@@ -152,8 +152,8 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** čvor stabla `POPUNI_FORM`
 - **NetGen:** 0 kontrola → nema dijaloga (`Form1.vb` 5369–5370), ali `FILLEXPLORER` prepiše master (`5445–5452`).
-- **Carpo:** `form open` otvori prozor i kad je prazan.
-- **Posljedica:** klik na čvor Statusa otvori prazan dijalog umjesto da samo zamijeni master.
+- **Carpo:** forma s 0 kontrola ne otvara dijalog. `FILLEXPLORER=true` prepiše master `ONSUBMIT`-om (`FillExplorer`, `Podloga.OtvoriFormu`).
+- **Posljedica:** klik na čvor Statusa zamijeni master, ne otvori prazan prozor.
 - **Test:** `STA-08`, `STA-34`
 
 ## R20 `~` postaje `#` tek u routeru
@@ -456,8 +456,8 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `ONLOAD2` i rafalni `select` na podlozi
 - **NetGen:** stupac se traži po `Button.Text` (`Form1.vb` 3914–3921 i 4886–4896). To je natpis, ne `NAME`.
-- **Carpo:** `control enable` veže se na `name`.
-- **Posljedica:** `MPPonuda` `ONLOAD2` stupac `Dodaj` gasi gumb čiji je natpis Dodaj. Veza po `NAME` ne nađe stupac.
+- **Carpo:** `GumbNatpis` i `PostaviGumb` traže `Button.Text`. `Name` gumba je `cmd` + redni broj. Stupac `INSERTFORM1` ne gasi Dodaj.
+- **Posljedica:** `MPPonuda` `ONLOAD2` stupac `Dodaj` gasi gumb čiji je natpis Dodaj. Ako `@@dodaj` ostane, `ExecSql` preskoči red (`Class1.vb` 113–118) i spin taj SELECT ne potvrdi.
 - **Test:** `MPP-04`, `MPP-20`
 
 ## R58 `CLICK(ime)` klikne tu kontrolu
@@ -504,8 +504,8 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `FILLEXPLORER` na dijalogu
 - **NetGen:** `true` zamijeni master SQL-om `ONSUBMIT` plus parametri (`Form1.vb` 5445–5452). Prazan string padne u `Else`: `ExecSql` toga SQL-a, zatim ponovi zadnji master (`5509–5519`). `ONSUBMIT` koji ne počinje s `INSERT`/`DELETE`/`UPDATE`/`SELECT` ne briše zalijepljene parametre (`3378–3388`).
-- **Carpo:** nema tu granu. Oba oblika lako postanu isti refresh.
-- **Posljedica:** `FILTERFORM` (`TRUE`) napuni grid. `DODAJIZNOS` (prazan) izvrši `spMPPoravnajKP` i osvježi stari master, ne postavi novi upit.
+- **Carpo:** `true` zove `ZamijeniIzvor`. Prazan string je `prazan`: `Citaj` pa `PonoviZadnji`. Nisu isti refresh.
+- **Posljedica:** `FILTERFORM` (`TRUE`) napuni grid novim upitom. `DODAJIZNOS` (prazan) izvrši `spMPPoravnajKP` i osvježi stari master.
 - **Test:** `MPK-30`, `MPK-31`
 
 Implementacijski registar na `cursor/netgen-otvaranje-3266` završava s R64. Sljedeće stavke su R65.

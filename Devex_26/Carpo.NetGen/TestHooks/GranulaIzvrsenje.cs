@@ -98,6 +98,9 @@ namespace Carpo.NetGen.TestHooks
             NgForm forma = FormaGumba(p, gumb.Naredba);
             if (forma != null)
             {
+                string fill = FillExplorer.Klasa(forma);
+                if (fill == "true" || fill == "prazan")
+                    s["fillExplorer"] = fill;
                 Raspored.KljuceviForme(forma, s);
                 s["datumParam"] = ImaDatum(forma) ? "yyyyMMdd" : "";
             }
@@ -306,6 +309,17 @@ namespace Carpo.NetGen.TestHooks
 
             DetailGrid.Kljucevi(p, g.Stanje, s);
             Stablo.Kljucevi(p, s);
+            string cvorSql = FillExplorer.CvorSql(p);
+            if (cvorSql.Length > 0)
+                s["cvorSql"] = cvorSql;
+            string comboKlasa = ComboKlasa(p);
+            if (comboKlasa.Length > 0)
+                s["comboStupac0"] = comboKlasa;
+            string natpis = GumbNatpis.Prvi(GumbNatpis.Efektivni(p), GumbNatpis.Aliasi(Attr(p, "ONLOAD2")));
+            if (natpis.Length > 0)
+                s["gumb.natpis"] = natpis;
+            if (OnLoad2IzReda(p, cb, natpis))
+                s["gumb.spin"] = "da";
             DodajKomande(p, s);
             DodajKontrole(p, s);
             DodajPoziv(p, s);
@@ -572,6 +586,88 @@ namespace Carpo.NetGen.TestHooks
             if (k == null || k.Atributi == null || !k.Atributi.Ima(ime))
                 return null;
             return k.Atributi.Vrijednost(ime);
+        }
+
+        private static string ComboKlasa(NgProject p)
+        {
+            string sql = (Attr(p, "COMBO") ?? "").Trim();
+            if (sql.Length == 0 || SqlTekst.JeZabranaPisanja(sql))
+                return "";
+            if (SqlTekst.Odluka(SqlTekst.Sredi(sql, new SqlKontekst())) != "salji")
+                return "";
+            try
+            {
+                DataTable dt = Citaj(sql);
+                if (dt == null || dt.Rows.Count == 0 || dt.Columns.Count <= ComboStablo.IndeksVrijednosti)
+                    return "";
+                return ComboStablo.Klasa(Convert.ToString(dt.Rows[0][ComboStablo.IndeksVrijednosti]));
+            }
+            catch (Exception)
+            {
+                return "";
+            }
+        }
+
+        private static bool OnLoad2IzReda(NgProject p, Dictionary<string, string> cb, string natpis)
+        {
+            if (string.IsNullOrEmpty(natpis) || cb == null || cb.Count == 0)
+                return false;
+            string sql = Attr(p, "ONLOAD2") ?? "";
+            if (sql.Trim().Length == 0)
+                return false;
+            var kljucevi = new List<string>(cb.Keys);
+            kljucevi.Sort(delegate (string a, string b) { return b.Length.CompareTo(a.Length); });
+            for (int i = 0; i < kljucevi.Count; i++)
+            {
+                string k = kljucevi[i];
+                string v;
+                cb.TryGetValue(k, out v);
+                sql = Zamijeni(sql, "@@" + k, v ?? "");
+            }
+            string spremno = SqlTekst.Sredi(sql, new SqlKontekst { OperaterId = "7", Node = "null" });
+            if (SqlTekst.Odluka(spremno) != "salji" || SqlTekst.JeZabranaPisanja(spremno))
+                return false;
+            try
+            {
+                DataTable dt = Citaj(spremno);
+                if (dt == null || dt.Rows.Count == 0 || !dt.Columns.Contains(natpis))
+                    return false;
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static string Zamijeni(string sql, string token, string vrijednost)
+        {
+            if (string.IsNullOrEmpty(sql) || string.IsNullOrEmpty(token))
+                return sql ?? "";
+            int i = 0;
+            while (i < sql.Length)
+            {
+                int p = sql.IndexOf(token, i, StringComparison.OrdinalIgnoreCase);
+                if (p < 0)
+                    break;
+                sql = sql.Substring(0, p) + vrijednost + sql.Substring(p + token.Length);
+                i = p + (vrijednost ?? "").Length;
+            }
+            return sql;
+        }
+
+        private static DataTable Citaj(string sql)
+        {
+            var dt = new DataTable();
+            using (var conn = new SqlConnection(Spoj()))
+            using (var cmd = new SqlCommand(sql, conn))
+            using (var da = new SqlDataAdapter(cmd))
+            {
+                cmd.CommandTimeout = 30;
+                conn.Open();
+                da.Fill(dt);
+            }
+            return dt;
         }
 
         private static string Spoj()

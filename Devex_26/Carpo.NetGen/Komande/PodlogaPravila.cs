@@ -1,0 +1,217 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
+using Carpo.NetGen.Model;
+
+namespace Carpo.NetGen.Komande
+{
+    /// <summary>
+    /// FILLEXPLORER nakon OKClick. Form1.vb 5369–5370 i 5445–5519.
+    /// Prazan string nije true: ExecSql pa zadnji master.
+    /// </summary>
+    public static class FillExplorer
+    {
+        public static string Klasa(NgForm forma)
+        {
+            if (forma == null || forma.Atributi == null || !forma.Atributi.Ima("FILLEXPLORER"))
+                return "";
+            string v = (forma.Atributi.Vrijednost("FILLEXPLORER") ?? "").Trim();
+            string l = v.ToLowerInvariant();
+            if (l == "true" || l == "false" || l == "onlydet" || l == "onlytree"
+                || l == "treeandrefreshmaster" || l == "treeandmaster")
+                return l;
+            return "prazan";
+        }
+
+        public static bool OtvaraDijalog(NgForm forma)
+        {
+            return forma != null && forma.Kontrole != null && forma.Kontrole.Count > 0;
+        }
+
+        public static bool ZamjenjujeMaster(string klasa)
+        {
+            return klasa == "true" || klasa == "treeandmaster";
+        }
+
+        public static bool PonavljaZadnji(string klasa)
+        {
+            return klasa == "prazan";
+        }
+
+        /// <summary>ONSUBMIT, plus parametri ako prvih 6 nije DML i nema !!. Form2.vb 3378–3388.</summary>
+        public static string NoviMaster(NgForm forma, string parametri)
+        {
+            if (forma == null)
+                return "";
+            string stora = (forma.OnSubmit ?? "").Trim();
+            if (stora.Length == 0)
+                return "";
+            if (stora.IndexOf("!!", StringComparison.Ordinal) >= 0)
+                return stora.Replace("!!", "").Trim();
+            if (string.IsNullOrWhiteSpace(parametri))
+                return stora;
+            return Lanac.Lijepi(stora, parametri).Trim();
+        }
+
+        /// <summary>
+        /// Čvor čija forma nema kontrola i FILLEXPLORER je true: master postaje ONSUBMIT.
+        /// </summary>
+        public static string CvorSql(NgProject projekt)
+        {
+            if (projekt == null || string.IsNullOrEmpty(projekt.Tree))
+                return "";
+            string[] dijelovi = projekt.Tree.Split('#');
+            for (int i = 0; i < dijelovi.Length; i++)
+            {
+                string seg = dijelovi[i] ?? "";
+                int k = seg.IndexOf(':');
+                if (k < 0 || k >= seg.Length - 1)
+                    continue;
+                NgForm forma = Nadji(projekt, seg.Substring(k + 1).Trim());
+                if (forma == null || OtvaraDijalog(forma) || !ZamjenjujeMaster(Klasa(forma)))
+                    continue;
+                return NoviMaster(forma, "");
+            }
+            return "";
+        }
+
+        private static NgForm Nadji(NgProject projekt, string ime)
+        {
+            if (projekt.Forme == null || ime.Length == 0)
+                return null;
+            for (int i = 0; i < projekt.Forme.Count; i++)
+            {
+                if (string.Equals(projekt.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
+                    return projekt.Forme[i];
+            }
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// ONLOAD2 indeksira red po Button.Text. Form1.vb 3914–3921. NAME i Tag nisu ključ.
+    /// BUTTONS prepisuje prvih N gumba. Form1.vb 3770–3819. Samo j=6 čeka prazan Button7.
+    /// </summary>
+    public static class GumbNatpis
+    {
+        public static List<NgButton> Efektivni(NgProject projekt)
+        {
+            var po = new Dictionary<int, NgButton>();
+            if (projekt != null && projekt.Gumbi != null)
+            {
+                for (int i = 0; i < projekt.Gumbi.Count; i++)
+                {
+                    NgButton g = projekt.Gumbi[i];
+                    po[g.Redni] = g;
+                }
+            }
+            string buttons = projekt == null ? "" : (projekt.Buttons ?? "");
+            if (buttons.Trim().Length > 0)
+            {
+                string[] a = buttons.Split('#');
+                for (int j = 0; j < a.Length && j < 10; j++)
+                {
+                    string dio = a[j] ?? "";
+                    int kolon = dio.IndexOf(':');
+                    if (kolon < 0)
+                        continue;
+                    int redni = j + 1;
+                    NgButton postojeci;
+                    if (redni == 7 && po.TryGetValue(7, out postojeci) && (postojeci.Natpis ?? "").Trim().Length > 0)
+                        continue;
+                    po[redni] = new NgButton(redni, dio.Substring(0, kolon), dio.Substring(kolon + 1));
+                }
+            }
+            var lista = new List<NgButton>();
+            for (int r = 1; r <= 10; r++)
+            {
+                NgButton g;
+                if (po.TryGetValue(r, out g))
+                    lista.Add(g);
+            }
+            return lista;
+        }
+
+        /// <summary>Stupac koji se zove kao natpis. Stupac koji se zove kao naredba ne dira gumb.</summary>
+        public static string PoStupcu(IList<NgButton> gumbi, string stupac)
+        {
+            if (gumbi == null || string.IsNullOrEmpty(stupac))
+                return "";
+            for (int i = 0; i < gumbi.Count; i++)
+            {
+                if (string.Equals((gumbi[i].Natpis ?? "").Trim(), stupac.Trim(), StringComparison.OrdinalIgnoreCase))
+                    return (gumbi[i].Natpis ?? "").Trim();
+            }
+            return "";
+        }
+
+        public static string Prvi(IList<NgButton> gumbi, IList<string> stupci)
+        {
+            if (stupci == null)
+                return "";
+            for (int i = 0; i < stupci.Count; i++)
+            {
+                string n = PoStupcu(gumbi, stupci[i]);
+                if (n.Length > 0)
+                    return n;
+            }
+            return "";
+        }
+
+        /// <summary>'Dodaj' = izraz. Literal iza kojeg nije = nije alias.</summary>
+        public static List<string> Aliasi(string sql)
+        {
+            var lista = new List<string>();
+            if (string.IsNullOrEmpty(sql))
+                return lista;
+            int i = 0;
+            while (i < sql.Length)
+            {
+                int a = sql.IndexOf('\'', i);
+                if (a < 0)
+                    break;
+                int b = sql.IndexOf('\'', a + 1);
+                if (b < 0)
+                    break;
+                int j = b + 1;
+                while (j < sql.Length && char.IsWhiteSpace(sql[j]))
+                    j++;
+                if (j < sql.Length && sql[j] == '=')
+                    lista.Add(sql.Substring(a + 1, b - a - 1));
+                i = b + 1;
+            }
+            return lista;
+        }
+
+        public static string Vrijednost(DataRow red, string natpis)
+        {
+            if (red == null || red.Table == null || string.IsNullOrEmpty(natpis))
+                return "";
+            if (!red.Table.Columns.Contains(natpis))
+                return "";
+            object v = red[natpis];
+            if (v == null || v == DBNull.Value)
+                return "";
+            return Convert.ToString(v);
+        }
+    }
+
+    /// <summary>
+    /// Combo podloge: ValueMember je stupac 0, DisplayMember stupac 1. Form1.vb 3342–3344.
+    /// SelectedValue postaje TREE. Form1.vb 7732 i 4344.
+    /// </summary>
+    public static class ComboStablo
+    {
+        public const int IndeksVrijednosti = 0;
+        public const int IndeksPrikaza = 1;
+
+        public static string Klasa(string vrijednost)
+        {
+            if (string.IsNullOrEmpty(vrijednost))
+                return "";
+            if (vrijednost.IndexOf('#') >= 0 && vrijednost.IndexOf(':') >= 0)
+                return "tree";
+            return "nije-tree";
+        }
+    }
+}

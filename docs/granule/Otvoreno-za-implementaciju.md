@@ -1,8 +1,10 @@
 # Otvoreno za implementaciju
 
+Četvrti agent (`cursor/netgen-cetvrti-dokaz-0b55`) zatvara uz test i NetGen linije: `MPK-30`, `MPK-31`, `STA-34`, `MPP-20`. `MPP-20` je pravilo (`Button.Text`); spin SELECT ostaje nepotvrđen dok `@@dodaj` preživi. `PL-32` se zatvara tek kad `spNg_combo` na spinu vrati TREE tekst u stupcu 0. `STA-12` ostaje otvoren: klijentski red u `ssMeni` se ne izmišlja.
+
 Izvor je CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31), commit `b7d8989`, izvještaj `SVE ukupno=571 zeleno=411 otvoreno=160 pad=0`.
 
-Svih 160 stavki je otvoreno. Nijedna nije pad. Grupe su po elementu NetGena i poredane po broju granula. Uz svaku stavku je linija izvora i razlog zašto je ostala otvorena.
+Snimak CI #31 ima 160 stavki. U ovom prolazu su iz tablice izašle četiri (`MPK-30`, `MPK-31`, `STA-34`, `MPP-20`). Ostale su i dalje otvorene. Nijedna nije pad. Grupe su po elementu NetGena. Uz svaku stavku je linija izvora i razlog zašto je ostala otvorena.
 
 | # | Element | Granula | Stavki |
 |---|---|---:|---:|
@@ -11,7 +13,7 @@ Svih 160 stavki je otvoreno. Nijedna nije pad. Grupe su po elementu NetGena i po
 | 3 | Datum: format, ključne riječi, krivi atribut | 5 | 6 |
 | 4 | Detail grid: veza, jednokratne kolone, selector | 4 | 9 |
 | 5 | totalgen i ASSEMBLYLOAD | 4 | 6 |
-| 6 | onlytree, CLICK, enable po natpisu, dnevnik | 4 | 4 |
+| 6 | onlytree, CLICK, enable po natpisu, dnevnik | 3 | 3 |
 | 7 | Kvačica, suma, sort, edit, Enter i selekcija | 3 | 14 |
 | 8 | Raspored dijaloga: /14, tab, label, ONLOAD polja | 3 | 12 |
 | 9 | Stupac mastera: tip, širina, skrivanje, poredak | 3 | 11 |
@@ -19,7 +21,7 @@ Svih 160 stavki je otvoreno. Nijedna nije pad. Grupe su po elementu NetGena i po
 | 11 | Radio, check, OKSTAY, CLOSE i REFRESHCONTROL | 3 | 6 |
 | 12 | Ovisni combo, multidrop, status, WUDTH, TRANSLATE | 3 | 5 |
 | 13 | Prazan broj, apostrof i spRaiserror | 3 | 5 |
-| 14 | FILLEXPLORER i prazan početni master | 3 | 4 |
+| 14 | FILLEXPLORER i prazan početni master | 1 | 1 |
 | 15 | Ispis mastera, zaglavlje i Spin.Printing | 3 | 4 |
 | 16 | Procedura ili tijelo nisu dostupni za čitanje | 3 | 3 |
 | 17 | Lijevi panel: prazno stablo, combo, splitter | 2 | 9 |
@@ -31,7 +33,7 @@ Svih 160 stavki je otvoreno. Nijedna nije pad. Grupe su po elementu NetGena i po
 | 23 | Redoslijed punjenja podloge | 1 | 1 |
 | 24 | fidus nema tablicu ssMeni | 1 | 1 |
 
-Zbroj stavki je 160.
+Zbroj stavki u tablici ispod je 156.
 
 ## 1. XML nije u spin ssMeni
 
@@ -141,17 +143,16 @@ Zbroj stavki je 160.
 
 ## 6. onlytree, CLICK, enable po natpisu, dnevnik
 
-**4 granula, 4 stavki:** KntBlaPromet, LVObracun, MPPonuda, MPPorKPNG.
+**3 granula, 3 stavki:** KntBlaPromet, LVObracun, MPPorKPNG.
 
-**NetGen:** `FILLEXPLORER=onlytree` zove samo `NapuniDrvoVrijeme` (`Form1.vb` 5475). `Ime(@a=)` nije ime forme (`Form2.vb` 4407). `CLICK(Ok)` izvrši `ONCLICK` te kontrole (`Form2.vb` 7151–7155). `enable`/`disable` traži `Button.Text` (`Form1.vb` 3914–3921). SQL filtera ide u NgDnevnik, ne u CB log.
+**NetGen:** `FILLEXPLORER=onlytree` zove samo `NapuniDrvoVrijeme` (`Form1.vb` 5475). `Ime(@a=)` nije ime forme (`Form2.vb` 4407). `CLICK(Ok)` izvrši `ONCLICK` te kontrole (`Form2.vb` 7151–7155). SQL filtera ide u NgDnevnik, ne u CB log.
 
-**Nedostatak:** Četiri odvojene rupe. Kuka nema `onlytree` ni `CLICK`. `MPPonuda` stoji na SELECT-u koji traži `@@operateriid`. Dnevnik filtera nije CB log.
+**Nedostatak:** Kuka nema `onlytree` ni `CLICK`. Dnevnik filtera nije CB log. `MPP-20` je zatvoren: traži se `Button.Text`.
 
 | Stavka | Očekivano | Izvor | Zašto je otvoreno |
 |---|---|---|---|
 | LVObracun `LVO-20` | onlytree ne salje master. Ime(@a=) nije ime forme | `netgen/Form1.vb:5475; netgen/Form2.vb:4407` | kuka nema ključ |
 | KntBlaPromet `KBP-20` | CLICK(Ok) izvrsi ONCLICK, ne samo zatvaranje | `netgen/Form2.vb:7151-7155` | kuka nema ključ |
-| MPPonuda `MPP-20` | enable/disable trazi Button.Text, ne NAME | `netgen/Form1.vb:3914-3921` | SELECT na spinu nije prošao |
 | MPPorKPNG `MPK-43` | SQL filtera ide u NgDnevnik, ne u CBLog | `docs/funkcionalnosti/logging.md` | dijalog još nije u kuki |
 
 ## 7. Kvačica, suma, sort, edit, Enter i selekcija
@@ -296,17 +297,14 @@ Zbroj stavki je 160.
 
 ## 14. FILLEXPLORER i prazan početni master
 
-**3 granula, 4 stavki:** MPPorKPNG, PrijemniList, Statusi.
+**1 granula, 1 stavka:** PrijemniList.
 
-**NetGen:** `true` zamijeni master SQL-om `ONSUBMIT` i parametara (`Form1.vb` 5445–5452). Prazan `FILLEXPLORER` izvrši `ONSUBMIT`, pa ponovi zadnji master (`5509–5519`). Forma bez kontrola ne otvara dijalog (`5369–5370`). Nema `ONLOAD`: početni master SQL je prazan (`3367–3368`, `1830`).
+**NetGen:** Nema `ONLOAD`: početni master SQL je prazan (`3367–3368`, `1830`).
 
-**Nedostatak:** SQL na Prijemnom listu padne na `#select`. Na MPPorKPNG dijalog još nije u kuki. Prazan `FILLEXPLORER` nije `true`.
+**Nedostatak:** SQL na Prijemnom listu padne na `#select`. `MPK-30`, `MPK-31` i `STA-34` su zatvoreni.
 
 | Stavka | Očekivano | Izvor | Zašto je otvoreno |
 |---|---|---|---|
-| MPPorKPNG `MPK-30` | FILTERFORM true zamijeni master SQL-om ONSUBMIT i parametara | `netgen/Form1.vb:5445-5452` | dijalog još nije u kuki |
-| MPPorKPNG `MPK-31` | Prazan FILLEXPLORER izvrsi ONSUBMIT pa ponovi zadnji master | `netgen/Form1.vb:5509-5519` | dijalog još nije u kuki |
-| Statusi `STA-34` | Forma bez kontrola ne otvara dijalog; FILLEXPLORER zamijeni master ONSUBMIT-om | `netgen/Form1.vb:5369-5370,5445-5452` | kuka nema ključ |
 | PrijemniList `PL-25` | Nema ONLOAD: pocetni master SQL je prazan | `netgen/Form1.vb:3367-3368,1830` | SELECT na spinu nije prošao |
 
 ## 15. Ispis mastera, zaglavlje i Spin.Printing

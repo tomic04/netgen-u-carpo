@@ -132,6 +132,7 @@ namespace Carpo.NetGen.Ui
             _master.Ucitaj(_projekt, null);
             NapuniGrid();
             NapuniGumbe();
+            PostimajGumbe();
             return true;
         }
 
@@ -204,7 +205,7 @@ namespace Carpo.NetGen.Ui
             if (t == null || t.Columns.Count == 0 || t.Rows.Count == 0)
                 return;
             _comboRedovi = t;
-            int prikaz = t.Columns.Count > 1 ? 1 : 0;
+            int prikaz = t.Columns.Count > ComboStablo.IndeksPrikaza ? ComboStablo.IndeksPrikaza : ComboStablo.IndeksVrijednosti;
             for (int i = 0; i < t.Rows.Count; i++)
                 cmbComboEditFilter.Items.Add(Convert.ToString(t.Rows[i][prikaz]));
             bbiLookUpFilter.Visibility = BarItemVisibility.Always;
@@ -216,13 +217,13 @@ namespace Carpo.NetGen.Ui
             if (bbiLookUpFilter.EditValue == null || _comboRedovi == null)
                 return;
             string prikaz = Convert.ToString(bbiLookUpFilter.EditValue);
-            int stupac = _comboRedovi.Columns.Count > 1 ? 1 : 0;
+            int stupac = _comboRedovi.Columns.Count > ComboStablo.IndeksPrikaza ? ComboStablo.IndeksPrikaza : ComboStablo.IndeksVrijednosti;
             string vrijednost = "";
             for (int i = 0; i < _comboRedovi.Rows.Count; i++)
             {
                 if (Convert.ToString(_comboRedovi.Rows[i][stupac]) == prikaz)
                 {
-                    vrijednost = Convert.ToString(_comboRedovi.Rows[i][0]);
+                    vrijednost = Convert.ToString(_comboRedovi.Rows[i][ComboStablo.IndeksVrijednosti]);
                     break;
                 }
             }
@@ -297,6 +298,24 @@ namespace Carpo.NetGen.Ui
                 OsvjeziMaster();
                 return;
             }
+            if (!FillExplorer.OtvaraDijalog(forma))
+            {
+                _dubinaForme++;
+                try
+                {
+                    string bez = FillExplorer.Klasa(forma);
+                    if (FillExplorer.ZamjenjujeMaster(bez) || FillExplorer.PonavljaZadnji(bez))
+                        PrimijeniFill(forma);
+                    string dalje = DijalogTok.NextForm(forma);
+                    if (dalje.Length > 0)
+                        OtvoriFormu(dalje);
+                }
+                finally
+                {
+                    _dubinaForme--;
+                }
+                return;
+            }
             _dubinaForme++;
             try
             {
@@ -309,10 +328,13 @@ namespace Carpo.NetGen.Ui
                     _polja["izvjestaj"] = iz;
                 if (dij.DialogResult != DialogResult.OK)
                     return;
+                string klasa = FillExplorer.Klasa(forma);
+                if (FillExplorer.ZamjenjujeMaster(klasa) || FillExplorer.PonavljaZadnji(klasa))
+                    PrimijeniFill(forma);
                 string sljedeca = DijalogTok.NextForm(forma);
                 if (sljedeca.Length > 0)
                     OtvoriFormu(sljedeca);
-                else
+                else if (!FillExplorer.ZamjenjujeMaster(klasa) && !FillExplorer.PonavljaZadnji(klasa))
                     OsvjeziMaster();
             }
             finally
@@ -523,15 +545,64 @@ namespace Carpo.NetGen.Ui
                 pogled.FocusedRowHandle = 0;
         }
 
+        private void PrimijeniFill(NgForm forma)
+        {
+            string klasa = FillExplorer.Klasa(forma);
+            if (FillExplorer.ZamjenjujeMaster(klasa))
+            {
+                string sql = FillExplorer.NoviMaster(forma, "");
+                if (sql.Length == 0)
+                    return;
+                _master.ZamijeniIzvor(sql);
+                NapuniGrid();
+                return;
+            }
+            if (FillExplorer.PonavljaZadnji(klasa))
+            {
+                string sql = FillExplorer.NoviMaster(forma, "");
+                if (sql.Length > 0)
+                {
+                    string spremno = SqlTekst.Sredi(sql, _master.Kontekst).Replace("~~", ",");
+                    if (!SqlTekst.JeZabranaPisanja(spremno) && SqlTekst.Odluka(spremno) == "salji")
+                        Citaj(spremno);
+                }
+                _master.PonoviZadnji();
+                NapuniGrid();
+            }
+        }
+
+        private void PostimajGumbe()
+        {
+            if (_projekt == null || _projekt.Atributi == null || !_projekt.Atributi.Ima("ONLOAD2"))
+                return;
+            string sql = SqlTekst.Sredi(_projekt.Atributi.Vrijednost("ONLOAD2") ?? "", _master.Kontekst);
+            if (SqlTekst.Odluka(sql) != "salji" || SqlTekst.JeZabranaPisanja(sql))
+                return;
+            DataTable t = Citaj(sql);
+            if (t == null || t.Rows.Count == 0)
+                return;
+            var gumbi = GumbNatpis.Efektivni(_projekt);
+            for (int i = 0; i < gumbi.Count; i++)
+            {
+                string v = (GumbNatpis.Vrijednost(t.Rows[0], gumbi[i].Natpis) ?? "").Trim().ToLowerInvariant();
+                if (v == "enable")
+                    PostaviGumb(gumbi[i].Natpis, true);
+                else if (v == "disable")
+                    PostaviGumb(gumbi[i].Natpis, false);
+            }
+        }
+
         private void NapuniGumbe()
         {
             pnlButtons.Controls.Clear();
             if (_projekt == null)
                 return;
-            for (int i = _projekt.Gumbi.Count - 1; i >= 0; i--)
+            var gumbi = GumbNatpis.Efektivni(_projekt);
+            for (int i = gumbi.Count - 1; i >= 0; i--)
             {
-                NgButton b = _projekt.Gumbi[i];
+                NgButton b = gumbi[i];
                 var gumb = new SimpleButton();
+                gumb.Name = "cmd" + b.Redni.ToString();
                 gumb.Text = (b.Natpis ?? "").Replace("!!", "\r\n");
                 gumb.Tag = b.Naredba;
                 gumb.Dock = DockStyle.Left;

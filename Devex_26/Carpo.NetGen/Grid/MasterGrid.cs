@@ -238,6 +238,35 @@ namespace Carpo.NetGen.Grid
             Stanje.DxGrid = dx != null && dx.Trim().ToLowerInvariant() == "true";
         }
 
+        /// <summary>FILLEXPLORER true: zadnji master postaje ovaj SQL. Form1.vb 5445–5452.</summary>
+        public void ZamijeniIzvor(string sql)
+        {
+            Stanje.IzvorSql = sql ?? "";
+            Stanje.OtvaraFormu = false;
+            string prvi = SqlTekst.Sredi(Stanje.IzvorSql, Kontekst);
+            Stanje.ZadnjiSql = prvi;
+            PrimijeniSlanje(prvi);
+        }
+
+        /// <summary>Prazan FILLEXPLORER: ponovi zadnji SQL, ne novi upit. Form1.vb 5518–5519.</summary>
+        public void PonoviZadnji()
+        {
+            PrimijeniSlanje(Stanje.ZadnjiSql ?? "");
+        }
+
+        private void PrimijeniSlanje(string sql)
+        {
+            string drugi = SqlTekst.Sredi(sql ?? "", Kontekst).Replace("~~", ",");
+            Stanje.SqlZaSlanje = drugi;
+            Stanje.Odluka = SqlTekst.Odluka(drugi);
+            Stanje.BlokiranoPisanje = false;
+            if (Stanje.Odluka == "salji" && SqlTekst.JeZabranaPisanja(drugi))
+            {
+                Stanje.BlokiranoPisanje = true;
+                Stanje.Odluka = "zabrana-pisanja";
+            }
+        }
+
         public void Osvjezi(DataTable tablica)
         {
             Stanje.Redoslijed.Add("REFRESHMASTERGRID");
