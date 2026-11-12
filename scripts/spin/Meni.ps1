@@ -1,4 +1,4 @@
-# Testni redovi u dbo.ssMeni na localhost/spin.
+# Testni redovi u ssMeni na localhost/spin.
 # Parametar je asm:NetGenDLL.loader:<xml>. Jupiter iz toga uzme tekst iza
 # druge dvotocke i preda ga kao ModuleID. NetGen ga spremi u Mid
 # (Form1.vb 1251-1258) i otvori remotedllpath\SharedDLLs\xml\ + Mid (1139).
@@ -25,9 +25,22 @@ function Exec([string]$sql) {
     return $cmd.ExecuteNonQuery()
 }
 
-$ima = Q "select object_id(N'dbo.ssMeni', N'U') as id"
-if ($ima.Rows.Count -eq 0 -or $ima.Rows[0].id -is [DBNull]) {
-    throw "Na spinu nema dbo.ssMeni. Skripta tablicu ne stvara."
+$meta = Q @"
+select top 1 o.object_id, o.type, schema_name(o.schema_id) as shema
+from sys.objects o
+where o.name = N'ssMeni' and o.type in ('U','V','SN')
+order by case o.type when 'U' then 0 when 'V' then 1 else 2 end
+"@
+if ($meta.Rows.Count -eq 0) {
+    throw "Na spinu nema objekta ssMeni. Skripta ga ne stvara."
+}
+$oid = $meta.Rows[0].object_id
+Write-Host ("ssMeni je " + $meta.Rows[0].shema + " tip " + $meta.Rows[0].type)
+if ([string]$meta.Rows[0].type -eq "SN") {
+    $base = Q "select object_id(base_object_name) as id from sys.synonyms where object_id = $oid"
+    if ($base.Rows.Count -gt 0 -and -not ($base.Rows[0].id -is [DBNull])) {
+        $oid = $base.Rows[0].id
+    }
 }
 
 $kolone = Q @"
@@ -39,9 +52,9 @@ left join (
     select ic.column_id
     from sys.indexes i
     join sys.index_columns ic on ic.object_id = i.object_id and ic.index_id = i.index_id
-    where i.object_id = object_id(N'dbo.ssMeni') and i.is_primary_key = 1
+    where i.object_id = $oid and i.is_primary_key = 1
 ) pk on pk.column_id = c.column_id
-where c.object_id = object_id(N'dbo.ssMeni')
+where c.object_id = $oid
 order by c.column_id
 "@
 
@@ -51,7 +64,7 @@ foreach ($r in $kolone.Rows) {
 }
 if ($paramKol -eq $null) { throw "ssMeni nema stupac Parametar." }
 
-$predlozak = Q "select top 1 1 as ima from dbo.ssMeni where Parametar like N'asm:NetGenDLL.loader:%'"
+$predlozak = Q "select top 1 1 as ima from ssMeni where Parametar like N'asm:NetGenDLL.loader:%'"
 $imaPredlozak = $predlozak.Rows.Count -gt 0
 
 $stavke = @(
@@ -79,7 +92,7 @@ foreach ($s in $stavke) {
 
     $f = $fajl.Replace("'", "''")
     $broj = Q @"
-select count(*) as n from dbo.ssMeni
+select count(*) as n from ssMeni
 where Parametar like N'%:$f' or Parametar like N'%\$f' or Parametar like N'%/$f'
 "@
     if ([int]$broj.Rows[0].n -gt 0) {
@@ -101,7 +114,7 @@ where Parametar like N'%:$f' or Parametar like N'%\$f' or Parametar like N'%/$f'
         } elseif ($ime -eq "Opis") {
             $izrazi.Add("N'" + $opis + "'")
         } elseif ([int]$c.pk -eq 1) {
-            $izrazi.Add("(select isnull(max(" + $qime + "), 0) + 1 from dbo.ssMeni)")
+            $izrazi.Add("(select isnull(max(" + $qime + "), 0) + 1 from ssMeni)")
         } elseif ($imaPredlozak) {
             $izrazi.Add("p." + $qime)
         } elseif ([int]$c.is_nullable -eq 0) {
@@ -115,9 +128,9 @@ where Parametar like N'%:$f' or Parametar like N'%\$f' or Parametar like N'%/$f'
         }
     }
     if ($imaPredlozak) {
-        $sql = "insert into dbo.ssMeni (" + ($imena -join ",") + ") select top 1 " + ($izrazi -join ",") + " from dbo.ssMeni p where p.Parametar like N'asm:NetGenDLL.loader:%'"
+        $sql = "insert into ssMeni (" + ($imena -join ",") + ") select top 1 " + ($izrazi -join ",") + " from ssMeni p where p.Parametar like N'asm:NetGenDLL.loader:%'"
     } else {
-        $sql = "insert into dbo.ssMeni (" + ($imena -join ",") + ") values (" + ($izrazi -join ",") + ")"
+        $sql = "insert into ssMeni (" + ($imena -join ",") + ") values (" + ($izrazi -join ",") + ")"
     }
     Exec $sql | Out-Null
     Write-Host "ubacen testni red $param"
