@@ -35,7 +35,3 @@ Grana `cursor/netgen-cetvrti-dokaz-0b55`. Ne diram ručni Start, UI smoke, `zadn
 | ZakljucivanjeTemNG `ONK-04` | `Zaključi` otvara `Zakljucavanje`. `spKntZakljucivanjeTem` se ne šalje. `Form2.vb` 6882. |
 | MPNivelacija `NIV-05` | `Pokaži` šalje `ONSUBMIT` jer je `FILLEXPLORER=TRUE`. `Form1.vb` 5445. |
 | MPRealizNG `REA-04` | `Pokaži` na `FORM1` šalje `ONSUBMIT` jer je `FILLEXPLORER=TRUE`. `Form1.vb` 5445. |
-| KUPNG `KUC-07`, `KUP-05` | Dogovor na PR #74: polovica ssMeni. Parent je prefiks Nivo, `fk_meni` ostaje uključen. |
-| MPNarIzdSkl `NAR-09` | Isto. |
-| MPNGPregDokMAIL `MAIL-07` | Isto. |
-| Rijetke `RIJ-31`, `RIJ-33` | Isto. |
