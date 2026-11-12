@@ -58,6 +58,13 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(FaktureMinMax.Provjeri(root));
             sve.AddRange(KntKonfSheme.Provjeri(root));
             sve.AddRange(SklMinMax.Provjeri(root));
+            sve.AddRange(PnObracun.Provjeri(root));
+            sve.AddRange(KntBlaDok.Provjeri(root));
+            sve.AddRange(Akcije.Provjeri(root));
+            sve.AddRange(ManagerObaveza.Provjeri(root));
+            sve.AddRange(PnKatalozi.Provjeri(root));
+            sve.AddRange(PorukeDocXml.Provjeri(root));
+            sve.AddRange(SmokePrazno.Provjeri(root));
             sve.AddRange(Statusi.Provjeri(root));
             sve.AddRange(KntBlaZak.Provjeri(root));
             sve.AddRange(PrijemniList.Provjeri(root));

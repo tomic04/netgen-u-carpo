@@ -672,6 +672,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Posljedica:** `FaktureMinMaxDat` i `SklMinMaxDat` `MAINFORM` nemaju povećanje. Naslov podloge i dalje je element `CAPTION` projekta (`Klase tečajeva`), a dijalog nosi svoj `CAPTION`.
 - **Test:** `FMD-03`, `SMD-03`
 
+Najnovija povučena implementacijska grana `cursor/netgen-dblclick-3266` (`0f24586`) završava s R83 (checklista Managera). QA R83 je `POPUPDETAIL`, QA R84 je `MAXIMIZEBOX`. Sljedeća stavka je R85.
+
+## R85 `POPUP` segment `-:` je crtica, ne prazan gumb
+
+- **Element:** `POPUPMASTER` segment `-:`
+- **NetGen:** segment se lomi na prvoj `:` (`Form1.vb` 3564–3566). Natpis je `-`, tag iza dvotočke je prazan. Stavka se doda u `ContextMenuStrip1`. Standardni separator `-` dolazi kasnije, zasebno (`3653`).
+- **Carpo:** prazan tag lako izbaci stavku iz izbornika.
+- **Posljedica:** `Akcije` između `Promjene` i `Obriši operatera` ima crticu. To je stavka izbornika, ne preskok.
+- **Test:** `AKC-04`
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
@@ -735,3 +745,10 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 | `FaktureMinMaxDat.md` | `MAXIMIZEBOX`, datum `#OK` | R84, R24 |
 | `KntKonfShemeMatTem.md` | `ONLOAD` je `sp … 1`, `LANDSCAPE` bez ispisa | R41 |
 | `SklMinMaxDat.md` | `MAXIMIZEBOX`, datum `#OK` | R84, R24 |
+| `PNObracun.md` | `Ime(@a=@@x)` na dvostrukom kliku, `PERMISIO` | R55, R06 |
+| `KntBlaDok.md` | stablo bez `:` na prvom čvoru, `POPUPDETAIL` | R10, R83, R11 |
+| `Akcije.md` | popup `-:`, timeout 600, nema `ONLOAD` | R85, R65 |
+| `ManagerObaveza.md` | `Razdoblje` bez `:`, `PRINTREPXMASTER` | R60, R41 |
+| `PNKatalozi.md` | samo store u stablu, nema `ONLOAD` | R01, R65 |
+| `PorukeDoc.md` | XML nije u repou | |
+| `Smoke-prazno-uzorak.md` | 20 praznih iz smokea #35 | |
