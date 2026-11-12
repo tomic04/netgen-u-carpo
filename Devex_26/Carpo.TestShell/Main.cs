@@ -357,6 +357,10 @@ namespace Carpo.TestShell
             string tag = null;
             if (ime.Equals("OznakaKL.xml", StringComparison.OrdinalIgnoreCase))
                 otvori = "Izmjena";
+            else if (ime.Equals("KntKompVerizne.xml", StringComparison.OrdinalIgnoreCase))
+                tag = "OBRISI_FORM";
+            else if (ime.Equals("Statusi.xml", StringComparison.OrdinalIgnoreCase))
+                otvori = "Unesi";
             if (otvori == null && tag == null)
                 return 0;
             var gumb = tag != null ? NadjiPoTag(granula, tag) : NadjiGumb(granula, otvori);
@@ -414,6 +418,9 @@ namespace Carpo.TestShell
             try
             {
                 gumb.PerformClick();
+                int rok = Environment.TickCount + 20000;
+                while (!odustao && Environment.TickCount < rok)
+                    Application.DoEvents();
             }
             catch (Exception ex)
             {

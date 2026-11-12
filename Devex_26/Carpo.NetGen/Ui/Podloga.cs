@@ -309,7 +309,7 @@ namespace Carpo.NetGen.Ui
                 dij.Id = _master.Stanje.Id;
                 dij.ZadnjiSql = _master.Stanje.ZadnjiSql;
                 dij.OtvoriDrugu = OtvoriFormu;
-                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj);
+                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj, true, this);
                 string iz = dij.Vrijednost("izvjestaj");
                 if (!string.IsNullOrEmpty(iz))
                     _polja["izvjestaj"] = iz;
@@ -648,6 +648,11 @@ namespace Carpo.NetGen.Ui
             var gumb = sender as SimpleButton;
             string naredba = gumb == null || gumb.Tag == null ? "" : gumb.Tag.ToString();
             NgDnevnik.Akcija("gumb " + (gumb == null ? "" : gumb.Text) + " " + naredba);
+            if (IsHandleCreated)
+            {
+                BeginInvoke(new Action(delegate () { IzvrsiLanac(naredba); }));
+                return;
+            }
             IzvrsiLanac(naredba);
         }
 

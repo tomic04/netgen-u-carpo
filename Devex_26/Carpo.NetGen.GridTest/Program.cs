@@ -377,6 +377,10 @@ namespace Carpo.NetGen.GridTest
             Carpo.NetGen.Komande.PorukaNaredba.Pokazi("MSGBOX(Pozor)");
             Carpo.NetGen.Komande.PorukaNaredba.Prikazi = null;
             T("msgbox", poruka == "POZOR", poruka);
+            var msg = Carpo.NetGen.Komande.DijalogTok.Koraci("CREATETEXTFILE3(c:\\a.txt)#msgbox(Pozor)#OK");
+            T("dijalog-msgbox-lanac", msg.Count == 3 && msg[0].Vrsta == "sql" && msg[1].Vrsta == "poruka" && msg[1].Tekst == "POZOR" && msg[2].Vrsta == "ok", msg.Count.ToString());
+            var rod = Carpo.NetGen.Komande.DijalogTok.Koraci("spMPIzdatnicaSKLMP @action=1#CLOSEPARENT");
+            T("dijalog-closeparent-lanac", rod.Count == 2 && rod[0].Vrsta == "sql" && rod[0].Tekst.StartsWith("spMPIzdatnicaSKLMP") && rod[1].Vrsta == "roditelj", rod.Count.ToString());
             T("openform", Carpo.NetGen.Komande.OtvoriNaredba.Ime("OPENFORM(Unesi)") == "UNESI", "");
             T("prostor", Carpo.NetGen.Komande.ProstorNaredba.Je("POSLOVNIPROSTOR(5)")
                 && Carpo.NetGen.Komande.ProstorNaredba.Argument("POSLOVNIPROSTOR(5)") == "5"

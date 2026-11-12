@@ -31,6 +31,15 @@ namespace Carpo.NetGen.Komande
             public readonly List<string> Naredbe = new List<string>();
         }
 
+        /// <summary>
+        /// Jedan segment Rafalna. Form2.vb 7031–7169 ne izlazi iz petlje na MSGBOX ni na CLOSEPARENT.
+        /// </summary>
+        public sealed class Korak
+        {
+            public string Vrsta = "";
+            public string Tekst = "";
+        }
+
         public static bool JeJupiter(string server)
         {
             if (string.IsNullOrEmpty(server))
@@ -173,6 +182,52 @@ namespace Carpo.NetGen.Komande
             if (jupiter)
                 k.SaljeSql = false;
             return k;
+        }
+
+        /// <summary>
+        /// Redoslijed je cijeli ONCLICK. MSGBOX ne prekida (7165–7169).
+        /// CLOSEPARENT postavi zastavicu i ide u Button2, petlja ide dalje (7035–7037).
+        /// </summary>
+        public static List<Korak> Koraci(string onClick)
+        {
+            var lista = new List<Korak>();
+            string[] seg = Lanac.Segmenti(onClick ?? "");
+            for (int i = 0; i < seg.Length; i++)
+            {
+                string t = (seg[i] ?? "").Trim();
+                if (t.Length == 0)
+                    continue;
+                var k = new Korak();
+                k.Tekst = t;
+                string u = t.ToUpperInvariant();
+                if (u.IndexOf("MSGBOX(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "poruka";
+                    k.Tekst = PorukaNaredba.Tekst(t);
+                }
+                else if (u == "CLOSE" || u == "CANCEL")
+                    k.Vrsta = "odustani";
+                else if (u == "CLOSEPARENT")
+                    k.Vrsta = "roditelj";
+                else if (u == "OK")
+                    k.Vrsta = "ok";
+                else if (u == "OKSTAY")
+                    k.Vrsta = "okstay";
+                else if (t.StartsWith(":", StringComparison.Ordinal))
+                {
+                    k.Vrsta = "forma";
+                    k.Tekst = t.Substring(1).Trim();
+                }
+                else if (KlikNaredba.Kontrola(t).Length > 0)
+                {
+                    k.Vrsta = "klik";
+                    k.Tekst = KlikNaredba.Kontrola(t);
+                }
+                else
+                    k.Vrsta = "sql";
+                lista.Add(k);
+            }
+            return lista;
         }
 
         public static bool PreskociGrid(NgControl k)

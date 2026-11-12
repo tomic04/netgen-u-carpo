@@ -28,6 +28,7 @@ namespace Carpo.NetGen.Ui
         private Func<string, DataTable> _citaj;
         private SqlKontekst _kontekst;
         private NgForm _forma;
+        private static Dijalog _zatvoriRoditelja;
         private bool _jupiter;
 
         public string OtvorenaForma = "";
@@ -53,7 +54,7 @@ namespace Carpo.NetGen.Ui
             KeyPreview = true;
         }
 
-        public void Prikazi(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj, bool modal = true)
+        public void Prikazi(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj, bool modal = true, Form vlasnik = null)
         {
             if (forma == null)
                 return;
@@ -167,7 +168,23 @@ namespace Carpo.NetGen.Ui
             if (on.TrimStart().StartsWith("select", StringComparison.OrdinalIgnoreCase) && citaj != null)
                 NapuniIzOnLoad(on, kontekst, citaj);
             if (modal)
-                ShowDialog();
+            {
+                if (vlasnik != null && vlasnik != this && !vlasnik.IsDisposed)
+                    ShowDialog(vlasnik);
+                else
+                    ShowDialog();
+            }
+        }
+
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            if (_zatvoriRoditelja != null && _zatvoriRoditelja != this)
+            {
+                _zatvoriRoditelja = null;
+                DialogResult = DialogResult.Cancel;
+                Close();
+            }
         }
 
         private void NapuniKontrolu(Control c, NgControl k)
@@ -235,18 +252,66 @@ namespace Carpo.NetGen.Ui
                     naredba = tag.Substring(crta + 1);
             }
             DijalogTok.Klik klik = DijalogTok.Gumb(_forma, redni, naredba, _jupiter);
-            if (klik.OtvaraFormu.Length > 0)
+            var koraci = DijalogTok.Koraci(naredba);
+            bool lanac = koraci.Count > 1;
+            for (int s = 0; s < koraci.Count; s++)
             {
-                OtvorenaForma = klik.OtvaraFormu;
-                if (b != null)
-                    b.DialogResult = DialogResult.None;
-                if (OtvoriDrugu != null)
-                    OtvoriDrugu(klik.OtvaraFormu);
-                return;
+                string v = koraci[s].Vrsta;
+                if (v == "poruka" || v == "roditelj" || v == "odustani" || v == "ok" || v == "okstay" || v == "forma")
+                    lanac = true;
             }
-            if (klik.Odustani)
+            if (lanac)
             {
-                DialogResult = DialogResult.Cancel;
+                for (int i = 0; i < koraci.Count; i++)
+                {
+                    DijalogTok.Korak korak = koraci[i];
+                    if (korak.Vrsta == "poruka")
+                    {
+                        PorukaNaredba.Pokazi("MSGBOX(" + korak.Tekst + ")");
+                        continue;
+                    }
+                    if (korak.Vrsta == "odustani")
+                    {
+                        DialogResult = DialogResult.Cancel;
+                        continue;
+                    }
+                    if (korak.Vrsta == "roditelj")
+                    {
+                        _zatvoriRoditelja = this;
+                        DialogResult = DialogResult.Cancel;
+                        continue;
+                    }
+                    if (korak.Vrsta == "ok" || korak.Vrsta == "okstay")
+                    {
+                        if (korak.Vrsta == "ok")
+                            DialogResult = DialogResult.OK;
+                        if (klik.SaljeSql && _citaj != null && klik.MasterSql.Length > 0)
+                        {
+                            try { _citaj(klik.MasterSql); }
+                            catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + klik.MasterSql); }
+                        }
+                        continue;
+                    }
+                    if (korak.Vrsta == "klik")
+                    {
+                        Control[] cilj = Controls.Find(korak.Tekst, true);
+                        if (cilj.Length > 0)
+                            cilj[0].Focus();
+                        continue;
+                    }
+                    if (korak.Vrsta == "forma")
+                    {
+                        OtvorenaForma = korak.Tekst;
+                        if (OtvoriDrugu != null)
+                            OtvoriDrugu(korak.Tekst);
+                        continue;
+                    }
+                    if (korak.Vrsta == "sql" && _citaj != null && !_jupiter && !ZastitaSql.Tekst(korak.Tekst).Pise)
+                    {
+                        try { _citaj(korak.Tekst); }
+                        catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + korak.Tekst); }
+                    }
+                }
                 return;
             }
             if (KlikNaredba.Kontrola(naredba).Length > 0)
@@ -255,11 +320,6 @@ namespace Carpo.NetGen.Ui
                 Control[] cilj = Controls.Find(ime, true);
                 if (cilj.Length > 0)
                     cilj[0].Focus();
-                return;
-            }
-            if (PorukaNaredba.Tekst(naredba).Length > 0)
-            {
-                PorukaNaredba.Pokazi(naredba);
                 return;
             }
             if (Carpo.NetGen.Print.PrintBridge.Vrsta(naredba, true).Length > 0)

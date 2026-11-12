@@ -333,7 +333,7 @@ namespace Carpo.NetGen.Ui
                 dij.Id = IdReda();
                 dij.ZadnjiSql = _master.Stanje.ZadnjiSql;
                 dij.OtvoriDrugu = Otvori;
-                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj);
+                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj, true, this);
                 if (dij.DialogResult != DialogResult.OK)
                     return;
                 string explorer = DijalogTok.SqlNakonOk(forma);
