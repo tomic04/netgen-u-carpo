@@ -904,9 +904,9 @@
         private DevExpress.XtraBars.BarButtonItem bbiSideBar;
         private DevExpress.XtraBars.BarStaticItem barStaticItem1;
         private DevExpress.XtraBars.BarStaticItem bbiTreeCaption;
-        protected Components.JTreeListControl trMain;
-        protected Components.JGridControl gcGla;
-        protected Components.JGridControl gcDet;
+        protected internal Components.JTreeListControl trMain;
+        protected internal Components.JGridControl gcGla;
+        protected internal Components.JGridControl gcDet;
         protected internal DevExpress.XtraBars.BarManager barManager1;
         private DevExpress.XtraBars.BarSubItem bbiGridExport;
         private DevExpress.XtraBars.BarButtonItem bbiExportXlsx;

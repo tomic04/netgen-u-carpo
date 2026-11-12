@@ -214,12 +214,12 @@
         private DevExpress.XtraBars.BarDockControl barDockControlLeftMain;
         private DevExpress.XtraBars.BarDockControl barDockControlRightMain;
         internal DevExpress.XtraBars.BarManager barManagerMain;
-        protected DevExpress.XtraBars.BarStaticItem bbiVerzija;
-        protected DevExpress.XtraBars.BarEditItem bbiLog;
-        protected DevExpress.XtraEditors.Repository.RepositoryItemPictureEdit repPicEditLog;
-        protected DevExpress.XtraBars.BarStaticItem bbiBrojSlogovaMasterGrid;
-        protected DevExpress.XtraBars.BarStaticItem bbiBrojSlogovaDetailsGrid;
-        protected DevExpress.XtraBars.BarStaticItem bbiBrojSlogova;
+        protected internal DevExpress.XtraBars.BarStaticItem bbiVerzija;
+        protected internal DevExpress.XtraBars.BarEditItem bbiLog;
+        protected internal DevExpress.XtraEditors.Repository.RepositoryItemPictureEdit repPicEditLog;
+        protected internal DevExpress.XtraBars.BarStaticItem bbiBrojSlogovaMasterGrid;
+        protected internal DevExpress.XtraBars.BarStaticItem bbiBrojSlogovaDetailsGrid;
+        protected internal DevExpress.XtraBars.BarStaticItem bbiBrojSlogova;
         internal DevExpress.XtraBars.Bar statusBar;
         internal DevExpress.XtraSplashScreen.SplashScreenManager splashScreenManager1;
         internal DevExpress.XtraBars.BarStaticItem bbiLabel;
