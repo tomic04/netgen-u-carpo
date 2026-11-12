@@ -6,7 +6,7 @@ Broj baza je različitih baza iz `ssMeni-svi-serveri.md` (jupiter2019, jupiter20
 
 Unutar istog broja baza ide veći broj elemenata `INPUT`, zatim veća datoteka. Ako postoje Biovega i Agronom, putanja u tablici je Biovega.
 
-Prvih pet: `DrzaveNG`, `ZupanijeNG`, `PDVPromjenaNEW`, `MPNarPredis`, `NacinOtpremeNG`.
+Prvih pet: `DrzaveNG`, `ZupanijeNG`, `PDVPromjenaNEW`, `MPNarPredis`, `NacinOtpremeNG`. Redovi 6–10 i 11–15 imaju checkliste. Šifrarnici istog obrasca su u `Sifranik-obrazac.md`.
 
 | # | Baze | Kontrole | Bajtova | Biovega | Datoteka | Putanja |
 |---:|---:|---:|---:|:---:|---|---|

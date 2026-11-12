@@ -808,4 +808,10 @@ Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88
 | `MPTrgovinaPortal.md` | dvostruki klik `:TRGOVINAFORM` | R65 |
 | `MPUvjetiKase.md` | `:FILTERFORM`, brisanje `@action=5` | R18 |
 | `Obrazac.md` | store, `onlytree`, `OBRAZAC(@obrazacid=0)` | R01, R54, R55 |
+| `Sifranik-obrazac.md` | zajednički unos, Odustani je `OK`, `NEXTFORM` Dodaj | R41 |
+| `KOD_RAD1.md` | prazan ulaz, `spKOD_RAD1_Azur` | R65 |
+| `MPPredispIz.md` | Danas i `spMPTreeNG`, `vrstadokid-` | R01, R43, R11 |
+| `MPIzduMPZaprimi.md` | prvi čvor prazan, `UPDATE_FORM` i `UPDATEFORM` | R10, R60 |
+| `CarinskaTarifaNG.md` | šifrarnik, Odustani je `ok` | R41 |
+| `MPZakljPerioda.md` | `select` stupca `prazno`, `@action=8` | R65 |
 | `Smoke-prazno-uzorak.md` | 20 praznih iz smokea #35 | |

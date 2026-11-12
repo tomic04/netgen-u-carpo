@@ -107,6 +107,11 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(MpTrgovinaPortal.Provjeri(root));
             sve.AddRange(MpUvjetiKase.Provjeri(root));
             sve.AddRange(ObrazacGranula.Provjeri(root));
+            sve.AddRange(KodRad1.Provjeri(root));
+            sve.AddRange(MpPredispIz.Provjeri(root));
+            sve.AddRange(MpIzduMp.Provjeri(root));
+            sve.AddRange(CarinskaTarifaNg.Provjeri(root));
+            sve.AddRange(MpZakljPerioda.Provjeri(root));
             sve.AddRange(Statusi.Provjeri(root));
             sve.AddRange(KntBlaZak.Provjeri(root));
             sve.AddRange(PrijemniList.Provjeri(root));
