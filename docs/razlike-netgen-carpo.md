@@ -656,107 +656,50 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Posljedica:** `VrCjenik` unos i izmjena ne osvježavaju master samo zato što forma nosi taj atribut.
 - **Test:** `VRC-05`
 
-## R83 Provjera checklistе na Manager rasporedu
+## R83 `POPUPDETAIL` nije izbornik mastera
 
-- **Element:** `docs/granule/Izgled-Carpo-checklista.md`. Build `gfi-ispis` (`b46b32c`) sadrži `Podloga : Carpo.UI.Forms.Master.Manager` (`4267122`).
-- **Drži:** nema ribbon stranice. Combo je `cmbComboEditFilter`, stablo `trMain`. Lijeva strana se sakrije kad nema `TREE` ni `COMBO`. Master je `gcGla`. `bar2` je iznad. Detail je ispod, kartica Stavke. Gumbi su u `pnlButtons`. Status počinje s `Broj slogova:`.
-- **Odstupanje:** nema kartica Dimenzije, Zaliha i DMS iz `AIOPonuda.xml`. NetGen ima jedan `DETAILGRID`. Ikona čvora je indeks 0, sivi krug iz `JTreeListControl.OnCreateControl`, ne ikone danas/tjedan.
-- **Odluka:** namjerno odstupanje, izgled.
-- **Test:** nema slike.
-- **PR:** dblclick
+- **Element:** `POPUPDETAIL`
+- **NetGen:** `POPUP` se prepiše s `POPUPMASTER` (`Form1.vb` 3384–3385) i puni `ContextMenuStrip1`, pa standardne stavke (`3562–3676`). `POPUPDETAIL` ide u `strPopUpDet` (`3386`) i puni `ContextMenuStrip2` (`3702–3750`). Desni klik detalja zove `ContextMenuStrip2.Show` na `GridEX2` (`7225`).
+- **Carpo:** jedan izbornik grida lako pokaže stavke mastera i na detalju.
+- **Posljedica:** `MPKase` na detalju ima `Dodaj` i `Izmjeni`. `Izmjeni` traži `UPDATEFORM`. Forma je `UPDATE_FORM` (R19). Master taj izbornik nema.
+- **Test:** `KSE-05`
 
-## R84 `FILTER` na projektu je forma
+## R84 `MAXIMIZEBOX=FALSE` gasi povećanje dijaloga
 
-- **Element:** 14 redova `nema-forme` u smokeu
-- **NetGen:** `SelectNodes("/PROJECT/" & strImeForme)` (`Form2.vb` 957). Ime je element, ne atribut `NAME`.
-- **Carpo:** parser je `FILTER` držao strukturnim, pa `/PROJECT/FILTER` nije bio forma. To je naš propust. `MPUvjetiKaseNEW` ima element `FILTERFORM1` i `NAME=FILTERFORM`, a `ONLOAD` traži `FILTERFORM`. `MPPregRbTrNG2` traži `FORM1`, element je `FILTERFORM`. `MPOptimalneZaliheNEWv2` traži `FILTERFORM`, element je `MAINFORM`. Te tri NetGen isto ne nađe.
-- **Odluka:** NetGen logika. `FILTER` se čita kao forma. Tri datoteke bez tog elementa ostaju `nema-forme`.
-- **Test:** `filter-je-forma`
-- **PR:** filter-forma
+- **Element:** `MAXIMIZEBOX` na formi
+- **NetGen:** `Me.MaximizeBox` dobije tekst atributa (`Form2.vb` 1031). `FALSE` je Boolean false. Prazan string pod `On Error Resume Next` ne mijenja okvir.
+- **Carpo:** dijalog koji naslijedi master često ostavi gumb za povećanje.
+- **Posljedica:** `FaktureMinMaxDat` i `SklMinMaxDat` `MAINFORM` nemaju povećanje. Naslov podloge i dalje je element `CAPTION` projekta (`Klase tečajeva`), a dijalog nosi svoj `CAPTION`.
+- **Test:** `FMD-03`, `SMD-03`
 
-## R85 `spMPTrgovineNG` nema parametar `@operateriid`
+Najnovija povučena implementacijska grana `cursor/netgen-dblclick-3266` (`0f24586`) završava s R83 (checklista Managera). QA R83 je `POPUPDETAIL`, QA R84 je `MAXIMIZEBOX`. Sljedeća stavka je R85.
 
-- **Element:** smoke `ostalo`, `MPPovijestPrijava.xml`
-- **NetGen:** `SrediSQL` zamijeni `@@operateriid` i pošalje isti tekst (`Form1.vb` 2482).
-- **Carpo:** upit je `spMPTrgovineNG @action=1, @operateriid = 7`. Spin javi da procedura nema taj parametar. Port tekst nije prepisao.
-- **Odluka:** NetGen logika. XML se ne mijenja.
-- **Test:** nema
-- **PR:** filter-forma
+## R85 `POPUP` segment `-:` je crtica, ne prazan gumb
 
-## R86 `MPKasaPolog` ima dvostruke stupce u SQL-u
+- **Element:** `POPUPMASTER` segment `-:`
+- **NetGen:** segment se lomi na prvoj `:` (`Form1.vb` 3564–3566). Natpis je `-`, tag iza dvotočke je prazan. Stavka se doda u `ContextMenuStrip1`. Standardni separator `-` dolazi kasnije, zasebno (`3653`).
+- **Carpo:** prazan tag lako izbaci stavku iz izbornika.
+- **Posljedica:** `Akcije` između `Promjene` i `Obriši operatera` ima crticu. To je stavka izbornika, ne preskok.
+- **Test:** `AKC-04`
 
-- **Element:** drugi smoke `ostalo`
-- **NetGen:** šalje `ONLOAD` kako je napisan.
-- **Carpo:** spin javi `Ambiguous column name 'odsat'`, `odmin`, `dosat`, `domin`. Isti tekst.
-- **Odluka:** NetGen logika. XML se ne mijenja.
-- **Test:** nema
-- **PR:** filter-forma
+Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88. QA R84 ostaje `MAXIMIZEBOX`, QA R85 ostaje popup `-:`. QA R89 je segment popup-a bez dvotočke. Sljedeći slobodan broj je R90.
 
-## R87 `oznaka2` nije stupac u `klmasterroba`
+## R89 Popup segment bez dvotočke nije stavka
 
-- **Element:** smoke `krivi-stupac`, `OznakaKL.xml`
-- **NetGen:** master je `select ... oznaka2 as DodatnaOznaka from klmasterroba`.
-- **Carpo:** spin javi `Invalid column name 'oznaka2'`. Zato QA stavke OznakaKL koje traže napunjen grid ostaju otvorene.
-- **Odluka:** NetGen logika. Upit se ne prepravlja.
-- **Test:** nema
-- **PR:** filter-forma
+- **Element:** segment `POPUPMASTER` bez `:`
+- **NetGen:** svaki segment se lomi na prvoj `:` (`Form1.vb` 3564–3566). `IndexOf` je −1, `Substring` baci, `On Error Resume Next` na ulazu u proceduru. Par natpis/naredba se ne složi.
+- **Carpo:** segment bez dvotočke lako postane ime forme ili se tiho proguta na drugi način.
+- **Posljedica:** `MPInvRazlike` završava s `Stornoraj#STORNO`. Ni `Stornoraj` ni `STORNO` nisu stavka `natpis:naredba`.
+- **Test:** `IRA-04`
 
-## R88 Prazan master na uzorku od 20
+## R90 Combo na dijalogu: prazan red, stupac 0/1, refresh
 
-- **Element:** 413 praznih u smokeu repoa
-- **Uzorak:** Akcije, OdobreniKaloNG, MPPonudaWeb, UcinakObr_Agrar, MER_ZahtjevZaNabavkuNG (nema master `ONLOAD`, ima `TREE` ili `COMBO`). KntOPZ-STAT-1, MPKasaImport, MPPDV, MPPrMPCNG, RealizacijaPonuda, ZakljucivanjeTemNG, kntDobDospRac, MPAnalKNG, MPePotvrdeNarudzbe, MPKntNacinPlacAzur, MPNeZakNG, MPPregKlaseStanja, MPPrMPRNG, MPTestKomisRobe, MPTrgovinaPortal (`ONLOAD` je `:forma` ili prazan).
-- **NetGen:** prazan `ONLOAD` ne šalje master. `:forma` otvori formu i master čeka `FILLEXPLORER`. Stablo se ne klikne samo.
-- **Carpo:** isti predložak. Nismo poslali drugačiji parametar ni filter. Prazno je podatak ili čekanje na čvor ili formu, ne kriva zamjena.
-- **Odluka:** NetGen logika.
-- **Test:** nema
-- **PR:** filter-forma
-
-## R89 Jupiter smoke ne pokreće proceduru koja piše
-
-- **Element:** EXEC na `jupiter2019` i `jupiter2022`
-- **NetGen:** `JeZabranaPisanja` gleda prvu riječ. `spKntZakljucivanjeTem @action=1` i `spKntPreknjizavanjeNG @action=2` nisu `insert`/`update`/`delete`, pa bi se poziv poslao. Tijelo piše u trajnu tablicu. To su naredbe gumba (`ONSUBMIT`), ne load.
-- **Carpo:** smoke prije svakog EXEC-a čita `sys.sql_modules` i rekurzivno tijela koje procedura zove. INSERT/UPDATE/DELETE/MERGE/TRUNCATE/DROP nad tablicom koja nije `#temp` ili `@varijabla` se ne pokreće. Oznaka je `procedura-piše`.
-- **Posljedica:** `ZakljucivanjeTemNG` i `KntPreknjizavanjeNG` na otvaranju te procedure ne zovu. Ako se pojave u load putu, ostanu neizvršene. Smoke prije ove zaštite nije pokrenut. Nijedna procedura nije izvršena.
-- **Odluka:** zaštita smokea. XML, tablice i procedure se ne diraju.
-- **Test:** `zastita-zakljucivanje`, `zastita-preknjizi`, `otvaranje-nema-zakljucivanje`, `otvaranje-nema-preknjizi`
-- **PR:** jupiter-smoke
-
-## R90 Klik na dijalogu ide kroz lanac, upis ne
-
-- **Element:** `ONCLICK` gumba na formi
-- **NetGen:** `Rafalno` (`Form2.vb` 6884–6890). `OKStay` ostaje i fokusira. `OK` zatvara i osvježi master. `ok` je OKClick pa `NEXTFORM`. `CLOSE` ne šalje SQL.
-- **Carpo:** isti lanac za ostanak, zatvaranje, fokus i `refreshMaster`. `sqlImaZalijep` je false: ONCLICK je Rafalno, ne drugi niz `@ime=`. SELECT se pošalje. Poziv procedure koji piše se ne šalje (R89).
-- **Odluka:** NetGen logika za tok. Upis ostaje zaštićen.
-- **Test:** `dijalog-ostaje`, `dijalog-ok`, `dijalog-close`, `dijalog-refresh`
-- **PR:** dijalog-gumb
-
-## R91 Combo i grid na dijalogu šalju svoj SELECT
-
-- **Element:** `SQL` na combo i grid kontrole forme
-- **NetGen:** pri otvaranju forme pokrene SQL kontrole. `ONSUBMIT` čeka gumb.
-- **Carpo:** combo (`LookUpEdit`) i grid dobiju rezultat ako je tekst `SELECT` i ne zove proceduru. Poziv procedure i dalje čeka provjeru tijela (R89), pa se ne šalje iz dijaloga.
-- **Odluka:** NetGen logika za SELECT. Upis i neprovjerena procedura ostaju zaštićeni.
-- **Test:** `dijalog-combo-sql`
-- **PR:** dijalog-sql
-
-## R92 Dijalog: ONCLICK, FILLEXPLORER, combo, grid, NEXTFORM
-
-- **Element:** gumb, combo, grid i `NEXTFORM` na formi
-- **NetGen:** `ONCLICK` ide u `Tag` i `Glbl_Click` (`Form2.vb` 1345–1349, 6221–6228). `:Zakljucavanje` otvara tu formu, ne zatvara roditelja. `CMD1` bez dvotočke je OK (`3367–3396`). `FILLEXPLORER=TRUE` pošalje `ONSUBMIT` u master (`Form1.vb` 5445–5452). Combo puni `SQL` (`Form2.vb` 2396–2431). Grid puni `SQL` osim `SKIPDEFAULTLOAD=TRUE` (`1635–1646`). `NEXTFORM` se čita (`1052`) i nakon OK otvara tu formu (`4431`).
-- **Carpo:** isto za tok. Na `jupiter2019` i `jupiter2022` gumb i `ONSUBMIT` se ne šalju. Combo i grid koji su čisti `SELECT` smiju se poslati pri otvaranju. Procedura u njihovom SQL-u čeka provjeru tijela i s Jupitera se ne šalje.
-- **Posljedica:** `ZakljucivanjeTemNG` Zaključi otvara `Zakljucavanje`. `MPRealizNG` Pokaži drži `spMPRealizacijaRobeNG`, ali ga Jupiter ne izvrši. `MPNivelacija` combo je `spMPDajTrgovinaNG`. `JeziciNG` `NEXTFORM` je `Dodaj`. `PROMET` `NEXTFORM` je prazan.
-- **Odluka:** NetGen logika. Upis i Jupiter gumb ostaju zaštićeni.
-- **Test:** `rupa-zakljuci`, `rupa-pokazi`, `rupa-combo`, `rupa-grid`, `rupa-next`, `rupa-niv-combo`, `rupa-niv-pokazi`, `rupa-jupiter-nema-onsubmit`
-- **PR:** dijalog-rupe
-
-## R93 Combo na dijalogu: prazan red, stupac 0/1, refresh
-
-- **Element:** combo `SQL`, `ALLOWEMPTY`, `ONCLICK` refresh
-- **NetGen:** čim se kontrola složi, `ExecSql` puni combo (`Form2.vb` 2396–2431). Stupac 0 je vrijednost, stupac 1 prikaz. `ALLOWEMPTY` je samo `true`. Inače se na prazan odabir pokuša `SelectedValue=1` (`3455–3464`). `select 'refresh' as ime` ponovo puni tu kontrolu, ne onu koja je kliknuta (`5158–5176`).
-- **Carpo:** isto pravilo. `FOLSE` i nedostajući atribut ne ubace prazan red. `@@operateriid` se zamijeni. `@@trgovinaid` koji ostane ne šalje se. Refresh je `ONCLICK`: na jupiter2019 i jupiter2022 se ne šalje. Multidrop nije combo.
-- **Posljedica:** `MPRealizNG` trgovina ima prazan red. `MPInventura` sort nema. `MPKntNacinPlacAzur` `FOLSE` nije prazan red, vrijednost 1 je «Samo za MP». `MPNivelacija` `TRUE` jest prazan red.
+- **Element:** combo `SQL`, `ALLOWEMPTY`, `TRANSLATE`, `ONCLICK` refresh
+- **NetGen:** čim se kontrola složi, `ExecSql` puni combo (`Form2.vb` 2396–2431). Stupac 0 je vrijednost, stupac 1 prikaz (`2430–2431`). `ALLOWEMPTY` je samo `true` nakon `Trim` i `ToLower` (`2402–2403`). Inače se na prazan odabir pokuša `SelectedValue=1` (`3455–3464`). `TRANSLATE` prevodi samo stupac 1 (`2420–2424`). `select 'refresh' as ime` ponovo puni tu kontrolu (`5158–5176`).
+- **Carpo:** isto pravilo. `FOLSE` i nedostajući atribut ne ubace prazan red. `@@operateriid` i `@@id` se zamijene. `@@trgovinaid` koji ostane ne šalje se dok refresh ne da vrijednost. Refresh je `ONCLICK` i na jupiter2019 i jupiter2022 se ne šalje. Multidrop nije combo.
+- **Posljedica:** deset slučajeva iz `docs/granule/Combo-dijalog-testovi.md`. `MPRealizNG` prazan red šalje `@trgovinaid=null`. `MPInventura` sort bira vrijednost 1. Refresh puni `skladisteid` i `osobeid`. `MPKntNacinPlacAzur` `FOLSE` bira «Samo za MP». `DobUgovori` prevodi samo naziv. `MER_ZahtjevZaNabavkuNG` namjena 1 je osnovno sredstvo, ne roba.
 - **Odluka:** NetGen logika. Jupiter ne šalje ONCLICK.
-- **Test:** `combo-1-prazan` do `combo-10-nula`, `combo-prazan-red`
+- **Test:** `combo-1-prazan`, `combo-1-null`, `combo-1-operater`, `combo-2-odabir`, `combo-3-refresh`, `combo-4-ostao`, `combo-4-poslije`, `combo-5-folse`, `combo-5-jedan`, `combo-6-nema-atribut`, `combo-7-multidrop`, `combo-8-prevod`, `combo-9-nivel`, `combo-10-nula`
 - **PR:** combo-prazan
 
 ## R94 `ONCLICK` je lanac, `exec` se ne lijepi
@@ -827,3 +770,45 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 | `MatTem.md` | `:FILTERFORM`, `!!`, `LANDSCAPE` ne dira `PRINTMASTER` | R18, R14, R41, R65 |
 | `MPPSNG.md` | stablo bez `:`, `AUTOFITCOLUMNS`, `Lista`, `vrstadokid-` | R10, R80, R60, R43, R57 |
 | `MPStanje.md` | `INCLUDE`, `SKIPDEFAULTLOAD` | R78, R53, R65 |
+| `MPTrgOprNG.md` | `:FILTERFORM`, detail `@@id`, `BUTTONS` | R18, R11, R56 |
+| `MPKase.md` | `POPUPDETAIL`, `DETAILDBLCLICK`, `Lista` | R83, R75, R60, R19 |
+| `FaktureMinMaxDat.md` | `MAXIMIZEBOX`, datum `#OK` | R84, R24 |
+| `KntKonfShemeMatTem.md` | `ONLOAD` je `sp … 1`, `LANDSCAPE` bez ispisa | R41 |
+| `SklMinMaxDat.md` | `MAXIMIZEBOX`, datum `#OK` | R84, R24 |
+| `PNObracun.md` | `Ime(@a=@@x)` na dvostrukom kliku, `PERMISIO` | R55, R06 |
+| `KntBlaDok.md` | stablo bez `:` na prvom čvoru, `POPUPDETAIL` | R10, R83, R11 |
+| `Akcije.md` | popup `-:`, timeout 600, nema `ONLOAD` | R85, R65 |
+| `ManagerObaveza.md` | `Razdoblje` bez `:`, `PRINTREPXMASTER` | R60, R41 |
+| `PNKatalozi.md` | samo store u stablu, nema `ONLOAD` | R01, R65 |
+| `PorukeDoc.md` | XML nije u repou | |
+| `MPRealizNG.md` | `:FORM1`, `@@datumod` ostaje, timeout 600 | R18, R65, R41 |
+| `PartneriAuditNG.md` | element `FILTER` je forma | R84 |
+| `ZakljucivanjeTemNG.md` | `:MAINFORM`, `MAXIMIZEBOX=TRUE`, `sp` koji zaključuje | R18, R84 |
+| `MPNivelacija.md` | stablo, `vrstadokid-`, `ONLOAD2` po natpisu | R01, R43, R57 |
+| `KntPreknjizavanjeNG.md` | element `FILTER`, `PRINTMASTER#REFRESHMASTER` | R84, R41, R04 |
+| `KntBlaVrste.md` | XML nije u repou | |
+| `MPTrgovine.md` | XML nije u repou | |
+| `HROsobeUcinak.md` | `:UPDATE_FORM` | R18 |
+| `KUPVrstPN.md` | `sp` na submitu lijepi parametre | R14 |
+| `MPIzdVPNG.md` | nema `ONLOAD`, `Lista`, `vrstadokid-` | R60, R43, R11 |
+| `PNNalozi.md` | `onlytree`, `Ime(@a=)` | R54, R55, R06 |
+| `kntShemaKonta.md` | store `spKntShemaTree`, `PRINTMASTER` i `LANDSCAPE` | R01, R41, R65 |
+| `KntIzvodTijek.md` | XML nije u repou | |
+| `KntPriGen.md` | XML nije u repou | |
+| `KntZatvaranjeNG.md` | XML nije u repou | |
+| `ManPokazateljiGrupe.md` | XML nije u repou | |
+| `kntDobDospRac.md` | `:FILTERFORM`, `MULTIBLUE`, suma ostaje | R18, R21, R65 |
+| `KntPreknjizavanjePartnera.md` | `exec` ne lijepi parametre, proknjiži je upis | R14, R41 |
+| `Predujmovi.md` | `BUTTONS`, proknjiži je upis | R18, R41 |
+| `PDVpoStjecanju.md` | prikaz i prebacivanje u IRA | R18, R41 |
+| `MPPregUtrzakNG.md` | `:FORM1`, `vrstadokid-` | R18, R43, R11 |
+| `PDVPromjena.md` | XML nije u repou | |
+| `Dijalozi-pregled.md` | četiri rupe dijaloga, broj datoteka | |
+| `RekapitulacijaUI.md` | `:Parametri#refreshmaster`, `PRINTREPXMASTER` | R04, R41, R65 |
+| `ServisPrava.md` | `:MAINFORM`, element `FILTER`, `DETAILDBLCLICK` | R18, R75, R84 |
+| `MPInvRazlike.md` | popup bez `:`, `INSERTFORM@@indvrdok` | R89, R43, R60 |
+| `MPNarFFirma.md` | prvi čvor s praznom naredbom, `vrstadokid-propongla` | R10, R43, R60 |
+| `LVKatalozi.md` | store, `onlytree`, `TOTALROWVISIBLE=false` | R01, R54, R65 |
+| `Nedostaje-79.md` | rang 79–92 nema XML | |
+| `Combo-dijalog-testovi.md` | deset combo slučajeva | R26, R27, R28, R31 |
+| `Smoke-prazno-uzorak.md` | 20 praznih iz smokea #35 | |

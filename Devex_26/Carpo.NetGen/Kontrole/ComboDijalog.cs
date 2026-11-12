@@ -84,5 +84,49 @@ namespace Carpo.NetGen.Kontrole
         {
             return !jupiter;
         }
+
+        public const int StupacVrijednost = 0;
+        public const int StupacPrikaz = 1;
+
+        public static string Prikaz(DataTable tablica, string vrijednost)
+        {
+            if (tablica == null || tablica.Columns.Count <= StupacPrikaz)
+                return "";
+            for (int i = 0; i < tablica.Rows.Count; i++)
+            {
+                if (string.Equals(Convert.ToString(tablica.Rows[i][StupacVrijednost]), vrijednost, StringComparison.Ordinal))
+                    return Convert.ToString(tablica.Rows[i][StupacPrikaz]);
+            }
+            return "";
+        }
+
+        public static string Parametar(string ime, string odabrano, bool allowEmpty)
+        {
+            string kljuc = string.IsNullOrEmpty(ime) ? "combo" : ime;
+            if (allowEmpty && (string.IsNullOrEmpty(odabrano) || odabrano == "null"))
+                return "@" + kljuc + "=null";
+            if (string.IsNullOrEmpty(odabrano) || odabrano == "null")
+                return "@" + kljuc + "=null";
+            return "@" + kljuc + "=" + odabrano;
+        }
+
+        public static bool Translate(NgControl kontrola)
+        {
+            if (kontrola == null || kontrola.Atributi == null || !kontrola.Atributi.Ima("TRANSLATE"))
+                return false;
+            return AllowEmpty(kontrola.Atributi.Vrijednost("TRANSLATE"));
+        }
+
+        /// <summary>TRANSLATE dira samo stupac 1. Stupac 0 ostaje id.</summary>
+        public static void PrevediStupac1(DataTable tablica, bool translate, Func<string, string> prevedi)
+        {
+            if (!translate || tablica == null || tablica.Columns.Count <= StupacPrikaz || prevedi == null)
+                return;
+            for (int i = 0; i < tablica.Rows.Count; i++)
+            {
+                string tekst = Convert.ToString(tablica.Rows[i][StupacPrikaz]);
+                tablica.Rows[i][StupacPrikaz] = prevedi(tekst ?? "");
+            }
+        }
     }
 }
