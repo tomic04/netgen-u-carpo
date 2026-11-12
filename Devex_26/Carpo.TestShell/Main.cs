@@ -182,6 +182,17 @@ namespace Carpo.TestShell
                     if (Carpo.NetGen.Xml.NetGenXmlReader.JeNetGenProjekt(xml))
                     {
                         var loader = new Carpo.NetGen.Loader();
+                        try
+                        {
+                            var dnevnik = new Carpo.Core.Logger(Carpo.Core.Log.LogLevel.Info);
+                            dnevnik.GranuleName = Path.GetFileNameWithoutExtension(xml);
+                            dnevnik.ServerName = server;
+                            dnevnik.DatabaseName = database;
+                            Carpo.NetGen.Log.NgDnevnik.Spoji(dnevnik);
+                        }
+                        catch
+                        {
+                        }
                         loader.TestXmlPath = xml;
                         loader.moduleId = Path.GetFileName(xml);
                         loader.mainHandle = (int)pnlShell.Handle;

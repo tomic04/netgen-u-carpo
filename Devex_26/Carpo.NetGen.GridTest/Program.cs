@@ -5,6 +5,7 @@ using System.Text;
 using System.Data.SqlClient;
 using System.IO;
 using Carpo.NetGen.Grid;
+using Carpo.NetGen.Log;
 using Carpo.NetGen.Xml;
 
 namespace Carpo.NetGen.GridTest
@@ -186,6 +187,7 @@ namespace Carpo.NetGen.GridTest
             var g3 = new MasterGrid();
             g3.Ucitaj(Projekt("ONLOAD", ""), null);
             T("prazan-onload", g3.Stanje.Odluka == "prazno", g3.Stanje.Odluka);
+            T("log-preskok", NgDnevnik.Zapisi.Count > 0 && NgDnevnik.Zapisi[NgDnevnik.Zapisi.Count - 1].Opis == "NetGen preskok", NgDnevnik.Zapisi.Count == 0 ? "" : NgDnevnik.Zapisi[NgDnevnik.Zapisi.Count - 1].Opis);
             T("checkbox-default-vidljiv", new MasterGrid().Stanje.CheckboxVidljiv, "");
             T("total-default-ukljucen", new GridStanje().TotalRed, "");
             T("sort-default-ukljucen", new GridStanje().SortKlikom, "");
@@ -211,6 +213,7 @@ namespace Carpo.NetGen.GridTest
             T("prije-greske-ima-stupac", gErr.Stanje.Kolone.Count > 2, gErr.Stanje.Kolone.Count.ToString());
             gErr.ZabiljeziGresku("Invalid column name 'oznaka2'.");
             T("sql-greska-ne-puni", gErr.Stanje.Kolone.Count == 0 && gErr.Stanje.Tablica == null && gErr.Stanje.Poruka != null && gErr.Stanje.Poruka.IndexOf("oznaka2", StringComparison.Ordinal) >= 0, gErr.Stanje.Poruka);
+            T("log-greska", NgDnevnik.Zapisi.Count > 0 && NgDnevnik.Zapisi[NgDnevnik.Zapisi.Count - 1].Razina == "Error", "");
         }
 
         private static void PisanjeIServer()

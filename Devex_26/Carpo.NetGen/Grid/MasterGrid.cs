@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
+using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
 
 namespace Carpo.NetGen.Grid
@@ -109,6 +110,7 @@ namespace Carpo.NetGen.Grid
                 Stanje.Odluka = "forma";
                 Stanje.Redoslijed.Add("nije-sql");
                 PrimijeniAtribute(projekt, null);
+                NgDnevnik.Akcija("otvara formu " + (Stanje.ImeForme ?? ""));
                 return;
             }
 
@@ -144,12 +146,23 @@ namespace Carpo.NetGen.Grid
             Stanje.Redoslijed.Add("kraj");
             OznaciDx(projekt);
             GridIzgled.Popuni(Stanje);
+            ZabiljeziOdluku();
+        }
+
+        private void ZabiljeziOdluku()
+        {
+            if (Stanje.OtvaraFormu)
+                NgDnevnik.Akcija("otvara formu " + (Stanje.ImeForme ?? ""));
+            else if (Stanje.BlokiranoPisanje)
+                NgDnevnik.Akcija("nije poslano, zabrana pisanja: " + (Stanje.SqlZaSlanje ?? ""));
+            else if (Stanje.Odluka != "salji")
+                NgDnevnik.Preskok(Stanje.SqlZaSlanje);
         }
 
         /// <summary>
         /// Class1.ExecSql. Uspjeh puni grid. Greška pokaže poruku i ne veže stupce
         /// (Catch vraća Nothing, CreateGridColumns na Nothing odmah izađe).
-        /// Ne zove spNetGenErrorLog: to je upis, a ovaj korak je samo čitanje.
+        /// Ne zove spNetGenErrorLog. Greška ide u Carpo Logger (Ctrl+F11), ne u CBLog.
         /// </summary>
         public void IzvrsiCitanje(string connectionString)
         {
@@ -160,6 +173,7 @@ namespace Carpo.NetGen.Grid
                 ZabiljeziGresku("nema connection stringa");
                 return;
             }
+            NgDnevnik.Sql(Stanje.SqlZaSlanje);
             try
             {
                 var dt = new DataTable();
@@ -199,6 +213,8 @@ namespace Carpo.NetGen.Grid
         {
             Stanje.SqlGreska = poruka ?? "";
             Stanje.Poruka = prikazi ? ((poruka ?? "") + "\r\n\r\n" + (Stanje.SqlZaSlanje ?? "")) : null;
+            if (prikazi)
+                NgDnevnik.Greska((poruka ?? "") + " | " + (Stanje.SqlZaSlanje ?? ""));
             Stanje.Tablica = null;
             Stanje.Kolone.Clear();
             Stanje.Id = "0";

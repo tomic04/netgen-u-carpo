@@ -2,6 +2,8 @@
 
 Ovo je plan. M0 (parser, oba Jupiter ulaza, TestShell grana, build) je otvoren u `Devex_26/Carpo.NetGen`. Faze slijede odluke do iteracije 3 i dopunu iz `ssMeni` (dokument 06): dva ulaza `Loader` i `frm`, TestShell smije se mijenjati, SQL kao tekst, tipfeleri, `TotalGenMultiSelectTemp`, DMS, `ASSEMBLYLOAD`, fiskalizacija, `yearmonth` 2005–2009, `FOREACH*` na podlozi se ne piše, ispis je v26 + `rptDevRepx`. Testna baza je samo `sql-ai` / `spin`. `jupiter2022` se ne koristi. Baza se ne mijenja u M0.
 
+Log ide kroz Carpo logger (Ctrl+F11, `Carpo.Core.Logger`), ne kroz NetGen `CBLog` / `PokaziCBLog`. Pravilo i otvorene stavke su u `docs/funkcionalnosti/logging.md`. Svaki sljedeći element zove `NgDnevnik`.
+
 Svaka faza ima kriterij prihvaćanja koji se može pročitati bez „izgleda u redu“. Dok nema DLL-ova (dokument 09), radi se samo ono što ne traži prevodenje: zlatni fajlovi i opisi. Čim TestShell prođe build, kreće M0 u C#.
 
 ## Ulazi
