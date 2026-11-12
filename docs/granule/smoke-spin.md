@@ -1,40 +1,48 @@
 # Smoke spin
 
-Izvor: CI PR #27, commit `28a39f2`, run 43236761185. Baza `spin`, samo čitanje. Operater 7, timeout 12 s.
+Izvor: CI #35, commit `b46b32c`, raspored Managera. Baza spin, samo čitanje.
 
-## Što se otvara
+## ssMeni NetGenDLL
 
-- ssMeni: 128 stavki, otvoreno 52, greške 4.
-- XML u repou: 605 projekata, otvoreno 493, greške 112.
+Ukupno 128. Otvoreno s retcima 14. Otvoreno prazno 39. Pad 3.
 
-`Narudzbe.xml` (BIOVEGA i Agronom) je `nema-sql` s 1 korijenom: combo je napunio stablo, master predloška nema dok se ne klikne čvor.
+Padovi:
 
-## Zašto greške nisu popravak porta
+- nema-forme: 2
+- pretvorba: 1
 
-- `pretvorba` na AOP: NetGen šalje `@id='null'` (`Node` kreće kao `"null"`, odabir čvora je komentar).
-- `nema-procedure` (91 u repou): procedura nije u spinu. XML i baza se ne mijenjaju.
-- `nema-forme`: `ONLOAD` traži element `/PROJECT/ime`. `FILTER` ili `FORM1` tog imena nema (NetGen `SelectSingleNode` radi isto). `NAME` atribut se ne čita kao ime forme.
-- `sintaksa` na MPTrgOprNG: u mjerenju #27 `@@id` je otišao prazan. NetGen za formu zove `GetID()`, a prazan grid vrati `0` (`Form1.vb` 5293–5298, 5566–5582). To se ispravlja u sljedećem koraku (`SqlTekst.ZaFormu`). Master upit i dalje vidi prazan `ID` dok grid ne postoji.
-- `krivi-stupac` OznakaKL: stupac `oznaka2` ne postoji u `klmasterroba`.
-- `ostalo`: procedura odbije parametar ili SQL u XML-u ima dvostruki stupac. Tekst upita se ne mijenja.
+## XML u repou
+
+Ukupno 605. Otvoreno s retcima 82. Otvoreno prazno 413. Pad 110.
+
+Padovi:
+
+- nema-procedure: 91
+- nema-forme: 14
+- pretvorba: 2
+- ostalo: 2
+- krivi-stupac: 1
+
+`nema-xml` nije pad: datoteke nema u repou. Prazno znači prozor se otvori, master nema redova (nema ONLOAD ili forma još nije vratila retke). AOP pretvorba je NetGen `@id='null'`. MPTrgOprNG više nije sintaksa: forma šalje `@@id` kao `0`. `nema-procedure` je procedura koje nema u spinu.
+
+`Narudzbe.xml` je u tablici ispod. Combo puni stablo; master ostaje prazan dok se ne klikne čvor.
 
 # Smoke spin: ssMeni NetGenDLL
 
 Samo citanje. Upit je `asm:NetGenDLL.loader` i `asm:NetGenDLL.frm`. Operater je 7. Timeout naredbe je 12 s. AOP i dalje šalje `@id='null'` jer NetGen `Node` kreće kao `"null"` i odabir čvora je komentar.
 
-Ukupno 128, otvoreno 52, greske 4.
+Ukupno 128, otvoreno 53, greske 3.
 
 ## Uzroci
 
 | Uzrok | Broj |
 |---|---|
 | nema-xml | 72 |
-| forma | 19 |
+| forma | 20 |
 | nema-sql | 18 |
 | otvoreno | 15 |
 | nema-forme | 2 |
 | pretvorba | 1 |
-| sintaksa | 1 |
 
 ## Stavke
 
@@ -123,7 +131,7 @@ Ukupno 128, otvoreno 52, greske 4.
 | MPRACNEFISK.xml | 0 |  | forma | otvorena FORM1, sql ostao-@@ |
 | MPRealizNG.xml | 0 |  | forma | otvorena FORM1, sql ostao-@@ |
 | MPRobnoDOk.xml |  |  | nema-xml | nema datoteke za MPRobnoDOk.xml |
-| MPTrgOprNG.xml |  |  | sintaksa | forma FILTERFORM: Incorrect syntax near '='. |
+| MPTrgOprNG.xml | 0 |  | forma | otvorena FILTERFORM |
 | MPTrgovine.xml |  |  | nema-xml | nema datoteke za MPTrgovine.xml |
 | NacinObracunaZadatka.xml |  |  | nema-xml | nema datoteke za NacinObracunaZadatka.xml |
 | newswebsite.xml |  |  | nema-xml | nema datoteke za newswebsite.xml |
@@ -173,20 +181,19 @@ Ukupno 128, otvoreno 52, greske 4.
 
 Svaka NetGen datoteka pod `definitions/netgen`. Isti uvjeti. `nema-xml` ovdje nema.
 
-Ukupno 605, otvoreno 493, greske 112.
+Ukupno 605, otvoreno 495, greske 110.
 
 ## Uzroci
 
 | Uzrok | Broj |
 |---|---|
-| forma | 234 |
+| forma | 236 |
 | nema-sql | 183 |
 | nema-procedure | 91 |
 | otvoreno | 76 |
 | nema-forme | 14 |
 | pretvorba | 2 |
 | ostalo | 2 |
-| sintaksa | 2 |
 | krivi-stupac | 1 |
 
 ## Stavke
@@ -361,7 +368,7 @@ Ukupno 605, otvoreno 493, greske 112.
 | MPTestBlagajni.xml |  |  | nema-procedure | Could not find stored procedure 'spMPTestBlagajne'.    spMPTestBlagajne @action = 1 |
 | MPTrgCjenNG.xml | 3 |  | otvoreno |  |
 | MPTrgFiskPD.xml |  |  | nema-procedure | Could not find stored procedure 'spMPTrgFiskPD'.    spMPTrgFiskPD @action=1, @operateriid=7 |
-| MPTrgOprNG.xml |  |  | sintaksa | forma FILTERFORM: Incorrect syntax near '='. |
+| MPTrgOprNG.xml | 0 |  | forma | otvorena FILTERFORM |
 | MPTrgovinaPortal.xml | 0 |  | nema-sql | prazno |
 | MPUmirovNG.xml | 0 |  | forma | otvorena FILTERFORM, sql ostao-@@ |
 | MPUpdateKase.xml | 0 |  | forma | otvorena FILTER_FORM |
@@ -686,7 +693,7 @@ Ukupno 605, otvoreno 493, greske 112.
 | MPStanjeTrg.xml | 0 |  | nema-sql | prazno |
 | MPTestKomisRobe.xml | 0 |  | forma | otvorena FILTERFORM, sql ostao-@@ |
 | MPTrgCjenNG.xml | 3 |  | otvoreno |  |
-| MPTrgOprNG.xml |  |  | sintaksa | forma FILTERFORM: Incorrect syntax near '='. |
+| MPTrgOprNG.xml | 0 |  | forma | otvorena FILTERFORM |
 | MPTrgovinaPortal.xml | 0 |  | nema-sql | prazno |
 | MPTrgovineOstalo.xml | 0 |  | forma | otvorena FILTERFORM |
 | MPTrgovineWoltXml.xml |  |  | nema-procedure | Could not find stored procedure 'spmpWoltXml'.    spmpWoltXml  @action = 1 |
