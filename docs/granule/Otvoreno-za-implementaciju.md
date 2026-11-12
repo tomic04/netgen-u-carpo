@@ -66,6 +66,7 @@ Ostale stavke ostaju otvorene. Kuka na `otvori` ih ne zatvara, ili ljuska ih ne 
 - SQL s gumba ide u `Klik.Naredbe` i `GumbKlik` ga ne pošalje. Otvoreno: `JEZ-61`, `JEZ-70`, `OKL-70`, `OKL-71`.
 - Combo i grid u dijalogu pošalju samo `select` koji zaštita ne označi kao proceduru ili upis. `sp` se preskoči. Širina iz zadnje četvorke i skriven `ID` nisu u tom punjenju.
 - `FILLEXPLORER=true` složi `MasterSql`. Ljuska ga nakon dijaloga ne stavi u master. Otvoreno: `MPK-30`, `MPK-31`, `STA-34`.
+- `FAK-10` odbijen. Test gleda `Parametar like`. `Meni.ps1` upise `asm:NetGenDLL.loader:FakPar.xml`. `fk_meni` je `nocheck` jer izracunati Parent ne prolazi. Nema NetGen linije koja ovo potvrduje. Ostaje otvoren. Sazetak 164 / 138 / 26.
 
 Grid test na vrhu (#56) posebno drži `rupa-zakljuci` (`:Zakljucavanje` otvara formu i ne šalje SQL) i `rupa-pokazi` (`FILLEXPLORER` složi SQL, a na Jupiteru ga ne šalje). To nisu stavke iz ovih 164. Master ljuske se i dalje ne zamijeni.
 
