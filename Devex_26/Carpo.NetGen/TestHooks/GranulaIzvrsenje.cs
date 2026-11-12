@@ -111,6 +111,16 @@ namespace Carpo.NetGen.TestHooks
                 }
                 else if (FillExplorer.SaljeMaster(fill))
                     s["masterSql"] = FillExplorer.NoviMaster(forma, s["formaParam"]);
+                string onloaded = forma.Atributi != null && forma.Atributi.Ima("ONLOADED")
+                    ? (forma.Atributi.Vrijednost("ONLOADED") ?? "")
+                    : "";
+                string imeKlika = Lanac.ImeKlika(onloaded);
+                if (imeKlika.Length > 0)
+                {
+                    string onclick = DijalogTok.OnClickKontrole(forma, imeKlika);
+                    s["click.ime"] = imeKlika;
+                    s["click.lanac"] = Lanac.NastavakKlika(onclick);
+                }
                 Raspored.KljuceviForme(forma, s);
                 s["datumParam"] = ImaDatum(forma) ? "yyyyMMdd" : "";
             }
@@ -448,7 +458,6 @@ namespace Carpo.NetGen.TestHooks
             s["assemblyload.greska"] = "prekini";
             s["totalgen.dijalog"] = "parametri-dva";
             s["totalgen.shell"] = "master-sql";
-            s["click.ok"] = "repx-template";
             s["carpoform.kup"] = CarpoFormKup(projekt);
         }
 

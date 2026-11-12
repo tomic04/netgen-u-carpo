@@ -82,7 +82,7 @@ namespace Carpo.NetGen.Komande
         {
             var k = new Klik();
             k.NextForm = NextForm(forma);
-            string naredba = (onClick ?? "").Trim();
+            string naredba = ProsiriClick(forma, (onClick ?? "").Trim());
             if (naredba.Length == 0 && redni == 2)
             {
                 k.Odustani = true;
@@ -107,8 +107,7 @@ namespace Carpo.NetGen.Komande
                     continue;
                 if (t.StartsWith(":", StringComparison.Ordinal))
                 {
-                    k.OtvaraFormu = t.Substring(1).Trim();
-                    k.Zatvara = false;
+                    k.OtvaraFormu = t.Replace(":", "").Trim();
                     k.SaljeSql = false;
                     continue;
                 }
@@ -143,6 +142,44 @@ namespace Carpo.NetGen.Komande
             if (jupiter)
                 k.SaljeSql = false;
             return k;
+        }
+
+        /// <summary>CLICK(ime) zamijeni ONCLICK te kontrole. Gumb ide preko Tag = ONCLICK. Form2.vb 6143–6146.</summary>
+        public static string ProsiriClick(NgForm forma, string naredba)
+        {
+            string[] seg = Lanac.Segmenti(naredba);
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < seg.Length; i++)
+            {
+                string t = (seg[i] ?? "").Trim();
+                string ime = Lanac.ImeKlika(t);
+                if (ime.Length > 0)
+                {
+                    string onclick = OnClickKontrole(forma, ime);
+                    if (onclick.Length > 0)
+                        t = onclick;
+                }
+                if (sb.Length > 0)
+                    sb.Append('#');
+                sb.Append(t);
+            }
+            return sb.ToString();
+        }
+
+        public static string OnClickKontrole(NgForm forma, string ime)
+        {
+            if (forma == null || forma.Kontrole == null || string.IsNullOrEmpty(ime))
+                return "";
+            for (int i = 0; i < forma.Kontrole.Count; i++)
+            {
+                NgControl k = forma.Kontrole[i];
+                if (!string.Equals(k.Name, ime, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (k.Grana != NgGrana.Button || k.Atributi == null)
+                    return "";
+                return (k.Atributi.Vrijednost("ONCLICK") ?? "").Trim();
+            }
+            return "";
         }
 
         public static bool PreskociGrid(NgControl k)

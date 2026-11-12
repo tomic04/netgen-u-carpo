@@ -464,8 +464,8 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `CLICK(`
 - **NetGen:** `Rafalno` skine `CLICK(`, ostatak je ime, `Glbl_Click` na toj kontroli (`Form2.vb` 7151–7155). `KntBlaPromet` `ONLOADED="click(Ok)"` tako stisne gumb `ok`, čiji je `ONCLICK` `close#:REPX/@@template (@id=@@BLPrometGlaId)`.
-- **Carpo:** nema `CLICK(ime)`. Zatvaranje forme ne pokrene `ONCLICK` tog gumba.
-- **Posljedica:** ispis blagajne ostane na praznoj formi ako se `click(Ok)` preskoči. Ime izvještaja je vrijednost `@@template` iz `ONLOAD`.
+- **Carpo:** `Lanac.ImeKlika` i `DijalogTok.ProsiriClick` skidaju `CLICK(` i puste `ONCLICK` gumba. `CLOSE` ne briše sljedeći `:REPX` (`Dijalog.GumbKlik`).
+- **Posljedica:** `KntBlaPromet` `click(Ok)` na `ISPISDOK_FORM` ide na `close` i `REPX/@@template (@id=@@BLPrometGlaId)`. Samo zatvaranje nije dovoljno. `ONLOADED` se i dalje sam pali samo kad forma nema kontrola (`Form2.vb` 2798).
 - **Test:** `KBP-04`, `KBP-20`
 
 ## R59 Izgled je Carpo, ponašanje je NetGen

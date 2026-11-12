@@ -30,3 +30,4 @@ Grana `cursor/netgen-cetvrti-dokaz-0b55`. Ne diram ručni Start, UI smoke, `zadn
 | Statusi `STA-34` | Forma bez kontrola ne otvara dijalog. `Form1.vb` 5369–5370, 5445–5452. |
 | MPPonuda `MPP-20` | `enable`/`disable` traži `Button.Text`. `Form1.vb` 3914–3921. Nije zatvoreno na `cursor/netgen-rucni-start-3266`. |
 | LVObracun `LVO-20` | `FILLEXPLORER=onlytree` zove samo stablo, master se ne šalje. `INSERTLVGLA(@hrkadroviid = 0)` je forma `INSERTLVGLA`. `Form1.vb` 5475, `Form2.vb` 4407–4418. |
+| KntBlaPromet `KBP-20` | `CLICK(Ok)` izvrši `ONCLICK` gumba `ok`. `close` ne guta `:REPX/@@template`. `Form2.vb` 7151–7155, 7033, 6882. |

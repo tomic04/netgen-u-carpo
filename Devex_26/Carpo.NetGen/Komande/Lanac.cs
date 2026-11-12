@@ -329,6 +329,46 @@ namespace Carpo.NetGen.Komande
             return ishod;
         }
 
+        /// <summary>CLICK(ime) postane ime kontrole. Form2.vb 7151–7154: ToUpper, skine CLICK( i ).</summary>
+        public static string ImeKlika(string segment)
+        {
+            string p = (segment ?? "").Trim().ToUpperInvariant();
+            if (p.IndexOf("CLICK(", StringComparison.Ordinal) < 0)
+                return "";
+            p = p.Replace("CLICK(", "");
+            p = p.Replace(")", "");
+            return p.Trim();
+        }
+
+        /// <summary>
+        /// ONCLICK gumba nakon CLICK. CLOSE ne prekida petlju: sljedeći :REPX i dalje ide.
+        /// Form2.vb 7033 i 6882. Replace skine sve dvotočke, kao NovaGenerickaForma2.
+        /// </summary>
+        public static string NastavakKlika(string onClick)
+        {
+            string[] seg = Segmenti(onClick);
+            var dijelovi = new List<string>();
+            for (int i = 0; i < seg.Length; i++)
+            {
+                string t = (seg[i] ?? "").Trim();
+                if (t.Length == 0)
+                    continue;
+                if (string.Equals(t, "CLOSE", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(t, "CANCEL", StringComparison.OrdinalIgnoreCase))
+                {
+                    dijelovi.Add("close");
+                    continue;
+                }
+                if (t.StartsWith(":", StringComparison.Ordinal))
+                {
+                    dijelovi.Add(t.Replace(":", ""));
+                    continue;
+                }
+                dijelovi.Add(t);
+            }
+            return string.Join("|", dijelovi.ToArray());
+        }
+
         public static string Fokus(string poruka)
         {
             if (string.IsNullOrEmpty(poruka))

@@ -236,7 +236,6 @@ namespace Carpo.NetGen.Ui
                     b.DialogResult = DialogResult.None;
                 if (OtvoriDrugu != null)
                     OtvoriDrugu(klik.OtvaraFormu);
-                return;
             }
             if (klik.Odustani)
             {

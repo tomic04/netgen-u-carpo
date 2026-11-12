@@ -66,6 +66,7 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(RijetkeKontrole.Provjeri(root));
             sve.AddRange(Cetvrti.Provjeri(root));
             sve.AddRange(LVObracun.Provjeri(root));
+            sve.AddRange(KntBlaPromet.Provjeri(root));
 
             string tekst = Qa.Tekst(sve);
             Console.WriteLine(tekst);
