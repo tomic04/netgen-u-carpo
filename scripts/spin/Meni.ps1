@@ -109,13 +109,35 @@ $stavke = @(
     @("RobaWebKlase.xml", "test RobaWebKlase")
 )
 
-# Parent je izračunat. fk_meni na tom izrazu ne prima testni Nivo.
-# Constraint se ugasi samo za ovaj upis i vrati bez provjere starih redova.
-Exec "alter table ssMeni nocheck constraint fk_meni" | Out-Null
-$redni = 0
+$def = Q "select definition from sys.computed_columns where object_id = object_id(N'dbo.ssMeni') and name = N'Parent'"
+if ($def.Rows.Count -gt 0) { Write-Host ("Parent = " + $def.Rows[0].definition) }
+$brisi = @()
+foreach ($s0 in $stavke) { $brisi += "N'asm:NetGenDLL.loader:" + $s0[0].Replace("'", "''") + "'" }
+Exec ("delete from ssMeni where Parametar in (" + ($brisi -join ",") + ")") | Out-Null
 try {
+    Exec "alter table ssMeni with check check constraint fk_meni" | Out-Null
+    Write-Host "fk_meni je with check"
+} catch {
+    Write-Host ("fk_meni with check nije prosao, constraint ostaje ukljucen za nove retke: " + $_.Exception.Message)
+}
+
+$uzor = Q "select top 1 rtrim(Nivo) as nivo, AplikacijeID from ssMeni where Parent is not null and len(rtrim(Nivo)) >= 4 order by Nivo"
+if ($uzor.Rows.Count -eq 0) { throw "Nema reda s Parentom iz kojeg se cita duljina Nivo." }
+$bazaNivo = [string]$uzor.Rows[0].nivo
+$prefiks = $bazaNivo.Substring(0, $bazaNivo.Length - 2)
+$app = $uzor.Rows[0].AplikacijeID
+Write-Host ("Nivo prefiks roditelja " + $prefiks + " aplikacija " + $app)
+
+function SlobodniNivo() {
+    for ($i = 0; $i -lt 100; $i++) {
+        $k = $prefiks + ("{0:d2}" -f $i)
+        $n = Q "select count(*) as n from ssMeni where AplikacijeID = $app and rtrim(Nivo) = N'$k'"
+        if ([int]$n.Rows[0].n -eq 0) { return $k }
+    }
+    throw "Nema slobodnog Nivo pod $prefiks"
+}
+
 foreach ($s in $stavke) {
-    $redni++
     $fajl = $s[0]
     $opis = $s[1].Replace("'", "''")
     $param = "asm:NetGenDLL.loader:" + $fajl
@@ -151,7 +173,7 @@ where Parametar like N'%:$f' or Parametar like N'%\$f' or Parametar like N'%/$f'
         } elseif ($ime -eq "Nivo") {
             $dulj = [int]$c.max_length
             if ($tip -match "nvar|nchar") { if ($dulj -gt 0) { $dulj = [int]($dulj / 2) } }
-            $kod = "Z{0:d2}" -f $redni
+            $kod = SlobodniNivo
             if ($dulj -gt 0 -and $kod.Length -gt $dulj) { $kod = $kod.Substring(0, $dulj) }
             $izrazi.Add("N'" + $kod + "'")
         } elseif ([int]$c.pk -eq 1) {
@@ -175,11 +197,7 @@ where Parametar like N'%:$f' or Parametar like N'%\$f' or Parametar like N'%/$f'
     }
     Write-Host $sql
     Exec $sql | Out-Null
-    Write-Host "ubacen testni red $param"
-}
-
-} finally {
-    Exec "alter table ssMeni with nocheck check constraint fk_meni" | Out-Null
+    Write-Host "ubacen testni red $param nivo $kod"
 }
 
 $conn.Close()

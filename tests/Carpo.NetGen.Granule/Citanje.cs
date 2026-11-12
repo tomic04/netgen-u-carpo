@@ -117,6 +117,40 @@ namespace Carpo.NetGen.Granule
             return r;
         }
 
+        public static DataTable Tablica(string sql, out string greska)
+        {
+            greska = null;
+            if (!JeCitanje(sql))
+            {
+                if (!SmijeProceduru(sql, out greska))
+                {
+                    if (greska == null)
+                        greska = "odbio sam naredbu koja nije cisto citanje";
+                    return null;
+                }
+                greska = null;
+            }
+            try
+            {
+                using (var conn = new SqlConnection(Spoj))
+                {
+                    conn.Open();
+                    using (var da = new SqlDataAdapter(sql, conn))
+                    {
+                        da.SelectCommand.CommandTimeout = 60;
+                        var dt = new DataTable();
+                        da.Fill(dt);
+                        return dt;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                greska = ex.GetType().Name + ": " + ex.Message;
+                return null;
+            }
+        }
+
         public static string PrviTekst(string sql, out string greska)
         {
             greska = null;

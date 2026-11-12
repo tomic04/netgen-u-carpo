@@ -15,7 +15,7 @@ namespace Carpo.NetGen.Granule
                 return Qa.O(granula, id, "ssMeni (samo citanje) za " + fajl, "dbo.ssMeni", greska);
             if (redovi.Count == 0)
                 return Qa.O(granula, id, fajl + " nije u ssMeni.Parametar", "dbo.ssMeni", "0 redova");
-            return Qa.Z(granula, id, fajl + " je u ssMeni: " + string.Join(" ; ", redovi.ToArray()), "dbo.ssMeni.Parametar");
+            return Qa.O(granula, id, fajl + " je u ssMeni, ali to jos nije otvaranje granule", "netgen/Form1.vb:1139,1251-1258", redovi[0]);
         }
     }
 }

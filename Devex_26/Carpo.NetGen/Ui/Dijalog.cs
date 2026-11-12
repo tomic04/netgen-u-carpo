@@ -177,14 +177,11 @@ namespace Carpo.NetGen.Ui
             string sql = (k.Atributi.Vrijednost("SQL") ?? "").Trim();
             if (sql.Length == 0)
                 return;
-            SqlZastita z = ZastitaSql.Tekst(sql);
-            if (z.Pise || z.Procedure.Count > 0)
-                return;
-            sql = ComboDijalog.SqlZaSlanje(sql, _kontekst);
+            bool prazan = ComboDijalog.AllowEmpty(k);
             DataTable dt = null;
             try
             {
-                dt = _citaj(sql);
+                dt = ComboDijalog.Ucitaj(sql, prazan, _citaj);
             }
             catch (Exception ex)
             {
@@ -195,9 +192,6 @@ namespace Carpo.NetGen.Ui
             var look = c as LookUpEdit;
             if (look != null)
             {
-                bool prazan = ComboDijalog.AllowEmpty(k);
-                if (prazan)
-                    ComboDijalog.UbaciPrazan(dt);
                 look.Properties.DataSource = dt;
                 look.Properties.ValueMember = dt.Columns[0].ColumnName;
                 look.Properties.DisplayMember = dt.Columns.Count > 1 ? dt.Columns[1].ColumnName : dt.Columns[0].ColumnName;

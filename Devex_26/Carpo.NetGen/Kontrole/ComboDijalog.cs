@@ -84,5 +84,24 @@ namespace Carpo.NetGen.Kontrole
         {
             return !jupiter;
         }
+
+        /// <summary>
+        /// Form2.vb 2396–2431 i 2503–2504. Procedura ide kao i ostali SQL.
+        /// Upis ne ide. Stupac 0 je vrijednost, stupac 1 je natpis.
+        /// ALLOWEMPTY ubaci red 0 = null i red 1 = prazan tekst.
+        /// </summary>
+        public static DataTable Ucitaj(string sql, bool allowEmpty, Func<string, DataTable> citaj)
+        {
+            if (citaj == null || string.IsNullOrWhiteSpace(sql))
+                return null;
+            if (ZastitaSql.Tekst(sql).Pise)
+                return null;
+            DataTable dt = citaj(SqlZaSlanje(sql, new SqlKontekst()));
+            if (dt == null || dt.Columns.Count == 0)
+                return dt;
+            if (allowEmpty)
+                UbaciPrazan(dt);
+            return dt;
+        }
     }
 }
