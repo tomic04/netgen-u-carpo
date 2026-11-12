@@ -30,9 +30,9 @@ Gumb Prikaži: `If @@partneriid is null begin exec spRaiserror ... '+focus(partn
 
 Izlaz je `CLOSE` (`7033`).
 
-`CMD3CAPTION="Ispis:PRINTMASTER"` ide u `IspisGRIDREPX`, isto kao `PRINTREPXMASTER` (`Form1.vb` 4951-4955).
+`CMD3CAPTION="Ispis:PRINTMASTER"` ide u `IspisGRIDREPX`, isto kao `PRINTREPXMASTER` (`Form1.vb` 4945-4955). To nije `Button7_Click`. `PAGEORIENTATION="LANDSCAPE"` se na tom putu ne čita (`5984-6003`). Prazan `PAGEHEADERCENTER` reže naslov do `v[` (`5996-5997`). `##` i `!!` u zaglavlju su novi red. Konekcija master ispisa je `strGlobalSQLSERVERlogin`, ne `Conn` (`6003`). Detail ispis koristi `Conn` (`6085`).
 
-`CMD4` i `CMD5` su `::repx/... #CLOSE`. Nakon ispisa `CLOSE` zatvori formu (`Form2.vb` 7033). `!!` u captionu je novi red (`2943`), na `ONSUBMIT` gasi lijepljenje. Dva značenja, ovisno o mjestu.
+`CMD4` i `CMD5` su `:repx/ime(@p=@@x) #CLOSE`. `NovaGenerickaForma2` vidi `REPX/` (`Form2.vb` 4276) i zove `PrintRpt` (`4322`). Dijalog zamijeni `repx/` s `repx:/` (`4296-4297`). Shell (`Form1.vb` 5238-5239`) zamijeni s `repx:` bez kose crte. `PrintRpt` prvo zove `Spin.Printing.v23`, pa `v9.1` (`Class1.vb` 297-304). Ako oba padnu, `Form6` zove `rptDevRepx.clsReport` (`615-632`, `Form6.vb` 134-161). Odluka porta je v26, ne v23 (`docs/analiza/00-sazetak.md`, `PrintBridge`). Ako parametri već imaju `@id=`, drugi `@id` se ne lijepi (`Class1.vb` 320-327`). `#CLOSE` zatvori formu (`Form2.vb` 7033). `!!` u captionu je novi red (`2943`), na `ONSUBMIT` gasi lijepljenje. Dva značenja, ovisno o mjestu.
 
 ## Rupe
 
@@ -41,3 +41,6 @@ Izlaz je `CLOSE` (`7033`).
 - `+focus(partneriid)` mora vratiti fokus i ostaviti grešku, jer nema `+OK` (`Class1.vb` 187-204).
 - multidrop šalje `id1~id2`, ne zarezom (`3446`).
 - `firstdayofyear` je 1. siječnja tekuće godine, format parametra `yyyyMMdd` (`2254`, `3531`).
+- `PRINTMASTER` ne gleda `PAGEORIENTATION` (`5984`). `LANDSCAPE` na ovoj granuli ne okrene REPX master.
+- `:repx/` na dijalogu postane `repx:/`, na shellu `repx:` (`Form2.vb` 4297, `Form1.vb` 5238).
+- NetGen učitava `Spin.Printing.v23`, pa `v9.1` (`Class1.vb` 297-304). Port zove v26 (`PrintBridge`). Ako v26 nema isti `Print`/`PrintMulti`, ispis padne u `rptDevRepx`.

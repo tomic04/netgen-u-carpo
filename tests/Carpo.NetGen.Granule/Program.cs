@@ -43,6 +43,13 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(MPNarIzdSkl.Provjeri(root));
             sve.AddRange(DobUgovori.Provjeri(root));
             sve.AddRange(MpNgPregDokMail.Provjeri(root));
+            sve.AddRange(PozivPravila.Provjeri());
+            sve.AddRange(KupCarpo.Provjeri(root));
+            sve.AddRange(KupDostKn.Provjeri(root));
+            sve.AddRange(KupDostBvg.Provjeri(root));
+            sve.AddRange(MpBlagajnaIspis.Provjeri(root));
+            sve.AddRange(KarticaIspis.Provjeri(root));
+            sve.AddRange(JeziciIspis.Provjeri(root));
 
             string tekst = Qa.Tekst(sve);
             Console.WriteLine(tekst);

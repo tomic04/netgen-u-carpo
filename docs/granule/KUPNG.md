@@ -47,6 +47,16 @@ Radio (`rbLik`, `rbPred`) ide kao `@ime=1` ili `0` (`3432-3435`).
 
 `OK` zatvara formu (`6888-6890`). `OKSTAY` postavi `NeZelimClosatFormu` pa je `Button1` ne zatvori (`6884-6887`). `CANCEL`, `CLOSE` i `CLOSEPARENT` zovu `Button2` (`7031-7037`). `CLOSEPARENT` prije toga stavi `bCloseParent = True`.
 
+## Poziv Carpo subforme
+
+`CMD8` je `ADAPTER_FORM~REFRESHMASTERGRID`. Tilda postane `#` u `NovaGenerickaForma` (`Form1.vb` 4558). Prvi segment otvori dijalog. `ADAPTER_FORM` ima jedan `INPUT` `CarpoForm`, `DEFAULT="KnjigaUra.frmKnjigaUraInsert.xml"`, `VISIBLE="false"`. `ONLOADED="ASSEMBLYLOAD(NetGenAdapter.clsCarpoKnjigaUra)#ok"`.
+
+Grana `BrojKontrola = 0` (`Form2.vb` 2798) ovu naredbu ne pokrene. `Form2_Load` (`5796`) je pokrene kad se dijalog vidi. `totalgen` na dijalogu dobije `strParametriSvi` dvaput (`7424–7456`), uključujući `@CarpoForm='...'`. `#ok` zatvori omotač. Tek onda shell odradi `REFRESHMASTERGRID`.
+
+`CMD10` nema tildu: `ASSEMBLYLOAD(KUPPreglednikDMS.ScanPreview)` ide u `NovaGenerickaForma` (`4584–4623`). To nije Carpo. Zadnji argumenti su zadnji SQL mastera i `ParametriSaGrida`. Povrat se ne čita. `CreateObject` put (`5254–5278`) čita `o.id`; ovaj ne.
+
+Popup koji ima tildu ide u `Rafalno` s vodećom dvotočkom (`5743–5757`), grana `:ASSEMBLYLOAD` (`6602`).
+
 ## Rupe
 
 - `~` i `#` su isti razdjelnik, ali tek u `NovaGenerickaForma` (`4558`). Parser CMD ne smije ostaviti tildu kao dio imena forme.
@@ -55,3 +65,6 @@ Radio (`rbLik`, `rbPred`) ide kao `@ime=1` ili `0` (`3432-3435`).
 - `MULTISELECT` i `MULTIBLUE` ne pune isti skup redova (`5015` naspram `5022`).
 - `FOREACH*` na dijalogu vrti petlju (`Form2.vb` 7040). Na podlozi ne (`Form1.vb` 6843-6850).
 - `OKSTAY` ostavlja formu otvorenu (`6884`). `CLOSEPARENT` nije običan `CLOSE` (`7035-7036`).
+- `ONLOADED` s jednom kontrolom ne ide kroz `2798`, ali `Form2_Load` (`5796`) ipak zove `ASSEMBLYLOAD`. Preskočiti Load znači da se Knjiga URA ne otvori.
+- Dijalog `totalgen` nije shell potpis (`7424` naspram `Form1.vb` 4623). `CarpoForm` je u `strParametriSvi`.
+- `CMD10` bez tildi je DMS `ScanPreview`, ne `NetGenAdapter`.

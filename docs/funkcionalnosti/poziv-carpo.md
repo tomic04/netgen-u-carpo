@@ -44,7 +44,7 @@ Adapter forme su dijalog, pa vrijedi zadnji red. `strParametriSvi` uključuje ko
 - **Povrat.** `totalgen` se ne sprema. `o.id` se čita samo na `CreateObject` putu (`Form1.vb` 5275–5278), ne na `ASSEMBLYLOAD`.
 - **Greška.** `Load` ili `CreateInstance` padne: CB log i `Exit Sub` (ostatak `#` lanca staje).
 - **Nakon uspjeha.** Lanac ide dalje. `#ok` zatvara NetGen dijalog. `REFRESHMASTERGRID` na gumbu ponovo šalje zadnji SQL mastera.
-- **`ONLOADED`.** `Form2.vb` 2798 zove `strONLOADED` samo kad je `BrojKontrola = 0`. Adapter forme imaju jedan `INPUT`, pa ta grana ne radi; forma se prikaže (`4430`). To ostaje NetGen ponašanje, ne „popravak“.
+- **`ONLOADED`.** `Form2.vb` 2798 zove `strONLOADED` samo kad je `BrojKontrola = 0`. Adapter forma ima jedan `INPUT`, pa ta grana ne radi i forma se prikaže (`4430`). `Form2_Load` (`5796`) ipak zove isti `strONLOADED` kad se dijalog otvori (VB ne razlikuje velika slova u imenu). `ASSEMBLYLOAD#ok` na `ONLOADED` zato ide nakon prikaza, ne u grani s nula kontrola. Forma bez ijednog `INPUT` (npr. ispis `vrstadokid-`) ide samo kroz `2798` i `ShowDialog` se preskoči.
 
 ## Checklist (kad element dođe na red)
 
