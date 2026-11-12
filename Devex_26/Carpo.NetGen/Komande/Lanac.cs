@@ -41,13 +41,26 @@ namespace Carpo.NetGen.Komande
             for (int i = 0; i < seg.Length; i++)
             {
                 string u = (seg[i] ?? "").Trim();
-                if (u.StartsWith(":", StringComparison.Ordinal))
-                    u = u.Substring(1).Trim();
-                if (u.Equals("REFRESHMASTERGRID", StringComparison.OrdinalIgnoreCase)
-                    || u.Equals("REFRESHMASTER", StringComparison.OrdinalIgnoreCase))
+                if (OsvjezavaSegment(u))
                     return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// REFRESHMASTERGRID i REFRESHMASTER (i refreshmaster) ponove zadnji SQL.
+        /// Prazna forma i dalje ima OKClick pa PokaziUpit (Form1.vb 5354–5370, 5519).
+        /// </summary>
+        public static bool OsvjezavaSegment(string segment)
+        {
+            string u = (segment ?? "").Trim();
+            if (u.StartsWith(":", StringComparison.Ordinal))
+                u = u.Substring(1).Trim();
+            int z = u.IndexOf('(');
+            if (z > 0)
+                u = u.Substring(0, z).Trim();
+            return u.Equals("REFRESHMASTERGRID", StringComparison.OrdinalIgnoreCase)
+                || u.Equals("REFRESHMASTER", StringComparison.OrdinalIgnoreCase);
         }
 
         public static string IspisSegment(string naredba)

@@ -26,7 +26,76 @@ namespace Carpo.NetGen.Komande
             s["okClick"] = string.Equals(naredba.Trim(), "ok", StringComparison.OrdinalIgnoreCase) ? "true" : "false";
             s["fokus"] = Fokus(naredba);
             s["sqlImaZalijep"] = "false";
+            string sljedeca = DijalogTok.NextForm(forma);
+            s["nextForm"] = sljedeca;
             s["dodajPoruka"] = "";
+            return s;
+        }
+
+        /// <summary>
+        /// Prihvati je Button1: OKClick, pa ONSUBMIT, pa zadnji master (Form1.vb 5519).
+        /// Odustani je Button2: nema SQL-a i nema refresha. Escape bez ONESCKEY samo zatvara.
+        /// </summary>
+        public static Dictionary<string, string> PoNatpisu(NgProject projekt, string natpis, bool potvrda)
+        {
+            var s = new Dictionary<string, string>(StringComparer.Ordinal);
+            NgForm forma = null;
+            NgButton gumb = null;
+            if (projekt != null && projekt.Forme != null && !string.IsNullOrEmpty(natpis))
+            {
+                for (int i = 0; i < projekt.Forme.Count && gumb == null; i++)
+                {
+                    NgForm f = projekt.Forme[i];
+                    if (f.Gumbi == null)
+                        continue;
+                    for (int g = 0; g < f.Gumbi.Count; g++)
+                    {
+                        if (string.Equals(f.Gumbi[g].Natpis, natpis, StringComparison.OrdinalIgnoreCase))
+                        {
+                            forma = f;
+                            gumb = f.Gumbi[g];
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!potvrda)
+            {
+                s["refreshMaster"] = "false";
+                s["okClick"] = "false";
+                s["sqlImaZalijep"] = "false";
+                s["sqlApostrof"] = "";
+                return gumb == null && !string.IsNullOrEmpty(natpis) ? null : s;
+            }
+            if (gumb == null)
+                return null;
+            string submit = forma == null ? "" : (forma.OnSubmit ?? "");
+            bool lijepi = submit.Trim().Length > 0 && !Lanac.Prvih6JeDml(submit) && submit.IndexOf("!!", StringComparison.Ordinal) < 0;
+            s["refreshMaster"] = "true";
+            s["okClick"] = "true";
+            s["sqlImaZalijep"] = lijepi ? "true" : "false";
+            s["sqlApostrof"] = "''";
+            s["nextForm"] = DijalogTok.NextForm(forma);
+            return s;
+        }
+
+        public static Dictionary<string, string> Escape(NgProject projekt)
+        {
+            var s = new Dictionary<string, string>(StringComparer.Ordinal);
+            bool ima = false;
+            if (projekt != null && projekt.Forme != null)
+            {
+                for (int i = 0; i < projekt.Forme.Count && !ima; i++)
+                {
+                    NgForm f = projekt.Forme[i];
+                    if (f.Atributi != null && f.Atributi.Ima("ONESCKEY")
+                        && (f.Atributi.Vrijednost("ONESCKEY") ?? "").Trim().Length > 0)
+                        ima = true;
+                }
+            }
+            s["refreshMaster"] = "false";
+            s["okClick"] = ima ? "true" : "false";
+            s["sqlImaZalijep"] = "false";
             return s;
         }
 

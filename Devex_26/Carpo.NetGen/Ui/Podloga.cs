@@ -266,15 +266,26 @@ namespace Carpo.NetGen.Ui
             }
         }
 
+        private int _dubinaForme;
+
         private void OtvoriFormu(string naredba)
         {
-            if (string.IsNullOrWhiteSpace(naredba) || _projekt == null)
+            if (string.IsNullOrWhiteSpace(naredba) || _projekt == null || _dubinaForme > 8)
                 return;
-            NgForm forma = null;
             string trazeno = naredba.Trim();
+            if (trazeno.StartsWith(":", StringComparison.Ordinal))
+                trazeno = trazeno.Substring(1).Trim();
+            int zagrada = trazeno.IndexOf('(');
+            string ime = zagrada > 0 ? trazeno.Substring(0, zagrada).Trim() : trazeno;
+            if (Lanac.OsvjezavaSegment(ime))
+            {
+                OsvjeziMaster();
+                return;
+            }
+            NgForm forma = null;
             for (int i = 0; i < _projekt.Forme.Count; i++)
             {
-                if (string.Equals(_projekt.Forme[i].Ime, trazeno, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(_projekt.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
                 {
                     forma = _projekt.Forme[i];
                     break;
@@ -282,16 +293,40 @@ namespace Carpo.NetGen.Ui
             }
             if (forma == null)
             {
-                NgDnevnik.Akcija("nema forme " + trazeno);
+                NgDnevnik.Akcija("nema forme " + ime);
+                OsvjeziMaster();
                 return;
             }
-            var dij = new Dijalog();
-            dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server));
-            dij.OtvoriDrugu = OtvoriFormu;
-            dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj);
-            string iz = dij.Vrijednost("izvjestaj");
-            if (!string.IsNullOrEmpty(iz))
-                _polja["izvjestaj"] = iz;
+            _dubinaForme++;
+            try
+            {
+                var dij = new Dijalog();
+                dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server));
+                dij.OtvoriDrugu = OtvoriFormu;
+                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj);
+                string iz = dij.Vrijednost("izvjestaj");
+                if (!string.IsNullOrEmpty(iz))
+                    _polja["izvjestaj"] = iz;
+                if (dij.DialogResult != DialogResult.OK)
+                    return;
+                string sljedeca = DijalogTok.NextForm(forma);
+                if (sljedeca.Length > 0)
+                    OtvoriFormu(sljedeca);
+                else
+                    OsvjeziMaster();
+            }
+            finally
+            {
+                _dubinaForme--;
+            }
+        }
+
+        private void OsvjeziMaster()
+        {
+            if (DijalogTok.JeJupiter(_server) || _projekt == null)
+                return;
+            _master.Ucitaj(_projekt, null);
+            NapuniGrid();
         }
 
         private void IzvrsiLanac(string naredba)
@@ -315,11 +350,6 @@ namespace Carpo.NetGen.Ui
                     NgDnevnik.Akcija("ispis " + s);
                 else if (s.ToUpperInvariant().IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0)
                     NgDnevnik.Akcija("assembly " + s);
-                else if (string.Equals(s, "REFRESHMASTERGRID", StringComparison.OrdinalIgnoreCase))
-                {
-                    _master.Ucitaj(_projekt, null);
-                    NapuniGrid();
-                }
                 else
                     OtvoriFormu(s);
             }

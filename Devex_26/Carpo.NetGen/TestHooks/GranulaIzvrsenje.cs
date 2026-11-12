@@ -34,6 +34,12 @@ namespace Carpo.NetGen.TestHooks
                 return Gumb(zahtjev);
             if (string.Equals(zahtjev.Akcija, "kontrola", StringComparison.OrdinalIgnoreCase))
                 return Kontrola(zahtjev);
+            if (string.Equals(zahtjev.Akcija, "prihvati", StringComparison.OrdinalIgnoreCase))
+                return Natpis(zahtjev, true);
+            if (string.Equals(zahtjev.Akcija, "odustani", StringComparison.OrdinalIgnoreCase))
+                return Natpis(zahtjev, false);
+            if (string.Equals(zahtjev.Akcija, "escape", StringComparison.OrdinalIgnoreCase))
+                return new Pogled { Izvedeno = true, Stavke = DijalogKlik.Escape(Projekt(zahtjev.XmlPutanja)) };
             if (!string.Equals(zahtjev.Akcija, "otvori", StringComparison.OrdinalIgnoreCase))
             {
                 return new Pogled
@@ -108,6 +114,15 @@ namespace Carpo.NetGen.TestHooks
                     return p.Forme[i];
             }
             return null;
+        }
+
+        private static Pogled Natpis(Zahtjev zahtjev, bool potvrda)
+        {
+            NgProject p = Projekt(zahtjev.XmlPutanja);
+            Dictionary<string, string> s = DijalogKlik.PoNatpisu(p, zahtjev.Cilj, potvrda);
+            if (s == null)
+                return new Pogled { Izvedeno = false, Napomena = "nema gumba " + (zahtjev.Cilj ?? "") };
+            return new Pogled { Izvedeno = true, Stavke = s };
         }
 
         private static Pogled Kontrola(Zahtjev zahtjev)

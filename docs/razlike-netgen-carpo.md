@@ -788,6 +788,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `next-kom`, `next-prazan`
 - **PR:** nextform
 
+## R97 Master se osvježi i na `refreshmaster`, i nakon OK
+
+- **Element:** lanac na ljusci i `NEXTFORM` nakon potvrde
+- **NetGen:** `REFRESHMASTERGRID` zove `PokaziUpit` (`Form1.vb` 4570). `refreshmaster` i `REFRESHMASTER` nisu ta riječ, ali prazna forma ima `OKClick` pa se zadnji master ipak ponovi (`5354–5370`, `5519`, `Zadnji` je true). `NEXTFORM` se otvara dok nije prazan (`5381`). `Odustani` i Escape bez `ONESCKEY` ne šalju SQL (`3400`, `4161`).
+- **Carpo:** ljuska osvježi master na obje riječi i nakon OK. Forma koje nema ne baca poruku. `prihvati`, `odustani` i `escape` stižu do kuke. Na jupiter2019 i jupiter2022 se taj master ne šalje.
+- **Posljedica:** `JeziciNG` Unesi ima `#refreshmaster` i `NEXTFORM=Dodaj`. `OznakaKL` Prihvati osvježi master, Odustani ne. `update` ne lijepi drugi niz, apostrof ide kao `''`.
+- **Odluka:** NetGen logika. Jupiter se ne dira.
+- **Test:** `jez-refreshmaster`, `jez-next`, `okl-prihvati`, `okl-odustani`, `okl-escape`
+- **PR:** refresh-ok
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

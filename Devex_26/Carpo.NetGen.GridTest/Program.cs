@@ -313,6 +313,22 @@ namespace Carpo.NetGen.GridTest
             T("dijalog-close", odustani != null && odustani["refreshMaster"] == "false", "");
             Dictionary<string, string> spremi = DijalogKlik.Stavke(p, "Izmijeni.buttonOK");
             T("dijalog-refresh", spremi != null && spremi["refreshMaster"] == "true" && spremi["ostajeOtvorena"] == "false", "");
+            T("jez-next", zatvori != null && zatvori["okClick"] == "true" && zatvori["nextForm"] == "Dodaj" && zatvori["dodajPoruka"] == "",
+                zatvori == null ? "" : zatvori["nextForm"]);
+            T("jez-refreshmaster", p != null && Lanac.OsvjezavaZadnjiSql("Unesi#refreshmaster") && Lanac.OsvjezavaSegment("REFRESHMASTER")
+                && !Lanac.Izvrsi("REFRESHMASTER", true, null).RefreshMasterGrid, "");
+            NgProject nef = Ucitaj("MPRACNEFISK.xml");
+            string nefNaredba = "";
+            if (nef != null)
+            {
+                for (int i = 0; i < nef.Gumbi.Count; i++)
+                {
+                    string n = nef.Gumbi[i].Naredba ?? "";
+                    if (n.IndexOf("VRIJEMEJIR", StringComparison.OrdinalIgnoreCase) >= 0)
+                        nefNaredba = n;
+                }
+            }
+            T("nef-refresh", Lanac.OsvjezavaZadnjiSql(nefNaredba), nefNaredba);
             NgProject oznaka = Ucitaj("OznakaKL.xml");
             NgForm frm = null;
             if (oznaka != null)
@@ -327,6 +343,13 @@ namespace Carpo.NetGen.GridTest
             Raspored.KljuceviForme(frm, kljucevi);
             T("frmedit-tab", frm != null && kljucevi["tab"] == "Label16,oznaka2,Prihvati,Odustani" && kljucevi["formaNaslov"] == "Izmjena oznake" && kljucevi["acceptButton"] == "",
                 kljucevi.ContainsKey("tab") ? kljucevi["tab"] : "");
+            Dictionary<string, string> prihvati = DijalogKlik.PoNatpisu(oznaka, "Prihvati", true);
+            T("okl-prihvati", prihvati != null && prihvati["refreshMaster"] == "true" && prihvati["sqlImaZalijep"] == "false" && prihvati["sqlApostrof"] == "''",
+                prihvati == null ? "nema" : prihvati["sqlImaZalijep"]);
+            Dictionary<string, string> od = DijalogKlik.PoNatpisu(oznaka, "Odustani", false);
+            T("okl-odustani", od != null && od["refreshMaster"] == "false", "");
+            Dictionary<string, string> esc = DijalogKlik.Escape(oznaka);
+            T("okl-escape", esc["refreshMaster"] == "false" && esc["okClick"] == "false", "");
             NgForm filter = null;
             NgProject pre = Ucitaj("KntPreknjizavanjeNG.xml");
             if (pre != null)
