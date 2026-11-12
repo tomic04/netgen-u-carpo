@@ -702,14 +702,14 @@ Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88
 - **Test:** `combo-1-prazan`, `combo-1-null`, `combo-1-operater`, `combo-2-odabir`, `combo-3-refresh`, `combo-4-ostao`, `combo-4-poslije`, `combo-5-folse`, `combo-5-jedan`, `combo-6-nema-atribut`, `combo-7-multidrop`, `combo-8-prevod`, `combo-9-nivel`, `combo-10-nula`
 - **PR:** combo-prazan
 
-## R94 `ONCLICK` je lanac, `exec` se ne lijepi
+## R91 `ONCLICK` lanac: CLOSE, OK, onlytree, upis
 
-- **Element:** `ONCLICK` i `ONSUBMIT` koji počinje s `exec`
-- **NetGen:** `ONCLICK` ide u `Tag` i `Rafalno` (`Form2.vb` 6221–6228, 6806). `!!` skine lijepljenje (`Form1.vb` 5511–5512). `exec sp...` nije `sp` na početku, pa se drugi niz `@ime=` ne dodaje.
-- **Carpo:** segmenti se kupe. `:forma` otvara formu. `OK` zatvara. Na jupiter2019 i jupiter2022 nijedan `ONCLICK` ni `ONSUBMIT` se ne šalje. `exec` i `!!` ostanu bez drugog niza.
-- **Posljedica:** `MPInventura` Stavke šalje `spMPInventuraNG` pa `OK`, ali ne s Jupitera. `KntPreknjizavanjePartnera` `exec spKntPreknjizavanjePartnera @Action=1` ne dobije `@PartnerSTARIid=9` na kraj.
-- **Odluka:** NetGen logika. Jupiter gumb se ne izvršava.
-- **Test:** `onclick-jupiter`, `onclick-exec-ne-lijepi`
+- **Element:** `ONCLICK` na gumbu dijaloga
+- **NetGen:** tag ide u `Rafalno` (`Form2.vb` 6221, 6808). `CLOSE`/`cancel` su `Button2`, `OKClick` ostane false (`7031`, `3400`). Natpis `Zatvori (F8)` s `ONCLICK=OK` je potvrda (`6888`). `:Zakljucavanje` otvara formu (`6882`). `FILLEXPLORER` `true`/`onlytree`/prazno bira master, stablo ili zadnji upit (`5445–5519`). Prazan `#` se preskoči (`6821`). `@@` koji ostane prekine lanac prije `OK` (`7511`). `sp` i `exec` lijepe parametre; `!!` i `insert`/`update`/`delete`/`select` ne (R14).
+- **Carpo:** isti tok. Na jupiter2019 i jupiter2022 se nijedan segment ni `ONSUBMIT` ne šalje. `update Pubvars` u Bisnode putanji i `delete` u `KUPStatN` su upis.
+- **Posljedica:** deset slučajeva iz `docs/granule/Onclick-dijalog-testovi.md`. `Završi` ne potvrđuje. `Zaključi` otvara `Zakljucavanje`. `ONLYTREE` ne puni master. `KntPreknjizavanjePartnera` ima `!!`, pa se `@ime=` ne lijepi; goli `exec` bez `!!` se lijepi.
+- **Odluka:** NetGen logika. Jupiter ne izvršava ONCLICK ni ONSUBMIT.
+- **Test:** `onk-01` do `onk-10`, `onk-kup-brisanje`, `onclick-exec-ne-lijepi`
 - **PR:** onclick-lanac
 
 ## Pokrivenost checklisti

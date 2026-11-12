@@ -116,10 +116,6 @@ namespace Carpo.NetGen.Komande
             string bez = sql.Replace("!!", "");
             if (sql.Contains("!!"))
                 return bez;
-            string pocetak = bez.TrimStart();
-            if (pocetak.StartsWith("exec", StringComparison.OrdinalIgnoreCase)
-                || pocetak.StartsWith("execute", StringComparison.OrdinalIgnoreCase))
-                return bez;
             if (Prvih6JeDml(bez))
                 return bez;
             if (string.IsNullOrWhiteSpace(parametri))

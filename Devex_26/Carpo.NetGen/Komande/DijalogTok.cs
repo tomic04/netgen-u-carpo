@@ -145,6 +145,130 @@ namespace Carpo.NetGen.Komande
             return k;
         }
 
+        public sealed class Razrada
+        {
+            public bool OkClick;
+            public bool Zatvara;
+            public bool Prekinuto;
+            public bool ImaUpis;
+            public bool Salje;
+            public bool MasterIzSubmita;
+            public bool SamoStablo;
+            public bool PonoviZadnjiMaster;
+            public string OtvaraFormu = "";
+            public string Fill = "";
+            public string Submit = "";
+            public readonly List<string> PrijeOk = new List<string>();
+            public readonly List<string> NijeSql = new List<string>();
+        }
+
+        public static Razrada Razradi(NgForm forma, string onclick, bool jupiter, string parametri, IDictionary<string, string> vrijednosti)
+        {
+            var k = new Razrada();
+            string[] seg = Lanac.Segmenti(onclick);
+            for (int i = 0; i < seg.Length; i++)
+            {
+                string t = (seg[i] ?? "").Trim();
+                if (t.Length == 0)
+                    continue;
+                t = Zamijeni(t, vrijednosti);
+                if (t.StartsWith(":", StringComparison.Ordinal))
+                {
+                    string ime = t.Substring(1).Trim();
+                    int z = ime.IndexOf('(');
+                    if (z >= 0)
+                        ime = ime.Substring(0, z).Trim();
+                    k.OtvaraFormu = ime;
+                    k.Zatvara = false;
+                    continue;
+                }
+                if (t.StartsWith("BLAGAJNAENABLE", StringComparison.OrdinalIgnoreCase))
+                {
+                    k.NijeSql.Add(t);
+                    continue;
+                }
+                string u = t.ToUpperInvariant();
+                if (u == "CLOSE" || u == "CANCEL" || u == "CLOSEPARENT")
+                {
+                    k.OkClick = false;
+                    k.Zatvara = true;
+                    k.Salje = false;
+                    return k;
+                }
+                if (u == "OKSTAY")
+                {
+                    k.OkClick = true;
+                    k.Zatvara = false;
+                    continue;
+                }
+                if (u == "OK")
+                {
+                    k.OkClick = true;
+                    k.Zatvara = true;
+                    PrimijeniSubmit(k, forma, parametri, vrijednosti, jupiter);
+                    return k;
+                }
+                if (ZastitaSql.Tekst(t).Pise)
+                    k.ImaUpis = true;
+                if (t.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                {
+                    k.PrijeOk.Add(t);
+                    k.Prekinuto = true;
+                    k.Zatvara = false;
+                    k.OkClick = false;
+                    k.Salje = false;
+                    return k;
+                }
+                k.PrijeOk.Add(t);
+            }
+            if (jupiter || k.ImaUpis)
+                k.Salje = false;
+            return k;
+        }
+
+        private static void PrimijeniSubmit(Razrada k, NgForm forma, string parametri, IDictionary<string, string> vrijednosti, bool jupiter)
+        {
+            string fill = "";
+            if (forma != null && forma.Atributi != null && forma.Atributi.Ima("FILLEXPLORER"))
+                fill = (forma.Atributi.Vrijednost("FILLEXPLORER") ?? "").Trim().ToLowerInvariant();
+            k.Fill = fill;
+            string submit = forma == null ? "" : (forma.OnSubmit ?? "");
+            submit = Zamijeni(submit, vrijednosti);
+            submit = Lanac.Lijepi(submit, parametri);
+            k.Submit = submit.Trim();
+            if (fill == "true")
+                k.MasterIzSubmita = k.Submit.Length > 0;
+            else if (fill == "onlytree")
+                k.SamoStablo = true;
+            else if (fill.Length == 0 && k.Submit.Length == 0)
+                k.PonoviZadnjiMaster = true;
+            bool submitPise = k.Submit.Length > 0 && ZastitaSql.Tekst(k.Submit).Pise;
+            if (submitPise)
+                k.ImaUpis = true;
+            k.Salje = !jupiter && !k.ImaUpis && (k.PrijeOk.Count > 0 || (k.Submit.Length > 0 && !k.SamoStablo));
+        }
+
+        private static string Zamijeni(string sql, IDictionary<string, string> vrijednosti)
+        {
+            if (string.IsNullOrEmpty(sql) || vrijednosti == null)
+                return sql ?? "";
+            foreach (KeyValuePair<string, string> kv in vrijednosti)
+            {
+                string token = "@@" + kv.Key;
+                int i = 0;
+                while (i < sql.Length)
+                {
+                    int p = sql.IndexOf(token, i, StringComparison.OrdinalIgnoreCase);
+                    if (p < 0)
+                        break;
+                    string v = kv.Value ?? "";
+                    sql = sql.Substring(0, p) + v + sql.Substring(p + token.Length);
+                    i = p + v.Length;
+                }
+            }
+            return sql;
+        }
+
         public static bool PreskociGrid(NgControl k)
         {
             return Skip(k);

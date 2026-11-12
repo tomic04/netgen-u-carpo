@@ -34,6 +34,7 @@ namespace Carpo.NetGen.GridTest
             DijalogRupe();
             ComboDijalogTest();
             OnClickTest();
+            OnkDeset();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -75,6 +76,148 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void OnkDeset()
+        {
+            var prazno = new Dictionary<string, string>();
+            NgControl g1 = Kontrol(Forma(Ucitaj("ServisPrava.xml"), "MAINFORM"), "ButtonNG27");
+            DijalogTok.Razrada r1 = DijalogTok.Razradi(Forma(Ucitaj("ServisPrava.xml"), "MAINFORM"), Klik(g1), true, "", prazno);
+            T("onk-01", g1 != null && (g1.Atributi.Vrijednost("CAPTION") ?? "").IndexOf("Zavr", StringComparison.Ordinal) >= 0
+                && !r1.OkClick && r1.Zatvara && !r1.Salje && r1.Submit.Length == 0, Klik(g1));
+
+            NgForm nar = Forma(Ucitaj("MPePotvrdeNarudzbe.xml"), "FILTERFORM");
+            NgControl g2 = Kontrol(nar, "ButtonNG26");
+            DijalogTok.Razrada r2 = DijalogTok.Razradi(nar, Klik(g2), true, "", prazno);
+            T("onk-02", !r2.OkClick && r2.Zatvara && !r2.MasterIzSubmita && !r2.Salje, Klik(g2));
+
+            NgForm pron = Forma(Ucitaj("ProNotpL.xml"), "MAINFORM");
+            NgControl g3 = Kontrol(pron, "button1");
+            DijalogTok.Razrada r3 = DijalogTok.Razradi(pron, Klik(g3), true, "", prazno);
+            T("onk-03", g3 != null && (g3.Atributi.Vrijednost("CAPTION") ?? "").IndexOf("Zatvori", StringComparison.Ordinal) >= 0
+                && r3.OkClick && r3.PonoviZadnjiMaster && r3.Submit.Length == 0 && !r3.Salje, Klik(g3));
+
+            NgForm zak = Forma(Ucitaj("ZakljucivanjeTemNG.xml"), "MAINFORM");
+            NgControl g4 = Kontrol(zak, "buttonOK");
+            DijalogTok.Razrada r4 = DijalogTok.Razradi(zak, Klik(g4), true, "", prazno);
+            T("onk-04", r4.OtvaraFormu == "Zakljucavanje" && !r4.Zatvara && !r4.Salje && r4.Submit.Length == 0, r4.OtvaraFormu);
+
+            var opzV = new Dictionary<string, string>();
+            opzV["nizkonto"] = "1";
+            opzV["datumDoParam"] = "20200131";
+            opzV["DatDospParam"] = "20200131";
+            opzV["chktreceZemlje"] = "0";
+            NgForm upit = Forma(Ucitaj("KntOPZ-STAT-1.xml"), "UPIT");
+            DijalogTok.Razrada r5 = DijalogTok.Razradi(upit, "OK", true, "@dodatno=1", opzV);
+            T("onk-05", r5.OkClick && r5.MasterIzSubmita && r5.Submit.IndexOf("spKntOPZSTAT", StringComparison.OrdinalIgnoreCase) >= 0
+                && r5.Submit.IndexOf("@dodatno=1", StringComparison.Ordinal) >= 0
+                && r5.Submit.IndexOf("@@", StringComparison.Ordinal) < 0 && !r5.Salje, r5.Submit);
+
+            var treeV = new Dictionary<string, string>();
+            treeV["datod"] = "20200101";
+            treeV["datdo"] = "20200131";
+            treeV["node"] = "0";
+            NgForm bruto = Forma(Ucitaj("KntBrutoBilancaNG.xml"), "FILTER_FORM");
+            NgControl g6 = Kontrol(bruto, "ok");
+            DijalogTok.Razrada r6 = DijalogTok.Razradi(bruto, Klik(g6), true, "", treeV);
+            DijalogTok.Razrada r6greska = DijalogTok.Razradi(bruto, Klik(g6), true, "", prazno);
+            T("onk-06", r6.OkClick && r6.SamoStablo && !r6.MasterIzSubmita && r6.PrijeOk.Count == 1
+                && r6.PrijeOk[0].IndexOf("spKntBrutoBilanca_Pregled_Tree", StringComparison.OrdinalIgnoreCase) >= 0
+                && !r6.Salje && r6greska.Prekinuto && !r6greska.OkClick, r6.Fill);
+
+            NgForm bis = Forma(Ucitaj("BisnodeExport.xml"), "PARAM_FORM");
+            var bisV = new Dictionary<string, string>();
+            bisV["ComboIzv"] = "1";
+            bisV["Razdoblje"] = "20200101";
+            DijalogTok.Razrada r7 = DijalogTok.Razradi(bis, "#OK", true, "@dodatno=2", bisV);
+            var putV = new Dictionary<string, string>();
+            putV["putanja"] = "C:/izvoz";
+            putV["path"] = "C:/izvoz";
+            putV["razdoblje"] = "20200101";
+            putV["ComboIzv"] = "1";
+            NgControl putanja = Kontrol(Forma(Ucitaj("BisnodeExport.xml"), "Export"), "button1");
+            DijalogTok.Razrada r7upis = DijalogTok.Razradi(Forma(Ucitaj("BisnodeExport.xml"), "Export"), Klik(putanja), true, "", putV);
+            bool imaPub = false;
+            for (int i = 0; i < r7upis.PrijeOk.Count; i++)
+            {
+                if (r7upis.PrijeOk[i].IndexOf("update Pub", StringComparison.OrdinalIgnoreCase) >= 0)
+                    imaPub = true;
+            }
+            T("onk-07", r7.OkClick && r7.PrijeOk.Count == 0 && r7.MasterIzSubmita
+                && r7.Submit.IndexOf("spBisnodeExportQuery", StringComparison.OrdinalIgnoreCase) >= 0
+                && r7.Submit.IndexOf("@dodatno=2", StringComparison.Ordinal) >= 0 && !r7.Salje
+                && r7upis.ImaUpis && !r7upis.Salje && imaPub, r7upis.Prekinuto ? "prekid" : r7upis.PrijeOk.Count.ToString());
+
+            NgForm skl = Forma(Ucitaj("SklMinMaxDat.xml"), "MAINFORM");
+            NgControl g8 = Kontrol(skl, "cmdDodaj");
+            var dat = new Dictionary<string, string>();
+            dat["datod"] = "20200101";
+            dat["datdo"] = "20200131";
+            DijalogTok.Razrada r8 = DijalogTok.Razradi(skl, Klik(g8), true, "", dat);
+            DijalogTok.Razrada r8greska = DijalogTok.Razradi(skl, Klik(g8), true, "", prazno);
+            T("onk-08", r8.OkClick && r8.PonoviZadnjiMaster && r8.PrijeOk.Count == 1
+                && r8.PrijeOk[0].IndexOf("spSktMinMaxDatum", StringComparison.OrdinalIgnoreCase) >= 0
+                && r8.PrijeOk[0].IndexOf("@@", StringComparison.Ordinal) < 0 && !r8.Salje
+                && r8greska.Prekinuto && !r8greska.OkClick, r8.PrijeOk.Count.ToString());
+
+            NgForm pdv = Forma(Ucitaj("KntPDVObrasciEU.xml"), "FILTER_FORM");
+            NgControl g9 = Kontrol(pdv, "ok");
+            var pdvV = new Dictionary<string, string>();
+            pdvV["datod"] = "20200101";
+            pdvV["checkdatod"] = "1";
+            pdvV["tromjesecje"] = "1";
+            pdvV["godina"] = "2020";
+            pdvV["checkdatPPO"] = "1";
+            pdvV["CheckNapomena"] = "0";
+            pdvV["dtpdvobrazac"] = "20200101";
+            pdvV["comboboxGodinaPpo"] = "2020";
+            DijalogTok.Razrada r9 = DijalogTok.Razradi(pdv, Klik(g9), true, "", pdvV);
+            bool imaUpdate = false;
+            for (int i = 0; i < r9.PrijeOk.Count; i++)
+            {
+                if (r9.PrijeOk[i].IndexOf("update dbo.KntPDVObrasciEU", StringComparison.OrdinalIgnoreCase) >= 0)
+                    imaUpdate = true;
+            }
+            T("onk-09", r9.OkClick && r9.PrijeOk.Count == 5 && imaUpdate && r9.ImaUpis && r9.MasterIzSubmita && !r9.Salje, r9.PrijeOk.Count.ToString());
+
+            NgForm kasa = Forma(Ucitaj("MPKasaImport.xml"), "FILTERFORM");
+            NgControl g10 = Kontrol(kasa, "ok");
+            var kasV = new Dictionary<string, string>();
+            kasV["mpkaseid"] = "5";
+            DijalogTok.Razrada r10 = DijalogTok.Razradi(kasa, Klik(g10), true, "@extra=9", kasV);
+            T("onk-10", r10.NijeSql.Count == 1 && r10.NijeSql[0].IndexOf("BLAGAJNAENABLE(5)", StringComparison.OrdinalIgnoreCase) >= 0
+                && r10.PrijeOk.Count == 0 && r10.OkClick && r10.MasterIzSubmita
+                && r10.Submit.IndexOf("spMPKasaCopy", StringComparison.OrdinalIgnoreCase) >= 0
+                && r10.Submit.IndexOf("@extra=9", StringComparison.Ordinal) < 0 && !r10.Salje, r10.NijeSql[0]);
+
+            NgProject kup = Ucitaj("KUPStatN.xml");
+            NgControl brisi = null;
+            NgForm kupForma = null;
+            if (kup != null)
+            {
+                for (int f = 0; f < kup.Forme.Count && brisi == null; f++)
+                {
+                    for (int i = 0; i < kup.Forme[f].Kontrole.Count; i++)
+                    {
+                        string o = kup.Forme[f].Kontrole[i].Atributi == null ? "" : (kup.Forme[f].Kontrole[i].Atributi.Vrijednost("ONCLICK") ?? "");
+                        if (o.StartsWith("delete ", StringComparison.OrdinalIgnoreCase))
+                        {
+                            brisi = kup.Forme[f].Kontrole[i];
+                            kupForma = kup.Forme[f];
+                        }
+                    }
+                }
+            }
+            DijalogTok.Razrada rBrisi = DijalogTok.Razradi(kupForma, Klik(brisi), true, "", prazno);
+            T("onk-kup-brisanje", rBrisi.ImaUpis && !rBrisi.Salje && rBrisi.Prekinuto && rBrisi.PrijeOk.Count > 0
+                && rBrisi.PrijeOk[0].StartsWith("delete ", StringComparison.OrdinalIgnoreCase) && !rBrisi.OkClick, rBrisi.PrijeOk[0]);
+        }
+
+        private static string Klik(NgControl k)
+        {
+            if (k == null || k.Atributi == null)
+                return "";
+            return k.Atributi.Vrijednost("ONCLICK") ?? "";
         }
 
         private static void OnClickTest()
