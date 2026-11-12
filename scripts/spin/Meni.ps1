@@ -135,10 +135,10 @@ where Parametar like N'%:$f' or Parametar like N'%\$f' or Parametar like N'%/$f'
     $izrazi = New-Object System.Collections.Generic.List[string]
     foreach ($c in $kolone.Rows) {
         $tip = [string]$c.tip
-        if ([int]$c.is_identity -eq 1 -or [int]$c.is_computed -eq 1) { continue }
         if ($tip -eq "timestamp" -or $tip -eq "rowversion") { continue }
         $ime = [string]$c.name
         $qime = "[" + $ime.Replace("]", "]]") + "]"
+        if ($ime -ne "Parent" -and ([int]$c.is_identity -eq 1 -or [int]$c.is_computed -eq 1)) { continue }
         $imena.Add($qime)
         if ($ime -eq "Parametar") {
             $izrazi.Add("N'" + $param.Replace("'", "''") + "'")
