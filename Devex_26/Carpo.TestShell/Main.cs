@@ -368,11 +368,12 @@ namespace Carpo.TestShell
             }
             string pod = snimka + ".podforma.png";
             bool odustao = false;
+            int pokusaj = 0;
             var timer = new System.Windows.Forms.Timer();
-            timer.Interval = 700;
+            timer.Interval = 400;
             timer.Tick += delegate
             {
-                timer.Stop();
+                pokusaj++;
                 Form dij = null;
                 foreach (Form f in Application.OpenForms)
                 {
@@ -382,12 +383,21 @@ namespace Carpo.TestShell
                     break;
                 }
                 if (dij == null)
+                {
+                    if (pokusaj > 30)
+                        timer.Stop();
                     return;
-                try { dij.Update(); } catch { }
-                SnimiProzor(dij.Handle, pod);
+                }
                 var o = NadjiGumb(dij, "Odustani");
                 if (o == null)
+                {
+                    if (pokusaj > 30)
+                        timer.Stop();
                     return;
+                }
+                timer.Stop();
+                try { dij.Update(); } catch { }
+                SnimiProzor(dij.Handle, pod);
                 odustao = true;
                 o.PerformClick();
             };
