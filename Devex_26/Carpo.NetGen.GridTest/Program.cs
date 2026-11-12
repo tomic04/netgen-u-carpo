@@ -5,6 +5,7 @@ using System.Text;
 using System.Data.SqlClient;
 using System.IO;
 using Carpo.NetGen.Grid;
+using Carpo.NetGen.Shell;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Kontrole;
 using Carpo.NetGen.Poziv;
@@ -31,6 +32,7 @@ namespace Carpo.NetGen.GridTest
             KomandeTestovi();
             ZastitaTestovi();
             DijalogKlikTest();
+            TipoviTestovi();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -72,6 +74,37 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void TipoviTestovi()
+        {
+            T("tip-manager", TipForme.Odredi(Ucitaj("KntKompVerizne.xml")) == TipForme.Manager, TipForme.Odredi(Ucitaj("KntKompVerizne.xml")));
+            T("tip-grid", TipForme.Odredi(Ucitaj("JeziciNG.xml")) == TipForme.SamoGrid, TipForme.Odredi(Ucitaj("JeziciNG.xml")));
+            T("tip-dijalog", TipForme.Odredi(Ucitaj("ZakljucivanjeTemNG.xml")) == TipForme.Dijalog, TipForme.Odredi(Ucitaj("ZakljucivanjeTemNG.xml")));
+            T("tip-narudzbe", TipForme.Odredi(Ucitaj("Narudzbe.xml")) == TipForme.Manager, TipForme.Odredi(Ucitaj("Narudzbe.xml")));
+            NgForm filter = null;
+            NgProject zak = Ucitaj("ZakljucivanjeTemNG.xml");
+            if (zak != null)
+            {
+                for (int i = 0; i < zak.Forme.Count; i++)
+                {
+                    if (string.Equals(zak.Forme[i].Ime, "MAINFORM", StringComparison.OrdinalIgnoreCase))
+                        filter = zak.Forme[i];
+                }
+            }
+            NgControl datum = null;
+            if (filter != null)
+            {
+                for (int i = 0; i < filter.Kontrole.Count; i++)
+                {
+                    if (string.Equals(filter.Kontrole[i].Name, "datumod", StringComparison.OrdinalIgnoreCase))
+                        datum = filter.Kontrole[i];
+                }
+            }
+            int z = 0;
+            Mjesto m = datum == null ? null : Raspored.Izracunaj(datum.Grana, datum.Atributi, ref z);
+            T("tip-dijalog-nije-manager", !TipForme.JeManager(zak) && m != null && m.Lijevo == MasterGrid.VbJedinica(1195),
+                m == null ? "nema" : m.Lijevo.ToString());
         }
 
         private static void DijalogKlikTest()

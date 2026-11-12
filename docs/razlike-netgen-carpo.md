@@ -739,6 +739,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `dijalog-combo-sql`
 - **PR:** dijalog-sql
 
+## R92 Manager predložak samo kad XML ima taj raspored
+
+- **Element:** ljuska granule
+- **NetGen:** nekoliko sličnih obrazaca. Form1 složi lijevi panel samo za `TREE` ili `COMBO`, detail samo za `DETAILGRID`, gumbe dolje. Dijalog drži `TOP`/`LEFT` (`Form2.vb` 2945–2950).
+- **Carpo:** kartica Stavke i puni Manager idu samo na tip `manager` (lijevo + detail + gumbi). `samo-grid`, `stablo-master`, `samo-detail` i `dijalog` ne dobivaju tu karticu. Koordinate dijaloga ostaju `/14`.
+- **Posljedica:** `JeziciNG` je samo master. `ZakljucivanjeTemNG` je dijalog, `datumod` `LEFT` 1195 je 85 px. `KntKompVerizne` ostaje Manager.
+- **Odluka:** namjerno. Predložak nije cilj. Skin i DevExpress kontrole ostaju.
+- **Test:** `tip-manager`, `tip-grid`, `tip-dijalog`, `tip-narudzbe`, `tip-dijalog-nije-manager`
+- **PR:** tipovi-formi
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

@@ -4,9 +4,13 @@ Carpo.NetGen je Carpo prozor. Izgled vuče na Carpo. Podaci, naredbe i SQL ostaj
 
 Janus kontrole (grid, stablo) zamjenjuju se DevExpressom. Sve ostalo što se vidi također je DevExpress, a gdje Carpo već ima komponentu, baznu formu, ribbon ili editor, koristi se taj, ne kopija.
 
+## Odluka: Manager nije obrazac za svaku granulu
+
+NetGen ima nekoliko custom obrazaca, sličnih jedan drugome. Carpo predložak nije cilj sam po sebi. Manager (stablo lijevo, master, detalj na kartici Stavke, gumbi dolje) ide samo na granule čiji XML stvarno ima lijevi panel (`TREE` ili `COMBO`), `DETAILGRID` i gumbe. Ostale zadržavaju NetGen raspored: pozicije, dock i paneli. Kontrole su i dalje DevExpress, skin je Carpo. Popis je `docs/granule/tipovi-formi.md`.
+
 ## Checklist
 
-- [x] Podloga nasljeđuje `Carpo.UI.Forms.Master.Manager` (RibbonBase preko JupiterManager). Nema vlastite ribbon stranice. Combo je `bbiLookUpFilter`, stablo `trMain`, master `gcGla`, traka `bar2`, detail kartica Stavke, gumbi u `pnlButtons`, status `Broj slogova`.
+- [x] Podloga nasljeđuje `Carpo.UI.Forms.Master.Manager` samo kao ljusku. Kartica Stavke stavlja se samo kad je tip `manager`. Inače detail, ako ga XML ima, ostaje grid ispod mastera, a prazno stablo i prazan detail se sklope. Combo je `bbiLookUpFilter`, stablo `trMain`, master `gcGla`, gumbi u `pnlButtons`, status `Broj slogova`.
 - [x] Skin: `BonusSkins.Register` i `SkinManager.EnableFormSkins`, kao `Base.Start`.
 - [x] Gumbi `CMDx` / `BUTTONS` su flat gumbi u donjem `pnlButtons`, istim redom i natpisom. Ribbon stranica se ne puni.
 - [x] Master i detail su `GridControl` / `GridView`. Auto-filter red je uključen kao u Carpu. Širina, skriveni stupac, sort, zabrana izmjene i checkbox selekcija ostaju NetGen.
@@ -14,7 +18,8 @@ Janus kontrole (grid, stablo) zamjenjuju se DevExpressom. Sve ostalo što se vid
 - [x] Dijalozi su `XtraForm`. Editor po tipu: `TextEdit`, `SpinEdit`, `ButtonEdit`, `DateEdit`, `LookUpEdit`, `CheckedComboBoxEdit`, `CheckEdit`, `CheckEdit` s `RadioGroupIndex` (svaki RADIO drži svoj `TOP`/`LEFT`), `SimpleButton`, `LabelControl`, `GroupControl`, `PanelControl`, `PictureEdit`, `GridControl`, `TreeList`. Raspored je NetGen `SrediKontrolu` (`/ 14`).
 - [x] Status na dijalogu je `LabelControl` na dnu. WebBrowser ostaje WinForms jer DevExpress nema preglednik.
 - [x] Filter forma je isti `XtraForm` sa skinom. `BORDERSTYLE=3` je fiksni dijalog. Combo, datum, broj, check i gumb nose Carpo default (null tekst `...`, maska datuma, broj desno, gumb 7 pt). Stupac grida crta `FORMAT` i poravnanje. Status ribbana pokazuje server, bazu i operatera.
-- [ ] Klik gumba na dijalogu još ne vrti lanac (lanac je u `Lanac`, kuka ga već pokriva). Combo i grid na dijalogu ne šalju vlastiti SQL pri otvaranju.
+- [x] Klik gumba na dijalogu vrti lanac (`OK`, `OKStay`, `CLOSE`). SELECT se šalje. Procedura koja piše se ne šalje.
+- [x] Combo i grid na dijalogu pri otvaranju pošalju vlastiti `SELECT`. Poziv procedure čeka provjeru tijela.
 
 ## Što se ne dira
 

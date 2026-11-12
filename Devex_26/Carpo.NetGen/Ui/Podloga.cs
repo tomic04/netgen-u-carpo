@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
+using Carpo.NetGen.Shell;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
@@ -40,6 +41,7 @@ namespace Carpo.NetGen.Ui
         private int _redovaDetail;
         private DataTable _comboRedovi;
         private readonly System.Collections.Generic.Dictionary<string, string> _polja = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private XtraTabControl _stavke;
 
         public Podloga()
         {
@@ -67,10 +69,10 @@ namespace Carpo.NetGen.Ui
             stavke.Text = "Stavke";
             splitGrid.Panel2.Controls.Remove(gcDet);
             stavke.Controls.Add(gcDet);
-            var tab = new XtraTabControl();
-            tab.Dock = DockStyle.Fill;
-            tab.TabPages.Add(stavke);
-            splitGrid.Panel2.Controls.Add(tab);
+            _stavke = new XtraTabControl();
+            _stavke.Dock = DockStyle.Fill;
+            _stavke.TabPages.Add(stavke);
+            splitGrid.Panel2.Controls.Add(_stavke);
             bbiLookUpFilter.EditValueChanged += Combo_EditValueChanged;
             bbiLookUpFilter.Visibility = BarItemVisibility.Never;
             bbiBrojSlogova.Caption = "Broj slogova:";
@@ -166,6 +168,8 @@ namespace Carpo.NetGen.Ui
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
+            if (!TipForme.JeManager(_projekt))
+                MakniKarticuStavke();
             if (!_stablo.Stanje.Vidljivo || _stablo.Stanje.Splitter <= 0)
                 splitMain.PanelVisibility = SplitPanelVisibility.Panel2;
             else
@@ -186,6 +190,20 @@ namespace Carpo.NetGen.Ui
             }
             if (_master.Stanje.OtvaraFormu)
                 IzvrsiLanac(_master.Stanje.ImeForme ?? "");
+        }
+
+        /// <summary>
+        /// Kartica Stavke je dio Manager predloška. Ostali obrasci drže detail grid
+        /// izravno, ili ga nemaju, kao NetGen SplitContainer2.
+        /// </summary>
+        private void MakniKarticuStavke()
+        {
+            if (_stavke == null || _stavke.Parent == null)
+                return;
+            _stavke.Parent.Controls.Remove(_stavke);
+            gcDet.Dock = DockStyle.Fill;
+            if (!_detail.Stanje.Nema && !_detail.Stanje.OtvaraFormu)
+                splitGrid.Panel2.Controls.Add(gcDet);
         }
 
         private void NapuniCombo()
