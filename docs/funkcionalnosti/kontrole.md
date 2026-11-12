@@ -16,6 +16,18 @@ Prazan broj je `0` (`3601`). Tražilica: `sp` i `select` ostaju SQL. `dbo.sp…`
 
 DevExpress svojstva koja NetGen postavlja eksplicitno, jer tvornički DX nije isti:
 
+Stablo na dijalogu ne dodaje `:imeForme` na tag. `yearmonth` na dijalogu ne crta godine. `TREETRANSLATE` vrijedi samo na podlozi. Svaki čvor nosi sliku 0.
+
+`WebBrowser` šalje `URL` velikim slovima u `Navigate`. Ako URL-a nema, adresa je kolona imena kontrole iz `ONLOAD`. Vrijednost `refresh` nije adresa.
+
+`PictureBox` je `StretchImage`. `LOCATION` ide velikim slovima. Vrijednost koja počinje s `http` zove `Load`.
+
+`NEXTFORM` nakon OK otvara tu formu. Dozvola pita ime prve forme, ne sljedeće.
+
+Ime forme s `filter` pali DB clipboard, osim `DBCLIPBOARD=false`. Pad tog selecta ne stvara tablicu.
+
+`CHECKBOXVISIBLE=FALSE` na gridu dijaloga sakrije stupac 1. `SKIPDEFAULTLOAD=TRUE` ne puni grid odmah.
+
 | Grana | Širina | Ostalo |
 |---|---|---|
 | text | 300 | `TextEdit` |

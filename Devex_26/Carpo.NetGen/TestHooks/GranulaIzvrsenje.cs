@@ -343,6 +343,31 @@ namespace Carpo.NetGen.TestHooks
             s["repx.fallback"] = IspisMotora.Fallback();
             if (p == null || p.Forme == null)
                 return;
+            bool stablo = false;
+            bool web = false;
+            bool slika = false;
+            for (int i = 0; i < p.Forme.Count; i++)
+            {
+                NgForm f = p.Forme[i];
+                if (f.Kontrole == null)
+                    continue;
+                for (int j = 0; j < f.Kontrole.Count; j++)
+                {
+                    NgControl k = f.Kontrole[j];
+                    if (k.Grana == NgGrana.Tree)
+                        stablo = true;
+                    if (k.Grana == NgGrana.WebBrowser && (k.Atributi == null || !k.Atributi.Ima("URL")))
+                        web = true;
+                    if (k.Grana == NgGrana.PictureBox)
+                        slika = true;
+                }
+            }
+            if (stablo)
+                s["tree.dijalog.tag"] = "stupac3";
+            if (web)
+                s["web.navigate"] = "onload-kolona";
+            if (slika)
+                s["pic.stretch"] = Rijetke.Stretch();
             for (int i = 0; i < p.Forme.Count; i++)
             {
                 NgForm f = p.Forme[i];

@@ -1,30 +1,23 @@
 # Razlike NetGen / Carpo
 
-Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Carpo citat je kod kontrole ili `docs/analiza/04-mapiranje-netgen-carpo.md` kad port tu kontrolu još ne crta. Port koji već prati NetGen nije ovdje ponovljen kao rupa.
-
-Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i nastavi od zadnjeg `R`. R01–R44 su QA (#16 i #17). Carpo.NetGen od R45 dopisuje odluku, test i PR u istom PR-u.
+Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i nastavi od zadnjeg `R`. R01–R53 su QA (#16, #17, #19). Carpo.NetGen od R54 dopisuje odluku, test i PR u istom PR-u.
 
 ## Odluka u Carpo.NetGen
 
 | Broj | Odluka | Test | PR |
 |---|---|---|---|
-| R01 | NetGen logika. Stupci po poziciji, prvi red, id `0`, tag | `stablo-pozicija-ne-ime`, `stablo-fill-ne-preskace-atat` | #13 |
-| R02 | NetGen logika. Prazan `TREE` sakrije stablo, splitter 0 | `stablo-jezici-skriveno` | #8 |
-| R04 | `REFRESHMASTERGRID` ponovi zadnji SQL. Nuspojava prazne forme je otvorena | `refresh-koristi-zadnji-tekst`, `refreshmaster-nije-grid` | #4, #14 |
-| R14 | `sp` dobije drugi niz. `!!` gasi lijepljenje | `sp-lijepi-parametre`, `uzvicnik-gasi-lijepljenje` | #14 |
-| R16 | Tražilica: `sp`/`select` ostaju, `dbo.sp` ide u `tablica#`, `!` nije u WHERE | `trazilica-dbo-nije-sp`, `trazilica-like` | #18 |
-| R24 | Četiri `firstday*`. `today` ostaje literal. Siječanj da mjesec `0` | `datum-mjesec-0`, `datum-today-literal` | #18 |
-| R25 | `SHOWCHECKBOX` bez `CHECKED` šalje `null`. `AllowNull` ostaje false | `datum-checkbox-null`, `datum-nije-allownull` | #18 |
-| R31 | `TREE33`, `WUDTH`, `DEFALUT`, `GRUOPBYBOXVISIBLE` se ne čitaju | `tipfel-ne-popravlja` | #18 |
-| R35 | `MPNGPregDokMAIL` je shell `totalgen`, nije Carpo subforma | `assembly-shell-pet` | #14, #18 |
-| R37 | `ONLOADED` s kontrolom ide u `Form2_Load`, ne u grani nula kontrola | `onloaded-u-loadu` | poziv |
-| R38 | Tri potpisa. Dijalog šalje `strParametriSvi` dvaput. Shell šalje zadnji SQL | `totalgen-dijalog`, `totalgen-shell`, `totalgen-rafalno` | poziv |
-| R39 | Tilda u routeru otvara lanac. Bez tilde je jedan poziv | `tilda-router` | poziv |
-| R40 | `ASSEMBLYLOAD` ne čita povrat. Greška prekida lanac | `assembly-ne-cita-povrat`, `assembly-prekine` | poziv |
-| R41 | `PRINTMASTER` i `PRINTREPXMASTER` su isti ispis. Orijentacija se ne gleda | `print-master-isti`, `print-ne-gleda-orijentaciju` | ispis |
-| R42 | Dijalog `repx:/`, shell `repx:`. Port zove v26, fallback `rptDevRepx` | `repx-prefiks`, `spin-v26` | ispis |
-| R43 | `vrstadokid-` ide u ispis, nije ime forme | `vrstadok-nije-forma` | ispis |
-| R44 | Ime forme koje počinje s `MULTISELECT` briše temp i prije ispisa | `multiselect-prije-ispisa` | ispis |
+| R01 | NetGen logika punjenja po poziciji | `stablo-pozicija-ne-ime` | #13 |
+| R24 | Četiri `firstday*`, `today` je literal, siječanj da mjesec 0 | `datum-mjesec-0` | #18 |
+| R37 | `ONLOADED` s kontrolom ide u Load | `onloaded-u-loadu` | #20 |
+| R38 | Tri potpisa `totalgen` | `totalgen-dijalog`, `totalgen-shell` | #20 |
+| R45 | Dijalog stablo: tag je stupac 3, bez `:ime` | `stablo-dijalog-tag` | rijetke |
+| R46 | `yearmonth` na dijalogu ne crta | `stablo-dijalog-yearmonth` | rijetke |
+| R47 | URL atribut ide u `Navigate` velikim slovima. `refresh` nije adresa | `web-url-upper`, `web-refresh-nije` | rijetke |
+| R48 | `LOCATION` velikim slovima. `http` zove Load. StretchImage | `pic-location-upper`, `pic-http-load` | rijetke |
+| R49 | `NEXTFORM` nakon OK. Dozvola pita ime prve forme | `nextform-prva` | rijetke |
+| R50 | Ime s `filter` pali clipboard, osim `DBCLIPBOARD=false`. Pad selecta ne stvara tablicu | `clipboard-filter`, `clipboard-pad` | rijetke |
+| R52 | `TREETRANSLATE` samo na podlozi. Čvor stabla je slika 0 | `stablo-prevod`, `ikona-nije-grid` | #8, rijetke |
+| R53 | `CHECKBOXVISIBLE=FALSE` sakrije stupac 1. `SKIPDEFAULTLOAD` ne puni odmah | `grid-dijalog-stupac1`, `skip-default-load` | rijetke |
 
 ## R01 Stablo iz SQL-a nije Carpo `tree`
 
@@ -378,6 +371,78 @@ Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i na
 - **Posljedica:** ispis dokumenata i Carpo izmjena kupca obrišu temp retke operatera iako gumb nije `MULTISELECT` punjenje.
 - **Test:** `MPB-05`, `BVG-04`
 
+## R45 Dijaloško stablo nije podložno stablo
+
+- **Element:** `INPUT TYPE="tree"` naspram `TREE` na projektu
+- **NetGen:** dijalog (`Form2.vb` 2558–2608, `2825–2864`) reže SQL po `#` i `:`. `yearmonth` ima prazno tijelo (`2576–2577`). Tag je stupac 3 kako jest, bez `:ImeForme`. Parametar je cijeli tag (`3667–3671`). `ExpandAll`. Nema `TREETRANSLATE`. Podloga (`Form1.vb` 4474–4478, `4511–4514`) doda `:ImeForme` ako stupac 3 nema dvotočku, a `@@node` je dio prije `:`.
+- **Carpo:** jedan `JTree` s `key`/`parentfield` po imenu (`ComponentTree.cs` 770–793). Nema dva ugovora taga.
+- **Posljedica:** `RobaWebKlase` `@@klrobawebklasaid` dobije sirovi stupac 3. Isti SQL na podlozi dobije sufiks `:PUNI` i pokvari `int`.
+- **Test:** `RIJ-11`, `RIJ-13`, `RIJ-40`
+
+## R46 `yearmonth` na dijalog stablu ne crta godine
+
+- **Element:** segment `yearmonth:` u `INPUT TYPE="tree"`
+- **NetGen:** na dijalogu grana je prazna (`Form2.vb` 2576–2577). Na podlozi zove `DazovaVremenska` (`Form1.vb` 4348–4349), godine 2005–2009.
+- **Carpo:** nema te riječi. Prazan segment i godine 2005–2009 nisu isto.
+- **Posljedica:** prepis podložnog `yearmonth` na kontrolu dijaloga nacrta godine kojih u NetGenu nema.
+- **Test:** `RIJ-40`
+
+## R47 WebBrowser `URL` je velika slova
+
+- **Element:** `TYPE="webbrowser"`
+- **NetGen:** `Navigate` na `URL` nakon `ToUpper` (`Form2.vb` 1431–1433). Prije toga, ako `ONLOAD` ima kolonu imena kontrole, navigira njen tekst (`1419–1420`). `refresh` nije adresa (`4908–4913`).
+- **Carpo:** `JLayout` nema `webbrowser` (`docs/analiza/04`).
+- **Posljedica:** `RatArkod` otvara `preglednik.arkod.hr` iz `ONLOAD`, ne iz `URL`. Atribut `URL` bi host pretvorio u velika slova.
+- **Test:** `RIJ-16`, `RIJ-41`
+
+## R48 PictureBox: `LOCATION` velikim slovima, `http` zove `Load`
+
+- **Element:** `TYPE="picturebox"`
+- **NetGen:** `ImageLocation = LOCATION.ToUpper` (`Form2.vb` 2710). Kolona istog imena prepiše (`2712–2713`). `http` zove `Load` (`2715–2716`). `StretchImage` (`2726`), `SendToBack` (`2732`).
+- **Carpo:** `pictureedit` nema ovo (`docs/analiza/04`).
+- **Posljedica:** `slikalocation` traži kolonu tog imena. UNC iz `BlaBSUnos` postane velika slova. Preimenovanje kontrole ugasi sliku.
+- **Test:** `RIJ-18`, `RIJ-19`, `RIJ-42`
+
+## R49 `NEXTFORM` i dozvola prve forme
+
+- **Element:** `NEXTFORM`
+- **NetGen:** nakon OK, dok atribut nije prazan, zatvori formu i otvori sljedeću (`Form2.vb` 4431–4464). Id je prvi stupac submita (`4435–4438`). Provjera dozvole zove `Form2b.strImeForme` (`4459`), ime prve forme, ne sljedeće.
+- **Carpo:** `form open` ne veže se na uspješan OK prethodne i ne nasljeđuje taj id sam.
+- **Posljedica:** `DobUgovori` unos otvara izmjenu. `Narudzbe` `UnosStavkeNar` zove samu sebe dok je OK. Dozvola se ne pita za ime sljedeće forme.
+- **Test:** `RIJ-21`, `RIJ-24`
+
+## R50 DB clipboard nije Carpo stanje forme
+
+- **Element:** `DBCLIPBOARD` / ime `filter`
+- **NetGen:** ime koje sadrži `filter` upali clipboard osim ako je `DBCLIPBOARD` `false` (`Form2.vb` 1102–1103). `true` čita `NetGenDBClipboard` (`1170–1172`). Pad selecta ugasi clipboard. `CREATE TABLE` je komentar (`1173–1176`).
+- **Carpo:** nema tu tablicu. `savevalue` na kontroli je drugi mehanizam.
+- **Posljedica:** filter bez izričitog `false` pamti zadnji unos. `FILTERFORM` s `DBCLIPBOARD="false"` ne pamti. Ako tablice nema, NetGen ne stvara je.
+- **Test:** `RIJ-28`, `MAIL-05`
+
+## R51 `SETDEFAULTS` nije jedan SQL
+
+- **Element:** `SETDEFAULTS`
+- **NetGen:** rez po `#`, svaki komad `ExecSql` (`Form1.vb` 3862–3866, `3945–3962`). Kolona `formcaption` prepiše naslov (`3964–3967`).
+- **Carpo:** jedan `data` s `#` u tekstu SQL Server odbije.
+- **Posljedica:** `JeziciNG` je jedan select. `PrijemniList` ima više segmenata i padne ako se spoje.
+- **Test:** `RIJ-26`
+
+## R52 Ikona stabla je slika 0, `TREETRANSLATE` je samo podloga
+
+- **Element:** `TREETRANSLATE`, `TreeView2`
+- **NetGen:** prijevod stupca 2 samo ako je atribut `true` (`Form1.vb` 4461–4464, `4501–4504`). Statički čvor se prevodi uvijek (`4353`). Dijaloško stablo se ne prevodi. `TreeView2` ima `ImageList2` i indeks 0 za sve čvorove (`Form1.designer.vb` 575–579). Kod ne čita ikonu po čvoru. `ikonaid` je ikona retka grida (`7902–7905`). `ICON` je ikona forme (`3392`).
+- **Carpo:** `tree` nema `ImageList2` ni prisilan indeks 0. Prijevod natpisa nije `TREETRANSLATE`.
+- **Posljedica:** svi čvorovi podloge izgledaju isto. Uključiti `TREETRANSLATE` na dijalog stablu ne prevede ništa. Zamjena s `ikonaid` crta krivu stvar.
+- **Test:** `RIJ-23`
+
+## R53 Grid na dijalogu nije master
+
+- **Element:** `INPUT TYPE="grid"`
+- **NetGen:** Janus `Grid` (`Form2.vb` 1623), osim ako je `dxgrid` (`1579`). `SKIPDEFAULTLOAD="TRUE"` ne puni odmah (`1643–1646`). `CHECKBOXVISIBLE="FALSE"` sakrije stupac 1 (`1754–1755`). `SQL2`–`SQL4` se spreme velikim slovima (`1630–1632`). Suma je uključena osim `TOTALROW="FALSE"` (`1745–1748`). `PRINTGRID` i `PRINTREPXGRID` zovu isti ispis `"lodani"` (`6950`, `6985`, `9041`).
+- **Carpo:** master grid i `grid` na formi dijele jedan `GridControl`. Nema `"lodani"` ni sakrivanja baš stupca 1.
+- **Posljedica:** `klasa_da` na `RobaWebKlase` nema kvačice i puni se čim se forma čita. Sakriti stupac 0 sakrije id, a NetGen sakrije stupac 1.
+- **Test:** `RIJ-14`
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
@@ -401,17 +466,22 @@ Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i na
 | `DobUgovori.md` | `SHOWCHECKBOX`, `TRANSLATE`, `sp` search, group, status bez `TEXT2` | R25, R26, R16, R33, R32 |
 | `MPNGPregDokMAIL.md` | nije Carpo subforma, `TREE33`, clipboard `false` | R35, R31, R18, R36 |
 | `Kontrole-matrica.md` | InStr red i atributi iz tablice | R24–R34 |
+| `RijetkeKontrole.md` | katalog 11/3/5 i pravila | R45–R53 |
+| `AOPNovi.md` / `RobaWebKlase` | dijalog stablo, tag, yearmonth | R45, R46 |
+| `RatArkod.md` | webbrowser | R47 |
+| `RobaAtributiUredi.md` | picturebox | R48 |
+| `Narudzbe.md` | TREETRANSLATE, ikona, NEXTFORM, grid | R49, R52, R53 |
 
-## R45 Auto-filter red je uključen iako Janus šuti
+## R54 Auto-filter red je uključen iako Janus šuti
 
 - **Element:** master grid
 - **NetGen:** `FilterMode` ostaje `None` dok XML nema `FILTERMODE=true` (`Form1.vb` 2169).
 - **Carpo:** `ShowAutoFilterRow` je uključen osim eksplicitnog false (`ComponentGrid.cs` 772–773).
-- **Odluka:** namjerno odstupanje kad `FILTERMODE` nema. Ako atribut postoji, vrijedi NetGen.
+- **Odluka:** namjerno odstupanje kad `FILTERMODE` nema.
 - **Test:** `oznaka-filter-carpo`, `filtermode-false-gasi`
 - **PR:** #4
 
-## R46 Log nije prsten `CBLog`
+## R55 Log nije prsten `CBLog`
 
 - **Element:** zapis događaja
 - **NetGen:** `NapuniCBLog` drži 40 redova (`Class1.vb` 76–82). Greška zna ići u `spNetGenErrorLog`.
@@ -420,38 +490,38 @@ Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i na
 - **Test:** `log-preskok`, `log-greska`
 - **PR:** #4, #9
 
-## R47 Upis i `jupiter2022` se ne šalju
+## R56 Upis i `jupiter2022` se ne šalju
 
 - **Element:** veza na bazu
-- **NetGen:** `insert`/`update`/`delete` idu na server. Produkcija zna biti `jupiter2022`.
+- **NetGen:** upis ide na server. Produkcija zna biti `jupiter2022`.
 - **Carpo.NetGen:** `SqlTekst.JeZabranaPisanja` zaustavi upis. `SpinVeza` odbije ime koje sadrži `jupiter2022`.
-- **Odluka:** namjerno odstupanje. Čitanje ide na `spin`.
+- **Odluka:** namjerno odstupanje.
 - **Test:** `zabrana-insert`, `ne-jupiter2022`
 - **PR:** #4
 
-## R48 TestShell crta `DataGridView`, ugovor je DevExpress niz
+## R57 TestShell crta `DataGridView`, ugovor je DevExpress niz
 
 - **Element:** prozor granule
 - **NetGen:** Janus `GridEX`.
-- **Carpo:** TestShell u `Podloga.cs` 79–111 crta `DataGridView` s NetGen defaultima. `MasterGrid.DxPostavke` je niz za DevExpress host.
-- **Odluka:** Carpo mehanika za crtež. Ponašanje ostaje NetGen.
+- **Carpo:** `Podloga.cs` 79–111 crta `DataGridView` s NetGen defaultima. `MasterGrid.DxPostavke` je niz za DevExpress host.
+- **Odluka:** Carpo mehanika za crtež.
 - **Test:** `dx-header-empty-select`
 - **PR:** #4, #9
 
-## R49 Ikona stabla nije `OrdersDetails16.ico`
+## R58 Zamjenska ikona umjesto `OrdersDetails16.ico`
 
-- **Element:** `TreeView2.ImageList`
-- **NetGen:** indeks 0, ključ `OrdersDetails16.ico` (`Form1.designer.vb` 575–579).
-- **Carpo.NetGen:** datoteke nema. `Podloga` stavi zamjensku sličicu 16×16 i drži indeks 0.
-- **Odluka:** Carpo mehanika za sliku.
+- **Element:** `ImageList2`
+- **NetGen:** ključ `OrdersDetails16.ico`, indeks 0 (`Form1.designer.vb` 575–579).
+- **Carpo.NetGen:** datoteke nema. `Podloga` stavi sličicu 16×16 i drži indeks 0. `ikonaid` na gridu nije ta slika.
+- **Odluka:** Carpo mehanika za sliku. Indeks ostaje 0.
 - **Test:** `stablo-prevod`
 - **PR:** #9
 
-## R50 `GroupTotals=Always` nije mapiran
+## R59 `GroupTotals=Always` nije mapiran
 
 - **Element:** master i detail grid
-- **NetGen:** dizajner stavi `GroupTotals=Always`. Svježi GridEX je `Never`.
-- **Carpo:** to svojstvo nije preneseno na DX footer.
+- **NetGen:** dizajner stavi `GroupTotals=Always`.
+- **Carpo:** to svojstvo nije preneseno.
 - **Odluka:** otvoreno.
 - **Test:** nema
 - **PR:** #4

@@ -278,6 +278,29 @@ namespace Carpo.NetGen.GridTest
             T("spin-v26", IspisMotora.Verzija() == "v26" && IspisMotora.Fallback() == "rptDevRepx", "");
             T("vrstadok-nije-forma", IspisMotora.JeVrstaDok(":vrstadokid-mpblagajnagla") && !IspisMotora.JeVrstaDok("FILTERFORM"), "");
             T("multiselect-prije-ispisa", IspisMotora.BriseTemp("MULTISELECTISPIS_FORM") && !IspisMotora.BriseTemp("ISPIS_FORM"), "");
+            T("web-url-upper", Rijetke.WebAdresa("http://a", "x") == "HTTP://A", "");
+            T("web-refresh-nije", Rijetke.WebAdresa(null, "refresh") == "" && Rijetke.WebAdresa(null, "http://arkod") == "http://arkod", "");
+            T("pic-location-upper", Rijetke.LokacijaSlike(@"\\server\a.jpg") == @"\\SERVER\A.JPG" && Rijetke.HttpLoad("http://a") && Rijetke.Stretch() == "stretch", "");
+            T("pic-http-load", Rijetke.HttpLoad("https://a") && !Rijetke.HttpLoad(@"C:\a.jpg"), "");
+            T("nextform-prva", Rijetke.Sljedeca("IZMJENI_FORM") == "IZMJENI_FORM" && Rijetke.DozvolaIme("INSERT_FORM", "IZMJENI_FORM") == "INSERT_FORM", "");
+            T("clipboard-filter", Rijetke.Clipboard("FILTERFORM", "") && !Rijetke.Clipboard("FILTERFORM", "false"), "");
+            T("clipboard-pad", !Rijetke.ClipboardPadStvaraTablicu(), "");
+            T("grid-dijalog-stupac1", Rijetke.SkriveniSelector() == 1, "");
+            T("skip-default-load", Rijetke.PreskociPocetno("TRUE") && !Rijetke.PreskociPocetno("false"), "");
+            T("setdefaults-hash", Rijetke.SetDefaults("select 1#select 2").Length == 2, "");
+            var dijStablo = new Stablo();
+            dijStablo.NaDijalogu = true;
+            dijStablo.Ucitaj(Projekt("TREE", "yearmonth:FORM"), null);
+            T("stablo-dijalog-yearmonth", dijStablo.Stanje.Korijen.Count == 0, dijStablo.Stanje.Korijen.Count.ToString());
+            var tab = new DataTable();
+            tab.Columns.Add("a"); tab.Columns.Add("b"); tab.Columns.Add("c"); tab.Columns.Add("d");
+            tab.Rows.Add("1", "", "Klase", "abc");
+            dijStablo.Jezik = "eng";
+            dijStablo.Rjecnik = new Dictionary<string, string>();
+            dijStablo.Rjecnik["Klase"] = "Classes";
+            dijStablo.Ucitaj(ProjektS("TREE", "spTreeX:FORMA", "TREETRANSLATE", "true"), delegate (string q) { return tab; });
+            T("stablo-dijalog-tag", dijStablo.Stanje.Korijen.Count == 1 && dijStablo.Stanje.Korijen[0].Tag == "abc" && dijStablo.Stanje.Korijen[0].Natpis == "Klase" && dijStablo.Stanje.Korijen[0].Ikona == 0, dijStablo.Stanje.Korijen.Count == 0 ? "" : dijStablo.Stanje.Korijen[0].Tag);
+            T("ikona-nije-grid", dijStablo.Stanje.Korijen[0].Ikona == 0, "");
         }
 
         private static void KomandeTestovi()

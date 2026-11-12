@@ -45,6 +45,7 @@ namespace Carpo.NetGen.Grid
         public StabloStanje Stanje = new StabloStanje();
         public SqlKontekst Kontekst = new SqlKontekst();
         public string ImeXml = "";
+        public bool NaDijalogu;
         public string Jezik = "";
         public Dictionary<string, string> Rjecnik;
 
@@ -94,7 +95,10 @@ namespace Carpo.NetGen.Grid
                 string lijevo = seg.Substring(0, kolon);
                 string desno = seg.Substring(kolon + 1);
                 if (string.Equals(lijevo.Trim(), "yearmonth", StringComparison.OrdinalIgnoreCase))
-                    GodinaMjesec(desno.Trim());
+                {
+                    if (!NaDijalogu)
+                        GodinaMjesec(desno.Trim());
+                }
                 else if (lijevo.ToLowerInvariant().Contains("tree"))
                     IzStore(lijevo, desno, citaj);
                 else
@@ -249,10 +253,10 @@ namespace Carpo.NetGen.Grid
             var c = new Cvor();
             c.Oznaka = Celija(dr, 0);
             string natpis = Celija(dr, 2);
-            c.Natpis = Stanje.Prevedi ? Prevedi(natpis) : natpis;
+            c.Natpis = !NaDijalogu && Stanje.Prevedi ? Prevedi(natpis) : natpis;
             c.Ikona = 0;
             string t = dr.Table.Columns.Count > 3 ? Celija(dr, 3) : "";
-            if (t.IndexOf(':') >= 0)
+            if (NaDijalogu || t.IndexOf(':') >= 0)
                 c.Tag = t;
             else
                 c.Tag = t + ":" + imeForme;
