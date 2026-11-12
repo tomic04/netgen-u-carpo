@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Globalization;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
+using Carpo.NetGen.Kontrole;
 using Carpo.NetGen.Model;
 using Carpo.NetGen.Xml;
 
@@ -187,6 +188,7 @@ namespace Carpo.NetGen.TestHooks
                 s["cb." + par.Key] = "ima";
 
             DodajKomande(s);
+            DodajKontrole(p, s);
             return new Pogled { Izvedeno = true, Stavke = s };
         }
 
@@ -248,6 +250,118 @@ namespace Carpo.NetGen.TestHooks
             s["cancelClose"] = zatvori.Button2 ? "button2" : "";
             var ostani = Lanac.Izvrsi("OKSTAY", true, null);
             s["okStay"] = ostani.Ostaje && !ostani.Zatvara ? "ne-zatvara" : "";
+        }
+
+        private static void DodajKontrole(NgProject p, Dictionary<string, string> s)
+        {
+            if (p == null)
+                return;
+            var sve = new List<NgControl>();
+            if (p.KontroleIzvanForme != null)
+                sve.AddRange(p.KontroleIzvanForme);
+            if (p.Forme != null)
+            {
+                for (int i = 0; i < p.Forme.Count; i++)
+                {
+                    if (p.Forme[i].Kontrole != null)
+                        sve.AddRange(p.Forme[i].Kontrole);
+                }
+            }
+            NgControl mjesta = null;
+            for (int i = 0; i < sve.Count; i++)
+            {
+                NgControl k = sve[i];
+                string ime = k.Name ?? "";
+                if (k.Grana == NgGrana.StatusStrip && string.Equals(ime, "s1", StringComparison.OrdinalIgnoreCase)
+                    && k.Atributi.Ima("TEXT1"))
+                    s["status.s1"] = Ponasanje.StatusTekst(k.Atributi.Vrijednost("TEXT1")) == (k.Atributi.Vrijednost("TEXT1") ?? "").ToUpperInvariant()
+                        ? "TEXT1-upper" : "";
+                if (k.Grana == NgGrana.Number && string.Equals(ime, "iznos", StringComparison.OrdinalIgnoreCase))
+                    s["number.iznos"] = Ponasanje.BrojParametar("");
+                if (k.Grana == NgGrana.Number && string.Equals(ime, "Rabat", StringComparison.OrdinalIgnoreCase))
+                    s["number.Rabat"] = Ponasanje.BrojParametar("");
+                if (k.Grana == NgGrana.MultiDrop && string.Equals(ime, "kntplanaid", StringComparison.OrdinalIgnoreCase))
+                    s["multidrop.kntplanaid"] = "tilde";
+                if (k.Grana == NgGrana.Date && string.Equals(ime, "datumod", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(AttrK(k, "DEFAULT"), "firstdayofmonth", StringComparison.OrdinalIgnoreCase))
+                    s["date.datumod"] = Ponasanje.DatumPocetni("firstdayofmonth", DateTime.Today.Year, DateTime.Today.Month);
+                if (k.Grana == NgGrana.Date && string.Equals(ime, "datumdo", StringComparison.OrdinalIgnoreCase)
+                    && k.Atributi.Ima("DEFALUT") && !k.Atributi.Ima("DEFAULT"))
+                    s["date.datumdo"] = "nema-default";
+                if (k.Grana == NgGrana.Radio && string.Equals(ime, "rbtnKumulativ", StringComparison.OrdinalIgnoreCase))
+                    s["radio.rbtnKumulativ"] = "1-0";
+                if (k.Grana == NgGrana.Check && string.Equals(ime, "PoSkladistu", StringComparison.OrdinalIgnoreCase))
+                    s["check.PoSkladistu"] = "checkstate";
+                if (k.Grana == NgGrana.Date && string.Equals(ime, "datum", StringComparison.OrdinalIgnoreCase)
+                    && (k.TypeRaw ?? "").ToLowerInvariant().IndexOf("datetiem", StringComparison.Ordinal) >= 0)
+                    s["date.datum"] = "date";
+                if (string.Equals(ime, "pakovanje", StringComparison.OrdinalIgnoreCase)
+                    && k.Atributi.Ima("WUDTH") && !k.Atributi.Ima("WIDTH"))
+                    s["width.pakovanje"] = "nema";
+                if (k.Grana == NgGrana.Date && string.Equals(ime, "datugovorvrijedido", StringComparison.OrdinalIgnoreCase)
+                    && Ponasanje.AllowEmptyJeTrue(AttrK(k, "SHOWCHECKBOX")) && !k.Atributi.Ima("CHECKED"))
+                    s["date.datugovorvrijedido"] = Ponasanje.DatumParametar(true, null, DateTime.Today);
+                if (k.Grana == NgGrana.Combo && Ponasanje.AllowEmptyJeTrue(AttrK(k, "TRANSLATE")) && !s.ContainsKey("combo.translate"))
+                    s["combo.translate"] = "stupac1";
+                if (string.Equals(ime, "mjestaid", StringComparison.OrdinalIgnoreCase))
+                    mjesta = k;
+                string sql = (AttrK(k, "ONLOSTFOCUS") ?? "") + " " + (AttrK(k, "ONCLICK") ?? "");
+                string cilj = ImeRefresha(sql);
+                if (cilj.Length > 0)
+                {
+                    NgControl ciljK = Nadji(sve, cilj);
+                    if (ciljK != null && ciljK.Grana == NgGrana.Combo)
+                        s["combo.refresh." + cilj] = Ponasanje.ComboOsvjezavanje("refresh", Ponasanje.AllowEmptyJeTrue(AttrK(ciljK, "ALLOWEMPTY")));
+                }
+            }
+            if (mjesta != null && !s.ContainsKey("combo.refresh.mjestaid")
+                && Ponasanje.AllowEmptyJeTrue(AttrK(mjesta, "ALLOWEMPTY")))
+                s["combo.refresh.mjestaid"] = Ponasanje.ComboOsvjezavanje("refresh", true);
+
+            string naredbe = (p.Popup ?? "") + " " + (p.Buttons ?? "");
+            if (naredbe.IndexOf("ASSEMBLYLOAD(", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                var poziv = Ponasanje.AssemblyShell("id", "operater", "konekcija", "zadnji", "parametri", true, true);
+                var pad = Ponasanje.AssemblyShell("id", "operater", "konekcija", "zadnji", "parametri", false, true);
+                s["assemblyload.args"] = poziv.Argumenata == 5 ? "shell-pet" : "";
+                s["assemblyload.greska"] = pad.Prekinuto ? "prekini" : "";
+            }
+        }
+
+        private static NgControl Nadji(List<NgControl> sve, string ime)
+        {
+            for (int i = 0; i < sve.Count; i++)
+            {
+                if (string.Equals(sve[i].Name, ime, StringComparison.OrdinalIgnoreCase))
+                    return sve[i];
+            }
+            return null;
+        }
+
+        private static string ImeRefresha(string sql)
+        {
+            if (string.IsNullOrEmpty(sql))
+                return "";
+            int p = sql.IndexOf("refresh", StringComparison.OrdinalIgnoreCase);
+            if (p < 0)
+                return "";
+            int a = sql.IndexOf(" as ", p, StringComparison.OrdinalIgnoreCase);
+            if (a < 0)
+                return "";
+            string ostatak = sql.Substring(a + 4).Trim();
+            int kraj = 0;
+            while (kraj < ostatak.Length && (char.IsLetterOrDigit(ostatak[kraj]) || ostatak[kraj] == '_'))
+                kraj++;
+            if (kraj == 0)
+                return "";
+            return ostatak.Substring(0, kraj);
+        }
+
+        private static string AttrK(NgControl k, string ime)
+        {
+            if (k == null || k.Atributi == null || !k.Atributi.Ima(ime))
+                return null;
+            return k.Atributi.Vrijednost(ime);
         }
 
         private static string Spoj()

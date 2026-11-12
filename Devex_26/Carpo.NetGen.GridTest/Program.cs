@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using System.IO;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
+using Carpo.NetGen.Kontrole;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Xml;
 
@@ -223,6 +224,44 @@ namespace Carpo.NetGen.GridTest
             T("log-greska", NgDnevnik.Zapisi.Count > 0 && NgDnevnik.Zapisi[NgDnevnik.Zapisi.Count - 1].Razina == "Error", "");
         }
 
+        private static void KontroleTestovi()
+        {
+            T("datum-mjesec-0", Ponasanje.DatumPocetni("firstdayoflastmonth", 2026, 1) == "01.0.2026", Ponasanje.DatumPocetni("firstdayoflastmonth", 2026, 1));
+            T("datum-today-literal", Ponasanje.DatumPocetni("TODAY", 2026, 11) == "today", "");
+            T("datum-firstday", Ponasanje.DatumPocetni("firstdayofmonth", 2026, 11) == "01.11.2026"
+                && Ponasanje.DatumPocetni("firstdayofyear", 2026, 6) == "01.01.2026", "");
+            T("datum-checkbox-null", Ponasanje.DatumParametar(true, null, new DateTime(2026, 1, 2)) == "null", "");
+            T("datum-nije-allownull", Ponasanje.Dx("date").IndexOf("AllowNull=false", StringComparison.Ordinal) >= 0, "");
+            T("cur-isti-broj", Ponasanje.DxBroj() == Ponasanje.Dx("number") && Ponasanje.BrojParametar("") == "0", "");
+            T("combo-prazan-je-1", Ponasanje.ComboParametar(false, true) == "1" && Ponasanje.ComboParametar(true, true) == "null", "");
+            T("allow-prazan-nije", !Ponasanje.AllowEmptyJeTrue("") && !Ponasanje.AllowEmptyJeTrue("FALSE") && Ponasanje.AllowEmptyJeTrue("TRUE"), "");
+            T("multidrop-ne-ubacuje", !Ponasanje.MultidropUbacujePrazanRed(), "");
+            T("trazilica-dbo-nije-sp", Ponasanje.TrazilicaOblik("dbo.spNesto @a=1") == "hash"
+                && Ponasanje.TrazilicaOblik("spX") == "sp" && Ponasanje.TrazilicaOblik("select 1") == "select", "");
+            string like = Ponasanje.TrazilicaSql("roba#robaid#userid%#!cast(userid as varchar)#%naziv%", "12");
+            T("trazilica-like", like.IndexOf("userid like '12%'", StringComparison.Ordinal) >= 0
+                && like.IndexOf("naziv like '%12%'", StringComparison.Ordinal) >= 0
+                && like.IndexOf("cast(userid as varchar) like", StringComparison.Ordinal) < 0, like);
+            T("combo-refresh", Ponasanje.ComboOsvjezavanje("refresh", true) == "refresh+allowempty", "");
+            T("combo-stupci", Ponasanje.Dx("combo").IndexOf("ValueMember=stupac0", StringComparison.Ordinal) >= 0, "");
+            var tipfel = new Dictionary<string, string>();
+            tipfel["WUDTH"] = "1500";
+            tipfel["TREE33"] = "Danas:FORM";
+            tipfel["DEFALUT"] = "today";
+            tipfel["GRUOPBYBOXVISIBLE"] = "";
+            T("tipfel-ne-popravlja", Ponasanje.Procitano(tipfel, "WIDTH") == null
+                && Ponasanje.Procitano(tipfel, "TREE") == null
+                && Ponasanje.Procitano(tipfel, "DEFAULT") == null
+                && Ponasanje.Procitano(tipfel, "GROUPBYBOXVISIBLE") == null, "");
+            T("label-ne-salje", !Ponasanje.LabelSaljeParametar(), "");
+            T("status-upper", Ponasanje.StatusTekst("abc") == "ABC", "");
+            var ok = Ponasanje.AssemblyShell("1", "7", "cs", "select 1", "@a=1", true, true);
+            var lose = Ponasanje.AssemblyShell("1", "7", "cs", "select 1", "@a=1", false, true);
+            T("assembly-shell-pet", ok.Argumenata == 5 && ok.ZadnjiSql == "select 1" && ok.ParametriGrida == "@a=1" && !ok.Prekinuto, "");
+            T("assembly-prekine", lose.Prekinuto, "");
+            T("datetiem-je-datum", NgType.Odredi("datetiem") == NgGrana.Date && NgType.Odredi("CMEditVB6.CurMEdit") == NgGrana.Number, "");
+        }
+
         private static void KomandeTestovi()
         {
             T("sp-lijepi-parametre", Lanac.Lijepi("spKultureNGAzur @Action=0,", "@Cijena=''")
@@ -255,6 +294,7 @@ namespace Carpo.NetGen.GridTest
             T("foreach-podloga", podloga.Foreach.Length == 0 && podloga.Odigrano.Count == 0, "");
             T("foreach-plavi", Lanac.Izvrsi("FOREACHBLUEROW(x)#spAzur", true, null).Foreach == "plavi", "");
             T("refresh-sql", Lanac.RefreshSql("ime") == "select 'refresh' as ime" && Lanac.RefreshControl() == "select refresh", "");
+            KontroleTestovi();
         }
 
         private static void StabloTestovi()
