@@ -33,7 +33,7 @@ function NadjiXml([string]$ime) {
     return $hit.FullName
 }
 
-$cs = "Server=localhost;Database=spin;Integrated Security=True;Pooling=false;Connect Timeout=15;Application Name=CarpoNetGen-otvaranje"
+$cs = "Server=localhost;Database=spin;Integrated Security=True;TrustServerCertificate=True;Pooling=false;Connect Timeout=15;Application Name=CarpoNetGen-otvaranje"
 $conn = New-Object System.Data.SqlClient.SqlConnection $cs
 $conn.Open()
 $kreirano = New-Object System.Collections.Generic.List[string]

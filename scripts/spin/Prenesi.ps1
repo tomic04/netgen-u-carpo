@@ -24,7 +24,7 @@ $red = @(
 )
 
 function Veza([string]$server, [string]$baza, [string]$ime) {
-    $cs = "Server=$server;Database=$baza;Integrated Security=True;Pooling=false;Connect Timeout=15;Application Name=$ime"
+    $cs = "Server=$server;Database=$baza;Integrated Security=True;TrustServerCertificate=True;Pooling=false;Connect Timeout=15;Application Name=$ime"
     $c = New-Object System.Data.SqlClient.SqlConnection $cs
     $c.Open()
     return $c
