@@ -200,11 +200,12 @@ namespace Carpo.TestShell
                         if (!string.IsNullOrEmpty(loader.ZadnjaGreska))
                             MessageBox.Show(loader.ZadnjaGreska, "Carpo.NetGen");
                         else
-                            MessageBox.Show(
-                                "NetGen XML je učitan. M0 ne otvara formu.\r\n"
-                                + "Obrazac koji M1 crta prvi: lijevo stablo + master-detail.\r\n"
-                                + loader.Sazetak,
-                                "Carpo.NetGen");
+                        {
+                            var forma = new Carpo.NetGen.Ui.Podloga();
+                            if (!forma.Prikazi(xml, server, database, operateriId))
+                                MessageBox.Show(forma.Text, "Carpo.NetGen");
+                            forma.Show(this);
+                        }
                     }
                     else
                     {

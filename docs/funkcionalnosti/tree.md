@@ -40,7 +40,7 @@ Dizajner `Form1.designer.vb` 572–581, plus kod kad se drvo puni (4336–4339).
 
 ## Log
 
-`NgDnevnik`: „Idem puniti drvo“, „Punjenje drveta sa storom“, SQL stora, `TREE PROBLEM`, `AfterSelect`. Isti Carpo logger, Ctrl+F11.
+`NgDnevnik`: „Idem puniti drvo“, „Punjenje drveta sa storom“, SQL stora, `TREE PROBLEM`, `AfterSelect`. Isti Carpo logger. Prozor `Podloga` na Ctrl+F11 otvara `Carpo.Core.Log.Log`.
 
 ## Otvoreno
 
