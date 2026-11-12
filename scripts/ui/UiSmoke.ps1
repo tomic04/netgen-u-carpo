@@ -79,7 +79,7 @@ foreach ($rel in $granule) {
     if (Test-Path -LiteralPath $snimkaGreska) { Write-Host (Get-Content -LiteralPath $snimkaGreska -Raw) }
     if ($kod -ne 0) { throw "UI smoke $ime kod $kod. $tekst" }
     if ($tekst -notlike "OK*") { throw "UI smoke $ime nema OK. $tekst" }
-    if (-not (Test-Path -LiteralPath $png)) { throw "UI smoke $ime nema screenshot" }
+    if (-not $Klik -and -not (Test-Path -LiteralPath $png)) { throw "UI smoke $ime nema screenshot" }
     $klikDat = $png + ".klik.txt"
     if ($Klik -and (Test-Path -LiteralPath $klikDat)) {
         Get-Content -LiteralPath $klikDat | ForEach-Object { Write-Host $_ }

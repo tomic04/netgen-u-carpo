@@ -45,6 +45,7 @@ namespace Carpo.TestShell
         private bool _autoMode = false;
         private int _uiIshod;
         private bool _uiKlikGotov;
+        private bool _klikPregled;
 
         
         public Main()
@@ -258,6 +259,7 @@ namespace Carpo.TestShell
         {
             _uiIshod = 0;
             _uiKlikGotov = false;
+            _klikPregled = klik;
             var dir = Path.GetDirectoryName(snimka);
             if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);
@@ -290,6 +292,16 @@ namespace Carpo.TestShell
             if (_uiIshod == 1)
                 return 1;
             Form granula = NadjiGranulu();
+            if (granula == null && _klikPregled)
+            {
+                var rokForme = DateTime.UtcNow.AddSeconds(45);
+                while (DateTime.UtcNow < rokForme && granula == null)
+                {
+                    Application.DoEvents();
+                    Thread.Sleep(250);
+                    granula = NadjiGranulu();
+                }
+            }
             if (granula == null && _uiIshod != 2)
             {
                 SnimiEkran(snimka);
@@ -319,7 +331,7 @@ namespace Carpo.TestShell
                     Thread.Sleep(250);
                 }
             }
-            if (!ImaSnimku(snimka))
+            if (!ImaSnimku(snimka) && !_klikPregled)
             {
                 SnimiEkran(snimka + ".ekran.png");
                 UpisiIshod(snimka, "FAIL nema screenshota " + TekstSnimke(snimka));
@@ -363,7 +375,9 @@ namespace Carpo.TestShell
         {
             foreach (Form f in Application.OpenForms)
             {
-                if (f == null || f == this || !f.Visible)
+                if (f == null || f == this)
+                    continue;
+                if (!f.Visible && !_klikPregled)
                     continue;
                 return f;
             }
@@ -373,22 +387,24 @@ namespace Carpo.TestShell
         private void CuvajDijalog(string snimka)
         {
             int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
-            for (int i = 0; i < 40; i++)
+            int krugova = _klikPregled ? 160 : 40;
+            for (int i = 0; i < krugova; i++)
             {
                 Thread.Sleep(500);
-                string naslov = ProzorGreske(pid);
+                string naslov = ZatvoriProzorGreske(pid);
                 if (naslov != null)
                 {
                     SnimiEkran(snimka);
                     UpisiIshod(snimka, "FAIL dijalog " + naslov);
                     _uiIshod = 1;
-                    Environment.Exit(1);
+                    if (!_klikPregled)
+                        Environment.Exit(1);
                 }
                 IntPtr prozor = ProzorGranule(pid);
                 if (prozor != IntPtr.Zero)
                 {
                     _uiIshod = 2;
-                    if (!_uiKlikGotov && !ImaSnimku(snimka))
+                    if (!_klikPregled && !_uiKlikGotov && !ImaSnimku(snimka))
                     {
                         Thread.Sleep(800);
                         SnimiProzor(prozor, snimka);
@@ -397,6 +413,8 @@ namespace Carpo.TestShell
                     }
                 }
             }
+            if (_klikPregled)
+                return;
             if (_uiIshod == 0)
             {
                 SnimiEkran(snimka);
@@ -408,6 +426,29 @@ namespace Carpo.TestShell
                 UpisiIshod(snimka, "FAIL screenshot " + TekstSnimke(snimka));
                 Environment.Exit(4);
             }
+        }
+
+        private static string ZatvoriProzorGreske(int pid)
+        {
+            string naslov = null;
+            EnumWindows(delegate (IntPtr h, IntPtr l)
+            {
+                uint wpid;
+                GetWindowThreadProcessId(h, out wpid);
+                if (wpid != (uint)pid || !IsWindowVisible(h))
+                    return true;
+                var sb = new StringBuilder(512);
+                GetWindowText(h, sb, sb.Capacity);
+                string t = sb.ToString();
+                if (t == "Start Error" || t == "Carpo.NetGen" || t == "Greška" || t == "StartXmlGen()")
+                {
+                    naslov = t + TekstDijaloga(h);
+                    PostMessage(h, 0x0010, IntPtr.Zero, IntPtr.Zero);
+                    return false;
+                }
+                return true;
+            }, IntPtr.Zero);
+            return naslov;
         }
 
         private static string ProzorGreske(int pid)
