@@ -1,6 +1,6 @@
 # Razlike NetGen / Carpo
 
-Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i nastavi od zadnjeg `R`. R01–R53 su QA (#16, #17, #19). Carpo.NetGen od R54 dopisuje odluku, test i PR u istom PR-u. Zadnji broj na ovoj grani je R63.
+Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i nastavi od zadnjeg `R`. R01–R53 su QA (#16, #17, #19). Carpo.NetGen od R54 dopisuje odluku, test i PR u istom PR-u. Zadnji broj na ovoj grani je R64.
 
 ## Odluka u Carpo.NetGen
 
@@ -561,3 +561,12 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 - **Odluka:** namjerno odstupanje, izgled. SQL, parametri i lanac se ne mijenjaju. Klik gumba zatvara dijalog; lanac s tipke još nije spojen. Combo i grid na dijalogu ne šalju vlastiti SQL pri otvaranju.
 - **Test:** `raspored-auto`, `raspored-zvjezdica`, `raspored-width`, `raspored-wudth`, `editor-grana`
 - **PR:** dijalog
+
+## R64 Lijeva strana i detail imaju DevExpress kartice
+
+- **Element:** `TabControl1` / `TabControl2` na podlozi
+- **NetGen:** `TabControl1` drži `Programs` (`TreeView1`) i `Explorer` (`ComboBox1` + `TreeView2`). Visina zaglavlja je 0 (`ItemSize` 56×0), pa se natpis kartice ne vidi. Kad stablo ima čvorove, bira se kartica 1. `TabControl2` na detailu ima `Stavke` i `DMS`; `DMS` se skine ako `strDMSDet` nije postavljen (`Form1.vb` 2431–2436).
+- **Carpo:** `XtraTabControl`. Vide se natpisi `Programs`, `Explorer` i `Stavke`. `Programs` je prazna. `DMS` se ne crta. Combo je `LookUpEdit`, stablo `TreeList`, detail grid `GridView`.
+- **Odluka:** namjerno odstupanje, izgled. Zaglavlje kartice je vidljivo. Odabir `Explorer` i sakriveni `DMS` ostaju NetGen.
+- **Test:** nema. Korisnik vidi kartice na KntKompVerizne.
+- **PR:** otvaranje

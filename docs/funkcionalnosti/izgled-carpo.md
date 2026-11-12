@@ -10,7 +10,7 @@ Janus kontrole (grid, stablo) zamjenjuju se DevExpressom. Sve ostalo što se vid
 - [x] Skin: `BonusSkins.Register` i `SkinManager.EnableFormSkins`, kao `Base.Start`.
 - [x] Gumbi `CMDx` / `BUTTONS` su `BarButtonItem` u grupi Naredbe, istim redom i natpisom. Poznate riječi (unesi, izmjeni, obriši, ispis, osvježi) dobiju DevExpress sliku Add/Edit/Delete/Print/Refresh.
 - [x] Master i detail su `GridControl` / `GridView`. Auto-filter red je uključen kao u Carpu. Širina, skriveni stupac, sort, zabrana izmjene i checkbox selekcija ostaju NetGen.
-- [x] Stablo je `TreeList`. Combo na podlozi je `LookUpEdit`.
+- [x] Stablo je `TreeList` na kartici `Explorer` (`XtraTabControl`). Druga kartica je `Programs` (prazna, TestShell nema stablo granula). Detail je kartica `Stavke`. DMS kartica se ne dodaje.
 - [x] Dijalozi su `XtraForm`. Editor po tipu: `TextEdit`, `SpinEdit`, `ButtonEdit`, `DateEdit`, `LookUpEdit`, `CheckedComboBoxEdit`, `CheckEdit`, `CheckEdit` s `RadioGroupIndex` (svaki RADIO drži svoj `TOP`/`LEFT`), `SimpleButton`, `LabelControl`, `GroupControl`, `PanelControl`, `PictureEdit`, `GridControl`, `TreeList`. Raspored je NetGen `SrediKontrolu` (`/ 14`).
 - [x] Status na dijalogu je `LabelControl` na dnu. WebBrowser ostaje WinForms jer DevExpress nema preglednik.
 - [ ] Klik gumba na dijalogu još ne vrti lanac (lanac je u `Lanac`, kuka ga već pokriva). Combo i grid na dijalogu ne šalju vlastiti SQL pri otvaranju.

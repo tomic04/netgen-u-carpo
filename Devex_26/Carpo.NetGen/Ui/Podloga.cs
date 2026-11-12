@@ -14,6 +14,7 @@ using DevExpress.XtraBars.Ribbon;
 using DevExpress.XtraEditors;
 using DevExpress.XtraGrid;
 using DevExpress.XtraGrid.Views.Grid;
+using DevExpress.XtraTab;
 using DevExpress.XtraTreeList;
 using DevExpress.XtraTreeList.Nodes;
 
@@ -27,6 +28,8 @@ namespace Carpo.NetGen.Ui
     {
         private readonly SplitContainerControl _split;
         private readonly SplitContainerControl _detailSplit;
+        private readonly XtraTabControl _tabLijevo;
+        private readonly XtraTabControl _tabDetalj;
         private readonly TreeList _drvo;
         private readonly LookUpEdit _combo;
         private readonly GridControl _grid;
@@ -104,17 +107,35 @@ namespace Carpo.NetGen.Ui
             _detailPogled.GridControl = _detailGrid;
             PodesiPogled(_detailPogled, false);
 
+            var stavke = new XtraTabPage();
+            stavke.Text = "Stavke";
+            stavke.Controls.Add(_detailGrid);
+            _tabDetalj = new XtraTabControl();
+            _tabDetalj.Dock = DockStyle.Fill;
+            _tabDetalj.TabPages.Add(stavke);
+
             _detailSplit = new SplitContainerControl();
             _detailSplit.Dock = DockStyle.Fill;
             _detailSplit.Horizontal = true;
             _detailSplit.Panel1.Controls.Add(_grid);
-            _detailSplit.Panel2.Controls.Add(_detailGrid);
+            _detailSplit.Panel2.Controls.Add(_tabDetalj);
+
+            var programi = new XtraTabPage();
+            programi.Text = "Programs";
+            var explorer = new XtraTabPage();
+            explorer.Text = "Explorer";
+            explorer.Controls.Add(_drvo);
+            explorer.Controls.Add(_combo);
+            _tabLijevo = new XtraTabControl();
+            _tabLijevo.Dock = DockStyle.Fill;
+            _tabLijevo.TabPages.Add(programi);
+            _tabLijevo.TabPages.Add(explorer);
+            _tabLijevo.SelectedTabPage = explorer;
 
             _split = new SplitContainerControl();
             _split.Dock = DockStyle.Fill;
             _split.Horizontal = false;
-            _split.Panel1.Controls.Add(_drvo);
-            _split.Panel1.Controls.Add(_combo);
+            _split.Panel1.Controls.Add(_tabLijevo);
             _split.Panel2.Controls.Add(_detailSplit);
             Controls.Add(_split);
             if (ribbonControl1 != null)
@@ -210,6 +231,8 @@ namespace Carpo.NetGen.Ui
             else
             {
                 _split.PanelVisibility = SplitPanelVisibility.Both;
+                if (_tabLijevo.TabPages.Count > 1)
+                    _tabLijevo.SelectedTabPageIndex = 1;
                 int d = _stablo.Stanje.Splitter;
                 if (d > 40 && d < Width - 120)
                     _split.SplitterPosition = d;

@@ -33,7 +33,10 @@ namespace Carpo.NetGen.Granule
                     continue;
                 redovi.Add(Otvori(root, indeks, p));
             }
-            string tekst = Izvjestaj(redovi);
+            string tekst = Izvjestaj("ssMeni NetGenDLL", "Samo citanje. Upit je `asm:NetGenDLL.loader` i `asm:NetGenDLL.frm`. Operater je 7. Timeout naredbe je 12 s. AOP i dalje šalje `@id='null'` jer NetGen `Node` kreće kao `\"null\"` i odabir čvora je komentar.", redovi);
+            var repo = Repo(root);
+            string tekstRepo = Izvjestaj("XML u repou", "Svaka NetGen datoteka pod `definitions/netgen`. Isti uvjeti. `nema-xml` ovdje nema.", repo);
+            tekst = tekst + "\n" + tekstRepo;
             Console.WriteLine(tekst);
             if (!string.IsNullOrWhiteSpace(izlaz))
             {
@@ -103,46 +106,7 @@ namespace Carpo.NetGen.Granule
                 r.Greska = ucitano.Greska ?? "XML";
                 return r;
             }
-            var g = new MasterGrid();
-            g.Kontekst.OperaterId = "7";
-            g.Ucitaj(ucitano.Projekt, null);
-            g.Stanje.TimeoutSekundi = 12;
-            if (g.Stanje.Odluka == "salji" && !g.Stanje.BlokiranoPisanje)
-                g.IzvrsiCitanje(Citanje.Spoj);
-            r.Odluka = g.Stanje.Odluka ?? "";
-            if (!string.IsNullOrEmpty(g.Stanje.SqlGreska))
-            {
-                r.Uzrok = Uzrok(g.Stanje.SqlGreska);
-                r.Greska = Skrati(g.Stanje.Poruka ?? g.Stanje.SqlGreska);
-                r.Sql = Skrati(g.Stanje.SqlZaSlanje);
-                IzmjeriStablo(ucitano.Projekt, r);
-                return r;
-            }
-            if (g.Stanje.BlokiranoPisanje)
-            {
-                r.Uzrok = "upis-blokiran";
-                r.Greska = Skrati(g.Stanje.IzvorSql);
-                return r;
-            }
-            if (g.Stanje.OtvaraFormu)
-            {
-                r.Uzrok = "forma";
-                r.Greska = "ONLOAD je forma " + (g.Stanje.ImeForme ?? "");
-                return r;
-            }
-            if (g.Stanje.Odluka != "salji")
-            {
-                r.Uzrok = "nema-sql";
-                r.Greska = g.Stanje.Odluka ?? "prazno";
-                r.Otvoreno = true;
-                IzmjeriStablo(ucitano.Projekt, r);
-                return r;
-            }
-            r.Otvoreno = true;
-            r.Redova = g.Stanje.Tablica == null ? 0 : g.Stanje.Tablica.Rows.Count;
-            r.Uzrok = "otvoreno";
-            IzmjeriStablo(ucitano.Projekt, r);
-            return r;
+            return Izmjeri(ucitano.Projekt, r);
         }
 
         private static void IzmjeriStablo(Carpo.NetGen.Model.NgProject projekt, Red r)
@@ -167,8 +131,153 @@ namespace Carpo.NetGen.Granule
                 r.Korijena = st.Stanje.Korijen.Count;
         }
 
+        private static void Forma(Carpo.NetGen.Model.NgProject projekt, MasterGrid master, Red r)
+        {
+            string ime = master.Stanje.ImeForme ?? "";
+            int hash = ime.IndexOf('#');
+            if (hash >= 0)
+                ime = ime.Substring(0, hash);
+            ime = ime.Trim();
+            Carpo.NetGen.Model.NgForm forma = null;
+            if (projekt.Forme != null)
+            {
+                for (int i = 0; i < projekt.Forme.Count; i++)
+                {
+                    if (string.Equals(projekt.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
+                    {
+                        forma = projekt.Forme[i];
+                        break;
+                    }
+                }
+            }
+            if (forma == null)
+            {
+                r.Uzrok = "nema-forme";
+                r.Greska = "nema forme " + ime;
+                return;
+            }
+            string on = (forma.OnLoad ?? "").Trim();
+            if (on.StartsWith(":", StringComparison.Ordinal) || on.Length == 0)
+            {
+                r.Otvoreno = true;
+                r.Uzrok = "forma";
+                r.Greska = "otvorena " + ime + (on.Length == 0 ? "" : ", ONLOAD forme je opet forma");
+                return;
+            }
+            var kontekst = new SqlKontekst();
+            kontekst.OperaterId = "7";
+            kontekst.Node = "null";
+            string sql = SqlTekst.Sredi(on, kontekst);
+            string odluka = SqlTekst.Odluka(sql);
+            if (odluka != "salji" || SqlTekst.JeZabranaPisanja(sql))
+            {
+                r.Otvoreno = true;
+                r.Uzrok = "forma";
+                r.Greska = "otvorena " + ime + ", sql " + (SqlTekst.JeZabranaPisanja(sql) ? "upis-blokiran" : odluka);
+                return;
+            }
+            string poruka;
+            DataTable t = CitajPoruku(sql, out poruka);
+            if (poruka != null)
+            {
+                r.Uzrok = Uzrok(poruka);
+                r.Greska = "forma " + ime + ": " + Skrati(poruka);
+                r.Sql = Skrati(sql);
+                return;
+            }
+            r.Otvoreno = true;
+            r.Uzrok = "forma";
+            r.Redova = t == null ? 0 : t.Rows.Count;
+            r.Greska = "otvorena " + ime;
+        }
+
+        private static List<Red> Repo(string root)
+        {
+            var redovi = new List<Red>();
+            string netgen = Path.Combine(root, "definitions", "netgen");
+            if (!Directory.Exists(netgen))
+                return redovi;
+            string[] fajlovi = Directory.GetFiles(netgen, "*.xml", SearchOption.AllDirectories);
+            Array.Sort(fajlovi, StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < fajlovi.Length; i++)
+            {
+                if (!NetGenXmlReader.JeNetGenProjekt(fajlovi[i]))
+                    continue;
+                string rel = fajlovi[i].Substring(netgen.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                redovi.Add(OtvoriDatoteku(fajlovi[i], rel));
+            }
+            return redovi;
+        }
+
+        private static Red OtvoriDatoteku(string fajl, string rel)
+        {
+            var r = new Red();
+            r.Parametar = rel;
+            r.TrazeniPut = rel;
+            r.Xml = fajl;
+            var ucitano = NetGenXmlReader.Ucitaj(fajl);
+            if (!ucitano.Uspjeh || ucitano.Projekt == null)
+            {
+                r.Uzrok = "xml";
+                r.Greska = ucitano.Greska ?? "XML";
+                return r;
+            }
+            return Izmjeri(ucitano.Projekt, r);
+        }
+
+        private static Red Izmjeri(Carpo.NetGen.Model.NgProject projekt, Red r)
+        {
+            var g = new MasterGrid();
+            g.Kontekst.OperaterId = "7";
+            g.Ucitaj(projekt, null);
+            g.Stanje.TimeoutSekundi = 12;
+            if (g.Stanje.Odluka == "salji" && !g.Stanje.BlokiranoPisanje)
+                g.IzvrsiCitanje(Citanje.Spoj);
+            r.Odluka = g.Stanje.Odluka ?? "";
+            if (!string.IsNullOrEmpty(g.Stanje.SqlGreska))
+            {
+                r.Uzrok = Uzrok(g.Stanje.SqlGreska);
+                r.Greska = Skrati(g.Stanje.Poruka ?? g.Stanje.SqlGreska);
+                r.Sql = Skrati(g.Stanje.SqlZaSlanje);
+                IzmjeriStablo(projekt, r);
+                return r;
+            }
+            if (g.Stanje.BlokiranoPisanje)
+            {
+                r.Uzrok = "upis-blokiran";
+                r.Greska = Skrati(g.Stanje.IzvorSql);
+                return r;
+            }
+            if (g.Stanje.OtvaraFormu)
+            {
+                IzmjeriStablo(projekt, r);
+                Forma(projekt, g, r);
+                return r;
+            }
+            if (g.Stanje.Odluka != "salji")
+            {
+                r.Uzrok = "nema-sql";
+                r.Greska = g.Stanje.Odluka ?? "prazno";
+                r.Otvoreno = true;
+                IzmjeriStablo(projekt, r);
+                return r;
+            }
+            r.Otvoreno = true;
+            r.Redova = g.Stanje.Tablica == null ? 0 : g.Stanje.Tablica.Rows.Count;
+            r.Uzrok = "otvoreno";
+            IzmjeriStablo(projekt, r);
+            return r;
+        }
+
         private static DataTable Citaj(string sql)
         {
+            string poruka;
+            return CitajPoruku(sql, out poruka);
+        }
+
+        private static DataTable CitajPoruku(string sql, out string poruka)
+        {
+            poruka = null;
             if (string.IsNullOrWhiteSpace(sql) || SqlTekst.JeZabranaPisanja(sql))
                 return null;
             try
@@ -184,8 +293,9 @@ namespace Carpo.NetGen.Granule
                     return dt;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                poruka = ex.Message;
                 return null;
             }
         }
@@ -270,14 +380,17 @@ namespace Carpo.NetGen.Granule
             return s;
         }
 
-        private static string Izvjestaj(List<Red> redovi)
+        private static string Izvjestaj(string naslov, string uvod, List<Red> redovi)
         {
             var po = new Dictionary<string, int>(StringComparer.Ordinal);
             int otvoreno = 0;
+            int greske = 0;
             for (int i = 0; i < redovi.Count; i++)
             {
                 if (redovi[i].Otvoreno)
                     otvoreno++;
+                else if (redovi[i].Uzrok != "nema-xml" && redovi[i].Uzrok != "nema-puta")
+                    greske++;
                 int n;
                 po.TryGetValue(redovi[i].Uzrok, out n);
                 po[redovi[i].Uzrok] = n + 1;
@@ -285,9 +398,9 @@ namespace Carpo.NetGen.Granule
             var kljucevi = new List<string>(po.Keys);
             kljucevi.Sort(delegate (string a, string b) { return po[b].CompareTo(po[a]); });
             var sb = new StringBuilder();
-            sb.Append("# Smoke spin: ssMeni NetGenDLL\n\n");
-            sb.Append("Samo citanje. Upit je `asm:NetGenDLL.loader` i `asm:NetGenDLL.frm`. Operater u kuki je 7. Timeout naredbe je 12 s.\n\n");
-            sb.Append("Ukupno ").Append(redovi.Count).Append(", otvoreno ").Append(otvoreno).Append(".\n\n");
+            sb.Append("# Smoke spin: ").Append(naslov).Append("\n\n");
+            sb.Append(uvod).Append("\n\n");
+            sb.Append("Ukupno ").Append(redovi.Count).Append(", otvoreno ").Append(otvoreno).Append(", greske ").Append(greske).Append(".\n\n");
             sb.Append("## Uzroci\n\n");
             sb.Append("| Uzrok | Broj |\n|---|---|\n");
             for (int i = 0; i < kljucevi.Count; i++)

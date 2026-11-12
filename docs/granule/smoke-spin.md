@@ -1,4 +1,18 @@
-# Smoke spin: ssMeni NetGenDLL
+# Smoke spin
+
+Ponovna provjera AOP (`Form1.vb` 39, 3875–3882, `Class1.vb` 113–118): `Node` kreće kao `"null"`, čitanje odabranog čvora je komentar, `@@node` postane `null`, `@@` više nema pa se upit šalje. NetGen pokaže istu grešku pretvorbe. Port je ne guta i ne bira prvi čvor.
+
+`Narudzbe` u ssMeni je `SKLAD\Narudzbe.xml`. Te datoteke nema u repou, pa stavka ostaje `nema-xml`. `BIOVEGA/Narudzbe.xml` i Agronom primjerak imaju `COMBO` i mjere se u dijelu „XML u repou“: prva vrijednost comboa puni stablo.
+
+21 `nema-sql` nema master predložak. Prozor se otvori, master ostane prazan dok se ne klikne čvor. To nije greška porta.
+
+26 `ONLOAD` koji počinje s `:` sada traži formu u XML-u i, ako je njen `ONLOAD` select/sp, pošalje ga (samo čitanje). Ako forme nema, uzrok je `nema-forme`.
+
+Sljedeća tablica je mjerenje prije tog koraka (CI 43230508391 / remeasure 43231784612). Novi izvještaj prepisuje je iz CI artefakta `smoke-spin.md`.
+
+AOP (`BIOVEGA\AOPNovi.xml`): stablo ima 1 korijen. Master i dalje padne na `@id='null'` jer čvor nije odabran. To je isto što NetGen pošalje i prikaže. Broj granula s retcima ostaje 17. Combo je na sljedećem mjerenju napunio korijene tamo gdje `TREE` ili `COMBO` vrati čvorove (Akcije 5, DobUgovori 7, OdobreniKaloNG 1). 21 `nema-sql` i dalje nema master predložak, pa retke ne dobije dok se ne klikne čvor.
+
+## ssMeni NetGenDLL
 
 Mjerenje na sql-ai, baza `spin`, samo citanje. Upit: `Parametar like 'asm:NetGenDLL.loader%'` ili `asm:NetGenDLL.frm%`. Operater 7, timeout 12 s. Izvor: CI run 43230508391, prije comboa na podlozi.
 
