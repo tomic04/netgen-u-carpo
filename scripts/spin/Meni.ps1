@@ -15,7 +15,7 @@ function Q([string]$sql) {
     $da = New-Object System.Data.SqlClient.SqlDataAdapter $cmd
     $dt = New-Object System.Data.DataTable
     [void]$da.Fill($dt)
-    return $dt
+    return ,$dt
 }
 
 function Exec([string]$sql) {
