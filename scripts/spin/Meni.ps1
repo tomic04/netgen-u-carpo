@@ -7,8 +7,6 @@ $ErrorActionPreference = "Stop"
 $cs = "Server=localhost;Database=spin;Integrated Security=True;TrustServerCertificate=True;Pooling=false;Connect Timeout=15;Application Name=CarpoNetGen-ssMeni;ApplicationIntent=ReadOnly"
 $conn = New-Object System.Data.SqlClient.SqlConnection $cs
 $conn.Open()
-$info = Q "select db_name() as db, cast(object_id(N'ssMeni') as varchar(20)) as oid"
-Write-Host ("baza=" + $info.Rows[0].db + " object_id(ssMeni)=" + $info.Rows[0].oid)
 
 function Q([string]$sql) {
     $cmd = $conn.CreateCommand()
@@ -27,25 +25,25 @@ function Exec([string]$sql) {
     return $cmd.ExecuteNonQuery()
 }
 
+$info = Q "select db_name() as db, cast(object_id(N'ssMeni') as varchar(20)) as oid"
+Write-Host ("baza=" + $info.Rows[0].db + " object_id(ssMeni)=" + $info.Rows[0].oid)
+
 $meta = Q @"
 select top 1 o.object_id, o.type, schema_name(o.schema_id) as shema
 from sys.objects o
 where o.name = N'ssMeni' and o.type in ('U','V','SN')
 order by case o.type when 'U' then 0 when 'V' then 1 else 2 end
 "@
-if ($meta.Rows.Count -eq 0) {
-    throw "Na spinu nema objekta ssMeni. Skripta ga ne stvara."
-}
-$oid = $meta.Rows[0].object_id
-Write-Host ("ssMeni je " + $meta.Rows[0].shema + " tip " + $meta.Rows[0].type)
-if ([string]$meta.Rows[0].type -eq "SN") {
-    $base = Q "select object_id(base_object_name) as id from sys.synonyms where object_id = $oid"
-    if ($base.Rows.Count -gt 0 -and -not ($base.Rows[0].id -is [DBNull])) {
-        $oid = $base.Rows[0].id
+if ($meta.Rows.Count -gt 0) {
+    $oid = $meta.Rows[0].object_id
+    Write-Host ("ssMeni je " + $meta.Rows[0].shema + " tip " + $meta.Rows[0].type)
+    if ([string]$meta.Rows[0].type -eq "SN") {
+        $base = Q "select object_id(base_object_name) as id from sys.synonyms where object_id = $oid"
+        if ($base.Rows.Count -gt 0 -and -not ($base.Rows[0].id -is [DBNull])) {
+            $oid = $base.Rows[0].id
+        }
     }
-}
-
-$kolone = Q @"
+    $kolone = Q @"
 select c.name, c.is_identity, c.is_computed, c.is_nullable, ty.name as tip, c.max_length,
        case when pk.column_id is null then 0 else 1 end as pk
 from sys.columns c
@@ -59,6 +57,38 @@ left join (
 where c.object_id = $oid
 order by c.column_id
 "@
+} else {
+    $probe = $conn.CreateCommand()
+    $probe.CommandText = "select top 0 * from ssMeni"
+    $rd = $probe.ExecuteReader()
+    $schema = $rd.GetSchemaTable()
+    $rd.Close()
+    if ($schema -eq $null -or $schema.Rows.Count -eq 0) {
+        throw "Na spinu nema objekta ssMeni. Skripta ga ne stvara."
+    }
+    Write-Host "ssMeni se vidi upitom, ne preko sys.objects. Stupaca: $($schema.Rows.Count)"
+    $kolone = New-Object System.Data.DataTable
+    [void]$kolone.Columns.Add("name", [string])
+    [void]$kolone.Columns.Add("is_identity", [int])
+    [void]$kolone.Columns.Add("is_computed", [int])
+    [void]$kolone.Columns.Add("is_nullable", [int])
+    [void]$kolone.Columns.Add("tip", [string])
+    [void]$kolone.Columns.Add("max_length", [int])
+    [void]$kolone.Columns.Add("pk", [int])
+    foreach ($srow in $schema.Rows) {
+        $nr = $kolone.NewRow()
+        $nr.name = [string]$srow["ColumnName"]
+        $nr.is_identity = $(if ($srow["IsIdentity"] -eq $true) { 1 } else { 0 })
+        $nr.is_computed = $(if ($srow["IsReadOnly"] -eq $true -and $srow["IsIdentity"] -ne $true) { 1 } else { 0 })
+        $nr.is_nullable = $(if ($srow["AllowDBNull"] -eq $true) { 1 } else { 0 })
+        $nr.tip = [string]$srow["DataTypeName"]
+        $len = 0
+        if ($srow["ColumnSize"] -isnot [DBNull]) { $len = [int]$srow["ColumnSize"] }
+        $nr.max_length = $len
+        $nr.pk = $(if ($srow.Table.Columns.Contains("IsKey") -and $srow["IsKey"] -eq $true) { 1 } else { 0 })
+        [void]$kolone.Rows.Add($nr)
+    }
+}
 
 $paramKol = $null
 foreach ($r in $kolone.Rows) {
