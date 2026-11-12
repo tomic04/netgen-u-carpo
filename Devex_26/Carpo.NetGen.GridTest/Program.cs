@@ -160,7 +160,12 @@ namespace Carpo.NetGen.GridTest
             T("total-default-ukljucen", new GridStanje().TotalRed, "");
             T("sort-default-ukljucen", new GridStanje().SortKlikom, "");
             T("filter-default-iskljucen", !new GridStanje().FilterRed, "");
-            T("dx-carpo-ne-pali-autofilter", new MasterGrid().Stanje.DxPostavke.Count == 0 || true, "postavlja se tek nakon ucitavanja");
+            var gDef = new MasterGrid();
+            var dtDef = new DataTable();
+            dtDef.Columns.Add("a", typeof(int));
+            dtDef.Rows.Add(1);
+            gDef.Ucitaj(Projekt("ONLOAD", "select 1 as a"), dtDef);
+            T("groupby-janus-default-true", !gDef.Stanje.GroupByBox.HasValue && Ima(gDef, "OptionsView.ShowGroupPanel=true"), "");
         }
 
         private static void PisanjeIServer()

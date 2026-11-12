@@ -81,39 +81,69 @@ Grupe: `MASTERCOLUMNS` 117, `DETAILCOLUMNS` 52. Isti formatter (`CustomFormatKol
 
 `@@id` / `@@operateriid` / `@@node` (zadano tekst `null`, `Form1.vb` 39) zamjenjuju se u `SrediSQL` (`2482`).
 
+## Rezultat na sql-ai
+
+Run koji je prošao: https://github.com/tomic04/netgen-u-carpo/actions/runs/43212771219
+Prethodni, 43212527893 i 43212561971, pali su na istoj SQL iznimci prije nego je Catch uhvaćen.
+
+Automatski testovi grida na tom runu: **58 PASS, FAIL=0**. Ovaj commit dodaje `groupby-janus-default-true` (`GroupByBoxVisible=True` izmjereno na svježem GridEX-u).
+
+| Granula | SQL koji bi NetGen poslao | Redovi | Kolone | Napomena |
+|---|---|---|---|---|
+| `OznakaKL` | `select klmasterrobaid, sortkey, Naziv, oznaka, oznaka2 as DodatnaOznaka from klmasterroba order by sortkey` | 0 | nije vezan | `Invalid column name 'oznaka2'`. `ExecSql` bi ušao u Catch, pokazao poruku i vratio `Nothing`. Tablica ima **947** redova. Od stupaca s „oznak” postoji samo `Oznaka`. XML i baza nisu dirani. |
+| `JeziciNG` | `spJeziciQuery @action=0, @id=''` | **15** | **2** | Fokus na prvom redu, id=13. `Naziv` širina 178 (2500/14). Agregat s dva G nije vezan. |
+
 ## Defaulti
 
-Svježi `new GridEX()` i `new GridView()` mjeri `Carpo.NetGen.Defaults` na runneru. Izlaz je artifact `grid-defaults.tsv`. Ova tablica je ono što znamo iz koda prije tog mjerenja; brojevi iz alata dopunjuju je čim run prođe. Gdje XML šuti, Carpo ne ostavlja DevExpress default ako se razlikuje od Janusa.
+Izvor mjerenja: `Carpo.NetGen.Defaults` na runneru, artifact `grid-defaults.tsv` (isti run). To su svježi `new GridEX()` i `new GridView()`, bez XML-a i bez NetGen designera.
 
-NetGen designer (`Form1.designer.vb` 624–664) već mijenja svježi GridEX prije XML-a. To je polazna točka granule, ne tvornički `new GridEX()`.
+Kad XML šuti, Carpo prati **kontrolu koju NetGen drži na formi**: designer (`Form1.designer.vb` 624–664) plus kod u `PokaziUpit`. Svojstva koja designer ne dira ostaju na izmjerenoј tvorničkoj vrijednosti.
 
-| Svojstvo | Janus / WinForms kako ga NetGen ostavi | DevExpress 26 (tvornički, Carpo ga ne kopira) | Što Carpo.NetGen postavlja |
-|---|---|---|---|
-| Sort klikom na header | `AutomaticSort` se gasi samo na `AUTOMATICSORT=false`. Inače ostaje uključen (`3401`) | Carpo `ComponentGrid` zna ugasiti `AllowSort` po definiciji | `OptionsCustomization.AllowSort=true`, osim `false` u XML-u |
-| Auto-filter red | `FilterMode` nije Automatic dok XML ne kaže `FILTERMODE=true` (`2169`) | Carpo pali `ShowAutoFilterRow` osim ako definicija kaže false (`ComponentGrid.cs` 772) | `ShowAutoFilterRow=false`, osim `FILTERMODE=true` |
-| Group panel | Atribut `GROUPBYBOXVISIBLE` ako postoji. Inače designer ga ne dira | Carpo gasi panel samo ako XML kaže false (`719`) | `ShowGroupPanel` samo ako XML ima atribut. Inače `janus-default` dok tsv ne kaže tvorničku vrijednost |
-| Total / footer | Uključen osim `TOTALROWVISIBLE=FALSE` (`2049`) | DX footer je ugašen dok se ne traži | `ShowFooter` prati to pravilo |
-| Širina kolona | Fiksne (`CreateGridColumns`), ne auto na cijeli grid | DX `ColumnAutoWidth` zna biti uključen | `ColumnAutoWidth=false` |
-| Selekcija | Designer: `MultipleSelection` (`657`) | DX često jedan red | `MultiSelect=true` |
-| Selekcija bez fokusa | Designer: `HideSelection.Highlight` (`640`) | DX zna posiviti red | `EnableAppearanceHideSelection=false` |
-| Inkrementalna pretraga | Designer: `AllCharacters` (`641`) | Carpo je eksplicitno pali (`798`) | `AllowIncrementalSearch=true` |
-| Uređivanje | `EditMode.EditOff`, stupac `NoEdit` dok nije u `EDITCOLUMNS` | DX često editable | `Editable=false`, osim filter+edit stupaca |
-| Enter | Bez edit stupaca `EnterKeyBehavior.None`, pa atribut ako postoji (`3419`) | DX Enter zna otvoriti editor | `Enter=None` ili vrijednost iz XML-a |
-| Obrub | Designer: `BorderStyle.None` | DX ima obrub | `BorderStyle=NoBorder` |
-| Font | Designer: MS Sans Serif 8.25 | DX tema | isti font |
-| Row header | Designer: `RowHeaders=True` | DX indicator | `ShowIndicator=true` |
-| Checkbox stupac | Selector je vidljiv dok XML nije `FALSE` | DX nema ActAsSelector | poseban stupac `Selector`, vidljivost po `CHECKBOXVISIBLE` |
-| `GRIDALLOWEDIT` | ne postoji u kodu | | ne postavlja se |
+| Svojstvo | Svježi Janus GridEX | NetGen kad XML šuti | Svježi DevExpress 26 | Što Carpo.NetGen postavlja |
+|---|---|---|---|---|
+| Sort klikom na header | `AutomaticSort=True` | ostaje True (kod gasi samo na `false`, `3401`) | sort kolone je uključen | `AllowSort=true` |
+| Group panel | `GroupByBoxVisible=True` | ostaje True (designer ne dira) | panel DX-a nije isti objekt | `ShowGroupPanel=true` |
+| Auto-filter | `FilterMode=None` | ostaje None dok nije `FILTERMODE=true` | `ActiveFilterEnabled=True` | `ShowAutoFilterRow=false` |
+| Total red | `TotalRow=False` | kod ga upali osim na `FALSE` (`2049`) | footer nije uključen | `ShowFooter=true` (pratimo kod, ne svježi GridEX) |
+| Uređivanje | `AllowEdit=True`, `EditMode=EditOff` | stupci `NoEdit` | `Editable=True` | `Editable=false` |
+| Enter | `EnterKeyBehavior=NextRow` | kod stavi `None` ako nema `EDITCOLUMNS` (`3419`) | Enter zna otvoriti editor | `Enter=None` |
+| Selekcija | `SingleSelection`, cijeli red | designer: `MultipleSelection` | `IsMultiSelect=False` | `MultiSelect=true` |
+| Selekcija bez fokusa | `HideSelection=HideSelection` | designer: `Highlight` | `FocusRectStyle=CellFocus` | `EnableAppearanceHideSelection=false` |
+| Row header | `RowHeaders=False` | designer: `True` | indicator | `ShowIndicator=true` |
+| Obrub | `SunkenLight3D` | designer: `None` | `BorderStyle=Default` | `NoBorder` |
+| Širina kolona | fiksne | isto | auto širina je čest DX default | `ColumnAutoWidth=false` |
+| Scroll | `ScrollBars=Automatic` | isto | `HorzScrollVisibility=Auto` | ne diramo |
+| Grupni total | `GroupTotals=Never` | designer: `Always` | `GroupFooterShowMode=VisibleIfExpanded` | otvoreno, nije mapirano |
+| Font | (designer) MS Sans Serif 8.25 | isto | tema | `Font=Microsoft Sans Serif, 8.25pt` |
+| Checkbox stupac | nema ga dok `CreateGridColumns` ne doda Selector | vidljiv osim `CHECKBOXVISIBLE=FALSE` | nema ActAsSelector | stupac `Selector` |
+| `GRIDALLOWEDIT` | kod ga ne čita | ne pali edit | | ne postavlja se |
+
+Najvažnije razlike koje su morale biti eksplicitne, jer DX default nije Janus:
+
+- auto-filter: DX `ActiveFilterEnabled=True`, Janus `FilterMode=None` → `ShowAutoFilterRow=false` (Carpo `ComponentGrid` inače pali filter red)
+- uređivanje: DX `Editable=True`, Janus `EditMode=EditOff` → `Editable=false`
+- Enter: Janus tvornički `NextRow`, NetGen kod `None` kad nema edit stupaca → `Enter=None`
+- selekcija: svježi GridEX i DX su jedan red, designer NetGena je `MultipleSelection` → `MultiSelect=true`
+- obrub i row header: svježi GridEX je `SunkenLight3D` i bez row headera; forma ima `None` i `RowHeaders=True`
 
 Ponašanja koja nisu jedno svojstvo:
 
 | Ponašanje | NetGen | Test |
 |---|---|---|
-| Enter/Tab | vidi `ENTERKEYBEHAVIOR` | `oznaka-edit-ignorira-gridallowedit` (`None`) |
-| Sort klikom | uključen osim `AUTOMATICSORT=false` | `oznaka-sort`, `oznaka-dx-sort-on` |
-| Auto-filter | ugašen osim `FILTERMODE=true` | `oznaka-nema-filter`, `oznaka-dx-nema-autofilter` |
-| Dvostruki klik | `MASTERDBLCLICK` otvara formu, nije svojstvo grida. Veza na formu nije ovaj element | nije u grid testu |
-| Selekcija više redova | designer `MultipleSelection` | DX postavka `MultiSelect=true` |
-| Scroll pri refreshu | `REFRESHMASTERGRID` ponovi zadnji SQL (`4577`), fokus po id / `MASTERMOVELAST` | `refresh-koristi-zadnji-tekst`, `fokus-zadnji` |
+| Enter | `None` bez `EDITCOLUMNS` | `oznaka-edit-ignorira-gridallowedit` |
+| Sort klikom | uključen osim `AUTOMATICSORT=false` | `oznaka-sort` |
+| Auto-filter | ugašen osim `FILTERMODE=true` | `oznaka-nema-filter` |
+| Dvostruki klik | `MASTERDBLCLICK` otvara formu | otvoreno, nije ovaj element |
+| Više redova | designer `MultipleSelection` | `MultiSelect=true` |
+| Scroll pri refreshu | ponovi zadnji SQL, fokus po id / `MASTERMOVELAST` | `refresh-koristi-zadnji-tekst`, `fokus-zadnji` |
+
+## Otvoreno
+
+- `OznakaKL` na `spin`: 0 redova, jer nema `oznaka2` (ima `Oznaka`, tablica ima 947 redova).
+- `EDITCOLUMNS` koji je SQL (44 datoteke) se ne izvršava da bi se dobio popis stupaca.
+- `ONCELLEDITED` / `BEFORECELLEDITED` se čitaju, izmjena ćelije se ne vrti.
+- `TRANSLATECOLUMNS` i `MASTERGRIDLAYOUTFILE`.
+- `GroupTotals=Always` s designera nije mapiran na DX.
+- Sonda `asm:` (UTF-16) nije našla `Jupiter.exe`. 16 pogodaka su tuđi DLL-ovi. Ulaz ostaje `Carpo.NetGen.Loader`. Nije dokazano cijepa li host na prvoj ili zadnjoj točki.
 
 `docs/granule/` i `tests/` piše drugi agent. Ovaj dokument ih ne dira.

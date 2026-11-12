@@ -439,7 +439,7 @@ namespace Carpo.NetGen.Grid
         {
             s.DxPostavke.Clear();
             s.DxPostavke.Add("OptionsView.ShowAutoFilterRow=" + (s.FilterRed ? "true" : "false"));
-            s.DxPostavke.Add("OptionsView.ShowGroupPanel=" + (s.GroupByBox.HasValue ? (s.GroupByBox.Value ? "true" : "false") : "janus-default"));
+            s.DxPostavke.Add("OptionsView.ShowGroupPanel=" + (s.GroupByBox.HasValue ? (s.GroupByBox.Value ? "true" : "false") : "true"));
             s.DxPostavke.Add("OptionsView.ShowFooter=" + (s.TotalRed ? "true" : "false"));
             s.DxPostavke.Add("OptionsView.ColumnAutoWidth=false");
             s.DxPostavke.Add("OptionsView.ShowIndicator=true");
