@@ -100,6 +100,18 @@ namespace Carpo.NetGen.GridTest
             Raspored.KljuceviForme(frm, kljucevi);
             T("frmedit-tab", frm != null && kljucevi["tab"] == "Label16,oznaka2,Prihvati,Odustani" && kljucevi["formaNaslov"] == "Izmjena oznake" && kljucevi["acceptButton"] == "",
                 kljucevi.ContainsKey("tab") ? kljucevi["tab"] : "");
+            NgForm filter = null;
+            NgProject pre = Ucitaj("KntPreknjizavanjeNG.xml");
+            if (pre != null)
+            {
+                for (int i = 0; i < pre.Forme.Count; i++)
+                {
+                    if (string.Equals(pre.Forme[i].Ime, "FILTER", StringComparison.OrdinalIgnoreCase))
+                        filter = pre.Forme[i];
+                }
+            }
+            List<string> combo = Otvaranje.Kontrole(filter, new SqlKontekst());
+            T("dijalog-combo-sql", filter != null && combo.Count > 0 && !Ima(combo, "spKntPreknjizavanjeNG"), combo.Count.ToString());
         }
 
         private static bool Ima(List<string> upiti, string dio)

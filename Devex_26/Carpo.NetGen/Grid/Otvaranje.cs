@@ -38,6 +38,32 @@ namespace Carpo.NetGen.Grid
             return lista;
         }
 
+        /// <summary>SQL combo i grid kontrole na formi, pri otvaranju. Ne ONSUBMIT i ne ONCLICK.</summary>
+        public static List<string> Kontrole(NgForm forma, SqlKontekst kontekst)
+        {
+            var lista = new List<string>();
+            if (forma == null || forma.Kontrole == null)
+                return lista;
+            SqlKontekst k = SqlTekst.ZaFormu(kontekst);
+            for (int i = 0; i < forma.Kontrole.Count; i++)
+            {
+                NgControl c = forma.Kontrole[i];
+                if (c.Grana != NgGrana.Combo && c.Grana != NgGrana.Grid && c.Grana != NgGrana.DxGrid)
+                    continue;
+                if (c.Atributi == null || !c.Atributi.Ima("SQL"))
+                    continue;
+                Dodaj(lista, c.Atributi.Vrijednost("SQL"), k);
+            }
+            return lista;
+        }
+
+        public static string Spreman(string predlozak, SqlKontekst kontekst)
+        {
+            var lista = new List<string>();
+            Dodaj(lista, predlozak, kontekst);
+            return lista.Count == 0 ? null : lista[0];
+        }
+
         public static string Detail(NgProject projekt, SqlKontekst kontekst)
         {
             if (projekt == null)

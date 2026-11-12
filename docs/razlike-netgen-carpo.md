@@ -730,6 +730,15 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `dijalog-ostaje`, `dijalog-ok`, `dijalog-close`, `dijalog-refresh`
 - **PR:** dijalog-gumb
 
+## R91 Combo i grid na dijalogu šalju svoj SELECT
+
+- **Element:** `SQL` na combo i grid kontrole forme
+- **NetGen:** pri otvaranju forme pokrene SQL kontrole. `ONSUBMIT` čeka gumb.
+- **Carpo:** combo (`LookUpEdit`) i grid dobiju rezultat ako je tekst `SELECT` i ne zove proceduru. Poziv procedure i dalje čeka provjeru tijela (R89), pa se ne šalje iz dijaloga.
+- **Odluka:** NetGen logika za SELECT. Upis i neprovjerena procedura ostaju zaštićeni.
+- **Test:** `dijalog-combo-sql`
+- **PR:** dijalog-sql
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

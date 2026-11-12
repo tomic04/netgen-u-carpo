@@ -110,6 +110,7 @@ namespace Carpo.NetGen.Ui
                     Controls.Add(l);
                 }
                 Controls.Add(c);
+                NapuniKontrolu(c, k);
             }
 
             if (forma.Gumbi != null)
@@ -147,6 +148,44 @@ namespace Carpo.NetGen.Ui
             if (on.TrimStart().StartsWith("select", StringComparison.OrdinalIgnoreCase) && citaj != null)
                 NapuniIzOnLoad(on, kontekst, citaj);
             ShowDialog();
+        }
+
+        private void NapuniKontrolu(Control c, NgControl k)
+        {
+            if (_citaj == null || k == null)
+                return;
+            if (k.Grana != NgGrana.Combo && k.Grana != NgGrana.Grid && k.Grana != NgGrana.DxGrid)
+                return;
+            if (k.Atributi == null || !k.Atributi.Ima("SQL"))
+                return;
+            string sql = Otvaranje.Spreman(k.Atributi.Vrijednost("SQL"), SqlTekst.ZaFormu(_kontekst));
+            if (string.IsNullOrEmpty(sql))
+                return;
+            SqlZastita z = ZastitaSql.Tekst(sql);
+            if (z.Pise || z.Procedure.Count > 0)
+                return;
+            DataTable dt = null;
+            try
+            {
+                dt = _citaj(sql);
+            }
+            catch (Exception ex)
+            {
+                NgDnevnik.Greska(ex.Message + " | " + sql);
+            }
+            if (dt == null || dt.Columns.Count == 0)
+                return;
+            var look = c as LookUpEdit;
+            if (look != null)
+            {
+                look.Properties.DataSource = dt;
+                look.Properties.ValueMember = dt.Columns[0].ColumnName;
+                look.Properties.DisplayMember = dt.Columns.Count > 1 ? dt.Columns[1].ColumnName : dt.Columns[0].ColumnName;
+                return;
+            }
+            var grid = c as GridControl;
+            if (grid != null)
+                grid.DataSource = dt;
         }
 
         private void GumbKlik(object sender, EventArgs e)
