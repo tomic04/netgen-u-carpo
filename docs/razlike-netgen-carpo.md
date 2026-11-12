@@ -1,6 +1,6 @@
 # Razlike NetGen / Carpo
 
-Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i nastavi od zadnjeg `R`. R01–R53 su QA (#16, #17, #19). Carpo.NetGen od R54 dopisuje odluku, test i PR u istom PR-u. Zadnji broj na ovoj grani je R66.
+Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i nastavi od zadnjeg `R`. R01–R53 su QA (#16, #17, #19). Carpo.NetGen od R54 dopisuje odluku, test i PR u istom PR-u. Zadnji broj na ovoj grani je R67.
 
 ## Odluka u Carpo.NetGen
 
@@ -588,3 +588,13 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 - **Odluka:** NetGen logika.
 - **Test:** `forma-id-0`, `forma-id-red`
 - **PR:** id-forme
+
+## R67 Podloga puni raspored Managera, ne vlastiti ribbon
+
+- **Element:** glavni prozor granule
+- **NetGen:** lijevo combo i stablo, desno master iznad detaila, dolje gumbi, status s brojem slogova. Nema Office stranice s velikim ikonama.
+- **Carpo:** `Manager` (`Carpo.UI.Forms.Master.Manager` : `JupiterManager` : `JupiterShared` : `RibbonBase`) već ima taj raspored: `trMain`, `bbiLookUpFilter`, `bar2` (natrag, osvježi, Postavke, Export), `gcGla` / `splitGrid` / `gcDet`, `pnlButtons`, status `Broj slogova`. Manager ponuda to puni iz Carpo XML-a.
+- **Carpo.NetGen:** `Podloga` nasljeđuje `Manager` i puni iste panele. NetGen gumbi su flat gumbi u `pnlButtons`, ne ribbon stranica. Detail je kartica Stavke. Dimenzije, Zaliha i DMS se ne crtaju: NetGen ih nema osim DMS-a kad je `strDMSDet` postavljen, a taj put nije spojen.
+- **Odluka:** namjerno odstupanje, izgled. Naredbe, SQL i redoslijed gumba ostaju NetGen.
+- **Test:** nema. Korisnik gleda KntKompVerizne i KntBlaZak.
+- **PR:** raspored

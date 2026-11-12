@@ -6,11 +6,11 @@ Janus kontrole (grid, stablo) zamjenjuju se DevExpressom. Sve ostalo što se vid
 
 ## Checklist
 
-- [x] Podloga nasljeđuje `RibbonBase.RibbonBase` (`RibbonBase.v26`), isti ribbon kao Carpo forme (`Carpo.UI.Forms.Jupiter.Base`).
+- [x] Podloga nasljeđuje `Carpo.UI.Forms.Master.Manager` (RibbonBase preko JupiterManager). Nema vlastite ribbon stranice. Combo je `bbiLookUpFilter`, stablo `trMain`, master `gcGla`, traka `bar2`, detail kartica Stavke, gumbi u `pnlButtons`, status `Broj slogova`.
 - [x] Skin: `BonusSkins.Register` i `SkinManager.EnableFormSkins`, kao `Base.Start`.
-- [x] Gumbi `CMDx` / `BUTTONS` su `BarButtonItem` u grupi Naredbe, istim redom i natpisom. Poznate riječi (unesi, izmjeni, obriši, ispis, osvježi) dobiju DevExpress sliku Add/Edit/Delete/Print/Refresh.
+- [x] Gumbi `CMDx` / `BUTTONS` su flat gumbi u donjem `pnlButtons`, istim redom i natpisom. Ribbon stranica se ne puni.
 - [x] Master i detail su `GridControl` / `GridView`. Auto-filter red je uključen kao u Carpu. Širina, skriveni stupac, sort, zabrana izmjene i checkbox selekcija ostaju NetGen.
-- [x] Stablo je `TreeList` na kartici `Explorer` (`XtraTabControl`). Druga kartica je `Programs` (prazna, TestShell nema stablo granula). Detail je kartica `Stavke`. DMS kartica se ne dodaje.
+- [x] Stablo je `trMain` na lijevoj strani Managera, combo je `bbiLookUpFilter`. Detail je kartica Stavke ispod mastera.
 - [x] Dijalozi su `XtraForm`. Editor po tipu: `TextEdit`, `SpinEdit`, `ButtonEdit`, `DateEdit`, `LookUpEdit`, `CheckedComboBoxEdit`, `CheckEdit`, `CheckEdit` s `RadioGroupIndex` (svaki RADIO drži svoj `TOP`/`LEFT`), `SimpleButton`, `LabelControl`, `GroupControl`, `PanelControl`, `PictureEdit`, `GridControl`, `TreeList`. Raspored je NetGen `SrediKontrolu` (`/ 14`).
 - [x] Status na dijalogu je `LabelControl` na dnu. WebBrowser ostaje WinForms jer DevExpress nema preglednik.
 - [x] Filter forma je isti `XtraForm` sa skinom. `BORDERSTYLE=3` je fiksni dijalog. Combo, datum, broj, check i gumb nose Carpo default (null tekst `...`, maska datuma, broj desno, gumb 7 pt). Stupac grida crta `FORMAT` i poravnanje. Status ribbana pokazuje server, bazu i operatera.
