@@ -4,6 +4,8 @@ Ovo je plan. M0 (parser, oba Jupiter ulaza, TestShell grana, build) je otvoren u
 
 Log ide kroz Carpo logger (Ctrl+F11, `Carpo.Core.Logger`), ne kroz NetGen `CBLog` / `PokaziCBLog`. Pravilo i otvorene stavke su u `docs/funkcionalnosti/logging.md`. Svaki sljedeći element zove `NgDnevnik`.
 
+Svaka razlika NetGena i Carpa ide u `docs/razlike-netgen-carpo.md` u istom PR-u u kojem je otkrivena. Checklist je na vrhu tog registra.
+
 Svaka faza ima kriterij prihvaćanja koji se može pročitati bez „izgleda u redu“. Dok nema DLL-ova (dokument 09), radi se samo ono što ne traži prevodenje: zlatni fajlovi i opisi. Čim TestShell prođe build, kreće M0 u C#.
 
 ## Ulazi
