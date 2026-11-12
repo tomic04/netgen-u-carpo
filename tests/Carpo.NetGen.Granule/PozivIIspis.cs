@@ -206,7 +206,7 @@ namespace Carpo.NetGen.Granule
                 && Kontrole.A(Kontrole.Nadji(odo, "CarpoForm"), "DEFAULT") == "KUP_Odobravanje.xml"
                 ? Qa.Z(Ime, "BVG-06", "Odobravanje: assembly je na gumbu, ONLOADED je SQL i +close", "netgen/Form2.vb:7424; netgen/Class1.vb:187-204")
                 : Qa.P(Ime, "BVG-06", "gumb", "netgen/Form2.vb:7424", klik));
-            l.Add(Stablo.Meni(Ime, "BVG-07", "KUPDostKnNGBvg.xml"));
+            l.Add(Stablo.Otvori(Ime, "BVG-07", "KUPDostKnNGBvg.xml", root));
             Ispis.K(l, Ime, xml, "BVG-20", "clsCarpoKupUra i clsCarpoKnjigaUra dijele totalgen, razlikuje se CarpoForm", "netgen/Form2.vb:7456", "carpoform.kup", "KnjigaUra.frmKnjigaUraKupEdit.xml");
             return l;
         }
