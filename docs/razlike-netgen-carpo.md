@@ -682,7 +682,15 @@ Najnovija povučena implementacijska grana `cursor/netgen-dblclick-3266` (`0f245
 - **Posljedica:** `Akcije` između `Promjene` i `Obriši operatera` ima crticu. To je stavka izbornika, ne preskok.
 - **Test:** `AKC-04`
 
-Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88 (`FILTER` kao forma, `spMPTrgovineNG`, `MPKasaPolog`, `oznaka2`, uzorak praznog mastera). QA R84 ostaje `MAXIMIZEBOX`, QA R85 ostaje popup `-:`. Sljedeći slobodan broj je R89. Ovaj blok nema novu stavku.
+Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88. QA R84 ostaje `MAXIMIZEBOX`, QA R85 ostaje popup `-:`. QA R89 je segment popup-a bez dvotočke. Sljedeći slobodan broj je R90.
+
+## R89 Popup segment bez dvotočke nije stavka
+
+- **Element:** segment `POPUPMASTER` bez `:`
+- **NetGen:** svaki segment se lomi na prvoj `:` (`Form1.vb` 3564–3566). `IndexOf` je −1, `Substring` baci, `On Error Resume Next` na ulazu u proceduru. Par natpis/naredba se ne složi.
+- **Carpo:** segment bez dvotočke lako postane ime forme ili se tiho proguta na drugi način.
+- **Posljedica:** `MPInvRazlike` završava s `Stornoraj#STORNO`. Ni `Stornoraj` ni `STORNO` nisu stavka `natpis:naredba`.
+- **Test:** `IRA-04`
 
 ## Pokrivenost checklisti
 
@@ -776,4 +784,11 @@ Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88
 | `MPPregUtrzakNG.md` | `:FORM1`, `vrstadokid-` | R18, R43, R11 |
 | `PDVPromjena.md` | XML nije u repou | |
 | `Dijalozi-pregled.md` | četiri rupe dijaloga, broj datoteka | |
+| `RekapitulacijaUI.md` | `:Parametri#refreshmaster`, `PRINTREPXMASTER` | R04, R41, R65 |
+| `ServisPrava.md` | `:MAINFORM`, element `FILTER`, `DETAILDBLCLICK` | R18, R75, R84 |
+| `MPInvRazlike.md` | popup bez `:`, `INSERTFORM@@indvrdok` | R89, R43, R60 |
+| `MPNarFFirma.md` | prvi čvor s praznom naredbom, `vrstadokid-propongla` | R10, R43, R60 |
+| `LVKatalozi.md` | store, `onlytree`, `TOTALROWVISIBLE=false` | R01, R54, R65 |
+| `Nedostaje-79.md` | rang 79–92 nema XML | |
+| `Combo-dijalog-testovi.md` | deset combo slučajeva | R26, R27, R28, R31 |
 | `Smoke-prazno-uzorak.md` | 20 praznih iz smokea #35 | |

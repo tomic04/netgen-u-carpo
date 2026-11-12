@@ -84,6 +84,13 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(PdvPoStjecanju.Provjeri(root));
             sve.AddRange(MpPregUtrzak.Provjeri(root));
             sve.AddRange(PdvPromjenaXml.Provjeri(root));
+            sve.AddRange(RekapitulacijaUi.Provjeri(root));
+            sve.AddRange(ServisPrava.Provjeri(root));
+            sve.AddRange(MpInvRazlike.Provjeri(root));
+            sve.AddRange(MpNarFFirma.Provjeri(root));
+            sve.AddRange(LvKatalozi.Provjeri(root));
+            sve.AddRange(Nedostaje79.Provjeri(root));
+            sve.AddRange(ComboDijalog.Provjeri(root));
             sve.AddRange(Statusi.Provjeri(root));
             sve.AddRange(KntBlaZak.Provjeri(root));
             sve.AddRange(PrijemniList.Provjeri(root));
