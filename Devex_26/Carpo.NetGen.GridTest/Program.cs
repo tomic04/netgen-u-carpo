@@ -25,6 +25,7 @@ namespace Carpo.NetGen.GridTest
             SqlPreskoci();
             IntrastatPreskok();
             RucniStart();
+            Odabir();
             Zamjene();
             OznakaBezBaze();
             JeziciBezBaze();
@@ -52,6 +53,16 @@ namespace Carpo.NetGen.GridTest
                 Console.WriteLine("PRESKOCENO spin (nema CARPO_SPIN=1)");
             Console.WriteLine("FAIL=" + fail.ToString());
             return fail == 0 ? 0 : 1;
+        }
+
+        private static void Odabir()
+        {
+            T("odabir-verizne-manager", Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("KntKompVerizne.xml")), "");
+            T("odabir-statusi-manager", Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("Statusi.xml")), "");
+            T("odabir-blazak-manager", Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("KntBlaZak.xml")), "");
+            T("odabir-oznaka-nije", !Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("OznakaKL.xml")), "");
+            T("odabir-jezici-nije", !Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("JeziciNG.xml")), "");
+            T("odabir-stavke-nije", !Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("RealizacijaStavkeNG.xml")), "");
         }
 
         private static void RucniStart()

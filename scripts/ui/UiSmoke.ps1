@@ -12,10 +12,10 @@ New-Item -ItemType Directory -Force -Path $Shots | Out-Null
 $granule = @(
     "BIOVEGA\OznakaKL.xml",
     "Agronom granule\KntKompVerizne.xml",
-    "BIOVEGA\JeziciNG.xml",
+    "BIOVEGA\JeziciNG.xml", # nije Manager: nema stabla ni detaila
     "Agronom granule\Statusi.xml",
     "BIOVEGA\KntBlaZak.xml",
-    "Agronom granule\RealizacijaStavkeNG.xml"
+    "Agronom granule\RealizacijaStavkeNG.xml" # nije Manager: ulaz je dijalog Parametri
 )
 
 function Pokreni([string]$xml, [string]$png) {

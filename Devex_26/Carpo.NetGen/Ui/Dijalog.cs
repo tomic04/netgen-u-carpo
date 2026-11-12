@@ -48,7 +48,7 @@ namespace Carpo.NetGen.Ui
             KeyPreview = true;
         }
 
-        public void Prikazi(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj)
+        public void Prikazi(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj, bool modal = true)
         {
             if (forma == null)
                 return;
@@ -161,7 +161,8 @@ namespace Carpo.NetGen.Ui
             string on = forma.OnLoad ?? "";
             if (on.TrimStart().StartsWith("select", StringComparison.OrdinalIgnoreCase) && citaj != null)
                 NapuniIzOnLoad(on, kontekst, citaj);
-            ShowDialog();
+            if (modal)
+                ShowDialog();
         }
 
         private void NapuniKontrolu(Control c, NgControl k)

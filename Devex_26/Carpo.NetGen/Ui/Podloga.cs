@@ -25,9 +25,8 @@ using DevExpress.XtraTreeList.Nodes;
 namespace Carpo.NetGen.Ui
 {
     /// <summary>
-    /// NetGen podloga na gotovom rasporedu Carpo Managera (Manager ponuda):
-    /// RibbonBase preko JupiterManager, lijevo combo i stablo, desno traka i master,
-    /// ispod detail, dolje flat gumbi, status Broj slogova.
+    /// Samo granule čiji NetGen raspored jest stablo lijevo, master-detail i gumbi dolje.
+    /// Ostale idu u ObicnaForma ili u Dijalog. Odabir je OdabirForme.JeManager.
     /// </summary>
     public sealed class Podloga : Carpo.UI.Forms.Master.Manager
     {

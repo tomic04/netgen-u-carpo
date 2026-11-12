@@ -205,10 +205,12 @@ namespace Carpo.TestShell
                             MessageBox.Show(loader.ZadnjaGreska, "Carpo.NetGen");
                         else
                         {
-                            var forma = new Carpo.NetGen.Ui.Podloga();
-                            if (!forma.Prikazi(xml, server, database, operateriId))
-                                MessageBox.Show(forma.Text, "Carpo.NetGen");
-                            forma.Show(this);
+                            string greska;
+                            var forma = Carpo.NetGen.Ui.Prozor.Otvori(xml, server, database, operateriId, out greska);
+                            if (forma == null || !string.IsNullOrEmpty(greska))
+                                MessageBox.Show(string.IsNullOrEmpty(greska) ? "Granula se nije otvorila." : greska, "Carpo.NetGen");
+                            if (forma != null)
+                                forma.Show(this);
                         }
                     }
                     else

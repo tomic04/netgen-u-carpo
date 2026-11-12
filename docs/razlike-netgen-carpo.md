@@ -845,6 +845,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** korak `Spin stubovi i otvaranje` na sql-ai
 - **PR:** spin-otvaranje
 
+## R104 Manager samo kad raspored odgovara
+
+- **Element:** odabir prozora granule
+- **NetGen:** `Form1` je ljuska sa stablom, masterom, detailom i gumbima dolje. Prazan `TREE` i prazan `COMBO` sakriju lijevo (`Form1.vb` 4310–4316). Dijalog je `Form2`, raspored `TOP/LEFT/WIDTH/HEIGHT / 14`.
+- **Carpo:** `Podloga : Manager` vrijedi samo kad ima stablo, `DETAILGRID` koji nije `:forma`, i barem jedan gumb (`OdabirForme.JeManager`). Inače je `ObicnaForma` (grid i gumbi, bez ribbona) ili, kad ulaz počinje s `:`, sam `Dijalog`.
+- **Posljedica:** `KntKompVerizne`, `Statusi` i `KntBlaZak` ostaju Manager. `OznakaKL` i `JeziciNG` su obična forma. `RealizacijaStavkeNG` otvara dijalog `Parametri`.
+- **Odluka:** dogovor. Manager se ne stavlja na svaku granulu.
+- **Test:** `odabir-verizne-manager`, `odabir-jezici-nije`, `odabir-stavke-nije`. UI smoke snima `JeziciNG` i `RealizacijaStavkeNG`.
+- **PR:** odabir-forme
+
 ## R103 `WIDTH` prepisuje širinu koju je SQL već složio
 
 - **Element:** `MASTERCOLUMNS` `WIDTH`
@@ -900,7 +910,7 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 | `KntR2racuni1.md` | `PRINTMASTER` ne gleda `LANDSCAPE` | R41 |
 | `TecRazOTV.md` | XML nije u repou | |
 | `RealizacijaStavkeNG.md` | `#ISEMPTY`, timeout 180, `PRINTREPXMASTER` | R72, R65, R41 |
-| `Izgled-Carpo-checklista.md` | Manager ponuda, ne Office ribbon | R74 |
+| `Izgled-Carpo-checklista.md` | Manager ponuda, ne Office ribbon | R74, R104 |
 | `MPKaseOperNG.md` | `DETAILDBLCLICK`, `Lista` bez `:`, detail `@@id` | R75, R60, R11 |
 | `KOD_RSPostavke.md` | stablo store, `IZMJENA(@…)`, `REFRESHAFTERCHILD` | R55, R54, R77, R65 |
 | `RealizacijaFakture.md` | `#ISEMPTY`, timeout 180 | R72, R65 |
