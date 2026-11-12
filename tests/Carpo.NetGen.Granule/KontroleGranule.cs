@@ -632,7 +632,7 @@ namespace Carpo.NetGen.Granule
                 && Kontrole.OblikTrazilice(Kontrole.A(sea, "SQL") ?? "") == "hash"
                 ? Qa.Z(Ime, "MAIL-06", "filter: zavisni combo i search vipartneri#", "netgen/Form2.vb:7510,5158; netgen/Form3.vb:102")
                 : Qa.P(Ime, "MAIL-06", "filter kontrole", "netgen/Form2.vb:5158", ""));
-            l.Add(Stablo.Meni(Ime, "MAIL-07", "MPNGPregDokMAIL.xml"));
+            l.Add(Stablo.Otvori(Ime, "MAIL-07", "MPNGPregDokMAIL.xml", root));
             Kontrole.K(l, Ime, xml, "MAIL-20", "totalgen(id, operater, konekcija, zadnji SQL mastera, parametri grida). Povrat se ne cita", "netgen/Form1.vb:4599-4623", "assemblyload.args", "shell-pet");
             Kontrole.K(l, Ime, xml, "MAIL-21", "Load ili CreateInstance padne: CB log i Exit Sub", "netgen/Form1.vb:4600-4611", "assemblyload.greska", "prekini");
             return l;
