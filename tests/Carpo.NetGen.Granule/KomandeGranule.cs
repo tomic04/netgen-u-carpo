@@ -116,7 +116,7 @@ namespace Carpo.NetGen.Granule
             l.Add(dklik.IndexOf("as focus", StringComparison.OrdinalIgnoreCase) >= 0 && dklik.IndexOf("as Naziv", StringComparison.Ordinal) >= 0
                 ? Qa.Z(Ime, "KUL-11", "Dodaj parametra: focus kolona i refresh kontrole Naziv i stavke", "netgen/Form2.vb:4627-4632,4974-4998")
                 : Qa.P(Ime, "KUL-11", "focus/refresh", "netgen/Form2.vb:4629", dklik));
-            l.Add(Stablo.Meni(Ime, "KUL-12", "Kulture.xml"));
+            l.Add(Stablo.Otvori(Ime, "KUL-12", "Kulture.xml", root));
 
             Komande.K(l, Ime, xml, "KUL-20", "Prazan number ide kao 0, prazan text kao navodnici", "netgen/Form2.vb:3601,3655", "prazanBroj", "0");
             Komande.K(l, Ime, xml, "KUL-21", "Tražilica šalje Tag (id), ne tekst. Prazan tag je null", "netgen/Form2.vb:3626-3632", "searchParam", "tag");
