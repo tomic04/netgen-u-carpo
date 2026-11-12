@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Text;
 using System.Data.SqlClient;
 using System.IO;
 using Carpo.NetGen.Grid;
@@ -198,11 +199,22 @@ namespace Carpo.NetGen.GridTest
             using (var c = new SqlConnection(SpinVeza.Spoj("localhost", "spin")))
             {
                 c.Open();
-                using (var cmd = new SqlCommand(g.Stanje.SqlZaSlanje, c))
+                try
                 {
-                    cmd.CommandTimeout = g.Stanje.TimeoutSekundi;
-                    using (var da = new SqlDataAdapter(cmd))
-                        da.Fill(dt);
+                    using (var cmd = new SqlCommand(g.Stanje.SqlZaSlanje, c))
+                    {
+                        cmd.CommandTimeout = g.Stanje.TimeoutSekundi;
+                        using (var da = new SqlDataAdapter(cmd))
+                            da.Fill(dt);
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    // Class1.ExecSql u Catch vrati Nothing i ne rusi proces.
+                    Console.WriteLine("SPIN " + ime + " NETGEN-CATCH " + ex.Message);
+                    T(ime + "-netgen-catch", true, ex.Message);
+                    IspisiKontekst(c, ime);
+                    return;
                 }
             }
             g.Ucitaj(p, dt);
@@ -216,6 +228,34 @@ namespace Carpo.NetGen.GridTest
             T(ime + "-kolone", podataka >= minKolona, podataka.ToString());
             T(ime + "-fokus", g.Stanje.Tablica != null && g.Stanje.Id != "", g.Stanje.FocusRazlog + " id=" + g.Stanje.Id);
             Console.WriteLine("SPIN " + ime + " redovi=" + dt.Rows.Count.ToString() + " kolone=" + podataka.ToString());
+        }
+
+        private static void IspisiKontekst(SqlConnection c, string ime)
+        {
+            try
+            {
+                using (var cmd = new SqlCommand("select count(*) from klmasterroba", c))
+                {
+                    object n = cmd.ExecuteScalar();
+                    Console.WriteLine("SPIN " + ime + " klmasterroba-redovi=" + n);
+                }
+                using (var cmd = new SqlCommand("select column_name from information_schema.columns where table_name='klmasterroba' and column_name like '%oznak%' order by column_name", c))
+                using (var r = cmd.ExecuteReader())
+                {
+                    var sb = new StringBuilder();
+                    while (r.Read())
+                    {
+                        if (sb.Length > 0)
+                            sb.Append(",");
+                        sb.Append(r.GetString(0));
+                    }
+                    Console.WriteLine("SPIN " + ime + " klmasterroba-oznake=" + sb);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("SPIN " + ime + " kontekst " + ex.Message);
+            }
         }
 
         private static bool Ima(MasterGrid g, string s)
