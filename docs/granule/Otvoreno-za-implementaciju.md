@@ -35,6 +35,8 @@ Od 27 otvorenih, 20 je ostalo (12 `ssMeni`, 4 XML-a, `JEZ-31`, `DOS-11`, `FAK-11
 
 Stari CI `b7d8989` ima 571 / 411 / 160. Novi `ef710b9` ima 354 / 341 / 13. Od 160, 117 je još u katalogu (13 i dalje otvoreno, 104 zeleno). 42 prave stavke nema u novom katalogu. 36 ima NetGen dokaz i ostaje zatvoreno. Šest je izbačeno bez dokaza i ostaje otvoreno: `STA-12`, `MPP-20`, `PL-32`, `MPK-30`, `MPK-31`, `STA-34`.
 
+Krug poslije #74 i #75: nijedna od 164 nije novo zatvorena. `JEZ-31` i redovi `ssMeni` i dalje su otvoreni. Testni upis u `ssMeni` nije dokaz. [#75](https://github.com/tomic04/netgen-u-carpo/pull/75) bira Manager samo uz stablo, detail koji nije `:forma` i gumbe (`Form1.vb` 4310–4316). To nije stavka iz 164. Sažetak ostaje 137 / 27.
+
 Izvor polaznog izvještaja je CI [#34](https://github.com/tomic04/netgen-u-carpo/pull/34), commit `30236ff`, `SVE ukupno=624 zeleno=460 otvoreno=164 pad=0`.
 
 Svih 164 stavki je otvoreno u izvještaju [#34](https://github.com/tomic04/netgen-u-carpo/pull/34). Nijedna nije pad. Grupe su po elementu NetGena. Tablica ispod i dalje opisuje to stanje. Novije stanje, prema implementaciji [#50](https://github.com/tomic04/netgen-u-carpo/pull/50), [#52](https://github.com/tomic04/netgen-u-carpo/pull/52), [#54](https://github.com/tomic04/netgen-u-carpo/pull/54), [#55](https://github.com/tomic04/netgen-u-carpo/pull/55) i [#56](https://github.com/tomic04/netgen-u-carpo/pull/56), vrh je `cursor/netgen-nextform-3266` (`5015fe1`), stoji u sljedećem odjeljku.
