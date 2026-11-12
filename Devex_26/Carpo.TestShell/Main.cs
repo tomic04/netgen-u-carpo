@@ -275,8 +275,10 @@ namespace Carpo.TestShell
                     UpisiIshod(snimka, "FAIL bind " + ex);
                     return 1;
                 }
+                Faza(snimka, "prije-klika");
                 cmdGen_Click(this, EventArgs.Empty);
                 _uiKlikGotov = true;
+                Faza(snimka, "poslije-klika");
             }
             catch (Exception ex)
             {
@@ -307,7 +309,7 @@ namespace Carpo.TestShell
                     catch
                     {
                     }
-                    SnimiProzor(granula.Handle, snimka, true);
+                    SnimiProzor(granula.Handle, snimka);
                     if (!ImaSnimku(snimka))
                         SnimiFormu(granula, snimka);
                     if (ImaSnimku(snimka))
@@ -324,9 +326,11 @@ namespace Carpo.TestShell
             }
             try
             {
+                Faza(snimka, "prije-zatvaranja");
                 if (granula != null && !granula.IsDisposed)
                     granula.Close();
                 Close();
+                Faza(snimka, "poslije-zatvaranja");
             }
             catch (Exception ex)
             {
@@ -355,6 +359,8 @@ namespace Carpo.TestShell
             for (int i = 0; i < 40; i++)
             {
                 Thread.Sleep(500);
+                if (_uiKlikGotov)
+                    continue;
                 string naslov = ProzorGreske(pid);
                 if (naslov != null)
                 {
@@ -367,18 +373,12 @@ namespace Carpo.TestShell
                 if (prozor != IntPtr.Zero)
                 {
                     _uiIshod = 2;
-                    if (!_uiKlikGotov)
-                    {
-                        _uiVidjen++;
-                        if (!ImaSnimku(snimka))
-                        {
-                            // PrintWindow s ove niti čeka UI i zna zaglaviti Show. Ovdje samo pikseli.
-                            SnimiProzor(prozor, snimka, false);
-                        }
-                        // WM_CLOSE usred Show zna zaglaviti modeless prozor. Zatvori tek modal koji ne pusti klik.
-                        if (_uiVidjen >= 6 && ImaSnimku(snimka))
-                            PostMessage(prozor, 0x0010, IntPtr.Zero, IntPtr.Zero);
-                    }
+                    _uiVidjen++;
+                    if (!ImaSnimku(snimka))
+                        SnimiProzor(prozor, snimka);
+                    // WM_CLOSE usred Show zna zaglaviti modeless prozor. Zatvori tek modal koji ne pusti klik.
+                    if (_uiVidjen >= 6 && ImaSnimku(snimka))
+                        PostMessage(prozor, 0x0010, IntPtr.Zero, IntPtr.Zero);
                 }
             }
             if (_uiIshod == 0)
@@ -403,9 +403,7 @@ namespace Carpo.TestShell
                 GetWindowThreadProcessId(h, out wpid);
                 if (wpid != (uint)pid || !IsWindowVisible(h))
                     return true;
-                var sb = new StringBuilder(512);
-                GetWindowText(h, sb, sb.Capacity);
-                string t = sb.ToString();
+                string t = NaslovProzora(h);
                 if (t == "Start Error" || t == "Carpo.NetGen" || t == "Greška" || t == "StartXmlGen()")
                 {
                     nadjen = t + TekstDijaloga(h);
@@ -421,8 +419,7 @@ namespace Carpo.TestShell
             var sb = new StringBuilder();
             EnumChildWindows(hwnd, delegate (IntPtr h, IntPtr l)
             {
-                var t = new StringBuilder(2000);
-                GetWindowText(h, t, t.Capacity);
+                string t = NaslovProzora(h);
                 if (t.Length > 0)
                     sb.Append(" | ").Append(t);
                 return true;
@@ -439,9 +436,7 @@ namespace Carpo.TestShell
                 GetWindowThreadProcessId(h, out wpid);
                 if (wpid != (uint)pid || !IsWindowVisible(h))
                     return true;
-                var sb = new StringBuilder(512);
-                GetWindowText(h, sb, sb.Capacity);
-                string t = sb.ToString();
+                string t = NaslovProzora(h);
                 if (t.Length == 0 || t == "TestShell")
                     return true;
                 if (t == "Start Error" || t == "Carpo.NetGen" || t == "Greška")
@@ -483,7 +478,7 @@ namespace Carpo.TestShell
             try { File.WriteAllText(put + ".snimka.txt", tekst); } catch { }
         }
 
-        private static void SnimiProzor(IntPtr hwnd, string put, bool smijeCekati)
+        private static void SnimiProzor(IntPtr hwnd, string put)
         {
             if (hwnd == IntPtr.Zero || ImaSnimku(put))
                 return;
@@ -502,59 +497,23 @@ namespace Carpo.TestShell
             }
             if (SnimiPikselima(r.Left, r.Top, w, h, put))
                 return;
-            if (!smijeCekati)
-            {
-                if (!SnimiBitBlt(hwnd, w, h, put))
-                    ZapisiSnimku(put, "ekran bez sadrzaja " + w + "x" + h);
-                return;
-            }
-            try
-            {
-                using (var bmp = new System.Drawing.Bitmap(w, h))
-                using (var g = System.Drawing.Graphics.FromImage(bmp))
-                {
-                    IntPtr hdc = g.GetHdc();
-                    bool tisak = false;
-                    try
-                    {
-                        tisak = PrintWindow(hwnd, hdc, 2) || PrintWindow(hwnd, hdc, 0);
-                    }
-                    finally
-                    {
-                        g.ReleaseHdc(hdc);
-                    }
-                    if (!tisak)
-                    {
-                        IntPtr src = GetWindowDC(hwnd);
-                        try
-                        {
-                            IntPtr hdc2 = g.GetHdc();
-                            try
-                            {
-                                tisak = BitBlt(hdc2, 0, 0, w, h, src, 0, 0, 0x00CC0020);
-                            }
-                            finally
-                            {
-                                g.ReleaseHdc(hdc2);
-                            }
-                        }
-                        finally
-                        {
-                            ReleaseDC(hwnd, src);
-                        }
-                    }
-                    if (!tisak || !JeSadrzaj(bmp))
-                    {
-                        ZapisiSnimku(put, "snimka prazna " + w + "x" + h);
-                        return;
-                    }
-                    bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
-                }
-            }
-            catch (Exception ex)
-            {
-                ZapisiSnimku(put, ex.ToString());
-            }
+            if (!SnimiBitBlt(hwnd, w, h, put))
+                ZapisiSnimku(put, "ekran bez sadrzaja " + w + "x" + h);
+        }
+
+        private static void Faza(string snimka, string tekst)
+        {
+            try { File.WriteAllText(snimka + ".faza.txt", tekst); } catch { }
+        }
+
+        private static string NaslovProzora(IntPtr hwnd)
+        {
+            var sb = new StringBuilder(512);
+            IntPtr rezultat;
+            IntPtr odg = SendMessageTimeout(hwnd, 0x000D, (IntPtr)sb.Capacity, sb, 0x0002, 200, out rezultat);
+            if (odg == IntPtr.Zero)
+                return "";
+            return sb.ToString();
         }
 
         private static bool SnimiBitBlt(IntPtr hwnd, int w, int h, string put)
@@ -731,6 +690,9 @@ namespace Carpo.TestShell
 
         [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
         private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint msg, IntPtr wParam, StringBuilder lParam, uint flags, uint timeout, out IntPtr result);
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
