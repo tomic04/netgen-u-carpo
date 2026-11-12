@@ -300,9 +300,6 @@ namespace Carpo.NetGen.TestHooks
                 NgButton b = p.Gumbi[i];
                 s["gumb." + b.Redni.ToString(CultureInfo.InvariantCulture)] = b.Natpis + "|" + b.Naredba + "|true";
             }
-            string natpis = NatpisOnLoad2(p);
-            if (natpis.Length > 0)
-                s["gumb.natpis"] = natpis;
 
             foreach (var par in cb)
                 s["cb." + par.Key] = "ima";
@@ -383,33 +380,6 @@ namespace Carpo.NetGen.TestHooks
             s["onlytree.param"] = "samo-stablo";
             s["click.ok"] = "repx-template";
             s["carpoform.kup"] = CarpoFormKup(projekt);
-        }
-
-        /// <summary>
-        /// ONLOAD2 enable traži stupac po Button.Text, ne po NAME (Form1.vb 3914–3921).
-        /// </summary>
-        public static string NatpisOnLoad2(NgProject p)
-        {
-            if (p == null)
-                return "";
-            string on2 = Attr(p, "ONLOAD2") ?? "";
-            string buttons = p.Buttons ?? "";
-            if (on2.Length == 0 || buttons.Length == 0)
-                return "";
-            string[] seg = buttons.Split('#');
-            for (int i = 0; i < seg.Length; i++)
-            {
-                string dio = (seg[i] ?? "").Trim();
-                if (dio.Length == 0)
-                    continue;
-                int c = dio.IndexOf(':');
-                string natpis = c > 0 ? dio.Substring(0, c).Trim() : dio;
-                if (natpis.Length == 0)
-                    continue;
-                if (on2.IndexOf("'" + natpis + "'", StringComparison.Ordinal) >= 0)
-                    return natpis;
-            }
-            return "";
         }
 
         public static string CarpoFormKup(NgProject p)

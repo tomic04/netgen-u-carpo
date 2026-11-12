@@ -108,8 +108,6 @@ namespace Carpo.NetGen.GridTest
             if (g != null && g.Stavke != null && g.Stavke.ContainsKey("dll"))
                 dll = g.Stavke["dll"];
             T("opz-nije-dll", g != null && g.Izvedeno && dll == "ne", dll);
-            NgProject pon = Ucitaj("MPPonuda.xml");
-            T("mpp-20", GranulaIzvrsenje.NatpisOnLoad2(pon) == "Dodaj", GranulaIzvrsenje.NatpisOnLoad2(pon));
             NgProject bvg = Ucitaj("KUPDostKnNGBvg.xml");
             T("bvg-carpoform", GranulaIzvrsenje.CarpoFormKup(bvg) == "KnjigaUra.frmKnjigaUraKupEdit.xml", GranulaIzvrsenje.CarpoFormKup(bvg));
         }
