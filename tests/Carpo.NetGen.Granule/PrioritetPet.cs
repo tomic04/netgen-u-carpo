@@ -182,7 +182,7 @@ namespace Carpo.NetGen.Granule
                 ? Qa.Z(Ime, "OPZ-08", "Timeout je 240", "netgen/Form1.vb:3463")
                 : Qa.P(Ime, "OPZ-08", "timeout", "netgen/Form1.vb:3463", Pet.Attr(p, "COMMANDTIMEOUT")));
             l.Add(Pet.Izgled("OPZ-09", "HEADERALIGNMENT=2 je poravnanje zaglavlja, izgled."));
-            l.Add(Qa.Kljuc(Ime, "OPZ-20", "Eporezna ne otvara dijalog i ne ucitava DLL", "netgen/Form1.vb:5369-5370", a, "gumb", "Eporezna", "dll", "ne"));
+            l.Add(Qa.Mora(Ime, "OPZ-20", "Eporezna ne otvara dijalog i ne ucitava DLL", "netgen/Form1.vb:5369-5370", a, "gumb", "Eporezna", "dll", "ne"));
             return l;
         }
     }

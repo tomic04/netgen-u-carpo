@@ -167,24 +167,24 @@ namespace Carpo.NetGen.Granule
 
         private static void DodajRuntime(List<Stavka> l, string xml)
         {
-            R(l, xml, "OKL-30", "Redoslijed: nema SETDEFAULTS, drvo, pa master SQL, detail se ne zove",
+            M(l, xml, "OKL-30", "Redoslijed: nema SETDEFAULTS, drvo, pa master SQL, detail se ne zove",
                 "netgen/Form1.vb:3862-3883,2104-2113", "otvori", "", "sqlTrag",
                 MasterSql);
-            R(l, xml, "OKL-31", "Prazan TREE i prazan COMBO skrivaju TreeView2",
+            M(l, xml, "OKL-31", "Prazan TREE i prazan COMBO skrivaju TreeView2",
                 "netgen/Form1.vb:4310-4316,3345-3347", "otvori", "", "stabloVidljivo", "false");
-            R(l, xml, "OKL-32", "Lijevi splitter je 0 i gumb drveta je ugasen",
+            M(l, xml, "OKL-32", "Lijevi splitter je 0 i gumb drveta je ugasen",
                 "netgen/Form1.vb:4313-4315", "otvori", "", "lijeviSplitter", "0");
-            R(l, xml, "OKL-33", "Gumb za drvo je disabled",
+            M(l, xml, "OKL-33", "Gumb za drvo je disabled",
                 "netgen/Form1.vb:4315", "otvori", "", "gumbDrvoEnabled", "false");
-            R(l, xml, "OKL-34", "Combo na podlozi je skriven",
+            M(l, xml, "OKL-34", "Combo na podlozi je skriven",
                 "netgen/Form1.vb:3345-3347", "otvori", "", "comboVidljiv", "false");
-            R(l, xml, "OKL-35", "Nema detail SQL pa se donji splitter spusti na visinu-50",
+            M(l, xml, "OKL-35", "Nema detail SQL pa se donji splitter spusti na visinu-50",
                 "netgen/Form1.vb:2111-2113", "otvori", "", "detailSql", "");
-            R(l, xml, "OKL-36", "Izbornik je skriven (nema MENU)",
+            M(l, xml, "OKL-36", "Izbornik je skriven (nema MENU)",
                 "netgen/Form1.vb:3552-3553,3449-3450,3491-3494", "otvori", "", "menuVidljiv", "false");
-            R(l, xml, "OKL-37", "Help gumb nije vidljiv (nema HELPKOD)",
+            M(l, xml, "OKL-37", "Help gumb nije vidljiv (nema HELPKOD)",
                 "netgen/Form1.vb:3491-3494", "otvori", "", "helpVidljiv", "false");
-            R(l, xml, "OKL-81", "Nema TIMER: statusna oznaka timera je skrivena",
+            M(l, xml, "OKL-81", "Nema TIMER: statusna oznaka timera je skrivena",
                 "netgen/Form1.vb:3449-3450", "otvori", "", "timerVidljiv", "false");
             l.Add(Izgled("OKL-38", "NetGen sakrije DX grid. Port crta DevExpress.", "netgen/Form1.vb:1906-1908"));
             M(l, xml, "OKL-39", "CHECKBOXVISIBLE FALSE sakrije checkbox stupac. Janus Icon 22 je izgled – Carpo",
@@ -225,23 +225,23 @@ namespace Carpo.NetGen.Granule
                 "netgen/Form1.vb:2059-2072", "otvori", "", "fokus", "grid");
             M(l, xml, "OKL-59", "Nema kolone id pa je @@id vrijednost Cells(2), prvi podatak (klmasterrobaid)",
                 "netgen/Form1.vb:5566-5582", "otvori", "", "idJe", "klmasterrobaid");
-            R(l, xml, "OKL-60", "Vidljiv je samo gumb Izmjena, naredba FRMEDIT",
+            M(l, xml, "OKL-60", "Vidljiv je samo gumb Izmjena, naredba FRMEDIT",
                 "netgen/Form1.vb:3827-3837,5664-5667", "otvori", "", "gumb.1", "Izmjena|FRMEDIT|true");
             R(l, xml, "OKL-61", "Dvostruki klik otvara FRMEDIT",
                 "netgen/Form1.vb:6935-6936", "dblclick", "", "forma", "FRMEDIT");
-            R(l, xml, "OKL-62", "Naslov dijaloga je Izmjena oznake",
+            M(l, xml, "OKL-62", "Naslov dijaloga je Izmjena oznake",
                 "netgen/Form2.vb:969", "gumb", "Izmjena", "formaNaslov", "Izmjena oznake");
-            R(l, xml, "OKL-63", "Sirina dijaloga je 5112/14, visina 2189/14, prije GetSetting registra",
+            M(l, xml, "OKL-63", "Sirina dijaloga je 5112/14, visina 2189/14, prije GetSetting registra",
                 "netgen/Form2.vb:1093-1094,2785-2788", "gumb", "Izmjena", "formaSirina", Qa.Px("5112").ToString());
-            R(l, xml, "OKL-64", "Visina dijaloga je 2189/14",
+            M(l, xml, "OKL-64", "Visina dijaloga je 2189/14",
                 "netgen/Form2.vb:1094", "gumb", "Izmjena", "formaVisina", Qa.Px("2189").ToString());
-            R(l, xml, "OKL-65", "Label prikazuje CAPTION, ne TEXT=Label16",
+            M(l, xml, "OKL-65", "Label prikazuje CAPTION, ne TEXT=Label16",
                 "netgen/Form2.vb:2932-2938", "gumb", "Izmjena", "kontrola.Label16.tekst", "Dodatna oznaka");
-            R(l, xml, "OKL-66", "Label TOP/LEFT/W/H su jedinice/14, VB zaokruzivanje na parni",
+            M(l, xml, "OKL-66", "Label TOP/LEFT/W/H su jedinice/14, VB zaokruzivanje na parni",
                 "netgen/Form2.vb:2945-2950", "gumb", "Izmjena", "kontrola.Label16.top", Qa.Px("389").ToString());
-            R(l, xml, "OKL-67", "oznaka2 LEFT je 2002/14",
+            M(l, xml, "OKL-67", "oznaka2 LEFT je 2002/14",
                 "netgen/Form2.vb:2947", "gumb", "Izmjena", "kontrola.oznaka2.left", Qa.Px("2002").ToString());
-            R(l, xml, "OKL-68", "ONLOAD upise oznaka2 iz reda; tekst null postaje prazan",
+            M(l, xml, "OKL-68", "ONLOAD upise oznaka2 iz reda; tekst null postaje prazan",
                 "netgen/Form2.vb:2016-2018", "gumb", "Izmjena", "kontrola.oznaka2.izOnLoada", "true");
             M(l, xml, "OKL-69", "Prihvati izvrsi update tek nakon zatvaranja i onda osvjezi master",
                 "netgen/Form2.vb:3367-3396; netgen/Form1.vb:5510-5519", "prihvati", "Prihvati", "refreshMaster", "true");
@@ -255,18 +255,18 @@ namespace Carpo.NetGen.Granule
                 "netgen/Form2.vb:4161-4166", "escape", "", "refreshMaster", "false");
             R(l, xml, "OKL-74", "Nema AcceptButton: Enter u tekstu ne radi Prihvati",
                 "netgen/Form2.vb:3367", "gumb", "Izmjena", "acceptButton", "");
-            R(l, xml, "OKL-75", "Tab: label (auto), pa oznaka2, pa Prihvati, pa Odustani",
+            M(l, xml, "OKL-75", "Tab: label (auto), pa oznaka2, pa Prihvati, pa Odustani",
                 "netgen/Form2.vb:3027-3043,2775-2776", "gumb", "Izmjena", "tab", "Label16,oznaka2,Prihvati,Odustani");
-            R(l, xml, "OKL-76", "PERMISIO nije u XML-u pa default ostaje true i salje se select ssPermission",
+            M(l, xml, "OKL-76", "PERMISIO nije u XML-u pa default ostaje true i salje se select ssPermission",
                 "netgen/Form1.vb:3153,3395,3414-3416,2706", "otvori", "", "permisioSql",
                 "ssPermission");
-            R(l, xml, "OKL-77", "Kontekstni izbornik ima standardne stavke iako POPUP ne postoji",
+            M(l, xml, "OKL-77", "Kontekstni izbornik ima standardne stavke iako POPUP ne postoji",
                 "netgen/Form1.vb:3620-3673", "otvori", "", "kontekst",
                 "Spremi postavke grida|Reset grida|Export grid|Grupiraj / razgrupiraj|Format style|Izgled grida|Ispis REPX|Ispis");
             l.Add(Izgled("OKL-78", "NetGen group header ima prefiks [ i sufiks razmak ]. Krom se ne trazi.", "netgen/Form1.vb:2136-2142"));
             M(l, xml, "OKL-79", "Pocetni poredak redova je poredak SQL-a, grid sam ne sortira",
                 "netgen/Form1.vb:1999", "otvori", "", "pocetniSort", "sql");
-            R(l, xml, "OKL-80", "Nema ICON pa ikona dolazi iz hosta (Ikona), ne iz Graphics\\Icons",
+            M(l, xml, "OKL-80", "Nema ICON pa ikona dolazi iz hosta (Ikona), ne iz Graphics\\Icons",
                 "netgen/Form1.vb:3430-3440", "otvori", "", "ikona", "host");
         }
 

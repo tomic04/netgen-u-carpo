@@ -188,10 +188,10 @@ namespace Carpo.NetGen.Granule
             var l = new List<Stavka>();
             K(l, xml, "MPK-30", "FILTERFORM true zamijeni master SQL-om ONSUBMIT i parametara", "netgen/Form1.vb:5445-5452", "gumb", "Parametri", "fillExplorer", "true");
             K(l, xml, "MPK-31", "Prazan FILLEXPLORER izvrsi ONSUBMIT pa ponovi zadnji master", "netgen/Form1.vb:5509-5519", "gumb", "Dodaj", "fillExplorer", "prazan");
-            K(l, xml, "MPK-40", "datumdok i napomena dijele indeks 1. Red je datum pa napomena", "netgen/Form2.vb:3027-3030", "gumb", "Dodaj", "tab", "datumdok,napomena");
-            K(l, xml, "MPK-41", "Datum nije DATE1. U parametru je danas kao yyyyMMdd, broj je 0", "netgen/Form2.vb:2251-2267,3530-3532,2084", "gumb", "Dodaj", "datumParam", "yyyyMMdd");
+            l.Add(Qa.Mora(Ime, "MPK-40", "datumdok i napomena dijele indeks 1. Red je datum pa napomena", "netgen/Form2.vb:3027-3030", xml, "gumb", "Dodaj", "tab", "datumdok,napomena"));
+            l.Add(Qa.Mora(Ime, "MPK-41", "Datum nije DATE1. U parametru je danas kao yyyyMMdd, broj je 0", "netgen/Form2.vb:2251-2267,3530-3532,2084", xml, "gumb", "Dodaj", "datumParam", "yyyyMMdd"));
             l.Add(Qa.Mora(Ime, "MPK-42", "Checkbox stupac je vidljiv, total je ukljucen, sort klikom ostaje", "netgen/Form1.vb:2043-2053,3401-3404", xml, "otvori", "", "selectorVidljiv", "true"));
-            K(l, xml, "MPK-43", "SQL filtera ide u NgDnevnik, ne u CBLog", "docs/funkcionalnosti/logging.md", "gumb", "Parametri", "dnevnik", "NetGen SQL");
+            l.Add(Qa.Mora(Ime, "MPK-43", "SQL filtera ide u NgDnevnik, ne u CBLog", "docs/funkcionalnosti/logging.md", xml, "gumb", "Parametri", "dnevnik", "NetGen SQL"));
             l.Add(Izgled("MPK-50", "Row header, prazni retci, HeaderLines, font i obrub su Janus krom. Kontrola je DevExpress.", "netgen/Form1.designer.vb:640-655; netgen/Class1.vb:1000,1364"));
             l.Add(Izgled("MPK-51", "Gumbi su u ribbonu. Sirina 79 i razmak 8 se ne traze.", "netgen/Form1.vb:3312,3845-3846"));
             return l;
