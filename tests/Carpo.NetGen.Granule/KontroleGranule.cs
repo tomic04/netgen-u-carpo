@@ -446,7 +446,7 @@ namespace Carpo.NetGen.Granule
             l.Add(sea != null && sea.Grana == NgGrana.Search && Kontrole.OblikTrazilice(ssql) == "hash" && ssql.IndexOf("sifra%", StringComparison.Ordinal) >= 0 && !Kontrole.AllowTrue(Kontrole.A(sea, "ALLOWEMPTY"))
                 ? Qa.Z(Ime, "FAK-09", "SEARCH hash. ALLOWEMPTY na searchu se ne cita", "netgen/Form2.vb:2140; netgen/Form3.vb:102")
                 : Qa.P(Ime, "FAK-09", "search", "netgen/Form3.vb:102", ssql));
-            l.Add(Stablo.Meni(Ime, "FAK-10", "FakPar.xml"));
+            l.Add(Stablo.Otvori(Ime, "FAK-10", "FakPar.xml", root));
             l.Add(Kontrole.Objekti(Ime, "FAK-11", "spFakPartneriUvjetiQuery"));
             Kontrole.K(l, Ime, xml, "FAK-20", "CurMEdit prazan ide kao 0, ne kao tekst", "netgen/Form2.vb:2071,3601", "number.Rabat", "0");
             Kontrole.K(l, Ime, xml, "FAK-21", "checkbox PoSkladistu salje CheckState", "netgen/Form2.vb:3424-3427", "check.PoSkladistu", "checkstate");
