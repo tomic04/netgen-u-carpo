@@ -19,6 +19,7 @@ namespace Carpo.NetGen.Granule
             l.Add(Assembly(root));
             l.Add(Prostor(root));
             l.Add(Blagajna(root));
+            l.Add(Roditelj(root));
             return l;
         }
 
@@ -126,6 +127,32 @@ namespace Carpo.NetGen.Granule
             if (!Lanac.Izvrsi("BLAGAJNAENABLE(@@mpkaseid)#OK", true, null).Zatvara)
                 return Qa.P(granula, id, opis, izvor, "OK iza naredbe nije zatvorio");
             Console.WriteLine("[Z] MPKasaImport NRD-BLAGAJNA upit=spmpBlagajnaEnable indenable=0/1");
+            return Qa.Z(granula, id, opis, izvor);
+        }
+
+        private static Stavka Roditelj(string root)
+        {
+            const string granula = "MPIzdVPNG";
+            const string id = "NRD-RODITELJ";
+            const string opis = "DA na ODUSTANI1 zatvara roditelja i ne guta SQL ispred";
+            const string izvor = "netgen/Form2.vb:7035-7037";
+            string xml = Path.Combine(root, "definitions", "netgen", "BIOVEGA", "MPIzdVPNG.xml");
+            string tekst = Procitaj(xml);
+            const string naredba = "spMPIzdatnicaSKLMP @action = 901, @operateriid = @@operateriid , @trgovinaid = @@trgovinaid, @id=@@id#CLOSEPARENT";
+            if (tekst == null || tekst.IndexOf(naredba, StringComparison.Ordinal) < 0)
+                return Qa.P(granula, id, opis, izvor, "XML nema CLOSEPARENT");
+            if (!RoditeljNaredba.Je("CLOSEPARENT"))
+                return Qa.P(granula, id, opis, izvor, "Je je false");
+            Lanac.Ishod ishod = Lanac.Izvrsi(naredba, true, null);
+            bool imaSql = false;
+            for (int i = 0; i < ishod.Odigrano.Count; i++)
+            {
+                if ((ishod.Odigrano[i] ?? "").IndexOf("spMPIzdatnicaSKLMP", StringComparison.Ordinal) >= 0)
+                    imaSql = true;
+            }
+            if (!ishod.CloseParent || !ishod.Button2 || !imaSql)
+                return Qa.P(granula, id, opis, izvor, "closeParent=" + ishod.CloseParent + " sql=" + imaSql);
+            Console.WriteLine("[Z] MPIzdVPNG NRD-RODITELJ closeParent=da sql=spMPIzdatnicaSKLMP");
             return Qa.Z(granula, id, opis, izvor);
         }
 
