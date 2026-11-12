@@ -249,7 +249,7 @@ namespace Carpo.NetGen.Granule
             l.Add(cmd6 != null && cmd6.Naredba.StartsWith("MULTIBLUE", StringComparison.OrdinalIgnoreCase)
                 ? Qa.Z(Ime, "KUP-04", "MULTIBLUE uzima plave (SelectedItems), ne cekirane", "netgen/Form1.vb:5022-5032")
                 : Qa.P(Ime, "KUP-04", "MULTIBLUE", "netgen/Form1.vb:5022", cmd6 == null ? "" : cmd6.Naredba));
-            l.Add(Stablo.Meni(Ime, "KUP-05", "KUPNG.xml"));
+            l.Add(Stablo.Otvori(Ime, "KUP-05", "KUPNG.xml", root));
 
             Komande.K(l, Ime, xml, "KUP-10", "Temp tablica: delete po suser_sname i po operateriid, pa insert id, host, suser, operater", "netgen/Form1.vb:4934-5018", "multiTemp", "delete-dva-pa-insert");
             Komande.K(l, Ime, xml, "KUP-11", "FOREACHSELECTED na dijalogu vrti cekirane retke grida i sljedeci segment", "netgen/Form2.vb:7040-7042,8337-8354", "foreachSelected", "cekirani");
