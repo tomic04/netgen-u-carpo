@@ -51,6 +51,7 @@ namespace Carpo.NetGen.Xml
                 var doc = new XmlDocument();
                 doc.XmlResolver = null;
                 doc.Load(putanja);
+                IncludeXml.Spoji(doc, putanja);
                 return Parsiraj(doc, putanja);
             }
             catch (Exception ex)

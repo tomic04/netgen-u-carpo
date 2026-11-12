@@ -620,9 +620,9 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 
 - **Element:** `INCLUDE` na formi
 - **NetGen:** ako je globalni include prazan, čita se s forme (`Form2.vb` 844–849). Vrijednost se cijepa po `#` (`863`). Ime datoteke zamijeni zadnji segment putanje (`869`). Prvo `SpinDMSUtil.NetGenFinder.GetFile`, pa `XmlDocument.Load` (`905–908`). Djeca `/PROJECT` se uvezu (`916–934`). `On Error Resume Next` je na ulazu u `ProcitajXML` (`706`). Datoteka koja ne postoji ostavi formu kakva je napisana (`913`).
-- **Carpo:** atribut se spremi (`NetGenXmlReader.cs` 118). Drugi XML se ne učitava i kontrole se ne dodaju.
-- **Posljedica:** `MPStanje` `MAINFORM` traži `MPKarticaRobe.xml` u istom folderu. Te datoteke nema. Kad stigne, njeni čvorovi moraju ući u dokument prije crtanja `MAINFORM`.
-- **Test:** `MPS-04`
+- **Carpo:** `IncludeXml.Spoji` prije parsiranja. `GetFile` je `SpinDMSUtil.NetGenFinder` ili prazan pa disk. Nema datoteke: log i forma ostaje.
+- **Posljedica:** `MPStanje` i dalje nema `MPKarticaRobe.xml` u folderu, pa se ništa ne doda. Kad datoteka stigne, njeni čvorovi uđu.
+- **Test:** `include-dijete`, `include-nema`, `include-finder`
 
 ## R79 `DETCHECKBOXVISIBLE` nije kvačica mastera
 

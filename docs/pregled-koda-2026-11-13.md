@@ -12,7 +12,7 @@ Pregledano je 9 modula. Popravljeno: `FILLEXPLORER` nakon OK, `ONLOAD2` po natpi
 |---|---|
 | NetGen | `Loader.vb` `Run8`: ista polja, `hWnd` 0 dok nema prozora. `Form2.ProcitajXML` čita atribute kako jesu. |
 | Carpo | `Ulaz/Loader.cs` 60–96 i `Xml/NetGenXmlReader.cs` 47–127. |
-| Razlika | NE za ulaz i čitanje atributa. `INCLUDE` se spremi, a tuđi XML se ne uvozi (R78, namjerno dok datoteka ne postoji). |
+| Razlika | NE za ulaz. `INCLUDE` uvozi djecu `/PROJECT` (`Xml/IncludeXml.cs`, `Form2.vb` 844–934). Nema datoteke: forma ostaje. |
 
 ## 2. ExecSql i @@
 

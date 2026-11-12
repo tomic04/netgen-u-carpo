@@ -30,6 +30,7 @@ namespace Carpo.NetGen.GridTest
             Pregled();
             AssemblyLoad();
             Fiskal();
+            Include();
             Zamjene();
             OznakaBezBaze();
             JeziciBezBaze();
@@ -120,6 +121,79 @@ namespace Carpo.NetGen.GridTest
             finally
             {
                 Carpo.NetGen.Print.Prevod.Vanjski = null;
+            }
+        }
+
+        private static void Include()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "ng-inc-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            Carpo.NetGen.Xml.IncludeXml.Finder = null;
+            try
+            {
+                string dijete = Path.Combine(dir, "dijete.xml");
+                File.WriteAllText(dijete, "<PROJECT><IZTUDEG NAME=\"IZTUDEG\" CAPTION=\"iz\"></IZTUDEG></PROJECT>");
+                string host = Path.Combine(dir, "host.xml");
+                File.WriteAllText(host, "<PROJECT><MAINFORM NAME=\"MAINFORM\" INCLUDE=\"dijete.xml\" CAPTION=\"h\"></MAINFORM></PROJECT>");
+                var p = NetGenXmlReader.Ucitaj(host).Projekt;
+                bool ima = false;
+                bool ostao = false;
+                if (p != null)
+                {
+                    for (int i = 0; i < p.Forme.Count; i++)
+                    {
+                        if (string.Equals(p.Forme[i].Ime, "IZTUDEG", StringComparison.OrdinalIgnoreCase))
+                            ima = true;
+                        if (string.Equals(p.Forme[i].Ime, "MAINFORM", StringComparison.OrdinalIgnoreCase))
+                            ostao = true;
+                    }
+                }
+                T("include-dijete", ima && ostao, ima ? "ima" : "nema");
+                string prazan = Path.Combine(dir, "prazan.xml");
+                File.WriteAllText(prazan, "<PROJECT><HOST NAME=\"HOST\" INCLUDE=\"nema-te-datoteke.xml\"></HOST></PROJECT>");
+                var p2 = NetGenXmlReader.Ucitaj(prazan).Projekt;
+                bool hostOstao = false;
+                int tudjih = 0;
+                if (p2 != null)
+                {
+                    for (int i = 0; i < p2.Forme.Count; i++)
+                    {
+                        if (string.Equals(p2.Forme[i].Ime, "HOST", StringComparison.OrdinalIgnoreCase))
+                            hostOstao = true;
+                        else
+                            tudjih++;
+                    }
+                }
+                T("include-nema", hostOstao && tudjih == 0, tudjih.ToString());
+                string disk = Path.Combine(dir, "s-diska.xml");
+                File.WriteAllText(disk, "<PROJECT><SDISKA NAME=\"SDISKA\"></SDISKA></PROJECT>");
+                string dom = Path.Combine(dir, "dom.xml");
+                File.WriteAllText(dom, "<PROJECT><DOM NAME=\"DOM\" INCLUDE=\"s-diska.xml\"></DOM></PROJECT>");
+                Carpo.NetGen.Xml.IncludeXml.Finder = delegate(string put)
+                {
+                    var d = new System.Xml.XmlDocument();
+                    d.LoadXml("<PROJECT><IZFINDERA NAME=\"IZFINDERA\"></IZFINDERA></PROJECT>");
+                    return d;
+                };
+                var p3 = NetGenXmlReader.Ucitaj(dom).Projekt;
+                bool finder = false;
+                bool diskForma = false;
+                if (p3 != null)
+                {
+                    for (int i = 0; i < p3.Forme.Count; i++)
+                    {
+                        if (p3.Forme[i].Ime == "IZFINDERA")
+                            finder = true;
+                        if (p3.Forme[i].Ime == "SDISKA")
+                            diskForma = true;
+                    }
+                }
+                T("include-finder", finder && !diskForma, finder ? "finder" : "disk");
+            }
+            finally
+            {
+                Carpo.NetGen.Xml.IncludeXml.Finder = null;
+                try { Directory.Delete(dir, true); } catch { }
             }
         }
 
