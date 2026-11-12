@@ -513,7 +513,7 @@ namespace Carpo.NetGen.Granule
             l.Add(md != null && md.Grana == NgGrana.MultiDrop && Kontrole.A(md, "ALLOWEMPTY") == "FALSE"
                 ? Qa.Z(Ime, "NAR-08", "ALLOWEMPTY na multidropu se procita i ne ubaci red", "netgen/Form2.vb:2499-2504")
                 : Qa.P(Ime, "NAR-08", "multidrop ALLOWEMPTY", "netgen/Form2.vb:2500", ""));
-            l.Add(Stablo.Meni(Ime, "NAR-09", "MPNarIzdSkl.xml"));
+            l.Add(Stablo.Otvori(Ime, "NAR-09", "MPNarIzdSkl.xml", root));
             Kontrole.K(l, Ime, xml, "NAR-20", "datetiem se crta kao datum", "netgen/Form2.vb:2232", "date.datum", "date");
             Kontrole.K(l, Ime, xml, "NAR-21", "WUDTH se ignorira", "netgen/Form2.vb:2949", "width.pakovanje", "nema");
             return l;
