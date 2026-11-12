@@ -473,3 +473,16 @@ Zbroj stavki je 164.
 |---|---|---|---|
 | ssMeni-serveri `SSMENI-jupiter2019fidus` | fidus nema ssMeni | `jupiter2019.fidus` | objekt nije na serveru |
 
+## Dijalozi: MPRealizNG, ZakljucivanjeTemNG, MPNivelacija
+
+Port je `Dijalog` na `cursor/netgen-filter-forma-3266` (`14d3208`, `Devex_26/Carpo.NetGen/Ui/Dijalog.cs`). Ove tri forme nemaju `NEXTFORM`. Port taj atribut nigdje ne čita, pa ga ni ne bi slijedio.
+
+| Što | NetGen | Port | Posljedica |
+|---|---|---|---|
+| Klik gumba | `ONCLICK` ide u `Tag` i `Glbl_Click` (`Form2.vb` 1345–1349). `:Zakljucavanje` otvara tu formu. `CLOSE` zatvara. `OK` šalje `ONSUBMIT`. | `SimpleButton` dobije samo `DialogResult` prema natpisu (`Dijalog.cs` 199, 234–238, 103–120). `Podloga.OtvoriFormu` rezultat ne gleda. | `ZakljucivanjeTemNG` Zaključi zatvori dijalog i ne otvori `Zakljucavanje`. `MPNivelacija` Pokaži ne pošalje `ONSUBMIT` iako je `FILLEXPLORER=TRUE`. |
+| Combo pri otvaranju | SQL comba ide u `ExecSql` čim se kontrola složi (`Form2.vb` 2396–2427). `ALLOWEMPTY=true` ubaci prazan red. | `LookUpEdit` se nacrta bez SQL-a (`Dijalog.cs` 174–175). | `MPRealizNG` `trgovinaid`, `vrstadokid`, `partneriid`, `ZakljucivanjeTemNG` `vrstadokid` i `MPNivelacija` tri comba na `FILTERFORM` ostanu prazni. |
+| Grid pri otvaranju | Bez `SKIPDEFAULTLOAD` grid zove `ExecSql` (`Form2.vb` 1635–1646). `@@` kontrole zamijeni `SrediSQLPosljeNextForme` (`Class1.vb` 755–760). | `GridControl` ostane bez izvora (`Dijalog.cs` 208–215). | `MPRealizNG` `PROMET.stavke` i `KARTICA.gridkartica` se ne pune. |
+
+Ovo nije novi R. Zakoni su već R26, R53 i R49. Port ih na dijalogu još ne izvršava.
+
+

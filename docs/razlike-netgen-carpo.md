@@ -760,4 +760,13 @@ Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88
 | `KntPreknjizavanjeNG.md` | element `FILTER`, `PRINTMASTER#REFRESHMASTER` | R84, R41, R04 |
 | `KntBlaVrste.md` | XML nije u repou | |
 | `MPTrgovine.md` | XML nije u repou | |
+| `HROsobeUcinak.md` | `:UPDATE_FORM` | R18 |
+| `KUPVrstPN.md` | `sp` na submitu lijepi parametre | R14 |
+| `MPIzdVPNG.md` | nema `ONLOAD`, `Lista`, `vrstadokid-` | R60, R43, R11 |
+| `PNNalozi.md` | `onlytree`, `Ime(@a=)` | R54, R55, R06 |
+| `kntShemaKonta.md` | store `spKntShemaTree`, `PRINTMASTER` i `LANDSCAPE` | R01, R41, R65 |
+| `KntIzvodTijek.md` | XML nije u repou | |
+| `KntPriGen.md` | XML nije u repou | |
+| `KntZatvaranjeNG.md` | XML nije u repou | |
+| `ManPokazateljiGrupe.md` | XML nije u repou | |
 | `Smoke-prazno-uzorak.md` | 20 praznih iz smokea #35 | |
