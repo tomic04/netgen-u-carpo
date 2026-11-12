@@ -191,7 +191,7 @@ namespace Carpo.NetGen.Granule
             l.Add(ispis
                 ? Qa.Z(Ime, "KAR-11", "CMD3 PRINTMASTER ide u isti IspisGRIDREPX kao PRINTREPXMASTER", "netgen/Form1.vb:4951-4955")
                 : Qa.P(Ime, "KAR-11", "PRINTMASTER", "netgen/Form1.vb:4951", ""));
-            l.Add(Stablo.Meni(Ime, "KAR-12", "KarticaPartnera.xml"));
+            l.Add(Stablo.Otvori(Ime, "KAR-12", "KarticaPartnera.xml", root));
 
             Komande.K(l, Ime, xml, "KAR-20", "Datum ide kao yyyyMMdd u navodnicima", "netgen/Form2.vb:3531-3532", "datumFormat", "yyyyMMdd");
             Komande.K(l, Ime, xml, "KAR-21", "!! u captionu je novi red, na ONSUBMIT gasi lijepljenje", "netgen/Form2.vb:2943; netgen/Form1.vb:5449", "uzvicnik", "dva-znacenja");
