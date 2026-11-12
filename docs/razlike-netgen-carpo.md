@@ -769,4 +769,11 @@ Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88
 | `KntPriGen.md` | XML nije u repou | |
 | `KntZatvaranjeNG.md` | XML nije u repou | |
 | `ManPokazateljiGrupe.md` | XML nije u repou | |
+| `kntDobDospRac.md` | `:FILTERFORM`, `MULTIBLUE`, suma ostaje | R18, R21, R65 |
+| `KntPreknjizavanjePartnera.md` | `exec` ne lijepi parametre, proknjiži je upis | R14, R41 |
+| `Predujmovi.md` | `BUTTONS`, proknjiži je upis | R18, R41 |
+| `PDVpoStjecanju.md` | prikaz i prebacivanje u IRA | R18, R41 |
+| `MPPregUtrzakNG.md` | `:FORM1`, `vrstadokid-` | R18, R43, R11 |
+| `PDVPromjena.md` | XML nije u repou | |
+| `Dijalozi-pregled.md` | četiri rupe dijaloga, broj datoteka | |
 | `Smoke-prazno-uzorak.md` | 20 praznih iz smokea #35 | |
