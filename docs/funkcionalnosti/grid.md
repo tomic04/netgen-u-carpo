@@ -74,8 +74,8 @@ Grupe: `MASTERCOLUMNS` 117, `DETAILCOLUMNS` 52. Isti formatter (`CustomFormatKol
 4. `~~` postaje zarez prije preskoka (`Class1.vb` 87).
 5. Preskok: trim počinje s `@`, ili je točno prazan, ili `IndexOf("@@") > 0` (`104–118`). `@@` na poziciji 0 ne hvata drugi uvjet, ali ga hvata `@`.
 6. Zabrana u ovom koraku: `insert/update/delete/drop/alter/truncate/merge/create` se ne šalje (`spin` je samo čitanje).
-7. Stupci iz podataka: ikona (skrivena, širina 22), selector (širina 22), zatim podaci. `int` 34 i `##0`, `decimal`/`double` 44 i `#,##0.00`, `string` 200, `date` 100 i `dd.MM.yyyy`. Zadnja 4 znamenke natpisa su širina `/ 14`. `;` je novi red. Ime koje završava na `ID` se skriva. `!` se briše prije provjere `sum!`, pa `sum!` u praksi ne veže agregat (`Class1.vb` 1107 pa 1116).
-8. `CustomFormatKolona` preko toga. `CLEARCOLUMS=true` prvo sve sakrije.
+7. Stupci iz podataka: ikona (skrivena, širina 22), selector (širina 22, sakriven kad je `CHECKBOXVISIBLE=FALSE`). `int` 34 i `##0`, `decimal`/`double` 44 i `#,##0.00`, `string` **100** (`Class1.vb` 1203; 200 je samo hijerarhijski put u `Form1.vb` 1799), `date` 100 i `dd.MM.yyyy`. Zadnja 4 znamenke natpisa i `WIDTH` dijele se s 14 **decimalno** (VB `/`), pa je `2500/14` = 178,57 → **179**. `;` je novi red. Ime koje završava na `ID` se skriva. `!` se briše prije provjere `sum!`, pa `sum!` u praksi ne veže agregat (`Class1.vb` 1107 pa 1116). `GRIDALLOWEDIT` se ne čita: bez `EDITCOLUMNS` ćelija ostaje `NoEdit`. `HeaderLines` je 3, `EmptyRows` je uključen, selekcija je višestruka (designer).
+8. `CustomFormatKolona` preko toga. `CLEARCOLUMS=true` prvo sve sakrije. `CLEARCOLUMS=false` ne dira ostale stupce. `AGGREGATEFUNCTION` (dva G) se ne veže; čita se samo `AGREGATEFUNCTION` (jedno G).
 9. Fokus: nema redova → id `0`. Inače prvi red, id iz stupca `id` ili iz prvog podatka (Janus ćelija indeks 2, iza ikone i selectora, `GetID` 5566). `MASTERMOVELAST=true` ide na zadnji.
 10. `REFRESHMASTERGRID` ponovo šalje zapamćeni tekst, ne izvorni predložak s `@@` (`4570`).
 
@@ -86,12 +86,12 @@ Grupe: `MASTERCOLUMNS` 117, `DETAILCOLUMNS` 52. Isti formatter (`CustomFormatKol
 Run koji je prošao: https://github.com/tomic04/netgen-u-carpo/actions/runs/43213260590
 Prethodni, 43212527893 i 43212561971, pali su na istoj SQL iznimci prije nego je Catch uhvaćen. Run 43212771219 je prvi zeleni, još bez group-panel defaulta.
 
-Automatski testovi grida: **59 PASS, FAIL=0**.
+Automatski testovi grida na prošlom zelenom runu: **59 PASS, FAIL=0**. Nakon ispravka širine stringa (100), VB dijeljenja (`2500/14` → 179), `NoEdit`, `HeaderLines`/`EmptyRows`/višestruke selekcije, `CLEARCOLUMS=false` i SQL Catch-a koji ne puni grid, lokalni grid test je opet `FAIL=0`. Broj na runneru je u idućem runu.
 
 | Granula | SQL koji bi NetGen poslao | Redovi | Kolone | Napomena |
 |---|---|---|---|---|
 | `OznakaKL` | `select klmasterrobaid, sortkey, Naziv, oznaka, oznaka2 as DodatnaOznaka from klmasterroba order by sortkey` | 0 | nije vezan | `Invalid column name 'oznaka2'`. `ExecSql` bi ušao u Catch, pokazao poruku i vratio `Nothing`. Tablica ima **947** redova. Od stupaca s „oznak” postoji samo `Oznaka`. XML i baza nisu dirani. |
-| `JeziciNG` | `spJeziciQuery @action=0, @id=''` | **15** | **2** | Fokus na prvom redu, id=13. `Naziv` širina 178 (2500/14). Agregat s dva G nije vezan. |
+| `JeziciNG` | `spJeziciQuery @action=0, @id=''` | **15** | **2** | Fokus na prvom redu, id=13. `Naziv` širina **179** (`2500/14` decimalno, ne cjelobrojno 178). Agregat s dva G nije vezan. `CLEARCOLUMS=false` ostale stupce ne skriva. |
 
 ## Defaulti
 
@@ -116,7 +116,10 @@ Kad XML šuti, Carpo prati **kontrolu koju NetGen drži na formi**: designer (`F
 | Grupni total | `GroupTotals=Never` | designer: `Always` | `GroupFooterShowMode=VisibleIfExpanded` | otvoreno, nije mapirano |
 | Font | (designer) MS Sans Serif 8.25 | isto | tema | `Font=Microsoft Sans Serif, 8.25pt` |
 | Checkbox stupac | nema ga dok `CreateGridColumns` ne doda Selector | vidljiv osim `CHECKBOXVISIBLE=FALSE` | nema ActAsSelector | stupac `Selector` |
-| `GRIDALLOWEDIT` | kod ga ne čita | ne pali edit | | ne postavlja se |
+| `GRIDALLOWEDIT` | kod ga ne čita | ne pali edit | | ne postavlja se; ćelija ostaje `NoEdit` |
+| Prazni redovi | `EmptyRows` nije tvornički | `CreateGridColumns` stavi `True` (`1000`) | nema praznih redova | `EmptyRows=true` |
+| Redovi zaglavlja | 1 | `HeaderLines = 3` (`1364`) | 1 red | `HeaderLines=3` |
+| Širina stringa | — | `CreateGridColumns` 100; hijerarhija 200 | — | 100, osim zadnje 4 znamenke / `WIDTH` |
 
 Najvažnije razlike koje su morale biti eksplicitne, jer DX default nije Janus:
 

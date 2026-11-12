@@ -27,6 +27,7 @@ namespace Carpo.NetGen.Grid
         public int? Pozicija;
         public bool Selektor;
         public bool Grupiraj;
+        public string EditTip = "NoEdit";
     }
 
     public sealed class GridStanje
@@ -56,6 +57,19 @@ namespace Carpo.NetGen.Grid
         public readonly List<GridKolona> Kolone = new List<GridKolona>();
         public DataTable Tablica;
         public readonly List<string> DxPostavke = new List<string>();
+        public int HeaderLines = 3;
+        public bool EmptyRows = true;
+        public string EditMode = "EditOff";
+        public string SelectionMode = "MultipleSelection";
+        public string IncrementalSearch = "AllCharacters";
+        public bool RowHeaders = true;
+        public string HideSelection = "Highlight";
+        public string GridDock = "Fill";
+        public bool DxGrid;
+        public string SqlGreska;
+        public string Poruka;
+        public string GroupCount = "[ ]";
+        public string PocetniSort = "sql";
     }
 
     /// <summary>
@@ -67,10 +81,18 @@ namespace Carpo.NetGen.Grid
         public const int FakPretvorbe = 14;
         public SqlKontekst Kontekst = new SqlKontekst();
         public GridStanje Stanje = new GridStanje();
+        private NgProject _projekt;
+
+        /// <summary>VB `/` je decimalno dijeljenje, pa se rezultat zaokruži na cijeli (CInt, bankarski).</summary>
+        public static int VbJedinica(int jedinica)
+        {
+            return (int)Math.Round(jedinica / (double)FakPretvorbe, MidpointRounding.ToEven);
+        }
 
         public void Ucitaj(NgProject projekt, DataTable tablica)
         {
             Stanje = new GridStanje();
+            _projekt = projekt;
             if (projekt == null)
                 return;
             string onLoad = projekt.Atributi.Ima("ONLOAD") ? (projekt.Atributi.Vrijednost("ONLOAD") ?? "").Trim() : null;
@@ -109,7 +131,10 @@ namespace Carpo.NetGen.Grid
             {
                 Stanje.Tablica = tablica;
                 Stanje.Redoslijed.Add("exec");
-                SloziKolone(projekt, tablica);
+                if (tablica != null)
+                    SloziKolone(projekt, tablica);
+                else
+                    PrimijeniAtribute(projekt, projekt.NadjiGrupu("MASTERCOLUMNS"));
                 Fokus(projekt);
             }
             else
@@ -117,7 +142,84 @@ namespace Carpo.NetGen.Grid
                 PrimijeniAtribute(projekt, null);
             }
             Stanje.Redoslijed.Add("kraj");
+            OznaciDx(projekt);
             GridIzgled.Popuni(Stanje);
+        }
+
+        /// <summary>
+        /// Class1.ExecSql. Uspjeh puni grid. Greška pokaže poruku i ne veže stupce
+        /// (Catch vraća Nothing, CreateGridColumns na Nothing odmah izađe).
+        /// Ne zove spNetGenErrorLog: to je upis, a ovaj korak je samo čitanje.
+        /// </summary>
+        public void IzvrsiCitanje(string connectionString)
+        {
+            if (Stanje.Odluka != "salji" || Stanje.BlokiranoPisanje)
+                return;
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                ZabiljeziGresku("nema connection stringa");
+                return;
+            }
+            try
+            {
+                var dt = new DataTable();
+                using (var conn = new System.Data.SqlClient.SqlConnection(connectionString))
+                using (var cmd = new System.Data.SqlClient.SqlCommand(Stanje.SqlZaSlanje ?? "", conn))
+                using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
+                {
+                    cmd.CommandTimeout = Stanje.TimeoutSekundi;
+                    conn.Open();
+                    da.Fill(dt);
+                }
+                Stanje.Tablica = dt;
+                Stanje.Kolone.Clear();
+                Stanje.SqlGreska = null;
+                Stanje.Poruka = null;
+                SloziKolone(_projekt, dt);
+                Fokus(_projekt);
+                Stanje.Redoslijed.Add("exec-ok");
+            }
+            catch (Exception ex)
+            {
+                if (TihaGreska(ex.Message))
+                    ZabiljeziGresku(ex.Message, false);
+                else
+                    ZabiljeziGresku(ex.Message, true);
+            }
+            GridIzgled.Popuni(Stanje);
+        }
+
+        public void ZabiljeziGresku(string poruka)
+        {
+            ZabiljeziGresku(poruka, true);
+            GridIzgled.Popuni(Stanje);
+        }
+
+        private void ZabiljeziGresku(string poruka, bool prikazi)
+        {
+            Stanje.SqlGreska = poruka ?? "";
+            Stanje.Poruka = prikazi ? ((poruka ?? "") + "\r\n\r\n" + (Stanje.SqlZaSlanje ?? "")) : null;
+            Stanje.Tablica = null;
+            Stanje.Kolone.Clear();
+            Stanje.Id = "0";
+            Stanje.FocusRazlog = "sql-greska";
+            Stanje.Redoslijed.Add("sql-greska");
+        }
+
+        private static bool TihaGreska(string poruka)
+        {
+            string m = (poruka ?? "").ToLowerInvariant();
+            return m.IndexOf("ssoperateri", StringComparison.Ordinal) >= 0
+                || m.IndexOf("totalgenlang", StringComparison.Ordinal) >= 0
+                || m.IndexOf("sspermission", StringComparison.Ordinal) >= 0
+                || m.IndexOf("netgendbfilter", StringComparison.Ordinal) >= 0
+                || m.IndexOf("netgendbclipboard", StringComparison.Ordinal) >= 0;
+        }
+
+        private void OznaciDx(NgProject projekt)
+        {
+            string dx = Attr(projekt, "DXGRID");
+            Stanje.DxGrid = dx != null && dx.Trim().ToLowerInvariant() == "true";
         }
 
         public void Osvjezi(DataTable tablica)
@@ -138,8 +240,8 @@ namespace Carpo.NetGen.Grid
         private void SloziKolone(NgProject projekt, DataTable tablica)
         {
             Stanje.Redoslijed.Add("tip-format");
-            Stanje.Kolone.Add(new GridKolona { Podatak = "Icon", Natpis = "", Sirina = 22, Vidljiva = false });
-            Stanje.Kolone.Add(new GridKolona { Podatak = "Selector", Natpis = "", Sirina = 22, Selektor = true, Vidljiva = true, Uredivanje = true });
+            Stanje.Kolone.Add(new GridKolona { Podatak = "Icon", Natpis = "", Sirina = 22, Vidljiva = false, EditTip = "NoEdit" });
+            Stanje.Kolone.Add(new GridKolona { Podatak = "Selector", Natpis = "", Sirina = 22, Selektor = true, Vidljiva = true, Uredivanje = true, EditTip = "CheckBox" });
             if (tablica != null)
             {
                 foreach (DataColumn c in tablica.Columns)
@@ -190,7 +292,8 @@ namespace Carpo.NetGen.Grid
             }
             else if (tip.IndexOf("string", StringComparison.Ordinal) >= 0)
             {
-                k.Sirina = 200;
+                // CreateGridColumns 1203. 200 je samo hijerarhijski put (Form1.vb 1799).
+                k.Sirina = 100;
             }
 
             string cap = (k.Natpis ?? "").Trim();
@@ -199,7 +302,7 @@ namespace Carpo.NetGen.Grid
                 int n;
                 if (int.TryParse(cap.Substring(cap.Length - 4), NumberStyles.Integer, CultureInfo.InvariantCulture, out n) && n != 0)
                 {
-                    k.Sirina = n / FakPretvorbe;
+                    k.Sirina = VbJedinica(n);
                     k.Natpis = cap.Substring(0, cap.Length - 4);
                 }
             }
@@ -212,7 +315,10 @@ namespace Carpo.NetGen.Grid
             if (izvor.Length >= 2 && izvor.Substring(izvor.Length - 2).ToUpperInvariant() == "ID")
                 k.Vidljiva = false;
             if (editColumns != null && prije.Length > 0 && editColumns.ToLowerInvariant().Contains(prije.ToLowerInvariant()))
+            {
                 k.Uredivanje = true;
+                k.EditTip = tip.IndexOf("bool", StringComparison.Ordinal) >= 0 ? "CheckBox" : "TextBox";
+            }
             return k;
         }
 
@@ -327,7 +433,7 @@ namespace Carpo.NetGen.Grid
                 string width = def.Atributi.Vrijednost("WIDTH");
                 int w;
                 if (!string.IsNullOrEmpty(width) && int.TryParse(width.Trim(), out w) && w > 0)
-                    kol.Sirina = w / FakPretvorbe;
+                    kol.Sirina = VbJedinica(w);
                 string cap = def.Atributi.Vrijednost("CAPTION");
                 if (!string.IsNullOrEmpty(cap) && cap.Trim().Length > 0)
                     kol.Natpis = cap.Trim();
@@ -462,6 +568,15 @@ namespace Carpo.NetGen.Grid
             s.DxPostavke.Add("OptionsSelection.EnableAppearanceHideSelection=false");
             s.DxPostavke.Add("OptionsBehavior.AllowIncrementalSearch=true");
             s.DxPostavke.Add("OptionsBehavior.Editable=" + (s.AllowEditKadJeFilter ? "true" : "false"));
+            s.DxPostavke.Add("EditMode=" + s.EditMode);
+            s.DxPostavke.Add("HeaderLines=" + s.HeaderLines.ToString(CultureInfo.InvariantCulture));
+            s.DxPostavke.Add("EmptyRows=" + (s.EmptyRows ? "true" : "false"));
+            s.DxPostavke.Add("SelectionMode=" + s.SelectionMode);
+            s.DxPostavke.Add("IncrementalSearch=" + s.IncrementalSearch);
+            s.DxPostavke.Add("HideSelection=" + s.HideSelection);
+            s.DxPostavke.Add("RowHeaders=" + (s.RowHeaders ? "true" : "false"));
+            s.DxPostavke.Add("Dock=" + s.GridDock);
+            s.DxPostavke.Add("OptionsView.NewItemRowPosition=None");
             s.DxPostavke.Add("OptionsCustomization.AllowSort=" + (s.SortKlikom ? "true" : "false"));
             s.DxPostavke.Add("OptionsCustomization.AllowFilter=false");
             s.DxPostavke.Add("BorderStyle=NoBorder");

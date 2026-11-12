@@ -89,6 +89,19 @@ namespace Carpo.NetGen.GridTest
             T("oznaka-dx-autofilter", Ima(g, "OptionsView.ShowAutoFilterRow=true"), "");
             T("oznaka-dx-sort-on", Ima(g, "OptionsCustomization.AllowSort=true"), "");
             T("oznaka-redoslijed", g.Stanje.Redoslijed[0] == "startup-sql" && g.Stanje.Redoslijed.Contains("sredi"), string.Join(",", g.Stanje.Redoslijed.ToArray()));
+            T("oznaka-stablo-0", p.Raspored != null && !p.Raspored.StabloVidljivo && p.Raspored.LijeviSplitter == 0 && !p.Raspored.GumbDrvoEnabled, "");
+            var tg = new DataTable();
+            tg.Columns.Add("oznaka", typeof(string));
+            tg.Rows.Add("a");
+            var gg = new MasterGrid();
+            gg.Ucitaj(p, tg);
+            GridKolona oz = null;
+            for (int i = 0; i < gg.Stanje.Kolone.Count; i++)
+            {
+                if (string.Equals(gg.Stanje.Kolone[i].Podatak, "oznaka", StringComparison.OrdinalIgnoreCase))
+                    oz = gg.Stanje.Kolone[i];
+            }
+            T("oznaka-gridallowedit-nije-edit", oz != null && oz.EditTip == "NoEdit" && oz.Sirina == 100, oz == null ? "nema" : oz.EditTip + " " + oz.Sirina);
         }
 
         private static void JeziciBezBaze()
@@ -110,7 +123,24 @@ namespace Carpo.NetGen.GridTest
                 if (string.Equals(g.Stanje.Kolone[i].Podatak, "Naziv", StringComparison.OrdinalIgnoreCase))
                     naziv = g.Stanje.Kolone[i];
             }
-            T("jezici-naziv", naziv != null && naziv.Natpis == "Naziv" && naziv.Sirina == 2500 / MasterGrid.FakPretvorbe, naziv == null ? "nema" : naziv.Sirina.ToString());
+            T("jezici-naziv", naziv != null && naziv.Natpis == "Naziv" && naziv.Sirina == MasterGrid.VbJedinica(2500), naziv == null ? "nema" : naziv.Sirina.ToString());
+            T("jezici-vb-179", MasterGrid.VbJedinica(2500) == 179, MasterGrid.VbJedinica(2500).ToString());
+            t.Columns.Add("Opis", typeof(string));
+            t.Rows[0]["Opis"] = "x";
+            g.Ucitaj(p, t);
+            GridKolona opis = null;
+            naziv = null;
+            for (int i = 0; i < g.Stanje.Kolone.Count; i++)
+            {
+                if (string.Equals(g.Stanje.Kolone[i].Podatak, "Opis", StringComparison.OrdinalIgnoreCase))
+                    opis = g.Stanje.Kolone[i];
+                if (string.Equals(g.Stanje.Kolone[i].Podatak, "Naziv", StringComparison.OrdinalIgnoreCase))
+                    naziv = g.Stanje.Kolone[i];
+            }
+            T("jezici-clear-false-ne-skriva", opis != null && opis.Vidljiva && opis.Sirina == 100 && naziv != null && naziv.Vidljiva, opis == null ? "nema" : opis.Sirina.ToString());
+            T("jezici-edit-noedit", naziv != null && naziv.EditTip == "NoEdit" && g.Stanje.EditMode == "EditOff", "");
+            T("jezici-header-prazni-redovi", g.Stanje.HeaderLines == 3 && g.Stanje.EmptyRows && g.Stanje.SelectionMode == "MultipleSelection", "");
+            T("jezici-stablo-0", p.Raspored != null && !p.Raspored.StabloVidljivo && p.Raspored.LijeviSplitter == 0 && !p.Raspored.GumbDrvoEnabled, "");
             T("jezici-dva-g-nema-agregat", naziv != null && string.IsNullOrEmpty(naziv.Agregat), "");
             T("jezici-header-1", naziv != null && naziv.PoravnanjeZaglavlja == "1", "");
             T("jezici-checkbox-off", !g.Stanje.CheckboxVidljiv, "");
@@ -130,7 +160,7 @@ namespace Carpo.NetGen.GridTest
             var w = MasterGrid.IzPodatka(t.Columns["Iznos1600"], "");
             T("kol-sirina-1600", w.Sirina == 1600 / 14 && w.Natpis == "Iznos" && w.Format == "#,##0.00", w.Natpis + " " + w.Sirina);
             var s = MasterGrid.IzPodatka(t.Columns["Opis"], "");
-            T("kol-string-200", s.Sirina == 200, "");
+            T("kol-string-100", s.Sirina == 100 && s.EditTip == "NoEdit", s.Sirina.ToString());
             var d = MasterGrid.IzPodatka(t.Columns["Datum"], "");
             T("kol-datum", d.Format == "dd.MM.yyyy" && d.Sirina == 100, "");
             var z = MasterGrid.IzPodatka(t.Columns["sum!X"], "");
@@ -172,6 +202,15 @@ namespace Carpo.NetGen.GridTest
             dtDef.Rows.Add(1);
             gDef.Ucitaj(Projekt("ONLOAD", "select 1 as a"), dtDef);
             T("groupby-janus-default-true", !gDef.Stanje.GroupByBox.HasValue && Ima(gDef, "OptionsView.ShowGroupPanel=true"), "");
+            T("dx-header-empty-select", Ima(gDef, "HeaderLines=3") && Ima(gDef, "EmptyRows=true") && Ima(gDef, "SelectionMode=MultipleSelection") && Ima(gDef, "EditMode=EditOff"), "");
+            var gErr = new MasterGrid();
+            var dtErr = new DataTable();
+            dtErr.Columns.Add("Naziv", typeof(string));
+            dtErr.Rows.Add("a");
+            gErr.Ucitaj(Projekt("ONLOAD", "select oznaka2 from klmasterroba"), dtErr);
+            T("prije-greske-ima-stupac", gErr.Stanje.Kolone.Count > 2, gErr.Stanje.Kolone.Count.ToString());
+            gErr.ZabiljeziGresku("Invalid column name 'oznaka2'.");
+            T("sql-greska-ne-puni", gErr.Stanje.Kolone.Count == 0 && gErr.Stanje.Tablica == null && gErr.Stanje.Poruka != null && gErr.Stanje.Poruka.IndexOf("oznaka2", StringComparison.Ordinal) >= 0, gErr.Stanje.Poruka);
         }
 
         private static void PisanjeIServer()
@@ -206,29 +245,19 @@ namespace Carpo.NetGen.GridTest
             T(ime + "-sql-citanje", g.Stanje.Odluka == "salji" && !SqlTekst.JeZabranaPisanja(g.Stanje.SqlZaSlanje), g.Stanje.Odluka + " " + g.Stanje.SqlZaSlanje);
             if (g.Stanje.Odluka != "salji")
                 return;
-            var dt = new DataTable();
-            using (var c = new SqlConnection(SpinVeza.Spoj("localhost", "spin")))
+            g.IzvrsiCitanje(SpinVeza.Spoj("localhost", "spin"));
+            if (!string.IsNullOrEmpty(g.Stanje.SqlGreska))
             {
-                c.Open();
-                try
+                Console.WriteLine("SPIN " + ime + " NETGEN-CATCH " + g.Stanje.SqlGreska);
+                T(ime + "-netgen-catch", g.Stanje.Kolone.Count == 0 && g.Stanje.Tablica == null && !string.IsNullOrEmpty(g.Stanje.Poruka), g.Stanje.Poruka);
+                using (var c = new SqlConnection(SpinVeza.Spoj("localhost", "spin")))
                 {
-                    using (var cmd = new SqlCommand(g.Stanje.SqlZaSlanje, c))
-                    {
-                        cmd.CommandTimeout = g.Stanje.TimeoutSekundi;
-                        using (var da = new SqlDataAdapter(cmd))
-                            da.Fill(dt);
-                    }
-                }
-                catch (SqlException ex)
-                {
-                    // Class1.ExecSql u Catch vrati Nothing i ne rusi proces.
-                    Console.WriteLine("SPIN " + ime + " NETGEN-CATCH " + ex.Message);
-                    T(ime + "-netgen-catch", true, ex.Message);
+                    c.Open();
                     IspisiKontekst(c, ime);
-                    return;
                 }
+                return;
             }
-            g.Ucitaj(p, dt);
+            DataTable dt = g.Stanje.Tablica;
             int podataka = 0;
             for (int i = 0; i < g.Stanje.Kolone.Count; i++)
             {

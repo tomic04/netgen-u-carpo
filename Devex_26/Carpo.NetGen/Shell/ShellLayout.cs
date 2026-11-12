@@ -3,10 +3,9 @@ using Carpo.NetGen.Model;
 namespace Carpo.NetGen.Shell
 {
     /// <summary>
-    /// Podloga NetGena (Form1) je uvijek isti okvir: lijevo stablo, desno master grid,
-    /// ispod njega detail grid, gumbi ispod. Oko 90% granula zivi u tom okviru.
-    /// M1 crta prvo ovo. Prazan TREE ne znaci drugi raspored, samo prazno stablo.
-    /// Piksel TOP/LEFT nije cilj.
+    /// Podloga NetGena (Form1): lijevo stablo, desno master, ispod detail.
+    /// Prazan TREE i prazan COMBO sakriju TreeView2 i lijevi splitter stave na 0
+    /// (Form1.vb 4310–4316). To nije „stablo ostaje, samo prazno“.
     /// </summary>
     public sealed class ShellLayout
     {
@@ -22,8 +21,8 @@ namespace Carpo.NetGen.Shell
 
         public string ObrazacIme { get { return Obrazac; } }
 
-        /// <summary>Lijeva regija postoji uvijek, kao TreeView na Form1.</summary>
-        public bool LijevoStablo { get { return true; } }
+        /// <summary>TreeView2 je vidljiv. Prazan TREE uz prazan COMBO ovo gasi.</summary>
+        public bool LijevoStablo { get { return StabloVidljivo; } }
 
         public bool MasterGrid { get { return true; } }
         public bool DetailGrid { get { return true; } }
@@ -33,15 +32,45 @@ namespace Carpo.NetGen.Shell
         public string DetailSql { get; private set; }
         public string Buttons { get; private set; }
 
-        public bool ImaStablo { get { return TreeSql.Length > 0; } }
-        public bool ImaDetail { get { return DetailSql.Length > 0; } }
-        public bool ImaMasterSql { get { return MasterSql.Length > 0; } }
+        public bool ImaStablo { get { return TreeSql.Trim().Length > 0; } }
+        public bool ImaDetail { get { return DetailSql.Trim().Length > 0; } }
+        public bool ImaMasterSql { get { return MasterSql.Trim().Length > 0; } }
+
+        public bool StabloVidljivo { get; private set; }
+        public int LijeviSplitter { get; private set; }
+        public bool GumbDrvoEnabled { get; private set; }
+        public bool ComboVidljiv { get; private set; }
+
+        /// <summary>Nema DETAILGRID: SplitContainer2 ide na visinu forme minus 50 (Form1.vb 2111–2113).</summary>
+        public bool DetailSplitterNaDno { get; private set; }
 
         public static ShellLayout Iz(NgProject projekt)
         {
             if (projekt == null)
                 return new ShellLayout("", "", "", "");
-            return new ShellLayout(projekt.Tree, projekt.OnLoad, projekt.DetailGrid, projekt.Buttons);
+            var s = new ShellLayout(projekt.Tree ?? "", projekt.OnLoad ?? "", projekt.DetailGrid ?? "", projekt.Buttons ?? "");
+            string combo = "";
+            if (projekt.Atributi != null && projekt.Atributi.Ima("COMBO"))
+                combo = projekt.Atributi.Vrijednost("COMBO") ?? "";
+            s.ComboVidljiv = combo.Trim().Length > 0;
+            bool sakrij = s.TreeSql.Trim().Length == 0 && !s.ComboVidljiv;
+            s.StabloVidljivo = !sakrij;
+            s.GumbDrvoEnabled = !sakrij;
+            if (sakrij)
+            {
+                s.LijeviSplitter = 0;
+            }
+            else
+            {
+                int d = 290;
+                string raw = projekt.Atributi == null ? null : projekt.Atributi.Vrijednost("SPLITTERDISTANCE");
+                int parsed;
+                if (!string.IsNullOrEmpty(raw) && int.TryParse(raw.Trim(), out parsed))
+                    d = parsed;
+                s.LijeviSplitter = d;
+            }
+            s.DetailSplitterNaDno = s.DetailSql.Trim().Length == 0;
+            return s;
         }
     }
 }

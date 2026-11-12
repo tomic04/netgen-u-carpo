@@ -56,7 +56,16 @@ Prihvaćanje:
 
 ### M1 — prvo lijevo stablo i master-detail, pa gumbi
 
-Oko 90% granula ima isti okvir: lijevo stablo, desno master grid, ispod njega detail. To je podloga `Form1` (TreeView + GridEX1 + GridEX2), ne poseban XML predložak. M1 crta **prvo taj okvir**. Prazan `TREE` ne mijenja raspored, samo ostavlja stablo prazno. `DETAILGRID` puni donji grid. Piksel `TOP`/`LEFT` i dalje nije cilj. Dijalog (`frm`, `INPUT`) dolazi nakon što se u tom okviru vidi master, ne prije.
+Oko 90% granula ima isti okvir: lijevo stablo, desno master grid, ispod njega detail. To je podloga `Form1` (TreeView + GridEX1 + GridEX2), ne poseban XML predložak. Redoslijed elemenata, jedan po jedan: **grid**, zatim **stablo**, zatim **master-detail veza**, zatim **poziv Carpo subforme** (`docs/funkcionalnosti/poziv-carpo.md`). Prazan `TREE` sakrije `TreeView2` i lijevi splitter stavi na 0 (`Form1.vb` 4310–4316), ne ostavlja prazno stablo na ekranu. `DETAILGRID` puni donji grid. Piksel `TOP`/`LEFT` i dalje nije cilj.
+
+Dijalog dolazi nakon tog okvira. Iz QA OznakaKL i JeziciNG, ovo još nije grid i ostaje otvoreno dok ne dođe taj element:
+
+- `Unesi#refreshmaster` (hash nije `REFRESHMASTERGRID`, ali prazna sljedeća forma ipak osvježi zadnji SQL)
+- `Odustani` čiji je `ONCLICK` `ok`, ne `CLOSE`
+- `NEXTFORM` koji ne postoji: nema poruke, 0 kontrola i dalje `OKClick`
+- `BORDERSTYLE=3` se čuva, kod ga ne čita, ostaje `Sizable`
+- `REFRESHAFTERCHILD` na formi je sirov; `SrediKontrolu` ga čita samo na `INPUT`-u
+- natpis dijaloga i kontrola je `CAPTION` (ne `TEXT` gumba)
 
 Zadatak, tim redom: okvir lijevo stablo + master + detail; `ONLOAD` koji je SQL puni master (ako `ONLOAD` ne postoji, vrijedi `STARTUPSTORA`); gumbi iz `CMDxCAPTION` / `BUTTONS`; `@@id` i `@@operateriid`; `REFRESHMASTERGRID`; `ONLOAD=":IME"` ne ide u SQL. `Loader.Run8` i TestShell grana otvaraju istu klasu. `frm.Run8` ostaje dijalog, ne drugi crtač podloge.
 
