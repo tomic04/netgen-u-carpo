@@ -829,7 +829,7 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 
 - **Element:** otvaranje granula kojima na spinu fali objekt
 - **NetGen:** `ExecSql` padne i grid ostane prazan. XML se ne mijenja.
-- **Carpo:** `scripts/spin/Otvori.ps1` na `localhost/spin` jednom doda `varchar(50) NULL` ili proceduru `SELECT ... WHERE 1 = 0`. Ne piše retke. jupiter2019 i jupiter2022 se u ovom koraku ne otvaraju i ne čitaju.
+- **Carpo:** `scripts/spin/Prenesi.ps1` čita samo `sys.columns` i `sys.sql_modules` na jupiter2019 i jupiter2022, pa tijelo kreira na spinu. Ako definicije nema, `Otvori.ps1` doda prazan `SELECT ... WHERE 1 = 0` ili `varchar(50) NULL`. Procedure se na Jupiteru ne pokreću.
 - **Posljedica:** `AOPNovi` i dalje šalje `@id='null'`. Popis pravih tijela je u `docs/granule/spin-objekti.md`.
 - **Odluka:** spin je testni. Jupiter čeka novo odobrenje za bilo što osim otvaranja granula.
 - **Test:** korak `Spin stubovi i otvaranje`

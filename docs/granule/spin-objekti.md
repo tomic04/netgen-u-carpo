@@ -1,6 +1,6 @@
 # Objekti na spinu
 
-Jupiter se u ovom koraku ne čita. Na jupiter2019 i jupiter2022 smije samo otvaranje granula, i to nije ovaj skript.
+`scripts/spin/Prenesi.ps1` na sql-ai čita s jupiter2019 i jupiter2022 samo `sys.columns` i `sys.sql_modules`. Procedure se tamo ne pokreću i retci tablica se ne čitaju. Tijelo se kreira na spinu. Ako tekst ima INSERT, UPDATE, DELETE ili MERGE, izvor je označen s `pise`. Redoslijed: Biovega, pa ostale baze na jupiter2019, zatim jupiter2022. Izvor nakon runa je u `artifacts/spin/izvori.md`.
 
 `scripts/spin/stubovi.sql` i `scripts/spin/Otvori.ps1` rade samo na `localhost` / baza `spin`. Ako otvaranje javi da procedura ne postoji, skripta kreira prazan `SELECT ... WHERE 1 = 0` s parametrima iz poziva. Ako javi nepoznat stupac u jednostavnom `FROM`, doda `varchar(50) NULL`. Ništa od toga ne piše retke. Popis kreiranog ide u `artifacts/spin/stubovi-kreirani.md`, ishod u `artifacts/spin/otvaranje.md`.
 
