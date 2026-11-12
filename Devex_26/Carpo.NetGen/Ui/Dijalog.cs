@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Windows.Forms;
@@ -28,6 +29,7 @@ namespace Carpo.NetGen.Ui
         private SqlKontekst _kontekst;
         private NgForm _forma;
         private bool _jupiter;
+        private readonly Dictionary<string, string> _izUpita = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         public string OtvorenaForma = "";
         public string MasterSql = "";
@@ -222,8 +224,7 @@ namespace Carpo.NetGen.Ui
                 if (crta >= 0)
                     naredba = tag.Substring(crta + 1);
             }
-            if (DijalogTok.DozvoliUpis)
-                naredba = ZamijeniIzKontrola(naredba);
+            naredba = ZamijeniIzKontrola(naredba);
             DijalogTok.Klik klik = DijalogTok.Gumb(_forma, redni, naredba, _jupiter);
             if (klik.OtvaraFormu.Length > 0)
             {
@@ -239,21 +240,37 @@ namespace Carpo.NetGen.Ui
                 DialogResult = DialogResult.Cancel;
                 return;
             }
-            if (klik.SaljeSql && _citaj != null)
+            MasterSql = _jupiter ? "" : klik.MasterSql;
+            if (_citaj != null)
             {
-                MasterSql = klik.MasterSql;
-                NgDnevnik.Sql(klik.MasterSql);
-                try
+                for (int i = 0; i < klik.Naredbe.Count; i++)
                 {
-                    _citaj(klik.MasterSql);
+                    string dio = klik.Naredbe[i];
+                    if (!DijalogTok.SmijePoslati(dio))
+                        continue;
+                    NgDnevnik.Sql(dio);
+                    try
+                    {
+                        _citaj(dio);
+                    }
+                    catch (Exception ex)
+                    {
+                        NgDnevnik.Greska(ex.Message + " | " + dio);
+                    }
                 }
-                catch (Exception ex)
+                if (klik.SaljeSql && !string.IsNullOrEmpty(klik.MasterSql) && DijalogTok.SmijePoslati(klik.MasterSql))
                 {
-                    NgDnevnik.Greska(ex.Message + " | " + klik.MasterSql);
+                    NgDnevnik.Sql(klik.MasterSql);
+                    try
+                    {
+                        _citaj(klik.MasterSql);
+                    }
+                    catch (Exception ex)
+                    {
+                        NgDnevnik.Greska(ex.Message + " | " + klik.MasterSql);
+                    }
                 }
             }
-            else
-                MasterSql = _jupiter ? "" : klik.MasterSql;
             string fokus = DijalogKlik.Fokus(naredba);
             if (fokus.Length > 0)
             {
@@ -271,35 +288,35 @@ namespace Carpo.NetGen.Ui
         {
             if (string.IsNullOrEmpty(naredba))
                 return "";
-            string s = naredba;
-            if (_kontekst != null)
-            {
-                s = Zamijeni(s, "@@id", _kontekst.Id);
-                s = Zamijeni(s, "@@ID", _kontekst.Id);
-                s = Zamijeni(s, "@@node", _kontekst.Node);
-            }
-            for (int i = 0; i < Controls.Count; i++)
-            {
-                Control c = Controls[i];
-                if (c == null || string.IsNullOrEmpty(c.Name))
-                    continue;
-                string v = "";
-                var edit = c as TextEdit;
-                if (edit != null)
-                    v = edit.Text ?? "";
-                else
-                    continue;
-                s = Zamijeni(s, "@@" + c.Name, v);
-            }
-            return s;
+            var kontrole = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var par in _izUpita)
+                kontrole[par.Key] = par.Value;
+            SkupiTekst(this, kontrole);
+            string id = _kontekst == null ? "" : _kontekst.Id;
+            return DijalogTok.ZamijeniTokene(naredba, id, kontrole);
         }
 
-        private static string Zamijeni(string sql, string token, string vrijednost)
+        private static void SkupiTekst(Control roditelj, Dictionary<string, string> kontrole)
         {
-            if (string.IsNullOrEmpty(sql) || string.IsNullOrEmpty(token))
-                return sql ?? "";
-            string v = (vrijednost ?? "").Replace("'", "''");
-            return sql.Replace(token, v);
+            if (roditelj == null)
+                return;
+            for (int i = 0; i < roditelj.Controls.Count; i++)
+            {
+                Control c = roditelj.Controls[i];
+                if (!string.IsNullOrEmpty(c.Name))
+                {
+                    var broj = c as SpinEdit;
+                    var kvacica = c as CheckEdit;
+                    var edit = c as TextEdit;
+                    if (broj != null)
+                        kontrole[c.Name] = Convert.ToString(broj.Value, CultureInfo.InvariantCulture);
+                    else if (kvacica != null)
+                        kontrole[c.Name] = kvacica.Checked ? "1" : "0";
+                    else if (edit != null && !(edit is LookUpEdit))
+                        kontrole[c.Name] = edit.Text ?? "";
+                }
+                SkupiTekst(c, kontrole);
+            }
         }
 
         public string Vrijednost(string ime)
@@ -460,6 +477,11 @@ namespace Carpo.NetGen.Ui
             }
             if (dt == null || dt.Rows.Count == 0)
                 return;
+            foreach (DataColumn col in dt.Columns)
+            {
+                string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col]);
+                _izUpita[col.ColumnName] = v;
+            }
             foreach (DataColumn col in dt.Columns)
             {
                 Control[] n = Controls.Find(col.ColumnName, true);

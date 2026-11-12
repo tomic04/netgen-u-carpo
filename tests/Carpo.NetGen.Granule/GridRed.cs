@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Data;
 using Carpo.NetGen.Grid;
+using Carpo.NetGen.Komande;
 
 namespace Carpo.NetGen.Granule
 {
@@ -24,6 +26,16 @@ namespace Carpo.NetGen.Granule
             l.Add(ima
                 ? Qa.Z("GridRed", "GRD-01", "@@statusiid je stupac retka, vrijednost je '5'", "netgen/Form1.vb:2556-2576; netgen/Class1.vb:765-849")
                 : Qa.P("GridRed", "GRD-01", "@@statusiid iz grida", "netgen/Form1.vb:2556-2576; netgen/Class1.vb:765-849", sql + " | " + parametri));
+
+            var kontrole = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            kontrole["Naziv"] = "klik-proba";
+            string unos = DijalogTok.ZamijeniTokene("spJeziciAzur @action=0, @id=@@id, @Naziv='@@Naziv'", "0", kontrole);
+            bool token = unos.IndexOf("@@", StringComparison.Ordinal) < 0
+                && unos.IndexOf("@Naziv='klik-proba'", StringComparison.Ordinal) >= 0
+                && unos.IndexOf("@id=0", StringComparison.Ordinal) >= 0;
+            l.Add(token
+                ? Qa.Z("GridRed", "GRD-02", "@@Naziv iz kontrole uđe u storu kao 'klik-proba'", "netgen/Form2.vb:3367,3406,3655")
+                : Qa.P("GridRed", "GRD-02", "@@Naziv iz kontrole", "netgen/Form2.vb:3367,3406,3655", unos));
             return l;
         }
     }

@@ -43,6 +43,8 @@ namespace Carpo.NetGen.Ui
         private string _sqlGreska = "";
         private string _zadnjiSql = "";
         private string _testId = "";
+        private string _imeUnosa = "";
+        private readonly List<string> _poslano = new List<string>();
         private bool _punim;
         private int _redovaDetail;
         private DataTable _comboRedovi;
@@ -581,6 +583,8 @@ namespace Carpo.NetGen.Ui
                 return null;
             bool filter = sql.IndexOf("NetGenDBFilter", StringComparison.OrdinalIgnoreCase) >= 0;
             _zadnjiSql = sql;
+            if (!filter)
+                _poslano.Add(sql);
             try
             {
                 var dt = new DataTable();
@@ -613,7 +617,8 @@ namespace Carpo.NetGen.Ui
             var redovi = new List<string>();
             bool upis = DijalogTok.UpisNaSpinu(_server, _baza);
             DijalogTok.DozvoliUpis = upis;
-            DijalogTok.TekstUpisa = "klik-proba-" + DateTime.Now.ToString("yyyyMMddHHmmss");
+            _imeUnosa = "klik-proba-" + DateTime.Now.ToString("yyyyMMddHHmmss");
+            DijalogTok.TekstUpisa = _imeUnosa;
             try
             {
             return ProvediKlikoveUnutra(redovi, upis);
@@ -693,6 +698,7 @@ namespace Carpo.NetGen.Ui
                 if (g != null)
                     gumbi.Add(g);
             }
+            gumbi.Sort(delegate (SimpleButton a, SimpleButton b) { return Redoslijed(a).CompareTo(Redoslijed(b)); });
             for (int i = 0; i < gumbi.Count; i++)
             {
                 SimpleButton g = gumbi[i];
@@ -711,8 +717,14 @@ namespace Carpo.NetGen.Ui
                 }
                 _sqlGreska = "";
                 _zadnjiSql = "";
+                _poslano.Clear();
                 try
                 {
+                    if (upis && (naredba.IndexOf("Izm", StringComparison.OrdinalIgnoreCase) >= 0
+                        || naredba.IndexOf("UPDATE", StringComparison.OrdinalIgnoreCase) >= 0))
+                        DijalogTok.TekstUpisa = _imeUnosa + "-izmjena";
+                    else if (upis)
+                        DijalogTok.TekstUpisa = _imeUnosa;
                     if (upis && _testId.Length > 0)
                         _master.Kontekst.Id = _testId;
                     PokreniZatvaranje();
@@ -861,15 +873,48 @@ namespace Carpo.NetGen.Ui
             return n.StartsWith("odustani") || n.StartsWith("cancel");
         }
 
+        private static int Redoslijed(SimpleButton g)
+        {
+            string n = ((g.Tag as string) ?? "") + " " + (g.Text ?? "");
+            if (n.IndexOf("Unesi", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("INSERT", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("@action=0", StringComparison.OrdinalIgnoreCase) >= 0)
+                return 0;
+            if (n.IndexOf("Izm", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("UPDATE", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("@action=1", StringComparison.OrdinalIgnoreCase) >= 0)
+                return 1;
+            if (n.IndexOf("Obri", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("DELETE", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) >= 0)
+                return 2;
+            return 3;
+        }
+
+        private string PoslanoKoje(string dio)
+        {
+            for (int i = 0; i < _poslano.Count; i++)
+            {
+                if (_poslano[i].IndexOf(dio, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return _poslano[i];
+            }
+            return "";
+        }
+
         private string ProvjeriUpis(string naredba)
         {
-            if (string.IsNullOrEmpty(_zadnjiSql))
+            string sql = PoslanoKoje("spJeziciAzur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spStatusiAzur");
+            if (sql.Length == 0)
+                sql = _zadnjiSql ?? "";
+            if (sql.Length == 0)
                 return "";
-            if (_zadnjiSql.IndexOf("@@", StringComparison.Ordinal) >= 0)
-                return "GRESKA Form2.vb:3406 zamijeni @@ iz kontrole, poslano je " + _zadnjiSql;
+            if (sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                return "GRESKA Form2.vb:3406 zamijeni @@ iz kontrole, poslano je " + sql;
             string tekst = (DijalogTok.TekstUpisa ?? "").Replace("'", "''");
-            if (_zadnjiSql.IndexOf("spJeziciAzur", StringComparison.OrdinalIgnoreCase) >= 0
-                && _zadnjiSql.IndexOf("@action=0", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (sql.IndexOf("spJeziciAzur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("@action=0", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 DataTable t = Citaj("select top 1 cast(JeziciId as varchar(20)) as id from jezici where Naziv = N'" + tekst + "'");
                 if (t == null || t.Rows.Count == 0)
@@ -878,8 +923,17 @@ namespace Carpo.NetGen.Ui
                 _master.Kontekst.Id = _testId;
                 return "jezici.Naziv=" + DijalogTok.TekstUpisa + " id=" + _testId;
             }
-            if (_zadnjiSql.IndexOf("spJeziciAzur", StringComparison.OrdinalIgnoreCase) >= 0
-                && _zadnjiSql.IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (sql.IndexOf("spJeziciAzur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("@action=1", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                DataTable t = Citaj("select Naziv from jezici where JeziciId = " + (_testId.Length == 0 ? "0" : _testId));
+                string naziv = t == null || t.Rows.Count == 0 ? "" : Convert.ToString(t.Rows[0]["Naziv"]);
+                if (naziv != DijalogTok.TekstUpisa)
+                    return "GRESKA jezici.Naziv je '" + naziv + "', očekivano " + DijalogTok.TekstUpisa;
+                return "jezici id=" + _testId + " Naziv=" + naziv;
+            }
+            if (sql.IndexOf("spJeziciAzur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 DataTable t = Citaj("select count(*) as n from jezici where Naziv like N'klik-proba%'");
                 int n = t == null || t.Rows.Count == 0 ? -1 : Convert.ToInt32(t.Rows[0]["n"]);
@@ -888,7 +942,27 @@ namespace Carpo.NetGen.Ui
                 _testId = "";
                 return "testni jezik obrisan";
             }
-            return "poslano: " + _zadnjiSql;
+            if (sql.IndexOf("spStatusiAzur", StringComparison.OrdinalIgnoreCase) >= 0
+                && (sql.IndexOf("@Action=0", StringComparison.OrdinalIgnoreCase) >= 0 || sql.IndexOf("@action=0", StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                DataTable t = Citaj("select top 1 cast(statusiid as varchar(20)) as id from statusi where Korak = N'" + tekst + "'");
+                if (t == null || t.Rows.Count == 0)
+                    return "GRESKA nema reda u statusi.Korak=" + DijalogTok.TekstUpisa;
+                _testId = Convert.ToString(t.Rows[0]["id"]);
+                _master.Kontekst.Id = _testId;
+                return "statusi.Korak=" + DijalogTok.TekstUpisa + " id=" + _testId;
+            }
+            if (sql.IndexOf("spStatusiAzur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                DataTable t = Citaj("select count(*) as n from statusi where Korak like N'klik-proba%'");
+                int n = t == null || t.Rows.Count == 0 ? -1 : Convert.ToInt32(t.Rows[0]["n"]);
+                if (n != 0)
+                    return "GRESKA brisanje statusa ostavilo " + n.ToString();
+                _testId = "";
+                return "testni status obrisan";
+            }
+            return "poslano: " + sql;
         }
 
         private void OcistiTest()
@@ -896,6 +970,7 @@ namespace Carpo.NetGen.Ui
             try
             {
                 Citaj("delete from jezici where Naziv like N'klik-proba%'");
+                Citaj("delete from statusi where Korak like N'klik-proba%'");
             }
             catch
             {

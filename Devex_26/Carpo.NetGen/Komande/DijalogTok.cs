@@ -173,6 +173,50 @@ namespace Carpo.NetGen.Komande
             return k;
         }
 
+        /// <summary>
+        /// Form2.vb 3655 stavi tekst kontrole kao @Ime='vrijednost'.
+        /// Class1.vb 765-868 zamijeni @@Ime tom vrijednošću. XML već ima navodnike
+        /// oko @@Naziv, pa se u taj par stavlja sirovi tekst kontrole.
+        /// </summary>
+        public static string ZamijeniTokene(string sql, string id, IDictionary<string, string> kontrole)
+        {
+            if (string.IsNullOrEmpty(sql))
+                return "";
+            string s = sql;
+            s = s.Replace("@@id", id ?? "");
+            s = s.Replace("@@ID", id ?? "");
+            s = s.Replace("@@Id", id ?? "");
+            if (kontrole == null)
+                return s;
+            foreach (var par in kontrole)
+            {
+                if (string.IsNullOrEmpty(par.Key))
+                    continue;
+                string vrijednost = par.Value ?? "";
+                s = ZamijeniIme(s, par.Key, vrijednost);
+            }
+            return s;
+        }
+
+        private static string ZamijeniIme(string sql, string ime, string vrijednost)
+        {
+            string[] tokeni = new string[] { "@@" + ime, "@@" + ime.ToUpperInvariant(), "@@" + ime.ToLowerInvariant() };
+            string s = sql;
+            for (int i = 0; i < tokeni.Length; i++)
+            {
+                string token = tokeni[i];
+                int p = 0;
+                while ((p = s.IndexOf(token, p, StringComparison.OrdinalIgnoreCase)) >= 0)
+                {
+                    bool uNavodniku = p > 0 && s[p - 1] == '\'';
+                    string ubaci = uNavodniku ? (vrijednost ?? "").Replace("'", "''") : "'" + (vrijednost ?? "").Replace("'", "''") + "'";
+                    s = s.Substring(0, p) + ubaci + s.Substring(p + token.Length);
+                    p += ubaci.Length;
+                }
+            }
+            return s;
+        }
+
         public static bool SmijePoslati(string sql)
         {
             if (string.IsNullOrWhiteSpace(sql))
