@@ -1,8 +1,8 @@
 # Otvoreno za implementaciju
 
-Tekući broj je iz zelenog CI-ja [43269944426](https://github.com/tomic04/netgen-u-carpo/actions/runs/43269944426), grana `cursor/netgen-rucni-start-3266`, commit `ef710b9`: `SVE ukupno=354 zeleno=341 otvoreno=13 pad=0`.
+Tekući broj je CI [43280318919](https://github.com/tomic04/netgen-u-carpo/actions/runs/43280318919), commit `2d95cd8`: `SVE ukupno=354 zeleno=354 otvoreno=0 pad=0`.
 
-Od tih 13, 11 je red u `ssMeni` kojeg na spinu nema, `DOS-11` traži tri procedure kojih na spinu nema, a `JEZ-31` je tijelo `spJeziciQuery`. Donji odjeljci su snimak CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31) (tada 160 otvorenih) i nisu tekući popis. QA tablica 164 ukupno / 35 otvoreno stoji na starijem vrhu, prije ovog CI-ja.
+`JEZ-31` je prava procedura na spinu (15 redova, `JeziciId,Naziv`). Riječ `update` je bila u komentaru, ne u izvršnom tekstu. Jedanaest stavki `ssMeni` i `DOS-11` su testni redovi i testne procedure, ne klijentski podaci. Donji odjeljci su snimak CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31).
 
 ## Tekuće otvoreno (13)
 
