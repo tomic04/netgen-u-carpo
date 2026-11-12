@@ -35,6 +35,7 @@ namespace Carpo.NetGen.GridTest
             ComboDijalogTest();
             OnClickTest();
             GridDijalogTest();
+            NextFormTest();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -76,6 +77,15 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void NextFormTest()
+        {
+            NgForm kom = Forma(Ucitaj("KomStanjeSkl.xml"), "MAINFORM");
+            string sljedeca = DijalogTok.NextForm(kom);
+            DijalogTok.Klik ok = DijalogTok.Gumb(kom, 1, "", true);
+            T("next-kom", sljedeca == "ButtonKartica:KARTICA" && ok.Zatvara && ok.NextForm == sljedeca && !ok.SaljeSql, sljedeca);
+            T("next-prazan", DijalogTok.NextForm(Forma(Ucitaj("MPRealizNG.xml"), "PROMET")) == "", "");
         }
 
         private static void GridDijalogTest()

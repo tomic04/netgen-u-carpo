@@ -778,6 +778,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `grid-puni`, `grid-skip`
 - **PR:** grid-dijalog
 
+## R96 `NEXTFORM` se čita i nakon OK ostaje taj tekst
+
+- **Element:** `NEXTFORM`
+- **NetGen:** atribut se upiše u `strNextForm` (`Form2.vb` 1052). Nakon OK-a, dok nije prazan, otvara se ta forma (`4431–4458`).
+- **Carpo:** čita se cijeli tekst, uključujući `ButtonKartica:KARTICA`. Prazan atribut ostaje prazan. Na jupiter2019 i jupiter2022 se pritom ne šalje `ONSUBMIT`.
+- **Posljedica:** jedini ulazni `NEXTFORM` je `BIOVEGA/KomStanjeSkl.xml`. `MPRealizNG` `PROMET` je prazan.
+- **Odluka:** NetGen logika. Jupiter gumb se ne izvršava.
+- **Test:** `next-kom`, `next-prazan`
+- **PR:** nextform
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
