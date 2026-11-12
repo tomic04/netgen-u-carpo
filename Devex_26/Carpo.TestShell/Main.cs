@@ -293,14 +293,30 @@ namespace Carpo.TestShell
             }
             if (granula != null && !granula.IsDisposed)
             {
-                SnimiProzor(granula.Handle, snimka);
-                if (!ImaSnimku(snimka))
-                    SnimiFormu(granula, snimka);
+                var rok = DateTime.UtcNow.AddSeconds(4);
+                while (DateTime.UtcNow < rok && !ImaSnimku(snimka))
+                {
+                    try
+                    {
+                        granula.Activate();
+                        granula.Refresh();
+                        Application.DoEvents();
+                    }
+                    catch
+                    {
+                    }
+                    SnimiProzor(granula.Handle, snimka);
+                    if (!ImaSnimku(snimka))
+                        SnimiFormu(granula, snimka);
+                    if (ImaSnimku(snimka))
+                        break;
+                    Application.DoEvents();
+                    Thread.Sleep(250);
+                }
             }
             if (!ImaSnimku(snimka))
-                SnimiEkran(snimka);
-            if (!ImaSnimku(snimka))
             {
+                SnimiEkran(snimka + ".ekran.png");
                 UpisiIshod(snimka, "FAIL nema screenshota " + TekstSnimke(snimka));
                 return 4;
             }
@@ -340,9 +356,9 @@ namespace Carpo.TestShell
                 string naslov = ProzorGreske(pid);
                 if (naslov != null)
                 {
-                    _uiIshod = 1;
                     SnimiEkran(snimka);
                     UpisiIshod(snimka, "FAIL dijalog " + naslov);
+                    _uiIshod = 1;
                     Environment.Exit(1);
                 }
                 IntPtr prozor = ProzorGranule(pid);
@@ -353,8 +369,6 @@ namespace Carpo.TestShell
                     {
                         Thread.Sleep(800);
                         SnimiProzor(prozor, snimka);
-                        if (!ImaSnimku(snimka))
-                            SnimiEkran(snimka);
                         if (ImaSnimku(snimka))
                             PostMessage(prozor, 0x0010, IntPtr.Zero, IntPtr.Zero);
                     }
@@ -387,12 +401,26 @@ namespace Carpo.TestShell
                 string t = sb.ToString();
                 if (t == "Start Error" || t == "Carpo.NetGen" || t == "Greška" || t == "StartXmlGen()")
                 {
-                    nadjen = t;
+                    nadjen = t + TekstDijaloga(h);
                     return false;
                 }
                 return true;
             }, IntPtr.Zero);
             return nadjen;
+        }
+
+        private static string TekstDijaloga(IntPtr hwnd)
+        {
+            var sb = new StringBuilder();
+            EnumChildWindows(hwnd, delegate (IntPtr h, IntPtr l)
+            {
+                var t = new StringBuilder(2000);
+                GetWindowText(h, t, t.Capacity);
+                if (t.Length > 0)
+                    sb.Append(" | ").Append(t);
+                return true;
+            }, IntPtr.Zero);
+            return sb.ToString();
         }
 
         private static IntPtr ProzorGranule(int pid)
@@ -465,6 +493,8 @@ namespace Carpo.TestShell
                 ZapisiSnimku(put, "prozor " + w + "x" + h);
                 return;
             }
+            if (SnimiPikselima(r.Left, r.Top, w, h, put))
+                return;
             try
             {
                 using (var bmp = new System.Drawing.Bitmap(w, h))
@@ -500,9 +530,9 @@ namespace Carpo.TestShell
                             ReleaseDC(hwnd, src);
                         }
                     }
-                    if (!tisak)
+                    if (!tisak || !JeSadrzaj(bmp))
                     {
-                        ZapisiSnimku(put, "PrintWindow i BitBlt nisu uspjeli " + w + "x" + h);
+                        ZapisiSnimku(put, "snimka prazna " + w + "x" + h);
                         return;
                     }
                     bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
@@ -512,6 +542,58 @@ namespace Carpo.TestShell
             {
                 ZapisiSnimku(put, ex.ToString());
             }
+        }
+
+        private static bool SnimiPikselima(int lijevo, int gore, int w, int h, string put)
+        {
+            try
+            {
+                var ekran = System.Windows.Forms.SystemInformation.VirtualScreen;
+                int x = Math.Max(lijevo, ekran.Left);
+                int y = Math.Max(gore, ekran.Top);
+                int sirina = Math.Min(lijevo + w, ekran.Right) - x;
+                int visina = Math.Min(gore + h, ekran.Bottom) - y;
+                if (sirina < 50 || visina < 50)
+                {
+                    ZapisiSnimku(put, "piksel izvan ekrana " + sirina + "x" + visina);
+                    return false;
+                }
+                using (var bmp = new System.Drawing.Bitmap(sirina, visina))
+                {
+                    using (var g = System.Drawing.Graphics.FromImage(bmp))
+                        g.CopyFromScreen(x, y, 0, 0, new System.Drawing.Size(sirina, visina));
+                    if (!JeSadrzaj(bmp))
+                    {
+                        ZapisiSnimku(put, "ekran prazan " + sirina + "x" + visina);
+                        return false;
+                    }
+                    bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                ZapisiSnimku(put, ex.ToString());
+                return false;
+            }
+        }
+
+        private static bool JeSadrzaj(System.Drawing.Bitmap bmp)
+        {
+            int korakX = Math.Max(1, bmp.Width / 40);
+            int korakY = Math.Max(1, bmp.Height / 40);
+            var vjedra = new HashSet<int>();
+            for (int y = 0; y < bmp.Height; y += korakY)
+            {
+                for (int x = 0; x < bmp.Width; x += korakX)
+                {
+                    var c = bmp.GetPixel(x, y);
+                    vjedra.Add((c.R / 16) << 8 | (c.G / 16) << 4 | (c.B / 16));
+                    if (vjedra.Count >= 8)
+                        return true;
+                }
+            }
+            return false;
         }
 
         private static void SnimiEkran(string put)
@@ -530,6 +612,11 @@ namespace Carpo.TestShell
                 {
                     using (var g = System.Drawing.Graphics.FromImage(bmp))
                         g.CopyFromScreen(ekran.Location, System.Drawing.Point.Empty, ekran.Size);
+                    if (!JeSadrzaj(bmp))
+                    {
+                        ZapisiSnimku(put, "cijeli ekran prazan " + ekran.Width + "x" + ekran.Height);
+                        return;
+                    }
                     bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
                 }
             }
@@ -549,19 +636,22 @@ namespace Carpo.TestShell
                 if (r.Width < 50 || r.Height < 50)
                 {
                     ZapisiSnimku(put, "forma " + r.Width + "x" + r.Height);
-                    SnimiEkran(put);
                     return;
                 }
                 using (var bmp = new System.Drawing.Bitmap(r.Width, r.Height))
                 {
                     forma.DrawToBitmap(bmp, new System.Drawing.Rectangle(0, 0, r.Width, r.Height));
+                    if (!JeSadrzaj(bmp))
+                    {
+                        ZapisiSnimku(put, "DrawToBitmap prazan " + r.Width + "x" + r.Height);
+                        return;
+                    }
                     bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
                 }
             }
             catch (Exception ex)
             {
                 ZapisiSnimku(put, ex.ToString());
-                SnimiEkran(put);
             }
         }
 
@@ -581,6 +671,9 @@ namespace Carpo.TestShell
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern bool EnumWindows(EnumProc lpEnumFunc, IntPtr lParam);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool EnumChildWindows(IntPtr hWndParent, EnumProc lpEnumFunc, IntPtr lParam);
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern bool IsWindowVisible(IntPtr hWnd);

@@ -27,7 +27,10 @@ function Pokreni([string]$xml, [string]$png) {
     if (Test-Path -LiteralPath $png) { Remove-Item -LiteralPath $png -Force }
     $rad = Split-Path -Parent $Exe
     if ($sid -ne 0) {
-        $p = Start-Process -FilePath $Exe -ArgumentList @("--ui-smoke", $xml, $png) -WorkingDirectory $rad -PassThru
+        # Jedan string. Polje argumenata u Windows PowerShellu 5.1 ne stavlja navodnike,
+        # pa se "Agronom granule" rasiječe i TestShell otvori krivi XML.
+        $linija = "--ui-smoke `"$xml`" `"$png`""
+        $p = Start-Process -FilePath $Exe -ArgumentList $linija -WorkingDirectory $rad -PassThru
         if (-not $p.WaitForExit(75000)) {
             try { $p.Kill() } catch { }
             throw "timeout $xml"
