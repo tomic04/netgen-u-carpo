@@ -2,6 +2,8 @@
 
 Brojke su prema kuki na `cursor/netgen-nextform-3266` (`5015fe1`), bez upita na Jupiter. Spin je testni server i smije se čitati. Jupiter se ne dira.
 
+[#54](https://github.com/tomic04/netgen-u-carpo/pull/54) je poslije toga na `1bc0bc3`: gasi vezu prema Jupiteru i na spinu, ako stupca nema, doda `klmasterroba.oznaka2`. To ne zatvara nijednu od 164 stavki. #55 i #56 taj commit još nemaju. Brojke ispod ostaju.
+
 | Element | Ukupno | Zatvoreno | Otvoreno |
 |---|---:|---:|---:|
 | grid | 34 | 0 | 34 |
