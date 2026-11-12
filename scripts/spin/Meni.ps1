@@ -25,9 +25,6 @@ function Exec([string]$sql) {
     return $cmd.ExecuteNonQuery()
 }
 
-$info = Q "select db_name() as db, cast(object_id(N'ssMeni') as varchar(20)) as oid"
-Write-Host ("baza=" + $info.Rows[0].db + " object_id(ssMeni)=" + $info.Rows[0].oid)
-
 $meta = Q @"
 select top 1 o.object_id, o.type, schema_name(o.schema_id) as shema
 from sys.objects o
