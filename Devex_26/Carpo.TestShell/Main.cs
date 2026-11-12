@@ -305,7 +305,7 @@ namespace Carpo.TestShell
                     catch
                     {
                     }
-                    SnimiProzor(granula.Handle, snimka);
+                    SnimiProzor(granula.Handle, snimka, true);
                     if (!ImaSnimku(snimka))
                         SnimiFormu(granula, snimka);
                     if (ImaSnimku(snimka))
@@ -368,7 +368,8 @@ namespace Carpo.TestShell
                     if (!_uiKlikGotov && !ImaSnimku(snimka))
                     {
                         Thread.Sleep(800);
-                        SnimiProzor(prozor, snimka);
+                        // PrintWindow s ove niti čeka UI i zna zaglaviti Show. Ovdje samo pikseli.
+                        SnimiProzor(prozor, snimka, false);
                         if (ImaSnimku(snimka))
                             PostMessage(prozor, 0x0010, IntPtr.Zero, IntPtr.Zero);
                     }
@@ -476,7 +477,7 @@ namespace Carpo.TestShell
             try { File.WriteAllText(put + ".snimka.txt", tekst); } catch { }
         }
 
-        private static void SnimiProzor(IntPtr hwnd, string put)
+        private static void SnimiProzor(IntPtr hwnd, string put, bool smijeCekati)
         {
             if (hwnd == IntPtr.Zero || ImaSnimku(put))
                 return;
@@ -495,6 +496,12 @@ namespace Carpo.TestShell
             }
             if (SnimiPikselima(r.Left, r.Top, w, h, put))
                 return;
+            if (!smijeCekati)
+            {
+                if (!SnimiBitBlt(hwnd, w, h, put))
+                    ZapisiSnimku(put, "ekran bez sadrzaja " + w + "x" + h);
+                return;
+            }
             try
             {
                 using (var bmp = new System.Drawing.Bitmap(w, h))
@@ -541,6 +548,44 @@ namespace Carpo.TestShell
             catch (Exception ex)
             {
                 ZapisiSnimku(put, ex.ToString());
+            }
+        }
+
+        private static bool SnimiBitBlt(IntPtr hwnd, int w, int h, string put)
+        {
+            try
+            {
+                using (var bmp = new System.Drawing.Bitmap(w, h))
+                using (var g = System.Drawing.Graphics.FromImage(bmp))
+                {
+                    IntPtr src = GetWindowDC(hwnd);
+                    try
+                    {
+                        IntPtr hdc = g.GetHdc();
+                        bool ok;
+                        try
+                        {
+                            ok = BitBlt(hdc, 0, 0, w, h, src, 0, 0, 0x00CC0020);
+                        }
+                        finally
+                        {
+                            g.ReleaseHdc(hdc);
+                        }
+                        if (!ok || !JeSadrzaj(bmp))
+                            return false;
+                    }
+                    finally
+                    {
+                        ReleaseDC(hwnd, src);
+                    }
+                    bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                ZapisiSnimku(put, ex.ToString());
+                return false;
             }
         }
 
