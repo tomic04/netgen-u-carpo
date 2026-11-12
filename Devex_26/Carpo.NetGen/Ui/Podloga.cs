@@ -664,7 +664,7 @@ namespace Carpo.NetGen.Ui
                 SimpleButton g = gumbi[i];
                 string naredba = g.Tag == null ? "" : g.Tag.ToString();
                 string natpis = (g.Text ?? "").Replace("\r\n", " ").Trim();
-                if (Destruktivan(naredba))
+                if (Destruktivan(naredba, natpis))
                 {
                     redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", naredba, "netgen/Form1.vb:5664"));
                     continue;
@@ -755,13 +755,36 @@ namespace Carpo.NetGen.Ui
             return !string.IsNullOrWhiteSpace(_master.Stanje.IzvorSql);
         }
 
-        private static bool Destruktivan(string naredba)
+        private bool Destruktivan(string naredba, string natpis)
         {
-            if (string.IsNullOrEmpty(naredba))
-                return false;
-            if (naredba.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (Pise(naredba) || Pise(natpis))
                 return true;
-            return ImaRijec(naredba, "insert") || ImaRijec(naredba, "update") || ImaRijec(naredba, "delete");
+            if (naredba != null && naredba.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            if (_projekt == null || string.IsNullOrEmpty(naredba))
+                return false;
+            string ime = naredba.Trim();
+            int hash = ime.IndexOf('#');
+            if (hash >= 0)
+                ime = ime.Substring(0, hash);
+            if (ime.StartsWith(":", StringComparison.Ordinal))
+                ime = ime.Substring(1);
+            for (int i = 0; i < _projekt.Forme.Count; i++)
+            {
+                if (!string.Equals(_projekt.Forme[i].Ime, ime.Trim(), StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (Pise(_projekt.Forme[i].OnSubmit) || Pise(_projekt.Forme[i].OnLoad))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool Pise(string tekst)
+        {
+            if (string.IsNullOrEmpty(tekst))
+                return false;
+            return ImaRijec(tekst, "insert") || ImaRijec(tekst, "update") || ImaRijec(tekst, "delete")
+                || tekst.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static bool ImaRijec(string tekst, string rijec)
