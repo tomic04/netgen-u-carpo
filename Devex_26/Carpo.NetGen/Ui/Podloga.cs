@@ -1,6 +1,5 @@
 using System;
 using System.Data;
-using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
@@ -8,23 +7,33 @@ using Carpo.NetGen.Grid;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
 using Carpo.NetGen.Xml;
+using DevExpress.Skins;
+using DevExpress.UserSkins;
+using DevExpress.XtraBars;
+using DevExpress.XtraEditors;
+using DevExpress.XtraGrid;
+using DevExpress.XtraGrid.Views.Grid;
+using DevExpress.XtraTreeList;
+using DevExpress.XtraTreeList.Nodes;
 
 namespace Carpo.NetGen.Ui
 {
     /// <summary>
-    /// Podloga kao Form1: lijevo drvo, desno master, splitter.
-    /// Ctrl+F11 otvara Carpo.Core.Log.Log nad loggerom spojenim u NgDnevnik.
+    /// NetGen podloga u Carpo ljusci: RibbonBase, ribbon gumbi, DevExpress grid i stablo.
+    /// Raspored i naredbe ostaju NetGen. Boja i stil gumba više nisu WinForms.
     /// </summary>
-    public sealed class Podloga : Form
+    public sealed class Podloga : RibbonBase.RibbonBase
     {
-        private readonly SplitContainer _split;
-        private readonly TreeView _drvo;
-        private readonly ComboBox _combo;
-        private readonly DataGridView _grid;
-        private readonly DataGridView _detailGrid;
-        private readonly SplitContainer _detailSplit;
-        private readonly FlowLayoutPanel _gumbi;
-        private readonly Label _status;
+        private readonly SplitContainerControl _split;
+        private readonly SplitContainerControl _detailSplit;
+        private readonly TreeList _drvo;
+        private readonly LookUpEdit _combo;
+        private readonly GridControl _grid;
+        private readonly GridView _pogled;
+        private readonly GridControl _detailGrid;
+        private readonly GridView _detailPogled;
+        private readonly RibbonPageGroup _naredbe;
+        private readonly BarStaticItem _status;
         private readonly Stablo _stablo = new Stablo();
         private readonly MasterGrid _master = new MasterGrid();
         private readonly DetailGrid _detail = new DetailGrid();
@@ -34,106 +43,96 @@ namespace Carpo.NetGen.Ui
 
         public Podloga()
         {
+            BonusSkins.Register();
+            SkinManager.EnableFormSkins();
             Text = "NetGen";
             Width = 1100;
             Height = 700;
             StartPosition = FormStartPosition.CenterScreen;
             KeyPreview = true;
-            Font = new Font("Microsoft Sans Serif", 8.25f);
 
-            _status = new Label();
-            _status.Dock = DockStyle.Bottom;
-            _status.Height = 22;
-            _status.TextAlign = ContentAlignment.MiddleLeft;
-
-            _gumbi = new FlowLayoutPanel();
-            _gumbi.Dock = DockStyle.Bottom;
-            _gumbi.Height = 40;
-            _gumbi.FlowDirection = FlowDirection.LeftToRight;
-            _gumbi.WrapContents = false;
-
-            _drvo = new TreeView();
-            _drvo.Dock = DockStyle.Fill;
-            _drvo.ShowRootLines = true;
-            _drvo.ShowPlusMinus = true;
-            _drvo.ShowLines = true;
-            _drvo.HideSelection = true;
-            _drvo.AllowDrop = true;
-            _drvo.Sorted = false;
-            _drvo.BorderStyle = BorderStyle.None;
-            _drvo.BackColor = SystemColors.ControlLightLight;
-            var slike = new ImageList();
-            slike.ImageSize = new Size(16, 16);
-            slike.ColorDepth = ColorDepth.Depth32Bit;
-            var bmp = new Bitmap(16, 16);
-            using (var g = Graphics.FromImage(bmp))
+            var stranica = new RibbonPage("Početna");
+            _naredbe = new RibbonPageGroup("Naredbe");
+            _naredbe.ShowCaptionButton = false;
+            stranica.Groups.Add(_naredbe);
+            if (ribbonControl1 != null)
             {
-                g.Clear(Color.Transparent);
-                g.FillRectangle(Brushes.SteelBlue, 1, 1, 14, 14);
+                ribbonControl1.Pages.Add(stranica);
+                ribbonControl1.Toolbar.ShowCustomizeItem = false;
             }
-            slike.Images.Add("OrdersDetails16.ico", bmp);
-            _drvo.ImageList = slike;
-            _drvo.ImageIndex = 0;
-            _drvo.SelectedImageIndex = 0;
-            _drvo.AfterSelect += Drvo_AfterSelect;
 
-            _combo = new ComboBox();
+            _status = new BarStaticItem();
+            _status.Caption = "";
+            _status.AutoSize = BarStaticItemSize.Spring;
+            if (ribbonControl1 != null && ribbonControl1.StatusBar != null)
+                ribbonControl1.StatusBar.ItemLinks.Add(_status);
+
+            _drvo = new TreeList();
+            _drvo.Dock = DockStyle.Fill;
+            var stupac = _drvo.Columns.Add();
+            stupac.Caption = "";
+            stupac.Visible = true;
+            stupac.VisibleIndex = 0;
+            _drvo.OptionsView.ShowColumns = false;
+            _drvo.OptionsView.ShowIndicator = false;
+            _drvo.OptionsView.ShowHorzLines = false;
+            _drvo.OptionsView.ShowVertLines = false;
+            _drvo.OptionsBehavior.Editable = false;
+            _drvo.FocusedNodeChanged += Drvo_FocusedNodeChanged;
+
+            _combo = new LookUpEdit();
             _combo.Dock = DockStyle.Top;
-            _combo.DropDownStyle = ComboBoxStyle.DropDownList;
-            _combo.Font = new Font("Microsoft Sans Serif", 8.25f);
+            _combo.Properties.NullText = "";
+            _combo.Properties.ShowHeader = false;
+            _combo.Properties.ShowFooter = false;
             _combo.Visible = false;
-            _combo.SelectedIndexChanged += Combo_SelectedIndexChanged;
+            _combo.EditValueChanged += Combo_EditValueChanged;
 
-            _grid = new DataGridView();
+            _pogled = new GridView();
+            _grid = new GridControl();
             _grid.Dock = DockStyle.Fill;
-            _grid.ReadOnly = true;
-            _grid.AllowUserToAddRows = false;
-            _grid.AllowUserToDeleteRows = false;
-            _grid.AllowUserToResizeRows = false;
-            _grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            _grid.MultiSelect = true;
-            _grid.RowHeadersVisible = true;
-            _grid.BorderStyle = BorderStyle.None;
-            _grid.BackgroundColor = SystemColors.Window;
-            _grid.Font = new Font("Microsoft Sans Serif", 8.25f);
-            _grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            _grid.ColumnHeadersHeight = 48;
-            _grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
-            _grid.EditMode = DataGridViewEditMode.EditProgrammatically;
-            _grid.SelectionChanged += Grid_SelectionChanged;
+            _grid.MainView = _pogled;
+            _pogled.GridControl = _grid;
+            PodesiPogled(_pogled, true);
+            _pogled.FocusedRowChanged += Pogled_FocusedRowChanged;
 
-            _detailGrid = new DataGridView();
+            _detailPogled = new GridView();
+            _detailGrid = new GridControl();
             _detailGrid.Dock = DockStyle.Fill;
-            _detailGrid.ReadOnly = true;
-            _detailGrid.AllowUserToAddRows = false;
-            _detailGrid.AllowUserToDeleteRows = false;
-            _detailGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            _detailGrid.MultiSelect = true;
-            _detailGrid.RowHeadersVisible = true;
-            _detailGrid.BorderStyle = BorderStyle.None;
-            _detailGrid.BackgroundColor = SystemColors.Window;
-            _detailGrid.Font = new Font("Microsoft Sans Serif", 8.25f);
-            _detailGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            _detailGrid.ColumnHeadersHeight = 48;
-            _detailGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
-            _detailGrid.EditMode = DataGridViewEditMode.EditProgrammatically;
+            _detailGrid.MainView = _detailPogled;
+            _detailPogled.GridControl = _detailGrid;
+            PodesiPogled(_detailPogled, false);
 
-            _detailSplit = new SplitContainer();
+            _detailSplit = new SplitContainerControl();
             _detailSplit.Dock = DockStyle.Fill;
-            _detailSplit.Orientation = Orientation.Horizontal;
+            _detailSplit.Horizontal = true;
             _detailSplit.Panel1.Controls.Add(_grid);
             _detailSplit.Panel2.Controls.Add(_detailGrid);
 
-            _split = new SplitContainer();
+            _split = new SplitContainerControl();
             _split.Dock = DockStyle.Fill;
-            _split.Orientation = Orientation.Vertical;
+            _split.Horizontal = false;
             _split.Panel1.Controls.Add(_drvo);
             _split.Panel1.Controls.Add(_combo);
             _split.Panel2.Controls.Add(_detailSplit);
-
-            Controls.Add(_status);
-            Controls.Add(_gumbi);
             Controls.Add(_split);
+            if (ribbonControl1 != null)
+                Controls.SetChildIndex(ribbonControl1, 0);
+        }
+
+        private static void PodesiPogled(GridView pogled, bool master)
+        {
+            pogled.OptionsBehavior.Editable = false;
+            pogled.OptionsBehavior.ReadOnly = true;
+            pogled.OptionsView.ShowAutoFilterRow = true;
+            pogled.OptionsView.ColumnAutoWidth = false;
+            pogled.OptionsView.ShowGroupPanel = true;
+            pogled.OptionsSelection.MultiSelect = true;
+            pogled.OptionsSelection.EnableAppearanceFocusedCell = false;
+            pogled.FocusRectStyle = DrawFocusRectStyle.RowFocus;
+            pogled.OptionsSelection.MultiSelectMode = GridMultiSelectMode.RowSelect;
+            if (master)
+                pogled.OptionsView.ShowIndicator = true;
         }
 
         public bool Prikazi(string xml, string server, string baza, int operater)
@@ -141,7 +140,7 @@ namespace Carpo.NetGen.Ui
             var r = NetGenXmlReader.Ucitaj(xml);
             if (!r.Uspjeh || r.Projekt == null)
             {
-                _status.Text = r.Greska ?? "XML nije učitan.";
+                PostaviStatus(r.Greska ?? "XML nije učitan.");
                 return false;
             }
             _projekt = r.Projekt;
@@ -160,7 +159,7 @@ namespace Carpo.NetGen.Ui
             }
             catch (Exception ex)
             {
-                _status.Text = ex.Message;
+                PostaviStatus(ex.Message);
                 return false;
             }
 
@@ -186,46 +185,42 @@ namespace Carpo.NetGen.Ui
 
         private void NapuniDrvo()
         {
-            _drvo.BeginUpdate();
+            _drvo.BeginUnboundLoad();
             _drvo.Nodes.Clear();
             for (int i = 0; i < _stablo.Stanje.Korijen.Count; i++)
-                DodajCvor(_stablo.Stanje.Korijen[i], _drvo.Nodes);
-            _drvo.EndUpdate();
+                DodajCvor(_stablo.Stanje.Korijen[i], null);
+            _drvo.EndUnboundLoad();
+            _drvo.ExpandAll();
         }
 
-        private void DodajCvor(Cvor cvor, TreeNodeCollection kamo)
+        private void DodajCvor(Cvor cvor, TreeListNode roditelj)
         {
-            var n = new TreeNode(cvor.Natpis ?? "");
+            TreeListNode n = _drvo.AppendNode(new object[] { cvor.Natpis ?? "" }, roditelj);
             n.Tag = cvor;
-            n.Name = cvor.Oznaka ?? "";
-            n.ImageIndex = 0;
-            n.SelectedImageIndex = 0;
-            kamo.Add(n);
             for (int i = 0; i < cvor.Djeca.Count; i++)
-                DodajCvor(cvor.Djeca[i], n.Nodes);
+                DodajCvor(cvor.Djeca[i], n);
         }
 
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
             if (!_stablo.Stanje.Vidljivo || _stablo.Stanje.Splitter <= 0)
-                _split.Panel1Collapsed = true;
+                _split.PanelVisibility = SplitPanelVisibility.Panel2;
             else
             {
-                _split.Panel1Collapsed = false;
+                _split.PanelVisibility = SplitPanelVisibility.Both;
                 int d = _stablo.Stanje.Splitter;
-                int max = _split.Width - _split.SplitterWidth - 80;
-                if (d > 40 && d < max)
-                    _split.SplitterDistance = d;
+                if (d > 40 && d < Width - 120)
+                    _split.SplitterPosition = d;
             }
             if (_detail.Stanje.Nema || _detail.Stanje.OtvaraFormu)
-                _detailSplit.Panel2Collapsed = true;
+                _detailSplit.PanelVisibility = SplitPanelVisibility.Panel1;
             else
             {
-                _detailSplit.Panel2Collapsed = false;
+                _detailSplit.PanelVisibility = SplitPanelVisibility.Both;
                 int visina = _detailSplit.Height;
                 if (visina > 160)
-                    _detailSplit.SplitterDistance = (int)(visina * 0.62);
+                    _detailSplit.SplitterPosition = (int)(visina * 0.62);
             }
             if (_master.Stanje.OtvaraFormu)
             {
@@ -240,7 +235,7 @@ namespace Carpo.NetGen.Ui
         private void NapuniCombo()
         {
             _combo.Visible = false;
-            _combo.DataSource = null;
+            _combo.Properties.DataSource = null;
             if (_projekt == null || _projekt.Atributi == null || !_projekt.Atributi.Ima("COMBO"))
                 return;
             string sql = (_projekt.Atributi.Vrijednost("COMBO") ?? "").Trim();
@@ -250,30 +245,29 @@ namespace Carpo.NetGen.Ui
             if (t == null || t.Columns.Count == 0 || t.Rows.Count == 0)
                 return;
             _combo.Visible = true;
-            _combo.ValueMember = t.Columns[0].ColumnName;
-            if (t.Columns.Count > 1)
-                _combo.DisplayMember = t.Columns[1].ColumnName;
-            _combo.DataSource = t;
+            _combo.Properties.ValueMember = t.Columns[0].ColumnName;
+            _combo.Properties.DisplayMember = t.Columns.Count > 1 ? t.Columns[1].ColumnName : t.Columns[0].ColumnName;
+            _combo.Properties.DataSource = t;
+            _combo.EditValue = t.Rows[0][0];
         }
 
-        private void Combo_SelectedIndexChanged(object sender, EventArgs e)
+        private void Combo_EditValueChanged(object sender, EventArgs e)
         {
-            if (_combo.SelectedValue == null || _combo.SelectedValue is DataRowView)
+            if (_combo.EditValue == null || _combo.EditValue is DataRowView)
                 return;
-            string vrijednost = Convert.ToString(_combo.SelectedValue);
+            string vrijednost = Convert.ToString(_combo.EditValue);
             _stablo.IzTeksta(vrijednost, _projekt, Citaj);
             NapuniDrvo();
             if (_stablo.Stanje.Vidljivo && _stablo.Stanje.Splitter > 0)
             {
-                _split.Panel1Collapsed = false;
-                int max = _split.Width - _split.SplitterWidth - 80;
+                _split.PanelVisibility = SplitPanelVisibility.Both;
                 int d = _stablo.Stanje.Splitter;
-                if (d > 40 && d < max)
-                    _split.SplitterDistance = d;
+                if (d > 40 && d < Width - 120)
+                    _split.SplitterPosition = d;
             }
         }
 
-        private void Drvo_AfterSelect(object sender, TreeViewEventArgs e)
+        private void Drvo_FocusedNodeChanged(object sender, FocusedNodeChangedEventArgs e)
         {
             var cvor = e.Node == null ? null : e.Node.Tag as Cvor;
             if (cvor == null)
@@ -323,7 +317,7 @@ namespace Carpo.NetGen.Ui
             dij.Prikazi(forma, _master.Kontekst, Citaj);
         }
 
-        private void Grid_SelectionChanged(object sender, EventArgs e)
+        private void Pogled_FocusedRowChanged(object sender, DevExpress.XtraGrid.Views.Base.FocusedRowChangedEventArgs e)
         {
             if (_punim)
                 return;
@@ -334,7 +328,7 @@ namespace Carpo.NetGen.Ui
         {
             _punim = true;
             _master.IzvrsiCitanje(_spoj);
-            VeziGrid();
+            VeziGrid(_pogled, _grid, _master.Stanje.Tablica, _master.Stanje.Kolone, _master.Stanje.Poruka, _master.Stanje.CheckboxVidljiv, _master.Stanje.GroupByBox, _master.Stanje.FilterRed || _master.Stanje.FilterNamjernoOdstupanje || !_master.Stanje.FilterIzXml);
             _punim = false;
             OsvjeziDetail();
         }
@@ -345,13 +339,13 @@ namespace Carpo.NetGen.Ui
             if (SqlTekst.JeZabranaPisanja(spremno))
             {
                 NgDnevnik.Akcija("nije poslano, zabrana pisanja: " + spremno);
-                _status.Text = "Upis nije poslan.";
+                PostaviStatus("Upis nije poslan.");
                 return;
             }
             NgDnevnik.Sql(spremno);
             DataTable t = Citaj(spremno);
             _grid.DataSource = t;
-            _status.Text = t == null ? "Greška SQL-a." : (t.Rows.Count.ToString() + " redova");
+            PostaviStatus(t == null ? "Greška SQL-a." : (t.Rows.Count.ToString() + " redova"));
             OsvjeziDetail();
         }
 
@@ -362,11 +356,8 @@ namespace Carpo.NetGen.Ui
                 _detailGrid.DataSource = null;
                 return;
             }
-            DataRow red = null;
-            DataRowView pogled = _grid.CurrentRow == null ? null : _grid.CurrentRow.DataBoundItem as DataRowView;
-            if (pogled != null)
-                red = pogled.Row;
-            else if (_master.Stanje.Tablica != null && _master.Stanje.Tablica.Rows.Count > 0)
+            DataRow red = _pogled.GetFocusedDataRow();
+            if (red == null && _master.Stanje.Tablica != null && _master.Stanje.Tablica.Rows.Count > 0)
                 red = _master.Stanje.Tablica.Rows[0];
             string sql = _detail.Slozi(red);
             if (string.IsNullOrWhiteSpace(sql))
@@ -380,79 +371,93 @@ namespace Carpo.NetGen.Ui
             DataTable t = Citaj(sql);
             NgColumnGroup def = _projekt == null ? null : _projekt.NadjiGrupu("DETAILCOLUMNS");
             _detail.PrimijeniTablicu(t, def);
-            _detailGrid.DataSource = t;
-            for (int i = 0; i < _detail.Stanje.Kolone.Count; i++)
-            {
-                GridKolona k = _detail.Stanje.Kolone[i];
-                if (k.Selektor || k.Podatak == "Icon")
-                    continue;
-                if (!_detailGrid.Columns.Contains(k.Podatak))
-                    continue;
-                DataGridViewColumn c = _detailGrid.Columns[k.Podatak];
-                c.Visible = k.Vidljiva;
-                c.HeaderText = k.Natpis ?? k.Podatak;
-                if (k.Sirina > 0)
-                    c.Width = k.Sirina;
-            }
-            if (_detail.Stanje.FokusZadnji && _detailGrid.Rows.Count > 0)
-                _detailGrid.Rows[_detailGrid.Rows.Count - 1].Selected = true;
+            VeziGrid(_detailPogled, _detailGrid, t, _detail.Stanje.Kolone, _detail.Stanje.Poruka, _detail.Stanje.CheckboxVidljiv, null, true);
+            if (_detail.Stanje.FokusZadnji && _detailPogled.RowCount > 0)
+                _detailPogled.FocusedRowHandle = _detailPogled.RowCount - 1;
         }
 
-        private void VeziGrid()
+        private void VeziGrid(GridView pogled, GridControl grid, DataTable tablica, System.Collections.Generic.List<GridKolona> kolone, string poruka, bool checkbox, bool? grupa, bool filter)
         {
-            _grid.DataSource = _master.Stanje.Tablica;
-            if (!string.IsNullOrEmpty(_master.Stanje.Poruka))
+            grid.DataSource = tablica;
+            pogled.PopulateColumns();
+            if (grupa.HasValue)
+                pogled.OptionsView.ShowGroupPanel = grupa.Value;
+            pogled.OptionsView.ShowAutoFilterRow = filter;
+            if (checkbox)
+                pogled.OptionsSelection.MultiSelectMode = GridMultiSelectMode.CheckBoxRowSelect;
+            if (!string.IsNullOrEmpty(poruka))
             {
-                _status.Text = _master.Stanje.Poruka.Replace("\r\n", " ");
+                PostaviStatus(poruka.Replace("\r\n", " "));
                 return;
             }
-            int redova = _master.Stanje.Tablica == null ? 0 : _master.Stanje.Tablica.Rows.Count;
-            _status.Text = redova.ToString() + " redova";
-            for (int i = 0; i < _master.Stanje.Kolone.Count; i++)
+            int redova = tablica == null ? 0 : tablica.Rows.Count;
+            PostaviStatus(redova.ToString() + " redova");
+            if (kolone == null)
+                return;
+            for (int i = 0; i < kolone.Count; i++)
             {
-                GridKolona k = _master.Stanje.Kolone[i];
+                GridKolona k = kolone[i];
                 if (k.Selektor || k.Podatak == "Icon")
                     continue;
-                if (!_grid.Columns.Contains(k.Podatak))
+                var c = pogled.Columns.ColumnByFieldName(k.Podatak);
+                if (c == null)
                     continue;
-                DataGridViewColumn c = _grid.Columns[k.Podatak];
                 c.Visible = k.Vidljiva;
-                c.HeaderText = k.Natpis ?? k.Podatak;
+                c.Caption = k.Natpis ?? k.Podatak;
                 if (k.Sirina > 0)
                     c.Width = k.Sirina;
-                c.ReadOnly = !k.Uredivanje;
+                c.OptionsColumn.AllowEdit = k.Uredivanje;
             }
-            if (_grid.Rows.Count > 0)
-                _grid.Rows[0].Selected = true;
+            if (pogled.RowCount > 0)
+                pogled.FocusedRowHandle = 0;
         }
 
         private void NapuniGumbe()
         {
-            _gumbi.Controls.Clear();
-            if (_projekt == null)
+            _naredbe.ItemLinks.Clear();
+            if (_projekt == null || ribbonControl1 == null)
                 return;
             for (int i = 0; i < _projekt.Gumbi.Count; i++)
             {
                 NgButton b = _projekt.Gumbi[i];
-                var btn = new Button();
-                btn.Text = b.Natpis;
-                btn.Tag = b.Naredba;
-                btn.AutoSize = true;
-                btn.Click += Gumb_Click;
-                _gumbi.Controls.Add(btn);
+                var item = new BarButtonItem(ribbonControl1.Manager, b.Natpis ?? "");
+                item.Tag = b.Naredba;
+                item.ImageOptions.ImageUri.Uri = Ikona(b.Natpis);
+                item.ItemClick += Gumb_ItemClick;
+                _naredbe.ItemLinks.Add(item);
             }
         }
 
-        private void Gumb_Click(object sender, EventArgs e)
+        private static string Ikona(string natpis)
         {
-            var btn = sender as Button;
-            string naredba = btn == null || btn.Tag == null ? "" : btn.Tag.ToString();
-            NgDnevnik.Akcija("gumb " + (btn == null ? "" : btn.Text) + " " + naredba);
+            string n = (natpis ?? "").ToLowerInvariant();
+            if (n.IndexOf("unesi", StringComparison.Ordinal) >= 0 || n.IndexOf("dodaj", StringComparison.Ordinal) >= 0)
+                return "Add";
+            if (n.IndexOf("izmjen", StringComparison.Ordinal) >= 0 || n.IndexOf("izmijen", StringComparison.Ordinal) >= 0)
+                return "Edit";
+            if (n.IndexOf("obri", StringComparison.Ordinal) >= 0 || n.IndexOf("briš", StringComparison.Ordinal) >= 0 || n.IndexOf("bris", StringComparison.Ordinal) >= 0)
+                return "Delete";
+            if (n.IndexOf("ispi", StringComparison.Ordinal) >= 0 || n.IndexOf("print", StringComparison.Ordinal) >= 0)
+                return "Print";
+            if (n.IndexOf("osvje", StringComparison.Ordinal) >= 0 || n.IndexOf("refresh", StringComparison.Ordinal) >= 0)
+                return "Refresh";
+            return "";
+        }
+
+        private void Gumb_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            string naredba = e.Item == null || e.Item.Tag == null ? "" : e.Item.Tag.ToString();
+            NgDnevnik.Akcija("gumb " + (e.Item == null ? "" : e.Item.Caption) + " " + naredba);
             if (string.Equals(naredba.Trim(), "REFRESHMASTERGRID", StringComparison.OrdinalIgnoreCase))
             {
                 _master.Ucitaj(_projekt, null);
                 NapuniGrid();
             }
+        }
+
+        private void PostaviStatus(string tekst)
+        {
+            _status.Caption = tekst ?? "";
         }
 
         private DataTable Citaj(string sql)
@@ -475,7 +480,7 @@ namespace Carpo.NetGen.Ui
             catch (Exception ex)
             {
                 NgDnevnik.Greska(ex.Message + " | " + sql);
-                _status.Text = ex.Message;
+                PostaviStatus(ex.Message);
                 return null;
             }
         }
@@ -485,7 +490,7 @@ namespace Carpo.NetGen.Ui
             object logger = NgDnevnik.CarpoLogger;
             if (logger == null)
             {
-                _status.Text = "Carpo logger nije spojen.";
+                PostaviStatus("Carpo logger nije spojen.");
                 return;
             }
             try
@@ -493,7 +498,7 @@ namespace Carpo.NetGen.Ui
                 Type tip = logger.GetType().Assembly.GetType("Carpo.Core.Log.Log");
                 if (tip == null)
                 {
-                    _status.Text = "Carpo.Core.Log.Log nije pronađen.";
+                    PostaviStatus("Carpo.Core.Log.Log nije pronađen.");
                     return;
                 }
                 object frm = Activator.CreateInstance(tip, logger);
@@ -505,7 +510,7 @@ namespace Carpo.NetGen.Ui
             }
             catch (Exception ex)
             {
-                _status.Text = "Ctrl+F11: " + ex.Message;
+                PostaviStatus("Ctrl+F11: " + ex.Message);
             }
         }
     }

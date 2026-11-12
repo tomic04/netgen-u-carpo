@@ -233,6 +233,8 @@ namespace Carpo.NetGen.Granule
                 if (lista[i].EndsWith(norm, StringComparison.OrdinalIgnoreCase))
                     return lista[i];
             }
+            if (norm.IndexOf('\\') >= 0)
+                return null;
             return lista[0];
         }
 

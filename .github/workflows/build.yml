@@ -198,17 +198,28 @@ jobs:
           if (-not $pun.StartsWith($korijenPun + "\", [System.StringComparison]::OrdinalIgnoreCase)) {
             throw "Cilj nije unutar ${korijen}: $pun"
           }
+          $ErrorActionPreference = "Continue"
           if (Test-Path -LiteralPath $pun) {
-            Remove-Item -LiteralPath $pun -Recurse -Force -ErrorAction Continue
+            cmd /c "rmdir /s /q `"$pun`"" | Out-Null
           }
           $bin = Join-Path $pun "bin"
           New-Item -ItemType Directory -Force -Path $bin | Out-Null
           New-Item -ItemType Directory -Force -Path (Join-Path $pun "definitions") | Out-Null
-          Copy-Item -Path (Join-Path $env:GITHUB_WORKSPACE "artifacts\bin\*") -Destination $bin -Recurse -Force -ErrorAction Continue
-          Copy-Item -Path (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Destination (Join-Path $pun "definitions") -Recurse -Force -ErrorAction Continue
+          Get-ChildItem -LiteralPath (Join-Path $env:GITHUB_WORKSPACE "artifacts\bin") -Recurse -File | ForEach-Object {
+            $rel = $_.FullName.Substring((Join-Path $env:GITHUB_WORKSPACE "artifacts\bin").Length).TrimStart('\')
+            $dest = Join-Path $bin $rel
+            $destDir = Split-Path -Parent $dest
+            if (-not (Test-Path -LiteralPath $destDir)) { New-Item -ItemType Directory -Force -Path $destDir | Out-Null }
+            try { Copy-Item -LiteralPath $_.FullName -Destination $dest -Force -ErrorAction Stop }
+            catch { Write-Host "nije zamijenjeno (otvoreno): $dest" }
+          }
+          try {
+            Copy-Item -Path (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Destination (Join-Path $pun "definitions") -Recurse -Force -ErrorAction Stop
+          } catch { Write-Host "definitions nisu sve kopirane: $($_.Exception.Message)" }
           if (-not (Test-Path -LiteralPath (Join-Path $bin "Carpo.TestShell.exe"))) {
             throw "Nema Carpo.TestShell.exe u $bin"
           }
+          $ErrorActionPreference = "Stop"
           $vrijeme = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
           $tekst = "grana: $grana`r`ncommit: $env:NETGEN_COMMIT`r`nvrijeme: $vrijeme`r`n"
           Set-Content -LiteralPath (Join-Path $korijen "zadnji.txt") -Value $tekst -Encoding UTF8

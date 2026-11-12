@@ -543,3 +543,12 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 - **Odluka:** NetGen logika. Podloga ima combo, prva vrijednost puni stablo.
 - **Test:** `combo-prvi-prolaz`, `combo-puni-drvo`
 - **PR:** #22
+
+## R62 Podloga je Carpo ribbon, ne sivi WinForms
+
+- **Element:** izgled glavne forme
+- **NetGen:** `Form1` je WinForms, gumbi su `Button` na dnu, grid je Janus, stablo je `TreeView`.
+- **Carpo:** forma nasljeđuje `RibbonBase`, gumbi su `BarButtonItem`, grid je `GridView` s auto-filter redom, stablo je `TreeList`, combo je `LookUpEdit`. Skin je `EnableFormSkins`, kao `Carpo.UI.Forms.Jupiter.Base.Start`.
+- **Odluka:** namjerno odstupanje, samo izgled. Naredbe, SQL i redoslijed gumba ostaju NetGen. Širine stupaca, skriveni stupci, zabrana izmjene i checkbox selekcija ostaju.
+- **Test:** nema automatske slike. Korisnik gleda KntKompVerizne i KntBlaZak u TestShellu.
+- **PR:** izgled
