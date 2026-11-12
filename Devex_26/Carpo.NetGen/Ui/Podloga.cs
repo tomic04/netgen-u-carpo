@@ -217,6 +217,14 @@ namespace Carpo.NetGen.Ui
                 if (visina > 160)
                     _detailSplit.SplitterDistance = (int)(visina * 0.62);
             }
+            if (_master.Stanje.OtvaraFormu)
+            {
+                string ime = _master.Stanje.ImeForme ?? "";
+                int hash = ime.IndexOf('#');
+                if (hash >= 0)
+                    ime = ime.Substring(0, hash);
+                OtvoriFormu(ime.Trim());
+            }
         }
 
         private void Drvo_AfterSelect(object sender, TreeViewEventArgs e)
