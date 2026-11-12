@@ -558,6 +558,38 @@ Implementacijski registar na `cursor/netgen-otvaranje-3266` završava s R64. Slj
 - **Posljedica:** `KntOPZ-STAT-1` ima `FILLEXPLORER="TRUE"` na projektu. Master se puni tek kad `UPIT` (koji isto ima `TRUE`) vrati SQL.
 - **Test:** `OPZ-04`
 
+## R71 `ONLOAD` s `#` je lanac, ne jedan SQL
+
+- **Element:** `ONLOAD` na projektu
+- **NetGen:** cijeli tekst ide u `NovaGenerickaForma` ako počinje s `:` (`Form1.vb` 3879–3880). Tamo se reže na `#` (`4558–4561`). Prvi segment `:FILTERFORM` otvori formu (`4862`). Sljedeći segmenti su posebne naredbe.
+- **Carpo:** `onload` lako ostane jedan string i ne odradi `enable`/`disable` iza filtera.
+- **Posljedica:** `Bilanca-GFI` nakon filtera gasi `TSI` ili `GFI` ovisno o `@@izvjestaj`.
+- **Test:** `GFI-03`
+
+## R72 `#ISEMPTY` u zaglavlju ispisa
+
+- **Element:** `PAGEHEADERLEFT`
+- **NetGen:** `Rafalna_Priprema` reže na `#` (`Form1.vb` 7744–7768). Segment `ISEMPTY(...)` koji je prazan ili `null` preskoči sljedeći komad. Inače preskoči dva i uzme treći. `**` postane razmak (`7764`).
+- **Carpo:** zaglavlje nema tu granu. `#` ostane u tekstu ili sruši ispis.
+- **Posljedica:** `RealizacijaStavkeNG` lijevo zaglavlje ispiše period, skladište i partnera samo kad vrijednost postoji.
+- **Test:** `REA-05`
+
+## R73 `.clsGFIPOD` nije `.clsreport`
+
+- **Element:** drugi segment gumba GFI/TSI
+- **NetGen:** ispis ulazi samo ako ime počinje s `repx/` ili sadrži `.clsreport` (`Form1.vb` 5215). `AOPuExcel.clsGFIPOD(...)` ne zadovoljava. Ime lijevo od `(` traži se kao forma (`4407–4418`). Forme nema, dijalog se ne otvori (`5369–5370`).
+- **Carpo:** nastavak `.cls` lako ode u isti ispis kao `.clsReport`.
+- **Posljedica:** `Bilanca-GFI` GFI/TSI otvore `GFIPODFORM` / `TSIPODFORM`, a drugi segment ne ispisuje Excel. DLL je samo `ASSEMBLYLOAD(AOPuExcel64.Class1)`.
+- **Test:** `GFI-05`
+
+## R74 Podloga je Manager ponuda, ne Office ribbon
+
+- **Element:** izgled prozora granule. Namjerno odstupanje, pojašnjenje R59.
+- **NetGen:** `Form1` je WinForms. Gumbi su na dnu, stablo lijevo, master desno, detail ispod.
+- **Carpo:** klasa je `Carpo.UI.Forms.Master.Manager`, baza `JupiterManager` → `JupiterShared` → `Jupiter.Base` → `RibbonBase.RibbonBase` (`Manager.cs` 30, `Base.cs` 16). Uzorak je `definitions/carpo/AIOPonuda.xml`, forma `frmMaster`, natpis `SPIN - Manager ponuda`. Raspored: `splitMain` lijevo (`cmbComboEditFilter`, `trMain`), desno `gcGla` s `bar2` (ikone 16 px), `splitGrid` detail ispod, `pnlButtons` na dnu, status `bbiBrojSlogova` = `Broj slogova:` (`Manager.Designer.cs` 138–158, 381–400, 641–719, `JupitetShared.Designer.cs` 122–126).
+- **Posljedica:** port ne stavlja gumbe u Office ribbon s velikim ikonama. Donji red ostaje. Lijevi combo i stablo ostaju. Status pokazuje broj slogova. Naredbe, SQL i redoslijed gumba ostaju NetGen.
+- **Test:** `docs/granule/Izgled-Carpo-checklista.md`
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
@@ -598,3 +630,10 @@ Implementacijski registar na `cursor/netgen-otvaranje-3266` završava s R64. Slj
 | `MPKntNacinPlacAzur.md` | `TOTALROW` se ne čita, `ALLOWEMPTY="FOLSE"`, `BUTTONS`, `FOCUS` | R31, R56, R66 |
 | `KntOPZ-STAT-1.md` | `Ime.Start`, `POSITION`, `FILLEXPLORER` na projektu, `CLEARCOLUMS` | R67, R69, R70, R08 |
 | `MPRACNEFISK.md` | `DETAILGRID` s razmakom, `REFRESHMASTER`, `FISKALIZACIJA(@@id)`, `.clsReport` | R04, R43, R55, R63 |
+| `MPFiskalPubVars.md` | ulaz je `:UPDATEFORM`, `TOTALROW` se ne čita | R18, R66 |
+| `Bilanca-GFI.md` | `ONLOAD` lanac, `.clsGFIPOD` nije ispis, timeout 120 | R71, R73, R65, R41 |
+| `MPPDV.md` | dvostruki klik `:MP_PDV`, `PERMISIO` | R18, R06 |
+| `KntR2racuni1.md` | `PRINTMASTER` ne gleda `LANDSCAPE` | R41 |
+| `TecRazOTV.md` | XML nije u repou | |
+| `RealizacijaStavkeNG.md` | `#ISEMPTY`, timeout 180, `PRINTREPXMASTER` | R72, R65, R41 |
+| `Izgled-Carpo-checklista.md` | Manager ponuda, ne Office ribbon | R74 |

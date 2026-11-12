@@ -277,9 +277,14 @@ namespace Carpo.NetGen.Granule
             for (int i = 0; i < p.Gumbi.Count; i++)
             {
                 if (p.Gumbi[i].Redni == redni)
-                    return p.Gumbi[i].Natpis == natpis && p.Gumbi[i].Naredba == naredba;
+                    return (natpis == null || p.Gumbi[i].Natpis == natpis) && p.Gumbi[i].Naredba == naredba;
             }
             return false;
+        }
+
+        public static bool GumbNaredba(NgProject p, int redni, string naredba)
+        {
+            return Gumb(p, redni, null, naredba);
         }
 
         public static bool NemaRedni(NgProject p, int redni)

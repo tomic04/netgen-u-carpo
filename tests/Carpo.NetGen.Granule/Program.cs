@@ -36,6 +36,12 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(MpKntNacinPlac.Provjeri(root));
             sve.AddRange(KntOpzStat.Provjeri(root));
             sve.AddRange(MpRacNeFisk.Provjeri(root));
+            sve.AddRange(MpFiskalPubVars.Provjeri(root));
+            sve.AddRange(BilancaGfi.Provjeri(root));
+            sve.AddRange(MpPdv.Provjeri(root));
+            sve.AddRange(KntR2Racuni.Provjeri(root));
+            sve.AddRange(TecRazOtv.Provjeri(root));
+            sve.AddRange(RealizacijaStavke.Provjeri(root));
             sve.AddRange(Statusi.Provjeri(root));
             sve.AddRange(KntBlaZak.Provjeri(root));
             sve.AddRange(PrijemniList.Provjeri(root));
