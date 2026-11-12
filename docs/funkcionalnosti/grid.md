@@ -83,10 +83,10 @@ Grupe: `MASTERCOLUMNS` 117, `DETAILCOLUMNS` 52. Isti formatter (`CustomFormatKol
 
 ## Rezultat na sql-ai
 
-Run koji je prošao: https://github.com/tomic04/netgen-u-carpo/actions/runs/43212771219
-Prethodni, 43212527893 i 43212561971, pali su na istoj SQL iznimci prije nego je Catch uhvaćen.
+Run koji je prošao: https://github.com/tomic04/netgen-u-carpo/actions/runs/43213260590
+Prethodni, 43212527893 i 43212561971, pali su na istoj SQL iznimci prije nego je Catch uhvaćen. Run 43212771219 je prvi zeleni, još bez group-panel defaulta.
 
-Automatski testovi grida na tom runu: **58 PASS, FAIL=0**. Ovaj commit dodaje `groupby-janus-default-true` (`GroupByBoxVisible=True` izmjereno na svježem GridEX-u).
+Automatski testovi grida: **59 PASS, FAIL=0**.
 
 | Granula | SQL koji bi NetGen poslao | Redovi | Kolone | Napomena |
 |---|---|---|---|---|
