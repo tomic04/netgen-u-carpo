@@ -590,6 +590,15 @@ Implementacijski registar na `cursor/netgen-otvaranje-3266` završava s R64. Slj
 - **Posljedica:** port ne stavlja gumbe u Office ribbon s velikim ikonama. Donji red ostaje. Lijevi combo i stablo ostaju. Status pokazuje broj slogova. Naredbe, SQL i redoslijed gumba ostaju NetGen.
 - **Test:** `docs/granule/Izgled-Carpo-checklista.md`
 
+## R75 Provjera checklistе na Manager rasporedu
+
+- **Element:** `docs/granule/Izgled-Carpo-checklista.md`
+- **Drži:** nema ribbon stranice s velikim ikonama. Combo je `cmbComboEditFilter`, stablo `trMain`, lijeva strana se sakrije kad nema `TREE` ni `COMBO`. Master je `gcGla`. `bar2` ostaje iznad grida. Detail je ispod, kartica Stavke. Gumbi su u `pnlButtons`. Status počinje s `Broj slogova:`.
+- **Odstupanje:** `AIOPonuda.xml` ima i kartice Dimenzije, Zaliha i DMS. Port crta samo Stavke, jer NetGen ima jedan `DETAILGRID`. Ikona čvora je indeks 0 (sivi krug koji `JTreeListControl` stavi u `OnCreateControl`), ne ikone danas/tjedan iz Carpo XML-a.
+- **Odluka:** namjerno odstupanje, izgled. R71–R73 su u kodu (`OnLoadLanac`, `Zaglavlje`, `JeIspisImena`).
+- **Test:** nema slike. Korisnik gleda KntKompVerizne i KntBlaZak.
+- **PR:** checklista
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
