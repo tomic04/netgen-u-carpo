@@ -476,6 +476,38 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 - **Posljedica:** QA ne traži boju, stil gumba, položaj gumba dolje, prazne retke, row header, broj redova zaglavlja, highlight bez fokusa, font, obrub ni sliku čvora. Pad nije ako to ne izgleda kao Janus. I dalje se gleda natpis i redoslijed gumba, naredba gumba, širina i skriveni stupac, sort, editabilnost, checkbox stupac, raspored kontrola na dijalogu, tab, enable/visible i fokus.
 - **Test:** `OKL-38`, `OKL-45`, `OKL-54`, `OKL-55`, `OKL-56`, `OKL-78`, `JEZ-49`, `JEZ-54`, `JEZ-60`, `JEZ-69` su oznaka, ne pad.
 
+## R60 `CMDxCAPTION` bez dvotočke nije gumb
+
+- **Element:** `CMD7CAPTION` / `CMD8CAPTION` na podlozi (`MPPorKPNG` `Lista`, `Print dok.`)
+- **NetGen:** `IndexOf(":")` je −1, `Substring` baci, `On Error Resume Next` ostavi tekst prazan (`Form1.vb` 3320–3333). `Button7` i `Button8` se prije toga ne prazne (`3118–3122` čisti samo 1–6), a dizajner im ne da tekst. Prazan tekst sakrije gumb (`3834–3835`).
+- **Carpo:** parser takav zapis stavi u `PreskoceniGumbi` (`NetGenXmlReader.cs` 276–280) i ne napravi gumb. Ljuska koja od cijelog teksta napravi natpis bez naredbe pokaže `Lista` i `Print dok.`
+- **Posljedica:** ta dva gumba se ne vide i ništa ne pokreću. Popup ih nema.
+- **Test:** `MPK-06`, `MPK-07`
+
+## R61 `TABINDEX` s razmakom i dalje je taj broj
+
+- **Element:** `TABINDEX` na `INPUT`
+- **NetGen:** u fajlu je `1` i tab. `XmlDocument` tab u atributu pretvori u razmak, vrijednost je `"1 "`. Dodjela u `Integer` (`Form2.vb` 3027–3030) razmak proguta, indeks je 1, `TabStop=True`. Grana za nedostajući indeks (`3038–3041`) se ne pali. `Enabled=False` gasi `TabStop` (`3046`).
+- **Carpo:** `int.Parse` bez trima na `"1 "` baci. Forma padne ili kontrola ostane bez taba.
+- **Posljedica:** `datumdok` i `napomena` dijele indeks 1. Redoslijed među jednakim indeksima je red dodavanja: prvo datum, zatim napomena, pa 2, 3 i 4.
+- **Test:** `MPK-21`, `MPK-40`
+
+## R62 `VALUE` na datumu nije početna vrijednost
+
+- **Element:** `INPUT TYPE="date"`
+- **NetGen:** čita se `DEFAULT`, ne `VALUE` (`Form2.vb` 2251–2267). Prazan `DEFAULT` u `Value` baci, ostane danas. `CHECKBOX` se ne čita; kvačica je `SHOWCHECKBOX` (`2275–2278`). Bez nje datum je uključen. U parametru je `'yyyyMMdd'` (`3530–3532`). `DECIMALS` na broju je `DecimalDigits` (`2086`); početni tekst je 0 (`2084`).
+- **Carpo:** `value` na kontroli je početna vrijednost. `DATE1` / `DATE2` / `DATE` bi postali tekst, ne danas.
+- **Posljedica:** `MPPorKPNG` filter i unos šalju današnji datum, ne riječ `DATE1`. Broj krene od 0 s četiri decimale.
+- **Test:** `MPK-21`, `MPK-22`, `MPK-41`
+
+## R63 Prazan `FILLEXPLORER` nije `true`
+
+- **Element:** `FILLEXPLORER` na dijalogu
+- **NetGen:** `true` zamijeni master SQL-om `ONSUBMIT` plus parametri (`Form1.vb` 5445–5452). Prazan string padne u `Else`: `ExecSql` toga SQL-a, zatim ponovi zadnji master (`5509–5519`). `ONSUBMIT` koji ne počinje s `INSERT`/`DELETE`/`UPDATE`/`SELECT` ne briše zalijepljene parametre (`3378–3388`).
+- **Carpo:** nema tu granu. Oba oblika lako postanu isti refresh.
+- **Posljedica:** `FILTERFORM` (`TRUE`) napuni grid. `DODAJIZNOS` (prazan) izvrši `spMPPoravnajKP` i osvježi stari master, ne postavi novi upit.
+- **Test:** `MPK-30`, `MPK-31`
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
@@ -510,3 +542,4 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 | `KntKompVerizne.md` | `sptree`, `BUTTONS` ne briše kasniji CMD, `repx/` | R56, R42 |
 | `KntBlaPromet.md` | `CLICK(Ok)`, `@@template`, `CLEARCOLUMS` | R58, R42, R08 |
 | `MPPonuda.md` | nema `ONLOAD`, natpis gumba, `vrstadokid-` | R57, R43 |
+| `MPPorKPNG.md` | `CMD` bez `:`, `TABINDEX` s tabom, `VALUE` na datumu, prazan `FILLEXPLORER` | R18, R60, R61, R62, R63 |

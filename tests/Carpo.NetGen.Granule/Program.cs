@@ -30,6 +30,7 @@ namespace Carpo.NetGen.Granule
             var sve = new List<Stavka>();
             sve.AddRange(OznakaKL.Provjeri(root));
             sve.AddRange(JeziciNG.Provjeri(root));
+            sve.AddRange(MPPorKPNG.Provjeri(root));
             sve.AddRange(Statusi.Provjeri(root));
             sve.AddRange(KntBlaZak.Provjeri(root));
             sve.AddRange(PrijemniList.Provjeri(root));
