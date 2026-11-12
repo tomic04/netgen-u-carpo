@@ -295,27 +295,15 @@ namespace Carpo.TestShell
                 UpisiIshod(snimka, "FAIL nema prozora granule");
                 return 2;
             }
-            if (granula != null && !granula.IsDisposed)
+            if (!ImaSnimku(snimka) && granula != null && !granula.IsDisposed)
             {
-                var rok = DateTime.UtcNow.AddSeconds(4);
+                var rok = DateTime.UtcNow.AddSeconds(3);
                 while (DateTime.UtcNow < rok && !ImaSnimku(snimka))
                 {
-                    try
-                    {
-                        granula.Activate();
-                        granula.Refresh();
-                        Application.DoEvents();
-                    }
-                    catch
-                    {
-                    }
                     SnimiProzor(granula.Handle, snimka);
-                    if (!ImaSnimku(snimka))
-                        SnimiFormu(granula, snimka);
                     if (ImaSnimku(snimka))
                         break;
-                    Application.DoEvents();
-                    Thread.Sleep(250);
+                    Thread.Sleep(200);
                 }
             }
             if (!ImaSnimku(snimka))
