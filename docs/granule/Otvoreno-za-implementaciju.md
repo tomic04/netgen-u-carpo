@@ -20,6 +20,7 @@ Od 138 zatvorenih, **128 je pravilo** i **10 je spin podatak**. Devet je `Oznaka
 Po stavci, [#74](https://github.com/tomic04/netgen-u-carpo/pull/74) `af3816f`:
 
 - `JEZ-31` potvrđen. `spJeziciQuery @action=0` vratio je `JeziciId, Naziv` i 15 redova. Tijelo nema upis. `Class1.vb` 113–118 šalje poziv jer nema `@@`. `Form1.vb` 3882. Sažetak 164 / 138 / 26.
+- `DOS-11` odbijen. Test broji ime u `sys.objects`. `dospjele.sql` sam kaže da tri procedure nisu klijentsko tijelo. `Form2.vb` 2430–2431 (stupac 0 vrijednost, stupac 1 natpis) se ne izvršava. Ostaje otvoren. Sažetak i dalje 164 / 138 / 26.
 
 [#72](https://github.com/tomic04/netgen-u-carpo/pull/72) stavlja klijentski XML izvan `definitions/netgen`. `TRZ-01`, `POR-01`, `RFA-00` i `REA-00` ostaju otvoreni. [#71](https://github.com/tomic04/netgen-u-carpo/pull/71) ispravno ne šalje `@@godina` (`Class1.vb` 113). To nije zatvorena stavka.
 
