@@ -35,41 +35,11 @@ namespace Carpo.NetGen.Granule
         {
             var sb = new StringBuilder();
             sb.Append("# Smoke Jupiter\n\n");
-            sb.Append("Samo put otvaranja: ONLOAD, master, stablo, detail, combo i SQL na filteru. ");
-            sb.Append("Nema gumba, nema ONSUBMIT, nema ispisa, nema fiskalizacije.\n\n");
-            sb.Append("Prije ovog runnera smoke na jupiter2019 i jupiter2022 nije pokrenut. Nijedna procedura nije izvršena.\n\n");
-            sb.Append("`Application Name=CarpoNetGen-smoke`, `CommandTimeout` 30 s, `Pooling=false`, jedna granula pa zatvorena konekcija. Operater je 7, `@@node` je `null`.\n\n");
-            sb.Append("Zaštita ne gleda samo prvu riječ. `spKntZakljucivanjeTem @action=1` i `spKntPreknjizavanjeNG @action=2` su poziv procedure. ");
-            sb.Append("Prije EXEC-a ide `SELECT` iz `sys.sql_modules`, i rekurzivno za procedure koje tijelo zove. ");
-            sb.Append("INSERT/UPDATE/DELETE/MERGE/TRUNCATE/DROP nad tablicom koja nije `#temp` ili `@varijabla` se ne pokreće (`procedura-piše`). ");
-            sb.Append("Izravni tekst s DELETE/UPDATE/DROP/TRUNCATE/MERGE/ALTER/GRANT/REVOKE, CREATE osim `CREATE TABLE #temp`, ili INSERT osim u `#temp`, je `preskočeno-zaštita`.\n\n");
-            sb.Append("Usporedba s `docs/granule/ssMeni-svi-serveri.md` (inventar, CI 43233316047). Inventar je broj NetGen redova, ne broj datoteka.\n\n");
-            bool stop = false;
-            for (int i = 0; i < Baze.Length && !stop; i++)
-            {
-                string server = Baze[i][0];
-                string baza = Baze[i][1];
-                int inventar;
-                int.TryParse(Baze[i][2], out inventar);
-                sb.Append("## ").Append(baza).Append(" (").Append(server).Append(")\n\n");
-                try
-                {
-                    string dio;
-                    stop = Baza(root, server, baza, inventar, out dio);
-                    sb.Append(dio);
-                }
-                catch (Exception ex)
-                {
-                    sb.Append("Veza nije uspjela. Ništa nije izvršeno. ").Append(Celija(ex.GetType().Name + ": " + ex.Message)).Append("\n\n");
-                }
-                Upisi(izlaz, sb.ToString());
-                Console.WriteLine("zavrseno " + server + " " + baza + (stop ? " STOP" : ""));
-            }
-            if (!stop)
-                sb.Append("Nijedna procedura koja piše nije pokrenuta.\n");
+            sb.Append("Korisnik je zabranio upite prema jupiter2019 i jupiter2022 dok sam ne odobri. ");
+            sb.Append("Ovaj poziv ne otvara vezu i ne šalje ni SELECT ni čitanje sys.sql_modules.\n");
             Upisi(izlaz, sb.ToString());
             Console.WriteLine(sb.ToString());
-            return stop ? 3 : 0;
+            return 0;
         }
 
         private static bool Baza(string root, string server, string baza, int inventar, out string tekst)
