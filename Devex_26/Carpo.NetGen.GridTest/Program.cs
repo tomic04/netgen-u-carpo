@@ -29,6 +29,7 @@ namespace Carpo.NetGen.GridTest
             PisanjeIServer();
             StabloTestovi();
             KomandeTestovi();
+            ZastitaTestovi();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -39,6 +40,47 @@ namespace Carpo.NetGen.GridTest
                 Console.WriteLine("PRESKOCENO spin (nema CARPO_SPIN=1)");
             Console.WriteLine("FAIL=" + fail.ToString());
             return fail == 0 ? 0 : 1;
+        }
+
+        private static void ZastitaTestovi()
+        {
+            T("zastita-prva-rijec", !SqlTekst.JeZabranaPisanja("spKntZakljucivanjeTem @action=1"), "");
+            SqlZastita z = ZastitaSql.Tekst("spKntZakljucivanjeTem @action=1,@datumod='20200101',@datumdo='20200131',@vrstadokid=1");
+            T("zastita-zakljucivanje", !z.Pise && z.Procedure.Count == 1 && z.Procedure[0] == "spKntZakljucivanjeTem",
+                z.Pise ? z.Razlog : (z.Procedure.Count == 0 ? "nema" : z.Procedure[0]));
+            SqlZastita z2 = ZastitaSql.Tekst("exec dbo.spKntPreknjizavanjeNG @action=2, @ssoperateriid=7");
+            T("zastita-preknjizi", !z2.Pise && z2.Procedure.Count == 1 && z2.Procedure[0] == "spKntPreknjizavanjeNG",
+                z2.Procedure.Count == 0 ? "nema" : z2.Procedure[0]);
+            SqlZastita tijelo = ZastitaSql.Tijelo("insert into knttem (a) values (1)\r\nexec spDruga @a=1");
+            T("zastita-tijelo-pise", tijelo.Pise, tijelo.Razlog);
+            SqlZastita temp = ZastitaSql.Tijelo("insert into #t select 1\r\nupdate #t set a=1\r\ndelete from #t\r\nexec spCita");
+            T("zastita-temp", !temp.Pise && temp.Procedure.Count == 1 && temp.Procedure[0] == "spCita", temp.Razlog);
+            T("zastita-delete-direktno", ZastitaSql.Tekst("delete from #t").Pise, "");
+            T("zastita-insert-temp", !ZastitaSql.Tekst("insert into #t select 1").Pise, ZastitaSql.Tekst("insert into #t select 1").Razlog);
+            T("zastita-create-temp", !ZastitaSql.Tekst("create table #t (a int)").Pise, ZastitaSql.Tekst("create table #t (a int)").Razlog);
+            T("zastita-create-stalna", ZastitaSql.Tekst("create table knttem (a int)").Pise, "");
+            T("zastita-merge", ZastitaSql.Tijelo("merge knttem t using src s on 1=1 when matched then update set a=1;").Pise, "");
+            T("zastita-komentar", !ZastitaSql.Tijelo("-- delete from knttem\r\nselect 1").Pise, "");
+            T("zastita-string", ZastitaSql.Tijelo("select 'delete from knttem' as x").Pise, "");
+            T("zastita-dinamicki", ZastitaSql.Tijelo("exec(@sql)").Pise, "");
+            NgProject zak = Ucitaj("ZakljucivanjeTemNG.xml");
+            string master;
+            List<string> upiti = Otvaranje.Upiti(zak, new SqlKontekst(), "ZakljucivanjeTemNG.xml", out master);
+            T("otvaranje-nema-zakljucivanje", zak != null && !Ima(upiti, "spKntZakljucivanjeTem"), upiti.Count.ToString());
+            NgProject pre = Ucitaj("KntPreknjizavanjeNG.xml");
+            string master2;
+            List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
+            T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static bool Ima(List<string> upiti, string dio)
+        {
+            for (int i = 0; i < upiti.Count; i++)
+            {
+                if (upiti[i].IndexOf(dio, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+            return false;
         }
 
         private static void T(string id, bool ok, string detalj)

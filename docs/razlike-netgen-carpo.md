@@ -711,6 +711,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** nema
 - **PR:** filter-forma
 
+## R89 Jupiter smoke ne pokreće proceduru koja piše
+
+- **Element:** EXEC na `jupiter2019` i `jupiter2022`
+- **NetGen:** `JeZabranaPisanja` gleda prvu riječ. `spKntZakljucivanjeTem @action=1` i `spKntPreknjizavanjeNG @action=2` nisu `insert`/`update`/`delete`, pa bi se poziv poslao. Tijelo piše u trajnu tablicu. To su naredbe gumba (`ONSUBMIT`), ne load.
+- **Carpo:** smoke prije svakog EXEC-a čita `sys.sql_modules` i rekurzivno tijela koje procedura zove. INSERT/UPDATE/DELETE/MERGE/TRUNCATE/DROP nad tablicom koja nije `#temp` ili `@varijabla` se ne pokreće. Oznaka je `procedura-piše`.
+- **Posljedica:** `ZakljucivanjeTemNG` i `KntPreknjizavanjeNG` na otvaranju te procedure ne zovu. Ako se pojave u load putu, ostanu neizvršene. Smoke prije ove zaštite nije pokrenut. Nijedna procedura nije izvršena.
+- **Odluka:** zaštita smokea. XML, tablice i procedure se ne diraju.
+- **Test:** `zastita-zakljucivanje`, `zastita-preknjizi`, `otvaranje-nema-zakljucivanje`, `otvaranje-nema-preknjizi`
+- **PR:** jupiter-smoke
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

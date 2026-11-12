@@ -12,6 +12,7 @@ namespace Carpo.NetGen.Granule
             string root = null;
             string izvjestaj = null;
             string ssmeni = null;
+            string jupiter = null;
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == "--izvjestaj" && i + 1 < args.Length)
@@ -24,6 +25,11 @@ namespace Carpo.NetGen.Granule
                     ssmeni = args[++i];
                     continue;
                 }
+                if (args[i] == "--jupiter" && i + 1 < args.Length)
+                {
+                    jupiter = args[++i];
+                    continue;
+                }
                 if (root == null && !args[i].StartsWith("--", StringComparison.Ordinal))
                     root = args[i];
             }
@@ -32,6 +38,8 @@ namespace Carpo.NetGen.Granule
                 Console.Error.WriteLine("Upotreba: Carpo.NetGen.Granule.exe <korijen-repa> --izvjestaj <datoteka>");
                 return 2;
             }
+            if (jupiter != null)
+                return JupiterSmoke.Pokreni(root, jupiter);
             if (ssmeni != null)
                 return SmokeMeni.Pokreni(root, ssmeni);
 

@@ -13,6 +13,7 @@ on:
 jobs:
   build:
     runs-on: [self-hosted, sql-ai]
+    timeout-minutes: 360
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -177,6 +178,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "ssMeni smoke nije procitao izbornik." }
           Get-Content (Join-Path $env:GITHUB_WORKSPACE "artifacts\granule\smoke-spin.md")
 
+      - name: Jupiter smoke
+        if: github.head_ref == 'cursor/netgen-jupiter-smoke-3266' || github.ref_name == 'cursor/netgen-jupiter-smoke-3266'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin"
+          $md = Join-Path $env:GITHUB_WORKSPACE "docs\granule\smoke-jupiter.md"
+          & (Join-Path $out "Carpo.NetGen.Granule.exe") $env:GITHUB_WORKSPACE --jupiter $md
+          if ($LASTEXITCODE -eq 3) { throw "Jupiter smoke je poslao upis. Vidi docs/granule/smoke-jupiter.md" }
+          if ($LASTEXITCODE -ne 0) { throw "Jupiter smoke nije zavrsio. Kod $LASTEXITCODE" }
+          Get-Content -LiteralPath $md -TotalCount 30
+
       - name: Stabilni TestShell na sql-ai
         shell: powershell
         env:
@@ -248,4 +261,5 @@ jobs:
             artifacts/defaults/asm-sonda.txt
             artifacts/granule/izvjestaj.txt
             artifacts/granule/smoke-spin.md
+            docs/granule/smoke-jupiter.md
             artifacts/bin/Carpo.NetGen.Granule.exe
