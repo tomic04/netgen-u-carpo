@@ -927,9 +927,9 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 
 - **Element:** `ASSEMBLYLOAD` na dijalogu
 - **NetGen:** `Form2.vb` 3406–3486 skuplja check, radio, combo, search, grid i tekst u `strParametriSvi`. Taj niz ide dvaput u `totalgen` (`7424–7456`).
-- **Carpo:** `Dijalog.SviParametri` skuplja check, lookup i tekst. Search, grid i radio još nisu u nizu. Shell i `Rafalno` potpisi jesu u `AssemblyPoziv`.
-- **Posljedica:** adapter dijaloga dobije `@ime` tekstualnih kontrola. Search box i grid iz forme ne uđu u peti argument dok se `PokupiParametre` ne prenese cijeli.
-- **Test:** `assembly-dijalog` provjerava da su zadnja dva argumenta isti niz, ne da je niz potpun.
+- **Carpo:** `Dijalog.SviParametri` skuplja check, lookup, tekst, radio (`@ime=1` ili `0`), search (`@ime=` tag ili `null`, plus `@searchboxime`) i grid (`@ime`, `@arrayofblueids`, `@nizplavihajdijeva`, `@nizoznacenihajdijeva`, `@rowcount`).
+- **Posljedica:** peti argument `totalgen` na dijalogu dobije ta tri tipa. Označeni redovi grida ostaju prazan niz dok kontrola nema kvačice.
+- **Test:** `param-radio`, `param-search`, `param-grid`
 
 ## R110 `PrintLink` nema NetGen zaglavlje ni `lodani`
 
@@ -939,10 +939,10 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Posljedica:** ispis liste ide kroz Spin, ali raspored zaglavlja je onaj koji `PrintLink` zna, ne Janus tri stupca.
 - **Test:** `print-master`, `print-lodani`, `print-do2`
 
-## R109 Fiskalizacija ne zove `PosaljiSoapPorukuCertifikatDatoteka`
+## R109 Fiskalizacija ne ide na pravu poreznu
 
 - **Element:** `FISKALIZACIJA`
-- **NetGen:** `Form1.vb` 520 šalje XML i certifikat u Raverus. Povrat je SOAP tekst. `DohvatiJir` čita JIR (`548`).
-- **Carpo:** učita isti DLL i klasu (`FiskalPoziv.Ucitaj`). Metodom slanja se ne zove, da zahtjev ne ode poreznoj.
-- **Posljedica:** bez `Raverus.FiskalizacijaDEV.COM.dll` na stroju fiskalizacija staje na `Assembly.Load`, kao i NetGen. Kad DLL stigne, slanje je još jedan poziv iste metode, ne nova implementacija.
-- **Test:** `fiskal-nema-slanja`
+- **NetGen:** `Form1.vb` 493–548 postavi `CisUrl`, `TimeOut` i mape, pa `PosaljiSoapPorukuCertifikatDatoteka(xml, pfx, lozinka)`. Greška je šifra `55555` i `DohvatiGresku`. Inače `DohvatiJir`. Prazan URL postane `https://cis.porezna-uprava.hr:8449/FiskalizacijaService` (`377`).
+- **Carpo:** isti poziv i ista obrada (`FiskalPoziv.Posalji`). URL koji sadrži `porezna-uprava.hr` se ne zove. Prazan URL se ne zamjenjuje produkcijskim.
+- **Posljedica:** treba `Raverus.FiskalizacijaDEV.COM.dll`, PFX i lozinka iz `mpfiskalizacija`, i CIS URL koji nije produkcijski. Toga nema u repou.
+- **Test:** `fiskal-soap`, `fiskal-greska`, `fiskal-nema-porezne`

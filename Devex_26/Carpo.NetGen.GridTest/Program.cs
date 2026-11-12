@@ -273,6 +273,29 @@ namespace Carpo.NetGen.GridTest
                 && Carpo.NetGen.Poziv.FiskalPoziv.SloRacun == "SLORacun", "");
             var i = Carpo.NetGen.Poziv.FiskalPoziv.Ucitaj("");
             T("fiskal-nema-slanja", i.Poslano == false, i.Greska);
+            var cis = new LazniCis();
+            Carpo.NetGen.Poziv.FiskalPoziv.Cis = cis;
+            try
+            {
+                var soap = Carpo.NetGen.Poziv.FiskalPoziv.Posalji("<Racun/>", "C:\\cert\\test.pfx", "tajna", "http://127.0.0.1/fiskal-test", "1000", "", "");
+                T("fiskal-soap", soap.Poslano && soap.Jir == "JIR-TEST" && cis.CisUrl == "http://127.0.0.1/fiskal-test"
+                    && cis.Xml == "<Racun/>" && cis.Pfx.EndsWith("test.pfx", StringComparison.Ordinal)
+                    && soap.Url.IndexOf("porezna", StringComparison.OrdinalIgnoreCase) < 0, soap.Jir + " " + cis.CisUrl);
+                cis.Baci = true;
+                var greska = Carpo.NetGen.Poziv.FiskalPoziv.Posalji("<Racun/>", "C:\\cert\\test.pfx", "tajna", "http://127.0.0.1/fiskal-test", "1000", "", "");
+                T("fiskal-greska", !greska.Poslano && greska.Sifra == "55555" && greska.Greska == "opis-cis", greska.Sifra + " " + greska.Greska);
+                int prije = cis.Poziva;
+                var blok = Carpo.NetGen.Poziv.FiskalPoziv.Posalji("<Racun/>", "C:\\cert\\test.pfx", "tajna", "https://cis.porezna-uprava.hr:8449/FiskalizacijaService", "", "", "");
+                T("fiskal-nema-porezne", !blok.Poslano && cis.Poziva == prije, blok.Greska);
+            }
+            finally
+            {
+                Carpo.NetGen.Poziv.FiskalPoziv.Cis = null;
+            }
+            T("param-radio", Carpo.NetGen.Komande.ParametriSvi.Radio("r1", true) == "@r1=1,", "");
+            T("param-search", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "0", "Kava, mljevena") == "@roba=null,@searchboxroba='Kava  mljevena',", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "0", "Kava, mljevena"));
+            T("param-search-id", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "15", "Kava") == "@roba=15,@searchboxroba='Kava',", "");
+            T("param-grid", Carpo.NetGen.Komande.ParametriSvi.Grid("stavke", "8", "8~9", "", 2) == "@stavke=8,@arrayofblueidsstavke='~8~9~',@nizplavihajdijevastavke='~8~9~',@nizoznacenihajdijevastavke='',@rowcountstavke=2,", Carpo.NetGen.Komande.ParametriSvi.Grid("stavke", "8", "8~9", "", 2));
         }
 
         private static void AssemblyLoad()
@@ -1702,6 +1725,45 @@ namespace Carpo.NetGen.GridTest
                 return null;
             }
             return null;
+        }
+    }
+
+    public sealed class LazniCis
+    {
+        public string CisUrl { get; set; }
+        public string TimeOut { get; set; }
+        public string NazivMapeZahtjev { get; set; }
+        public string NazivMapeOdgovor { get; set; }
+        public bool NazivAutoGeneriranje { get; set; }
+        public string OdgovorGreska { get; set; }
+        public string OdgovorGreskaStatus { get; set; }
+        public string Xml;
+        public string Pfx;
+        public int Poziva;
+        public bool Baci;
+
+        public string PosaljiSoapPorukuCertifikatDatoteka(string xml, string pfx, string lozinka)
+        {
+            Poziva++;
+            Xml = xml;
+            Pfx = pfx;
+            if (Baci)
+            {
+                OdgovorGreska = "sifra";
+                OdgovorGreskaStatus = "err";
+                throw new InvalidOperationException("cis");
+            }
+            return "<Odgovor><Jir>JIR-TEST</Jir></Odgovor>";
+        }
+
+        public string DohvatiJir(string odgovor)
+        {
+            return "JIR-TEST";
+        }
+
+        public string DohvatiGresku(string greska)
+        {
+            return "opis-cis";
         }
     }
 

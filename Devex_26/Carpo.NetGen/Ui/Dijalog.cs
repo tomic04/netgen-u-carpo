@@ -309,9 +309,20 @@ namespace Carpo.NetGen.Ui
                 if (string.IsNullOrEmpty(c.Name))
                     continue;
                 var chk = c as CheckEdit;
+                if (chk != null && chk.Properties.CheckStyle == CheckStyles.Radio)
+                {
+                    sb.Append(ParametriSvi.Radio(c.Name, chk.Checked));
+                    continue;
+                }
                 if (chk != null)
                 {
                     sb.Append("@").Append(c.Name.Trim()).Append("=").Append((int)chk.CheckState).Append(",");
+                    continue;
+                }
+                var grid = c as GridControl;
+                if (grid != null)
+                {
+                    sb.Append(GridParametar(grid));
                     continue;
                 }
                 var look = c as LookUpEdit;
@@ -322,6 +333,12 @@ namespace Carpo.NetGen.Ui
                     sb.Append("@").Append(c.Name.Trim()).Append("=").Append(t).Append(",");
                     continue;
                 }
+                if (c.GetType() == typeof(ButtonEdit))
+                {
+                    var trazi = (ButtonEdit)c;
+                    sb.Append(ParametriSvi.Search(c.Name, c.Tag as string, trazi.Text));
+                    continue;
+                }
                 var txt = c as TextEdit;
                 if (txt != null)
                 {
@@ -329,6 +346,43 @@ namespace Carpo.NetGen.Ui
                 }
             }
             return sb.ToString();
+        }
+
+        private static string GridParametar(GridControl grid)
+        {
+            var pogled = grid.MainView as GridView;
+            int redova = pogled == null ? 0 : pogled.RowCount;
+            string id = "0";
+            var plavi = new StringBuilder();
+            if (pogled != null && redova > 0)
+            {
+                id = Celija(pogled, pogled.FocusedRowHandle);
+                int[] sel = pogled.GetSelectedRows();
+                for (int i = 0; i < sel.Length; i++)
+                {
+                    if (sel[i] < 0)
+                        continue;
+                    plavi.Append(Celija(pogled, sel[i]));
+                    if (i < sel.Length - 1)
+                        plavi.Append("~");
+                }
+            }
+            return ParametriSvi.Grid(grid.Name, id, plavi.ToString(), "", redova);
+        }
+
+        private static string Celija(GridView pogled, int red)
+        {
+            if (red < 0)
+                return "0";
+            object id = pogled.GetRowCellValue(red, "id");
+            if (id == null || id == DBNull.Value)
+            {
+                if (pogled.Columns.Count == 0)
+                    return "0";
+                id = pogled.GetRowCellValue(red, pogled.Columns[0]);
+            }
+            string t = id == null || id == DBNull.Value ? "" : Convert.ToString(id);
+            return t.Length == 0 ? "0" : t;
         }
 
         public string Vrijednost(string ime)
