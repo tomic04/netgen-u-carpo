@@ -289,7 +289,7 @@ namespace Carpo.TestShell
                 UpisiIshod(snimka, "FAIL start " + ex);
                 return 1;
             }
-            if (_uiIshod == 1)
+            if (_uiIshod == 1 && !_klikPregled)
                 return 1;
             Form granula = NadjiGranulu();
             if (granula == null && _klikPregled)

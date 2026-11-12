@@ -117,6 +117,8 @@ namespace Carpo.UI.Components.Base
             treeControl.OptionsView.ShowAutoFilterRow = true;
             treeControl.TabStop = false;
             this.AutoPopulate = definition?.AutoPopulate;
+            if (definition == null)
+                return;
 
             SetEvents(definition.Event);
 
