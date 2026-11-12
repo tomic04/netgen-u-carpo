@@ -67,6 +67,13 @@ foreach ($rel in $granule) {
     if ($kod -ne 0) { throw "UI smoke $ime kod $kod. $tekst" }
     if ($tekst -notlike "OK*") { throw "UI smoke $ime nema OK. $tekst" }
     if (-not (Test-Path -LiteralPath $png)) { throw "UI smoke $ime nema screenshot" }
+    if ($ime -eq "OznakaKL" -or $ime -eq "Statusi") {
+        if ($tekst -notlike "*podforma=*") { throw "UI smoke $ime nije kliknuo podformu. $tekst" }
+        if (-not (Test-Path -LiteralPath ($png + ".podforma.png"))) { throw "UI smoke $ime nema snimku podforme" }
+    }
+    if ($ime -eq "RealizacijaStavkeNG" -and $tekst -notlike "*klik=Odustani*") {
+        throw "UI smoke $ime nije kliknuo Odustani. $tekst"
+    }
 }
 Write-Host "UI smoke svih $($granule.Count) granula je prosao."
 # Start-Process ne postavlja LASTEXITCODE. Prazan kod workflow cita kao pad.

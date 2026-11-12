@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using DevExpress.XtraEditors;
 using System.Xml.Linq;
 using Gen = Carpo.Gen;
 
@@ -307,6 +308,13 @@ namespace Carpo.TestShell
                 UpisiIshod(snimka, "FAIL nema screenshota " + TekstSnimke(snimka));
                 return 4;
             }
+            string klik = "";
+            if (granula != null && !granula.IsDisposed)
+            {
+                int k = Klikni(granula, snimka, out klik);
+                if (k != 0)
+                    return k;
+            }
             try
             {
                 Faza(snimka, "prije-zatvaranja");
@@ -321,8 +329,109 @@ namespace Carpo.TestShell
                 UpisiIshod(snimka, "FAIL zatvaranje " + ex);
                 return 3;
             }
-            UpisiIshod(snimka, "OK " + xml);
+            UpisiIshod(snimka, "OK " + xml + (klik.Length == 0 ? "" : " " + klik));
             return 0;
+        }
+
+        /// <summary>
+        /// Tri tipa: obična forma (Izmjena), Manager (Unesi), ulazni dijalog (Odustani).
+        /// Odustani je CLOSE i ne šalje SQL (OznakaKL FRMEDIT CMD2, Statusi INSERTFORM ONCLICK close).
+        /// </summary>
+        private int Klikni(Form granula, string snimka, out string trag)
+        {
+            trag = "";
+            string ime = Path.GetFileName(xml ?? "");
+            if (ime.Equals("RealizacijaStavkeNG.xml", StringComparison.OrdinalIgnoreCase))
+            {
+                var o = NadjiGumb(granula, "Odustani");
+                if (o == null)
+                {
+                    UpisiIshod(snimka, "FAIL nema gumba Odustani");
+                    return 5;
+                }
+                o.PerformClick();
+                trag = "klik=Odustani";
+                return 0;
+            }
+            string otvori = null;
+            if (ime.Equals("OznakaKL.xml", StringComparison.OrdinalIgnoreCase))
+                otvori = "Izmjena";
+            else if (ime.Equals("Statusi.xml", StringComparison.OrdinalIgnoreCase))
+                otvori = "Unesi";
+            if (otvori == null)
+                return 0;
+            var gumb = NadjiGumb(granula, otvori);
+            if (gumb == null)
+            {
+                UpisiIshod(snimka, "FAIL nema gumba " + otvori);
+                return 5;
+            }
+            string pod = snimka + ".podforma.png";
+            bool odustao = false;
+            var timer = new System.Windows.Forms.Timer();
+            timer.Interval = 700;
+            timer.Tick += delegate
+            {
+                timer.Stop();
+                Form dij = null;
+                foreach (Form f in Application.OpenForms)
+                {
+                    if (f == null || f.IsDisposed || !f.Visible || f == this || f == granula)
+                        continue;
+                    dij = f;
+                    break;
+                }
+                if (dij == null)
+                    return;
+                try { dij.Update(); } catch { }
+                SnimiProzor(dij.Handle, pod);
+                var o = NadjiGumb(dij, "Odustani");
+                if (o == null)
+                    return;
+                odustao = true;
+                o.PerformClick();
+            };
+            timer.Start();
+            try
+            {
+                gumb.PerformClick();
+            }
+            catch (Exception ex)
+            {
+                timer.Stop();
+                timer.Dispose();
+                UpisiIshod(snimka, "FAIL klik " + ex.Message);
+                return 5;
+            }
+            timer.Stop();
+            timer.Dispose();
+            if (!odustao || !ImaSnimku(pod))
+            {
+                UpisiIshod(snimka, "FAIL podforma " + otvori);
+                return 5;
+            }
+            trag = "podforma=" + otvori;
+            return 0;
+        }
+
+        private static SimpleButton NadjiGumb(Control korijen, string natpis)
+        {
+            if (korijen == null)
+                return null;
+            foreach (Control c in korijen.Controls)
+            {
+                var b = c as SimpleButton;
+                if (b != null)
+                {
+                    string t = (b.Text ?? "").Replace("\r", "").Replace("\n", "");
+                    if (t.IndexOf(natpis, StringComparison.OrdinalIgnoreCase) >= 0)
+                        return b;
+                }
+                var dublje = NadjiGumb(c, natpis);
+                if (dublje != null)
+                    return dublje;
+            }
+            return null;
         }
 
         private Form NadjiGranulu()
