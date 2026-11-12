@@ -28,7 +28,7 @@ Jedina ulazna forma s `NEXTFORM` je `BIOVEGA/KomStanjeSkl.xml`.
 
 Redoslijed za prvi dodir: combo SQL, zatim `ONCLICK`, zatim grid SQL, zatim `NEXTFORM`.
 
-Kriteriji za combo su u `Combo-dijalog-testovi.md`. Kriteriji za `ONCLICK` su u `Onclick-dijalog-testovi.md`.
+Kriteriji za combo su u `Combo-dijalog-testovi.md`. Kriteriji za `ONCLICK` su u `Onclick-dijalog-testovi.md`. Kriteriji za grid i `NEXTFORM` su u `Grid-nextform-dijalog-testovi.md`.
 
 ## Sve forme u datoteci
 

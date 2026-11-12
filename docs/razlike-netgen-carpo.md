@@ -796,4 +796,11 @@ Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88
 | `BisnodeExport.md` | `:PARAM_FORM`, `#OK`, `update Pubvars` | R18, R14, R82 |
 | `Nedostaje-96.md` | rang 98–111 nema XML | |
 | `Onclick-dijalog-testovi.md` | deset ONCLICK slučajeva | R14, R18, R54 |
+| `Grid-nextform-dijalog-testovi.md` | deset gridova i osam NEXTFORM | R14, R18 |
+| `Prioritet-2.md` | XML bez checkliste, po bazama pa po kontrolama | |
+| `DrzaveNG.md` | `ONLOAD` je upit, Odustani je `OK`, `NEXTFORM` Dodaj | R41 |
+| `ZupanijeNG.md` | isti obrazac kao države | R41 |
+| `PDVPromjenaNEW.md` | `:FILTERFORM`, store, `!!` na brisanju | R18, R01, R14 |
+| `MPNarPredis.md` | nema `ONLOAD`, `vrstadokid-` | R10, R01, R43, R11 |
+| `NacinOtpremeNG.md` | `OKStay` pa prazna polja | R41 |
 | `Smoke-prazno-uzorak.md` | 20 praznih iz smokea #35 | |

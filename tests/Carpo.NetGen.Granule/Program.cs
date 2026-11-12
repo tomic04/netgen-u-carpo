@@ -96,6 +96,12 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(BisnodeExport.Provjeri(root));
             sve.AddRange(Nedostaje96.Provjeri(root));
             sve.AddRange(OnclickDijalog.Provjeri(root));
+            sve.AddRange(DrzaveNg.Provjeri(root));
+            sve.AddRange(ZupanijeNg.Provjeri(root));
+            sve.AddRange(PdvPromjenaNew.Provjeri(root));
+            sve.AddRange(MpNarPredis.Provjeri(root));
+            sve.AddRange(NacinOtpremeNg.Provjeri(root));
+            sve.AddRange(GridNext.Provjeri(root));
             sve.AddRange(Statusi.Provjeri(root));
             sve.AddRange(KntBlaZak.Provjeri(root));
             sve.AddRange(PrijemniList.Provjeri(root));

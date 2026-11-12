@@ -107,7 +107,7 @@ namespace Carpo.NetGen.Granule
             NgProject p = Pet.Ucitaj(l, Ime, "PRK-01", root, "definitions", "netgen", "BIOVEGA", "KntPreknjizavanjeNG.xml");
             if (p == null)
                 return l;
-            l.Add(p.OnLoad == ":FILTER" && (p.Buttons ?? "").IndexOf("MULTISELECT_Proknjizi", StringComparison.Ordinal) >= 0
+            l.Add(p.OnLoad == ":FILTER" && (p.Buttons ?? "").IndexOf("MULTISELECT_Proknj", StringComparison.Ordinal) >= 0
                 && Pet.Attr(p, "CMD5CAPTION").IndexOf("PRINTMASTER#REFRESHMASTER", StringComparison.Ordinal) >= 0
                 ? Qa.Z(Ime, "PRK-02", "Ulaz je FILTER. CMD5 je PRINTMASTER pa REFRESHMASTER", "netgen/Form1.vb:3879,4951,4570")
                 : Qa.P(Ime, "PRK-02", "onload", "netgen/Form1.vb:3879", p.OnLoad));
