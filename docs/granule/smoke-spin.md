@@ -2,7 +2,7 @@
 
 Mjerenje na sql-ai, baza `spin`, samo citanje. Upit: `Parametar like 'asm:NetGenDLL.loader%'` ili `asm:NetGenDLL.frm%`. Operater 7, timeout 12 s. Izvor: CI run 43230508391, prije comboa na podlozi.
 
-AOP: NetGen šalje `@id='null'` i prikaže grešku. To nije preskok. Narudžbe nemaju `ONLOAD`, master ostaje prazan dok se ne odabere čvor. Stablo dolazi iz prve vrijednosti `COMBO`. 21 stavka `nema-sql` nema master predložak, nije pad upita. 63 `nema-xml` nema datoteku u repou.
+AOP (`BIOVEGA\AOPNovi.xml`): stablo ima 1 korijen. Master i dalje padne na `@id='null'` jer čvor nije odabran. To je isto što NetGen pošalje i prikaže. Broj granula s retcima ostaje 17. Combo je na sljedećem mjerenju napunio korijene tamo gdje `TREE` ili `COMBO` vrati čvorove (Akcije 5, DobUgovori 7, OdobreniKaloNG 1). 21 `nema-sql` i dalje nema master predložak, pa retke ne dobije dok se ne klikne čvor.
 
 Ukupno 128, otvoreno 38.
 
