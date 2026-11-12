@@ -739,6 +739,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `dijalog-combo-sql`
 - **PR:** dijalog-sql
 
+## R92 Dijalog: ONCLICK, FILLEXPLORER, combo, grid, NEXTFORM
+
+- **Element:** gumb, combo, grid i `NEXTFORM` na formi
+- **NetGen:** `ONCLICK` ide u `Tag` i `Glbl_Click` (`Form2.vb` 1345–1349, 6221–6228). `:Zakljucavanje` otvara tu formu, ne zatvara roditelja. `CMD1` bez dvotočke je OK (`3367–3396`). `FILLEXPLORER=TRUE` pošalje `ONSUBMIT` u master (`Form1.vb` 5445–5452). Combo puni `SQL` (`Form2.vb` 2396–2431). Grid puni `SQL` osim `SKIPDEFAULTLOAD=TRUE` (`1635–1646`). `NEXTFORM` se čita (`1052`) i nakon OK otvara tu formu (`4431`).
+- **Carpo:** isto za tok. Na `jupiter2019` i `jupiter2022` gumb i `ONSUBMIT` se ne šalju. Combo i grid koji su čisti `SELECT` smiju se poslati pri otvaranju. Procedura u njihovom SQL-u čeka provjeru tijela i s Jupitera se ne šalje.
+- **Posljedica:** `ZakljucivanjeTemNG` Zaključi otvara `Zakljucavanje`. `MPRealizNG` Pokaži drži `spMPRealizacijaRobeNG`, ali ga Jupiter ne izvrši. `MPNivelacija` combo je `spMPDajTrgovinaNG`. `JeziciNG` `NEXTFORM` je `Dodaj`. `PROMET` `NEXTFORM` je prazan.
+- **Odluka:** NetGen logika. Upis i Jupiter gumb ostaju zaštićeni.
+- **Test:** `rupa-zakljuci`, `rupa-pokazi`, `rupa-combo`, `rupa-grid`, `rupa-next`, `rupa-niv-combo`, `rupa-niv-pokazi`, `rupa-jupiter-nema-onsubmit`
+- **PR:** dijalog-rupe
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

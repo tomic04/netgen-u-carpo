@@ -26,6 +26,17 @@ namespace Carpo.NetGen.Ui
     {
         private Func<string, DataTable> _citaj;
         private SqlKontekst _kontekst;
+        private NgForm _forma;
+        private bool _jupiter;
+
+        public string OtvorenaForma = "";
+        public string MasterSql = "";
+        public Action<string> OtvoriDrugu;
+
+        public void JupiterNeSaljeGumb(bool jupiter)
+        {
+            _jupiter = jupiter;
+        }
 
         public Dijalog()
         {
@@ -43,6 +54,9 @@ namespace Carpo.NetGen.Ui
                 return;
             _citaj = citaj;
             _kontekst = kontekst;
+            _forma = forma;
+            OtvorenaForma = "";
+            MasterSql = "";
             string naslov = forma.Atributi == null ? null : forma.Atributi.Vrijednost("CAPTION");
             if (string.IsNullOrEmpty(naslov))
                 naslov = forma.Ime;
@@ -122,11 +136,11 @@ namespace Carpo.NetGen.Ui
                     var b = new SimpleButton();
                     b.Name = "cmd" + g.Redni.ToString();
                     b.Text = Raspored.SrediTekst(g.Natpis);
+                    b.Tag = g.Redni.ToString() + "|" + (g.Naredba ?? "");
                     b.Left = x;
                     b.Top = ClientSize.Height - 36;
                     b.Width = 96;
                     b.Anchor = AnchorStyles.Left | AnchorStyles.Bottom;
-                    b.Tag = g.Naredba ?? "";
                     b.Click += GumbKlik;
                     CarpoIzgled.Gumb(b);
                     Controls.Add(b);
@@ -156,14 +170,17 @@ namespace Carpo.NetGen.Ui
                 return;
             if (k.Grana != NgGrana.Combo && k.Grana != NgGrana.Grid && k.Grana != NgGrana.DxGrid)
                 return;
+            if (k.Grana != NgGrana.Combo && DijalogTok.PreskociGrid(k))
+                return;
             if (k.Atributi == null || !k.Atributi.Ima("SQL"))
                 return;
-            string sql = Otvaranje.Spreman(k.Atributi.Vrijednost("SQL"), SqlTekst.ZaFormu(_kontekst));
-            if (string.IsNullOrEmpty(sql))
+            string sql = (k.Atributi.Vrijednost("SQL") ?? "").Trim();
+            if (sql.Length == 0)
                 return;
             SqlZastita z = ZastitaSql.Tekst(sql);
-            if (z.Pise || z.Procedure.Count > 0)
+            if (z.Pise || z.Procedure.Count > 0 || _jupiter)
                 return;
+            sql = Otvaranje.Spreman(sql, SqlTekst.ZaFormu(_kontekst)) ?? sql;
             DataTable dt = null;
             try
             {
@@ -191,47 +208,62 @@ namespace Carpo.NetGen.Ui
         private void GumbKlik(object sender, EventArgs e)
         {
             var b = sender as SimpleButton;
-            string naredba = b == null ? "" : (b.Tag as string ?? "");
-            if (naredba.Trim().Length == 0)
+            string tag = b == null ? "" : (b.Tag as string ?? "");
+            int redni = 0;
+            string naredba = tag;
+            int crta = tag.IndexOf('|');
+            if (crta > 0 && tag.StartsWith("cmd", StringComparison.Ordinal) == false)
             {
-                DialogResult = b != null && Odustajanje(b.Text) ? DialogResult.Cancel : DialogResult.OK;
+                int.TryParse(tag.Substring(0, crta), out redni);
+                naredba = tag.Substring(crta + 1);
+            }
+            if (b != null && b.Name != null && b.Name.StartsWith("cmd", StringComparison.Ordinal))
+            {
+                int.TryParse(b.Name.Substring(3), out redni);
+                if (crta >= 0)
+                    naredba = tag.Substring(crta + 1);
+            }
+            DijalogTok.Klik klik = DijalogTok.Gumb(_forma, redni, naredba, _jupiter);
+            if (klik.OtvaraFormu.Length > 0)
+            {
+                OtvorenaForma = klik.OtvaraFormu;
+                if (b != null)
+                    b.DialogResult = DialogResult.None;
+                if (OtvoriDrugu != null)
+                    OtvoriDrugu(klik.OtvaraFormu);
                 return;
             }
-            Lanac.Ishod ishod = Lanac.Izvrsi(naredba, true, null);
-            string[] seg = Lanac.Segmenti(naredba);
-            for (int i = 0; i < seg.Length; i++)
+            if (klik.Odustani)
             {
-                string t = (seg[i] ?? "").Trim();
-                if (!t.StartsWith("select", StringComparison.OrdinalIgnoreCase))
-                    continue;
-                if (ZastitaSql.Tekst(t).Pise || _citaj == null)
-                    continue;
-                string sql = SqlTekst.Sredi(t, _kontekst);
-                NgDnevnik.Sql(sql);
+                DialogResult = DialogResult.Cancel;
+                return;
+            }
+            if (klik.SaljeSql && _citaj != null)
+            {
+                MasterSql = klik.MasterSql;
+                NgDnevnik.Sql(klik.MasterSql);
                 try
                 {
-                    _citaj(sql);
+                    _citaj(klik.MasterSql);
                 }
                 catch (Exception ex)
                 {
-                    NgDnevnik.Greska(ex.Message + " | " + sql);
+                    NgDnevnik.Greska(ex.Message + " | " + klik.MasterSql);
                 }
             }
+            else
+                MasterSql = _jupiter ? "" : klik.MasterSql;
             string fokus = DijalogKlik.Fokus(naredba);
             if (fokus.Length > 0)
             {
-                Control[] n = Controls.Find(fokus, true);
-                if (n.Length > 0)
-                    n[0].Focus();
+                Control[] nadjeni = Controls.Find(fokus, true);
+                if (nadjeni.Length > 0)
+                    nadjeni[0].Focus();
             }
-            if (ishod.Ostaje)
-            {
-                if (b != null)
-                    b.DialogResult = DialogResult.None;
-                return;
-            }
-            if (ishod.Zatvara || ishod.Button2)
-                DialogResult = ishod.Button2 ? DialogResult.Cancel : DialogResult.OK;
+            if (klik.Zatvara)
+                DialogResult = DialogResult.OK;
+            else if (b != null)
+                b.DialogResult = DialogResult.None;
         }
 
         public string Vrijednost(string ime)

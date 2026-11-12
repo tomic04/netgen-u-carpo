@@ -1,0 +1,149 @@
+using System;
+using System.Collections.Generic;
+using Carpo.NetGen.Grid;
+using Carpo.NetGen.Model;
+using Carpo.NetGen.Xml;
+
+namespace Carpo.NetGen.Komande
+{
+    /// <summary>
+    /// Dijalog kako Form2 radi: ONCLICK, CMD1 = OK, FILLEXPLORER, combo/grid SQL, NEXTFORM.
+    /// Na jupiter2019 i jupiter2022 gumb i ONSUBMIT se ne šalju.
+    /// </summary>
+    public static class DijalogTok
+    {
+        public sealed class Punjenje
+        {
+            public string Ime = "";
+            public string Sql = "";
+            public bool Preskoceno;
+        }
+
+        public sealed class Klik
+        {
+            public string OtvaraFormu = "";
+            public bool Zatvara;
+            public bool Odustani;
+            public bool FillExplorer;
+            public string MasterSql = "";
+            public bool SaljeSql;
+            public string NextForm = "";
+        }
+
+        public static bool JeJupiter(string server)
+        {
+            if (string.IsNullOrEmpty(server))
+                return false;
+            return server.IndexOf("jupiter2019", StringComparison.OrdinalIgnoreCase) >= 0
+                || server.IndexOf("jupiter2022", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        public static string NextForm(NgForm forma)
+        {
+            if (forma == null || forma.Atributi == null || !forma.Atributi.Ima("NEXTFORM"))
+                return "";
+            return (forma.Atributi.Vrijednost("NEXTFORM") ?? "").Trim();
+        }
+
+        public static bool PuniExplorer(NgForm forma)
+        {
+            if (forma == null || forma.Atributi == null || !forma.Atributi.Ima("FILLEXPLORER"))
+                return false;
+            return string.Equals((forma.Atributi.Vrijednost("FILLEXPLORER") ?? "").Trim(), "true", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static List<Punjenje> PriOtvori(NgForm forma)
+        {
+            var lista = new List<Punjenje>();
+            if (forma == null || forma.Kontrole == null)
+                return lista;
+            for (int i = 0; i < forma.Kontrole.Count; i++)
+            {
+                NgControl k = forma.Kontrole[i];
+                if (k.Grana != NgGrana.Combo && k.Grana != NgGrana.Grid && k.Grana != NgGrana.DxGrid)
+                    continue;
+                var p = new Punjenje();
+                p.Ime = k.Name ?? "";
+                if (k.Grana != NgGrana.Combo && Skip(k))
+                {
+                    p.Preskoceno = true;
+                    lista.Add(p);
+                    continue;
+                }
+                if (k.Atributi != null && k.Atributi.Ima("SQL"))
+                    p.Sql = (k.Atributi.Vrijednost("SQL") ?? "").Trim();
+                lista.Add(p);
+            }
+            return lista;
+        }
+
+        public static Klik Gumb(NgForm forma, int redni, string onClick, bool jupiter)
+        {
+            var k = new Klik();
+            k.NextForm = NextForm(forma);
+            string naredba = (onClick ?? "").Trim();
+            if (naredba.Length == 0 && redni == 2)
+            {
+                k.Odustani = true;
+                k.Zatvara = true;
+                k.NextForm = "";
+                return k;
+            }
+            if (naredba.Length == 0 && redni == 1)
+            {
+                k.Zatvara = true;
+                k.FillExplorer = PuniExplorer(forma);
+                if (k.FillExplorer && forma != null)
+                    k.MasterSql = (forma.OnSubmit ?? "").Trim();
+                k.SaljeSql = k.MasterSql.Length > 0 && !jupiter && !ZastitaSql.Tekst(k.MasterSql).Pise;
+                return k;
+            }
+            string[] seg = Lanac.Segmenti(naredba);
+            for (int i = 0; i < seg.Length; i++)
+            {
+                string t = (seg[i] ?? "").Trim();
+                if (t.Length == 0)
+                    continue;
+                if (t.StartsWith(":", StringComparison.Ordinal))
+                {
+                    k.OtvaraFormu = t.Substring(1).Trim();
+                    k.Zatvara = false;
+                    k.SaljeSql = false;
+                    continue;
+                }
+                string u = t.ToUpperInvariant();
+                if (u == "CLOSE" || u == "CANCEL")
+                {
+                    k.Odustani = true;
+                    k.Zatvara = true;
+                    k.NextForm = "";
+                    k.SaljeSql = false;
+                }
+                else if (u == "OK")
+                {
+                    k.Zatvara = true;
+                    if (forma != null)
+                        k.MasterSql = (forma.OnSubmit ?? "").Trim();
+                    k.SaljeSql = k.MasterSql.Length > 0 && !jupiter && !ZastitaSql.Tekst(k.MasterSql).Pise;
+                }
+                else if (u == "OKSTAY")
+                {
+                    k.Zatvara = false;
+                }
+            }
+            return k;
+        }
+
+        public static bool PreskociGrid(NgControl k)
+        {
+            return Skip(k);
+        }
+
+        private static bool Skip(NgControl k)
+        {
+            if (k.Atributi == null || !k.Atributi.Ima("SKIPDEFAULTLOAD"))
+                return false;
+            return string.Equals((k.Atributi.Vrijednost("SKIPDEFAULTLOAD") ?? "").Trim(), "true", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+}

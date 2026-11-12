@@ -36,6 +36,7 @@ namespace Carpo.NetGen.Ui
         private readonly DetailGrid _detail = new DetailGrid();
         private NgProject _projekt;
         private string _spoj = "";
+        private string _server = "";
         private bool _punim;
         private int _redovaDetail;
         private DataTable _comboRedovi;
@@ -103,6 +104,7 @@ namespace Carpo.NetGen.Ui
                 return false;
             }
             _projekt = r.Projekt;
+            _server = server ?? "";
             Text = string.IsNullOrEmpty(_projekt.Naslov) ? "NetGen" : _projekt.Naslov;
             bbiVerzija.Caption = (server ?? "") + " · " + (baza ?? "") + " · " + operater.ToString();
             var kontekst = new SqlKontekst();
@@ -284,6 +286,8 @@ namespace Carpo.NetGen.Ui
                 return;
             }
             var dij = new Dijalog();
+            dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server));
+            dij.OtvoriDrugu = OtvoriFormu;
             dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj);
             string iz = dij.Vrijednost("izvjestaj");
             if (!string.IsNullOrEmpty(iz))

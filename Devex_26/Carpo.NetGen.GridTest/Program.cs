@@ -31,6 +31,7 @@ namespace Carpo.NetGen.GridTest
             KomandeTestovi();
             ZastitaTestovi();
             DijalogKlikTest();
+            DijalogRupe();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -72,6 +73,75 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void DijalogRupe()
+        {
+            NgProject zak = Ucitaj("ZakljucivanjeTemNG.xml");
+            NgForm main = Forma(zak, "MAINFORM");
+            NgControl zakljuci = Kontrol(main, "buttonOK");
+            string klik = zakljuci == null ? "" : (zakljuci.Atributi.Vrijednost("ONCLICK") ?? "");
+            DijalogTok.Klik otvara = DijalogTok.Gumb(main, 0, klik, true);
+            T("rupa-zakljuci", otvara.OtvaraFormu == "Zakljucavanje" && !otvara.Zatvara && !otvara.SaljeSql, otvara.OtvaraFormu);
+            NgForm potvrda = Forma(zak, "Zakljucavanje");
+            DijalogTok.Klik ok = DijalogTok.Gumb(potvrda, 0, "OK", true);
+            T("rupa-zakljuci-jupiter", ok.MasterSql.IndexOf("spKntZakljucivanjeTem", StringComparison.OrdinalIgnoreCase) >= 0 && !ok.SaljeSql, ok.MasterSql);
+
+            NgProject real = Ucitaj("MPRealizNG.xml");
+            NgForm form1 = Forma(real, "FORM1");
+            DijalogTok.Klik pokazi = DijalogTok.Gumb(form1, 1, "", true);
+            T("rupa-pokazi", pokazi.FillExplorer && pokazi.MasterSql.IndexOf("spMPRealizacijaRobeNG", StringComparison.OrdinalIgnoreCase) >= 0 && !pokazi.SaljeSql, pokazi.MasterSql);
+            T("rupa-combo", SqlKontrole(form1, "trgovinaid").IndexOf("trgovina", StringComparison.OrdinalIgnoreCase) >= 0, SqlKontrole(form1, "trgovinaid"));
+            NgForm promet = Forma(real, "PROMET");
+            T("rupa-grid", SqlKontrole(promet, "stavke").IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) >= 0, SqlKontrole(promet, "stavke"));
+            T("rupa-next-prazan", DijalogTok.NextForm(promet) == "", DijalogTok.NextForm(promet));
+
+            NgProject niv = Ucitaj("MPNivelacija.xml");
+            NgForm filter = Forma(niv, "FILTERFORM");
+            T("rupa-niv-combo", SqlKontrole(filter, "xtrgovinaid").IndexOf("spMPDajTrgovinaNG", StringComparison.OrdinalIgnoreCase) >= 0, SqlKontrole(filter, "xtrgovinaid"));
+            DijalogTok.Klik nivPokazi = DijalogTok.Gumb(filter, 1, "", true);
+            T("rupa-niv-pokazi", nivPokazi.FillExplorer && !nivPokazi.SaljeSql && nivPokazi.MasterSql.IndexOf("spMPQueryGlaIDetNG", StringComparison.OrdinalIgnoreCase) >= 0, nivPokazi.MasterSql);
+
+            NgForm unesi = Forma(Ucitaj("JeziciNG.xml"), "Unesi");
+            T("rupa-next", DijalogTok.NextForm(unesi) == "Dodaj", DijalogTok.NextForm(unesi));
+            string master;
+            List<string> upiti = Otvaranje.Upiti(real, new SqlKontekst(), "MPRealizNG.xml", out master);
+            T("rupa-jupiter-nema-onsubmit", !Ima(upiti, "spMPRealizacijaRobeNG"), upiti.Count.ToString());
+        }
+
+        private static string SqlKontrole(NgForm forma, string ime)
+        {
+            List<DijalogTok.Punjenje> lista = DijalogTok.PriOtvori(forma);
+            for (int i = 0; i < lista.Count; i++)
+            {
+                if (string.Equals(lista[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
+                    return lista[i].Sql ?? "";
+            }
+            return "";
+        }
+
+        private static NgForm Forma(NgProject p, string ime)
+        {
+            if (p == null || p.Forme == null)
+                return null;
+            for (int i = 0; i < p.Forme.Count; i++)
+            {
+                if (string.Equals(p.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
+                    return p.Forme[i];
+            }
+            return null;
+        }
+
+        private static NgControl Kontrol(NgForm f, string ime)
+        {
+            if (f == null)
+                return null;
+            for (int i = 0; i < f.Kontrole.Count; i++)
+            {
+                if (string.Equals(f.Kontrole[i].Name, ime, StringComparison.OrdinalIgnoreCase))
+                    return f.Kontrole[i];
+            }
+            return null;
         }
 
         private static void DijalogKlikTest()

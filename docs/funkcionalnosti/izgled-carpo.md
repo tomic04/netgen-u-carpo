@@ -14,7 +14,7 @@ Janus kontrole (grid, stablo) zamjenjuju se DevExpressom. Sve ostalo što se vid
 - [x] Dijalozi su `XtraForm`. Editor po tipu: `TextEdit`, `SpinEdit`, `ButtonEdit`, `DateEdit`, `LookUpEdit`, `CheckedComboBoxEdit`, `CheckEdit`, `CheckEdit` s `RadioGroupIndex` (svaki RADIO drži svoj `TOP`/`LEFT`), `SimpleButton`, `LabelControl`, `GroupControl`, `PanelControl`, `PictureEdit`, `GridControl`, `TreeList`. Raspored je NetGen `SrediKontrolu` (`/ 14`).
 - [x] Status na dijalogu je `LabelControl` na dnu. WebBrowser ostaje WinForms jer DevExpress nema preglednik.
 - [x] Filter forma je isti `XtraForm` sa skinom. `BORDERSTYLE=3` je fiksni dijalog. Combo, datum, broj, check i gumb nose Carpo default (null tekst `...`, maska datuma, broj desno, gumb 7 pt). Stupac grida crta `FORMAT` i poravnanje. Status ribbana pokazuje server, bazu i operatera.
-- [ ] Klik gumba na dijalogu još ne vrti lanac (lanac je u `Lanac`, kuka ga već pokriva). Combo i grid na dijalogu ne šalju vlastiti SQL pri otvaranju.
+- [x] Klik gumba izvrši `ONCLICK`. `:Zakljucavanje` otvara tu formu. `CMD1` Pokaži uz `FILLEXPLORER=TRUE` pripremi `ONSUBMIT`, ali ga na jupiter2019 i jupiter2022 ne šalje. Combo i grid pri otvaranju čitaju svoj `SQL` (`SKIPDEFAULTLOAD` preskače grid). `NEXTFORM` se čita. Čisti `SELECT` se smije poslati. Procedura na gumbu ili u `ONSUBMIT` s Jupitera se ne šalje.
 
 ## Što se ne dira
 
