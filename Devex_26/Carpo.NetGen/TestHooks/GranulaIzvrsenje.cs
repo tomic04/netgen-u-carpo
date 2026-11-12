@@ -93,7 +93,7 @@ namespace Carpo.NetGen.TestHooks
             bool assembly = naredbaGumba.IndexOf("ASSEMBLYLOAD(", StringComparison.OrdinalIgnoreCase) >= 0;
             s["dll"] = assembly ? "da" : "ne";
             s["ispis"] = Lanac.IspisSegment(gumb.Naredba);
-            s["pageHeaderRight"] = Attr(p, "PAGEHEADERRIGHT") ?? "";
+            s["pageHeaderRight"] = Carpo.NetGen.Print.IspisZaglavlje.Desno(Attr(p, "PAGEHEADERRIGHT") ?? "", Medjuspremnik(p));
             s["border"] = "Sizable";
             NgForm forma = FormaGumba(p, gumb.Naredba);
             if (forma != null)
@@ -172,25 +172,7 @@ namespace Carpo.NetGen.TestHooks
             g.Kontekst.OperaterId = "7";
             g.Ucitaj(p, null);
 
-            var cb = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            string set = Attr(p, "SETDEFAULTS");
-            if (!string.IsNullOrWhiteSpace(set))
-            {
-                string[] dijelovi = set.Split('#');
-                for (int i = 0; i < dijelovi.Length; i++)
-                {
-                    string dio = dijelovi[i].Trim();
-                    if (dio.Length == 0 || SqlTekst.JeZabranaPisanja(dio))
-                        continue;
-                    try
-                    {
-                        NapuniMedjuspremnik(Spoj(), dio, cb);
-                    }
-                    catch (SqlException)
-                    {
-                    }
-                }
-            }
+            var cb = Medjuspremnik(p);
 
             if (g.Stanje.Odluka == "salji" && !g.Stanje.BlokiranoPisanje)
                 g.IzvrsiCitanje(Spoj());
@@ -204,6 +186,7 @@ namespace Carpo.NetGen.TestHooks
 
             var s = new Dictionary<string, string>(StringComparer.Ordinal);
             string master = g.Stanje.IzvorSql ?? "";
+            string set = Attr(p, "SETDEFAULTS");
             s["sqlTrag"] = string.IsNullOrWhiteSpace(set) ? master : (set.Trim() + " || " + master);
 
             var raspored = p.Raspored;
@@ -313,6 +296,29 @@ namespace Carpo.NetGen.TestHooks
             if (!string.IsNullOrEmpty(sqlGreska))
                 pogled.Napomena = "NetGen Catch: poruka, grid nije napunjen. " + sqlGreska;
             return pogled;
+        }
+
+        private static Dictionary<string, string> Medjuspremnik(NgProject p)
+        {
+            var cb = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            string set = Attr(p, "SETDEFAULTS");
+            if (string.IsNullOrWhiteSpace(set))
+                return cb;
+            string[] dijelovi = set.Split('#');
+            for (int i = 0; i < dijelovi.Length; i++)
+            {
+                string dio = dijelovi[i].Trim();
+                if (dio.Length == 0 || SqlTekst.JeZabranaPisanja(dio))
+                    continue;
+                try
+                {
+                    NapuniMedjuspremnik(Spoj(), dio, cb);
+                }
+                catch (SqlException)
+                {
+                }
+            }
+            return cb;
         }
 
         private static void NapuniMedjuspremnik(string spoj, string sql, Dictionary<string, string> cb)

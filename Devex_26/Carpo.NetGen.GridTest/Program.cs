@@ -26,6 +26,7 @@ namespace Carpo.NetGen.GridTest
             IntrastatPreskok();
             RucniStart();
             Odabir();
+            Jez57();
             Zamjene();
             OznakaBezBaze();
             JeziciBezBaze();
@@ -53,6 +54,15 @@ namespace Carpo.NetGen.GridTest
                 Console.WriteLine("PRESKOCENO spin (nema CARPO_SPIN=1)");
             Console.WriteLine("FAIL=" + fail.ToString());
             return fail == 0 ? 0 : 1;
+        }
+
+        private static void Jez57()
+        {
+            var cb = new System.Collections.Generic.Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
+            cb["tkosmomi"] = "Spin d.o.o.";
+            T("jez-57-cb", Carpo.NetGen.Print.IspisZaglavlje.Desno("@@tkosmomi", cb) == "Spin d.o.o.", Carpo.NetGen.Print.IspisZaglavlje.Desno("@@tkosmomi", cb));
+            var prazan = new System.Collections.Generic.Dictionary<string, string>();
+            T("jez-57-prazan", Carpo.NetGen.Print.IspisZaglavlje.Desno("@@tkosmomi", prazan) == "null", Carpo.NetGen.Print.IspisZaglavlje.Desno("@@tkosmomi", prazan));
         }
 
         private static void Odabir()
