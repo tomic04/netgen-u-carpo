@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Carpo.NetGen.Ui;
 using DevExpress.XtraEditors;
 using System.Xml.Linq;
 using Gen = Carpo.Gen;
@@ -377,8 +378,29 @@ namespace Carpo.TestShell
             int pokusaj = 0;
             var timer = new System.Windows.Forms.Timer();
             timer.Interval = 400;
+            Dijalog.NakonPrikaza = delegate (Dijalog dij)
+            {
+                if (odustao || dij == null || dij.IsDisposed)
+                    return;
+                var o = NadjiGumb(dij, "Odustani");
+                if (o == null)
+                {
+                    razlog = dij.Text + " " + TekstGumba(dij);
+                    try { dij.Close(); } catch { }
+                    return;
+                }
+                try { dij.Update(); } catch { }
+                SnimiProzor(dij.Handle, pod);
+                odustao = true;
+                o.PerformClick();
+            };
             timer.Tick += delegate
             {
+                if (odustao)
+                {
+                    timer.Stop();
+                    return;
+                }
                 pokusaj++;
                 Form dij = null;
                 foreach (Form f in Application.OpenForms)
@@ -426,11 +448,13 @@ namespace Carpo.TestShell
             {
                 timer.Stop();
                 timer.Dispose();
+                Dijalog.NakonPrikaza = null;
                 UpisiIshod(snimka, "FAIL klik " + ex.Message);
                 return 5;
             }
             timer.Stop();
             timer.Dispose();
+            Dijalog.NakonPrikaza = null;
             if (!odustao || !ImaSnimku(pod))
             {
                 UpisiIshod(snimka, "FAIL podforma " + otvori + " " + razlog);

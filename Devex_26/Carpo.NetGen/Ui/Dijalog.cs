@@ -29,6 +29,7 @@ namespace Carpo.NetGen.Ui
         private SqlKontekst _kontekst;
         private NgForm _forma;
         private static Dijalog _zatvoriRoditelja;
+        public static Action<Dijalog> NakonPrikaza;
         private bool _jupiter;
 
         public string OtvorenaForma = "";
@@ -174,6 +175,19 @@ namespace Carpo.NetGen.Ui
                 else
                     ShowDialog();
             }
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            Action<Dijalog> h = NakonPrikaza;
+            if (h == null)
+                return;
+            BeginInvoke(new Action(delegate ()
+            {
+                if (!IsDisposed)
+                    h(this);
+            }));
         }
 
         protected override void OnActivated(EventArgs e)
