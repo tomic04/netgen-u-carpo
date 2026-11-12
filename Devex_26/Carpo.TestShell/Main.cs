@@ -354,13 +354,16 @@ namespace Carpo.TestShell
                 return 0;
             }
             string otvori = null;
+            string tag = null;
             if (ime.Equals("OznakaKL.xml", StringComparison.OrdinalIgnoreCase))
                 otvori = "Izmjena";
-            else if (ime.Equals("Statusi.xml", StringComparison.OrdinalIgnoreCase))
-                otvori = "Unesi";
-            if (otvori == null)
+            else if (ime.Equals("KntKompVerizne.xml", StringComparison.OrdinalIgnoreCase))
+                tag = "OBRISI_FORM";
+            if (otvori == null && tag == null)
                 return 0;
-            var gumb = NadjiGumb(granula, otvori);
+            var gumb = tag != null ? NadjiPoTag(granula, tag) : NadjiGumb(granula, otvori);
+            if (otvori == null)
+                otvori = tag;
             if (gumb == null)
             {
                 UpisiIshod(snimka, "FAIL nema gumba " + otvori);
@@ -422,6 +425,22 @@ namespace Carpo.TestShell
             }
             trag = "podforma=" + otvori;
             return 0;
+        }
+
+        private static SimpleButton NadjiPoTag(Control korijen, string tag)
+        {
+            if (korijen == null)
+                return null;
+            foreach (Control c in korijen.Controls)
+            {
+                var b = c as SimpleButton;
+                if (b != null && b.Tag != null && string.Equals(b.Tag.ToString(), tag, StringComparison.OrdinalIgnoreCase))
+                    return b;
+                var dublje = NadjiPoTag(c, tag);
+                if (dublje != null)
+                    return dublje;
+            }
+            return null;
         }
 
         private static SimpleButton NadjiGumb(Control korijen, string natpis)
