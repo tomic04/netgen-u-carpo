@@ -4,6 +4,25 @@ Lijevo stablo podloge je `TreeView2`. Punjenje je `NapuniDrvoVrijeme` (`Form1.vb
 
 Korpus: 633 XML-a, atribut `TREE` na `<PROJECT>` u **243** datoteke. Segmenti odvojeni s `#`: **453** stora (lijevo od `:` sadrži `tree`), **383** statična natpisa, **52** prazna. `yearmonth` u korpusu nema nijedan, a kod ga i dalje ima (2005–2009). `TREETRANSLATE="TRUE"` u 4 datoteke. `SPLITTERDISTANCE` npr. `200` (`prnPredajaM.xml`) i `180`. `TREEDRAGDROP` u NetGen korpusu nema; kod na `DragDrop` i dalje šalje taj SQL (`8175`).
 
+## Punjenje iz store (nije Carpo drvo)
+
+`DazovaIzStore` (`Form1.vb` 4446–4498) puni `SqlDataAdapter.Fill`. Ne ide kroz `ExecSql`, pa preskok kad `@@` preživi (`Class1.vb` 113–118) ovdje ne vrijedi. `@@operateriid` se i dalje zamijeni u `SrediSQL` prije `Fill`.
+
+Stupci se čitaju **samo po poziciji**, nikad po imenu:
+
+| Pozicija | Uloga |
+|---|---|
+| 0 | id čvora. Mora biti jedinstven, inače `Relations.Add` padne i stablo ostane prazno (`TREE PROBLEM`) |
+| 1 | id roditelja |
+| 2 | natpis |
+| 3 | tag; ako nema `:`, doda se `:imeForme` |
+
+U drvo uđe samo podstablo **prvog reda**. Dijete čiji je id tekst `"0"` se ne crta, ni njegovi potomci. Redoslijed djece je redoslijed redaka u tablici.
+
+Carpo `JTree` (`ComponentTree.SetTree`, `key` / `parentfield` / `valuefield`) traži stupce **po imenu**. Ista procedura, na primjer `spBlagajneZakTreeNG` ili `spTreeVrstaDok`, zato ne napuni Carpo drvo: imena polja nisu ugovor. U Carpo.NetGen je Carpo drvo samo crtež već složenih čvorova.
+
+Integracijski test na `spin` (`CARPO_SPIN=1`) izvrši `spTreeVrstaDok`, `spBlagajneZakTreeNG` i `spNg_combo @action='Drvo_NabPri'`, pa čvor po čvor (id, roditelj, natpis, tag, redoslijed) usporedi motor s ovim algoritmom. Ispiše i imena stupaca, da se vidi da nisu Carpo `key`/`parentfield`.
+
 ## Atributi
 
 | Atribut | Kad | Ponašanje |
@@ -44,7 +63,7 @@ Dizajner `Form1.designer.vb` 572–581, plus kod kad se drvo puni (4336–4339).
 
 ## Otvoreno
 
-- `Translate` / `TREETRANSLATE` nema rječnik. Natpis ostaje iz baze ili iz XML-a.
+- `Translate` / `TREETRANSLATE`: hrvatski i prazan jezik ostaju izvorni tekst (`Module1.vb` 266). Drugi jezik treba rječnik. `JupiterPrevoditelj` nije spojen.
 - `COMBO` koji mijenja SQL drveta (`ComboBox1_SelectedValueChanged`) nije ovaj prolaz. Pravilo vidljivosti kad je `TREE` prazan a `COMBO` nije jest urađeno.
-- `ImageList2` i povlačenje čvora (tijelo `DragDrop` je komentar; živi je samo SQL `TREEDRAGDROP`).
-- Dijalog koji `AfterSelect` otvara preko `NovaGenerickaForma` dolazi s gumbima, ne sa stablom.
+- Izvorni `OrdersDetails16.ico` nije u repou. Prozor i dalje veže `ImageList` i indeks 0.
+- Dijalog s čvora pokazuje formu iz taga (naslov, polja, `ONLOAD` select). Cijeli `Form2` (`ONSUBMIT`, lijepljenje, `OKStay`) je kasniji element.

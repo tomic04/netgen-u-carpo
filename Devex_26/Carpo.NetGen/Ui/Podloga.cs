@@ -20,12 +20,16 @@ namespace Carpo.NetGen.Ui
         private readonly SplitContainer _split;
         private readonly TreeView _drvo;
         private readonly DataGridView _grid;
+        private readonly DataGridView _detailGrid;
+        private readonly SplitContainer _detailSplit;
         private readonly FlowLayoutPanel _gumbi;
         private readonly Label _status;
         private readonly Stablo _stablo = new Stablo();
         private readonly MasterGrid _master = new MasterGrid();
+        private readonly DetailGrid _detail = new DetailGrid();
         private NgProject _projekt;
         private string _spoj = "";
+        private bool _punim;
 
         public Podloga()
         {
@@ -57,6 +61,19 @@ namespace Carpo.NetGen.Ui
             _drvo.Sorted = false;
             _drvo.BorderStyle = BorderStyle.None;
             _drvo.BackColor = SystemColors.ControlLightLight;
+            var slike = new ImageList();
+            slike.ImageSize = new Size(16, 16);
+            slike.ColorDepth = ColorDepth.Depth32Bit;
+            var bmp = new Bitmap(16, 16);
+            using (var g = Graphics.FromImage(bmp))
+            {
+                g.Clear(Color.Transparent);
+                g.FillRectangle(Brushes.SteelBlue, 1, 1, 14, 14);
+            }
+            slike.Images.Add("OrdersDetails16.ico", bmp);
+            _drvo.ImageList = slike;
+            _drvo.ImageIndex = 0;
+            _drvo.SelectedImageIndex = 0;
             _drvo.AfterSelect += Drvo_AfterSelect;
 
             _grid = new DataGridView();
@@ -75,12 +92,35 @@ namespace Carpo.NetGen.Ui
             _grid.ColumnHeadersHeight = 48;
             _grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
             _grid.EditMode = DataGridViewEditMode.EditProgrammatically;
+            _grid.SelectionChanged += Grid_SelectionChanged;
+
+            _detailGrid = new DataGridView();
+            _detailGrid.Dock = DockStyle.Fill;
+            _detailGrid.ReadOnly = true;
+            _detailGrid.AllowUserToAddRows = false;
+            _detailGrid.AllowUserToDeleteRows = false;
+            _detailGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            _detailGrid.MultiSelect = true;
+            _detailGrid.RowHeadersVisible = true;
+            _detailGrid.BorderStyle = BorderStyle.None;
+            _detailGrid.BackgroundColor = SystemColors.Window;
+            _detailGrid.Font = new Font("Microsoft Sans Serif", 8.25f);
+            _detailGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+            _detailGrid.ColumnHeadersHeight = 48;
+            _detailGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
+            _detailGrid.EditMode = DataGridViewEditMode.EditProgrammatically;
+
+            _detailSplit = new SplitContainer();
+            _detailSplit.Dock = DockStyle.Fill;
+            _detailSplit.Orientation = Orientation.Horizontal;
+            _detailSplit.Panel1.Controls.Add(_grid);
+            _detailSplit.Panel2.Controls.Add(_detailGrid);
 
             _split = new SplitContainer();
             _split.Dock = DockStyle.Fill;
             _split.Orientation = Orientation.Vertical;
             _split.Panel1.Controls.Add(_drvo);
-            _split.Panel2.Controls.Add(_grid);
+            _split.Panel2.Controls.Add(_detailSplit);
 
             Controls.Add(_status);
             Controls.Add(_gumbi);
@@ -104,6 +144,7 @@ namespace Carpo.NetGen.Ui
             _stablo.Kontekst = kontekst;
             _stablo.ImeXml = kontekst.XmlName;
             _master.Kontekst = kontekst;
+            _detail.Kontekst = kontekst;
             try
             {
                 _spoj = SpinVeza.Spoj(server, baza);
@@ -116,6 +157,7 @@ namespace Carpo.NetGen.Ui
 
             _stablo.Ucitaj(_projekt, Citaj);
             NapuniDrvo();
+            _detail.Pripremi(_projekt);
             _master.Ucitaj(_projekt, null);
             NapuniGrid();
             NapuniGumbe();
@@ -146,6 +188,8 @@ namespace Carpo.NetGen.Ui
             var n = new TreeNode(cvor.Natpis ?? "");
             n.Tag = cvor;
             n.Name = cvor.Oznaka ?? "";
+            n.ImageIndex = 0;
+            n.SelectedImageIndex = 0;
             kamo.Add(n);
             for (int i = 0; i < cvor.Djeca.Count; i++)
                 DodajCvor(cvor.Djeca[i], n.Nodes);
@@ -155,15 +199,24 @@ namespace Carpo.NetGen.Ui
         {
             base.OnShown(e);
             if (!_stablo.Stanje.Vidljivo || _stablo.Stanje.Splitter <= 0)
-            {
                 _split.Panel1Collapsed = true;
-                return;
+            else
+            {
+                _split.Panel1Collapsed = false;
+                int d = _stablo.Stanje.Splitter;
+                int max = _split.Width - _split.SplitterWidth - 80;
+                if (d > 40 && d < max)
+                    _split.SplitterDistance = d;
             }
-            _split.Panel1Collapsed = false;
-            int d = _stablo.Stanje.Splitter;
-            int max = _split.Width - _split.SplitterWidth - 80;
-            if (d > 40 && d < max)
-                _split.SplitterDistance = d;
+            if (_detail.Stanje.Nema || _detail.Stanje.OtvaraFormu)
+                _detailSplit.Panel2Collapsed = true;
+            else
+            {
+                _detailSplit.Panel2Collapsed = false;
+                int visina = _detailSplit.Height;
+                if (visina > 160)
+                    _detailSplit.SplitterDistance = (int)(visina * 0.62);
+            }
         }
 
         private void Drvo_AfterSelect(object sender, TreeViewEventArgs e)
@@ -173,30 +226,63 @@ namespace Carpo.NetGen.Ui
                 return;
             _stablo.Odaberi(cvor);
             string naredba = (cvor.Naredba ?? "").Trim();
-            if (naredba.StartsWith("==", StringComparison.Ordinal))
-                naredba = naredba.Substring(2).Trim();
-            if (naredba.StartsWith("select", StringComparison.OrdinalIgnoreCase)
-                || naredba.StartsWith("sp", StringComparison.OrdinalIgnoreCase)
-                || naredba.StartsWith("exec", StringComparison.OrdinalIgnoreCase))
+            string sqlNaredba = naredba;
+            if (sqlNaredba.StartsWith("==", StringComparison.Ordinal))
+                sqlNaredba = sqlNaredba.Substring(2).Trim();
+            bool jeSql = sqlNaredba.StartsWith("select", StringComparison.OrdinalIgnoreCase)
+                || sqlNaredba.StartsWith("sp", StringComparison.OrdinalIgnoreCase)
+                || sqlNaredba.StartsWith("exec", StringComparison.OrdinalIgnoreCase);
+            if (jeSql)
+                IzvrsiSql(sqlNaredba);
+            else
             {
-                IzvrsiSql(naredba);
+                string master = _projekt == null ? "" : (_projekt.OnLoad ?? "");
+                if (master.IndexOf("@@node", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    _master.Ucitaj(_projekt, null);
+                    NapuniGrid();
+                }
+                OtvoriFormu(naredba);
+            }
+        }
+
+        private void OtvoriFormu(string naredba)
+        {
+            if (string.IsNullOrWhiteSpace(naredba) || _projekt == null)
+                return;
+            NgForm forma = null;
+            string trazeno = naredba.Trim();
+            for (int i = 0; i < _projekt.Forme.Count; i++)
+            {
+                if (string.Equals(_projekt.Forme[i].Ime, trazeno, StringComparison.OrdinalIgnoreCase))
+                {
+                    forma = _projekt.Forme[i];
+                    break;
+                }
+            }
+            if (forma == null)
+            {
+                NgDnevnik.Akcija("nema forme " + trazeno);
                 return;
             }
-            string master = _projekt == null ? "" : (_projekt.OnLoad ?? "");
-            if (master.IndexOf("@@node", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                _master.Ucitaj(_projekt, null);
-                NapuniGrid();
+            var dij = new Dijalog();
+            dij.Prikazi(forma, _master.Kontekst, Citaj);
+        }
+
+        private void Grid_SelectionChanged(object sender, EventArgs e)
+        {
+            if (_punim)
                 return;
-            }
-            if (naredba.Length > 0)
-                NgDnevnik.Akcija("otvara formu " + naredba);
+            OsvjeziDetail();
         }
 
         private void NapuniGrid()
         {
+            _punim = true;
             _master.IzvrsiCitanje(_spoj);
             VeziGrid();
+            _punim = false;
+            OsvjeziDetail();
         }
 
         private void IzvrsiSql(string sql)
@@ -212,6 +298,50 @@ namespace Carpo.NetGen.Ui
             DataTable t = Citaj(spremno);
             _grid.DataSource = t;
             _status.Text = t == null ? "Greška SQL-a." : (t.Rows.Count.ToString() + " redova");
+            OsvjeziDetail();
+        }
+
+        private void OsvjeziDetail()
+        {
+            if (_detail.Stanje.Nema || _detail.Stanje.OtvaraFormu)
+            {
+                _detailGrid.DataSource = null;
+                return;
+            }
+            DataRow red = null;
+            DataRowView pogled = _grid.CurrentRow == null ? null : _grid.CurrentRow.DataBoundItem as DataRowView;
+            if (pogled != null)
+                red = pogled.Row;
+            else if (_master.Stanje.Tablica != null && _master.Stanje.Tablica.Rows.Count > 0)
+                red = _master.Stanje.Tablica.Rows[0];
+            string sql = _detail.Slozi(red);
+            if (string.IsNullOrWhiteSpace(sql))
+                return;
+            if (SqlTekst.JeZabranaPisanja(sql))
+            {
+                NgDnevnik.Akcija("nije poslano, zabrana pisanja: " + sql);
+                return;
+            }
+            NgDnevnik.Sql(sql);
+            DataTable t = Citaj(sql);
+            NgColumnGroup def = _projekt == null ? null : _projekt.NadjiGrupu("DETAILCOLUMNS");
+            _detail.PrimijeniTablicu(t, def);
+            _detailGrid.DataSource = t;
+            for (int i = 0; i < _detail.Stanje.Kolone.Count; i++)
+            {
+                GridKolona k = _detail.Stanje.Kolone[i];
+                if (k.Selektor || k.Podatak == "Icon")
+                    continue;
+                if (!_detailGrid.Columns.Contains(k.Podatak))
+                    continue;
+                DataGridViewColumn c = _detailGrid.Columns[k.Podatak];
+                c.Visible = k.Vidljiva;
+                c.HeaderText = k.Natpis ?? k.Podatak;
+                if (k.Sirina > 0)
+                    c.Width = k.Sirina;
+            }
+            if (_detail.Stanje.FokusZadnji && _detailGrid.Rows.Count > 0)
+                _detailGrid.Rows[_detailGrid.Rows.Count - 1].Selected = true;
         }
 
         private void VeziGrid()

@@ -24,7 +24,11 @@ namespace Carpo.NetGen.GridTest
             PisanjeIServer();
             StabloTestovi();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
+            {
                 Spin();
+                SpinDetalj();
+                SpinStabloFill();
+            }
             else
                 Console.WriteLine("PRESKOCENO spin (nema CARPO_SPIN=1)");
             Console.WriteLine("FAIL=" + fail.ToString());
@@ -241,14 +245,14 @@ namespace Carpo.NetGen.GridTest
             dt.Columns.Add("parentid", typeof(string));
             dt.Columns.Add("naziv", typeof(string));
             dt.Columns.Add("vrijednost", typeof(string));
-            dt.Rows.Add("0", "", "Sve", "0");
-            dt.Rows.Add("5", "0", "Dio", "5");
-            dt.Rows.Add("0", "0", "nula", "9");
+            dt.Rows.Add("1", "", "Sve", "1");
+            dt.Rows.Add("5", "1", "Dio", "5");
+            dt.Rows.Add("0", "1", "nula", "9");
             var store = new Stablo();
             store.Ucitaj(ProjektS("TREE", "spTreeKlMasterRoba:KLAS", "SPLITTERDISTANCE", "200"), delegate (string sql) { return dt; });
             T("stablo-splitter-200", store.Stanje.Splitter == 200, store.Stanje.Splitter.ToString());
             T("stablo-store", store.Stanje.Korijen.Count == 1 && store.Stanje.Korijen[0].Natpis == "Sve" && store.Stanje.Korijen[0].Djeca.Count == 1, store.Stanje.Korijen.Count == 0 ? "nema" : store.Stanje.Korijen[0].Djeca.Count.ToString());
-            T("stablo-store-tag", store.Stanje.Korijen[0].Tag == "0:KLAS" && store.Stanje.Korijen[0].Djeca[0].Tag == "5:KLAS" && store.Stanje.Korijen[0].Djeca[0].Oznaka == "5", store.Stanje.Korijen[0].Djeca[0].Tag);
+            T("stablo-store-tag", store.Stanje.Korijen[0].Tag == "1:KLAS" && store.Stanje.Korijen[0].Djeca[0].Tag == "5:KLAS" && store.Stanje.Korijen[0].Djeca[0].Oznaka == "5", store.Stanje.Korijen[0].Djeca[0].Tag);
             T("stablo-store-sql", store.Stanje.SqlPozivi.Count > 0 && store.Stanje.SqlPozivi[0].IndexOf("spTreeKlMasterRoba", StringComparison.Ordinal) >= 0, "");
 
             var prev = new Stablo();
@@ -258,6 +262,63 @@ namespace Carpo.NetGen.GridTest
             var drag = new Stablo();
             drag.Ucitaj(Projekt("TREEDRAGDROP", "delete from x"), null);
             T("stablo-drag-ne-pise", drag.SqlOtpusta() == "", "");
+
+            var prevod = new Stablo();
+            prevod.Jezik = "eng";
+            prevod.Rjecnik = new Dictionary<string, string>();
+            prevod.Rjecnik["Klase"] = "Classes";
+            prevod.Ucitaj(Projekt("TREE", "Klase:FILTER"), null);
+            T("stablo-prevod", prevod.Stanje.Korijen[0].Natpis == "Classes" && prevod.Stanje.Korijen[0].Ikona == 0, prevod.Stanje.Korijen[0].Natpis);
+            prevod.Jezik = "hrv";
+            prevod.Ucitaj(Projekt("TREE", "Klase:FILTER"), null);
+            T("stablo-hrv-ne-prevodi", prevod.Stanje.Korijen[0].Natpis == "Klase", prevod.Stanje.Korijen[0].Natpis);
+
+            var det = new DetailGrid();
+            det.Pripremi(ProjektS("DETAILGRID", "spX @id=@@id, @naziv=@@naziv", "DETCHECKBOXVISIBLE", "FALSE"));
+            var redovi = new DataTable();
+            redovi.Columns.Add("klmasterrobaid", typeof(int));
+            redovi.Columns.Add("Naziv", typeof(string));
+            redovi.Rows.Add(9, "Kruh");
+            redovi.Rows.Add(3, "Mlijeko");
+            string detSql = det.Slozi(redovi.Rows[0]);
+            T("det-id-prvi", det.Stanje.IdMaster == "9", det.Stanje.IdMaster);
+            T("det-zamjena", detSql.IndexOf("@id=9", StringComparison.Ordinal) >= 0 && detSql.IndexOf("@naziv='Kruh'", StringComparison.Ordinal) >= 0, detSql);
+            T("det-checkbox-skriven", !det.Stanje.CheckboxVidljiv, "");
+            string sql2 = det.Slozi(redovi.Rows[1]);
+            T("det-refresh-predlozak", sql2.IndexOf("@id=3", StringComparison.Ordinal) >= 0 && sql2.IndexOf("Mlijeko", StringComparison.Ordinal) >= 0, sql2);
+            var nema = new DetailGrid();
+            nema.Pripremi(Projekt("ONLOAD", "select 1"));
+            T("det-prazan", nema.Stanje.Nema && nema.Slozi(null) == "", "");
+            var dvotocka = new DetailGrid();
+            dvotocka.Pripremi(Projekt("DETAILGRID", ":FORMA"));
+            T("det-dvotocka", dvotocka.Stanje.OtvaraFormu && dvotocka.Slozi(null) == "", "");
+            var vise = new DetailGrid();
+            vise.Pripremi(ProjektS("DETAILGRID", "select 1 where id=@@id", "SQL2", "select 2 where id=@@id"));
+            vise.Slozi(redovi.Rows[0]);
+            T("det-sql2", vise.Stanje.DodatniSql.Count == 1 && vise.Stanje.DodatniSql[0].IndexOf("id=9", StringComparison.Ordinal) >= 0, vise.Stanje.DodatniSql.Count == 0 ? "" : vise.Stanje.DodatniSql[0]);
+
+            var imena = new DataTable();
+            imena.Columns.Add("ParentId", typeof(string));
+            imena.Columns.Add("Id", typeof(string));
+            imena.Columns.Add("Caption", typeof(string));
+            imena.Columns.Add("ValueField", typeof(string));
+            imena.Rows.Add("1", "", "Korijen", "1");
+            imena.Rows.Add("5", "1", "Dijete", "5");
+            imena.Rows.Add("0", "1", "nula", "0");
+            var poImenu = new Stablo();
+            poImenu.Ucitaj(Projekt("TREE", "spTreePoPoziciji:FORM"), delegate (string q) { return imena; });
+            T("stablo-pozicija-ne-ime", poImenu.Stanje.Korijen.Count == 1
+                && poImenu.Stanje.Korijen[0].Oznaka == "1"
+                && poImenu.Stanje.Korijen[0].Natpis == "Korijen"
+                && poImenu.Stanje.Korijen[0].Djeca.Count == 1
+                && poImenu.Stanje.Korijen[0].Djeca[0].Oznaka == "5",
+                poImenu.Stanje.Korijen.Count == 0 ? "prazno" : poImenu.Stanje.Korijen[0].Oznaka);
+
+            int fillPoziva = 0;
+            string fillSql = "";
+            var at = new Stablo();
+            at.Ucitaj(Projekt("TREE", "spTreeX @@nepostoji:FORM"), delegate (string q) { fillPoziva++; fillSql = q; return null; });
+            T("stablo-fill-ne-preskace-atat", fillPoziva == 1 && fillSql.IndexOf("@@nepostoji", StringComparison.Ordinal) >= 0, fillSql);
         }
 
         private static void PisanjeIServer()
@@ -272,6 +333,279 @@ namespace Carpo.NetGen.GridTest
             var g = new MasterGrid();
             g.Ucitaj(Projekt("ONLOAD", "update klmasterroba set oznaka=1"), null);
             T("update-se-ne-salje", g.Stanje.BlokiranoPisanje && g.Stanje.Odluka == "zabrana-pisanja", g.Stanje.Odluka);
+        }
+
+        private static void SpinStabloFill()
+        {
+            string spoj = SpinVeza.Spoj("localhost", "spin");
+            int usporedeno = 0;
+            usporedeno += UsporediStablo(spoj, "spTreeVrstaDok", "POPUNI_FORM", "Statusi");
+            usporedeno += UsporediStablo(spoj, "spBlagajneZakTreeNG @action=0,@operateriid=0", "MJESEC_FORM", "KntBlaZak-0");
+            usporedeno += UsporediStablo(spoj, "spBlagajneZakTreeNG @action=2,@operateriid=0", "MJESEC_FORM0", "KntBlaZak-2");
+            UsporediCombo(spoj);
+            T("spin-stablo-barem-jedno", usporedeno > 0, "usporedjeno=" + usporedeno.ToString());
+        }
+
+        private static int UsporediStablo(string spoj, string sql, string forma, string ime)
+        {
+            DataTable t = FillAdapter(spoj, sql);
+            if (t == null)
+            {
+                T("spin-stablo-" + ime, false, "Fill nije vratio tablicu");
+                return 0;
+            }
+            var imena = new StringBuilder();
+            for (int i = 0; i < t.Columns.Count; i++)
+            {
+                if (i > 0) imena.Append(",");
+                imena.Append(i.ToString()).Append(":").Append(t.Columns[i].ColumnName);
+            }
+            Console.WriteLine("SPIN-STABLO " + ime + " stupci=" + imena + " redovi=" + t.Rows.Count);
+            List<string> ocek = NetGenStablo(t, forma);
+            List<string> dobiveno = StabloIzMotora(sql, forma, t);
+            bool isto = ListeIste(ocek, dobiveno);
+            T("spin-stablo-" + ime, isto, isto ? ("cvorova=" + ocek.Count) : PrvaRazlika(ocek, dobiveno));
+            return t.Rows.Count > 0 && isto ? 1 : 0;
+        }
+
+        private static void UsporediCombo(string spoj)
+        {
+            DataTable combo = FillAdapter(spoj, "exec spNg_combo @action='Drvo_NabPri'");
+            if (combo == null || combo.Rows.Count == 0 || combo.Columns.Count < 1)
+            {
+                T("spin-stablo-combo", false, combo == null ? "nema" : ("redovi=" + combo.Rows.Count));
+                return;
+            }
+            string tekst = Convert.ToString(combo.Rows[0][0]) ?? "";
+            Console.WriteLine("SPIN-STABLO combo stupac0=" + (tekst.Length > 120 ? tekst.Substring(0, 120) : tekst));
+            string[] dijelovi = tekst.Split('#');
+            int n = 0;
+            for (int i = 0; i < dijelovi.Length; i++)
+            {
+                int k = dijelovi[i].IndexOf(':');
+                if (k < 0)
+                    continue;
+                string lijevo = dijelovi[i].Substring(0, k).Trim();
+                if (lijevo.ToLowerInvariant().IndexOf("tree", StringComparison.Ordinal) < 0)
+                    continue;
+                string desno = dijelovi[i].Substring(k + 1).Trim();
+                n += UsporediStablo(spoj, lijevo, desno, "PrijemniList-" + n);
+                if (n > 0)
+                    break;
+            }
+            if (n == 0)
+                T("spin-stablo-combo", false, "nema store segmenta u stupcu 0");
+        }
+
+        private static List<string> StabloIzMotora(string sql, string forma, DataTable t)
+        {
+            var s = new Stablo();
+            s.Ucitaj(Projekt("TREE", sql + ":" + forma), delegate (string q) { return t; });
+            var linije = new List<string>();
+            for (int i = 0; i < s.Stanje.Korijen.Count; i++)
+                Spljosti(s.Stanje.Korijen[i], "", linije);
+            return linije;
+        }
+
+        private static void Spljosti(Cvor c, string roditelj, List<string> linije)
+        {
+            linije.Add(c.Oznaka + "\t" + roditelj + "\t" + c.Natpis + "\t" + c.Tag);
+            for (int i = 0; i < c.Djeca.Count; i++)
+                Spljosti(c.Djeca[i], c.Oznaka, linije);
+        }
+
+        /// <summary>
+        /// Neovisna kopija Form1.DazovaIzStore: samo pozicije 0..3, prvi red, dijete "0" se ne crta.
+        /// Dupli stupac 0 = relacija padne, stablo prazno.
+        /// </summary>
+        private static List<string> NetGenStablo(DataTable t, string forma)
+        {
+            var linije = new List<string>();
+            if (t == null || t.Rows.Count == 0 || t.Columns.Count < 3)
+                return linije;
+            var jednom = new Dictionary<string, bool>(StringComparer.Ordinal);
+            for (int i = 0; i < t.Rows.Count; i++)
+            {
+                string id = Celija(t.Rows[i], 0);
+                if (id.Length == 0)
+                    continue;
+                if (jednom.ContainsKey(id))
+                    return new List<string>();
+                jednom[id] = true;
+            }
+            NetGenCvor(t, t.Rows[0], "", forma, linije, new Dictionary<DataRow, bool>());
+            return linije;
+        }
+
+        private static void NetGenCvor(DataTable t, DataRow red, string roditelj, string forma, List<string> linije, Dictionary<DataRow, bool> vidjeni)
+        {
+            string id = Celija(red, 0);
+            string tag = t.Columns.Count > 3 ? Celija(red, 3) : "";
+            if (tag.IndexOf(':') < 0)
+                tag = tag + ":" + forma;
+            linije.Add(id + "\t" + roditelj + "\t" + Celija(red, 2) + "\t" + tag);
+            for (int i = 0; i < t.Rows.Count; i++)
+            {
+                DataRow dr = t.Rows[i];
+                if (dr == red || vidjeni.ContainsKey(dr))
+                    continue;
+                if (Celija(dr, 1) != id)
+                    continue;
+                if (Celija(dr, 0) == "0")
+                    continue;
+                vidjeni[dr] = true;
+                NetGenCvor(t, dr, id, forma, linije, vidjeni);
+            }
+        }
+
+        private static string Celija(DataRow dr, int i)
+        {
+            if (dr == null || i >= dr.Table.Columns.Count || dr[i] == null || dr[i] == DBNull.Value)
+                return "";
+            return dr[i].ToString().Trim();
+        }
+
+        private static bool ListeIste(List<string> a, List<string> b)
+        {
+            if (a.Count != b.Count)
+                return false;
+            for (int i = 0; i < a.Count; i++)
+            {
+                if (!string.Equals(a[i], b[i], StringComparison.Ordinal))
+                    return false;
+            }
+            return true;
+        }
+
+        private static string PrvaRazlika(List<string> a, List<string> b)
+        {
+            int n = a.Count < b.Count ? a.Count : b.Count;
+            for (int i = 0; i < n; i++)
+            {
+                if (!string.Equals(a[i], b[i], StringComparison.Ordinal))
+                    return "idx " + i + " ocek [" + a[i] + "] dobiveno [" + b[i] + "]";
+            }
+            return "duljina " + a.Count + "/" + b.Count;
+        }
+
+        private static DataTable FillAdapter(string spoj, string sql)
+        {
+            try
+            {
+                var dt = new DataTable();
+                using (var conn = new SqlConnection(spoj))
+                using (var cmd = new SqlCommand(sql, conn))
+                using (var da = new SqlDataAdapter(cmd))
+                {
+                    cmd.CommandTimeout = 60;
+                    conn.Open();
+                    da.Fill(dt);
+                }
+                return dt;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("SPIN-STABLO FILL " + sql + " " + ex.Message);
+                return null;
+            }
+        }
+
+        private static void SpinDetalj()
+        {
+            string korijen = null;
+            var dir = new DirectoryInfo(Environment.CurrentDirectory);
+            while (dir != null && korijen == null)
+            {
+                string a = Path.Combine(dir.FullName, "definitions", "netgen");
+                if (Directory.Exists(a))
+                    korijen = dir.FullName;
+                dir = dir.Parent;
+            }
+            if (korijen == null)
+            {
+                Console.WriteLine("SPIN-DETALJ nema definitions/netgen");
+                return;
+            }
+            string[] kandidati = {
+                Path.Combine(korijen, "definitions", "netgen", "BIOVEGA", "DobUgovori.xml"),
+                Path.Combine(korijen, "definitions", "netgen", "Agronom granule", "Statusi.xml"),
+                Path.Combine(korijen, "definitions", "netgen", "Agronom granule", "KntKompVerizne.xml")
+            };
+            string spoj = SpinVeza.Spoj("localhost", "spin");
+            for (int i = 0; i < kandidati.Length; i++)
+            {
+                string put = kandidati[i];
+                string ime = Path.GetFileName(put);
+                if (!File.Exists(put))
+                {
+                    Console.WriteLine("SPIN-DETALJ " + ime + " nema fajla");
+                    continue;
+                }
+                var r = NetGenXmlReader.Ucitaj(put);
+                if (!r.Uspjeh || r.Projekt == null)
+                {
+                    Console.WriteLine("SPIN-DETALJ " + ime + " XML " + r.Greska);
+                    continue;
+                }
+                var kontekst = new SqlKontekst();
+                kontekst.Node = "0";
+                kontekst.OperaterId = "0";
+                var st = new Stablo();
+                st.Kontekst = kontekst;
+                st.ImeXml = ime;
+                string treeG = "nema";
+                if (!string.IsNullOrWhiteSpace(r.Projekt.Tree))
+                {
+                    st.Ucitaj(r.Projekt, delegate (string sql) { return SpinCitaj(spoj, sql); });
+                    treeG = st.Stanje.Korijen.Count > 0 ? ("cvorova=" + st.Stanje.Korijen.Count) : "prazno";
+                }
+                var g = new MasterGrid();
+                g.Kontekst = kontekst;
+                g.Ucitaj(r.Projekt, null);
+                string masterG = g.Stanje.Odluka;
+                if (g.Stanje.Odluka == "salji")
+                {
+                    g.IzvrsiCitanje(spoj);
+                    masterG = string.IsNullOrEmpty(g.Stanje.SqlGreska)
+                        ? ("redovi=" + (g.Stanje.Tablica == null ? 0 : g.Stanje.Tablica.Rows.Count))
+                        : ("FAIL " + g.Stanje.SqlGreska);
+                }
+                var d = new DetailGrid();
+                d.Kontekst = kontekst;
+                d.Pripremi(r.Projekt);
+                string detG = d.Stanje.Nema ? "nema" : "ima";
+                if (!d.Stanje.Nema && !d.Stanje.OtvaraFormu && g.Stanje.Tablica != null && g.Stanje.Tablica.Rows.Count > 0)
+                {
+                    string sql = d.Slozi(g.Stanje.Tablica.Rows[0]);
+                    DataTable dt = SpinCitaj(spoj, sql);
+                    detG = dt == null ? "FAIL" : ("redovi=" + dt.Rows.Count);
+                }
+                Console.WriteLine("SPIN-DETALJ " + ime + " stablo=" + treeG + " master=" + masterG + " detail=" + detG);
+            }
+        }
+
+        private static DataTable SpinCitaj(string spoj, string sql)
+        {
+            if (string.IsNullOrWhiteSpace(sql) || SqlTekst.JeZabranaPisanja(sql))
+                return null;
+            try
+            {
+                var dt = new DataTable();
+                using (var conn = new SqlConnection(spoj))
+                using (var cmd = new SqlCommand(sql, conn))
+                using (var da = new SqlDataAdapter(cmd))
+                {
+                    cmd.CommandTimeout = 30;
+                    conn.Open();
+                    da.Fill(dt);
+                }
+                return dt;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("SPIN-DETALJ SQL " + ex.Message);
+                return null;
+            }
         }
 
         private static void Spin()

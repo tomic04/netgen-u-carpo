@@ -14,6 +14,7 @@ namespace Carpo.NetGen.Grid
         public string Tag = "";
         public string Node = "";
         public string Naredba = "";
+        public int Ikona;
         public readonly List<Cvor> Djeca = new List<Cvor>();
     }
 
@@ -44,6 +45,8 @@ namespace Carpo.NetGen.Grid
         public StabloStanje Stanje = new StabloStanje();
         public SqlKontekst Kontekst = new SqlKontekst();
         public string ImeXml = "";
+        public string Jezik = "";
+        public Dictionary<string, string> Rjecnik;
 
         public void Ucitaj(NgProject projekt, Func<string, DataTable> citaj)
         {
@@ -97,13 +100,30 @@ namespace Carpo.NetGen.Grid
                 else
                 {
                     var c = new Cvor();
-                    c.Natpis = lijevo;
+                    c.Natpis = Prevedi(lijevo);
+                    c.Ikona = 0;
                     c.Tag = ":" + desno;
                     Raspakiraj(c);
                     Stanje.Korijen.Add(c);
                 }
             }
             Filtri(citaj);
+        }
+
+        public string Prevedi(string tekst)
+        {
+            if (tekst == null)
+                return "";
+            if (string.IsNullOrWhiteSpace(Jezik) || string.Equals(Jezik.Trim(), "hrv", StringComparison.OrdinalIgnoreCase))
+                return tekst;
+            if (Rjecnik != null)
+            {
+                string v;
+                if (Rjecnik.TryGetValue(tekst, out v))
+                    return v;
+            }
+            NgDnevnik.Akcija("prijevod nema riječ: " + tekst);
+            return tekst;
         }
 
         public void Odaberi(Cvor cvor)
@@ -137,12 +157,14 @@ namespace Carpo.NetGen.Grid
             {
                 var godina = new Cvor();
                 godina.Natpis = g.ToString(CultureInfo.InvariantCulture);
+                godina.Ikona = 0;
                 godina.Tag = g.ToString(CultureInfo.InvariantCulture) + "0101#" + g.ToString(CultureInfo.InvariantCulture) + "1231:" + imeForme;
                 Raspakiraj(godina);
                 for (int j = 1; j <= 12; j++)
                 {
                     var mjesec = new Cvor();
                     mjesec.Natpis = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(j);
+                    mjesec.Ikona = 0;
                     string js = j.ToString(CultureInfo.InvariantCulture);
                     string gs = g.ToString(CultureInfo.InvariantCulture);
                     mjesec.Tag = gs + js + "01#" + gs + js + "30:" + imeForme;
@@ -176,10 +198,30 @@ namespace Carpo.NetGen.Grid
                     NgDnevnik.Greska(" TREE PROBLEM : nema tablice");
                 return;
             }
+            if (!IdStupacJedinstven(tablica))
+            {
+                NgDnevnik.Greska(" TREE PROBLEM : stupac 0 nije jedinstven");
+                return;
+            }
             var vidjeni = new Dictionary<DataRow, bool>();
             var root = IzReda(tablica.Rows[0], imeForme);
             DodajDjecu(tablica, tablica.Rows[0], root, imeForme, vidjeni);
             Stanje.Korijen.Add(root);
+        }
+
+        private static bool IdStupacJedinstven(DataTable tablica)
+        {
+            var vidjeni = new Dictionary<string, bool>(StringComparer.Ordinal);
+            for (int i = 0; i < tablica.Rows.Count; i++)
+            {
+                string id = Celija(tablica.Rows[i], 0);
+                if (id.Length == 0)
+                    continue;
+                if (vidjeni.ContainsKey(id))
+                    return false;
+                vidjeni[id] = true;
+            }
+            return true;
         }
 
         private void DodajDjecu(DataTable tablica, DataRow roditelj, Cvor cvor, string imeForme, Dictionary<DataRow, bool> vidjeni)
@@ -206,7 +248,9 @@ namespace Carpo.NetGen.Grid
         {
             var c = new Cvor();
             c.Oznaka = Celija(dr, 0);
-            c.Natpis = Celija(dr, 2);
+            string natpis = Celija(dr, 2);
+            c.Natpis = Stanje.Prevedi ? Prevedi(natpis) : natpis;
+            c.Ikona = 0;
             string t = dr.Table.Columns.Count > 3 ? Celija(dr, 3) : "";
             if (t.IndexOf(':') >= 0)
                 c.Tag = t;
