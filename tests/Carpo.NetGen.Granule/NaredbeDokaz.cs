@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Carpo.NetGen.Komande;
+using Carpo.NetGen.Poziv;
 
 namespace Carpo.NetGen.Granule
 {
@@ -15,6 +16,7 @@ namespace Carpo.NetGen.Granule
             var l = new List<Stavka>();
             l.Add(Click(root));
             l.Add(MsgBox(root));
+            l.Add(Assembly(root));
             return l;
         }
 
@@ -51,6 +53,31 @@ namespace Carpo.NetGen.Granule
             if (dobiveno != ocekivano || dobiveno.Length == 0)
                 return Qa.P(granula, id, opis, izvor, "tekst [" + dobiveno + "]");
             Console.WriteLine("[Z] KOD_Diskete NRD-MSGBOX " + dobiveno);
+            return Qa.Z(granula, id, opis, izvor);
+        }
+
+        private static Stavka Assembly(string root)
+        {
+            const string granula = "MPOdjavaNarNG";
+            const string id = "NRD-ASSEMBLY";
+            const string opis = "Spremi učita ExportToExcelNG i prekine lanac ako sklopa nema";
+            const string izvor = "netgen/Form2.vb:7424-7456";
+            string xml = Path.Combine(root, "definitions", "netgen", "BIOVEGA", "MPOdjavaNarNG.xml");
+            string tekst = Procitaj(xml);
+            string naredba = Izmedu(tekst, "ASSEMBLYLOAD(", ")");
+            if (naredba == null)
+                return Qa.P(granula, id, opis, izvor, "XML nema ASSEMBLYLOAD(");
+            string tip = AssemblyPoziv.TipIz(naredba);
+            string sklop = AssemblyPoziv.SklopIz(tip);
+            if (tip != "ExportToExcelNG.clsExportToExcelNG" || sklop != "ExportToExcelNG")
+                return Qa.P(granula, id, opis, izvor, "tip [" + tip + "] sklop [" + sklop + "]");
+            string veza = AssemblyPoziv.Konekcija("dijalog", "Server=localhost;Database=spin");
+            if (veza != "Driver={SQL Server};Server=localhost;Database=spin")
+                return Qa.P(granula, id, opis, izvor, "veza [" + veza + "]");
+            AssemblyPoziv.Ishod ishod = AssemblyPoziv.Pozovi(naredba, "dijalog", "7", "3", "Server=localhost", "zadnji", "grid", "@a=1");
+            if (!ishod.Prekinuto || ishod.Pozvan || ishod.Argumenti[3] != "@a=1" || ishod.Argumenti[4] != "@a=1")
+                return Qa.P(granula, id, opis, izvor, "prekinuto=" + ishod.Prekinuto + " pozvan=" + ishod.Pozvan);
+            Console.WriteLine("[Z] MPOdjavaNarNG NRD-ASSEMBLY tip=ExportToExcelNG.clsExportToExcelNG sklop=ExportToExcelNG prekinuto=da");
             return Qa.Z(granula, id, opis, izvor);
         }
 
