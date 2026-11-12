@@ -825,6 +825,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `sta-stablo`
 - **PR:** stablo-kljuc
 
+## R101 Na spinu prazan stupac i dvije prazne procedure
+
+- **Element:** objekti koje spin nema, a XML ih zove pri otvaranju
+- **NetGen:** `OznakaKL` čita `klmasterroba.oznaka2`. `Kulture` zove `spKultureNGQuery`. `FakPar` zove `spFakPartneriUvjetiQuery`.
+- **Carpo:** `scripts/spin/stubovi.sql` doda stupac ako ga nema i proceduru samo ako je nema. Tijelo je `SELECT ... WHERE 1=0`, bez upisa. `scripts/spin/Otvori.ps1` na sql-ai otvori master tih granula i `KUPNG`, `Statusi`, `KntBlaZak`. `AOPNovi` i dalje šalje `@id='null'` i smije pasti na konverziji. Jupiter se ne dira.
+- **Posljedica:** stub nije prava poslovna procedura. Popis tijela koja treba korisnik je u `docs/granule/spin-objekti.md`.
+- **Odluka:** privremeno na spinu, dok ne stignu prava tijela.
+- **Test:** korak `Spin stubovi i otvaranje` na sql-ai
+- **PR:** spin-otvaranje
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
