@@ -7,6 +7,8 @@ using System.IO;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Kontrole;
+using Carpo.NetGen.Poziv;
+using Carpo.NetGen.Print;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Xml;
 
@@ -260,6 +262,22 @@ namespace Carpo.NetGen.GridTest
             T("assembly-shell-pet", ok.Argumenata == 5 && ok.ZadnjiSql == "select 1" && ok.ParametriGrida == "@a=1" && !ok.Prekinuto, "");
             T("assembly-prekine", lose.Prekinuto, "");
             T("datetiem-je-datum", NgType.Odredi("datetiem") == NgGrana.Date && NgType.Odredi("CMEditVB6.CurMEdit") == NgGrana.Number, "");
+            T("onloaded-u-loadu", Motora.OnLoadedULoadu() && !Motora.OnLoadedPrijePrikaza(1) && Motora.OnLoadedPrijePrikaza(0), "");
+            string[] dij = Motora.Totalgen("dijalog", "1", "7", "cs", "sql", "grid", "@CarpoForm='a'");
+            string[] sh = Motora.Totalgen("shell", "1", "7", "cs", "sql", "grid", "@CarpoForm='a'");
+            string[] raf = Motora.Totalgen("rafalno", "1", "7", "cs", "sql", "grid", "@CarpoForm='a'");
+            T("totalgen-dijalog", dij[3] == "@CarpoForm='a'" && dij[4] == dij[3], "");
+            T("totalgen-shell", sh[3] == "sql" && sh[4] == "grid" && !Motora.CitaPovrat(), "");
+            T("totalgen-rafalno", raf[4].Length == 0 && raf[3] == "sql", "");
+            T("tilda-router", Motora.Router("ADAPTER_FORM~REFRESHMASTERGRID") == "lanac:ADAPTER_FORM#REFRESHMASTERGRID"
+                && Motora.Router("ASSEMBLYLOAD(x)").StartsWith("jedan:", StringComparison.Ordinal), "");
+            T("assembly-ne-cita-povrat", !Motora.CitaPovrat(), "");
+            T("print-master-isti", IspisMotora.JeMaster("PRINTMASTER") && IspisMotora.JeMaster("PRINTREPXMASTER"), "");
+            T("print-ne-gleda-orijentaciju", !IspisMotora.GledaOrijentaciju(), "");
+            T("repx-prefiks", IspisMotora.Prefiks(true, ":repx/rptX") == ":repx:/rptX" && IspisMotora.Prefiks(false, ":repx/rptX") == ":repx:rptX", "");
+            T("spin-v26", IspisMotora.Verzija() == "v26" && IspisMotora.Fallback() == "rptDevRepx", "");
+            T("vrstadok-nije-forma", IspisMotora.JeVrstaDok(":vrstadokid-mpblagajnagla") && !IspisMotora.JeVrstaDok("FILTERFORM"), "");
+            T("multiselect-prije-ispisa", IspisMotora.BriseTemp("MULTISELECTISPIS_FORM") && !IspisMotora.BriseTemp("ISPIS_FORM"), "");
         }
 
         private static void KomandeTestovi()

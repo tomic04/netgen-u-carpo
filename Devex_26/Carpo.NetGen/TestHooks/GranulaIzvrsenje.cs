@@ -6,6 +6,8 @@ using System.Globalization;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Kontrole;
+using Carpo.NetGen.Poziv;
+using Carpo.NetGen.Print;
 using Carpo.NetGen.Model;
 using Carpo.NetGen.Xml;
 
@@ -189,6 +191,7 @@ namespace Carpo.NetGen.TestHooks
 
             DodajKomande(s);
             DodajKontrole(p, s);
+            DodajPoziv(p, s);
             return new Pogled { Izvedeno = true, Stavke = s };
         }
 
@@ -325,6 +328,39 @@ namespace Carpo.NetGen.TestHooks
                 var pad = Ponasanje.AssemblyShell("id", "operater", "konekcija", "zadnji", "parametri", false, true);
                 s["assemblyload.args"] = poziv.Argumenata == 5 ? "shell-pet" : "";
                 s["assemblyload.greska"] = pad.Prekinuto ? "prekini" : "";
+            }
+        }
+
+        private static void DodajPoziv(NgProject p, Dictionary<string, string> s)
+        {
+            string[] dijalog = Motora.Totalgen("dijalog", "id", "op", "cs", "zadnji", "grid", "@CarpoForm='x'");
+            string[] shell = Motora.Totalgen("shell", "id", "op", "cs", "zadnji", "grid", "@CarpoForm='x'");
+            s["totalgen.dijalog"] = dijalog.Length == 5 && dijalog[3] == dijalog[4] && dijalog[3].IndexOf("CarpoForm", StringComparison.Ordinal) >= 0
+                ? "parametri-dva" : "";
+            s["totalgen.shell"] = shell.Length == 5 && shell[3] == "zadnji" && shell[4] == "grid" && !Motora.CitaPovrat()
+                ? "master-sql" : "";
+            s["spin.printing"] = IspisMotora.Verzija();
+            s["repx.fallback"] = IspisMotora.Fallback();
+            if (p == null || p.Forme == null)
+                return;
+            for (int i = 0; i < p.Forme.Count; i++)
+            {
+                NgForm f = p.Forme[i];
+                string on = f.OnLoad ?? "";
+                if (f.Atributi != null && f.Atributi.Ima("ONLOADED"))
+                    on = f.Atributi.Vrijednost("ONLOADED") ?? on;
+                if (on.IndexOf("clsCarpoKupUra", StringComparison.Ordinal) < 0)
+                    continue;
+                for (int j = 0; j < f.Kontrole.Count; j++)
+                {
+                    if (!string.Equals(f.Kontrole[j].Name, "CarpoForm", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    string def = f.Kontrole[j].Atributi.Vrijednost("DEFAULT") ?? "";
+                    if (def.Length == 0)
+                        continue;
+                    if (!s.ContainsKey("carpoform.kup") || def.IndexOf("KupEdit", StringComparison.Ordinal) >= 0)
+                        s["carpoform.kup"] = def;
+                }
             }
         }
 
