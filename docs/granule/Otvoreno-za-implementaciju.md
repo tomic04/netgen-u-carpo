@@ -1,23 +1,29 @@
 # Otvoreno za implementaciju
 
-Brojke su prema [#66](https://github.com/tomic04/netgen-u-carpo/pull/66)–[#70](https://github.com/tomic04/netgen-u-carpo/pull/70) i CI [bf4b045](https://github.com/tomic04/netgen-u-carpo/commit/bf4b045aa03edc5633e6189b283a0cee8fb2789a). Jupiter QA ne zove.
+Brojke su prema CI implementacije [43269944426](https://github.com/tomic04/netgen-u-carpo/actions/runs/43269944426) (`ef710b9`) i [#74](https://github.com/tomic04/netgen-u-carpo/pull/74). Jupiter QA ne zove. Testovi nisu popušteni.
 
-Od 129 zatvorenih, **128 je pravilo** (XML ili NetGen linija). **1 je spin podatak:** `OKL-58`. Na tom CI-ju test traži `fokus=grid` i prolazi. Kuka na ovoj grani stavlja `grid` samo kad `RowCount > 0` (`Form1.vb` 2059–2072).
+Od 137 zatvorenih, **128 je pravilo** i **9 je spin podatak**. Tih 9 je `OznakaKL` na tom CI-ju: `OKL-25`–`27`, `OKL-40`–`43`, `OKL-58`, `OKL-59`. Upit je vratio 947 redova, stupce `klmasterrobaid, sortkey, Naziv, oznaka, DodatnaOznaka` i tipove `Int32, String, String, String, String`. `Form1.vb` 3882 šalje `STARTUPSTORA`. `Class1.vb` 1124–1126 skriva ime na `ID`. `Class1.vb` 1087–1139 daje int širinu 34 i `##0`. `Class1.vb` 1201–1204 daje stringu 100. `Form1.vb` 5566–5582 uzima `Cells(2)` kad nema stupca `id`. `Form1.vb` 2059–2072 stavlja fokus na grid jer ima redova.
 
 | Element | Ukupno | Zatvoreno | Pravilo | Spin podaci | Otvoreno |
 |---|---:|---:|---:|---:|---:|
-| grid | 34 | 26 | 25 | 1 | 8 |
+| grid | 34 | 34 | 25 | 9 | 0 |
 | stablo | 20 | 19 | 19 | 0 | 1 |
 | combo | 5 | 5 | 5 | 0 | 0 |
 | gumbi/lanac | 38 | 32 | 32 | 0 | 6 |
 | dijalog | 28 | 28 | 28 | 0 | 0 |
 | ispis | 4 | 4 | 4 | 0 | 0 |
 | ostalo | 35 | 15 | 15 | 0 | 20 |
-| **sve** | **164** | **129** | **128** | **1** | **35** |
+| **sve** | **164** | **137** | **128** | **9** | **27** |
 
 [#66](https://github.com/tomic04/netgen-u-carpo/pull/66) zatvara pravilo, ne redove iz baze. `STA-33` je forma iza dvotočke (`Form1.vb` 7186–7187). `STA-35` puni stablo adapterom (`4441–4447`). `BLA-30` prazan tag `:` ide u `NovaGenerickaForma` (`4353–4355`, `7187`). `BLA-31` `SrediSQL` prije `Fill` (`4442`). `BLA-32` četiri korijena: natpis `Blagajne` plus tri store (`4344–4356`). `PL-30` i `PL-31` slijede `7730–7733` i izlaz dok je `TREE` prazan (`4310`). `PL-35` je `REFRESHMASTER` koji nije `REFRESHMASTERGRID` (`4570`).
 
-Ostaje otvoreno: `PL-32`. Ključ `comboStupac0=tree` je upisan tekst, ne stupac 0 rezultata (`Form1.vb` 3342–3344). `OKL-25`–`27` i `OKL-40`–`43`, `OKL-59` nisu zatvoreni: [#67](https://github.com/tomic04/netgen-u-carpo/pull/67) ih mjeri na predanoj tablici u grid testu, ne na otvaranju granule. `MPP-20` ostaje otvoren, [#68](https://github.com/tomic04/netgen-u-carpo/pull/68) je to povukao. `JEZ-57` je pravilo: atribut `PAGEHEADERRIGHT` je `@@tkosmomi`. `SrediSQL` prije ispisa (`6001`) nije izvršen.
+[#74](https://github.com/tomic04/netgen-u-carpo/pull/74) ne zatvara `JEZ-31`. U tablici i dalje piše otvoreno. `Class1.vb` 113–118 preskače samo prazan tekst, tekst s `@` na početku i tekst u kojem je `@@`. Poziv `spJeziciQuery @action=0, @id=''` nema `@@`, pa ga NetGen šalje (`Form1.vb` 3882). Skidanje komentara i zaglavlja `CREATE PROC` prije traženja `insert` je ispravno. Stavka ostaje otvorena dok CI ne pokaže `[Z]` na stvarnom tijelu.
+
+[#72](https://github.com/tomic04/netgen-u-carpo/pull/72) stavlja klijentski XML izvan `definitions/netgen`. `TRZ-01`, `POR-01`, `RFA-00` i `REA-00` ostaju otvoreni. [#71](https://github.com/tomic04/netgen-u-carpo/pull/71) ispravno ne šalje `@@godina` (`Class1.vb` 113). To nije zatvorena stavka.
+
+Ostaje otvoreno: `PL-32` (stupac 0 comboa, `Form1.vb` 3342–3344), `MPP-20` (`Form1.vb` 3914–3921), 11 redova `ssMeni`, `DOS-11`, `JEZ-31`. `scripts/spin/Meni.ps1` i `dospjele.sql` na #74 su testni objekti, ne klijentski red ni tijelo. Ne smiju pozeleniti te stavke.
+
+Uzorak po tipu: samo-grid `OznakaKL` (spin, gore). Šifrarnik `JeziciNG`: `JEZ-56` pravilo, `JEZ-31` otvoren. Manager `KntBlaZak` i `PrijemniList`: čvor je pravilo, `PL-32` nije. Stablo-master `Statusi`: `STA-33` i `STA-35` su pravilo. Rijetke `RIJ-40`–`42` su `[Z]` na istom CI-ju, i dalje pravilo kuke, ne red iz baze.
 
 `PL-25` ostaje zatvoren kao pravilo. Bez `ONLOAD` master ostaje prazan: `strStartupStora` krene kao `""` (`Form1.vb` 3124), `ONLOAD` koji ne postoji ne prepiše ga (`3368`, `On Error Resume Next` od `3065`), a `PokaziUpit` na prazan SQL izađe (`1830`). `SETDEFAULTS` se ipak izvrši prije toga (`3862–3866`, `SetDefolte` šalje SQL na `3958–3962`). Zato trag na ovoj grani ima tekst `SETDEFAULTS`, pa ` || `, pa prazan master. [#66](https://github.com/tomic04/netgen-u-carpo/pull/66) prazni `sqlTrag` kad nema `ONLOAD`. To gasi master, ali briše dokaz da je `SetDefolte` poslan. Test i dalje traži oba dijela.
 
@@ -25,7 +31,7 @@ Grid je detail, kvačica, suma, sort i stupci mastera. Stablo je čvor, lijevi p
 
 Što korisnik donosi s klijenata (SQL koji fali na spinu i 63 XML-a) je u [fali-od-korisnika.md](fali-od-korisnika.md). Jupiter nije pitan, pa nijedan objekt nije zapisan kao odsutan na oba Jupitera. Stavke se tim popisom ne zatvaraju.
 
-Od 35 otvorenih, 20 je ostalo (12 `ssMeni`, 4 XML-a, `JEZ-31`, `DOS-11`, `FAK-11`, `MPP-20`), 8 je shema retka, `PL-32` i šest gumba. Build `bf4b045` pada na 102 `Qa.Mora` jer ova grana nema ključeve iz #66. `PrijemniList` padne i na `#select` u `SETDEFAULTS`: NetGen reže na `#` (`Form1.vb` 3863), kuka ove grane šalje cijeli tekst. To je port, ne izmjena testa.
+Od 27 otvorenih, 20 je ostalo (12 `ssMeni`, 4 XML-a, `JEZ-31`, `DOS-11`, `FAK-11`, `MPP-20`), `PL-32` i šest gumba. Shema `OznakaKL` više nije u tome.
 
 Izvor polaznog izvještaja je CI [#34](https://github.com/tomic04/netgen-u-carpo/pull/34), commit `30236ff`, `SVE ukupno=624 zeleno=460 otvoreno=164 pad=0`.
 
