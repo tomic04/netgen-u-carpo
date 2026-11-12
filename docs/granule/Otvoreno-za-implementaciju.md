@@ -1,27 +1,25 @@
 # Otvoreno za implementaciju
 
-Brojke su prema kuki na [#65](https://github.com/tomic04/netgen-u-carpo/pull/65) `cursor/netgen-spin-otvaranje-3266` (`1f3a401`). Jupiter se ne zove. Spin smije.
+Brojke su prema kuki na [#65](https://github.com/tomic04/netgen-u-carpo/pull/65) `cursor/netgen-spin-otvaranje-3266` (`e630d88`). Jupiter QA ne zove. Spin smije.
 
-[#62](https://github.com/tomic04/netgen-u-carpo/pull/62), [#63](https://github.com/tomic04/netgen-u-carpo/pull/63) i [#64](https://github.com/tomic04/netgen-u-carpo/pull/64) dodaju ključeve. Zatvoreno je samo ono što kuka vrati bez master SQL-a. [#65](https://github.com/tomic04/netgen-u-carpo/pull/65) priprema stubove i skriptu otvaranja. To nije dokaz da je `Statusi`, `KntBlaZak` ili `KUPNG` prošao.
+`87f60db` vraća ključeve i kad master upit padne. Zatvoreno je pravilo iz XML-a ili lanca, ne shema rezultata. Stupci iz reda (`OKL-25`–`27`, `OKL-40`–`43`, `OKL-59`) i klik na čvor (`STA-33`, `STA-35`, `BLA-30`–`32`, `PL-30`–`32`) ostaju otvoreni. `JEZ-57` i dalje traži `@@tkosmomi` u zaglavlju.
 
-Novo zatvoreno, bez master upita: `PL-20`–`PL-24` (nema `ONLOAD`), `PL-33` i `PL-34` (`DETAILCOLUMNS` `Kolicina` 1000/14 = 71), `OPZ-20` (`Eporezna` nije `ASSEMBLYLOAD`), `MAIL-20` i `MAIL-21` (`ONLOAD` je `:FILTERFORM`), `JEZ-56` (`PRINTREPXMASTER`), `KAR-40` (`repx.fallback` je `rptDevRepx`). `MAIL-20`/`MAIL-21` i `KAR-40` dobiju stalni tekst kuke.
+`OKL-58` prima `grid` i `nema`: bez redova fokus nije grid. `PL-25` gleda prazan master iza `SETDEFAULTS`, ne prazan cijeli trag.
 
 | Element | Ukupno | Zatvoreno | Otvoreno |
 |---|---:|---:|---:|
-| grid | 34 | 4 | 30 |
-| stablo | 20 | 3 | 17 |
-| combo | 5 | 0 | 5 |
-| gumbi/lanac | 38 | 18 | 20 |
-| dijalog | 28 | 1 | 27 |
-| ispis | 4 | 2 | 2 |
-| ostalo | 35 | 3 | 32 |
-| **sve** | **164** | **31** | **133** |
+| grid | 34 | 26 | 8 |
+| stablo | 20 | 12 | 8 |
+| combo | 5 | 5 | 0 |
+| gumbi/lanac | 38 | 31 | 7 |
+| dijalog | 28 | 28 | 0 |
+| ispis | 4 | 3 | 1 |
+| ostalo | 35 | 15 | 20 |
+| **sve** | **164** | **120** | **44** |
 
 Grid je detail, kvačica, suma, sort i stupci mastera. Stablo je čvor, lijevi panel i `onlytree`. Combo je odjeljak 13. Gumbi/lanac su naredba, `OK`/`CLOSE`, `NEXTFORM`, `FILLEXPLORER` i `FOREACH`. Dijalog je datum, raspored, prazan broj, tražilica i kontrole na formi. Ispis je `PRINTREPX`. Ostalo je izbornik, `totalgen`, XML kojeg nema i `ssMeni`.
 
-Ranije zatvorenih 19 ostaje. Novih 12 diže zbroj na 31. `Statusi` i `KntBlaZak` imaju ključ (`treeStupci`, `detailNaSelekciji`, `detSelector`, `detClear`), ali `ONLOAD` je procedura. Dok spin ne vrati shemu, stavka ostaje otvorena. `BLA-35` širina iz `WIDTH` ne prepisuje stupac koji je SQL već složio.
-
-Stablo, dijalog, combo, ispis i ostalo koji se mogu pitati na spinu ili bez baze sada su pad. Nisu pad: 12 redova `ssMeni` kojih nema i 4 XML-a kojih nema u repou. Te datoteke i retke se ne izmišljaju. `JEZ-31`, `DOS-11` i `FAK-11` i dalje čekaju objekt na spinu.
+Od 44 otvorena, 20 je ostalo: 12 redova `ssMeni`, 4 XML-a kojih nema, `JEZ-31`, `DOS-11`, `FAK-11` i `MPP-20`. Datoteke i retke izbornika se ne izmišljaju. `WIDTH` sada prepisuje širinu iz SQL-a, pa je `BLA-35` 179 i bez retka.
 
 Izvor polaznog izvještaja je CI [#34](https://github.com/tomic04/netgen-u-carpo/pull/34), commit `30236ff`, `SVE ukupno=624 zeleno=460 otvoreno=164 pad=0`.
 
