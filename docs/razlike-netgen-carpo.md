@@ -825,6 +825,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `sta-stablo`
 - **PR:** stablo-kljuc
 
+## R102 Definicije s Jupitera, izvršenje samo na spinu
+
+- **Element:** stupac i procedure koje spin nema
+- **NetGen:** XML zove `klmasterroba.oznaka2`, `spKultureNGQuery`, `spFakPartneriUvjetiQuery`, `spKUPPrometQueryN`, `spStatusiQuery`, `spBLZakljucakQueryNG`.
+- **Carpo:** s jupiter2019 i jupiter2022 čita se samo `sys.columns` i `sys.sql_modules`. Procedure se tamo ne pokreću i retci tablica se ne čitaju. Tijelo se kreira na spinu. Ako tekst ima INSERT/UPDATE/DELETE/MERGE, u izvještaju piše `pise`. `AOPNovi` i dalje šalje `@id='null'`.
+- **Posljedica:** izvor (server i baza) je u `artifacts/spin/izvori.md` nakon sql-ai. Prazan stub ostaje samo ako definicije nema ni u jednoj poznatoj bazi.
+- **Odluka:** spin je testni. Jupiter ostaje samo za definicije.
+- **Test:** korak `Definicije s Jupitera na spin i otvaranje`
+- **PR:** spin-otvaranje
+
 ## R101 Na spinu prazan stupac i dvije prazne procedure
 
 - **Element:** objekti koje spin nema, a XML ih zove pri otvaranju

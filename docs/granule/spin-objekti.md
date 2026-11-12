@@ -1,6 +1,12 @@
 # Objekti na spinu
 
-Stubovi u `scripts/spin/stubovi.sql` samo otvaraju granulu. Ne pišu. Pravo tijelo treba doći od korisnika. Jupiter se ne dira.
+`scripts/spin/Prenesi.ps1` na sql-ai čita definicije s jupiter2019 i jupiter2022. Samo `sys.columns` i `sys.sql_modules`. Procedure se tamo ne pokreću i retci tablica se ne čitaju. Tijelo se kreira na spinu. Ako tekst procedure ima INSERT, UPDATE, DELETE ili MERGE, izvor je označen s `pise`.
+
+Redoslijed baza: Biovega, CentarTehnike, Setcor, Enna, Ireks (jupiter2019), zatim Panissimo, Tusak, CentarTehnike, Setcor (jupiter2022).
+
+Nakon runa izvor je u `artifacts/spin/izvori.md`, a otvaranje u `artifacts/spin/otvaranje.md`.
+
+Prazan stub iz `stubovi.sql` ostaje samo ako definicije nema ni u jednoj od tih baza.
 
 ## Već nadomješteno praznim objektom
 
