@@ -35,6 +35,7 @@ Po stavci, [#74](https://github.com/tomic04/netgen-u-carpo/pull/74) `af3816f`:
 - `MPK-30` potvrđen. `FILTERFORM` ima `FILLEXPLORER=TRUE` i `ONSUBMIT` `spMPPoravnajKP`. `Form1.vb` 5445–5452 zamijeni master tim SQL-om. Test nije konstanta: kriva klasa ili procedura bez tog imena pada. Sažetak 164 / 139 / 25.
 - `MPK-31` potvrđen. `DODAJIZNOS` ima prazan `FILLEXPLORER`. To nije grana `true`. `Form1.vb` 5509–5519 izvrši `ONSUBMIT` pa ponovi zadnji master. Gumb je `Dodaj:DODAJIZNOS`. Sažetak 164 / 140 / 24.
 - `STA-34` potvrđen. `POPUNI_FORM` nema kontrola pa se dijalog ne otvara (`Form1.vb` 5369–5370, `OKClick=True`). `FILLEXPLORER=TRUE` stavi master na `spStatusiQuery @action=0, @node=@@node` (`5445–5452`). Test traži taj tekst, nije konstanta. Sažetak 164 / 141 / 23.
+- `PL-32` odbijen. Run [43284226475](https://github.com/tomic04/netgen-u-carpo/actions/runs/43284226475) (`d4d658a`) stao je u `sta12.ps1` prije testova. `pl32.sql` je prošao, `Cetvrti.Pl32` se nije izvršio, nema `[Z]`. Stupac 0 iz `spNg_combo` nije prošao kroz `IzTeksta` (`Form1.vb` 3342–3344, 4344). Ostaje otvoren. Sažetak 164 / 141 / 23.
 
 [#72](https://github.com/tomic04/netgen-u-carpo/pull/72) stavlja klijentski XML izvan `definitions/netgen`. `TRZ-01`, `POR-01`, `RFA-00` i `REA-00` ostaju otvoreni. [#71](https://github.com/tomic04/netgen-u-carpo/pull/71) ispravno ne šalje `@@godina` (`Class1.vb` 113). To nije zatvorena stavka.
 
