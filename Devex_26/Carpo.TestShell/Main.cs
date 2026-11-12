@@ -440,9 +440,6 @@ namespace Carpo.TestShell
             try
             {
                 gumb.PerformClick();
-                int rok = Environment.TickCount + 20000;
-                while (!odustao && Environment.TickCount < rok)
-                    Application.DoEvents();
             }
             catch (Exception ex)
             {

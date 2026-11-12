@@ -648,11 +648,6 @@ namespace Carpo.NetGen.Ui
             var gumb = sender as SimpleButton;
             string naredba = gumb == null || gumb.Tag == null ? "" : gumb.Tag.ToString();
             NgDnevnik.Akcija("gumb " + (gumb == null ? "" : gumb.Text) + " " + naredba);
-            if (IsHandleCreated)
-            {
-                BeginInvoke(new Action(delegate () { IzvrsiLanac(naredba); }));
-                return;
-            }
             IzvrsiLanac(naredba);
         }
 
