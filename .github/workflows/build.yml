@@ -1,0 +1,165 @@
+# Build Carpo.sln na self-hosted Windows runneru sql-ai.
+# DLL-ovi i DevExpress se ne committaju. SharedAssembliesDir pokazuje na
+# kopiju u workspaceu, slozenu iz Jupiter Client mape na runneru.
+# Pojedinacni pad NetGen XML-a u smoke testu ne rusi job. Invarijanta parsera rusi.
+
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: [self-hosted, sql-ai]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Priprema referenci i build
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $msb = "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe"
+          if (-not (Test-Path $msb)) {
+            throw "Nema MSBuild: $msb"
+          }
+
+          $jupiter = "C:\Users\ntomic\Desktop\Jupiter Client\Programs\SharedAssemblies"
+          if (-not (Test-Path $jupiter)) {
+            throw "Nema Jupiter SharedAssemblies: $jupiter"
+          }
+
+          $dxRoot = "C:\Program Files\DevExpress 26.1\Components"
+          $dx = Join-Path $dxRoot "Bin\Framework"
+          $probe = Join-Path $dx "DevExpress.Data.v26.1.dll"
+          if (-not (Test-Path $probe)) {
+            $found = Get-ChildItem -Path $dxRoot -Filter "DevExpress.Data.v26.1.dll" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $found) {
+              throw "Nema DevExpress.Data.v26.1.dll pod $dxRoot. Instaliran DevExpress 26.1 (build 26.1.3.0, PublicKeyToken b88d1754d700e49a) treba biti na tom stroju. NuGet feed sam ne spaja reference bez HintPath."
+            }
+            $dx = $found.DirectoryName
+          }
+          Write-Host "DevExpress bin: $dx"
+
+          $refs = Join-Path $env:GITHUB_WORKSPACE "artifacts\refs"
+          $out = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin"
+          New-Item -ItemType Directory -Force -Path (Join-Path $refs "Spin") | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $refs "Microsoft") | Out-Null
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+
+          $treba = @(
+            "JupiterTranslator10.dll",
+            "JupiterLogger.dll",
+            "RibbonBase.v26.dll",
+            "Spin.Printing.v26.dll",
+            "SpinDMSUtil.dll",
+            "Microsoft.Office.Interop.Outlook.dll",
+            "Dimenzije.dll"
+          )
+          $nema = @()
+          foreach ($n in $treba) {
+            $src = Join-Path $jupiter "Spin\$n"
+            if (Test-Path $src) {
+              Copy-Item $src (Join-Path $refs "Spin\$n") -Force
+            } else {
+              $nema += $n
+            }
+          }
+
+          $adodb = Join-Path $jupiter "Microsoft\adodb.dll"
+          $adodbVs = "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\PublicAssemblies\adodb.dll"
+          if (Test-Path $adodb) {
+            Copy-Item $adodb (Join-Path $refs "Microsoft\adodb.dll") -Force
+          } elseif (Test-Path $adodbVs) {
+            Copy-Item $adodbVs (Join-Path $refs "Microsoft\adodb.dll") -Force
+            Write-Host "adodb.dll uzet iz VS PublicAssemblies (nema ga u SharedAssemblies\Microsoft)."
+          } else {
+            $nema += "adodb.dll"
+          }
+
+          if ($nema.Count -gt 0) {
+            throw ("Na runneru fale DLL-ovi (ne committaju se, trebaju u Jupiter Client\Programs\SharedAssemblies): " + ($nema -join ", "))
+          }
+
+          # Postojeci Carpo.*.dll su samo pocetna sjemenka. Svaki projekt poslije
+          # prepisuje svoj izlaz u refs\Spin, jer HintPath ne gleda OutputPath.
+          $sjeme = @(
+            "Carpo.Structure.dll", "Carpo.Common.dll", "Carpo.Data.dll", "Carpo.Core.dll",
+            "Carpo.UI.dll", "Carpo.dll", "Carpo.XmlGen.dll"
+          )
+          foreach ($n in $sjeme) {
+            $src = Join-Path $jupiter "Spin\$n"
+            if (Test-Path $src) {
+              Copy-Item $src (Join-Path $refs "Spin\$n") -Force
+            }
+          }
+
+          if (-not $out.EndsWith("\")) { $out = $out + "\" }
+          $pShared = "/p:SharedAssembliesDir=$refs"
+          $pOut = "/p:OutputPath=$out"
+          $pDx = "/p:DevExpressBinDir=$dx"
+
+          # Redoslijed je lanac HintPatha (dokument 07/09), ne jedan msbuild na sln
+          # u paraleli: inace Common trazi Structure.dll prije nego je izvor izgraden.
+          $projekti = @(
+            "Devex_26\Carpo.Structure\Carpo.Structure.csproj",
+            "Devex_26\Carpo.Common\Carpo.Common.csproj",
+            "Devex_26\Carpo.Data\Carpo.Data.csproj",
+            "Devex_26\Carpo.Core\Carpo.Core.csproj",
+            "Devex_26\Carpo.UI\Carpo.UI.csproj",
+            "Devex_26\Carpo.Gen\Carpo.csproj",
+            "Devex_26\Carpo.XmlGen\Carpo.XmlGen.csproj",
+            "Devex_26\Carpo.CMS\Carpo.CMS.csproj",
+            "Devex_26\Carpo.NetGen\Carpo.NetGen.csproj",
+            "Devex_26\Carpo.NetGen.Corpus\Carpo.NetGen.Corpus.csproj",
+            "Devex_26\Carpo.Lite\Carpo.Lite.csproj",
+            "Devex_26\Carpo.Specific\Carpo.Specific.csproj",
+            "Devex_26\Carpo.Designer\Carpo.Designer.csproj",
+            "Devex_26\Carpo.TestShell\Carpo.TestShell.csproj"
+          )
+
+          foreach ($p in $projekti) {
+            Write-Host "=== $p ==="
+            & $msb (Join-Path $env:GITHUB_WORKSPACE $p) /t:Build /m:1 /nologo /v:minimal /p:Configuration=Debug /p:Platform=AnyCPU $pShared $pOut $pDx
+            if ($LASTEXITCODE -ne 0) {
+              throw "Build pao: $p"
+            }
+            Copy-Item ($out + "*.dll") (Join-Path $refs "Spin") -Force
+          }
+
+          Write-Host "Build gotov: $out"
+
+      - name: Smoke NetGen XML
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin"
+          $exe = Join-Path $out "Carpo.NetGen.Corpus.exe"
+          if (-not (Test-Path $exe)) { throw "Nema $exe" }
+          $smoke = Join-Path $env:GITHUB_WORKSPACE "artifacts\smoke"
+          New-Item -ItemType Directory -Force -Path $smoke | Out-Null
+          & $exe `
+            (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") `
+            (Join-Path $env:GITHUB_WORKSPACE "definitions\Prepisane_granule\Netgen") `
+            --izvjestaj (Join-Path $smoke "izvjestaj.txt") `
+            --tsv (Join-Path $smoke "korpus.tsv")
+          if ($LASTEXITCODE -ne 0) {
+            throw "Smoke invarijante parsera nisu prosle (OznakaKL, JeziciNG, HIGHT, TYPE, UTF-16). Pad pojedinog drugog XML-a je u FAILED_LIST i sam ne ruši run."
+          }
+
+      - name: Artifact TestShell, NetGen i smoke
+        uses: actions/upload-artifact@v4
+        with:
+          name: carpo-m0
+          if-no-files-found: error
+          path: |
+            artifacts/bin/Carpo.NetGen.dll
+            artifacts/bin/Carpo.NetGen.pdb
+            artifacts/bin/Carpo.NetGen.Corpus.exe
+            artifacts/bin/Carpo.NetGen.Corpus.pdb
+            artifacts/bin/Carpo.TestShell.exe
+            artifacts/bin/Carpo.TestShell.pdb
+            artifacts/smoke/izvjestaj.txt
+            artifacts/smoke/korpus.tsv

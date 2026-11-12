@@ -119,7 +119,7 @@ Tipfeleri koje grana ne uzme (rijetko, ali postoje u produkcijskim fajlovima):
 | `g_rid` | 4 | 4 | nema `grid` |
 | `b1utton` | 3 | 1 | nema `button` |
 | `buttton` | 2 | 2 | nema `button` (`butto` + `n` višak t) |
-| `datetiem` | 5 | 5 | nema `date` |
+| `datetiem` | 5 | 5 | sadrži `date` (počinje s njim) — **nastane datum**. Ranija rečenica „nema date“ ne drži |
 | `buttonnevrijedi` | 2 | 1 | sadrži `button` — **nastane gumb**, ime je komentar autora |
 | `cbex3.comboboxex3` | 1 | 1 | sadrži `combo` — nastane combo |
 | `tmedit2vb6.textmedit2` | 2 | 2 | sadrži `text` — nastane text |
@@ -389,7 +389,7 @@ Prvi podstring u `Form2.vb` ~1256–2737. Posljedice koje korpus stvarno dira:
 | `b_utton`, `bxutton`, `b1utton`, `buttton` | 15+11+3+2 | **ništa** (nema podstring `button`) |
 | `t1ext`, `tekst` | 14+2 | ništa |
 | `g_rid` | 4 | ništa |
-| `datetiem` | 5 | ništa |
+| `datetiem` | 5 | datum, jer string počinje s `date` |
 | `picture` | 2 | ništa (`picturebox` se traži cijeli) |
 | `int` | 3 | ništa |
 | prazan `TYPE` | 1 | ništa |

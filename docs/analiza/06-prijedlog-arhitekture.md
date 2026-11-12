@@ -1,16 +1,52 @@
 # 06 — Prijedlog arhitekture `Carpo.NetGen`
 
-**Iteracija 3.** Hibrid (opcija C) ostaje. Projekt se zove `Carpo.NetGen`, namespace `Carpo`, i ulazi u `Carpo.sln`. Dva načina na koja Jupiter dođe do njega opisana su odmah ispod. Ispis je `Spin.Printing` v26 i `rptDevRepx`. `FOREACH*` na podlozi se ne piše (dokaz u dokumentu 10). `yearmonth` je 2005–2009, kopija. Faze su u dokumentu 08.
+**Iteracija 3, dopuna nakon čitanja `spin.dbo.ssMeni`.** Hibrid (opcija C) ostaje. Projekt se zove `Carpo.NetGen`, namespace i klasa `Carpo.NetGen.Loader`, i ulazi u `Carpo.sln`. Ranija pretpostavka da je klasa `Carpo.Loader` (namespace `Carpo`) više ne vrijedi: redak izbornika nosi puni `asm:` zapis, pa ime mora biti ono koje Jupiter iz tog zapisa instancira. Ispis je `Spin.Printing` v26 i `rptDevRepx`. `FOREACH*` na podlozi se ne piše (dokaz u dokumentu 10). `yearmonth` je 2005–2009, kopija. Faze su u dokumentu 08.
 
-Novi projekt je class library u `Carpo.sln`, .NET Framework 4.8, namespace `Carpo`, bez reference na Janus. Parser i komande ne žive u `Carpo.UI`. TestShell (`Main.cs`) smije se mijenjati.
+Novi projekt je class library u `Carpo.sln`, .NET Framework 4.8, bez reference na Janus. Parser i komande ne žive u `Carpo.UI`. TestShell (`Main.cs`) smije se mijenjati.
+
+## Što piše u `ssMeni` (samo čitanje, baza `spin` na `sql-ai`)
+
+Tablica `dbo.ssMeni`, 830 redova. Kolone: `MeniID`, `AplikacijeID`, `Nivo`, `Opis`, `Tag`, `Parametar` varchar(80), `Ikona`, `SideOn`, `Hint`, `Ikona8`, `Parent`, `MobParametar`, `WebApi`. Baza se ovim dokumentom ne mijenja.
+
+Jupiter pokreće granulu preko `Parametar`. Oblik s prefiksom `asm:` je `asm:<Assembly>.<Klasa>:<putanja xml>`. Primjeri iz tablice:
+
+- `asm:NetGenDLL.loader:PrijemniList.xml`
+- `asm:NetGenDll.loader:MER\ManagerObaveza.xml` (podfolder je dio putanje, ne smije se odrezati na ime fajla)
+- `asm:Carpo.Start:ManagerRobe.xml`
+
+Broj redova po prefiksu (usporedba bez obzira na velika/mala slova):
+
+| Prefiks | Redova | Napomena |
+|---|---|---|
+| `carpo.start` | 252 | Carpo, klasa `Start` |
+| `netgendll.loader` | 132 | 119 različitih XML-ova. Podloga, `Loader` |
+| `izvgen8.clsizv` | 32 | nije NetGen |
+| `crossgen.frmmain` | 29 | nije NetGen |
+| `netgendll.frm` | 9 | druga ulazna klasa NetGena, `frm`, ne `loader` |
+| `dmsmanagerv1.start` | 2 | nije NetGen |
+| `netgendx.form1` | 1 | nije ovaj port |
+| bez `asm:` | 37 | oblik `TotalGen.clsTotal:X.xml` |
+
+Svi današnji `asm:` prefiksi imaju točno jednu točku između assemblyja i klase. `Carpo.Start` u stvarnom kodu je klasa `Start` u namespaceu `Carpo.Gen`, assembly `Carpo` (`Carpo.Gen/Start.cs`). Zato je razumno čitanje: host uzme zadnju točku prije dvotočke, lijevo je ime assemblyja, desno je ime klase (ne puni CLR naziv), i traži je bez obzira na velika/mala slova. To čitanje nije vidljivo u ovom repou (izvornik Jupitera nije tu). Ako host ipak cijepa na prvoj točki, `Carpo.NetGen.Loader` bi tražio assembly `Carpo` i klasu `NetGen.Loader`, što ne bi radilo. To se vidi tek na prvom stvarnom pozivu iz Jupitera, ne u M0. Ako padne, assembly se preimenuje u jednu riječ i `Parametar` prati; parser se ne dira.
+
+`Parametar` je varchar(80). Prefiks `asm:Carpo.NetGen.Loader:` ima 24 znaka, `asm:NetGenDLL.loader:` ima 21. Tri znaka razlike. Prije prebacivanja granule treba provjeriti da novi zapis stane u 80. Ovaj posao tu provjeru ne radi i bazu ne ažurira.
+
+Prebacivanje jedne granule na novi interpreter je promjena `Parametar` u `asm:Carpo.NetGen.Loader:<isti xml>` (ista relativna putanja, uključujući podfolder). Devet redova s `frm` ide na `asm:Carpo.NetGen.frm:<isti xml>`.
 
 ## Dva ulaza iz Jupitera
 
-Izvornik Jupitera nije u repou. Iz komentara u `Loader.vb` (167) Jupiter 10 diže NetGen preko `Assembly.Load`, ne preko projektne reference. Redak izbornika u bazi klijenta veže granulu na assembly `NetGenDLL`. Točno ime stupca nije u ovom repou (otvoreno pitanje u sažetku). Dok se to ne vidi, plan računa da redak nosi bar ime assemblyja, a klasa je `Loader` s metodom `Run8` jer je to jedini javni ugovor.
+Iz komentara u `Loader.vb` (167) Jupiter 10 diže NetGen preko `Assembly.Load`, ne preko projektne reference. Stupac je `ssMeni.Parametar`, vidi odjeljak iznad.
 
-**Način A — test, granula po granula.** Korisnik u Jupiteru/bazi na jednoj granuli promijeni poziv s `NetGenDLL` na `Carpo.NetGen`. Ostale granule i dalje učitavaju stari DLL. Klasa koju Jupiter treba naći: `Carpo.Loader` (namespace `Carpo`), ista polja i `Run8` kao `netgen/Loader.vb`. Unutra se ne kopira VB; zove se implementacija u `Carpo.NetGen`. TestShell ne ide preko tog assembly imena: `Main.cs` vidi korijen `<PROJECT>` i zove istu klasu izravno, s `TestXmlPath` i `pnlShell.Handle`.
+M0 izlaže obje klase, s istim poljima kao VB, da ih `asm:` može naći:
 
-**Način B — kasnije, drop-in.** Kad A radi na dovoljno granula, isporuči se tanki assembly čije je ime i dalje `NetGenDLL`, klasa i dalje `NetGenDLL.Loader`, `Run8` samo proslijedi na `Carpo.Loader`. Stavi se u `SharedAssemblies` umjesto starog `NetGenDLL.dll`. Redovi u bazama klijenata se ne mijenjaju. Stari VB se više ne izvršava. Shim nema vlastitu logiku osim delegiranja, da se bugovi ne popravljaju na dva mjesta.
+- `Carpo.NetGen.Loader` — kao `netgen/Loader.vb`. Polja `moduleId`, `strNGParams`, `mainHandle`, `Ikona`, `Koler`, `WCaption`, `hWnd`. `Run8` vraća null. `ShellResize(w, h)` postoji. AppDomain ostaje ugašen.
+- `Carpo.NetGen.frm` — kao `netgen/frm.vb`, ime klase malim slovom kao u parametru. Polja `moduleId`, `mainHandle`, `WCaption`, `hWnd`, `Ikona`, `Koler`, `ulazniID`, `ulaznaForma`. Nema `strNGParams` i nema `ShellResize`. Živi poziv je `Run8` (`New Form2` u VB-u, dijalog). Stari `Run` u VB-u ne radi `New`; potpis i dalje postoji. `ulazniID` prepisuje `ID`, `ulaznaForma` prepisuje ime forme (`Form2.vb` 489 i 503). M0 to samo zapamti, dijalog ne otvara.
+
+`moduleId` ostaje relativna putanja s podfolderom. Disk je `remoteDllPath + "\SharedDLLs\xml\" + moduleId`. TestShell je iznimka: punu putanju daje kroz `TestXmlPath`, a `moduleId` je ime fajla, jer dijalog Postavke ne šalje Jupiterov `remoteDllPath`.
+
+**Način A — test, granula po granula.** U `ssMeni.Parametar` se na jednoj granuli zamijeni `NetGenDLL.loader` s `Carpo.NetGen.Loader` (odnosno `frm` s `Carpo.NetGen.frm`). Ostale granule i dalje učitavaju stari DLL. Unutra se ne kopira VB. TestShell ne ide preko `asm:` zapisa: `Main.cs` vidi korijen `<PROJECT>` i zove `Carpo.NetGen.Loader` izravno.
+
+**Način B — kasnije, drop-in.** Kad A radi na dovoljno granula, isporuči se tanki assembly čije je ime i dalje `NetGenDLL`, klase i dalje `Loader` i `frm`, a `Run8` samo proslijedi na `Carpo.NetGen`. Stavi se u `SharedAssemblies` umjesto starog `NetGenDLL.dll`. Redovi u bazama klijenata se ne mijenjaju. Shim nema vlastitu logiku osim delegiranja.
 
 Prelaz: A dok se uspoređuje ponašanje na `sql-ai`. B tek kad korisnik kaže da je skup granula dovoljan. A i B dijele istu implementaciju; razlika je samo ime assemblyja koji Jupiter učita.
 

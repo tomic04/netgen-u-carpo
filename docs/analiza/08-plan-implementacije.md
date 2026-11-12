@@ -1,6 +1,6 @@
 # 08 — Plan implementacije
 
-Ovo je plan, ne kod. Projekt `Carpo.NetGen` (namespace `Carpo`) se još ne otvara; analiza je zrela za M0 čim stignu DLL-ovi iz dokumenta 09. Faze slijede odluke do iteracije 3: dva Jupiter ulaza (dokument 06), TestShell smije se mijenjati, SQL kao tekst, tipfeleri, `TotalGenMultiSelectTemp`, DMS, `ASSEMBLYLOAD`, fiskalizacija, `yearmonth` 2005–2009, `FOREACH*` na podlozi se ne piše, ispis je v26 + `rptDevRepx`. Testna baza je samo `sql-ai` / `spin`. `jupiter2022` se ne koristi.
+Ovo je plan. M0 (parser, oba Jupiter ulaza, TestShell grana, build) je otvoren u `Devex_26/Carpo.NetGen`. Faze slijede odluke do iteracije 3 i dopunu iz `ssMeni` (dokument 06): dva ulaza `Loader` i `frm`, TestShell smije se mijenjati, SQL kao tekst, tipfeleri, `TotalGenMultiSelectTemp`, DMS, `ASSEMBLYLOAD`, fiskalizacija, `yearmonth` 2005–2009, `FOREACH*` na podlozi se ne piše, ispis je v26 + `rptDevRepx`. Testna baza je samo `sql-ai` / `spin`. `jupiter2022` se ne koristi. Baza se ne mijenja u M0.
 
 Svaka faza ima kriterij prihvaćanja koji se može pročitati bez „izgleda u redu“. Dok nema DLL-ova (dokument 09), radi se samo ono što ne traži prevodenje: zlatni fajlovi i opisi. Čim TestShell prođe build, kreće M0 u C#.
 
@@ -8,14 +8,25 @@ Svaka faza ima kriterij prihvaćanja koji se može pročitati bez „izgleda u r
 
 ### Jupiter
 
-Klasa (ime assemblyja je pitanje 1 u sažetku) mora imati:
+`ssMeni.Parametar` (varchar(80), 830 redova na `spin`, samo čitanje) je `asm:<Assembly>.<Klasa>:<putanja xml>`. Podfolder u putanji ostaje (`MER\ManagerObaveza.xml`). Brojke i rizik jedne točke u prefiksu su u dokumentu 06. Prebacivanje granule je izmjena tog stupca, ne izmjena XML-a. M0 bazu ne dira.
+
+Dvije klase, obje u assemblyju `Carpo.NetGen`:
+
+**`Carpo.NetGen.Loader`** (132 reda `netgendll.loader`). Kao `Loader.vb`:
 
 - polja `moduleId`, `strNGParams`, `mainHandle`, `Ikona`, `Koler`, `WCaption`, `hWnd`
 - `Run8(server, database, userId, password, operater, clientHandle, top, left, remoteDllPath)`
 - `ShellResize(w, h)` kao `Loader.vb` 22–26
-- `Run8` vraća `Nothing` i puni `hWnd`/`WCaption`, kao živi `Loader.Run8` (`Loader.vb` 160–195), ne stari `Run` koji je vraćao objekt
+- `Run8` vraća `Nothing`. `WCaption` se puni iz `<CAPTION>` (i `v[verzija]` ako `VERSION` postoji, `Form1.vb` 3522–3528). `hWnd` ostaje 0 dok M1 ne otvori prozor
 
-Unutra: `New` forme u istom AppDomainu (AppDomain ostaje ugašen, komentar 22.04.2024). `strNGParams` ide u isti router kao klik gumba (`NovaGenerickaForma`).
+**`Carpo.NetGen.frm`** (9 redova `netgendll.frm`). Kao `frm.vb`, dijalog, ne podloga:
+
+- polja `moduleId`, `mainHandle`, `WCaption`, `hWnd`, `Ikona`, `Koler`, `ulazniID`, `ulaznaForma`
+- nema `strNGParams` i nema `ShellResize`
+- `Run` i `Run8` s istim potpisom. Živi je `Run8` (`New Form2`). Stari `Run` u VB-u ne instancira formu; potpis ostaje da host ne padne na missing method
+- `ulazniID` i `ulaznaForma` se u M0 samo čuvaju (`Form2.vb` 489, 503)
+
+Unutra: forma u istom AppDomainu (AppDomain ostaje ugašen, komentar 22.04.2024). `strNGParams` ide u isti router kao klik gumba (`NovaGenerickaForma`), tek u M1. DMS i tablica `netgenxml` nisu M0: ako XML nije na disku, M0 javi istu `XML LOAD ERROR` poruku i ne ide u bazu.
 
 ### TestShell
 
@@ -41,13 +52,17 @@ Prihvaćanje:
 - `OznakaKL.xml`: jedna forma `FRMEDIT`, kontrola `oznaka2` tipa text, `ONSUBMIT` počinje s `update`
 - `JeziciNG.xml`: `CLEARCOLUMS` se pročita (kod ga traži), `AGGREGATEFUNCTION` s dva G se **ne** veže na agregat
 - `HIGHT` ne postane `HEIGHT`
+- `datetiem` ide u granu datuma: `InStr` nađe podstring `date` (riječ počinje s njim). Katalog je to prvo proglasio promašajem; vrijedi kod, ne ta rečenica
 
-### M1 — podloga i oba ulaza
+### M1 — prvo lijevo stablo i master-detail, pa gumbi
 
-Zadatak: `ONLOAD` koji je SQL puni grid. Gumbi iz `CMDxCAPTION` / `BUTTONS`. `@@id` i `@@operateriid`. `REFRESHMASTERGRID`. `ONLOAD=":IME"` ne ide u SQL. `Run8` i TestShell grana otvaraju istu klasu.
+Oko 90% granula ima isti okvir: lijevo stablo, desno master grid, ispod njega detail. To je podloga `Form1` (TreeView + GridEX1 + GridEX2), ne poseban XML predložak. M1 crta **prvo taj okvir**. Prazan `TREE` ne mijenja raspored, samo ostavlja stablo prazno. `DETAILGRID` puni donji grid. Piksel `TOP`/`LEFT` i dalje nije cilj. Dijalog (`frm`, `INPUT`) dolazi nakon što se u tom okviru vidi master, ne prije.
+
+Zadatak, tim redom: okvir lijevo stablo + master + detail; `ONLOAD` koji je SQL puni master (ako `ONLOAD` ne postoji, vrijedi `STARTUPSTORA`); gumbi iz `CMDxCAPTION` / `BUTTONS`; `@@id` i `@@operateriid`; `REFRESHMASTERGRID`; `ONLOAD=":IME"` ne ide u SQL. `Loader.Run8` i TestShell grana otvaraju istu klasu. `frm.Run8` ostaje dijalog, ne drugi crtač podloge.
 
 Prihvaćanje:
 
+- TestShell pokaže okvir lijevo stablo + master + detail prije ijednog dijaloga; `OznakaKL` ima prazno stablo i pun master (`STARTUPSTORA`), detail prazan
 - jedinični test substituera: fiksni `@@id` / `@@operateriid`, SQL s preživjelim `@@` se ne šalje (`Class1.vb` 113–118)
 - `OznakaKL`: `STARTUPSTORA` se izvrši jer `ONLOAD` ne postoji (linije 3367–3368, `On Error Resume Next`)
 - TestShell na toj datoteci pokaže grid (kad ima baze) ili, bez baze, model s točnim SQL tekstom

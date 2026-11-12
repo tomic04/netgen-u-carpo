@@ -178,10 +178,30 @@ namespace Carpo.TestShell
 
                 if (!isXmlGen)
                 {
-                    Gen.Start start = new Gen.Start();
-                    start.TestXmlPath = xml;
-                    start.ModuleId = Path.GetFileName(xml);
-                    start.Run(server, database, username, password, operateriId, (int)pnlShell.Handle, 0, 0, "");
+                    // <root> ostaje Carpo. <PROJECT> ide u Carpo.NetGen (isti server, baza, operater).
+                    if (Carpo.NetGen.Xml.NetGenXmlReader.JeNetGenProjekt(xml))
+                    {
+                        var loader = new Carpo.NetGen.Loader();
+                        loader.TestXmlPath = xml;
+                        loader.moduleId = Path.GetFileName(xml);
+                        loader.mainHandle = (int)pnlShell.Handle;
+                        loader.Run8(server, database, username, password, operateriId, (int)pnlShell.Handle, 0, 0, "");
+                        if (!string.IsNullOrEmpty(loader.ZadnjaGreska))
+                            MessageBox.Show(loader.ZadnjaGreska, "Carpo.NetGen");
+                        else
+                            MessageBox.Show(
+                                "NetGen XML je učitan. M0 ne otvara formu.\r\n"
+                                + "Obrazac koji M1 crta prvi: lijevo stablo + master-detail.\r\n"
+                                + loader.Sazetak,
+                                "Carpo.NetGen");
+                    }
+                    else
+                    {
+                        Gen.Start start = new Gen.Start();
+                        start.TestXmlPath = xml;
+                        start.ModuleId = Path.GetFileName(xml);
+                        start.Run(server, database, username, password, operateriId, (int)pnlShell.Handle, 0, 0, "");
+                    }
                 }
                 else
                 {
