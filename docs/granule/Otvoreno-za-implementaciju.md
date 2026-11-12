@@ -2,7 +2,7 @@
 
 Brojke su prema CI implementacije [43269944426](https://github.com/tomic04/netgen-u-carpo/actions/runs/43269944426) (`ef710b9`) i [#74](https://github.com/tomic04/netgen-u-carpo/pull/74). Jupiter QA ne zove. Testovi nisu popušteni.
 
-Od 146 zatvorenih, **130 je pravilo** i **16 je spin podatak**. Devet je `OznakaKL` (`OKL-25`–`27`, `OKL-40`–`43`, `OKL-58`, `OKL-59`): 947 redova. Deseti je `JEZ-31`. Jedanaesti je `FAK-11`. Dvanaesti je `PL-32`. Trinaesti je `MPP-20`. Četrnaesti je `STA-12`: `Parent` `0701` vodi na `MeniID` 1611, `Loader.Run8` otvori `Statusi.xml`. Petnaesti je `JEZ-57`: desno zaglavlje je `naziv` iz `SETDEFAULTS`, ne `@@tkosmomi`. `Form1.vb` 6001, `Class1.vb` 966.
+Od 147 zatvorenih, **130 je pravilo** i **17 je spin podatak**. Devet je `OznakaKL` (`OKL-25`–`27`, `OKL-40`–`43`, `OKL-58`, `OKL-59`): 947 redova. Deseti je `JEZ-31`. Jedanaesti je `FAK-11`. Dvanaesti je `PL-32`. Trinaesti je `MPP-20`. Četrnaesti je `STA-12`: `Parent` `0701` vodi na `MeniID` 1611, `Loader.Run8` otvori `Statusi.xml`. Petnaesti je `JEZ-57`: desno zaglavlje je `naziv` iz `SETDEFAULTS`, ne `@@tkosmomi`. `Form1.vb` 6001, `Class1.vb` 966.
 
 | Element | Ukupno | Zatvoreno | Pravilo | Spin podaci | Otvoreno |
 |---|---:|---:|---:|---:|---:|
@@ -12,8 +12,8 @@ Od 146 zatvorenih, **130 je pravilo** i **16 je spin podatak**. Devet je `Oznaka
 | gumbi/lanac | 38 | 35 | 35 | 0 | 3 |
 | dijalog | 28 | 28 | 28 | 0 | 0 |
 | ispis | 4 | 4 | 3 | 1 | 0 |
-| ostalo | 35 | 20 | 15 | 5 | 15 |
-| **sve** | **164** | **146** | **130** | **16** | **18** |
+| ostalo | 35 | 21 | 15 | 6 | 14 |
+| **sve** | **164** | **147** | **130** | **17** | **17** |
 
 [#66](https://github.com/tomic04/netgen-u-carpo/pull/66) zatvara pravilo, ne redove iz baze. `STA-33` je forma iza dvotočke (`Form1.vb` 7186–7187). `STA-35` puni stablo adapterom (`4441–4447`). `BLA-30` prazan tag `:` ide u `NovaGenerickaForma` (`4353–4355`, `7187`). `BLA-31` `SrediSQL` prije `Fill` (`4442`). `BLA-32` četiri korijena: natpis `Blagajne` plus tri store (`4344–4356`). `PL-30` i `PL-31` slijede `7730–7733` i izlaz dok je `TREE` prazan (`4310`). `PL-35` je `REFRESHMASTER` koji nije `REFRESHMASTERGRID` (`4570`).
 
@@ -23,6 +23,7 @@ Po stavci, [#74](https://github.com/tomic04/netgen-u-carpo/pull/74) `af3816f`:
 - `DOS-11` odbijen. Test broji ime u `sys.objects`. `dospjele.sql` sam kaže da tri procedure nisu klijentsko tijelo. `Form2.vb` 2430–2431 (stupac 0 vrijednost, stupac 1 natpis) se ne izvršava. Ostaje otvoren. Sažetak i dalje 164 / 138 / 26.
 - `DOS-11` potvrđen. Run [43284522194](https://github.com/tomic04/netgen-u-carpo/actions/runs/43284522194) (`261149b`) je zelen. `[Z] konto 1/1000, prazan red na klasi, shema 1/Test shema, grid ima red`. `ComboDijalog.Ucitaj` pozove `spKntPopuniKontroleNG`, `spOrgShemaQuery` i `spKntOtvStavkeQueryNG`. Stupac 0 je vrijednost, stupac 1 natpis (`Form2.vb` 2430–2431, 2503–2504). `ALLOWEMPTY` ubaci prazan prvi red. Tijela na spinu i dalje vraćaju te vrijednosti, ali test ih izvrši i veže stupce. Sažetak 164 / 146 / 18.
 - `FAK-10` odbijen. Test gleda `Parametar like`. `Meni.ps1` upise `asm:NetGenDLL.loader:FakPar.xml`. `fk_meni` je `nocheck` jer izracunati Parent ne prolazi. Nema NetGen linije koja ovo potvrduje. Ostaje otvoren. Sazetak 164 / 138 / 26.
+- `FAK-10` potvrđen. Run [43286278068](https://github.com/tomic04/netgen-u-carpo/actions/runs/43286278068) (`cad37f0`) je zelen. `[Z] asm:NetGenDLL.loader:FakPar.xml -> FakPar.xml otvoren`. `Loader.vb` 183 stavi `ModuleID`, `Form1.vb` 1251–1258 spremi `Mid`, `1139` otvori `SharedDLLs\xml\` plus taj modul. `ONLOAD` učitanog XML-a je isti kao u repou. `fk_meni` se ne gasi. Sažetak 164 / 147 / 17.
 - `DOS-10` odbijen. Test gleda `Parametar like`. `Meni.ps1` upise `asm:NetGenDLL.loader:KntDospjeleStavke.xml`. `fk_meni` je `nocheck` jer izracunati Parent ne prolazi. Nema NetGen linije koja ovo potvrduje. Ostaje otvoren. Sazetak 164 / 138 / 26.
 - `KUL-12` odbijen. Test gleda `Parametar like`. `Meni.ps1` upise `asm:NetGenDLL.loader:Kulture.xml`. `fk_meni` je `nocheck` jer izracunati Parent ne prolazi. Nema NetGen linije koja ovo potvrduje. Ostaje otvoren. Sazetak 164 / 138 / 26.
 - `KND-06` odbijen. Test gleda `Parametar like`. `Meni.ps1` upise `asm:NetGenDLL.loader:KUPDostKN.xml`. `fk_meni` je `nocheck` jer izracunati Parent ne prolazi. Nema NetGen linije koja ovo potvrduje. Ostaje otvoren. Sazetak 164 / 138 / 26.
@@ -56,7 +57,7 @@ Po stavci, [#74](https://github.com/tomic04/netgen-u-carpo/pull/74) `af3816f`:
 
 [#72](https://github.com/tomic04/netgen-u-carpo/pull/72) stavlja klijentski XML izvan `definitions/netgen`. `TRZ-01`, `POR-01`, `RFA-00` i `REA-00` ostaju otvoreni. [#71](https://github.com/tomic04/netgen-u-carpo/pull/71) ispravno ne šalje `@@godina` (`Class1.vb` 113). To nije zatvorena stavka.
 
-Ostaje otvoreno: 11 redova `ssMeni`, `DOS-11`. `Meni.ps1` i `dospjele.sql` ne zatvaraju te stavke.
+Ostaje otvoreno: 11 redova `ssMeni`. `Meni.ps1` više ne gasi `fk_meni`.
 
 Uzorak po tipu: samo-grid `OznakaKL` (spin). Šifrarnik `JeziciNG`: `JEZ-56` pravilo, `JEZ-31` spin. Manager `KntBlaZak` i `PrijemniList`: čvor je pravilo, `PL-32` je spin. Stablo-master `Statusi`: `STA-33` i `STA-35` su pravilo. Rijetke `RIJ-40`–`42` su `[Z]` na istom CI-ju, i dalje pravilo kuke, ne red iz baze.
 
@@ -66,7 +67,7 @@ Grid je detail, kvačica, suma, sort i stupci mastera. Stablo je čvor, lijevi p
 
 Što korisnik donosi s klijenata (SQL koji fali na spinu i 63 XML-a) je u [fali-od-korisnika.md](fali-od-korisnika.md). Jupiter nije pitan, pa nijedan objekt nije zapisan kao odsutan na oba Jupitera. Stavke se tim popisom ne zatvaraju.
 
-Od 18 otvorenih, 15 je ostalo (11 `ssMeni`, 4 XML-a) i tri gumba.
+Od 17 otvorenih, 14 je ostalo (10 `ssMeni`, 4 XML-a) i tri gumba.
 
 Stari CI `b7d8989` ima 571 / 411 / 160. Novi `ef710b9` ima 354 / 341 / 13. Od 160, 117 je još u katalogu (13 i dalje otvoreno, 104 zeleno). 42 prave stavke nema u novom katalogu. 36 ima NetGen dokaz i ostaje zatvoreno. Šest je izbačeno bez dokaza i ostaje otvoreno: `STA-12`, `MPP-20`, `PL-32`, `MPK-30`, `MPK-31`, `STA-34`.
 
