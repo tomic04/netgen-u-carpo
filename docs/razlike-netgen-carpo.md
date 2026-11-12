@@ -791,4 +791,9 @@ Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88
 | `LVKatalozi.md` | store, `onlytree`, `TOTALROWVISIBLE=false` | R01, R54, R65 |
 | `Nedostaje-79.md` | rang 79–92 nema XML | |
 | `Combo-dijalog-testovi.md` | deset combo slučajeva | R26, R27, R28, R31 |
+| `OdobreniKaloNG.md` | store, `KlMaster` `FILLEXPLORER` | R01, R18 |
+| `KUPStatN.md` | `ONLOAD` je select, brisanje je `@action=2` | R14 |
+| `BisnodeExport.md` | `:PARAM_FORM`, `#OK`, `update Pubvars` | R18, R14, R82 |
+| `Nedostaje-96.md` | rang 98–111 nema XML | |
+| `Onclick-dijalog-testovi.md` | deset ONCLICK slučajeva | R14, R18, R54 |
 | `Smoke-prazno-uzorak.md` | 20 praznih iz smokea #35 | |
