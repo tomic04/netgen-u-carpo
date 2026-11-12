@@ -222,6 +222,8 @@ namespace Carpo.NetGen.Ui
                 if (crta >= 0)
                     naredba = tag.Substring(crta + 1);
             }
+            if (DijalogTok.DozvoliUpis)
+                naredba = ZamijeniIzKontrola(naredba);
             DijalogTok.Klik klik = DijalogTok.Gumb(_forma, redni, naredba, _jupiter);
             if (klik.OtvaraFormu.Length > 0)
             {
@@ -263,6 +265,41 @@ namespace Carpo.NetGen.Ui
                 DialogResult = DialogResult.OK;
             else if (b != null)
                 b.DialogResult = DialogResult.None;
+        }
+
+        private string ZamijeniIzKontrola(string naredba)
+        {
+            if (string.IsNullOrEmpty(naredba))
+                return "";
+            string s = naredba;
+            if (_kontekst != null)
+            {
+                s = Zamijeni(s, "@@id", _kontekst.Id);
+                s = Zamijeni(s, "@@ID", _kontekst.Id);
+                s = Zamijeni(s, "@@node", _kontekst.Node);
+            }
+            for (int i = 0; i < Controls.Count; i++)
+            {
+                Control c = Controls[i];
+                if (c == null || string.IsNullOrEmpty(c.Name))
+                    continue;
+                string v = "";
+                var edit = c as TextEdit;
+                if (edit != null)
+                    v = edit.Text ?? "";
+                else
+                    continue;
+                s = Zamijeni(s, "@@" + c.Name, v);
+            }
+            return s;
+        }
+
+        private static string Zamijeni(string sql, string token, string vrijednost)
+        {
+            if (string.IsNullOrEmpty(sql) || string.IsNullOrEmpty(token))
+                return sql ?? "";
+            string v = (vrijednost ?? "").Replace("'", "''");
+            return sql.Replace(token, v);
         }
 
         public string Vrijednost(string ime)

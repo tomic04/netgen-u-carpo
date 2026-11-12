@@ -39,6 +39,34 @@ namespace Carpo.NetGen.Komande
                 || server.IndexOf("jupiter2022", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
+        /// <summary>
+        /// Upis smije samo klik-pregled na bazi spin, server localhost na sql-ai.
+        /// jupiter2019, jupiter2022 i svaka druga baza ostaju zatvorene.
+        /// </summary>
+        public static bool UpisNaSpinu(string server, string baza)
+        {
+            if (!string.Equals((baza ?? "").Trim(), "spin", StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (JeJupiter(server))
+                return false;
+            string s = (server ?? "").Trim();
+            bool lokal = s.Length == 0
+                || string.Equals(s, "localhost", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(s, ".", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(s, "(local)", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(s, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+                || s.IndexOf("sql-ai", StringComparison.OrdinalIgnoreCase) >= 0;
+            if (!lokal)
+                return false;
+            string akcija = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") ?? "";
+            string stroj = Environment.MachineName ?? "";
+            return string.Equals(akcija, "true", StringComparison.OrdinalIgnoreCase)
+                || stroj.IndexOf("sql-ai", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        public static bool DozvoliUpis;
+        public static string TekstUpisa = "";
+
         public static string NextForm(NgForm forma)
         {
             if (forma == null || forma.Atributi == null || !forma.Atributi.Ima("NEXTFORM"))
@@ -96,7 +124,7 @@ namespace Carpo.NetGen.Komande
                 k.FillExplorer = PuniExplorer(forma);
                 if (k.FillExplorer && forma != null)
                     k.MasterSql = Lanac.Lijepi((forma.OnSubmit ?? "").Trim(), "");
-                k.SaljeSql = !jupiter && k.MasterSql.Length > 0 && !ZastitaSql.Tekst(k.MasterSql).Pise;
+                k.SaljeSql = !jupiter && k.MasterSql.Length > 0 && SmijePoslati(k.MasterSql);
                 return k;
             }
             string[] seg = Lanac.Segmenti(naredba);
@@ -125,7 +153,7 @@ namespace Carpo.NetGen.Komande
                     k.Zatvara = true;
                     if (forma != null)
                         k.MasterSql = Lanac.Lijepi((forma.OnSubmit ?? "").Trim(), "");
-                    if (!jupiter && k.MasterSql.Length > 0 && !ZastitaSql.Tekst(k.MasterSql).Pise)
+                    if (!jupiter && k.MasterSql.Length > 0 && SmijePoslati(k.MasterSql))
                         k.SaljeSql = true;
                 }
                 else if (u == "OKSTAY")
@@ -136,13 +164,24 @@ namespace Carpo.NetGen.Komande
                 {
                     string svedeno = Lanac.Lijepi(t, "");
                     k.Naredbe.Add(svedeno);
-                    if (!jupiter && !ZastitaSql.Tekst(svedeno).Pise)
+                    if (!jupiter && SmijePoslati(svedeno))
                         k.SaljeSql = true;
                 }
             }
             if (jupiter)
                 k.SaljeSql = false;
             return k;
+        }
+
+        public static bool SmijePoslati(string sql)
+        {
+            if (string.IsNullOrWhiteSpace(sql))
+                return false;
+            if (sql.IndexOf("cis.porezna-uprava.hr", StringComparison.OrdinalIgnoreCase) >= 0)
+                return false;
+            if (!ZastitaSql.Tekst(sql).Pise)
+                return true;
+            return DozvoliUpis;
         }
 
         public static bool PreskociGrid(NgControl k)

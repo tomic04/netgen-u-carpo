@@ -245,7 +245,12 @@ jobs:
           if ($puni) { $popis = Join-Path $env:GITHUB_WORKSPACE "scripts\ui\klik-puno.txt" }
           $snimke = Join-Path $env:GITHUB_WORKSPACE "artifacts\ui-smoke"
           Write-Host "Klik pregled $popis"
+          $ciscenje = Join-Path $env:GITHUB_WORKSPACE "scripts\spin\klik-ciscenje.sql"
+          sqlcmd -S localhost -d spin -E -C -b -i $ciscenje
+          if ($LASTEXITCODE -ne 0) { throw "klik-ciscenje.sql nije prosao" }
           & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSmoke.ps1") -Exe $exe -XmlRoot (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Shots $snimke -Popis $popis -Klik
+          sqlcmd -S localhost -d spin -E -C -b -i $ciscenje
+          if ($LASTEXITCODE -ne 0) { throw "klik-ciscenje.sql nakon pregleda nije prosao" }
           if ($LASTEXITCODE -ne 0) { throw "Klik pregled nije prosao. Kod $LASTEXITCODE" }
           Get-Content -LiteralPath (Join-Path $snimke "klik-pregled.md")
 
