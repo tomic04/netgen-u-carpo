@@ -508,6 +508,56 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 - **Posljedica:** `FILTERFORM` (`TRUE`) napuni grid. `DODAJIZNOS` (prazan) izvrši `spMPPoravnajKP` i osvježi stari master, ne postavi novi upit.
 - **Test:** `MPK-30`, `MPK-31`
 
+Implementacijski registar na `cursor/netgen-otvaranje-3266` završava s R64. Sljedeće stavke su R65.
+
+## R65 `COMMANDTIMEOUT` na projektu je timeout SQL-a
+
+- **Element:** `COMMANDTIMEOUT`
+- **NetGen:** default je `"30"` (`Module1.vb` 177). Atribut na projektu prepiše `strCommandTimeout` (`Form1.vb` 3463). `ExecSql` ga stavi na `SqlCommand` (`Class1.vb` 99).
+- **Carpo:** grid i dalje može ostati na 30 s.
+- **Posljedica:** `Intrastat` čeka 300 s, `KntOPZ-STAT-1` 240 s. Kraći timeout prekine obrazac.
+- **Test:** `INT-08`, `OPZ-08`
+
+## R66 `TOTALROW` nije `TOTALROWVISIBLE`
+
+- **Element:** suma na masteru
+- **NetGen:** gasi se samo `TOTALROWVISIBLE="FALSE"` (`Form1.vb` 2049–2053). `TOTALROW` se na podlozi ne čita.
+- **Carpo:** lako pročita `TOTALROW` kao total.
+- **Posljedica:** `MPKntNacinPlacAzur` ima `TOTALROW="FALSE"`, a `TOTALROWVISIBLE` nema. Suma ostaje uključena.
+- **Test:** `NPL-04`
+
+## R67 `Ime.Start(a ; b)` nije `ASSEMBLYLOAD`
+
+- **Element:** naredba gumba
+- **NetGen:** `ASSEMBLYLOAD(` je posebna grana (`Form1.vb` 4584). `OpzStatExport.Start(@@datumDoParam ; @@datdospparam)` nema taj prefiks. Ime se reže na `(` (`Form2.vb` 4407–4418), forma `OpzStatExport.Start` ne postoji, 0 kontrola, dijalog se ne otvori (`Form1.vb` 5369–5370). Točka-zarez ostane u parametrima koji se ne izvrše.
+- **Carpo:** `Ime.Start` lako postane učitavanje DLL-a, kao pravi `ASSEMBLYLOAD` na `KntPDVObrasciEU`.
+- **Posljedica:** Eporezna na OPZ-STAT-1 ne diže DLL. EPorezna na PDV obrascima diže `EPoreznaObrasci.Program`.
+- **Test:** `OPZ-06`, `PDV-06`
+
+## R68 `ONENTERKEY` nije `EnterKeyBehavior`
+
+- **Element:** Enter na master gridu
+- **NetGen:** prazan `EDITCOLUMNS` stavi `EnterKeyBehavior=None` (`Form1.vb` 3419–3421). `ONENTERKEY` se i dalje čita (`3364`). `GridEX1_KeyDown` na Enter zove `NovaGenerickaForma` (`7021–7023`).
+- **Carpo:** `Enter=None` proguta tipku i ne otvori formu.
+- **Posljedica:** `KntPDVObrasciEU` na Enter otvara `IZMIJENI_FORM`.
+- **Test:** `PDV-05`
+
+## R69 `POSITION` prepiše red stupca
+
+- **Element:** `COLUMN POSITION`
+- **NetGen:** ako je `CLEARCOLUMS` true, stupac prvo dobije tekući red (`Form1.vb` 7516–7518). Ako `POSITION` nije prazan, taj broj prepiše red (`7526`).
+- **Carpo:** red stupaca ostane red iz rezultata ili iz XML-a, bez drugog upisa.
+- **Posljedica:** `KntOPZ-STAT-1` `FormatId` ide na poziciju −1 i `VISIBLE=FALSE`.
+- **Test:** `OPZ-07`
+
+## R70 `FILLEXPLORER` na projektu se ne čita
+
+- **Element:** `FILLEXPLORER` na `<PROJECT>`
+- **NetGen:** `Form1` taj atribut ne čita. Vrijednost vrijedi na formi koja se zatvori (`Form2.vb` 1092, `Form1.vb` 5445).
+- **Carpo:** atribut na projektu lako se protumači kao da master odmah puni sebe.
+- **Posljedica:** `KntOPZ-STAT-1` ima `FILLEXPLORER="TRUE"` na projektu. Master se puni tek kad `UPIT` (koji isto ima `TRUE`) vrati SQL.
+- **Test:** `OPZ-04`
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
@@ -542,4 +592,9 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 | `KntKompVerizne.md` | `sptree`, `BUTTONS` ne briše kasniji CMD, `repx/` | R56, R42 |
 | `KntBlaPromet.md` | `CLICK(Ok)`, `@@template`, `CLEARCOLUMS` | R58, R42, R08 |
 | `MPPonuda.md` | nema `ONLOAD`, natpis gumba, `vrstadokid-` | R57, R43 |
-| `MPPorKPNG.md` | `CMD` bez `:`, `TABINDEX` s tabom, `VALUE` na datumu, prazan `FILLEXPLORER` | R18, R60, R61, R62, R63 |
+| `MPPorKPNG.md` | `CMD` bez `:`, `TABINDEX` s razmakom, `VALUE` na datumu, prazan `FILLEXPLORER` | R18, R60, R61, R62, R63 |
+| `Intrastat.md` | `SETDEFAULTS` rezan na `#`, `COMMANDTIMEOUT` 300, detail `@@id`, repx s parametrom | R51, R11, R55, R65 |
+| `KntPDVObrasciEU.md` | `BUTTONS`, `ONENTERKEY`, `ASSEMBLYLOAD`, `repx/@@Template`, `PAGEORIENTATION` ne dira REPX | R41, R56, R35, R68 |
+| `MPKntNacinPlacAzur.md` | `TOTALROW` se ne čita, `ALLOWEMPTY="FOLSE"`, `BUTTONS`, `FOCUS` | R31, R56, R66 |
+| `KntOPZ-STAT-1.md` | `Ime.Start`, `POSITION`, `FILLEXPLORER` na projektu, `CLEARCOLUMS` | R67, R69, R70, R08 |
+| `MPRACNEFISK.md` | `DETAILGRID` s razmakom, `REFRESHMASTER`, `FISKALIZACIJA(@@id)`, `.clsReport` | R04, R43, R55, R63 |
