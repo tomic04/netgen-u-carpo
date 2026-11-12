@@ -14,4 +14,8 @@ if ($LASTEXITCODE -ne 0) { throw "drop spFakPartneriUvjetiQuery nije prosao" }
 sqlcmd -S localhost -d spin -E -C -b -f 65001 -i $sql
 if ($LASTEXITCODE -ne 0) { throw "spFakPartneriUvjetiQuery.A.sql nije prosao" }
 
-Write-Host "spin spFakPartneriUvjetiQuery = klijentska verzija A"
+$tablica = Join-Path $root "scripts\spin\FakPartneriUvjeti.sql"
+sqlcmd -S localhost -d spin -E -C -b -f 65001 -i $tablica
+if ($LASTEXITCODE -ne 0) { throw "FakPartneriUvjeti.sql nije prosao" }
+
+Write-Host "spin spFakPartneriUvjetiQuery = klijentska verzija A, tablica FakPartneriUvjeti"
