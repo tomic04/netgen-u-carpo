@@ -854,13 +854,13 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `bla-width-prepisuje`
 - **PR:** spin-otvaranje
 
-## R107 Desno zaglavlje ispisa ostaje `@@tkosmomi`
+## R107 Desno zaglavlje: izvor je token, zamjena još nije ispis
 
 - **Element:** `PAGEHEADERRIGHT`
-- **NetGen:** ispis mastera čita desno zaglavlje iz atributa. `SETDEFAULTS` kasnije nađe `@@tkosmomi` u međuspremniku (`Form1.vb` 6001, `Class1.vb` 932).
-- **Carpo:** gumb `Ispiši` vraća `pageHeaderRight=@@tkosmomi`. Vrijednost se ne zamjenjuje prije ispisa u testu i ne šalje se upit.
-- **Odluka:** NetGen logika.
-- **Test:** `jez-57`
+- **NetGen:** prije ispisa desno zaglavlje ide kroz `SrediSQL` i `Translate` (`Form1.vb` 6001). `@@tkosmomi` dolazi iz `SETDEFAULTS` u međuspremniku (`Class1.vb` 932).
+- **Carpo:** gumb `Ispiši` vraća sirovi atribut `@@tkosmomi`. `SrediSQL` prije ispisa nije dio ovog testa.
+- **Odluka:** `JEZ-57` nije zatvoren dok zamjena tokena nije ista kao u `Form1.vb` 6001.
+- **Test:** `jez-57` dokazuje samo token.
 - **PR:** ispis-zaglavlje
 
 ## Pokrivenost checklisti
