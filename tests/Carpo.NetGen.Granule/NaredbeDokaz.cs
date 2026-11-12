@@ -18,6 +18,7 @@ namespace Carpo.NetGen.Granule
             l.Add(MsgBox(root));
             l.Add(Assembly(root));
             l.Add(Prostor(root));
+            l.Add(Blagajna(root));
             return l;
         }
 
@@ -100,6 +101,31 @@ namespace Carpo.NetGen.Granule
             if (!ishod.Zatvara || ishod.Prekinuto)
                 return Qa.P(granula, id, opis, izvor, "zatvara=" + ishod.Zatvara);
             Console.WriteLine("[Z] MPTrgovinaPortal NRD-PROSTOR argument=@@GRIDMASTERTRGOVINAID zatvara=da");
+            return Qa.Z(granula, id, opis, izvor);
+        }
+
+        private static Stavka Blagajna(string root)
+        {
+            const string granula = "MPKasaImport";
+            const string id = "NRD-BLAGAJNA";
+            const string opis = "Pokreni import šalje spmpBlagajnaEnable i pali ili gasi kasu";
+            const string izvor = "netgen/Form2.vb:6868-6872; netgen/Class1.vb:1975-1986";
+            string xml = Path.Combine(root, "definitions", "netgen", "Agronom granule", "MPKasaImport.xml");
+            string tekst = Procitaj(xml);
+            if (tekst == null || tekst.IndexOf("BLAGAJNAENABLE(@@mpkaseid)#OK", StringComparison.Ordinal) < 0)
+                return Qa.P(granula, id, opis, izvor, "XML nema BLAGAJNAENABLE");
+            string kasa = BlagajnaNaredba.Id("BLAGAJNAENABLE(@@mpkaseid)");
+            string upit = BlagajnaNaredba.Upit(kasa);
+            string ugasi = BlagajnaNaredba.Update(kasa, false);
+            string upali = BlagajnaNaredba.Update(kasa, true);
+            if (kasa != "@@MPKASEID"
+                || upit != "spmpBlagajnaEnable @mpkaseid = @@MPKASEID"
+                || ugasi != "update mpkase set indenable = 0 where mpkaseid = @@MPKASEID"
+                || upali != "update mpkase set indenable = 1 where mpkaseid = @@MPKASEID")
+                return Qa.P(granula, id, opis, izvor, "upit [" + upit + "]");
+            if (!Lanac.Izvrsi("BLAGAJNAENABLE(@@mpkaseid)#OK", true, null).Zatvara)
+                return Qa.P(granula, id, opis, izvor, "OK iza naredbe nije zatvorio");
+            Console.WriteLine("[Z] MPKasaImport NRD-BLAGAJNA upit=spmpBlagajnaEnable indenable=0/1");
             return Qa.Z(granula, id, opis, izvor);
         }
 
