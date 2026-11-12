@@ -44,6 +44,7 @@ namespace Carpo.TestShell
         private string paramList = "";
         private bool _autoMode = false;
         private int _uiIshod;
+        private int _uiVidjen;
         private bool _uiKlikGotov;
 
         
@@ -252,6 +253,7 @@ namespace Carpo.TestShell
         public int PokreniUiSmoke(string snimka)
         {
             _uiIshod = 0;
+            _uiVidjen = 0;
             _uiKlikGotov = false;
             var dir = Path.GetDirectoryName(snimka);
             if (!string.IsNullOrEmpty(dir))
@@ -365,12 +367,16 @@ namespace Carpo.TestShell
                 if (prozor != IntPtr.Zero)
                 {
                     _uiIshod = 2;
-                    if (!_uiKlikGotov && !ImaSnimku(snimka))
+                    if (!_uiKlikGotov)
                     {
-                        Thread.Sleep(800);
-                        // PrintWindow s ove niti čeka UI i zna zaglaviti Show. Ovdje samo pikseli.
-                        SnimiProzor(prozor, snimka, false);
-                        if (ImaSnimku(snimka))
+                        _uiVidjen++;
+                        if (!ImaSnimku(snimka))
+                        {
+                            // PrintWindow s ove niti čeka UI i zna zaglaviti Show. Ovdje samo pikseli.
+                            SnimiProzor(prozor, snimka, false);
+                        }
+                        // WM_CLOSE usred Show zna zaglaviti modeless prozor. Zatvori tek modal koji ne pusti klik.
+                        if (_uiVidjen >= 6 && ImaSnimku(snimka))
                             PostMessage(prozor, 0x0010, IntPtr.Zero, IntPtr.Zero);
                     }
                 }
