@@ -69,7 +69,9 @@ namespace Carpo.NetGen.Grid
             if (red == null || red.Table == null)
                 return "";
             var sb = new System.Text.StringBuilder();
-            for (int i = 1; i < red.Table.Columns.Count; i++)
+            // Janus ima stupac 0 koji nije podatak, pa Form1.vb 2557 krene od 1.
+            // DataTable nema taj stupac: prvi podatak je indeks 0, i to je statusiid.
+            for (int i = 0; i < red.Table.Columns.Count; i++)
             {
                 object v = red[i];
                 if (v == null || v == System.DBNull.Value)

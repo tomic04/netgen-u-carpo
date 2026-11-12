@@ -6,5 +6,7 @@ if object_id(N'dbo.StatusiNext', N'U') is not null and object_id(N'dbo.statusi',
     where StatusiId in (select statusiid from dbo.statusi where Korak like N'klik-proba%');
 if object_id(N'dbo.statusi', N'U') is not null
     delete from dbo.statusi where Korak like N'klik-proba%';
+if object_id(N'dbo.StatusiAudit', N'U') is not null and object_id(N'dbo.VrstaDok', N'U') is not null
+    exec(N'delete from dbo.StatusiAudit where VrstaDokId in (select VrstaDokId from dbo.VrstaDok where Opis = N''klik-proba'')');
 if object_id(N'dbo.VrstaDok', N'U') is not null and col_length(N'dbo.VrstaDok', N'Opis') is not null
     exec(N'delete from dbo.VrstaDok where Opis = N''klik-proba''');

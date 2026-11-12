@@ -617,7 +617,7 @@ namespace Carpo.NetGen.Ui
             var redovi = new List<string>();
             bool upis = DijalogTok.UpisNaSpinu(_server, _baza);
             DijalogTok.DozvoliUpis = upis;
-            _imeUnosa = "klik-proba-" + DateTime.Now.ToString("yyyyMMddHHmmss");
+            _imeUnosa = "kp" + DateTime.Now.ToString("HHmmss");
             DijalogTok.TekstUpisa = _imeUnosa;
             try
             {
@@ -726,7 +726,11 @@ namespace Carpo.NetGen.Ui
                     else if (upis)
                         DijalogTok.TekstUpisa = _imeUnosa;
                     if (upis && _testId.Length > 0)
+                    {
                         _master.Kontekst.Id = _testId;
+                        if (_master.Kontekst.ParametriSaGrida.IndexOf("@statusiid=", StringComparison.OrdinalIgnoreCase) < 0)
+                            _master.Kontekst.ParametriSaGrida += "@statusiid='" + _testId + "' , ";
+                    }
                     if (upis && naredba.IndexOf("INSERTFORM", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         DataTable vd = Citaj("select top 1 cast(VrstaDokId as varchar(20)) as id from VrstaDok where Opis = N'klik-proba'");
@@ -855,7 +859,7 @@ namespace Carpo.NetGen.Ui
                 if (n.Length == 0)
                     continue;
                 var edit = n[0] as TextEdit;
-                if (edit != null && string.IsNullOrEmpty(edit.Text))
+                if (edit != null)
                     edit.Text = tekst;
             }
         }

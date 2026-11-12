@@ -186,15 +186,17 @@ namespace Carpo.NetGen.Komande
             s = s.Replace("@@id", id ?? "");
             s = s.Replace("@@ID", id ?? "");
             s = s.Replace("@@Id", id ?? "");
-            if (kontrole == null)
-                return s;
-            foreach (var par in kontrole)
+            if (kontrole != null)
             {
-                if (string.IsNullOrEmpty(par.Key))
-                    continue;
-                string vrijednost = par.Value ?? "";
-                s = ZamijeniIme(s, par.Key, vrijednost);
+                foreach (var par in kontrole)
+                {
+                    if (string.IsNullOrEmpty(par.Key))
+                        continue;
+                    s = ZamijeniIme(s, par.Key, par.Value ?? "");
+                }
             }
+            // Form2.vb 3818: grid bez kvačica da prazan niz. Inače @@ ostane u navodniku i stora ga dobije kao tekst.
+            s = ZamijeniIme(s, "nizoznacenihajdijevaslijedeci", "");
             return s;
         }
 
