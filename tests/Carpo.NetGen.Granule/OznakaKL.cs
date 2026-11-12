@@ -4,7 +4,6 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Xml;
 using Carpo.NetGen.Model;
-using Carpo.NetGen.TestHooks;
 using Carpo.NetGen.Xml;
 
 namespace Carpo.NetGen.Granule
@@ -222,7 +221,8 @@ namespace Carpo.NetGen.Granule
             l.Add(Izgled("OKL-56", "NetGen HideSelection je Highlight. Ne trazi se.", "netgen/Form1.designer.vb:640"));
             M(l, xml, "OKL-57", "Grid je Dock Fill",
                 "netgen/Form1.vb:1906", "otvori", "", "gridDock", "Fill");
-            l.Add(Fokus(xml));
+            M(l, xml, "OKL-58", "Ako ima redova, fokus je na gridu",
+                "netgen/Form1.vb:2059-2072", "otvori", "", "fokus", "grid");
             M(l, xml, "OKL-59", "Nema kolone id pa je @@id vrijednost Cells(2), prvi podatak (klmasterrobaid)",
                 "netgen/Form1.vb:5566-5582", "otvori", "", "idJe", "klmasterrobaid");
             M(l, xml, "OKL-60", "Vidljiv je samo gumb Izmjena, naredba FRMEDIT",
@@ -268,36 +268,6 @@ namespace Carpo.NetGen.Granule
                 "netgen/Form1.vb:1999", "otvori", "", "pocetniSort", "sql");
             M(l, xml, "OKL-80", "Nema ICON pa ikona dolazi iz hosta (Ikona), ne iz Graphics\\Icons",
                 "netgen/Form1.vb:3430-3440", "otvori", "", "ikona", "host");
-        }
-
-        private static Stavka Fokus(string xml)
-        {
-            const string opis = "Fokus je grid kad ima redova, inace nema";
-            const string izvor = "netgen/Form1.vb:2059-2072";
-            if (GranulaSesija.Izvrsi == null)
-                return Qa.P(Ime, "OKL-58", opis, izvor, "Kuka nije spojena");
-            Pogled pogled;
-            try
-            {
-                pogled = GranulaSesija.Izvrsi(new Zahtjev
-                {
-                    XmlPutanja = xml,
-                    Akcija = "otvori",
-                    Cilj = "",
-                    MasterId = "0",
-                    Vrijednosti = ""
-                });
-            }
-            catch (Exception ex)
-            {
-                return Qa.P(Ime, "OKL-58", opis, izvor, ex.GetType().Name);
-            }
-            if (pogled == null || !pogled.Izvedeno || pogled.Stavke == null || !pogled.Stavke.ContainsKey("fokus"))
-                return Qa.P(Ime, "OKL-58", opis, izvor, pogled == null ? "null" : (pogled.Napomena ?? "nema fokusa"));
-            string v = pogled.Stavke["fokus"];
-            if (v == "grid" || v == "nema")
-                return Qa.Z(Ime, "OKL-58", opis + " (" + v + ")", izvor);
-            return Qa.P(Ime, "OKL-58", opis, izvor, v);
         }
 
         private static void R(List<Stavka> l, string xml, string id, string opis, string izvor, string akcija, string cilj, string kljuc, string ocekivano)

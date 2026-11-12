@@ -295,7 +295,7 @@ namespace Carpo.NetGen.Granule
             Stablo.M(l, Ime, xml, "PL-23", "Detail SQL je declare/exec", "netgen/Form1.vb:3373", "detailSql", det);
             Stablo.M(l, Ime, xml, "PL-24", "CHECKBOXVISIBLE FALSE", "netgen/Form1.vb:2043", "selectorVidljiv", "false");
             string pocetni = (Stablo.Atribut(xml, "SETDEFAULTS") ?? "").Trim();
-            Stablo.M(l, Ime, xml, "PL-25", "Nema ONLOAD: pocetni master SQL je prazan", "netgen/Form1.vb:3367-3368,1830", "sqlTrag",
+            Stablo.M(l, Ime, xml, "PL-25", "Nema ONLOAD: master je prazan, SETDEFAULTS ide prije njega", "netgen/Form1.vb:3124,3367-3368,1830,3862-3866,3958-3962", "sqlTrag",
                 pocetni.Length == 0 ? "" : pocetni + " || ");
             Stablo.K(l, Ime, xml, "PL-30", "SelectedValueChanged upise SelectedValue u strTreeNodes i ponovo zove NapuniDrvoVrijeme", "netgen/Form1.vb:7730-7733", "comboPuniDrvo", "true");
             Stablo.K(l, Ime, xml, "PL-31", "Dok je TREE jos prazan, NapuniDrvo izadje prije splitter-a i prije Enable gumba", "netgen/Form1.vb:4310-4320", "comboPrviProlaz", "izlaz");
