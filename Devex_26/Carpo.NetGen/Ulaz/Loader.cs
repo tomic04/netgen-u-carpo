@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Carpo.NetGen.Grid;
 using Carpo.NetGen.Model;
 
 namespace Carpo.NetGen
@@ -31,6 +32,7 @@ namespace Carpo.NetGen
         private const uint SWP_NOACTIVATE = 0x0010;
 
         public NgProject Projekt { get; private set; }
+        public MasterGrid Grid { get; private set; }
 
         public string Sazetak
         {
@@ -52,14 +54,14 @@ namespace Carpo.NetGen
         public object Run(string server, string database, string userId, string password,
             int operater, int clientHandle, short top, short left, string remoteDllPath)
         {
-            return Izvrsi(remoteDllPath);
+            return Izvrsi(server, remoteDllPath, operater);
         }
 
         public object Run8(string server, string database, string userId, string password,
             int operater, int clientHandle, short top, short left, string remoteDllPath)
         {
             // strNGParams ide u isti router kao klik gumba tek u M1. Ovdje se ne izvrsava.
-            return Izvrsi(remoteDllPath);
+            return Izvrsi(server, remoteDllPath, operater);
         }
 
         /// <summary>Loader.vb 22-26. Bez hWnd ne dira prozor (M0 jos nema formu).</summary>
@@ -72,13 +74,25 @@ namespace Carpo.NetGen
             SetWindowPos(new IntPtr(hWnd), new IntPtr(-1), 0, 0, w, h, SWP_NOACTIVATE | SWP_NOZORDER);
         }
 
-        private object Izvrsi(string remoteDllPath)
+        private object Izvrsi(string server, string remoteDllPath, int operater)
         {
+            if (!string.IsNullOrEmpty(server) && server.IndexOf("jupiter2022", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                ZadnjaGreska = "jupiter2022 se ne koristi.";
+                return null;
+            }
             var o = NgUlaz.Pokreni(TestXmlPath, moduleId, remoteDllPath);
             if (o.Ucitano && o.Greska == null)
                 WCaption = o.WCaption;
             ZadnjaGreska = o.Greska;
             Projekt = o.Projekt;
+            if (Projekt != null)
+            {
+                Grid = new MasterGrid();
+                Grid.Kontekst.OperaterId = operater.ToString();
+                Grid.Kontekst.XmlName = moduleId ?? "";
+                Grid.Ucitaj(Projekt, null);
+            }
             return null;
         }
 

@@ -114,6 +114,8 @@ jobs:
             "Devex_26\Carpo.CMS\Carpo.CMS.csproj",
             "Devex_26\Carpo.NetGen\Carpo.NetGen.csproj",
             "Devex_26\Carpo.NetGen.Corpus\Carpo.NetGen.Corpus.csproj",
+            "Devex_26\Carpo.NetGen.GridTest\Carpo.NetGen.GridTest.csproj",
+            "Devex_26\Carpo.NetGen.Defaults\Carpo.NetGen.Defaults.csproj",
             "Devex_26\Carpo.Lite\Carpo.Lite.csproj",
             "Devex_26\Carpo.Specific\Carpo.Specific.csproj",
             "Devex_26\Carpo.Designer\Carpo.Designer.csproj",
@@ -149,17 +151,41 @@ jobs:
             throw "Smoke invarijante parsera nisu prosle (OznakaKL, JeziciNG, HIGHT, TYPE, UTF-16). Pad pojedinog drugog XML-a je u FAILED_LIST i sam ne ruši run."
           }
 
-      - name: Artifact TestShell, NetGen i smoke
+      - name: Grid testovi i defaulti
+        shell: powershell
+        env:
+          CARPO_SPIN: "1"
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin"
+          $def = Join-Path $env:GITHUB_WORKSPACE "artifacts\defaults"
+          New-Item -ItemType Directory -Force -Path $def | Out-Null
+          & (Join-Path $out "Carpo.NetGen.GridTest.exe")
+          if ($LASTEXITCODE -ne 0) { throw "Grid testovi nisu prosli. Vidi PASS/FAIL iznad." }
+          $dx = "C:\Program Files\DevExpress 26.1\Components\Bin\Framework"
+          & (Join-Path $out "Carpo.NetGen.Defaults.exe") `
+            --jupiter "C:\Users\ntomic\Desktop\Jupiter Client" `
+            --dx $dx `
+            --izlaz (Join-Path $def "grid-defaults.tsv")
+          if ($LASTEXITCODE -ne 0) { throw "Defaults alat je pao." }
+          Write-Host "---- asm sonda (pocetak) ----"
+          Get-Content (Join-Path $def "asm-sonda.txt") -TotalCount 80
+
+      - name: Artifact TestShell, NetGen, grid i defaulti
         uses: actions/upload-artifact@v4
         with:
-          name: carpo-m0
+          name: carpo-grid
           if-no-files-found: error
           path: |
             artifacts/bin/Carpo.NetGen.dll
             artifacts/bin/Carpo.NetGen.pdb
             artifacts/bin/Carpo.NetGen.Corpus.exe
             artifacts/bin/Carpo.NetGen.Corpus.pdb
+            artifacts/bin/Carpo.NetGen.GridTest.exe
+            artifacts/bin/Carpo.NetGen.Defaults.exe
             artifacts/bin/Carpo.TestShell.exe
             artifacts/bin/Carpo.TestShell.pdb
             artifacts/smoke/izvjestaj.txt
             artifacts/smoke/korpus.tsv
+            artifacts/defaults/grid-defaults.tsv
+            artifacts/defaults/asm-sonda.txt
