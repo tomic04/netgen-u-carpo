@@ -200,7 +200,7 @@ namespace Carpo.NetGen.Granule
             }
 
             l.Add(Stablo.Meni(Ime, "RIJ-30", "AOPNovi.xml"));
-            l.Add(Stablo.Meni(Ime, "RIJ-31", "RatArkod.xml"));
+            l.Add(Stablo.Otvori(Ime, "RIJ-31", "RatArkod.xml", root));
             l.Add(Stablo.Meni(Ime, "RIJ-32", "Narudzbe.xml"));
             l.Add(Stablo.Meni(Ime, "RIJ-33", "RobaWebKlase.xml"));
 
