@@ -21,6 +21,8 @@ Od 119 zatvorenih, **119 je pravilo dokazano** (XML ili NetGen linija, kuka vrat
 
 Grid je detail, kvačica, suma, sort i stupci mastera. Stablo je čvor, lijevi panel i `onlytree`. Combo je odjeljak 13. Gumbi/lanac su naredba, `OK`/`CLOSE`, `NEXTFORM`, `FILLEXPLORER` i `FOREACH`. Dijalog je datum, raspored, prazan broj, tražilica i kontrole na formi. Ispis je `PRINTREPX`. Ostalo je izbornik, `totalgen`, XML kojeg nema i `ssMeni`.
 
+Što korisnik donosi s klijenata (SQL koji fali na spinu i 63 XML-a) je u [fali-od-korisnika.md](fali-od-korisnika.md). Jupiter nije pitan, pa nijedan objekt nije zapisan kao odsutan na oba Jupitera. Stavke se tim popisom ne zatvaraju.
+
 Od 45 otvorenih, 20 je ostalo: 12 redova `ssMeni`, 4 XML-a kojih nema, `JEZ-31`, `DOS-11`, `FAK-11` i `MPP-20`. Datoteke i retke izbornika se ne izmišljaju. Deveti otvoreni grid je `OKL-58`. `WIDTH` prepisuje širinu iz SQL-a, pa je `BLA-35` 179 i bez retka, ali to je pravilo, ne spin red.
 
 Izvor polaznog izvještaja je CI [#34](https://github.com/tomic04/netgen-u-carpo/pull/34), commit `30236ff`, `SVE ukupno=624 zeleno=460 otvoreno=164 pad=0`.
