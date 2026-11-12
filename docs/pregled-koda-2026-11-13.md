@@ -110,9 +110,32 @@ Pregledano je 9 modula. Popravljeno: `FILLEXPLORER` nakon OK, `ONLOAD2` po natpi
 | Carpo | `Placeholders.cs` `PrintBridge`. Ako nema `NetGenExtensions`, log i izlaz, bez iznimke. |
 | Razlika | NE za tri potpisa. DA ostaje: REPX ne okreće stranicu. |
 
+## 14. Placeholdere i što ugasiti prije produkcije
+
+Živi ulaz (TestShell, `Prozor`, `Podloga`) ne zove ove tri metode. One i dalje bace `NotSupportedException` ako ih netko pozove:
+
+| Klasa | Datoteka | Što radi |
+|---|---|---|
+| `LayoutEngine.Crtaj` | `Placeholders.cs` 11–14 | M0 ne crta. Crta `Podloga` / `ObicnaForma`. |
+| `CommandRunner.Pokreni` | `Placeholders.cs` 22–25 | M0 ne izvršava komandu. Radi `GumbTok` i `Lanac`. |
+| `SqlBridge.Exec` | `Placeholders.cs` 37–40 | M0 ne šalje SQL. Radi `MasterGrid` i `Citaj`. |
+
+Ostalo što nije NetGen tijelo:
+
+| Što | Gdje | NetGen | Prije produkcije |
+|---|---|---|---|
+| Upis `insert`/`update`/`delete`/`drop`/`alter`/`truncate`/`merge`/`create` se ne šalje | `SqlTekst.JeZabranaPisanja` 104–120 | `Class1.ExecSql` šalje | Na spinu i jupiteru ovo mora ostati. Na produkcijskoj bazi se gasi, inače spremanje ne stiže. Test `zabrana-insert`. |
+| `jupiter2022` u `SpinVeza.Spoj` baca | `SqlTekst.cs` 135–136 | NetGen se spaja | Ostaje ugašeno. Nema čitanja ni upisa na taj server. |
+| SOAP fiskalizacije | `FiskalPoziv.Ucitaj` | `Form1.vb` 520 `PosaljiSoapPorukuCertifikatDatoteka` | Ne uključivati dok `Raverus.FiskalizacijaDEV.COM.dll` nije na stroju. Ovaj kod metodu ne zove. |
+| Word | nema poziva | `Form1.vb` 5093 `WORDDOT1` i `CreateObject("Word.Application")` | Nije implementirano. |
+| `:repx/` izvještaj | `IspisMotora` kaže da se pisač ne zove | `Class1.vb` 297 `Spin.Printing.Start` | Grid REPX ide kroz `PrintBridge`. Spin.Printing za `:repx/` još nije poziv. |
+| QA kuka | `GranulaSesija` | nema je | Produkcijski `Loader` je ne zove. Ostaje isključena. |
+
 ## Što ostaje otvoreno
 
-- Word još nema tijelo.
-- Fiskalizacija ne šalje SOAP dok DLL nije na stroju, i ovaj kod ga ne zove.
+- Word (`Form1.vb` 5093) još nema tijelo.
+- Fiskalizacija ne šalje SOAP.
+- `:repx/` ne zove `Spin.Printing`.
+- `JeZabranaPisanja` na spinu ostaje uključena.
 - `strParametriSvi` na dijalogu za `ASSEMBLYLOAD` skuplja check, lookup i tekst. Search, grid i radio iz `Form2.vb` 3432 još nisu u tom nizu.
 - 12 redova `ssMeni` i XML-ovi kojih nema u repou. Shema se ne dira.
