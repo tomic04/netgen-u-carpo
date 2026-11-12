@@ -854,6 +854,15 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `bla-width-prepisuje`
 - **PR:** spin-otvaranje
 
+## R106 `ONLOAD2` gleda natpis gumba, ne ime
+
+- **Element:** enable/disable na podlozi
+- **NetGen:** `DodatnoPostimajKontrolu` čita stupac čije je ime `Button.Text` (`Form1.vb` 3914–3921). `NAME` se ne gleda.
+- **Carpo:** `MPPonuda` ima `BUTTONS` koji počinje s `Dodaj:` i `ONLOAD2` s aliasom `'Dodaj'`. Ključ je `gumb.natpis=Dodaj`. Upit se ne šalje.
+- **Odluka:** NetGen logika.
+- **Test:** `mpp-20`
+- **PR:** gumb-natpis
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
