@@ -164,12 +164,15 @@ order by c.column_id
     if (-not $uspio) { throw "Formula left(nivo, len(nivo)-2) nije dala Parent jednak roditeljskom Nivo. fk_meni nije gasen." }
 }
 
+# Parent je char(6): len(nivo)=2 -> NULL, inace left(nivo, len(nivo)-2).
+# To nije MeniID. MeniID roditelja je red ciji je Nivo jednak tom Parentu.
+# fk_meni je na AplikacijeID i ostaje ukljucen.
 $provjera = Q @"
-select c.MeniID, rtrim(c.Nivo) as Nivo, rtrim(c.Parent) as Parent
+select c.MeniID, rtrim(c.Nivo) as Nivo, rtrim(c.Parent) as ParentNivo, p.MeniID as ParentMeniID
 from ssMeni c
+join ssMeni p on rtrim(p.Nivo) = rtrim(c.Parent)
 where c.Parametar = N'$param'
-  and exists (select 1 from ssMeni p where rtrim(p.Nivo) = rtrim(c.Parent))
 "@
-if ($provjera.Rows.Count -ne 1) { throw "Statusi.xml nema Parent koji je postojeci Nivo." }
+if ($provjera.Rows.Count -lt 1) { throw "Statusi.xml Parent ne vodi na MeniID. fk_meni nije gasen." }
 $conn.Close()
-Write-Host ("STA-12 ssMeni MeniID=" + $provjera.Rows[0].MeniID + " Nivo=" + $provjera.Rows[0].Nivo + " Parent=" + $provjera.Rows[0].Parent)
+Write-Host ("STA-12 ssMeni MeniID=" + $provjera.Rows[0].MeniID + " Nivo=" + $provjera.Rows[0].Nivo + " ParentNivo=" + $provjera.Rows[0].ParentNivo + " ParentMeniID=" + $provjera.Rows[0].ParentMeniID)

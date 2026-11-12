@@ -49,18 +49,22 @@ namespace Carpo.NetGen.Granule
                     return Qa.P(ime, id, opis, izvor, g1 ?? "fk");
                 if (ugasen != "0")
                     return Qa.P(ime, id, opis, izvor, "fk_meni je ugasen");
-                DataTable red = Tablica("select rtrim(Nivo) as Nivo, rtrim(cast(Parent as varchar(20))) as Parent from ssMeni where Parametar = N'" + param + "'");
-                if (red.Rows.Count != 1)
-                    return Qa.P(ime, id, opis, izvor, "redova=" + red.Rows.Count);
+                DataTable red = Tablica(
+                    "select rtrim(c.Nivo) as Nivo, rtrim(cast(c.Parent as varchar(20))) as ParentNivo, p.MeniID as ParentMeniID "
+                    + "from ssMeni c join ssMeni p on rtrim(p.Nivo) = rtrim(cast(c.Parent as varchar(20))) "
+                    + "where c.Parametar = N'" + param + "'");
+                if (red.Rows.Count < 1)
+                    return Qa.P(ime, id, opis, izvor, "Parent ne vodi na MeniID");
                 string nivo = Convert.ToString(red.Rows[0]["Nivo"]).Trim();
-                string parent = Convert.ToString(red.Rows[0]["Parent"]).Trim();
-                if (nivo.Length <= 2 || parent != nivo.Substring(0, nivo.Length - 2))
-                    return Qa.P(ime, id, opis, izvor, "Parent [" + parent + "] nije left(Nivo, len-2) od [" + nivo + "]");
+                string parentNivo = Convert.ToString(red.Rows[0]["ParentNivo"]).Trim();
+                int parentMeniId = Convert.ToInt32(red.Rows[0]["ParentMeniID"]);
+                if (nivo.Length <= 2 || parentNivo != nivo.Substring(0, nivo.Length - 2))
+                    return Qa.P(ime, id, opis, izvor, "Parent [" + parentNivo + "] nije left(Nivo, len-2)");
                 string postoji = Citanje.PrviTekst(
-                    "select cast(count(*) as varchar(10)) from ssMeni where rtrim(Nivo) = N'" + parent.Replace("'", "") + "'",
+                    "select cast(count(*) as varchar(10)) from ssMeni where MeniID = " + parentMeniId.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     out string g2);
-                if (postoji == null || postoji == "0")
-                    return Qa.P(ime, id, opis, izvor, "Nivo " + parent + " ne postoji. " + (g2 ?? ""));
+                if (postoji != "1")
+                    return Qa.P(ime, id, opis, izvor, "ParentMeniID " + parentMeniId + " ne postoji. " + (g2 ?? ""));
                 string module = MeniParametar.ModuleId(param);
                 if (module != "Statusi.xml")
                     return Qa.P(ime, id, opis, izvor, "moduleId [" + module + "]");
@@ -77,8 +81,8 @@ namespace Carpo.NetGen.Granule
                     return Qa.P(ime, id, opis, izvor, loader.ZadnjaGreska ?? "Loader nije ucitao XML");
                 if ((loader.Projekt.Tree ?? "").IndexOf("POPUNI_FORM", StringComparison.Ordinal) < 0)
                     return Qa.P(ime, id, opis, izvor, loader.Projekt.Tree ?? "");
-                Console.WriteLine("[Z] Cetvrti.STA-12 Loader.Run8 moduleId=" + module + " Parent=" + parent);
-                return Qa.Z(ime, id, "Loader.Run8 " + module + " Parent=" + parent, izvor);
+                Console.WriteLine("[Z] Cetvrti.STA-12 Loader.Run8 moduleId=" + module + " ParentMeniID=" + parentMeniId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                return Qa.Z(ime, id, "Loader.Run8 " + module + " ParentMeniID=" + parentMeniId.ToString(System.Globalization.CultureInfo.InvariantCulture), izvor);
             }
             catch (Exception ex)
             {
