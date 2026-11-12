@@ -682,6 +682,8 @@ Najnovija povučena implementacijska grana `cursor/netgen-dblclick-3266` (`0f245
 - **Posljedica:** `Akcije` između `Promjene` i `Obriši operatera` ima crticu. To je stavka izbornika, ne preskok.
 - **Test:** `AKC-04`
 
+Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88 (`FILTER` kao forma, `spMPTrgovineNG`, `MPKasaPolog`, `oznaka2`, uzorak praznog mastera). QA R84 ostaje `MAXIMIZEBOX`, QA R85 ostaje popup `-:`. Sljedeći slobodan broj je R89. Ovaj blok nema novu stavku.
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
@@ -751,4 +753,11 @@ Najnovija povučena implementacijska grana `cursor/netgen-dblclick-3266` (`0f245
 | `ManagerObaveza.md` | `Razdoblje` bez `:`, `PRINTREPXMASTER` | R60, R41 |
 | `PNKatalozi.md` | samo store u stablu, nema `ONLOAD` | R01, R65 |
 | `PorukeDoc.md` | XML nije u repou | |
+| `MPRealizNG.md` | `:FORM1`, `@@datumod` ostaje, timeout 600 | R18, R65, R41 |
+| `PartneriAuditNG.md` | element `FILTER` je forma | R84 |
+| `ZakljucivanjeTemNG.md` | `:MAINFORM`, `MAXIMIZEBOX=TRUE`, `sp` koji zaključuje | R18, R84 |
+| `MPNivelacija.md` | stablo, `vrstadokid-`, `ONLOAD2` po natpisu | R01, R43, R57 |
+| `KntPreknjizavanjeNG.md` | element `FILTER`, `PRINTMASTER#REFRESHMASTER` | R84, R41, R04 |
+| `KntBlaVrste.md` | XML nije u repou | |
+| `MPTrgovine.md` | XML nije u repou | |
 | `Smoke-prazno-uzorak.md` | 20 praznih iz smokea #35 | |
