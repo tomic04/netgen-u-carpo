@@ -32,11 +32,25 @@ jobs:
           & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Prenesi.ps1")
           & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Retci.ps1")
           & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Otvori.ps1")
-          sqlcmd -S localhost -d spin -E -C -b -i (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\pl32.sql")
-          if ($LASTEXITCODE -ne 0) { throw "pl32.sql nije prosao" }
-          sqlcmd -S localhost -d spin -E -C -b -i (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\mpp20.sql")
-          if ($LASTEXITCODE -ne 0) { throw "mpp20.sql nije prosao" }
-          & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\sta12.ps1")
+          function Pokreni-Pripremu([string]$ime, [scriptblock]$tijelo) {
+            try {
+              & $tijelo
+              Write-Host "PRIPREMA OK $ime"
+            } catch {
+              Write-Host "PRIPREMA PAD $ime : $($_.Exception.Message)"
+            }
+          }
+          Pokreni-Pripremu "pl32.sql" {
+            sqlcmd -S localhost -d spin -E -C -b -i (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\pl32.sql")
+            if ($LASTEXITCODE -ne 0) { throw "pl32.sql kod $LASTEXITCODE" }
+          }
+          Pokreni-Pripremu "mpp20.sql" {
+            sqlcmd -S localhost -d spin -E -C -b -i (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\mpp20.sql")
+            if ($LASTEXITCODE -ne 0) { throw "mpp20.sql kod $LASTEXITCODE" }
+          }
+          Pokreni-Pripremu "sta12.ps1" {
+            & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\sta12.ps1")
+          }
 
       - name: Artifact spin otvaranje
         if: always()

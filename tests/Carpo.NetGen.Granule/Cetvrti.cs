@@ -76,7 +76,8 @@ namespace Carpo.NetGen.Granule
                     return Qa.P(ime, id, opis, izvor, loader.ZadnjaGreska ?? "Loader nije ucitao XML");
                 if ((loader.Projekt.Tree ?? "").IndexOf("POPUNI_FORM", StringComparison.Ordinal) < 0)
                     return Qa.P(ime, id, opis, izvor, loader.Projekt.Tree ?? "");
-                return Qa.Z(ime, id, opis + ". Parent=" + parent + " moduleId=" + module, izvor);
+                Console.WriteLine("[Z] Cetvrti.STA-12 Loader.Run8 moduleId=" + module + " Parent=" + parent);
+                return Qa.Z(ime, id, "Loader.Run8 " + module + " Parent=" + parent, izvor);
             }
             catch (Exception ex)
             {
@@ -165,7 +166,8 @@ namespace Carpo.NetGen.Granule
                 }
                 if (!danas || !skladiste)
                     return Qa.P(ime, id, opis, izvor, "stablo nije rasclanilo " + vrijednost);
-                return Qa.Z(ime, id, opis + ". spin stupac0=" + vrijednost, izvor);
+                Console.WriteLine("[Z] Cetvrti.Pl32 IzTeksta " + vrijednost);
+                return Qa.Z(ime, id, "IzTeksta " + vrijednost, izvor);
             }
             catch (Exception ex)
             {
@@ -227,7 +229,8 @@ namespace Carpo.NetGen.Granule
                     return Qa.P(ime, id, opis, izvor, "kuka nema gumb.stanje");
                 if (pogled.Stavke["gumb.stanje"] != ocek || pogled.Stavke["gumb.natpis"] != "Dodaj")
                     return Qa.P(ime, id, opis, izvor, "kuka [" + pogled.Stavke["gumb.natpis"] + " " + pogled.Stavke["gumb.stanje"] + "]");
-                return Qa.Z(ime, id, opis + ". Dodaj=" + ocek + " iz spmpPermissionNG", izvor);
+                Console.WriteLine("[Z] Cetvrti.Mpp20 @@dodaj=" + dodaj.ToString(System.Globalization.CultureInfo.InvariantCulture) + " Button.Text=Dodaj stanje=" + dobiveno);
+                return Qa.Z(ime, id, "@@dodaj Button.Text Dodaj=" + ocek, izvor);
             }
             catch (Exception ex)
             {
