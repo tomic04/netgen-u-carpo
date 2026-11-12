@@ -300,7 +300,19 @@ namespace Carpo.NetGen.GridTest
             dijStablo.Rjecnik["Klase"] = "Classes";
             dijStablo.Ucitaj(ProjektS("TREE", "spTreeX:FORMA", "TREETRANSLATE", "true"), delegate (string q) { return tab; });
             T("stablo-dijalog-tag", dijStablo.Stanje.Korijen.Count == 1 && dijStablo.Stanje.Korijen[0].Tag == "abc" && dijStablo.Stanje.Korijen[0].Natpis == "Klase" && dijStablo.Stanje.Korijen[0].Ikona == 0, dijStablo.Stanje.Korijen.Count == 0 ? "" : dijStablo.Stanje.Korijen[0].Tag);
-            T("ikona-nije-grid", dijStablo.Stanje.Korijen[0].Ikona == 0, "");
+            T("node-null-se-salje", SqlTekst.Sredi("spKntAOPOBRASCIQuery @id='@@node'", new SqlKontekst()).IndexOf("@id='null'", StringComparison.Ordinal) >= 0
+                && SqlTekst.Odluka(SqlTekst.Sredi("spKntAOPOBRASCIQuery @id='@@node'", new SqlKontekst())) == "salji", "");
+            var comboPrazan = new Stablo();
+            comboPrazan.Ucitaj(Projekt("COMBO", "select 'spTreeX:FORM' as tree, 'Vrijeme' as opis"), null);
+            T("combo-prvi-prolaz", comboPrazan.Stanje.PrviProlaz == "izlaz" && comboPrazan.Stanje.Vidljivo && comboPrazan.Stanje.Splitter == 243 && !comboPrazan.Stanje.GumbDrvo && comboPrazan.Stanje.Korijen.Count == 0, comboPrazan.Stanje.PrviProlaz);
+            var comboDt = new DataTable();
+            comboDt.Columns.Add("id");
+            comboDt.Columns.Add("parentid");
+            comboDt.Columns.Add("caption");
+            comboDt.Columns.Add("value");
+            comboDt.Rows.Add("1", "", "Danas", "1:FORM");
+            comboPrazan.IzTeksta("spTreeX:FORM", ProjektS("TREE", "", "SPLITTERDISTANCE", "180"), delegate (string q) { return comboDt; });
+            T("combo-puni-drvo", comboPrazan.Stanje.PrviProlaz.Length == 0 && comboPrazan.Stanje.Splitter == 180 && comboPrazan.Stanje.GumbDrvo && comboPrazan.Stanje.Korijen.Count == 1 && comboPrazan.Stanje.Korijen[0].Tag == "1:FORM", comboPrazan.Stanje.Korijen.Count.ToString());
         }
 
         private static void KomandeTestovi()

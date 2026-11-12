@@ -1,6 +1,8 @@
 # Smoke spin: ssMeni NetGenDLL
 
-Mjerenje na sql-ai, baza `spin`, samo citanje. Upit: `Parametar like 'asm:NetGenDLL.loader%'` ili `asm:NetGenDLL.frm%`. Operater 7, timeout 12 s. Izvor: CI run 43230508391.
+Mjerenje na sql-ai, baza `spin`, samo citanje. Upit: `Parametar like 'asm:NetGenDLL.loader%'` ili `asm:NetGenDLL.frm%`. Operater 7, timeout 12 s. Izvor: CI run 43230508391, prije comboa na podlozi.
+
+AOP: NetGen šalje `@id='null'` i prikaže grešku. To nije preskok. Narudžbe nemaju `ONLOAD`, master ostaje prazan dok se ne odabere čvor. Stablo dolazi iz prve vrijednosti `COMBO`. 21 stavka `nema-sql` nema master predložak, nije pad upita. 63 `nema-xml` nema datoteku u repou.
 
 Ukupno 128, otvoreno 38.
 

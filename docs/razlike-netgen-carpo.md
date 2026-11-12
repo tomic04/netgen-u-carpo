@@ -525,3 +525,21 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 - **Odluka:** otvoreno.
 - **Test:** nema
 - **PR:** #4
+
+## R60 Prvi master AOP šalje `@id='null'` i prikaže grešku
+
+- **Element:** `@@node` prije klika na stablo (`AOPNovi`)
+- **NetGen:** `Node` kreće kao `"null"` (`Form1.vb` 39). Čitanje odabranog čvora je komentar (`3875–3877`). `SrediSQL` ubaci tu riječ (`2482`). `ONLOAD` `@id='@@node'` postane `@id='null'`. `@@` više nema, pa `ExecSql` upit pošalje (`113–118` ga ne preskače). Poruka pretvorbe nema `#` ni `+`, pa je `MsgBox` kritičan i grid ostane prazan (`Class1.vb` 220–222).
+- **Carpo:** isti početni `Node`. Port ne uzima prvi čvor umjesto te riječi.
+- **Odluka:** NetGen logika. Greška se vidi, grid se ne puni.
+- **Test:** `node-null-se-salje`
+- **PR:** #22
+
+## R61 Combo na podlozi upiše prvu vrijednost u stablo
+
+- **Element:** `COMBO` bez `TREE` (Narudžbe, Prijemni list)
+- **NetGen:** prazan `strTreeNodes` i pun combo ne gase stablo i ne diraju splitter (`4310–4320`). Veza comboa odabere prvi red i `SelectedValueChanged` stavi stupac 0 u `strTreeNodes`, pa opet `NapuniDrvoVrijeme` (`7730–7733`, `4322–4330`). Splitter tada postane `SPLITTERDISTANCE` ili 290.
+- **Carpo:** `JTree` ne čita taj combo.
+- **Odluka:** NetGen logika. Podloga ima combo, prva vrijednost puni stablo.
+- **Test:** `combo-prvi-prolaz`, `combo-puni-drvo`
+- **PR:** #22

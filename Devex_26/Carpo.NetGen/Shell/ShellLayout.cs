@@ -53,15 +53,22 @@ namespace Carpo.NetGen.Shell
             if (projekt.Atributi != null && projekt.Atributi.Ima("COMBO"))
                 combo = projekt.Atributi.Vrijednost("COMBO") ?? "";
             s.ComboVidljiv = combo.Trim().Length > 0;
-            bool sakrij = s.TreeSql.Trim().Length == 0 && !s.ComboVidljiv;
+            bool treePrazan = s.TreeSql.Trim().Length == 0;
+            bool sakrij = treePrazan && !s.ComboVidljiv;
             s.StabloVidljivo = !sakrij;
-            s.GumbDrvoEnabled = !sakrij;
             if (sakrij)
             {
+                s.GumbDrvoEnabled = false;
                 s.LijeviSplitter = 0;
+            }
+            else if (treePrazan)
+            {
+                s.GumbDrvoEnabled = false;
+                s.LijeviSplitter = 243;
             }
             else
             {
+                s.GumbDrvoEnabled = true;
                 int d = 290;
                 string raw = projekt.Atributi == null ? null : projekt.Atributi.Vrijednost("SPLITTERDISTANCE");
                 int parsed;

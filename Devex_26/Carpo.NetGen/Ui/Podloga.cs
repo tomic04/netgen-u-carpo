@@ -19,6 +19,7 @@ namespace Carpo.NetGen.Ui
     {
         private readonly SplitContainer _split;
         private readonly TreeView _drvo;
+        private readonly ComboBox _combo;
         private readonly DataGridView _grid;
         private readonly DataGridView _detailGrid;
         private readonly SplitContainer _detailSplit;
@@ -76,6 +77,13 @@ namespace Carpo.NetGen.Ui
             _drvo.SelectedImageIndex = 0;
             _drvo.AfterSelect += Drvo_AfterSelect;
 
+            _combo = new ComboBox();
+            _combo.Dock = DockStyle.Top;
+            _combo.DropDownStyle = ComboBoxStyle.DropDownList;
+            _combo.Font = new Font("Microsoft Sans Serif", 8.25f);
+            _combo.Visible = false;
+            _combo.SelectedIndexChanged += Combo_SelectedIndexChanged;
+
             _grid = new DataGridView();
             _grid.Dock = DockStyle.Fill;
             _grid.ReadOnly = true;
@@ -120,6 +128,7 @@ namespace Carpo.NetGen.Ui
             _split.Dock = DockStyle.Fill;
             _split.Orientation = Orientation.Vertical;
             _split.Panel1.Controls.Add(_drvo);
+            _split.Panel1.Controls.Add(_combo);
             _split.Panel2.Controls.Add(_detailSplit);
 
             Controls.Add(_status);
@@ -156,6 +165,7 @@ namespace Carpo.NetGen.Ui
             }
 
             _stablo.Ucitaj(_projekt, Citaj);
+            NapuniCombo();
             NapuniDrvo();
             _detail.Pripremi(_projekt);
             _master.Ucitaj(_projekt, null);
@@ -224,6 +234,42 @@ namespace Carpo.NetGen.Ui
                 if (hash >= 0)
                     ime = ime.Substring(0, hash);
                 OtvoriFormu(ime.Trim());
+            }
+        }
+
+        private void NapuniCombo()
+        {
+            _combo.Visible = false;
+            _combo.DataSource = null;
+            if (_projekt == null || _projekt.Atributi == null || !_projekt.Atributi.Ima("COMBO"))
+                return;
+            string sql = (_projekt.Atributi.Vrijednost("COMBO") ?? "").Trim();
+            if (sql.Length == 0 || SqlTekst.JeZabranaPisanja(sql))
+                return;
+            DataTable t = Citaj(SqlTekst.Sredi(sql, _master.Kontekst));
+            if (t == null || t.Columns.Count == 0 || t.Rows.Count == 0)
+                return;
+            _combo.Visible = true;
+            _combo.ValueMember = t.Columns[0].ColumnName;
+            if (t.Columns.Count > 1)
+                _combo.DisplayMember = t.Columns[1].ColumnName;
+            _combo.DataSource = t;
+        }
+
+        private void Combo_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_combo.SelectedValue == null || _combo.SelectedValue is DataRowView)
+                return;
+            string vrijednost = Convert.ToString(_combo.SelectedValue);
+            _stablo.IzTeksta(vrijednost, _projekt, Citaj);
+            NapuniDrvo();
+            if (_stablo.Stanje.Vidljivo && _stablo.Stanje.Splitter > 0)
+            {
+                _split.Panel1Collapsed = false;
+                int max = _split.Width - _split.SplitterWidth - 80;
+                int d = _stablo.Stanje.Splitter;
+                if (d > 40 && d < max)
+                    _split.SplitterDistance = d;
             }
         }
 

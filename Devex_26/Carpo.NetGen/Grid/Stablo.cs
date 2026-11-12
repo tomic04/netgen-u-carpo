@@ -32,6 +32,7 @@ namespace Carpo.NetGen.Grid
         public bool Prevedi;
         public string DragDropSql = "";
         public string ZadnjaNaredba = "";
+        public string PrviProlaz = "";
         public readonly List<Cvor> Korijen = new List<Cvor>();
         public readonly List<string> SqlPozivi = new List<string>();
     }
@@ -71,21 +72,52 @@ namespace Carpo.NetGen.Grid
                 {
                     Stanje.Vidljivo = true;
                     Stanje.Splitter = 243;
-                    Stanje.GumbDrvo = true;
+                    Stanje.GumbDrvo = false;
+                    Stanje.PrviProlaz = "izlaz";
                 }
                 return;
             }
 
             Stanje.Vidljivo = true;
             Stanje.GumbDrvo = true;
+            Stanje.Splitter = Splitter(projekt);
+            NapuniSegmente(tree, citaj);
+            Filtri(citaj);
+        }
+
+        /// <summary>
+        /// SelectedValueChanged: prva vrijednost comboa postane strTreeNodes i zove NapuniDrvoVrijeme.
+        /// Form1.vb 7730–7733, pa grana 4322.
+        /// </summary>
+        public void IzTeksta(string tree, NgProject projekt, Func<string, DataTable> citaj)
+        {
+            if (string.IsNullOrWhiteSpace(tree))
+                return;
+            Stanje.Korijen.Clear();
+            Stanje.SqlPozivi.Clear();
+            Stanje.PrviProlaz = "";
+            Stanje.Vidljivo = true;
+            Stanje.GumbDrvo = true;
+            Stanje.Splitter = Splitter(projekt);
+            if (projekt != null)
+                Stanje.Prevedi = string.Equals((Atr(projekt, "TREETRANSLATE") ?? "").Trim(), "true", StringComparison.OrdinalIgnoreCase);
+            NapuniSegmente(tree, citaj);
+            Filtri(citaj);
+        }
+
+        private int Splitter(NgProject projekt)
+        {
             int splitter = 290;
             string raw = Atr(projekt, "SPLITTERDISTANCE");
             int parsed;
             if (!string.IsNullOrWhiteSpace(raw) && int.TryParse(raw.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed))
                 splitter = parsed;
-            Stanje.Splitter = splitter;
+            return splitter;
+        }
 
-            string[] dijelovi = tree.Split('#');
+        private void NapuniSegmente(string tree, Func<string, DataTable> citaj)
+        {
+            string[] dijelovi = (tree ?? "").Split('#');
             for (int i = 0; i < dijelovi.Length; i++)
             {
                 string seg = dijelovi[i] ?? "";
@@ -111,7 +143,6 @@ namespace Carpo.NetGen.Grid
                     Stanje.Korijen.Add(c);
                 }
             }
-            Filtri(citaj);
         }
 
         public string Prevedi(string tekst)

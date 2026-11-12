@@ -115,6 +115,7 @@ namespace Carpo.NetGen.Granule
                 r.Uzrok = Uzrok(g.Stanje.SqlGreska);
                 r.Greska = Skrati(g.Stanje.Poruka ?? g.Stanje.SqlGreska);
                 r.Sql = Skrati(g.Stanje.SqlZaSlanje);
+                IzmjeriStablo(ucitano.Projekt, r);
                 return r;
             }
             if (g.Stanje.BlokiranoPisanje)
@@ -134,20 +135,36 @@ namespace Carpo.NetGen.Granule
                 r.Uzrok = "nema-sql";
                 r.Greska = g.Stanje.Odluka ?? "prazno";
                 r.Otvoreno = true;
+                IzmjeriStablo(ucitano.Projekt, r);
                 return r;
             }
             r.Otvoreno = true;
             r.Redova = g.Stanje.Tablica == null ? 0 : g.Stanje.Tablica.Rows.Count;
             r.Uzrok = "otvoreno";
-            if (!string.IsNullOrWhiteSpace(ucitano.Projekt.Tree))
-            {
-                var st = new Carpo.NetGen.Grid.Stablo();
-                st.Kontekst.OperaterId = "7";
-                st.ImeXml = Path.GetFileName(fajl);
-                st.Ucitaj(ucitano.Projekt, delegate (string sql) { return Citaj(sql); });
-                r.Korijena = st.Stanje.Korijen.Count;
-            }
+            IzmjeriStablo(ucitano.Projekt, r);
             return r;
+        }
+
+        private static void IzmjeriStablo(Carpo.NetGen.Model.NgProject projekt, Red r)
+        {
+            string combo = "";
+            if (projekt.Atributi != null && projekt.Atributi.Ima("COMBO"))
+                combo = (projekt.Atributi.Vrijednost("COMBO") ?? "").Trim();
+            var st = new Carpo.NetGen.Grid.Stablo();
+            st.Kontekst.OperaterId = "7";
+            st.ImeXml = r.Xml == null ? "" : Path.GetFileName(r.Xml);
+            st.Ucitaj(projekt, delegate (string sql) { return Citaj(sql); });
+            if (combo.Length > 0 && !SqlTekst.JeZabranaPisanja(combo))
+            {
+                DataTable ct = Citaj(SqlTekst.Sredi(combo, st.Kontekst));
+                if (ct != null && ct.Rows.Count > 0 && ct.Columns.Count > 0)
+                {
+                    string vrijednost = Convert.ToString(ct.Rows[0][0]);
+                    st.IzTeksta(vrijednost, projekt, delegate (string sql) { return Citaj(sql); });
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(projekt.Tree) || combo.Length > 0)
+                r.Korijena = st.Stanje.Korijen.Count;
         }
 
         private static DataTable Citaj(string sql)
