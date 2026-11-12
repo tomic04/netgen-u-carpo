@@ -457,7 +457,7 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 - **Element:** `ONLOAD2` i rafalni `select` na podlozi
 - **NetGen:** stupac se traži po `Button.Text` (`Form1.vb` 3914–3921 i 4886–4896). To je natpis, ne `NAME`.
 - **Carpo:** `GumbNatpis` i `PostaviGumb` traže `Button.Text`. `Name` gumba je `cmd` + redni broj. Stupac `INSERTFORM1` ne gasi Dodaj.
-- **Posljedica:** `MPPonuda` `ONLOAD2` stupac `Dodaj` gasi gumb čiji je natpis Dodaj. Ako `@@dodaj` ostane, `ExecSql` preskoči red (`Class1.vb` 113–118) i spin taj SELECT ne potvrdi.
+- **Posljedica:** `MPPonuda` `ONLOAD2` stupac `Dodaj` gasi ili pali gumb čiji je natpis Dodaj. `@@dodaj` se prije `ExecSql` zamijeni vrijednošću iz `spmpPermissionNG` (`Class1.vb` 765–849, 932–964).
 - **Test:** `MPP-04`, `MPP-20`
 
 ## R58 `CLICK(ime)` klikne tu kontrolu

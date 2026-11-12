@@ -214,4 +214,72 @@ namespace Carpo.NetGen.Komande
             return "nije-tree";
         }
     }
+
+    /// <summary>
+    /// SETDEFAULTS stupac ide u CB kao ime=. ONLOAD2 onda mijenja @@ime prije ExecSql.
+    /// Form1.vb 3976–3998 i Class1.vb 765–849, 932–964.
+    /// </summary>
+    public static class Dozvola
+    {
+        public static Dictionary<string, string> IzReda(DataRow red)
+        {
+            var cb = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (red == null || red.Table == null)
+                return cb;
+            for (int i = 0; i < red.Table.Columns.Count; i++)
+            {
+                object v = red[i];
+                string t = v == null || v == DBNull.Value ? "null" : Convert.ToString(v);
+                t = (t ?? "").Trim();
+                if (t.StartsWith("'", StringComparison.Ordinal) && t.Length > 0)
+                    t = t.Substring(1);
+                if (t.EndsWith("'", StringComparison.Ordinal) && t.Length > 0)
+                    t = t.Substring(0, t.Length - 1);
+                cb[red.Table.Columns[i].ColumnName] = t.Trim();
+            }
+            return cb;
+        }
+
+        public static string Poslije(string sql, IDictionary<string, string> cb)
+        {
+            if (sql == null)
+                sql = "";
+            int zastita = 0;
+            while (sql.IndexOf("@@", StringComparison.Ordinal) >= 0 && zastita++ < 40)
+            {
+                int poc = sql.IndexOf("@@", StringComparison.Ordinal);
+                string sql2 = sql.Substring(poc) + " ";
+                int kraj = sql2.IndexOf(' ');
+                char[] rub = { '\'', '%', '#', ',', ')', '*', '/', '\\', '+', '-', '.', '(', '=' };
+                for (int i = 0; i < rub.Length; i++)
+                {
+                    int p = sql2.IndexOf(rub[i]);
+                    if (p > -1 && p < kraj)
+                        kraj = p;
+                }
+                if (kraj <= 0)
+                    break;
+                string token = sql2.Substring(0, kraj);
+                string vrijednost = IzCb(token, cb);
+                sql = sql.Substring(0, poc) + vrijednost + sql.Substring(poc + token.Length);
+            }
+            return sql;
+        }
+
+        private static string IzCb(string token, IDictionary<string, string> cb)
+        {
+            string param = (token ?? "").Trim().Replace("@@", "@");
+            string ime = param.StartsWith("@", StringComparison.Ordinal) ? param.Substring(1) : param;
+            string v = null;
+            if (cb != null)
+                cb.TryGetValue(ime, out v);
+            if (string.IsNullOrWhiteSpace(v))
+                return "null";
+            double broj;
+            string norm = v.Replace(",", ".");
+            if (double.TryParse(norm, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out broj))
+                return norm;
+            return v;
+        }
+    }
 }

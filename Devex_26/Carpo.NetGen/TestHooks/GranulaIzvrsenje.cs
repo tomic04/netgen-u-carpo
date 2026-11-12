@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
+using System.IO;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Kontrole;
@@ -173,6 +174,7 @@ namespace Carpo.NetGen.TestHooks
             NgProject p = ucitano.Projekt;
             var g = new MasterGrid();
             g.Kontekst.OperaterId = "7";
+            g.Kontekst.XmlName = Path.GetFileName(xml ?? "");
             g.Ucitaj(p, null);
 
             var cb = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -185,9 +187,12 @@ namespace Carpo.NetGen.TestHooks
                     string dio = dijelovi[i].Trim();
                     if (dio.Length == 0 || SqlTekst.JeZabranaPisanja(dio))
                         continue;
+                    string spremno = SqlTekst.Sredi(dio, g.Kontekst);
+                    if (SqlTekst.Odluka(spremno) != "salji" || SqlTekst.JeZabranaPisanja(spremno))
+                        continue;
                     try
                     {
-                        NapuniMedjuspremnik(Spoj(), dio, cb);
+                        NapuniMedjuspremnik(Spoj(), spremno, cb);
                     }
                     catch (SqlException)
                     {
@@ -318,8 +323,12 @@ namespace Carpo.NetGen.TestHooks
             string natpis = GumbNatpis.Prvi(GumbNatpis.Efektivni(p), GumbNatpis.Aliasi(Attr(p, "ONLOAD2")));
             if (natpis.Length > 0)
                 s["gumb.natpis"] = natpis;
-            if (OnLoad2IzReda(p, cb, natpis))
+            string stanje = StanjeGumba(p, g.Kontekst, cb, natpis);
+            if (stanje.Length > 0)
+            {
+                s["gumb.stanje"] = stanje;
                 s["gumb.spin"] = "da";
+            }
             DodajKomande(p, s);
             DodajKontrole(p, s);
             DodajPoziv(p, s);
@@ -608,52 +617,24 @@ namespace Carpo.NetGen.TestHooks
             }
         }
 
-        private static bool OnLoad2IzReda(NgProject p, Dictionary<string, string> cb, string natpis)
+        private static string StanjeGumba(NgProject p, SqlKontekst kontekst, Dictionary<string, string> cb, string natpis)
         {
             if (string.IsNullOrEmpty(natpis) || cb == null || cb.Count == 0)
-                return false;
-            string sql = Attr(p, "ONLOAD2") ?? "";
-            if (sql.Trim().Length == 0)
-                return false;
-            var kljucevi = new List<string>(cb.Keys);
-            kljucevi.Sort(delegate (string a, string b) { return b.Length.CompareTo(a.Length); });
-            for (int i = 0; i < kljucevi.Count; i++)
-            {
-                string k = kljucevi[i];
-                string v;
-                cb.TryGetValue(k, out v);
-                sql = Zamijeni(sql, "@@" + k, v ?? "");
-            }
-            string spremno = SqlTekst.Sredi(sql, new SqlKontekst { OperaterId = "7", Node = "null" });
-            if (SqlTekst.Odluka(spremno) != "salji" || SqlTekst.JeZabranaPisanja(spremno))
-                return false;
+                return "";
+            string sql = Dozvola.Poslije(SqlTekst.Sredi(Attr(p, "ONLOAD2") ?? "", kontekst), cb);
+            if (SqlTekst.Odluka(sql) != "salji" || SqlTekst.JeZabranaPisanja(sql))
+                return "";
             try
             {
-                DataTable dt = Citaj(spremno);
-                if (dt == null || dt.Rows.Count == 0 || !dt.Columns.Contains(natpis))
-                    return false;
-                return true;
+                DataTable dt = Citaj(sql);
+                if (dt == null || dt.Rows.Count == 0)
+                    return "";
+                return (GumbNatpis.Vrijednost(dt.Rows[0], natpis) ?? "").Trim().ToLowerInvariant();
             }
             catch (Exception)
             {
-                return false;
+                return "";
             }
-        }
-
-        private static string Zamijeni(string sql, string token, string vrijednost)
-        {
-            if (string.IsNullOrEmpty(sql) || string.IsNullOrEmpty(token))
-                return sql ?? "";
-            int i = 0;
-            while (i < sql.Length)
-            {
-                int p = sql.IndexOf(token, i, StringComparison.OrdinalIgnoreCase);
-                if (p < 0)
-                    break;
-                sql = sql.Substring(0, p) + vrijednost + sql.Substring(p + token.Length);
-                i = p + (vrijednost ?? "").Length;
-            }
-            return sql;
         }
 
         private static DataTable Citaj(string sql)

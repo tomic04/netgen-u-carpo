@@ -575,7 +575,24 @@ namespace Carpo.NetGen.Ui
         {
             if (_projekt == null || _projekt.Atributi == null || !_projekt.Atributi.Ima("ONLOAD2"))
                 return;
-            string sql = SqlTekst.Sredi(_projekt.Atributi.Vrijednost("ONLOAD2") ?? "", _master.Kontekst);
+            var cb = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            string set = _projekt.Atributi.Ima("SETDEFAULTS") ? (_projekt.Atributi.Vrijednost("SETDEFAULTS") ?? "") : "";
+            if (set.Trim().Length > 0)
+            {
+                string[] dijelovi = set.Split('#');
+                for (int i = 0; i < dijelovi.Length; i++)
+                {
+                    string dio = SqlTekst.Sredi((dijelovi[i] ?? "").Trim(), _master.Kontekst);
+                    if (dio.Length == 0 || SqlTekst.Odluka(dio) != "salji" || SqlTekst.JeZabranaPisanja(dio))
+                        continue;
+                    DataTable red = Citaj(dio);
+                    if (red == null || red.Rows.Count == 0)
+                        continue;
+                    foreach (var par in Dozvola.IzReda(red.Rows[0]))
+                        cb[par.Key] = par.Value;
+                }
+            }
+            string sql = Dozvola.Poslije(SqlTekst.Sredi(_projekt.Atributi.Vrijednost("ONLOAD2") ?? "", _master.Kontekst), cb);
             if (SqlTekst.Odluka(sql) != "salji" || SqlTekst.JeZabranaPisanja(sql))
                 return;
             DataTable t = Citaj(sql);

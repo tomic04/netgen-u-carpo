@@ -23,7 +23,7 @@ Grana `cursor/netgen-cetvrti-dokaz-0b55`. Ne diram ručni Start, UI smoke, `JEZ-
 
 | Stavka | Što radim |
 |---|---|
-| Statusi `STA-12` | Čitam `ssMeni.Parametar`. Klijentski red se ne izmišlja. |
+| Statusi `STA-12` | Red s Nivo djeteta, Parent na postojeći MeniID, `fk_meni` ostaje uključen. Loader otvara `Statusi.xml`. |
 | PrijemniList `PL-32` | Stupac 0 comboa je TREE tekst (`#` i `:`). `Form1.vb` 3342–3344, 4344, 7730–7733. |
 | MPPorKPNG `MPK-30` | `FILLEXPLORER=true` zamijeni master s `ONSUBMIT`. `Form1.vb` 5445–5452. |
 | MPPorKPNG `MPK-31` | Prazan `FILLEXPLORER` izvrši `ONSUBMIT` pa ponovi zadnji master. `Form1.vb` 5509–5519. |

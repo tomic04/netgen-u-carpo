@@ -1,14 +1,14 @@
 # Otvoreno za implementaciju
 
-Četvrti agent (`cursor/netgen-cetvrti-dokaz-0b55`) zatvara uz test i NetGen linije: `MPK-30`, `MPK-31`, `STA-34`, `MPP-20`. `MPP-20` je pravilo (`Button.Text`); spin SELECT ostaje nepotvrđen dok `@@dodaj` preživi. `PL-32` se zatvara tek kad `spNg_combo` na spinu vrati TREE tekst u stupcu 0. `STA-12` ostaje otvoren: klijentski red u `ssMeni` se ne izmišlja.
+Četvrti agent (`cursor/netgen-cetvrti-dokaz-0b55`): `MPK-30`, `MPK-31`, `STA-34` su pravilo. `PL-32` izvršava `spNg_combo` (`scripts/spin/pl32.sql`). `MPP-20` izvršava `spmpPermissionNG` i zamijeni `@@dodaj` prije ExecSql (`scripts/spin/mpp20.sql`). `STA-12` upisuje red s Parentom uz uključen `fk_meni` i otvara ga kroz `Loader` (`scripts/spin/sta12.ps1`).
 
 Izvor je CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31), commit `b7d8989`, izvještaj `SVE ukupno=571 zeleno=411 otvoreno=160 pad=0`.
 
-Snimak CI #31 ima 160 stavki. U ovom prolazu su iz tablice izašle četiri (`MPK-30`, `MPK-31`, `STA-34`, `MPP-20`). Ostale su i dalje otvorene. Nijedna nije pad. Grupe su po elementu NetGena. Uz svaku stavku je linija izvora i razlog zašto je ostala otvorena.
+Snimak CI #31 ima 160 stavki. U ovom prolazu su iz tablice izašle `MPK-30`, `MPK-31`, `STA-34`, `MPP-20`, `PL-32` i `STA-12`. Ostale su i dalje otvorene. Nijedna nije pad. Grupe su po elementu NetGena. Uz svaku stavku je linija izvora i razlog zašto je ostala otvorena.
 
 | # | Element | Granula | Stavki |
 |---|---|---:|---:|
-| 1 | XML nije u spin ssMeni | 10 | 12 |
+| 1 | XML nije u spin ssMeni | 9 | 11 |
 | 2 | Naredba dijaloga, dvostruki klik i refresh mastera | 5 | 18 |
 | 3 | Datum: format, ključne riječi, krivi atribut | 5 | 6 |
 | 4 | Detail grid: veza, jednokratne kolone, selector | 4 | 9 |
@@ -17,7 +17,7 @@ Snimak CI #31 ima 160 stavki. U ovom prolazu su iz tablice izašle četiri (`MPK
 | 7 | Kvačica, suma, sort, edit, Enter i selekcija | 3 | 14 |
 | 8 | Raspored dijaloga: /14, tab, label, ONLOAD polja | 3 | 12 |
 | 9 | Stupac mastera: tip, širina, skrivanje, poredak | 3 | 11 |
-| 10 | Stablo iz SQL-a i klik na čvor | 3 | 10 |
+| 10 | Stablo iz SQL-a i klik na čvor | 3 | 9 |
 | 11 | Radio, check, OKSTAY, CLOSE i REFRESHCONTROL | 3 | 6 |
 | 12 | Ovisni combo, multidrop, status, WUDTH, TRANSLATE | 3 | 5 |
 | 13 | Prazan broj, apostrof i spRaiserror | 3 | 5 |
@@ -33,11 +33,11 @@ Snimak CI #31 ima 160 stavki. U ovom prolazu su iz tablice izašle četiri (`MPK
 | 23 | Redoslijed punjenja podloge | 1 | 1 |
 | 24 | fidus nema tablicu ssMeni | 1 | 1 |
 
-Zbroj stavki u tablici ispod je 156.
+Zbroj stavki u tablici ispod je 154.
 
 ## 1. XML nije u spin ssMeni
 
-**10 granula, 12 stavki:** FakPar, KUPDostKN, KUPDostKnNGBvg, KUPNG, KntDospjeleStavke, Kulture, MPNGPregDokMAIL, MPNarIzdSkl, Rijetke, Statusi.
+**9 granula, 11 stavki:** FakPar, KUPDostKN, KUPDostKnNGBvg, KUPNG, KntDospjeleStavke, Kulture, MPNGPregDokMAIL, MPNarIzdSkl, Rijetke.
 
 **NetGen:** Test traži red u `dbo.ssMeni` čiji `Parametar` sadrži `asm:NetGenDLL.loader` ili `asm:NetGenDLL.frm` i točno ime datoteke. Prazan rezultat je 0 redova.
 
@@ -45,7 +45,6 @@ Zbroj stavki u tablici ispod je 156.
 
 | Stavka | Očekivano | Izvor | Zašto je otvoreno |
 |---|---|---|---|
-| Statusi `STA-12` | Statusi.xml nije u ssMeni.Parametar | `dbo.ssMeni` | spin ssMeni nema red |
 | Kulture `KUL-12` | Kulture.xml nije u ssMeni.Parametar | `dbo.ssMeni` | spin ssMeni nema red |
 | KUPNG `KUP-05` | KUPNG.xml nije u ssMeni.Parametar | `dbo.ssMeni` | spin ssMeni nema red |
 | KntDospjeleStavke `DOS-10` | KntDospjeleStavke.xml nije u ssMeni.Parametar | `dbo.ssMeni` | spin ssMeni nema red |
@@ -227,7 +226,7 @@ Zbroj stavki u tablici ispod je 156.
 
 ## 10. Stablo iz SQL-a i klik na čvor
 
-**3 granula, 10 stavki:** KntBlaZak, PrijemniList, Statusi.
+**3 granula, 9 stavki:** KntBlaZak, PrijemniList, Statusi.
 
 **NetGen:** Punjenje ide `SqlDataAdapter.Fill`, ne `ExecSql` (`Form1.vb` 4442–4447). Stupci su 0 id, 1 parent, 2 natpis, 3 tag (`4450`, `4461–4478`). Korijen je samo prvi red. Dijete s id `0` se preskoči (`4455`, `4498`). Tag bez dvotočke postane `vrijednost:ImeForme` (`4474–4477`). `AfterSelect`: `@@node` je lijevo od `:`, forma desno (`7182–7188`). Tag `:` ima prazno ime forme i `NovaGenerickaForma` izađe (`7185–7187`, `4546`). Combo koji vrati TREE tekst upiše `SelectedValue` i ponovo zove `NapuniDrvoVrijeme` (`7730–7733`, `3342–3344`).
 
@@ -244,7 +243,6 @@ Zbroj stavki u tablici ispod je 156.
 | KntBlaZak `BLA-31` | @@operateriid u TREE store se zamijeni prije SqlDataAdapter.Fill | `netgen/Form1.vb:4442-4446` | kuka nema ključ |
 | KntBlaZak `BLA-32` | Tri storea su tri korijena, ne podgrane cvora Blagajne | `netgen/Form1.vb:4347-4480` | kuka nema ključ |
 | PrijemniList `PL-30` | SelectedValueChanged upise SelectedValue u strTreeNodes i ponovo zove NapuniDrvoVrijeme | `netgen/Form1.vb:7730-7733` | SELECT na spinu nije prošao |
-| PrijemniList `PL-32` | Vrijednost combo stupca 0 mora biti TREE tekst (segmenti s # i :) | `netgen/Form1.vb:3342-3344,4344` | SELECT na spinu nije prošao |
 
 ## 11. Radio, check, OKSTAY, CLOSE i REFRESHCONTROL
 
