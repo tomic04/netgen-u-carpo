@@ -57,12 +57,18 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(KntKompVerizne.Provjeri(root));
             sve.AddRange(KntBlaPromet.Provjeri(root));
             sve.AddRange(MPPonuda.Provjeri(root));
+            sve.AddRange(ServeriMeni.Provjeri(root));
 
             string tekst = Qa.Tekst(sve);
             if (!string.IsNullOrEmpty(PrioritetMeni.Tekst))
             {
                 tekst += Environment.NewLine;
                 tekst += PrioritetMeni.Tekst;
+            }
+            if (!string.IsNullOrEmpty(ServeriMeni.Tekst))
+            {
+                tekst += Environment.NewLine;
+                tekst += ServeriMeni.Tekst;
             }
             Console.WriteLine(tekst);
             if (!string.IsNullOrWhiteSpace(izvjestaj))
