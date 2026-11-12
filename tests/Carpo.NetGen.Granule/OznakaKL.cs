@@ -243,15 +243,15 @@ namespace Carpo.NetGen.Granule
                 "netgen/Form2.vb:2947", "gumb", "Izmjena", "kontrola.oznaka2.left", Qa.Px("2002").ToString());
             R(l, xml, "OKL-68", "ONLOAD upise oznaka2 iz reda; tekst null postaje prazan",
                 "netgen/Form2.vb:2016-2018", "gumb", "Izmjena", "kontrola.oznaka2.izOnLoada", "true");
-            R(l, xml, "OKL-69", "Prihvati izvrsi update tek nakon zatvaranja i onda osvjezi master",
+            M(l, xml, "OKL-69", "Prihvati izvrsi update tek nakon zatvaranja i onda osvjezi master",
                 "netgen/Form2.vb:3367-3396; netgen/Form1.vb:5510-5519", "prihvati", "Prihvati", "refreshMaster", "true");
-            R(l, xml, "OKL-70", "Update ne dobije zalijepljene parametre; @@oznaka2 i @@ID su zamijenjeni",
+            M(l, xml, "OKL-70", "Update ne dobije zalijepljene parametre; @@oznaka2 i @@ID su zamijenjeni",
                 "netgen/Form2.vb:3378-3388; netgen/Class1.vb:740-851", "prihvati", "Prihvati", "sqlImaZalijep", "false");
-            R(l, xml, "OKL-71", "Apostrof u tekstu ide kao '' (preko ¸¸), zarez se vrati iz ~~",
+            M(l, xml, "OKL-71", "Apostrof u tekstu ide kao '' (preko ¸¸), zarez se vrati iz ~~",
                 "netgen/Form2.vb:3655; netgen/Class1.vb:87,850", "prihvati", "Prihvati", "sqlApostrof", "''");
-            R(l, xml, "OKL-72", "Odustani ne salje SQL i ne osvjezava master",
+            M(l, xml, "OKL-72", "Odustani ne salje SQL i ne osvjezava master",
                 "netgen/Form2.vb:3400-3402; netgen/Form1.vb:5429", "odustani", "Odustani", "refreshMaster", "false");
-            R(l, xml, "OKL-73", "Escape zatvara bez OKClick i bez SQL-a",
+            M(l, xml, "OKL-73", "Escape zatvara bez OKClick i bez SQL-a",
                 "netgen/Form2.vb:4161-4166", "escape", "", "refreshMaster", "false");
             R(l, xml, "OKL-74", "Nema AcceptButton: Enter u tekstu ne radi Prihvati",
                 "netgen/Form2.vb:3367", "gumb", "Izmjena", "acceptButton", "");
@@ -273,6 +273,11 @@ namespace Carpo.NetGen.Granule
         private static void R(List<Stavka> l, string xml, string id, string opis, string izvor, string akcija, string cilj, string kljuc, string ocekivano)
         {
             l.Add(Qa.Runtime(Ime, id, opis, izvor, xml, akcija, cilj, kljuc, ocekivano));
+        }
+
+        private static void M(List<Stavka> l, string xml, string id, string opis, string izvor, string akcija, string cilj, string kljuc, string ocekivano)
+        {
+            l.Add(Qa.Mora(Ime, id, opis, izvor, xml, akcija, cilj, kljuc, ocekivano));
         }
 
         private static Stavka Izgled(string id, string opis, string izvor)

@@ -228,16 +228,16 @@ namespace Carpo.NetGen.Granule
             R(l, xml, "JEZ-58", "Dvostruki klik otvara Izmijeni", "netgen/Form1.vb:6935", "dblclick", "", "forma", "Izmijeni");
             R(l, xml, "JEZ-59", "Unesi: okvir nema natpis FrmJezici", "netgen/Form2.vb:2932-2938", "gumb", "Unesi", "kontrola.FrmJezici.tekst", "");
             l.Add(Izgled("JEZ-60", "NetGen SIZE=13 na zvjezdici. Font je Carpo skin.", "netgen/Form2.vb:3077-3081"));
-            R(l, xml, "JEZ-61", "Spremi na Unesi ostaje na formi (OKStay), Naziv se isprazni", "netgen/Form2.vb:6884-6887,4627-4633,4970-4979", "kontrola", "Unesi.buttonOK", "ostajeOtvorena", "true");
-            R(l, xml, "JEZ-62", "Nakon OKStay fokus je kontrola naziv", "netgen/Form2.vb:4627-4632", "kontrola", "Unesi.buttonOK", "fokus", "naziv");
-            R(l, xml, "JEZ-63", "Odustani na Unesi je naredba ok: OKClick true, pa NEXTFORM Dodaj", "netgen/Form2.vb:6888; netgen/Form1.vb:5381", "kontrola", "Unesi.buttonCLOSE", "okClick", "true");
-            R(l, xml, "JEZ-64", "Forma Dodaj ne postoji: nema poruke, 0 kontrola i dalje OKClick", "netgen/Form1.vb:5354-5370", "kontrola", "Unesi.buttonCLOSE", "dodajPoruka", "");
-            R(l, xml, "JEZ-65", "Segment refreshmaster nije REFRESHMASTERGRID, ali prazna forma ipak osvježi zadnji SQL", "netgen/Form1.vb:4570,4926-5370,5519", "gumb", "Unesi", "refreshMaster", "true");
+            M(l, xml, "JEZ-61", "Spremi na Unesi ostaje na formi (OKStay), Naziv se isprazni", "netgen/Form2.vb:6884-6887,4627-4633,4970-4979", "kontrola", "Unesi.buttonOK", "ostajeOtvorena", "true");
+            M(l, xml, "JEZ-62", "Nakon OKStay fokus je kontrola naziv", "netgen/Form2.vb:4627-4632", "kontrola", "Unesi.buttonOK", "fokus", "naziv");
+            M(l, xml, "JEZ-63", "Odustani na Unesi je naredba ok: OKClick true, pa NEXTFORM Dodaj", "netgen/Form2.vb:6888; netgen/Form1.vb:5381", "kontrola", "Unesi.buttonCLOSE", "okClick", "true");
+            M(l, xml, "JEZ-64", "Forma Dodaj ne postoji: nema poruke, 0 kontrola i dalje OKClick", "netgen/Form1.vb:5354-5370", "kontrola", "Unesi.buttonCLOSE", "dodajPoruka", "");
+            M(l, xml, "JEZ-65", "Segment refreshmaster nije REFRESHMASTERGRID, ali prazna forma ipak osvježi zadnji SQL", "netgen/Form1.vb:4570,4926-5370,5519", "gumb", "Unesi", "refreshMaster", "true");
             R(l, xml, "JEZ-66", "Izmijeni ONLOAD napuni Naziv iz stupca", "netgen/Form2.vb:2016", "gumb", "Izmijeni", "kontrola.Naziv.izOnLoada", "true");
             R(l, xml, "JEZ-67", "Izmijeni Odustani je CLOSE: nema SQL-a i nema refresha", "netgen/Form2.vb:7033; netgen/Form1.vb:5429", "kontrola", "Izmijeni.buttonCLOSE", "refreshMaster", "false");
-            R(l, xml, "JEZ-68", "Izmijeni Spremi zatvori formu i osvježi master (Zadnji=true)", "netgen/Form2.vb:6888; netgen/Form1.vb:5519", "kontrola", "Izmijeni.buttonOK", "refreshMaster", "true");
+            M(l, xml, "JEZ-68", "Izmijeni Spremi zatvori formu i osvježi master (Zadnji=true)", "netgen/Form2.vb:6888; netgen/Form1.vb:5519", "kontrola", "Izmijeni.buttonOK", "refreshMaster", "true");
             l.Add(Izgled("JEZ-69", "NetGen BORDERSTYLE na formi ne cita, ostane Sizable. Obrub Carpo forme se ne trazi.", "netgen/Form2.vb:999-1124"));
-            R(l, xml, "JEZ-70", "Azur na Unesi ide kroz Rafalno, ne kroz lijepljenje ONSUBMIT; @@ se zamijeni, drugi niz @ime= se ne dodaje, upis se ne šalje u testu", "netgen/Form2.vb:7510,3655", "kontrola", "Unesi.buttonOK", "sqlImaZalijep", "false");
+            M(l, xml, "JEZ-70", "Azur na Unesi ide kroz Rafalno, ne kroz lijepljenje ONSUBMIT; @@ se zamijeni, drugi niz @ime= se ne dodaje, upis se ne šalje u testu", "netgen/Form2.vb:7510,3655", "kontrola", "Unesi.buttonOK", "sqlImaZalijep", "false");
             R(l, xml, "JEZ-71", "PERMISIO default true šalje select ssPermission", "netgen/Form1.vb:3153,2706", "otvori", "", "permisioSql", "ssPermission");
             R(l, xml, "JEZ-72", "Enter na gridu je None", "netgen/Form1.vb:3419-3421", "otvori", "", "enterKey", "None");
             R(l, xml, "JEZ-73", "tkosmomi iz SETDEFAULTS je u međuspremniku prije ispisa", "netgen/Form1.vb:3995-3998", "otvori", "", "cb.tkosmomi", "ima");
@@ -246,6 +246,11 @@ namespace Carpo.NetGen.Granule
         private static void R(List<Stavka> l, string xml, string id, string opis, string izvor, string akcija, string cilj, string kljuc, string ocekivano)
         {
             l.Add(Qa.Runtime(Ime, id, opis, izvor, xml, akcija, cilj, kljuc, ocekivano));
+        }
+
+        private static void M(List<Stavka> l, string xml, string id, string opis, string izvor, string akcija, string cilj, string kljuc, string ocekivano)
+        {
+            l.Add(Qa.Mora(Ime, id, opis, izvor, xml, akcija, cilj, kljuc, ocekivano));
         }
 
         private static Stavka Izgled(string id, string opis, string izvor)

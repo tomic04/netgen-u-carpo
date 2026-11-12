@@ -230,7 +230,7 @@ namespace Carpo.NetGen.Granule
             l.Add(!p.Atributi.Ima("CHECKBOXVISIBLE") && !p.Atributi.Ima("TOTALROWVISIBLE")
                 ? Qa.Z(Ime, "NEF-10", "Checkbox stupac i suma ostaju ukljuceni", "netgen/Form1.vb:2043-2053")
                 : Qa.P(Ime, "NEF-10", "default grida", "netgen/Form1.vb:2043", ""));
-            l.Add(Qa.Kljuc(Ime, "NEF-20", "Treci segment osvjezi zadnji master iako rijec nije REFRESHMASTERGRID", "netgen/Form1.vb:4570,5519", Pet.Putanja(root, "MPRACNEFISK.xml"), "gumb", "FISKALIZACIJA ", "refreshMaster", "true"));
+            l.Add(Qa.Mora(Ime, "NEF-20", "Treci segment osvjezi zadnji master iako rijec nije REFRESHMASTERGRID", "netgen/Form1.vb:4570,5519", Pet.Putanja(root, "MPRACNEFISK.xml"), "gumb", "FISKALIZACIJA ", "refreshMaster", "true"));
             return l;
         }
     }

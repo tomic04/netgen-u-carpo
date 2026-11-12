@@ -1,6 +1,23 @@
 # Otvoreno za implementaciju
 
-Izvor je CI [#34](https://github.com/tomic04/netgen-u-carpo/pull/34), commit `30236ff`, izvještaj `SVE ukupno=624 zeleno=460 otvoreno=164 pad=0`.
+Brojke su prema kuki na `cursor/netgen-nextform-3266` (`5015fe1`), bez upita na Jupiter. Spin je testni server i smije se čitati. Jupiter se ne dira.
+
+| Element | Ukupno | Zatvoreno | Otvoreno |
+|---|---:|---:|---:|
+| grid | 34 | 0 | 34 |
+| stablo | 20 | 0 | 20 |
+| combo | 5 | 0 | 5 |
+| gumbi/lanac | 38 | 6 | 32 |
+| dijalog | 28 | 0 | 28 |
+| ispis | 4 | 0 | 4 |
+| ostalo | 35 | 0 | 35 |
+| **sve** | **164** | **6** | **158** |
+
+Grid je detail, kvačica, suma, sort i stupci mastera. Stablo je čvor, lijevi panel i `onlytree`. Combo je odjeljak 13. Gumbi/lanac su naredba, `OK`/`CLOSE`, `NEXTFORM`, `FILLEXPLORER` i `FOREACH`. Dijalog je datum, raspored, prazan broj, tražilica i kontrole na formi. Ispis je `PRINTREPX`. Ostalo je izbornik, `totalgen`, XML kojeg nema i `ssMeni`.
+
+Trinaest stavki bez baze sada je pad dok kuka ne vrati ključ: `OKL-69`–`OKL-73`, `JEZ-61`–`JEZ-65`, `JEZ-68`, `JEZ-70`, `NEF-20`. Zatvorenih šest (`OKL-61`, `OKL-74`, `JEZ-58`, `JEZ-67`, `KAR-21`, `KAR-23`) ostaje usporedba koja ne ruši build dok akcija nije izvedena.
+
+Izvor polaznog izvještaja je CI [#34](https://github.com/tomic04/netgen-u-carpo/pull/34), commit `30236ff`, `SVE ukupno=624 zeleno=460 otvoreno=164 pad=0`.
 
 Svih 164 stavki je otvoreno u izvještaju [#34](https://github.com/tomic04/netgen-u-carpo/pull/34). Nijedna nije pad. Grupe su po elementu NetGena. Tablica ispod i dalje opisuje to stanje. Novije stanje, prema implementaciji [#50](https://github.com/tomic04/netgen-u-carpo/pull/50), [#52](https://github.com/tomic04/netgen-u-carpo/pull/52), [#54](https://github.com/tomic04/netgen-u-carpo/pull/54), [#55](https://github.com/tomic04/netgen-u-carpo/pull/55) i [#56](https://github.com/tomic04/netgen-u-carpo/pull/56), vrh je `cursor/netgen-nextform-3266` (`5015fe1`), stoji u sljedećem odjeljku.
 
