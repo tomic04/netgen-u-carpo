@@ -854,6 +854,15 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `bla-width-prepisuje`
 - **PR:** spin-otvaranje
 
+## R107 Desno zaglavlje ispisa ostaje `@@tkosmomi`
+
+- **Element:** `PAGEHEADERRIGHT`
+- **NetGen:** ispis mastera čita desno zaglavlje iz atributa. `SETDEFAULTS` kasnije nađe `@@tkosmomi` u međuspremniku (`Form1.vb` 6001, `Class1.vb` 932).
+- **Carpo:** gumb `Ispiši` vraća `pageHeaderRight=@@tkosmomi`. Vrijednost se ne zamjenjuje prije ispisa u testu i ne šalje se upit.
+- **Odluka:** NetGen logika.
+- **Test:** `jez-57`
+- **PR:** ispis-zaglavlje
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

@@ -26,6 +26,7 @@ namespace Carpo.NetGen.GridTest
             Zamjene();
             OznakaBezBaze();
             JeziciBezBaze();
+            IspisZaglavlje();
             Kolone();
             PisanjeIServer();
             StabloTestovi();
@@ -81,6 +82,24 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void IspisZaglavlje()
+        {
+            string xml = null;
+            var dir = new DirectoryInfo(Environment.CurrentDirectory);
+            while (dir != null && xml == null)
+            {
+                string k = Path.Combine(dir.FullName, "definitions", "netgen", "Agronom granule", "JeziciNG.xml");
+                if (File.Exists(k))
+                    xml = k;
+                dir = dir.Parent;
+            }
+            Pogled g = xml == null ? null : GranulaIzvrsenje.Izvrsi(new Zahtjev { XmlPutanja = xml, Akcija = "gumb", Cilj = "Ispiši" });
+            string desno = "";
+            if (g != null && g.Stavke != null && g.Stavke.ContainsKey("pageHeaderRight"))
+                desno = g.Stavke["pageHeaderRight"];
+            T("jez-57", g != null && g.Izvedeno && desno == "@@tkosmomi", desno);
         }
 
         private static void StabloKljucevi()
