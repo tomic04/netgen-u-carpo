@@ -23,6 +23,7 @@ namespace Carpo.NetGen.Komande
             public bool RefreshMasterGrid;
             public string Fokus = "";
             public string Foreach = "";
+            public string Otvara = "";
             public readonly List<string> Odigrano = new List<string>();
         }
 
@@ -247,6 +248,12 @@ namespace Carpo.NetGen.Komande
                     continue;
                 }
                 string u = t.ToUpperInvariant();
+                if (t.StartsWith(":", StringComparison.Ordinal))
+                {
+                    ishod.Otvara = PozivForme.Rastavi(t).Ime;
+                    ishod.Odigrano.Add(":" + ishod.Otvara);
+                    continue;
+                }
                 if (u == "OKSTAY")
                 {
                     ishod.Ostaje = true;

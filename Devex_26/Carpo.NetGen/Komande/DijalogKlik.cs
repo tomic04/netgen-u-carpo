@@ -29,6 +29,8 @@ namespace Carpo.NetGen.Komande
             string sljedeca = DijalogTok.NextForm(forma);
             s["nextForm"] = sljedeca;
             s["dodajPoruka"] = "";
+            s["otvaraFormu"] = ishod.Otvara ?? "";
+            s["saljeSubmit"] = ishod.Otvara.Length > 0 ? "false" : "nije-ova-grana";
             return s;
         }
 

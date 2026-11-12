@@ -32,3 +32,6 @@ Grana `cursor/netgen-cetvrti-dokaz-0b55`. Ne diram ručni Start, UI smoke, `zadn
 | LVObracun `LVO-20` | `FILLEXPLORER=onlytree` zove samo stablo, master se ne šalje. `INSERTLVGLA(@hrkadroviid = 0)` je forma `INSERTLVGLA`. `Form1.vb` 5475, `Form2.vb` 4407–4418. |
 | KntBlaPromet `KBP-20` | `CLICK(Ok)` izvrši `ONCLICK` gumba `ok`. `close` ne guta `:REPX/@@template`. `Form2.vb` 7151–7155, 7033, 6882. |
 | MPPorKPNG `MPK-43` | SQL filtera `spMPPoravnajKP` ide u `NgDnevnik` kao `NetGen SQL`, ne u CBLog. `Class1.vb` 138. |
+| ZakljucivanjeTemNG `ONK-04` | `Zaključi` otvara `Zakljucavanje`. `spKntZakljucivanjeTem` se ne šalje. `Form2.vb` 6882. |
+| MPNivelacija `NIV-05` | `Pokaži` šalje `ONSUBMIT` jer je `FILLEXPLORER=TRUE`. `Form1.vb` 5445. |
+| MPRealizNG `REA-04` | `Pokaži` na `FORM1` šalje `ONSUBMIT` jer je `FILLEXPLORER=TRUE`. `Form1.vb` 5445. |
