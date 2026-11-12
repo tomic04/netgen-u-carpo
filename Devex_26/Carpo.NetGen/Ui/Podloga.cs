@@ -727,6 +727,12 @@ namespace Carpo.NetGen.Ui
                         DijalogTok.TekstUpisa = _imeUnosa;
                     if (upis && _testId.Length > 0)
                         _master.Kontekst.Id = _testId;
+                    if (upis && naredba.IndexOf("INSERTFORM", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        DataTable vd = Citaj("select top 1 cast(VrstaDokId as varchar(20)) as id from VrstaDok where Opis = N'klik-proba'");
+                        if (vd != null && vd.Rows.Count > 0)
+                            _master.Kontekst.Node = Convert.ToString(vd.Rows[0]["id"]);
+                    }
                     PokreniZatvaranje();
                     g.PerformClick();
                     Application.DoEvents();
@@ -918,7 +924,7 @@ namespace Carpo.NetGen.Ui
             {
                 DataTable t = Citaj("select top 1 cast(JeziciId as varchar(20)) as id from jezici where Naziv = N'" + tekst + "'");
                 if (t == null || t.Rows.Count == 0)
-                    return "GRESKA nema reda u jezici.Naziv=" + DijalogTok.TekstUpisa;
+                    return "GRESKA nema reda u jezici.Naziv=" + DijalogTok.TekstUpisa + " sql=" + sql;
                 _testId = Convert.ToString(t.Rows[0]["id"]);
                 _master.Kontekst.Id = _testId;
                 return "jezici.Naziv=" + DijalogTok.TekstUpisa + " id=" + _testId;
