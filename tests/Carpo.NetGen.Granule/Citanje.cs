@@ -157,5 +157,42 @@ namespace Carpo.NetGen.Granule
             sb.Append(")");
             return sb.ToString();
         }
+
+        public static List<string> Stupac(string sql, out string greska)
+        {
+            var lista = new List<string>();
+            greska = null;
+            if (!JeCitanje(sql))
+            {
+                greska = "odbio sam naredbu koja nije cisto citanje";
+                return null;
+            }
+            try
+            {
+                using (var conn = new SqlConnection(Spoj))
+                {
+                    conn.Open();
+                    using (var cmd = new SqlCommand(sql, conn))
+                    {
+                        cmd.CommandTimeout = 30;
+                        using (var rd = cmd.ExecuteReader())
+                        {
+                            while (rd.Read())
+                            {
+                                lista.Add(rd.IsDBNull(0) ? "" : Convert.ToString(rd.GetValue(0)));
+                                if (lista.Count >= 20)
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                greska = ex.GetType().Name + ": " + ex.Message;
+                return null;
+            }
+            return lista;
+        }
     }
 }

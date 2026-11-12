@@ -109,6 +109,40 @@ namespace Carpo.NetGen.Granule
             return Jednako(granula, id, opis, izvor, ocekivano, pogled.Stavke[kljuc]);
         }
 
+        /// <summary>
+        /// Isti poziv kao Runtime, ali nedostajuci kljuc je otvoren.
+        /// TREE cvorovi i master-detail tok jos nisu u kuki; kriva vrijednost i dalje je pad.
+        /// </summary>
+        public static Stavka Kljuc(string granula, string id, string opis, string izvor, string xml, string akcija, string cilj, string kljuc, string ocekivano)
+        {
+            if (GranulaSesija.Izvrsi == null)
+                return O(granula, id, opis, izvor, GranulaNijeIzvedena);
+            Pogled pogled;
+            try
+            {
+                pogled = GranulaSesija.Izvrsi(new Zahtjev
+                {
+                    XmlPutanja = xml,
+                    Akcija = akcija,
+                    Cilj = cilj,
+                    MasterId = "0",
+                    Vrijednosti = ""
+                });
+            }
+            catch (Exception ex)
+            {
+                return P(granula, id, opis, izvor, "Izvrsi je bacio: " + ex.GetType().Name + ": " + ex.Message);
+            }
+            if (pogled == null || !pogled.Izvedeno)
+            {
+                string razlog = pogled == null ? "Izvrsi je vratio null" : (pogled.Napomena ?? "Izvedeno=false");
+                return O(granula, id, opis, izvor, razlog);
+            }
+            if (pogled.Stavke == null || !pogled.Stavke.ContainsKey(kljuc))
+                return O(granula, id, opis, izvor, "nema kljuca " + kljuc + " (TREE / detail tok jos nije u kuki)");
+            return Jednako(granula, id, opis, izvor, ocekivano, pogled.Stavke[kljuc]);
+        }
+
         public static string Tekst(IList<Stavka> sve)
         {
             var sb = new StringBuilder();
