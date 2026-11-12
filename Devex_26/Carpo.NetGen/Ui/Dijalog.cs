@@ -178,9 +178,9 @@ namespace Carpo.NetGen.Ui
             if (sql.Length == 0)
                 return;
             SqlZastita z = ZastitaSql.Tekst(sql);
-            if (z.Pise || z.Procedure.Count > 0 || _jupiter)
+            if (z.Pise || z.Procedure.Count > 0)
                 return;
-            sql = Otvaranje.Spreman(sql, SqlTekst.ZaFormu(_kontekst)) ?? sql;
+            sql = ComboDijalog.SqlZaSlanje(sql, _kontekst);
             DataTable dt = null;
             try
             {
@@ -195,9 +195,14 @@ namespace Carpo.NetGen.Ui
             var look = c as LookUpEdit;
             if (look != null)
             {
+                bool prazan = ComboDijalog.AllowEmpty(k);
+                if (prazan)
+                    ComboDijalog.UbaciPrazan(dt);
                 look.Properties.DataSource = dt;
                 look.Properties.ValueMember = dt.Columns[0].ColumnName;
                 look.Properties.DisplayMember = dt.Columns.Count > 1 ? dt.Columns[1].ColumnName : dt.Columns[0].ColumnName;
+                if (!prazan && ComboDijalog.OdabirAkoNista(dt, false) == "1")
+                    look.EditValue = 1;
                 return;
             }
             var grid = c as GridControl;

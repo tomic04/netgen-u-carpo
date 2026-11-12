@@ -749,6 +749,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `rupa-zakljuci`, `rupa-pokazi`, `rupa-combo`, `rupa-grid`, `rupa-next`, `rupa-niv-combo`, `rupa-niv-pokazi`, `rupa-jupiter-nema-onsubmit`
 - **PR:** dijalog-rupe
 
+## R93 Combo na dijalogu: prazan red, stupac 0/1, refresh
+
+- **Element:** combo `SQL`, `ALLOWEMPTY`, `ONCLICK` refresh
+- **NetGen:** čim se kontrola složi, `ExecSql` puni combo (`Form2.vb` 2396–2431). Stupac 0 je vrijednost, stupac 1 prikaz. `ALLOWEMPTY` je samo `true`. Inače se na prazan odabir pokuša `SelectedValue=1` (`3455–3464`). `select 'refresh' as ime` ponovo puni tu kontrolu, ne onu koja je kliknuta (`5158–5176`).
+- **Carpo:** isto pravilo. `FOLSE` i nedostajući atribut ne ubace prazan red. `@@operateriid` se zamijeni. `@@trgovinaid` koji ostane ne šalje se. Refresh je `ONCLICK`: na jupiter2019 i jupiter2022 se ne šalje. Multidrop nije combo.
+- **Posljedica:** `MPRealizNG` trgovina ima prazan red. `MPInventura` sort nema. `MPKntNacinPlacAzur` `FOLSE` nije prazan red, vrijednost 1 je «Samo za MP». `MPNivelacija` `TRUE` jest prazan red.
+- **Odluka:** NetGen logika. Jupiter ne šalje ONCLICK.
+- **Test:** `combo-1-prazan` do `combo-10-nula`, `combo-prazan-red`
+- **PR:** combo-prazan
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

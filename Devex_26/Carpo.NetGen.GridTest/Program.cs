@@ -32,6 +32,7 @@ namespace Carpo.NetGen.GridTest
             ZastitaTestovi();
             DijalogKlikTest();
             DijalogRupe();
+            ComboDijalogTest();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -73,6 +74,89 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void ComboDijalogTest()
+        {
+            NgForm realiz = Forma(Ucitaj("MPRealizNG.xml"), "FORM1");
+            NgControl trgovina = Kontrol(realiz, "trgovinaid");
+            T("combo-1-prazan", ComboDijalog.AllowEmpty(trgovina), "");
+            var k = new SqlKontekst();
+            k.OperaterId = "7";
+            string sql1 = ComboDijalog.SqlZaSlanje(trgovina.Atributi.Vrijednost("SQL"), k);
+            T("combo-1-operater", sql1.IndexOf("@@operateriid", StringComparison.OrdinalIgnoreCase) < 0 && sql1.IndexOf("=7", StringComparison.Ordinal) >= 0, sql1);
+
+            NgForm inv = Forma(Ucitaj("MPInventura.xml"), "INSERTFORM");
+            NgControl sort = Kontrol(inv, "sortpoid");
+            NgControl trg = Kontrol(inv, "trgovinaid");
+            T("combo-2-nema-prazan", sort != null && !ComboDijalog.AllowEmpty(sort), "");
+            var tablica = new DataTable();
+            tablica.Columns.Add("id", typeof(int));
+            tablica.Columns.Add("naziv", typeof(string));
+            tablica.Rows.Add(1, "Klasifikacija + naziv robe");
+            tablica.Rows.Add(2, "sifra");
+            T("combo-2-odabir", ComboDijalog.OdabirAkoNista(tablica, false) == "1", "");
+            List<string> osvjezi = ComboDijalog.RefreshImena(trg.Atributi.Vrijednost("ONCLICK"));
+            T("combo-3-refresh", osvjezi.Count == 2 && osvjezi[0] == "skladisteid" && osvjezi[1] == "osobeid" && !ComboDijalog.OnClickSeSalje(true), osvjezi.Count.ToString());
+            NgControl osobe = Kontrol(inv, "osobeid");
+            string sql4 = ComboDijalog.SqlZaSlanje(osobe.Atributi.Vrijednost("SQL"), k);
+            T("combo-4-ostao", SqlTekst.Odluka(sql4) == "ostao-@@", sql4);
+            string poslije = sql4.Replace("@@trgovinaid", "5");
+            T("combo-4-poslije", SqlTekst.Odluka(poslije) == "salji" && poslije.IndexOf("= 5", StringComparison.Ordinal) >= 0, poslije);
+
+            NgForm nacin = Forma(Ucitaj("MPKntNacinPlacAzur.xml"), "FILTERFORM");
+            if (nacin == null)
+                nacin = Forma(Ucitaj("MPKntNacinPlacAzur.xml"), "FORM1");
+            NgControl svi = Kontrol(nacin, "svi");
+            T("combo-5-folse", svi != null && !ComboDijalog.AllowEmpty(svi), svi == null ? "nema" : (svi.Atributi.Vrijednost("ALLOWEMPTY") ?? ""));
+            var sviTab = new DataTable();
+            sviTab.Columns.Add("svi", typeof(int));
+            sviTab.Columns.Add("naziv", typeof(string));
+            sviTab.Rows.Add(1, "Samo za MP");
+            sviTab.Rows.Add(2, "SVI");
+            T("combo-5-jedan", ComboDijalog.OdabirAkoNista(sviTab, false) == "1", "");
+
+            NgForm kase = null;
+            NgProject kaseP = Ucitaj("MPKaseOperNG.xml");
+            if (kaseP != null)
+            {
+                for (int i = 0; i < kaseP.Forme.Count; i++)
+                {
+                    if (Kontrol(kaseP.Forme[i], "kasa") != null && kaseP.Forme[i].Kontrole != null)
+                    {
+                        NgControl kandidat = Kontrol(kaseP.Forme[i], "kasa");
+                        if (kandidat.Grana == NgGrana.Combo)
+                            kase = kaseP.Forme[i];
+                    }
+                }
+            }
+            NgControl kasa = Kontrol(kase, "kasa");
+            T("combo-6-nema-atribut", kasa != null && !ComboDijalog.AllowEmpty(kasa), "");
+
+            NgControl multi = null;
+            NgProject opz = Ucitaj("KntOPZ-STAT-1.xml");
+            if (opz != null)
+            {
+                for (int i = 0; i < opz.Forme.Count && multi == null; i++)
+                    multi = Kontrol(opz.Forme[i], "nizKonto");
+            }
+            T("combo-7-multidrop", multi != null && multi.Grana == NgGrana.MultiDrop, multi == null ? "nema" : multi.Grana.ToString());
+
+            T("combo-9-nivel", ComboDijalog.AllowEmpty(Kontrol(Forma(Ucitaj("MPNivelacija.xml"), "FILTERFORM"), "xtrgovinaid")), "");
+
+            var nula = new DataTable();
+            nula.Columns.Add("namjena", typeof(int));
+            nula.Columns.Add("naziv", typeof(string));
+            nula.Rows.Add(0, "Roba");
+            nula.Rows.Add(1, "Osnovno sredstvo");
+            T("combo-10-nula", !ComboDijalog.AllowEmpty((string)null) && ComboDijalog.OdabirAkoNista(nula, false) == "1", "");
+
+            var prazna = new DataTable();
+            prazna.Columns.Add("id", typeof(string));
+            prazna.Columns.Add("naziv", typeof(string));
+            prazna.Rows.Add("5", "A");
+            ComboDijalog.UbaciPrazan(prazna);
+            T("combo-prazan-red", Convert.ToString(prazna.Rows[0][0]) == "null" && Convert.ToString(prazna.Rows[0][1]) == "", Convert.ToString(prazna.Rows[0][0]));
         }
 
         private static void DijalogRupe()
