@@ -154,6 +154,36 @@ namespace Carpo.NetGen.Ui
                 if (s.Length == 0)
                     continue;
                 string vrsta = GumbTok.Akcija(_projekt, s);
+                if (vrsta == "prazno")
+                {
+                    if (PraznoNaredba.PreskociSljedeci(s))
+                        i++;
+                    continue;
+                }
+                if (vrsta == "nista")
+                    continue;
+                if (vrsta == "fiskal" || vrsta == "prostor" || vrsta == "blagajna")
+                {
+                    IzvrsiVanjsko(vrsta, s);
+                    continue;
+                }
+                if (vrsta == "odznaci")
+                    continue;
+                if (vrsta == "roditelj")
+                {
+                    Close();
+                    return;
+                }
+                if (vrsta == "poruka")
+                {
+                    PorukaNaredba.Pokazi(s);
+                    continue;
+                }
+                if (vrsta == "openform")
+                {
+                    Otvori(OtvoriNaredba.Ime(s));
+                    continue;
+                }
                 if (vrsta == "osvjezi")
                     Osvjezi();
                 else if (vrsta == "forma")
@@ -178,6 +208,19 @@ namespace Carpo.NetGen.Ui
                 else if (vrsta == "sql")
                     PrimijeniSelect(s);
             }
+        }
+
+        private void IzvrsiVanjsko(string vrsta, string s)
+        {
+            if (vrsta == "fiskal")
+            {
+                NgDnevnik.Akcija("fiskal tablica=" + FiskalNaredba.Tablica(s) + " poziva=" + FiskalNaredba.Poziva(0));
+                Carpo.NetGen.Poziv.FiskalPoziv.Posalji(FiskalNaredba.Argument(s), "", "", "", "", "", "");
+            }
+            else if (vrsta == "prostor")
+                NgDnevnik.Akcija("prostor " + ProstorNaredba.Argument(s) + " poziva=" + ProstorNaredba.Poziva(0));
+            else if (vrsta == "blagajna")
+                NgDnevnik.Akcija(BlagajnaNaredba.Update(BlagajnaNaredba.Id(s), false));
         }
 
         private string IdReda()

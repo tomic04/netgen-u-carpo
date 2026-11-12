@@ -249,6 +249,19 @@ namespace Carpo.NetGen.Ui
                 DialogResult = DialogResult.Cancel;
                 return;
             }
+            if (KlikNaredba.Kontrola(naredba).Length > 0)
+            {
+                string ime = KlikNaredba.Kontrola(naredba);
+                Control[] cilj = Controls.Find(ime, true);
+                if (cilj.Length > 0)
+                    cilj[0].Focus();
+                return;
+            }
+            if (PorukaNaredba.Tekst(naredba).Length > 0)
+            {
+                PorukaNaredba.Pokazi(naredba);
+                return;
+            }
             if (Carpo.NetGen.Print.PrintBridge.Vrsta(naredba, true).Length > 0)
             {
                 DevExpress.XtraGrid.GridControl grid = null;

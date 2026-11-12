@@ -390,6 +390,13 @@ namespace Carpo.NetGen.Ui
                     s = s.Substring(1).Trim();
                 if (s.Length == 0)
                     continue;
+                if (PraznoNaredba.PreskociSljedeci(s))
+                {
+                    i++;
+                    continue;
+                }
+                if (PraznoNaredba.Je(s) || StupacVrijednost.Je(s))
+                    continue;
                 if (s.StartsWith("select", StringComparison.OrdinalIgnoreCase))
                 {
                     string stanje = Lanac.GumbIzCase(s, Polje("izvjestaj"));
@@ -397,6 +404,26 @@ namespace Carpo.NetGen.Ui
                     if (jednako > 0)
                         PostaviGumb(stanje.Substring(0, jednako), stanje.Substring(jednako + 1) != "disable");
                 }
+                else if (GumbTok.Akcija(_projekt, s) == "fiskal")
+                {
+                    NgDnevnik.Akcija("fiskal tablica=" + FiskalNaredba.Tablica(s));
+                    Carpo.NetGen.Poziv.FiskalPoziv.Posalji(FiskalNaredba.Argument(s), "", "", "", "", "", "");
+                }
+                else if (GumbTok.Akcija(_projekt, s) == "prostor")
+                    NgDnevnik.Akcija("prostor " + ProstorNaredba.Argument(s));
+                else if (GumbTok.Akcija(_projekt, s) == "blagajna")
+                    NgDnevnik.Akcija(BlagajnaNaredba.Upit(BlagajnaNaredba.Id(s)));
+                else if (GumbTok.Akcija(_projekt, s) == "odznaci")
+                    NgDnevnik.Akcija("uncheck");
+                else if (GumbTok.Akcija(_projekt, s) == "roditelj")
+                {
+                    Close();
+                    return;
+                }
+                else if (GumbTok.Akcija(_projekt, s) == "poruka")
+                    PorukaNaredba.Pokazi(s);
+                else if (GumbTok.Akcija(_projekt, s) == "openform")
+                    OtvoriFormu(OtvoriNaredba.Ime(s));
                 else if (GumbTok.Akcija(_projekt, s) == "stupci")
                     PrimijeniStupce(s);
                 else if (GumbTok.Akcija(_projekt, s) == "word")

@@ -149,17 +149,17 @@ Stanje je `radi` kad se naredba izvrši, `nije` kad se samo preskoči ili zabilj
 | INCLUDE | `Form2.vb` 844–934 | `IncludeXml` | radi |
 | select na podlozi | `Form1.vb` 4875–4898 | `ObicnaForma.PrimijeniSelect` | radi |
 | HIDECOLUMNS / SHOWCOLUMNS | `Form1.vb` 6730–6766 | `StupciNaredba` | radi |
-| FISKALIZACIJA* | `Form1.vb` 4643–4779, 493–548 | `FiskalPoziv.Posalji` postoji, gumb je ne zove | nije |
+| FISKALIZACIJA* | `Form1.vb` 4643–4781 | `FiskalNaredba` bira tablicu i broj poziva, SOAP je `FiskalPoziv.Posalji` | radi, bez porezne |
+| CLICK( | `Form2.vb` 7151; podloga `Form1.vb` 6856 komentirano | `KlikNaredba` | radi na dijalogu, podloga ne |
+| MSGBOX( | `Form2.vb` 7165–7169 | `PorukaNaredba` | radi |
+| OPENFORM( | `Form1.vb` 6582–6585 | `OtvoriNaredba` | radi |
+| POSLOVNIPROSTOR( | `Form1.vb` 4783–4801 | `ProstorNaredba` | radi, broj poziva |
+| BLAGAJNAENABLE( | `Form1.vb` 4635, `Class1.vb` 1975 | `BlagajnaNaredba` | radi, upis i dalje stoji na spinu |
+| UNCHECKMASTERGRID | `Form1.vb` 4626–4633 | `OdznaciNaredba` | radi |
+| CLOSEPARENT | `Form1.vb` 6838–6840 | `RoditeljNaredba` | radi |
+| ISEMPTY u lancu | `Form1.vb` 6768–6776 | `PraznoNaredba` | radi |
+| GRID_COLUMN_VALUE( | `Form1.vb` 6785–6807 komentirano | `StupacVrijednost` ne izvršava | radi, kao NetGen |
 | FOREACHSELECTED / FOREACHROW / FOREACHBLUEROW | `Form1.vb` 6843–6850 tijelo komentirano; `Form2` izvršava | `Lanac` samo zabilježi | nije |
-| CLICK( | `Form2.vb` 7151–7155 | nema | nije |
-| MSGBOX( | `Form2.vb` 7165 | nema | nije |
-| OPENFORM( | `Form1.vb` 6582 | nema | nije |
-| POSLOVNIPROSTOR( | `Form1.vb` 4783 | nema | nije |
-| BLAGAJNAENABLE( | `Form1.vb` 4635 | nema | nije |
-| UNCHECKMASTERGRID | `Form1.vb` 4626 | nema | nije |
-| CLOSEPARENT | `Form1.vb` 6838 | `Lanac` zabilježi | nije |
-| ISEMPTY u lancu | `Form1.vb` 6768 | zaglavlje da, lanac ne | nije |
-| GRID_COLUMN_VALUE( | `Form1.vb` 6785 | nema | nije |
 | BEEP() | `Form1.vb` 6579 | nema | nije |
 | STARTSEARCH( | `Form1.vb` 6592 | komentirano i u NetGenu | nije |
 | CLICK na podlozi | `Form1.vb` 6852 | komentirano i u NetGenu | nije |

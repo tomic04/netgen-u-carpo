@@ -307,6 +307,36 @@ namespace Carpo.NetGen.GridTest
             pokazi.TryGetValue("oznaka", out vidljiv);
             T("stupci-show", vidljiv, "");
             T("stupci-nije-master", Carpo.NetGen.Komande.StupciNaredba.Primijeni("HIDECOLUMNS(detalj,oznaka)").Count == 0, "");
+            T("fiskal-gumb", Carpo.NetGen.Komande.FiskalNaredba.Tablica("FISKALIZACIJAFAKTURE(@@id)") == 2
+                && Carpo.NetGen.Komande.FiskalNaredba.Tablica("FISKALIZACIJAN(@@id)") == -1
+                && Carpo.NetGen.Komande.FiskalNaredba.Poziva(0) == 1
+                && Carpo.NetGen.Komande.FiskalNaredba.Poziva(3) == 3
+                && Carpo.NetGen.Komande.FiskalNaredba.Argument("FISKALIZACIJA(@@id)") == "@@ID", "");
+            T("klik-podloga", Carpo.NetGen.Komande.KlikNaredba.NaPodlozi() == false
+                && Carpo.NetGen.Komande.KlikNaredba.Kontrola("CLICK(ok)") == "OK", "");
+            string poruka = "";
+            Carpo.NetGen.Komande.PorukaNaredba.Prikazi = delegate(string t) { poruka = t; };
+            Carpo.NetGen.Komande.PorukaNaredba.Pokazi("MSGBOX(Pozor)");
+            Carpo.NetGen.Komande.PorukaNaredba.Prikazi = null;
+            T("msgbox", poruka == "POZOR", poruka);
+            T("openform", Carpo.NetGen.Komande.OtvoriNaredba.Ime("OPENFORM(Unesi)") == "UNESI", "");
+            T("prostor", Carpo.NetGen.Komande.ProstorNaredba.Je("POSLOVNIPROSTOR(5)")
+                && Carpo.NetGen.Komande.ProstorNaredba.Argument("POSLOVNIPROSTOR(5)") == "5"
+                && Carpo.NetGen.Komande.ProstorNaredba.Poziva(4) == 4, "");
+            T("blagajna", Carpo.NetGen.Komande.BlagajnaNaredba.Upit("12") == "spmpBlagajnaEnable @mpkaseid = 12"
+                && Carpo.NetGen.Komande.BlagajnaNaredba.Update("12", false).IndexOf("indenable = 0", StringComparison.Ordinal) >= 0
+                && Carpo.NetGen.Komande.BlagajnaNaredba.Update("12", true).IndexOf("indenable = 1", StringComparison.Ordinal) >= 0, "");
+            var kvacice = new bool[] { true, true, false };
+            Carpo.NetGen.Komande.OdznaciNaredba.Odznaci(kvacice);
+            T("uncheck", Carpo.NetGen.Komande.OdznaciNaredba.Je("UNCHECKMASTERGRID") && !kvacice[0] && !kvacice[1], "");
+            T("closeparent", Carpo.NetGen.Komande.RoditeljNaredba.Je("CLOSEPARENT")
+                && Carpo.NetGen.Komande.GumbTok.Akcija(null, "CLOSEPARENT") == "roditelj", "");
+            T("isempty-lanac", Carpo.NetGen.Komande.PraznoNaredba.PreskociSljedeci("ISEMPTY(null)")
+                && Carpo.NetGen.Komande.PraznoNaredba.PreskociSljedeci("ISEMPTY()")
+                && !Carpo.NetGen.Komande.PraznoNaredba.PreskociSljedeci("ISEMPTY(5)"), "");
+            T("grid-column-value", Carpo.NetGen.Komande.StupacVrijednost.Je("GRID_COLUMN_VALUE(g,c,1)")
+                && Carpo.NetGen.Komande.StupacVrijednost.Izvrsava() == false
+                && Carpo.NetGen.Komande.GumbTok.Akcija(null, "GRID_COLUMN_VALUE(g,c,1)") == "nista", "");
         }
 
         private static void AssemblyLoad()

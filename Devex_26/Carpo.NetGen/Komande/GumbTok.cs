@@ -19,6 +19,24 @@ namespace Carpo.NetGen.Komande
             if (s.Length == 0)
                 return "";
             string u = s.ToUpperInvariant();
+            if (FiskalNaredba.Tablica(u) != 0)
+                return "fiskal";
+            if (ProstorNaredba.Je(u))
+                return "prostor";
+            if (u.IndexOf("BLAGAJNAENABLE(", StringComparison.Ordinal) >= 0)
+                return "blagajna";
+            if (OdznaciNaredba.Je(u))
+                return "odznaci";
+            if (RoditeljNaredba.Je(u))
+                return "roditelj";
+            if (PraznoNaredba.Je(u))
+                return "prazno";
+            if (StupacVrijednost.Je(u) || (u.IndexOf("CLICK(", StringComparison.Ordinal) >= 0 && !KlikNaredba.NaPodlozi()))
+                return "nista";
+            if (u.IndexOf("MSGBOX(", StringComparison.Ordinal) >= 0)
+                return "poruka";
+            if (u.IndexOf("OPENFORM(", StringComparison.Ordinal) >= 0)
+                return "openform";
             if (u.IndexOf("HIDECOLUMNS(", StringComparison.Ordinal) >= 0 || u.IndexOf("SHOWCOLUMNS(", StringComparison.Ordinal) >= 0)
                 return "stupci";
             if (u.StartsWith("WORDDOT1", StringComparison.Ordinal))
