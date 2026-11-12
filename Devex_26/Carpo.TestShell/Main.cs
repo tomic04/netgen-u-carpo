@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
@@ -42,6 +43,7 @@ namespace Carpo.TestShell
         private bool isXmlGen = false;
         private string paramList = "";
         private bool _autoMode = false;
+        private int _uiIshod;
 
         
         public Main()
@@ -238,8 +240,225 @@ namespace Carpo.TestShell
 
         private void Main_Load(object sender, EventArgs e)
         {
+            if (_autoMode)
+                return;
             Postavke();
         }
+
+        /// <summary>
+        /// Isti klik na Start kao korisnik. Ne spaja GranulaSesija.
+        /// </summary>
+        public int PokreniUiSmoke(string snimka)
+        {
+            _uiIshod = 0;
+            var dir = Path.GetDirectoryName(snimka);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+            var cudar = new Thread(delegate () { CuvajDijalog(snimka); });
+            cudar.IsBackground = true;
+            cudar.SetApartmentState(ApartmentState.STA);
+            cudar.Start();
+            try
+            {
+                operater = operateriId.ToString();
+                cmdGen.Enabled = true;
+                try
+                {
+                    Carpo.Core.Logger.BindJupiterLogs(server, operateriId, operater, database, null, Path.GetFileNameWithoutExtension(xml));
+                }
+                catch (Exception ex)
+                {
+                    UpisiIshod(snimka, "FAIL bind " + ex);
+                    return 1;
+                }
+                cmdGen_Click(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                SnimiEkran(snimka);
+                UpisiIshod(snimka, "FAIL start " + ex);
+                return 1;
+            }
+            if (_uiIshod == 1)
+                return 1;
+            Form granula = NadjiGranulu();
+            if (granula == null && _uiIshod != 2)
+            {
+                SnimiEkran(snimka);
+                UpisiIshod(snimka, "FAIL nema prozora granule");
+                return 2;
+            }
+            if (granula != null)
+                SnimiFormu(granula, snimka);
+            try
+            {
+                if (granula != null && !granula.IsDisposed)
+                    granula.Close();
+                Close();
+            }
+            catch (Exception ex)
+            {
+                SnimiEkran(snimka);
+                UpisiIshod(snimka, "FAIL zatvaranje " + ex);
+                return 3;
+            }
+            UpisiIshod(snimka, "OK " + xml);
+            return 0;
+        }
+
+        private Form NadjiGranulu()
+        {
+            foreach (Form f in Application.OpenForms)
+            {
+                if (f == null || f == this || !f.Visible)
+                    continue;
+                return f;
+            }
+            return null;
+        }
+
+        private void CuvajDijalog(string snimka)
+        {
+            int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+            for (int i = 0; i < 40; i++)
+            {
+                Thread.Sleep(500);
+                string naslov = ProzorGreske(pid);
+                if (naslov != null)
+                {
+                    _uiIshod = 1;
+                    SnimiEkran(snimka);
+                    UpisiIshod(snimka, "FAIL dijalog " + naslov);
+                    Environment.Exit(1);
+                }
+                IntPtr prozor = ProzorGranule(pid);
+                if (prozor != IntPtr.Zero)
+                {
+                    _uiIshod = 2;
+                    Thread.Sleep(800);
+                    SnimiEkran(snimka);
+                    PostMessage(prozor, 0x0010, IntPtr.Zero, IntPtr.Zero);
+                }
+            }
+            if (_uiIshod == 0)
+            {
+                SnimiEkran(snimka);
+                UpisiIshod(snimka, "FAIL timeout");
+                Environment.Exit(2);
+            }
+        }
+
+        private static string ProzorGreske(int pid)
+        {
+            string nadjen = null;
+            EnumWindows(delegate (IntPtr h, IntPtr l)
+            {
+                uint wpid;
+                GetWindowThreadProcessId(h, out wpid);
+                if (wpid != (uint)pid || !IsWindowVisible(h))
+                    return true;
+                var sb = new StringBuilder(512);
+                GetWindowText(h, sb, sb.Capacity);
+                string t = sb.ToString();
+                if (t == "Start Error" || t == "Carpo.NetGen" || t == "Greška" || t == "StartXmlGen()")
+                {
+                    nadjen = t;
+                    return false;
+                }
+                return true;
+            }, IntPtr.Zero);
+            return nadjen;
+        }
+
+        private static IntPtr ProzorGranule(int pid)
+        {
+            IntPtr nadjen = IntPtr.Zero;
+            EnumWindows(delegate (IntPtr h, IntPtr l)
+            {
+                uint wpid;
+                GetWindowThreadProcessId(h, out wpid);
+                if (wpid != (uint)pid || !IsWindowVisible(h))
+                    return true;
+                var sb = new StringBuilder(512);
+                GetWindowText(h, sb, sb.Capacity);
+                string t = sb.ToString();
+                if (t.Length == 0 || t == "TestShell")
+                    return true;
+                if (t == "Start Error" || t == "Carpo.NetGen" || t == "Greška")
+                    return true;
+                nadjen = h;
+                return false;
+            }, IntPtr.Zero);
+            return nadjen;
+        }
+
+        private static void SnimiEkran(string put)
+        {
+            try
+            {
+                var ekran = Screen.PrimaryScreen.Bounds;
+                using (var bmp = new System.Drawing.Bitmap(ekran.Width, ekran.Height))
+                {
+                    using (var g = System.Drawing.Graphics.FromImage(bmp))
+                        g.CopyFromScreen(ekran.Location, System.Drawing.Point.Empty, ekran.Size);
+                    bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private static void SnimiFormu(Form forma, string put)
+        {
+            try
+            {
+                var r = forma.Bounds;
+                if (r.Width < 50 || r.Height < 50)
+                {
+                    SnimiEkran(put);
+                    return;
+                }
+                using (var bmp = new System.Drawing.Bitmap(r.Width, r.Height))
+                {
+                    forma.DrawToBitmap(bmp, new System.Drawing.Rectangle(0, 0, r.Width, r.Height));
+                    bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
+                }
+            }
+            catch
+            {
+                SnimiEkran(put);
+            }
+        }
+
+        private static void UpisiIshod(string snimka, string tekst)
+        {
+            try
+            {
+                File.WriteAllText(snimka + ".txt", tekst);
+                Console.Error.WriteLine(tekst);
+            }
+            catch
+            {
+            }
+        }
+
+        private delegate bool EnumProc(IntPtr hWnd, IntPtr lParam);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool EnumWindows(EnumProc lpEnumFunc, IntPtr lParam);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
         private void Postavke()
         {

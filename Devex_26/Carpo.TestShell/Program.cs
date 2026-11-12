@@ -9,10 +9,25 @@ namespace Carpo.TestShell
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        private static void Main()
+        private static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            if (args != null && args.Length >= 3 && args[0] == "--ui-smoke")
+            {
+                var main = new Main("localhost", "spin", args[1], 7, "", "", true);
+                string snimka = args[2];
+                main.Shown += delegate
+                {
+                    main.BeginInvoke(new Action(delegate
+                    {
+                        int kod = main.PokreniUiSmoke(snimka);
+                        Environment.Exit(kod);
+                    }));
+                };
+                Application.Run(main);
+                return;
+            }
             Application.Run(new Main());
 
             //Carpo.XmlGen.Generate.Start("d:\\xmlGenTest.xml");

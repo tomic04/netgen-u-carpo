@@ -257,26 +257,34 @@ jobs:
             throw "Nema Carpo.TestShell.exe u $bin"
           }
           $ErrorActionPreference = "Stop"
-          $vrijeme = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
           $exe = Join-Path $bin "Carpo.TestShell.exe"
-          $tekst = "grana: $grana`r`ncommit: $env:NETGEN_COMMIT`r`nvrijeme: $vrijeme`r`nexe: $exe`r`nxml: $(Join-Path $pun 'definitions\netgen')`r`n"
-          Set-Content -LiteralPath (Join-Path $korijen "zadnji.txt") -Value $tekst -Encoding UTF8
-          & icacls $korijen /grant "ntomic:(OI)(CI)RX" "*S-1-5-32-545:(OI)(CI)RX" /T /C
-          if ($LASTEXITCODE -gt 1) { throw "icacls je vratio $LASTEXITCODE" }
-          Write-Host "Stabilni TestShell: $bin\Carpo.TestShell.exe"
-          Write-Host "XML: $(Join-Path $pun 'definitions\netgen')"
+          $snimke = Join-Path $env:GITHUB_WORKSPACE "artifacts\ui-smoke"
+          try {
+            & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSmoke.ps1") -Exe $exe -XmlRoot (Join-Path $pun "definitions\netgen") -Shots $snimke
+            if ($LASTEXITCODE -ne 0) { throw "UI smoke nije prosao. Kod $LASTEXITCODE" }
+            $vrijeme = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+            $tekst = "grana: $grana`r`ncommit: $env:NETGEN_COMMIT`r`nvrijeme: $vrijeme`r`nexe: $exe`r`nxml: $(Join-Path $pun 'definitions\netgen')`r`n"
+            Set-Content -LiteralPath (Join-Path $korijen "zadnji.txt") -Value $tekst -Encoding UTF8
+            & icacls $korijen /grant "ntomic:(OI)(CI)RX" "*S-1-5-32-545:(OI)(CI)RX" /T /C
+            if ($LASTEXITCODE -gt 1) { throw "icacls je vratio $LASTEXITCODE" }
+            Write-Host "Stabilni TestShell: $exe"
+          } finally {
+            & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\Ocisti.ps1") -Korijen $korijen
+          }
 
       - name: Artifact TestShell, NetGen, grid i defaulti
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: carpo-grid
-          if-no-files-found: error
+          if-no-files-found: warn
           path: |
             artifacts/bin/Carpo.NetGen.dll
             artifacts/bin/Carpo.NetGen.pdb
             artifacts/bin/Carpo.NetGen.Corpus.exe
             artifacts/bin/Carpo.NetGen.Corpus.pdb
             artifacts/bin/Carpo.NetGen.GridTest.exe
+            artifacts/ui-smoke/
             artifacts/bin/Carpo.NetGen.Defaults.exe
             artifacts/bin/Carpo.TestShell.exe
             artifacts/bin/Carpo.TestShell.pdb
