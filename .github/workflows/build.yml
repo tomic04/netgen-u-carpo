@@ -174,6 +174,43 @@ jobs:
           & (Join-Path $out "Carpo.NetGen.Granule.exe") $env:GITHUB_WORKSPACE --izvjestaj (Join-Path $env:GITHUB_WORKSPACE "artifacts\granule\izvjestaj.txt")
           if ($LASTEXITCODE -ne 0) { throw "QA granule: ima padova. Otvorene stavke ne ruse build. Vidi artifacts/granule/izvjestaj.txt" }
 
+      - name: Stabilni TestShell na sql-ai
+        shell: powershell
+        env:
+          NETGEN_GRANA: ${{ github.head_ref || github.ref_name }}
+          NETGEN_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $korijen = "C:\NetGenCarpo"
+          $grana = $env:NETGEN_GRANA
+          if ([string]::IsNullOrWhiteSpace($grana)) { throw "Nema imena grane." }
+          $ime = $grana.Replace("/", "_").Replace("\", "_")
+          if ($ime -match '^\.+$' -or $ime.Contains(":")) { throw "Neispravno ime grane: $ime" }
+          if (-not (Test-Path -LiteralPath $korijen)) {
+            New-Item -ItemType Directory -Path $korijen | Out-Null
+          }
+          $cilj = Join-Path $korijen $ime
+          $pun = [System.IO.Path]::GetFullPath($cilj)
+          $korijenPun = [System.IO.Path]::GetFullPath($korijen)
+          if (-not $pun.StartsWith($korijenPun + "\", [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Cilj nije unutar ${korijen}: $pun"
+          }
+          if (Test-Path -LiteralPath $pun) {
+            Remove-Item -LiteralPath $pun -Recurse -Force
+          }
+          $bin = Join-Path $pun "bin"
+          New-Item -ItemType Directory -Path $bin | Out-Null
+          New-Item -ItemType Directory -Path (Join-Path $pun "definitions") | Out-Null
+          Copy-Item -Path (Join-Path $env:GITHUB_WORKSPACE "artifacts\bin\*") -Destination $bin -Recurse -Force
+          Copy-Item -Path (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Destination (Join-Path $pun "definitions") -Recurse -Force
+          $vrijeme = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+          $tekst = "grana: $grana`r`ncommit: $env:NETGEN_COMMIT`r`nvrijeme: $vrijeme`r`n"
+          Set-Content -LiteralPath (Join-Path $korijen "zadnji.txt") -Value $tekst -Encoding UTF8
+          & icacls $korijen /grant "ntomic:(OI)(CI)RX" "*S-1-5-32-545:(OI)(CI)RX" /T /C
+          if ($LASTEXITCODE -gt 0) { throw "icacls je vratio $LASTEXITCODE" }
+          Write-Host "Stabilni TestShell: $bin\Carpo.TestShell.exe"
+          Write-Host "XML: $(Join-Path $pun 'definitions\netgen')"
+
       - name: Artifact TestShell, NetGen, grid i defaulti
         uses: actions/upload-artifact@v4
         with:
