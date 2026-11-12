@@ -22,7 +22,7 @@ Snimak CI #31 ima 160 stavki. U ovom prolazu su iz tablice izašle `MPK-30`, `MP
 | 12 | Ovisni combo, multidrop, status, WUDTH, TRANSLATE | 3 | 5 |
 | 13 | Prazan broj, apostrof i spRaiserror | 3 | 5 |
 | 14 | FILLEXPLORER i prazan početni master | 1 | 1 |
-| 15 | Ispis mastera, zaglavlje i Spin.Printing | 3 | 4 |
+| 15 | Ispis mastera, zaglavlje i Spin.Printing | 3 | 3 |
 | 16 | Procedura ili tijelo nisu dostupni za čitanje | 3 | 3 |
 | 17 | Lijevi panel: prazno stablo, combo, splitter | 2 | 9 |
 | 18 | Izbornik, help, timer, PERMISIO, popup, ikona | 1 | 7 |
@@ -33,7 +33,7 @@ Snimak CI #31 ima 160 stavki. U ovom prolazu su iz tablice izašle `MPK-30`, `MP
 | 23 | Redoslijed punjenja podloge | 1 | 1 |
 | 24 | fidus nema tablicu ssMeni | 1 | 1 |
 
-Zbroj stavki u tablici ispod je 154.
+Zbroj stavki u tablici ispod je 153.
 
 ## 1. XML nije u spin ssMeni
 
@@ -307,7 +307,7 @@ Zbroj stavki u tablici ispod je 154.
 
 ## 15. Ispis mastera, zaglavlje i Spin.Printing
 
-**3 granula, 4 stavki:** JeziciNG, KarticaPartnera, MPBlagajna.
+**3 granula, 3 stavki:** JeziciNG, KarticaPartnera, MPBlagajna.
 
 **NetGen:** `PRINTREPXMASTER` zove ispis mastera, ne formu tog imena (`Form1.vb` 4945–4948, `5984`). Desno zaglavlje je `@@tkosmomi` iz `SETDEFAULTS` (`6001`, `Class1.vb` 932–966). NetGen ide na Spin.Printing v23 pa v9.1 (`Class1.vb` 297–304). Port zove v26 (`Placeholders.cs` 46–52). Ako ispis padne, `Form6` zove `rptDevRepx.DoPrint2` (`Form6.vb` 134–161, `Class1.vb` 606–632).
 
@@ -316,7 +316,6 @@ Zbroj stavki u tablici ispod je 154.
 | Stavka | Očekivano | Izvor | Zašto je otvoreno |
 |---|---|---|---|
 | JeziciNG `JEZ-56` | Ispiši zove ispis mastera, ne formu tog imena | `netgen/Form1.vb:4945-4948,5984` | dijalog još nije u kuki |
-| JeziciNG `JEZ-57` | Desno zaglavlje ispisa dolazi iz @@tkosmomi (SETDEFAULTS u CB) | `netgen/Form1.vb:6001; netgen/Class1.vb:932-966` | dijalog još nije u kuki |
 | MPBlagajna `MPB-20` | Spin.Printing.v23 pa v9.1. Port zove v26, ne v23 | `netgen/Class1.vb:297-304; Devex_26/Carpo.NetGen/Placeholders.cs:46-52` | kuka nema ključ |
 | KarticaPartnera `KAR-40` | Ako Spin.Printing padne, Form6 zove rptDevRepx.DoPrint2 | `netgen/Form6.vb:134-161; netgen/Class1.vb:606-632` | kuka nema ključ |
 

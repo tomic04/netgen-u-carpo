@@ -223,7 +223,12 @@ namespace Carpo.NetGen.Granule
             R(l, xml, "JEZ-54", "HeaderLines je 3, selekcija višestruka, Enter None", "netgen/Class1.vb:1364; netgen/Form1.designer.vb:654; netgen/Form1.vb:3419", "otvori", "", "headerLines", "3");
             R(l, xml, "JEZ-55", "Gumb 4 ne postoji, Ispiši je redni 5", "netgen/Form1.vb:3827-3848", "otvori", "", "gumb.5", "Ispiši|PRINTREPXMASTER|true");
             R(l, xml, "JEZ-56", "Ispiši zove ispis mastera, ne formu tog imena", "netgen/Form1.vb:4945-4948,5984", "gumb", "Ispiši", "ispis", "PRINTREPXMASTER");
-            R(l, xml, "JEZ-57", "Desno zaglavlje ispisa dolazi iz @@tkosmomi (SETDEFAULTS u CB)", "netgen/Form1.vb:6001; netgen/Class1.vb:932-966", "gumb", "Ispiši", "pageHeaderRight", "@@tkosmomi");
+            string tkosmomiGreska;
+            string tkosmomi = Citanje.PrviTekst(SetDefaults, out tkosmomiGreska);
+            if (tkosmomi == null)
+                l.Add(Qa.P(Ime, "JEZ-57", "Desno zaglavlje ispisa dolazi iz @@tkosmomi (SETDEFAULTS u CB)", "netgen/Form1.vb:6001; netgen/Class1.vb:932-966", tkosmomiGreska ?? "SETDEFAULTS"));
+            else
+                R(l, xml, "JEZ-57", "Desno zaglavlje ispisa dolazi iz @@tkosmomi (SETDEFAULTS u CB)", "netgen/Form1.vb:6001; netgen/Class1.vb:932-966", "gumb", "Ispiši", "pageHeaderRight", tkosmomi.Trim());
             R(l, xml, "JEZ-58", "Dvostruki klik otvara Izmijeni", "netgen/Form1.vb:6935", "dblclick", "", "forma", "Izmijeni");
             R(l, xml, "JEZ-59", "Unesi: okvir nema natpis FrmJezici", "netgen/Form2.vb:2932-2938", "gumb", "Unesi", "kontrola.FrmJezici.tekst", "");
             R(l, xml, "JEZ-60", "Zvjezdica je font veličine 13", "netgen/Form2.vb:3077-3081", "gumb", "Unesi", "kontrola.LabelZvjezdica.velicina", "13");

@@ -19,7 +19,7 @@ Polazni broj je iz zelenog CI-ja [43269944426](https://github.com/tomic04/netgen
 
 ## Četvrti agent — preuzeto
 
-Grana `cursor/netgen-cetvrti-dokaz-0b55`. Ne diram ručni Start, UI smoke, `JEZ-57`, `zadnji.txt`, `JEZ-31`, `DOS-11` ni 11 redova `ssMeni` iz tablice iznad.
+Grana `cursor/netgen-cetvrti-dokaz-0b55`. Ne diram ručni Start, UI smoke, `zadnji.txt`, `JEZ-31`, `DOS-11` ni 11 redova `ssMeni` iz tablice iznad. `JEZ-57` je preuzet: `PAGEHEADERRIGHT` ide kroz CB (`Form1.vb` 6001, `Class1.vb` 966).
 
 | Stavka | Što radim |
 |---|---|

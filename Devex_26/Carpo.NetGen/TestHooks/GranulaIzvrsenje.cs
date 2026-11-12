@@ -94,7 +94,7 @@ namespace Carpo.NetGen.TestHooks
             bool assembly = naredbaGumba.IndexOf("ASSEMBLYLOAD(", StringComparison.OrdinalIgnoreCase) >= 0;
             s["dll"] = assembly ? "da" : "ne";
             s["ispis"] = Lanac.IspisSegment(gumb.Naredba);
-            s["pageHeaderRight"] = Attr(p, "PAGEHEADERRIGHT") ?? "";
+            s["pageHeaderRight"] = PageHeaderRight(p);
             s["border"] = "Sizable";
             NgForm forma = FormaGumba(p, gumb.Naredba);
             if (forma != null)
@@ -615,6 +615,42 @@ namespace Carpo.NetGen.TestHooks
             {
                 return "";
             }
+        }
+
+        /// <summary>
+        /// IspisGRIDREPX: SrediSQL, pa CB (DatumjezaIspis), pa ## i !!, pa Rafalna_Priprema.
+        /// Form1.vb 6001. Nenadnevna vrijednost iz CB ide sirova. Class1.vb 966.
+        /// </summary>
+        private static string PageHeaderRight(NgProject p)
+        {
+            string raw = Attr(p, "PAGEHEADERRIGHT") ?? "";
+            var cb = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            string set = Attr(p, "SETDEFAULTS");
+            var k = new SqlKontekst { OperaterId = "7", Node = "null", XmlName = "" };
+            if (!string.IsNullOrWhiteSpace(set))
+            {
+                string[] dijelovi = set.Split('#');
+                for (int i = 0; i < dijelovi.Length; i++)
+                {
+                    string dio = SqlTekst.Sredi((dijelovi[i] ?? "").Trim(), k);
+                    if (dio.Length == 0 || SqlTekst.Odluka(dio) != "salji" || SqlTekst.JeZabranaPisanja(dio))
+                        continue;
+                    try
+                    {
+                        DataTable dt = Citaj(dio);
+                        if (dt.Rows.Count == 0)
+                            continue;
+                        foreach (var par in Dozvola.IzReda(dt.Rows[0]))
+                            cb[par.Key] = par.Value;
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+            string sql = Dozvola.Poslije(SqlTekst.Sredi(raw, k), cb);
+            sql = sql.Replace("##", "\r\n").Replace("!!", "\r\n");
+            return SqlTekst.Sredi(IspisMotora.Zaglavlje(sql), k);
         }
 
         private static string StanjeGumba(NgProject p, SqlKontekst kontekst, Dictionary<string, string> cb, string natpis)
