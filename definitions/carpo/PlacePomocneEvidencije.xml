@@ -1,0 +1,311 @@
+<root version="1.0">
+	<!--
+  Komentari:
+  9.9.2021. Marin - namjestio caption kod checkedita
+  18.03.2021. Jadranka Vučenović Vojvodić - kreirala granulu ver 1.0.
+  20.04.2021. Jadranka Vučenović Vojvodić - dodala multiselect za višetruko brisanje
+  -->
+	<!--
+  *******************************************************************************************
+  POČETNA FORMA
+  *******************************************************************************************
+  -->
+	<form type="master" name="frmPomocneEvidencije" caption="Pomoćne evidencije">
+		<event type="init">
+			<action type="control populate" value="#grdMaster" />
+		
+		</event>
+		<event type="load">
+			<!-- DISABLE BTN IZMIJENI I OBRIŠI PRI ODREĐENOM ODABIRU NA DRVETU-->
+			<action type="menu disable" value="#menIzmijeni,#menObrisi" if="#tree.@id==0"></action> 
+			<action type="menu enable" value="#menIzmijeni,#menObrisi" else=""></action>	
+		
+		</event>
+		<managerlayout>
+			<!-- LOOKUP-->
+			<lookup name="filter">
+				<comboitem value="Klase unosa" />
+				<comboitem value="Osobe" />
+				<event type="valuechanged">
+					<action type="variable value">
+						<parameter name="global.filter" value="#filter" />
+					</action>
+					
+				</event>
+			</lookup>
+			<!-- TREE-->
+			<tree name="tree" keyfield="OOPKlaseUnosaId" key="Id" expandedlevel="1" dataname="dtTree">
+               <!-- DISABLE UNESI, IZIMJENI I OBRIŠI AKO ID NA DRVETU JE 0-->
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdMaster" /> 
+					 <action type="control disable" value="#btnUnesi,#btnIzmijeni,#btnObrisi" if="#tree.@ids==0"></action>  
+					 <action type="control enable" value="#btnUnesi,#btnIzmijeni,#btnObrisi" if="#tree.@ids!=0"></action>  
+					<action if="#filter==Osobe">
+					<action type="control disable" value="#btnUnesi" />	
+                    <action type="menu disable" value="#menUnos,#menIzmijeni" />					
+					</action> 
+					<action else="">
+						<action type="control enable" value="#btnUnesi" />	
+						<action type="menu enable" value="#menUnos,#menIzmijeni" />	
+					</action>
+				<action if="#filter==Klase unosa">
+				<action type="menu disable" value="#menIzmijeni,#menObrisi" if="#tree.@id==0"></action> 
+				<action type="menu enable" value="#menIzmijeni,#menObrisi" else=""></action>
+				</action>
+				<action else="">
+                <action type="menu disable" value="#menIzmijeni,#menObrisi" ></action>
+				</action>
+                <!-- DISABLE IZIMJENI I OBRIŠI AKO ID NA DRVETU RAZLIČIT OD 0 I MASTER GRID JE PRAZAN-->
+					<action if="#grdMaster.rowcount==0&amp;&amp;#tree.@ids!=0" type="control disable" value="#btnIzmijeni,#btnObrisi" />
+					<action type="control enable" value="#btnIzmijeni,#btnObrisi" if="#grdMaster.rowcount!=0&amp;&amp;#tree.@ids!=0"/>
+				</event>
+				<fields>
+					<field name="caption" />
+				</fields>
+				
+				<menu>
+					<!-- MENU UNOS-->
+					<menuitem caption="Unesi" name="menUnos" type="add">
+						<event type="click">
+							<action type="form open" value="frmUnos">
+								<parameter name="caption" value="Unos klase"/>
+								<parameter name="OOPKlaseUnosaId" value="0" />
+								<parameter name="tip" value="Unos" />
+							</action>
+							<action type="control populate keepfocus" value="#tree"/>
+						</event>
+					</menuitem>
+					<!-- MENU IZMIJENA-->
+					<menuitem caption="Izmijeni" name="menIzmijeni" type="edit">
+						<event type="click">
+							<action type="form open" value="frmUnos">
+								<parameter name="caption" value="Izmijeni {#tree.@caption}"/>
+								<parameter name="OOPKlaseUnosaId" value="#tree.@ids" />								
+								<parameter name="tip" value="Izmijena" />
+							</action>
+							<action type="control populate keepfocus" value="#tree"/>
+						</event>
+					</menuitem>
+					<!-- MENU BRISANJE-->
+					<menuitem caption="Obriši" name="menObrisi" type="delete">
+						<event type="click">
+							<action type="form open" value="frmBrisanjeKlase">
+								<parameter name="OOPKlaseUnosaId" value="#tree.@ids" />
+								<parameter name="selectedids" value="#tree.@ids"/>
+								<parameter name="tip" value="Brisanje" />
+							</action>
+							<action type="control populate keepfocus" value="#tree"/>
+						</event>
+					</menuitem>
+				</menu>
+			
+			</tree>
+			<!-- GRID-->
+			<grid type="master" name="grdMaster" dataname="~dtGrid" key="OOPUnosId" fieldsmartspaces="false" bestfitonrefresh="true" autowidth="true" multiselect="true">
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON UNOS-->
+				<button caption="Unesi" name="btnUnesi" type="add">
+					<event type="click">
+						<action type="form open" value="frmUnosPomocneEvid">
+							<parameter name="Tip" value="unos" />
+							<parameter name="OOPUnosId" value="0" type="int"/>
+							<parameter name="HRKadroviId" value="#grdMaster.@HRKadroviId"/>
+							<parameter name="caption" value="Unos"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster"/>
+						<action type="control enable" value="#btnIzmijeni,#btnObrisi" if="#grdMaster.rowcount!=0&amp;&amp;#tree.@ids!=0"/>
+					</event>
+				</button>
+				<!-- BUTTON IZMIJENA-->
+				<button caption="Izmijeni" name="btnIzmijeni" type="edit">
+					<event type="click">
+						<action type="form open" value="frmUnosPomocneEvid">
+							<parameter name="Tip" value="izmjena"/>
+							<parameter name="OOPUnosId" value="#grdMaster.@OOPUnosId" />
+							<parameter name="HRKadroviId" value="#grdMaster.@HRKadroviId"/>
+							<parameter name="caption" value="Izmjena"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster"/>
+					</event>
+				</button>
+				<!-- BUTTON BRISANJE-->
+				<button caption="Obriši" name="btnObrisi" type="delete">
+					<event type="click">
+						<action type="form open" value="frmBrisanje">
+							<parameter name="caption" value="Brisanje odabranih zapisa"/>
+							<parameter name="selectedids" value="#grdMaster.selectedids"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster"/>
+						<action type="control disable" value="#btnIzmijeni,#btnObrisi" if="#grdMaster.rowcount==0"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+            <!-- POVEZIVANJE SA STOROM ZA DRVO-->
+			<data command="spPlacePomocneEvidencije_CP" name="dtTree">
+				<parameter name="@action" value="osobe" if="global.$filter==Osobe" />
+				<parameter name="@action" value="Klase_unosa" elseif="global.$filter==Klase unosa" />
+				<parameter name="@indGreske.output.int"></parameter>
+			</data>
+			<!-- POVEZIVANJE SA STOROM ZA MASTER GRID-->
+			<data command="spPlacePomocneEvidencije_CP" name="dtGrid">
+				<parameter name="@action" value="master_klase" if="global.$filter==Klase unosa" />
+				<parameter name="@action" value="master_osobe" else="global.$filter==Osobe" />           
+				<parameter name="@filter" value="#tree.@id" if="#tree.@id!=0" />
+				<parameter name="@filter" value="" if="#tree.@id==0" />
+			</data>
+			<!-- POVEZIVANJE SA STOROM ZA BRISANJE-->
+			<!-- <data command="spPlacePomocneEvidencije_CP" name="dtBrisanje"> -->
+				<!-- <parameter name="@action" value="brisanje"/> -->
+				<!-- <parameter name="@selectedids" value="$selectedids"/> -->
+				<!-- <parameter name="@indGreske.output.int"></parameter> -->
+			<!-- </data> -->
+		</datalist>
+		
+		
+
+	</form>
+	
+	<!-- POVEZIVANJE SUBOVA-->
+	<form name="frmUnosPomocneEvid" path="frmUnosPomocneEvid.xml"/>
+	<form name="frmBrisanje" path="frmUnosPomocneEvid.xml"/>
+	<!--
+  *******************************************************************************************
+  FORMA ZA UNOS I IZMJENU KLASE NA DRVETU
+  *******************************************************************************************
+  -->
+	<form name="frmUnos" caption="$caption" width="400" height="150" fixedsize="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtGetKlasu" if="$OOPKlaseUnosaId!=0" />
+		</event>
+		<layout>
+			<group cols="1" rows="2" groupbordervisible="false" >
+				<item caption="Naziv" col="1" row="1" textposition="top" highlight="false" >
+					<textedit name="txtNaziv" datavalue="~dtGetKlasu.@Naziv" allownull="false" required="true" maxlength="100"></textedit>
+				</item>
+				<item col="1" row="2" highlight="false" >
+					<checkedit caption="Umirovljeno" name="chkUmirovljeno" datavalue="~dtGetKlasu.@Umirovljeno" ></checkedit>
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+			<!-- SPREMI-->
+				<button name="btnUnos" caption="Spremi">
+					<event type="click">
+						<action type="validate"/>
+						<action if="$OOPKlaseUnosaId==0">
+							<action type="datarun reader" value="~dtUnos">
+								<action type="control populate" value="parent.#tree">
+									<action type="control focus" value="parent.#tree">
+										<parameter value="$noviID"/>
+									</action>
+								</action>
+							</action>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!" />
+								<action type="form close" />
+							</action>
+						</action>
+						<action if="$OOPKlaseUnosaId!=0"> 
+							<action type="datarun reader" value="~dtIzmjena"></action> 
+							<action if="$indGreske==0"> 
+								<action type="message" value="Uspješno spremljeno!" /> 
+								<action type="form close" /> 
+							</action> 
+						</action> 
+					</event>
+				</button>
+				<!-- ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" >
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+		<!-- POVEZIVANJE SA STOROM ZA DOHVAĆANJE KLASE-->
+			<data command="spPlacePomocneEvidencije_CP" name="dtGetKlasu">
+				<parameter name="@action" value="getKlasu"></parameter>
+				<parameter name="@OOPKlaseUnosaId" value="$OOPKlaseUnosaId" type="int"/>
+			</data>
+			<!-- POVEZIVANJE SA STOROM ZA UNOS KLASE-->
+			<data command="spPlacePomocneEvidencije_CP" name="dtUnos">
+				<parameter name="@action" value="unos_klase"></parameter>
+				<parameter name="@OOPKlaseUnosaId.output.int" variablename="noviID"></parameter>
+				<parameter name="@naziv" value="#txtNaziv"></parameter>
+				<parameter name="@umirovljeno" value="#chkUmirovljeno"></parameter>
+				<parameter name="@indGreske.output.int"></parameter>
+			</data>
+			<!-- POVEZIVANJE SA STOROM ZA IZMJENU KLASE-->
+			<data command="spPlacePomocneEvidencije_CP" name="dtIzmjena">
+				<parameter name="@action" value="izmjena_klase"></parameter>
+				<parameter name="@OOPKlaseUnosaId" value="$OOPKlaseUnosaId"></parameter>
+				<parameter name="@naziv" value="#txtNaziv"></parameter>
+				<parameter name="@umirovljeno" value="#chkUmirovljeno"></parameter>
+				<parameter name="@indGreske.output.int"></parameter>
+			</data>
+		</datalist>
+	</form>
+
+	<!--
+  *******************************************************************************************
+  FORMA ZA BRISANJE KLASE
+  *******************************************************************************************
+  -->
+	<form name="frmBrisanjeKlase" caption ="Brisanje" width="400" height="150" fixedsize="true" saveformsize="false" >
+		<event type="shown">
+			<action type ="control value" value="#lblPitanje">
+				<parameter value="Jeste li sigurni da želite obrisati klasu '{parent.#tree.@caption}'?"/>
+			</action>
+		</event>
+		<layout>
+			<!--omotač-->
+			<group cols="1" rows="1" groupbordervisible="true" >
+				<item col="1" row="1"  highlight="false">
+					<labeledit name="lblPitanje" fontsizedelta="2"  value=""  />
+				</item>
+			</group>
+			<!--kraj omotača-->
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnBrisi" caption="OBRIŠI" type="del">
+					<event type="click">
+						<!-- Okini storu -->
+						<action type="datarun reader" value="~dtBrisanjeKlase"/>
+						<action if="$indGreske==0">
+							<action type="control populate keepfocus" value="parent.#tree"/>
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right" >
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+          <!-- POVEZIVANJE SA STOROM ZA BRISANJE KLASE UNOSA-->
+			<data command="spPlacePomocneEvidencije_CP" name="dtBrisanjeKlase">
+				<parameter name="@Action" value="brisanje_klase" type="string"/>
+				<parameter name="@OOPKlaseUnosaId" value="$selectedids"/>
+				<parameter name="@indGreske.output.int"></parameter>
+			</data>
+		</datalist>
+	</form>
+
+</root>

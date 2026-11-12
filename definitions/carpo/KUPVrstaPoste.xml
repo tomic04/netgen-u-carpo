@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<form name="master" type="master" caption="Vrsta pošte">
+    
+    <event type="init">
+ 			<action type="control populate" value="#grdGrid"/>
+		</event>       
+		<event type="shown">
+			<action type="variable value" >
+				<parameter name="NoviId" value="0" type="int"/>
+			</action>   			
+		</event>
+    
+		<managerlayout>        
+			<event type="load">
+				<action type="variable value" >
+					<parameter name="NoviId" value="0" type="int"/>
+				</action>                                           
+			</event>  
+      
+			<grid name="grdGrid" dataname="dtGrid" key="kupvrstaposteid" type="master" bestfitonrefresh="True">
+        <fields>
+					<field name="Oznaka" caption="Oznaka" fixwidth="100" />
+					<field name="Naziv" caption="Naziv" fixwidth="200"/>
+					<field name="Indikator" caption="Indikator" fixwidth="100"/>
+				</fields>
+            
+          
+				<event type="focusedrowchanged">
+					<action type="control enable" value="#btnObrisi,#btnIzmijeni" if="#grdGrid.rowcount!=0"/>
+					<action type="control disable" value="#btnObrisi,#btnIzmijeni" else=""/>
+				</event>
+        
+				<event type="doubleclick">
+					<action type="form open" value="frmVrstaPoste"  if="#grdGrid.rowcount&gt;0">
+						<parameter name="tekst" value="izmijena"/>
+						<parameter name="KupVrstaPosteId" value="#grdGrid.@kupvrstaposteid"/>
+						<parameter name="Action" value="1"/>
+					</action>
+
+					<action type="control populate" value="#grdGrid">
+						<action type="control focus" value="#grdGrid">
+							<parameter value="#grdGrid.@kupvrstaposteid"/>
+						</action>					
+					</action>
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="UNESI" type="add">
+					<menuitem control="#grdGrid"/>
+					<event type="click">
+						<action type="form open" value="frmVrstaPoste">
+							<parameter name="tekst" value="unos"/>
+							<parameter name="Action" value="0"/>
+						</action>	
+					</event>
+				</button>
+
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit">
+					<menuitem control="#grdGrid"/>				
+					<event type="click">
+						<action type="form open" value="frmVrstaPoste"  if="#grdGrid.rowcount&gt;0">
+							<parameter name="tekst" value="izmijena"/>
+							<parameter name="KupVrstaPosteId" value="#grdGrid.@kupvrstaposteid"/>
+							<parameter name="Action" value="1"/>
+						</action>			
+					</event>
+				</button>
+
+				<button name="btnObrisi" caption="OBRIŠI" type="delete">
+					<menuitem control="#grdGrid"/>
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati vrstu pošte: {#grdGrid.@Naziv}?">
+							<action type="datarun nonquery" value="~dtDelete" >
+								<action type="control populate" value="#grdGrid" />
+							</action>
+						</action>
+					</event>
+				</button>
+        
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCKUPVrstaPosteQuery" name="dtGrid">
+        <parameter name="@action" value="grid" />
+      </data>
+        
+	
+			<data command="spCKUPVrstaPosteAzur"  name="dtDelete">
+				<parameter name="@Action" value="2" />
+				<parameter name="@Id" value="#grdGrid.@kupvrstaposteid" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmVrstaPoste" caption="Vrsta pošte :: {$tekst}" width="400" fixedsize="true">
+		<event type="init">		
+			<action type="datarun reader" value="~dtGetIndikator" />
+			<action type="datarun reader" value="~dtGetDataEdit" if="$KupVrstaPosteId!=null"/>
+		</event>
+		<event type="load">
+			<action type="control value" value="#txtOznaka" if="$KupVrstaPosteId!=null">
+				<parameter value="~dtGetDataEdit.@Oznaka"/>
+			</action>
+			<action type="control value" value="#txtNaziv"  if="$KupVrstaPosteId!=null">
+				<parameter value="~dtGetDataEdit.@Naziv"/>
+			</action>
+			<action type="control value" value="#cmbIndikator"  if="$KupVrstaPosteId!=null">
+				<parameter value="~dtGetDataEdit.@IndFId"/>
+			</action>
+		</event>
+		<layout textposition="left">
+			<group cols="1" rows="3" >
+				<item caption="Oznaka:" col="1" row="1">
+					<textedit name="txtOznaka" required="True"   />
+				</item>
+				<item caption="Naziv:" col="1" row="2">
+					<textedit name="txtNaziv" required="True"   />
+				</item>				
+				<item caption="Indikator:" col="1" row="3" >
+					<comboedit name="cmbIndikator" autopopulate="true" required="True" valuefield="IndFId" displayfield="Naziv" datavalue="~dtGetIndikator.@IndFId" dataname="dtGetIndikator">
+					</comboedit>
+				</item>
+			</group>
+		</layout>			
+		<datalist>
+			<data command="select 1 as IndFId,'Ulazni račun - 1 ' as Naziv
+       							 union all 
+										 select 0 as IndFId ,'Ostalo - 0' as Naziv" type="text" name="dtGetIndikator">
+			</data>
+			<data command="spCKUPVrstaPosteAzur" name="dtAdd">
+				<parameter name="@Action" value="$Action"/>
+				<parameter name="@ID" value="$KupVrstaPosteId"/>
+				<parameter name="@Oznaka" value="#txtOznaka"/>	
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				<parameter name="@IndF" value="#cmbIndikator"/>
+			</data>
+			<data command="spCKUPVrstaPosteQuery"  name="dtGetDataEdit">
+        <parameter name="@action" value="edit" />
+				<parameter name="@KupVrstaPosteId" value="$KupVrstaPosteId" />
+			</data>
+			
+		</datalist>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<!-- <action type="validate" /> -->
+						<action type="datarun scalar" value="~dtAdd">
+							<parameter name="parent.$Noviid" />
+						</action>
+						<action type="form close"/>
+            
+            <action type="control populate" value="parent.#grdGrid">
+              
+            <action type="control focus" value="parent.#grdGrid" if="$Action==0">
+               <parameter value="parent.$Noviid" />
+            </action>   
+
+             <action type="control focus" value="parent.#grdGrid" if="$Action==1">
+                 <parameter value="$KupVrstaPosteId" />
+               </action>
+            </action>
+            
+        
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel">
+          <event type="click">
+              <action type="control focus" value="parent.#grdGrid" if="$Action==1">
+                 <parameter value="$KupVrstaPosteId" />
+               </action> 
+          </event>
+        </button>
+			</buttons>
+		</panelbuttons>
+	</form>
+
+</root>

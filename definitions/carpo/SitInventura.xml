@@ -1,0 +1,372 @@
+<root version="1.1">
+  
+  <!--1.0 - subforme SitInventura.frmNovaInvUnos.xml
+                     SitInventura.frmUnosKol.xml
+                     SitInventura.frmUnosRas.xml
+      1.1. - 03.07.2020. MZ - prilagodba ispisa popisnih i inventurnih lista (3 kriterija)-->
+
+  <!--***********************************GLAVNA FORMA ZA INVENTURU****************************************-->
+  <form name="frmSitInventura" type="master" caption="Inventura sitnog inventara" >
+    <event type="oninit">
+      <!--<action type="datarun reader" value="~dtGet" />-->
+      <action type="datarun scalar" value="~dtGetLastInvDate">
+        <parameter name="TreeFocus"/>
+      </action>
+    </event>
+    <event type="shown">
+      <action type="control focus" value="#tree">
+        <parameter value="$TreeFocus"/>
+      </action>
+    </event>
+    <managerlayout>
+      <!--filter drveta-->
+      <lookup name="filter" >
+        <comboitem value="Vremenska podjela"/>
+      </lookup>
+
+      <!--*****stablo*****-->
+      <tree name="tree" key="id" filtermode="smart" expandfirst="true" dataname="dtTree">
+
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdMaster" />
+        </event>
+        <fields>
+          <field name="Name" />
+        </fields>
+      </tree>
+
+      <!--Grid Glava-->
+      <grid name="grdMaster" type="master" key="SitInventuraGlaId" async="true" dataname="dtMaster" preventfocusgroup="false" fieldsmartspaces="false" bestfitonrefresh="true ">
+        <fields inherited="true">
+          <field name="DatumInventure" caption="Datum inventure" />
+          <field name="DatumPopisa" caption="Datum popisa" />
+          <field name="OrgJedinica" caption="Organizacijska jedinica" />
+          <field name="Smjestaj" caption="Smještaj" />
+        </fields>
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdDetalj" />
+        </event>
+        <!--desni klik za brisanje-->
+        <menu>
+            <menuitem caption="Obriši inventuru" sort="1">
+              <event type="click">                
+                <action type="confirm" value="Da li ste sigurni da želite obrisati inventuru?" >
+                  <action type="datarun reader" value="~dtBrisiInv"  waittype="progress" waitcaption="Pričekajte..." waittext="..brisanje u tijeku..."/>
+                  <action type="message" value="~dtBrisiInv.@Poruka" />                  
+                </action>
+                <action type="control populate" value="#grdMaster" />
+              </event>
+            </menuitem>
+            <menuitem caption="Izmijeni datum inventure" sort="1">
+              <event type="click">
+                <action type="form open" value="frmIzmjenaDatuma">
+                  <parameter name="Caption" value="Izmjena datuma inventure"/>
+                  <parameter name="Tip" value="Izmjena datuma"/>
+                  <parameter name="SitInventuraGlaId" value="#grdMaster.@SitInventuraGlaId"/>
+                </action>
+                <action type="control populate" value="#grdMaster" />
+              </event>
+            </menuitem>
+          </menu>
+        <styles>
+          <style name="fontcolor" value="	#0F6F8A" if="#grdMaster.@formatid==blue" />
+          <style name="fontcolor" value="#00A877" elseif="#grdMaster.@formatid==green" />
+          <style name="fontcolor" value="#000000" else="" />
+        </styles>
+      </grid>
+      <!--Grid Detalj-->
+      <grid name="grdDetalj" dataname="dtDetalj" fieldsmartspaces="false"  key="SitInventuraDetId" multiselect="true" bestfitonrefresh="true">
+        <fields inherited="true">
+          <field name="Naziv" fixed="true"/>
+          <field name="Sifra" caption="Šifra" fixed="true"/>
+          <field name="KolicinaPopisana" caption="Popisana količina" />
+          <field name="DatumPopisa" caption="Datum popisa" />
+          <field name="KolicinaKnjizna" caption="Knjižna količina" />
+          <field name="VrijednostKnjizna" caption="Knjižna vrijednost" />
+          <field name="KolicinaPeriodUlaz" caption="Količina ulaz" />
+          <field name="KolicinaPeriodIzlaz" caption="Količina izlaz" />
+          <field name="KolicinaStvarna" caption="Stvarna količina" />
+          <field name="VrijednostStvarna" caption="Stvarna vrijednost" />
+          <field name="KolicinaVisak" caption="Višak količina" />
+          <field name="VrijednostVisak" caption="Višak vrijednost" />
+          <field name="KolicinaManjak" caption="Manjak kolicina" />
+          <field name="VrijednostManjak" caption="Manjak vrijednost" />
+          <field name="KolicinaRashod" caption="Rashod količina" />
+          <field name="VrijednostRashod" caption="Rashod vrijednost" />
+          <field name="OrgJedinica" caption="Organizacijska jedinica" />
+          <field name="Smjestaj" caption="Smještaj" />
+        </fields>
+        <menu>
+          <menuitem caption="Obriši sitni inventar s inventure" name="menObrDet" sort="1">
+            <event type="click">
+              <action type="confirm" value="Da li ste sigurni da želite obrisati sitni inventar s inventure?" >
+                <!--<action type="message" value="#grdInvImovina.selectedids" />-->
+                <action type="datarun reader" value="~dtBrisiInventar"  waittype="progress" waitcaption="Pričekajte..." waittext="..brisanje u tijeku..."/>
+              </action>
+              <action type="control populate" value="#grdMaster" />
+            </event>
+          </menuitem>
+        </menu>
+        <event type="focusedrowchanged">
+          <action type="control disable" value="#btnUnosKol,#btnDonos,#btnUnosRas,#btnZakljucak" if="#grdMaster.@Status=='Zaključena'" />
+          <action type="control enable" value="#btnUnosKol,#btnDonos,#btnUnosRas,#btnZakljucak" else="" />
+          <action type="menu disable" value="#menObrDet" if="#grdMaster.@Status=='Zaključena'"/>
+          <action type="menu enable" value="#menObrDet" else="" />
+        </event>
+        <styles>
+          <style name="fontcolor" value="	#D1001C" if="#grdDetalj.@formatid==red" />
+          <style name="fontcolor" value="#00A877" elseif="#grdDetalj.@formatid==green" />
+          <style name="fontcolor" value="#000000" else="" />
+        </styles>
+      </grid>
+
+    </managerlayout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnosInv" caption="Unos inventure">
+          <event type="click">
+            <action type="form open" value="frmNovaInvUnos">
+              <parameter name="Caption" value="Unos nove inventure"/>
+              <parameter name="Tip" value="Unos novo"/>
+            </action>
+            <action if="dialogresult!=cancel">
+              <action type="control populate" value="#tree">
+                <action type="control focus" value="#tree">
+                  <parameter value="$TreeFocus"/>
+                </action>
+              </action>
+              <action type="control focus" value="#grdMaster">
+                <parameter value="$MasterFocus"/>
+              </action>
+            </action>
+
+          </event>
+        </button>
+        <button name="btnIspisi" caption="Ispis lista">
+          <event type="click">
+            <action type="form open" value="frmIspisLista">
+              <parameter name="Caption" value="Ispis"/>
+              <parameter name="Tip" value="Ispis lista"/>
+              <parameter name="SitInventuraGlaId" value="#grdMaster.@SitInventuraGlaId"/>
+            </action>
+          </event>
+        </button>
+        <button name="btnUnosKol" caption="Unos količina">
+          <event type="click">
+            <action type="form open" value="frmUnosKol">
+              <parameter name="Caption" value="Unos popisanih količina"/>
+              <parameter name="Tip" value="Unos količina"/>
+              <parameter name="SitInventuraGlaId" value="#grdMaster.@SitInventuraGlaId"/>
+            </action>
+            <action type="control refreshvalue" value="#grdMaster" />
+          </event>
+        </button>
+        <button name="btnDonos" caption="Donos knjižnog stanja">
+          <event type="click">
+            <action type="confirm" value="Da li ste sigurni da želite napraviti donos knjižnog stanja?" >
+              <action type="datarun reader" value="~dtDonos"  waittype="progress" waitcaption="Pričekajte..." waittext="..donos u tijeku..."/>
+            </action>
+            <action type="control populate" value="#grdMaster" />
+          </event>
+        </button>
+        <button name="btnUnosRas" caption="Unos rashoda">
+          <event type="click">
+            <action type="form open" value="frmUnosRas">
+              <parameter name="Caption" value="Unos rashoda"/>
+              <parameter name="Tip" value="Unos rashoda"/>
+              <parameter name="SitInventuraGlaId" value="#grdMaster.@SitInventuraGlaId"/>
+            </action>
+            <action type="control populate" value="#grdMaster" />
+          </event>
+        </button>
+        <button name="btnZakljucak" caption="Zaključak inventure">
+          <event type="click">
+            <action type="confirm" value="Da li ste sigurni da želite zaključiti inventuru?" >
+              <action type="datarun reader" value="~dtZakljucak"  waittype="progress" waitcaption="Pričekajte..." waittext="..zaključak u tijeku..."/>
+            </action>
+            <action type="control populate" value="#grdMaster" />
+          </event>
+        </button>
+        <button name="btnPonistiZakljucak" caption="Poništavanje zaključka inventure">
+          <event type="click">
+            <action type="confirm" value="Da li ste sigurni da želite poništiti zaključak inventure?" >
+              <action type="datarun reader" value="~dtPonistiZakljucak"  waittype="progress" waitcaption="Pričekajte..." waittext="..poništavanje zaključka u tijeku..."/>
+            </action>
+            <action type="control populate" value="#grdMaster" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="select top 1 left(convert(varchar,datumpopisa,112),6) from SitInventuraGla order by DatumPopisa desc" type="text" name="dtGetLastInvDate"/>
+      <data command="spSitInventura_TreeCP" name="dtTree">
+        <parameter name="@Action" value="Vremenska_tree" />
+      </data>
+      <data command="spSitInventura_QueryCP" name="dtMaster" >
+        <parameter name="@Action" value="Master_query"  />
+        <parameter name="@Godina" value="#tree.@Godina" />
+        <parameter name="@Mjesec" value="#tree.@Mjesec" />
+        <parameter name="@OperateriId" value="@@OperateriId" />
+      </data>
+      <data command="spSitInventura_QueryCP" name="dtDetalj" >
+        <parameter name="@Action" value="Detalj_query"  />
+        <parameter name="@SitInventuraGlaId" value="#grdMaster.@SitInventuraGlaId" />
+      </data>
+      <data command="spSitInventura_AzurCP" name="dtBrisiInv">
+        <parameter name="@Action" value="Brisanje_SitInvGla" />
+        <parameter name="@SitInventuraGlaId" value="#grdMaster.@SitInventuraGlaId" />
+      </data>
+      <data command="spSitInventura_AzurCP" name="dtBrisiInventar">
+        <parameter name="@Action" value="Brisanje_SitInvDet" />
+        <parameter name="@SelectedIds" value="#grdDetalj.SelectedIds" />
+        <parameter name="@SitInventuraGlaId" value="#grdMaster.@SitInventuraGlaId" />
+      </data>
+      <data command="spSitInventura_AzurCP" name="dtDonos">
+        <parameter name="@Action" value="Knjizno_donos" />
+        <parameter name="@SitInventuraGlaId" value="#grdMaster.@SitInventuraGlaId" />
+        <parameter name="@OrgShemaId" value="#grdMaster.@OrgShemaId" />
+        <parameter name="@SmjestajId" value="#grdMaster.@SmjestajId" />
+        <parameter name="@HRKadroviId" value="#grdMaster.@HRKadroviId" />
+        <parameter name="@SitKlaseId" value="#grdMaster.@SitKlaseId" />
+        <parameter name="@IndIspodOrg" value="#grdMaster.@IndIspodOrgId" />
+        <parameter name="@IndIspodSmj" value="#grdMaster.@IndIspodSmjId" />
+        <parameter name="@DatumInventure" value="#grdMaster.@DatumInventure" />
+        <parameter name="@DatumPopisa" value="#grdMaster.@DatumPopisa" />
+      </data>
+     <data command="spSitInventura_AzurCP" name="dtZakljucak">
+        <parameter name="@Action" value="Inv_Zakljucak" />
+        <parameter name="@SitInventuraGlaId" value="#grdMaster.@SitInventuraGlaId" />
+        <parameter name="@OperateriId" value="@@OperateriId" />
+        <parameter name="@DatumInventure" value="#grdMaster.@DatumInventure" />
+      </data>
+      <data command="spSitInventura_AzurCP" name="dtPonistiZakljucak">
+        <parameter name="@Action" value="Inv_ponisti_zakljucak" />
+        <parameter name="@SitInventuraGlaId" value="#grdMaster.@SitInventuraGlaId" />
+        <parameter name="@OperateriId" value="@@OperateriId" />
+      </data>
+    </datalist>
+  </form>
+
+  <form name="frmNovaInvUnos" path="frmNovaInvUnos.xml"/>
+  <form name="frmUnosKol" path="frmUnosKol.xml"/>
+  <form name="frmUnosRas" path="frmUnosRas.xml"/>
+
+  <!--**********************************KRAJ GLAVNE FORME ZA INVENTURU****************************************-->
+
+
+  
+  
+  <!--*****************************FORMA ZA IZMJENU DATUMA INVENTURE***********************************-->
+
+  <form name="frmIzmjenaDatuma" caption="$caption"  width="330" >
+
+    <event type="oninit">
+      <action type="datarun reader" value="~dtGet" />
+    </event>
+
+    <layout textposition="left" >
+      <group cols="1" rows="1" groupbordervisible="false" >
+        <item caption="Datum inventure:" col="1" row="7" colspan="2">
+          <dateedit name="datDatumInv" datavalue="~dtGet.@DatumInventure" />
+        </item>
+      </group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi"  caption="Spremi" type="add"  >
+          <event type="click">
+            <action type="datarun reader" value="~dtSpremiDatum" />
+            <action type="form close" />
+          </event>
+        </button>
+        <button caption="Odustani" type="cancel" dock="right">
+          <event type="click"/>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spSitInventura_HelpCP" name="dtGet">
+        <parameter name="@Action" value="Datum_izmjena"/>
+        <parameter name="@SitInventuraGlaId" value="$SitInventuraGlaId"/>
+      </data>
+      <data command="spSitInventura_AzurCP" name="dtSpremiDatum" >
+        <parameter name="@Action" value="Izmjena_datum"/>
+        <parameter name="@SitInventuraGlaId" value="$SitInventuraGlaId"/>
+        <parameter name="@DatumInventure" value="#datDatumInv"/>
+        <parameter name="@OperateriId" value="@@OperateriId"/>
+      </data>
+    </datalist>
+  </form>
+
+  <!--**************************KRAJ FORME ZA IZMJENU DATUMA INVENTURE***********************************-->
+
+  <!--*****************************FORMA ZA ISPISE LISTA***********************************-->
+  <form name="frmIspisLista" caption="$caption"  width="350" fixedsize="true" >
+
+    <layout textposition="left" >
+      <group cols="1" rows="2" groupbordervisible="false" >
+        <item  col="1" row="1" cols="1" rows="1" textposition="left" highlight="false">
+          <checkedit name="chkKolicine" caption="Ispiši količine" />
+        </item>
+        <group cols="3" rows="1" col="1" row="2" caption="Kriterij ispisa" groupbordervisible="true" spacing="2,2,2,2" >
+          <item  col="1" row="1"  textposition="right" highlight="false">
+            <checkedit name="chkSmjestaj" caption="Smještaj"/>
+          </item>
+          <item  col="2" row="1"  textposition="right" highlight="false" >
+            <checkedit name="chkOrgShema" caption="Org. jedinica"/>
+          </item>
+          <item  col="3" row="1"  textposition="right" highlight="false" >
+            <checkedit name="chkDjelatnik" caption="Djelatnik"/>
+          </item>
+        </group>
+      </group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnPopisna"  caption="Popisna lista" >
+          <event type="click">
+            <action type="print" value="repx:rptSitPopisnaListaCP">
+              <parameter name="Action" value="Popisna_lista" />
+              <parameter name="SitInventuraGlaId" value="$SitInventuraGlaId" />
+              <parameter name="IndKolicina" value="#chkKolicine" />
+              <parameter name="IndSmjestaj" value="#chkSmjestaj" />
+              <parameter name="IndOrgShema" value="#chkOrgShema" />
+              <parameter name="IndDjelatnik" value="#chkDjelatnik" />
+            </action>
+          </event>
+        </button>
+
+        <button name="btnInventurna"  caption="Inventurna lista" >
+          <event type="click">
+            <action type="print" value="repx:rptSitInventurnaListaCP">
+              <parameter name="Action" value="Inventurna_lista" />
+              <parameter name="SitInventuraGlaId" value="$SitInventuraGlaId" />
+              <parameter name="IndKolicina" value="#chkKolicine" />
+              <parameter name="IndSmjestaj" value="#chkSmjestaj" />
+              <parameter name="IndOrgShema" value="#chkOrgShema" />
+              <parameter name="IndDjelatnik" value="#chkDjelatnik" />
+            </action>
+          </event>
+        </button>
+
+        <button name="btnOdustani"  caption="Odustani" type="cancel" dock="right" >
+          <event type="click"/>
+        </button>
+
+      </buttons>
+    </panelbuttons>
+
+
+    <datalist>
+
+    </datalist>
+  </form>
+  <!--*****************************KRAJ FORME ZA ISPISE LISTA***********************************-->
+
+</root>
+

@@ -1,0 +1,262 @@
+<root version="1.0">
+  <form name="frmMaster" type="master" caption="Dnevnik rada stroja" >
+    <managerlayout>
+      <lookup name="filter">
+        <comboitem value="Vremenska podjela" />
+      </lookup>
+      <!-- DRVO -->
+      <tree name="trDrvo"  allowdrop="false" expandfirst="true" dataname="dtDrvo" keyfield="OSDnevnikRadaStrojaId">
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdGlava" />
+        </event>
+        <fields>
+          <field name="Name" />
+        </fields>
+      </tree>
+      <!-- MASTER GRID -->
+      <grid name="grdGlava" type="master" dataname="~dtGlava" autopopulate="true" async="true" key="OSDnevnikRadaStrojaId" bestfitonrefresh="true" showfooter="false" focusedrowchanged="false" fieldsmartspaces="false" >
+        <fields inherited="true">
+        </fields>
+      </grid>
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnos" caption="Unos">
+          <event type="click">
+            <action type="form open" value="frmStavka">
+              <parameter name="caption" value="Unos"/>
+              <parameter name="Tip" value="Unos"/>
+            </action>
+            <action type="control populate" value="#grdGlava" />
+            <action type="control populate" value="#trDrvo" />
+          </event>
+        </button>
+        <button name="btnIzmjeni" caption="Izmjena">
+          <event type="click">
+            <action type="form open" value="frmStavka">
+              <parameter name="OSDnevnikRadaStrojaId" value="#grdGlava.@OSDnevnikRadaStrojaId" />
+              <parameter name="caption" value="Izmjena"/>
+              <parameter name="Tip" value="Izmjena"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdGlava"/>
+          </event>
+        </button>
+        <button name="btnObrisi" caption="Obriši" type="delete">
+          <event type="click">
+            <action type="confirm" value="Jeste li sigurni da želite obrisati označenu stavku?">
+              <action type="datarun nonquery" value="~dtDelete">
+                <action type="control populate" value="#grdGlava"/>
+              </action>
+              <action type="control populate" value="#trDrvo" />
+            </action>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spOSDnevnikRadaStroja_Tree" name="dtDrvo" key="sortkey">
+        <parameter name="@action" value="drvo" if="#filter==Vremenska podjela"/>
+      </data>
+      <data command="spOSDnevnikRadaStroja_Query" name="dtGlava" >
+        <parameter name="@Action" value="master"  />
+        <parameter name="@godina" value="#trDrvo.@godina" />
+        <parameter name="@mjesec" value="#trDrvo.@mjesec" />
+      </data>
+      <data command="spOSDnevnikRadaStroja_Azur" name="dtDelete">
+        <parameter name="@Action" value="brisanje" />
+        <parameter name="@OSDnevnikRadaStrojaId" value="#grdGlava.@OSDnevnikRadaStrojaId" />
+      </data>
+    </datalist>
+  </form>
+
+  <!--forma za unos/izmjenu-->
+  <form name="frmStavka" caption="$caption" saveformlayout="true">
+    <event type="oninit">
+      <action type="datarun reader" value="~dtGet" if="$OSDnevnikRadaStrojaId!=null" />
+    </event>
+    <event type="onshown">
+      <action type="control disable" value="#cmbDokument" if="$Tip==Izmjena" />
+      <action type="control enable" value="#cmbDokument" else="" />
+    </event>
+    <layout textposition="top" itemspadding="3">
+      <group cols="1" rows="3" col="1" row="1" backgroundcolor="" groupbordervisible="false">
+        <group cols="1" rows="7" col="1" row="1" caption="Osnovni podaci" spacing="2,2,2,1" >
+          <item caption="Vrsta dokumenta" col="1" row="1">
+            <comboedit name="cmbDokument" valuefield="VrstaDokId" displayfield="Opis" datavalue="~dtGet.@VrstaDokId" dataname="Global.dtcmbDokument" required="true" allownull="false" />
+          </item>
+          <item caption="Broj" col="1" row="2">
+            <textedit name="txtBroj" datavalue="~dtGet.@Broj" enabled="false"/>
+          </item>
+          <item caption="Datum" col="1" row="3">
+            <dateedit name="datDatum" required="true" value="Now" datavalue="~dtGet.@Datum"/>
+          </item>
+          <item caption="Gradilište" col="1" row="4">
+            <comboedit name="cmbGradiliste" valuefield="orgshemaid" displayfield="Naziv" datavalue="~dtGet.@orgshemaid" dataname="Global.dtcmbGradiliste" required="true" />
+          </item>
+          <item caption="Stroj" col="1" row="5">
+            <comboedit name="cmbStroj" valuefield="dimenzijeid" displayfield="Naziv" datavalue="~dtGet.@dimenzijeid" dataname="Global.dtcmbStroj" required="true"/>
+          </item>
+          <item caption="Priključni stroj" col="1" row="6">
+            <comboedit name="cmbPrikljucniStroj" valuefield="dimenzijeid" displayfield="Naziv" datavalue="~dtGet.@PrikljucniDimenzijeId" dataname="Global.dtcmbPrikljucniStroj" />
+          </item>
+          <item caption="Strojar" col="1" row="7">
+            <comboedit name="cmbStrojar" valuefield="hrkadroviid" displayfield="Naziv" datavalue="~dtGet.@hrkadroviid" dataname="Global.dtcmbStrojar" required="true"/>
+          </item>
+        </group>
+        <group cols="3" rows="2" col="1" row="2" caption ="Stanje stroja" spacing="2,2,1,1" >
+          <item caption="Početno stanje stroja (sati)" col="1" row="1">
+            <textedit name="txtPocetnoStroj" datavalue="~dtGet.@PocetnoStanjeStroja" format="n2" nulltext="0.00">
+              <event type="leave">
+                <action type="datarun scalar" value="dtZbroj" >
+                  <parameter name="Razlikastroj" />
+                </action>
+                <action type="control value" value="#txtUkupnoStroj">
+                  <parameter value="$Razlikastroj" />
+                </action>
+              </event>
+            </textedit>
+          </item>
+          <item caption="Završno stanje stroja (sati)" col="2" row="1">
+            <textedit name="txtZavrsnoStroj" datavalue="~dtGet.@ZavrsnoStanjeStroja" format="n2" nulltext="0.00">
+              <event type="leave">
+                <action type="datarun scalar" value="dtZbroj" >
+                  <parameter name="Razlikastroj" />
+                </action>
+                <action type="control value" value="#txtUkupnoStroj">
+                  <parameter value="$Razlikastroj" />
+                </action>
+              </event>
+            </textedit>
+          </item>
+          <item caption="Ukupno stanje stroja (sati)" col="3" row="1">
+            <textedit name="txtUkupnoStroj" enabled="false" datavalue="~dtGet.@UkupnoStanjeStroja" format="n2" nulltext="0.00">
+            </textedit>
+          </item>
+          <item caption="Početno stanje vozila (km)" col="1" row="2">
+            <textedit name="txtPocetnoKilometri" datavalue="~dtGet.@PocetnoStanjeKilometri" format="n2" nulltext="0.00">
+              <event type="leave">
+                <action type="datarun scalar" value="dtZbrojKm" >
+                  <parameter name="Razlikakm" />
+                </action>
+                <action type="control value" value="#txtUkupnoKilometri">
+                  <parameter value="$Razlikakm" />
+                </action>
+              </event>
+            </textedit>
+          </item>
+          <item caption="Završno stanje vozila (km)" col="2" row="2">
+            <textedit name="txtZavrsnoKilometri" datavalue="~dtGet.@ZavrsnoStanjeKilometri" format="n2" nulltext="0.00">
+              <event type="leave">
+                <action type="datarun scalar" value="dtZbrojKm" >
+                  <parameter name="Razlikakm" />
+                </action>
+                <action type="control value" value="#txtUkupnoKilometri">
+                  <parameter value="$Razlikakm" />
+                </action>
+              </event>
+            </textedit>
+          </item>
+          <item caption="Ukupno stanje vozila (km)" col="3" row="2">
+            <textedit name="txtUkupnoKilometri" enabled="false" datavalue="~dtGet.@UkupnoStanjeKilometri" format="n2" nulltext="0.00">
+            </textedit>
+          </item>
+        </group>
+        <group cols="3" rows="1" col="1" row="3" caption="Sati" spacing="2,2,1,2" >
+          <item caption="Sati zastoja stroja" col="1" row="1">
+            <textedit name="txtSatiZastoja" datavalue="~dtGet.@SatiZastoja" format="n0" nulltext="0"/>
+          </item>
+          <item caption="Sati kvara stroja" col="2" row="1">
+            <textedit name="txtSatiKvara" datavalue="~dtGet.@SatiKvara" format="n0" nulltext="0"/>
+          </item>
+          <item caption="Sati strojara" col="3" row="1">
+            <textedit name="txtSatiStrojara" datavalue="~dtGet.@SatiStrojara" format="n0" nulltext="0"/>
+          </item>
+        </group>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="Spremi">
+          <event type="click">
+            <action type="validate"/>
+            <action type="datarun nonquery" value="~dtUpdate" if="$OSDnevnikRadaStrojaId!=null"/>
+            <action type="datarun nonquery" value="~dtInsert" else=""/>
+            <action type="form close"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spOSDnevnikRadaStroja_Query" name="dtGet" >
+        <parameter name="@Action" value="izmjena" />
+        <parameter name="@OSDnevnikRadaStrojaId" value="$OSDnevnikRadaStrojaId" />
+      </data>
+      <data  command="spOSDnevnikRadaStroja_Azur" name="dtInsert">
+        <parameter name="@action" value="unos" />
+        <parameter name="@orgshemaid" value="#cmbGradiliste" />
+        <parameter name="@hrkadroviid" value="#cmbStrojar" />
+        <parameter name="@dimenzijeid" value="#cmbStroj" />
+        <parameter name="@PrikljucniDimenzijeId" value="#cmbPrikljucniStroj" />
+        <parameter name="@PocetnoStanjeStroja" value="#txtPocetnoStroj" />
+        <parameter name="@ZavrsnoStanjeStroja" value="#txtZavrsnoStroj" />
+        <parameter name="@UkupnoStanjeStroja" value="#txtUkupnoStroj" />
+        <parameter name="@PocetnoStanjeKilometri" value="#txtPocetnoKilometri" />
+        <parameter name="@ZavrsnoStanjeKilometri" value="#txtZavrsnoKilometri" />
+        <parameter name="@UkupnoStanjeKilometri" value="#txtUkupnoKilometri" />
+        <parameter name="@SatiZastoja" value="#txtSatiZastoja" />
+        <parameter name="@SatiKvara" value="#txtSatiKvara" />
+        <parameter name="@SatiStrojara" value="#txtSatiStrojara" />
+        <parameter name="@Datum" value="#datDatum" />
+        <parameter name="@VrstaDokId" value="#cmbDokument" />
+      </data>
+      <data command="spOSDnevnikRadaStroja_Azur" name="dtUpdate">
+        <parameter name="@action" value="izmjena" />
+        <parameter name="@OSDnevnikRadaStrojaId" value="$OSDnevnikRadaStrojaId" />
+        <parameter name="@orgshemaid" value="#cmbGradiliste" />
+        <parameter name="@hrkadroviid" value="#cmbStrojar" />
+        <parameter name="@dimenzijeid" value="#cmbStroj" />
+        <parameter name="@PrikljucniDimenzijeId" value="#cmbPrikljucniStroj" />
+        <parameter name="@PocetnoStanjeStroja" value="#txtPocetnoStroj" />
+        <parameter name="@ZavrsnoStanjeStroja" value="#txtZavrsnoStroj" />
+        <parameter name="@UkupnoStanjeStroja" value="#txtUkupnoStroj" />
+        <parameter name="@PocetnoStanjeKilometri" value="#txtPocetnoKilometri" />
+        <parameter name="@ZavrsnoStanjeKilometri" value="#txtZavrsnoKilometri" />
+        <parameter name="@UkupnoStanjeKilometri" value="#txtUkupnoKilometri" />
+        <parameter name="@SatiZastoja" value="#txtSatiZastoja" />
+        <parameter name="@SatiKvara" value="#txtSatiKvara" />
+        <parameter name="@SatiStrojara" value="#txtSatiStrojara" />
+        <parameter name="@Datum" value="#datDatum" />
+        <parameter name="@VrstaDokId" value="#cmbDokument" />
+      </data>
+      <data command="spOSDnevnikRadaStroja_Help" name="dtZbroj">
+        <parameter name="@action" value="razlikastroj" />
+        <parameter name="@pocetnostanjestroja" value="#txtPocetnoStroj" />
+        <parameter name="@zavrsnostanjestroja" value="#txtZavrsnoStroj" />
+      </data>
+      <data command="spOSDnevnikRadaStroja_Help" name="dtZbrojKm">
+        <parameter name="@action" value="razlikakm" />
+        <parameter name="@pocetnostanjekm" value="#txtPocetnoKilometri" />
+        <parameter name="@zavrsnostanjekm" value="#txtZavrsnoKilometri" />
+      </data>
+    </datalist>
+  </form>
+  <datalist>
+    <data command="spOSDnevnikRadaStroja_Help" name="dtcmbGradiliste">
+      <parameter name="@Action" value="gradiliste" />
+    </data>
+    <data command="spOSDnevnikRadaStroja_Help" name="dtcmbStroj">
+      <parameter name="@Action" value="stroj" />
+    </data>
+    <data command="spOSDnevnikRadaStroja_Help" name="dtcmbPrikljucniStroj">
+      <parameter name="@Action" value="PrikljucniStroj" />
+    </data>
+    <data command="spOSDnevnikRadaStroja_Help" name="dtcmbStrojar">
+      <parameter name="@Action" value="strojar" />
+    </data>
+    <data command="spOSDnevnikRadaStroja_Help" name="dtcmbDokument">
+      <parameter name="@Action" value="dokument" />
+    </data>
+  </datalist>
+</root>

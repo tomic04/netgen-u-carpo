@@ -1,0 +1,790 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root version="8.0.0.0">
+	<form name="frmGlavna" type="master" caption="Manager partnera">
+		<method name="CarpoPartnerInfo" dll="Carpo" class="Carpo.Gen.Start" method="Run" />
+		<event type="shown">
+			<action type="variable value" value="global.ind">
+				<parameter value="P" />
+			</action>
+			<action type="variable value">
+				<parameter name="global.IndIspod" value="0" type="int" />
+			</action>
+			<action type="variable value" value="$SortKey">
+				<parameter value="''" />
+			</action>
+			<action type="control focus" value="#tree">
+				<parameter value="-2" type="int" />
+			</action>
+			<action type="footer text" value="Filter: Samo partneri" />
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Klasifikacija partnera" />
+				<comboitem value="Djelatnosti" />
+				<comboitem value="Zemljovid" />
+				<event type="valuechanged">
+					<action type="variable value" value="global.filter">
+						<parameter value="#filter" />
+					</action>
+					<action type="control visible" value="#btnFilter" if="#filter==Klasifikacija partnera||#filter==Zemljovid">
+						<parameter value="true" />
+					</action>
+					<action if="#filter==Djelatnosti">
+						<action type="variable value" value="global.ind">
+							<parameter value="P" />
+						</action>
+					</action>
+				</event>
+			</lookup>
+			<tree name="tree" key="Id" dataname="dtTree" allowdrop="true" allowdrag="true" expandallonload="true" filtermode="smart">
+				<fields>
+					<field name="naziv" />
+				</fields>
+				<event type="dragover">
+					<action type="drop allow" value="true" if="#tree.level>0" />
+				</event>
+				<menu type="drop">
+					<menuitem caption="Premjesti" name="mnuPremjesti">
+						<event type="click">
+							<action type="datarun noquery" value="~dtPremjesti" />
+							<action type="control focus" value="#tree">
+								<parameter value="$KlPartneriID" type="int" />
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</event>
+					</menuitem>
+					<menuitem caption="Kopiraj" name="mnuKopiraj">
+						<event type="click">
+							<action type="datarun noquery" value="~dtKopiraj" />
+							<action type="control focus" value="#tree">
+								<parameter value="$KlPartneriID" type="int" />
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</event>
+					</menuitem>
+					<menuitem type="separator" />
+					<menuitem caption="Odustani" />
+				</menu>
+				<event type="focusedrowchanged">
+					<action type="variable value" value="global.$IndIspod">
+						<parameter value="0" type="int" />
+					</action>
+					<action type="variable value" value="$KlPartneriID">
+						<parameter name="KlPartneriID" value="#tree.@Id" />
+					</action>
+					<action type="control populate" value="#grdGlava" />
+				</event>
+				<menu>
+					<menuitem caption="Ispod" name="mnu1">
+						<event type="click">
+							<action type="variable value" value="global.$IndIspod">
+								<parameter value="1" type="int" />
+							</action>
+							<action type="datarun reader" value="dtSortKey" />
+							<action type="variable value" value="$SortKey">
+								<parameter value="~dtSortKey.@SortKey" />
+							</action>
+							<action type="control populate" value="#grdGlava" />
+						</event>
+					</menuitem>
+				</menu>
+			</tree>
+			<grid name="grdGlava" type="master" dataname="dtGlava" bestfitonrefresh="true" key="Id" allowdrag="true" multiselect="true" savelayout="true">
+				<fields inherited="true">
+				</fields>
+				<styles>
+					<style name="fontcolor" value="blue" if="#grdGlava.@P/L=='L'&amp;&amp;global.$filter==Klasifikacija partnera">
+					</style>
+					<style name="fontcolor" value="blue" if="#grdGlava.@P/L=='L'&amp;&amp;global.$filter==Zemljovid">
+					</style>
+				</styles>
+				<event type="doubleclick">
+					<action if="#grdGlava.@P/L=='L'">
+						<action type="message" value="Iz ovog sučelja nije moguć rad sa lokacijama!" />
+					</action>
+					<action else="">
+						<action type="form open" value="frmPartnerInfoEdit">
+							<parameter name="PartneriId" value="#grdGlava.@PartneriId" />
+						</action>
+						<action if="global.$NoviPartneriId!=null">
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</action>
+					</action>
+				</event>
+				<event type="focusedrowchanged">
+					<action if="global.$filter==Klasifikacija partnera||global.$filter==Djelatnosti||global.$filter==Zemljovid">
+						<action type="menu enable" value="#menKreditniLimit,#menUvjetiZabrane,#menPostaviZabranu,#menUkloniZabranu" />
+						<action type="menu enable" value="#mnuKopiraj" if="global.$filter==Klasifikacija partnera" />
+						<action type="menu disable" value="#mnuKopiraj" if="global.$filter!=Klasifikacija partnera" />
+						<action type="menu enable" value="#menPostaviZabranu" if="#grdGlava.@Zabrana=='Ne'" />
+						<action type="menu disable" value="#menPostaviZabranu" else="" />
+						<action type="menu enable" value="#menUkloniZabranu" if="#grdGlava.@Zabrana=='Da'" />
+						<action type="menu disable" value="#menUkloniZabranu" else="" />
+						<action type="control disable" value="#btnIzmjeni,#btnObrisi,#btnParInfo" if="#grdGlava.rowcount==0" />
+						<action type="control enable" value="#btnIzmjeni,#btnObrisi,#btnParInfo" else="" />
+						<!-- Premjesti / Ispod samo u Klasifikacija partnera -->
+						<action if="global.$filter==Klasifikacija partnera">
+							<action if="#tree.@Id==-2||#tree.@Id==-1||global.$IndIspod==1">
+								<action type="menu disable" value="#mnuPremjesti" />
+							</action>
+							<action else="">
+								<action type="menu enable" value="#mnuPremjesti" />
+							</action>
+							<action if="#tree.@Id==-2||#tree.@Id==-1">
+								<action type="menu disable" value="#mnu1" />
+							</action>
+							<action else="">
+								<action type="menu enable" value="#mnu1" />
+							</action>
+						</action>
+						<action if="global.$filter!=Klasifikacija partnera">
+							<action type="menu disable" value="#mnuPremjesti,#mnu1" />
+						</action>
+					</action>
+					<!-- Specifični slučaj za Djelatnosti da sakrije btnFilter -->
+					<action if="global.$filter==Djelatnosti">
+						<action type="control visible" value="#btnFilter">
+							<parameter value="false" />
+						</action>
+						<action type="footer text" value="Filter: Samo partneri" />
+					</action>
+				</event>
+				<menu>
+					<menuitem name="menKreditniLimit" caption="Kreditni limit" function="KreditniLimit">
+						<event type="click">
+							<action type="form open" value="frmKreditniLimit">
+								<parameter name="PartneriId" value="#grdGlava.@PartneriId" />
+							</action>
+						</event>
+					</menuitem>
+					<menuitem type="separator" />
+					<menuitem name="menUvjetiZabrane" caption="Uvjeti zabrane" function="UvjetiZabrane">
+						<event type="click">
+							<action type="form open" value="frmUvjetiZabrane">
+								<parameter name="PartneriId" value="#grdGlava.@PartneriId" />
+							</action>
+						</event>
+					</menuitem>
+					<menuitem type="separator" />
+					<menuitem name="menUkloniZabranu" caption="Ukloni zabranu" function="PostaviZabranu">
+						<event type="click">
+							<action type="datarun nonquery" value="~dtZabrana" />
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</event>
+					</menuitem>
+					<menuitem name="menPostaviZabranu" caption="Postavi zabranu" function="PostaviZabranu">
+						<event type="click">
+							<action type="datarun nonquery" value="~dtZabrana" />
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</event>
+					</menuitem>
+				</menu>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="Dodaj" function="Insert">
+					<event type="click">
+						<action type="form open" value="frmPartnerInfoEdit">
+							<parameter name="PartneriId" value="null" />
+						</action>
+						<action if="global.$NoviPartneriId!=null">
+							<action type="datarun reader" value="~dtPartneriFocus" />
+							<action type="control focus" value="#tree" if="global.$filter==Djelatnosti||global.$filter==Klasifikacija partnera">
+								<parameter value="-1" type="int" />
+							</action>
+							<action type="control focus" value="#tree" if="global.$filter==Zemljovid">
+								<parameter value="0" type="string" />
+							</action>
+							<action type="control populate" value="#grdGlava" />
+							<action if="global.$filter==Klasifikacija partnera||global.$filter==Zemljovid">
+								<action type="control focus" value="#grdGlava">
+									<parameter value="~dtPartneriFocus.@Id" type="string" />
+								</action>
+							</action>
+							<action if="global.$filter==Djelatnosti">
+								<action type="control focus" value="#grdGlava">
+									<parameter value="~dtPartneriFocus.@PartneriId" type="int" />
+								</action>
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmjeni" caption="Izmijeni" function="Edit">
+					<event type="click">
+						<action if="#grdGlava.@P/L=='L'">
+							<action type="message" value="Iz ovog sučelja nije moguć rad sa lokacijama!" />
+						</action>
+						<action else="">
+							<action type="form open" value="frmPartnerInfoEdit">
+								<parameter name="PartneriId" value="#grdGlava.@PartneriId" />
+							</action>
+							<action if="global.$NoviPartneriId!=null">
+								<action type="control populate keepfocus" value="#grdGlava" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="Obriši" type="delete" function="Delete">
+					<event type="click">
+						<action if="#grdGlava.@P/L=='L'">
+							<action type="message" value="Iz ovog sučelja nije moguć rad sa lokacijama!" />
+						</action>
+						<action else="">
+							<action type="confirm" value="Želite li obrisati odabranog partnera?">
+								<action type="datarun nonquery" value="~dtDelete" />
+							</action>
+							<action type="control populate" value="#grdGlava" />
+						</action>
+					</event>
+				</button>
+				<button name="btnParInfo" caption="Partner Info" begingroup="true">
+					<event type="click">
+						<action type="method run" value="CarpoPartnerInfo">
+							<parameter name="moduleid" value="PartnerInfo.xml" />
+							<parameter name="global.PartneriId" type="var" valuetype="int" value="#grdGlava.@PartneriId" />
+						</action>
+					</event>
+				</button>
+				<button name="btnFilter" caption="Filter" begingroup="true">
+					<dropdownitem name="btnPartneriLokacije" caption="Partneri i lokacije">
+						<event type="click">
+							<action type="variable value" value="global.ind">
+								<parameter value="''" />
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava" />
+							<action type="footer text" value="Filter: Partneri i lokacije" />
+						</event>
+					</dropdownitem>
+					<dropdownitem name="btnPartneri" caption="Samo partneri">
+						<event type="click">
+							<action type="variable value" value="global.ind">
+								<parameter value="P" />
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava" />
+							<action type="footer text" value="Filter: Samo partneri" />
+						</event>
+					</dropdownitem>
+					<dropdownitem name="btnLokacije" caption="Samo lokacije">
+						<event type="click">
+							<action type="variable value" value="global.ind">
+								<parameter value="L" />
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava" />
+							<action type="footer text" value="Filter: Samo lokacije" />
+						</event>
+					</dropdownitem>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCPartneriZabrana" name="dtZabrana">
+				<parameter name="@action" value="1" />
+				<parameter name="@ID" value="#grdGlava.@PartneriId" />
+			</data>
+			<data command="spCPartneriManager_Query" name="dtSortKey">
+				<parameter name="@action" value="11" />
+				<parameter name="@KlPartneriId" value="#tree.@Id" />
+			</data>
+			<data command="spCPartneriManagerLnKlase" name="dtPremjesti">
+				<parameter name="@Action" value="0" />
+				<parameter name="@DestKlasaid" value="#tree.@Id" />
+				<parameter name="@NizId" value="#grdGlava.selectedids" />
+				<parameter name="@StaraKlasaId" value="$KlPartneriID" />
+			</data>
+			<data command="spCPartneriManagerLnKlase" name="dtKopiraj">
+				<parameter name="@Action" value="1" />
+				<parameter name="@DestKlasaid" value="#tree.@Id" />
+				<parameter name="@NizId" value="#grdGlava.selectedids" />
+				<parameter name="@StaraKlasaId" value="$KlPartneriID" />
+			</data>
+			<data command="spCTreeKlMasterManagerPartneri" name="dtTree" if="global.$filter==Klasifikacija partnera">
+				<parameter name="@Action" value="1" />
+			</data>
+			<data command="spCTreeKlMasterManagerPartneri" name="dtTree" if="global.$filter==Djelatnosti">
+				<parameter name="@Action" value="2" />
+			</data>
+			<data command="spCTreeKlMasterManagerPartneri" name="dtTree" if="global.$filter==Zemljovid">
+				<parameter name="@Action" value="3" />
+			</data>
+			<data command="spCPartneriManager_Query" name="dtGlava" if="global.$filter==Klasifikacija partnera">
+				<parameter name="@Action" value="4" if="#tree.@Id==-2" />
+				<parameter name="@Action" value="3" if="#tree.@Id==-1" />
+				<parameter name="@Action" value="5" if="global.$IndIspod==1" />
+				<parameter name="@Action" value="0" if="#tree.@Id!=-2&amp;&amp;#tree.@Id!=-1&amp;&amp;global.$IndIspod!=1" />
+				<parameter name="@ind" value="global.$ind" />
+				<parameter name="@KlPartneriId" value="$KlPartneriId" />
+				<parameter name="@SortKey" value="$SortKey" />
+				<parameter name="@KlKlPartneriId" value="0" />
+			</data>
+			<data command="spCPartneriManager_Query" name="dtGlava" if="global.$filter==Djelatnosti">
+				<parameter name="@action" value="12" />
+				<parameter name="@Id" value="#tree.@Id" />
+			</data>
+			<data command="spCPartneriManager_Query" name="dtGlava" if="global.$filter==Zemljovid">
+				<parameter name="@action" value="14" />
+				<parameter name="@ind" value="global.$ind" />
+				<parameter name="@Id" value="#tree.@Id" if="#tree.level==0" />
+				<parameter name="@DrzaveId" value="#tree.@drzaveid" if="#tree.level==1" />
+				<parameter name="@ZupanijeId" value="#tree.@zupanijeid" if="#tree.level==2" />
+				<parameter name="@MjestaId" value="#tree.@mjestaid" if="#tree.level==3" />
+			</data>
+			<data command="spCPartnerInfoAzur" name="dtDelete">
+				<parameter name="@Action" value="3" />
+				<parameter name="@ID" value="#grdGlava.@PartneriId" />
+			</data>
+			<!-- dataset za fokus na partnera nakon unosa -->
+			<data command="spCPartneriManager_Query" name="dtPartneriFocus">
+				<parameter name="@Action" value="13" />
+				<parameter name="@ID" value="global.$NoviPartneriId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmPartnerInfoEdit" caption="Osnovni podaci o partneru" statusbar="true" template="sidebar" width="700" height="400" saveformsize="true">
+		<event type="init">
+			<part name="prtRefreshVariable" path="prtPartnerInfo.xml" />
+			<part name="frmPartnerInfoEditInit" path="prtPartnerInfo.xml" />
+		</event>
+		<event type="load">
+			<part name="frmPartnerInfoEditLoad" path="prtPartnerInfo.xml" />
+		</event>
+		<event type="shown">
+			<part name="frmPartnerInfoEditShown" path="prtPartnerInfo.xml" />
+			<!-- <action type="control disable" value="#tabs[2]" if="$PartneriId!=null"/> -->
+			<action type="control focus" value="#txtOIB" />
+		</event>
+		<event type="close">
+			<action type="datarun nonquery" value="global.~dtTmpKlaseObrisiSve" />
+		</event>
+		<infocontrols>
+			<tabs name="tabsEdit">
+				<event type="tabchanged">
+					<action type="control visible" value="#btnSudskiRegistar" if="$SelectedTabIndex==0">
+						<parameter value="true" />
+					</action>
+					<action type="control visible" value="#btnSudskiRegistar" elseif="$SelectedTabIndex!=0">
+						<parameter value="false" />
+					</action>
+					<action type="control visible" value="#btnKlaseDodaj,#btnKlaseObrisi" if="$SelectedTabIndex==2">
+						<parameter value="true" />
+					</action>
+					<action type="control visible" value="#btnKlaseDodaj,#btnKlaseObrisi" elseif="$SelectedTabIndex!=2">
+						<parameter value="false" />
+					</action>
+				</event>
+			</tabs>
+		</infocontrols>
+		<part name="frmPartnerInfoEditLayout" path="prtPartnerInfo.xml" />
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate" />
+						<part name="frmPartnerInfoEditSpremi" path="prtPartnerInfo.xml" />
+					</event>
+				</button>
+				<button name="btnSudskiRegistar" caption="Uskladi sa       sud. reg.">
+					<event type="click">
+					</event>
+				</button>
+				<button name="btnKlaseDodaj" caption="Dodaj">
+					<event type="click">
+						<action type="form open" value="frmPartnerInfoKlasePartneraTmp">
+							<parameter name="PartneriId" value="global.$PartneriId" />
+							<parameter name="PartnerNaziv" value="$PartnerNaziv" />
+							<parameter name="KlPartneriId" value="null" />
+						</action>
+					</event>
+				</button>
+				<button name="btnKlaseObrisi" caption="Obriši">
+					<event type="click">
+						<action type="variable value">
+							<parameter name="SamoTmpEdit" value="1" />
+						</action>
+						<action type="datarun nonquery" value="global.~dtTmpKlaseObrisi" />
+						<action type="control populate" value="#grdKlase" />
+					</event>
+				</button>
+				<button name="btnZatvori" caption="Odustani" dock="right">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmKreditniLimit" caption="Kreditni limit">
+		<event type="init">
+			<action type="datarun reader" value="~dtKreditniLimit" />
+		</event>
+		<event type="shown">
+			<action type="control value" value="#chkLimit" if="#txtLimit!=null">
+				<parameter value="true" />
+			</action>
+			<action type="control value" value="#chkLimit" if="#txtLimit==null">
+				<parameter value="false" />
+			</action>
+			<action type="control enable" value="#txtLimit" if="#chkLimit==true" />
+			<action type="control disable" value="#txtLimit" if="#chkLimit==false" />
+		</event>
+		<layout>
+			<group cols="2" rows="3">
+				<item row="1" col="1">
+					<labeledit value="Partner" />
+				</item>
+				<item row="1" col="2">
+					<textedit name="txtPartner" datavalue="~dtKreditniLimit.@Naziv" enabled="false" />
+				</item>
+				<item row="2" col="1">
+					<checkedit name="chkLimit" caption="Limit">
+						<event type="valuechanged">
+							<action type="control value" value="#txtLimit" if="#chkLimit==false">
+								<parameter value="" />
+							</action>
+							<action type="control disable" value="#txtLimit" if="#chkLimit==false" />
+							<action type="control enable" value="#txtLimit" if="#chkLimit==true" />
+						</event>
+					</checkedit>
+				</item>
+				<item row="2" col="2">
+					<textedit name="txtLimit" datavalue="~dtKreditniLimit.@KreditniLimit" allownull="true" format="n2" />
+				</item>
+				<item row="3" col="1">
+					<labeledit value="Osiguranje plaćanja" />
+				</item>
+				<item row="3" col="2">
+					<textedit name="txtOsiguranje" datavalue="~dtKreditniLimit.@OsiguranjePlacanja" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action if="#chkLimit==true&amp;&amp;#txtLimit==null">
+							<action type="validate" />
+							<action type="message" value="Potrebno je unijeti limit!" />
+						</action>
+						<action else="">
+							<action type="validate" />
+							<action type="datarun nonquery" value="~dtEdit" />
+							<action type="variable value" value="$KlPartneriID">
+								<parameter value="parent.#tree.@Id" />
+							</action>
+							<action type="control populate keepfocus" value="parent.#grdGlava" />
+							<action type="form close" />
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel">
+					<event type="click" />
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCPartneriManager_Query" name="dtKreditniLimit">
+				<parameter name="@Action" value="2" />
+				<parameter name="@ID" value="$PartneriId" />
+			</data>
+			<data command="spCPartneriZabrana" name="dtEdit">
+				<parameter name="@ID" value="$PartneriId" />
+				<parameter name="@action" value="2" />
+				<parameter name="@KreditniLimit" value="#txtLimit" if="#txtLimit!=''&amp;&amp;#chkLimit==true" />
+				<parameter name="@KreditniLimit" value="null" else="" />
+				<parameter name="@OsiguranjePlacanja" value="#txtOsiguranje" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUvjetiZabrane" caption="Uvjeti zabrane">
+		<event type="init">
+			<action type="datarun reader" value="~dtUvjetiZabraneRead" />
+		</event>
+		<event type="shown">
+			<action type="control value" value="#chkUvjete">
+				<parameter value="false" />
+			</action>
+			<action type="control disable" value="#txtDani" />
+			<action type="control disable" value="#txtZabranaLimit" />
+			<action if="#txtDani!=null&amp;&amp;#txtZabranaLimit!=null">
+				<action type="control value" value="#chkUvjete">
+					<parameter value="true" />
+				</action>
+				<action type="control enable" value="#txtDani" />
+				<action type="control enable" value="#txtZabranaLimit" />
+			</action>
+		</event>
+		<layout>
+			<group cols="2" rows="3">
+				<item row="1" col="1">
+					<checkedit name="chkUvjete" caption="Postavi uvjete zabrane">
+						<event type="valuechanged">
+							<action type="control value" value="#txtDani" if="#chkUvjete==false">
+								<parameter value="" />
+							</action>
+							<action type="control value" value="#txtZabranaLimit" if="#chkUvjete==false">
+								<parameter value="" />
+							</action>
+							<action type="control disable" value="#txtDani" if="#chkUvjete==false" />
+							<action type="control enable" value="#txtDani" if="#chkUvjete==true" />
+							<action type="control disable" value="#txtZabranaLimit" if="#chkUvjete==false" />
+							<action type="control enable" value="#txtZabranaLimit" if="#chkUvjete==true" />
+						</event>
+					</checkedit>
+				</item>
+				<item row="2" col="1">
+					<labeledit value="Dani:" />
+				</item>
+				<item row="2" col="2">
+					<textedit name="txtDani" datavalue="~dtUvjetiZabraneRead.@Dani" />
+				</item>
+				<item row="3" col="1">
+					<labeledit value="Limit:" />
+				</item>
+				<item row="3" col="2">
+					<textedit name="txtZabranaLimit" datavalue="~dtUvjetiZabraneRead.@Limit" format="n2" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action if="#chkUvjete==false">
+							<action type="datarun nonquery" value="~dtUvjetiZabraneDelete" />
+							<action type="variable value" value="$KlPartneriID">
+								<parameter value="parent.#tree.@Id" />
+							</action>
+							<action type="control populate keepfocus" value="parent.#grdGlava" />
+							<action type="form close" />
+						</action>
+						<action else="">
+							<action if="#txtDani==null||#txtDani==''||#txtZabranaLimit==null||#txtZabranaLimit==''">
+								<action type="message" value="Potrebno je popuniti polja Dani i Limit!" />
+							</action>
+							<action else="">
+								<action type="validate" />
+								<action type="datarun nonquery" value="~dtUvjetiZabraneSave" />
+								<action type="variable value" value="$KlPartneriID">
+									<parameter value="parent.#tree.@Id" />
+								</action>
+								<action type="control populate keepfocus" value="parent.#grdGlava" />
+								<action type="form close" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel">
+					<event type="click" />
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCPKLAzur" name="dtUvjetiZabraneRead">
+				<parameter name="@Action" value="2" />
+				<parameter name="@PartneriId" value="$PartneriId" />
+			</data>
+			<data command="spCPKLAzur" name="dtUvjetiZabraneSave">
+				<parameter name="@Action" value="0" />
+				<parameter name="@PartneriId" value="$PartneriId" />
+				<parameter name="@Dani" value="#txtDani" />
+				<parameter name="@Limit" value="#txtZabranaLimit" />
+			</data>
+			<data command="spCPKLAzur" name="dtUvjetiZabraneDelete">
+				<parameter name="@Action" value="1" />
+				<parameter name="@PartneriId" value="$PartneriId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmPartnerInfoKlasePartneraTmp" statusbar="false" saveformsize="true">
+		<event type="shown">
+			<action type="form caption" value="Unos nove klase partnera {$PartnerNaziv}" />
+		</event>
+		<part name="frmPartnerInfoKlasePartneraLayout" path="prtPartnerInfo.xml" />
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="Dodaj">
+					<event type="click">
+						<action type="validate" />
+						<action type="variable value">
+							<parameter name="SamoTmpEdit" value="1" />
+						</action>
+						<action if="#cmbKlase!=null">
+							<action type="datarun nonquery" value="global.~dtTmpKlaseDodaj" />
+							<action type="control populate" value="parent.#grdKlase" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnZatvori" caption="Odustani" dock="right">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<datalist>
+		<data name="dtGetPartnerOpcenito" command="spCPartnerInfoQuery">
+			<parameter name="@Action" value="20" />
+			<parameter name="@PartneriId" value="$PartneriId" />
+		</data>
+		<data name="dtMjesto" command="spPartneriManagerNET_Combo">
+			<parameter name="@Action" value="Mjesto" />
+			<parameter name="@PartneriId" value="null" />
+		</data>
+		<data name="dtNacinNaplate" command="spPartneriManagerNET_Combo">
+			<parameter name="@Action" value="NacinNaplate" />
+			<parameter name="@PartneriId" value="null" />
+		</data>
+		<data name="dtMIBPGstatus" command="spPartneriManagerNET_Combo">
+			<parameter name="@Action" value="MIBPGstatus" />
+			<parameter name="@PartneriId" value="null" />
+		</data>
+		<data name="dtDjelatnost" command="spPartneriManagerNET_Combo">
+			<parameter name="@Action" value="Djelatnost" />
+			<parameter name="@PartneriId" value="null" />
+		</data>
+		<data name="dtKlase" command="spCPartnerInfoCombo">
+			<parameter name="@Action" value="Klase" />
+		</data>
+		<data name="dtValidatePartnera" command="spCPartnerInfoValidatePartnera">
+			<parameter name="@Action" value="1" if="$PartneriId==null" />
+			<parameter name="@Action" value="2" if="$PartneriId!=null" />
+			<parameter name="@PartneriId" value="$PartneriId" />
+			<parameter name="@Naziv" value="#txtNaziv" />
+			<parameter name="@PorezniBroj" value="#txtOIB" />
+			<parameter name="@DrzaveId" value="$DrzaveId" />
+			<parameter name="@Sifra" value="#txtSifra" />
+		</data>
+		<data name="dtUnesiIzmijeniPartnera" command="spCPartnerInfoAzur">
+			<parameter name="@Action" value="1" if="$PartneriId==null" />
+			<parameter name="@Action" value="2" if="$PartneriId!=null" />
+			<!-- <parameter name="@PartneriId" value="global.$PartneriId"/> -->
+			<parameter name="@ID" value="$PartneriId" />
+			<parameter name="@naziv" value="#txtNaziv" />
+			<parameter name="@Matbroj" value="#txtMatBroj" />
+			<parameter name="@sifra" value="#txtSifra" />
+			<parameter name="@PorezniBroj" value="#txtOIB" />
+			<parameter name="@MIPIGBroj" value="#txtMIBPGBroj" />
+			<parameter name="@MIPIGStatus" value="#cmbMIBPGStatus" />
+			<parameter name="@IBK" value="#txtIBK" />
+			<parameter name="@TrosarinskiBroj" value="#txtTrosarinskiBroj" />
+			<parameter name="@DjelatnostiId" value="#cmbDjelatnost" />
+			<parameter name="@naziv2" value="#txtNaziv2" />
+			<parameter name="@MjestaId" value="#cmbMjesto" />
+			<parameter name="@Adresa" value="#txtAdresa" />
+			<parameter name="@Telefon1" value="#txtTelefon1" />
+			<parameter name="@Telefon2" value="#txtTelefon2" />
+			<parameter name="@Fax" value="#txtfax" />
+			<parameter name="@Email" value="#txtEmail" />
+			<parameter name="@Www" value="#txtWeb" />
+			<parameter name="@AdresaPosta" value="#memAdresaPosta" />
+			<parameter name="@SluzbeniNaziv" value="#txtSluzbeniNaziv" />
+			<parameter name="@NacinNaplateId" value="#cmbNacinPlacanja" />
+			<parameter name="@slika" value="#picLogo" type="varbinary" />
+			<parameter name="@IndPDV" value="#chePDVSustav" />
+			<parameter name="@IndR2" value="#cheR2Racuni" />
+		</data>
+		<data name="dtIzmijeniDodatni" command="spCPartnerInfoAzur">
+			<parameter name="@Action" value="5" />
+			<!-- <parameter name="@PartneriId" value="global.$PartneriId"/> -->
+			<parameter name="@ID" value="$PartneriId" />
+			<parameter name="@Matbroj" value="#txtMatBroj" />
+			<parameter name="@MIPIGBroj" value="#txtMIBPGBroj" />
+			<parameter name="@MIPIGStatus" value="#cmbMIBPGStatus" />
+			<parameter name="@IBK" value="#txtIBK" />
+			<parameter name="@TrosarinskiBroj" value="#txtTrosarinskiBroj" />
+			<parameter name="@AdresaPosta" value="#memAdresaPosta" />
+			<parameter name="@NacinNaplateId" value="#cmbNacinPlacanja" />
+			<parameter name="@SluzbeniNaziv" value="#txtSluzbeniNaziv" />
+			<parameter name="@Naziv2" value="#txtNaziv2" />
+			<parameter name="@IndPDV" value="#chePDVSustav" />
+			<parameter name="@IndR2" value="#cheR2Racuni" />
+		</data>
+		<data name="dtObaveznaPolja" command="spCPartneriInfoObaveznaPolja">
+			<parameter name="@Action" value="1" />
+			<parameter name="@ID" value="$PartneriId" />
+			<parameter name="@naziv" value="#txtNaziv" />
+			<parameter name="@Matbroj" value="#txtMatBroj" />
+			<parameter name="@sifra" value="#txtSifra" />
+			<parameter name="@PorezniBroj" value="#txtOIB" />
+			<parameter name="@MIPIGBroj" value="#txtMIBPGBroj" />
+			<parameter name="@MIPIGStatus" value="#cmbMIBPGStatus" />
+			<parameter name="@IBK" value="#txtIBK" />
+			<parameter name="@TrosarinskiBroj" value="#txtTrosarinskiBroj" />
+			<parameter name="@DjelatnostiId" value="#cmbDjelatnost" />
+			<parameter name="@naziv2" value="#txtNaziv2" />
+			<parameter name="@MjestaId" value="#cmbMjesto" />
+			<parameter name="@Adresa" value="#txtAdresa" />
+			<parameter name="@Telefon1" value="#txtTelefon1" />
+			<parameter name="@Telefon2" value="#txtTelefon2" />
+			<parameter name="@Fax" value="#txtfax" />
+			<parameter name="@Email" value="#txtEmail" />
+			<parameter name="@Www" value="#txtWeb" />
+			<parameter name="@AdresaPosta" value="#memAdresaPosta" />
+			<parameter name="@SluzbeniNaziv" value="#txtSluzbeniNaziv" />
+			<parameter name="@NacinNaplateId" value="#cmbNacinPlacanja" />
+		</data>
+		<data name="dtGetDrzave" command="spCPartnerInfoQueries">
+			<parameter name="@Action" value="GetDrzave" />
+			<parameter name="@Id" value="#cmbMjesto" />
+		</data>
+		<data name="dtTmpKlaseDodaj" command="spCPartnerInfoTmpKlaseAzur">
+			<parameter name="@Action" value="1" />
+			<parameter name="@KlPartneriId" value="#cmbKlase" />
+			<parameter name="@Operateriid" value="@@operateriid" />
+		</data>
+		<data name="dtTmpKlaseObrisi" command="spCPartnerInfoTmpKlaseAzur">
+			<parameter name="@Action" value="2" />
+			<parameter name="@Operateriid" value="@@operateriid" />
+			<parameter name="@KlPartneriId" value="#grdKlase.@KlPartneriId" />
+		</data>
+		<data name="dtTmpKlaseObrisiSve" command="spCPartnerInfoTmpKlaseAzur">
+			<parameter name="@Action" value="3" />
+			<parameter name="@Operateriid" value="@@operateriid" />
+		</data>
+		<data name="dtTmpKlase" command="spCPartnerInfoTmpKlaseQuery">
+			<parameter name="@Action" value="1" if="$SamoTmpEdit==0" />
+			<parameter name="@Action" value="2" if="$SamoTmpEdit==1" />
+			<parameter name="@Operateriid" value="@@operateriid" />
+			<parameter name="@PartneriId" value="$PartneriId" />
+		</data>
+		<data name="dtTmpKlaseDodajLok" command="spCPartnerInfoTmpKlaseLokAzur">
+			<parameter name="@Action" value="1" />
+			<parameter name="@KlPartneriId" value="#cmbKlase" />
+			<parameter name="@Operateriid" value="@@operateriid" />
+		</data>
+		<data name="dtTmpKlaseObrisiLok" command="spCPartnerInfoTmpKlaseLokAzur">
+			<parameter name="@Action" value="2" />
+			<parameter name="@Operateriid" value="@@operateriid" />
+			<parameter name="@KlPartneriId" value="#grdKlaseLokacija.@KlPartneriID" />
+		</data>
+		<data name="dtTmpKlaseObrisiSveLok" command="spCPartnerInfoTmpKlaseLokAzur">
+			<parameter name="@Action" value="3" />
+			<parameter name="@Operateriid" value="@@operateriid" />
+		</data>
+		<data name="dtTmpKlaseLok" command="spCPartnerInfoTmpKlaseLokQuery">
+			<parameter name="@Action" value="1" if="$SamoTmpEdit==0" />
+			<parameter name="@Action" value="2" if="$SamoTmpEdit==1" />
+			<parameter name="@Operateriid" value="@@operateriid" />
+			<parameter name="@PartneriId" value="$PartneriId" />
+			<parameter name="@ParStruId" value="$ParStruId" />
+		</data>
+		<data name="dtGetPartnerLogo" command="spCPartnerInfoSlike">
+			<parameter name="@Action" value="3" />
+			<parameter name="@PartneriId" value="$PartneriId" />
+		</data>
+		<data name="dtUnesiIzmijeniKlase" command="spCPartnerInfoLnPartneriAzur">
+			<parameter name="@Action" value="8" />
+			<parameter name="@Operateriid" value="@@operateriid" />
+			<parameter name="@Id" value="$PartneriId" if="$NoviPartneriId==null" />
+			<parameter name="@Id" value="$NoviPartneriId" elseif="$NoviPartneriId!=null" />
+		</data>
+		<data name="dtUnesiIzmijeniKlaseLok" command="spCPartnerInfoLnPartneriAzur">
+			<parameter name="@Action" value="9" />
+			<parameter name="@Operateriid" value="@@operateriid" />
+			<parameter name="@Id" value="$ParStruId" if="$NoviParStruId==null" />
+			<parameter name="@Id" value="$NoviParStruId" elseif="$NoviParStruId!=null" />
+		</data>
+	</datalist>
+</root>

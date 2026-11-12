@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT  
+	BUTTONS=""
+	POPUPMASTER="" 
+	MASTERDBLCLICK="KARTICA"
+	GROUPBYBOXVISIBLE="TRUE" 
+	ONLOAD="" 
+	FROZENCOLUMNS="0"
+	COMMANDTIMEOUT="300"
+	CHECKBOXVISIBLE="FALSE"
+	SETDEFAULTS=""
+	>
+	
+<NAME>Stanje MP</NAME>
+<CAPTION>Stanje MP</CAPTION>
+
+
+	<MAINFORM
+			FILLEXPLORER=""
+			WIDTH="14000"
+			ONSUBMIT=""
+			VERSION="1"
+			COMMANDTIMEOUT="900"
+			FOCUS="danaisporuke"
+			ONLOAD="select null as klmasterrobaid, 0 as podklase,  0 as danaprometa, 0 as danaisporuke"
+			HEIGHT="11000"
+			CAPTION="Kontrola automatske narudžbe sa skladišta "
+		>
+		<INPUT TYPE="panel" DOCK="1" HEIGHT="1200" />
+		<INPUT TYPE="panel" DOCK="2" HEIGHT="800" />
+
+		<INPUT TYPE="date"   NAME="Datumdok"      CAPTION="Datum narudžbe*" TOP="200" LEFT="1500"  DECIMALS="0"  WIDTH="1500"/>
+		<INPUT TYPE="combo"    NAME="trgovinaid"   ALLOWEMPTY="TRUE" CAPTION="Trgovina*" WIDTH="2500" TOP="200" LEFT="3900" SQL="spmpdajtrgovinang @operateriid = @@operateriid" ONCLICK="select 'refresh' as skladusteid" />
+		<INPUT TYPE="search" NAME="robaid" 			CAPTION="Roba*" TOP="200" LEFT="7500" WIDTH="3500"  ALLOWEMPTY="TRUE" HEIGHT="280" 
+			   SQL="spMPRobaZaMPNG @trgovinaid = @@trgovinaid , @trazi = '@@searchboxrobaid', @partneriid = @@asortMPid, @skladisteid = @@skladisteid"
+		 ONLOSTFOCUS="if @@robaid is not null begin exec spMPDajArtikalNG @robaId = @@robaid, @TrgovinaId = @@trgovinaid, @Skladisteid = @@skladisteid, @datum = @@datumdok,@partneriid = null, @vrstadokid = @@vrstadokid, @sifradok = '99' end" 
+			   BACKCOLOR="LIGHTYELLOW" HOTKEY=""/>
+
+		<INPUT TYPE="combo"    NAME="klmasterrobaid"   ALLOWEMPTY="TRUE" CAPTION="Klasa Robe*" TOP="200" LEFT="12000" SQL="select KlMasterRobaId, naziv,sortkey from KlMasterRoba order by sortkey"  />
+		<INPUT TYPE="checkbox" NAME="podklase"  CAPTION="Pokaži i podklase" TOP="200" LEFT="16500"    />
+		<INPUT TYPE="number"   NAME="danaisporuke"      CAPTION="Dana isporuke*" TOP="600" LEFT="1500"  DECIMALS="0"  WIDTH="500"/>
+		<INPUT TYPE="number"   NAME="danaprometa"      CAPTION="Dana prometa*" TOP="600" LEFT="3200"  DECIMALS="0"  WIDTH="500"/>
+		<INPUT TYPE="checkbox"     NAME="pakovanje" CAPTION="Zaokruži na pakovanje*"  WUDTH="1500" TOP="600" LEFT="3900" SQL=""  ENABLED ="FALSE"/>
+		<INPUT TYPE="multidrop"    NAME="vrsta"   ALLOWEMPTY="FALSE" CAPTION="Vrsta robe*" TOP="600" LEFT="6600" WIDTH="2500"
+			   SQL="select '1' as vrsta, 'Vagana roba ' union all select '2' , 'Nevagana roba ' union all select '3' , 'Hladni pogon ' union all select 4 , 'Smrznuto i sladoledi'"  />
+    <INPUT TYPE="multidrop"    NAME="dodklasa"   ALLOWEMPTY="FALSE" CAPTION="Dodatna klasa*" TOP="600" LEFT="10500" WIDTH="2500"
+             SQL="spmpDajDodKlasa @duzina = 2"  />
+    <INPUT TYPE="combo" NAME="skladisteid" SQL="spmpdajskladiste @trgovinaid = @@trgovinaid, @operateriid=@@operateriid" ALLOWEMPTY="FALSE" TOP="600" LEFT="14000" WIDTH="2500" CAPTION="Skladište*" />
+
+		<INPUT TYPE="button"   NAME="pokazi"    CAPTION="Pokaži" TOP="600" LEFT="17000"  SQL="" ONCLICK="select 'refresh' as donosa#select 'visible' as donosa" />
+
+		<INPUT TYPE="grid"
+					NAME="donosa"
+					TOP="1700"
+					LEFT="200"
+					WIDTH="13000"
+					HEIGHT="9000"
+					DOCK="5"
+					CHECKBOXVISIBLE="FALSE"
+					TOTALROWVISIBLE="FALSE"
+					EDITCOLUMNS=""
+					SKIPDEFAULTLOAD="TRUE"
+					ONCELLEDITED=""
+					GROUPBYBOXVISIBLE="FALSE"
+					CAPTION="automatske narudžbe"
+					VISIBLE="FALSE"
+					SQL="spMPAutomatskeNarudzbePEKINEW @action = 1, @trgovinaid=@@trgovinaid, @robaid = @@robaid,  @KlMasterRobaId = @@KlMasterRobaId, @danaprometa = @@danaprometa, @danaisporuke=@@danaisporuke, @podklase=@@podklase, @pakovanje = @@pakovanje,  @skladisteid = @@skladisteid, @donos = 0, @datumdok = @@datumdok, @vrsta = '@@vrsta', @id = @@id, @obnovi = 1, @pregled = 1, @dodklasa = '@@dodklasa'" />
+
+		<INPUT TYPE="group" NAME="bottomgroupbox" DOCK="2" HEIGHT="750"  />
+
+		<INPUT TYPE="button" NAME="ok"     CAPTION="Kartica"  TOP="250" LEFT="456" WIDTH="1106" HEIGHT="322" PARENT="bottomgroupbox"
+			   ONCLICK=":KARTICA"  HOTKEY="F2" />
+		<INPUT TYPE="button" NAME="nova" CAPTION="Nova roba" TOP="250" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK=":NOVAROBA" PARENT="bottomgroupbox" />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="250" LEFT="3756" WIDTH="1106" HEIGHT="322" ONCLICK="close" PARENT="bottomgroupbox" />
+
+	</MAINFORM>
+
+
+	<KARTICA 
+	HEIGHT="7500" 
+	WIDTH="15000" 
+	CAPTION="Kartica: '@@opis' "
+	ONSUBMIT=""
+    CHECKBOXVISIBLE="TRUE"
+	SKIPDEFAULTLOAD="TRUE"
+	ONLOAD="select convert(varchar(10),userid) +'  '+[naziv] as opis from roba  where robaid=@@donosa "
+	ONLOAD2="spMPPermissionNG @action = 0 , @operateriid = @@operateriid, @object = '@@xmlname'"
+	ONLOADED="select 'refresh' as grid">
+
+	<INPUT TYPE="number" NAME="nenc" CAPTION="" DECIMALS="0" TOP="6500" LEFT="5200" WIDTH="1000" VISIBLE="FALSE" ENABLED="FALSE"/>
+	<INPUT TYPE="grid" NAME="grid" TOP="200" LEFT="200" WIDTH="14500" HIGHT="6000" 
+			TOTALROW="FALSE" 
+			CHECKBOXVISIBLE="FALSE"
+		    
+			PAGEORIENTATION="LANDSCAPE"
+			SQL="exec spMPStanjeKarticaNG @action=0, @nenc = 1, @robaid=@@donosa, @DatumOd=@@DatumOd, @DatumDo=@@datumdok, @trgovinaid=@@trgovinaid, @totalgen = 2 " CAPTION="Kartica robe"/>
+	<COLUMN INDEX="" NAME="[Stanje0800]" AGREGATEFUNCTION="0"/>
+	<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="200" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+	<INPUT TYPE="button" NAME="" CAPTION="Ispis kartice" TOP="6500" LEFT="2200" WIDTH="1500" HEIGHT="322" ONCLIOCK=":printgrid(grid)"/>
+
+
+</KARTICA>
+
+<NOVAROBA
+	HEIGHT="7500"
+	WIDTH="12000"
+	CAPTION="Kartica: '@@opis' "
+	ONSUBMIT=""
+	VERSION="1.3"
+    CHECKBOXVISIBLE="TRUE"
+	SKIPDEFAULTLOAD="TRUE"
+	ONLOAD="select convert(varchar(10),userid) +'  '+[naziv] as opis from roba  where robaid=@@donosa "
+	ONLOAD2="spMPPermissionNG @action = 0 , @operateriid = @@operateriid, @object = '@@xmlname'"
+	ONLOADED="select 'refresh' as grid">
+
+		<INPUT TYPE="number" NAME="nenc" CAPTION="" DECIMALS="0" TOP="6500" LEFT="5200" WIDTH="1000" VISIBLE="FALSE" ENABLED="FALSE"/>
+		<INPUT TYPE="grid" NAME="grid" TOP="200" LEFT="200" WIDTH="11500" HIGHT="7000"
+				TOTALROW="FALSE"
+				CHECKBOXVISIBLE="FALSE"
+		    
+				PAGEORIENTATION="LANDSCAPE"
+				SQL="exec spMPAutomatskeNarudzbePEKInew @action=22, @trgovinaid=@@trgovinaid, @skladisteid = @@skladisteid, @klmasterrobaid = @@klmasterrobaid,  @vrsta = '@@vrsta' " CAPTION="Nova roba za naručiti"/>
+		<COLUMN INDEX="" NAME="[Stanje0800]" AGREGATEFUNCTION="0"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="200" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+	
+
+</NOVAROBA>
+
+
+	<OBNOVIKOL 
+	NAME="OBNOVIKOL" 
+	HEIGHT="3000" 
+	WIDTH="6500" 
+	CAPTION="Obnova količine mp stanja" 
+	ONSUBMIT=""
+	ONLOAD="select year(@@datumdo) as godina"
+	CMD1CAPTION="" CMD2CAPTION="">>
+	
+	<INPUT TYPE="label" NAME="Label18" TOP="446" LEFT="245" HEIGHT="490" WIDTH="5443" VISIBLE="TRUE" BOLD="TRUE" CAPTION="Želite obnoviti količinsko stanje mp?"/>
+	<INPUT TYPE="text" NAME="godina" TOP="5000" LEFT="2261" HEIGHT="288" WIDTH="1440" VISIBLE="FALSE" CAPTION="" TABINDEX="" ENABLED="FALSE"/>
+	<INPUT TYPE="button" NAME="ok" CAPTION="Obnovi količine" TOP="1200" LEFT="500" WIDTH="1500" HEIGHT="322" ONCLICK="spMPObnovaMPStanjeNG @Action=1, @trgovinaid=@@skladisteid, @godina = @@godina#OK"/>
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="1200" LEFT="2200" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+
+</OBNOVIKOL>
+
+<OBNOVISTANJE 
+	NAME="OBNOVISTANJE" 
+	HEIGHT="3000" 
+	WIDTH="6500"
+	CAPTION="Obnova financijskog iznosa stanja mp" 
+	ONSUBMIT=""
+	ONLOAD="select year(@@datumdo) as godina"
+	CMD1CAPTION="" CMD2CAPTION="">
+	
+	<INPUT TYPE="label" NAME="Label20" TOP="461" LEFT="274" HEIGHT="677" WIDTH="5774" VISIBLE="TRUE" BOLD="TRUE" CAPTION="Želite obnoviti financijski saldo stanja mp?"/>
+	<INPUT TYPE="text" NAME="godina" TOP="5000" LEFT="2304" HEIGHT="288" WIDTH="1440" VISIBLE="FALSE" CAPTION="godina" TABINDEX="" ENABLED="FALSE"/>
+	<INPUT TYPE="button" NAME="ok" CAPTION="Obnovi količine" TOP="1200" LEFT="500" WIDTH="1500" HEIGHT="322" ONCLICK="spMPObnovaMPStanjeNG @Action=2, @trgovinaid=@@skladisteid, @godina = @@godina#OK"/>
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="1200" LEFT="2200" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+
+</OBNOVISTANJE>
+	
+</PROJECT>

@@ -1,0 +1,200 @@
+<root version="1.0.0.3">
+<!--23.11.2020. SV Opis HD 60760-->
+<!--16.11.2020. SV OdgovornaOsoba2 HD 60712-->
+<!--06.11.2020. SV OdgovornaOsoba HD 60595-->
+<!--19.5.2020. AA TipOpis HD 55458-->
+	<form name="frmStatusUlaznihDokumenata" type="master" caption="Status ulaznih dokumenata" maximized="true" statusbar="true">
+		<method name="KupDokument" dll="KUPPreglednikDMS" class="KUPPreglednikDMS.ScanPreview" method="TotalGen" />
+		<event type="init"> 
+			<action type="datarun reader" value="~dtSetDatum" />
+			<action type="variable value" >
+				<parameter name="NapuniGrid" value="0" />
+			</action>
+		</event>
+		<event type="load">	
+			<action type="control populate" value="#grdStavke"/>
+
+		</event>
+		<event type="shown">	
+			<action type="control enable" value="#btnStavke,#btnKUP,#btnURA" if="#grdStavke.rowcount!=0"/>
+			<action type="control disable" value="#btnStavke,#btnKUP,#btnURA" else=""/>
+		</event>
+
+		<layout itemspadding="2" >
+
+			<group cols="1" rows="2" groupbordervisible="false">
+
+				<group cols="3" rows="1" col="1" row="1" groupbordervisible="true">
+					<columnsdefinition>
+						<column size="20%" position="1" />
+						<column size="20%" position="2" />
+						<column size="60%" position="3" />
+					</columnsdefinition>
+
+					<item col="1" row="1"  textposition="top" caption="Skladište:" >
+						<comboedit name="cmbSkladiste" autopopulate="true" valuefield="SkladisteId" displayfield="OznakaOpis" datavalue="~dtSkladiste.@SkladisteId" dataname="dtSkladiste">
+						</comboedit>
+					</item>
+
+					<group cols="2" rows="1" col="2" row="1" groupbordervisible="false">
+						<column size="50%" position="1" />
+						<column size="50%" position="2" />
+
+						<item col="1" row="1" textposition="top" caption="Datum od:" >
+							<dateedit  name="datDatumOd" value="" datavalue="~dtSetDatum.@DatumOd" type="date">
+							</dateedit>
+						</item>
+
+						<item col="2" row="1" textposition="top" caption="Datum do:" >
+							<dateedit  name="datDatumDo" value="" datavalue="~dtSetDatum.@DatumDo" type="date">
+							</dateedit>
+						</item>
+					</group>
+				</group>
+
+				<group caption="Stavke" padding="0" groupbordervisible="true" cols="1" rows="1" col="1" row="2">
+					<item row="1" col="1" highlight="False" >
+						<grid name="grdStavke" multiselect="true" key="SkladisteId" printcaptionalign="left" printcaption="Rekapitulacija za period od {#datDatumOd::dd.MM.yyyy.} do {#datDatumDo::dd.MM.yyyy.}" showgrouppanel="true" showfooter="false" savelayout="true">												
+							<data command="spC_Robno_StatusUlDok">
+							    <parameter name="@Action" value="statusi" />
+								<parameter name="@skladisteid" value="#cmbSkladiste" type="int" if="$NapuniGrid==1"/>
+								<parameter name="@skladisteid" value="-1" type="int" else=""/>
+								<parameter name="@DatumOd" value="#datDatumOd" type="date" />
+								<parameter name="@DatumDo" value="#datDatumDo" type="date"/>
+							</data>
+							<fields>	
+								<field name="RobnoFors" caption="RobnoFors" />
+								<field name="TipOpis" caption="Status" />
+								<field name="DatumDok" caption="Datum Dok." />
+								<field name="Broj" caption="Broj" />
+								<field name="VrstaDok" caption="Vrsta dokumenta" />
+								<field name="OrgDok" caption="OrgDok" />
+								<field name="BrojUfe" caption="Broj Ufe" />
+								<field name="fakvrijednost" caption="Fak. vrijednost" showsum="true" />
+								<field name="Rabat" caption="Rabat" />
+								<field name="ZavTrosak" caption="ZavTrošak" showsum="true"/>
+								<field name="nabvrijednost" caption="Nab. vrijednost" showsum="true"/>
+								<field name="vrijednostufe" caption="Iznos fakture" showsum="true"/>
+								<field name="Razlika" caption="Razlika" showsum="true"/>
+								<field name="Proknjizeno" caption="Proknjiženo"/>
+								<field name="Skladiste" caption="Skladište"/>
+								<field name="Partner" caption="Partner"/>	
+								<field name="Datumknjizenja" caption="Datum knjiženja"/>
+								<field name="OdgovornaOsoba" caption="Odgovorna Osoba"/>
+								<field name="OdgovornaOsoba2" caption="Odgovorna Osoba 2"/>
+								<field name="OpisPL" caption="Opis"/>
+							</fields>
+
+							<event type="doubleclick">
+
+								<action type="control enable" value="#btnStavke,#btnKUP" if="#grdStavke.rowcount!=0"/>
+								<action type="control disable" value="#btnStavke,#btnKUP" else=""/>
+
+								<action type="form open" value="frmDokument">
+									<parameter name="BrojDok" value="#grdStavke.@Broj" />
+									<parameter name="DatumDok" value="#grdStavke.@DatumDok" type="date" />
+									<parameter name="Ufa" value="#grdStavke.@BrojUfe" />
+									<parameter name="SktPrometGlaId" value="#grdStavke.@SktPrometGlaId" />
+								</action>				
+							</event>
+							
+							<event type="focusedrowchanged">
+							    <action type="control enable" value="#btnKUP" if="#grdStavke.@KupPrometId!=0"/>
+						        <action type="control disable" value="#btnKUP" else=""/>
+								<action type="control enable" value="#btnURA" if="#grdStavke.@fakturedobid!=0"/>
+						        <action type="control disable" value="#btnURA" else=""/>
+							</event>
+
+							<styles>
+								<!-- BOJANJE-->
+								<style name="backgroundcolor" value="white" if="#grdStavke.fieldname==TipOpis&amp;&amp;#grdStavke.@Tip==1" />
+								<style name="backgroundcolor" value="red" if="#grdStavke.fieldname==TipOpis&amp;&amp;#grdStavke.@Tip==2" />
+								<style name="backgroundcolor" value="blue" if="#grdStavke.fieldname==TipOpis&amp;&amp;#grdStavke.@Tip==3" />
+								<style name="backgroundcolor" value="yellow" if="#grdStavke.fieldname==TipOpis&amp;&amp;#grdStavke.@Tip==4" />
+								<style name="backgroundcolor" value="green" if="#grdStavke.fieldname==TipOpis&amp;&amp;#grdStavke.@Tip==5" />								
+							</styles>	
+
+						</grid>
+					</item>
+				</group>
+			</group>	
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnIzracunaj" caption="&amp;IZRAČUNAJ" dock="left">
+					<event type="click" waittype="progress" waitcaption="Obrada" waittext="Učitavanje stavaka..." sleep="2000">
+						<action type="variable value" >
+							<parameter name="NapuniGrid" value="1" />
+						</action>
+						<action type="control populate" value="#grdStavke"/>
+						
+						<action type="control enable" value="#btnStavke" if="#grdStavke.rowcount!=0"/>
+						<action type="control disable" value="#btnStavke" else=""/>
+						
+						<action type="control enable" value="#btnKup" if="#grdStavke.rowcount!=0&amp;&amp;#grdStavke.@KupPrometId!=0"/>
+						<action type="control disable" value="#btnKup" else=""/>
+					</event>
+				</button>
+				<button name="btnStavke" caption="&amp;PRIKAŽI STAVKE" dock="left">
+					<event type="click">
+						<action type="form open" value="frmDokument">
+							<parameter name="BrojDok" value="#grdStavke.@Broj" />
+							<parameter name="DatumDok" value="#grdStavke.@DatumDok" type="date" />
+							<parameter name="Ufa" value="#grdStavke.@BrojUfe" />
+							<parameter name="SktPrometGlaId" value="#grdStavke.@SktPrometGlaId" />
+						</action>
+					</event>
+				</button>
+				<button name="btnURA" caption="&amp;PRIKAŽI URU" dock="left">
+					<event type="click">
+						<action type="form open" value="frmURA">
+							<parameter name="BrojDok" value="#grdStavke.@Broj" />
+							<parameter name="DatumDok" value="#grdStavke.@DatumDok" type="date" />
+							<parameter name="Ufa" value="#grdStavke.@BrojUfe" />
+							<parameter name="URA" value="#grdStavke.@BrojTem11" />
+							<parameter name="KntTemId" value="#grdStavke.@knttemid" />
+						</action>
+					</event>
+				</button>
+				<button name="btnKUP" caption="&amp;KUP DOKUMENT" dock="left">
+					<event type="click">
+						<action type="method run" value="KupDokument" >
+							<parameter name="id" value="#grdStavke.@KupPrometId" />
+							<parameter name="operateriId" value="@@operateriid" />
+							<parameter name="cs" value="Driver={SQL Server};Server={@@server};Database={@@database};" />
+							<parameter name="param" value="" />
+							<parameter name="param2" value="" />
+						</action>
+					</event>
+				</button>
+				<button name="btnLegenda" caption="&amp;LEGENDA" dock="left">
+					<event type="click">
+						<action type="form open" value="frmLegenda">
+						</action>
+					</event>
+				</button>
+
+				<button caption="IZLAZ" type="cancel" dock="right">
+					<event type="click">
+						<action type="form close"/>	
+					</event>
+				</button>	
+
+				<button caption="UPUTI ME" type="HELP" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+
+			<data command="spC_Robno_StatusUlDok" name="dtSkladiste">
+				<parameter name="@Action" value="skladiste" />
+			</data>	
+
+			<data command="select cast(cast(year(getdate()) as CHAR(4))+'0101' as DATE) as DatumOd,cast(getdate() as date) as DatumDo" type="text" name="dtSetDatum"/>
+
+		</datalist>
+	</form>
+	<form name="frmDokument" path="frmDokument.xml"/>
+	<form name="frmLegenda" path="frmLegenda.xml"/>
+	<form name="frmURA" path="frmURA.xml"/>
+	
+</root>

@@ -1,0 +1,310 @@
+<root>
+
+    <!-- 
+        $indGreske = 0 - nema greške
+            $poruka - poruka uspjeha
+        
+        $indGreske = 1 - SQL greška ili pad na kontroli
+            - u slučaju greške error message je dostupan u $poruka, ali on se ne prikazuje preko
+                action type="message" value="$poruka" nego kroz RAISERROR() u proceduri koja rukuje greškama
+    -->
+
+    <form name="frmDneEvAkcije" type="master" saveformlayout="true" caption="Akcije">
+
+        <event type="init">
+            <action type="control populate" value="#grdMaster" />
+        </event>
+
+        <event type="load">
+            <!-- ako akcija u tablici na koju se odnose prava ima filter polje (npr. umirovljeno), ovo neće biti null-->
+            <action type="variable value" value="filterPolje">
+                <parameter value="#grdMaster.@FilterPoljeId" />
+            </action>
+        </event>
+
+        <managerlayout>
+
+            <grid name="grdMaster" caption="Akcije" type="master" key="AkcijeId" dataname="dtGrdAkcije" fieldsmartspaces="false" multiselect="true" showgrouppanel="false">
+
+                <event type="focusedrowchanged">
+
+                    <!-- klikom na akciju u master gridu, populate detalj grid sa svim pravima svih operatera na tu akciju-->
+                    <!-- ako se trenutna akcija ima filter polje, a prethodna nema (ili obrnuto)-->
+                    <action if="$filterPolje==null&amp;&amp;#grdMaster.@FilterPoljeId!=null">
+
+                        <!-- spremi novu vrijednost filter polja-->
+                        <action type="variable value" value="filterPolje">
+                            <parameter value="#grdMaster.@FilterPolje" />
+                        </action>
+
+                        <!-- odradi set layout, gdje ponovno generiraš detalj grid za akciju, s time da po potrebi uklanjaš, dodaješ stupac umirovljeno-->
+                        <action type="setlayout" value="#grdDetalj">
+                            <parameter value="~dtGrdAkcijeOperateri" />
+                        </action>
+
+                    </action>
+                    <action type="control populate" value="#grdDetalj">
+                        <!-- ako u detalj gridu (prava) nema prava na odabranu akciju, disable button-e za kopiranje, brisanje, osvježavanje prava-->
+                        <action if="#grdDetalj.rowcount==0">
+                            <action type="control disable" value="#btnKopiranje,#btnObrisi" />
+                            <action type="menu disable" value="#menOsvjezi" />
+                        </action>
+
+                        <!-- inače, enable-->
+                        <action else="">
+                            <action type="control enable" value="#btnKopiranje,#btnObrisi" />
+                            <action type="menu enable" value="#menOsvjezi" />
+                        </action>
+                    </action>
+
+                </event>
+                <fields inherited="true">
+                    <field name="Naziv" caption="Akcija" />
+                    <field name="AkcOznaka" caption="Oznaka akcije" />
+                </fields>
+                <menu>
+
+                    <!-- OSVJEŽAVANJE - iz akcijeOpDet briše prava na umirovljene org. jedinice, odnosno dodaje na nove, na temelju prava koja proizlaze iz AkcijeOp operatera-->
+                    <!-- ovaj menuitem osvježava sva prava svih operatera na odabrane akcije-->
+                    <menuitem name="menOsvjezi" caption="Osvježi prava za odabrane akcije">
+
+                        <event type="click">
+                            <action type="confirm" value="Jeste li sigurni da želite osvježiti podatke o pravima za odabrane akcije? Operateri će izgubiti prava na predmete koji su označeni kao umirovljeni!">
+
+
+                                <action type="datarun reader" value="~dtOsvjeziPravaAkcija">
+                                    <!-- ako je akcija uspješna (msgid==1) refresh detalj grid; nije da će se akcijeOp iz grida ikada obrisati ili dodati, nego se ovo radi da se npr. boldaju
+                                        novoumirovljena prava-->
+                                    <action if="$indGreske==0" type="control refreshvalue" value="#grdDetalj">
+                                        <action type="message" value="$poruka" />
+                                    </action>
+
+                                </action>
+
+                            </action>
+                        </event>
+
+                    </menuitem>
+
+                    <menuitem type="separator" />
+
+                    <!-- BRISANJE AKCIJE - briše akcijeOpDet vezane uz AkcOznaku akcije, AkcijeOp, i na kraju Akciju-->
+                    <menuitem name="menBrisanjeAkcije" caption="Obriši odabrane akcije">
+
+                        <event type="click">
+                            <action type="confirm" value="Jeste li sigurni da želite obrisati odabrane akcije? Bit će obrisana i sva prava dodijeljena na te akcije!">
+                                <action type="datarun reader" value="~dtBrisanjeAkcije">
+
+                                    <action if="$indGreske==0" type="control populate keepfocus" value="#grdMaster">
+                                        <action type="message" value="$poruka" />
+                                    </action>
+
+                                </action>
+                            </action>
+                        </event>
+
+                    </menuitem>
+                </menu>
+
+            </grid>
+            <grid name="grdDetalj" caption="Prava" type="detail" key="AkcijeOpId" dataname="dtGrdAkcijeOperateri" bestfitonrefresh="true" fieldsmartspaces="false" showgrouppanel="false" multiselect="true">
+
+                <!-- ako je org. jedinica na koju se odnosi pravo umirovljena, ali postoji u svojoj tablici, ili ako je obrisana iz svoje tablice, ali još postoji referenca na nju
+                u AkcijeOpDet, bolda se akcijeOp za to pravo-->
+                <styles>
+                    <style name="bold" if="#grdDetalj.@Umirovljeno==1" />
+                </styles>
+
+                <fields inherited="true">
+                    <field name="Akcije" caption="Oznaka" />
+                    <field name="Naziv" caption="Operater" />
+                    <field name="Vrijednost" caption="Pravo na..." />
+                    <field name="iispod" caption="I ispod" />
+                    <field name="AkcOznaka" caption="Oznaka akcije" />
+                </fields>
+
+                <menu>
+                    <!-- otvara formu s gridom svih prava operatera na odabranu akciju NE SAMO NA PRAVA KOJA POTIČU OD KLIKNUTOG AKCIJEOP-->
+                    <menuitem name="menSvaPrava" caption="Sva prava operatera na akciju">
+
+                        <event type="click">
+                            <action type="form open" value="frmPravaOperater" />
+                        </event>
+
+                    </menuitem>
+
+                    <menuitem type="separator" />
+
+                    <!-- OSVJEŽI OPERATERA - isto kao osvježavanje za akciju, ali osvježava samo prava samo za odabrane operatere, na akciju iz master grida-->
+                    <menuitem name="menOsvjeziOperatera" caption="Osvježi prava za odabrane operatere na akciju">
+
+                        <event type="click" waittype="progress" waitcaption="Osvježavanje" waittext="Osvježavanje u tijeku...">
+                            <action type="datarun reader" value="~dtOsvjeziPravaOperater">
+
+                                <action if="$indGreske==0" type="control refreshvalue" value="#grdDetalj">
+                                    <action type="message" value="$poruka" />
+                                </action>
+
+                            </action>
+                        </event>
+
+                    </menuitem>
+
+                    <!-- OBRIŠI PRAVA - briše odabrane akcijeOp i sve AkcijeOpDet koji proizlaze iz njih-->
+                    <!-- zatim osvježava prava, samo za operatere čija su se prava brisala -->
+                    <menuitem caption="Obriši odabrana prava" name="menObrisiPrava">
+                        <event type="click">
+                            <action type="confirm" value="Jeste li sigurni da želite obrisati odabrana prava? Nakon brisanja provesti će se i osvježavanje prava!">
+                                <action waittype="progress" waitcaption="Osvježavanje" waittext="Osvježavanje u tijeku..."></action>
+                                <action type="datarun reader" value="~dtBrisanjePrava">
+
+                                    <action if="$indGreske==0" type="control populate keepfocus" value="#grdDetalj">
+                                        <action if="#grdDetalj.rowcount==0">
+                                            <action type="control disable" value="#btnKopiranje,#btnObrisi" />
+                                            <action type="menu disable" value="#menOsvjezi" />
+                                        </action>
+                                        <action else="">
+                                            <action type="control enable" value="#btnKopiranje,#btnObrisi" />
+                                            <action type="menu enable" value="#menOsvjezi" />
+                                        </action>
+                                        <action type="message" value="$poruka" if="$indGreske==0" />
+                                    </action>
+
+                                </action>
+                            </action>
+                        </event>
+                    </menuitem>
+
+                </menu>
+            </grid>
+
+
+        </managerlayout>
+
+        <panelbuttons>
+            <buttons>
+
+                <!-- AKCIJE - otvara formu za upravljanje akcijama-->
+                <!-- radi control populate po izlasku iz forme, u slučaju da je dodana/obrisana/izmijenjena neka akcija -->
+                <button caption="AKCIJE" name="btnAkcije">
+                    <dropdownitem caption="Pregled akcija">
+                        <event type="click">
+                            <action type="form open" value="frmAkcije" />
+                            <action type="control populate keepfocus" value="#grdMaster" />
+                        </event>
+                    </dropdownitem>
+                    <dropdownitem caption="Unos nove akcije">
+                        <event type="click">
+                            <action type="form open" value="frmAkcijeUnosIzmjena" />
+                        </event>
+                    </dropdownitem>
+                </button>
+                <!-- OPERATERI - otvara formu za unos prava za operatere-->
+                <button caption="OPERATERI" name="btnOperateri">
+                    <event type="click">
+                        <action type="form open" value="frmPravaUnos" />
+                    </event>
+                </button>
+                <!-- KOPIRAJ PRAVA - otvara formu za kopiranje svih prava na neke akcije, s jednog operatera na drugog-->
+                <!-- šalje operatera s detalj grida kao parametar, pa se on u formi set-a kao default operater s kojeg se kopiraju prava-->
+                <button begingroup="true" caption="KOPIRAJ PRAVA" name="btnKopiranje">
+                    <event type="click">
+                        <action type="form open" value="frmPravaKopiranje">
+                            <!-- proslijedi operateriid iz detalj grida pa ga stavi u src izvornog operatera-->
+                            <parameter name="operateriid" value="#grdDetalj.@operateriid" />
+                        </action>
+                        <action if="#grdDetalj.rowcount&gt;&gt;1" type="menu enable" value="#menOsvjezi" />
+                        <action else="" type="menu disable" value="#menOsvjezi"></action>
+                    </event>
+                </button>
+
+                <!-- OBRIŠI PRAVA - isto kao menuitem na master gridu-->
+                <button begingroup="true" caption="OBRIŠI PRAVA" name="btnObrisi">
+                    <event type="click">
+                        <action type="confirm" value="Jeste li sigurni da želite obrisati odabrana prava? Nakon brisanja provesti će se i osvježavanje prava!">
+                            <action type="datarun reader" value="~dtBrisanjePrava">
+
+                                <action if="$indGreske==0" type="control populate keepfocus" value="#grdDetalj">
+                                    <action if="#grdDetalj.rowcount==0">
+                                        <action type="control disable" value="#btnKopiranje,#btnObrisi" />
+                                        <action type="menu disable" value="#menOsvjezi" />
+                                    </action>
+                                    <action else="">
+                                        <action type="control enable" value="#btnKopiranje,#btnObrisi" />
+                                        <action type="menu enable" value="#menOsvjezi" />
+                                    </action>
+                                    <action type="message" value="$poruka" />
+                                </action>
+
+                            </action>
+                        </action>
+                    </event>
+                </button>
+
+            </buttons>
+
+        </panelbuttons>
+
+        <datalist>
+            <!-- MASTER GRID-->
+            <data command="spDneEv_Akcije_Query_CP" name="dtGrdAkcije">
+                <parameter name="@action" value="grid_akcije" />
+            </data>
+            <!-- DETALJ GRID-->
+            <data command="spDneEv_Akcije_Query_CP" name="dtGrdAkcijeOperateri">
+                <parameter name="@action" value="grid_akcije_operateri" />
+                <parameter name="@AkcOznaka" value="#grdMaster.@AkcOznaka" />
+            </data>
+            <!-- BRISANJE PRAVA IZ DETALJ GRIDA-->
+            <data command="spDneEv_Akcije_Azur_Prava_CP" name="dtBrisanjePrava">
+                <parameter name="@action" value="brisanje_prava" />
+                <parameter name="@akcijeOp" value="#grdDetalj.selectedids" />
+                <parameter name="@operateriid" value="@@operateriid" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+            <!-- OSVJEŽAVANJE PRAVA NA AKCIJE-->
+            <data command="spDneEv_Akcije_Azur_Prava_CP" name="dtOsvjeziPravaAkcija">
+                <parameter name="@action" value="osvježi_prava" />
+                <parameter name="@operateriid" value="@@operateriid" />
+                <parameter name="@akcije" value="#grdMaster.selectedids" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+            <!-- OSVJEŽAVANJE PRAVA ODABRANIH U DETALJ GRIDU-->
+            <!-- @akcijeOp će se za ovaj poziv koristiti da se identificiraju operateri za koje se osvježavaju prava-->
+            <data command="spDneEv_Akcije_Azur_Prava_CP" name="dtOsvjeziPravaOperater">
+                <parameter name="@action" value="osvježi_prava" />
+                <parameter name="@operateriid" value="@@operateriid" />
+                <parameter name="@akcije" value="#grdMaster.selectedids" />
+                <parameter name="@AkcijeOp" value="#grdDetalj.selectedids" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+            <!-- BRISANJE AKCIJE IZ MASTER GRIDA-->
+            <data command="spDneEv_Akcije_Azur_Akcije_CP" name="dtBrisanjeAkcije">
+                <parameter name="@action" value="brisanje_akcije" />
+
+                <parameter name="@Akcije" value="#grdMaster.selectedids" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+        </datalist>
+
+        
+    </form>
+
+    <form name="frmPravaOperater" path="frmPravaOperater.xml"/>
+
+    <form name="frmPravaUnos" path="frmPravaUnos.xml"/>
+
+    <form name="frmPravaKopiranje" path="frmPravaKopiranje.xml"/>
+
+    <form name="frmAkcije" path="frmAkcijeDefinicije.xml"/>
+    <form name="frmAkcijeUnosIzmjena" path="frmAkcijeDefinicije.xml"/>
+    <form name="frmDefinicije" path="frmAkcijeDefinicije.xml"/>
+    <form name="frmDefinicijeUnosIzmjena" path="frmAkcijeDefinicije.xml"/>
+
+
+</root>

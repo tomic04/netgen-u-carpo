@@ -1,0 +1,168 @@
+﻿<root>
+		<form name="frmDDDefinicijaIsplateVirmani" type="master" caption="$caption" width="500" height="500" fixedsize="false">
+			<event type="init">
+				<action type="datarun reader" value="~dtGetVirmani" if="OOPVirmaniIsId!=0"/>
+			</event>
+			<event type="load">
+				<action type="control populate" value="#grdVirmaniIzm"/>
+			</event>
+			<layout>
+				<group cols="2" rows="1" col="1" row="1" groupbordervisible="true">
+					<item row="1" col="1" colspan="2">
+						<grid name="grdVirmaniIzm" type="detail" dataname="dtGetVirmani" keyfield="OOPVirmaniIsId" fieldsmartspaces="false">
+							<fields inherited="true"/>
+						</grid>
+					</item>
+				</group>				
+			</layout>
+
+			<panelbuttons>
+				<buttons>
+					<button name="btnDodaj" caption="Dodaj" type="add" dock="left">
+						<event type="click">
+							<action type="form open" value="frmDDDefinicijaIsplateVirmaniAzur">
+								<parameter name="oopisStavkeId" value="$oopisStavkeId" type="int" />
+								<parameter name="OOPVirmaniIsId" value="0" type="int" />
+								<parameter name="Tip" value="DodajVirman" />
+								<parameter name="caption" value="Dodaj novi virman" />
+							</action>
+							<!--<action type="control enable" value="" if="#grdVirmaniIzm.rowcount!=0"/>
+							<action type="control disable" value="" if="#grdVirmaniIzm.rowcount==0"/>-->
+						</event>
+					</button>
+					<button name="btnIzmjeniV" caption="Izmjeni" type="edit" dock="left">
+						<event type="click">
+							<action type="form open" value="frmDDDefinicijaIsplateVirmaniAzur">
+								<parameter name="OOPVirmaniIsId" value="#grdVirmaniIzm.@OOPVirmaniIsId" type="int" />
+								<parameter name="partneriid" value="#grdVirmaniIzm.@partneriid" type="int" />
+								<parameter name="Tip" value="IzmjenaVirman" />
+								<parameter name="caption" value="Izmjena virmana '{#grdVirmaniIzm.@Stavka}'" />
+							</action>
+							<action type="control populate" value="#grdVirmaniIzm"/>
+							<action type="control focus"  value="#grdVirmaniIzm">
+								<parameter value="$OOPVirmaniIsId" type="int"/>
+							</action>
+						</event>
+					</button>
+					<button name="btnObrisiV" caption="Obriši" type="del">
+						<event type="click">
+							<action type="confirm" value="Želite li obrisati virman: '{#grdVirmaniIzm.@Stavka}'?">
+								<action type="datarun nonquery" value="~dtDeleteDet">
+									<parameter name="oopisStavkeId" type="int"/>
+								</action>
+							</action>
+							<action type="control populate keepfocus" value="#grdVirmaniIzm" />
+							<action type="control disable" value="" if="#grdVirmaniIzm.rowcount==0"/>
+						</event>
+					</button>
+					<!-- Button Odustani -->
+					<button name="btnOdustani" caption="Odustani" type="cancel" begingroup="true">
+						<event type="click">
+							<action type="control populate" value="parent.#grdMaster"/>
+						</event>
+					</button>
+				</buttons>
+			</panelbuttons>
+
+			<datalist>
+				<!--ovaj data puni grid-->				
+				<data command="spDrugiDohodakQueryCP_Ivan" name="dtGetVirmani">
+					<parameter name="@action" value="Virmani" />
+					<parameter name="@oopisStavkeId" value="$oopisStavkeId" />
+				</data>
+			</datalist>
+		</form>
+
+	<form name="frmDDDefinicijaIsplateVirmaniAzur" type="master" caption="$caption" width="500" height="500" fixedsize="false">
+		<event type="load">
+			<action type="datarun reader" value="~dtGet" if="OOPVirmaniIsId!=0"/>
+		</event>
+		<event type="shown">
+			<action type="control value" value="#cmbTipStavke">
+				<parameter value="~dtGet.@OOPIsStavkeTipId" text="~dtGet.@OOPIsStavkeTipId" if="$tip==IzmjenaVirman"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="2" col="1" row="1" groupbordervisible="true">
+				<group cols="2" rows="1" col="1" row="1" groupbordervisible="false" spacing="2,2,2,1">
+					<item row="1" col="1" colspan="3" caption="Vrsta virmana:">
+						<comboedit name="cmbTipStavke"  valuefield="OOPIsStavkeTipId" displayfield="Naziv" dataname="~dtGetTip" allownull="false"/>
+					</item>
+					<item row="1" col="2" caption="Skupni virman:">
+						<checkedit name="chkSkupniVir" value="false"/>
+					</item>
+				</group>
+				<group cols="4" rows="20" col="1" row="2" groupbordervisible="false" spacing="2,2,1,2" caption="Elementi naloga za plaćanje">
+					<item row="1" col="1" colspan="2" caption="Platitelj:">
+						<searchedit name="srcPlatitelj" dataname="~dtPlatitelj" fieldtext="Partneri" fieldvalue="partneriid" required="true" datavalue="~dtGet.@partneriid" datatext="~dtGet.@partneri">
+							<event type="valuechanged">
+								<action type="datarun reader" value="~dtGetPlatitelj">
+									<action type="control value" value="#lblAdresa">
+										<parameter value="~dtGet.@MjestoTroska" />
+									</action>
+								</action>
+							</event>
+						</searchedit>
+					</item>
+					<item row="2" col="1" colspan="2">
+						<labeledit name="lblAdresa"/>
+					</item>
+					<item row="3" col="1" colspan="2">
+						<labeledit name="lblMjesto"/>
+					</item>
+					<item row="4" col="1" colspan="3">						
+					</item>
+					<item row="5" col="1" colspan="2" caption="Model:">
+						<textedit name="txtModel" datavalue="~dtGetPlatitelj.@Model"/>
+					</item>
+				</group>
+			</group>	
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun reader" value="~dtUnosVirmana" if="$tip==IzmjenaAzur">
+							<parameter name="OOPVirmaniIsId" type="int"/>
+							<action type="control populate" value="parent.#grdVirmaniIzm"/>
+							<action type="form close"/>
+
+						</action>
+						<action type="datarun reader" value="~dtIzmjenaVirmana" if="$tip==IzmjenaDetAzur">
+							<parameter name="OOPVirmaniIsId" type="int"/>
+							<action type="control focus" value="parent.#grdVirmaniIzm">
+								<parameter value="$OOPVirmaniIsId" type="int"/>
+							</action>
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<!-- KONTROLA: BUTTON -->
+				<button name="Odustani" caption="Odustani" type="cancel" dock="right">
+					<event type="click">
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<!--ovaj data puni grid-->
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtGetTip">
+				<parameter name="@action" value="Tipcombo" />
+			</data>
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtPlatitelj">
+				<parameter name="@action" value="Partneri" />
+				<parameter name="@tekst" value="#srcPartner.text"/>
+			</data>
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtGet">
+				<parameter name="@action" value="Dohvati_partnera" />
+				<parameter name="@partneriid" value="$partneriid" />
+			</data>
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtGetPlatitelj">
+				<parameter name="@action" value="lblPlatitelj" />
+				<parameter name="@partneriid" value="#srcPlatitelj.@partneriid" />
+			</data>
+		</datalist>
+	</form>
+</root>

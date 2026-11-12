@@ -1,0 +1,488 @@
+<root version="1.0" loglevel="4">
+<!-- 24.12.2025. AČ dorade prikaz na gridu, mogućnost brisanja -->
+	<form name="frmMaster" type="master" caption="Evidencija naplate">
+		<method name="eIzvjestavanjeDLL" dll="eIzvjestavanje" class="eIzvjestavanje.EntryPoint" method="MarkPaid" />		
+		<event type="init">
+			<action type="datarun reader" value="~dtDajRazdoblje"/>
+			<action type="variable value">
+				<parameter name="PrviDan" value="~dtDajRazdoblje.@PrviDanPrethodnogMjeseca"/>
+				<parameter name="ZadnjiDan" value="~dtDajRazdoblje.@ZadnjiDanPrethodnogMjeseca"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="form open" value="frmRazdoblje">
+				<parameter name="DatumOd" value="$PrviDan"/>
+				<parameter name="DatumDo" value="$ZadnjiDan"/>
+				<action type="control populate" value="#grdGlava"/>
+			</action>
+		</event>
+		<managerlayout>
+			<grid name="grdGlava" key="KntNaplataF2ID" type="master" autopopulate="false" savelayout="true" multiselect="true" bestfitonrefresh="true" dataname="~dtMasterGrid">
+				<event type="doubleclick">
+					<action type="form open" value="frmIzmijeni" if="#grdGlava.@Status!=Success">
+						<parameter name="KntNaplataF2Id" value="#grdGlava.@KntNaplataF2ID"/>
+					</action>
+					<action type="control populate" value="#grdGlava"/>
+					<action type="control focus" value="#grdGlava">
+						<parameter value="$KntNaplataF2Id" />
+					</action>
+				</event>
+				<fields>
+					<field name="VrstaDokumenta"/>
+					<field name="BrojTemeljnice"/>
+					<field name="DatumKnjizenja" caption="Datum knjiženja"/>
+					<field name="BrojDokumenta"/>
+					<field name="DatumIzdavanja"/>
+					<field name="OIBIzdavatelja"/>
+					<field name="OIBPrimatelja"/>
+					<field name="DatumNaplate"/>
+					<field name="NaplaceniIznos"/>
+					<field name="NacinPlacanja"/>
+					<field name="Napomena"/>
+					<field name="Status"/>
+					<field name="VrijemeSlanja"/>
+					<field name="Evidencija"/>
+					<field name="OdgovorDecodedXml" caption="Odgovor"/>
+					<field name="Komentar"/>
+				</fields>
+				<styles>
+					<style name="italic" value="true" if="#grdGlava.@Komentar==Ručni unos"/>
+					<style name="fontcolor" value="blue" if="#grdGlava.@Komentar==Ručni unos"/>
+				</styles>
+				<menu>
+					<menuitem caption="Uključi u evidenciju">
+						<event type="click">
+							<action type="datarun nonquery" value="~dtUkljuci"/>
+							<action type="control populate" value="#grdGlava"/>
+						</event>
+					</menuitem>
+					<menuitem caption="Isključi iz evidencije">
+						<event type="click">
+							<action type="datarun nonquery" value="~dtIskljuci"/>
+							<action type="control populate" value="#grdGlava"/>
+						</event>
+					</menuitem>
+				</menu>
+				<fields>				
+					<field name="Broj" caption="Broj računa"/>
+					<field name="DatumDok" caption="Datum računa"/>
+					<field name="PorezniBroj" caption="OIB"/>
+					<field name="Naziv" caption="Partner"/>
+					<field name="DatumValute" caption="Datum valute"/>
+					<field name="PartneriId" visible="false"/>
+				</fields>					
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnRazdoblje" caption="Razdoblje">
+					<event type="click">
+						<action type="form open" value="frmRazdoblje">
+							<parameter name="IndForme" value="NapuniGrid"/>
+							<parameter name="DatumOd" value="$DatumOd"/>
+							<parameter name="DatumDo" value="$DatumDo"/>
+						</action>
+						<action type="control populate" value="#grdGlava"/>
+					</event>
+				</button>
+				<button name="btnDonos" caption="Donesi">
+					<event type="click">
+						<action type="form open" value="frmRazdoblje">
+							<parameter name="IndForme" value="FormaDonos"/>
+							<parameter name="DatumOd" value="$DatumOd"/>
+							<parameter name="DatumDo" value="$DatumDo"/>
+						</action>
+						<action type="control populate" value="#grdGlava"/>
+					</event>
+				</button>
+				<button name="btnUnos" caption="Unesi">
+					<event type="click">
+						<action type="form open" value="frmUnesi"/>
+						<action type="control populate" value="#grdGlava"/>
+						<action type="control focus" value="#grdGlava">
+							<parameter value="$KntNaplataF2Id" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmjena" caption="Izmijeni">
+					<event type="click">
+						<action type="form open" value="frmIzmijeni" if="#grdGlava.@Status!=Success">
+							<parameter name="KntNaplataF2Id" value="#grdGlava.@KntNaplataF2ID"/>
+						</action>
+						<action type="control populate" value="#grdGlava"/>
+						<action type="control focus" value="#grdGlava">
+							<parameter value="$KntNaplataF2Id" />
+						</action>						
+					</event>
+				</button>
+				<button name="btnBrisanje" caption="Obriši">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati odabrane stavke?">
+							<action type="control foreachrow selected" value="#grdGlava">
+								<action type="datarun nonquery" value="~dtObrisi"/>
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava"/>
+						</action>
+					</event>						
+				</button>
+				<button name="btnPostKonta" caption="Postavke konta">
+					<event type="click">
+						<action type="form open" value="frmKonta"></action>
+					</event>
+				</button>
+				<button name="btnPostNPl" caption="Postavke način plaćanja">
+					<event type="click">
+						<action type="form open" value="frmVrstaDok"/>
+					</event>
+				</button>
+				<button name="btnEIzvjestavanje" caption="E-izvještavanje">
+					<event type="click">
+						<action type="control foreachrow selected" value="#grdGlava">
+							<action type="transaction">
+								<action type="method run" value="eIzvjestavanjeDLL" if="#grdGlava.@Evidencija==DA">
+									<parameter name="cs" value="@@connection" />
+									<parameter name="operateriId" value="@@operateriId"/>
+									<parameter name="id" value="#grdGlava.@KntNaplataF2ID" /> 
+									<parameter name="param" value="" />
+									<parameter name="param2" value="" />
+								</action>
+							</action>						
+							<action type="control refreshrow" value="#grdGlava" if="transaction!=success">
+								<parameter value="~dtAzurirajJedan"/>
+							</action>
+							<action type="control refreshrow" value="#grdGlava" if="transaction==success">
+								<parameter value="~dtAzurirajJedan"/>
+							</action>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKntEvidencijaNaplateAzur" name="dtObrisi">	
+				<parameter name="@Action" value="7"/>	
+				<parameter name="@KntNaplataF2ID" value="#grdGlava.@KntNaplataF2ID"/>		
+			</data>
+			<data command="spKntEvidencijaNaplateQuery" name="dtAzurirajJedan">	
+				<parameter name="@Action" value="7"/>	
+				<parameter name="@KntNaplataF2ID" value="#grdGlava.@KntNaplataF2ID"/>		
+			</data>
+			<data name="dtMasterGrid" command="spKntEvidencijaNaplateQuery">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@DatumOd" value="$DatumOd"/>
+				<parameter name="@DatumDo" value="$DatumDo"/>
+			</data>
+			<data name="dtDajRazdoblje" command="select DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) - 1, 0) AS PrviDanPrethodnogMjeseca,
+												EOMONTH(DATEADD(MONTH, -1, GETDATE())) AS ZadnjiDanPrethodnogMjeseca" type="text"/>
+			<data name="dtUkljuci" command="spKntEvidencijaNaplateAzur">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@SelectedIds" value="#grdGlava.selectedids"/>
+			</data>
+			<data name="dtIskljuci" command="spKntEvidencijaNaplateAzur">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@SelectedIds" value="#grdGlava.selectedids"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmRazdoblje" caption="Razdoblje" width="400">
+		<event type="load">
+			<action type="control value" value="#datDatOd">
+				<parameter value="$DatumOd"/>
+			</action>
+			<action type="control value" value="#datDatDo">
+				<parameter value="$DatumDo"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="2" rows="1">
+				<item caption="Datum od" col="1" row="1">
+					<dateedit name="datDatOd" savevalue="app"></dateedit>
+				</item>
+				<item caption="Datum do" col="2" row="1">
+					<dateedit name="datDatDo" savevalue="app"></dateedit>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnIzvrsi" caption="Prikaži">
+					<event type="click">
+						<action type="variable value" value="parent.$DatumOd">
+							<parameter value="#datDatOd" type="date"/>
+						</action>
+						<action type="variable value" value="parent.$DatumDo">
+							<parameter value="#datDatDo" type="date"/>
+						</action>
+						<action type="form open" value="frmDonos" if="$IndForme==FormaDonos">
+							<parameter name="DatumOd" value="#datDatOd"/>
+							<parameter name="DatumDo" value="#datDatDo"/>
+						</action>
+						<action type="control populate" value="parent.#grdGlava"/>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" dock="right"/>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmKonta" caption="Odabir konta za Evidenciju naplate" width="600">
+		<event type="load">
+			<action type="control populate" value="#grdKonta"/>
+		</event>
+		<layout>
+			<group cols="1" rows="1">
+				<item caption="Konto" col="1" row="1">
+					<grid name="grdKonta" dataname="~dtGetKonta" key="KntPlanAId" bestfitonrefresh="true" savelayout="true">
+						<event type="cellvaluechanged">
+							<action type="datarun nonquery" value="~dtIzmjenaKonta" if="#grdKonta.focusedfield==Naplata"/>
+							<action type="control populate keepfocus" value="#grdKonta"/>
+						</event>	
+						<fields>
+							<field name="Konto"/>
+							<field name="Naziv"/>
+							<field name="Naplata" editable="true" edittype="bit"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Izlaz" type="cancel" dock="right"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGetKonta" command="spKntEvidencijaNaplateQuery">
+				<parameter name="@Action" value="3"/>
+			</data>
+			<data name="dtIzmjenaKonta" command="spKntEvidencijaNaplateAzur">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@KntPlanAId" value="#grdKonta.@KntPlanaId"/>
+				<parameter name="@Naplata" value="#grdKonta.@Naplata"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUnesi" caption="Unos u evidenciju naplate">
+		<event type="load">
+			<action type="datarun reader" value="~dtGetOIB"/>
+			<action type="control value" value="#txtOIBizdavatelja">
+				<parameter value="~dtGetOIB.@OIBIzdavatelja"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="8">
+				<item col="1" row="1" caption="Broj dokumenta:">
+					<textedit name="txtBrojDok"></textedit>
+				</item>
+				<item col="1" row="2" caption="Datum izdavanja:">
+					<dateedit name="datDatIzdavanja"></dateedit>
+				</item>
+				<item col="1" row="3" caption="OIB izdavatelja:">
+					<textedit name="txtOIBizdavatelja"></textedit>
+				</item>
+				<item col="1" row="4" caption="OIB primatelja:">
+					<textedit name="txtOIBprimatelja"></textedit>
+				</item>
+				<item col="1" row="5" caption="Datum naplate:">
+					<dateedit name="datDatNaplate"></dateedit>
+				</item>
+				<item col="1" row="6" caption="Naplaćeni iznos:">
+					<textedit name="txtNaplaceniIznos" format="n2" value="0"></textedit>
+				</item>
+				<item col="1" row="7" caption="Način plaćanja:">
+					<comboedit name="cmbNacinPlacanja" dataname="~dtNacinPlacanja" valuefield="Id" displayfield="Naziv"></comboedit>
+				</item>
+				<item col="1" row="8" caption="Napomena:">
+					<textedit name="txtNapomena"></textedit>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun scalar" value="~dtSpremi">
+							<parameter name="KntNaplataF2Id" value="~dtSpremi.KntNaplataF2Id"/>
+						</action>
+						<action type="variable value" value="parent.$KntNaplataF2Id">
+							<parameter value="$KntNaplataF2Id"/>
+						</action>
+						<action type="control populate" value="parent.#grdGlava">
+							<action type="control focus" value="parent.#grdGlava">
+								<parameter value="$KntNaplataF2Id" />
+							</action>
+						</action>
+						<action type="form close"/>	
+					</event>
+				</button> 
+				<button caption="Odustani" type="cancel" dock="right"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGetOIB" command="spKntEvidencijaNaplateQuery">
+				<parameter name="@Action" value="6"/>	
+			</data>
+			<data name="dtNacinPlacanja" command="spKntEvidencijaNaplateQuery">
+				<parameter name="@Action" value="1"/>				
+			</data>
+			<data name="dtSpremi" command="spKntEvidencijaNaplateAzur">
+				<parameter name="@Action" value="2"/>				
+				<parameter name="@BrojDokumenta" value="#txtBrojDok"/>				
+				<parameter name="@DatumIzdavanja" value="#datDatIzdavanja"/>				
+				<parameter name="@OIBIzdavatelja" value="#txtOIBizdavatelja"/>				
+				<parameter name="@OIBPrimatelja" value="#txtOIBprimatelja"/>				
+				<parameter name="@DatumNaplate" value="#datDatNaplate"/>				
+				<parameter name="@NaplaceniIznos" value="#txtNaplaceniIznos"/>				
+				<parameter name="@NacinPlacanja" value="#cmbNacinPlacanja"/>				
+				<parameter name="@OperateriId" value="@@OperateriId"/>				
+				<parameter name="@Napomena" value="#txtNapomena"/>				
+			</data>
+		</datalist>
+	</form>
+	<form name="frmIzmijeni" caption="Izmjena">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet"/>
+		</event>
+		<layout>
+			<group cols="1" rows="8">
+				<item col="1" row="1" caption="Broj dokumenta:">
+					<textedit name="txtBrojDok" datavalue="~dtGet.@BrojDokumenta"></textedit>
+				</item>
+				<item col="1" row="2" caption="Datum izdavanja:">
+					<dateedit name="datDatIzdavanja" datavalue="~dtGet.@DatumIzdavanja"></dateedit>
+				</item>
+				<item col="1" row="3" caption="OIB izdavatelja:">
+					<textedit name="txtOIBizdavatelja" datavalue="~dtGet.@OIBIzdavatelja"></textedit>
+				</item>
+				<item col="1" row="4" caption="OIB primatelja:">
+					<textedit name="txtOIBprimatelja" datavalue="~dtGet.@OIBPrimatelja"></textedit>
+				</item>
+				<item col="1" row="5" caption="Datum naplate:">
+					<dateedit name="datDatNaplate" datavalue="~dtGet.@DatumNaplate"></dateedit>
+				</item>
+				<item col="1" row="6" caption="Naplaćeni iznos:">
+					<textedit name="txtNaplaceniIznos" format="n2" datavalue="~dtGet.@NaplaceniIznos"></textedit>
+				</item>
+				<item col="1" row="7" caption="Način plaćanja:">
+					<comboedit name="cmbNacinPlacanja" dataname="~dtNacinPlacanja" valuefield="Id" displayfield="Naziv" datavalue="~dtGet.@NacinPlacanja"></comboedit>
+				</item>
+				<item col="1" row="8" caption="Napomena:">
+					<textedit name="txtNapomena" datavalue="~dtGet.@Napomena" ></textedit>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun scalar" value="~dtSpremi">
+							<parameter name="KntNaplataF2Id" value="~dtSpremi.KntNaplataF2Id"/>
+						</action>
+						<action type="variable value" value="parent.$KntNaplataF2Id">
+							<parameter value="$KntNaplataF2Id"/>
+						</action>
+						<action type="form close"/>	
+					</event>
+				</button> 
+				<button caption="Odustani" type="cancel" dock="right"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGet" command="spKntEvidencijaNaplateQuery">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@KntNaplataF2Id" value="$KntNaplataF2Id"/>
+			</data>
+			<data name="dtNacinPlacanja" command="spKntEvidencijaNaplateQuery">
+				<parameter name="@Action" value="1"/>				
+			</data>
+			<data name="dtSpremi" command="spKntEvidencijaNaplateAzur">
+				<parameter name="@Action" value="3"/>				
+				<parameter name="@BrojDokumenta" value="#txtBrojDok"/>				
+				<parameter name="@DatumIzdavanja" value="#datDatIzdavanja"/>				
+				<parameter name="@OIBIzdavatelja" value="#txtOIBizdavatelja"/>				
+				<parameter name="@OIBPrimatelja" value="#txtOIBprimatelja"/>				
+				<parameter name="@DatumNaplate" value="#datDatNaplate"/>				
+				<parameter name="@NaplaceniIznos" value="#txtNaplaceniIznos"/>				
+				<parameter name="@NacinPlacanja" value="#cmbNacinPlacanja"/>				
+				<parameter name="@OperateriId" value="@@OperateriId"/>
+				<parameter name="@KntNaplataF2Id" value="$KntNaplataF2Id"/>	
+				<parameter name="@Napomena" value="#txtNapomena"/>				
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDonos" caption="Donos">
+		<event type="load">
+			<action type="control populate" value="#grdDonos"/>
+		</event>
+		<layout>
+			<group cols="1" rows="1">
+				<item col="1" row="1">
+					<grid name="grdDonos" dataname="~dtGrid" savelayout="true" key="KntPrometId" multiselect="true">
+					
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDonesi" caption="Donos">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="~dtDonos"/>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" dock="right"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGrid" command="spKntEvidencijaNaplateQuery">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@DatumOd" value="$DatumOd"/>
+				<parameter name="@DatumDo" value="$DatumDo"/>
+			</data>
+			<data name="dtDonos" command="spKntEvidencijaNaplateAzur">
+				<parameter name="@Action" value="6"/>
+				<parameter name="@DatumOd" value="$DatumOd"/>
+				<parameter name="@DatumDo" value="$DatumDo"/>
+				<parameter name="@OperateriId" value="@@OperateriId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmVrstaDok" caption="Postavke načina plaćanja" width="550">
+		<event type="load">
+			<action type="control populate" value="#grdVrstaDok"/>
+		</event>
+		<layout>
+			<group cols="1" rows="1" caption="Tip plaćanja može biti T (transakcija),O (obračun),Z (ostalo), prazni ne ulaze u izvještaj">
+				<item col="1" row="1">
+					<grid name="grdVrstaDok" dataname="~dtVrstaDok" key="VrstaDokId" bestfitonrefresh="true" savelayout="true">
+						<event type="cellvaluechanged">
+							<action type="datarun nonquery" value="~dtIzmjenaNacinaPl" if="#grdVrstaDok.focusedfield==TipPlacanja"/>
+							<action type="control populate keepfocus" value="#grdVrstaDok"/>
+						</event>	
+						<fields>
+							<field name="Opis"/>
+							<field name="TipPlacanja" editable="true"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Izlaz" type="cancel" dock="right"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtVrstaDok" command="spKntEvidencijaNaplateQuery">
+				<parameter name="@Action" value="2"/>
+			</data>
+			<data name="dtIzmjenaNacinaPl" command="spKntEvidencijaNaplateAzur">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@VrstaDokId" value="#grdVrstaDok.@VrstaDokId"/>
+				<parameter name="@TipPlacanja" value="#grdVrstaDok.@TipPlacanja"/>
+			</data>
+		</datalist>
+	</form>
+</root>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- KUPNGSpin_KUP_URA - subforma: ORGSHEMA (NetGen) → frmOrgShema (Carpo) -->
+<root version="1.2">
+  <form name="frmOrgShema" caption="Odabir organizacijske sheme" type="dialog" width="820" height="560" fixedsize="false" saveformsize="true">
+    <event type="shown">
+      <action type="control populate" value="#grdShema"/>
+    </event>
+
+    <layout>
+      <group cols="1" rows="1" groupbordervisible="false">
+        <item col="1" row="1">
+          <grid name="grdShema" dataname="~dtShema" bestfitonrefresh="true" showautofilterrow="true" multiselect="true" savelayout="true">
+            <fields inherited="true"/>
+          </grid>
+        </item>
+      </group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="SPREMI">
+          <event type="click" waittype="progress" waitcaption="Spremanje" waittext="Spremam...">
+            <action type="datarun scalar" value="~dtGetLogId">
+              <parameter name="$LogId"/>
+            </action>
+            <action type="datarun nonquery" value="~dtDeleteLn"/>
+            <action type="control foreachrow selected" value="#grdShema">
+              <action type="datarun nonquery" value="~dtInsertLn"/>
+            </action>
+            <action type="form close"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" dock="right">
+          <event type="click">
+            <action type="form close"/>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data name="dtShema" command="spKUPPrometQueryN" timeout="300">
+        <parameter name="@action" value="9"/>
+        <parameter name="@operateriid" value="@@operateriid"/>
+        <parameter name="@id" value="$Id"/>
+      </data>
+
+      <data name="dtGetLogId" type="text" timeout="300"
+            command="select top 1 KUPPrometOdobrenjeLogId
+                    from KUPPrometOdobrenjeLog
+                    where OperateriIdTo = @operateriid and KUPPrometid = @id
+                    order by DatumUnosa desc">
+        <parameter name="@operateriid" value="@@operateriid" type="int"/>
+        <parameter name="@id" value="$Id" type="int"/>
+      </data>
+
+      <data name="dtDeleteLn" type="text" timeout="300"
+            command="delete from LnKUPOrgShema where KUPPrometOdobrenjeLogId = @logid">
+        <parameter name="@logid" value="$LogId" type="int"/>
+      </data>
+
+      <data name="dtInsertLn" command="spKUPPrometAzurN" timeout="300">
+        <parameter name="@Action" value="15"/>
+        <parameter name="@operateriid" value="@@operateriid"/>
+        <parameter name="@id" value="$Id"/>
+        <parameter name="@iznosorg" value="#grdShema.@Iznos"/>
+        <parameter name="@posto" value="#grdShema.@Posto"/>
+        <parameter name="@OrgShemaId" value="#grdShema.@OrgShemaId"/>
+        <parameter name="RaiseInfoMsg" value="true"/>
+      </data>
+    </datalist>
+  </form>
+</root>
+

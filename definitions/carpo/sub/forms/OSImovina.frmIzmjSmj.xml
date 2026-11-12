@@ -1,0 +1,181 @@
+<root version="1.0">
+
+  <!--******************************************FILTER - IZMJENA SMJEŠTAJA****************************************-->
+  <form name="frmIzmjSmj" caption="$caption" fixedsize="false" width="800" height="500" saveformlayout="true">
+    <event type="oninit">
+      <action type="datarun reader" value="~dtIzmjena" />
+      <action type="datarun reader" value="~dtIzmjSmj" />
+    </event>
+    <event type="close">
+      <action type="datarun reader" value="~dtBrisanje" />
+    </event>
+    <event type="onload">
+      <action type="control disable" value="#srcDjelatnik,#srcLokacija,#srcOrgShema,#btnPrezaduzi,#btnSpremi,#chkDjelatnik,#chkLokacija,#chkOrgShema" if="$Tip==Razduzenje" />
+      <action type="control enable" value="#srcDjelatnik,#srcLokacija,#srcOrgShema,#btnSpremi,#chkDjelatnik,#chkLokacija,#chkOrgShema" else=""/>
+      <action type="control disable" value="btnRazduzi" if="$Tip==Prezaduzenje" />
+      <action type="control enable" value="btnRazduzi" else=""/>
+    </event>
+    <layout >
+      <group cols="1" rows="2" groupbordervisible="false">
+
+        <group rows="2" cols="5" col="1" row="1" spacing="2,2,2,1">
+          <columnsdefinition>
+            <column pos="1" size="25%"></column>
+            <column pos="2" size="25%"></column>
+            <column pos="3" size="25%"></column>
+            <column pos="4" size="25%"></column>
+            <column pos="5" size="100"></column>
+          </columnsdefinition>
+          <item caption="Djelatnik:" col="1" row="1"  >
+            <searchedit name="srcDjelatnik" fieldvalue="HRKadroviId" fieldtext="Djelatnik" dataname="dtDjelatnik" />
+          </item>
+          <item  col="1" row="2"  highlight="False" textposition="right">
+            <checkedit name="chkDjelatnik" caption="Zadrži trenutnu postavku zaduženja po djelatniku                     " value="0"/>
+          </item>
+          <item caption="Lokacija:" col="2" row="1" >
+            <searchedit name="srcLokacija"  fieldvalue="SmjestajId" fieldtext="Naziv" dataname="dtLokacija" />
+          </item>
+          <item  col="2" row="2"  highlight="False" textposition="right">
+            <checkedit name="chkLokacija" caption="Zadrži trenutnu postavku zaduženja na lokaciju                     " value="0"/>
+          </item>
+          <item caption="Org.jedinica:" col="3" row="1"  >
+            <searchedit name="srcOrgShema" fieldvalue="OrgShemaId" fieldtext="Naziv" dataname="dtOrgShema" />
+          </item>
+          <item  col="3" row="2"  highlight="False" textposition="right">
+            <checkedit name="chkOrgShema" caption="Zadrži trenutnu postavku zaduženja na org.jedinicu                     " value="0"/>
+          </item>
+          <item caption="Datum dokumenta:" col="4" row="1" >
+            <dateedit name="datDatum" value="now" />
+          </item>
+          <item caption="" col="5" row="1" >
+            <button name="btnSpremi"  caption="Spremi" >
+              <event type="click">
+                <action type="datarun reader" value="~dtKontrolaBlokade">
+                  <action type="message" value="~dtKontrolaBlokade.@Poruka" if="~dtKontrolaBlokade.@IndGreska==1" />
+                  <action type="control focus" value="#datDatum"/>
+                </action>
+                <action if="~dtKontrolaBlokade.@IndGreska==0">
+                  <action type="message" value="'Djelatnik, lokacija ili org.jedinica moraju biti popunjeni!\nUkoliko želite razdužiti imovinu, iz izbornika izaberite opciju Razduži imovinu!'" if="#srcDjelatnik==null&amp;&amp;#srcLokacija==null&amp;&amp;#srcOrgShema==null"/>
+                  <action type="datarun nonquery" value="~dtPodaciPrezaduzenje" else="" />
+                  <action type="control populate" value="#grdIzmjSmj" />
+                  <action type="control refreshvalue" value="#srcDjelatnik,#srcLokacija,#srcOrgShema,#datDatum"/>
+                  <action type="control focus" value="#srcDjelatnik"/>
+                </action>
+              </event>
+            </button>
+          </item>
+        </group>
+
+        <group cols="1" rows="1" col="1" row="2" spacing="2,2,1,2" >
+          <item col="1" row="1">
+             <grid caption="" name="grdIzmjSmj" dataname="dtIzmjSmj" fieldsmartspaces="false" autopopulate="true" key="OSImovinaFilterId" keyfield="OSImovinaFilterId" multiselect="true" showcheckboxes="true" bestfitonrefresh="true">
+              <event type="cellvaluechanged">
+                <action type="datarun nonquery" value="~dtUpdateKol" />
+                <action type="control populate keepfocus" value="#grdIzmjSmj" />
+              </event>
+              <fields inherited="true">
+                <field name="Kolicina2" caption="Nova količina" editable="true" format="n2" tooltip="Nova količina ne može biti veća od trenutno zadužene količine!"/>
+                <field name="Novi djelatnik" visible="false" if="$Tip==Razduzenje"/>
+                <field name="Nova lokacija" visible="false" if="$Tip==Razduzenje"/>
+                <field name="Nova org.jedinica" visible="false" if="$Tip==Razduzenje"/>
+              </fields>
+            </grid>
+          </item>
+        </group>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnRazduzi"  caption="Razduži" >
+          <event type="click">
+            <action type="datarun reader" value="~dtKontrolaBlokade">
+              <action type="message" value="~dtKontrolaBlokade.@Poruka" if="~dtKontrolaBlokade.@IndGreska==1" />
+              <action type="control focus" value="#datDatum"/>
+            </action>
+            <action if="~dtKontrolaBlokade.@IndGreska==0" >
+              <action type="datarun nonquery" value="~dtRazduzenje" />
+              <action type="form close" />
+            </action>
+          </event>
+        </button>
+        <button name="btnPrezaduzi"  caption="Prezaduži" >
+          <event type="click">
+            <action type="datarun nonquery" value="~dtPrezaduzenje" />
+            <!--<action type="datarun nonquery" value="~dtBrisanje" />-->
+            <action type="form close" />
+          </event>
+        </button>
+        <button caption="Odustani" type="cancel" dock="right">
+          <event type="click">
+            <!--<action type="datarun nonquery" value="~dtBrisanje" />-->
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spOSFilter_AzurCP" name="dtKontrolaBlokade">
+        <parameter name="@Action" value="Kontrola_blokade"/>
+        <parameter name="@Datum" value="#datDatum" />
+      </data>
+      <data command="spOSFilter_HelpCP" name="dtIzmjSmj">
+        <parameter name="@Action" value="Grid_SmjestajIzmjena"/>
+        <parameter name="@OperateriId" value="@@OperateriId"/>
+      </data>
+      <data command="spOSImovinaSmjestaj_HelpCP" name="dtOrgShema">
+        <parameter name="@Action" value="OrgShema_src"/>
+        <parameter name="@tekst" value="#srcOrgShema.text"/>
+      </data>
+      <data command="spOSImovinaSmjestaj_HelpCP" name="dtLokacija">
+        <parameter name="@Action" value="Lokacija_src"/>
+        <parameter name="@tekst" value="#srcLokacija.text"/>
+      </data>
+      <data command="spOSImovinaSmjestaj_HelpCP" name="dtDjelatnik">
+        <parameter name="@Action" value="Djelatnik_src"/>
+        <parameter name="@tekst" value="#srcDjelatnik.text"/>
+      </data>
+      <data command="spOSFilter_AzurCP" name="dtBrisanje">
+        <parameter name="@action" value="Izlaz_Brisanje"/>
+        <parameter name="@OperateriId" value="@@OperateriId"/>
+      </data>
+      <data command="spOSFilter_AzurCP" name="dtUpdateKol">
+        <parameter name="@Action" value="Kolicina_edit"/>
+        <parameter name="@Kolicina2" value="#grdIzmjSmj.@Kolicina2" type="decimal"/>
+        <parameter name="@OSImovinaFilterId" value="#grdIzmjSmj.@OSImovinaFilterId"/>
+      </data>
+      <data command="spOSFilter_AzurCP" name="dtIzmjena">
+        <parameter name="@action" value="SmjestajIzmjena_Spremi"/>
+        <parameter name="@SelectedIds" value="$SelectedIds"/>
+        <parameter name="@OperateriId" value="@@OperateriId"/>
+      </data>
+      <data command="spOSFilter_AzurCP" name="dtPodaciPrezaduzenje">
+        <parameter name="@action" value="SmjestajIzmjena_Podaci"/>
+        <parameter name="@SelectedIds" value="#grdIzmjSmj.SelectedIds"/>
+        <parameter name="@HRKadroviId" value="#srcDjelatnik"/>
+        <parameter name="@SmjestajId" value="#srcLokacija"/>
+        <parameter name="@OrgShemaId" value="#srcOrgShema"/>
+        <parameter name="@chkHRKadrovi" value="#chkDjelatnik"/>
+        <parameter name="@chkSmjestaj" value="#chkLokacija"/>
+        <parameter name="@chkOrgShema" value="#chkOrgShema"/>
+      </data>
+      <data command="spOSFilter_AzurCP" name="dtRazduzenje">
+        <parameter name="@Action" value="Razduzenje_filter"/>
+        <parameter name="@DatumDok" value="#datDatum"/>
+        <parameter name="@SelectedIds" value="#grdIzmjSmj.SelectedIds"/>
+        <parameter name="@OperateriId" value="@@OperateriId"/>
+      </data>
+      <data command="spOSFilter_AzurCP" name="dtPrezaduzenje">
+        <parameter name="@Action" value="Prezaduzenje_filter"/>
+        <parameter name="@chkHRKadrovi" value="#chkDjelatnik"/>
+        <parameter name="@chkSmjestaj" value="#chkLokacija"/>
+        <parameter name="@chkOrgShema" value="#chkOrgShema"/>
+        <parameter name="@DatumDok" value="#datDatum"/>
+        <parameter name="@SelectedIds" value="$SelectedIds"/>
+        <parameter name="@OperateriId" value="@@OperateriId"/>
+      </data>
+    </datalist>
+  </form>
+  <!--*******************************************KRAJ FILTER - IZMJENA SMJEŠTAJA**************************************************-->
+
+</root>
+

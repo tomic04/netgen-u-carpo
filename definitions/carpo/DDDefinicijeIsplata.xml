@@ -1,0 +1,2328 @@
+<root>
+
+    <!--
+        7.9.2021. MG - namjestio checkbox kod forme za predložak virmana i labele kod unosa formule za DevEx20
+        05.05.2021. MG - dodao polje Napomena kod unosa/izmjene vrste isplata
+                        - ono definira od koje stavke formule će se početi obračun (npr. ako korisnik želi unositi bruto s PDV-om kao bruto, stavi u napomenu BrutoPDV) 
+        16.3.2021. MG - dodao izbor koji će se podaci brisati s vrste isplate na koju se kopira
+        15.3.2021. MG - namjestio formu za kopiranje vrsta isplate da se kopira s jedne na drugu, umjesto izrade nove isplate na temelju stare
+                    uklonio button za unos računa kod unosa/izmjene predloška virmana
+    -->
+    <form type="master" name="DefinicijeIsplata" caption="Definicije isplata" saveformlayout="true">
+
+
+        <event type="init">
+
+            <!-- AKO JE MASTER GRID PRAZAN, DISABLE IZMJENU/BRISANJE ISPLATE, AZUR DETALJA-->
+            <action type="control populate" value="#grdMaster">
+                <action if="#grdMaster.rowcount==0" type="control disable" value="#btnIzmijeniIsplatu,#btnObrisiIsplatu,#btnAzurirajDetalj" />
+            </action>
+
+        </event>
+
+        <managerlayout>
+
+            <!-- MASTER GRID - VRSTE DRUGOG DOHOTKA-->
+            <grid type="master" name="grdMaster" dataname="dtMasterGrid" key="oopisstavkeid" fieldsmartspaces="false" enableappearanceoddrow="true" bestfitonrefresh="true" multiselect="true" showgrouppanel="false">
+
+                <fields inherited="true" />
+
+
+                <!-- AKO NEKA VRSTA ISPLATE NEMA STAVKI ZA DEFINICIJU OBRAČNUA, RED  U MASTER GRIDU JE CRVEN-->
+                <styles>
+                    <style if="#grdMaster.@imaFormuleId==null" name="fontcolor" value="red" />
+                </styles>
+
+                <!-- POPULACIJA DETALJ GRIDA OVISNO O KLIKNUTOM TABU-->
+                <event type="focusedrowchanged">
+                    <action type="control populate" value="#grdFormule">
+                        <action if="#grdFormule.rowcount==1" type="menu disable" value="#menIspod,#menIznad" />
+                        <action else="" type="menu enable" value="#menIspod,#menIznad" />
+                    </action>
+                    <action type="control populate" value="#grdKoef" />
+                    <action type="control populate" value="#grdVirmani" />
+                </event>
+
+                <!-- MENUITEMI ZA MASTER GRID-->
+                <menu>
+
+                    <!-- MASTER GRID - MENU IZMJENA NAZIVA DRUGOG DOHOTKA-->
+                    <menuitem caption="Izmijeni vrstu isplate" name="menIzmijeniIsplatu">
+                        <event type="click">
+
+                            <!-- TIP JE UJEDNO I NAZIV ACTION-A U PROCEDURI-->
+                            <action type="form open" value="frmUnosIzmijenaVrsteIsplate">
+                                <parameter name="tip" value="IzmjenaIsplate" />
+
+                                <parameter name="caption" value="Izmjena isplate {#grdMaster.@Naziv}" />
+                                <parameter name="oopisstavkeid" value="#grdMaster" />
+                            </action>
+
+                            <!-- NAKON ZATVARANJA FORME, REFRESH MASTER GRIDA-->
+                            <action type="control refreshvalue" value="#grdMaster" />
+
+                        </event>
+                    </menuitem>
+
+                    <!-- MASTER GRID - MENU BRISANJE VRSTE ISPLATE-->
+                    <menuitem caption="Obriši vrstu isplate" name="menObrisiIsplatu" type="delete">
+                        <event type="click">
+
+                            <action type="confirm" value="Jeste li sigurni da želite obrisati podatke za vrstu isplate {#grdMaster.@Naziv}?">
+                                <action type="datarun reader" value="dtBrisanjeIsplate">
+
+                                    <!-- AKO JE BRISANJE USPJEŠNO; REFRESH DRVO, CONTROL POPULATE KEEPFOCUS MASTER GRID-->
+                                    <!-- AKO JE BRISANJE USPJEŠNO I GRID JE SADA PRAZAN, DISABLE BUTTONE-->
+                                    <action if="$indGreske==0">
+                                        <action type="control populate keepfocus" value="#grdMaster" />
+
+                                        <action if="#grdMaster.rowcount==0" type="control disable" value="#btnIzmijeniIsplatu,#btnObrisiIsplatu,#btnAzurirajDetalj" />
+                                        <action type="message" value="$poruka" />
+
+                                    </action>
+
+                                </action>
+                            </action>
+
+                        </event>
+                    </menuitem>
+
+                </menu>
+
+            </grid>
+
+            <!-- TABOVI-->
+            <tabs name="tabs">
+
+                <!-- OVO JE TREBALO DISABLE MENUITEM ZA PREMJEŠTANJE FORMULA GORE DOLJE AKO NEMA BAR 2 FORMULE-->
+                <event type="selectedtabchanged">
+                    <action if="#tabs.selectedtab==tabFormule">
+                        <action if="#grdFormule.rowcount==1" type="menu disable" value="#menIspod,#menIznad" />
+                        <action else="" type="menu enable" value="#menIspod,#menIznad" />
+                    </action>
+                </event>
+
+
+                <!-- TAB DEFINICIJE OBRAČUNA-->
+                <tab name="tabFormule" caption="Formule">
+
+                    <!-- GRID DEFINICIJE OBRAČUNA-->
+                    <grid type="detalj" name="grdFormule" dataname="dtFormuleGrid" key="oopisstavkedefid" fieldsmartspaces="false" bestfitonrefresh="true" multiselect="true" showgrouppanel="false">
+
+
+                        <fields inherited="true">
+                            <field name="rbr" caption="Redni broj" />
+                            <field name="Tipstavke" caption="Tip stavke" />
+                        </fields>
+
+                        <!-- MENU ZA GRID DEFINICIJE OBRAČUNA - U TABU-->
+                        <menu>
+
+                            <!-- GRID DEFINICIJE - MENU UNESI IZNAD-->
+                            <menuitem caption="Unesi iznad" name="menUnesiIznad" type="add">
+                                <event type="click">
+
+                                    <!-- $NAZIVSTAVKE - AKO SE RADI O SVEMU OSIM UNOSA, ON JE NAZIV FORMULE NA KOJOJ JE FOKUS U GRIDU-->
+                                    <!-- $LBLCAPTION - DA AKO SE RADI NPR. O UNOSU IZNAD PIŠE 'UNOS IZNAD $NAZIVSTAVKE'-->
+                                    <action type="form open" value="frmUnesiIzmijeniFormulu">
+                                        <parameter name="tip" value="UnosIznad" />
+
+                                        <parameter name="caption" value="Unos formule za izračun vrste isplate {#grdMaster.@Naziv}" />
+                                        <parameter name="lblCaption" value="Iznad stavke:" />
+
+                                        <parameter name="nazivstavke" value="#grdFormule.@Naziv" />
+                                        <parameter name="oopisstavkeid" value="#grdMaster" />
+                                        <parameter name="oopisstavkedefid" value="#grdFormule" />
+                                    </action>
+
+                                    <!-- AKO JE U FORMI UNESENA NOVA FORMULA-->
+                                    <action if="$noviid!=null">
+
+                                        <!-- POPULATE GRIDA FORMULE, FOKUS NA NOVI UNOS-->
+                                        <action type="control populate" value="#grdFormule">
+
+                                            <action type="control focus" value="#grdFormule">
+                                                <parameter value="$noviid" type="int" />
+                                            </action>
+
+                                        </action>
+
+                                        <!-- RESET ID-A NOVOG UNOSA-->
+                                        <action type="variable value" value="$noviid">
+                                            <parameter value="null" />
+                                        </action>
+
+                                        <!-- OVO JE JER SU TE KONTROLE "DISABLEANE" AKO DOSAD NIJE BILO BAR 2 RETKA U GRIDU-->
+                                        <action type="menu enable" value="#menIspod,#menIznad" />
+
+                                    </action>
+
+                                </event>
+                            </menuitem>
+
+                            <!-- GRID DEFINICIJE - MENU UNESI ISPOD - SVE ISTO KAO UNOS IZNAD-->
+                            <menuitem caption="Unesi ispod" name="menUnesiIspod" type="add">
+                                <event type="click">
+                                    <action type="form open" value="frmUnesiIzmijeniFormulu">
+                                        <parameter name="tip" value="UnosIspod" />
+
+                                        <parameter name="caption" value="Unos formule za izračun vrste isplate {#grdMaster.@Naziv}" />
+                                        <parameter name="lblCaption" value="Ispod stavke:" />
+
+                                        <parameter name="nazivstavke" value="#grdFormule.@Naziv" />
+                                        <parameter name="oopisstavkeid" value="#grdMaster" />
+                                        <parameter name="oopisstavkedefid" value="#grdFormule" />
+                                    </action>
+
+                                    <action if="$noviid!=null">
+
+                                        <action type="control populate" value="#grdFormule">
+
+                                            <action type="control focus" value="#grdFormule">
+                                                <parameter value="$noviid" type="int" />
+                                            </action>
+
+                                        </action>
+
+                                        <action type="variable value" value="$noviid">
+                                            <parameter value="null" />
+                                        </action>
+
+                                        <action type="menu enable" value="#menIspod,#menIznad" />
+
+                                    </action>
+
+                                </event>
+                            </menuitem>
+
+                            <menuitem type="separator" />
+
+                            <!-- DEFINICIJA OBRAČUNA - MENU PREMJESTI STAVKU IZNAD DRUGE-->
+                            <menuitem caption="Premjesti gore" name="menIznad">
+                                <event type="click">
+
+                                    <!-- VRIJEDNOST VARIJABLE POLOZAJ POSTAJE pomakGore I IDE U DATA ZA POMAK- TO JE NAZIV ACTION-A ZA POMAK GORE-->
+                                    <action type="variable value" value="polozaj">
+                                        <parameter value="pomakGore" />
+                                    </action>
+
+
+                                    <action type="datarun reader" value="dtRazmjestajFormule">
+
+                                        <!-- AKO JE POMAK USPJEŠAN, CONTROL POPULATE KEEPFOCUS-->
+                                        <action if="$indGreske==0" type="control refreshvalue" value="#grdFormule" />
+
+                                    </action>
+                                </event>
+                            </menuitem>
+
+                            <!-- DEFINICIJA OBRAČUNA - MENU PREMJESTI STAVKU ISPOD DRUGE-->
+                            <!-- FUNKCIONIRA ISTO KAO PRETHODNI MENU-->
+                            <menuitem caption="Premjesti dolje" name="menIspod">
+                                <event type="click">
+
+                                    <action type="variable value" value="polozaj">
+                                        <parameter value="pomakDolje" />
+                                    </action>
+
+                                    <action type="datarun reader" value="dtRazmjestajFormule">
+
+                                        <action if="$indGreske==0" type="control refreshvalue" value="#grdFormule" />
+
+                                    </action>
+                                </event>
+                            </menuitem>
+
+                            <menuitem type="separator" />
+
+                            <!-- DEFINICIJE OBRAČUNA - MENU IZMJENA DEF STAVKE-->
+                            <!-- LBLCAPTION, NAZIVSTAVKE ISTI PRINCIP KAO UNOS IZNAD/ISPOD-->
+                            <menuitem caption="Izmijeni formulu" name="menIzmijeniFormulu">
+                                <event type="click">
+                                    <action type="form open" value="frmUnesiIzmijeniFormulu">
+                                        <parameter name="tip" value="Izmjena" />
+
+                                        <parameter name="caption" value="Izmjena formule za izračun vrste isplate {#grdMaster.@Naziv}" />
+                                        <parameter name="oopisstavkedefid" value="#grdFormule" />
+                                        <parameter name="oopisstavkeid" value="#grdMaster" />
+
+                                        <parameter name="lblCaption" value="Za stavku:" />
+
+                                        <parameter name="nazivstavke" value="#grdFormule.@Naziv" />
+                                    </action>
+
+                                    <!-- NA IZLASKU IZ FORME, NEOVISNO O TOME JE LI ODRAĐENA PROMJENA, REFRESHVALUE GRIDA FORMULE-->
+                                    <action type="control refreshvalue" value="#grdFormule" />
+
+
+                                </event>
+                            </menuitem>
+
+                            <!-- DEFINICIJE OBRAČUNA - MENU BRISANJE DEF STAVKE-->
+                            <menuitem caption="Obriši formule" name="menObrisiFormulu">
+                                <event type="click">
+                                    <action type="confirm" value="Jeste li sigurni da želite obrisati označene formule?">
+
+                                        <action type="datarun reader" value="~dtBrisanjeFormula">
+
+                                            <!-- ZA USPJEŠNO BRISANJE, CONTROL POPULATE KEEPFOCUS-->
+                                            <!-- AKO JE SAD SAMO 1 ITEM U GRIDU, DISABLE MENUITEME ZA POMICANJE GORE DOLJE (NE RADI)-->
+                                            <!-- AKO JE SAD 0 ITEMA U GRIDU, REFRESH MASTER GRID DA SE REFRESHA BOJA RETKA U MASTERU-->
+                                            <action if="$indGreske==0">
+                                                <action type="control populate keepfocus" value="#grdFormule" />
+                                                <action if="#grdFormule.rowcount==1" type="menu disable" value="#menIznad,#menIspod" />
+                                                <action if="#grdFormule.rowcount==0" type="control refreshvalue" value="#grdMaster" />
+                                                <action type="message" value="$poruka" />
+                                            </action>
+
+                                        </action>
+
+                                    </action>
+                                </event>
+                            </menuitem>
+
+                        </menu>
+
+                    </grid>
+
+                </tab>
+
+                <!-- TAB - KOEFICIJENTI-->
+                <tab name="tabKoef" caption="Koeficijenti">
+
+                    <grid type="detalj" name="grdKoef" dataname="dtKoefGrid" key="oopisstavkekoefid" showgrouppanel="false" bestfitonrefresh="true" fieldsmartspaces="false" multiselect="true">
+                        <fields inherited="true">
+                            <field name="koeficijent" format="n7" />
+                            <field name="StopaPrireza" caption="Stopa prireza" />
+                        </fields>
+
+                        <!-- KOEFICIJENTI GRID - MENU-->
+                        <menu>
+
+                            <!-- MENU UNESI KOEFICIJENT -->
+                            <menuitem caption="Unesi koeficijent" name="menUnesiKoeficijent">
+                                <event type="click">
+                                    <action type="form open" value="frmUnesiIzmijeniKoeficijent">
+                                        <parameter name="tip" value="Unos" />
+
+                                        <parameter name="caption" value="Unos stope prireza i koeficijente za preračun" />
+
+                                        <parameter name="oopisstavkeid" value="#grdMaster" />
+                                    </action>
+
+                                    <action if="$noviid!=null">
+
+                                        <action type="control populate" value="#grdKoef">
+                                            <action type="control focus" value="#grdKoef">
+                                                <parameter value="$noviid" type="int" />
+                                            </action>
+                                        </action>
+
+                                        <action type="variable value" value="$noviid">
+                                            <parameter value="null" />
+                                        </action>
+
+                                    </action>
+
+                                </event>
+                            </menuitem>
+
+                            <menuitem caption="Izmijeni koeficijent" name="menIzmijeniKoeficijent">
+                                <event type="click">
+                                    <action type="form open" value="frmUnesiIzmijeniKoeficijent">
+                                        <parameter name="tip" value="Izmjena" />
+
+                                        <parameter name="caption" value="Izmjena stope prireza i koeficijenta za preračun" />
+
+                                        <parameter name="oopisstavkekoefid" value="#grdKoef" />
+                                        <parameter name="oopisstavkeid" value="#grdMaster" />
+                                    </action>
+
+                                    <action type="control refreshvalue" value="#grdKoef" />
+
+                                </event>
+                            </menuitem>
+
+                            <menuitem caption="Obriši koeficijente" name="menObrisiKoeficijent">
+                                <event type="click">
+                                    <action type="confirm" value="Jeste li sigurni da želite obrisati podatke o označenim koeficijentima za preračun neto-bruto?">
+                                        <action type="datarun reader" value="~dtBrisanjeKoef">
+
+                                            <action if="$indGreske==0">
+                                                <action type="control populate keepfocus" value="#grdKoef" />
+                                                <action type="message" value="$poruka" />
+                                            </action>
+
+                                        </action>
+                                    </action>
+                                </event>
+                            </menuitem>
+                        </menu>
+
+                    </grid>
+
+                </tab>
+
+                <tab name="tabVirmani" caption="Predlošci virmana">
+                    <grid type="detalj" name="grdVirmani" dataname="dtVirmaniGrid" bestfitonrefresh="true" key="OOPVirmaniIsId" fieldsmartspaces="false" multiselect="true">
+                        <fields inherited="true">
+                            <field name="UKorist" caption="U korist" />
+                            <field name="SvrhaDoznake" caption="Svrha doznake" />
+                        </fields>
+
+                        <menu>
+                            <menuitem caption="Unesi predložak" name="menUnesiPredlozak">
+                                <event type="click">
+                                    <action type="form open" value="frmUnosIzmjenaPredloška">
+                                        <parameter name="tip" value="UnosPredloška" />
+
+                                        <parameter name="caption" value="Unos novog predloška" />
+
+                                        <parameter name="oopisstavkeid" value="#grdMaster" />
+                                    </action>
+
+                                    <action if="$noviid!=null">
+
+                                        <action type="control populate" value="#grdVirmani">
+
+                                            <action type="control focus">
+                                                <parameter value="$noviid" type="int" />
+                                            </action>
+
+                                        </action>
+
+                                        <action type="variable value" value="$noviid">
+                                            <parameter value="null" />
+                                        </action>
+
+                                    </action>
+
+
+                                </event>
+                            </menuitem>
+
+                            <menuitem caption="Izmijeni predložak" name="menIzmijeniPredlozak">
+                                <event type="click">
+                                    <action type="form open" value="frmUnosIzmjenaPredloška">
+                                        <parameter name="tip" value="IzmjenaPredloška" />
+
+                                        <parameter name="caption" value="Izmjena predloška" />
+                                        <parameter name="oopvirmaniisid" value="#grdVirmani" />
+                                    </action>
+
+                                    <action type="control refreshvalue" value="#grdVirmani" />
+
+                                </event>
+                            </menuitem>
+
+                            <menuitem caption="Obriši predloške" name="menObrisiPredlozak">
+                                <event type="click">
+                                    <action type="confirm" value="Jeste li sigurni da želite obrisati označene predloške?">
+
+                                        <action type="datarun reader" value="~dtBrisanjePredlozak">
+
+                                            <action if="$indGreske==0">
+                                                <action type="control populate keepfocus" value="#grdVirmani" />
+                                                <action type="message" value="$poruka" />
+                                            </action>
+
+                                        </action>
+
+                                    </action>
+                                </event>
+                            </menuitem>
+                        </menu>
+
+                    </grid>
+                </tab>
+
+            </tabs>
+
+        </managerlayout>
+
+        <panelbuttons>
+            <buttons>
+
+                <!-- BUTTON UNOS VRSTE ISPLATE-->
+                <button caption="Unesi vrstu isplate" name="btnUnesiIsplatu" type="add">
+                    <event type="click">
+                        <action type="form open" value="frmUnosIzmijenaVrsteIsplate">
+                            <parameter name="tip" value="UnosIsplate" />
+                            <parameter name="caption" value="Unos nove vrste isplate" />
+                        </action>
+
+                        <action if="$noviid!=null">
+
+                            <action type="control populate" value="#grdMaster">
+                                <action type="control focus" value="#grdMaster">
+                                    <parameter value="$noviid" type="int" />
+                                </action>
+                            </action>
+
+                            <!-- ZA ENABLE KONTROLA, AKO JE PRIJE UNOSA BILO 0 ISPLATA-->
+                            <action type="control enable" value="#btnIzmijeniIsplatu,#btnObrisiIsplatu,#btnAzurirajDetalj" />
+
+                            <action type="variable value" value="$noviid">
+                                <parameter value="null" />
+                            </action>
+
+                        </action>
+
+                    </event>
+                </button>
+
+                <button caption="Izmijeni vrstu isplate" name="btnIzmijeniIsplatu" type="edit">
+                    <event type="click">
+                        <action type="form open" value="frmUnosIzmijenaVrsteIsplate">
+                            <parameter name="tip" value="IzmjenaIsplate" />
+
+                            <parameter name="caption" value="Izmjena naziva isplate {#grdMaster.@Naziv}" />
+                            <parameter name="oopisstavkeid" value="#grdMaster" />
+                        </action>
+
+                        <action type="control refreshvalue" value="#grdMaster" />
+
+                    </event>
+                </button>
+
+                <button caption="Obriši vrstu isplate" name="btnObrisiIsplatu" type="delete">
+                    <event type="click">
+
+                        <action type="confirm" value="Jeste li sigurni da želite obrisati podatke za vrstu isplate {#grdMaster.@Naziv}?">
+                            <action type="datarun reader" value="dtBrisanjeIsplate">
+
+                                <action if="$indGreske==0">
+                                    <action type="control populate keepfocus" value="#grdMaster" />
+
+                                    <action if="#grdMaster.rowcount==0" type="control disable" value="#btnIzmijeniIsplatu,#btnObrisiIsplatu,#btnAzurirajDetalj" />
+                                    <action type="message" value="$poruka" />
+                                </action>
+
+                            </action>
+                        </action>
+                    </event>
+                </button>
+
+                <!-- PANEL BUTTON AZUR DETALJA-->
+                <button caption="Ažuriraj detalj" name="btnAzurirajDetalj" type="edit" begingroup="true">
+                    <event type="click">
+
+                        <!-- KLIKOM NA AZUR DETALJA, OVISNO O ODABRANOM TABU, UĐI U PRIPADAJUĆU FORMU DETALJA, POPULATE GRID U NJOJ-->
+                        <action if="#tabs.selectedtab==tabFormule" type="form open" value="frmFormule">
+                            <action type="control populate keepfocus" value="#grdFormule" />
+                        </action>
+
+                        <action elseif="#tabs.selectedtab==tabKoef" type="form open" value="frmKoeficijenti">
+                            <action type="control populate keepfocus" value="#grdKoef" />
+                        </action>
+
+                        <action elseif="#tabs.selectedtab==tabVirmani" type="form open" value="frmVirmani">
+                            <action type="control populate keepfocus" value="#grdVirmani" />
+                        </action>
+
+                    </event>
+
+                </button>
+
+                <button caption="Kopiraj vrstu isplate" name="btnKopiraj" type="add" begingroup="true">
+                    <event type="click">
+
+                        <action type="form open" value="frmKopiranjeVrsteIsplate">
+
+                            <parameter name="tip" value="KopiranjeIsplate" />
+
+                            <parameter name="caption" value="Kopiranje vrste isplate" />
+
+                            <parameter name="oopisstavkeid" value="#grdMaster" />
+
+                        </action>
+
+                        <action if="$noviid!=null">
+
+                            <action type="control populate" value="#grdMaster">
+
+                                <action type="control focus" value="#grdMaster">
+                                    <parameter value="$noviid" type="int" />
+                                </action>
+
+                            </action>
+
+                            <action type="variable value" value="$noviid">
+                                <parameter value="null" />
+                            </action>
+
+                        </action>
+
+                    </event>
+
+                </button>
+
+
+                <button caption="Izračunaj koeficijente neto-bruto" name="btnKoefIzracun" type="add" begingroup="true">
+                    <event type="click">
+
+                        <action type="confirm" value="Jeste li sigurni da želite preračunati neto-bruto koeficijente za odabrane vrste isplate?">
+                            <action type="datarun reader" value="~dtKoefIzracun">
+
+                                <action if="$indGreske==0">
+                                    <action type="control populate" value="#grdKoef" />
+                                    <action type="message" value="$poruka" />
+                                </action>
+
+
+                            </action>
+                        </action>
+
+                    </event>
+
+                </button>
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+
+            <!-- MASTER GRID-->
+            <data command="spDDDefinicijeIsplata_Query" name="dtMasterGrid">
+                <parameter name="@action" value="masterGrid" />
+            </data>
+
+            <!-- DETALJ GRIDOVI-->
+            <data command="spDDDefinicijeIsplata_Query" name="dtFormuleGrid">
+                <parameter name="@action" value="formuleGrid" />
+                <parameter name="@oopisstavkeid" value="#grdMaster" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_Query" name="dtKoefGrid">
+                <parameter name="@action" value="koefGrid" />
+                <parameter name="@oopisstavkeid" value="#grdMaster" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_Query" name="dtVirmaniGrid">
+                <parameter name="@action" value="virmaniGrid" />
+                <parameter name="@oopisstavkeid" value="#grdMaster" />
+            </data>
+
+
+            <data command="spDDDefinicijeIsplata_Def_Azur" name="dtRazmjestajFormule">
+                <parameter name="@action" value="$polozaj" />
+                <parameter name="@oopisstavkeid" value="#grdMaster" />
+                <parameter name="@rbr" value="#grdFormule.@rbr" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+            <!-- BRISANJE-->
+            <data command="spDDDefinicijeIsplata_VrsteIsplata_Azur" name="dtBrisanjeIsplate">
+                <parameter name="@action" value="brisanjeIsplate" />
+                <parameter name="@oopisstavkeid" value="#grdMaster" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+            <!-- OOPISSTAVKEID POTREBAN ZBOG AŽURIRANJA REDNIH BROJEVA U FORMULAMA-->
+            <data command="spDDDefinicijeIsplata_Def_Azur" name="dtBrisanjeFormula">
+                <parameter name="@action" value="brisanjeFormula2" />
+                <parameter name="@oopisstavkeid" value="#grdMaster" />
+                <parameter name="@ids" value="#grdFormule.selectedids" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_Koef_Azur" name="dtBrisanjeKoef">
+                <parameter name="@action" value="brisanjeKoef" />
+                <parameter name="@ids" value="#grdKoef.selectedids" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_VirmaniAzur" name="dtBrisanjePredlozak">
+                <parameter name="@action" value="brisanjePredlozaka2" />
+                <parameter name="@ids" value="#grdVirmani.selectedids" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_KoefIzracun" name="dtKoefIzracun">
+                <parameter name="@odabrani" value="#grdMaster.selectedids" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+        </datalist>
+
+    </form>
+
+
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::        FORMA ZA FORMULE       ::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+
+    <form width="800" height="600" name="frmFormule" caption="Formule za izračun vrste isplate {parent.#grdMaster.@Naziv}" saveformlayout="true">
+
+        <event type="load">
+            <action type="control populate" value="#grdFormule" />
+        </event>
+
+        <!-- AKO NEMA ITEMA U GRIDU, DISABLE SVE OSIM BTNUNOS-->
+        <!-- AKO MANJE OD 2 ITEMA U GRIDU, DISABLE BTN ZA PREMJEŠTANJE-->
+        <!-- AKO JE VIŠE OD 0 ITEMA, DISABLE BTNUNOS-->
+        <event type="shown">
+            <action if="#grdFormule.rowcount&lt;2" type="control disable" value="#btnIznad,#btnIspod" />
+            <action if="#grdFormule.rowcount==0" type="control disable" value="#btnIznad,#btnIspod,#btnUnesiIznad,#btnUnesiIspod,#btnIzmijeni,#btnObrisi" />
+            <action else="" type="control disable" value="#btnUnesiFormulu" />
+        </event>
+
+        <layout>
+
+            <group rows="1" cols="2" groupbordervisible="false">
+
+                <columnsdefinition>
+                    <column position="1" size="90" />
+                    <column position="2" size="10" />
+                </columnsdefinition>
+
+                <group row="1" col="1" rows="5" cols="1" groupbordervisible="false" width="70">
+
+                    <item row="1" col="1" height="100" />
+
+                    <item row="2" col="1" width="70" height="50">
+                        <button caption="PREMJESTI GORE" name="btnIznad">
+                            <event type="click">
+
+                                <action type="variable value" value="polozaj">
+                                    <parameter value="pomakGore" />
+                                </action>
+
+                                <action type="datarun reader" value="dtRazmjestajFormule">
+
+                                    <action if="$indGreske==0" type="control refreshvalue" value="#grdFormule" />
+
+                                </action>
+                            </event>
+                        </button>
+                    </item>
+
+
+                    <item row="3" col="1" width="70" height="50">
+                        <button caption="PREMJESTI DOLJE" name="btnIspod">
+                            <event type="click">
+
+                                <action type="variable value" value="polozaj">
+                                    <parameter value="pomakDolje" />
+                                </action>
+
+                                <action type="datarun reader" value="dtRazmjestajFormule">
+
+                                    <action if="$indGreske==0" type="control refreshvalue" value="#grdFormule" />
+
+                                </action>
+                            </event>
+                        </button>
+                    </item>
+
+                    <item row="4" col="1" height="30" />
+
+                </group>
+
+                <group row="1" col="2" rows="1" cols="1" groupbordervisible="false">
+
+                    <item row="1" col="1">
+
+                        <grid type="master" name="grdFormule" bestfitonrefresh="true" dataname="dtFormuleGrid" key="oopisstavkedefid" multiselect="true" fieldsmartspaces="false">
+                            <fields inherited="true">
+                                <field name="rbr" caption="Redni broj" />
+                                <field name="Tipstavke" caption="Tip stavke" />
+                            </fields>
+                        </grid>
+
+                    </item>
+
+                </group>
+
+            </group>
+
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+
+                <!-- DEFINICIJE OBRAČUNA - BUTTON UNOS DEF STAVKE-->
+                <button caption="UNESI" name="btnUnesiFormulu">
+                    <event type="click">
+                        <action type="form open" value="frmUnesiIzmijeniFormulu">
+
+                            <!-- U FORMU PROSLJEĐUJE CAPTION, TIP, NAZIV ISPLATE S MASTER GRID-A, ZA LABEL U FORMI, ID DRUGOG DOHOTKA, DA NOVA STAVKA DEFINICIJE ZNA ZA 
+                            KOJI DRUGI DOHODAK SE VEŽE-->
+                            <parameter name="tip" value="Unos" />
+
+                            <parameter name="caption" value="Unos formule za izračun vrste isplate {parent.#grdMaster.@Naziv}" />
+                            <parameter name="lblCaption" value="Za vrstu isplate:" />
+
+                            <parameter name="nazivstavke" value="parent.#grdMaster.@Naziv" />
+
+                            <parameter name="oopisstavkeid" value="parent.#grdMaster" />
+                        </action>
+
+                        <!-- AKO JE UNUTAR FORME BAR JEDNOM KLIKNUTO SPREMI S USPJEŠNIM SPREMANJEM-->
+                        <action if="$noviid!=null">
+
+                            <!-- ISPUNI GRID, FOKUS NA NAJNOVIJI UNOS-->
+                            <action type="control populate" value="#grdFormule">
+
+                                <action type="control focus" value="#grdFormule">
+                                    <parameter value="$noviid" type="int" />
+                                </action>
+
+                            </action>
+
+                            <!-- AKO SADA IMA 1 ITEM U GRIDU, REFRESH MASTER GRID DA SE PROMIJENI BOJA RETKA-->
+                            <action if="#grdFormule.rowcount==1" type="control refreshvalue" value="parent.#grdMaster" />
+
+                            <!-- RESET VARIJABLE NOVIID ZA FOKUS NA NOVI UNOS-->
+                            <action type="variable value" value="$noviid">
+                                <parameter value="null" />
+                            </action>
+
+                            <!-- KOD USPJEŠNOG UNOSA, ENABLE SVE BUTTONE OSIM ZA PREMJEŠTANJE-->
+                            <!-- KOD USPJEŠNOG UNOSA, DISABLE BTNUNOS-->
+                            <action type="control enable" value="#btnUnesiIznad,#btnUnesiIspod,#btnIzmijeni,#btnObrisi" />
+                            <action type="control disable" value="#btnUnesiFormulu" />
+
+                        </action>
+
+                    </event>
+                </button>
+
+                <button caption="UNESI IZNAD" name="btnUnesiIznad" type="add" begingroup="true">
+                    <event type="click">
+                        <action type="form open" value="frmUnesiIzmijeniFormulu">
+                            <parameter name="tip" value="UnosIznad" />
+
+                            <parameter name="caption" value="Unos formule za izračun vrste isplate {parent.#grdMaster.@Naziv}" />
+                            <parameter name="lblCaption" value="Iznad stavke:" />
+
+                            <parameter name="nazivstavke" value="#grdFormule.@Naziv" />
+                            <parameter name="oopisstavkeid" value="parent.#grdMaster" />
+                            <parameter name="oopisstavkedefid" value="#grdFormule" />
+                        </action>
+
+                        <action if="$noviid!=null">
+
+                            <action type="control populate" value="#grdFormule">
+
+                                <action type="control focus" value="#grdFormule">
+                                    <parameter value="$noviid" type="int" />
+                                </action>
+
+                            </action>
+
+                            <action type="variable value" value="$noviid">
+                                <parameter value="null" />
+                            </action>
+
+                            <!-- AKO JE USPJEŠAN UNOS IZNAD/ISPOD PODRAZUMJEVA SE DA JE SAD BAR 2 ITEMA, ENABLE BTN ZA PREMJEŠTANJE-->
+                            <action type="control enable" value="#btnIspod,#btnIznad" />
+
+                        </action>
+
+                    </event>
+                </button>
+
+                <button caption="UNESI ISPOD" name="btnUnesiIspod" type="add">
+                    <event type="click">
+                        <action type="form open" value="frmUnesiIzmijeniFormulu">
+                            <parameter name="tip" value="UnosIspod" />
+
+                            <parameter name="caption" value="Unos formule za izračun vrste isplate {parent.#grdMaster.@Naziv}" />
+                            <parameter name="lblCaption" value="Ispod stavke:" />
+
+                            <parameter name="nazivstavke" value="#grdFormule.@Naziv" />
+                            <parameter name="oopisstavkeid" value="parent.#grdMaster" />
+                            <parameter name="oopisstavkedefid" value="#grdFormule" />
+                        </action>
+
+                        <action if="$noviid!=null">
+
+                            <action type="control populate" value="#grdFormule">
+
+                                <action type="control focus" value="#grdFormule">
+                                    <parameter value="$noviid" type="int" />
+                                </action>
+
+                            </action>
+
+                            <action type="variable value" value="$noviid">
+                                <parameter value="null" />
+                            </action>
+
+                            <action type="control enable" value="#btnIspod,#btnIznad" />
+
+                        </action>
+
+                    </event>
+                </button>
+
+                <button caption="IZMIJENI" name="btnIzmijeni" type="edit" begingroup="true">
+                    <event type="click">
+                        <action type="form open" value="frmUnesiIzmijeniFormulu">
+                            <parameter name="tip" value="Izmjena" />
+
+                            <parameter name="caption" value="Izmjena formule za izračun vrste isplate {parent.#grdMaster.@Naziv}" />
+                            <parameter name="oopisstavkedefid" value="#grdFormule" />
+                            <parameter name="oopisstavkeid" value="parent.#grdMaster" />
+
+                            <parameter name="lblCaption" value="Za stavku:" />
+
+                            <parameter name="nazivstavke" value="#grdFormule.@Naziv" />
+                        </action>
+
+                        <action type="control refreshvalue" value="#grdFormule" />
+
+                    </event>
+                </button>
+
+                <button caption="OBRIŠI" name="btnObrisi" type="delete">
+                    <event type="click">
+                        <action type="confirm" value="Jeste li sigurni da želite obrisati označene formule?">
+                            <action type="datarun reader" value="~dtBrisanjeFormula">
+
+                                <action if="$indGreske==0" type="control populate keepfocus" value="#grdFormule">
+
+                                    <action if="#grdFormule.rowcount==1" type="control disable" value="#btnIspod,#btnIznad" />
+
+                                    <action if="#grdFormule.rowcount==0">
+                                        <action type="control disable" value="#btnIznad,#btnIspod,#btnUnesiIznad,#btnUnesiIspod,#btnIzmijeni,#btnObrisi" />
+                                        <action type="control enable" value="#btnUnesiFormulu" />
+                                        <action type="control refreshvalue" value="parent.#grdMaster" />
+                                    </action>
+
+                                    <action type="message" value="$poruka" />
+                                </action>
+
+                            </action>
+                        </action>
+                    </event>
+                </button>
+
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+
+            <data command="spDDDefinicijeIsplata_Query" name="dtFormuleGrid">
+                <parameter name="@action" value="formuleGrid" />
+                <parameter name="@oopisstavkeid" value="parent.#grdMaster" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_Def_Azur" name="dtRazmjestajFormule">
+                <parameter name="@action" value="$polozaj" />
+                <parameter name="@oopisstavkeid" value="parent.#grdMaster" />
+                <parameter name="@rbr" value="#grdFormule.@rbr" />
+                <parameter name="@indGreske.output.int" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_Def_Azur" name="dtBrisanjeFormula">
+                <parameter name="@action" value="brisanjeFormula2" />
+                <parameter name="@oopisstavkeid" value="parent.#grdMaster" />
+                <parameter name="@ids" value="#grdFormule.selectedids" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+        </datalist>
+
+    </form>
+
+
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::   FORMA ZA UNOS/IZMIJENU FORMULA  ::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+
+    <form width="500" height="500" name="frmUnesiIzmijeniFormulu" caption="$caption" saveformlayout="true">
+
+        <!-- DATARUN ZA CMB I ISPUNJAVANJE POTREBNIH PODATAKA-->
+        <event type="init">
+
+            <action type="datarun reader" value="dtCmbTipovi" />
+
+            <action type="datarun reader" value="dtGetFormulu" />
+
+            <!-- AKO JE UNOS ISPOD, DOHVATI RBR IZ GRIDA + 1-->
+            <action if="$tip==UnosIspod" type="datarun reader" value="dtGetRbrIspod" />
+
+        </event>
+
+        <event type="load">
+
+            <!-- SET VRIJEDNOST LABELA PRI VRHU FORME (NAZIV STAVKE U FOKUSU NA FORMULE GRIDU, ILI MASTER GRIDU, OVISNO O TIPU)-->
+            <action type="control value" value="#lblVrstaIsplate">
+                <parameter value="$nazivstavke" />
+            </action>
+
+            <action type="control value" value="#lblVrstaIsplateCaption">
+                <parameter value="$lblCaption"/>
+            </action>
+
+            <!-- AKO JE IZMJENA, SETIRAJ VRIJEDNOSTI IZ DTGET-A-->
+            <action if="$tip==Izmjena">
+
+                <action type="control value" value="#txtNaziv">
+                    <parameter value="~dtGetFormulu.@Naziv" />
+                </action>
+
+                <action type="control value" value="#lblVrstaIsplate">
+                    <parameter value="~dtGetFormulu.@Naziv" />
+                </action>
+
+                <action type="control value" value="#txtPostotak">
+                    <parameter value="~dtGetFormulu.@Postotak" />
+                </action>
+
+                <action type="control value" value="#txtFormula">
+                    <parameter value="~dtGetFormulu.@Formula" />
+                </action>
+
+                <action type="control value" value="#cmbTip">
+                    <parameter value="~dtGetFormulu.@oopisstavketipid" text="~dtGetFormulu.@Tipisplate" />
+                </action>
+
+            </action>
+
+            <!-- AKO JE PRVI UNOS, LBLRBR = 1-->
+            <action elseif="$tip==Unos" type="control value" value="#lblRbr">
+                <parameter value="1" />
+            </action>
+
+            <!-- AKO JE UNOS ISPOD, LBLRBR = DTGETRBRISPOD-->
+            <action elseif="$tip==UnosIspod" type="control value" value="#lblRbr">
+                <parameter value="~dtGetRbrIspod.@Rbr" />
+            </action>
+
+        </event>
+
+        <layout>
+
+            <group rows="2" cols="1" groupbordervisible="false">
+
+                <group row="1" col="1" rows="2" cols="1">
+
+                    <!-- LBLVRSTAISPLATE PREUZIMA CAPTION OVISNO O TIPU-->
+                    <group row="1" col="1" rows="1" cols="2" groupbordervisible="false">
+                        <item row="1" col="1">
+                            <labeledit name="lblVrstaIsplateCaption" fontsizedelta="1" fontbold="true" />
+                        </item>
+                        <item row="1" col="2">
+                            <labeledit name="lblVrstaIsplate" fontsizedelta="1" />
+                        </item>                        
+                    </group>
+                    <group row="2" col="1" rows="1" cols="2" groupbordervisible="false">
+                        <item row="1" col="1">
+                            <labeledit name="lblRbrCaption" value="Na rbr: " fontbold="true" />
+                        </item>
+                        <item row="1" col="2" fontbold="true">
+                            <labeledit name="lblRbr" fontsizedelta="1" datavalue="~dtGetFormulu.@Rbr" />
+                        </item>
+                    </group>
+                </group>
+
+                <group row="2" col="1" rows="2" cols="1" highlight="false" groupbordervisible="false">
+
+                    <group row="1" col="1" rows="2" cols="1" caption="Podaci o stavki: ">
+
+                        <item row="1" col="1" caption="Naziv stavke" highlight="false">
+                            <textedit name="txtNaziv" required="true" />
+                        </item>
+
+                        <item row="2" col="1" caption="Tip stavke" highlight="false">
+                            <comboedit name="cmbTip" valuefield="oopisstavketipid" displayfield="Tipisplate" dataname="dtCmbTipovi" />
+                        </item>
+
+                    </group>
+
+                    <group row="2" col="1" rows="3" cols="1" caption="Podaci za izračun" highlight="false">
+
+                        <item row="1" col="1" caption="Postotak" highlight="false">
+                            <textedit name="txtPostotak" format="n2" nulltext="0,00" />
+                        </item>
+
+                        <item row="2" col="1" caption="Formula za izračun stavke" highlight="false">
+                            <textedit name="txtFormula" />
+                        </item>
+
+                        <item row="3" col="1" height="1" />
+
+                    </group>
+
+                </group>
+            </group>
+
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+                <button caption="SPREMI" name="btnSpremi">
+                    <event type="click">
+
+                        <action type="validate" />
+
+                        <action type="datarun reader" value="dtUnosIzmjenaFormule">
+
+                            <!-- AKO TIP NIJE IZMJENA, SET VARIJABLU NOVIID - ONA ĆE BITI KONTROLA PROVEDENE PROMJENE I SLUŽI ZA 
+                            FOKUS NA GRID-->
+                            <action if="$tip!=Izmjena&amp;&amp;$indGreske==0">
+
+                                <action type="variable value" value="parent.noviid">
+                                    <parameter value="$noviid" />
+                                </action>
+
+                                <action type="form  close" />
+
+                                <action type="message" value="$poruka" />
+
+                            </action>
+
+                            <action elseif="$tip==Izmjena&amp;&amp;$indGreske==0" type="form close">
+                                <action type="message" value="$poruka" />
+                            </action>
+
+                        </action>
+
+                    </event>
+                </button>
+
+                <button caption="ODUSTANI" name="btnOdustani" dock="right">
+                    <event type="click">
+                        <action type="form close" />
+                    </event>
+                </button>
+
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtGetFormulu">
+                <parameter name="@action" value="getFormulu" />
+                <parameter name="@oopisstavkedefid" value="$oopisstavkedefid" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtGetRbrIspod">
+                <parameter name="@action" value="getRbrIspod" />
+                <parameter name="@rbr" value="~dtGetFormulu.@rbr" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtCmbTipovi">
+                <parameter name="@action" value="cmbTipovi" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_Def_Azur" name="dtUnosIzmjenaFormule">
+
+                <parameter name="@action" value="$tip" />
+
+                <parameter name="@oopisstavkeid" value="$oopisstavkeid" />
+
+                <parameter if="$tip==Izmjena" name="@oopisstavkedefid" value="$oopisstavkedefid" />
+
+                <parameter name="@oopisstavketipid" value="#cmbTip" />
+
+                <parameter name="@rbr" value="~dtGetFormulu.@rbr" />
+
+                <parameter name="@Naziv" value="#txtNaziv" />
+                <parameter name="@postotak" value="#txtPostotak" />
+                <parameter name="@formula" value="#txtFormula" />
+
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+                <parameter name="@noviId.output.int" />
+
+            </data>
+
+        </datalist>
+
+    </form>
+
+
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::        FORMA ZA KOEFICIJENTE         ::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+
+    <form width="500" height="600" name="frmKoeficijenti" caption="Stope prireza i koeficijenti za preračun" saveformlayout="true">
+
+        <event type="load">
+            <action type="control populate" value="#grdKoef" />
+        </event>
+
+        <event type="shown">
+            <action if="#grdKoef.rowcount==0" type="control disable" value="#btnIzmijeni,#btnObrisi" />
+        </event>
+
+        <layout>
+
+            <group rows="1" cols="1" groupbordervisible="false">
+                <item row="1" col="1">
+
+                    <grid type="master" name="grdKoef" bestfitonrefresh="true" showgrouppanel="false" dataname="dtKoefGrid" key="oopisstavkekoefid" fieldsmartspaces="false" multiselect="true">
+                        <fields inherited="true">
+                            <field name="koeficijent" format="n7" />
+                            <field name="StopaPrireza" caption="Stopa prireza" />
+                        </fields>
+                    </grid>
+
+                </item>
+            </group>
+
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+                <button caption="UNESI" name="btnUnesi" type="add">
+                    <event type="click">
+                        <action type="form open" value="frmUnesiIzmijeniKoeficijent">
+                            <parameter name="tip" value="Unos" />
+
+                            <parameter name="caption" value="Unos stope prireza i koeficijenta za preračun" />
+                            <parameter name="oopisstavkeid" value="parent.#grdMaster" />
+                        </action>
+
+                        <action if="$noviid!=null">
+
+                            <action type="control populate" value="#grdKoef">
+
+                                <action type="control focus" value="#grdKoef">
+                                    <parameter value="$noviid" type="int" />
+                                </action>
+
+                            </action>
+
+                            <action type="variable value" value="$noviid">
+                                <parameter value="null" />
+                            </action>
+
+                            <action type="control enable" value="#btnIzmijeni,#btnObrisi" />
+
+                        </action>
+
+                    </event>
+                </button>
+
+                <button caption="IZMIJENI" name="btnIzmijeni" type="edit">
+                    <event type="click">
+                        <action type="form open" value="frmUnesiIzmijeniKoeficijent">
+                            <parameter name="tip" value="Izmjena" />
+
+                            <parameter name="caption" value="Izmjena stope prireza i koeficijenta za preračun" />
+                            <parameter name="oopisstavkekoefid" value="#grdKoef" />
+                        </action>
+
+                        <action type="control refreshvalue" value="#grdKoef" />
+
+                    </event>
+                </button>
+
+                <button caption="OBRIŠI" name="btnObrisi" type="delete">
+                    <event type="click">
+                        <action type="confirm" value="Jeste li sigurni da želite obrisati podatke o označenim koeficijentima za preračun neto-bruto?">
+                            <action type="datarun reader" value="~dtBrisanjeKoef">
+
+                                <action if="$indGreske==0" type="control populate keepfocus" value="#grdKoef">
+
+                                    <action if="#grdKoef.rowcount==0" type="control disable" value="#btnIzmijeni,#btnObrisi" />
+                                    <action type="message" value="$poruka" />
+                                </action>
+
+                            </action>
+                        </action>
+                    </event>
+                </button>
+
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+
+            <data command="spDDDefinicijeIsplata_Query" name="dtKoefGrid">
+                <parameter name="@action" value="koefGrid" />
+                <parameter name="@oopisstavkeid" value="parent.#grdMaster" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_Koef_Azur" name="dtBrisanjeKoef">
+                <parameter name="@action" value="brisanjeKoef" />
+                <parameter name="@ids" value="#grdKoef.selectedids" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+        </datalist>
+
+    </form>
+
+
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::   FORMA ZA UNOS/IZMIJENU KOEF   :::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+
+    <form width="500" height="200" name="frmUnesiIzmijeniKoeficijent" caption="$caption" saveformlayout="true">
+
+        <event type="init">
+
+            <!-- DTGET KOEF ZA PUNJENJE FORME KOD IZMJENE-->
+            <action if="$tip==Izmjena" type="datarun reader" value="dtGetKoef" />
+
+        </event>
+
+        <event type="shown">
+
+            <!-- AKO JE IZMJENA, ISPUNI KONTROLE IZ DTGET-A-->
+            <action if="$tip==Izmjena">
+
+                <action type="control value" value="#txtPrirez">
+                    <parameter value="~dtGetKoef.@Prirez" />
+                </action>
+
+                <action type="control value" value="#txtKoef">
+                    <parameter value="~dtGetKoef.@Koeficijent" />
+                </action>
+
+            </action>
+
+        </event>
+
+        <layout>
+
+            <group rows="1" cols="2" groupbordervisible="false">
+
+                <item row="1" col="1" caption="Stopa prireza" highlight="false">
+                    <textedit name="txtPrirez" allownull="false" format="n2" value="0" />
+                </item>
+
+                <item row="1" col="2" caption="Koeficijent" highlight="false">
+                    <textedit name="txtKoef" allownull="false" format="n7" value="0" />
+                </item>
+            </group>
+
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+                <button caption="SPREMI" name="btnSpremi">
+                    <event type="click">
+
+                        <action type="validate" />
+
+                        <action type="datarun reader" value="dtUnosIzmjenaKoef">
+
+                            <!-- AKO JE UNOS, SET NOVIID, ISPRAZNI KONTROLE, ALI NE FORM CLOSE-->
+                            <action if="$tip==Unos&amp;&amp;$indGreske==0">
+
+                                <action type="variable value" value="parent.noviid">
+                                    <parameter value="$noviid" />
+                                </action>
+
+                                <action type="control refreshvalue" value="##" />
+
+                                <action type="message" value="$poruka" />
+
+                            </action>
+
+                            <!-- AKO JE IZMJENA FORM CLOSE-->
+                            <action if="$tip==Izmjena&amp;&amp;$indGreske==0" type="form  close">
+                                <action type="message" value="$poruka" />
+                            </action>
+
+                        </action>
+
+                    </event>
+
+                </button>
+
+                <button caption="ODUSTANI" name="btnOdustani" dock="right">
+                    <event type="click">
+                        <action type="form close" />
+                    </event>
+                </button>
+
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtGetKoef">
+                <parameter name="@action" value="getKoef" />
+                <parameter name="@oopisstavkekoefid" value="$oopisstavkekoefid" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_Koef_Azur" name="dtUnosIzmjenaKoef">
+                <parameter name="@action" value="$tip" />
+
+                <parameter if="$tip==Izmjena" name="@oopisstavkekoefid" value="$oopisstavkekoefid" />
+
+                <parameter name="@oopisstavkeid" value="$oopisstavkeid" />
+
+                <parameter name="@prirez" value="#txtPrirez" />
+                <parameter name="@koeficijent" value="#txtKoef" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+                <parameter name="@noviId.output.int" />
+            </data>
+
+        </datalist>
+
+    </form>
+
+
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::        FORMA ZA PREDLOŠKE         :::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+
+    <form name="frmVirmani" caption="Predlošci virmana za vrstu isplate {parent.#grdMaster.@Naziv}" saveformlayout="true" height="600" width="800">
+
+        <event type="load">
+            <action type="control populate" value="#grdVirmani" />
+        </event>
+
+        <event type="shown">
+            <action if="#grdVirmani.rowcount==0" type="control disable" value="#btnIzmijeni,#btnObrisi" />
+        </event>
+
+        <layout>
+
+            <group rows="1" cols="1" groupbordervisible="false">
+                <item row="1" col="1">
+
+                    <grid type="detalj" name="grdVirmani" dataname="dtVirmaniGrid" key="OOPVirmaniIsId" fieldsmartspaces="false" multiselect="true" bestfitonrefresh="true">
+                        <fields inherited="true">
+                            <field name="UKorist" caption="U korist" />
+                            <field name="SvrhaDoznake" caption="Svrha doznake" />
+                        </fields>
+                    </grid>
+
+                </item>
+            </group>
+
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+                <button caption="UNESI" name="btnUnesi" type="add">
+                    <event type="click">
+                        <action type="form open" value="frmUnosIzmjenaPredloška">
+                            <parameter name="tip" value="UnosPredloška" />
+
+                            <parameter name="caption" value="Unos novog predloška" />
+
+                            <parameter name="oopisstavkeid" value="parent.#grdMaster" />
+                        </action>
+
+                        <action if="$noviid!=null">
+
+                            <action type="control populate" value="#grdVirmani">
+
+                                <action type="control focus">
+                                    <parameter value="$noviid" type="int" />
+                                </action>
+
+                            </action>
+
+                            <action type="variable value" value="$noviid">
+                                <parameter value="null" />
+                            </action>
+
+                            <action type="control enable" value="#btnIzmijeni,#btnObrisi" />
+
+                        </action>
+
+                    </event>
+                </button>
+
+                <button caption="IZMIJENI" name="btnIzmijeni" type="edit">
+                    <event type="click">
+
+                        <action type="form open" value="frmUnosIzmjenaPredloška">
+                            <parameter name="tip" value="IzmjenaPredloška" />
+
+                            <parameter name="caption" value="Izmjena predloška" />
+                            <parameter name="oopvirmaniisid" value="#grdVirmani" />
+                        </action>
+
+                        <action type="control refreshvalue" value="#grdVirmani" />
+
+                    </event>
+                </button>
+
+                <button caption="OBRIŠI" name="btnObrisi" type="delete">
+                    <event type="click">
+                        <action type="confirm" value="Jeste li sigurni da želite obrisati podatke o odabranim predlošcima?">
+
+                            <action type="datarun reader" value="~dtBrisanjePredlozak">
+
+                                <action if="$indGreske==0" type="control populate keepfocus" value="#grdVirmani">
+
+                                    <action if="#grdVirmani.rowcount==0" type="control disable" value="#btnIzmijeni,#btnObrisi" />
+                                    <action type="message" value="$poruka" />
+                                </action>
+
+                            </action>
+
+                        </action>
+                    </event>
+                </button>
+
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+
+            <data command="spDDDefinicijeIsplata_Query" name="dtVirmaniGrid">
+                <parameter name="@action" value="virmaniGrid" />
+                <parameter name="@oopisstavkeid" value="parent.#grdMaster" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_VirmaniAzur" name="dtBrisanjePredlozak">
+                <parameter name="@action" value="brisanjePredlozaka2" />
+                <parameter name="@ids" value="#grdVirmani.selectedids" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+        </datalist>
+
+    </form>
+
+
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::: FORMA ZA UNOS/IZMIJENU VRSTE ISPLATE :::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+
+    <form width="500" height="300" name="frmUnosIzmijenaVrsteIsplate" caption="$caption" saveformlayout="true">
+
+        <event type="init">
+
+            <!-- DTGET PODATKE O ISPLATI ZA IZMJENU-->
+            <action if="$tip==IzmjenaIsplate" type="datarun reader" value="dtGetIsplata" />
+
+        </event>
+
+        <event type="shown">
+
+            <action type="control value" value="#txtNaziv">
+                <parameter value="~dtGetIsplata.@Naziv" />
+            </action>
+
+        </event>
+
+        <layout>
+
+            <group rows="5" cols="1">
+
+                <item row="1" col="1" caption="Naziv" highlight="false" textposition="top">
+                    <textedit name="txtNaziv" required="true" />
+                </item>
+                <item row="2" col="1" caption="JOPPD osiguranik" highlight="false" textposition="top">
+                    <comboedit name="cmbOsiguranik" valuefield="KODOsiguraniciId" displayfield="KODOsiguraniciOpis" dataname="dtCmbOsiguranik" datavalue="~dtGetIsplata.@KODOsiguraniciId" />
+                </item>
+                <item row="3" col="1" caption="JOPPD primitak" highlight="false" textposition="top">
+                    <comboedit name="cmbPrimitak" valuefield="KODPrimiciId" displayfield="KODPrimiciOpis" dataname="dtCmbPrimitak" datavalue="~dtGetIsplata.@KODPrimiciId" />
+                </item>
+                <item row="4" col="1" caption="JOPPD neoporeziv primitak" highlight="false" textposition="top">
+                    <comboedit name="cmbNPrimitak" valuefield="KODNeoporeziviPrimiciId" displayfield="KODNeoporeziviPrimiciOpis" dataname="dtCmbNPrimitak" datavalue="~dtGetIsplata.@KODNeoporeziviPrimiciId" />
+                </item>
+                <item row="5" col="1" caption="Napomena" highlight="false" textposition="top" tooltip="Koja stavka se uzima kao bruto kod unosa bruto iznosa">
+                    <textedit name="txtNapomena" datavalue="~dtGetIsplata.@Napomena"></textedit>
+                </item>
+
+            </group>
+
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+                <button caption="SPREMI" name="btnSpremi">
+
+                    <event type="click">
+                        <action type="validate" />
+
+                        <action type="datarun reader" value="dtUnosIzmjenaTipIsplata">
+
+                            <action if="$tip==UnosIsplate&amp;&amp;$indGreske==0">
+
+                                <action type="variable value" value="parent.noviid">
+                                    <parameter value="$noviid" />
+                                </action>
+
+                                <action type="form  close" />
+
+                                <action type="message" value="$poruka" />
+
+                            </action>
+
+                            <action if="$tip==IzmjenaIsplate&amp;&amp;$indGreske==0" type="form  close">
+                                <action type="message" value="$poruka" />
+                            </action>
+
+                        </action>
+
+                    </event>
+
+                </button>
+
+                <button caption="ODUSTANI" name="btnOdustani" dock="right">
+                    <event type="click">
+                        <action type="form close" />
+                    </event>
+                </button>
+
+            </buttons>
+        </panelbuttons>
+
+
+        <datalist>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtGetIsplata">
+                <parameter name="@action" value="getIsplata" />
+
+                <parameter name="@oopisstavkeid" value="$oopisstavkeid" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_VrsteIsplata_Azur" name="dtUnosIzmjenaTipIsplata">
+
+                <parameter name="@action" value="$tip" />
+
+                <parameter name="@oopisstavkeid" value="$oopisstavkeid" />
+
+                <parameter name="@naziv" value="#txtNaziv" />
+
+                <parameter name="@kodprimiciId" value="#cmbPrimitak" />
+                <parameter name="@kodnprimiciId" value="#cmbNPrimitak" />
+                <parameter name="@kodosiguraniciId" value="#cmbOsiguranik" />
+                <parameter name="@napomena" value="#txtNapomena" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+                <parameter name="@noviId.output.int" />
+
+            </data>
+
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtCmbOsiguranik">
+                <parameter name="@action" value="cmbOsiguranici" />
+            </data>
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtCmbPrimitak">
+                <parameter name="@action" value="cmbPrimici" />
+            </data>
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtCmbNPrimitak">
+                <parameter name="@action" value="cmbNPrimici" />
+            </data>
+
+        </datalist>
+
+    </form>
+
+
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::  FORMA ZA KOPIRANJE VRSTA ISPLATA :::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+
+    <form width="500" height="400" name="frmKopiranjeVrsteIsplate" caption="$caption" fixedsize="true" saveformlayout="true">
+
+        <event type="init">
+            <action type="datarun reader" value="dtGetIsplateCmb" />
+        </event>
+
+        <event type="load">
+
+            <action type="control value" value="#cmbIsplata">
+                <parameter text="{parent.#grdMaster.@Naziv}" value="{parent.#grdMaster}" />
+            </action>
+
+            <!-- AKO JE COMBO ZA VRSTU ISPLATE NULL, DISABLE KONTROLE (IAKO SE TO NEĆE DOGODITI)-->
+            <action if="#cmbIsplata==null" type="control disable" value="#cmbIsplataNova,#chkFormule,#chkKoef,#chkNalozi,#chkSve" />
+
+        </event>
+
+        <layout>
+
+            <group rows="2" cols="2" groupbordervisible="false">
+
+                <group row="1" col="1" rows="2" cols="1" colspan="2">
+
+                    <!-- NA PROMJENI COMBO-A AKO JE NULL, DISABLE KONTROLE, AKO NIJE ENABLE-->
+                    <item row="1" col="1" caption="Sa vrste isplate: " textposition="left" highlight="false">
+                        <comboedit name="cmbIsplata" dataname="~dtGetIsplateCmb" displayfield="Naziv" valuefield="oopisstavkeid" allownull="false">
+                            <event type="valuechanged">
+                                <action if="#cmbIsplata!=null" type="control enable" value="#cmbIsplataNova,#chkFormule,#chkKoef,#chkNalozi,#chkSve" />
+                                <action else="" type="control disable" value="#cmbIsplataNova,#chkFormule,#chkKoef,#chkNalozi,#chkSve" />
+                            </event>
+                        </comboedit>
+                    </item>
+
+                    <item row="2" col="1" caption="Na vrstu isplate: " textposition="left" highlight="false">
+                        <comboedit name="cmbIsplataNova" dataname="~dtGetIsplateCmb" displayfield="Naziv" valuefield="oopisstavkeid" allownull="false"></comboedit>
+                    </item>
+
+                </group>
+
+                <group row="2" col="1" rows="8" cols="2" colspan="2">
+
+                    <item row="1" col="1" caption="Kopiraj formule: " textposition="left" highlight="false" />
+
+                    <item row="1" col="2" highlight="false">
+                        <checkedit name="chkFormule" />
+                    </item>
+
+                    <item row="2" col="1" caption="Kopiraj koeficijente pretvorbe neto-bruto: " textposition="left" highlight="false" />
+
+                    <item row="2" col="2" highlight="false">
+                        <checkedit name="chkKoef" />
+                    </item>
+
+                    <item row="3" col="1" caption="Kopiraj predloške virmana: " textposition="left" highlight="false" />
+
+                    <item row="3" col="2" highlight="false">
+                        <checkedit name="chkNalozi" />
+                    </item>
+
+                    <!-- AKO JE U PROCEDURI CHKSVE 1 (ODNOSNO TU JE OZNAČEN), U PROCEDURI SETA OSTALE CHECKOVE NA 1-->
+                    <item row="4" col="1" caption="Kopiraj sve: " textposition="left" highlight="false" />
+
+                    <item row="4" col="2" highlight="false">
+                        <checkedit name="chkSve" />
+                    </item>
+
+
+                    <item row="5" col="1" fontbold="true" caption="Iz vrste isplate na koju se kopira obriši: " textposition="left" highlight="false" spacing="2,0,0,0"></item>
+                    <item row="6" col="1" caption="Sve prethodne podatke o vrsti isplate:" highlight="false" textposition="left"></item>
+                    <item row="6" col="2" highlight="false">
+                        <radioedit name="rdoBrisiSve"></radioedit>
+                    </item>
+                    <item row="7" col="1" caption="Samo podatke koji se kopiraju: " highlight="false" textposition="left"></item>
+                    <item row="7" col="2" highlight="false">
+                        <radioedit name="rdoBrisiNeke" value="1"></radioedit>
+                    </item>
+
+                    <item row="7" col="1" height="10"></item>
+
+
+                </group>
+
+            </group>
+
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+
+                <button name="btnSpremi" caption="SPREMI">
+                    <event type="click">
+
+                        <action type="validate" />
+
+                        <!-- NAKON USPJEHA, SAMO ISPRAZNI KONTROLE AKO KORISNIK ŽELI NASTAVITI KOPIRATI VRSTE ISPLATA-->
+                        <action type="datarun reader" value="~dtKopirajIsplatu">
+                            <action if="$indGreske==0">
+
+                                <action type="variable value" value="parent.noviid">
+                                    <parameter value="$noviid" />
+                                </action>
+
+                                <action type="control refreshvalue" value="##" />
+
+                                <action type="message" value="$poruka" />
+
+                            </action>
+
+                        </action>
+                    </event>
+                </button>
+
+                <button name="btnOdustani" caption="ODUSTANI" dock="right">
+                    <event type="click">
+                        <action type="form close" />
+                    </event>
+                </button>
+
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+
+            <data command="spDDDefinicijeIsplata_VrsteIsplata_Azur" name="dtKopirajIsplatu">
+                <parameter name="@action" value="$tip" />
+                <parameter name="@oopisstavkeid" value="#cmbIsplata" />
+                <parameter name="@ciljanaOOPIsStavkeId" value="#cmbIsplataNova" />
+                <parameter name="chkFormule" value="#chkFormule" />
+                <parameter name="chkKoef" value="#chkKoef" />
+                <parameter name="chkNalozi" value="#chkNalozi" />
+                <parameter name="chkSve" value="#chkSve" />
+
+                <parameter name="@brisiSvePrethodno" value="1" if="#rdoBrisiSve==true" />
+                <parameter name="@brisiSvePrethodno" value="0" elseif="#rdoBrisiNeke==true" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+                <parameter name="@noviId.output.int" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtGetIsplateCmb">
+                <parameter name="@action" value="cmbIsplate" />
+            </data>
+
+        </datalist>
+
+    </form>
+
+
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::  FORMA ZA UNOS/IZMJENU PREDLOŽAKA :::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+
+    <form width="880" height="600" name="frmUnosIzmjenaPredloška" fixedsize="true" caption="$caption">
+
+        <!-- AKO JE IZMJENA, DTGET PODATKE O PREDLOŠKU-->
+        <!-- INAČE, DTGET PODATKE O FIRMI PLATITELJU PREMA NasId U PUBVARS-->
+        <event type="init">
+            <action if="$tip==IzmjenaPredloška" type="datarun reader" value="dtGetPredlozak" />
+            <action elseif="$tip==UnosPredloška" type="datarun reader" value="dtGetNas" />
+        </event>
+
+        <!-- PRIJE NO ŠTO SE UNESE FIRMA PLATITELJ/PRIMATELJ, DISABLE BTN ZA UNOS NOVOG RACUNA-->
+        <!--event type="load">
+            <action type="control disable" value="#btnNoviRacunPlatitelj,#btnNoviRacunPrimatelj" />
+        </event-->
+
+        <event type="shown">
+
+            <!-- AKO JE IZMJENA, SET KONTROLE IZ DTGET-A: SET SAMO SPECIFIČNE KONTROLE KAO CMB I SRC I CHK,
+            OSTALE SE PUNE SAME PREKO DATAVALUE-->
+            <action if="$tip==IzmjenaPredloška">
+
+                <action type="control value" value="chkSkupniVirman">
+                    <parameter if="~dtGetPredlozak.@indskupni==0||~dtGetPredlozak.@indskupni==null" value="False" />
+                    <parameter else="" value="True" />
+                </action>
+
+                <action type="control value" value="cmbVrsteIsplata">
+                    <parameter text="~dtGetPredlozak.@Naziv" value="~dtGetPredlozak.@oopisstavketipid" />
+                </action>
+
+                <action type="control value" value="srcPlatitelj">
+                    <parameter text="~dtGetPredlozak.@NazivPlatitelj" value="~dtGetPredlozak.@nalogodavacid" />
+                </action>
+
+                <action type="control value" value="cmbBrojRacunaPlatitelj">
+                    <parameter text="~dtGetPredlozak.@Nalogodavacziro" value="~dtGetPredlozak.@Nalogodavacziroid" />
+                </action>
+
+                <action type="control value" value="srcPrimatelj">
+                    <parameter text="~dtGetPredlozak.@NazivPrimatelj" value="~dtGetPredlozak.@partneriid" />
+                </action>
+
+                <action type="control value" value="cmbBrojRacunaPrimatelj">
+                    <parameter text="~dtGetPredlozak.@partneriziro" value="~dtGetPredlozak.@parziroid" />
+                </action>
+
+            </action>
+
+            <!-- AKO JE UNOS, ISPUNI CMB PLATITELJA I POVEZANE PODATKE IZ DTGET NASID-->
+            <action elseif="$tip==UnosPredloška" type="control value" value="srcPlatitelj">
+                <parameter text="~dtGetNas.@Naziv" value="~dtGetNas.@NasId" />
+            </action>
+
+        </event>
+
+        <layout>
+
+            <group rows="4" cols="1" groupbordervisible="false">
+
+                <group row="1" col="1" rows="1" cols="2" caption="Podaci o vrsti isplate">
+
+                    <item row="1" col="1" caption="Vrsta virmana:" textposition="left" highlight="false">
+                        <comboedit name="cmbVrsteIsplata" dataname="dtGetVrsteIsplata" displayfield="Tipisplate" valuefield="oopisstavketipid" allownull="false" />
+                    </item>
+
+                    <item row="1" col="2" highlight="false">
+                        <checkedit name="chkSkupniVirman" caption="Skupni virman" datavalue="~dtGetPredlozak@indskupni" />
+                    </item>
+                </group>
+
+                <group row="2" col="1" rows="5" cols="2" caption="Podaci o platitelju">
+
+                    <!--columnsdefinition>
+                        <column position="1" size="30%" />
+                        <column position="2" size="30%" />
+                        <column position="3" size="10%" />
+                    </columnsdefinition-->
+
+                    <!-- NA PROMJENI FIRME U SRCPLATITELJ/PRIMATELJ, AKO NIJE NULL-->
+                    <!-- ISPUNI CMB RAČUNA TE FIRME-->
+                    <!-- ISPUNI PODATKE O ADRESI FIRME-->
+                    <!-- DISABLE TEXTEDITE ZA ADRESU, KAO U STAROJ GRANULI-->
+                    <!-- ENABLE BTN ZA UNOS NOVOG RAČUNA-->
+                    <item row="1" col="1" caption="Platitelj:" textposition="left" highlight="false">
+                        <searchedit name="srcPlatitelj" dataname="dtSrcPlatitelj" fieldtext="Naziv" fieldvalue="partneriid" required="true">
+                            <event type="valuechanged">
+                                <action if="#srcPlatitelj!=null">
+                                    <action type="datarun reader" value="dtGetPlatiteljRacuni">
+                                        <action type="control populate" value="#cmbBrojRacunaPlatitelj" />
+                                    </action>
+                                    <action type="datarun reader" value="dtGetPlatitelj">
+
+                                        <action type="control value" value="#txtUlicaPlatitelj">
+                                            <parameter value="~dtGetPlatitelj.@adresa" />
+                                        </action>
+
+                                        <action type="control value" value="#txtMjestoPlatitelj">
+                                            <parameter value="~dtGetPlatitelj.@mjesto" />
+                                        </action>
+
+                                    </action>
+
+                                    <action type="control disable" value="#txtUlicaPlatitelj,#txtMjestoPlatitelj" />
+                                    <!--action type="control enable" value="#btnNoviRacunPlatitelj" /-->
+
+                                </action>
+
+                                <!-- AKO JE SRC NULL-->
+                                <!-- ISPRAZNI PODATKE O ADRESI-->
+                                <!-- ENABLE TEXTEDITE ADRESE-->
+                                <!-- DISABLE BTN ZA NOVI RAČUN-->
+                                <!-- POPULATE CMB RAČUN DA BUDE PRAZAN-->
+                                <action else="">
+                                    <action type="control refreshvalue" value="#txtUlicaPlatitelj,#txtMjestoPlatitelj,#cmbBrojRacunaPlatitelj" />
+                                    <action type="control enable" value="#txtUlicaPlatitelj,#txtMjestoPlatitelj" />
+                                    <!--action type="control disable" value="#btnNoviRacunPlatitelj" /-->
+                                    <action type="control populate" value="#cmbBrojRacunaPlatitelj" />
+                                </action>
+                            </event>
+                        </searchedit>
+                    </item>
+
+                    <item row="1" col="2" caption="Broj računa:" textposition="left" highlight="false">
+                        <comboedit name="cmbBrojRacunaPlatitelj" dataname="dtGetPlatiteljRacuni" valuefield="parziroid" displayfield="iban" allownull="false" required="true" />
+                    </item>
+
+                    <!-- UNOS NOVOG RAČUNA ZA PLATITELJA-->
+                    <!-- PROSLJEĐUJE SE PARTNERIID IZ SRCPLATITELJ-->
+                    <!-- NOVIID SLUŽI KAO KONTROLA USPJEŠNOG UNOSA I ZA CONTROL VALUE CMB RACUNA NA TAJ NOVI RACUN-->
+                    <!--item row="1" col="3">
+                        <button name="btnNoviRacunPlatitelj" image="add">
+                            <event type="click">
+                                <action type="form open" value="frmUnosRacuna">
+                                    <parameter name="partneriid" value="#srcPlatitelj" />
+                                    <parameter name="partner" value="#srcPlatitelj.text" />
+
+                                    <parameter name="noviid" value="null" />
+                                    <parameter name="noviiban" value="null" />
+                                </action>
+
+                                <action if="$noviid!=null">
+
+                                    <action type="control populate" value="#cmbBrojRacunaPlatitelj" />
+
+                                    <action type="control value" value="#cmbBrojRacunaPlatitelj">
+                                        <parameter text="$noviiban" value="$noviid" />
+                                    </action>
+
+                                    <action type="variable value" value="$noviid">
+                                        <parameter value="null" />
+                                    </action>
+                                    <action type="variable value" value="$noviiban">
+                                        <parameter value="null" />
+                                    </action>
+
+                                </action>
+
+                            </event>
+                        </button>
+                    </item-->
+
+                    <item row="2" col="1" caption=" " textposition="left" highlight="false">
+                        <textedit name="txtUlicaPlatitelj" datavalue="~dtGetPredlozak@adresaplatitelja" />
+                    </item>
+
+                    <item row="3" col="1" caption=" " textposition="left" highlight="false">
+                        <textedit name="txtMjestoPlatitelj" datavalue="~dtGetPredlozak.@mjestoplatitelja" />
+                    </item>
+
+                    <item row="4" col="1" caption="Model:" textposition="left" highlight="false">
+                        <textedit name="txtModelPlatitelj" datavalue="~dtGetPredlozak.@PzvbrZad1" required="true" />
+                    </item>
+
+                    <item row="5" col="1" caption="Poziv na broj zaduženja:" textposition="left" highlight="false">
+                        <textedit name="txtPozivNaBrojZad" datavalue="~dtGetPredlozak.@Pzvbrzad2" />
+                    </item>
+                </group>
+
+                <group row="3" col="1" rows="5" cols="2" caption="Podaci o primatelju">
+
+                    <!--columnsdefinition>
+                        <column position="1" size="45%" />
+                        <column position="2" size="45%" />
+                        <column position="3" size="10%" />
+                    </columnsdefinition-->
+
+                    <item row="1" col="1" caption="Primatelj:" textposition="left" highlight="false">
+                        <searchedit name="srcPrimatelj" dataname="dtSrcPrimatelj" fieldtext="Naziv" fieldvalue="partneriid">
+                            <event type="valuechanged">
+                                <action if="#srcPrimatelj!=null">
+                                    <action type="datarun reader" value="dtGetPrimateljRacuni">
+                                        <action type="control populate" value="#cmbBrojRacunaPrimatelj" />
+                                    </action>
+                                    <action type="datarun reader" value="dtGetPrimatelj">
+
+                                        <action type="control value" value="#cmbBrojRacunaPrimatelj">
+                                            <parameter value="~dtGetPrimatelj.@parziroid" text="~dtGetPrimatelj.iban" />
+                                        </action>
+
+                                        <action type="control value" value="#txtAdresaPrimatelj">
+                                            <parameter value="~dtGetPrimatelj.@adresa" />
+                                        </action>
+
+                                        <action type="control value" value="#txtMjestoPrimatelj">
+                                            <parameter value="~dtGetPrimatelj.@mjesto" />
+                                        </action>
+
+                                    </action>
+
+                                    <action type="control disable" value="#txtAdresaPrimatelj,#txtMjestoPrimatelj" />
+                                    <!--action type="control enable" value="#btnNoviRacunPrimatelj" /-->
+                                </action>
+
+                                <action else="">
+                                    <action type="control refreshvalue" value="#txtAdresaPrimatelj,#txtMjestoPrimatelj,#cmbBrojRacunaPrimatelj" />
+                                    <action type="control enable" value="#txtAdresaPrimatelj,#txtMjestoPrimatelj" />
+                                    <!--action type="control disable" value="#btnNoviRacunPrimatelj" /-->
+                                    <action type="control populate" value="#cmbBrojRacunaPrimatelj" />
+                                </action>
+
+                            </event>
+                        </searchedit>
+                    </item>
+
+                    <item row="1" col="2" caption="Broj računa:" textposition="left" highlight="false">
+                        <comboedit name="cmbBrojRacunaPrimatelj" dataname="dtGetPrimateljRacuni" valuefield="parziroid" displayfield="iban" />
+                    </item>
+
+                    <!--item row="1" col="3">
+                        <button name="btnNoviRacunPrimatelj" image="add">
+                            <event type="click">
+                                <action type="form open" value="frmUnosRacuna">
+                                    <parameter name="partneriid" value="#srcPrimatelj" />
+                                    <parameter name="partner" value="#srcPrimatelj.text" />
+
+                                    <parameter name="noviid" value="null" />
+                                    <parameter name="noviiban" value="null" />
+
+                                </action>
+
+                                <action if="$noviid!=null">
+
+                                    <action type="control populate" value="#cmbBrojRacunaPrimatelj" />
+
+                                    <action type="control value" value="#cmbBrojRacunaPrimatelj">
+                                        <parameter text="$noviiban" value="$noviid" />
+                                    </action>
+
+                                    <action type="variable value" value="$noviid">
+                                        <parameter value="null" />
+                                    </action>
+
+                                </action>
+
+                            </event>
+                        </button>
+                    </item-->
+
+                    <item row="2" col="1" caption=" " textposition="left" highlight="false">
+                        <textedit name="txtAdresaPrimatelj" datavalue="~dtGetPredlozak.@adresaprimatelj" />
+                    </item>
+
+                    <item row="3" col="1" caption=" " textposition="left" highlight="false">
+                        <textedit name="txtMjestoPrimatelj" datavalue="~dtGetPredlozak.@mjestoprimatelj" />
+                    </item>
+
+                    <item row="4" col="1" caption="Model:" textposition="left" highlight="false">
+                        <textedit name="txtModelPrimatelj" datavalue="~dtGetPredlozak.@pzvbrod1" />
+                    </item>
+
+                    <item row="5" col="1" caption="Poziv na broj odobrenja:" textposition="left" highlight="false">
+                        <textedit name="txtPozivNaBrojOd" datavalue="~dtGetPredlozak.@pzvbrod2" />
+                    </item>
+                </group>
+
+                <group row="4" col="1" rows="3" cols="2" caption="Podaci o plaćanju">
+
+                    <!--columnsdefinition>
+                        <column position="1" size="45%" />
+                        <column position="2" size="45%" />
+                        <column position="3" size="10%" />
+                    </columnsdefinition-->
+
+                    <item row="1" col="1" caption="Opis plaćanja:" textposition="left" highlight="false">
+                        <textedit name="txtSvrha1" datavalue="~dtGetPredlozak.@svrha1" />
+                    </item>
+
+                    <item row="2" col="1" caption=" " textposition="left" highlight="false">
+                        <textedit name="txtSvrha2" datavalue="~dtGetPredlozak.@svrha2" />
+                    </item>
+
+                    <!--item row="3" col="1" caption=" " textposition="left" highlight="false">
+                        <textedit name="txtSvrha3" datavalue="~dtGetPredlozak.@svrha3" />
+                    </item-->
+
+                    <item row="1" col="2" caption="Statističko obilježje:" textposition="left" highlight="false">
+                        <textedit name="txtSifra1" datavalue="~dtGetPredlozak.@sifra1" />
+                    </item>
+
+                    <item row="2" col="2" caption=" " textposition="left" highlight="false">
+                        <textedit name="txtSifra2" datavalue="~dtGetPredlozak.@sifra2" />
+                    </item>
+
+                    <!--item row="3" col="2" caption="Šifra opisa plaćanja:" textposition="left" highlight="false">
+                        <textedit name="txtSifra3" datavalue="~dtGetPredlozak.@sifra3" />
+                    </item-->
+
+                    <item row="3" col="1" caption="Iznos:" textposition="left" highlight="false" spacing="2,2,15,2">
+                        <textedit name="txtIznos" datavalue="~dtGetPredlozak.@iznostemplate" />
+                    </item>
+
+                </group>
+
+            </group>
+
+        </layout>
+
+        <panelbuttons>
+
+            <buttons>
+
+                <button caption="SPREMI" name="btnSpremi">
+                    <event type="click">
+
+                        <action type="validate" />
+
+                        <action type="datarun reader" value="dtUnosIzmjenaVirman">
+
+                            <!-- NA USPJEŠNOM UNOSU SAMO REFRESHVALUE, AKO KORISNIK ŽELI NASTAVITI UNOSITI-->
+                            <action if="$tip==UnosPredloška&amp;&amp;$indGreske==0">
+
+                                <action type="variable value" value="parent.noviid">
+                                    <parameter value="$noviid" type="int" />
+                                </action>
+
+                                <action type="control refreshvalue" value="##" />
+
+                                <action type="message" value="$poruka" />
+
+                            </action>
+
+                            <action if="$tip==IzmjenaPredloška&amp;&amp;$indGreske==0" type="form close">
+                                <action type="message" value="$poruka" />
+                            </action>
+
+                        </action>
+                    </event>
+                </button>
+
+                <button caption="ODUSTANI" name="btnOdustani" dock="right">
+                    <event type="click">
+                        <action type="form close" />
+                    </event>
+                </button>
+
+            </buttons>
+
+        </panelbuttons>
+
+        <datalist>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtGetNas">
+                <parameter name="@action" value="getNas" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtGetPredlozak">
+                <parameter name="@action" value="getPredlozak" />
+                <parameter name="@oopvirmaniisid" value="$oopvirmaniisid" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtGetVrsteIsplata">
+                <parameter name="@action" value="cmbTipovi" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtSrcPlatitelj">
+                <parameter name="@action" value="srcPartner" />
+                <parameter name="@filter" value="#srcPlatitelj.text" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtSrcPrimatelj">
+                <parameter name="@action" value="srcPartner" />
+                <parameter name="@filter" value="#srcPrimatelj.text" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtGetPlatitelj">
+                <parameter name="@action" value="getPartnerPodaci" />
+                <parameter name="@partneriid" value="#srcPlatitelj" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtGetPrimatelj">
+                <parameter name="@action" value="getPartnerPodaci" />
+                <parameter name="@partneriid" value="#srcPrimatelj" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtGetPlatiteljRacuni">
+                <parameter name="@action" value="cmbRacuni" />
+                <parameter name="@partneriid" value="#srcPlatitelj" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtGetPrimateljRacuni">
+                <parameter name="@action" value="cmbRacuni" />
+                <parameter name="@partneriid" value="#srcPrimatelj" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_VirmaniAzur" name="dtUnosIzmjenaVirman">
+                <parameter name="@action" value="$tip" />
+
+                <parameter name="@oopvirmaniisid" value="$oopvirmaniisid" />
+
+                <parameter name="@oopisstavkeid" value="$oopisstavkeid" />
+                <parameter name="@oopisstavketipid" value="#cmbVrsteIsplata" />
+
+                <parameter name="@indSkupni" value="#chkSkupniVirman" />
+
+                <parameter name="@NalogodavacId" value="#srcPlatitelj" />
+                <parameter name="@NalogodavacZiroId" value="#cmbBrojRacunaPlatitelj" />
+                <parameter name="@NalogodavacZiro" value="#cmbBrojRacunaPlatitelj.text" />
+                <parameter name="@PzvbrZad1" value="#txtModelPlatitelj" />
+                <parameter name="@PzvbrZad2" value="#txtPozivNaBrojZad" />
+
+                <parameter name="@Partneriid" value="#srcPrimatelj" />
+                <parameter name="@Parziroid" value="#cmbBrojRacunaPrimatelj" />
+                <parameter name="@partneriziro" value="#cmbBrojRacunaPrimatelj.text" />
+                <parameter name="@PzvbrOd1" value="#txtModelPrimatelj" />
+                <parameter name="@PzvbrOd2" value="#txtPozivNaBrojOd" />
+
+                <parameter name="@Svrha1" value="#txtSvrha1" />
+                <parameter name="@Svrha2" value="#txtSvrha2" />
+                <!-- <parameter name="@Svrha3" value="#txtSvrha3" /> -->
+
+                <parameter name="@Sifra1" value="#txtSifra1" />
+                <parameter name="@Sifra2" value="#txtSifra2" />
+                <!-- <parameter name="@Sifra3" value="#txtSifra3" /> -->
+
+                <parameter name="@iznos" value="#txtIznos" type="string" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+                <parameter name="@noviId.output.int" />
+            </data>
+
+        </datalist>
+
+    </form>
+
+
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::  FORMA ZA UNOS NOVOG RAČUNA :::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+
+    <form width="500" height="200" name="frmUnosRacuna" caption="Unos novog računa za partnera {$partner}" saveformlayout="true">
+
+        <layout>
+            <group rows="2" cols="1">
+
+                <item row="1" col="1" caption="Naziv banke" textposition="left" highlight="false">
+                    <searchedit name="srcBanka" dataname="dtsrcBanke" valuefield="partneriid" textfield="Naziv" required="true" />
+                </item>
+
+                <item row="2" col="1" caption="Broj računa" textposition="left" highlight="false">
+                    <textedit name="txtRacun" required="true" />
+                </item>
+
+            </group>
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+
+                <button caption="SPREMI" name="btnSpremi">
+                    <event type="click">
+
+                        <action type="validate" />
+
+                        <action type="datarun reader" value="dtUnosRacuna">
+
+                            <!-- NAKON USPJEŠNOG UNOSA, SET NOVIID NA ID NOVOG RAČUNA, NOVIIBAN NA TEKST RAČUNA,
+                            ZA ISPUNJAVANJE COMBO-A U PARENT FORMI-->
+                            <action if="$indGreske==0" type="form close">
+
+                                <action type="variable value" value="parent.noviid">
+                                    <parameter value="$noviid" type="int" />
+                                </action>
+
+                                <action type="variable value" value="parent.noviiban">
+                                    <parameter value="#txtRacun" />
+                                </action>
+
+                            </action>
+
+                            <action type="message" value="$poruka" />
+
+                        </action>
+                    </event>
+                </button>
+
+                <button caption="ODUSTANI" name="btnOdustani" dock="right">
+                    <event type="click">
+                        <action type="form close" />
+                    </event>
+                </button>
+
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+
+            <data command="spDDDefinicijeIsplata_QueryHelper" name="dtsrcBanke">
+                <parameter name="@action" value="srcBanke" />
+                <parameter name="@filter" value="#srcBanka.text" />
+            </data>
+
+            <data command="spDDDefinicijeIsplata_VirmaniAzur" name="dtUnosRacuna">
+                <parameter name="@action" value="UnosRacuna" />
+
+                <parameter name="@partneriid" value="$partneriid" />
+                <parameter name="@iban" value="#txtRacun" />
+                <parameter name="@bankaid" value="#srcBanka" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+                <parameter name="@noviId.output.int" />
+            </data>
+
+        </datalist>
+
+    </form>
+
+</root>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT  
+	BUTTONS=""
+	POPUPMASTER="" 
+	MASTERDBLCLICK="MPKARTICA"
+	GROUPBYBOXVISIBLE="TRUE" 
+	ONLOAD="" 
+	FROZENCOLUMNS="0"
+	COMMANDTIMEOUT="300"
+	CHECKBOXVISIBLE="FALSE">
+	
+<NAME>Stanja trgovina</NAME>
+<CAPTION>Stanja trgovina</CAPTION>
+	
+
+	<MAINFORM 
+		INCLUDE="MPKarticaRobe.xml" 
+		NAME=" MAINFORM " 
+		HEIGHT="10000" 
+		WIDTH="19000"
+		CAPTION="Stanje MP"
+		COMMANDTIMEOUT="300"
+		ONLOAD="SELECT convert(char(4),year(getdate()))+&apos;0101&apos; as datumod, null as trgovinaid"
+		MAXIMIZEBOX="TRUE" 
+		WINDOWSTATE="0">
+
+		<INPUT TYPE="group" NAME="topgroupbox" DOCK="1" CAPTION="Filter" HEIGHT="1700"   />
+		<INPUT TYPE="group" NAME="bottomgroupbox" DOCK="2" HEIGHT="550"  />
+		<INPUT TYPE="grid" NAME="mastergrid" DOCK="5" CHECKBOXVISIBLE="FALSE" SQL="if year(@@datumod)&lt;&gt;year(@@datumdo) begin 
+			exec spRaiserror 69001, &apos;Stanje maloprodaje može se pregledavati samo u istoj godini ! Molim ponovite upit !&apos;
+			end exec spmpStanjaTrgovina @trgovinaid =@@skladisteid, @DatumOd=@@datumod, @DatumDo=@@datumdo, @kolind = @@kolind"    
+			PAGEHEADERCENTER="Stanje trgovine @@comboboxskladisteid"
+			PAGEHEADERRIGHT=""
+			PAGEHEADERLEFT="Na dan @@datumdo  "
+			PAGEFOOTERCENTER=""
+			PAGEFOOTERLEFT=""
+			PAGEFOOTERRIGHT=""
+			PAGEORIENTATION="LANDSCAPE">
+
+			<COLUMN INDEX="" NAME="MPC1000"  AGREGATEFUNCTION="0" />
+			<COLUMN INDEX="" NAME="PDV%"  AGREGATEFUNCTION="0" />
+
+		</INPUT>
+
+		<INPUT TYPE="combo" NAME="skladisteid" TOP="250" LEFT="1200" WIDTH="4500" SQL="spMPDajTrgovina @operateriid=@@operateriid" ALLOWEMPTY="FALSE" CAPTION="Trgovina:*"/>
+		<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od:*" TOP="700" LEFT="1200" WIDTH="2000"/>
+		<INPUT TYPE="date" NAME="datumdo" CAPTION="do:*" TOP="700" LEFT="4000" WIDTH="2000"/>
+		<INPUT TYPE="combo" NAME="kolind" TOP="1150" LEFT="1200" WIDTH="4500" SQL="select 0 as kolind, 'Bez obzira na količinu' union all select 1, 'Količina &lt;> 0' " ALLOWEMPTY="FALSE" CAPTION="Količina:*"/>
+
+		<INPUT TYPE="button" NAME="b0" PARENT="topgroupbox" TOP="700" LEFT="12000" CAPTION="Pokaži podatke" WIDTH="1500" ONCLICK="select 'refresh' as mastergrid" />
+
+		<INPUT TYPE="button" NAME="b1" CAPTION="Odustani" PARENT="bottomgroupbox" TOP="150" LEFT="200" WIDTH="1500" HEIGHT="322" ONCLICK="close" HOTKEY="" />
+		<INPUT TYPE="button" NAME="b2" CAPTION="Kartica" PARENT="bottomgroupbox" TOP="150" LEFT="2200" WIDTH="1500" HEIGHT="322" ONCLICK=":MPKARTICA" HOTKEY="" />
+		<INPUT TYPE="button" NAME="b4" CAPTION="Ispis stanja" PARENT="bottomgroupbox" TOP="150" LEFT="8200" WIDTH="1500" HEIGHT="322" ONCLICK="PRINTGRID(mastergrid)" HOTKEY="" />
+	</MAINFORM>
+
+	
+<KARTICA 
+	HEIGHT="7500" 
+	WIDTH="15000" 
+	CAPTION="Kartica: '@@opis' "
+	ONSUBMIT=""
+    CHECKBOXVISIBLE="TRUE"
+	ONLOAD="select sifra+'  '+[naziv robe] as opis from ##temp50 where robaid=@@mastergrid and trgovinaid=@@skladisteid">
+
+
+	<INPUT TYPE="grid" NAME="grid" TOP="200" LEFT="200" WIDTH="14500" HIGHT="6000" 
+			TOTALROW="TRUE" 
+			CHECKBOXVISIBLE="FALSE"
+			PAGEORIENTATION="LANDSCAPE"
+			SQL="exec spMPStanjeKarticaNG @action=0, @robaid=@@mastergrid, @DatumOd=@@DatumOd, @DatumDo=@@DatumDo, @trgovinaid=@@skladisteid, @totalgen = 2 " CAPTION="Kartica robe"/>
+	<COLUMN INDEX="" NAME="[Stanje0800]" AGREGATEFUNCTION="0"/>
+	<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="200" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+	<INPUT TYPE="button" NAME="" CAPTION="Ispis kartice" TOP="6500" LEFT="2200" WIDTH="1500" HEIGHT="322" ONCLIOCK=":rptMPStanjeKartica"/>
+
+
+</KARTICA>
+
+
+</PROJECT>

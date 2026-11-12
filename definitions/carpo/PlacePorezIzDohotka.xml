@@ -1,0 +1,245 @@
+<root>
+
+<!--  
+    8.9.2021. Marin - namjestio columns definition u subformi da se ispravno prikazuje na DevX20
+-->
+
+    <form name="frmPlacePorezIzDohotka" type="master" caption="Porez iz dohotka" saveformlayout="false" fixedsize="true" width="500" height="400">
+
+        <event type="load">
+            <action type="control populate" value="#grdPorezIzDohotka"></action>
+        </event>
+
+        <event type="shown">
+            <action if="#grdPorezIzDohotka.rowcount==0" type="control disable" value="#btnObrisi"></action>
+            <action else="" type="control enable" value="#btnObrisi"></action>
+        </event>
+        
+        <layout>
+            <group cols="1" rows="1" groupbordervisible="false">
+                <item row="1" col="1" highlight="false">
+                    <grid name="grdPorezIzDohotka" type="master" key="OOPPorezId" dataname="dtGrid" bestfitonrefresh="true" showgrouppanel="false" fieldsmartspaces="false" multiselect="true">
+
+                        <!-- editabilne ćelije-->
+                        <event type="cellvaluechanged">
+
+                            <action type="datarun reader" value="~dtKontrola">
+
+                                <action if="$indgreske==0">
+                                    <action type="datarun reader" value="~dtIzmjena">
+
+                                        <!-- ako je izmjena uspješna (akcOznaka je unique, nije prazna) control populate keepfocus-->
+                                        <action if="$indGreske==0">
+                                            <action type="control populate keepfocus" value="#grdPorezIzDohotka" />
+                                        </action>
+        
+                                    </action>
+                                </action>
+
+                                <!-- ako je izmjena neuspješna, refresh grid akcije; inače će u gridu pisati nova vrijednost, koja zapravo nije ušla u bazu-->
+                                <action else="">
+                                    <action type="control refreshvalue" value="#grdPorezIzDohotka"/>
+                                </action>
+
+                            </action>
+
+                        </event>
+
+                        <fields inherited="true">
+                            <field name="IznosOd" caption="Iznos od" editable="true"></field>
+                            <field name="IznosDo" caption="Iznos do" editable="true"></field>
+                            <field name="Stopa" editable="true"></field>
+                        </fields>
+
+                        <menu>
+                            <menuitem name="menUnesi" caption="UNESI">
+        
+                                <event type="click">
+                                    <action type="form open" value="frmPlacePorezIzDohotkaUnos">
+                                    </action>
+                                </event>
+            
+                            </menuitem>
+            
+                            <menuitem name="menObrisi" caption="OBRIŠI">
+                    
+                                <event type="click">
+                                    <action type="confirm" value="Jeste li sigurani da želite obrisati odabrane porezne razrede?">
+                                        <action type="datarun reader" value="~dtBrisanje">
+                                            <action if="$indgreske==0">
+                                                <action type="control populate keepfocus" value="#grdPorezIzDohotka"></action>
+                                                <action type="message" value="$poruka"></action>
+                                                <action if="#grdPorezIzDohotka.rowcount==0" type="control disable" value="#btnObrisi"></action>
+                                            </action>
+                                        </action>
+                                    </action>
+                                </event>
+            
+                            </menuitem>
+                        </menu>
+
+                    </grid>
+                </item>
+            </group>
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+        
+                <button name="btnUnesi" caption="UNESI">
+        
+                    <event type="click">
+                        <action type="form open" value="frmPlacePorezIzDohotkaUnos">
+                        </action>
+                        <action if="#grdPorezIzDohotka.rowcount!=0" type="control enable" value="#btnObrisi"></action>
+                    </event>
+
+                </button>
+
+                <button name="btnObrisi" caption="OBRIŠI">
+        
+                    <event type="click">
+                        <action type="confirm" value="Jeste li sigurani da želite obrisati odabrane porezne razrede?">
+                            <action type="datarun reader" value="~dtBrisanje">
+                                <action if="$indgreske==0">
+                                    <action type="control populate keepfocus" value="#grdPorezIzDohotka"></action>
+                                    <action type="message" value="$poruka"></action>
+                                    <action if="#grdPorezIzDohotka.rowcount==0" type="control disable" value="#btnObrisi"></action>
+                                </action>
+                            </action>
+                        </action>
+                    </event>
+
+                </button>
+        
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+            <data command="spPlacePorezIzDohotka" name="dtGrid">
+                <parameter name="@action" value="grid"/>
+            </data>
+            <data command="spPlacePorezIzDohotka" name="dtIzmjena">
+                <parameter name="@action" value="izmjena"/>
+
+                <parameter name="@oopporezid" value="#grdPorezIzDohotka"/>
+
+                <parameter name="@kolona" value="#grdPorezIzDohotka.focusedfield"/>
+                <parameter name="@vrijednost" value="#grdPorezIzDohotka.focusedvalue"/>
+
+                <parameter name="@poruka.output.string"/>
+                <parameter name="@indgreske.output.int"/>
+            </data>
+            <data command="spPlacePorezIzDohotka" name="dtKontrola">
+                <parameter name="@action" value="kontrola"/>
+
+                <parameter name="@kolona" value="#grdPorezIzDohotka.focusedfield"/>
+                <parameter name="@vrijednost" value="#grdPorezIzDohotka.focusedvalue"/>
+
+                <parameter name="@oopporezid" value="#grdPorezIzDohotka"/>
+
+                <parameter name="@poruka.output.string"/>
+                <parameter name="@indgreske.output.int"/>
+            </data>
+            <data command="spPlacePorezIzDohotka" name="dtBrisanje">
+                <parameter name="@action" value="brisanje"/>
+                <parameter name="@ids" value="#grdPorezIzDohotka.selectedids"/>
+
+                <parameter name="@poruka.output.string"/>
+                <parameter name="@indgreske.output.int"/>
+            </data>
+        </datalist>
+
+    </form>
+
+    <form name="frmPlacePorezIzDohotkaUnos" type="detail" caption="UNOS POREZNOG RAZREDA" saveformlayout="false" fixedsize="true" width="500" height="100">
+
+        <layout>
+            <group cols="3" rows="1">
+
+                <columnsdefinition>
+                    <column position="1" size="33%"/>
+                    <column position="2" size="33%"/>
+                    <column position="3" size="33%"/>
+                </columnsdefinition>
+
+                <item row="1" col="1" caption="Iznos od: " highlight="false">
+                    <textedit name="txtOd" format="n2" value="0" allownull="false" required="true"></textedit>
+                </item>
+                <item row="1" col="2" caption="Iznos do: " highlight="false">
+                    <textedit name="txtDo" format="n2" value="0" allownull="false" required="true"></textedit>
+                </item>
+                <item row="1" col="3" caption="Stopa: " highlight="false">
+                    <textedit name="txtPosto" value="0" format="n4" required="true"></textedit>
+                </item>
+            </group>
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+        
+                <button name="btnSpremi" caption="SPREMI">
+                
+                    <event type="click">
+                        <action type="validate"/>
+
+                        <action type="datarun reader" value="dtKontrola">
+                            <action if="$indgreske==0">
+
+                                <action type="datarun reader" value="~dtUnos">
+                
+                                    <action if="$indGreske==0">
+                                        <action type="control populate" value="parent.#grdPorezIzDohotka">
+                                        </action>
+                                        <action type="control focus" value="parent.#grdPorezIzDohotka">
+                                            <parameter value="$noviid" type="int"/>
+                                        </action>
+                                        <action type="message" value="$poruka"/>
+                                        <action type="control refreshvalue" value="##"></action>
+                                    </action>
+                        
+                                </action>
+
+                            </action>
+                        </action>
+                        
+                    </event>
+                
+                </button>
+
+                <button name="btnOdustani" caption="ODUSTANI" dock="right">
+                    <event type="click">
+                        <action type="form close"/>
+                    </event>
+                </button>
+        
+            </buttons>
+        </panelbuttons>
+        
+
+        <datalist>
+            <data command="spPlacePorezIzDohotka" name="dtUnos">
+                <parameter name="@action" value="unos"/>
+
+                <parameter name="@od" value="#txtOd"/>
+                <parameter name="@do" value="#txtDo"/>
+                <parameter name="@posto" value="#txtPosto"/>
+
+                <parameter name="@poruka.output.string"/>
+                <parameter name="@indgreske.output.int"/>
+                <parameter name="@noviid.output.int"/>
+            </data>
+            <data command="spPlacePorezIzDohotka" name="dtKontrola">
+                <parameter name="@action" value="kontrola"/>
+
+                <parameter name="@od" value="#txtOd"/>
+                <parameter name="@do" value="#txtDo"/>
+                <parameter name="@posto" value="#txtPosto"/>
+
+                <parameter name="@poruka.output.string"/>
+                <parameter name="@indgreske.output.int"/>
+            </data>
+        </datalist>
+
+    </form>
+</root>

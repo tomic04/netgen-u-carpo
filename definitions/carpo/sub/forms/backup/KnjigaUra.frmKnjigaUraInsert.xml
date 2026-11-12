@@ -1,0 +1,1749 @@
+<!--11.2.2020. AA KUP prijenos tečaja-->
+<!--29.1.2020. AA PubVar DodajIban-->
+<!--27.12.2019. AA PLK u vrijednost postavljamo iznos bez PDV-a-->
+<!--23.12.2019. AA PLK postavljanje unesenih vrijednosti-->
+<!--5.9.2019. AA @OperateriId dtKUP-->
+<!--21.6.2019. AA blokada po datumu knjiženja HD 47057-->
+<!--7.6.2019. AA iz Kupa podatak Dana-->
+<!--16.5.2019. AA PDV s oznakom N-->
+<!--10.10.2018. AA usklađeno za pozivanje iz KUP-a-->
+<!--23.5.2018. AA Spin ne želi upisivanje modela i poziva na broj-->
+<!--14.5.2018. AA disable srcPartner ako iz Temeljnica, na spremi-parent.$NoviFaktureDobId-->
+<!--8.5.2018. AA dodala NazivId na tražilicu partnera-->
+<root> 
+	<form name="frmKnjigaUraInsert" caption="Unos dokumenta" fixedsize="false"> 
+		<event type="init">
+			<action type="datarun reader" value="~dtGetMaxUra"/>
+			<action type="datarun reader" value="~dtGetPodaci" />
+			<action type="datarun reader" value="~dtGetUgovori" if="$TemInd==1||$PLKInd==1"/>			
+			<action type="datarun reader" value="~dtUraDatDVO"/>
+			<action type="datarun reader" value="~dtIbanPubVar"/>		
+			<!-- <action type="datarun reader" value="~dtPartneri" if="$PartneriId!=null"/> -->
+			<!-- <action type="datarun reader" value="~dtIndUgovor" /> -->
+		</event>
+		<event type="load">	
+			<!--procedura za pozivanje iz KUP-a-->
+			<!--$KupPrometId je sada $Id zbog generičkog NetGenAdaptera-->
+			<action if="$Id!=null">
+				<action type="datarun reader" value="~dtKUP"/>	
+				<!--ako dođe do raiserrora u provjerama (tada neće vratiti vrijednosti iz baze) zatvori formu-->
+				<action type="variable value" value="$ZatvoriFormu" if="~dtKUP.@PartneriId==null">
+					<parameter value="1"/>
+				</action>
+				<action else="">
+					<action type="variable value" value="$PartneriId">
+						<parameter value="~dtKUP.@PartneriId"/>
+					</action>				
+					<action type="control value" value="#txtRacun">
+						<parameter value="~dtKUP.@Broj"/>
+					</action>
+					<action type="control value" value="#datNadnevak">
+						<parameter value="~dtKUP.@DatumDokumenta"/>
+					</action>
+					<action type="control value" value="#datKnjizenja">
+						<parameter value="~dtKUP.@DatumDokumenta"/>
+					</action>				
+					<action type="control value" value="#datDVO">
+						<parameter value="~dtKUP.@DatumDokumenta"/>
+					</action>	
+					<action type="control value" value="#datValuta">
+						<parameter value="~dtKUP.@DatumValute"/>
+					</action>				
+					<action type="control value" value="#srcPartner">
+						<parameter value="~dtKUP.@PartneriId"/>
+					</action>	
+					<action type="control value" value="#cmbOrgShema">
+						<parameter value="~dtKUP.@OrgShemaId"/>
+					</action>
+					<!--zbog HD52661 uključujem valutu; bio problem s nekreiranjem virmana ako se povuče HRK-->
+					<action type="control value" value="#cmbDevValuta">
+						<parameter value="~dtKUP.@ValuteId"/>
+					</action>				
+					<action if="~dtKUP.@ValuteId!=null">
+						<!-- <action type="control value" value="#curIznossPdv">-->
+							<!-- <parameter value="0"/> -->
+						<!-- </action> -->
+						<action type="datarun reader" value="~dtTecaj"/>
+						<action type="control value" value="#curTecaj" >
+							<parameter value="~dtTecaj.@tecaj" type="decimal"/>
+						</action>
+					</action>
+					<action type="control value" value="#curIznossPdv" else="">
+						<parameter value="~dtKUP.@Iznos"/>
+					</action>	
+					<action type="control value" value="#curDevIznos" if="~dtKUP.@ValuteId!=null">
+						<parameter value="~dtKUP.@Iznos"/>
+					</action>
+					<action type="control value" value="#curDevIznos" else="">
+						<parameter value="0"/>
+					</action>					
+					<action type="control value" value="#txtGodina">
+						<parameter value="~dtKUP.@Godina"/>
+					</action>
+					<action type="control value" value="#txtDana">
+						<parameter value="~dtKUP.@Dana"/>
+					</action>									
+					<action type="control value" value="#txtNapomena">
+						<parameter value="~dtKUP.@Opis"/>
+					</action>
+					<!-- eRačun punjenje -->
+					<action type="control value" value="#curOsnovica25">
+						<parameter value="~dtKUP.@Osnovica25"/>
+					</action>				
+					<action type="control value" value="#cur25Odbiv">
+						<parameter value="~dtKUP.@PorezOdbiv25"/>
+					</action>
+					<action type="control value" value="#cur25NeOdbiv">
+						<parameter value="~dtKUP.@PorezNeOdbiv25"/>
+					</action>
+					<action type="control value" value="#curOsnovica13">
+						<parameter value="~dtKUP.@Osnovica13"/>
+					</action>				
+					<action type="control value" value="#cur13Odbiv">
+						<parameter value="~dtKUP.@PorezOdbiv13"/>
+					</action>	
+					<action type="control value" value="#cur13Neodbiv">
+						<parameter value="~dtKUP.@PorezNeOdbiv13"/>
+					</action>				
+					<action type="control value" value="#curOsnovica10">
+						<parameter value="~dtKUP.@Osnovica10"/>
+					</action>	
+					<action type="control value" value="#cur10Odbiv">
+						<parameter value="~dtKUP.@PorezOdbiv10"/>
+					</action>
+					<action type="control value" value="#cur10Neodbiv">
+						<parameter value="~dtKUP.@PorezNeOdbiv10"/>
+					</action>
+					<action type="control value" value="#curOsnovica5">
+						<parameter value="~dtKUP.@Osnovica5"/>
+					</action>
+					<action type="control value" value="#cur5Odbiv">
+						<parameter value="~dtKUP.@PorezOdbiv5"/>
+					</action>	
+					<action type="control value" value="#cur5NeOdbiv">
+						<parameter value="~dtKUP.@PorezNeOdbiv5"/>
+					</action>	
+					<action type="control value" value="#curNeoporezivo">
+						<parameter value="~dtKUP.@IznosNeoporeziv"/>
+					</action>	
+					<action type="control value" value="#curNePod">
+						<parameter value="~dtKUP.@NePod"/>
+					</action>		
+					<action type="control value" value="#txtPozivNaBroj">
+						<parameter value="~dtKUP.@PozivNaBrojXml"/>
+					</action>	
+					<action type="control value" value="#txtModel">
+						<parameter value="~dtKUP.@ModelXml"/>
+					</action>
+					<action type="control value" value="#curProlazneStavke">
+						<parameter value="~dtKUP.@PovNaknada"/>
+					</action>	
+					<action type="control value" value="#curIznosBezPdv">
+						<parameter value="~dtKUP.@IznosBezPdv"/>
+					</action>
+					<action type="control value" value="#curPdvUkupno">
+						<parameter value="~dtKUP.@PorezUkupno"/>
+					</action>					
+					<action type="control disable" value="#srcPartner"/>
+				</action>
+			</action>
+			<!--prebačeno zbog KUP-a-->
+			<action type="datarun reader" value="~dtPartneri" if="$PartneriId!=null"/>
+			<action type="datarun reader" value="~dtIndUgovor" />		
+			<action type="datarun reader" value="~dtTekGodina"/>
+			<!--ako pozivam iz temeljnica ili PLK, ne treba biti vidljiva opcija spremi i proknjiži-->
+			<action type="control disable" value="#srcPartner,#btnProknjizi,#cheTem,#btnRate" if="$TemInd==1||$PLKInd==1"/>
+			<action type="control value" value="#cmbVrstaKnjige" if="$KntVrsteKnjigaUraIdInsert!=null">
+				<parameter value="$KntVrsteKnjigaUraIdInsert"/>
+			</action>
+			<action else="">
+				<action type="datarun reader" value="~dtPonudiKnjigu"/>
+				<action type="control value" value="#cmbVrstaKnjige" >
+					<parameter value="~dtPonudiKnjigu.@KntVrsteKnjigaUraId"/>
+				</action>
+			</action>
+			<!--ako pozivam iz KUP-a daj sljedeći broj od one godine iz koje je račun-overwrite broj-->
+			<action if="$Id!=null">
+				<action type="datarun reader" value="~dtPraviBrojDok"/>
+				<action type="control value" value="#txtURA">
+					<parameter value="~dtPraviBrojDok.@BrojDok"/>
+				</action>
+			</action>
+			<!--ako pozivam iz temeljnica, postavi datum sa temeljnice-->
+			<action if="$TemInd==1">
+				<action type="control value" value="#datNadnevak">
+					<parameter value="global.$DatumKnjizenja"/>
+				</action>
+				<action type="control value" value="#datKnjizenja">
+					<parameter value="global.$DatumKnjizenja"/>
+				</action>			
+				<action type="control value" value="#datDVO">
+					<parameter value="global.$DatumKnjizenja"/>
+				</action>												
+			</action>	
+			<!--ako pozivam iz PLK, postavi datume sa PLK-->
+			<action if="$PLKInd==1">
+				<action type="control value" value="#datNadnevak">
+					<parameter value="$PLKDatumDok"/>
+				</action>
+				<action type="control value" value="#datKnjizenja">
+					<parameter value="$PLKDatumDok"/>
+				</action>			
+				<action type="control value" value="#datDVO">
+					<parameter value="$PLKDatumVal"/>
+				</action>
+				<action type="control value" value="#cmbOrgShema">
+					<parameter value="$PLKOrgShemaId"/>
+				</action>				
+				<action type="control value" value="#cmbOsobe">
+					<parameter value="$PLKOsobeId"/>
+				</action>					
+			</action>			
+			<!--otkomentirano zbog punjenja varijable EUSlucaj-->
+			<action type="datarun reader" value="~dtGetPodaci" />
+			<action type="variable value" if="~dtGetPodaci.@PDV==G||~dtGetPodaci.@PDV==S||~dtGetPodaci.@PDV==B||~dtGetPodaci.@PDV==A||~dtGetPodaci.@PDV==E">
+				<parameter name="EUSlucaj" value="1" type="int" />
+			</action>
+			<action type="variable value" else="">
+				<parameter name="EUSlucaj" value="0" type="int" />
+			</action>
+			<action type="variable value" value="$PDVN" if="~dtGetPodaci.@PDV==N">
+				<parameter value="1" type="int"/>
+			</action>
+			<action type="variable value" value="$PDVN" else="">
+				<parameter value="0" type="int"/>
+			</action>				
+			<action type="variable value">
+				<parameter name="IndUgovor" value="~dtIndUgovor.@IndUgovor" type="int" />
+			</action>
+			<action type="variable value">
+				<parameter name="IndDatDvoDatVal" value="~dtUraDatDVO.@IndDatDVO" type="int" />
+			</action>	
+			<action type="variable value">
+				<parameter name="IznosFakture" value="0" type="decimal" />
+			</action>
+			<action type="variable value">
+				<parameter name="NoviFaktureDobId" value="null" type="int" />
+			</action>
+			<action type="control disable" value="#txtBrojUCD,#datUCD,#txtBrojZak"/>
+			<action type="variable value">
+				<parameter name="IbanPubVar" value="~dtIbanPubVar.@DodajIban"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control focus" value="#txtRacun"/>
+			<action type="control value" value="#cheTem">
+				<parameter value="#cheTemLazni"/>
+			</action>
+			<action type="form close" if="$ZatvoriFormu==1"/>
+			<!--varijabla za provjeru dolazi li do izmjene iznosaspdvom, ako ne, ne treba preračunavati tečaj-->
+			<action type="variable value" value="$IzmjenaTecaj">
+				<parameter value="0"/>
+			</action>				
+		</event>	
+		<layout textposition="top" >
+			<group cols="2" rows="2" groupbordervisible="false">
+				<columnsdefinition>
+					<column size="50%" position="1" />
+					<column size="50%" position="2" />
+				</columnsdefinition>
+				<group  name="" cols="1" rows="3" col="1" row="1" groupbordervisible="false">
+					<group caption="Opći podaci" col="1" row="1" cols="1" rows="5" spacing="2,2,2,2">
+						<group caption="" col="1" row="1" cols="4" rows="1"  groupbordervisible="false">
+							<columnsdefinition>
+								<column position="1" size="200" />
+								<column position="2" size="30" />
+								<column position="3" size="30" />
+								<column position="4" size="100" />
+							</columnsdefinition>
+							<item col="1" row="1" caption="Vrsta knjige:" padding="0">
+								<comboedit name="cmbVrstaKnjige" required="true" autopopulate="true" valuefield="KntVrsteKnjigaUraId" displayfield="NazivKnjige" datavalue="~dtVrstaKnjige.@KntVrsteKnjigaUraId" dataname="dtVrstaKnjige">
+									<event type="valuechanged"> 
+										<action type="datarun reader" value="~dtGetPodaci" />
+										<action type="variable value" value="$EUSlucaj" if="~dtGetPodaci.@PDV==G||~dtGetPodaci.@PDV==S||~dtGetPodaci.@PDV==B||~dtGetPodaci.@PDV==A||~dtGetPodaci.@PDV==E">
+											<parameter value="1" type="int"/>
+										</action>
+										<action type="variable value" value="$EUSlucaj" else="">
+											<parameter value="0" type="int"/>
+										</action>
+										<action type="variable value" value="$PDVN" if="~dtGetPodaci.@PDV==N">
+											<parameter value="1" type="int"/>
+										</action>
+										<action type="variable value" value="$PDVN" else="">
+											<parameter value="0" type="int"/>
+										</action>											
+									</event>
+								</comboedit>
+							</item>
+							<group  name="" col="2" row="1" cols="2" rows="1"  groupbordervisible="false" alignmode="local">
+								<item col="1" row="1" caption="R1"  padding="0" highlight="false"> 
+									<radioedit name="rbR1" value="true" />
+								</item>
+								<item col="2" row="1" caption="R2"  padding="0" highlight="false"> 
+									<radioedit name="rbR2" value="false" />
+								</item>
+							</group>
+							<item col="4" row="1" caption="Redni broj:"  padding="0" > 
+								<textedit name="txtRedniBroj" value="RBROJ" readonly="true" />
+							</item>
+						</group>
+						<group caption="" col="1" row="2" cols="6" rows="1" colspan="6" groupbordervisible="false">
+							<item col="1" row="2" caption="Račun:" colspan="4" padding="0" > 
+								<textedit name="txtRacun" required="true"/>
+							</item>
+							<item col="5" row="2" caption="URA" colspan="2" padding="0"  > 
+								<textedit name="txtURA" required="true" datavalue="~dtGetMaxUra.@brojdok"/>
+							</item>
+						</group>
+						<group caption="" col="1" row="3" cols="6" rows="1" colspan="6" groupbordervisible="false">
+							<item col="1" row="1" caption="Dat.dok.:" colspan="2" padding="0"  >
+								<dateedit  name="datNadnevak" required="true" datavalue="~dtGetPodaci.@Nadnevak"> <!-- minvalue="Global.$BlokadaOd" maxvalue="Global.$BlokadaDo"-->
+									<event type="valuechanged" raiseonload="false" >
+										<!-- <action type="datarun reader" value="~dtNadnevakGodina" /> -->
+                                            <!--<action type="control value" value="#txtGodina">-->
+												<!--<parameter value="~dtNadnevakGodina.@god"/>-->
+                                             <!--</action>-->
+										<action type="control value" value="#datDVO">
+											<parameter value="#datNadnevak"/>
+										</action>
+										<action type="control value" value="#datValuta">
+											<parameter value="#datNadnevak"/>
+										</action>
+										<action type="control value" value="#datKnjizenja">
+											<parameter value="#datNadnevak"/>
+										</action>									
+									</event>
+									<event type="leave">										
+										<action type="datarun reader" value="~dtDatValute"/>
+										<action type="control value" value="#datValuta">
+											<parameter value="~dtDatValute.@datvalute"/>
+										</action>
+									</event>
+								</dateedit>
+							</item>
+							<item col="3" row="1" caption="God.:" colspan="1" padding="0"  > 
+								<textedit name="txtGodina" required="true" datavalue="~dtGetPodaci.@Godina"/>
+							</item>
+							<item col="4" row="1" caption="Dat.DVO:" colspan="2" padding="0" >
+								<dateedit  name="datDVO" datavalue="~dtGetPodaci.@DatDVO" >
+									<event type="leave">
+										<action type="datarun reader" value="~dtDatValute" />
+										<action type="control value" value="#datValuta">
+											<parameter value="~dtDatValute.@datvalute"/>
+										</action>
+									</event>
+								</dateedit>
+							</item>
+							<item col="6" row="1" caption="Dana" colspan="1" padding="0" > 
+								<textedit name="txtDana" datavalue="~dtGetPodaci.@Dana" format="n0">
+									<event type="valuechanged">
+										<action type="control value" value="#txtDana" if="#txtDana==null">
+											<parameter value="0"/>
+										</action>
+									</event>
+									<event type="leave">
+										<action type="datarun reader" value="~dtDatValute" />
+										<action type="control value" value="#datValuta">
+											<parameter value="~dtDatValute.@datvalute"/>
+										</action>
+									</event>
+								</textedit>
+							</item>
+						</group>
+						<group caption="" col="1" row="4" cols="3" rows="1" colspan="6" groupbordervisible="false">
+							<columnsdefinition>
+								<column position="1" size="100" />
+								<column position="2" size="100" />
+								<column position="3" size="100" />
+							</columnsdefinition>
+							<item col="1" row="1" caption="Valuta:"  padding="0"  >
+								<dateedit  name="datValuta" required="true" datavalue="~dtGetPodaci.@DatumValute" >
+									<event type="leave">
+										<action type="datarun reader" value="~dtDana"/>
+										<action type="control value" value="#txtDana">
+											<parameter value="~dtDana.@dana"/>
+										</action>
+									</event>
+								</dateedit>
+							</item>
+							<item col="2" row="1" caption="Dat.knjiženja:"  padding="0"  >
+								<dateedit  name="datKnjizenja" required="true" datavalue="~dtGetPodaci.@DatumKnjizenja" >
+									<event type="valuechanged" raiseonload="false" >
+										<action type="datarun reader" value="~dtKnjizGodina"/>
+										<action type="control value" value="#txtGodina">
+											<parameter value="~dtKnjizGodina.@god"/>
+										</action>
+									</event>								
+								</dateedit>
+							</item>
+						</group>
+						<group caption="" col="1" row="5" cols="6" rows="1" colspan="6" groupbordervisible="false">
+							<item col="1" row="5" caption="Osoba:" colspan="3" padding="0" >
+								<comboedit name="cmbOsobe" autopopulate="true" valuefield="OsobeId" displayfield="Naziv" datavalue="~dtPopuniCombo.@OsobeId" dataname="dtPopuniCombo">
+									<event type="valuechanged" raiseonload="false" > 
+									</event>
+								</comboedit>
+							</item>
+							<item col="4" row="5" caption="Org.shema:" colspan="3" padding="0" >
+                                <combotreeedit name="cmbOrgShema" autopopulate="true" valuefield="Id" displayfield="Naziv" parentfieldname="ParentId" datavalue="~dtGetPodaci.@OrgShemaId" dataname="dtGetOrgShema">
+									<event type="valuechanged" raiseonload="false" > 
+									</event>
+								</combotreeedit>
+							</item>
+						</group>
+					</group>
+					<group caption="Partner" name="partner" cols="2" rows="3" col="1" row="2" colspan="6" spacing="2,2,2,2" >
+						<item col="1" row="1" colspan="2" caption="Partner:" padding="0" >
+							<searchedit  name="srcPartner" required="true" fieldtext="NazivId" fieldvalue="PartneriId" datavalue="~dtPartneri.@PartneriId" datatext="~dtPartneri.@Naziv" dataname="dtGetPartneri" savelayout="true">
+								<event type="valuechanged">
+									<action type="datarun reader" value="~dtGetPodaciZaPartnera" /> 
+									<!-- <action type="datarun reader" value="~dtGetUgovori" />  -->
+									<!-- <action type="datarun reader" value="~dtGetPDVID" />  -->
+									<!--zakomentiran EU partner, ne radi ništa??-->
+									<!-- <action type="datarun reader" value="~dtEuPartner" /> -->
+									<!-- <action type="variable value" value="$EUPartner" > -->
+										<!-- <parameter value="~dtEuPartner.@EuPartner" type="int"/> -->
+									<!-- </action> -->
+									<action type="control focus" value="#srcPartner" if="#srcPartner==null"/>
+									<action type="control value" value="#txtMjesto">
+										<parameter value="~dtGetPodaciZaPartnera.@Mjesto"/>
+									</action>
+									<action type="control value" value="#txtOIB">
+										<parameter value="~dtGetPodaciZaPartnera.@OIB"/>
+									</action>
+									<!-- <action type="control populate" value="#cmbUgovori"/> -->
+									<!-- <action type="control populate" value="#cmbPDVID" /> -->
+									<action type="control populate" value="#cmbIBAN,#cmbPDVID,#cmbUgovori" />
+								</event>
+							</searchedit>
+						</item>
+						<item col="1" row="2" caption="Ugovor:" colspan="1" padding="0" >
+							<comboedit name="cmbUgovori" autopopulate="true" valuefield="DobUgovoriId" displayfield="Naziv" datavalue="~dtGetUgovori.@DobUgovoriId" dataname="dtGetUgovori">
+								<event type="leave" raiseonload="false" >
+									<action type="datarun reader" value="~dtDatValUgo" if="$IndUgovor==1">
+										<action type="control value" value="#datValuta" >
+											<parameter value="~dtDatValUgo.@Datum"/>
+										</action>
+										<action type="datarun reader" value="~dtDanaUgovor"/>
+										<action type="control value" value="#txtDana">
+											<parameter value="~dtDanaUgovor.@dana"/>
+										</action>
+									</action>
+								</event>
+							</comboedit>
+						</item>
+						<item col="2" row="2" caption="OIB:" colspan="1" padding="0" >
+							<textedit name="txtOIB" readonly="true"/>
+						</item>
+						<item col="1" row="3" caption="Mjesto:" colspan="1" padding="0" >
+							<textedit name="txtMjesto" readonly="true"/>
+						</item>
+						<item col="2" row="3" caption="PDVID:" colspan="1" padding="0" >
+							<comboedit name="cmbPDVID" autopopulate="true" valuefield="ParStruId" displayfield="Naziv"  dataname="dtGetPDVID" allownull="false">
+								<event type="valuechanged" raiseonload="false"> 
+									<action type="datarun reader" value="~dtEuPartnerParStru"/>
+									<action type="variable value" value="$EUPartner" >
+										<parameter value="~dtEuPartnerParStru.@EuPartner" type="int"/>
+									</action>
+								</event>
+							</comboedit>
+						</item>
+					</group>
+					<group caption="Podaci za platni promet" name="platni" cols="3" rows="1" col="1" row="3" spacing="2,2,2,2">
+						<columnsdefinition>
+							<column position="1" size="50" />
+							<column position="2" size="170" />
+							<column position="3" size="100" />
+						</columnsdefinition>
+						<item col="1" row="1" caption="Model:"  padding="0" > 
+							<textedit name="txtModel"  />
+						</item>
+						<item col="2" row="1" caption="Poziv na broj:"  padding="0">
+							<textedit name="txtPozivNaBroj" datavalue="~dtGetPodaci.@PozivNaBroj"/>
+						</item>
+						<item col="3" row="1" caption="IBAN:"  padding="0"  >
+							<comboedit name="cmbIBAN" autopopulate="true" valuefield="ParZiroId" displayfield="IBAN"  dataname="dtGetParZiro" allownull="false">	 
+								<event type="keydown" >
+									<action if="key==13">
+										<action if="$IbanPubVar==1">
+											<action type="variable value" value="$NoviIban">
+												<parameter value="null"/>
+											</action>
+											<!--okidaj samo ako je odabran partner i nešto je upisano-->
+											<action if="#srcPartner!=null&amp;&amp;#cmbIBAN!=null">
+												<action type="datarun scalar" value="~dtDodajIBAN">
+													<parameter name="NoviIban"/>
+												</action>
+												<action if="$NoviIban&gt;0">
+													<action type="control populate" value="#cmbIBAN"/>
+													<action type="control value" value="#cmbIBAN">
+														<parameter value="$NoviId"/>
+													</action>
+												</action>
+												<action elseif="$NoviIban==null"/>
+												<action else="">
+													<action type="message" value="Neispravan ili već postojeći IBAN!"/>
+													<!--ne mogu ga zadržati na samoj sebi-->
+													<action type="control focus" value="#cmbIBAN"/>
+												</action>
+											</action>
+										</action>
+									</action>
+								</event>
+							</comboedit>
+						</item>
+					</group>
+				</group>
+				<group  name="" cols="1" rows="1" col="2" row="1" groupbordervisible="false">
+					<group caption="Iznosi" col="1" alignmode="local" row="1" cols="5" rows="12" spacing="2,2,2,2" backgroundcolor="#d2d2e0">
+						<columnsdefinition>
+							<column size="40" position="1" />
+							<column size="30%" position="2" />
+							<column size="30%" position="3" />
+							<column size="30%" position="4" />	
+							<column size="5%" position="5" />								
+						</columnsdefinition>
+						<!--  prvi red -->
+						<item col="2" row="1" caption="Devizni iznos:"  padding="2" >
+							<textedit name="curDevIznos" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#curDevIznos" if="#curDevIznos==null">
+										<parameter value="0"/>
+									</action>
+								</event>							
+							</textedit>
+						</item>
+						<item col="3" row="1" caption="Valuta:"  padding="2" >
+							<comboedit name="cmbDevValuta" autopopulate="true" valuefield="ValuteId" displayfield="Oznaka" datavalue="~dtGetPodaci.@ValuteId" dataname="dtGetValute">
+								<event type="valuechanged" raiseonload="false"> 
+									<action type="datarun reader" value="~dtTecaj"/>
+									<action type="control value" value="#curTecaj" >
+										<parameter value="~dtTecaj.@tecaj" type="decimal"/>
+									</action>
+								</event>
+								<event type="leave" raiseonload="false"> 
+									<!-- <action type="control value" value="#curTecaj" > -->
+										<!-- <parameter value="~dtTecaj.@tecaj" type="decimal"/> -->
+									<!-- </action> -->
+									<action if="#cmbDevValuta==null">
+										<action type="control disable" value="#txtBrojUCD,#datUCD,#txtBrojZak"/>
+									</action> 
+									<action else="">
+										<action type="control enable" value="#txtBrojUCD,#datUCD,#txtBrojZak"/>
+										<action type="variable value" value="$action" >
+											<parameter value="dev"/>
+										</action>
+										<action type="datarun reader" value="~dtPostimajKontrole"/>
+										<action type="control value" value="#curOsnovica25">
+											<parameter value="~dtPostimajKontrole.@osnovica25"/>
+										</action>
+										<action type="control value" value="#curIznossPdv">
+											<parameter value="~dtPostimajKontrole.@iznosspdv"/>
+										</action>
+										<action type="variable value" value="$IzmjenaTecaj">
+											<parameter value="0"/>
+										</action>											
+										<action type="control value" value="#cur25Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv25"/>
+										</action>
+										<action type="control value" value="#curNePod">
+											<parameter value="~dtPostimajKontrole.@nepod"/>
+										</action>
+										<action type="control value" value="#curIznosBezPdv">
+											<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+										</action>
+										<action type="control value" value="#cur25NeOdbiv">
+											<parameter value="~dtPostimajKontrole.@neodbiv25"/>
+										</action>
+									</action>
+									<action if="$EUSlucaj==1">
+										<action type="control focus" value="#curOsnovica25"/>
+										<action type="control attribute" value="#curIznossPdv, #cmbPDV37, #curNeoporezivo, #curNePod">
+											<parameter name="tabstop" value="false"/>
+										</action>
+									</action>									
+								</event>
+							</comboedit>
+						</item>
+						<item col="4" row="1" caption="Tečaj:" padding="2"  >
+							<textedit name="curTecaj" value="0" format="n6" type="decimal" readonly="true"/>
+						</item> 
+						<!--  drugi red -->
+						<item col="2" row="2" caption="Iznos računa (s PDV):" padding="2"  >
+							<textedit name="curIznossPdv" value="0" format="n2" type="decimal"> 
+								<event type="valuechanged">
+									<action type="control value" value="#curIznossPdv" if="#curIznossPdv==null">
+										<parameter value="0"/>
+									</action>
+									<action type="variable value" value="$IzmjenaTecaj">
+										<parameter value="1"/>
+									</action>									
+								</event>								
+								<event type="leave" raiseonload="false"> 
+									<!-- <action if="$EuSlucaj==0"> -->
+										<action type="variable value" value="$action" >
+											<parameter value="iznosspdv"/>
+										</action>
+										<action type="datarun reader" value="~dtPostimajKontrole"/>
+										<!-- <action type="message" value="~dtPostimajKontrole.@neoporezivo_tabstop">
+										</action> -->
+										<action type="control value" value="#curOsnovica25">
+											<parameter value="~dtPostimajKontrole.@osnovica25"/>
+										</action>
+										<action type="control value" value="#curIznossPdv">
+											<parameter value="~dtPostimajKontrole.@iznosspdv"/>
+										</action>
+										<action type="control value" value="#cur25Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv25"/>
+										</action>
+										<action type="control value" value="#curNePod">
+											<parameter value="~dtPostimajKontrole.@nepod"/>
+										</action>
+										<action type="control value" value="#curIznosBezPdv">
+											<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+										</action>
+										<action type="control value" value="#cur25NeOdbiv">
+											<parameter value="~dtPostimajKontrole.@neodbiv25"/>
+										</action>
+										<action type="control value" value="#curPdvUkupno">
+											<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+										</action>
+										<action type="control value" value="#cur13Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv13"/>
+										</action>
+										<action type="control value" value="#cur5Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv5"/>
+										</action>
+										<action type="control value" value="#cur22Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv22"/>
+										</action>
+										<action type="control value" value="#curTecaj" if="$IzmjenaTecaj==1">
+											<parameter value="~dtPostimajKontrole.@tecaj"/>
+										</action>
+										<action type="variable value" value="$IzmjenaTecaj">
+											<parameter value="0"/>
+										</action>										
+										<!-- 	<action type="variable value">
+											<parameter name="neoporezivo_tabstop" value="~dtPostimajKontrole.@neoporezivo_tabstop"/>
+										</action> -->
+										<!-- <action type="control attribute" value="#curNeoporezivo"> -->
+											<!-- <parameter name="tabstop" value="false"/> -->
+										<!-- </action> -->
+									<!-- </action> -->
+									<action if="$EuSlucaj==1">
+										<action type="control attribute" value="#curNePod">
+											<parameter name="tabstop" value="true"/>
+										</action>
+									</action>
+									<action if="$PDVN==1">
+										<action type="control focus" value="#curNePod"/>
+										<action type="control attribute" value="#curNeoporezivo,#cmbPDV37">
+											<parameter name="tabstop" value="false"/>
+										</action>									
+									</action>									
+								</event>	
+							</textedit>
+						</item>
+						<item col="3" row="2" caption="PDV 30/50/70/0:" padding="2" >
+							<comboedit name="cmbPDV37" autopopulate="true" valuefield="pdv37id" displayfield="oznaka" datavalue="~dtGetPodaci.@pdv37id" dataname="dtGetPDV37">
+								<event type="valuechanged" raiseonload="false"> 
+									<action type="variable value" value="$action" >
+										<parameter value="pdv37"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#cur25Odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv25"/>
+									</action>
+									<action type="control value" value="#cur25NeOdbiv">
+										<parameter value="~dtPostimajKontrole.@neodbiv25"/>
+									</action>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>
+								</event>
+							</comboedit>
+						</item>
+						<item col="4" row="2" caption="Osnovica 0%:" padding="2">
+							<textedit name="curNeoporezivo" value="0" format="n2" type="decimal" >
+								<event type="valuechanged">
+									<action type="control value" value="#curNeoporezivo" if="#curNeoporezivo==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false"> 
+									<action if="$EuSlucaj==0">
+										<action type="variable value" value="$action" >
+											<parameter value="neoporezivo"/>
+										</action>
+										<action type="datarun reader" value="~dtPostimajKontrole"/>
+										<action type="control value" value="#cur25Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv25"/>
+										</action>
+										<action type="control value" value="#cur25NeOdbiv">
+											<parameter value="~dtPostimajKontrole.@neodbiv25"/>
+										</action>
+										<action type="control value" value="#curPdvUkupno">
+											<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+										</action>
+										<action type="control value" value="#curIznosBezPdv">
+											<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+										</action>
+										<!-- <action type="datarun reader" value="~dtPostimajKontrole"/> -->
+										<action type="control value" value="#curOsnovica25">
+											<parameter value="~dtPostimajKontrole.@osnovica25"/>
+										</action>
+										<action type="control value" value="#cur13Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv13"/>
+										</action>
+										<action type="control value" value="#cur5Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv5"/>
+										</action>
+										<action type="control value" value="#cur22Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv22"/>
+										</action>  
+									</action>
+								</event>
+							</textedit>
+						</item> 
+						<!--  treći red -->
+						<item col="4" row="3" caption="Ne podliježe:" colspan="1"  padding="2">
+							<textedit name="curNePod" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#curNePod" if="#curNePod==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action if="$EuSlucaj==0">
+										<action type="variable value" value="$action" >
+											<parameter value="neoporezivo"/>
+										</action>
+										<action type="datarun reader" value="~dtPostimajKontrole"/>
+										<action type="control value" value="#cur25Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv25"/>
+										</action>
+										<action type="control value" value="#cur25NeOdbiv">
+											<parameter value="~dtPostimajKontrole.@neodbiv25"/>
+										</action>
+										<action type="control value" value="#curPdvUkupno">
+											<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+										</action>
+										<action type="control value" value="#curIznosBezPdv">
+											<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+										</action>
+										<!-- <action type="datarun reader" value="~dtPostimajKontrole"/> -->
+										<action type="control value" value="#curOsnovica25">
+											<parameter value="~dtPostimajKontrole.@osnovica25"/>
+										</action>
+										<action type="control value" value="#cur13Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv13"/>
+										</action>
+										<action type="control value" value="#cur5Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv5"/>
+										</action>
+										<action type="control value" value="#cur22Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv22"/>
+										</action> 
+									</action> 
+									<action if="$EuSlucaj==1">
+										<action type="control focus" value="#curOsnovica25"/>
+									</action>
+								</event>	
+							</textedit>
+						</item>
+						<!--  četvrti red -->
+						<item col="1" row="4" caption=" " colspan="1" textposition="top" padding="2">
+							<labeledit value="25%"/> 
+						</item>
+						<item col="2" row="4" caption="OSNOVICA" colspan="1" padding="2"> 
+							<textedit name="curOsnovica25" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#curOsnovica25" if="#curOsnovica25==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="osnovica25"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#cur25Odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv25"/>
+									</action>
+									<action type="control value" value="#cur25NeOdbiv">
+										<parameter value="~dtPostimajKontrole.@neodbiv25"/>
+									</action>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>
+									<action type="control value" value="#curOsnovica25">
+										<parameter value="~dtPostimajKontrole.@osnovica25"/>
+									</action>
+									<action type="control value" value="#cur13Odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv13"/>
+									</action>
+									<action type="control value" value="#cur5Odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv5"/>
+									</action>
+									<action type="control value" value="#cur22Odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv22"/>
+									</action>
+									<action type="control value" value="#curTecaj">
+										<parameter value="~dtPostimajKontrole.@tecaj"/>
+									</action>
+									<action type="control value" value="#curNePod">
+										<parameter value="~dtPostimajKontrole.@nepod"/>
+									</action>		
+									<action type="control value" value="#curIznossPdv">
+										<parameter value="~dtPostimajKontrole.@IznossPdv"/>
+									</action>
+									<action type="variable value" value="$IzmjenaTecaj">
+										<parameter value="0"/>
+									</action>									
+								</event>	
+							</textedit>
+						</item>
+						<item col="3" row="4" caption="ODBIV" colspan="1" padding="2" >
+							<textedit name="cur25Odbiv" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#cur25Odbiv" if="#cur25Odbiv==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="odbiv25"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<!-- 	<action type="control value" value="#cur25Odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv25"/>
+									</action> -->
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>	
+							</textedit> 
+						</item>
+						<item col="4" row="4" caption="NEODBIV" colspan="1" padding="2" > 
+							<textedit name="cur25Neodbiv" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#cur25Neodbiv" if="#cur25Neodbiv==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="neodbiv25"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#CurOsnovica13">
+										<parameter value="~dtPostimajKontrole.@osnovica13"/>
+									</action>
+									<action type="control value" value="#cur13Neodbiv">
+										<parameter value="~dtPostimajKontrole.@neodbiv13"/>
+									</action>
+									<action type="control value" value="#cur13odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv13"/>
+									</action>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>	
+							</textedit>
+						</item> 
+						<!-- peti red -->
+						<item col="1" row="5" caption="" colspan="1" textposition="left" padding="2">
+							<labeledit value="13%"/> 
+						</item>
+						<item col="2" row="5" caption="" colspan="1" padding="2" > 
+							<textedit name="CurOsnovica13" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#CurOsnovica13" if="#CurOsnovica13==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="osnovica13"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#CurOsnovica13">
+										<parameter value="~dtPostimajKontrole.@osnovica13"/>
+									</action>
+									<action type="control value" value="#cur13Neodbiv">
+										<parameter value="~dtPostimajKontrole.@neodbiv13"/>
+									</action>
+									<action type="control value" value="#cur13odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv13"/>
+									</action>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>	
+									<action type="control value" value="#curIznossPdv">
+										<parameter value="~dtPostimajKontrole.@IznossPdv"/>
+									</action>	
+									<action type="variable value" value="$IzmjenaTecaj">
+										<parameter value="0"/>
+									</action>									
+								</event>	
+							</textedit>
+						</item>
+						<item col="3" row="5" caption="" colspan="1" padding="2" >
+							<textedit name="cur13Odbiv" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#cur13Odbiv" if="#cur13Odbiv==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="odbiv13"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>	
+							</textedit>
+						</item>
+						<item col="4" row="5" caption="" colspan="1" padding="2" > 
+							<textedit name="cur13Neodbiv" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#cur13Neodbiv" if="#cur13Neodbiv==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="neodbiv13"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#CurOsnovica5">
+										<parameter value="~dtPostimajKontrole.@osnovica5"/>
+									</action>
+									<action type="control value" value="#cur5Odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv5"/>
+									</action>
+									<action type="control value" value="#cur5Neodbiv">
+										<parameter value="~dtPostimajKontrole.@neodbiv5"/>
+									</action>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>	
+							</textedit>
+						</item>
+						<!-- šesti red -->
+						<item col="1" row="6" caption="" colspan="1" textposition="left" padding="2">
+							<labeledit value="5%"/> 
+						</item>
+						<item col="2" row="6" caption="" colspan="1" padding="2"> 
+							<textedit name="CurOsnovica5" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#CurOsnovica5" if="#CurOsnovica5==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="osnovica5"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#cur5Odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv5"/>
+									</action>
+									<action type="control value" value="#cur5Neodbiv">
+										<parameter value="~dtPostimajKontrole.@neodbiv5"/>
+									</action>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>	
+									<action type="control value" value="#curIznossPdv">
+										<parameter value="~dtPostimajKontrole.@IznossPdv"/>
+									</action>
+									<action type="variable value" value="$IzmjenaTecaj">
+										<parameter value="0"/>
+									</action>									
+								</event>	
+							</textedit>
+						</item>
+						<item col="3" row="6" caption="" colspan="1" padding="2" >
+							<textedit name="cur5Odbiv" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#cur5Odbiv" if="#cur5Odbiv==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="odbiv5"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>								
+							</textedit> 
+						</item>
+						<item col="4" row="6" caption="" colspan="1" padding="2" > 
+							<textedit name="cur5Neodbiv" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#cur5Neodbiv" if="#cur5Neodbiv==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="neodbiv5"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>	
+							</textedit>
+						</item>
+						<!-- osmi red -->
+						<item col="1" row="8" caption="" colspan="1" textposition="left" padding="2">
+							<labeledit value="10%"/> 
+						</item>
+						<item col="2" row="8" caption="" colspan="1" padding="2" > 
+							<textedit name="CurOsnovica10" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#CurOsnovica10" if="#CurOsnovica10==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="osnovica10"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#cur10Odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv10"/>
+									</action>
+									<action type="control value" value="#cur10Neodbiv">
+										<parameter value="~dtPostimajKontrole.@neodbiv10"/>
+									</action>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>								
+							</textedit> 
+						</item>
+						<item col="3" row="8" caption="" colspan="1" padding="2" >
+							<textedit name="cur10Odbiv" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#cur10Odbiv" if="#cur10Odbiv==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="odbiv10"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>								
+							</textedit> 
+						</item>
+						<item col="4" row="8" caption="" colspan="1" padding="2" > 
+							<textedit name="cur10Neodbiv" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#cur10Neodbiv" if="#cur10Neodbiv==null">
+										<parameter value="0"/>
+									</action>
+								</event>							
+							</textedit>
+						</item> 
+						<!-- deveti red -->
+						<item col="1" row="9" caption="" colspan="1" textposition="left" padding="2">
+							<labeledit value="23%"/> 
+						</item>
+						<item col="2" row="9" caption="" colspan="1" padding="2" > 
+							<textedit name="CurOsnovica23" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#CurOsnovica23" if="#CurOsnovica23==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="osnovica23"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#cur23Odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv23"/>
+									</action>
+									<action type="control value" value="#cur23Neodbiv">
+										<parameter value="~dtPostimajKontrole.@neodbiv23"/>
+									</action>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>	
+							</textedit>
+						</item>
+						<item col="3" row="9" caption="" colspan="1" padding="2" >
+							<textedit name="cur23Odbiv" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#cur23Odbiv" if="#cur23Odbiv==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="odbiv23"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>		
+							</textedit>
+						</item>
+						<item col="4" row="9" caption="" colspan="1" padding="2" > 
+							<textedit name="cur23Neodbiv" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#cur23Neodbiv" if="#cur23Neodbiv==null">
+										<parameter value="0"/>
+									</action>
+								</event>							
+							</textedit>
+						</item> 
+						<!-- deseti red -->
+						<item col="1" row="10" caption="" colspan="1" textposition="left" padding="2">
+							<labeledit value="22%"/> 
+						</item>
+						<item col="2" row="10" caption="" colspan="1" padding="2" > 
+							<textedit name="CurOsnovica22" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#CurOsnovica22" if="#CurOsnovica22==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="osnovica22"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#cur22Odbiv">
+										<parameter value="~dtPostimajKontrole.@odbiv22"/>
+									</action>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>			
+							</textedit>
+						</item>
+						<item col="3" row="10" caption="" colspan="1" padding="2">
+							<textedit name="cur22Odbiv" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#cur22Odbiv" if="#cur22Odbiv==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="odbiv22"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>								
+							</textedit> 
+						</item>
+						<item col="4" row="10" caption="" colspan="1" padding="2" > 
+							<textedit name="cur22Neodbiv" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#cur22Neodbiv" if="#cur22Neodbiv==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="neodbiv22"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#curPdvUkupno">
+										<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+									</action>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>						
+								</event>	
+							</textedit>
+						</item> 
+						<!-- 11 red -->
+						<item col="2" row="11" caption="Iznos bez PDV:" colspan="1" padding="2" > 
+							<textedit name="curIznosBezPdv" value="0" format="n2" type="decimal" readonly="true">
+								<event type="valuechanged">
+									<action type="control value" value="#curIznosBezPdv" if="#curIznosBezPdv==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action if="$EuSlucaj==0">
+										<action type="variable value" value="$action" >
+											<parameter value="neoporezivo"/>
+										</action>
+										<action type="datarun reader" value="~dtPostimajKontrole"/>
+										<action type="control value" value="#cur25Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv25"/>
+										</action>
+										<action type="control value" value="#cur25NeOdbiv">
+											<parameter value="~dtPostimajKontrole.@neodbiv25"/>
+										</action>
+										<action type="control value" value="#curPdvUkupno">
+											<parameter value="~dtPostimajKontrole.@pdvukupno"/>
+										</action>
+										<action type="control value" value="#curIznosBezPdv">
+											<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+										</action>
+										<action type="datarun reader" value="~dtPostimajKontrole"/>
+										<action type="control value" value="#curOsnovica25">
+											<parameter value="~dtPostimajKontrole.@osnovica25"/>
+										</action>
+										<action type="control value" value="#cur13Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv13"/>
+										</action>
+										<action type="control value" value="#cur5Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv5"/>
+										</action>
+										<action type="control value" value="#cur22Odbiv">
+											<parameter value="~dtPostimajKontrole.@odbiv22"/>
+										</action>  
+									</action>
+								</event>			
+							</textedit> 
+						</item>
+						<item col="3" row="11" caption="Prolazne stavke:" colspan="1" padding="2" >
+							<textedit name="curProlazneStavke" value="0" format="n2" type="decimal">
+								<event type="valuechanged">
+									<action type="control value" value="#curProlazneStavke" if="#curProlazneStavke==null">
+										<parameter value="0"/>
+									</action>
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="prolazne_stavke"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+									<action type="control value" value="#curIznosBezPdv">
+										<parameter value="~dtPostimajKontrole.@iznosbezpdv"/>
+									</action>	
+									<!--provjera poreza-->
+									<action type="variable value" value="$action" >
+										<parameter value="PorezUpozorenje"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>
+								</event>										
+							</textedit>
+						</item>
+						<item col="4" row="11" caption="Pretporez ukupno:" colspan="1"  padding="2" > 
+							<textedit name="curPdvUkupno" value="0" format="n2" type="decimal" readonly="true">
+								<event type="valuechanged">
+									<action type="control value" value="#curPdvUkupno" if="#curPdvUkupno==null">
+										<parameter value="0"/>
+									</action>
+								</event>
+							</textedit>
+						</item>
+						<!-- 12 red -->
+						<item col="1" row="12" caption="Vrsta računa:" colspan="2"  padding="1">
+							<comboedit name="cmbShemaKnj" autopopulate="true" valuefield="KntMasterShemaKnjId" displayfield="Naziv" dataname="dtGetShemaKnj" savevalue="app">
+								<event type="valuechanged" raiseonload="false"> 
+								</event>
+							</comboedit>
+						</item>
+						<item col="3" row="12" caption="Napomena:" colspan="3" padding="1" >
+							<textedit name="txtNapomena" datavalue="~dtGetPodaci.@Napomena">
+								<event type="leave" raiseonload="false">
+									<action type="variable value" value="$action" >
+										<parameter value="napomena"/>
+									</action>
+									<action type="datarun reader" value="~dtPostimajKontrole"/>			  
+								</event>		
+							</textedit>
+						</item>
+					</group>
+				</group>
+				<group caption="Podaci s carinske deklaracije" name="carina" cols="5" rows="1" col="1" row="2" colspan="2" spacing="2,2,2,2">
+					<item col="1" row="1" caption="Broj JCD:" colspan="2" >
+						<textedit name="txtBrojUCD" datavalue="~dtGetPodaci.@BrojUCD"/>
+					</item>
+					<item col="3" row="1" caption="Datum JCD:" colspan="1">
+						<dateedit  name="datUCD"  value="" datavalue="~dtGetPodaci.@DatumUCD">
+						</dateedit>
+					</item>
+					<item col="4" row="1" caption="Broj zaključka:" colspan="2">
+						<textedit name="txtBrojZak" datavalue="~dtGetPartneri.@BrojZak"/>
+					</item>
+					<item col="4" row="1">
+						<!--ovo je skrivena kontrola, koja služi samo za spremanje vrijednosti u bazu checkedita iz action panela jer savevalue ne radi za actionpanel-->
+						<checkedit name="cheTemLazni" caption="Temeljnica" savevalue="app" visible="false">
+							<event type="checkedchanged">
+								<action type="control value" value="#cheTem">
+									<parameter value="#cheTemLazni"/>
+								</action>
+							</event>
+						</checkedit>
+					</item>
+				</group>
+			</group>
+		</layout>  
+		<actionpanel>
+			<items>
+				<item>
+					<button name="btnSpremi" caption="SPREMI">
+						<event type="click">
+							<!--BLOKADA-->
+							<action type="datarun reader" value="~dtBlokada"/>	
+							<action type="variable value">
+								<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date"/>
+								<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date"/>			
+							</action>			
+							<action type="message" value="Datum dokumenta je izvan dopuštenog razdoblja knjiženja!" 
+													if="#datKnjizenja&lt;Global.$BlokadaOd||#datKnjizenja&gt;Global.$BlokadaDo"/>
+							<action else="">						
+								<action type="validate">
+									<!--zakomentirati za Spin, ne zele upisivanje modela i poziva na br-->
+									<!--<action type="control value" value="#txtModel" if="#txtModel==null">
+										<parameter value="00"/>
+									</action>
+									<action type="control value" value="#txtPozivNaBroj" if="#PozivNaBroj==null">
+										<parameter value="#txtRacun"/>
+									</action>-->
+									<!---->
+									<action type="variable value" value="$action" >
+										<parameter value="IznosFakture"/>
+									</action>
+									<action type="transaction">
+										<action type="datarun scalar" value="~dtIznosFakture">
+											<parameter name="$IznosFakture" />
+										</action>
+										<action type="datarun scalar" value="~dtSpremiFaktureDob">
+											<parameter name="$NoviFaktureDobId" />
+										</action>
+										<action type="datarun scalar" value="~dtSpremiUru" if="$Id==null">
+											<parameter name="parent.$NoviId" />
+										</action>
+										<action type="datarun nonquery" value="~dtSpremiUru" else=""/>
+									</action>
+									<action type="variable value" value="parent.$NoviFaktureDobId" if="$Id==null">
+										<parameter value="$NoviFaktureDobId"/>
+									</action>
+									<action type="message" value="Neuspješan unos!" if="transaction!=success"/>
+									<action else="">
+										<!--PLK postavi unesene vrijednosti-->
+										<action if="$PLKInd==1">
+											<action if="transaction==success">
+												<action type="control value" value="parent.#txtURA">
+													<parameter value="#txtURA"/>
+												</action>  
+												<action type="control value" value="parent.#txtFVrijednost">
+													<parameter value="#curIznosBezPdv"/>
+												</action>
+												<action type="variable value" value="parent.$UFA">
+													<parameter value="$NoviFaktureDobId"/>
+												</action>
+											</action>
+										</action>
+										<action type="form close"/>
+									</action>
+								</action>
+							</action>
+						</event>
+					</button>		
+				</item>
+				<item>
+					<button name="btnOdustani" caption="ODUSTANI">
+						<event type="click">
+							<action type="form close"/>
+						</event>
+					</button>
+				</item>	
+				<item>
+					<button name="btnRate" caption="RATE" visible="false">
+					</button>	
+				</item>					
+				<item>
+					<checkedit name="cheTem" caption="Temeljnica" dock="right" savevalue="app">
+						<event type="checkedchanged">
+							<action type="control value" value="#cheTemLazni">
+								<parameter value="#cheTem"/>
+							</action>
+						</event>
+					</checkedit>
+				</item>
+				<item>
+					<button name="btnProknjizi" caption="SPREMI I PROKNJIŽI" dock="right">
+					    <event type="click">
+							<!--BLOKADA-->
+							<action type="datarun reader" value="~dtBlokada"/>	
+							<action type="variable value">
+								<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date"/>
+								<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date"/>			
+							</action>			
+							<action type="message" value="Datum dokumenta je izvan dopuštenog razdoblja knjiženja!" 
+													if="#datKnjizenja&lt;Global.$BlokadaOd||#datKnjizenja&gt;Global.$BlokadaDo"/>
+							<action else="">						
+								<action type="validate">
+									<action type="variable value" value="$action" >
+										<parameter value="IznosFakture"/>
+									</action>
+									<action type="transaction">
+										<action type="datarun scalar" value="~dtIznosFakture">
+											<parameter name="$IznosFakture" />
+										</action>
+										<action type="datarun scalar" value="~dtSpremiFaktureDob">
+											<parameter name="$NoviFaktureDobId" />
+										</action>
+										<action type="datarun scalar" value="~dtSpremiUru" if="$Id==null">
+											<parameter name="parent.$NoviId" />
+										</action>
+										<action type="datarun nonquery" value="~dtSpremiUru" else=""/>								
+									</action>		
+									<action type="message" value="Došlo je do pogreške!" if="transaction!=success"/>
+									<action else="">
+										<!--dtProknjiži odvojeno od prethodnih azura, tako je bilo i u staroj granuli-->
+										<action type="datarun scalar" value="~dtProknjizi">
+											<parameter name="NoviKntTemId"/>
+										</action>
+										<action type="form open" value="frmTemEdit" if="#cheTem==true">
+											<parameter name="KntTemId" value="$NoviKntTemId"/>
+											<parameter name="UraInd" value="1"/>
+										</action>
+										<action type="form close"/>										
+									</action>							
+								</action>
+							</action>
+						</event>
+					</button>
+				</item>
+			</items>
+		</actionpanel>
+		<datalist>
+			<data command="spCKntVrsteKnjigaUraQuery" name="dtVrstaKnjige">
+				<parameter name="@action" value="0" type="int"/>
+			</data>
+			<data command="spCKntKnjigaUraEdit" name="dtPopuniCombo">
+				<parameter name="@action" value="osobe"/>
+			</data>
+			<data command="spCKntTemOrgShemaQuery" name="dtGetOrgShema">
+				<parameter name="@Action" value="0" />
+			</data>	
+			<data command="spCKntTemTraziPartneri" name="dtGetPartneri">
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>
+			<data command="spCKntKnjigaUraEdit" name="dtGetUgovori">
+				<parameter name="@Action" value="ugovori" />
+				<parameter name="@PartneriId" value="#srcPartner" />
+			</data>
+			<data command="spCKntKnjigaUraEdit" name="dtGetPDVID">
+				<parameter name="@Action" value="PDVID" />
+				<parameter name="@PartneriId" value="#srcPartner" />
+			</data>
+			<data command="spCKntKnjigaUraEdit" name="dtGetValute">
+				<parameter name="@Action" value="valute" />
+			</data>
+			<data command="spCKntKnjigaUraEdit" name="dtGetPDV37">
+				<parameter name="@Action" value="pdv37" />
+			</data>
+			<data command="spCKntKnjigaUraEdit" name="dtGetShemaKnj">
+				<parameter name="@Action" value="shemaknj" />
+			</data>
+			<!--ako pozivamo iz Knjige Ura, onda okidaj sljedeći broj ure, ako iz Temeljnica, prepiši broj temeljnice-->
+			<data name="dtGetMaxUra" command="spCKntKnjigaUraSljedeciBrojDok" if="$TemInd!=1">
+				<parameter name="@KntVrsteKnjigauraId" value="$KntVrsteKnjigaUraId" />
+			</data>
+			<data name="dtGetMaxUra" type="text" command="select @BrojDok as brojdok" elseif="$TemInd==1">
+				<parameter name="@BrojDok" value="global.$BrojDok" type="string"/>
+			</data>
+			<!---->
+			<data command="spCKntKnjigaUraPopuniKontrole" name="dtGetPodaci">
+				<parameter name="@action" value="init" />
+				<parameter name="@KntVrsteKnjigaUraId" value="#cmbVrstaKnjige" />
+			</data>
+			<data command="select year(@nadnevak) as god" type="text" name="dtNadnevakGodina">
+				<parameter name="@nadnevak" value="#datNadnevak" type="date"/>
+			</data>			
+			<data command="select case when exists (select * from pubvars where varime = 'URADatDvoDatVal' and varset = '1') then 1 else 0 end as IndDatDVO " type="text" name="dtUraDatDVO">
+			</data>	
+			<data command="select DATEADD(D,@dana,@datum) as datvalute" type="text" name="dtDatValute">
+				<parameter name="@datum" value="#datNadnevak" type="date" if="$IndDatDvoDatVal==0"/>
+				<parameter name="@datum" value="#datDVO" type="date" if="$IndDatDvoDatVal==1"/>
+				<parameter name="@dana" value="#txtDana" type="int"/>
+			</data>
+			<data command="select (DATEDIFF(D,@valuta,@datum))*-1 as dana" type="text" name="dtDana">
+				<parameter name="@datum" value="#datNadnevak" type="date" if="$IndDatDvoDatVal==0"/>
+				<parameter name="@datum" value="#datDVO" type="date" if="$IndDatDvoDatVal==1"/>
+				<parameter name="@valuta" value="#DatValuta" type="date"/>
+			</data>
+			<data command="select (DATEDIFF(D,@valuta,@datum))*-1 as dana" type="text" name="dtDanaUgovor">
+				<parameter name="@datum" value="#datNadnevak" type="date" if="$IndDatDvoDatVal==0"/>
+				<parameter name="@datum" value="#datDVO" type="date" if="$IndDatDvoDatVal==1"/>
+				<parameter name="@valuta" value="#DatValuta" type="date"/>
+			</data>
+			<!--AA postavila spCKntKnjigaUraZiroDataGet jer se spCKntVirmaniZiroDataGet koristi u virmanima i zamijenjena je-->
+			<data command="spCKntKnjigaUraZiroDataGet" name="dtGetParZiro">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@PartneriId" value="#srcPartner" />
+			</data>
+			<data command="spCKntKnjigaUraPopuniKontrole" name="dtGetPodaciZaPartnera">
+				<parameter name="@action" value="podacizapartnera" />
+				<parameter name="@PartneriID" value="#srcPartner" />
+			</data>
+			<data command="spCkntVirmaniDodajIBAN" name="dtDodajIBAN">
+				<parameter name="@action" value="0" type="int"/> 
+				<parameter name="@Ziro" value="#cmbIBAN.text"/>
+				<parameter name="@PartneriID" value="#srcPartner" type="int"/>
+				<parameter name="@BankeId" value="0" type="int"/>
+			</data>
+			<data command="spCKntPartnerIzEU" name="dtEuPartner">
+				<parameter name="@action" value="1" type="int"/>
+				<parameter name="@PartneriID" value="#srcPartner" type="int"/>
+			</data>
+			<data command="spCKntPartnerIzEU" name="dtEuPartnerParStru">
+				<parameter name="@action" value="2" type="int"/>
+				<parameter name="@ParStruId" value="#cmbPDVID" type="int"/>
+			</data>
+			<data command="select case when exists (select * from pubvars where varime = 'KnjigaUraDatValUgo' and varset = '1') then 1 else 0 end as IndUgovor" type="text" name="dtIndUgovor">
+			</data>	
+			<data command="spCKntKnjigaUraDatValUgo" name="dtDatValUgo">
+				<parameter name="@DatumDok" value="#datDVO" type="date" if="$IndDatDvoDatVal==1"/>
+				<parameter name="@DatumDok" value="#datNadnevak" type="date" else=""/>
+				<parameter name="@PartneriID" value="#srcPartner" type="int"/>
+			</data>
+			<data command="select dbo.fnTecaj(@datum,@valute) as tecaj" type="text" name="dtTecaj">
+				<parameter name="@datum" value="#datDVO" type="date"/>
+				<parameter name="@valute" value="#cmbDevValuta" type="int"/>
+			</data>	
+			<data command="spCKntKnjigaUraPostimajKontrole" name="dtIznosFakture">
+				<parameter name="@action" value="$action"/>
+				<parameter name="@EuSlucaj" value="$EuSlucaj" type="int"/>
+				<parameter name="@iznosspdv" value="#curIznossPdv" type="decimal"/>
+				<parameter name="@osnovica25" value="#curOsnovica25" type="decimal"/>
+				<parameter name="@osnovica13" value="#curOsnovica13" type="decimal"/>
+				<parameter name="@osnovica10" value="#curOsnovica10" type="decimal"/>
+				<parameter name="@osnovica5" value="#curOsnovica5" type="decimal"/>
+			</data>
+			<data command="spCKntKnjigaUraPostimajKontrole" name="dtPostimajKontrole">
+				<parameter name="@action" value="$action"/>
+				<parameter name="@datdvo" value="#datDVO" type="date"/>
+				<parameter name="@deviznos" value="#curDevIznos" type="decimal"/>
+				<parameter name="@valutaid" value="#cmbDevValuta" type="int"/>
+				<parameter name="@iznosspdv" value="#curIznossPdv" type="decimal"/>
+				<parameter name="@pdv37id" value="#cmbPDV37" type="int"/>
+				<parameter name="@neoporezivo" value="#curNeoporezivo" type="decimal"/>
+				<parameter name="@nepod" value="#curNePod" type="decimal"/>
+				<parameter name="@osnovica25" value="#curOsnovica25" type="decimal"/>
+				<parameter name="@odbiv25" value="#cur25odbiv" type="decimal"/>
+				<parameter name="@neodbiv25" value="#cur25neodbiv" type="decimal"/>
+				<parameter name="@osnovica13" value="#curOsnovica13" type="decimal"/>
+				<parameter name="@odbiv13" value="#cur13odbiv" type="decimal"/>
+				<parameter name="@neodbiv13" value="#cur13neodbiv" type="decimal"/>
+				<parameter name="@osnovica5" value="#curOsnovica5" type="decimal"/>
+				<parameter name="@odbiv5" value="#cur5odbiv" type="decimal"/>
+				<parameter name="@neodbiv5" value="#cur5neodbiv" type="decimal"/>
+				<parameter name="@osnovica23" value="#curOsnovica23" type="decimal"/>
+				<parameter name="@odbiv23" value="#cur23odbiv" type="decimal"/>
+				<parameter name="@neodbiv23" value="#cur23neodbiv" type="decimal"/>
+				<parameter name="@osnovica22" value="#curOsnovica22" type="decimal"/>
+				<parameter name="@odbiv22" value="#cur22odbiv" type="decimal"/>
+				<parameter name="@neodbiv22" value="#cur22neodbiv" type="decimal"/>
+				<parameter name="@osnovica10" value="#curOsnovica10" type="decimal"/>
+				<parameter name="@odbiv10" value="#cur10odbiv" type="decimal"/>
+				<parameter name="@neodbiv10" value="#cur10neodbiv" type="decimal"/>
+				<parameter name="@iznosbezpdv" value="#curIznosBezPdv" type="decimal"/>
+				<parameter name="@pdvukupno" value="#curPdvUkupno" type="decimal"/>
+				<parameter name="@EuSlucaj" value="$EuSlucaj" type="int"/>
+				<parameter name="@tecaj" value="#curTecaj" type="decimal"/>
+				<parameter name="@KntVrsteKnjigaUraId" value="#cmbVrstaKnjige" type="int"/>
+				<parameter name="@prolaznestavke" value="#curProlazneStavke" type="decimal"/>
+			</data>
+			<data command="spCKntFaktureDobAzur2" name="dtSpremiFaktureDob">
+				<parameter name="@action" value="0" type="int"/>
+				<parameter name="@ID" value="null" type="int"/>
+				<parameter name="@Status" value="" type="string"/>
+				<parameter name="@PartneriId" value="#srcPartner" type="int"/>
+				<parameter name="@DatumDok" value="#datNadnevak" type="date"/>
+				<parameter name="@DatumValute" value="#datValuta" type="date"/>
+				<parameter name="@ValuteId" value="null" type="int"/>
+				<parameter name="@Tecaj" value="null" type="decimal"/>
+				<parameter name="@IznosFakture" value="$IznosFakture" type="decimal"/>
+				<!-- <parameter name="@IznosPlaceni" value="#IznosPlaceni" type="decimal"/> -->
+				<parameter name="@IznosPlaceni" value="0" type="decimal"/>
+				<parameter name="@IznosPoreza" value="#curPdvUkupno" type="decimal"/>
+				<parameter name="@r1" value="1" if="#rbR1==true"/>
+				<parameter name="@r1" value="2" else=""/>
+				<parameter name="@KntMasterShemaKnjId" value="null" type="int" if="#cmbShemaKnj==null"/>
+				<parameter name="@KntMasterShemaKnjId" value="#cmbShemaKnj" type="int" else=""/>
+				<parameter name="@DobUgovoriId" value="null" type="int" if="#cmbUgovori==null"/>
+				<parameter name="@DobUgovoriId" value="#cmbUgovori" type="int" else=""/>
+				<parameter name="@OrgShemaId" value="null" type="int" if="#cmbOrgShema==null"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShema" type="int" else=""/>
+				<parameter name="@OsobeId" value="null" type="int" if="#cmbOsobe==null"/>
+				<parameter name="@OsobeId" value="#cmbOsobe" type="int" else=""/>
+				<parameter name="@Broj" value="#txtRacun" type="string"/>
+				<parameter name="@BrojDok" value="#txtURA" type="string"/>
+				<parameter name="@Model" value="" type="string" if="#txtModel==null"/>
+				<parameter name="@Model" value="#txtModel" type="string" else=""/>	
+				<parameter name="@IndGlk" value="0" type="string"/>
+				<parameter name="@OperaterId" value="@@OperateriId" type="int"/>
+				<parameter name="@DevValuteId" value="null" type="int" if="#cmbDevValuta==null"/>
+				<parameter name="@DevValuteId" value="#cmbDevValuta" type="int" else=""/>
+				<parameter name="@DevIznos" value="#curDevIznos" type="decimal" />
+				<parameter name="@DevUplata" value="0" type="decimal" />
+				<parameter name="@datDVO" value="#datDVO" type="date" />
+				<parameter name="@PozivNaBroj" value="#txtPozivNaBroj" type="string" />
+				<parameter name="@parziroid" value="null" type="int" if="#cmbIBAN==null"/>
+				<parameter name="@parziroid" value="#cmbIBAN" type="int" else=""/>
+				<parameter name="@BrojUCD" value="" type="string" if="#txtBrojUCD==null"/>
+				<parameter name="@BrojUCD" value="#txtBrojUCD" type="string" else=""/>
+				<parameter name="@DatumUCD" value="null" type="date" if="#datUCD==null"/>
+				<parameter name="@DatumUCD" value="#datUCD" type="date" else=""/>				
+				<parameter name="@BrojZakljucka" value="" type="string" if="#txtBrojZak==null"/>
+				<parameter name="@BrojZakljucka" value="#txtBrojZak" type="string" else=""/>
+				<parameter name="@KUPPrometId" value="null" type="int" if="$Id==null"/>
+				<parameter name="@KUPPrometId" value="$Id" type="int" else=""/>
+				<parameter name="@DatumKnjizenja" value="#datKnjizenja" type="date" />
+			</data>
+			<data command="spCKntKnjigaUraAzur2" name="dtSpremiUru">
+				<parameter name="@action" value="0" type="int"/>
+				<parameter name="@ID" value="null" type="int"/>
+				<parameter name="@KntVrsteKnjigaUraId" value="#cmbVrstaKnjige" type="int"/>
+				<parameter name="@FaktureDobId" value="$NoviFaktureDobId" type="int"/>
+				<parameter name="@RedniBroj" value="RBROJ" type="string"/>
+				<parameter name="@IznosBezPoreza" value="#curIznosBezPdv" type="decimal"/>
+				<parameter name="@IznosUkupno" value="#curIznossPdv" type="decimal"/>
+				<parameter name="@IznosOdbitak" value="#cur22odbiv" type="decimal"/>
+				<parameter name="@IznosNeodbitak" value="#cur22neodbiv" type="decimal"/>
+				<parameter name="@Napomena" value="" type="string" if="#txtNapomena==null"/>
+				<parameter name="@Napomena" value="#txtNapomena" type="string" else=""/>
+				<parameter name="@OperaterId" value="@@OperateriId" type="int"/>
+				<parameter name="@Godina" value="#txtGodina" type="int"/>
+				<parameter name="@StatusKnj" value="0" type="int"/>
+				<parameter name="@PartneriId" value="#srcPartner" type="int"/>
+				<parameter name="@DatumDok" value="#datNadnevak" type="date"/>
+				<parameter name="@Broj" value="#txtRacun" type="string"/>
+				<parameter name="@BrojDok" value="#txtURA" type="string"/>
+				<parameter name="@IznosNeoporeziv" value="#curNeoporezivo" type="decimal"/>
+				<parameter name="@osnovica10" value="#curOsnovica10" type="decimal"/>
+				<parameter name="@PorezOdbiv10" value="#cur10odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv10" value="#cur10neodbiv" type="decimal"/>
+				<parameter name="@osnovica22" value="#curOsnovica22" type="decimal"/>
+				<parameter name="@osnovica23" value="#curOsnovica23" type="decimal"/>
+				<parameter name="@PorezOdbiv23" value="#cur23odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv23" value="#cur23neodbiv" type="decimal"/>
+				<parameter name="@nepod" value="#curNePod" type="decimal"/>
+				<parameter name="@osnovica25" value="#curOsnovica25" type="decimal"/>
+				<parameter name="@PorezOdbiv25" value="#cur25odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv25" value="#cur25neodbiv" type="decimal"/>
+				<parameter name="@osnovica5" value="#curOsnovica5" type="decimal"/>
+				<parameter name="@PorezOdbiv5" value="#cur5odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv5" value="#cur5neodbiv" type="decimal"/>
+				<parameter name="@ParStruId" value="#cmbPDVID" type="int"/>
+				<parameter name="@ProlazneStavke" value="#curProlazneStavke" type="decimal"/>
+				<parameter name="@osnovica13" value="#curOsnovica13" type="decimal"/>
+				<parameter name="@PorezOdbiv13" value="#cur13odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv13" value="#cur13neodbiv" type="decimal"/>
+			</data>
+			<data command="spCKntKnjigaUraPopuniKontrole" name="dtGetPodaciEdit">
+				<parameter name="@action" value="edit" />
+				<parameter name="@KntVrsteKnjigaUraId" value="#cmbVrstaKnjige"/>
+				<parameter name="@FaktureDobId" value="$FaktureDobId"/>
+				<parameter name="@KntKnjigaUraId" value="$KntKnjigaUraId"/>
+			</data>
+			<!--AA-->
+			<data command="spPartneriQuery_Carpo" name="dtPartneri">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$PartneriId"/>
+				<parameter name="@IDPartneri" value="0"/>
+				<parameter name="@DownUnder" value="0"/>
+				<parameter name="@SortKey" value=""/>
+				<parameter name="@Naziv" value=""/>
+				<parameter name="@Sifra" value=""/>				
+			</data>
+			<!----> 
+			<data name="dtProknjizi" command="spCKntFaktureDobKnjizenje">
+				<parameter name="@ID" value="$NoviFaktureDobId"/>
+			</data>	
+			<data name="dtKUP" command="spCKntKnjigaUraKup">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@KupPrometId" value="$Id"/>
+                    <parameter name="@OperateriId" value="@@operateriid"/>
+			</data>	
+			<data name="dtBlokada" command="spCKntKnjigaUraTreePozicije">
+				<parameter name="@Action" value="Blokada" type="string"/>
+			</data>			
+			<data name="dtPonudiKnjigu" type="text" command="select top 1 KntVrsteKnjigauraId from KntVrsteKnjigaUra where BrojKnjige=1 order by KntVrsteKnjigaUraId"/>
+			<data command="select year(@nadnevak) as god" type="text" name="dtKnjizGodina">
+				<parameter name="@nadnevak" value="#datKnjizenja" type="date"/>
+			</data>
+			<data name="dtPraviBrojDok" command="spCKntKnjigaUraSljedeciBrojDok">
+				<parameter name="@KntVrsteKnjigauraId" value="$KntVrsteKnjigauraId"/>
+				<parameter name="@DatumDok" value="#datNadnevak"/>
+			</data>
+			<data name="dtIbanPubVar" command="spCKntKnjigaUraHelp">
+				<parameter name="@Action" value="1"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmTemEdit" path="Temeljnice.frmTemEdit.xml"/>	
+	<form name="frmTemStavka" path="Temeljnice.frmTemStavka.xml"/>
+	<form name="frmTemStavkaEdit" path="Temeljnice.frmTemStavkaEdit.xml"/>	
+</root>

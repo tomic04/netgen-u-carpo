@@ -1,0 +1,225 @@
+<root>
+	<form name="frmMaster" type="master" caption="Jupiter Software objekti odobravanje">
+		<event type="init">
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Status" />
+				<comboitem value="Aplikacija" />
+				<event type="valuechanged">
+					<action type="variable value" value="global.filter">
+						<parameter value="#filter" />
+					</action>
+				</event>
+			</lookup>
+			<tree name="tree" dataname="dtTreeData" filtermode="smart">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdMaster" />
+				</event>
+				<fields>
+					<field name="Naziv" />
+				</fields>
+			</tree>
+			<grid name="grdMaster" type="master" dataname="dtGrid" savelayout="true" key="JupiterObjectId" autopopulate="true" multiselect="true">
+				<fields inherited="true">
+					<field name="Naziv" />
+					<field name="Parametar" />
+					<field name="Ikona" />
+					<field name="Opis" />
+					<field name="RobaId" hidden="false" showtotalsum="false" />
+					<field name="Roba" />
+					<field name="Sifra" caption="Šifra robe" />
+					<field name="Klasa" caption="Aplikacija" />
+					<field name="KomercijalniOpis" />
+					<field name="Cijena" showtotalsum="false" />
+					<field name="Operater" caption="Operater unosa" />
+					<field name="DatumUnosa" formatstring="dd.MM.yyyy. HH:mm" />
+					<field name="OperaterOdobravanja" caption="Operater odobravanja" />
+					<field name="DatumOdobravanja" />
+					<field name="NivoSlozenosti" caption="Nivo složenosti" />
+					<field name="Status" caption="Status" />
+					<field name="Checked" caption="Default" edittype="bit" />
+					<field name="Rbr" hidden="true" />
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="datarun scalar" value="~dtSljedeci">
+						<parameter name="idnext" />
+					</action>
+					<action type="variable value" value="global.JSObjektId">
+						<parameter value="#grdMaster.@JupiterObjectId" />
+					</action>
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmUpsert">
+						<parameter name="JupiterObjectId" value="#grdMaster.@JupiterObjectId" />
+						<parameter name="Tip" value="Izmjena" />
+						<parameter name="Caption" value="Izmjena JS Objekta" />
+					</action>
+					<action type="control focus" value="#grdMaster" if="#tree.@id==n2||#tree.@parentid==n2">
+						<parameter value="$idnext" />
+					</action>
+				</event>
+				<event type="selectionchanged">
+					<action type="variable value">
+						<parameter name="SelectedIds" value="#grdMaster.selectedids.table" />
+					</action>
+				</event>
+				<menu>
+					<menuitem name="menRoba" caption="Spoji JS objekt s Robom">
+						<event type="click">
+							<action type="form open" value="frmRoba">
+								<parameter name="SelectedId" value="$SelectedIds" />
+							</action>
+						</event>
+					</menuitem>
+					<menuitem name="menDefault" caption="Odredi defaultni JS objekt">
+						<event type="click">
+							<action type="form open" value="frmDefault">
+								<parameter name="JupiterObjectId" value="#grdMaster.@JupiterObjectId" />
+								<parameter name="Naziv" value="#grdMaster.@Naziv" />
+								<parameter name="RobaId" value="#grdMaster.@RobaId" />
+							</action>
+						</event>
+					</menuitem>
+					<menuitem type="separator" />
+					<menuitem name="menUmirovi" caption="Umirovi">
+						<event type="click">
+							<action type="datarun nonquery" value="~dtUmirovi" />
+							<action type="control populate" value="#grdMaster" />
+						</event>
+					</menuitem>
+					<menuitem name="menAktiviraj" caption="Aktiviraj">
+						<event type="click">
+							<action type="datarun nonquery" value="~dtAktiviraj" />
+							<action type="control populate" value="#grdMaster" />
+						</event>
+					</menuitem>
+					<menuitem type="separator" />
+					<menuitem name="menJSOPerServer" caption="Gdje se koristi?">
+						<event type="click">
+							<action type="form open" value="frmJSOPerServer">
+								<parameter name="Parametar" value="#grdMaster.@Parametar" />
+							</action>
+						</event>
+					</menuitem>
+				</menu>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="DODAJ" type="">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="JupiterObjectId" value="null" />
+							<parameter name="Tip" value="Unos" />
+							<parameter name="Caption" value="Dodavanje Jupiter Software objekta" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" type="">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="JupiterObjectId" value="#grdMaster.@JupiterObjectId" />
+							<parameter name="Tip" value="Izmjena" />
+							<parameter name="Caption" value="Izmjena Jupiter Software objekta" />
+						</action>
+						<action type="control focus" value="#grdMaster" if="#tree.@id==n2||#tree.@parentid==n2">
+							<parameter value="$idnext" />
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete" function="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati odabrane Jupiter Software objekte?">
+							<action type="datarun nonquery" value="~dtDelete">
+								<action type="control populate" value="#grdMaster" />
+							</action>
+						</action>
+						<action type="control focus" value="#grdMaster" if="#tree.@id==n2||#tree.@parentid==n2">
+							<parameter value="$idnext" />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spJSObjektiQuery" name="dtGrid" if="#tree.@id==s1||#tree.@parentid==s1">
+				<parameter name="@action" value="2" type="int" />
+				<parameter name="@Naziv" value="#tree.@Id" />
+			</data>
+			<data command="spJSObjektiQuery" name="dtGrid" if="#tree.@id==n2||#tree.@parentid==n2">
+				<parameter name="@action" value="3" type="int" />
+				<parameter name="@Naziv" value="#tree.@Id" />
+			</data>
+			<data command="spJSObjektiTree" name="dtTreeData" if="global.$filter==Status">
+				<parameter name="@action" value="2" type="int" />
+			</data>
+			<data command="spJSObjektiTree" if="global.$filter==Aplikacija" name="dtTreeData">
+				<parameter name="@action" value="3" type="int" />
+			</data>
+			<data command="spJSObjektiQuery" name="dtGrid" if="global.$filter==Aplikacija">
+				<parameter name="@action" value="4" type="int" />
+				<parameter name="@KlMasterRobaId" value="#tree.@Id" />
+			</data>
+			<data command="spJSObjektiAzur" name="dtDelete">
+				<parameter name="@action" value="12" type="int" />
+				<parameter name="@table" value="#grdMaster.selectedids.table" />
+			</data>
+			<data command="spJSObjektiQuery" name="dtSljedeci">
+				<parameter name="@action" value="11" type="int" />
+				<parameter name="@Naziv" value="#tree.@Id" />
+				<parameter name="@rbr" value="#grdMaster.@Rbr" />
+			</data>
+			<data command="spJSObjektiAzur" name="dtUmirovi">
+				<parameter name="@action" value="13" type="int" />
+				<parameter name="@JupiterObjectId" value="#grdMaster.@JupiterObjectId" />
+			</data>
+			<data command="spJSObjektiAzur" name="dtAktiviraj">
+				<parameter name="@action" value="14" type="int" />
+				<parameter name="@JupiterObjectId" value="#grdMaster.@JupiterObjectId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmJSOPerServer" caption="Gdje se koristi?" width="1120" height="590" saveformsize="true">
+		<event type="init">
+		</event>
+		<event type="shown">
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item col="1" row="1">
+					<grid name="grdJSOPerServer" key="" savelayout="true" dataname="dtJSOPerServer" bestfitonrefresh="true" autopopulate="true">
+						<fields>
+							<field name="server" caption="Server" />
+							<field name="DBName" caption="DBName" />
+							<field name="Opis" />
+							<field name="Parametar" />
+							<field name="Aplikacija" />
+							<field name="BrojPokretanja" caption="Broj Pokretanja"/>
+							<field name="VrijemeZadnjegPokretanja" caption="Vrijeme Zadnjeg Pokretanja"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right">
+					<event type="click">
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spJSObjektiQuery" name="dtJSOPerServer">
+				<parameter name="@action" value="18" />
+				<parameter name="@Parametar" value="$Parametar" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUpsert" path="frmUpsert.xml" />
+	<form name="frmDefault" path="frmDefault.xml" />
+	<form name="frmRoba" path="frmRoba.xml" />
+	<form name="frmRobaTrazilica" path="frmRobaTrazilica.xml" />
+	<form name="frmRobaDodaj" path="frmRobaDodaj.xml" />
+</root>

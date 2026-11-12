@@ -1,0 +1,200 @@
+
+<!--03.03.2021. - AR - U pozivanje procedure za prikaz naloga za otpremu dodao prosljeđivanje FaktureId da bi se prikazivali samo otpremnice vezane preko nextvrdid-a s ovom fakturom-->
+
+<root>
+	<form name="frmDonos" caption="Donos" fixedsize="false" width="600" height="570" closeformonescape='false'>
+		<event type="load">	
+		</event>
+		<event type="shown">
+			<!-- <action type="variable value" > -->
+			<!-- <parameter name="Action" value="0" /> -->
+			<!-- </action>		 -->
+			<action type="control value" value="#srcPartner">
+				<parameter value="$PartneriId" text="$PartnerNaziv"/>
+			</action>
+			<action type="control populate" value="#grdDonos"/>
+		</event>
+		<layout textposition="top" itemspadding="1">
+			<group cols="1" rows="3" groupbordervisible="false">
+				<item caption="Kupac:" col="1" row="1" fontbold="true"> 
+					<searchedit netgenfields="true" name="srcPartner" fontbold="true" dataname="Global.dtPartneri" fieldtext="NazivId" fieldvalue="partneriid" datavalue="#dtGet.@PartneriId" datatext="#dtGet.@Kupac" >
+						<event type="valuechanged">
+
+						</event>
+						<event type="leave" >	
+
+						</event>
+					</searchedit>
+				</item>			
+				<group cols="5" rows="1" col="1" row="2" caption="Vrsta dokumenta" groupbordervisible="true" fontbold="true">
+					<columnsdefinition>
+						<column size="80" position="1" />
+					</columnsdefinition>
+					<item col="2" row="1" caption="">
+						<radioedit name="rdoNOtp" caption="Nalog za otpremu" value="true" >
+							<event type="checkedchanged">
+								<action type="variable value" >
+									<parameter name="Action" value="0" />
+								</action>
+								<action type="control populate" value="#grdDonos"/>
+							</event>
+						</radioedit>
+					</item>						
+					<item col="3" row="1" caption="">
+						<radioedit name="rdoPonuda" caption="Ponuda" value="false" >
+							<event type="checkedchanged">
+								<action type="variable value" >
+									<parameter name="Action" value="1" />
+								</action>
+								<action type="control populate" value="#grdDonos"/>
+							</event>
+						</radioedit>
+					</item>
+					<item col="4" row="1" caption="">
+						<radioedit name="rdoSklOtp" caption="Skladišni dokument" value="false" >
+							<event type="checkedchanged">
+								<action type="variable value" >
+									<parameter name="Action" value="2" />
+								</action>
+								<action type="control populate" value="#grdDonos"/>
+							</event>
+						</radioedit>
+					</item>	
+					<item col="5" row="1" caption="">
+						<radioedit name="rdoRN" caption="Radni nalog" value="false" >
+							<event type="checkedchanged">
+								<action type="variable value" >
+									<parameter name="Action" value="3" />
+								</action>
+								<action type="control populate" value="#grdDonos"/>
+							</event>
+						</radioedit>
+					</item>					
+				</group>
+				<!-- <item caption="Broj dokumenta:" col="1" row="3" fontbold="true">  -->
+				<!-- <searchedit netgenfields="true" name="srcPartner" fontbold="true" dataname="Global.dtPartneri" fieldtext="NazivId" fieldvalue="partneriid" datavalue="#dtGet.@PartneriId" datatext="#dtGet.@Kupac" > -->
+				<!-- <event type="valuechanged"> -->
+				<!-- </event> -->
+				<!-- <event type="leave" >	 -->
+				<!-- </event> -->
+				<!-- </searchedit> -->
+				<!-- </item>	 -->
+				<!-- <item col="1" row="4" textvisible="False"> -->
+				<!-- <button name="btnPokazi" caption="Pokaži"> -->
+				<!-- <event type="click"> -->
+				<!-- </event> -->
+				<!-- </button> -->
+				<!-- </item>				 -->
+				<item col="1" row="3" highlight="false"  caption="Pronađeni dokumenti:"  fontbold="true">
+					<grid name="grdDonos" dataname="dtAsortimanGet"  multiselect="true" savelayout="true">
+						<fields inherited="true">
+							<!-- <field name="Klasarobe" caption="Klasa robe" /> -->
+							<!-- <field name="Sifra" caption="Šifra" /> -->
+							<!-- <field name="Roba" caption="Roba" /> -->
+							<!-- <field name="Kolicina" caption="Količina" editable="true" formatstring="n3"/> -->
+							<!-- <field name="Cijena" caption="Cijena (kn)" /> -->
+							<!-- <field name="JM" caption="JM" /> -->
+						</fields>
+						<styles>
+							<style name="bold" if="#grdDonos.@Kolicina&gt;0" />
+						</styles>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="DONESI" type="add" dock="right">
+					<event type="click">
+						<action type="variable value" >
+							<parameter name="PrepisiUvjete" value="0" />
+						</action>					
+						<!-- <action type="confirm" value="Prihvaćate li uvjete s izvornog dokumenta?" stoponconfirm="false"> -->
+						<!-- <action type="variable value" > -->
+						<!-- <parameter name="PrepisiUvjete" value="1" /> -->
+						<!-- </action>							 -->
+						<!-- </action> -->
+						<!-- HD37628 29.05./05.06. odluceno da se pitanje izbacuje i da se ne prepisuju uvjeti-->
+						<action type="control foreachrow selected" value="#grdDonos">	
+							<action type="datarun nonquery" value="~dtDonesiNOtp" if="$action==0"/>
+							<action type="datarun nonquery" value="~dtDonesiPonuda" elseif="$action==1"/>
+							<action type="datarun nonquery" value="~dtDonesiSkl" elseif="$action==2"/>
+							<action type="datarun nonquery" value="~dtDonesiRN" else="$action==3"/>
+						</action>						
+						<action type="control populate" value="parent.#grdRoba" />
+						<action type="control populate" value="parent.#grdUvjeti" />
+						<action if="$PrepisiUvjete==1">
+							<action type="datarun reader" value="~dtVrijednostiSGlave"/>
+							<action type="control value" value="parent.#cmbValuta">
+								<parameter value="~dtVrijednostiSGlave.@DevValuteId"/>
+							</action>	
+							<action type="control value" value="parent.#bteVrBoda">
+								<parameter value="~dtVrijednostiSGlave.@VrBodaDev"/>
+							</action>							
+						</action>
+						<action if="$action==0">
+							<action type="datarun reader" value="~dtRefreshPolja">
+							</action>
+							<action type="control value" value="parent.#datDatumIsp">
+								<parameter value="~dtRefreshPolja.@DatumIsporuke"/>
+							</action>
+							<!-- <action type="control value" value="parent.#cmbOsobe"> -->
+								<!-- <parameter value="~dtRefreshPolja.@OsobeId"/> -->
+							<!-- </action>							 -->
+						</action>
+						<action type="form close"/>				
+					</event>
+				</button>
+				<button caption="ODUSTANI" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_FaktureDonos_NOtp_Grid" name="dtAsortimanGet" timeout="60" if="$Action==0">
+				<!-- <parameter name="@Action" type="int" value="$Action" /> -->
+				<parameter name="@PartneriId" type="int" value="$PartneriId" />
+				<parameter name="@FaktureId" type="int" value="$FaktureId" />
+			</data>	
+			<data command="spProd_FaktureDonos_Ponuda_Grid" name="dtAsortimanGet" timeout="60" if="$Action==1">
+				<!-- <parameter name="@Action" type="int" value="$Action" /> -->
+				<parameter name="@PartneriId" type="int" value="$PartneriId" />
+			</data>				
+			<data command="spProd_FaktureDonos_Skl_Grid" name="dtAsortimanGet" timeout="60" if="$Action==2">
+				<!-- <parameter name="@Action" type="int" value="$Action" /> -->
+				<parameter name="@PartneriId" type="int" value="$PartneriId" />
+			</data>					
+			<data command="spProd_FaktureDonos_RN_Grid" name="dtAsortimanGet" timeout="60" if="$Action==3">
+				<!-- <parameter name="@Action" type="int" value="$Action" /> -->
+				<parameter name="@PartneriId" type="int" value="$PartneriId" />
+			</data>				
+			<data command="select case when @PakJMId is null then null else case when @Faktor = 0 then @Kolicina else @Kolicina / @Faktor end end as PakKolicina" type="text" name="dtKolPak">
+				<parameter name="@Kolicina" value="#grdDonos.@Kolicina" />
+				<parameter name="@Faktor" value="#grdDonos.@faktor" />
+				<parameter name="@PakJMId" value="#grdDonos.@jm2id" />
+			</data>		
+			<data command="select DatumIsporuke, OsobeId from Fakture where FaktureId=@ID" type="text" name="dtRefreshPolja">
+				<parameter name="@Id" value="$FaktureId" />
+			</data>				
+			<data command="select DevValuteId, VrBodaDev from Fakture where FaktureId=@Id" type="text" name="dtVrijednostiSGlave">
+				<parameter name="@Id" value="$FaktureId" />
+			</data>			
+			<data command="spProd_FaktureDonosNOtp_Azur" name="dtDonesiNOtp">
+				<parameter name="@Id" value="$FaktureId" />
+				<parameter name="@DonosDokID" value="#grdDonos.@DokId" />
+				<parameter name="@PrepisiUvjete" value="$PrepisiUvjete" />
+			</data>
+			<data command="spProd_FaktureDonosPonuda_Azur" name="dtDonesiPonuda">
+				<parameter name="@Id" value="$FaktureId" />
+				<parameter name="@DonosDokID" value="#grdDonos.@DokId" />
+				<parameter name="@PrepisiUvjete" value="$PrepisiUvjete" />
+			</data>	
+			<data command="spProd_FaktureDonosSkl_Azur" name="dtDonesiSkl">
+				<parameter name="@faktureid" value="$FaktureId" />
+				<parameter name="@sktprometglaid" value="#grdDonos.@DokId" />
+			</data>				
+			<data command="spProd_FaktureDonosRN_Azur" name="dtDonesiRN">
+				<parameter name="@faktureid" value="$FaktureId" />
+				<parameter name="@rnnaloziid" value="#grdDonos.@DokId" />
+			</data>				
+		</datalist>
+	</form>
+</root>

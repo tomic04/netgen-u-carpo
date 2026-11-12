@@ -1,0 +1,234 @@
+<!--
+9.8.2018. AA poreski period required
+6.8.2018. AA Polja na n0
+30.7.2018. v.1.0.0.2. funExportXML
+11.07.2018. v.1.0.0.1 PJ testna
+28.11.2018. v.1.0.0.0 PJ init
+-->
+<root version="1.0.0.2" loglevel="3">	
+    <form name="frmKntPDVObrazacRS" type="master" caption="PDV Obrazac" statusbar="true"  maximized="true" splitterposition="50" spliterfixed="false">
+		<method name="funExportXML" dll="PdvXmlObrazacRS" class="PdvXmlObrazacRS.Main" method="Start"/>		
+		<!-- <event type="init"> -->
+			<!-- <action type="datarun reader" value="~dtKontoInit"/> -->
+			<!-- <action type="datarun reader" value="~dtPotpisInit"/> -->
+		<!-- </event> -->
+		<event type="shown">
+			<action type="control populate" value="#grdGlava">
+			</action>
+		</event>
+		<layout name="panel1">
+			<group  row="1" cols="2" rows="1" col="1" colspan="4" bordervisible="false">
+				<columnsdefinition>
+					<column size="20%" position="1" /> 
+					<column size="80%" position="2" /> 
+				</columnsdefinition>
+				<item row="1" col="1" >
+					<grid name="grdGlava" dataname="~dtGrdGlava" multiselect="false" key="KntPDVObrazacRSGlaId" showgroupedcolumns="true">
+						<event type="focusedrowchanged"> 
+							<action type="datarun reader" value="~dtGrdDetalj"/>
+							<action type="control populate" value="#grdDetalj" />							
+						</event>
+					
+						<fields>
+							<field name="DatumZakljucka" groupindex="0" />
+							<field name="Broj"  />
+							<field name="OdgovornoLice"  />
+						</fields>
+					</grid>
+				</item>
+				<item row="1" col="2" >
+					<grid name="grdDetalj" bestfitonrefresh="true" dataname="~dtGrdDetalj" multiselect="true" key="KntPDVObrazacRSDetId">
+						<event type="cellvaluechanged">
+							<action type="datarun nonquery" value="~dtUpdate" />
+							<action type="control populate keepfocus" value="#grdDetalj" />
+						</event>
+						<fields >
+							<field name="PozicijaPdv"  />
+							<field name="Opis" fixwidth="420"  />
+							<!-- OVO OTKOMENTIRATI ZA ĆIRILIĆNI OPIS, a zakomentirati gornji red -->
+							<!--<field name="Naziv" fixwidth="420"  /> -->
+							<field name="Polje1" editable="true" minwidth="60" formatstring="n0" />
+							<field name="Polje1Naziv"  caption="Opis polja" />
+							<field name="Polje2" editable="true" minwidth="60" formatstring="n0" />
+							<field name="Polje2Naziv"  caption="Opis polja" />
+							<field name="Polje3" editable="true" minwidth="60" formatstring="n0" />
+							<field name="Polje3Naziv"  caption="Opis polja" />
+							<field name="Polje4" editable="true" minwidth="60" formatstring="n0" />
+							<field name="Polje4Naziv"  caption="Opis polja" />
+						</fields>
+						 <styles>
+							<style name="backgroundcolor" value="#00ffff" if="#grdDetalj.@Suma==1" />
+							<style name="backgroundcolor" value="#ffff00" if="#grdDetalj.@Suma==2" />
+							<style name="bold" value="true" if="#grdDetalj.@Suma==1" />
+						 </styles>
+					</grid>
+				</item>
+			</group>
+		</layout>
+        <panelbuttons>
+            <buttons>
+                <button name="btnUnesi" caption="Unesi">
+					<event type="click" >
+						<action type="form open" value="frmNoviObr"/>
+					</event>
+				</button>
+                <button name="btnObrisi" caption="Obriši" >
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati označeni obrazac?">							
+							<action type="datarun nonquery" value="~dtObrisi">	
+								<action type="control populate" value="#grdGlava" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnOsvjeziSUme" caption="Osvježi sume" >
+					<event type="click">
+						<action type="confirm" value="Želite li osvježiti sume?">							
+							<action type="datarun nonquery" value="~dtOsvjeziSume">	
+								<action type="control populate" value="#grdDetalj" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnPrint" caption="Ispiši"  >
+					<event type="click">
+                        <action type="control print" >
+                            <action type="print" value="repx:rptPDVObrazacRS">
+								<parameter name="ID" value="#grdGlava.@KntPDVObrazacRSGlaId"/>
+                            </action>
+                        </action>
+					</event>
+				</button>
+				
+                <button name="btnEporezna" caption="Kreiraj XML" >
+					<event type="click">
+						<action type="method run" value="funExportXML">
+							<parameter name="id" value="#grdGlava.@KntPDVObrazacRSGlaId" />
+							<parameter name="connectionString" value="@@connection" />
+						</action>						
+					</event>
+				</button>
+                <button name="btnIzlaz" caption="Izlaz" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+
+            </buttons>
+        </panelbuttons>
+        <datalist>
+            <data command="spKntPDVObrazacRSQuery" name="dtGrdGlava">
+				<parameter name="@Action" value="0"/>
+			</data>
+			<data command="spKntPDVObrazacRSQuery" name="dtGrdDetalj">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="#grdGlava.@KntPDVObrazacRSGlaId"/>
+			</data>
+			<data command="spKntPDVObrazacRS" name="dtObrisi">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="#grdGlava.@KntPDVObrazacRSGlaId"/>
+			</data>
+			<data command="spKntPDVObrazacRS" name="dtOsvjeziSume">
+				<parameter name="@Action" value="6"/>
+				<parameter name="@ID" value="#grdGlava.@KntPDVObrazacRSGlaId"/>
+			</data>		
+			<data  command="spKntPDVObrazacRS" name="dtUpdate">
+				<parameter name="@Action" value="7"/>
+				<parameter name="@Id" value="#grdDetalj.@KntPDVObrazacRSDetId"/>
+				<parameter name="@Value" value="#grdDetalj.focusedvalue" type="decimal"/>
+				<parameter name="@Kolona" value="#grdDetalj.focusedfield"/>
+			</data>		
+		</datalist>
+    </form>	
+	
+	<form caption="Kreiranje PDV Obrasca" name="frmNoviObr" width="800"> 
+		<event type="shown">
+			<action type="control disable" value="#txtBrPrijavePop" />
+		</event>
+		<layout textposition="top">
+			<group rows="4" cols="2" caption="Napomena: odabrani datum mora biti zadnji u mesecu!">
+				<columnsdefinition>
+					<column size="70%" position="1" /> 
+					<column size="30%" position="2" /> 
+				</columnsdefinition>
+				<item col="1" row="1" caption="Datum zaključka:"> 
+					<dateedit name="datDatumZak" required="true"/>
+				</item>
+				<item col="1" row="2" caption="Odgovorno lice:"> 
+					<comboedit name="cmbOsobe" dataname="dtOsobe" displayfield="Naziv" valuefield="OsobeId"   required="true"  autopopulate="true">
+					</comboedit>
+				</item>
+				<item col="1" row="3" caption="OJ:"> 
+					<textedit name="txtOJ" >
+					</textedit>
+				</item>
+				<item col="1" row="4" caption="Poreski period:"> 
+					<comboedit name="cmbPeriodPOB" dataname="dtPeriod" displayfield="Mjesec" valuefield="Mjesec"  required="true"   autopopulate="true">
+					</comboedit>
+				</item>
+				<item col="2" row="1" caption="Povracaj PDV DA:" textposition="left"> 
+					<checkedit name="chkPovracajDa" value="false">
+					</checkedit>
+				</item>
+				<item col="2" row="2" caption="Povracaj PDV NE:" textposition="left"> 
+					<checkedit name="chkPovracajNe" value="false">
+					</checkedit>
+				</item>
+				<item col="2" row="3" caption="Izmena Prijave:" textposition="left"> 
+					<checkedit name="chkIzmena" value="false">
+						 <event type="valuechanged">
+							<action if="#chkIzmena==true" type="control enable" value="#txtBrPrijavePop" />
+							<action if="#chkIzmena==false" type="control disable" value="#txtBrPrijavePop" />
+                        </event>
+					</checkedit>
+				</item>
+				<item col="2" row="4" caption="Broj PDV prijave popravka:" enabled="false"> 
+					<textedit name="txtBrPrijavePop" >
+					</textedit>
+				</item>
+			</group> 
+		</layout> 
+		<panelbuttons>
+			<buttons>
+				<button name="btnKreiraj" caption="Kreiraj">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun scalar" value="~dtNoviObr">
+							<parameter name="NewId" />
+						</action>
+						<action type="variable value">
+							<parameter name="Global.NewId" value="$NewId" />
+						</action>
+						<action type="form close"/>
+						<action type="control populate" value="parent.#grdGlava" />
+						<action type="control focus" value="parent.#grdGlava"  >
+							<parameter value="Global.$NewId" type="int"/> 
+						</action>
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" name="btnOdustani">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKntPDVObrazacRS" name="dtNoviObr">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@DatumZak" value="#datDatumZak"/>
+				<parameter name="@OperateriId" value="@@OperateriId"/>
+				<parameter name="@OsobeId" value="#cmbOsobe"/>
+				<parameter name="@OJ" value="#txtOJ"/>
+				<parameter name="@PovracajDa" value="#chkPovracajDa"/>
+				<parameter name="@PovracajNe" value="#chkPovracajNe"/>
+				<parameter name="@PeriodPOB" value="#cmbPeriodPOB"/>
+				<parameter name="@IzmenaPrijave" value="#chkIzmena"/>
+				<parameter name="@IdentBrPrijave" value="#txtBrPrijavePop"/>
+			</data>
+			<data command="spKntPDVObrazacRSQuery" name="dtOsobe">
+				<parameter name="@Action" value="2"/>
+			</data>
+			<data command="spKntPDVObrazacRSQuery" name="dtPeriod">
+				<parameter name="@Action" value="5"/>
+			</data>
+		</datalist>
+	</form>
+</root>

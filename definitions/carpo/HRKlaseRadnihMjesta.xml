@@ -1,0 +1,161 @@
+﻿<root version="1.0">
+  
+  <form name="frmMaster" type="master" caption="Klase radnih mjesta" >
+
+    <managerlayout>
+      <tree name="tree" keyfield="HRKlaseRMId" allowselfdrag="true" dataname="dtHRKlaseRMTree" showcolumns="true" showautofilterrow="false" expandallonload="true" expandedlevel="2">
+        <fields>
+          <field name="Naziv" />
+        </fields>
+      </tree>
+
+    </managerlayout>
+
+    <panelbuttons displaycontrolsprint="false">
+
+
+      <!--Za drag and drop spremanje/odustajanje-->
+      <buttons type="tree">
+        <button name="btnDrag" caption="Spremi promjene" type="selfdrag" function="SpremiPromjeneKlase">
+          <event type="click">
+            <action type="datarun nonquery" value="~dtHRKlaseRMAzur" />
+            <action type="control defaultmode" value="#tree" />
+          </event>
+        </button>
+
+        <button name="btnDrag" caption="Odustani" type="selfdragcancel">
+          <event type="click">
+            <action type="confirm" value="Želite odustati od reorganizacije?">
+              <action type="control populate" value="#tree" />
+              <action type="control dragmode" value="#tree" />
+            </action>
+          </event>
+        </button>
+        <button name="btnUnesi" caption="Unos nove klase" type="add" begingroup="true" function="UnesiKlase">
+          <event type="click">
+            <action type="form open" value="frmPromjena">
+              <parameter name="HRKlaseRMId" value="#tree" />
+              <parameter name="FormType" value="unos" />
+            </action>
+            <!-- control populate -->
+            <!-- control focus-->
+          </event>
+        </button>
+
+        <button name="btnEdit" caption="Izmjena klase" type="edit" function="IzmijeniKlase">
+          <event type="click">
+            <action type="form open" value="frmPromjena" if="#tree.@Id!=-1">
+              <parameter name="Id" value="1" />
+              <parameter name="HRKlaseRMId" value="#tree" />
+              <parameter name="FormType" value="izmjena" />
+            </action>
+            <action type="control populate keepfocus" value="#tree" />
+          </event>
+        </button>
+
+        <button name="btnDelete" caption="Brisanje klase" type="delete" function="ObrisiKlase">
+          <event type="click">
+            <action type="confirm" value="Jeste li sigurni da želite obrisati klasu?" if="#tree.@ID!=-1">
+              <action type="datarun nonquery" value="~dtHRKlaseRMDelete" />
+            </action>
+            <action type="control populate keepfocus" value="#tree" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spHRKlaseRMQueryCP" name="dtHRKlaseRMTree">
+        <parameter name="@Action" value="getTree" />
+      </data>
+      <data command="spHRKlaseRMTreeAzurCP" name="dtHRKlaseRMAzur">
+        <parameter name="@Action" value="setTree" />
+        <parameter name="@TableVar" value="#tree.datasource" />
+      </data>
+      <data command="spHRKlaseRMAzurCP" name="dtHRKlaseRMDelete">
+        <parameter name="@Action" value="brisanje" />
+        <parameter name="@HRKlaseRMId" value="#tree"/>
+        <parameter name="@Naziv" value="#txtNaziv" />
+      </data>
+    </datalist>
+  </form>
+
+  <!--FORMA ZA UNOS/IZMJENU Klasa-->
+
+  <form name="frmPromjena" caption="Klase radnih mjesta - {$formType}"  saveformlayout="true">
+    <event type="init">
+      <action type="datarun reader" value="~dtGet" if="$Id!=null" />
+    </event>
+
+    <layout textposition="left">
+      <group cols="1" rows="2" if="$Id==null">
+        <group row="1" col="1" cols="1" rows="1" caption="Pozicioniranje u odnosu na selektiranu klasu" spacing="0,0,0,10">
+          <group row="1" col="1" rows="1" cols="5" groupbordervisible="false">
+            <item row="1" col="1" highlight="false">
+              <radioedit name="rdo1" caption="Unutar" value="true" />
+            </item>
+            <item row="1" col="2" highlight="false">
+              <radioedit name="rdo2" caption="Iza" enabled="false" />
+            </item>
+            <item row="1" col="3" highlight="false">
+              <radioedit name="rdo3" caption="Ispred" enabled="false" />
+            </item>
+            <item row="1" col="4">
+            </item>
+            <item row="1" col="5" highlight="false">
+              <checkedit name="chkFormClose" value="true" tooltip="Zatvori formu nakon spremanja" />
+            </item>
+          </group>
+        </group>
+        <group row="2" col="1" cols="1" rows="2" groupbordervisible="false">
+          <item caption="Naziv:" col="1" row="1"  >
+            <textedit name="txtNaziv" required="true" datavalue="~dtGet.@Naziv"/>
+          </item>
+        </group>
+      </group>
+      <group cols="1" rows="2" else="">
+        <item caption="Naziv:" col="1" row="1"  >
+          <textedit name="txtNaziv" required="true" datavalue="~dtGet.@Naziv"/>
+        </item>
+      </group>
+    </layout>
+
+
+    <panelbuttons>
+      <buttons>
+        <button caption="SPREMI" type="add" dock="right">
+          <event type="click">
+            <action type="validate" />
+            <action type="datarun scalar" value="~dtAzur" >
+              <parameter name="Klaid"/>
+              <!--<action type="message" value="$ID"></action>-->
+            </action>
+            <action type="control populate keepfocus" value="parent.#tree"/>
+            <action type="control expand" value="parent.#tree">
+              <parameter name="key" value="$KlaId"></parameter>
+            </action>
+            <action type="form close" if="$Id!=null||#chkFormClose==true" />
+          </event>
+        </button>
+        <button caption="ODUSTANI" type="cancel" dock="right" />
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spHRKlaseRMAzurCP" name="dtAzur">
+        <parameter name="@Action" value="Unos" if="$Id==null" />
+        <parameter name="@Action" value="Izmjena" else="" />
+        <parameter name="@HRKlaseRMId" value="$HRKlaseRMId" text="" />
+        <parameter name="@Naziv" value="#txtNaziv" />
+        <parameter name="@InsertTip" value="in" if="#rdo1==true" />
+        <parameter name="@InsertTip" value="down" elseif="#rdo2==true" />
+        <parameter name="@InsertTip" value="up" else="" />
+      </data>
+      <data command="spHRKlaseRMQueryCP" name="dtGet">
+        <parameter name="@Action" value="GetSingle" />
+        <parameter name="@HRKlaseRMId" value="$HRKlaseRMId" />
+      </data>
+    </datalist>
+  </form>
+
+</root>

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+<PROJECT
+   ONLOAD=":FILTERFORM"
+   TREE=""
+   DETAILGRID=""
+   FILLEXPLORER="TRUE"
+	BUTTONS=""
+   CMD1CAPTION=""
+	AUTOMATICSORT="false"
+   CMD2CAPTION=""
+   CMD6CAPTION=""
+   CMD4CAPTION=""
+   CMD3CAPTION=""
+   CMD5CAPTION=""
+	FILTERMODE="true" 
+   
+		 EDITCOLUMNS="Min. količina za ažuriranje"
+	ONCELLEDITED=""
+	EDITCOLUMNSDET=""
+	ONCELLEDITEDDET=""
+   CHECKBOXVISIBLE="FALSE"
+   TOTALROWVISIBLE="FALSE"
+   ENTERKEYBEHAVIOR="0"
+   POPUPMASTER=""
+	COMMANDTIMEOUT="600"
+   TOTALROW="FALSE"
+   DETCHECKBOXVISIBLE="FALSE"
+   DETTOTALROWVISIBLE="FALSE"
+   MASTERDBLCLICK="">
+
+	<NAME>Ažuriranje minimalnih količina asortimana MP trgovina - light</NAME>
+  <CAPTION>Ažuriranje minimalnih količina asortimana MP trgovina - light</CAPTION>
+ 
+  <KOMENTAR> </KOMENTAR>
+  <AUTOR> MT 23.04.2009.  </AUTOR>
+
+	<MAINFORM CAPTION="Ažuriranje minimalnih količina asortimana MP trgovina - light" 
+			  WIDTH="15000" HEIGHT="8000" COMMANDTIMEOUT="600" WINDOWSTATE="2" 
+			  VERSION="4" DBCLIPBOARD="FALSE" ONLOAD="select null as robaid, '' as searchboxrobaid ">
+		
+		<INPUT TYPE="tree" SQL="spTreeKlMasterRoba::select 1" DOCK="3" NAME="klasaid"/>
+		<INPUT TYPE="PANEL" DOCK="2" HEIGHT="550" NAME="panel2"/>
+		<INPUT TYPE="PANEL" DOCK="1" HEIGHT="1600" NAME="panel1"/>
+		
+		<INPUT TYPE="combo" NAME="trgovinaid"  CAPTION="Trgovina*"  TOP="400" LEFT="1000" SQL="spmpdajtrgovinang @operateriid = @@operateriid" ONLOSTFOCUS="" ALLOWEMPTY="TRUE" BACKCOLOR="LIGHTYELLOW" />
+		<INPUT TYPE="search" NAME="robaid" CAPTION="Roba*" TOP="400" LEFT="6700" WIDTH="4000" ALLOWEMPTY="FALSE" HEIGHT="280" SQL="spMPRobaZaMPNG @trgovinaid = @@trgovinaid , @trazi = '@@searchboxrobaid'"
+			ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+
+		<INPUT TYPE="combo" NAME="DobavljacId"  CAPTION="Dobavljači*"  TOP="800" LEFT="1000" SQL="select partneriid, naziv from partneri where 
+			   partneriid in (select distinct dobavljacid from roba)" 
+			   ONLOSTFOCUS="" ALLOWEMPTY="TRUE" BACKCOLOR="LIGHTYELLOW" />
+		<!-- 
+		<INPUT TYPE="combo" NAME="dodklasaid" CAPTION="Dodatna klasa*" TOP="800" LEFT="6700" WIDTH="4000" ALLOWEMPTY="TRUE" HEIGHT="280" ENABLED="TRUE" 
+		SQL="select klrobaid, left('          ', len(rtrim(sortkey))) +' ' + naziv  
+					from klroba
+					where  klklrobaid=(select varset from pubvars where varime = 'DodKlasaKasa')
+					order by sortkey"
+			ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+			
+		<INPUT TYPE="check" NAME="dodpodklasa"  CAPTION="Pokaži i podklase*"  TOP="840" LEFT="14000" SQL="" ONLOSTFOCUS="" VISIBLE="TRUE" ALLOWEMPTY="TRUE" BACKCOLOR="" />
+-->
+		<INPUT TYPE="button" CAPTION="Više roba" ONCLICK=":VISEROBA" TOP="385"   LEFT="11000"  />
+		<INPUT TYPE="number" NAME="MinKolicina"  CAPTION="Min. količina*"  TOP="400" LEFT="14000" SQL="" ONLOSTFOCUS="" ALLOWEMPTY="TRUE" WIDTH="600" BACKCOLOR="LIGHTYELLOW" />
+
+		<INPUT TYPE="combo"    NAME="robnamarkaid"   ALLOWEMPTY="TRUE" CAPTION="Robna marka*" TOP="800" LEFT="6700"  WIDTH="4000" HEIGHT="320"
+				  SQL="select max(robnamarkaid) as robnamarkaid, opis from robnamarka
+					group by opis" 
+			   BACKCOLOR="LIGHTYELLOW" />
+
+
+<!-- 
+	  <INPUT TYPE="combo" NAME="klklrobaid" CAPTION="Dodatna klasa - osnovna*" TOP="1200" LEFT="1950" WIDTH="4200" HEIGHT="320" BACKCOLOR="LIGHTYELLOW" ALLOWEMPTY="true" ONLOSTFOCUS="select 'refresh' as klrobaid "
+			  SQL="select klklrobaid , naziv from klklroba order by naziv "/>
+
+	  <INPUT TYPE="combo" NAME="klrobaid" CAPTION="Dodatna klasa - pomoćna*" TOP="1200" LEFT="8200" WIDTH="4000" HEIGHT="320" BACKCOLOR="LIGHTYELLOW" ALLOWEMPTY="true"
+			  SQL="select klrobaid , naziv from klroba where klklrobaid = @@klklrobaid order by naziv "/>
+
+	  <INPUT TYPE="VB.checkbox" NAME="poddodklase" TOP="1240" LEFT="12400" WIDTH="3500" HEIGHT="320"  CAPTION="pokaži i sve podklase dodatne pomoćne klase"/>
+-->
+
+
+
+		<INPUT TYPE="button" CAPTION="Pokaži" ONCLICK="REFRESHCONTROL(stavke)" TOP="1185"   LEFT="17500" />
+
+
+		<INPUT TYPE="grid"  CHECKBOXVISIBLE="FALSE" TOTALROW="FALSE" EDITCOLUMNS="Min količina za ažuriranje" NAME="stavke"  
+			   SQL="spmpOptimalneZaliheNEW @action=100, @operateriid = @@operateriid, @KlasaID=@@KlasaID, @trgovinaid = @@trgovinaid, 
+			   @robaid = @@robaid, @dodklasaid = null, @dobavljacId=@@dobavljacId,
+			   @podklasa = null, @minkolicina = @@minkolicina, @robnamarkaid=@@robnamarkaid,  @dodpodklasa =null"
+		   ONCELLEDITED="if @@gridstavkeMin_količina_za_ažuriranje =0 begin
+				EXEC spRaiserror 69001, &apos; Količina nemože biti 0!&apos; 
+				select 1 as gridstavkeMin_količina_za_ažuriranje
+			   end"
+			   DOCK="5" SKIPDEFAULTLOAD="true" />
+		
+		<INPUT TYPE="button" TOP="120" LEFT="4500" CAPTION="Odustani" ONCLICK="close" PARENT="panel2"/>
+		<INPUT TYPE="button" TOP="120" LEFT="6500" CAPTION="Spremi izmjene" 
+			   ONCLICK="FOREACHROW(stavke)#update MPOptimalneZaliheTrgovine set kolicina = @@gridstavkeMin_količina_za_ažuriranje 
+			   where MPOptimalneZaliheTrgovineid = @@stavke#select 'refresh' as stavke" PARENT="panel2"/>
+
+		<INPUT TYPE="button" TOP="120" LEFT="8500" CAPTION="Min. zalihe"
+			   ONCLICK=":MINFORM" PARENT="panel2"/>
+
+
+	</MAINFORM>
+
+	
+
+	<VISEROBA
+			 WIDTH="8000"
+			 ONSUBMIT=""
+			 ONLOAD=""
+			 HEIGHT="6000"
+			 CAPTION="Odabir artikala za asortiman"
+			 CMD1CAPTION=""
+			 CMD2CAPTION=""
+	 FILLEXPLORER="treeandrefreshmaster"
+		 >
+		<INPUT TYPE="search" NAME="robaid" 			CAPTION="Roba (F5)*" TOP="532" LEFT="1790" WIDTH="4998" TABINDEX="1" COLUMNWIDTH=""
+							COLUMNCAPTION="" ALLOWEMPTY="FALSE" HEIGHT="280" SQL="spMPRobaZaMPNG  @trazi = '@@searchboxrobaid'"
+							ONLOSTFOCUS="exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid # select 'dodaj' as focus" BACKCOLOR="LIGHTYELLOW" HOTKEY="F5"/>
+		<INPUT TYPE="button" NAME="dodaj" CAPTION="Dodaj" TOP="1000" LEFT="1800" WIDTH="1106" HEIGHT="322" TABINDEX="3"
+			   ONCLICK="if @@robaid is not null begin exec spmpOptimalneZaliheNEW @action = 5, @robaid = @@robaid , @trgovinaid = @@trgovinaid , @operateriid = @@operateriid end #select 'refresh' as viseroba #select 'robaid' as focus "/>
+		
+		<INPUT TYPE="frame"  NAME="fr1"         CAPTION="" TOP="1500"   LEFT="1200"   WIDTH="4800" HEIGHT="3300"   />
+
+		<INPUT TYPE="grid"
+			   NAME="viseroba"
+			   REFRESHAFTERCHILD="TRUE"
+			   CAPTION="Stavke"
+			   TOP="1700" LEFT="1800" WIDTH="5400" HEIGHT="3000"
+			   TABINDEX="-1"
+			   AFTERREFRESH=""
+			   POPUP=""
+			   ONDBLCLICK=":"
+			   EDITCOLUMNS=""
+			   ONCELLEDITED=""
+			   CHECKBOXVISIBLE="FALSE"
+			   PAGEHEADERCENTER=""
+			   PAGEHEADERRIGHT=""
+			   PAGEHEADERLEFT=""
+			   PAGEFOOTERCENTER=""
+			   PAGEFOOTERLEFT=""
+			   PAGEFOOTERRIGHT="@@thosmomi"
+			   PAGEORIENTATION="LANDSCAPE"
+			   GROUPBYBOXVISIBLE="FALSE"
+			   TOTALROW="FALSE"
+			   SQL="spmpOptimalneZaliheNEW @action = 4, @trgovinaid = @@trgovinaid , @operateriid = @@operateriid" />
+		<INPUT TYPE="button" NAME="delete" CAPTION="Obriši" TOP="5000" LEFT="2500" WIDTH="1106" HEIGHT="322" TABINDEX="4"   ONCLICK="exec spmpOptimalneZaliheNEW @action = 6, @robaid = @@viseroba , @trgovinaid = @@trgovinaid , @operateriid = @@operateriid #select 'refresh' as viseroba"  />
+		<INPUT TYPE="button" NAME="deletesve" CAPTION="Obriši sve" TOP="5000" LEFT="4000" WIDTH="1106" HEIGHT="322" TABINDEX="4"   ONCLICK="exec spmpOptimalneZaliheNEW @action = 7,  @trgovinaid = @@trgovinaid , @operateriid = @@operateriid #select 'refresh' as viseroba"  />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Kraj odabira" TOP="5000" LEFT="1000" WIDTH="1106" HEIGHT="322" TABINDEX="4"   ONCLICK="close"  />
+
+	</VISEROBA>
+
+	<MINFORM
+			 WIDTH="7000"
+			 ONSUBMIT=""
+			 ONLOAD=""
+			 HEIGHT="8000"
+			 CAPTION="Min količine robe  @@gridstavkeNazivRobaid po trgovini"
+			 CMD1CAPTION=""
+			 CMD2CAPTION=""
+			 FILLEXPLORER=""
+
+		 >
+		<INPUT TYPE="grid"
+			   NAME="minzaliha"
+			   REFRESHAFTERCHILD="TRUE"
+			   CAPTION=" "
+			   TOP="500" LEFT="300" WIDTH="6000" HEIGHT="5000"
+			   TABINDEX="-1"
+			   AFTERREFRESH=""
+			   POPUP=""
+			   ONDBLCLICK=":"
+			   EDITCOLUMNS=""
+			   ONCELLEDITED=""
+			   CHECKBOXVISIBLE="FALSE"
+			   PAGEHEADERCENTER=""
+			   PAGEHEADERRIGHT=""
+			   PAGEHEADERLEFT=""
+			   PAGEFOOTERCENTER=""
+			   PAGEFOOTERLEFT=""
+			   PAGEFOOTERRIGHT="@@thosmomi"
+			   PAGEORIENTATION="LANDSCAPE"
+			   GROUPBYBOXVISIBLE="FALSE"
+			   TOTALROW="FALSE"
+			   SQL="spmpOptimalneZaliheNEW @action = 999 , @id = @@gridstavkeparasortimanstruid" />
+
+
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Zatvori" TABINDEX="1" TOP="6000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	</MINFORM>
+
+
+	
+</PROJECT>
+ 

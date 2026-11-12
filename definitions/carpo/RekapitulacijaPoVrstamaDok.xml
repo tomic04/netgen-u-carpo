@@ -1,0 +1,394 @@
+<!--v 1.0.7. 18.08.2021. IF Novi Carpo bug fixing - dodao minsize="350" u panel1-->
+<!--v 1.0.6. 26.10.2020. IF Combomultiedit VrstaDokNizId-->
+<!--v 1.0.5. 4.6.2020. AA format n3-->
+<!--v 1.0.4. 2.6.2020. AA ProizvodInd HD 55452-->
+<!--v 1.0.3. 5.2.2020. AA HD 52686 combomultiedit, dodala kolonu S za ukupnu sumu na ispisu-->
+<!--v 1.0.2. 19.3.2018. AA spTraziRobu custom-->
+<!--v 1.0.1. 27.11.2017. AA @Oznaka u dtDohvatiSkladiste-->
+<!--jupiter2012, spin20160126-->
+
+<root loglevel="3" version="1.0.6.">
+  <form name="frmRobnaKartica" path="RekapitulacijaPoVrstamaDokumenata.frmRobnaKartica.xml"/>
+  <form type="master" name="grdGlavni" saveformsize="true" maximized="true" caption="Rekapitulacija po vrstama dokumenta" template="splitter">
+    <event type="init">
+      <action type="datarun reader" value="~dtPrviDan"/>
+    </event>
+    <event type="load">
+      <action type="variable value">
+        <parameter name="global.$DatumOd" value="~dtPrviDan.@prvidan"/>
+      </action>
+      <action type="variable value">
+        <parameter name="global.$DatumDo" value="now" type="date"/>
+      </action>
+    </event>
+    <event type="shown">
+      <action type="control value" value="#datOd">
+        <parameter value="~dtPrviDan.@prvidan"/>
+      </action>
+      <action type="control value" value="#datDo">
+        <parameter value="now" type="date"/>
+      </action>
+      <action type="variable value" >
+        <parameter name="RobaIspod" value="0"/>
+      </action>
+      <action type="control disable" value="#btnDokument,#btnIspisi" if="#grdGlavni.rowcount==0"/>
+      <action type="control enable" value="#btnDokument,#btnIspisi" if="#grdGlavni.rowcount!=0"/>
+    </event>
+    <layout name="panel1" type="collapsable" minsize="350" >
+      <group  cols="2" rows="12" groupbordervisible="false">
+        <columnsdefinition>
+          <column size="100" position="2"/>
+          <column size="200" position="1"/>
+        </columnsdefinition>
+        <item col="1" row="1" textposition="left" colspan="2" caption="Skladište:">
+          <combomultiedit name="cmbSkladiste" dataname="~dtSkladiste" valuefield="SkladisteId" displayfield="OznakaOpis" savevalue="app"/>
+        </item>
+        <item col="1" row="2" textposition="left" caption="Od:">
+          <dateedit name="datOd" >
+            <event type="valuechanged">
+              <action type="variable value">
+                <parameter name="global.$DatumOd" value="#datOd"/>
+              </action>
+            </event>
+          </dateedit>
+        </item>
+        <item col="1" row="3" textposition="left" caption="Do:">
+          <dateedit name="datDo" >
+            <event type="valuechanged">
+              <action type="variable value">
+                <parameter name="global.$DatumDo" value="#datDo"/>
+              </action>
+            </event>
+          </dateedit>
+        </item>
+        <item col="1" row="4" textposition="left" colspan="2" caption="Roba:">
+          <searchedit name="srcRoba" dataname="dtTraziRobu" fieldvalue="RobaId" fieldtext="NazivId" savelayout="true"/>
+        </item>
+        <item caption="Proizvod:" col="1" row="5" colspan="4" textposition="left">
+          <comboedit name="cmbProizvod" dataname="~dtProizvod" displayfield="Naziv" valuefield="Id" allownull="false" savevalue="app"/>
+        </item>
+        <item col="1" row="7" textposition="left" caption="Uključi potklase">
+          <checkedit name="cheUkljuciPotklase" >
+            <event type="valuechanged">
+              <action type="variable value" if="#cheUkljuciPotklase==false">
+                <parameter name="RobaIspod" value="0"/>
+              </action>
+              <action type="variable value" if="#cheUkljuciPotklase==true">
+                <parameter name="RobaIspod" value="1"/>
+              </action>
+            </event>
+          </checkedit>
+        </item>
+        <item col="1" row="6" textposition="left" colspan="2" caption="Klasa:">
+          <comboedit name="cmbKlasa" dataname="~dtKlasa" valuefield="SortKey" displayfield="Naziv">
+            <event type="valuechanged">
+              <action type="control value" value="#cheUkljuciPotklase" if="#cmbKlasa==null">
+                <parameter value="false"/>
+              </action>
+            </event>
+          </comboedit>
+        </item>
+        <item col="1" row="8" textposition="left" colspan="2" caption="Na skladište:">
+          <comboedit name="cmbNaSkladiste" dataname="~dtSkladiste" valuefield="SkladisteId" displayfield="OznakaOpis"/>
+        </item>
+        <item col="1" row="9" textposition="left" colspan="2" caption="Vrsta dokumenta:">
+          <combomultiedit name="cmbVrstaDok" dataname="~dtVrstaDok" valuefield="VrstaDokId" displayfield="Naziv" tooltip="Vrstu dokumenta moguće je izabrati u slučaju rekapitulacije po broju dokumenta."/>
+        </item>
+        <item col="1" row="10" textposition="left" colspan="2" caption="Org. shema:">
+          <comboedit name="cmbOrgShema" dataname="~dtOrgShema" displayfield="Naziv" valuefield="SortKey"/>
+        </item>
+        <item col="1" row="11" textposition="left" colspan="2" caption="Trgovina:">
+          <comboedit name="cmbTrgovina" dataname="~dtTrgovina" displayfield="oznakaopis" valuefield="trgovinaid"/>
+        </item>
+        <item col="1" row="12"/>
+      </group>
+    </layout>
+    <layout name="panel2" >
+      <group  cols="1" rows="1" groupbordervisible="false">
+        <item col="1" row="1" >
+          <grid showfooter="true" name="grdGlavni" dataname="~dtGlavni" bestfitonrefresh="true" multiselect="true" savelayout="true">
+            <event type="shown">
+              <action type="control disable" value="#btnDokument,#btnIspisi" if="#grdGlavni.rowcount==0"/>
+              <action type="control enable" value="#btnDokument,#btnIspisi" if="#grdGlavni.rowcount!=0"/>
+            </event>
+            <fields>
+              <field name="S"/>
+              <field name="VrstaPromNaziv" caption="Vrsta prometa" visible="true" if="$Tip==VrstaProm"/>
+              <field name="nazivskladista" visible="true" if="$Tip!=BrojDok" caption="Skladište"/>
+              <field name="VrstaDoknaziv" caption="Vrsta dokumenta" visible="true" if="$Tip!=VrstaProm"/>
+              <field name="broj" caption="Broj dokumenta" visible="true" if="$Tip==BrojDok" />
+              <field name="SkladisteOpis" caption="Skl1" visible="true" if="$Tip==BrojDok"/>
+              <field name="Skladiste2Opis" caption="Skl2" visible="true" if="$Tip==BrojDok"/>
+              <field name="DatumKnjizenja" caption="Datum knjiženja" visible="true" if="$Tip==BrojDok"/>
+              <field name="DatumDok" caption="Datum dokumenta" visible="true" if="$Tip==BrojDok" />
+              <field name="PSVrijednost" caption="PS vrijednost"/>
+              <field name="Vrijednostulaz" caption="Ulaz vrijednost"/>
+              <field name="VrijednostIzlaz" caption="Izlaz vrijednost"/>
+              <field name="SumaVrijednost" caption="Suma vrijednost"/>
+              <field name="PSKol" caption="PS količina" format="n3"/>
+              <field name="KolicinaUlaz" caption="Ulaz količina" format="n3"/>
+              <field name="KolicinaIzlaz" caption="Izlaz količina" format="n3"/>
+              <field name="SumaKolicina" caption="Suma količina" format="n3"/>
+              <field name="orgdok" caption="Izvorni dokument" visible="true" if="$Tip==BrojDok"/>
+              <field name="Partnerinaziv" caption="Partner" visible="true" if="$Tip==BrojDok"/>
+              <field name="OrgShema" caption="Organizacijska shema" visible="true" if="$Tip==BrojDok"/>
+            </fields>
+            <print caption="Rekapitulacija po vrstama dokumenata"
+									captionalign="center"
+								   header="\n Za vremensko razdoblje od {global.$DatumOd::dd.MM.yyyy} do {global.$DatumDo::dd.MM.yyyy} 
+								   \n{#cmbSkladiste.@OznakaOpis} {#srcRoba.@Naziv} {#cmbKlasa.@Naziv} 
+								   \n{#cmbNaSkladiste.@OznakaOpis} {#cmbVrstaDok.@Naziv} {#cmbOrgShema.@SortKey} {#cmbTrgovina.@oznakaopis} \n"/>
+          </grid>
+        </item>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnPoVrstiDok" caption="PO VRSTI DOKUMENTA">
+          <event type="click">
+            <action type="variable value">
+              <parameter name="Tip" value="VrstaDok"/>
+            </action>
+            <action type="control populate" value="#grdGlavni"/>
+            <action type="control disable" value="#btnDokument,#btnIspisi" if="#grdGlavni.rowcount==0"/>
+            <action type="control enable" value="#btnDokument,#btnIspisi" if="#grdGlavni.rowcount!=0"/>
+            <action type="control disable" value="#btnDokument" if="$Tip!=BrojDok"/>
+            <action type="control enable" value="#btnDokument" if="$Tip==BrojDok"/>
+            <action type="panel collapse" value="panel1" />
+          </event>
+        </button>
+        <button name="btnPoVrstiDokSkl" caption="SKT-PO VRSTI DOKUMENTA">
+          <event type="click">
+            <action type="variable value">
+              <parameter name="Tip" value="VrstaDokSkt"/>
+            </action>
+            <action type="control populate" value="#grdGlavni"/>
+            <action type="control disable" value="#btnDokument,#btnIspisi" if="#grdGlavni.rowcount==0"/>
+            <action type="control enable" value="#btnDokument,#btnIspisi" if="#grdGlavni.rowcount!=0"/>
+            <action type="control disable" value="#btnDokument" if="$Tip!=BrojDok"/>
+            <action type="control enable" value="#btnDokument" if="$Tip==BrojDok"/>
+            <action type="panel collapse" value="panel1" />
+          </event>
+        </button>
+        <button name="btnPoVrstaProm" caption="PO VRSTI PROMETA">
+          <event type="click">
+            <action type="variable value">
+              <parameter name="Tip" value="VrstaProm"/>
+            </action>
+            <action type="control populate" value="#grdGlavni"/>
+            <action type="control disable" value="#btnDokument,#btnIspisi" if="#grdGlavni.rowcount==0"/>
+            <action type="control enable" value="#btnDokument,#btnIspisi" if="#grdGlavni.rowcount!=0"/>
+            <action type="control disable" value="#btnDokument" if="$Tip!=BrojDok"/>
+            <action type="control enable" value="#btnDokument" if="$Tip==BrojDok"/>
+            <action type="panel collapse" value="panel1" />
+          </event>
+        </button>
+        <button name="btnPoBrojuDok" caption="PO BROJU DOKUMENTA">
+          <event type="click">
+            <action type="variable value">
+              <parameter name="Tip" value="BrojDok"/>
+            </action>
+            <action type="control populate" value="#grdGlavni"/>
+            <action type="control disable" value="#btnDokument,#btnIspisi" if="#grdGlavni.rowcount==0"/>
+            <action type="control enable" value="#btnDokument,#btnIspisi" if="#grdGlavni.rowcount!=0"/>
+            <action type="control disable" value="#btnDokument" if="$Tip!=BrojDok"/>
+            <action type="control enable" value="#btnDokument" if="$Tip==BrojDok"/>
+            <action type="panel collapse" value="panel1" />
+          </event>
+        </button>
+        <button name="btnDokument" caption="DOKUMENT">
+          <event type="click">
+            <action type="form open" value="frmDokument"/>
+          </event>
+        </button>
+        <button name="btnIspisi" caption="ISPIS    SUČELJA">
+          <event type="click">
+            <action type="control printcontrol" value="#grdGlavni"/>
+          </event>
+        </button>
+        <button name="btnIzlaz" caption="IZLAZ">
+          <event type="click">
+            <action type="form close"/>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data name="dtSkladiste" command="spskladisteQueryCarpoRVD">
+        <parameter name="@Action" value="0"/>
+      </data>
+      <data type="text" name="dtPrviDan" command="select dateadd(yy,datediff(yy,0,getdate()),0) as prvidan"/>
+      <data name="dtVrstaDok" command="spVrstaDokQueryCarpoRVD">
+        <parameter name="@Action" value="7"/>
+      </data>
+      <data name="dtOrgShema" command="spOrgShemaQueryCarpoRVD">
+        <parameter name="@Action" value="0"/>
+      </data>
+      <data name="dtTrgovina" command="spCRekapVrstaDok">
+        <parameter name="@Action" value="1"/>
+      </data>
+      <data name="dtGlavni" command="spCRekapVrstaDok" if="$Tip==VrstaDok">
+        <parameter name="@Action" value="2"/>
+        <!-- <parameter name="@SkladisteId" value="#cmbSkladiste"/> -->
+        <!-- <parameter name="@VrstaDokNizId" value="#cmbVrstaDok"/> -->
+        <parameter name="@DatumOd" value="#datOd"/>
+        <parameter name="@DatumDo" value="#datDo"/>
+        <parameter name="@RobaId" value="#srcRoba"/>
+        <parameter name="@KlRoba" value="#cmbKlasa"/>
+        <parameter name="@KlRobaIspod" value="$RobaIspod"/>
+        <parameter name="@OrgShemaSortKey" value="#cmbOrgShema"/>
+        <parameter name="@Skladiste2Id" value="#cmbNaSkladiste"/>
+        <parameter name="@TrgovinaId" value="#cmbTrgovina"/>
+        <parameter name="@SkladisteNizId" value="#cmbSkladiste"/>
+        <parameter name="@ProizvodInd" value="#cmbProizvod.@ProizvodInd" type="int"/>
+      </data>
+      <data name="dtGlavni" command="spCRekapVrstaProm" if="$Tip==VrstaProm">
+        <!-- <parameter name="@SkladisteId" value="#cmbSkladiste"/> -->
+        <!-- <parameter name="@VrstaDokNizId" value="#cmbVrstaDok"/> -->
+        <parameter name="@DatumOd" value="#datOd"/>
+        <parameter name="@DatumDo" value="#datDo"/>
+        <parameter name="@RobaId" value="#srcRoba"/>
+        <parameter name="@KlRoba" value="#cmbKlasa"/>
+        <parameter name="@KlRobaIspod" value="$RobaIspod"/>
+        <parameter name="@OrgShemaSortKey" value="#cmbOrgShema"/>
+        <parameter name="@Skladiste2Id" value="#cmbNaSkladiste"/>
+        <parameter name="@TrgovinaId" value="#cmbTrgovina"/>
+        <parameter name="@SkladisteNizId" value="#cmbSkladiste"/>
+        <parameter name="@ProizvodInd" value="#cmbProizvod.@ProizvodInd" type="int"/>
+      </data>
+      <data name="dtGlavni" command="spCRekapBroj" if="$Tip==BrojDok">
+        <!-- <parameter name="@SkladisteId" value="#cmbSkladiste"/> -->
+        <!-- <parameter name="@VrstaDokId" value="#cmbVrstaDok"/> -->
+        <parameter name="@VrstaDokNizId" value="#cmbVrstaDok"/>
+        <parameter name="@DatumOd" value="#datOd"/>
+        <parameter name="@DatumDo" value="#datDo"/>
+        <parameter name="@RobaId" value="#srcRoba"/>
+        <parameter name="@KlRoba" value="#cmbKlasa"/>
+        <parameter name="@KlRobaIspod" value="$RobaIspod"/>
+        <parameter name="@OrgShemaSortKey" value="#cmbOrgShema"/>
+        <parameter name="@Skladiste2Id" value="#cmbNaSkladiste"/>
+        <parameter name="@TrgovinaId" value="#cmbTrgovina"/>
+        <parameter name="@SkladisteNizId" value="#cmbSkladiste"/>
+        <parameter name="@ProizvodInd" value="#cmbProizvod.@ProizvodInd" type="int"/>
+      </data>
+      <data name="dtGlavni" command="spCRekapVrstaDokSkt" if="$Tip==VrstaDokSkt">
+        <parameter name="@Action" value="2"/>
+        <!-- <parameter name="@SkladisteId" value="#cmbSkladiste"/> -->
+        <!-- <parameter name="@VrstaDokNizId" value="#cmbVrstaDok"/> -->
+        <parameter name="@DatumOd" value="#datOd"/>
+        <parameter name="@DatumDo" value="#datDo"/>
+        <parameter name="@RobaId" value="#srcRoba"/>
+        <parameter name="@KlRoba" value="#cmbKlasa"/>
+        <parameter name="@KlRobaIspod" value="$RobaIspod"/>
+        <parameter name="@OrgShemaSortKey" value="#cmbOrgShema"/>
+        <parameter name="@Skladiste2Id" value="#cmbNaSkladiste"/>
+        <parameter name="@TrgovinaId" value="#cmbTrgovina"/>
+        <parameter name="@SkladisteNizId" value="#cmbSkladiste"/>
+        <parameter name="@ProizvodInd" value="#cmbProizvod.@ProizvodInd" type="int"/>
+      </data>
+      <data name="dtKlasa" command="spKlMasterRobaQueryCarpoRVD">
+        <parameter name="@Action" value="0"/>
+        <parameter name="@klasifikacija" value="null"/>
+      </data>
+      <data name="dtTraziRobu" command="spTraziRoba">
+        <parameter name="@Action" value="Roba"/>
+        <parameter name="@Uvjet" value="#srcRoba.text"/>
+      </data>
+      <data name="dtProizvod" command="spCRekapProizvod">
+        <parameter name="@Action" value="1"/>
+      </data>
+    </datalist>
+  </form>
+  <form name="frmDokument" height="600" width="1000">
+    <event type="load">
+      <action type="datarun scalar" value="~dtDohvatiDokument">
+        <parameter name="Dokument"/>
+      </action>
+      <action type="datarun scalar" value="~dtDohvatiSkladiste">
+        <parameter name="$SkladisteId"/>
+      </action>
+    </event>
+    <event type="shown">
+      <action type="form caption" value="{$Dokument} br.: {parent.#grdGlavni.@broj} od datuma {global.$DatumOd::dd.MM.yyyy}, skladište: {#grdDokument.@Skladiste}, partner: {#grdDokument.@PartneriNaziv}"/>
+    </event>
+    <layout>
+      <group cols="1" rows="1">
+        <item col="1" row="1">
+          <grid name="grdDokument" type="master" showfooter="true" dataname="~dtDokument" autopopulate="true" key="userid" bestfitonrefresh="true" saveformsize="true" multiselect="true" savelayout="true">
+            <fields>
+              <field name="userid" caption="Roba"/>
+              <field name="RbNaziv" caption="Naziv"/>
+              <field name="KlrNaziv" caption="Klasa robe"/>
+              <field name="JMnaziv" caption="JM"/>
+              <field name="kolicinaulaz" caption="Količina ulaz"/>
+              <field name="kolicinaizlaz" caption="Količina izlaz"/>
+              <field name="cijena" caption="Cijena"/>
+              <field name="vrijednostulaz" caption="Vrijednost ulaz"/>
+              <field name="vrijednostizlaz" caption="Vrijednost izlaz"/>
+              <field name="Broj" caption="Broj dokumenta"/>
+              <field name="Skladiste" caption="Skladište"/>
+              <field name="DatumKnjizenja" caption="Datum knjiženja"/>
+              <field name="DatumDok" caption="Datum dokumenta"/>
+              <field name="OrgShemaNaziv" caption="Organizacijska shema"/>
+              <field name="PartneriNaziv" caption="Partner"/>
+              <field name="trgovina" caption="Trgovina"/>
+            </fields>
+            <print caption="{$Dokument} br.: {parent.#grdGlavni.@broj} od datuma {global.$DatumOd::dd.MM.yyyy}, skladište: {#grdDokument.@Skladiste}, partner: {#grdDokument.@PartneriNaziv}"
+                 header="\n"
+                 captionalign="center"/>
+          </grid>
+        </item>
+      </group>
+    </layout>
+    <panelbuttons >
+      <buttons>
+        <button name="btnIspisi" caption="ISPIŠI">
+          <event type="click">
+            <action type="print" value="repx:rptSktUlaz" if="parent.#grdGlavni.@vrijednostUlaz>0">
+              <parameter name="ID" value="parent.#grdGlavni.@sktprometglaid"/>
+            </action>
+            <action type="print" value="repx:rptSktIzlaz" if="parent.#grdGlavni.@vrijednostIzlaz>0">
+              <parameter name="ID" value="parent.#grdGlavni.@sktprometglaid"/>
+            </action>
+          </event>
+        </button>
+        <button name="btnKartica" caption="KARTICA">
+          <event type="click">
+            <action type="form open" value="frmRobnaKartica">
+              <parameter name="IndGranula" value="0"/>
+              <parameter name="DatumOd" value="global.$DatumOd"/>
+              <parameter name="DatumDo" value="global.$DatumDo"/>
+              <parameter name="SkladisteId" value="$SkladisteId"/>
+              <parameter name="RobaId" value="#grdDokument.@robaid"/>
+            </action>
+          </event>
+        </button>
+        <button name="btnIzlaz" caption="IZLAZ">
+          <event type="click">
+            <action type="form close"/>
+          </event>
+        </button>
+        <button name="btnIspisiSucelje" caption="ISPIS    SUČELJA">
+          <event type="click">
+            <action type="control printcontrol" value="#grdDokument"/>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data name="dtDokument" command="spCRekapDokument">
+        <parameter name="@Action" value="1"/>
+        <parameter name="@VrstaDokId" value="parent.#grdGlavni.@vrstadokid"/>
+        <parameter name="@Broj" value="parent.#grdGlavni.@broj"/>
+      </data>
+      <data name="dtDohvatiDokument" command="spCRekapDokument">
+        <parameter name="@Action" value="2"/>
+        <parameter name="@VrstaDokId" value="parent.#grdGlavni.@vrstadokid"/>
+      </data>
+      <data name="dtDohvatiSkladiste" command="spCRekapDokument">
+        <parameter name="@Action" value="3"/>
+        <parameter name="@Oznaka" value="parent.#grdGlavni.@SkladisteOznaka"/>
+      </data>
+    </datalist>
+  </form>
+</root>

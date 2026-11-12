@@ -1,0 +1,167 @@
+<root>
+	<form type="master" name="frmGlavna" caption="Općine">
+
+		<managerlayout>
+			<grid type="master" name="grdGlava" dataname="~dtNapuniGrid" inherited="true" multiselect="true">
+				<fields>
+					<field name="Ime jedinice" caption="Ime jedinice" />
+					<field name="Županija" caption="Županija" />
+					<field name="Tip jedinice" caption="Tip jedinice" />
+				</fields>
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				
+				<button name="btnUnesi" caption="UNESI">
+					<event type="click">
+						<action type="form open" value="frmUnos">
+						</action>
+					</event>
+				</button>
+
+				<button name="btnIzmjeni" caption="IZMJENI">
+					<event type="click">
+						<action type="form open" value="frmIzmjeni">
+							<parameter name="UgovoriNajamOpcineID" value="#grdGlava.@UgovoriNajamOpcineID" />
+							<parameter name="ImeJedinice" value="#grdGlava.@Ime jedinice" />
+							<parameter name="ZupanijeID" value="#grdGlava.@Županija" />
+							<parameter name="TipJedinice" value="#grdGlava.@Tip jedinice" />
+						</action>
+					</event>
+				</button>
+
+				<button name="btnDelete" caption="OBRIŠI">
+						<event type="click">
+							<action type="confirm" value="Jeste li sigurni da želite obrisati označenu stavku?" />
+							<action type="control foreachrow selected" value="#grdGlava">
+								<action type="datarun nonquery" value="~dtDelete" />	
+						    </action>
+							<action type="control populate" value="#grdGlava" />
+						</event>
+				</button>
+
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spUgovoriNajamOpcine_query" name="dtNapuniGrid" />
+			<data command="spUgovoriNajamOpcine_delete" name="dtDelete">
+					<parameter name="UgovoriNajamOpcineID" value="#grdGlava.@UgovoriNajamOpcineID" />
+			</data>
+		</datalist>
+
+
+	</form>
+
+	<form name="frmUnos" caption="Unesi">
+
+
+
+		<layout>
+			<group col="1" row="4" cols="2" rows="4"> 
+				<item col="1" row="1" caption="Ime jedinice:" colspan="2">
+					<textedit name="txtImeJedinice" required="true" />
+				</item>
+				<item col="1" row="2" caption="Županija:" colspan="2">
+					<comboedit name="cmbZupanije" dataname="~dtNapuniZupanije" valuefield="zupanijeid" displayfield="Naziv"  required="true"/>
+				</item>
+				<item col="1" row="3" caption="Tip jedinice:" rowspan="2" />
+				<item col="1" row="4">
+					<radioedit name="rdoOpcina" value="true" caption="Općina" />
+				</item>
+				<item col="2" row="4">
+					<radioedit name="rdoGrad" caption="Grad" value="false" />
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="Spremi">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="dtInsert" />
+						<action type="control populate" value="parent.#grdGlava" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right"/>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spUgovoriNajamOpcine_ZupanijeQuery" name="dtNapuniZupanije" />
+			<data command="spUgovoriNajamOpcine_insert" name="dtInsert">
+				<parameter name="@ImeJedinice" value="#txtImeJedinice" />
+				<parameter name="@Zupanije" value="#cmbZupanije" />
+				<parameter name="@TipJedinice" value="1" if="#rdoOpcina==true" />
+				<parameter name="@TipJedinice" value="2" else="" />
+			</data>
+
+		</datalist>
+	</form>
+
+	<form name="frmIzmjeni" caption="Izmjeni">
+
+		<event type="init">
+				<action type="datarun reader" value="dtGet" />
+						
+		</event>
+
+			<layout>
+
+				<group col="1" row="4" cols="2" rows="4"> 
+					<item col="1" row="1" caption="Ime jedinice:" colspan="2">
+						<textedit name="txtImeJedinice" datavalue="~dtGet.@Naziv" required="true"/> <!-- Podatak se puni sa imenom iz baze -->
+					</item>
+					<item col="1" row="2" caption="Županija:" colspan="2">
+						<comboedit name="cmbZupanije" dataname="~dtNapuniZupanije" valuefield="zupanijeid" displayfield="Naziv" 
+							datavalue="~dtGet.@ZupanijeID" required="true"/>
+					</item>
+					<item col="1" row="3" caption="Tip jedinice:" rowspan="2" />
+					<item col="1" row="4">
+						<radioedit name="rdoOpcina" caption="Općina" datavalue="~dtGet.@TipOpcina" />
+					</item>
+					<item col="2" row="4">
+						<radioedit name="rdoGrad" caption="Grad" datavalue="~dtGet.@TipGrad" />						
+					</item>
+				</group>
+
+			</layout>
+
+			<panelbuttons>
+				<buttons>
+					<button name="btnSpremi" caption="Spremi">
+						<event type="click">
+							<action type="validate" />
+							<action type="datarun nonquery" value="dtIzmjeni" />
+							<action type="control populate" value="parent.#grdGlava" />
+							<action type="form close" value="frmIzmjeni" />
+						</event>
+					</button>
+
+					<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+					</button>
+
+				</buttons>
+			</panelbuttons>
+		<datalist>
+
+			<data command="spUgovoriNajamOpcine_EditQuery" name="dtGet">
+				<parameter name="@UgovoriNajamOpcineID" value="$UgovoriNajamOpcineID" />
+			</data>
+			<data command="spUgovoriNajamOpcine_ZupanijeQuery" name="dtNapuniZupanije" />
+			<data command="spUgovoriNajamOpcine_Izmjena" name="dtIzmjeni">
+				<parameter name="@UgovoriNajamOpcineID" value="$UgovoriNajamOpcineID" />
+				<parameter name="@ImeJedinice" value="#txtImeJedinice" />
+				<parameter name="@Zupanija" value="#cmbZupanije" />
+				<parameter name="@TipJedinice" value="1" if="#rdoOpcina==true" />
+				<parameter name="@TipJedinice" value="2" else="" />
+			</data>	
+		</datalist>
+
+	</form>
+		
+</root>

@@ -1,0 +1,233 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root version="1.0">
+  <form name="frmManPlanKontoDetaljUnos" type="master" caption="Plan po analitičkim kontima" statusbar="false">
+    <event type="init">  
+          <action type="datarun reader" value="~dtPubVarsDim"/>       
+    </event>
+    
+    <event type="load">
+        <action type="variable value" value="$PubVarDimenzije">          
+					<parameter value="~dtPubVarsDim.@VarSet"/>
+				</action>
+            
+    </event>
+    
+    <event type="shown">     
+       <action type="control visible" value="#btnPoDimenzijama" if="$PubVarDimenzije==0">
+           <parameter value="false" />
+      </action>
+      <action type="control visible" value="#btnPoDimenzijama" else="">
+           <parameter value="true" />
+      </action>     
+      
+      <action type="control disable" value="#cmbKategorija,#cmbKonto,#btnIzvrsi" if="#cmbOrgShema==null"/>
+			<action type="control enable" value="#cmbKategorija,#cmbKonto,#btnIzvrsi"  else="" />	
+    
+      <action type="control disable" value="#cmbKonto" if="#cmbKategorija==null"/>
+			<action type="control enable" value="#cmbKonto"  else="" />
+
+      <action type="control disable" value="#btnPoMjesecima,#btnPoDimenzijama" if="#grdDet.rowcount==0"/>
+      <action type="control enable" value="#btnPoMjesecima,#btnPoDimenzijama"  else="" />
+    
+    </event>
+    
+    <layout textposition="left" itemspadding="3">
+      <group cols="4" rows="2" col="1" row="1">
+               
+        <item caption="Org.jedinica:" row="1" col="1" textalignmode="left" textposition="left">
+					<combotreeedit name="cmbOrgShema" valuefield="id" parentfieldname="parentid" displayfield="Naziv" dataname="dtOrgShema" >
+            <event type="rowclick">            
+              <action type="disallow" if="#cmbOrgShema.@Prava==0" />
+            </event>
+            
+            <event type="valuechanged">
+              <action if="#cmbOrgShema==null">
+                  <action type="control disable" value="#cmbKategorija,#cmbKonto,#btnIzvrsi"/>
+              </action>
+              <action elseif="#cmbOrgShema!=null">
+                  <action type="control enable" value="#cmbKategorija"/>    
+              </action>       
+             </event>                   
+          </combotreeedit>
+				</item>
+                    
+          <item caption="Grupa:" row="1" col="2" textposition="left">
+					  <comboedit name="cmbKategorija" valuefield="PlanLogKategorijaGrupaId" displayfield="Naziv" dataname="dtKategorija">
+              <event type="valuechanged">
+
+                <action type="datarun reader" value="dtKonto" />
+                 <action type="control populate" value="cmbKonto"/>
+                
+                <action if="#cmbOrgShema!=null">
+                  <action if="#cmbKategorija==null">
+                    <action type="control disable" value="#cmbKonto,#btnIzvrsi"/>
+                  </action>
+                  <action elseif="#cmbKategorija!=null">
+                    <action type="control enable" value="#cmbKonto">
+                    </action>
+                  </action>
+                </action>
+                <action elseif="#cmbOrgShema==null">
+                  <action type="control disable" value="#cmbKonto,#btnIzvrsi">
+                  </action>
+                </action> 
+                
+             </event>       
+               
+            </comboedit>
+				  </item>
+        
+         <group cols="2" rows="1" col="3" row="1" groupbordervisible="false" colspan="2">
+            <columnsdefinition>
+               <column size="70%" position="1" />
+               <column size="30%" position="1" />
+            </columnsdefinition>
+            <item caption="Kategorija:" row="1" col="1" >            
+					    <combomultiedit name="cmbKonto" valuefield="PlanLogKategorijaId" displayfield="Naziv" dataname="dtKonto" showmultiselecttext="true">
+                <event type="valuechanged">
+                  <!--<action type="message" value="ušla u valuechanged"/>-->
+                  
+                  <action if="#cmbOrgShema!=null&amp;&amp;#cmbKategorija!=null">
+                    <action if="#cmbKonto==null||#cmbKonto==">
+                        <action type="control disable" value="#btnIzvrsi"/>
+                      <!--<action type="message" value="disable"/>-->
+                    </action>
+                    <action elseif="#cmbKonto!=null||#cmbKonto!=">
+                      <action type="control enable" value="#btnIzvrsi">
+                        <!--<action type="message" value="enable"/>-->
+                      </action>
+                    </action> 
+                  </action>
+                  <action elseif="#cmbOrgShema==null||#cmbKategorija==null">
+                    <action type="control disable" value="#btnIzvrsi">
+                      <!--<action type="message" value="disable jer su oba null"/>-->
+                    </action>
+                  </action>
+       
+                </event>     
+             </combomultiedit>          
+				    </item>     
+           
+           <item caption=" " row="1" col="2" >
+            <button name="btnIzvrsi" caption="Izvrši">
+              <event type="click">         
+                 <action type="datarun reader" value="dtDetAzur"/>
+                 <action type="control populate" value="grdDet"/>
+                 <action type="control disable" value="#btnPoMjesecima,#btnPoDimenzijama" if="#grdDet.rowcount==0"/>
+                 <action type="control enable" value="#btnPoMjesecima,#btnPoDimenzijama"  else="" />     
+              </event>
+            </button>
+           </item>
+        </group>
+        
+        
+              
+        <item caption="" col="1" row="2" colspan="4" >
+            <grid name="grdDet" multiselect="true" dataname="dtDetQuery" key="KntPlanAId" type="master" bestfitonrefresh="True" showfooter="true" showgrouppanel="false">	
+              <fields>
+							<field name="Konto" caption="Konto"/>
+							<field name="KontoNaziv" caption="Konto Naziv"/>
+              <field name="Planirani Iznos" caption="Planirani Iznos" showtotalsum="true" showgroupsum="true"/>
+              <field name="Iznos" caption="Iznos" showtotalsum="true" showgroupsum="true"/>
+              <field name="ReferentniIznos" caption="Referentni Iznos" showtotalsum="true" showgroupsum="true"/>
+              <field name="ReferentniPlaniraniIznos" caption="Referentni Planirani Iznos" showtotalsum="true" showgroupsum="true"/>
+                
+							<!--<field name="kolicina" caption="Količina" fixwidth="70" formatstring="#,####0.000" showtotalsum="true" showgroupsum="true"/>-->
+								
+						</fields>
+              
+				    <event type="focusedrowchanged">
+					         <action type="control enable" value="#btnPoMjesecima,#btnPoDimenzijama" if="#grdDet.rowcount!=0"/>
+					         <action type="control disable" value="#btnPoMjesecima,#btnPoDimenzijama" else=""/>
+				    </event>
+				    <event type="doubleclick">
+					         <action type="form open" value="frmManPlanKontoMjeseci"  if="#grdDet.rowcount&gt;0">
+						          <parameter name="Tekst" value="Konto: {#grdDet.@konto} - {#grdDet.@KontoNaziv}"/>
+						          <parameter name="ManPlanKontoGlaId" value="$ManPlanKontoGlaId"/>
+                      <parameter name="OrgShemaId" value="#cmbOrgShema"/>
+                      <parameter name="KntPlanAId" value="#grdDet.@kntplanaid"/>
+                      <parameter name="TrosakInd" value="#grdDet.@TrosakInd"/>
+                      <parameter name="Godina" value="$Godina"/>
+                      <parameter name="GodinaRef" value="$GodinaRef"/>
+					         </action>
+                   <action type="control populate" value="grdDet"/>
+				    </event>
+			   </grid>        
+       </item>
+          
+       
+      </group>
+    </layout>
+    <panelbuttons>  
+      <buttons>
+        <button name="btnPoMjesecima" caption="Pregled plana po mjesecima">
+          <event type="click">
+            <action type="form open" value="frmManPlanPrikazPoMjesecima">
+              <parameter name="ManPlanKontoGlaId" value="$ManPlanKontoGlaId"/>
+              <parameter name="OrgShemaId" value="#cmbOrgShema"/>
+              <parameter name="NizKntPlanAId" value="#grdDet.selectedids" type="string"/>
+            </action>
+          </event>
+        </button>
+
+        <button name="btnPoDimenzijama" caption="Pregled plana po dimenzijama">
+          <event type="click">
+            <action type="form open" value="frmManPlanPrikazPoDimenzijama">
+              <parameter name="ManPlanKontoGlaId" value="$ManPlanKontoGlaId"/>
+              <parameter name="OrgShemaId" value="#cmbOrgShema"/>
+              <parameter name="NizKntPlanAId" value="#grdDet.selectedids" type="string"/>
+            </action>
+          </event>
+        </button>
+
+        <button name="btnOdustani" caption="Gotovo" type="cancel" dock="right"/>
+			</buttons>
+       
+    </panelbuttons>
+    <datalist>
+        
+       <data command="spManPlanKontoGlaRefKontrole" name="dtKategorija">
+        <parameter name="@kontrola" value="cmbKategorija" />     
+      </data>
+      
+     <data command="spManPlanKontoGlaRefKontrole" name="dtKonto">
+        <parameter name="@kontrola" value="cmbKonto" />
+        <parameter name="@indunos" value="#cmbKategorija.@TrosakInd"/>
+     </data>
+      
+     <data command="spManPlanKontoGlaRefKontrole" name="dtOrgShema">
+        <parameter name="@kontrola" value="cmbOrgShema" />
+        <parameter name="@OperateriId" value="@@OperateriId"/>
+     </data>
+     
+     <data command="spManPlanKontoDetAzur" name="dtDetAzur">
+        <parameter name="@ManPlanKontoGlaId" value="$ManPlanKontoGlaId" />
+        <parameter name="@OrgShemaID" value="#cmbOrgShema"/>
+        <parameter name="@TrosakInd" value="#cmbKategorija.@TrosakInd"/>
+        <parameter name="@NizPlanKategorijeId" value="#cmbKonto"/>
+     </data>
+      
+     <data command="spManPlanKontoDetQuery" name="dtDetQuery">
+        <parameter name="@ManPlanKontoGlaId" value="$ManPlanKontoGlaId" />
+        <parameter name="@OrgShemaID" value="#cmbOrgShema"/>
+        <parameter name="@TrosakInd" value="#cmbKategorija.@TrosakInd"/>
+        <parameter name="@NizPlanKategorijeId" value="#cmbKonto"/>
+     </data>
+      
+    
+    <!--<data command="spManPlanKontoGlaRefKontrole" name="dtDimVrste">
+        <parameter name="@kontrola" value="cmbVrsteDimenzija" />
+     </data>
+      
+    <data command="spManPlanKontoGlaRefKontrole" name="dtDimenzije">
+        <parameter name="@kontrola" value="cmbDimenzija" />
+        <parameter name="@id" value="#cmbVrsteDimenzija" />
+     </data>-->
+      
+     <data command="spManPlanKontoGlaRefKontrole" name="dtPubVarsDim">
+        <parameter name="@kontrola" value="pubvarsDimenzija" />
+     </data>
+
+    </datalist>
+  </form>
+</root>

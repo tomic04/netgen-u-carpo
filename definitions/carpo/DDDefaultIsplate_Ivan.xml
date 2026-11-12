@@ -1,0 +1,262 @@
+﻿<root>
+	<form name="frmDDDefaultIsplate" type="master" caption="Evidencija osoba za obračun drugog dohotka" maxwidth="800" maxheight="800">
+		<event type="init">
+			<action type="datarun reader" value="~dtMaster" />
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdMaster" />
+		</event>		
+		<layout>
+			<group cols="2" rows="2" groupbordervisible="false">
+				<!-- Glavni grid-->
+				<item row="1" col="1" colspan="2" rowspan="2">
+					<grid name="grdMaster"  type="master" dataname="dtMaster" key="DDDefaultIsplateId">						
+						<fields inherited="true">
+							<field name="hrpartneriid"  />
+							<field name="Osoba" caption="Osoba"  />
+							<field name="Bruto" caption="Bruto"  />
+							<field name="Neto" caption="Neto"  />
+							<field name="VrstaIsplate" caption="Vrsta isplate"  />
+							<field name="DatumOd" caption="Datum od"  />
+							<field name="DatumDo" caption="Datum do"  />
+							<field name="Opis" caption="Opis"  />
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- KONTROLA: BUTTON -->
+				<button name="btnUnos" caption="Unos" type="add">
+					<event type="click">
+						<action type="form open" value="frmDDDefaultIsplatePromjena" >
+							<parameter name="hrpartneriid" value="0" type="int" />
+							<parameter name="Tip" value="Unos" />
+							<parameter name="caption" value="Unos djelatnika" />
+						</action>
+						<action type="control populate" value="#grdMaster" >		
+						</action>
+					</event>
+				</button>
+
+				<button name="btnIzmjena" caption="Izmjena" type="edit" >
+					<event type="click">
+						<action type="form open" value="frmDDDefaultIsplatePromjena">
+							<parameter name="DDDefaultIsplateId" value="#grdMaster.@DDDefaultIsplateId" type="int" />
+							<parameter name="Tip" value="Izmjena" />
+							<parameter name="caption" value="Izmjena iznosa" />
+						</action>
+					</event>
+				</button>
+				<button name="btnBrisanje" caption="Brisanje" type="del">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati djelatnika: '{#grdMaster.@Osoba}'?">
+							<action type="datarun nonquery" value="~dtDelete">
+							</action>
+						</action>
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<!--poziv master grida-->
+			<data command="spDDDefaultIsplateQuery_Ivan" name="dtMaster">
+				<parameter name="@action" value="master"  type="string"/>
+			</data>
+			<!--Poziv delete iz store-->
+			<data command="spDDDefaultIsplateAzur_Ivan" name="dtDelete">
+				<parameter name="@action" value="brisanje_partnera" />
+				<parameter name="@DDDefaultIsplateId" value="#grdMaster.@DDDefaultIsplateId" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmDDDefaultIsplatePromjena"  caption="$caption" width="450" height="450" fixedsize="false">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$hrpartneriid!=0"/>
+			<action type="datarun reader" value="~dtDatumZadnji" />
+		</event>
+		<event type="load">
+			<action if="$tip!='Unos'">
+				<action type="control disable" value="#srcPartner, #cmbVrstaIsplate, #datDatumOd, #datDatumDo, #txtOpis"/>
+			</action>
+			<action type="control value" value="#rdoBruto" if="~dtGet.@Neto!=0">
+				<parameter value="false" />
+			</action>
+			<action type="control value" value="#rdoBruto" else="">
+				<parameter value="true" />
+			</action>
+			<action type="control value" value="#rdoNeto" if="~dtGet.@Bruto!=0">
+				<parameter value="false" />
+			</action>
+			<action type="control value" value="#rdoNeto" else="">
+				<parameter value="true" />
+			</action>
+		</event>
+		
+		<event type="shown">
+			<action if="$tip!='Unos'">
+				<action type="control value" value="#srcPartner">
+					<parameter value="~dtGet.@HRPartneriid" text="~dtGet.@Osoba" />
+				</action>
+				<action type="control value" value="#txtBruto">
+					<parameter value="~dtGet.@Bruto"  />
+					<action type="control disable" value="#txtBruto" if="#rdoBruto!=true"/>
+					<action type="control enable" value="#txtBruto" else="" />
+				</action>
+				<action type="control value" value="#txtNeto">
+					<parameter value="~dtGet.@Neto" />
+					<action type="control disable" value="#txtNeto" if="#rdoNeto!=true&amp;&amp;~dtGet.@Bruto!=0"/>
+					<action type="control enable" value="#txtNeto" else="" />
+				</action>
+				<action type="control value" value="#cmbVrstaIsplate">
+					<parameter value="~dtGet.@VrstaIsplateId" text="~dtGet.@VrstaIsplate" />
+				</action>
+				<action type="control value" value="#datDatumOd">
+					<parameter value="~dtGet.@DatumOd"  />
+				</action>
+				<action type="control value" value="#datDatumDo">
+					<parameter value="~dtGet.@DatumDo"  />
+				</action>
+				<action type="control value" value="#txtOpis">
+					<parameter value="~dtGet.@Opis"  />
+				</action>
+			</action>
+			
+			<action else ="" type="control value" value="#datDatumDo">
+				<parameter value="~dtDatumZadnji.@datum"  />
+			</action>
+			
+		</event>
+		<layout>
+				<group cols="3" rows="10" col="1" row="1" groupbordervisible="true" spacing="2,2,2,2" caption="Podaci o djelatniku za drugi dohodak">
+					<item row="1" col="1" colspan="2" caption="Osoba:">
+						<searchedit name="srcPartner" dataname="~dtPartner" fieldtext="Osoba" fieldvalue="hrpartneriid"></searchedit>
+					</item>
+					<item row="2" col="1">
+						<radioedit name="rdoBruto" value="true">
+							<event type="valuechanged">
+								<action type="control disable" value="#txtBruto" if="#rdoBruto!=true"/>
+								<action type="control enable" value="#txtBruto" else="" />
+								<action type="control value" value="#txtBruto" if="#rdoNeto==true">
+									<parameter value="0" />
+								</action>
+							</event>
+						</radioedit>
+					</item>
+					<item row="2" col="2" caption="Bruto:">
+						<textedit name="txtBruto" format="n2" value="0"/>
+					</item>
+					<item row="3" col="1">
+						<radioedit name="rdoNeto" value="false">
+							<event type="valuechanged">
+								<action type="control disable" value="#txtNeto" if="#rdoNeto!=true"/>
+								<action type="control enable" value="#txtNeto" else="" />
+								<action type="control value" value="#txtNeto" if="#rdoBruto==true">
+									<parameter value="0" />
+								</action>
+							</event>
+						</radioedit>
+					</item>
+					<item row="3" col="2" caption="Neto:">
+					<textedit name="txtNeto" format="n2" value="0"/>
+					</item>
+					<item row="4" col="1" colspan="2" caption="Vrsta isplate:">
+						<comboedit name="cmbVrstaIsplate"  valuefield="OOPIsStavkeId" displayfield="Naziv" dataname="~dtVrstaIsplate" />
+					</item>
+					<item row="5" col="1" colspan="2" caption="Datum od:">
+						<dateedit name="datDatumOd" value="now"/>
+					</item>
+					<item row="6" col="1"  colspan="2" caption="Datum do:">
+						<dateedit name="datDatumDo"/>
+					</item>
+					<item row="7" col="1" colspan="2" caption="Opis:">
+						<textedit name="txtOpis" fieldtext="Opis" />
+					</item>
+				</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<!-- Button Spremi -->
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action type="datarun reader" value="~dtUnosPartner" if="$tip==Unos">
+							<parameter name="hrpartneriid" type="int"/>
+							<action type="message" value="~dtUnosPartner.@Poruka" />
+							<action type="control refreshvalue" value="#srcPartner, #txtBruto, #txtNeto, #cmbVrstaIsplate, #datDatumOd, #datDatumDo, #txtOpis" if="~dtUnosPartner.@greska!=1">
+								<action type="control value" value="#datDatumDo">
+									<parameter value="~dtDatumZadnji.@datum"  />
+								</action>
+							</action>
+						</action>
+						
+						<action type="control populate" value="parent.#grdMaster"/>
+						
+						<action type="datarun reader" value="~dtIzmjenaPartner" if="$tip==Izmjena">
+							<parameter name="DDDefaultIsplateId" type="int"/>
+							<action type="message" value="~dtIzmjenaPartner.@Poruka" />
+							<action type="control populate keepfocus" value="parent.#grdMaster" />
+						</action>
+						
+					</event>
+
+				</button>
+				<!-- Button Odustani -->
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+					<event type="click">
+						<action type="control populate" value="parent.#grdMaster"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<!--ovaj data puni grid-->
+			<data command="spDDDefaultIsplateQuery_Ivan" name="dtPartner">
+				<parameter name="@action" value="Partneri" />
+				<parameter name="@tekst" value="#srcPartner.text"/>
+			</data>
+
+			<data command="spDDDefaultIsplateQuery_Ivan" name="dtVrstaIsplate">
+				<parameter name="@action" value="VrstaIsplate" />
+			</data>
+
+			<data command="spDDDefaultIsplateAzur_Ivan" name="dtUnosPartner">
+				<parameter name="@action" value="Unos_partnera" />
+				<parameter name="@hrpartneriid" value="#srcPartner" />
+				<parameter name="@bruto" value="#txtBruto" />
+				<parameter name="@neto" value="#txtNeto" />
+				<parameter name="@vrstaIsplateId" value="#cmbVrstaIsplate" />
+				<parameter name="@datumOd" value="#datDatumOd" />
+				<parameter name="@datumdo" value="#datDatumDo" />
+				<parameter name="@opis" value="#txtOpis" />
+				
+			</data>
+
+			<data command="spDDDefaultIsplateAzur_Ivan" name="dtIzmjenaPartner">
+				<parameter name="@action" value="izmjena_partnera" />
+				<parameter name="@bruto" value="#txtBruto" />
+				<parameter name="@neto" value="#txtNeto" />
+				<parameter name="@vrstaIsplateId" value="#cmbVrstaIsplate" />
+				<parameter name="@datumOd" value="#datDatumOd" />
+				<parameter name="@datumdo" value="#datDatumDo" />
+				<parameter name="@opis" value="#txtOpis" />
+				<parameter name="@DDDefaultIsplateId" value="$DDDefaultIsplateId" />
+			</data>
+
+			<data command="spDDDefaultIsplateQuery_Ivan" name="dtGet">
+				<parameter name="@action" value="Dohvati_partnera" />
+				<parameter name="@hrpartneriid" value="$hrpartneriid" />
+				<parameter name="@DDDefaultIsplateId" value="$DDDefaultIsplateId" />
+			</data>
+
+			<data command="spDDDefaultIsplateQuery_Ivan" name="dtDatumZadnji">
+				<parameter name="@action" value="ZadnjiDanMjesec" />
+			</data>
+		</datalist>
+	</form>
+	
+</root>

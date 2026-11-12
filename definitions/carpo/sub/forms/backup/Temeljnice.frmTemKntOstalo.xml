@@ -1,0 +1,310 @@
+<root version="1.0.0.2">
+	<form name="frmTemKntOstalo" caption="Ostali računi" width="1100" height="500" saveformsize="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtReset" />		
+			<action type="datarun reader" value="~dtGetDataEdit" />
+			<action type="variable value">
+				<parameter name="VarUplaceno" value="0" type="int"/>
+			</action>
+		</event>
+		<event type="load">	
+		</event>
+		<event type="shown">
+			<action type="control populate" value="#grdStavke"/>
+			<action type="control focus" value="#grdStavke"/>
+			<action type="control enable" value="cbDevValuta,curTecaj" if="$DevInd==1"/>
+			<action type="control disable" value="cbDevValuta,curTecaj" else=""/>
+		</event>
+		<layout itemspadding="1">
+			<group cols="5" rows="3" groupbordervisible="false" alignmode="local">
+				<rowsdefinition>
+					<row size="90%" position="1" />
+					<row size="35" position="2" />	
+					<row size="35" position="3" />						
+				</rowsdefinition>
+				<columnsdefinition>
+					<column size="20%" position="1"/>
+					<column size="20%" position="2"/>
+					<column size="10%" position="3"/>
+					<column size="25%" position="4"/>
+					<column size="25%" position="5"/>
+				</columnsdefinition>				
+				<group  cols="4" rows="1" col="1" row="2" colspan="3" groupbordervisible="false" alignmode="local">
+					<item caption="Uplaćeno:" col="1" row="1" colspan="2" textposition="left" fontsizedelta="1">
+						<textedit name="curUplaceno" value="$VarUplaceno" format="n2" entermovenextcontrol="false" fontsizedelta="1">
+							<event type="keydown" value="13">
+								<action type="variable value" value="$VarUplaceno">
+									<parameter value="#curUplaceno" type="decimal"/>
+								</action>
+								<action type="datarun nonquery" value="~dtCheckedSmije">
+									<action type="control populate" value="#grdStavke" />
+								</action>
+								<action type="control focus" value="#txtOpis" />
+							</event>
+						</textedit>
+					</item>	
+					<group col="3" row="1" colspan="2" cols="1" rows="1" groupbordervisible="false">
+						<item caption="Ostatak za zatvoriti:" col="1" row="1" textposition="left" fontsizedelta="1">
+							<textedit name="curOstatak" value="0" format="n2" datavalue="" readonly="true" fontsizedelta="1"/>
+						</item>
+					</group>
+				</group>	
+				<group name="dev"  cols="3" rows="1" col="4" row="2" colspan="2" fontsizedelta="1" alignmode="local" groupbordervisible="false">
+					<columnsdefinition>
+						<column size="50%" position="1"/>
+						<column size="130" position="2"/>
+						<column size="150" position="3"/>
+					</columnsdefinition>					
+					<item col="1" row="1" colspan="1"/>
+					<item col="2" row="1"  caption="Valuta:" fontsizedelta="1" textposition="left">
+						<comboedit name="cbDevValuta" autopopulate="true" valuefield="ValuteId" fontsizedelta="1" displayfield="Oznaka" datavalue="~dtGetDevValute.@ValuteId" dataname="dtGetDevValute">
+							<event type="valuechanged" raiseonload="false" >  
+								<action type="datarun reader" value="~dtGetTecaj" />
+								<action type="control value" value="#curTecaj" if="#cbDevValuta!=null">
+									<parameter value="~dtGetTecaj.@Tecaj" if="#cbDevValuta!=null" />
+								</action>
+							</event>
+						</comboedit>
+					</item>
+					<item caption="Tečaj:" col="3" row="1" colspan="1" fontsizedelta="1" textposition="left">
+						<textedit name="curTecaj" value="0.000000" format="n6" datavalue="~dtGetTecaj.@Tecaj" fontsizedelta="1"/>
+					</item>	
+				</group> 
+				<group caption="" name="kn1"  cols="4" rows="1" col="1" row="3" colspan="3" groupbordervisible="false" alignmode="local">	
+					<item col="1" row="1" colspan="2" caption="Opis:" fontsizedelta="1" textposition="left">
+						<textedit name="txtOpis"  value="" fontsizedelta="1">
+							<event type="leave" raiseonload="false" > 
+								<action type="control focus" value="#cmbNacinPlac" />
+							</event>
+						</textedit>
+					</item>
+					<group col="4" row="1" cols="1" rows="1" colspan="1" alignmode="local" groupbordervisible="false">
+						<item col="1" row="1"  caption="Način plaćanja:" fontsizedelta="1" textposition="left">
+							<comboedit name="cmbNacinPlac" fontsizedelta="1" autopopulate="true" valuefield="KntNacinPlacId" displayfield="Naziv" datavalue="~dtNacinPlac.@KntNacinPlacId" dataname="dtNacinPlac">
+								<event type="valuechanged" raiseonload="false" > 
+								</event>
+								<event type="leave" raiseonload="false" > 
+									<action type="control focus" value="#grdStavke" />
+								</event>
+							</comboedit>
+						</item>
+					</group>
+				</group>
+				<item row="1" col="1" colspan="5" highlight="False"  fontsizedelta="1">		
+					<grid name="grdStavke" fontsizedelta="1" dataname="~dtStavkeKntOstalo" multiselect="true" key="KntOstaloId" bestfitonrefresh="true"  showgrouppanel="False" showfooter="true" savelayout="true" tabstop="true">								
+						<event type="cellvaluechanged">
+							<!-- <action type="message" value="#grdStavke.@Checked"/> -->
+							<action type="datarun scalar" value="~dtGetCalc">
+								<parameter name="$Var"/>
+							</action>
+							<action type="control value" value="#curOstatak">
+								<parameter value="$Var" type="string"/>
+							</action>
+							<action type="control populate" value="#grdStavke"/> 
+						</event>
+						<event type="showingeditor">
+							<action type="editor allow" value="true" if="#grdStavke.@Smije==1" />
+						</event>
+						<event type="keydown" value="13">
+							<action if="#curOstatak&gt;0">
+								<action type="message" value="Knjiženje je moguće samo kada se potroši sav iznos uplate!"/>		
+								<action type="control focus" value="#grdStavke" />	
+							</action>
+							<action else=""> 
+								<action type="variable value" value="parent.$RacunId">
+									<parameter value="#grdStavke.@KntOstaloId" type="int"/>
+								</action>
+								<action type="variable value" value="parent.$BrojRacuna">
+									<parameter value="#grdStavke.@Broj" />
+								</action>
+								<action type="variable value" value="parent.$Duguje">
+									<parameter value="#grdStavke.@Duguje" />
+								</action>	
+								<action type="variable value" value="parent.$Potrazuje">
+									<parameter value="#grdStavke.@Potrazuje" />
+								</action>								
+								<action type="variable value" value="parent.$DevDug">
+									<parameter value="#grdStavke.@DevIznos" />
+								</action>
+								<action type="variable value" value="parent.$DevPot">
+									<parameter value="#grdStavke.@DevUplata" />
+								</action>
+								<action type="variable value" value="parent.$DevValuteId">
+									<parameter value="#grdStavke.@DevValuteId" />
+								</action>	
+								<action type="variable value" value="parent.$OrgShemaId">
+									<parameter value="#grdStavke.@OrgShemaId" />
+								</action>								
+								<action type="variable value" value="parent.$Saldo">
+									<parameter value="#grdStavke.@Saldo"/>
+								</action>
+								<!--ne povlači datum s računa, nego stavi datum temeljnice-->
+								<action type="variable value" value="parent.$DatDok">
+									<parameter value="global.$DatumKnjizenja"/>
+								</action>
+								<action type="variable value" value="parent.$DatVal">
+									<parameter value="global.$DatumKnjizenja"/>
+								</action>
+								<action type="datarun reader" value="~dtGetMulti"/>
+								<action type="variable value" value="parent.$multiselect">
+									<parameter value="~dtGetMulti.@multiselect" />
+								</action>
+								<action type="variable value" value="parent.$IndIzmjena">
+									<parameter value="1"/>
+								</action>								
+								<action type="datarun scalar" value="~dtSpremi" if="parent.$multiselect==1"/>
+								<action type="form close"/>
+							</action>
+						</event>
+						<fields>
+							<field name="Checked" caption=" " editable="true" edittype="bit"/>						
+							<field name="Broj" caption="Broj"/>
+							<field name="DatumValute" caption="Datum valute" />
+							<field name="Nadnevak" caption="Nadnevak"  />
+							<field name="Partner" caption="Partner"  />
+							<field name="Duguje" caption="Duguje"/>
+							<field name="Potrazuje" caption="Potražuje"/>
+							<field name="Saldo" caption="Saldo"/>
+							<field name="DevIznos" caption="Duguje\ndevizno"/>
+							<field name="DevUplata" caption="Potražuje\ndevizno"/>
+							<field name="DevSaldo" caption="Saldo\ndevizno"/>
+							<field name="DevValuta" caption="Valuta" />
+							<field name="orgshema_naziv" caption="Organizacijska\nshema"  />
+						</fields>
+						<styles>
+							<style name="fontcolor" value="blue" if="#grdStavke.@IndGlk==0"/>
+							<style name="fontcolor" value="black" else=""/>
+							<style name="italic" if="#grdStavke.@IndGlk==0" />
+							<style name="bold" value="true" if="#grdStavke.fieldname==Broj"/>
+						</styles>
+					</grid>
+				</item>		
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnChoose" caption="&amp;IZABERI" dock="left">
+					<event type="click">
+						<action if="#curOstatak&gt;0">
+							<action type="message" value="Knjiženje je moguće samo kada se potroši sav iznos uplate!"/>		
+							<action type="control focus" value="#grdStavke" />	
+						</action>
+						<action else=""> 
+							<action type="variable value" value="parent.$RacunId">
+								<parameter value="#grdStavke.@KntOstaloId" type="int"/>
+							</action>
+							<action type="variable value" value="parent.$BrojRacuna">
+								<parameter value="#grdStavke.@Broj" />
+							</action>
+							<action type="variable value" value="parent.$Saldo">
+								<parameter value="#grdStavke.@Saldo" />
+							</action>
+							<action type="variable value" value="parent.$DevDug">
+								<parameter value="#grdStavke.@DevIznos" />
+							</action>
+							<action type="variable value" value="parent.$DevPot">
+								<parameter value="#grdStavke.@DevUplata" />
+							</action>
+							<action type="variable value" value="parent.$Duguje">
+								<parameter value="#grdStavke.@Duguje" />
+							</action>	
+							<action type="variable value" value="parent.$Potrazuje">
+								<parameter value="#grdStavke.@Potrazuje" />
+							</action>							
+							<action type="variable value" value="parent.$DevValuteId">
+								<parameter value="#grdStavke.@DevValuteId" />
+							</action>
+							<action type="variable value" value="parent.$OrgShemaId">
+								<parameter value="#grdStavke.@OrgShemaId" />
+							</action>	
+							<!--ne povlači datum s računa, nego stavi datum temeljnice-->
+							<action type="variable value" value="parent.$DatDok">
+								<parameter value="global.$DatumKnjizenja"/>
+							</action>
+							<action type="variable value" value="parent.$DatVal">
+								<parameter value="global.$DatumKnjizenja"/>
+							</action>							
+							<action type="datarun scalar" value="~dtSpremi"/>
+							<action type="datarun reader" value="~dtGetMulti"/>
+							<action type="variable value" value="parent.$multiselect">
+								<parameter value="~dtGetMulti.@multiselect" />
+							</action>
+							<action type="variable value" value="parent.$IndIzmjena">
+								<parameter value="1"/>
+							</action>							
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtStavkeKntOstalo" command="spCKntOstaloQuery" >
+				<parameter name="@Action" value="103" type="int" />
+				<parameter name="@Id" value="$PartneriId" />
+				<parameter name="@Konto" value="$KntPlanaId" />
+				<parameter name="@VrstaPromSifra" value="global.$Sifra"/>
+				<parameter name="@Operateriid" value="@@operateriid" />
+			</data>		
+			<data command="spCKntTemValuteQuery" name="dtGetDevValute">
+				<parameter name="@Action" value="0" />
+			</data>	
+			<data command="spCKntTemNacinPlacQuery" name="dtNacinPlac">
+				<parameter name="@Action" value="0" />
+			</data>	
+			<data command="spCKntPrometQuery" name="dtGetDataEdit">
+				<parameter name="@Action" value="1" />
+				<parameter name="@Id" value="$KntPrometId" />
+			</data>
+			<data command="select vd.VrstaDokId,vd.Opis,vd.Prefix,vp.Sifra from VrstaDok vd,VrstaProm vp where vd.VrstaPromId in (select VrstaPromId from VrstaProm where Projekt = 'K') And vd.VrstaPromId = vp.VrstaPromId order by vd.opis" type="text" name="dtVrstaDok"/>
+			<data command="delete dbo.CKntTemCalc where  susersname=SUSER_NAME() and OperateriId=@Operateriid" type="text" name="dtReset">
+				<parameter name="@Operateriid" value="@@Operateriid" type="int"/>
+			</data>
+			<data command="select dbo.fnTecaj (@DatumKnjizenja,@ValuteId) as Tecaj" type="text" name="dtGetTecaj">
+				<parameter name="@DatumKnjizenja" value="Global.$DatumKnjizenja" type="date"/>
+				<parameter name="@ValuteId" value="#cbDevValuta" type="int"/>
+			</data>
+			<data command=" dbo.spCKntTemValuteQuery" name="dtGetDevValute">
+				<parameter name="@Action" value="0" />
+				<parameter name="@ID" value="0" />
+				<parameter name="@PartneriId" value="0" />
+			</data>
+			<data command="dbo.spCKntTemCalc" name="dtCheckedSmije">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@DokId" value="#grdStavke.@KntOstaloId"/>
+				<parameter name="@Var" value="#curUplaceno"/>
+				<parameter name="@Tablica" value="KntOstalo"/>
+				<parameter name="@Operateriid" value="@@Operateriid"/>
+			</data>
+			<data command="dbo.spCKntTemCalc" name="dtGetCalc">
+				<parameter name="@action" value="3"/>
+				<parameter name="@Var" value="#curUplaceno" type="decimal"/>
+				<parameter name="@Iznos" value="#grdStavke.@Saldo" type="decimal"/>
+				<parameter name="@operand" value="plus" if="#grdStavke.@Checked==true"/>
+				<parameter name="@operand" value="minus" else=""/>
+				<parameter name="@DokId" value="#grdStavke.@KntOstaloId"/>
+				<parameter name="@Tablica" value="KntOstalo"/>
+				<parameter name="@Operateriid" value="@@Operateriid"/>
+			</data>
+			<data command="spCKntPrometAzur" name="dtSpremi">
+				<parameter name="@action" value="5"/>
+				<parameter name="@KntTemId" value="Global.$KntTemId"/>
+				<parameter name="@KntPlanAId" value="parent.#srcKonto"/>
+				<parameter name="@PartneriId" value="parent.#srcPartner"/>
+				<parameter name="@DatumDokumenta" value="Global.$DatumKnjizenja"/>
+				<parameter name="@Opis" value="#txtOpis"/>
+				<parameter name="@KnjigaId" value="null"/>
+				<parameter name="@KntNacinPlacId" value="#cmbNacinPlac"/>
+				<parameter name="@DevValuteId" value="#cbDevValuta"/>
+				<parameter name="@ssOperateriId" value="@@operateriid"/>
+				<parameter name="@Uplaceno" value="#curUplaceno" type="decimal"/>
+				<parameter name="@Tecaj" value="#curTecaj" type="decimal"/>
+			</data>
+			<data command="dbo.spCKntTemCalc" name="dtGetMulti">
+				<parameter name="@action" value="7"/>
+				<parameter name="@Tablica" value="KntOstalo"/>
+				<parameter name="@Operateriid" value="@@Operateriid"/>
+			</data>			
+		</datalist>
+	</form>
+</root>

@@ -1,0 +1,212 @@
+<root>
+	<!--
+  Komentari:
+  4.11.2025. MP - PERMISSION -> FUNCTION NAME
+  09.11.2021. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmMirovanjeRO" caption="Mirovanje radnog odnosa za {parent.#txtPrezime} {parent.#txtIme}" width="850" height="350" >
+		<event type="load">
+			<action type="control populate" value="#grdMirovanjeRO"/>		
+			<action type="control disable" value="#btnIzmjena,btnBrisanje" if="#grdMirovanjeRO.rowcount==0"/>
+
+		</event>
+		<layout>
+			<group cols="1" rows="2" groupbordervisible="false">
+				<group cols="1" rows="1" groupbordervisible="true" col="1" row="1" spacing="2,2,2,1">
+					<item row="1" col="1" highlight="false">
+						<grid name="grdMirovanjeRO" key="HRKadroviMirovanjeId" dataname="~dtMirovanjeRO" multiselect="true" savelayout="true" fieldsmartspaces="false" showgrouppanel="false" bestfitonrefresh="true">
+							<fields inherited="true">
+							</fields>
+							<event type="doubleclick">
+								<action type="form open" value="frmUnosIzmjenaMirovanjaRO" function="IZMJENA_MIROVANJE">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviMirovanjeId" value="#grdMirovanjeRO.@HRKadroviMirovanjeId" />	
+									<parameter name="Caption" value="Izmjena mirovanja radnog odnosa za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdMirovanjeRO"/>
+								<action type="control populate" value="parent.#grdPodaci"/>	
+							</event>
+						</grid>
+					</item>
+				</group>
+				<group cols="8" rows="1" groupbordervisible="true" col="1" row="2" spacing="2,2,1,2">
+					<item row="1" col="1" highlight="false" height="40">
+						<button name="btnUnos" caption="Unos" function="UNOS_MIROVANJE"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaMirovanjaRO"> 
+									<parameter name="Caption" value="Unos mirovanja radnog odnosa za {parent.#txtPrezime} {parent.#txtIme}"/>		
+									<parameter name="HRKadroviMirovanjeId" value="0"/>   
+									<parameter name="HRKadroviId" value="$HRKadroviId" />	
+
+								</action>  
+								<action type="control populate keepfocus" value="#grdMirovanjeRO"/>
+								<action type="control populate" value="parent.#grdPodaci"/>	
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="2" highlight="false" height="40" >
+						<button name="btnIzmjena" caption="Izmjena" function="IZMJENA_MIROVANJE"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaMirovanjaRO">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviMirovanjeId" value="#grdMirovanjeRO.@HRKadroviMirovanjeId" />	
+									<parameter name="Caption" value="Izmjena mirovanja radnog odnosa za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdMirovanjeRO"/>
+								<action type="control populate" value="parent.#grdPodaci"/>	
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="3" highlight="false" height="40">
+						<button name="btnBrisanje" caption="Brisanje" function="BRISANJE_MIROVANJE"> 
+							<event type="click">   
+								<action type="confirm" value="Jeste li sigurni da želite obrisati izabrani zapis?">
+									<action type="datarun nonquery" value="~dtBrisanjeMirovanjeRO">
+
+									</action>
+								</action>
+								<action type="control populate" value="#grdMirovanjeRO,parent.#grdPodaci"></action>    
+								<action type="control disable" value="#btnIzmjena,btnBrisanje" if="#grdMirovanjeRO.rowcount==0"/>
+							</event>  
+						</button>
+					</item>
+
+					<item row="1" col="4" colspan="4" highlight="false" height="40"/>
+					<item row="1" col="8" highlight="false" height="40">
+						<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+							<event type="click">
+								<action type="form close" />
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+
+		</layout>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_MirovanjeRO_CP" name="dtMirovanjeRO">
+				<parameter name="@action" value="grid_mirovanjeRO" />
+				<parameter name="@hrkadroviid" value="$HRKadroviId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_MirovanjeRO_CP" name="dtBrisanjeMirovanjeRO">
+				<parameter name="@action" value="brisanje"/>
+				<parameter name="@HRKadroviMirovanjeId" value="#grdMirovanjeRO.@HRKadroviMirovanjeId"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!-- FORMA ZA UNOS,IZMJENU-->
+	<form name="frmUnosIzmjenaMirovanjaRO" caption="$Caption" width="380" height="390" fixedsize="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtGetMirovanjeRO" if="$HRKadroviMirovanjeId!=0" />
+		</event>
+		<event type="shown">
+			<!-- AKO JE IZMIJENA, POPUNI KONTROLE-->
+			<action if="$Tip=='Izmjena'">
+				<action type="control disable" value="#dtDatumDo" if="~dtGetMirovanjeRO.@datumdo==null"></action>
+				<action if="~dtGetMirovanjeRO.@datumdo==null">
+					<action type="control value" value="#dtDatumDo" >
+						<parameter value="now" />
+					</action>
+				</action>
+			</action>
+		</event>
+		<layout>
+			<group cols="2" rows="4" groupbordervisible="true">
+				<item row="1" col="1" caption="Vrsta odsustva:" highlight="false" colspan="2">
+					<comboedit name="cmbVrstaOdsustva" required="true" valuefield="HRVrsteMirId" displayfield="Naziv" dataname="~dtVrsteOdsustva" datavalue="~dtGetMirovanjeRO.@HRVrsteMirId"/>
+				</item>
+				<item row="2" col="1" caption="Datum od:" highlight="false" >
+					<dateedit name="dtDatumOd" value="now"  datavalue="~dtGetMirovanjeRO.@datumod">
+					</dateedit>
+				</item>
+				<item row="3" col="1" caption="Datum do:" highlight="false" >
+					<dateedit name="dtDatumDo" value="now" allownull="true" datavalue="~dtGetMirovanjeRO.@datumdo">
+					</dateedit>
+				</item>
+				<item row="4" col="1" caption="Napomena:" highlight="false" colspan="2">
+					<memoedit name="memNapomena"  datavalue="~dtGetMirovanjeRO.@napomena">
+					</memoedit>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+						<action type="validate"/>
+						<action if="$HRKadroviMirovanjeId==0">
+							<action type="datarun reader" value="~dtUnos">
+								<action type="control populate" value="parent.#grdMirovanjeRO">
+									<action type="control focus" value="parent.#grdMirovanjeRO">
+										<parameter value="$noviID"/>
+									</action>
+								</action>
+							</action>
+							<action type="control enable" value="parent.#btnIzmjena,parent.#btnBrisanje"/>
+						</action>
+						<action if="$indGreske==0">
+							<action type="message" value="Uspješno spremljeno!"/>
+							<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+							<action type="variable value" value="global.$RefreshajMaster">
+								<parameter value="1" type="int"/>
+							</action>
+							<action type="form close" />
+						</action>
+						<action if="$HRKadroviMirovanjeId!=0">
+							<action type="datarun reader" value="~dtIzmjena"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+								<action type="variable value" value="global.$RefreshajMaster">
+									<parameter value="1" type="int"/>
+								</action>
+								<action type="form close"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+		    <data command="spHRHelp" name="dtVrsteOdsustva">
+				<parameter name="@action" value="HRVrsteMir"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_MirovanjeRO_CP" name="dtGetMirovanjeRO">
+				<parameter name="@action" value="getMirovanjeRO" />
+				<parameter name="@HRKadroviMirovanjeId" value="$HRKadroviMirovanjeId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_MirovanjeRO_CP" name="dtUnos">
+				<parameter name="@action" value="unos"/>
+				<parameter name="@HRKadroviMirovanjeId.output.int" variablename="noviID"></parameter>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@hrvrstemirid"  value="#cmbVrstaOdsustva" />
+				<parameter name="@datumod"  value="#dtDatumOd" />
+				<parameter name="@datumdo"  value="#dtDatumDo" />
+				<parameter name="@napomena"  value="#memNapomena" />
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<data  command="spHRManagerMaster_Podaci_MirovanjeRO_CP" name="dtIzmjena">
+				<parameter name="@action" value="izmjena"/>
+				<parameter name="@HRKadroviMirovanjeId" value="$HRKadroviMirovanjeId"/>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@hrvrstemirid"  value="#cmbVrstaOdsustva" />
+				<parameter name="@datumod"  value="#dtDatumOd" />
+				<parameter name="@datumdo"  value="#dtDatumDo" />
+				<parameter name="@napomena"  value="#memNapomena" />
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+</root>

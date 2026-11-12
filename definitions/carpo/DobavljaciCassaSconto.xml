@@ -1,0 +1,403 @@
+<root>
+	<form name="frmMaster" type="master" caption="Rabati dobavljača">
+		<managerlayout>
+			<!-- FILTER ZA DRVO -->
+			<lookup name="filter">
+				<comboitem value="Vremenska podjela" />
+				<comboitem value="Partneri" />
+				<event type="valuechanged">
+					<action type="control populate" value="#tree">
+					</action>
+				</event>
+			</lookup>
+			<!-- DRVO -->
+			<tree name="tree" dataname="~dtTree" key="Id" expandlast="true">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava" />
+					<action type="control disable" value="#btnIzmijeni, #btnObrisi, #btnIspis" if="#grdGlava.rowcount==0" />
+					<action type="control enable" value="#btnIzmijeni, #btnObrisi, #btnIspis" elseif="#grdGlava.rowcount!=0" />
+				</event>
+				<data command="spCKntCassaScontoTree" if="#filter==Vremenska podjela">
+					<parameter name="@Action" value="0" />
+				</data>
+				<data command="spCKntCassaScontoTree" elseif="#filter==Partneri">
+					<parameter name="@Action" value="1" />
+				</data>
+				<fields>
+					<field name="caption" />
+				</fields>
+			</tree>
+			<!-- GLAVNI GRID -->
+			<grid name="grdGlava" dataname="~dtGlava" type="master" async="true" key="KntDobRabatGlaId" multiselect="true" savelayout="true" keyfield="KntDobRabatGlaId" searchfield="KntDobRabatGlaId" cleargridfilter="true">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetail" />
+				</event>
+				<!-- za izmjenu preko duplog klika - doraditi za formu za izmjenu, trenutno je unos -->
+				<event type="doubleclick">
+					<action if="grdGlava.rowcont!=0">
+						<action type="form open" value="frmUnosDobavljaca">
+							<parameter name="IndUnosa" value="0" type="int" />
+							<parameter name="PartneriID" value="#grdGlava.@PartneriID" />
+							<parameter name="Broj" value="#grdGlava.@Broj" />
+							<parameter name="Datum" value="#grdGlava.@Datum" />
+							<parameter name="KntDobRabatGlaId" value="#grdGlava.@KntDobRabatGlaId" />
+							<parameter name="Datum" value="#grdGlava.@Datum" />
+							<parameter name="CassaSconto" value="#grdDetail.@Cassa Sconto" />
+							<parameter name="BrojDana" value="#grdDetail.@Broj Dana" />
+							<parameter name="KntDobRabatDetId" value="#grdGlava.@KntDobRabatDetId" />
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava" />
+						<action type="control populate keepfocus" value="#grdDetail" />
+					</action>
+				</event>
+				<!-- za rad s tipkama -->
+				<event type="keydown">
+					<!-- za novi unos preko tipke insert -->
+					<action if="key==45" type="form open" value="frmUnosDobavljaca">
+							<parameter name="IndUnosa" value="1" type="int" />
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava" />
+						<action type="control populate keepfocus" value="#grdDetail" />
+						<action type="datarun scalar" value="~dtGlavniScope">
+							<parameter name="KntDobRabatGlaId"/>
+						</action>
+						<action type="control focus" value="#grdGlava">
+							<parameter value="$KntDobRabatGlaId" type="int"/>
+						</action>
+					<!-- za brisanje preko tipke delete -->
+					<action if="key==46">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati odabrani slog?">
+							<action type="control foreachrow selected" value="#grdGlava">
+								<action type="datarun nonquery" value="~dtObrisi" />
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</action>
+					</action>
+					<!-- za izmjenu preko tipke enter - doraditi za formu za izmjenu, trenutno je unos -->
+					<action if="key==13">
+						<action if="grdGlava.rowcont!=0">
+							<action type="form open" value="frmUnosDobavljaca">
+								<parameter name="IndUnosa" value="0" type="int" />
+								<parameter name="PartneriID" value="#grdGlava.@PartneriID" />
+								<parameter name="Broj" value="#grdGlava.@Broj" />
+								<parameter name="Datum" value="#grdGlava.@Datum" />
+								<parameter name="KntDobRabatGlaId" value="#grdGlava.@KntDobRabatGlaId" />
+								<parameter name="Datum" value="#grdGlava.@Datum" />
+								<parameter name="CassaSconto" value="#grdDetail.@Cassa Sconto" />
+								<parameter name="BrojDana" value="#grdDetail.@Broj Dana" />
+								<parameter name="KntDobRabatDetId" value="#grdGlava.@KntDobRabatDetId" />
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava" />
+							<action type="control populate keepfocus" value="#grdDetail" />
+						</action>
+					</action>
+				</event>
+				<fields>
+					<field name="Partneri Naziv" caption="Partneri Naziv" />
+					<field name="Broj" caption="Broj" />
+					<field name="Datum" caption="Datum" />
+				</fields>
+			</grid>
+			<!-- DETALJ GRID -->
+			<grid name="grdDetail" dataname="~dtDetail" showgrouppanel="false" showautofilterrow="true" multiselect="true" expandallonload="true" savelayout="true" wordwrap="true" cleargridfilter="true">
+				<fields>
+					<field name="Cassa Sconto" caption="Cassa Sconto" format="n2" />
+					<field name="Broj Dana" caption="Broj Dana" />
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<!-- FUNKCIJSKI GUMBI NA GLAVNOM PRIKAZU -->
+			<buttons>
+				<button name="btnUnesi" caption="Unesi">
+					<event type="click">
+						<action type="form open" value="frmUnosDobavljaca">
+							<parameter name="IndUnosa" value="1" type="int" />
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava" />s
+						<action type="control populate keepfocus" value="#grdDetail" />
+						<action type="datarun scalar" value="~dtGlavniScope">
+							<parameter name="KntDobRabatGlaId"/>
+						</action>
+						<action type="control focus" value="#grdGlava">
+							<parameter value="$KntDobRabatGlaId" type="int"/>
+						</action>
+						
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="Izmijeni" type="edit" function="edit">
+					<event type="click">
+						<action type="form open" value="frmUnosDobavljaca">
+							<parameter name="IndUnosa" value="0" type="int" />
+							<parameter name="PartneriID" value="#grdGlava.@PartneriID" />
+							<parameter name="Broj" value="#grdGlava.@Broj" />
+							<parameter name="Datum" value="#grdGlava.@Datum" />
+							<parameter name="KntDobRabatGlaId" value="#grdGlava.@KntDobRabatGlaId" />
+							<parameter name="Datum" value="#grdGlava.@Datum" />
+							<parameter name="CassaSconto" value="#grdDetail.@Cassa Sconto" />
+							<parameter name="BrojDana" value="#grdDetail.@Broj Dana" />
+							<parameter name="KntDobRabatDetId" value="#grdGlava.@KntDobRabatDetId" />
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava" />
+						<action type="control populate keepfocus" value="#grdDetail" />
+					</event>
+				</button>
+				<button name="btnObrisi" caption="Obriši">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati odabrani slog?">
+							<action type="control foreachrow selected" value="#grdGlava">
+								<action type="datarun nonquery" value="~dtObrisi" />
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIspis" caption="Ispis">
+					<event type="click">
+						<action type="control printcontrol" value="#grdGlava" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<!-- DATA LISTA ZA GLAVNI PRIKAZ -->
+			<!-- punjenje drveta -->
+			<data command="spCKntCassaScontoTree" name="dtTree" if="#filter==Vremenska podjela">
+				<parameter name="@Action" value="0" />
+			</data>
+			<data command="spCKntCassaScontoTree" name="dtTree" if="#filter==Partneri">
+				<parameter name="@Action" value="1" />
+			</data>
+			<!-- punjenje glavnog grida -->
+			<data command="spCKntCassaScontoQuery" name="dtGlava">
+				<parameter name="@action" value="4" if="#filter==Partneri" />
+				<parameter name="@partneriid" value="#tree.@Partneriid" if="#filter==Partneri" />
+				<parameter name="@node" value="#tree.@value" if="#filter==Vremenska podjela" />
+			</data>
+			<!-- punjenje detalj grida -->
+			<data command="spCKntCassaScontoQuery" name="dtDetail" if="#filter==Vremenska podjela">
+				<parameter name="@Action" value="5" />
+				<parameter name="@KntDobrabatglaId" value="#grdGlava.@KntDobrabatglaId" />
+			</data>
+			<data command="spCKntCassaScontoQuery" name="dtDetail" if="#filter==Partneri">
+				<parameter name="@Action" value="7" />
+				<parameter name="@Partneriid" value="#tree.@Partneriid" if="#filter==Partneri" />
+				<parameter name="@KntDobrabatglaId" value="#grdGlava.@KntDobrabatglaId" />
+			</data>
+			<!-- gumb obriši -->
+			<data name="dtObrisi" command="spCKntDobRabatGlaAzur">
+				<parameter name="@Action" value="2" />
+				<parameter name="@kntDobRabatGlaId" value="#grdGlava.@KntDobRabatGlaId" />
+			</data>
+			<data name="dtGlavniScope" command="spCKntDobRabatGlaAzur">
+				<parameter name="@Action" value="3" />
+			</data>
+		</datalist>
+	</form>
+	<!-- FORMA ZA UNOS DOBAVLJAČA -->
+	<form name="frmUnosDobavljaca" caption="Dobavljač" width="500" fixedsize="false">
+		<!-- novo dodano -->
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$IndUnosa==0" />
+			<action type="datarun reader" value="~dtGetStavke" if="$IndUnosa==0" />
+		</event>
+		<event type="onload">
+			<action type="control disable" value="#btnStavke" if="$IndUnosa==0" />
+			<action type="control disable" value="#btnStavkeUnesi, #btnStavkeIzmijeni, #btnStavkeObriši" if="$IndUnosa==1" />
+			<action type="control populate keepfocus" value="#grdStavke" if="$IndUnosa==0" />
+		</event>
+		<layout>
+			<group cols="1" rows="2" groupbordervisible="false">
+				<part name="prtCassaScontoUnosMaster" path="prtCassaScontoUnosMaster.xml" />
+				<group col="1" row="2" cols="6" rows="6">
+					<item col="1" row="1" colspan="5" rowspan="6">
+						<grid name="grdStavke" dataname="~dtDetail" showgrouppanel="false" key="kntDobRabatDetId" datavalue="~dtDetail.@KntDobrabatglaId">
+							<fields>
+								<field name="Cassa Sconto" caption="Cassa Sconto" datavalue="~dtGetStavke.@Cassa Sconto" />
+								<field name="Broj Dana" caption="Broj dana" datavalue="~dtGetStavke.@Broj Dana" />
+							</fields>
+						</grid>
+					</item>
+					<item col="6" row="1" rowspan="2">
+						<button name="btnStavkeUnesi" caption="Unesi">
+							<event type="click">
+								<action type="form open" value="frmStavkaUgovora" if="#grdDetail.rowcount!=0">
+									<parameter name="IndUnosa" value="1" type="int" />
+								</action>
+								<action type="control populate" value="#grdStavke" />
+								<action if="#grdStavke.rowcount==0" type="control disable" value="#btnStavkeIzmijeni, #btnStavkeObriši" />
+								<action type="control enable" value="#btnStavkeIzmijeni, #btnStavkeObriši" elseif="#grdStavke.rowcount!=0" />
+								<action type="datarun scalar" value="~dtDetailScope">
+									<parameter name="kntDobRabatDetId" />
+								</action>
+								<action type="control focus" value="#grdStavke">
+									<parameter value="$kntDobRabatDetId" type="int" />
+								</action>
+							</event>
+						</button>
+					</item>
+					<item col="6" row="3" rowspan="2">
+						<button name="btnStavkeIzmijeni" caption="Izmijeni">
+							<event type="click">
+								<action type="form open" value="frmStavkaUgovora">
+									<parameter name="IndUnosa" value="0" type="int" />
+									<parameter name="CassaSconto" value="parent.#grdStavke.@Cassa Sconto" />
+									<parameter name="BrojDana" value="parent.#grdStavke.@Broj Dana" />
+									<parameter name="KntDobRabatDetId" value="#grdStavke.@kntDobRabatDetId" />
+								</action>
+								<action type="control populate keepfocus" value="#grdStavke" />
+							</event>
+						</button>
+					</item>
+					<item col="6" row="5" rowspan="2">
+						<button name="btnStavkeObriši" caption="Obriši">
+							<event type="click">
+								<action type="confirm" value="Jeste li sigurni da želite obrisati odabrani slog?">
+									<action type="control foreachrow selected" value="#grdStavke">
+										<action type="datarun nonquery" value="~dtObrisi" />
+									</action>
+									<action type="control populate keepfocus" value="#grdStavke" />
+								</action>
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnZatvori" caption="Zatvori">
+					<event type="click">
+						<action if="$IndUnosa==0">
+							<action type="validate">
+								<action type="datarun nonquery" value="~dtUnosZaglavlja">
+									<parameter name="@KntDobRabatGlaId" value="#grdGlava.@KntDobRabatGlaId" />
+								</action>
+								<action type="control keepfocus" value="parent.#grdGlava">
+									<parameter value="#grdGlava.@KntDobRabatGlaId" type="int" />
+								</action>
+								<action type="form close" />
+							</action>
+						</action>
+						<action else="$IndUnosa==1">
+							<!--
+							<action type="control keepfocus" value="parent.#grdGlava" >
+							<parameter value="#grdGlava.@KntDobRabatGlaId" type="int" />
+							</action>
+							-->
+							<!--
+							<action type="control focus" value="parent.#grdGlava">
+							<parameter value="$kntDobRabatGlaId" type="int" />
+							</action>
+							-->
+							<!--
+							<action type="control keepfocus" value="parent.#grdGlava">
+							<parameter value="#grdGlava.@KntDobRabatGlaId" type="int" />
+							</action>
+							-->
+							<action type="form close" />
+						</action>
+					</event>
+				</button>
+				<button caption="Ispiši" name="btnIspis" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<!-- DATALISTA ZA UNOS DOBAVLJAČA (ZAGLAVLJE) -->
+			<!-- punjenje glavnog grida -->
+			<data command="spCKntCassaScontoQuery" name="dtGlava">
+				<parameter name="@action" value="4" if="#filter==Partneri" />
+				<parameter name="@partneriid" value="#tree.@Partneriid" if="#filter==Partneri" />
+				<parameter name="@node" value="#tree.@value" if="#filter==Vremenska podjela" />
+			</data>
+			<data command="spCKntCassaScontoQuery" name="dtDetail">
+				<parameter name="@Action" value="51" />
+				<parameter name="@KntDobrabatglaId" value="$KntDobrabatglaId" />
+			</data>
+			<data name="dtSrcPartneri" command="spTraziPartneri">
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>
+			<data name="dtUnosZaglavlja" command="spCKntDobRabatGlaAzur">
+				<parameter name="@Action" value="0" if="$IndUnosa==1" />
+				<parameter name="@Action" value="1" if="$IndUnosa==0" />
+				<parameter name="@PartneriID" value="#srcPartner" />
+				<parameter name="@Broj" value="#txtBroj" />
+				<parameter name="@Datum" value="#datCSDatum" />
+				<!-- <parameter name="@kntDobRabatGlaId" value="null" /> -->
+				<parameter name="@kntDobRabatGlaId" value="parent.#grdGlava.@KntDobRabatGlaId" if="$IndUnosa==0" />
+				<parameter name="@ID" value="parent.#grdGlava.@KntDobRabatGlaId" if="$IndUnosa==0" />
+			</data>
+			<data name="dtGlavniScope" command="spCKntDobRabatGlaAzur">
+				<parameter name="@Action" value="3" />
+			</data>
+			<data name="dtDetailScope" command="spCkntDobRabatDetAzur">
+				<parameter name="@Action" value="3" />
+			</data>
+			<data name="dtGet" command="spCKntDobRabatGlaAzur">
+				<parameter name="@Action" value="4" />
+				<parameter name="@kntDobRabatGlaId" value="$KntDobRabatGlaId" />
+			</data>
+			<data name="dtGetStavke" command="spCKntDobRabatDetAzur">
+				<parameter name="@Action" value="41" />
+				<parameter name="@kntDobRabatDetId" value="$KntDobRabatDetId" />
+			</data>
+			<data name="dtObrisi" command="spCKntDobRabatDetAzur">
+				<parameter name="@Action" value="2" />
+				<parameter name="@ID" value="#grdStavke.@kntDobRabatDetId" />
+			</data>
+		</datalist>
+	</form>
+	<!-- FORMA ZA UNOS STAVKI -->
+	<form name="frmStavkaUgovora" caption="Stavka ugovora" width="200" fixedsize="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtGetStavke" if="$IndUnosa==0" />
+		</event>
+		<layout textposition="left">
+			<group cols="1" rows="2" groupbordervisible="true">
+				<item caption="Cassa Sconto:" col="1" row="1">
+					<textedit name="txtCassaSconto" datavalue="~dtGetStavke.@CassaSconto" required="false" format="n2" />
+				</item>
+				<item caption="Broj dana:" col="1" row="2">
+					<textedit name="txtBrojDana" datavalue="~dtGetStavke.@BrojDana" required="false" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremiStavkaUgovora" caption="Spremi">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="~dtUnosStavke">
+						</action>
+						<action type="control populate" value="parent.#grdStavke" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustaniStavkaUgovora" caption="Odustani" type="cancel">
+					<event type="click">
+					</event>
+				</button>
+				<button name="btnUputiMe" caption="Uputi me">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<!-- DATALISTA ZA UNOS STAVKI -->
+			<data name="dtUnosStavke" command="spCKntDobRabatDetAzur">
+				<parameter name="@Action" value="0" if="$IndUnosa==1" />
+				<parameter name="@Action" value="1" if="$IndUnosa==0" />
+				<parameter name="@CassaSconto" value="#txtCassaSconto" />
+				<parameter name="@BrojDana" value="#txtBrojDana" />
+				<parameter name="@kntDobRabatGlaId" value="parent.$KntDobrabatglaId" />
+				<parameter name="@ID" value="parent.#grdStavke.@KntDobRabatDetId" if="$IndUnosa==0" />
+			</data>
+			<data name="dtGetStavke" command="spCKntDobRabatDetAzur">
+				<parameter name="@Action" value="41" />
+				<parameter name="@kntDobRabatDetId" value="$KntDobRabatDetId" />
+			</data>
+		</datalist>
+	</form>
+</root>

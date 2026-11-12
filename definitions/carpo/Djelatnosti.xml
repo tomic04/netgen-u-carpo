@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<form name="frmMaster" type="master" caption="Djelatnosti">
+		<managerlayout>
+			<tree name="tree" keyfield="DjelatnostiId" allowselfdrag="true" dataname="datOrgTree" showcolumns="true" autofiltercondition="contains" expandallonload="true" expandedlevel="2">
+				<fields>
+					<field name="Naziv" />
+					<field name="Oznaka" />
+				</fields>
+				<menu>
+					<menuitem caption="UNESI">
+						<part name="prtUnesi">
+						</part>
+					</menuitem>
+					<menuitem caption="IZMIJENI">
+						<part name="prtIzmijeni">
+						</part>
+					</menuitem>
+					<menuitem caption="OBRIŠI">
+						<part name="prtObrisi">
+						</part>
+					</menuitem>
+				</menu>
+			</tree>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="false">
+			<buttons type="tree">
+				<button name="btnDrag" caption="SPREMI PROMJENE" type="selfdrag">
+					<event type="click">
+						<action type="datarun nonquery" value="~datOrgAzur" />
+						<action type="control defaultmode" value="#tree" />
+					</event>
+				</button>
+				<button name="btnDragCancel" caption="ODUSTANI" type="selfdragcancel">
+					<event type="click">
+						<action type="confirm" value="Želite odustati od reorganizacije?">
+							<action type="control populate" value="#tree" />
+							<action type="control dragmode" value="#tree" />
+						</action>
+					</event>
+				</button>
+				<button name="btnUnesi" caption="UNESI" type="add" begingroup="true" color="light">
+					<part name="prtUnesi">
+					</part>
+				</button>
+				<button name="btnEdit" caption="IZMIJENI" type="edit">
+					<part name="prtIzmijeni">
+					</part>
+				</button>
+				<button name="btnDelete" caption="OBRIŠI" type="delete">
+					<part name="prtObrisi">
+					</part>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spDjelatnosti_Carpo_Query" name="datOrgTree">
+				<parameter name="Action" value="0" />
+			</data>
+			<data command="spDjelatnosti_Carpo_TreeAzur" name="datOrgAzur">
+				<parameter name="@Action" value="setTree" />
+				<parameter name="@TableVar" value="#tree.datasource" />
+			</data>
+			<data command="spDjelatnosti_Carpo_Azur" name="datOrgDelete">
+				<parameter name="@Action" value="delete" />
+				<parameter name="@DjelatnostiID" value="#tree" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmAzur" caption="Djelatnosti - {$formType}" fixedsize="true">
+		<event type="init">
+			<action type="datarun reader" value="~datGet" if="$Id!=null" />
+		</event>
+		<event type="shown">
+			<action type="control focus" value="#txtNaziv" />
+		</event>
+		<layout textposition="top">
+			<group cols="1" rows="1" if="$Id==null">
+				<group row="1" col="1" cols="1" rows="2" groupbordervisible="false">
+					<part name="prtFormAzur">
+					</part>
+				</group>
+			</group>
+			<group cols="1" rows="2" else="">
+				<part name="prtFormAzur">
+				</part>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI" type="add" dock="right">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~datAzur">
+							<parameter name="checkid" />
+							<!-- <action type="message" value="$checkid"></action> -->
+						</action>
+						<action type="control populate keepfocus" value="parent.#tree" />
+						<action type="control expand" value="parent.#tree">
+							<parameter name="key" value="$checkid" />
+						</action>
+						<action type="control refreshvalue" value="#txtNaziv,#txtOznaka"/>
+						<action type="form close" if="$Id!=null||#chkFormClose==true" />
+					</event>
+				</button>
+				<button caption="ODUSTANI" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spDjelatnosti_Carpo_Azur" name="datAzur">
+				<parameter name="@Action" value="add" if="$Id==null" />
+				<parameter name="@Action" value="edit" else="" />
+				<parameter name="@DjelatnostiID" value="$DjelatnostiID" text="" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@Oznaka" value="#txtOznaka" />
+				<parameter name="@InsertTip" value="in" />
+			</data>
+			<data command="spDjelatnosti_Carpo_Query" name="datGet">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$DjelatnostiID" />
+			</data>
+		</datalist>
+	</form>
+	<parts>
+		<part name="prtUnesi">
+			<event type="click">
+				<action type="form open" value="frmAzur">
+					<parameter name="DjelatnostiID" value="#tree" />
+					<parameter name="FormType" value="novi unos" />
+				</action>
+				<!-- <action type="control populate keepfocus" value="#tree" /> -->
+			</event>
+		</part>
+		<part name="prtIzmijeni">
+			<event type="click">
+				<action type="form open" value="frmAzur" if="#tree.@Id!=-1">
+					<parameter name="Id" value="1" />
+					<!-- pomoćna varijabla update/insert -->
+					<parameter name="DjelatnostiID" value="#tree" />
+					<parameter name="FormType" value="izmjena" />
+				</action>
+				<action type="control populate keepfocus" value="#tree" />
+			</event>
+		</part>
+		<part name="prtObrisi">
+			<event type="click">
+				<action type="confirm" value="Jeste li sigurni da želite obrisati djelatnost '{#tree.@Naziv}'?" if="#tree.@Id!=-1">
+					<action type="datarun nonquery" value="~datOrgDelete" />
+					<action type="control populate keepfocus" value="#tree" />
+				</action>
+				<action type="datarun nonquery" value="~datOrgAzur" />
+				<action type="control defaultmode" value="#tree" />
+			</event>
+		</part>
+		<part name="prtFormAzur">
+			<item caption="Naziv:" row="1" col="1">
+				<textedit name="txtNaziv" required="true" datavalue="~datGet.@Naziv" fontbold="true" />
+			</item>
+			<item caption="Oznaka:" row="2" col="1">
+				<textedit name="txtOznaka" datavalue="~datGet.@Oznaka" maxsize="10" />
+			</item>
+		</part>
+	</parts>
+</root>

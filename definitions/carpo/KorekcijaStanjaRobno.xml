@@ -1,0 +1,217 @@
+<!--
+24.12.2021. AA multiselect zaključivanje HD 68456
+22.12.2021. AA shortcut na donos N
+23.12.2020 DH dodao amp za podvlačenje slova na gumbima
+15.11.2018 PJ datumKnjizenja datum s dokumenta
+23.7.2018. AA bug na control focus na Izmijeni
+-->
+<root>
+     <form name="frmSklDonos" path="KorekcijaStanjaRobno.frmSklDonos.xml"/>
+     <form name="frmDonos" path="KorekcijaStanjaRobno.frmDonos.xml"/>
+     <form name="frmNapomene" path="KorekcijaStanjaRobno.frmNapomene.xml"/>
+     <form name="frmStavkeDetalj" path="KorekcijaStanjaRobno.frmStavkeDetalj.xml"/>
+     <form name="frmStavke" path="KorekcijaStanjaRobno.frmStavke.xml"/>
+     <form name="frmAzur" path="KorekcijaStanjaRobno.frmAzur.xml" caption="Korekcija prometa"/>
+     <form name="frmKorStRobno" caption="Korekcija prometa" type="master" maximized="true" statusbar="true">
+          <event type="init">
+               <action type="datarun reader" value="~dtVrstaProm"/>
+               <action type="variable value">
+                    <parameter name="VrstaPrometa" value="~dtVrstaProm.@VrstaPromId" type="int"/>
+               </action>
+          </event>
+          <event type="load">
+               <action type="variable value">
+                    <parameter name="Danas" value="now" type="date"/>
+               </action>
+          </event>
+          <managerlayout>
+               <lookup name="filter">
+                    <comboitem value="Vrijeme" searchfield="VrijemeId"/>
+                    <comboitem value="Skladište" searchfield="SkladisteId"/>
+                    <comboitem value="Status" searchfield="StatusidId"/>
+                    <event type="valuechanged">
+                         <action type="control populate" value="#trDrvo"/>
+                    </event>
+               </lookup>
+               <tree name="trDrvo" dataname="~dtDrvo" filtermode="smart" keyfield="Id">
+                    <fields>
+                         <field name="Name"/>
+                    </fields>
+                    <event type="focusedrowchanged">
+                         <action type="control populate" value="#grdMaster"/>
+                    </event>
+               </tree>
+               <grid name="grdMaster" type="master" dataname="~dtMGrid" bestfitonrefresh="true" keyfield="SktPrometGlaId" multiselect="true">
+                    <menu>
+                         <menuitem name="mnuPonistiZak" caption="Poništi zaključak">
+                              <event type="click">
+                                   <action type="confirm" value="Jeste li sigurni da želite poništiti zaključak?" />
+                                   <action type="datarun nonquery" value="~dtPonistiZakljucak"/>
+                                   <action type="control populate" value="#grdMaster"/>
+                              </event>
+                         </menuitem>
+                    </menu>
+                    <event type="doubleclick">
+                         <action type="form open" value="frmStavke">
+                              <parameter name="SktPrometGlaId" value="#grdMaster.@SktPrometGlaId"/>
+                         </action>
+                    </event>
+                    <event type="keydown">
+                         <action type="form open" value="frmStavke" if="key==13">
+                              <parameter name="SktPrometGlaId" value="#grdMaster.@SktPrometGlaId"/>
+                         </action>
+                         <action type="confirm" value="Jeste li sigurni da želite obrisati stavku?" if="key==46">
+                              <action type="datarun nonquery" value="~dtObrisi"/>
+                              <action type="control populate" value="#grdMaster"/>
+                         </action>
+                         <action type="form open" value="frmAzur" if="key==45"/>
+                    </event>
+                    <event type="focusedrowchanged">
+                         <action type="control populate" value="#grdDetail"/>
+                    </event>
+                    <fields>
+                         <field name="Broj" minwidth="100"/>
+                         <field name="DatumDok" caption="Datum" minwidth="100"/>
+                         <field name="StatusStr" caption="Status" minwidth="100"/>
+                         <field name="OrgDok" caption="Opis" minwidth="200"/>
+                         <field name="Opis" caption="Skladište" minwidth="150"/>
+                         <field name="Inicijali" caption="Operater" minwidth="50"/>
+                    </fields>
+                    <styles>
+                         <style name="fontcolor" value="grey" if="#grdMaster.@StatusStr==Zaključen"/>
+                         <style name="fontcolor" value="green" if="#grdMaster.@StatusStr==Otvoren"/>
+                    </styles>
+                    <print caption="Korekcija prometa" captionalign="center"/>
+               </grid>
+               <grid name="grdDetail" dataname="~dtDGrid">
+                    <fields>
+                         <field name="Šifra" caption="Roba" minwidth="50"/>
+                         <field name="RobaNaziv" caption="Naziv robe" minwidth="100"/>
+                         <field name="VrijednostUlaz" caption="Vrijednost ulaz" minwidth="200"/>
+                         <field name="VrijednostIzlaz" caption="Vrijednost izlaz" minwidth="200"/>
+                    </fields>
+               </grid>
+          </managerlayout>
+          <panelbuttons>
+               <buttons>
+                    <button name="btnInsert" caption="&amp;Unesi">
+                         <event type="click">
+                              <action type="form open" value="frmAzur">
+                                   <parameter name="Filter" value="#filter"/>
+                              </action>
+                              <action type="control populate" value="#trDrvo" if="$Izadji==false"/>
+                              <action type="control focus" value="#trDrvo">
+                                   <parameter value="$DodatnoTemp" />
+                              </action>
+                              <action type="control populate" value="#grdMaster"/>
+                              <action type="control focus" value="#grdMaster" if="$Izadji==false">
+                                   <parameter value="$SktPrometGlaId" />
+                              </action>
+                              <action type="variable value" value="$Izadji">
+                                   <parameter value="false" type="bool" />
+                              </action>
+                         </event>
+                    </button>
+                    <button name="btnEdit" caption="&amp;Izmijeni">
+                         <event type="click">
+                              <action type="form open" value="frmStavke">
+                                   <parameter name="SktPrometGlaId" value="#grdMaster.@SktPrometGlaId"/>
+                              </action>
+                              <action type="control populate" value="#grdMaster"/>
+                              <action type="control focus" value="#grdMaster">
+                                   <parameter value="$SktPrometGlaId"/>
+                              </action>
+                         </event>
+                    </button>
+                    <button name="btnDelete" caption="&amp;Obriši">
+                         <event type="click">
+                              <action type="confirm" value="Jeste li sigurni da želite obrisati stavku?">
+                                   <action type="datarun nonquery" value="~dtObrisi"/>
+                                   <action type="control populate" value="#grdMaster"/>
+                              </action>
+                         </event>
+                    </button>
+                    <button name="btnDonos" caption="Do&amp;nos">
+                         <event type="click">
+                              <action type="form open" value="frmSklDonos"/>
+                              <action type="control populate" value="#grdMaster"/>
+                         </event>
+                    </button>
+                    <button name="btnList" caption="&amp;Lista">
+                         <event type="click">
+                              <action type="control printcontrol" value="#grdMaster"/>
+                         </event>
+                    </button>
+                    <button name="btnDokument" caption="&amp;Dokument" dataname="~dtPrint" displayfield="Template">
+                         <event type="click">
+                              <action type="control print" value="#grdMaster">
+                                   <action type="print template" value="#btnDokument.@Template">
+                                        <parameter name="id" value="#grdMaster.@SktPrometGlaId"/>
+                                   </action>
+                              </action>
+                         </event>
+                    </button>
+                    <button name="btnZakljuci" caption="&amp;Zaključi">
+						<event type="click">
+							<action type="control foreachrow selected" value="#grdMaster">
+								<action type="datarun nonquery" value="~dtZakljuci"/>
+							</action>
+							<action type="control populate" value="#grdMaster"/>
+						</event>
+                    </button>
+                    <button name="btnUputiMe" caption="Uputi me">
+                         <event type="click">
+                              <action type="message" value="Ova funkcionalnost trenutno nije dostupna, molimo kontaktirajte Spin!"/>
+                         </event>
+                    </button>
+               </buttons>
+          </panelbuttons>
+          <datalist>
+               <data name="dtVrstaProm"  command="select VrstaPromId from VrstaProm where Sifra='114'" type="text"/>
+               <data name="dtDrvo" command="spRKorek_Tree_Statusi" if="#filter==Status"/>
+               <data name="dtDrvo" command="spRKorek_Tree_Skladiste" if="#filter==Skladište"/>
+               <data name="dtDrvo" command="spRKorek_Tree_Vrijeme" if="#filter==Vrijeme"/>
+               <data name="dtMGrid" command="spCRobnoKorekcijaGlaQuery_Vrijeme" if="#filter==Vrijeme">
+                    <parameter name="@ID"  value="#trDrvo.@Id"/>
+                    <parameter name="@ValueId"  value="#trDrvo.@ValueId"/>
+                    <parameter name="@SkladisteId"  value="#trDrvo.@SkladisteId"/>
+                    <parameter name="@mjesec"  value="#trDrvo.@mjesec"/>
+                    <parameter name="@Rbr"  value="#trDrvo.@Rbr"/>
+                    <parameter name="@VrstaPromId"  value="$VrstaPrometa"/>
+               </data>
+               <data name="dtMGrid" command="spCRobnoKorekcijaGlaQuery_Skladiste" if="#filter==Skladište">
+                    <parameter name="@ID"  value="#trDrvo.@Id"/>
+                    <parameter name="@ValueId"  value="#trDrvo.@ValueId"/>
+                    <parameter name="@SkladisteId"  value="#trDrvo.@SkladisteId"/>
+                    <parameter name="@mjesec"  value="#trDrvo.@mjesec"/>
+                    <parameter name="@Rbr"  value="#trDrvo.@Rbr"/>
+                    <parameter name="@VrstaPromId"  value="$VrstaPrometa"/>
+                    <parameter name="@godina" value="#trDrvo.@godina"/>
+               </data>
+               <data name="dtMGrid" command="spCRobnoKorekcijaGlaQuery_Status" if="#filter==Status">
+                    <parameter name="@Status" value="#trDrvo.@status"/>
+                    <parameter name="@mjesec"  value="#trDrvo.@mjesec"/>
+                    <parameter name="@godina"  value="#trDrvo.@godina"/>
+                    <parameter name="@VrstaPromId"  value="$VrstaPrometa"/>
+               </data>
+               <data name="dtDGrid" command="spSklad_DetailGridKorekcija">
+                    <parameter name="@Id" value="#grdMaster.@SktPrometGlaId"/>
+               </data>
+               <data name="dtPonistiZakljucak" command="spCRobnoPrometKorekcija_PonistiZaklj">
+                    <parameter name="@SktPrometGlaId"  value="#grdMaster.@SktPrometGlaId"/>
+               </data>
+               <data name="dtObrisi" command="spSklad_GlavaObrisi">
+                    <parameter name="@ID" value="#grdMaster.@SktPrometGlaId"/>
+               </data>
+               <data name="dtZakljuci" command="spCRobnoKorekcijaKnjizenje">
+                    <parameter name="@ID" value="#grdMaster.@SktPrometGlaId"/>
+                    <!--<parameter name="@DatumKnjizenja" value="$Danas"/>-->
+                    <parameter name="@DatumKnjizenja" value="#grdMaster.@DatumDok"/>
+                    <parameter name="@OperaterKnjizenjaId" value="@@operateriid"/>
+               </data>
+               <data name="dtPrint" command="spCRobnoKorekcije_Print">
+                    <parameter name="@SktPrometGlaId" value="#grdMaster.@SktPrometGlaId"/>
+               </data>
+          </datalist>
+     </form>
+</root>

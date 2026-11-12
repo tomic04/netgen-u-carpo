@@ -1,0 +1,269 @@
+<root version="1.0.1">
+	<form name="frmTecLista" caption="Tečajna lista" type="master" maximized="true">
+		<event type="shown">
+			<action type="datarun reader" value="~dtGridMaster"/>
+			<action type="control populate" value="#grdMaster"/>
+		</event>
+		<managerlayout>
+			<!-- <group cols="2" rows="1"> -->
+				<!-- <columnsdefinition> -->
+					<!-- <column size="50%" position="1"/> -->
+					<!-- <column size="50%" position="2"/> -->
+				<!-- </columnsdefinition> -->
+				<!-- <item col="1" row="1"> -->
+					<grid name="grdMaster" dataname="~dtGridMaster" type="master" key="TecajnaListaId" multiselect="true">
+						<event type="focusedrowchanged">
+							<action type="datarun reader" value="~dtGridDetail"/>
+							<action type="control populate" value="#grdDetail"/>
+				
+						</event>
+						<fields>
+							<field name="Broj" minwidth="100"/>
+							<field name="Datum" minwidth="100"/>
+							<field name="Naziv" caption="Banka"/>
+						</fields>
+						<print caption="Tečajne liste" captionalign="center"/>
+					</grid>
+				<!-- </item> -->
+				<!-- <item col="2" row="1"> -->
+					<grid name="grdDetail" dataname="~dtGridDetail" multiselect="true">
+						<fields>
+							<field name="Sifra" caption="Šifra"/>
+							<field name="Oznaka"/>
+							<field name="Mjera"/>
+							<field name="KupDevize" caption="Kupovni" minwidth="100" format="n6"/>
+							<field name="SreNBH" caption="Srednji HNB" minwidth="100" format="n6"/>
+							<field name="ProDevize" caption="Prodajni" minwidth="100" format="n6"/>
+						</fields>
+						<print caption="Tečajnica" header="\n Tečajnica {#grdMaster.@Naziv} broj {#grdMaster.@Broj} na dan {#grdMaster.@Datum::dd.MM.yyyy.} " captionalign="center"/>"
+					</grid>
+				<!-- </item> -->
+			<!-- </group> -->
+		</managerlayout>
+		<datalist>
+			<data name="dtGridMaster" command="spCTecajnaListaQuery">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@Id" value="null"/>
+			</data>
+			<data name="dtGridDetail" command="spCTecajnaListaQuery">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Id" value="#grdMaster.@TecajnaListaId"/>
+			</data>
+			<data name="dtObrisi" command="spCTecajnaListaAzur">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@ID" value="#grdMaster.@TecajnaListaId"/>
+				<parameter name="@ForceDelete" value="1"/>				
+			</data>
+		</datalist>
+		<panelbuttons>
+			<buttons>
+				<button name="btnInsert" caption="Unesi" function="Unesi">
+					<event type="click">
+						<action type="form open" value="frmAzur">
+							<parameter name="Action" value="0"/>
+						</action>						
+						<action type="control populate" value="#grdMaster"/>
+						<action type="control focus" value="#grdMaster">
+							<parameter value="$ID"/>
+						</action>	
+						
+					</event>
+				</button>				
+				<button name="btnEdit" caption="Izmijeni" function="Izmijeni">
+					<event type="click">
+						<action type="form open" value="frmAzur">
+							<parameter name="Action" value="1"/>
+							<parameter name="TecajnaListaID" value="#grdMaster.@TecajnaListaId"/>
+						</action>
+						<action type="control populate" value="#grdMaster"/>
+						<!-- <action type="control focus" value="#grdMaster"> -->
+							<!-- <parameter value="$ID"/> -->
+						<!-- </action>	 -->
+					</event>
+				</button>
+				<button name="btnDelete" caption="Obriši" function="Obrisi">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati stavku?">
+							<action type="datarun nonquery" value="~dtObrisi"/>								
+							<action type="control populate" value="#grdMaster"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnGet" caption="Donesi" function="Obrisi">
+					<event type="click">
+						<action type="form open" value="frmDonos"/>
+						<action type="control populate" value="#grdMaster"/>
+					</event>
+				</button>				
+			</buttons>		
+		</panelbuttons>
+	
+	</form>
+	<form name="frmAzur" height="500" width="500">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet"/>
+		</event>
+		<event type="shown">
+			<action type="form caption" value="Unos tečajnice" if="$TecajnaListaID==null"/>
+			<action type="form caption" value="Izmjena tečajnice" else=""/>
+			<action type="control populate" value="#grdTecaj"/>
+			<action type="control value" value="#datDatum" if="$TecajnaListaID==null">
+				<parameter value="now"/>
+			</action>
+			<action type="control visible" value="#btnUnosTL" if="$TecajnaListaID==null">
+				<parameter value="true"/>
+			</action>
+			<action type="control visible" value="#btnUnosTL" else="">
+				<parameter value="false"/>
+			</action>
+			<action type="control visible" value="#grdTecaj" if="$TecajnaListaID==null">
+				<parameter value="false"/>
+			</action>
+			<action type="control visible" value="#grdTecaj" else="">
+				<parameter value="true"/>
+			</action>
+		</event>
+		<layout>
+			<group rows="4" cols="2">
+				<rowsdefinition>
+					<!-- <row size="33" position="1"/> -->
+					<!-- <row size="33" position="2"/> -->
+					<row size="33" position="3"/>
+					<!-- <row size="01" position="4"/> -->
+				</rowsdefinition>
+				<item col="1" row="1" colspan="2" caption="Banka">
+					<comboedit name="cmbBanke" dataname="~dtBanke" valuefield="PartneriId" displayfield="Naziv" datavalue="~dtGet.@Partneriid">
+						<event type="leave">
+							<action type="datarun reader" value="~dtBrojcanik"/>
+							<action type="control value" value="#txtBrojcanik">
+								<parameter value="~dtBrojcanik.@broj"/>
+							</action>
+						</event>
+					</comboedit>
+				</item>
+				<item col="1" row="2" caption="Broj">
+					<textedit name="txtBrojcanik" datavalue="~dtGet.@Broj"/>
+				</item>
+				<item col="2" row="2" caption="Datum">
+					<dateedit name="datDatum" datavalue="~dtGet.@Datum" />
+				</item>
+				<item col="1" row="3">
+					<button name="btnUnosTL" caption="Unesi zaglavlje">
+						<event type="click">
+							<action type="datarun scalar" value="~dtUnosTL">
+								<parameter name="TecajnaListaUnosID"/>
+							</action>
+							<action type="datarun reader" value="~dtUnesiTecaj" if="$TecajnaListaID==null"/>
+							<action type="control populate" value="#grdTecaj"/>
+							<action type="control visible" value="#grdTecaj">
+								<parameter value="true"/>
+							</action>
+						</event>
+					</button>
+				</item>
+				<item col="1" row="4" colspan="2">
+					<grid name="grdTecaj" dataname="~dtTecaj" keyfield="TecajId" multiselect="true">
+						<event type="cellvaluechanged">
+							<action type="datarun nonquery" value="~dtTecajUpdate"/>
+							<action type="control populate keepfocus" value="#grdTecaj"/>
+						</event>
+						<fields>
+							<field name="Sifra" caption="Šifra"/>
+							<field name="Oznaka"/>
+							<field name="Mjera"/>
+							<field name="KupDevize" caption="Kupovni" editable="true" format="n6"/>
+							<field name="SreNBH" caption="Srednji HNB" editable="true" format="n6"/>
+							<field name="ProDevize" caption="Prodajni" editable="true" format="n6"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<datalist>
+			<data name="dtBanke" type="text" command="select p.PartneriId, p.Naziv from Partneri p 
+														inner join LnPartneri l on l.PartneriId=p.PartneriId 
+														inner join KlPartneri k on k.KlPartneriID=l.KlPartneriId 
+														where k.Naziv ='Banke' order by 2"/>
+			<data name="dtBrojcanik" command="spCTecajnaListaBroj">
+				<parameter name="@partneriid" value="#cmbBanke"/>
+			</data>
+			<data name="dtTecaj" command="spCTecajnaListaQuery">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Id" value="$TecajnaListaID" if="$Action==1"/>
+				<parameter name="@Id" value="$TecajnaListaUnosID" else=""/>
+			</data>
+			<data name="dtGet" command="spCTecajnaListaQuery">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@Id" value="$TecajnaListaID"/>
+			</data>
+			<data name="dtUnesiTecaj" command="spCTecajAzur">
+				<parameter name="@Action" value="initinsert"/>
+				<parameter name="@TecajnaListaId" value="$TecajnaListaUnosID"/>
+			</data>
+			<data name="dtUnosTL" command="spCTecajnaListaAzur">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@PartneriId" value="#cmbBanke"/>
+				<parameter name="@Datum" value="#datDatum"/>
+				<parameter name="@Broj" value="#txtBrojcanik"/>
+			</data>			
+			<data name="dtTecajUpdate" command="spCTecajAzur">
+				<parameter name="@Action" value="update"/>
+				<parameter name="@kupefektiva" value="#grdTecaj.@KupDevize"/>
+				<parameter name="@KupDevize" value="#grdTecaj.@KupDevize"/>
+				<parameter name="@SreBanke" value="#grdTecaj.@SreNBH"/>
+				<parameter name="@SreNBH" value="#grdTecaj.@SreNBH"/>
+				<parameter name="@ProEfektiva" value="#grdTecaj.@ProDevize"/>
+				<parameter name="@ProDevize" value="#grdTecaj.@ProDevize"/>
+				<parameter name="@Id" value="#grdTecaj.@TecajId"/> 
+			</data>
+		</datalist>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOk" caption="Izlaz">
+					<event type="click">						
+						<action type="variable value" value="parent.$ID">
+							<parameter value="$TecajnaListaUnosID"/>
+						</action>						
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmDonos" caption="Razdoblje donosa">
+		<layout>
+			<group cols="1" rows="2">
+				<item col="1" row="1" caption="Datum od:">
+					<dateedit name="datOd" value="now"/>
+				</item>
+				<item col="1" row="2" caption="Datum do:">
+					<dateedit name="datDo" value="now"/>
+				</item>				
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOk" caption="Donesi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtDonesi"/>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDonesi" command="spTecajImportHNBAPI">
+				<parameter name="@Action" value="2"/>
+				<!--TODO odabir partnera, trenutno u stori uzima prethodnog-->
+				<parameter name="@PartneriId" value="null"/>
+				<parameter name="@DatumOd" value="#datOd"/>
+				<parameter name="@DatumDo" value="#datDo"/>
+			</data>
+		</datalist>
+	</form>
+</root>

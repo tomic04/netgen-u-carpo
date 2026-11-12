@@ -1,0 +1,276 @@
+<root version="1.0">
+	<!--
+  Komentari:
+  09.08.2021. Jadranka Vučenović Vojvodić - kreirala granulu ver 1.0.
+  -->
+	<!--
+  *******************************************************************************************
+  POČETNA FORMA
+  *******************************************************************************************
+  -->
+	<form type="master" name="frmPocetna" caption="Titule" saveformsize="false" showversion="true" version="1.0">
+		<event type="init">
+			<action type="control populate" value="#grdGrid" />
+
+		</event>
+		<event type="load">
+			<action type="control disable" value="#btnIzmijeni" if="#tree.@id==0"/>
+			<action type="control enable" value="#btnIzmijeni" else=""/>
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Titule" />
+			</lookup>
+			<tree name="tree" keyfield="HRTituleId" key="Id" expandallonload="true" dataname="~dtTree">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGrid" /> 
+					<action if="#tree.@id==0">
+						<action type="control disable" value="#btnIzmijeni" />						
+					</action> 
+					<action else="">
+						<action type="control enable" value="#btnIzmijeni" />	
+					</action>
+				</event>
+				<fields>
+					<field name="caption" />
+				</fields>
+			</tree>
+			<grid type="master" name="grdGrid" dataname="~dtGrid" key="HRTituleId" fieldsmartspaces="false" bestfitonrefresh="true" autowidth="true">
+				<event type="doubleclick">
+					<action type="form open" value="frmUnos">
+						<parameter name="Tip" value="izmjena"/>
+						<parameter name="HRTituleId" value="#tree.@ids" />
+						<parameter name="caption" value="Ažuriranje titule"/>
+					</action>
+					<action type="control populate keepfocus" value="#grdGrid"/>
+				</event>
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON UNOS-->
+				<button caption="Unesi" name="btnUnesi" type="add">
+					<event type="click">
+						<action type="form open" value="frmUnos">
+							<parameter name="Tip" value="unos" />
+							<parameter name="HRTituleId" value="0" type="int"/>
+							<parameter name="caption" value="Unos titule"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGrid"/>
+						<action type="control enable" value="#btnIzmijeni" if="#grdGrid.rowcount!=0&amp;&amp;#tree.@ids!=0"/>
+					</event>
+				</button>
+				<!-- BUTTON IZMIJENA-->
+				<button caption="Izmjena" name="btnIzmijeni" type="edit">
+					<event type="click">
+						<action type="form open" value="frmUnos">
+							<parameter name="Tip" value="izmjena"/>
+							<parameter name="HRTituleId" value="#tree.@ids" />
+							<parameter name="caption" value="Ažuriranje titule"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGrid"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spHRTitule_CP" name="dtTree">
+				<parameter name="@action" value="DRVO" />
+			</data>
+
+			<data command="spHRTitule_CP" name="dtGrid">
+				<parameter name="@action" value="MASTER"/>
+				<parameter name="@filter" value="#tree.@id" if="#tree.@id!=0" />
+				<parameter name="@filter" value="" else="#tree.@id==0" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmUnos" caption="$caption" width="780" height="510" fixedsize="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$HRTituleId!=0" />
+		</event>
+		<event type="load">
+			<action if="$Tip=='unos'">
+				<action type="control disable" value="#btnDelete,#btnUnosIznosa" >
+				</action>
+			</action>
+			<action if="$Tip=='izmjena'">
+				<action type="control populate" value="#grdDetGrid" ></action>
+				<action type="control disable" value="#txtNaziv,#btnUnos" >
+				</action>
+			</action>
+			<action if="~dtGet.@datum==null">
+				<action type="control value" value="#dateDatumOd" >
+					<parameter value="now" />
+				</action>
+			</action>
+			<action if="~dtGet.@iznos==null">
+				<action type="control value" value="#txtIznos" >
+					<parameter value="0" format="n2"/>
+				</action>
+			</action>
+
+		</event>
+		<layout>
+
+			<group cols="1" rows="3" groupbordervisible="false" >
+				<group row="1" col="1" cols="3" rows="1" spacing="2,2,2,1">
+					<columnsdefinition>
+						<column position="1" size="50%"/>
+						<column position="2" size="10%"/>
+						<column position="3" size="40%"/>
+					</columnsdefinition>
+					<item caption="Naziv:" col="1" row="1" textposition="top" highlight="false">
+						<textedit name="txtNaziv" datavalue="~dtGet.@naziv" allownull="false" required="true" maxlength="50"></textedit>
+					</item>
+					<item caption=" " col="2" row="1" highlight="false">
+						<button name="btnUnos" caption="Prihvati" >
+							<event type="click">
+								<action type="validate"/>
+								<action if="$HRTituleId==0">
+									<action type="datarun reader" value="~dtUnos">
+										<action type="control populate" value="parent.#tree">
+											<action type="control focus" value="parent.#tree">
+												<parameter value="$noviID"/>
+											</action>
+										</action>
+									</action>
+									<action if="$indGreske==0">
+										<action type="message" value="Uspješno spremljeno!" />
+									</action>
+									<action type="control enable" value="#btnDelete,#btnUnosIznosa" >
+									</action>
+									<action type="control disable" value="#btnUnos,#txtNaziv" >
+									</action>
+								</action>
+							</event>
+						</button>
+					</item>
+				</group>
+				<group row="2" col="1" cols="3" rows="4" spacing="2,2,1,1">
+					<columnsdefinition>
+						<column position="1" size="50%"/>
+						<column position="2" size="40%"/>
+						<column position="3" size="10%"/>
+					</columnsdefinition>
+					<rowsdefinition>
+						<row position="1" size="35"/>
+					</rowsdefinition>
+					<item  col="1" row="1" highlight="false" colspan="2" rowspan="4">
+						<grid type="master" name="grdDetGrid" dataname="~dtDetGrid" key="HRTituleId" fieldsmartspaces="false" bestfitonrefresh="true" autowidth="true" >
+							<event type="focusedrowchanged">
+								<action type="control value" value="#dateDatumOd">
+									<parameter value="#grdDetGrid.@Datum" />
+								</action>
+								<action type="control value" value="#txtIznos">
+									<parameter value="#grdDetGrid.@Iznos"/>
+								</action>
+							</event>
+						</grid>
+					</item>
+					<item col="3" row="1"  highlight="false">
+						<button name="btnDelete" caption="Obriši">
+							<event type="click">
+								<action type="datarun reader" value="~dtBrisanje"/>
+								<action type="control populate" value="#grdDetGrid"/>
+								<action if="$indGreske==0">
+									<action type="control populate" value="#grdDetGrid"/>
+									<action type="control value" value="#dateDatumOd" >
+										<parameter value="now" />
+									</action>
+									<action type="control value" value="#txtIznos" >
+										<parameter value="0" format="n2"/>
+									</action>
+								</action>
+							</event>
+						</button>
+					</item>
+				</group>
+				<group row="3" col="1" cols="3" rows="3" spacing="2,2,1,2">
+					<columnsdefinition>
+						<column position="1" size="50%"/>
+						<column position="2" size="10%"/>
+						<column position="3" size="40%"/>
+					</columnsdefinition>
+					<rowsdefinition>
+						<row position="1" size="20"/>
+						<row position="2" size="48"/>
+					</rowsdefinition>
+					<item caption="Unos mjesečnog iznosa:" col="1" row="1" >
+					</item>
+					<item caption="Datum:" col="1" row="2" textposition="top" highlight="false">
+						<dateedit name="dateDatumOd" value="now" datavalue="~dtGet.@datum"/>
+					</item>
+					<item caption="Iznos:" col="1" row="3" textposition="top" highlight="false">
+						<textedit name="txtIznos" datavalue="~dtGet.@iznos" allownull="false" format="n2" value="0"></textedit>
+					</item>
+					<item caption=" "  col="2" row="3" highlight="false" textposition="top">
+						<button name="btnUnosIznosa" caption="Prihvati">
+							<event type="click">
+								<action if="$noviID!=0">
+									<action type="datarun reader" value="~dtUnosIznosa">
+										<action type="control populate" value="#grdDetGrid">
+										</action>
+									</action>
+									<action if="$indGreske==0">
+										<action type="message" value="Uspješno spremljeno!" />
+									</action>
+									<action if="$indGreske!=0">
+										<action type="control value" value="#dateDatumOd" >
+											<parameter value="now" />
+										</action>
+										<action type="control value" value="#txtIznos" >
+											<parameter value="0" format="n2"/>
+										</action>
+									</action>
+								</action>
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOdustani" caption="Odustani" dock="right" >
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spHRTitule_CP" name="dtUnos">
+				<parameter name="@action" value="UnosNaziva"></parameter>
+				<parameter name="@Id.output.int" variablename="noviID"></parameter>
+				<parameter name="@naziv" value="#txtNaziv"></parameter>
+				<parameter name="@indGreske.output.int"></parameter>
+			</data>
+			<data command="spHRTitule_CP" name="dtUnosIznosa">
+				<parameter name="@action" value="UnosMjesecnogIznosa"></parameter>
+				<parameter name="@Id" value="$HRTituleId" if="$Tip=='izmjena'"></parameter>
+				<parameter name="@Id" value="$noviID" else=""></parameter>
+				<parameter name="@datum" value="#dateDatumOd"></parameter>
+				<parameter name="@iznos" value="#txtIznos"></parameter>
+
+			</data>
+			<data command="spHRTitule_CP" name="dtDetGrid">
+				<parameter name="@action" value="DetGrid"/>
+				<parameter name="@id" value="$HRTituleId" if="$Tip=='izmjena'"/>
+				<parameter name="@id" value="$noviID" else=""/>
+			</data>
+			<data command="spHRTitule_CP" name="dtGet">
+				<parameter name="@action" value="getTitulu"></parameter>
+				<parameter name="@id" value="$HRTituleId"></parameter>
+			</data>
+			<data command="spHRTitule_CP" name="dtBrisanje">
+				<parameter name="@Action" value="brisanje" type="string"/>
+				<parameter name="@id" value="#grdDetGrid.@HRTituleDetId"/>
+				<parameter name="@indGreske.output.int"></parameter>
+			</data>
+		</datalist>
+	</form>
+</root>

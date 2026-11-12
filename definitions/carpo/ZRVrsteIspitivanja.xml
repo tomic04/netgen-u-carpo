@@ -1,0 +1,151 @@
+<root xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<form name="frmMaster" type="master" caption="Vrste ispitivanja">
+	<event type="shown">
+		<action type="control disable" value="#btnBrisanje,#btnIzmjena"/> 
+		<action type="control enable" value="#btnIzmjena,#btnBrisanje" if="#grdMaster.@ZRVrsteIspitivanjaId!=null" /> 
+	</event>
+		<managerlayout>
+			<!--master je obavezan atribut ukoliko na manageru imamo 2 grida-->
+			<grid name="grdMaster" autopopulate="true" type="master" async="true" bestfitonrefresh="true" key="ZRVrsteIspitivanjaId"  multiselect="true" fieldsmartspaces="false" >
+				<event type="focusedrowchanged">
+					<action type="control disable" value="#btnBrisanje,#btnIzmjena"/> 
+					<action type="control enable" value="#btnIzmjena,#btnBrisanje" if="#grdMaster.@ZRVrsteIspitivanjaId!=null" /> 
+				</event>
+
+				<data name="master" command="spZRVrsteIspitivanja_Query">
+					<parameter name="@Action" value="master"  />
+				</data>
+
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<!-- KONTROLA: BUTTON -->
+				<button name="btnUnos" caption="Unos" type="add" displayfield="Opis" dataname="">
+					<event type="click">
+						<action type="variable value" value="$ZRVrsteIspitivanjaId" >
+							<parameter value="#grdMaster.@ZRVrsteIspitivanjaId" type="int" />
+						</action> 
+						<action type="form open" value="frmUnos" >
+							<parameter name="ZRVrsteIspitivanjaId" value="null" type="int" /> 
+						</action> 
+						<action type="control populate" value="#grdMaster" >
+							<action type="control focus" value="#grdMaster" >
+								<parameter value="$ZRVrsteIspitivanjaId" />
+							</action> 
+						</action>
+					</event>
+				</button>
+
+				<button name="btnIzmjena" caption="Izmjena" type="add" displayfield="Opis" dataname="">
+					<event type="click">
+						<action type="form open" value="frmUnos" >
+							<parameter name="ZRVrsteIspitivanjaId" value="#grdMaster.@ZRVrsteIspitivanjaId" type="int" />
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster" />
+					</event>
+				</button>
+
+
+				<button name="btnBrisanje" caption="Brisanje" type="del" displayfield="Opis" dataname="">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati vrstu ispitivanja: {#grdMaster.@Naziv}?">
+							<action type="datarun nonquery" value="~dtDelete">
+								<action type="control populate" value="#grdMaster" >
+									<action type="control focus" value="#grdMaster" >
+										<!-- <parameter value="0" /> -->
+									</action>
+								</action>
+							</action>
+						</action>
+					</event>
+				</button>		
+
+
+			</buttons>
+		</panelbuttons>
+
+		<datalist>	  
+			<data command="spZRVrsteIspitivanja_Azur" name="dtDelete">
+				<parameter name="@Action" value="brisanje" type="string"/>
+				<parameter name="@ZRVrsteIspitivanjaId" value="#grdMaster.@ZRVrsteIspitivanjaId" type="int"/>
+			</data>
+
+		</datalist>
+
+	</form>
+  
+  <form name="frmUnos" caption="Vrsta ispitivanja" maxsize="true" width="500" fixedsize="false">
+		<!-- na inicijalizaciji forme okidaju se podaci potrebni da kontrole poprime vrijednosti za izmijenu (u slučaju da smo na formi za izmijenu - IF)-->
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$ZRVrsteIspitivanjaId!=null"/>
+		</event>
+
+    <layout textposition="left">
+			<group cols="1" rows="3" >
+				<item caption="Naziv:" col="1" row="1" >
+					<textedit name="txtNaziv" required="true" nulltext="Naziv..." datavalue="#dtGet.@Naziv"/>
+				</item>
+        
+        <item caption="Tip ispitivanja:" col="1" row="2" >
+					<comboedit name="cmbZRTipIspitivanja" autopopulate="false" readonly="false" required="false" valuefield="ZRTipIspitivanjaId" displayfield="Naziv" datavalue="~dtGet.@ZRTipIspitivanjaId" dataname="dtZRTipIspitivanja">
+					</comboedit>
+				</item>
+        
+				<item caption="Vrijeme:" col="1" row="3" >
+					<textedit name="txtVrijeme" required="false" nulltext="Broj mjeseci do sljedećeg pregleda..." datavalue="#dtGet.@Vrijeme"/>
+				</item>   
+        
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<!-- Provjeri required fields -->
+						<action type="validate" />
+						<!-- Okini storu -->
+						<action type="datarun nonquery" value="~dtEdit" if="$ZRVrsteIspitivanjaId!=null"/>
+						<action type="datarun nonquery" value="~dtAdd" else="" />
+						<!-- Osvježi grid na parent formi -->
+						<action type="control populate" value="parent.#grdMaster"/>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+
+
+		<datalist>
+			<data command="spZRVrsteIspitivanja_Query" name="dtGet">
+				<parameter name="@Action" value="izmjena"/>
+				<parameter name="@ZRVrsteIspitivanjaId" value="$ZRVrsteIspitivanjaId"/>
+			</data>
+
+			<data command="spZRVrsteIspitivanja_Azur" name="dtAdd">
+				<parameter name="@Action" value="unos" type="string"/>
+				<parameter name="@Naziv" value="#txtNaziv" type="string"/>
+        <parameter name="@ZRTipIspitivanjaId" value="#cmbZRTipIspitivanja" type="int"/>
+				<parameter name="@Vrijeme" value="#txtVrijeme" type="string"/>        
+			</data>
+
+			<data command="spZRVrsteIspitivanja_Azur" name="dtEdit">
+				<parameter name="@Action" value="izmjena" type="string"/>
+				<parameter name="@ZRVrsteIspitivanjaId" value="ZRVrsteIspitivanjaId" type="int"/>
+        <parameter name="@Naziv" value="#txtNaziv" type="string"/>
+        <parameter name="@ZRTipIspitivanjaId" value="#cmbZRTipIspitivanja" type="int"/>
+        <parameter name="@Vrijeme" value="#txtVrijeme" type="string"/>
+      </data>
+    
+      <data command="spZRVrsteIspitivanja_Query" name="dtZRTipIspitivanja">
+        <parameter name="@Action" value="zrtipispitivanjaid" />
+      </data>
+    
+		</datalist>
+
+	</form>
+  
+</root>

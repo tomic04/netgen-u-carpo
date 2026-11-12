@@ -1,0 +1,628 @@
+<root>
+	<form name="frmMaster" type="master" caption="Terkom - Obavijesti">
+
+		<managerlayout>
+
+	<lookup name="filter">
+		<comboitem value="OPERATERI" />
+        <comboitem value="PARTNERI"  />
+				<event type="valuechanged">
+        <!--mijenjaj i šalji varijablu filter na promjeni-->
+          <action type="variable value" value="global.filter">
+				<parameter value="#filter" />
+		 </action>
+          <action type="control populate" value="#tree"/>
+        </event>
+	</lookup>
+
+			<tree name="tree" filtermode="smart" expandallonload="true">
+				<data command="spMobTerkom_Obavijesti_TreeSviPartneri" if="#filter==PARTNERI" />
+				<data command="spMobTerkom_Obavijesti_TreeSviOperateri" else="" />
+				<event type="focusedrowchanged">
+          				<action type="control populate" value="#grdGlava" />
+        		</event>
+				<fields>
+					<field name="caption" />
+				</fields>
+			</tree>
+
+			<grid name="grdGlava" type="master" dataname="~dtGridQuery" >
+				<fields>
+					<field name="MobTerkom_ObavijestiGlaID" visible="false"/>
+					<field name="datumod" caption="Datum od" />
+					<field name="datumdo" caption="Datum do" />
+				    <field name="Naslov"  caption="Naslov" fontbold="true"/>
+					<field name="naziv"   caption="Kupac" />
+					<field name="naziv1"  caption="Lokacija" />
+
+					<field name="Aktivno" caption="Aktivno" /> 
+				
+				</fields>
+				<styles>
+					<style name="fontcolor" value="black" if="#grdGlava.@aktivno=='Da'" />
+					<style name="fontcolor" value="gray" if="#grdGlava.@aktivno=='Ne'" />
+				</styles>
+
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdPoruka" />
+					<action type="control populate" value="#grdOperateri" />
+				</event>
+			</grid>
+
+		<tabs name="detTabs">
+				<tab name="tabPoruka" caption="Poruka">
+						<grid name="grdPoruka" dataname="dtDetaljPoruka">
+							<fields>
+										
+								<field name="poruka" caption="Poruka" minwidth="500"/>
+							</fields>
+						</grid>
+				</tab>
+				<tab name="Operateri" caption="Operateri" >
+						<grid name="grdOperateri" dataname="dtDetaljOperateri">
+							<fields>
+							</fields>
+						</grid>
+				</tab>
+		</tabs>
+		
+		</managerlayout>
+		
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="UNESI">
+					<event type="click">
+						<action type="form open" value="frmUnos">
+							<parameter name="MobTerkom_ObavijestiGlaID" value="null" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI">
+					<event type="click">
+						<action type="form open" value="frmIzmijeni">
+							<parameter name="MobTerkom_ObavijestiGlaID" value="#grdGlava.@MobTerkom_ObavijestiGlaID" />
+						</action>
+
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI">
+					<event type="click">
+						<action type="confirm" value="Želite li sigurno obrisati obavijest(i)?">
+						<action type="datarun nonquery" value="~dtDelete" />
+						<action type="control populate" value="#grdGlava" />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+	<datalist>
+		<data command="spMobTerkom_Obavijesti_Query" name="dtgridQuery">
+			<parameter name="@id" value="#tree.@id" />
+			<parameter name="@action" value="0" if="#tree.@id!=0&amp;&amp;global.$filter==PARTNERI" />
+			<parameter name="@action" value="1" elseif="#tree.@id==0&amp;&amp;global.$filter==PARTNERI" />
+			<parameter name="@action" value="2" if="#tree.@id==0&amp;&amp;global.$filter==OPERATERI" /> 
+			<parameter name="@action" value="3" if="#tree.@id!=0&amp;&amp;global.$filter==OPERATERI" /> 
+		</data>
+		<data command="spMobTerkom_Obavijesti_GetPoruka" name="dtDetaljPoruka">
+			<parameter name="@MobTerkom_ObavijestiGlaID" value="#grdGlava.@MobTerkom_ObavijestiGlaID" />
+		</data>
+		<data command="spMobTerkom_Obavijesti_GetOperateriDetalji" name="dtDetaljOperateri">
+			<parameter name="@MobTerkom_ObavijestiGlaID" value="#grdGlava.@MobTerkom_ObavijestiGlaID" />
+		</data>
+		<data command="spMobTerkom_Obavijesti_Delete" name="dtDelete">
+			<parameter name="@MobTerkom_ObavijestiGlaID" value="#grdGlava.@MobTerkom_ObavijestiGlaID" />
+		</data>
+	</datalist>
+
+	</form>
+
+	<form name="frmUnos" caption="Unesi">
+
+		<event type="init">
+			<action type="datarun reader" value="~dtdatumDo" />
+			<action type="datarun reader" value="~dtPuniTabOperateri">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+			</action>
+		</event>
+		<event type="onload">
+			<action type="control populate" value="#grdOperateriTab" if="$MobTerkom_ObavijestiGlaID==!null"/>
+		</event>
+		<event type="close">
+			<action type="control foreachrow selected" value="#grdOperateriTab">
+				<action type="datarun nonquery" value="~dtOperateriUnos" />
+			</action>
+			<action type="control populate" value="parent.#grdGlava" />
+			<action type="control populate" value="parent.#grdOperateri" />
+			<action type="control populate" value="parent.#tree">
+			</action>
+			<action type="control focus" value="parent.#tree">
+				<parameter value="#srcPartner"/>
+			</action>
+		</event>
+		<layout>
+		<group cols="1" rows="1">	
+			<tabs name="tabsUnos" row="1" col="1">
+				<group cols="2" rows="7" col="1" row="1" caption="Obavijest">
+					<rowsdefinition>
+		             	<row position="6" size="100" /> 
+		             	<row position="7" size="7" />
+		       		 </rowsdefinition>  
+		       		
+						<item col="1" row="1" caption="Datum od:" colspan="2">
+							<dateedit name="datumOd" value="now" />
+						</item>
+						<item col="1" row="2" caption="Datum do:" colspan="2">
+							<dateedit name="datumDo" dataname="~dtDatumDo" datavalue="~dtdatumDo.@Datumdo" valuefield="datumdo" allownull="true"/>
+						</item>
+
+						<item col="1" row="3" caption="Naslov obavijesti:" colspan="2" >
+							<textedit name="txtNaslov" required="true"/>
+						</item>
+						<item col="1" row="4" caption="Partner:" colspan="2">
+						<searchedit netgenfields="true" name="srcPartner" fontbold="true"
+		                 datavalue="~dtGet.@PartneriId" datatext="~dtGet.@PartnerNaziv" dataname="~dtPartneri" fieldtext="NazivId" fieldvalue="partneriid" >
+		                    <event type="valuechanged">
+		                        <action type="variable value">
+		                            <parameter name="PartneriId" value="#srcPartner" />
+		                        </action>   
+		                        <action type="variable value">
+		                            <parameter name="IndPromijenjeno" value="1" />
+		                        </action>                           
+		                    </event>
+
+		                    <event type="leave">
+
+		                        <action type="variable value">
+		                            <parameter name="partneriid" value="#srcPartner" />
+		                        </action>
+
+		                        <action type="datarun reader" value="Global.~dtDajPartnera" if="#srcPartner!=null"/>                        
+		                        <action type="control value" value="#srcParstru" if="#srcPartner!=null&amp;&amp;#srcPartner.@BrojLokacija_Id==1">
+		                            <parameter value="~dtDajPartnera.@parstruid" text="~dtDajPartnera.@Naziv"/>
+		                        </action>
+		                      
+		                        <action type="control refreshvalue" value="#srcParstru" if="#srcPartner==null"/>
+		                        <action type="variable value">
+		                            <parameter name="IndLokacija" value="0" />
+		                        </action>
+		                        <action type="variable value">
+		                            <parameter name="IndPromijenjeno" value="0" />
+		                        </action>                    
+		                    </event>
+
+		                </searchedit>
+						</item>
+						<item col="1" row="5" caption="Lokacija:" colspan="2">
+							<searchedit name="srcParstru" dataname="~dtParstru" fieldtext="NazivId" fieldvalue="ParStruId" datavalue="~dtGet.@ParStruId" datatext="~dtGet.@Lokacija">
+								<event type="leave">
+		                        	<action type="datarun reader" value="~dtDajPartnera" if="#srcParstru!=null"/>
+		                        	<action type="control value" value="#srcPartner" if="#srcPartner==null&amp;&amp;#srcParstru!=null">
+		                            	<parameter value="~dtDajPartnera.@partneriid" text="~dtDajPartnera.@Naziv"/>
+		                        	</action>
+		                        	<action type="control focus" value="#txtNapomena" />
+		                        </event>
+							</searchedit>
+		 				</item>
+		 				<item col="1" row="6" caption="Tekst napomene:"  colspan="2" >
+		 					<memoedit name="txtNapomena" maxlength="180" required="true"/>
+		 				</item>
+		 				<item col="1" row="7" colspan="2">
+		 					<button name="btnKreiraj" caption="Kreiraj">
+		 						<event type="click">
+		 							<action type="validate" />
+									<action type="control populate" value="#grdOperateriTab" />
+									<action type="datarun scalar" value="~dtObavijestiInsert">
+									</action>
+									<action type="datarun scalar" value="~dtGetZadnjiId">
+											<parameter name="MobTerkom_ObavijestiGlaID" />
+									</action>
+									<action type="variable value" value="MobTerkom_ObavijestiGlaID">
+										<parameter value="$MobTerkom_ObavijestiGlaID" />
+									</action>
+									<action type="control populate" value="parent.#grdGlava">
+									</action>
+									<action type="control disable" value="#btnKreiraj" />
+									<action type="control populate" value="parent.#tree" />
+										<action type="variable value" value="global.#filter">
+											<parameter value="OPERATERI" />
+										</action>
+									<action type="tab focus" value="tabOperateri" />
+
+									<action type="control focus" value="parent.#grdGlava">
+											<parameter value="$MobTerkom_ObavijestiGlaID" />
+									</action>
+								</event>
+		 					</button>
+		 				</item>
+		 			<!-- 	<item row="7" col="2">
+			 				<button name="btnPonovnoSalji" caption="Ponovno pošalji operaterima">
+			 				
+			 				</button>
+			 			</item> -->
+					</group>
+			 	<group caption="Operateri" name="tabOperateri" cols="1" rows="2" col="1" row="1">
+			 		<rowsdefinition>
+		             	<row position="2" size="40" /> 
+		       		 </rowsdefinition>  
+
+			 		<item row="1" col="1" colspan="3">
+					 	<grid name="grdOperateriTab" dataname="~dtPuniTabOperateri" showgrouppanel="false" showcheckboxes="true">
+					<!--  		<event type="cellvaluechanged">
+					 			<action type="datarun nonquery" value="~dtUnesiOperatera" if="#grdOperateriTab.focusedfield==Izbor&amp;&amp;#grdOperateriTab.focusedvalue==true" />
+					 			<action type="datarun nonquery" value="~dtBrisiOperatera" if="#grdOperateriTab.focusedfield==Izbor&amp;&amp;#grdOperateriTab.focusedvalue==false" />
+					 			<action type="control populate keepfocus" value="#grdOperateriTab" />
+					 		</event> -->
+					 			<fields inherited="true">
+
+					 				<field name="izbor" caption="Poslati" editable="true" edittype="bit" visible="false"/>
+					 				<field name="procitano"  />
+					 				<field name="selectedid" visible="false"/>
+					 			</fields>
+					 		</grid>
+			 		</item>
+			 			<item row="2" col="1">
+			 			<button name="btnPonovnoSalji" caption="Ponovno pošalji operaterima">
+			 					<event type="click">
+			 						<action type="datarun nonquery" value="~dtPonovnoPosalji" />
+			 						<action type="control populate" value="#grdOperateriTab" />
+			 						<action type="control populate" value="parent.#grdOperateri" />
+			  					</event>
+			 			</button>
+			 		</item>
+			 	
+			 	</group>
+			 </tabs>
+			 	</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnOdustani" caption="Zatvori" type="cancel" dock="left"/>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			  <data command="spDajPartnera" name="dtDajPartnera">	
+				  <parameter name="@id" value="#srcParstru" />	
+				  <parameter name="@partneriid" value="#srcPartner" />
+			  </data>
+
+			  	<data command="spTraziPartneri" name="dtPartneri">
+					<parameter name="@Action" value="Partneri" />
+					<parameter name="@Uvjet" value="#srcPartner.text" />
+					<parameter name="@broj_lokacija" value="1" />
+					<data command="spProd_KupUgovori_PuniVrstu" name="dtGetVrsta" />
+				</data>
+
+				<data command="spTraziParstru" name="dtParstru">
+				  <parameter name="@action" value="Parstru"/>
+				  <parameter name="@Ind_Postotak" value="1"/>
+	        	  <parameter name="@Uvjet" value="#srcParstru.text" />
+				  <parameter name="@PartneriId" value="$PartneriId"/>
+			  </data>
+
+			   <data command="spDajPartnera" name="dtDajPartnera">	
+				  <parameter name="@id" value="#srcParstru" />	
+				  <parameter name="@partneriid" value="#srcPartner" />
+			  </data>	
+
+			  <data command="spMobTerkom_Obavijesti_DatumDo" name="dtDatumDo">
+			  </data>
+			<!--   <data command="spMobTerkom_obavijesti_OperateriUnos" name="dtPuniTabOperateri" /> -->
+			  <data command="spMobTerkom_Obavijesti_Insert" name="dtObavijestiInsert">
+			  	<parameter name="@datumod" value="#datumod" />
+			  	<parameter name="@datumdo" value="null" if="#chkNeograniceno==true" />
+			  	<parameter name="@datumdo" value="#datumdo" else=""/>
+			  	<parameter name="@naslov" value="#txtNaslov" />
+			  	<parameter name="@partneriid" value="#srcPartner" />
+			  	<parameter name="@parstruid" value="#srcParstru" />
+			  	<parameter name="@obavijest" value="#txtNapomena" />
+			  </data>
+			  <data command="spMobTerkom_Obavijesti_InsertOperateri" name="dtOperateriUnos"> 
+			  	<parameter name="@operateriid" value="#grdOperateriTab.@OperateriID" />
+			  	<parameter name="@poslati" value="1" />
+			  	<parameter name="@procitano" value="0" />
+			  </data>
+			  <data command="spMobTerkom_Obavijesti_GetIDDesc" name="dtGetZadnjiId" />
+
+			 <data command="spMobterkom_Obavijesti_UpdateOperateri" name="dtUnesiOperatera">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+				<parameter name="@operateriid" value="#grdOperateriTab.@operateriid" />
+			</data>
+
+			<data command="spMobterkom_Obavijesti_DeleteOperateri" name="dtBrisiOperatera">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+				<parameter name="@operateriid" value="#grdOperateriTab.@operateriid" />
+ 			</data>
+
+ 			<!-- <data command="spMobTerkom_Obavijesti_OperateriGetQuery" name="dtPuniTabOperateri">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+			</data> -->
+
+			<data command="spMobTerkom_Obavijesti_OperateriGetQueryGrid" name="dtPuniTabOperateri">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+			</data>
+
+			<data command="spMobTerkom_Obavijesti_PonovnoPosalji" name="dtPonovnoPosalji">
+			  		<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+			</data>
+
+			
+		</datalist>
+
+	</form>	
+
+	 <form name="frmIzmijeni" caption="Izmijeni">
+	 	
+	 	<event type="init">
+	 		<action type="datarun reader" value="~dtGet" />
+	 	</event>
+    	<event type="onload">
+    		<!-- <action type="control populate" value="#grdOperateriTab" /> -->
+    		<action type="datarun nonquery" value="~dtGetTabOperateri" />
+		 	<action type="control populate" value="#grdOperateriTab" />
+		    <action type="datarun reader" value="~dtGetOdabrani" />
+		    <action type="control selectedrows" value="#grdOperateriTab">
+				<parameter value="~dtGetOdabrani.@selectedid" />
+			</action>
+			<action type="control disable" value="#datumdo" if="~dtGet.@DatumDo==null" />
+			<action type="control value" value="#datumdo" if="~dtGet.@DatumDo==null">
+				<parameter value="" />
+			</action>
+    	</event>
+    	<event type="close">
+    		<action type="datarun nonquery" value="~dtDelForm" />
+    		<action type="control foreachrow selected" value="#grdOperateriTab">
+				<action type="datarun nonquery" value="~dtOperateriUpdate" />
+			</action>
+			<action type="control populate" value="parent.#grdOperateri" />
+		</event>
+    	<layout>
+    		<group cols="1" rows="1">
+    			<tabs name="tabsUnos" row="1" col="1">
+				<group cols="2" rows="7" col="1" row="1" caption="Obavijest">
+					<rowsdefinition>
+		             	<row position="6" size="100" /> 
+		             	<row position="7" size="7" />
+		       		 </rowsdefinition>  
+
+						<item col="1" row="1" caption="Datum od:" colspan="2">
+							<dateedit name="datumOd" dataname="~dtGet" datavalue="~dtGet.@datumod" valuefield="datumod" displayfield="datumod"/>
+						</item>
+						<item col="1" row="2" caption="Datum do:" colspan="2">
+							<dateedit name="datumDo" dataname="~dtGet" datavalue="~dtGet.@datumdo" valuefield="datumdo" displayfield="datumdo" allownull="true" />
+						</item>
+						<item col="1" row="3" caption="Naslov obavijesti:" colspan="2" >
+							<textedit name="txtNaslov" required="true" dataname="~dtGet" datavalue="~dtGet.@naslov" valuefield="naslov" displayfield="Naslov"/>
+						</item>
+						<item col="1" row="4" caption="Partner:" colspan="2">
+						<searchedit name="srcPartner" fontbold="true"
+		                 datavalue="~dtGet.@PartneriId" datatext="~dtGet.@Naziv" dataname="~dtPartneri" fieldtext="Nazivid" fieldvalue="partneriid" >
+		                    <event type="valuechanged">
+		                        <action type="variable value">
+		                            <parameter name="PartneriId" value="#srcPartner" />
+		                        </action>   
+		                        <action type="variable value">
+		                            <parameter name="IndPromijenjeno" value="1" />
+		                        </action>                           
+		                    </event>
+
+		                    <event type="leave">
+
+		                        <action type="variable value">
+		                            <parameter name="partneriid" value="#srcPartner" />
+		                        </action>
+
+		                        <action type="datarun reader" value="Global.~dtDajPartnera" if="#srcPartner!=null"/>                        
+		                        <action type="control value" value="#srcParstru" if="#srcPartner!=null&amp;&amp;#srcPartner.@BrojLokacija_Id==1">
+		                            <parameter value="~dtDajPartnera.@parstruid" text="~dtDajPartnera.@Naziv"/>
+		                        </action>
+		                      
+		                        <action type="control refreshvalue" value="#srcParstru" if="#srcPartner==null"/>
+		                        <action type="variable value">
+		                            <parameter name="IndLokacija" value="0" />
+		                        </action>
+		                        <action type="variable value">
+		                            <parameter name="IndPromijenjeno" value="0" />
+		                        </action>                    
+		                    </event>
+
+		                </searchedit>
+						</item>
+						<item col="1" row="5" caption="Lokacija:" colspan="2">
+							<searchedit name="srcParstru" dataname="~dtParStru" fieldtext="NazivID" fieldvalue="ParStruId" datavalue="~dtGet.@ParStruId" datatext="~dtGet.@Lokacija">
+								<event type="leave">
+		                        	<action type="datarun reader" value="~dtDajPartnera" if="#srcParstru!=null"/>
+		                        	<action type="control value" value="#srcPartner" if="#srcPartner==null&amp;&amp;#srcParstru!=null">
+		                            	<parameter value="~dtDajPartnera.@partneriid" text="~dtDajPartnera.@Naziv"/>
+		                        	</action>
+		                        	<action type="control focus" value="#txtNapomena" />
+		                        </event>
+							</searchedit>
+		 				</item>
+		 				<item col="1" row="6" caption="Tekst napomene:"  colspan="2" >
+		 					<memoedit name="txtNapomena" maxlength="180" required="true" dataname="~dtGet" datavalue="~dtGet.@obavijest"/>
+		 				</item>
+		 				<item col="1" row="7" colspan="2" >
+		 					<button name="btnKreiraj" caption="Spremi promjene">
+		 						<event type="click">
+		 							<action type="validate" />
+		 							<action type="datarun nonquery" value="~dtUpdate" />
+		 							<action type="control populate" value="parent.#grdGlava">
+		 								<action type="control focus" value="parent.#grdGlava">
+											<parameter value="$MobTerkom_ObavijestiGlaID" />
+										</action>
+									</action>
+								</event>
+		 					</button>
+		 				</item>
+					</group>
+			 	<group caption="Operateri" name="tabOperateri" cols="1" rows="2" col="1" row="1">
+			 		<rowsdefinition>
+		             	<row position="2" size="40" /> 
+		       		 </rowsdefinition>  
+
+			 		<item row="1" col="1" colspan="2">
+					 		<grid name="grdOperateriTab" dataname="~dtGetTabOperateri" showcheckboxes="true" showgrouppanel="false" key="operateriid">
+					<!--  		<event type="cellvaluechanged">
+					 			<action type="datarun nonquery" value="~dtUnesiOperatera" if="#grdOperateriTab.focusedfield==Izbor&amp;&amp;#grdOperateriTab.focusedvalue==true" />
+					 			<action type="datarun nonquery" value="~dtBrisiOperatera" if="#grdOperateriTab.focusedfield==Izbor&amp;&amp;#grdOperateriTab.focusedvalue==false" />
+					 			<action type="control populate keepfocus" value="#grdOperateriTab" />
+					 		</event> -->
+					 			<fields inherited="true">
+					 				<field name="operateriid" visible="false" />
+					 				<field name="izbor" caption="Poslati" editable="true" edittype="bit" visible="false" />
+					 				<field name="naziv" caption="Naziv" />
+					 				<field name="selectedid" />
+					 				<field name="Procitano" caption="Pročitano" />
+					 			</fields>
+					 		</grid>
+			 		</item>
+			 		<item row="2" col="1">
+			 			<button name="btnPonovnoSalji" caption="Ponovno pošalji operaterima">
+			 					<event type="click">
+			 						<action type="datarun nonquery" value="~dtPonovnoPosalji" />
+			 						<action type="control populate" value="#grdOperateriTab" />
+			 						<action type="control populate" value="parent.#grdOperateri" />
+			  					</event>
+			 			</button>
+			 		</item>
+			 	</group>
+			 </tabs>
+			 	</group>
+		</layout>	
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnOdustani" caption="Zatvori" type="cancel" dock="center"/>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spMobTerkom_Obavijesti_GetQuery" name="dtGet">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+			</data>
+
+			<data command="spDajPartnera" name="dtDajPartnera">	
+				  <parameter name="@id" value="#srcParstru" />	
+				  <parameter name="@partneriid" value="#srcPartner" />
+			</data>
+
+			<data command="spTraziPartneri" name="dtPartneri">
+					<parameter name="@Action" value="Partneri" />
+					<parameter name="@Uvjet" value="#srcPartner.text" />
+					<parameter name="@broj_lokacija" value="1" />
+					<data command="spProd_KupUgovori_PuniVrstu" name="dtGetVrsta" />
+			</data>
+
+			<data command="spTraziParstru" name="dtParstru">
+				  <parameter name="@action" value="Parstru"/>
+				  <parameter name="@Ind_Postotak" value="1"/>
+	        	  <parameter name="@Uvjet" value="#srcParstru.text" />
+				  <parameter name="@PartneriId" value="$PartneriId"/>
+			</data>
+
+			<data command="spMobTerkom_Obavijesti_OperateriGetQuery" name="dtGetTabOperateri">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+			</data>
+
+			<data command="spMobTerkom_Obavijesti_OdabraniOperater" name="dtGetOdabrani">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+			</data>
+
+			<data command="spMobTerkom_Obavijesti_Update" name="dtUpdate">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+				<parameter name="@datumod" value="#datumod" />
+				<parameter name="@datumdo" value="null" if="#chkNeograniceno==true" />
+			  	<parameter name="@datumdo" value="#datumdo" else=""/>
+				<parameter name="@naslov" value="#txtnaslov" />
+				<parameter name="@partneriid" value="#srcPartner" />
+			  	<parameter name="@parstruid" value="#srcParstru" />
+			  	<parameter name="@obavijest" value="#txtNapomena" />
+			</data>
+
+			<data command="spMobterkom_Obavijesti_UpdateOperateri" name="dtOperateriUpdate">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+				<parameter name="@operateriid" value="#grdOperateriTab.@operateriid" />
+			</data>
+		    <data command="spMobTerkom_Obavijesti_PonovnoPosalji" name="dtPonovnoPosalji">
+			  		<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+			</data>
+
+			<data command="spMobterkom_Obavijesti_UpdateOperateriDel" name="dtDelForm">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+			</data>
+			<data command="spMobTerkom_Obavijesti_DatumDo" name="dtDatumDo">
+			</data>
+
+			<data command="spMobterkom_Obavijesti_UpdateOperateri" name="dtUnesiOperatera">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+				<parameter name="@operateriid" value="#grdOperateriTab.@operateriid" />
+			</data>
+
+			<data command="spMobterkom_Obavijesti_DeleteOperateri" name="dtBrisiOperatera">
+				<parameter name="@MobTerkom_ObavijestiGlaID" value="$MobTerkom_ObavijestiGlaID" />
+				<parameter name="@operateriid" value="#grdOperateriTab.@operateriid" />
+ 			</data>
+
+		</datalist>
+
+  </form>
+
+	<root>
+
+<form name="frmLokacije" caption="Odabir lokacije" fixedsize="false" width="800" height="570">
+	<event type="onshown">
+		<action type="control focus" value="#grdLokacije"/>	
+	</event>
+        <layout textposition="top" itemspadding="1">
+            <group cols="1" rows="1" groupbordervisible="false">
+                <group cols="1" rows="1" groupbordervisible="false">
+                    <item row="1" col="1" highlight="false">
+                        <grid netgenfields="true" name="grdLokacije" autopopulate="true" dataname="Global.dtParstru" >
+                            <fields>
+                                <field name="Lokacija3000" caption="Lokacija" />
+                                <field name="Šifra lokacije" caption="Šifra" />
+                                <field name="Adresa" caption="Adresa" />
+                                <field name="Mjesto" caption="Mjesto"/>
+                                <field name="Partner" caption="Partner" />
+                            </fields>
+							<event type="keydown" value="13">
+								<action type="form close"></action>				
+								<action type="control value" value="parent.#srcParstru">
+									<parameter value="#grdLokacije.@parstruid" text="#grdLokacije.@Lokacija3000"/>
+								</action>
+							</event>
+                        </grid>
+                    </item>
+                </group>
+            </group>
+        </layout>
+        <panelbuttons>
+            <buttons>
+                <button caption="ODABERI" dock="right">
+                    <event type="click">
+                        <action type="form close"></action>				
+						<action type="control value" value="parent.#srcParstru">
+							<parameter value="#grdLokacije.@parstruid" text="#grdLokacije.@Lokacija3000"/>
+						</action>					
+					</event>
+                </button>
+                <button caption="ODUSTANI" dock="right">
+					<event type="click">
+                        <action type="form close"></action>	
+						<action type="datarun reader" value="Global.dtProvjeriPartnera"/>
+						<action type="control value" value="parent.#srcParstru" if="~dtProvjeriPartnera.@Ind_Provjera==0">
+							<parameter value="null"/>
+						</action>						
+					</event>
+				</button>
+            </buttons>
+        </panelbuttons>
+    </form>
+
+
+</root>
+
+</root>

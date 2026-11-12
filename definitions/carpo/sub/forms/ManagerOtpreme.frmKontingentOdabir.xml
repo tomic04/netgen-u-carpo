@@ -1,0 +1,157 @@
+<!--
+23.03.2023 MB - dodala editable="True" kod Raposlozivo i <action type="datarun nonquery" value="dtKontingentProvjera" /> prije svakog zatvaranja
+02.03.2023 Da i MB popravili fokus i kretanje Enterom unutar forme
+22.11.2022 DA - dodao ~dtKontingent_selectedrows.@KKvalGlaIds 
+14.10.2022 AR - dodao kolonu Opis na prikaz
+29.09.2022 AR - dodao evente "shown" i "close" i dataset za provjeru odabrane količine kod zatvaranja prozora
+-->
+
+<root>
+	<form name="frmKontingentOdabir" caption="Odabir kontingenta ({parent.$NazivRobe} - Količina: {parent.#txtKolicina} {parent.$JMNaziv})" fixedsize="false" width="800" height="300">
+		<event type="onload">
+			<action type="variable value">
+				<parameter name="sva_skladista" value="0" />
+			</action>
+			<action type="variable value">
+				<parameter name="minus_stavke" value="0" />
+			</action>
+			<action type="datarun nonquery" value="Global.dtKontingent" />
+			<action type="control populate" value="#grdKontingenti" />
+			<action type="datarun reader" value="Global.dtKontingent_selectedrows" />
+		</event>
+		<event type="shown">
+			<!--	<action type="control focus" value="#btnOdaberi"/> -->
+			<action type="control focus" value="#grdKontingenti"/>
+			<action type="control selectedrows" value="#grdKontingenti">
+				<parameter value="~dtKontingent_selectedrows.@KKvalGlaIds" type="string"/>
+			</action>
+		</event>
+		<event type="close">
+			<action type="datarun nonquery" value="dtKontingentProvjera" />
+		</event>
+		<layout textposition="top" itemspadding="3">
+			<group cols="2" rows="2" groupbordervisible="False">
+				<item row="1" col="1" colspan="2">
+					<grid name="grdKontingenti" async="true" dataname="Global.dtKontingent" multiselect="true" key="kkvalglaid" showgrouppanel="False">
+						<fields>
+							<field name="DatumDok" caption="Datum" />
+							<field name="Broj" caption="Broj" />
+							<field name="kolicinaulaz" caption="Ulaz" formatstring="n3"/>
+							<field name="kolicinaizlaz" caption="Izlaz" formatstring="n3"/>
+							<field name="raspolozivo" caption="Raspoloživo" formatstring="n3" editable="True"/>
+							<field name="roktrajanja" caption="Rok trajanja" />
+							<field name="jmnaziv" caption="Pakiranje" />
+							<field name="Skladiste" caption="Skladište" />
+							<field name="Napomena" caption="Napomena" />
+							<field name="Opis" caption="Opis" />
+						</fields>
+						<event type="keydown">
+							<action if="key==13">
+								<action type="control foreachrowselected" value="#grdKontingenti">
+									<action type="variable value">
+										<parameter name="Raspolozivo" value="#grdKontingenti.@raspolozivo" />
+									</action>
+									<action type="variable value">
+										<parameter name="kkvalglaid" value="#grdKontingenti.@kkvalglaid" />
+									</action>
+									<action type="datarun reader" value="dtKKvalLink"/>
+									<action type="variable value">
+										<parameter name="BrojKontingenta" value="~dtKKvalLink.@BrojKontingenta"/>
+									</action>
+								</action>
+								<action type="control value" value="parent.#txtKontingent" >
+									<parameter value="$BrojKontingenta"/>
+								</action>
+								<action type="variable value" >
+									<parameter name="parent.kkvalglaid" value="$kkvalglaid"/>
+								</action>
+								<action type="datarun nonquery" value="dtKontingentProvjera" />
+								<action type="form close"/>
+							</action>
+						</event>
+					</grid>
+				</item>
+				<item caption="Pokaži sva skladišta" textposition="left" row="2" col="1" highlight="False">
+					<checkedit name="chkSvaSkladista" caption="Pokaži sva skladišta">
+						<event type="checkedchanged">
+							<action type="variable value" if="#chkSvaSkladista==true">
+								<parameter name="sva_skladista" value="1" />
+							</action>
+							<action type="variable value" if="#chkSvaSkladista==false">
+								<parameter name="sva_skladista" value="0" />
+							</action>
+							<action type="control populate" value="#grdKontingenti" />
+						</event>
+					</checkedit>
+				</item>
+				<item caption="Pokaži minus stavke" textposition="left" row="2" col="2" highlight="False">
+					<checkedit name="chkMinusStavke" caption="Pokaži minus stavke">
+						<event type="checkedchanged">
+							<action type="variable value" if="#chkMinusStavke==true">
+								<parameter name="minus_stavke" value="1" />
+							</action>
+							<action type="variable value" if="#chkMinusStavke==false">
+								<parameter name="minus_stavke" value="0" />
+							</action>
+							<action type="control populate" value="#grdKontingenti" />
+						</event>
+					</checkedit>
+				</item>
+
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name ="btnOdaberi" caption="ODABERI" type="add" dock="left">
+					<event type="click">
+						<action type="control foreachrowselected" value="#grdKontingenti">
+							<action type="variable value">
+								<parameter name="Raspolozivo" value="#grdKontingenti.@raspolozivo" />
+							</action>
+							<action type="variable value">
+								<parameter name="kkvalglaid" value="#grdKontingenti.@kkvalglaid" />
+							</action>
+							<action type="datarun reader" value="dtKKvalLink"/>
+							<action type="variable value">
+								<parameter name="BrojKontingenta" value="~dtKKvalLink.@BrojKontingenta"/>
+							</action>
+						</action>
+						<action type="control value" value="parent.#txtKontingent" >
+							<parameter value="$BrojKontingenta"/>
+						</action>
+						<action type="variable value" >
+							<parameter name="parent.kkvalglaid" value="$kkvalglaid"/>
+						</action>
+						<action type="datarun nonquery" value="dtKontingentProvjera" />						
+						<action type="form close"/>
+					</event>
+				</button>
+				<button caption="ODUSTANI" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_NotpDet_KKvalLink" name="dtKKvalLink">
+				<parameter name="@Gla_Id" value="$ProNotpGlaId" />
+				<parameter name="@Det_Id" value="$ProNotpDetId" />
+				<parameter name="@OperateriId" value="@@OperateriId" />
+				<parameter name="@Tip" value="ProNotpDetId" type="string"/>
+				<parameter name="@KKval_Raspolozivo" value="$Raspolozivo" />
+				<parameter name="@kkvalglaid" value="$kkvalglaid" />
+				<parameter name="@Stavka_kolicina" value="$Kolicina" />
+			</data>
+			<data command="spProd_NotpDet_KKvalQuery" name="dtKontingent">
+				<parameter name="@sva_skladista" value="$Sva_skladista" />
+				<parameter name="@minus_stavke" value="$Minus_stavke" />
+				<parameter name="@robaid" value="$RobaID" />
+				<parameter name="@skladisteid" value="$SkladisteId" />
+				<parameter name="@broj" value="$Broj" />
+			</data>
+			<data command="spProd_NotpDet_KKvalLink_ProvjeraKOL" name="dtKontingentProvjera">
+				<parameter name="@Gla_Id" value="$ProNotpGlaId" />
+				<parameter name="@OperateriId" value="@@OperateriId" />
+				<parameter name="@Tip" value="ProNotpDetId" type="string"/>
+				<parameter name="@Stavka_kolicina" value="$Kolicina" />
+			</data>
+		</datalist>
+	</form>
+</root>

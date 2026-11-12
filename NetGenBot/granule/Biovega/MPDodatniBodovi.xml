@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+<PROJECT  
+   ONLOAD=":FILTERFORM" 
+   POPUPMASTER=""
+   TOTALROW="FALSE"
+   BUTTONS="Pronađi:FILTERFORM#Dodaj:DODAJFORM#Izmjeni:UPDATEFORM#Obriši:DELETEFORM#Kopiraj:KOPIFORM#(de)Aktiviraj:MULTISELECTAKTIVIRAJ" 
+   MASTERDBLCLICK="UPDATEFORM"
+   CHECKBOXVISIBLE="TRUE"
+   PAGEHEADERLEFT="Od @@datumod do @@datumdo"
+   PAGEHEADERRIGHT="@@tkosmomi"
+   SETDEFAULTS="select dbo.fnTkoSmoMi() as tkosmomi">
+ 
+  <NAME>Dodatni bodovi</NAME>
+  <CAPTION>Dodatni bodovi</CAPTION>
+ 
+  <KOMENTAR> </KOMENTAR>
+  <AUTOR> KK 23.02.2009.  </AUTOR>
+
+
+	<FILTERFORM 
+    NAME="FILTERFORM" 
+    HEIGHT="4200" WIDTH="7710" 
+		CAPTION="Upišite uvjete prikaza " 
+		ONSUBMIT="spMPDodatniBodovi @action=1, @dodatnibodovi = 1,  "
+		ONLOAD="" 
+    VERSION="2"
+		FILLEXPLORER="TRUE" 
+		NEXTFORM=""
+		CMD1CAPTION="Pokaži" 
+		CMD2CAPTION="Odustani" >
+    
+		<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od" />
+		<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do" />
+		<INPUT TYPE="check" NAME="sve" CAPTION="Bez obzira na datum" />
+		<INPUT TYPE="combo" NAME="kntnacinplacid " ALLOWEMPTY="TRUE" CAPTION="Način plaćanja" ONLOSTFOCUS="" SQL="spmpDajNacPacanjaKase" />
+		<INPUT TYPE="combo" NAME="trgovinaid" ALLOWEMPTY="TRUE" CAPTION="Trgovina" ONLOSTFOCUS="" SQL="spMPDajTrgovinaNG @operateriid  = @@operateriid" />
+		<INPUT TYPE="combo" NAME="aktivno" ALLOWEMPTY="TRUE" CAPTION="Status" ONLOSTFOCUS="" SQL="select 2 as aktivno, 'Aktivno' as Naziv union all select '1', 'Neaktivno'" />
+	</FILTERFORM>
+
+  <DODAJFORM 
+    WIDTH="10100" 
+    ONSUBMIT="select 1" 
+    VERSION="1"
+    ONLOAD="" 
+    ONLOADED ="select null as trgovinaid, null as kntnacinplacid, null as vrcjenikid, null as klmasterrobaid, null as popust, 1 as svetrgovine" 
+    HEIGHT="8300" 
+    CAPTION="Unos podataka"
+    FILLEXPLORER=""
+    FOCUS="datumod">
+    
+    <INPUT TYPE="frame" NAME="frm" CAPTION=""			TOP="50" LEFT="50" WIDTH="6500" HEIGHT="6700" />
+    <INPUT TYPE="frame" NAME="frm" CAPTION="" TOP="6800" LEFT="50" WIDTH="5550" HEIGHT="900" BACKCOLOR="lightgray" />
+
+
+    <INPUT TYPE="date" NAME="datumod" CAPTION="Datum od*" TOP="500" LEFT="1800" />
+	  <INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do*" TOP="500" LEFT="4000" />
+	  <INPUT TYPE="check" NAME="sve" CAPTION="Bez ograničenja*" TOP="900" LEFT="1600" 
+           ONCLICK ="if @@sve = 1 begin select 'disable' as datumdo end else begin select 'enable' as datumdo end" />
+
+    <INPUT TYPE="combo"    NAME="klmasterrobaid"   ALLOWEMPTY="TRUE" CAPTION="Klasa Robe*" TOP="1400" LEFT="1800"  WIDTH="4000" HEIGHT="320"
+           SQL="select KlMasterRobaId, sortkey + ' ' +naziv as naziv from KlMasterRoba order by sortkey"
+           ONLOSTFOCUS="if @@klmasterrobaid is not null begin 
+                          select 'disable' as mpcijena, 0 as popust, 0 as mpcijena, 'disable' as rbtnMPC 
+                        end 
+                        else begin 
+                          select 'enable' as rbtnPopust, 'enable' as rbtnMPC 
+                        end"/>
+	  <INPUT TYPE="search" NAME="robaid" 			CAPTION="Roba (F5)*" TOP="1800" LEFT="1800" WIDTH="4000" ALLOWEMPTY="FALSE" HEIGHT="280" 
+           SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid', @partneriid = @@partneriid"/>
+
+    <INPUT TYPE="search" NAME="partneriid" 			CAPTION="Partner*" TOP="2200" LEFT="1800" WIDTH="2500" ALLOWEMPTY="FALSE" HEIGHT="280"
+           SQL="vipartneri#partneriid#naziv%#%mjestanaziv%#sifra#!adresa"/>
+
+    <INPUT TYPE="number" NAME="putabodova" 			CAPTION=" X bodova*" TOP="2200" LEFT="5500" WIDTH="1000" ALLOWEMPTY="FALSE" HEIGHT="280"
+           SQL=""/>
+
+    <INPUT TYPE="number" NAME="dodatnibodovi"  CAPTION="Broj dodatnih boodva*" TOP="2700" LEFT="1800"  DECIMALS="0"   />
+    <INPUT TYPE="number" NAME="kolicinadodatnibodovi"  CAPTION="Količina za dod. boodve*" TOP="3100" LEFT="1800" DECIMALS="2"  />
+
+
+    <INPUT TYPE="combo" NAME="tippopustaid" CAPTION="Tip popusta:* " TOP="3600" LEFT="1800" ENABLED="FALSE"
+		   SQL =" select MPTipUvjetaPopustaid, opis as naziv from MPTipUvjetaPopusta where dodatnibodovi = 1" ALLOWEMPTY="FALSE" WIDTH="4000" HEIGHT="320"/>
+
+    <INPUT TYPE="check" NAME="svetrgovine" CAPTION="Sve trgovine* " TOP="4000" LEFT="1800" ENABLED="TRUE"
+		   SQL ="" ALLOWEMPTY="TRUE" WIDTH="4000" HEIGHT="320"/>
+
+
+
+    <INPUT TYPE="grid" DOCK="4"
+          NAME="trgovine"
+          REFRESHAFTERCHILD=""
+          CAPTION="Trgovine"
+          TOP="1000" LEFT="1150" WIDTH="3200" HEIGHT="3000"
+          TABINDEX="-1"
+          AFTERREFRESH=""
+          POPUP=""
+          ONDBLCLICK=""
+          CHECKBOXVISIBLE="TRUE"
+          EDITCOLUMNS=""
+          ONCELLEDITED=""
+          PAGEHEADERCENTER=""
+          PAGEHEADERRIGHT=""
+          PAGEHEADERLEFT="Datum: @@datum##Trgovina: @@trgovina"
+          PAGEFOOTERCENTER=""
+          PAGEFOOTERLEFT=""
+          PAGEFOOTERRIGHT="@@tkosmomi"
+          PAGEORIENTATION="LANDSCAPE"
+          GROUPBYBOXVISIBLE="FALSE"
+          TOTALROW="FALSE"
+          SQL="spMPDodatniBodovi @action=14" />
+
+    <INPUT TYPE="button" NAME="ok" CAPTION="Spremi (F2)" TOP="7100" LEFT="500" WIDTH="1106" HEIGHT="322"
+           ONCLICK="if @@svetrgovine = 0  begin (select 'DODAJTRG' as click ) end else begin (select 'DODAJCJEN' as click ) end#ok"/>
+   
+    <INPUT TYPE="button" NAME="cancel" CAPTION="Zatvori" TOP="7100" LEFT="1800" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+    
+    <INPUT TYPE="button" NAME="DODAJTRG" CAPTION="" TOP="-7100" LEFT="1800" WIDTH="1106" HEIGHT="322" 
+           ONCLICK="FOREACHSELECTED(trgovine)#spMPDodatniBodovi @action=3,   @trgovinaid = @(trgovine..trgovinaid), @datumod = @@datumod, @sve = @@sve , 
+           @datumdo = @@datumdo,  @dodatnibodovi = @@dodatnibodovi, @kolicinadodatnibodovi = @@kolicinadodatnibodovi,
+           @robaid = @@robaid , @klmasterrobaid =  @@klmasterrobaid,
+            @tippopustaid = @@tippopustaid, @clankart =1, @putabodova  =  @@putabodova , @partneriid = @@partnriid"  />
+    <INPUT TYPE="button" NAME="DODAJCJEN" CAPTION="" TOP="-7100" LEFT="1800" WIDTH="1106" HEIGHT="322" 
+           ONCLICK="exec spMPDodatniBodovi @action=3,  @datumod = @@datumod, @datumdo = @@datumdo,  @robaid = @@robaid , @klmasterrobaid =  @@klmasterrobaid, @tippopustaid = @@tippopustaid, @clankart =1,  @dodatnibodovi = @@dodatnibodovi, @kolicinadodatnibodovi = @@kolicinadodatnibodovi, @sve = @@sve,  @putabodova  =  @@putabodova,  @partneriid = @@partnriid   "  />
+
+
+  </DODAJFORM>
+
+  <UPDATEFORM
+    WIDTH="7100"
+    ONSUBMIT="select 1"
+    VERSION="1.2"
+    ONLOAD="spMPDodatniBodovi @action=2, @id = @@id"
+    ONLOADED =""
+    HEIGHT="6000"
+    CAPTION="Izmjena podataka"
+    FILLEXPLORER=""
+    FOCUS="datumod">
+
+    <INPUT TYPE="frame" NAME="frm" CAPTION=""			TOP="50" LEFT="50" WIDTH="6500" HEIGHT="6700" />
+    <INPUT TYPE="frame" NAME="frm" CAPTION="" TOP="6800" LEFT="50" WIDTH="5550" HEIGHT="900" BACKCOLOR="lightgray" />
+
+
+    <INPUT TYPE="date" NAME="datumod" CAPTION="Datum od*" TOP="500" LEFT="1800" />
+    <INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do*" TOP="500" LEFT="4000" />
+    <INPUT TYPE="check" NAME="sve" CAPTION="Bez ograničenja*" TOP="900" LEFT="1600"
+           ONCLICK ="if @@sve = 1 begin select 'disable' as datumdo end else begin select 'enable' as datumdo end" />
+
+    <INPUT TYPE="combo"    NAME="klmasterrobaid"   ALLOWEMPTY="TRUE" CAPTION="Klasa Robe*" TOP="1400" LEFT="1800"  WIDTH="4000" HEIGHT="320"
+           SQL="select KlMasterRobaId, sortkey + ' ' +naziv as naziv from KlMasterRoba order by sortkey"
+           ONLOSTFOCUS="if @@klmasterrobaid is not null begin 
+                          select 'disable' as mpcijena, 0 as popust, 0 as mpcijena, 'disable' as rbtnMPC 
+                        end 
+                        else begin 
+                          select 'enable' as rbtnPopust, 'enable' as rbtnMPC 
+                        end"/>
+    <INPUT TYPE="search" NAME="robaid" 			CAPTION="Roba (F5)*" TOP="1800" LEFT="1800" WIDTH="4000" ALLOWEMPTY="FALSE" HEIGHT="280"
+           SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid', @partneriid = @@partneriid"/>
+
+    <INPUT TYPE="search" NAME="partneriid" 			CAPTION="Partner*" TOP="2200" LEFT="1800" WIDTH="2500" ALLOWEMPTY="FALSE" HEIGHT="280"
+            SQL="vipartneri#partneriid#naziv%#%mjestanaziv%#sifra#!adresa"/>
+
+    <INPUT TYPE="number" NAME="putabodova" 			CAPTION=" X bodova*" TOP="2200" LEFT="5500" WIDTH="1000" ALLOWEMPTY="FALSE" HEIGHT="280"
+           SQL=""/>
+
+    <INPUT TYPE="number" NAME="dodatnibodovi"  CAPTION="Broj dodatnih boodva*" TOP="2700" LEFT="1800"  DECIMALS="0"   />
+    <INPUT TYPE="number" NAME="kolicinadodatnibodovi"  CAPTION="Količina za dod. boodve*" TOP="3100" LEFT="1800" DECIMALS="2"  />
+
+
+    <INPUT TYPE="combo" NAME="tippopustaid" CAPTION="Tip popusta:* " TOP="3600" LEFT="1800" ENABLED="FALSE"
+		   SQL =" select MPTipUvjetaPopustaid, opis as naziv from MPTipUvjetaPopusta where dodatnibodovi = 1" ALLOWEMPTY="FALSE" WIDTH="4000" HEIGHT="320"/>
+
+  
+    <INPUT TYPE="check" NAME="trgovinaid" CAPTION="" TOP="-4000" LEFT="1800" ENABLED="FALSE" VISIBLE="FALSE"
+   SQL ="" ALLOWEMPTY="TRUE" WIDTH="4000" HEIGHT="320"/>
+
+
+    <INPUT TYPE="button" NAME="ok" CAPTION="Spremi (F2)" TOP="5100" LEFT="500" WIDTH="1106" HEIGHT="322"
+           ONCLICK="exec spMPDodatniBodovi @action=4,  @id = @@id, @datumod = @@datumod, @datumdo = @@datumdo,  @robaid = @@robaid , @klmasterrobaid =  @@klmasterrobaid, @sve = @@sve, 
+           @tippopustaid = @@tippopustaid, @clankart =1,  @dodatnibodovi = @@dodatnibodovi, @kolicinadodatnibodovi = @@kolicinadodatnibodovi, @trgovinaid = @@trgovinaid , @putabodova  =  @@putabodova, @partneriid = @@partneriid#ok"/>
+
+    <INPUT TYPE="button" NAME="cancel" CAPTION="Zatvori" TOP="5100" LEFT="1800" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+
+
+  </UPDATEFORM>
+
+
+  <XUPDATEFORM 
+				   WIDTH="11000" 
+				   ONSUBMIT="select 1" 
+           VERSION="1.2"
+				   ONLOAD="spMPDodatniBodovi @action=2, @id = @@id" 
+				   HEIGHT="8000" 
+				   CAPTION="Izmjena podataka"
+				   FILLEXPLORER=""
+				   FOCUS="vrstapromid"
+
+		 >
+
+    <INPUT TYPE="frame" NAME="frm" CAPTION=""			TOP="50" LEFT="50" WIDTH="6500" HEIGHT="6700" />
+    <INPUT TYPE="frame" NAME="frm" CAPTION="" TOP="6800" LEFT="50" WIDTH="5550" HEIGHT="900" BACKCOLOR="lightgray" />
+    <INPUT TYPE="combo" NAME="vrcjenikid" ALLOWEMPTY="TRUE" CAPTION="Vrsta cjenika*" TOP="100" LEFT="1500" ONLOSTFOCUS="" SQL="spMPDajMPCjenik @operateriid = @@operateriid " WIDTH="4000" HEIGHT="320" />
+    <INPUT TYPE="combo" NAME="kntnacinplacid " ALLOWEMPTY="TRUE" CAPTION="Način plaćanja*" TOP="500" LEFT="1500" ONLOSTFOCUS="" SQL="spmpDajNacPacanjaKase" WIDTH="4000" HEIGHT="320" />
+    <INPUT TYPE="search" NAME="partneriid" ALLOWEMPTY="TRUE" CAPTION="Partner*" TOP="900" LEFT="1500" ONLOSTFOCUS="" SQL="vipartneri#partneriid#naziv%#%mjestanaziv%#sifra#!adresa" WIDTH="4000" HEIGHT="320" />
+    <INPUT TYPE="combo" CAPTION="Tip kartice partnera*" NAME="MPPartneriLoyID" TOP="1300" LEFT="1500"  WIDTH="3000" HEIGHT="320" ALLOWEMPTY="TRUE"  SQL="select MPPartneriLoyID, opis from MPPartneriLoy"/>
+
+    <INPUT TYPE="date" NAME="datumod" CAPTION="Datum od*" TOP="1700" LEFT="1500" />
+    <INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do*" TOP="1700" LEFT="3500" />
+    <INPUT TYPE="check" NAME="sve" CAPTION="Bez ograničenja*" TOP="1700" LEFT="5100"
+           ONCLICK ="if @@sve = 1 begin select 'disable' as datumdo end else begin select 'enable' as datumdo end" />
+    <INPUT TYPE="text" NAME="Satod" CAPTION="Vrijeme od(HH:MM)*" TOP="2100" LEFT="1500" WIDTH="400"/>
+    <INPUT TYPE="text" NAME="Minod" CAPTION=""			TOP="2100" LEFT="2000" WIDTH="400" />
+    <INPUT TYPE="text" NAME="Satdo" CAPTION="do(HH:MM)*" TOP="2100" LEFT="3400" WIDTH="400"/>
+    <INPUT TYPE="text" NAME="Mindo" CAPTION=""			TOP="2100" LEFT="3900" WIDTH="400" />
+    <INPUT TYPE="number" CAPTION="Iznos od *" NAME="iznosod" TOP="2500" LEFT="1500" SQL="" WIDTH="1000" HEIGHT="320" ENABLED="TRUE" DECIMALS="2"/>
+    <INPUT TYPE="number" CAPTION="do *" NAME="iznosdo" TOP="2500" LEFT="2800" SQL="" WIDTH="1000" HEIGHT="320" ENABLED="TRUE" DECIMALS="2"/>
+
+    <INPUT TYPE="check" NAME="clankart" ALLOWEMPTY="TRUE" TOP="3000" LEFT="1500" CAPTION="Samo za članove loyalty" ONLOSTFOCUS="" SQL="" />
+
+    <INPUT TYPE="combo"    NAME="klmasterrobaid"   ALLOWEMPTY="TRUE" CAPTION="Klasa Robe*" TOP="3500" LEFT="1500"  WIDTH="4000" HEIGHT="320"
+           SQL="select KlMasterRobaId, sortkey+ ' ' +naziv as naziv  from KlMasterRoba order by sortkey"
+           ONLOSTFOCUS="if @@klmasterrobaid is not null begin 
+                          select 'disable' as mpcijena, 0 as popust, 0 as mpcijena, 'disable' as rbtnMPC 
+                        end 
+                        else begin 
+                          select 'enable' as rbtnPopust, 'enable' as rbtnMPC 
+                        end"/>
+    <INPUT TYPE="checkbox" NAME="podklase"  CAPTION="Pokaži i podklase" TOP="3900" LEFT="1300"    />
+    <INPUT TYPE="search" NAME="robaid" 			CAPTION="Roba (F5)*" TOP="4300" LEFT="1500" WIDTH="4000" ALLOWEMPTY="FALSE" HEIGHT="280"
+           SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid', @partneriid = @@partneriid"/>
+
+    <INPUT TYPE="label" NAME="lblpop" CAPTION="STAVKA:" TOP="4800" LEFT="500" WIDTH="1400" HEIGHT="320" STYLE="1" ONCLICK="select 'enable' as popust, 'disable' as mpcijena, 0 as mpcijena, 'popust' as focus "/>
+    <INPUT TYPE="radio" NAME="rbtnPopust" CAPTION="% popusta" TOP="4700" LEFT="1500" WIDTH="1400" HEIGHT="320" ONCLICK="select 'enable' as popust, 'disable' as mpcijena, 0 as mpcijena, 'popust' as focus "/>
+    <INPUT TYPE="number" CAPTION="" NAME="popust" TOP="4750" LEFT="3100" SQL="" WIDTH="600" HEIGHT="320" ENABLED="TRUE" DECIMALS="2"/>
+    <INPUT TYPE="radio" NAME="rbtnMPC" CAPTION="Krajnja MPC" TOP="4700" LEFT="4100" WIDTH="1400" HEIGHT="320" ONCLICK="select 'enable' as mpcijena, 'disable' as popust, 0 as popust "/>
+    <INPUT TYPE="number" CAPTION="" NAME="mpcijena" TOP="4700" LEFT="5500" SQL="" WIDTH="600" HEIGHT="320" ENABLED="FALSE" DECIMALS="2"/>
+    <INPUT TYPE="check" CAPTION="Zabrani popust" NAME="zabranipopust" TOP="5100" LEFT="1500" SQL="" WIDTH="3600" HEIGHT="320" ENABLED="TRUE" DECIMALS=""/>
+
+    <INPUT TYPE="label" NAME="lblpop" CAPTION="RAČUN:" TOP="5600" LEFT="500" WIDTH="1400" HEIGHT="320" STYLE="1" ONCLICK=""/>
+    <INPUT TYPE="number" CAPTION="% popusta*" NAME="racpopust" TOP="5500" LEFT="2200" SQL="" WIDTH="600" HEIGHT="320" ENABLED="TRUE" DECIMALS="2"/>
+    <INPUT TYPE="number" CAPTION="Nominalni popust*" NAME="nompopustrac" TOP="5500" LEFT="4500" SQL="" WIDTH="600" HEIGHT="320" ENABLED="TRUE" DECIMALS="2"/>
+    <INPUT TYPE="combo" NAME="tippopustaid" CAPTION="Tip popusta:* " TOP="6100" LEFT="1500" SQL =" select MPTipUvjetaPopustaid, opis as naziv from MPTipUvjetaPopusta" ALLOWEMPTY="FALSE" WIDTH="4000" HEIGHT="320"/>
+
+    <INPUT TYPE="grid" NAME="griddan" CAPTION="Dani u tjednu" TOP="300" LEFT="7000" HEIGHT="5500" WIDTH="3600" GROUPBYBOXVISIBLE="FALSE" ALLOWEMPTY="" CHECKBOXVISIBLE="FALSE"
+			   SQL ="select mpuvjetikasedaniid,  Dan, satod+':'+minod as [OD0800] , satdo+':'+mindo as [DO0800] from mpuvjetikasedani where mpuvjetikaseid = @@id "/>
+		
+		<INPUT TYPE="button" NAME="ok" CAPTION="Dodaj" TOP="6100" LEFT="7000" WIDTH="1106" HEIGHT="322"
+			   ONCLICK=":DODAJDAN#select 'refresh' as griddan"  />
+		<INPUT TYPE="button" NAME="Izmjeni" CAPTION="Izmjeni" TOP="6100" LEFT="8200" WIDTH="1106" HEIGHT="322" ONCLICK=":IZMJENIDAN#select 'refresh' as griddan"  />
+		<INPUT TYPE="button" NAME="ob" CAPTION="Obriši" TOP="6100" LEFT="9400" WIDTH="1106" HEIGHT="322" ONCLICK=":BRISIDAN#select 'refresh' as griddan"  />
+
+
+		<INPUT TYPE="button" NAME="ok" CAPTION="Spremi (F2)" TOP="6800" LEFT="500" WIDTH="1106" HEIGHT="322" 
+			   ONCLICK="spMPDodatniBodovi @action=4,  @vrcjenikid = @@vrcjenikid, @trgovinaid = @@trgovinaid, @datumod = @@datumod, @datumdo = @@datumdo, @iznosod = @@iznosod, 
+         @iznosdo = @@iznosdo, @kntnacinplacid  = @@kntnacinplacid , @popust = @@popust ,  @mpcijena = @@mpcijena, @sve = @@sve,  @id = @@id , @klmasterrobaid =  @@klmasterrobaid, 
+         @robaid = @@robaid, @satod = '@@satod', @minod = '@@minod', @satdo = '@@satdo', @mindo = '@@mindo', @dan = @@dan, @zabranipopust = @@zabranipopust , 
+         @tippopustaid = @@tippopustaid, @partneriid = @@partneriid, @clankart = @@clankart,
+			     @popustrac = @@racpopust, @popustracnom = @@nompopustrac, @MPPartneriLoyID = @@MPPartneriLoyID#Ok"  />
+	
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Zatvori" TOP="6800" LEFT="1800" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+
+	</XUPDATEFORM>
+
+
+
+
+	<KOPIFORM
+			 WIDTH="7500"
+			 ONSUBMIT=""
+			 ONLOAD=""
+			 HEIGHT="8500"
+			 CAPTION="Kopiranje podataka"
+			 CHECKBOXVISIBLE="TRUE"
+			 TOTALROWVISIBLE="FALSE"
+			FOCUS="Naziv"
+		 >
+		<INPUT TYPE="grid"   CHECKBOXVISIBLE="TRUE"	TOTALROWVISIBLE="FALSE" NAME="gprovizija" TOP="400" LEFT="400" HEIGHT="6500" WIDTH="6000"  
+			   SQL="select trgovinaid, oznaka +' ' +opis as [Naziv trgovine4500] from trgovina where aktivno = 1 and trgovinaid not in (select trgovinaid from mpuvjetikase where mpuvjetikaseid = @@id) order by oznaka" />
+
+
+
+		<INPUT TYPE="button" NAME="ok" CAPTION="Kopiraj (F2)" TOP="7300" LEFT="196" WIDTH="1106" HEIGHT="322"
+						 ONCLICK="FOREACHSELECTED(gprovizija)#spMPDodatniBodovi @action=7, @id = @@id, @trgovinaid = @(gprovizija..trgovinaid)#Ok"  />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="7300" LEFT="1456" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+	</KOPIFORM>
+
+
+	<DELETEFORM
+				   WIDTH="8000" 
+				   ONSUBMIT="" 
+				   ONLOAD="spMPDodatniBodovi @action=2, @id = @@id" 
+				   HEIGHT="5000" 
+				   CAPTION="Želite li obrisati uvjet ? "  
+				  FOCUS="vrstapromid"
+		 >
+		<INPUT TYPE="combo" NAME="trgovinaid" ALLOWEMPTY="TRUE" CAPTION="Trgovina*" TOP="1100" LEFT="1500" ONLOSTFOCUS="" SQL="spMPDajTrgovina @operateriid  = @@operateriid" ENABLED="FALSE"/>
+		<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od*" TOP="1500" LEFT="1500" />
+		<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do*" TOP="1500" LEFT="3700" />
+		<INPUT TYPE="number" CAPTION="Dodatni bodovi*" NAME="dodatnibodovi" TOP="2300" LEFT="1500" SQL="" WIDTH="1000" HEIGHT="320" ENABLED="FALSE" DECIMALS="2" />
+		<INPUT TYPE="number" CAPTION="Kol. za dod. bodove*" NAME="kolicinadodatnibodovi" TOP="2700" LEFT="1500" SQL="" WIDTH="1000" HEIGHT="320" ENABLED="FALSE" DECIMALS="2" />
+		<INPUT TYPE="button" NAME="ok" CAPTION="Briši (F2)" TOP="3600" LEFT="1096" WIDTH="1106" HEIGHT="322" ONCLICK="spMPDodatniBodovi @action=5,  @id = @@id #Ok"  />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="3600" LEFT="2356" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+
+	</DELETEFORM>
+
+
+
+	<AKTIVIRAJstaro
+				   WIDTH="8000" 
+				   ONSUBMIT="" 
+				   ONLOAD="spMPDodatniBodovi @action=2, @id = @@id" 
+				   HEIGHT="5000" 
+				   CAPTION="Želite li promijeniti status uvjeta ? "  
+				  FOCUS=""
+		 >
+		<INPUT TYPE="combo" NAME="vrcjenikid" ALLOWEMPTY="TRUE" CAPTION="Vrsta cjenika*" TOP="300" LEFT="1500" ONLOSTFOCUS="" SQL="spMPDajMPCjenik @operateriid = @@operateriid " ENABLED="FALSE"/>
+		<INPUT TYPE="combo" NAME="kntnacinplacid " ALLOWEMPTY="TRUE" CAPTION="Način plaćanja*" TOP="700" LEFT="1500" ONLOSTFOCUS="" SQL="spmpDajNacPacanjaKase" ENABLED="FALSE"/>
+		<INPUT TYPE="combo" NAME="trgovinaid" ALLOWEMPTY="TRUE" CAPTION="Trgovina*" TOP="1100" LEFT="1500" ONLOSTFOCUS="" SQL="spMPDajTrgovina @operateriid  = @@operateriid" ENABLED="FALSE"/>
+		<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od*" TOP="1500" LEFT="1500" ENABLED="FALSE"/>
+		<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do*" TOP="1900" LEFT="1500" ENABLED="FALSE"/>
+		<INPUT TYPE="check" NAME="sve" CAPTION="Bez ograničenja*" TOP="1900" LEFT="3500" ENABLED="FALSE"/>
+		<INPUT TYPE="number" CAPTION="Iznos od *" NAME="iznosod" TOP="2300" LEFT="1500" SQL="" WIDTH="1000" HEIGHT="320" ENABLED="FALSE" DECIMALS="2" />
+		<INPUT TYPE="number" CAPTION="Iznos do *" NAME="iznosdo" TOP="2700" LEFT="1500" SQL="" WIDTH="1000" HEIGHT="320" ENABLED="FALSE" DECIMALS="2" />
+		<INPUT TYPE="number" CAPTION="% popusta*" NAME="popust" TOP="3100" LEFT="1500" SQL="" WIDTH="600" HEIGHT="320" ENABLED="FALSE" DECIMALS="2"/>
+    <INPUT TYPE="number" CAPTION="MP cijena*" NAME="mpcijena" TOP="3100" LEFT="3500" SQL="" WIDTH="600" HEIGHT="320" ENABLED="FALSE" DECIMALS="2"/>
+    <INPUT TYPE="button" NAME="ok" CAPTION="Promijeni " TOP="3600" LEFT="1096" WIDTH="1106" HEIGHT="322" ONCLICK="spMPDodatniBodovi @action=6,  @id = @@id #Ok"  />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="3600" LEFT="2356" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+	</AKTIVIRAJstaro>
+
+
+  <MULTISELECTAKTIVIRAJ
+    WIDTH="10500"
+    ONSUBMIT=""
+    ONLOAD="spMPDodatniBodovi @action=2, @id = @@id"
+    HEIGHT="5000"
+    CAPTION="Želite li promijeniti status uvjeta ? "
+    FOCUS="" >
+
+    <INPUT TYPE="grid" 
+           NAME="stavke" 
+           CAPTION="Štampanje iz Jupitera" 
+           TOP="200" LEFT="1400" 
+           WIDTH="8500" HEIGHT="3000" 
+           CHECKBOXVISIBLE="FALSE"
+           TOTALROW="FALSE"
+           GROUPBYBOXVISIBLE="FALSE"
+           SQL="select u.mpUvjetiKaseid,[Aktivno0800] = case when u.status = 1 then 'NE' else 'DA' end,r.naziv as [Roba2000],kl.naziv as [Klasa2000],
+                u.popust as [% popusta0800],u.mpcijena as [MP cijena1000],
+                u.datumod as [Datum početka1000],u.datumdo as [Datum kraja1000],u.satod as [Početni sat1000],u.satdo as [Završni sat1000]
+                from totalgenmultiselecttemp t 
+                inner join mpUvjetiKase u on t.id=u.mpUvjetiKaseid 
+                left outer join roba r on u.robaid = r.robaid 
+                left outer join klmasterroba kl on u.klmasterrobaid = kl.klmasterrobaid 
+                where t.operateriid=@@operateriid"/>
+
+    <INPUT TYPE="button" NAME="" CAPTION="Ukloni uvjet iz liste odabranih uvjeta" TOP="980" LEFT="140" WIDTH="1050" HEIGHT="900" 
+           ONCLICK="delete from totalgenmultiselecttemp where id=@@stavke and operateriid=@@operateriid#select 'refresh' as stavke"  />
+    
+    <INPUT TYPE="button" NAME="ok" CAPTION="Promijeni " TOP="3600" LEFT="1096" WIDTH="1106" HEIGHT="322" 
+           ONCLICK="FOREACHROW(stavke)#spMPDodatniBodovi @action=6, @id = @@gridstavkempUvjetiKaseid#Ok"  />
+    <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="3600" LEFT="2356" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+  </MULTISELECTAKTIVIRAJ>
+
+  <TIPOVI
+			   WIDTH="6500"
+			   ONSUBMIT="select 1"
+			   ONLOAD="spMPDodatniBodovi @action=2, @id = @@id"
+			   HEIGHT="5000"
+			   VERSION="1"
+			   CAPTION="Tipovi popusta - ažuriranje "
+			   FILLEXPLORER=""
+			   GROUPBYBOXVISIBLE="FALSE"
+			   TOTALROW="FALSE"
+			   FOCUS=""
+
+		 >
+
+    <INPUT TYPE="grid" NAME="gridtip" CAPTION="Dani u tjednu" TOP="500" LEFT="300" HEIGHT="2500" WIDTH="5600" GROUPBYBOXVISIBLE="FALSE" ALLOWEMPTY="" CHECKBOXVISIBLE="FALSE"
+			   SQL ="spMPDodatniBodovi @action = 13 "/>
+
+    <INPUT TYPE="button" NAME="ok" CAPTION="Dodaj" TOP="3500" LEFT="300" WIDTH="1106" HEIGHT="322"
+			   ONCLICK=":DODAJTIP#select 'refresh' as gridtip"  />
+    <INPUT TYPE="button" NAME="Izmjeni" CAPTION="Izmjeni" TOP="3500" LEFT="1500" WIDTH="1106" HEIGHT="322" ONCLICK=":UPDATETIP#select 'refresh' as gridtip"  />
+    <INPUT TYPE="button" NAME="ob" CAPTION="Obriši" TOP="3500" LEFT="2700" WIDTH="1106" HEIGHT="322" ONCLICK="exec spMPDodatniBodovi @action = 12 , @tippopustaid =  @@gridgridtipMPTipUvjetaPopustaid#select 'refresh' as gridtip"  />
+
+
+
+    <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="3500" LEFT="3900" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+
+  </TIPOVI>
+
+  <XTIPOVI
+			   WIDTH="5500"
+			   ONSUBMIT="select 1"
+			   ONLOAD="spMPDodatniBodovi @action=2, @id = @@id"
+			   HEIGHT="5000"
+			   CAPTION="Tipovi popusta - ažuriranje "
+			   FILLEXPLORER=""
+			   GROUPBYBOXVISIBLE="FALSE" 
+			   TOTALROW="FALSE" 
+			   FOCUS=""
+
+		 >
+
+		<INPUT TYPE="grid" NAME="gridtip" CAPTION="Dani u tjednu" TOP="500" LEFT="300" HEIGHT="2500" WIDTH="4600" GROUPBYBOXVISIBLE="FALSE" ALLOWEMPTY="" CHECKBOXVISIBLE="FALSE"
+			   SQL ="select MPTipUvjetaPopustaid , opis as [Opis3300] , Prioritet as [Prioritet1000] from MPTipUvjetaPopusta "/>
+
+		<INPUT TYPE="button" NAME="ok" CAPTION="Dodaj" TOP="3500" LEFT="300" WIDTH="1106" HEIGHT="322"
+			   ONCLICK=":DODAJTIP#select 'refresh' as gridtip"  />
+		<INPUT TYPE="button" NAME="Izmjeni" CAPTION="Izmjeni" TOP="3500" LEFT="1500" WIDTH="1106" HEIGHT="322" ONCLICK=":UPDATETIP#select 'refresh' as gridtip"  />
+		<INPUT TYPE="button" NAME="ob" CAPTION="Obriši" TOP="3500" LEFT="2700" WIDTH="1106" HEIGHT="322" ONCLICK="exec spMPDodatniBodovi @action = 12 , @tippopustaid =  @@gridgridtipMPTipUvjetaPopustaid#select 'refresh' as gridtip"  />
+
+
+
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="3500" LEFT="3900" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+
+	</XTIPOVI>
+
+  <DODAJTIP
+				   WIDTH="7000"
+				   ONSUBMIT="exec spMPDodatniBodovi @action = 10 , @opistipapopusta = '@@opis', @prioritet = @@prioritet, "
+				   ONLOAD=""
+				   HEIGHT="2500"
+				   CAPTION="Dodavanje tipa popusta "
+				   CMD1CAPTION="Spremni"
+				   CMD2CAPTION="Odustani"
+		   FILLEXPLORER=""
+		 >
+    <INPUT TYPE="text" NAME="opis" CAPTION="_Opis:" VALUE="" HEIGHT="320" WIDTH="3500" TABINDEX="" CHECKBOX="FALSE" />
+    <INPUT TYPE="number" NAME="prioritet" CAPTION="_Prioritet: " WIDTH="500" HEIGHT="320" TABINDEX="" ALLOWEMPTY="false" DECIMALS="0" SQL=""/>
+    <INPUT TYPE="check" NAME="vaucher" CAPTION="Vaučerski popust: " WIDTH="500" HEIGHT="320" TABINDEX="" ALLOWEMPTY="false" DECIMALS="0" SQL=""/>
+  </DODAJTIP>
+
+  <UPDATETIP
+				   WIDTH="7000"
+				   FOCUS="Prioritet"
+				   ONSUBMIT="exec spMPDodatniBodovi @action = 11 , @opistipapopusta = '@@opis', @prioritet = @@prioritet, @tippopustaid =  @@gridgridtipMPTipUvjetaPopustaid, "
+				   ONLOAD="select * from MPTipUvjetaPopusta where MPTipUvjetaPopustaid = @@gridgridtipMPTipUvjetaPopustaid"
+				   HEIGHT="2500"
+				   CAPTION="Izmjena tipa popusta "
+				   CMD1CAPTION="Spremni"
+				   CMD2CAPTION="Odustani"
+		   FILLEXPLORER=""
+		 >
+    <INPUT TYPE="text" NAME="opis" CAPTION="_Opis:" VALUE="" HEIGHT="320" WIDTH="3500" TABINDEX="" CHECKBOX="FALSE" />
+    <INPUT TYPE="number" NAME="prioritet" CAPTION="_Prioritet: " WIDTH="500" HEIGHT="320" TABINDEX="" ALLOWEMPTY="false" DECIMALS="0" SQL=""/>
+    <INPUT TYPE="check" NAME="vaucher" CAPTION="Vaučerski popust: " WIDTH="500" HEIGHT="320" TABINDEX="" ALLOWEMPTY="false" DECIMALS="0" SQL=""/>
+  </UPDATETIP>
+
+
+</PROJECT>
+ 
+

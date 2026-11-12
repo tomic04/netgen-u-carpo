@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <form name="frmNaziv" type="master" caption="Parametri kontrole uz robu" >
+        <managerlayout>
+		<!-- tree -->
+            <tree name="trTree" caption="Master klasifikacija" dataname="~dtTree" expandallonload="true">
+				<fields>
+					<field name="caption"/>
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="grdMaster"/>
+				</event>
+            </tree>
+		<!-- master -->
+            <grid name="grdMaster" type="master" dataname="~dtMaster" key="RobaId">
+				<menu>
+					<menuitem caption="Kopiraj parametre">
+						<event type="click">
+							<action type="confirm" value="Želite li  kopirati parametre {#grdMaster.@Naziv}?">
+								<action type="datarun nonquery" value="~dtParCopy" />
+							</action>
+						</event>
+					</menuitem>
+					<menuitem caption="Dodjeli parametre">
+						<event type="click">
+							<action type="confirm" value="Želite li  dodati parametre {#grdMaster.@Naziv}?"/>
+							<action type="datarun nonquery" value="~dtParPaste" />
+							<action type="control populate" value="grdDetail"/>
+						</event>
+					</menuitem>
+				</menu>
+				<fields>
+					<field name="Naziv" minwidth="200"/>
+					<field name="Kod"/>
+					<field name="KontrolaObavezna" caption="Kontrola obavezna"  minwidth="100"/>
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="grdDetail"/>
+				</event>
+            </grid>
+			
+		<!-- detail -->
+            <grid name="grdDetail" dataname="~dtDetail" multiselect="true">
+				<menu>
+					<menuitem caption="Deaktiviraj parametar uz robu">
+						<event type="click">
+							<action type="confirm" value="Želite li deaktivirati {#grdDetail.@Naziv}?">
+								<action type="datarun nonquery" value="~dtParNeaktiv" />
+								<action type="control populate keepfocus" value="grdDetail"/>
+							</action>
+						</event>
+					</menuitem>
+					<menuitem caption="Aktiviraj parametar uz robu">
+						<event type="click">
+							<action type="confirm" value="Želite li aktivirati {#grdDetail.@Naziv}?"/>
+							<action type="datarun nonquery" value="~dtParAktiv" />
+							<action type="control populate keepfocus" value="grdDetail"/>
+						</event>
+					</menuitem>
+				</menu>
+				<fields>
+					<field name="Naziv" minwidth="150"/>
+					<field name="strdefault" caption="Default"/>
+					<field name="DecMin" caption="Min"/>
+					<field name="DecMax" caption="Max"/>
+					<field name="Opis" minwidth="100"/>
+					<field name="StrObavezan" caption="Obavezan" minwidth="100"/>
+					<field name="DatumParametarRoba" caption="Datum" tooltip="Datum dodavanja parametra uz robu" />
+					<filed name="Aktivan"/>
+					<field name="DatumNEAktivan" caption="Neaktivan od" tooltip="Datum kada je parametar prestao biti aktivan uz ovu robu"/> <!-- , ovog datuma je promijenjen je dozvoljeni interval te se kreirao novi parametar istog imena i pridijelio se ovoj robi -->
+				</fields>
+            </grid>
+        </managerlayout>
+        <panelbuttons>
+            <buttons>
+			<!-- dodaj / izmijeni -->
+				<button caption="Dodaj / Izmijeni">
+					<event type="click">
+						<action type="form open" value="frmAddEdit">
+							<parameter name="RobaId" value="#grdMaster.@RobaId"/>
+							<parameter name="KlMasterRobaId" value="#trTree.@value"/>
+						</action>
+						<action type="control populate" value="#grdDetail"/>
+					</event>
+				</button>
+			<!-- obriši -->
+				<button caption="Obriši sve parametre robe">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati sve parametre za {#grdMaster.@Naziv}?"/>
+						<action type="datarun nonquery" value="~dtMultiDelete"/>
+						<action type="control populate" value="#grdDetail"/>
+					</event>
+				</button>
+            </buttons>
+        </panelbuttons>
+	<!-- store -->
+        <datalist>
+            <data name="dtTree" command="spTreeKlMasterRoba"/>
+			<data name="dtMaster" command="spRobaQueryGrdMaster">
+				<parameter name="@Id" value="#trTree.@value"/>
+			</data>
+			<data name="dtDetail" command="spCarpoKKvalLnParRobaQuery">
+				<parameter name="@action" value="1"/>
+				<parameter name="@RobaId" value="#grdMaster.@RobaId"/>
+			</data>
+			<data name="dtMultiDelete" command="spCarpoKKvalLnParRobaAzur">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@RobaId" value="#grdMaster.@RobaId"/>
+			</data>
+			<data name="dtParCopy" command="spKKvalParametriRobaCopy_Paste">
+				<parameter name="@action" value="copy"/>
+				<parameter name="@RobaId" value="#grdMaster.@RobaId"/>
+			</data>
+			<data name="dtParPaste" command="spKKvalParametriRobaCopy_Paste">
+				<parameter name="@action" value="paste"/>
+				<parameter name="@RobaId" value="#grdMaster.@RobaId"/>
+			</data>
+			<data name="dtParNeaktiv" command="spCarpoKKvalLnParRobaAzur">
+				<parameter name="@action" value="5"/>
+				<parameter name="@KKvalLnParametarRobaid" value="#grdDetail.@KKvalLnParametarRobaid"/>
+			</data>
+			<data name="dtParAktiv" command="spCarpoKKvalLnParRobaAzur">
+				<parameter name="@action" value="6"/>
+				<parameter name="@KKvalLnParametarRobaid" value="#grdDetail.@KKvalLnParametarRobaid"/>
+			</data>
+			
+        </datalist>
+    </form>
+	<form name="frmEditPar" path="frmEditPar.xml"/>
+	<form name="frmAddEdit" path="frmAddEdit.xml"/>
+</root>

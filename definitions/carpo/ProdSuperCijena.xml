@@ -1,0 +1,453 @@
+<root>
+	<form name="frmMaster" type="master" caption="Definiranje cijene jače od ugovora s kupcem">
+		<managerlayout>
+			<grid type="Master" name="grdMaster" dataname="~dtPuniMaster" key="ProdSuperCijenaGlaId" multiselect="true">
+				<fields>
+
+				</fields>
+					<event type="focusedrowchanged">
+						<action type="control populate" value="#grdDetail"/>
+						<action type="control populate" value="#grdTrgovine"/>
+					</event>
+			</grid>
+			
+			<tabs>
+				<tab caption="Partneri">			
+				
+					<grid name="grdDetail" dataname="dtPuniDetail" bestfitonrefresh="true" savelayout="true" multiselect="true">
+						<fields>
+							<field name="SviKupci" caption="Svi kupci"/>
+							<field name="KlasaPartnera" caption="Klasa partnera"/>
+							<field name="Partner" caption="Partner"/>
+							<field name="SifraPartnera" caption="Šifra partnera"/>
+							<field name="Smije" caption="Vrijedi"/>
+
+						</fields>
+					</grid>
+				</tab>	
+				<tab caption="Trgovine">
+					<grid name="grdTrgovine" dataname="dtPuniTrgovine" bestfitonrefresh="true" savelayout="true" multiselect="true" key="checked" >
+						<fields>
+							<field name="Trgovina" caption="Trgovina"/>
+						</fields>
+					</grid>
+				</tab>	
+			</tabs>
+		</managerlayout>
+
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnos" caption="UNESI">
+					<event type="click">
+						<action type="form open" value="frmUnos" />
+					</event>
+				</button>
+
+
+				<button name="btnIzmjeni" caption="IZMJENI">
+					<event type="click">
+						<action type="form open" value="frmIzmjeni">
+								<parameter name="ProdSuperCijenaGlaId" value="#grdMaster.@ProdSuperCijenaGlaId" />
+						</action>
+					</event>
+				</button>
+
+				<button name="btnDelete" caption="OBRIŠI">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati?">
+							<action type="control foreachrowselected" value="#grdMaster">
+								<action type="datarun nonquery" value="~dtDelete" />
+							</action>
+						</action>
+						
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+				
+				<button name="btnUnosPartnera" caption="UNESI PARTNERA">
+					<event type="click">
+						<action type="form open" value="frmUnosPartnera" />
+					</event>
+				</button>
+				
+				<button name="btnDeletePartnera" caption="OBRIŠI PARTNERA">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati?">
+							<action type="control foreachrowselected" value="#grdDetail">
+								<action type="datarun nonquery" value="~dtDeletePartnera" />
+							</action>
+						</action>
+						
+						<action type="control populate" value="#grdDetail" />
+					</event>
+				</button>
+				
+				<button name="btnTrgovine" caption="TRGOVINE">
+					<event type="click">
+						<action type="form open" value="frmTrgovina">
+								<parameter name="ProdSuperCijenaGlaId" value="#grdMaster.@ProdSuperCijenaGlaId" />
+						</action>
+						<action type="control populate" value="#grdTrgovine"/>
+					</event>
+				</button>
+				
+			</buttons>	
+
+		</panelbuttons>
+
+	<datalist>
+		<data command="spProd_SuperCijenaGla_Grid" name="dtPuniMaster" />
+	
+		<data command="spProd_SuperCijenaDet_Grid" name="dtPuniDetail" >
+			<parameter name="@ProdSuperCijenaGlaId" value="#grdMaster.@ProdSuperCijenaGlaId"/>
+		</data>
+    
+		<data command="spProd_SuperCijenaTrgovina_DetGrid" name="dtPunitrgovine" >
+			<parameter name="ProdSuperCijenaGlaId" value="#grdMaster.@ProdSuperCijenaGlaId"/>
+		</data>
+		
+		<data command="dbo.spProd_SuperCijenaGla_Obrisi" name="dtDelete">
+			<parameter name="ProdSuperCijenaGlaId" value="#grdMaster.@ProdSuperCijenaGlaId" />
+		</data>
+		
+		<data command="dbo.spProd_SuperCijenaDet_Obrisi" name="dtDeletePartnera">
+			<parameter name="ProdSuperCijenaDetId" value="#grdDetail.@ProdSuperCijenaDetId" />
+		</data>
+		
+	</datalist>
+
+
+	</form>
+
+<form name="frmUnos" caption="Unos">
+		<event type="init">
+			<action type="variable value" >
+				<parameter name="Sutra" value="~dtDatumDo.@Sutra" />
+			</action>
+		</event>
+		
+		<layout>
+			<group cols="1" rows="5">
+				<item col="1" row="1" caption="Roba:">
+						<searchedit name="srcRoba" fontsizedelta="1" fontbold="True" fieldtext="Roba3000" fieldvalue="RobaId" required="true" entermovenextcontrol="true" dataname="dtSearchRoba" function="srcRoba">
+							<action type="variable value" >
+								<parameter name="RobaId" value="#srcRoba" type="int"/>
+								<parameter name="NazivRobe" value="#srcRoba.@Naziv"/>
+								<!--#srcRoba.@Naziv <parameter name="NazivRobe" value="#txtNaziv"/> -->
+							</action>
+									<action type="control focus" value="#srcPartner"/>
+						</searchedit>
+				</item>
+				
+				<item col="1" row="2" caption="Cijena:">
+						<textedit name="txtCijena"  required="True" value="0" format="n2" datavalue=""/>
+				</item>	
+				
+				<item col="1" row="3" caption="Datum od:">
+						<dateedit name="datOd"  dataname="~dtDatumdo" valuefield="datumdo" datavalue="~dtDatumdo.@Sutra" required="true" value="now"/>
+				</item>
+				
+				<item col="1" row="4" caption="Datum do:">
+						<dateedit name="datDo" dataname="~dtDatumdo" valuefield="datumdo" datavalue="~dtDatumdo.@Datumdo"/>
+				</item>
+				
+				<item col="1" row="5" caption="Aktivno:">
+						<checkedit name="chkAktivno" caption=" Aktivno " value="1" />
+				</item>
+				
+			</group>
+		</layout>
+
+
+	<panelbuttons>
+		<buttons>
+			<button name="btnSpremi" caption="Spremi">
+				<event type="click">
+					<action type="validate" />
+					<action type="datarun scalar" value="~dtSpremi">
+					 <parameter name="id" />
+					</action>
+				 <action type="control populate" value="parent.#grdMaster">
+				<action type="control focus" value="parent.#grdMaster">
+                <parameter value="$id" name="id" type="int"/>
+            </action>
+			</action>
+			  <action type="control value" value="##">
+				<parameter value=""/>
+			  </action>
+				</event>
+			</button>
+			<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+
+			</button>
+		</buttons>
+	</panelbuttons>
+
+
+	<datalist>
+		<data command="spProd_SuperCijenaGla_Unesi" name="dtSpremi">
+			<parameter name="@RobaId" value="#srcRoba" />
+			<parameter name="@Cijena" value="#txtCijena" />
+			<parameter name="@DatumOd" value="#datOd" />
+			<parameter name="@DatumDo" value="#datDo" />
+			<parameter name="@Aktivno" value="#chkAktivno" />  
+			<parameter name="@OperaterIiD" value="@@operateriid" />  
+		</data>
+			
+	<data command="spTraziRoba" name="dtSearchRoba" >
+			<parameter name="@Action" value="Roba" />
+			<parameter name="@uvjet" value="#srcRoba.text" />		
+		</data>			
+	
+	</datalist>	
+
+	</form>
+
+
+
+<form name="frmIzmjeni" caption="Izmijeni">
+
+	<event type="init">
+			<action type="datarun reader" value="~dtGet" />
+	</event>
+	
+		<event type="shown">
+			<action type="control value" value="#chkAktivno">
+				<parameter value="~dtGet.@Aktivno"/>
+			</action>
+
+	</event>
+	
+
+		<layout>
+				
+				<group cols="1" rows="5">
+				<item col="1" row="1" caption="Roba:">
+						<searchedit name="srcRoba" fontsizedelta="1" fontbold="True" fieldtext="Roba3000" fieldvalue="RobaId" required="true" entermovenextcontrol="true" dataname="dtSearchRoba" datavalue="~dtGet.@Robaid" datatext="~dtGet.@Roba" function="srcRoba" enabled="false">
+							<action type="variable value" >
+								<parameter name="RobaId" value="#srcRoba" type="int"/>
+								<parameter name="NazivRobe" value="#srcRoba.@Naziv"/>
+								<!--#srcRoba.@Naziv <parameter name="NazivRobe" value="#txtNaziv"/> -->
+							</action>
+									<action type="control focus" value="#srcPartner"/>
+						</searchedit>
+				</item>
+				
+				<item col="1" row="2" caption="Cijena:">
+						<textedit name="txtCijena"  required="True"  format="n2" datavalue="~dtGet.@Cijena"/>
+				</item>	
+				
+				<item col="1" row="3" caption="Datum od:">
+						<dateedit name="datOd"  dataname="~dtDatumdo" valuefield="datumdo" datavalue="~dtGet.@DatumOd" required="true" />
+				</item>
+				
+				<item col="1" row="4" caption="Datum do:">
+						<dateedit name="datDo" dataname="~dtDatumdo" valuefield="datumdo" datavalue="~dtGet.@DatumDo"/>
+				</item>
+				
+				<item col="1" row="5" caption="Aktivno:">
+						<checkedit name="chkAktivno" caption=" Aktivno " datavalue="~dtGet.@Aktivno"/>
+				</item>
+				
+			</group>
+			
+		</layout>
+
+  
+	<panelbuttons>
+		<buttons>
+			<button name="btnSpremi" caption="Spremi">
+				<event type="click">
+					<action type="validate" />
+					<action type="datarun nonquery" value="~dtIzmjeni" />
+					<action type="control populate" value="parent.#grdMaster" />
+					<action type="form close" value="frmUnos"/>
+				</event>
+			</button>
+			<button name="btnOdustani" caption="Odustani" type="cancel" dock="right"/>
+		</buttons>
+	</panelbuttons>
+
+	<datalist>
+		
+		<data command="spProd_SuperCijenaGla_Query" name="dtGet">
+			<parameter name="@ProdSuperCijenaGlaId" value="$ProdSuperCijenaGlaId" />
+		</data>
+
+		<data command="spProd_SuperCijenaGla_Izmjeni" name="dtIzmjeni">
+				<parameter name="@ProdSuperCijenaGlaId" value="$ProdSuperCijenaGlaId" />
+				<parameter name="@RobaId" value="#srcRoba" />
+				<parameter name="@Cijena" value="#txtCijena" />
+				<parameter name="@DatumOd" value="#datOd" />
+				<parameter name="@DatumDo" value="#datDo" />
+				<parameter name="@Aktivno" value="#chkAktivno" />  
+				<parameter name="@OperaterIiD" value="@@operateriid" />  
+    </data>
+
+
+
+	</datalist>
+
+</form>
+
+<form name="frmUnosPartnera" caption="Unos partnera" width="400">
+	<event type="shown">
+		<action type="control disable" value="#srcPartner,#cmbKlPartneri"/> 
+	</event>
+		<layout textposition="left" itemspadding="3">
+            <group cols="1" rows="1" groupbordervisible="False">
+                <group cols="3" rows="5" row="1" col="1">
+                    <item row="1" col="1">
+                        <labeledit value="Vrijedi za:" />
+                    </item>
+					<item row="2" col="1" caption="">
+						 <radioedit name="rdoSviPartneri" caption="Sve kupce" value="true" >
+						 		<action type="control value" value="#srcPartner">
+									<parameter value="null"/>
+								</action>
+						 </radioedit>
+					</item>
+					<item row="3" col="1">
+                        <radioedit name="rdoKlasaPartnera" caption="Klasa partnera" >
+							<event type="checkedchanged">
+                                <action type="control enable" value="#cmbKlPartneri" if="#rdoKlasaPartnera==true" >
+                                    <action type="control focus" value="#cmbKlPartneri"></action>
+                                </action>
+                                <action type="control disable" value="#cmbKlPartneri" else="#rdoKlasaPartnera==false" >
+                                    <action type="control value" value="#cmbKlPartneri">
+                                        <parameter value="0"/>
+                                    </action>
+                                </action>
+								<action type="control value" value="#srcPartner">
+									<parameter value="null"/>
+								</action>
+                            </event>
+                        </radioedit>
+					</item>
+					<item col="2" row="3">
+					<!-- TODO: ne radi na edit -->
+					<comboedit name="cmbKlPartneri" valuefield="KlPartneriId" displayfield="Klasa" dataname="dtCMBKlasaPartnera" function="cmbKlPartneri" required="true"/> 
+					</item>	
+					<item row="4" col="1">
+                        <radioedit name="rdoPartner" caption="Partner" >
+							<event type="checkedchanged">
+                                <action type="control enable" value="#srcPartner" if="#rdoPartner==true" >
+                                    <action type="control focus" value="#srcPartner"></action>
+                                </action>
+                                <action type="control disable" value="#srcPartner" else="#rdoPartner==false" >
+                                    <action type="control value" value="#srcPartner">
+                                        <parameter value="0"/>
+                                    </action>
+                                </action>
+                            </event>
+                        </radioedit>
+                    </item>
+					<item row="4" col="2" textalignmode="auto">
+ 						<searchedit name="srcPartner" fieldtext="Partner3000" fieldvalue="PartneriId" fontbold="true" dataname="dtSearchPartner" function="srcPartner" required="true" >
+						<event type="valuechanged">
+						</event>
+					</searchedit>
+                    </item>
+					<item row="5" col="1" caption="">
+						<checkedit name="chkVrijedi" caption=" Vrijedi " value="1" savevalue="app"/>
+					</item>
+				</group>
+			</group>
+		</layout>
+	<panelbuttons>
+		<buttons>
+			<button name="btnSpremi" caption="Spremi">
+				<event type="click">
+					<action type="validate" />
+					<action type="datarun scalar" value="~dtSpremiDet">
+					 <parameter name="id" />
+					</action>
+				 <action type="control populate" value="parent.#grdDetail">
+				<action type="control focus" value="parent.#grdDetail">
+                <parameter value="$id" name="id" type="int"/>
+            </action>
+			</action>
+			<action type="control refreshvalue" value="#srcPartner,#cmbKlPartneri"/>   
+			<action type="control focus" value="#srcPartner" if="#rdoPartner==true"/>	
+			<action type="control focus" value="#cmbKlPartneri" if="#rdoKlasaPartnera==true"/>	
+				</event>
+			</button>
+			<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+
+			</button>
+		</buttons>
+	</panelbuttons>
+
+
+	<datalist>
+	
+	<data command="spTraziPartneri" name="dtSearchPartner" >
+			<parameter name="@Action" value="Partneri" />
+			<parameter name="@uvjet" value="#srcPartner.text" />		
+	</data>	
+	
+	<data command="spProd_SuperCijenaDet_GetKlPartneri" name="dtCMBKlasaPartnera" >
+	</data>	
+	
+	<data command="spProd_SuperCijenaDet_Unos" name="dtSpremiDet" >
+				<parameter name="@ProdSuperCijenaGlaId" value="parent.#grdMaster.@ProdSuperCijenaGlaId" />
+				<parameter name="@KlPartneriId" value="#cmbKlPartneri" />
+				<parameter name="@PartneriId" value="#srcPartner" />
+				<parameter name="@Smije" value="#chkVrijedi" />	
+	</data>
+	
+	</datalist>	
+
+	</form>
+
+<form name="frmTrgovina" caption="Trgovine">
+	<event type="init">
+		<action type="datarun reader" value="~dtPuniTrgovine" />
+	</event>
+	<event type="load">
+		<action type="control populate" value="#grdTrgovine" />
+	</event>
+	
+		<layout>
+			<group cols="1" rows="1">
+				<item col="1" row="1">
+				<grid name="grdTrgovine" dataname="~dtPuniTrgovine" bestfitonrefresh="true" savelayout="true" multiselect="true">
+					<fields inherited="true">
+						<field name="Checked" caption="." editable="true" edittype="bit"/>
+					</fields>
+					    <event type="cellvaluechanged">
+                             <action type="datarun nonquery" value="~dtEditTrgovine"/> 
+                             <action type="control populate keepfocus" value="#grdTrgovine"/> 
+                        </event>
+
+				</grid>
+				</item>
+			</group>
+		</layout>
+
+
+	<panelbuttons>
+		<buttons>
+			<button name="btnZatvori" caption="Zatvori" type="cancel" dock="middle"/>
+		</buttons>
+	</panelbuttons>
+
+
+	<datalist>
+			
+		<data command="spProd_SuperCijenaTrgovina_Get" name="dtPuniTrgovine" >
+			<parameter name="@ProdSuperCijenaGlaId" value="$ProdSuperCijenaGlaId"/>
+		</data>	
+		
+		<data command="spProd_SuperCijenaTrgovina_Edit" name="dtEditTrgovine" >
+			<parameter name="@TrgovinaId" value="#grdTrgovine.@TrgovinaId"/>
+			<parameter name="@Checked" value="#grdTrgovine.@Checked"/>	
+			<parameter name="@ProdSuperCijenaGlaId" value="$ProdSuperCijenaGlaId"/>
+		
+		</data>	
+	
+	</datalist>	
+
+	</form>
+</root>

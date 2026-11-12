@@ -1,0 +1,158 @@
+<root loglevel="5">
+	<form name="frmExcelImportTem" type="master" caption="Uvoz temeljnica iz excela">
+		<method name="fnImport" dll="ExcelImportTem" class="ExcelImportTem.Start" method="TotalGen"/>
+		<method name="fnRun" dll="ExcelImportTem" class="ExcelImportTem.Start" method="run"/>
+		<event type="load">
+			<action type="control populate" value="#grdGlavni"/>
+		</event>
+		<managerlayout>
+			<grid name="grdGlavni" type="master" key="KntImportTemId" autopopulate="false" dataname="~dtGlavni" savelayout="true" bestfitonrefresh="true" showcheckboxes="true">			
+				<event type="cellvaluechanged">
+					<action type="datarun nonquery" value="~dtUpdate"/>
+					<action type="control populate" value="#grdGlavni"/>
+				</event>
+				<event type="selectionchanged">
+					<action type="variable value" value="$SelectedIds">
+						<parameter value="#grdGlavni.selectedids"/>
+					</action>
+				</event>
+				<fields inherited="true">
+					<field name="DatumUnosa" caption="Datum uvoza"/>
+					<field name="VrstaDokumenta" caption="Vrsta dokumenta"/>
+					<field name="DatumKnjizenja" caption="Datum knjiženja" editable="true" format="dd.MM.yyyy"/>
+					<field name="DatumDok" caption="Datum dokumenta" editable="true" format="dd.MM.yyyy"/>
+					<field name="DatumValute" caption="Datum valute" editable="true" format="dd.MM.yyyy"/>
+					<field name="SifraPartnera" caption="Šifra partnera" editable="true"/>
+					<field name="NazivPartnera" caption="Partner"/>				
+					<field name="Konto" caption="Konto" editable="true"/>
+					<field name="BrojRacuna" caption="Broj računa" editable="true"/>
+					<field name="Opis" caption="Opis" editable="true"/>
+					<field name="Valuta" caption="Valuta" editable="true"/>
+					<field name="Tecaj" caption="Tečaj" editable="true" format="n6"/>
+					<field name="Duguje" caption="Duguje" editable="true"/>	
+					<field name="Potrazuje" caption="Potražuje" editable="true" format="n2"/>
+					<field name="DevDuguje" caption="Duguje dev" editable="true" format="n2"/>
+					<field name="DevPotrazuje" caption="Potražuje dev" editable="true" format="n2"/>
+					<field name="OrgShema" caption="Organizacijska shema"/>
+					<field name="Dim1" caption="Dim1" editable="true"/>
+					<field name="Dim2" caption="Dim2" editable="true"/>	
+					<field name="Dim3" caption="Dim3" editable="true"/>
+					<field name="Dim4" caption="Dim4" editable="true"/>
+					<field name="Dim5" caption="Dim5" editable="true"/>
+					<field name="Dim6" caption="Dim6" editable="true"/>
+					<field name="Dim7" caption="Dim7" editable="true"/>
+					<field name="Dim8" caption="Dim8" editable="true"/>	
+					<field name="Poruka" caption="Poruka"/>	
+					<field name="Error" visible="false"/>	
+					<field name="KntImportTemId" visible="false"/>						
+				</fields>
+				<styles>
+					<style name="fontcolor" value="red" if="#grdGlavni.@Poruka!=null&amp;&amp;#grdGlavni.@Poruka!="/>
+				</styles>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUvezi" caption="UVEZI">
+					<event type="click">
+						<action type="variable value" value="$cs">
+							<parameter value="Driver={SQL Server};server={@@server};database={@@database};uid={@@uid};pwd={@@pwd}"/>
+						</action>
+					<action type="method run" value="fnRun">
+							<parameter name="server" value="@@server"/>	
+							<parameter name="database" value="@@database"/>
+							<parameter name="username" value="@@uid"/>
+							<parameter name="password" value="@@pwd"/>
+							<parameter name="Operateriid" value="@@operateriid"/>	
+							<parameter name="Parent" value="0"/>	
+							<parameter name="pTop" value="0"/>	
+							<parameter name="pLeft" value="0"/>	
+							<parameter name="path" value=""/>							
+						</action>						
+						<!-- <action type="method run" value="fnImport"> -->
+							<!-- <parameter name="id" value="1"/>	 -->
+							<!-- <parameter name="operateriId" value="@@operateriid"/> -->
+							<!-- <parameter name="cs" value="Driver={SQL Server};server={@@server};database={@@database};uid={@@uid};pwd={@@pwd}"/> -->
+							<!-- <parameter name="param" value="" /> -->
+							<!-- <parameter name="param2" value=""/> -->
+						<!-- </action> -->
+						<action type="control focus" value="#grdGlavni"/>
+						<action type="control populate" value="#grdGlavni"/>
+					</event>
+				</button>
+				<button name="btnPrenesi" caption="PRENESI">
+					<event type="click">
+						<action type="confirm" value="Želite li prenijeti označene stavke?" if="$SelectedIds!=null&amp;&amp;SelectedIds!=">
+							<action type="datarun nonquery" value="~dtPrenesi"/>
+							<action type="control populate" value="#grdGlavni"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOsvjezi" caption="OSVJEŽI">
+					<event type="click">
+						<action type="control populate" value="#grdGlavni"/>
+							<action type="variable value" value="$SelectedIds">
+								<parameter value="null"/>
+							</action>
+							<action type="control selectedrows" value="#grdGlavni">
+								<parameter value="null"/>
+							</action>						
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati označene stavke?">
+							<action type="datarun nonquery" value="~dtObrisi"/>
+							<action type="control populate" value="#grdGlavni"/>
+						</action>
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGlavni" command="dbo.spKntImportTem">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+			</data>
+			<data name="dtUpdate" command="dbo.spKntImportTemAzur">
+				<parameter name="@ID" value="#grdGlavni.@KntImportTemId"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@DatumKnjizenja" value="#grdGlavni.@DatumKnjizenja" if="#grdGlavni.@DatumKnjizenja!='01.01.0001 0:00:00'"/>
+				<parameter name="@DatumKnjizenja" value="null" if="#grdGlavni.@DatumKnjizenja=='01.01.0001 0:00:00'"/>
+				<parameter name="@DatumDok" value="#grdGlavni.@DatumDok" if="#grdGlavni.@DatumDok!='01.01.0001 0:00:00'"/>
+				<parameter name="@DatumDok" value="null" if="#grdGlavni.@DatumDok=='01.01.0001 0:00:00'"/>				
+				<parameter name="@DatumValute" value="#grdGlavni.@DatumValute" if="#grdGlavni.@DatumValute!='01.01.0001 0:00:00'"/>
+				<parameter name="@DatumValute" value="null" if="#grdGlavni.@DatumValute=='01.01.0001 0:00:00'"/>	
+				<parameter name="@SifraPartnera" value="#grdGlavni.@SifraPartnera"/>
+				<parameter name="@BrojRacuna" value="#grdGlavni.@BrojRacuna"/>
+				<parameter name="@Konto" value="#grdGlavni.@Konto"/>
+				<parameter name="@Opis" value="#grdGlavni.@Opis"/>
+				<parameter name="@Valuta" value="#grdGlavni.@Valuta"/>
+				<parameter name="@Tecaj" value="#grdGlavni.@Tecaj"/>
+				<parameter name="@Duguje" value="#grdGlavni.@Duguje"/>
+				<parameter name="@Potrazuje" value="#grdGlavni.@Potrazuje"/>
+				<parameter name="@DevDuguje" value="#grdGlavni.@DevDuguje"/>
+				<parameter name="@DevPotrazuje" value="#grdGlavni.@DevPotrazuje"/>
+				<parameter name="@OrgShema" value="#grdGlavni.@OrgShema"/>
+				<parameter name="@Dim1" value="#grdGlavni.@Dim1"/>
+				<parameter name="@Dim2" value="#grdGlavni.@Dim2"/>
+				<parameter name="@Dim3" value="#grdGlavni.@Dim3"/>
+				<parameter name="@Dim4" value="#grdGlavni.@Dim4"/>
+				<parameter name="@Dim5" value="#grdGlavni.@Dim5"/>
+				<parameter name="@Dim6" value="#grdGlavni.@Dim6"/>
+				<parameter name="@Dim7" value="#grdGlavni.@Dim7"/>			
+				<parameter name="@Dim8" value="#grdGlavni.@Dim8"/>
+			</data>			
+			<data name="dtObrisi" command="spKntImportTem">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@NizId" value="$SelectedIds"/>
+			</data>
+			<data name="dtPrenesi" command="spKntImportTem">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@NizId" value="$SelectedIds"/>
+			</data>			
+		</datalist>
+	</form>
+</root>

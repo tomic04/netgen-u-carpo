@@ -1,0 +1,294 @@
+<!-- 
+13.10.2020. AA poništavanje obračuna samo ako ne postoji faktura if="#grdMaster.@KteFaktureId==null"
+21.5.2020. AA Temeljnice kolone
+28.4.2020. AA OdgovornaOsoba
+27.4.2020. AA kolona Kamate
+05.04.2019 Pj dodao @OperateriId u dtFaktura
+-->
+<root>
+	<form path="Kamate.frmSlUnos.xml" name="frmSlUnos"/>
+	<form path="Kamate.frmPoruke.xml" name="frmPoruke"/>
+	<form path="Kamate.frmUnos.xml" name="frmUnos"/>
+	<form path="Kamate.frmStavke.xml" name="frmStavke"/>
+	<form path="Kamate.frmSCDonos.xml" name="frmSCDonos"/>
+	<form path="Kamate.frmMultiDonos.xml" name="frmMultiDonos"/>
+	<form path="Kamate.frmDonos.xml" name="frmDonos"/>
+	<form path="Kamate.frmObracun.xml" name="frmObracun"/>
+	<form path="Kamate.frmJedObracun.xml" name="frmJedObracun"/>
+	<form path="Kamate.frmIzmjenaGla.xml" name="frmIzmjenaGla"/>
+	<form path="Kamate.frmPodaci.xml" name="frmPodaci"/>
+	<form path="Kamate.frmFakturaPostavke.xml" name="frmFakturaPostavke"/>
+	<form name="frmMaster" caption="Kamate" type="master" maximized="true" statusbar="true">
+		<event type="shown">
+			<action type="control focus" value="#trDrvo">
+				<parameter type="int" value="~dtDanas.@danas"/>
+			</action>
+			<action type="datarun reader" value="~dtPozicija"/>
+			<action if="#grdMaster.@ObrInd==1">
+				<action type="control disable" value="#btnEdit"/>
+				<action type="control enable" value="#btnFaktura" if="#grdMaster.@KteFaktureId==null"/>
+				<action type="control disable" value="#btnFaktura" if="#grdMaster.@KteFaktureId!=null"/>
+				<action type="menu disable" value="#mnuIzmjena"/>
+				<action type="menu enable" value="#mnuPonObr" if="#grdMaster.@KteFaktureId==null"/>
+				<action type="menu disable" value="#mnuPonObr" if="#grdMaster.@KteFaktureId!=null"/>
+			</action>
+			<action if="#grdMaster.@ObrInd==0">
+				<action type="control enable" value="#btnEdit"/>
+				<action type="control disable" value="#btnFaktura"/>
+				<action type="menu enable" value="#mnuIzmjena"/>
+				<action type="menu disable" value="#mnuPonObr"/>
+			</action>
+			<action type="control disable" value="#btnDelete" if="#grdMaster.@KteFaktureId!=null"/>
+			<action type="control enable" value="#btnDelete" if="#grdMaster.@KteFaktureId==null"/>
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Vrijeme" searchfield="VrijemeId"/>
+				<comboitem value="Partneri" searchfield="PartneriId"/>
+				<comboitem value="Operater" searchfield="OperateriId"/>
+				<event type="valuechanged">
+					<action type="control populate" value="#trDrvo"/>
+				</event>
+			</lookup>
+			<tree name="trDrvo" dataname="~dtDrvo" filtermode="smart" keyfield="Id">
+				<data type="integrated" if="#filter==Vrijeme" command="VremenskaPodjela"/>
+				<fields>
+					<field name="Name"/>
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdMaster"/>
+				</event>
+			</tree>
+			<grid name="grdMaster" key="kntKteGlavaId" type="master" dataname="~dtMGrid" bestfitonrefresh="true" multiselect="true" autopopulate="false">
+				<menu>
+					<menuitem name="mnuIzmjena" caption="Izmijeni zaglavlje">
+						<event type="click">
+							<action type="form open" value="frmIzmjenaGla">
+								<parameter name="kntKteGlavaId" value="#grdMaster.@kntKteGlavaId"/>
+							</action>
+							<action type="control populate" value="#grdMaster"/>
+						</event>
+					</menuitem>
+					<menuitem name="mnuPonObr" caption="Poništi obračun">
+						<event type="click">
+							<action type="confirm" value="Jeste li sigurni da želite poništiti odabrane obračune?">
+								<action type="control foreachrow selected" value="#grdMaster">
+									<action type="datarun nonquery" value="~dtObrisiObr" if="#grdMaster.@KteFaktureId==null"/>
+								</action>
+								<action type="control populate" value="#grdMaster"/>
+								<!-- <action type="control populate" value="#grdObracun"/> -->
+							</action>
+						</event>
+					</menuitem>
+				</menu>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetalj"/>
+					<action type="control populate" value="#grdObracun"/>
+					<action if="#grdMaster.@ObrInd==1">
+						<action type="control enable" value="#btnFaktura" if="#grdMaster.@KteFaktureId==null"/>
+						<action type="control disable" value="#btnFaktura" if="#grdMaster.@KteFaktureId!=null"/>
+						<action type="control enable" value="#btnPrint,#btnDokument"/>
+						<action type="control disable" value="#btnEdit"/>
+						<action type="menu disable" value="#mnuIzmjena"/>
+						<action type="menu enable" value="#mnuPonObr" if="#grdMaster.@KteFaktureId==null"/>
+						<action type="menu disable" value="#mnuPonObr" if="#grdMaster.@KteFaktureId!=null"/>
+					</action>
+					<action if="#grdMaster.@ObrInd==0">
+						<action type="control disable" value="#btnFaktura"/>
+						<action type="control enable" value="#btnEdit"/>
+						<action type="control disable" value="#btnPrint,#btnDokument"/>
+						<action type="menu enable" value="#mnuIzmjena"/>
+						<action type="menu disable" value="#mnuPonObr" if="#grdMaster.@KteFaktureId==null"/>
+						<action type="menu enable" value="#mnuPonObr" if="#grdMaster.@KteFaktureId!=null"/>
+					</action>
+					<action type="control disable" value="#btnDelete" if="#grdMaster.@KteFaktureId!=null"/>
+					<action type="control enable" value="#btnDelete" if="#grdMaster.@KteFaktureId==null"/>
+				</event>
+				<event type="keydown">
+					<action if="key==46">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati odabrane obračune kamata?">
+							<action type="control foreachrow selected" value="#grdMaster">
+								<action type="datarun nonquery" value="~dtObrisi"/>
+							</action>
+							<action type="control populate keepfocus" value="#grdMaster"/>
+						</action>
+					</action>
+				</event>
+				<event type="selectionchanged">
+					<action type="variable value">
+						<parameter name="SelectedIds" value="#grdMaster.selectedids"/>
+					</action>
+				</event>
+				<fields>
+					<field name="BrObr" caption="Broj obračuna"/>
+					<field name="Partner"/>
+					<field name="DatumDok" caption="Datum dokumenta"/>
+					<field name="VrstaStope" caption="Vrsta stope"/>
+					<field name="DatOd" caption="Datum od"/>
+					<field name="DatDo" caption="Datum do"/>
+					<field name="MinIznos" caption="Minimalni iznos"/>
+					<field name="Broj" caption="Broj fakture"/>
+					<field name="Status"/>
+					<field name="Kamate"/>
+					<field name="OdgovornaOsoba" caption="Odgovorna osoba"/>
+					<field name="Valuta"/>
+					<field name="Broj_temeljnice" caption="Broj temeljnice"/>
+					<field name="Vrsta_temeljnice" caption="Vrsta temeljnice"/>					
+				</fields>
+				<styles>
+					<style name="fontcolor" value="blue" if="#grdMaster.@ObrInd==1"/>
+					<style name="fontcolor" value="green" if="#grdMaster.@KteFaktureId!=null"/>
+				</styles>
+			</grid>
+			<tabs>
+				<tab caption="Stavke">
+					<grid name="grdDetalj" dataname="~dtDGrid" bestfitonrefresh="true">
+						<fields inherited="true">
+							<field name="BrojFak" caption="Broj računa"/>
+							<field name="Duguje"/>
+							<field name="Potrazuje" caption="Potražuje"/>
+							<field name="Datum"/>
+							<field name="Opis"/>
+						</fields>
+					</grid>
+				</tab>
+				<tab caption="Obračun">
+					<grid name="grdObracun" dataname="~dtOGrid" showgroupdecolums="true" showfooter="true" bestfitonrefresh="true">
+						<fields>
+							<field name="BrojFak" caption="Broj računa" groupindex="0"/>
+							<field name="Duguje"/>
+							<field name="Potrazuje" caption="Potražuje"/>
+							<field name="Datum"/>
+							<field name="BrojDana" caption="Broj dana"/>
+							<field name="Koef" caption="Koeficijent" showgroupsum="false" showtotalsum="false"/>
+							<field name="Stopa" showgroupsum="false" showtotalsum="false"/>
+							<field name="Godmje" caption="Obračunski period" showgroupsum="false" showtotalsum="false"/>
+							<field name="Osnovica" showgroupsum="false" showtotalsum="false"/>
+							<field name="Kamate"/>
+							<field name="Valuta"/>
+						</fields>
+					</grid>
+				</tab>
+			</tabs>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnInsert" caption="Unesi">
+					<event type="click">
+						<action type="form open" value="frmUnos"/>
+						<action type="control populate" value="#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnEdit" caption="Izmijeni">
+					<event type="click">
+						<action type="form open" value="frmStavke">
+							<parameter name="kntKteGlavaID" value="#grdMaster.@kntKteGlavaID"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnDelete" caption="Obriši">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati odabrane obračune kamata?">
+							<action type="control foreachrow selected" value="#grdMaster">
+								<action type="datarun nonquery" value="~dtObrisi"/>
+							</action>
+							<action type="control populate keepfocus" value="#grdMaster"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnMultiInsert" caption="Donesi">
+					<event type="click">
+						<action type="form open" value="frmMultiDonos"/>
+						<action type="control populate" value="#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnFaktura" caption="Fakturiraj">
+					<event type="click">
+						<action type="form open" value="frmFakturaPostavke"/>
+						<action type="control populate" value="#grdMaster"/>						
+						<action if="#grdMaster.@ObrInd==1">
+							<action type="control enable" value="#btnFaktura" if="#grdMaster.@KteFaktureId==null"/>
+							<action type="control disable" value="#btnFaktura" if="#grdMaster.@KteFaktureId!=null"/>
+							<action type="control disable" value="#btnEdit"/>
+							<action type="menu disable" value="#mnuIzmjena"/>
+						</action>
+						<action if="#grdMaster.@ObrInd==0">
+							<action type="control disable" value="#btnFaktura"/>
+							<action type="control enable" value="#btnEdit"/>
+							<action type="menu enable" value="#mnuIzmjena"/>
+						</action>
+						<action type="control disable" value="#btnDelete" if="#grdMaster.@KteFaktureId!=null"/>
+						<action type="control enable" value="#btnDelete" if="#grdMaster.@KteFaktureId==null"/>							
+					</event>
+				</button>
+				<button name="btnPrint" caption="Ispiši">
+					<event type="click">
+						<action type="form open" value="frmPoruke">
+							<parameter name="kntKteGlavaID" value="#grdMaster.@kntKteGlavaID"/>
+							<parameter name="SelectedIds" value="#grdMaster.selectedids" type="string"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnDokument" caption="Dokument" dataname="~dtPrint" displayfield="Opis" >
+					<event type="click">
+						<action type="control print" value="#grdMaster" singleprint="true" >
+							<action type="print template" value="#btnDokument.@Template">
+								<parameter name="SelectedIds" value="#grdMaster.selectedids" type="string"/>
+								<parameter name="id" value="#grdMaster.@kntKteGlavaID" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnExit" caption="Izlaz" dock="right" visible="false">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnUputiMe" caption="Uputi me" dock="right" visible="false">
+					<event type="click">
+						<action type="message" value="Ova funkcionalnost trenutno nije dostupna, molimo kontaktirajte Spin!"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDanas" command="SELECT CONVERT(VARCHAR(8), GETDATE(), 112) AS danas" type="text"/>
+			<data name="dtObrisiObr" command="spCKteObracunAzur">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Id" value="#grdMaster.@kntKteGlavaID"/>
+								<!-- <parameter name="@SelectedId" value="$SelectedIds"/> -->
+			</data>
+			<data name="dtObrisi" command="spCKteGlavaAzur">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@ID" value="#grdMaster.@kntKteGlavaID"/>
+			</data>
+			<data name="dtDrvo" command="spCKntKamateTreePartneri" if="#filter==Partneri"/>
+			<data name="dtDrvo" command="spCKntKamateTreeOperater" if="#filter==Operater"/>
+			<data name="dtMGrid" command="spCKteGlavaQuery" if="#filter==Partneri">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@ID" value="#trDrvo.@id"/>
+			</data>
+			<data name="dtMGrid" command="spCKteGlavaQuery" if="#filter==Operater">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@ID" value="#trDrvo.@id"/>
+			</data>
+			<data name="dtMGrid" command="spCKteGlavaQuery" if="#filter==Vrijeme">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@DatumOd" value="#trDrvo.@DatumOd"/>
+				<parameter name="@DatumDo" value="#trDrvo.@DatumDo"/>
+			</data>
+			<data name="dtDGrid" command="spCKteDetaljQuery">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@ID" value="#grdMaster.@kntKteGlavaId"/>
+			</data>
+			<data name="dtOGrid" command="spCKteObracunQuery">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@ID" value="#grdMaster.@kntKteGlavaId"/>
+			</data>
+			<data name="dtPrint" command="spCKteRptQuery">
+				<parameter name="@Action" value="template"/>
+			</data>
+		</datalist>
+	</form>
+</root>

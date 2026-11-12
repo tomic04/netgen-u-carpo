@@ -1,0 +1,155 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <form name="frmZiroRacuni" caption="Žiro-račun" fixedsize="true">
+    <event type="init">
+      <action type="datarun reader" value="~dtZiroGet" if="$ParZiroId!=null"/>
+    </event>
+    <event type="load">
+      <action type="control value" value="#chkDefault" if="~dtZiroGet.@defaultind==1">
+        <parameter value="true" />
+      </action>
+    </event>
+    <event type="shown">  <!-- kreirao varijable da bi mogao uspoređivati s nečim (potrebno za izmjenu žira i IBAN-a) -->
+      <action type="variable value">
+        <parameter name="PostojeciZiro" value="#txtZiro" />
+        <parameter name="PostojeciIban" value="#txtIBAN" />
+      </action>
+    </event>
+    <layout textposition="left">
+      <group cols="2" rows="6">
+        <item caption="Default:" col="1" row="1" highlight="false">
+          <checkedit name="chkDefault" value="false"/>
+        </item>
+        <item caption="Žiro-račun:" col="1" row="2" colspan="2" highlight="false">
+          <textedit name="txtZiro" datavalue="~dtZiroGet.@Ziro" required="true">
+            <event type="leave">
+              <action type="datarun scalar" value="~dtZiroPostoji" if="$PostojeciZiro!=#txtZiro">   <!-- provjerava da li Žiro već postoji, ali samo ako se promjenila vrijednost kontrole -->
+                <parameter name="PostojiZiro" />
+                <action type="message" value="Unijeli ste postojeći žiro-račun!" if="$PostojiZiro==1"/>
+                <action type="datarun scalar" value="~dtPodesiBankuZiro">
+                  <parameter name="BankaZiro"/>
+                </action>
+                <action type="control value" value="#cmbBanka" if="$BankaZiro!=null">   <!-- postavi banku ako postoji već definirana za taj žiro -->
+                  <parameter value="$BankaZiro"/>
+                </action>
+              </action>
+            </event>
+          </textedit>
+        </item>
+        <item caption="Tekući račun:" col="1" row="3" colspan="2" highlight="false">
+        </item>
+        <item caption="IBAN:" col="1" row="4" colspan="2" highlight="false">
+          <textedit name="txtIBAN" datavalue="~dtZiroGet.@iban">
+            <event type="leave">
+              <action type="datarun scalar" value="~dtIbanPostoji" if="$PostojeciIban!=#txtIBAN">   <!-- provjerava da li IBAN već postoji, ali samo ako se promjenila vrijednost kontrole -->
+                <parameter name="PostojiIban"/>
+                <action type="message" value="Unijeli ste postojeći IBAN!" if="$PostojiIban==1"/>
+                <action type="datarun scalar" value="~dtPodesiBankuIban">
+                  <parameter name="BankaIban"/>
+                </action>
+                <action type="control value" value="#cmbBanka" if="$BankaIban!=null">   <!-- postavi banku ako postoji već definirana za taj IBAN -->
+                  <parameter value="$BankaIban"/>
+                </action>
+              </action>
+            </event>
+          </textedit>
+        </item>
+        <item caption="SWIFT:" col="1" row="5" colspan="2" highlight="false">
+          <textedit name="txtSWIFT" datavalue="~dtZiroGet.@swift" />
+        </item>
+        <item caption="Naziv banke:" col="1" row="6" colspan="2" highlight="false">
+          <comboedit name="cmbBanka" valuefield="PartneriId" displayfield="Naziv" datavalue="~dtZiroGet.@Bankeid" dataname="dtBanka" required="true" />
+        </item>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="SPREMI" dock="left">
+          <event type="click">
+            <!--<action type="validate"/>-->
+            <action type="datarun scalar" value="~dtIbanRezultat" >
+              <!--if="#txtIBAN!=null">-->
+              <parameter name="IbanRezultat"/>
+            </action>
+            <action type="message" value="IBAN nije ispravno unešen!" if="$IbanRezultat==null"/>
+            <!--<action type="datarun nonquery" value="dtZiroAdd" elseif="$ParZiroId==null&amp;&amp;$IbanRezultat!=null">
+              <action type="form close"/>
+            </action>
+            <action type="datarun nonquery" value="dtZiroEdit" elseif="$ParZiroId!=null&amp;&amp;$IbanRezultat!=null">
+              <action type="form close"/>
+            </action>-->
+          </event>
+        </button>
+        <button name="btnUputiMe" caption="UPUTI ME" begingroup="true" dock="right" enabled="false"></button>
+        <button name="btnOdustani" caption="ODUSTANI" dock="right">
+          <event type="click">
+            <action type="form close"/>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spParZiroQuery_Carpo" name="dtZiroGet">
+        <parameter name="@Action" value="1"/>
+        <parameter name="@ID" value="$ParZiroId"/>
+      </data>
+      <data command="spPartneriQuery_Carpo" name="dtBanka">
+        <parameter name="@Action" value="11"/>
+        <parameter name="@ID" value="0"/>
+        <parameter name="@IDPartneri" value="0"/>
+        <parameter name="@DownUnder" value="0"/>
+        <parameter name="@SortKey" value=""/>
+        <parameter name="@Naziv" value=""/>
+        <parameter name="@Sifra" value=""/>
+      </data>
+      <data command="spIBAN_Carpo" name="dtIbanRezultat"> <!-- provjera ispravnosti IBAN-a -->
+        <parameter name="@iban" value="#txtIBAN" />
+                   <!--if="#txtIBAN!=null"/>-->
+        <!--<parameter name="@iban" value="" else=""/>-->
+      </data>
+      <data command="spIBAN_Carpo" name="dtIbanPostoji">  <!-- provjera postojanja IBAN-a -->
+        <parameter name="@Action" value="1"/>
+        <parameter name="@iban" value="#txtIBAN" if="#txtIBAN!=null"/>
+        <parameter name="@iban" value="" else=""/>
+      </data>
+      <data command="spIBAN_Carpo" name="dtPodesiBankuIban">  <!-- postavljanje banke preko IBAN-a -->
+        <parameter name="@Action" value="2"/>
+        <parameter name="@ID" value="0"/>
+        <parameter name="@iban" value="#txtIBAN"/>
+      </data>
+      <data command="spParZiroQuery_Carpo" name="dtZiroPostoji"> <!-- provjera postojanja žira -->
+        <parameter name="@Action" value="4"/>
+        <parameter name="@ID" value="0"/>
+        <parameter name="@Ziro" value="#txtZiro"/>
+      </data>
+      <data command="spParZiroQuery_Carpo" name="dtPodesiBankuZiro"> <!-- postavljanje banke preko žira -->
+        <parameter name="@Action" value="5"/>
+        <parameter name="@ID" value="0"/>
+        <parameter name="@Ziro" value="#txtZiro"/>
+      </data>
+      <data command="spParZiroAzur_Carpo" name="dtZiroAdd">
+        <parameter name="@Action" value="0"/>
+        <parameter name="@ID" value="0"/>
+        <parameter name="@BankeId" value="#cmbBanka"/>
+        <parameter name="@Ziro" value="#txtZiro"/>
+        <parameter name="@PartneriId" value="$PartneriId"/>
+        <parameter name="@DefaultInd" value="1" if="#chkDefault==true"/>
+        <parameter name="@TekuciRn" value="#txtTekuci"/>
+        <parameter name="@IBAN" value="#txtIBAN"/>
+        <parameter name="@SWIFT" value="#txtSWIFT"/>
+      </data>
+      <data command="spParZiroAzur_Carpo" name="dtZiroEdit">
+        <parameter name="@Action" value="1"/>
+        <parameter name="@ID" value="$ParZiroId"/>
+        <parameter name="@BankeId" value="#cmbBanka"/>
+        <parameter name="@Ziro" value="#txtZiro"/>
+        <parameter name="@PartneriId" value="$PartneriId"/>
+        <parameter name="@DefaultInd" value="1" if="#chkDefault==true"/>
+        <parameter name="@TekuciRn" value="#txtTekuci"/>
+        <parameter name="@IBAN" value="#txtIBAN"/>
+        <parameter name="@SWIFT" value="#txtSWIFT"/>
+      </data>
+      
+    </datalist>
+  </form>
+</root>

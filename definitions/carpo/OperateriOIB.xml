@@ -1,0 +1,169 @@
+<!-- 30.12.2025. AS dodavanje mogućnosti povezivanja kadrova -->
+<!-- 24.11.2025. AS kreirala za potrebe dodavanja i izmjene OIB-a -->
+<root>
+	<form name="master" type="master" caption="Operateri OIB">
+		<event type="init">
+			<action type="datarun scalar" value="~dtHRKadroviInd">
+			<parameter name="PostojiHRKadrovi"/>
+			</action>
+		</event>
+		<event type="load">
+			<action type="control disable" value="#btnPovezi" if="$PostojiHRKadrovi==0">
+				<parameter value="true"/>
+			</action>
+		</event>
+		<managerlayout>
+			<grid name="grdMaster" type="master" dataname="~dtMGrid" bestfitonrefresh="true" savelayout="true" key="OperateriID">
+				<!-- <event type="doubleclick">
+						<action type="form open" value="frmIzmjena">
+							<parameter name="OperateriID" value="#grdMaster.@OperateriID" type="int" />
+						</action>
+				</event> -->
+				<fields>
+					<field name="Naziv" />
+					<field name="Inicijali" />
+					<field name="OIB"/>
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnIzmjena" caption="IZMJENA">
+					<event type="click">
+						<action type="form open" value="frmIzmjena">
+							<parameter name="OperateriID" value="#grdMaster.@OperateriID" type="int" />
+						</action>
+					</event>
+				</button>
+				<button name="btnPovezi" caption="POVEŽI KADROVE" tooltip="Opcija dostupna za korisnike s kadrovskom evidencijom.">
+					<event type="click">
+						<action type="form open" value="frmPovezi">
+							<parameter name="OperateriID" value="#grdMaster.@OperateriID" type="int" />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtMGrid" command="spOperateriOIB">
+				<parameter name="@action" value="1" />
+			</data>
+			<data name="dtHRKadroviInd" command="spOperateriOIB">
+				<parameter name="@action" value="5" />
+			</data>
+		</datalist>
+	</form>
+	<form caption="Izmjena OIB" name="frmIzmjena">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" />
+		</event>
+		<event type="onload">
+			<action type="control disable" value="#txtNaziv, #txtInicijali" />
+		</event>
+		<layout textposition="top">
+			<group rows="1" cols="1">
+				<group rows="3" cols="1">
+					<item row="1" col="1" highlight="false" caption="Naziv:" textposition="left">
+						<textedit name="txtNaziv" datavalue="~dtGet.@Naziv" />
+					</item>
+					<item row="2" col="1" highlight="false" caption="Inicijali:" textposition="left">
+						<textedit name="txtInicijali" datavalue="~dtGet.@Inicijali" />
+					</item>
+					<item row="3" col="1" highlight="false" caption="OIB:" textposition="left">
+						<textedit name="txtOIB" datavalue="~dtGet.@OIB" />
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtIzmjenaOIB" />
+						<action type="control populate" value="parent.#grdMaster" />
+						<action type="control focus" value="parent.#grdMaster">
+							<parameter value="$OperateriID" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" name="btnOdustani">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGet" command="spOperateriOIB">
+				<parameter name="@action" value="2" />
+				<parameter name="@OperateriID" value="$OperateriID" />
+			</data>
+			<data name="dtIzmjenaOIB" command="spOperateriOIB">
+				<parameter name="@action" value="3" />
+				<parameter name="@OperateriID" value="$OperateriID" />
+				<parameter name="@OIB" value="#txtOIB" />
+			</data>
+		</datalist>
+	</form>
+	<form caption="Poveži operateri" name="frmPovezi">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" />
+			<action type="datarun reader" value="~dtGetOsoba" />
+			<action type="datarun reader" value="~dtGetOperater" />
+		</event>
+		<event type="onload">
+			<action type="control disable" value="#txtNaziv" />
+		</event>
+		<layout textposition="top">
+			<group rows="1" cols="1">
+				<group rows="2" cols="1">
+					<item row="1" col="1" highlight="false" caption="Naziv:" textposition="left">
+						<textedit name="txtNaziv" datavalue="~dtGet.@Naziv" />
+					</item>
+					<item row="2" col="1" highlight="false" caption="Djelatnik:" textposition="left">
+						<comboedit name="cmbKadrovi" dataname="~dtKadrovi" valuefield="HRKadroviId" displayfield="ImePrezime" datavalue="~dtGetOsoba.@HRKadroviId" />
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtPovezi" />
+						<action type="control populate" value="parent.#grdMaster" />
+						<action type="control focus" value="parent.#grdMaster">
+							<parameter value="$OperateriID" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" name="btnOdustani">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGet" command="spOperateriOIB">
+				<parameter name="@action" value="2" />
+				<parameter name="@OperateriID" value="$OperateriID" />
+			</data>
+			<data name="dtIzmjenaOIB" command="spOperateriOIB">
+				<parameter name="@action" value="3" />
+				<parameter name="@OperateriID" value="$OperateriID" />
+				<parameter name="@OIB" value="#txtOIB" />
+			</data>
+			<data name="dtKadrovi" command="spOperateriOIB">
+				<parameter name="@action" value="4" />
+			</data>
+			<data name="dtPovezi" command="spOperateriOIB">
+				<parameter name="@action" value="6" />
+				<parameter name="@OperateriID" value="$OperateriID" />
+				<parameter name="@ID" value="#cmbKadrovi" />
+			</data>
+		</datalist>
+	</form>
+</root>

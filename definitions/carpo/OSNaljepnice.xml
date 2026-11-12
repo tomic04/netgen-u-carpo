@@ -1,0 +1,158 @@
+<root version="1.1">
+
+	<form name="frmNaljepnice"  caption="Ispis naljepnica" saveformlayout="true" height="700" width="700">
+		<event type="init">
+			<action type="datarun reader" value="~dtNaljepnice" />
+			<action type="variable value" value="odabrano">
+				<parameter value="null" />
+			</action>
+		</event>
+    <event type="load">
+      <action type="control focus" value="#btnPrikaz" />      
+    </event>
+		<event type="shown">
+			<action type="control disable" value="#btnIspis" />
+			<action type="control disable" value="#txtRbr" if="~dtNaljepnice.@Postavka==2"/>
+			<action type="control enable" value="#txtRbr" else="" />
+		</event>
+
+
+		<layout textposition="left">
+			<group cols="1" rows="2" spacing="2,2,2,2" groupbordervisible="false">
+				<!--<rowsdefinition>
+					<row  position="1" size="5%" />
+					<row  position="2" size="95%" />
+				</rowsdefinition>-->
+				<group col="1" row="1" cols="4" rows="1" spacing="2,2,2,1" >
+					<!--<columnsdefinition>
+						<column  position="1" size="35%" />
+						<column  position="2" size="35%" />
+						<column  position="3" size="10%" />
+						<column  position="4" size="20%" />
+					</columnsdefinition>-->
+					<group col="1" row="1" cols="1" rows="3" groupbordervisible="false">
+						<item caption="Stanje na dan:" col="1" row="1"  highlight="false">
+							<dateedit name="datDatum" textposition="left" value="now" allownull="false" tabindex="1"/>
+						</item>
+						<item caption="Imovina:" col="1" row="2"  highlight="false">
+							<searchedit name="srcImovina" fieldvalue="OSImovinaId" fieldtext="Naziv" dataname="~dtImovina" tabindex="2"/>
+						</item>
+						<item caption="Mjesto troška:" col="1" row="3"  highlight="false">
+							<searchedit name="srcOrgShemaT" fieldvalue="OrgShemaId" fieldtext="Naziv" dataname="~dtOrgShemaT" tabindex="3"/>
+						</item>
+					</group>
+					<group col="2" row="1" cols="1" rows="3" groupbordervisible="false">
+						<item caption="Org.jedinica zaduženja:" col="1" row="1"  highlight="false">
+							<searchedit name="srcOrgShema" fieldvalue="OrgShemaId" fieldtext="Naziv" dataname="~dtOrgShema" tabindex="4"/>
+						</item>
+						<item caption="Smještaj:" col="1" row="2"  highlight="false">
+							<searchedit name="srcSmjestaj" fieldvalue="SmjestajId" fieldtext="Naziv" dataname="~dtSmjestaj" tabindex="5"/>
+						</item>
+						<item caption="Djelatnik:" col="1" row="3"  highlight="false">
+							<searchedit name="srcHRKadrovi" fieldvalue="HRKadroviId" fieldtext="Naziv" dataname="~dtHRKadroviId" tabindex="6"/>
+						</item>
+					</group>
+					<group col="3" row="1" cols="1" rows="3" groupbordervisible="false">
+						<item col="1" row="1" highlight="false" caption="Redni broj naljepnice:" >
+							<textedit name="txtRbr"  textposition="top" nulltext="0" tabindex="7"/>
+						</item>
+						<item col="1" row ="2">
+							<button name="btnPrikaz"  caption="Prikaži" function="PrikazNO" >
+								<event type="click">
+									<action type="datarun reader" value="~dtImovinaIspis" />
+									<action type="control populate" value="#grdImovina" />
+									<action type="control enable" value="#btnIspis" />
+								</event>
+							</button>
+						</item>
+						<group col="1" row ="3" cols="1" rows="1" groupbordervisible="false" if="~dtNaljepnice.@Postavka==1" >
+							<item col="1" row ="1" >
+								<button name="btnIspis"  caption="Ispiši" function="IspisN" >
+									<event type="click">
+										<action type="message" value="Morate odabrati naljepnicu za ispis!" if="$odabrano==null"/>
+										<action type="control print" else="">
+											<action type="print" value="repx:rptOSNaljepniceA4">
+												<parameter name="Action" value="Ispis" />
+												<parameter name="Rbr" value="#txtRbr" />
+												<parameter name="SelectedIds" value="#grdImovina.SelectedIds" />
+											</action>
+										</action>
+									</event>
+								</button>
+							</item>
+						</group>
+						<group col="1" row ="3" cols="1" rows="1" groupbordervisible="false" if="~dtNaljepnice.@Postavka==2" >
+							<item col="1" row ="1" >
+								<button name="btnIspis"  caption="Ispiši" function="IspisNT" >
+									<event type="click">
+										<action type="message" value="Morate odabrati naljepnicu za ispis!" if="$odabrano==null"/>
+										<action type="control print" else="">
+											<action type="print" value="repx:rptOSNaljepniceTraka">
+												<parameter name="Action" value="Ispis" />
+												<parameter name="SelectedIds" value="#grdImovina.SelectedIds" />
+											</action>
+										</action>
+									</event>
+								</button>
+							</item>
+						</group>
+					</group>
+				</group>
+				<group col="1" row="2" cols="1" rows="1" spacing="2,2,1,2">
+					<item col="1" row="1" highlight="false">
+						<grid name="grdImovina" type="master" dataname="~dtImovinaIspis" key="OSImovinaId" showautofilterrow="true" showgrouppanel="false" bestfitonrefresh="true" multiselect="true" showcheckboxes="true" fieldsmartspaces="false">
+							<fields inherited="true">
+							</fields>
+							<event type="selectionchanged" >
+								<action type="variable value">
+									<parameter name="odabrano" value="#grdImovina.SelectedIds" />
+								</action>
+							</event>
+						</grid>
+					</item>
+				</group>
+			</group>
+		</layout>
+
+		<datalist>
+			<data command="spOSNaljepnice" name="dtImovina">
+				<parameter name="@Action" value="Src_Imovina"/>
+				<parameter name="@Tekst" value="#srcImovina.text"/>
+			</data>
+			<data command="spOSNaljepnice" name="dtOrgShema">
+				<parameter name="@Action" value="Src_Orgshema"/>
+				<parameter name="@Tekst" value="#srcOrgShema.text"/>
+			</data>
+			<data command="spOSNaljepnice" name="dtOrgShemaT">
+				<parameter name="@Action" value="Src_Orgshema"/>
+				<parameter name="@Tekst" value="#srcOrgShemaT.text"/>
+			</data>
+			<data command="spOSNaljepnice" name="dtSmjestaj">
+				<parameter name="@Action" value="Src_Smjestaj"/>
+				<parameter name="@Tekst" value="#srcSmjestaj.text"/>
+			</data>
+			<data command="spOSNaljepnice" name="dtHRKadroviId">
+				<parameter name="@Action" value="Src_Djelatnik"/>
+				<parameter name="@Tekst" value="#srcHRKadrovi.text"/>
+			</data>
+			<data command="spOSNaljepnice" name="dtImovinaIspis">
+				<parameter name="@Action" value="Imovina_grid"/>
+				<parameter name="@Datum" value="#datDatum"/>
+				<parameter name="@OSImovinaId" value="#srcImovina"/>
+				<parameter name="@OrgShemaTId" value="#srcOrgShemaT"/>
+				<parameter name="@OrgShemaId" value="#srcOrgShema"/>
+				<parameter name="@SmjestajId" value="#srcSmjestaj"/>
+				<parameter name="@HRKadroviId" value="#srcHRKadrovi"/>
+			</data>
+			<data command="spOSNaljepnice" name="dtNaljepnice">
+				<parameter name="@Action" value="Naljepnice_dohvati"/>
+			</data>
+
+
+
+
+		</datalist>
+
+	</form>
+
+</root>

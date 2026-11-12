@@ -1,0 +1,911 @@
+﻿<root>
+	<!--
+  Komentari:
+  
+  -->
+  
+<!--
+  *******************************************************************************************
+  FORMA ZA UNOS NALOGA - SVE
+  *******************************************************************************************
+  -->
+	<form name="frmUnos" caption="$caption" width="1000" height="1000" fixedsize="false">
+		<event type="init">
+			<action type="datarun reader" value="~dtGetPutniNalog" if="$PNNaloziId!=0"/>
+			<action type="datarun reader" value="~dtGetIspis"/>
+						
+		</event>
+		<event type="shown">
+			<action type="control value" value="#srcDjelatnik">
+				<parameter text="~dtGetPutniNalog.@caphrkadroviid" value="~dtGetPutniNalog.@hrkadroviid"/>
+			</action>
+			<action type="control value" value="#cmbStatusi">
+				<parameter text="~dtGetPutniNalog.@pnstatusiid" value="~dtGetPutniNalog.@pnstatusiid"/>
+			</action>
+			
+			<action type="control disable" value="#txtBrojNaloga" if="global.$PravoIzmjeneBroja==0">
+			</action>
+			<action type="control value" value="#srcMjesta">
+				<parameter text="~dtGetPutniNalog.@capmjestaid" value="~dtGetPutniNalog.@Mjestaid"/>
+			</action>
+			<action type="control value" value="#srcPartner">
+				<parameter text="~dtGetPutniNalog.@cappartneriid" value="~dtGetPutniNalog.@partneriid"/>
+			</action>
+			<action if="$PNNaloziId==0">
+				<action type="control visible" value="#cmbStatusi,#btnStatus,#btnIspisNaloga,#btnIspisObracuna,#btnObracun">
+					<parameter value="false"/>
+				</action>				
+				<action type="control value" value="#txtBrojDana">
+					<parameter value="1"/>
+				</action>
+				<!-- ako je unos i osoba ima pravo unijeti samo za 1 osobu, onda joj odmah popuni tražilicu!! -->
+				<action if="global.$PravaKadrovaOperater==1">
+					<action type="datarun reader" value="~dtGetPrviKadar"/>
+					<action type="control value" value="#srcDjelatnik">
+						<parameter value="~dtGetPrviKadar.@hrkadroviid" text="~dtGetPrviKadar.@radnik"/>
+					</action>
+				</action>
+			</action>
+		</event>
+		<layout>
+			<group rows="2" cols="1" groupbordervisible="false" >
+				
+				
+				<group col="1" row="1" rows="6" cols="4" spacing="2,2,2,2" caption="Osnovni podaci" >
+					<item row="1" col="1" caption="Broj naloga:" highlight="false">
+						<textedit name="txtBrojNaloga" enabled="true" datavalue="~dtGetPutniNalog.@broj" />
+					</item>
+					<item row="2" col="1" caption="Datum naloga:" highlight="false">
+						<dateedit name="dtDatumNaloga" required="true" value="now" datavalue="~dtGetPutniNalog.@datumdok"/>
+					</item>
+					<item row="2" col="2" caption="Vrsta naloga:" highlight="false">
+						<comboedit name="cmbVrstaNaloga" required="true" valuefield="PNVrsteId" displayfield="Naziv" dataname="~dtPNVrste" datavalue="~dtGetPutniNalog.@PNVrsteId" allownull="false"/>
+					</item>
+					
+					<item row="2" col="3" caption="Status:" textposition="top" highlight="false" >
+							<comboedit name="cmbStatusi" valuefield="pnstatusiid" displayfield="Naziv" dataname="~dtStatusi" datavalue="~dtGetPutniNalog.@pnstatusiid" allownull="false" function="PromjenaStatusa"/>
+					</item>
+					<item row="2" col="4" highlight="false">
+						<button name="btnStatus" caption="Promijeni status" function="PromjenaStatusa">
+							<event type="click">
+								<action type="datarun reader" value="~dtPromjenaStatusa"/>
+								<action if="$indGreske==0">
+								<!-- <action type="message" value="Uspješno spremljeno!"/> -->
+								<action type="message" value="$poruka"/>
+								
+								<action type="control populate" value="parent.#tree" />
+								<!-- postavi fokus na mastergridu -->
+								<action type="control focus" value="parent.#grdMaster">
+									<parameter value="$pnnaloziid" type="int"/>
+								</action>
+								<action type="control populate" value="#cmbStatusi" />
+								
+							</action>
+							</event>
+						</button>
+					</item>
+					
+					<!--<item row="1" col="2" caption="Broj naloga:" highlight="false">
+						<textedit name="txtBrojNaloga" enabled="true" datavalue="~dtGetPutniNalog.@broj" readonly="true"/>
+					</item>-->
+					<!--<item row="1" col="2" caption="Vrsta dokumenta:" highlight="false">
+						<comboedit name="cmbVrstaDokumenta" required="true" valuefield="VrstadokId" displayfield="Opis" dataname="~dtVrstaDok" datavalue="~dtGetPutniNalog.@VrstadokId" allownull="false"/>
+					</item>-->
+					<item row="3" col="1" caption="Banka:" highlight="false" colspan="2">
+						<comboedit name="cmbBanka" required="true" valuefield="BankaId" displayfield="naziv" dataname="~dtBanka" datavalue="~dtGetPutniNalog.@BankaId" allownull="false"/>
+					</item>
+					<item row="3" col="3" highlight="false" caption="Tečaj:">
+						<comboedit name="cmbTecaj" required="true" valuefield="IndTecaj" displayfield="naziv" dataname="~dtTecaj" datavalue="~dtGetPutniNalog.@IndTecaj" allownull="false"/>
+					</item>
+					<item row="3" col="4" caption="Način isplate:" highlight="false" colspan="1">
+						<comboedit name="cmbNacinIsplate" required="true" valuefield="PNNaciniIsplateId" displayfield="Naziv" dataname="~dtPNNacinIsplate" datavalue="~dtGetPutniNalog.@PNNaciniIsplateId" allownull="false"/>
+					</item>
+					<item row="4" col="1" caption="Djelatnik:" highlight="false" colspan="2">
+						<searchedit name="srcDjelatnik" required="true" dataname="~dtDjelatnik" fieldtext="radnik" fieldvalue="hrkadroviid">
+							<event type="valuechanged">
+								<action type="datarun reader" value="dtOrgShema">
+									<action type="control populate" value="#cmbOrgShema"/>
+								</action>
+								<action type="datarun reader" value="dtRadnoMjesto">
+									<action type="control populate" value="#cmbRadnoMjesto"/>
+								</action>
+							</event>
+						</searchedit>
+					</item>
+					<item row="5" col="1" caption="Org.jedinica:" highlight="false" colspan="2">
+						<comboedit name="cmbOrgShema" valuefield="orgshemaid" displayfield="naziv" dataname="~dtOrgShema" datavalue="~dtGetPutniNalog.@OrgShemaId" allownull="false" enabled="false"/>
+					</item>
+					<item row="5" col="3" caption="Radno mjesto:" highlight="false" colspan="2">
+						<comboedit name="cmbRadnoMjesto" valuefield="HRRadnaMjestaId" displayfield="naziv" dataname="~dtRadnoMjesto" datavalue="~dtGetPutniNalog.@HRRadnamjestaId" allownull="false" enabled="false"/>
+					</item>
+					<item row="6" col="1" caption="Jedinica troška:" highlight="false" colspan="2">
+						<comboedit name="cmbJedTroska" valuefield="orgshemaid" displayfield="naziv" dataname="~dtJedinicaTroska" datavalue="~dtGetPutniNalog.@OrgShemaTrId" required="true"/>
+					</item>
+					<item row="6" col="3" caption="Dimenzija:" highlight="false" colspan="2">
+						<comboedit name="cmbDimenzija" valuefield="dimenzijeid" displayfield="naziv" dataname="~dtDimenzija" datavalue="~dtGetPutniNalog.@dimenzijeid"/>
+					</item>
+				</group>
+				<group col="1" row="2" rows="8" cols="4" spacing="2,2,2,2" caption="Podaci o putu"  >
+					<item row="1" col="1" caption="Datum odlaska na put:" highlight="false">
+						<dateedit name="dtDatumOdlNaloga" required="true" value="now" datavalue="~dtGetPutniNalog.@DatumOdlaska"/>
+					</item>
+					<item row="1" col="2" caption="Predviđeno trajanje (dani):" highlight="false">
+						<textedit name="txtBrojDana" format="n0" datavalue="~dtGetPutniNalog.@Trajanje" required="true"/>
+					</item>
+					<item row="1" col="3" caption="Razlog putovanja:" highlight="false" colspan="2">
+						<comboedit name="cmbRazlog" valuefield="PNRazloziId" displayfield="Naziv" dataname="~dtRazlozi" datavalue="~dtGetPutniNalog.@PNRazloziId" required="true" allownull="false"/>
+					</item>
+					<item row="2" col="1" caption="Partner:" highlight="false" colspan="2">
+						<searchedit name="srcPartner" dataname="~dtPartner" fieldtext="Naziv" fieldvalue="partneriid">
+							<!--<event type="valuechanged">
+								<action type="control value" value="#srcMjesta" if="#srcPartner!=null">
+									<parameter value="#srcPartner.@MjestaId" text="#srcPartner.@mjesto"/>
+								</action>
+								<action type="control value" value="#txtMjestoTXT" if="#srcPartner.@MjestaId!=null">
+									<parameter value=""/>
+								</action>
+							</event>-->
+						</searchedit>
+					</item>
+					<item row="2" col="3" caption="Partner (tekst):" highlight="false" colspan="2">
+						<textedit name="txtPartnerTXT" datavalue="~dtGetPutniNalog.@PartnerTXT"/>
+					</item>
+					<item row="3" col="1" caption="Mjesto:" highlight="false" colspan="2">
+						<searchedit name="srcMjesta" dataname="~dtSrcMjesta" fieldtext="Naziv" fieldvalue="MjestaId">
+								<!--<event type="valuechanged">
+									<action type="control value" value="#txtMjestoTXT" if="#srcMjesta!=null">
+										<parameter value=""/>
+									</action>
+								</event>-->
+						</searchedit>
+					</item>
+					<item row="3" col="3" caption="Mjesto (tekst):" highlight="false" colspan="2">
+						<textedit name="txtMjestoTXT" datavalue="~dtGetPutniNalog.@Mjesto"/>
+					</item>
+					<item row="4" col="1" caption="Kratki opis zadatka puta:" highlight="false" colspan="4">
+						<textedit name="txtOpisZadatka" datavalue="~dtGetPutniNalog.@opiszadatka"/>
+					</item>
+					<item row="5" col="1" caption="Prijevozno sredstvo (odlazak):" highlight="false" colspan="1">
+						<comboedit name="cmbPrijOdlaz" valuefield="PNVrPrijevozaId" displayfield="Naziv" dataname="~dtPrijevozi" datavalue="~dtGetPutniNalog.@pnvrprijevozaoid" required="true">
+							<event type="valuechanged">
+								<action type="control value" value="#cmbPrijDolaz">
+									<parameter value="#cmbPrijOdlaz"/>
+								</action>
+							</event>
+						</comboedit>
+					</item>
+					<item row="5" col="2" caption=" " highlight="false" colspan="">
+						<textedit name="txtPrOpisO" datavalue="~dtGetPutniNalog.@PrOpisO">
+						<event type="onleave">
+								<action type="control value" value="#txtPrOpisD">
+									<parameter value="#txtPrOpisO"/>
+								</action>
+							</event>
+						</textedit>
+					</item>
+					<item row="5" col="3" caption="Prijevozno sredstvo (dolazak):" highlight="false" colspan="1">
+						<comboedit name="cmbPrijDolaz" valuefield="PNVrPrijevozaId" displayfield="Naziv" dataname="~dtPrijevozi" datavalue="~dtGetPutniNalog.@pnvrprijevozadid" required="true"/>
+					</item>
+					<item row="5" col="4" caption=" " highlight="false" colspan="">
+						<textedit name="txtPrOpisD" datavalue="~dtGetPutniNalog.@PrOpisD"/>
+					</item>
+					
+					<item row="6" col="1" caption="Izvješće:" highlight="false" colspan="4" rowspan="3">
+						<memoedit name="memIzvjesce" datavalue="~dtGetPutniNalog.@lblIzvjesce"/>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+						 <!-- <action type="message" value="#srcPartner"/> 
+						 <action type="message" value="#srcPartner.text"/> 
+						 <action type="message" value="#srcPartner.@PartneriId"/> 
+						 <action type="message" value="#srcPartner.@Mjesto"/> 
+						 <action type="message" value="#srcPartner.@Adresa"/> 
+						 <action type="message" value="#srcPartner.@OIB"/>  -->
+						<action type="validate"/>
+						
+						<!-- izmjena -->
+						<action if="$pnnaloziid!=0">
+							<!-- <action type="message" value="izmjena!!"/> -->
+							<action type="datarun reader" value="~dtIzmjenaPutnogNaloga"/>
+							<action if="$indGreske==0">
+								<!-- <action type="message" value="Uspješno spremljeno!"/> -->
+								<action type="message" value="$poruka"/>
+								<action type="control populate" value="parent.#grdMaster"/>
+								<action type="form close"/> 
+							</action>
+							<action if="$indGreske==1">
+								<!-- <action type="message" value="Uspješno spremljeno!"/> -->
+								<action type="message" value="$poruka"/>
+							</action>
+						</action>
+						
+						<!-- unos -->
+						<action if="$pnnaloziid==0">
+							
+							<!-- <action type="message" value="unos!!"/> -->
+							<action type="datarun reader" value="~dtUnosPutnogNaloga">
+								<action if="$indGreske==0">
+									
+									<!-- <action type="message" value="NOVI ID: {$noviID}"/> -->
+									
+									<!--<action type="variable value" value="global.$pnnaloziid">
+										<parameter value="$noviID" type="int"/>
+									</action>-->
+									<!-- <action type="variable value" value="$pnnaloziid">
+										<parameter value="$noviID" type="int"/>
+									</action> -->
+									<action type="message" value="$poruka"/>
+									<!-- uzmi podatke za novi nalog -->
+									<action type="datarun reader" value="~dtGetFilter"/>
+									
+									
+									<!-- <action type="message" value="filter: {~dtGetFilter.@filterVrsta}"/>-->
+									 <!-- <action type="message" value="filterval: {~dtGetFilter.@filtervalue}"/> -->
+									
+									
+									<action type="variable value" value="$filtervalue">
+										<parameter value="~dtGetFilter.@filtervalue"/>
+									</action>
+									
+									<!-- <action type="message" value="filter: {$filtervalue}"/> -->
+									
+									<action type="control populate" value="parent.#tree" />
+									<!-- postavi fokus na drvo prema trenutnom filteru -->
+									<action type="control focus" value="parent.#tree">
+										<!-- <parameter value="~dtGetPutniNalog.@filterValue"/> -->
+										<parameter value="$filtervalue" type="string"/>
+									  </action>
+
+									<!-- postavi fokus na mastergridu -->
+									<action type="control focus" value="parent.#grdMaster">
+										<parameter value="$noviID" type="int"/>
+									  </action>  
+									
+									 <action type="form close"/> 
+								</action>
+								<action if="$indGreske==1">
+									<!-- <action type="message" value="$poruka"/> -->
+								</action>
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnIspisNaloga" caption="Ispis naloga" begingroup="true" function="IspisNaloga">
+					<event type="click">
+						<action type="print" value="~dtGetIspis.@imereporta1">
+							<parameter name="id" value="$PNNaloziId"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIspisObracuna" caption="Ispis obračuna" function="IspisObracuna">
+					<event type="click">
+						<action type="print" value="~dtGetIspis.@imereporta2">
+							<parameter name="id" value="$PNNaloziId"/>
+						</action>
+					</event>
+				</button>
+				
+				<button name="btnObracun" caption="Obračun" function="Obracun" begingroup="true">  
+					<event type="click">   
+						<action type="form open" value="frmObracun"> 
+							<parameter name="Caption" value="Obračun putnog naloga {global.$Broj}"/>   
+							<parameter name="OperateriId" value="@@OperateriId"/> 
+							<parameter name="PNNaloziId" value="global.$PNNaloziId"/>   
+						</action>   
+					</event> 
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spPNHelp" name="dtVrstaDok">
+				<parameter name="@action" value="vrstadok_help"/>
+			</data>
+			<data command="spPNHelp" name="dtBanka">
+				<parameter name="@action" value="Banke"/>
+			</data>
+			<data command="spPNHelp" name="dtTecaj">
+				<parameter name="@action" value="IndTecaj"/>
+			</data>
+			<data command="spPNHelp" name="dtPNVrste">
+				<parameter name="@action" value="pnvrste"/>
+			</data>
+			<data command="spPNHelp" name="dtPNNacinIsplate">
+				<parameter name="@action" value="pnnaciniisplate"/>
+			</data>
+			<data command="spPNHelp" name="dtDjelatnik">
+				<parameter name="@action" value="kadrovi_help"/>
+				<parameter name="@datum" value="#dtDatumNaloga"/>
+				<parameter name="@operateriid" value="$OperateriId"/>
+				<parameter name="@tekst" value="#srcDjelatnik.text"/>
+			</data>
+			<data command="spPNHelp" name="dtGetPrviKadar">
+				<parameter name="@action" value="kadrovi_help"/>
+				<parameter name="@datum" value="#dtDatumNaloga"/>
+				<parameter name="@operateriid" value="$OperateriId"/>
+			</data>
+			<data command="spPNHelp" name="dtOrgShema">
+				<parameter name="@action" value="kadrovi_org"/>
+				<parameter name="@datum" value="#dtDatumNaloga"/>
+				<parameter name="@hrkadroviid" value="#srcDjelatnik"/>
+			</data>
+			<data command="spPNHelp" name="dtRadnoMjesto">
+				<parameter name="@action" value="kadrovi_rm"/>
+				<parameter name="@datum" value="#dtDatumNaloga"/>
+				<parameter name="@hrkadroviid" value="#srcDjelatnik"/>
+			</data>
+			<data command="spPNHelp" name="dtJedinicaTroska">
+				<parameter name="@action" value="orgshema_help"/>
+			</data>
+			<data command="spPNHelp" name="dtDimenzija">
+				<parameter name="@action" value="dimenzije"/>
+			</data>
+			<data command="spPNHelp" name="dtMjesto">
+				<parameter name="@action" value="mjesta"/>
+			</data>
+			<data command="spPNHelp" name="dtSrcMjesta">
+				<parameter name="@action" value="srcMjesta"/>
+				<parameter name="@tekst" value="#srcMjesta.text"/>
+			</data>
+			<data command="spPNHelp" name="dtPartner">
+				<parameter name="@action" value="partneri"/>
+				<parameter name="@tekst" value="#srcPartner.text"/>
+			</data>
+			<data command="spPNHelp" name="dtRazlozi">
+				<parameter name="@action" value="razlozi"/>
+			</data>
+			<data command="spPNHelp" name="dtPrijevozi">
+				<parameter name="@action" value="prijevozi"/>
+			</data>
+			<data command="spPNHelp" name="dtPrijevoziDol">
+				<parameter name="@action" value="PrijevoziDol"/>
+				<parameter name="@PNVrPrijevozaId" value="#cmbPrijOdlaz"/>
+			</data>
+			<data command="spPNPromjenaStatusa" name="dtStatusi">
+				<parameter name="@action" value="statusi"/>
+				<parameter name="@pnnaloziid" value="$PNNaloziId"/>
+			</data>
+			<data command="spPNHelp" name="dtGetPutniNalog">
+				<parameter name="@action" value="ucitaj"/>
+				<parameter name="@id" value="$PNNaloziId"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<data command="spPNHelp" name="dtGetFilter">
+				<parameter name="@action" value="getFilter"/>
+				<parameter name="@id" value="$noviID"/>
+				<parameter name="@filter" value="global.$filter"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<data command="spPNHelp" name="dtGetIspis">
+				<parameter name="@action" value="Predlosci_za_ispis"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<data command="spPNAzur" name="dtUnosPutnogNaloga">
+				<parameter name="@action" value="unos"/>
+				<parameter name="@datum" value="#dtDatumNaloga"/>
+				<parameter name="@broj" value="#txtBrojNaloga"/>
+				<parameter name="@vrstadokid" value="#cmbVrstaDokumenta"/>
+				<parameter name="@BankaId" value="#cmbBanka"/>
+				<parameter name="@IndTecaj" value="#cmbTecaj"/>
+				<parameter name="@pnvrsteid" value="#cmbVrstaNaloga"/>
+				<parameter name="@pnnaciniisplateid" value="#cmbNacinIsplate"/>
+				<parameter name="@HrkadroviId" value="#srcDjelatnik"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShema"/>
+				<parameter name="@HRRadnamjestaId" value="#cmbRadnoMjesto"/>
+				<parameter name="@OrgShemaTrId" value="#cmbJedTroska"/>
+				<parameter name="@dimenzijeid" value="#cmbDimenzija"/>
+				<parameter name="@DatumOdlaska" value="#dtDatumOdlNaloga"/>				
+				<parameter name="@trajanje" value="#txtBrojDana"/>				
+				<parameter name="@MjestaId" value="#srcMjesta"/>
+				<parameter name="@Mjesto" value="#txtMjestoTXT"/>				
+				<parameter name="@PartneriId" value="#srcPartner"/>				
+				<parameter name="@partnerTXT" value="#txtPartnerTXT"/>
+				<parameter name="@pnrazloziid" value="#cmbRazlog"/>
+				<parameter name="@opiszadatka" value="#txtOpisZadatka"/>
+				<parameter name="@PNVrPrijevozaOId" value="#cmbPrijOdlaz"/>
+				<parameter name="@PNVrPrijevozaDId" value="#cmbPrijDolaz"/>
+				<parameter name="@PrOpisO" value="#txtPrOpisO"/>
+				<parameter name="@PrOpisD" value="#txtPrOpisD"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@izvjesce" value="#memIzvjesce"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+				<parameter name="@pnnaloziid.output.int" variablename="$noviID"/>
+			</data>
+			<data command="spPNAzur" name="dtIzmjenaPutnogNaloga">
+				<parameter name="@action" value="pn_edit"/>
+				<parameter name="@pnnaloziid" value="$PNNaloziId"/>
+				<parameter name="@datum" value="#dtDatumNaloga"/>
+				<parameter name="@broj" value="#txtBrojNaloga"/>
+				<parameter name="@vrstadokid" value="#cmbVrstaDokumenta"/>
+				<parameter name="@BankaId" value="#cmbBanka"/>
+				<parameter name="@IndTecaj" value="#cmbTecaj"/>
+				<parameter name="@pnvrsteid" value="#cmbVrstaNaloga"/>
+				<parameter name="@pnnaciniisplateid" value="#cmbNacinIsplate"/>
+				<parameter name="@HrkadroviId" value="#srcDjelatnik"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShema"/>
+				<parameter name="@HRRadnamjestaId" value="#cmbRadnoMjesto"/>
+				<parameter name="@OrgShemaTrId" value="#cmbJedTroska"/>
+				<parameter name="@dimenzijeid" value="#cmbDimenzija"/>
+				<parameter name="@DatumOdlaska" value="#dtDatumOdlNaloga"/>				
+				<parameter name="@trajanje" value="#txtBrojDana"/>				
+				<parameter name="@MjestaId" value="#srcMjesta"/>
+				<parameter name="@Mjesto" value="#txtMjestoTXT"/>				
+				<parameter name="@PartneriId" value="#srcPartner"/>				
+				<parameter name="@partnerTXT" value="#txtPartnerTXT"/>
+				<parameter name="@pnrazloziid" value="#cmbRazlog"/>
+				<parameter name="@opiszadatka" value="#txtOpisZadatka"/>
+				<parameter name="@PNVrPrijevozaOId" value="#cmbPrijOdlaz"/>
+				<parameter name="@PNVrPrijevozaDId" value="#cmbPrijDolaz"/>
+				<parameter name="@PrOpisO" value="#txtPrOpisO"/>
+				<parameter name="@PrOpisD" value="#txtPrOpisD"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@izvjesce" value="#memIzvjesce"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+			<data command="spPNPromjenaStatusa" name="dtPromjenaStatusa">
+				<parameter name="@action" value="unos_status"/>
+				<parameter name="@pnnaloziid" value="$PNNaloziId"/>
+				<parameter name="@pnstatusiid" value="#cmbStatusi"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+		</datalist>
+	</form>
+	
+	
+	
+<!--
+  *******************************************************************************************
+  FORMA ZA UNOS NALOGA - KADAR
+  *******************************************************************************************
+  -->
+	<form name="frmUnosKadar" caption="$caption" width="700" height="750" fixedsize="false">
+		<event type="init">
+			<action type="datarun reader" value="~dtGetPutniNalog" if="$PNNaloziId!=0"/>
+			<action type="datarun reader" value="~dtGetIspis"/>			
+		</event>
+		<event type="shown">
+		
+		
+			<action type="control value" value="#srcDjelatnik">
+				<parameter text="~dtGetPutniNalog.@caphrkadroviid" value="~dtGetPutniNalog.@hrkadroviid"/>
+			</action>
+			<action type="control value" value="#cmbStatusi">
+				<parameter text="~dtGetPutniNalog.@pnstatusiid" value="~dtGetPutniNalog.@pnstatusiid"/>
+			</action>
+			
+			<action type="control disable" value="#txtBrojNaloga" if="global.$PravoIzmjeneBroja==0">
+			</action>
+			<action type="control value" value="#srcMjesta">
+				<parameter text="~dtGetPutniNalog.@capmjestaid" value="~dtGetPutniNalog.@Mjestaid"/>
+			</action>
+			<action type="control value" value="#srcPartner">
+				<parameter text="~dtGetPutniNalog.@cappartneriid" value="~dtGetPutniNalog.@partneriid"/>
+			</action>
+			<action type="control visible" value="#cmbVrstaNaloga,#cmbBanka,#cmbTecaj,#cmbNacinIsplate,#cmbDimenzija">
+				<parameter value="false"/>
+			</action>	
+			<action if="$PNNaloziId==0">
+				<action type="control visible" value="#cmbStatusi,#btnStatus,#btnIspisNaloga,#btnIspisObracuna">
+					<parameter value="false"/>
+				</action>	
+				<action type="control value" value="#txtBrojDana">
+					<parameter value="1"/>
+				</action>
+				<!-- ako je unos i osoba ima pravo unijeti samo za 1 osobu, onda joj odmah popuni tražilicu!! -->
+				<action if="global.$PravaKadrovaOperater==1">
+					<action type="datarun reader" value="~dtGetPrviKadar"/>
+					<action type="control value" value="#srcDjelatnik">
+						<parameter value="~dtGetPrviKadar.@hrkadroviid" text="~dtGetPrviKadar.@radnik"/>
+					</action>
+				</action>
+			</action>
+			
+		</event>
+		<layout>
+			<group rows="2" cols="1" groupbordervisible="false" >
+				
+				
+				<group col="1" row="1" rows="5" cols="4" spacing="2,2,2,2" caption="Osnovni podaci" >
+					<item row="1" col="1" caption="Broj naloga:" highlight="false">
+						<textedit name="txtBrojNaloga" enabled="true" datavalue="~dtGetPutniNalog.@broj" />
+					</item>
+					<item row="2" col="1" caption="Datum naloga:" highlight="false">
+						<dateedit name="dtDatumNaloga" required="true" value="now" datavalue="~dtGetPutniNalog.@datumdok"/>
+					</item>
+					<item row="2" col="2" caption="Vrsta naloga:" highlight="false">
+						<comboedit  name="cmbVrstaNaloga" required="true" valuefield="PNVrsteId" displayfield="Naziv" dataname="~dtPNVrste" datavalue="~dtGetPutniNalog.@PNVrsteId" allownull="false"/>
+					</item>
+					
+					<item row="2" col="3" caption="Status:" textposition="top" highlight="false" >
+							<comboedit name="cmbStatusi" valuefield="pnstatusiid" displayfield="Naziv" dataname="~dtStatusi" datavalue="~dtGetPutniNalog.@pnstatusiid" allownull="false" function="PromjenaStatusa" enabled="false" />
+					</item>
+					<item row="2" col="4" highlight="false">
+						<button name="btnStatus" caption="Promijeni status" function="">
+							<event type="click">
+								<action type="datarun reader" value="~dtPromjenaStatusa"/>
+								<action if="$indGreske==0">
+								<!-- <action type="message" value="Uspješno spremljeno!"/> -->
+								<action type="message" value="$poruka"/>
+								
+								<action type="control populate" value="parent.#tree" />
+								<!-- postavi fokus na mastergridu -->
+								<action type="control focus" value="parent.#grdMaster">
+									<parameter value="$pnnaloziid" type="int"/>
+								</action>
+								<action type="control populate" value="#cmbStatusi" />
+								
+							</action>
+							</event>
+						</button>
+					</item>
+					
+					<!--<item row="1" col="2" caption="Broj naloga:" highlight="false">
+						<textedit name="txtBrojNaloga" enabled="true" datavalue="~dtGetPutniNalog.@broj" readonly="true"/>
+					</item>-->
+					
+					<item row="3" col="1" caption="Banka:" highlight="false" colspan="2">
+						<comboedit name="cmbBanka" required="true" valuefield="BankaId" displayfield="naziv" dataname="~dtBanka" datavalue="~dtGetPutniNalog.@BankaId" allownull="false"/>
+					</item>
+					<item row="3" col="3" highlight="false" caption="Tečaj:">
+						<comboedit name="cmbTecaj" required="true" valuefield="IndTecaj" displayfield="naziv" dataname="~dtTecaj" datavalue="~dtGetPutniNalog.@IndTecaj" allownull="false"/>
+					</item>
+					<item row="3" col="4" caption="Način isplate:" highlight="false" colspan="1">
+						<comboedit name="cmbNacinIsplate" required="true" valuefield="PNNaciniIsplateId" displayfield="Naziv" dataname="~dtPNNacinIsplate" datavalue="~dtGetPutniNalog.@PNNaciniIsplateId" allownull="false"/>
+					</item>
+					<item row="3" col="1" caption="Djelatnik:" highlight="false" colspan="2">
+						<searchedit name="srcDjelatnik" required="true" dataname="~dtDjelatnik" fieldtext="radnik" fieldvalue="hrkadroviid">
+							<event type="valuechanged">
+								<action type="datarun reader" value="dtOrgShema">
+									<action type="control populate" value="#cmbOrgShema"/>
+								</action>
+								<action type="datarun reader" value="dtRadnoMjesto">
+									<action type="control populate" value="#cmbRadnoMjesto"/>
+								</action>
+							</event>
+						</searchedit>
+					</item>
+					<item row="4" col="1" caption="Org.jedinica:" highlight="false" colspan="2">
+						<comboedit name="cmbOrgShema" valuefield="orgshemaid" displayfield="naziv" dataname="~dtOrgShema" datavalue="~dtGetPutniNalog.@OrgShemaId" allownull="false" enabled="false"/>
+					</item>
+					<item row="4" col="3" caption="Radno mjesto:" highlight="false" colspan="2">
+						<comboedit name="cmbRadnoMjesto" valuefield="HRRadnaMjestaId" displayfield="naziv" dataname="~dtRadnoMjesto" datavalue="~dtGetPutniNalog.@HRRadnamjestaId" allownull="false" enabled="false"/>
+					</item>
+					<item row="5" col="1" caption="Jedinica troška:" highlight="false" colspan="2">
+						<comboedit name="cmbJedTroska" valuefield="orgshemaid" displayfield="naziv" dataname="~dtJedinicaTroska" datavalue="~dtGetPutniNalog.@OrgShemaTrId" required="true"/>
+					</item>
+					<item row="5" col="3" caption="Dimenzija:" highlight="false" colspan="2">
+						<comboedit name="cmbDimenzija" valuefield="dimenzijeid" displayfield="naziv" dataname="~dtDimenzija" datavalue="~dtGetPutniNalog.@dimenzijeid"/>
+					</item>
+				</group>
+				<group col="1" row="2" rows="8" cols="4" spacing="2,2,2,2" caption="Podaci o putu"  >
+					<item row="1" col="1" caption="Datum odlaska na put:" highlight="false">
+						<dateedit name="dtDatumOdlNaloga" required="true" value="now" datavalue="~dtGetPutniNalog.@DatumOdlaska"/>
+					</item>
+					<item row="1" col="2" caption="Predviđeno trajanje (dani):" highlight="false">
+						<textedit name="txtBrojDana" format="n0" datavalue="~dtGetPutniNalog.@Trajanje" required="true"/>
+					</item>
+					<item row="1" col="3" caption="Razlog putovanja:" highlight="false" colspan="2">
+						<comboedit name="cmbRazlog" valuefield="PNRazloziId" displayfield="Naziv" dataname="~dtRazlozi" datavalue="~dtGetPutniNalog.@PNRazloziId" required="true" allownull="false"/>
+					</item>
+					<item row="2" col="1" caption="Partner:" highlight="false" colspan="2">
+						<searchedit name="srcPartner" dataname="~dtPartner" fieldtext="Naziv" fieldvalue="partneriid">
+							<!--<event type="valuechanged">
+								<action type="control value" value="#srcMjesta" if="#srcPartner!=null">
+									<parameter value="#srcPartner.@MjestaId" text="#srcPartner.@mjesto"/>
+								</action>
+								<action type="control value" value="#txtMjestoTXT" if="#srcPartner.@MjestaId!=null">
+									<parameter value=""/>
+								</action>
+							</event>-->
+						</searchedit>
+					</item>
+					<item row="2" col="3" caption="Partner (tekst):" highlight="false" colspan="2">
+						<textedit name="txtPartnerTXT" datavalue="~dtGetPutniNalog.@PartnerTXT"/>
+					</item>
+					<item row="3" col="1" caption="Mjesto:" highlight="false" colspan="2">
+						<searchedit name="srcMjesta" dataname="~dtSrcMjesta" fieldtext="Naziv" fieldvalue="MjestaId">
+							
+								<event type="valuechanged">
+									<action type="control value" value="#txtMjestoTXT" if="#srcMjesta!=null">
+										<parameter value=""/>
+									</action>
+								</event>
+						</searchedit>
+					</item>
+					<item row="3" col="3" caption="Mjesto (tekst):" highlight="false" colspan="2">
+						<textedit name="txtMjestoTXT" datavalue="~dtGetPutniNalog.@Mjesto"/>
+					</item>
+					<item row="4" col="1" caption="Kratki opis zadatka puta:" highlight="false" colspan="4">
+						<textedit name="txtOpisZadatka" datavalue="~dtGetPutniNalog.@opiszadatka"/>
+					</item>
+					<item row="5" col="1" caption="Prijevozno sredstvo (odlazak):" highlight="false" colspan="2">
+						<comboedit name="cmbPrijOdlaz" valuefield="PNVrPrijevozaId" displayfield="Naziv" dataname="~dtPrijevozi" datavalue="~dtGetPutniNalog.@pnvrprijevozaoid" required="true">
+							<event type="valuechanged">
+								<action type="datarun reader" value="dtPrijevoziDol">
+									<action type="control value" value="#cmbPrijDolaz">
+										<parameter value="~dtPrijevoziDol.@PNVrPrijevozaId"/>
+									</action>
+								</action>
+							</event>
+						</comboedit>
+					</item>
+					<item row="5" col="3" caption="Prijevozno sredstvo (dolazak):" highlight="false" colspan="2">
+						<comboedit name="cmbPrijDolaz" valuefield="PNVrPrijevozaId" displayfield="Naziv" dataname="~dtPrijevozi" datavalue="~dtGetPutniNalog.@pnvrprijevozadid" required="true"/>
+					</item>
+					
+					<item row="6" col="1" caption="Izvješće:" highlight="false" colspan="4" rowspan="3">
+						<memoedit name="memIzvjesce" datavalue="~dtGetPutniNalog.@lblIzvjesce"/>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+						 <!-- <action type="message" value="#srcPartner"/> 
+						 <action type="message" value="#srcPartner.text"/> 
+						 <action type="message" value="#srcPartner.@PartneriId"/> 
+						 <action type="message" value="#srcPartner.@Mjesto"/> 
+						 <action type="message" value="#srcPartner.@Adresa"/> 
+						 <action type="message" value="#srcPartner.@OIB"/>  -->
+						<action type="validate"/>
+						
+						<!-- izmjena -->
+						<action if="$pnnaloziid!=0">
+							<!-- <action type="message" value="izmjena!!"/> -->
+							<action type="datarun reader" value="~dtIzmjenaPutnogNaloga"/>
+							<action if="$indGreske==0">
+								<!-- <action type="message" value="Uspješno spremljeno!"/> -->
+								<action type="message" value="$poruka"/>
+								<action type="control populate" value="parent.#grdMaster"/>
+								<action type="form close"/> 
+							</action>
+							<action if="$indGreske==1">
+								<!-- <action type="message" value="Uspješno spremljeno!"/> -->
+								<action type="message" value="$poruka"/>
+							</action>
+						</action>
+						
+						<!-- unos -->
+						<action if="$pnnaloziid==0">
+							
+							<!-- <action type="message" value="unos!!"/> -->
+							<action type="datarun reader" value="~dtUnosPutnogNaloga">
+								<action if="$indGreske==0">
+									
+									<!-- <action type="message" value="NOVI ID: {$noviID}"/> -->
+									
+									<!--<action type="variable value" value="global.$pnnaloziid">
+										<parameter value="$noviID" type="int"/>
+									</action>-->
+									<!-- <action type="variable value" value="$pnnaloziid">
+										<parameter value="$noviID" type="int"/>
+									</action> -->
+									<action type="message" value="$poruka"/>
+									<!-- uzmi podatke za novi nalog -->
+									<action type="datarun reader" value="~dtGetFilter"/>
+									
+									
+									<!-- <action type="message" value="filter: {~dtGetFilter.@filterVrsta}"/>-->
+									 <!-- <action type="message" value="filterval: {~dtGetFilter.@filtervalue}"/> -->
+									
+									
+									<action type="variable value" value="$filtervalue">
+										<parameter value="~dtGetFilter.@filtervalue"/>
+									</action>
+									
+									<!-- <action type="message" value="filter: {$filtervalue}"/> -->
+									
+									<action type="control populate" value="parent.#tree" />
+									<!-- postavi fokus na drvo prema trenutnom filteru -->
+									<action type="control focus" value="parent.#tree">
+										<!-- <parameter value="~dtGetPutniNalog.@filterValue"/> -->
+										<parameter value="$filtervalue" type="string"/>
+									  </action>
+
+									<!-- postavi fokus na mastergridu -->
+									<action type="control focus" value="parent.#grdMaster">
+										<parameter value="$noviID" type="int"/>
+									  </action>  
+									
+									 <action type="form close"/> 
+								</action>
+								<action if="$indGreske==1">
+									<!-- <action type="message" value="$poruka"/> -->
+								</action>
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnIspisNaloga" caption="Ispis naloga" begingroup="true" function="IspisNaloga">
+					<event type="click">
+						<action type="print" value="~dtGetIspis.@imereporta1">
+							<parameter name="id" value="$PNNaloziId"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIspisObracuna" caption="Ispis obračuna" function="IspisObracuna">
+					<event type="click">
+						<action type="print" value="~dtGetIspis.@imereporta2">
+							<parameter name="id" value="$PNNaloziId"/>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spPNHelp" name="dtVrstaDok">
+				<parameter name="@action" value="vrstadok_help"/>
+			</data>
+			<data command="spPNHelp" name="dtBanka">
+				<parameter name="@action" value="Banke"/>
+			</data>
+			<data command="spPNHelp" name="dtTecaj">
+				<parameter name="@action" value="IndTecaj"/>
+			</data>
+			<data command="spPNHelp" name="dtPNVrste">
+				<parameter name="@action" value="pnvrste"/>
+			</data>
+			<data command="spPNHelp" name="dtPNNacinIsplate">
+				<parameter name="@action" value="pnnaciniisplate"/>
+			</data>
+			<data command="spPNHelp" name="dtDjelatnik">
+				<parameter name="@action" value="kadrovi_help"/>
+				<parameter name="@datum" value="#dtDatumNaloga"/>
+				<parameter name="@operateriid" value="$OperateriId"/>
+				<parameter name="@tekst" value="#srcDjelatnik.text"/>
+			</data>
+			<data command="spPNHelp" name="dtGetPrviKadar">
+				<parameter name="@action" value="kadrovi_help"/>
+				<parameter name="@datum" value="#dtDatumNaloga"/>
+				<parameter name="@operateriid" value="$OperateriId"/>
+			</data>
+			<data command="spPNHelp" name="dtOrgShema">
+				<parameter name="@action" value="kadrovi_org"/>
+				<parameter name="@datum" value="#dtDatumNaloga"/>
+				<parameter name="@hrkadroviid" value="#srcDjelatnik"/>
+			</data>
+			<data command="spPNHelp" name="dtRadnoMjesto">
+				<parameter name="@action" value="kadrovi_rm"/>
+				<parameter name="@datum" value="#dtDatumNaloga"/>
+				<parameter name="@hrkadroviid" value="#srcDjelatnik"/>
+			</data>
+			<data command="spPNHelp" name="dtJedinicaTroska">
+				<parameter name="@action" value="orgshema_help"/>
+			</data>
+			<data command="spPNHelp" name="dtDimenzija">
+				<parameter name="@action" value="dimenzije"/>
+			</data>
+			<data command="spPNHelp" name="dtMjesto">
+				<parameter name="@action" value="mjesta"/>
+			</data>
+			<data command="spPNHelp" name="dtSrcMjesta">
+				<parameter name="@action" value="srcMjesta"/>
+				<parameter name="@tekst" value="#srcMjesta.text"/>
+			</data>
+			<data command="spPNHelp" name="dtPartner">
+				<parameter name="@action" value="partneri"/>
+				<parameter name="@tekst" value="#srcPartner.text"/>
+			</data>
+			<data command="spPNHelp" name="dtRazlozi">
+				<parameter name="@action" value="razlozi"/>
+			</data>
+			<data command="spPNHelp" name="dtPrijevozi">
+				<parameter name="@action" value="prijevozi"/>
+			</data>
+			<data command="spPNHelp" name="dtPrijevoziDol">
+				<parameter name="@action" value="PrijevoziDol"/>
+				<parameter name="@PNVrPrijevozaId" value="#cmbPrijOdlaz"/>
+			</data>
+			<data command="spPNPromjenaStatusa" name="dtStatusi">
+				<parameter name="@action" value="statusi"/>
+				<parameter name="@pnnaloziid" value="$PNNaloziId"/>
+			</data>
+			<data command="spPNHelp" name="dtGetPutniNalog">
+				<parameter name="@action" value="ucitaj"/>
+				<parameter name="@id" value="$PNNaloziId"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<data command="spPNHelp" name="dtGetFilter">
+				<parameter name="@action" value="getFilter"/>
+				<parameter name="@id" value="$noviID"/>
+				<parameter name="@filter" value="global.$filter"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<data command="spPNHelp" name="dtGetIspis">
+				<parameter name="@action" value="Predlosci_za_ispis"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<data command="spPNAzur" name="dtUnosPutnogNaloga">
+				<parameter name="@action" value="unos"/>
+				<parameter name="@datum" value="#dtDatumNaloga"/>
+				<!--<parameter name="@broj" value="#txtBrojNaloga"/>-->
+				<parameter name="@vrstadokid" value="#cmbVrstaDokumenta"/>
+				<parameter name="@BankaId" value="#cmbBanka"/>
+				<parameter name="@IndTecaj" value="#cmbTecaj"/>
+				<parameter name="@pnvrsteid" value="#cmbVrstaNaloga"/>
+				<parameter name="@pnnaciniisplateid" value="#cmbNacinIsplate"/>
+				<parameter name="@HrkadroviId" value="#srcDjelatnik"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShema"/>
+				<parameter name="@HRRadnamjestaId" value="#cmbRadnoMjesto"/>
+				<parameter name="@OrgShemaTrId" value="#cmbJedTroska"/>
+				<parameter name="@dimenzijeid" value="#cmbDimenzija"/>
+				<parameter name="@DatumOdlaska" value="#dtDatumOdlNaloga"/>				
+				<parameter name="@trajanje" value="#txtBrojDana"/>				
+				<parameter name="@MjestaId" value="#srcMjesta"/>
+				<parameter name="@Mjesto" value="#txtMjestoTXT"/>				
+				<parameter name="@PartneriId" value="#srcPartner"/>				
+				<parameter name="@partnerTXT" value="#txtPartnerTXT"/>
+				<parameter name="@pnrazloziid" value="#cmbRazlog"/>
+				<parameter name="@opiszadatka" value="#txtOpisZadatka"/>
+				<parameter name="@PNVrPrijevozaOId" value="#cmbPrijOdlaz"/>
+				<parameter name="@PNVrPrijevozaDId" value="#cmbPrijDolaz"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@izvjesce" value="#memIzvjesce"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+				<parameter name="@pnnaloziid.output.int" variablename="$noviID"/>
+			</data>
+			<data command="spPNAzur" name="dtIzmjenaPutnogNaloga">
+				<parameter name="@action" value="pn_edit"/>
+				<parameter name="@pnnaloziid" value="$PNNaloziId"/>
+				<parameter name="@datum" value="#dtDatumNaloga"/>
+				<!--<parameter name="@broj" value="#txtBrojNaloga"/>-->
+				<parameter name="@vrstadokid" value="#cmbVrstaDokumenta"/>
+				<parameter name="@BankaId" value="#cmbBanka"/>
+				<parameter name="@IndTecaj" value="#cmbTecaj"/>
+				<parameter name="@pnvrsteid" value="#cmbVrstaNaloga"/>
+				<parameter name="@pnnaciniisplateid" value="#cmbNacinIsplate"/>
+				<parameter name="@HrkadroviId" value="#srcDjelatnik"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShema"/>
+				<parameter name="@HRRadnamjestaId" value="#cmbRadnoMjesto"/>
+				<parameter name="@OrgShemaTrId" value="#cmbJedTroska"/>
+				<parameter name="@dimenzijeid" value="#cmbDimenzija"/>
+				<parameter name="@DatumOdlaska" value="#dtDatumOdlNaloga"/>				
+				<parameter name="@trajanje" value="#txtBrojDana"/>				
+				<parameter name="@MjestaId" value="#srcMjesta"/>
+				<parameter name="@Mjesto" value="#txtMjestoTXT"/>				
+				<parameter name="@PartneriId" value="#srcPartner"/>				
+				<parameter name="@partnerTXT" value="#txtPartnerTXT"/>
+				<parameter name="@pnrazloziid" value="#cmbRazlog"/>
+				<parameter name="@opiszadatka" value="#txtOpisZadatka"/>
+				<parameter name="@PNVrPrijevozaOId" value="#cmbPrijOdlaz"/>
+				<parameter name="@PNVrPrijevozaDId" value="#cmbPrijDolaz"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@izvjesce" value="#memIzvjesce"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+			<data command="spPNPromjenaStatusa" name="dtPromjenaStatusa">
+				<parameter name="@action" value="unos_status_radnik"/>
+				<parameter name="@pnnaloziid" value="$PNNaloziId"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+		</datalist>
+	</form>
+</root>

@@ -1,0 +1,126 @@
+<root version="1.0.0.1">
+	<form name="frmRobnoObrada" type="master" caption="Povezivanje ulaza i izlaza" fixedsize="true" statusbar="true">
+		<event type="init"> 
+			<action type="datarun reader" value="~dtDatumPubVars"/>
+			<action type="variable value" >
+				<parameter name="$DatumDo" value="~dtDatumPubVars.@DatumDo" type="date" />
+			</action>			
+		</event>
+		<event type="load">
+			
+		</event>
+		<event type="shown">
+
+		</event>
+		<layout itemspadding="2" >
+
+			<group cols="1" rows="8" groupbordervisible="true">
+
+				<item col="1" row="1" caption=" " >
+					<labeledit name="txtOpis"  fontsizedelta="2" value="Povezivanje ulaza i izlaza za sva skladišta na kojima se vodi cijena po izabranoj metodi"/>
+				</item>
+				<item col="1" row="2" caption="" >
+					<labeledit name="txtOpis1"  fontsizedelta="2" value="uvažavajući dokumente do zadanog datuma."/>
+				</item>
+				<item col="1" row="3"  textvisible="False" >
+					<separator dark="true" backcolor="gray" />
+				</item>
+				<item col="1" row="4"  caption="" >
+					<labeledit name="txtUpozorenje" fontsizedelta="4" value="UPOZORENJE:"/>
+				</item>
+				<item col="1" row="5"  caption="" >
+					<labeledit name="txtUpozorenje1"  fontsizedelta="2" value="Izvršavanje ove opcije treba pustiti u vremenu kada nije značajan promet na serveru."/>
+				</item>
+				<item col="1" row="6"   textvisible="False" >
+					<separator dark="true" backcolor="gray" />
+				</item>
+
+				<group cols="3" rows="2" col="1" row="7" groupbordervisible="false">
+					<columnsdefinition>
+						<column size="20%" position="1" />
+						<column size="60%" position="2" />
+						<column size="20%" position="3" />
+					</columnsdefinition>
+
+					<item col="2" row="1"   textposition="top" caption="Poveži ulaze i izlaze za skladišta koja se vode po metodi:" >
+						<comboedit name="cmbNacin" autopopulate="true" valuefield="NacinId" displayfield="Opis" datavalue="~dtNacin.@NacinId" dataname="dtNacin">
+						</comboedit>
+					</item>
+					<group cols="1" rows="1" col="2" row="2" groupbordervisible="false">
+						<columnsdefinition>
+							<column size="100%" position="1" />
+						</columnsdefinition>
+						<item col="1" row="1" textposition="top" caption="Datum:" >
+							<!-- <dateedit  name="datDatumDo" datavalue="~dtDatumPubVars.@DatumDo"> -->
+							<dateedit  name="datDatumDo" value="$DatumDo">
+							</dateedit>
+						</item>
+					</group>
+				</group>
+
+
+				<item col="1" row="8"  colspan="2" textvisible="False" >
+					<separator dark="true" backcolor="gray" />
+				</item>
+			</group>	
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnIzvrsi" caption="&amp;IZVRŠI ODMAH" dock="left">
+					<event type="click" waittype="progress" waitcaption="Obrada" waittext="Radim... " sleep="2000">
+						<action type="datarun nonquery" value="~dtDelPubVars"/>
+						<!-- BRISANJE PubVarsa -->
+						<action type="datarun nonquery" value="~dtInsertPubVars"/> 
+						<!-- INSERT PubVarsa --> 
+						<action type="control disable" value="#btnIzvrsi,#btnPripremi"/>
+						<action type="datarun nonquery" value="~dtDatumPubVars"/>
+						<!-- KONTROLA PubVarsa -->
+						<action type="datarun scalar" value="~dtObnovi">
+							<!-- Izvrši robno knjiženje po izabranoj metodi -->
+							<parameter name="BrojStavki"/>
+							<action type="footer text" value="Gotovo!Kreirano zapisa: {$BrojStavki}"/>
+						</action>	
+					</event>
+				</button>
+				<button caption="ODUSTANI" type="cancel" dock="right">
+					<event type="click">
+						<action type="form close"/>	
+					</event>
+				</button>						
+				<button caption="UPUTI ME" type="HELP" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+
+			<data command="select 1 as NacinId,'F-FIFO metoda' as Opis
+						  union all
+						  select 2 as NacinId,'A-Metoda prosječnih cijena' as Opis
+						  union all
+						  select 3 as NacinId,'P-Metoda planskih cijena' as Opis " type="text" name="dtNacin"/>
+
+
+			<data command="delete from PubVars where VarIme = 'FIFODatum'" type="text" name="dtDelPubVars"/>	
+
+
+			<data command="insert into PubVars (VarIme, VarSet, VarOpis) 
+                           values ('FIFODatum', @Datum, 'Datum za spRobnoPrometFIFO a') " type="text" name="dtInsertPubVars">
+				<parameter name="@Datum" value="#datDatumDo" type="date"/>
+			</data>
+
+			<data command="spCRobno_Knjizenje_Datumi" name="dtDatumPubVars">
+				<parameter name="@action" value="1"/>
+			</data>
+
+			<data command="spC_RobnoPromet_FIFO" name="dtObnovi" if="#cmbNacin==1">
+				<parameter name="@datumdo" value="#datDatumDo" type="date"/>
+			</data>
+			<data command="spC_RobnoPromet_Prosjecne" name="dtObnovi" elseif="#cmbNacin==2">
+				<parameter name="@datumdo" value="#datDatumDo" type="date"/>
+			</data>
+			<data command="spC_RobnoPromet_Planske" name="dtObnovi" else="">
+				<parameter name="@datumdo" value="#datDatumDo" type="date"/>
+			</data> 
+
+		</datalist>
+	</form>
+</root>

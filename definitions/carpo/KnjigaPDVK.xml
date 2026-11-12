@@ -1,0 +1,111 @@
+<!--
+22.08.2017 v1.0.0.0 AČ init verzija
+-->
+<root version="1.0.0.1">
+
+	<form type="master" name="frmPDVK" caption="Knjiga PDV-K" template="splitter vertical" maximized="true" splitterposition="60" spliterfixed="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtKnjigaInit"/>
+		</event>
+		<event type="shown">
+			<action type="datarun reader" value="~dtPrviDan"/>
+			<action type="datarun reader" value="~dtZadnjiDan"/>
+			<action type="control value" value="#datD1">
+				<parameter value="~dtPrviDan.@Datum1"/>
+			</action>
+			<action type="control value" value="#datD2">
+				<parameter value="~dtZadnjiDan.@Datum2"/>
+			</action>
+		</event>
+		<layout name="panel1" type="collapsable" caption="Parametri" minsize="50">
+			<group rows="1" cols="4">
+				<columnsdefinition>
+					<column size="10%" position="1"/>
+					<column size="10%" position="2"/>
+					<column size="30%" position="3"/>
+					<column size="50%" position="4"/>
+				</columnsdefinition>
+				<item caption="Razdoblje od:" row="1" col="1">
+					<dateedit name="datD1" value="~dtPrviDan"/>
+				</item>
+				<item caption="do:" row="1" col="2">
+					<dateedit name="datD2" value="~dtZadnjiDan"/>
+				</item>
+				<item caption="Knjiga:" row="1" col="3">
+					<comboedit name="cmbKnjiga" dataname="~dtKnjiga" valuefield="knjigaid" displayfield="Naziv" datavalue="~dtKnjigaInit.@knjigaid">
+            <!-- na promjenbu vrijednosti u combu setamo kontroli vidljivost -->
+						<event type="valuechanged">
+							<action type="control visible" value="#grdURA" if="#cmbKnjiga==1">
+								<parameter value="true"/>
+							</action>
+							<action type="control visible" value="#grdURA" else="">
+								<parameter value="false"/>
+							</action>
+							<action type="control visible" value="#grdIRA" if="#cmbKnjiga==1">
+								<parameter value="false"/>
+							</action>
+							<action type="control visible" value="#grdIRA" else="">
+								<parameter value="true"/>
+							</action>
+						</event>
+					</comboedit>
+				</item>
+			</group>
+		</layout>
+		<layout name="panel2">
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<grid name="grdURA" savelayout="true" dataname="~dtMasterGrid" type="master" bestfitonrefresh="true" showgroupedcolumns="true">
+						<fields inherited="true">
+							<field name="s" groupindex="0"/>
+							<field name="DatumZaključka" groupindex="1"/>
+						</fields>
+					</grid>
+				</item>
+				<item row="1" col="1">
+				  <!-- ovdje ubaci drugi grid i stavi mu atribut visible="false" -->
+					<grid name="grdIRA" visible="false" savelayout="true" dataname="~dtMasterGrid" bestfitonrefresh="true" showgroupedcolumns="true">
+						<fields inherited="true">
+							<field name="s" groupindex="0"/>
+							<field name="DatumZaključka" groupindex="1"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<datalist>
+			<data name="dtKnjiga" command="select 1 as knjigaid,'Knjiga Ura' as Naziv UNION ALL select 2 as knjigaid, 'Knjiga Ira' as Naziv" type="text"/>
+			<data name="dtKnjigaInit" command="select 1 as knjigaid,'Knjiga Ura' as Naziv" type="text"/>
+			<data name="dtMasterGrid" command="spCKntKnjigaPDVK">
+				<parameter name="@knjigaid" value="#cmbKnjiga"/>
+				<parameter name="@DatumOd" value="#datD1"/>
+				<parameter name="@DatumDo" value="#datD2"/>
+			</data>
+			<data name="dtPrviDan" command="select DATEADD(year, DATEDIFF(year, 0, GETDATE())-1, 0) as Datum1" type="text"/>
+			<data name="dtZadnjiDan" command="select DATEADD(year, DATEDIFF(year, -1, GETDATE())-1, -1) as Datum2" type="text"/>
+		</datalist>
+		<panelbuttons>
+			<buttons>
+				<button name="btnIzvrsi" caption="Izvrši">
+					<event type="click">
+            <!-- ovdje odsad samo osvježavamo vrijednost kontroli -->
+						
+						<action type="control populate" value="#grdURA" if="#cmbKnjiga==1"/>
+						<action type="control populate" value="#grdIRA" else=""/>
+					</event>
+				</button>
+				<button name="btnPrint" caption="Ispis sučelja">
+					<event type="click">
+						<action type="control printcontrol" value="#grdURA" if="#cmbKnjiga==1"/>
+						<action type="control printcontrol" value="#grdIRA" else=""/>
+					</event>
+				</button>
+				<button name="btnExit" caption="Izlaz" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+</root>

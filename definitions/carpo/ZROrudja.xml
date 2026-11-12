@@ -1,0 +1,180 @@
+<root xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<form name="frmMaster" type="master" caption="Oruđa za rad">
+	<event type="shown">
+		<action type="control disable" value="#btnBrisanje,#btnIzmjena,#btnPrint"/> 
+		<action type="control enable" value="#btnIzmjena,#btnBrisanje,#btnPrint" if="#grdMaster.@ZROrudjaId!=null" /> 
+	</event>
+		<managerlayout>
+			<!--master je obavezan atribut ukoliko na manageru imamo 2 grida-->
+			<grid name="grdMaster" autopopulate="true" type="master" async="true" bestfitonrefresh="true" key="ZROrudjaId"  multiselect="true" showfooter="true" fieldsmartspaces="false" >
+				<event type="focusedrowchanged">
+					<action type="control disable" value="#btnBrisanje,#btnIzmjena,#btnPrint"/> 
+					<action type="control enable" value="#btnIzmjena,#btnBrisanje,#btnPrint" if="#grdMaster.@ZROrudjaId!=null" /> 
+				</event>
+        <fields inherited="true">
+          <field name="TvornickiBroj" caption="Tvornički broj"/>
+        </fields>
+
+				<data name="master" command="spZROrudja_Query">
+					<parameter name="@Action" value="master"  />
+				</data>
+
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<!-- KONTROLA: BUTTON -->
+				<button name="btnUnos" caption="Unos" type="add" displayfield="Opis" dataname="">
+					<event type="click">
+						<action type="variable value" value="$ZROrudjaId" >
+							<parameter value="#grdMaster.@ZROrudjaId" type="int" />
+						</action> 
+						<action type="form open" value="frmUnos" >
+							<parameter name="ZROrudjaId" value="null" type="int" /> 
+						</action> 
+						<action type="control populate" value="#grdMaster" >
+							<action type="control focus" value="#grdMaster" >
+								<parameter value="$ZROrudjaId" />
+							</action> 
+						</action>
+					</event>
+				</button>
+
+				<button name="btnIzmjena" caption="Izmjena" type="add" displayfield="Opis" dataname="">
+					<event type="click">
+						<action type="form open" value="frmUnos" >
+							<parameter name="ZROrudjaId" value="#grdMaster.@ZROrudjaId" type="int" />
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster" />
+					</event>
+				</button>
+
+
+				<button name="btnBrisanje" caption="Brisanje" type="del" displayfield="Opis" dataname="">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati oruđe za rad: {#grdMaster.@Naziv}?">
+							<action type="datarun nonquery" value="~dtDelete">
+								<action type="control populate" value="#grdMaster" >
+									<action type="control focus" value="#grdMaster" >
+										<!-- <parameter value="0" /> -->
+									</action>
+								</action>
+							</action>
+						</action>
+					</event>
+				</button>
+        
+        <button name="btnPrint" caption="ISPIŠI" >
+          <event type="click">
+            <!-- <action type="message" value="#grdMaster.@HRKadroviLijecnickiId"/> -->
+            <action type="control print" value="#grdMaster">
+              <action type="print template" value="repx:rptZROrudja_Karton">
+                <parameter name="action" value="ispis" />
+                <parameter name="ZROrudjaId" value="#grdMaster.@ZROrudjaId" />
+                <!-- <parameter name="id" value="1" /> -->
+              </action>
+            </action>
+          </event>
+        </button>
+
+
+			</buttons>
+		</panelbuttons>
+
+		<datalist>	  
+			<data command="spZROrudja_Azur" name="dtDelete">
+				<parameter name="@Action" value="brisanje" type="string"/>
+				<parameter name="@ZROrudjaId" value="#grdMaster.@ZROrudjaId" type="int"/>
+			</data>
+
+		</datalist>
+
+	</form>
+  
+  <form name="frmUnos" caption="Oruđe za rad" maxsize="true" width="500" fixedsize="false">
+		<!-- na inicijalizaciji forme okidaju se podaci potrebni da kontrole poprime vrijednosti za izmijenu (u slučaju da smo na formi za izmijenu - IF)-->
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$ZROrudjaId!=null"/>
+		</event>
+
+		<layout textposition="left">
+			<group cols="1" rows="5" >
+				<item caption="Naziv:" col="1" row="1" >
+					<textedit name="txtNaziv" required="true" nulltext="Naziv..." datavalue="#dtGet.@Naziv"/>
+				</item>
+        
+        <item caption="Tvrtka:" col="1" row="2" >
+					<textedit name="txtTvrtka" required="false" nulltext="Tvrtka koja je izradila oruđe..." datavalue="#dtGet.@Tvrtka"/>
+				</item>
+        
+        <item caption="Tvornički broj:" col="1" row="3" >
+					<textedit name="txtTvornickiBroj" required="false" nulltext="Tvornički broj oruđa..." datavalue="#dtGet.@TvornickiBroj"/>
+				</item>
+        
+        <item caption="Datum aktiviranja:" col="1" row="4" >
+					<dateedit name="DatAktiviranja" required="false" type="date" nulltext="Datum stavljanja u uporabu..." datavalue="#dtGet.@DatAktiviranja"/>
+				</item>
+        
+        <item caption="Osnovno sredstvo:" col="1" row="5" >
+          <searchedit name="srcOSImovina" fieldtext="Imovina" fieldvalue="OSImovinaId" datavalue="#dtGet.@OsimovinaId" datatext="#dtGet.@Imovina" required="false" dataname="dtOSImovina">    
+          </searchedit>
+        </item>     
+      		    
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<!-- Provjeri required fields -->
+						<action type="validate" />
+						<!-- Okini storu -->
+						<action type="datarun nonquery" value="~dtEdit" if="$ZROrudjaId!=null"/>
+						<action type="datarun nonquery" value="~dtAdd" else="" />
+						<!-- Osvježi grid na parent formi -->
+						<action type="control populate" value="parent.#grdMaster"/>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+
+
+		<datalist>
+			<data command="spZROrudja_Query" name="dtGet">
+				<parameter name="@Action" value="izmjena"/>
+				<parameter name="@ZROrudjaId" value="$ZROrudjaId"/>
+			</data>
+
+			<data command="spZROrudja_Azur" name="dtAdd">
+				<parameter name="@Action" value="unos" type="string"/>
+				<parameter name="@Naziv" value="#txtNaziv" type="string"/>
+        <parameter name="@TvornickiBroj" value="#txtTvornickiBroj" type="string"/>
+        <parameter name="@Tvrtka" value="#txtTvrtka" type="string"/>
+        <parameter name="@OSImovinaId" value="#srcOSImovina" type="int"/>
+				<parameter name="@DatAktiviranja" value="#DatAktiviranja" type="date"/>
+			</data>
+        
+			<data command="spZROrudja_Azur" name="dtEdit">
+				<parameter name="@Action" value="izmjena" type="string"/>
+				<parameter name="@ZROrudjaId" value="$ZROrudjaId" type="int"/>
+				<parameter name="@Naziv" value="#txtNaziv" type="string"/>
+        <parameter name="@TvornickiBroj" value="#txtTvornickiBroj" type="string"/>
+        <parameter name="@Tvrtka" value="#txtTvrtka" type="string"/>
+        <parameter name="@OSImovinaId" value="#srcOSImovina" type="int"/>
+				<parameter name="@DatAktiviranja" value="#DatAktiviranja" type="date"/>
+			</data>
+    
+      <data command="spZROrudja_Query" name="dtOSImovina">
+        <parameter name="@Action" value="osimovinaid" />
+        <parameter name="@tekst" value="#srcOSImovina.text" />
+      </data>
+    
+		</datalist>
+
+	</form>
+  
+</root>

@@ -1,0 +1,141 @@
+<root>
+	<form name="frmDodaj" caption="Unos novog dokumenta MP otpremnice" width="400">
+		<event type="init">
+			<action type="datarun reader" value="global.dtVrstaDok"/>	
+		</event>
+		<event type="load">
+			<action type="control disable" value="#btnUFA" />
+			<action type="control disable" value="#txtRabat" />
+			<action type="control disable" value="#txtUfaIzn" />
+		</event>
+		<event type="shown">
+		</event>
+
+		<layout>
+			<group rows="6" cols="6" caption="Zaglavlje:">
+				<item row="1" col="1" colspan="2" caption="Broj" textposition="left" >
+					<textedit name="txtBroj" readonly="true" datavalue="~dtQureyGla.@broj" fontbold="True"/>
+				</item>
+				<item row="2" col="1" colspan="2" caption="Datum" textposition="left" >
+					<dateedit name="datDok" required="true" value="now" datavalue="~dtQureyGla.@DatumDok"/>
+				</item>
+				<item row="2" col="4" colspan="2" caption="Trgovina" textposition="left" >
+					<comboedit name="cmbTrgovina" required="true" displayfield="Naziv" valuefield="TrgovinaId" dataname="~dtNapuniTrgovinu" datavalue="~dtQureyGla.@trgovinaid">
+						<event type="valuechanged">
+							<action type="control populate" value="#cmbOdgOsoba"/>
+							<action type="datarun scalar" value="~dtOrgShema">
+								<parameter name="orgshema" value="~dtOrgShema.@orgshemaid"/>
+							</action>
+						</event>
+					</comboedit>
+				</item>
+				<item row="3" col="1" colspan="2" caption="Vrsta dokumenta" textposition="left" >
+					<comboedit name="txtVrsta" required="true" displayfield="opis" valuefield="vrstadokid" dataname="~dtNapuniVrsDok" datavalue="~dtNapuniVrsDok.@vrstadokid"/>
+				</item>
+				<item row="3" col="4" colspan="2" caption="Odgovorna osoba" textposition="left" >
+					<comboedit name="cmbOdgOsoba" required="true" displayfield="Naziv" valuefield="OsobeId" dataname="~dtNapuniOsobu" datavalue="~dtQureyGla.@osobeid"/>
+				</item>
+				<item row="4" col="1" colspan="2" caption="Partner" textposition="left" >
+					<searchedit name="srcPartner" required="true" fieldtext="NazivId" fieldvalue="partneriid" dataname="~dtOdaberiPartneri" datavalue="~dtQureyGla.@partneriid" datatext="~dtQureyGla.@partner" netgenfields="true"/>
+				</item>
+				<item row="5" col="1" caption="URA/Dostavnica" textposition="left" >
+					<textedit name="txtUra" datavalue="~dtQureyGla.@napomena"/>
+				</item>
+				<item row="5" col="2" caption="" textposition="" >
+					<button name="btnUFA" caption="Nova UFA">
+						<event type="click">
+							<action type="comdll" value="KnjigaUra2.clsUraDoc">
+								<parameter name="@partneriid" value="#srcPartner"/>
+								<parameter name="@osobeid" value="#cmbOdgOsoba"/>
+								<parameter name="@orgshemaid" value="$orgshema"/>
+								<parameter name="@iznos" value="0"/>
+								<parameter name="@broj" value=""/>
+								<parameter name="@MP" value="MPDZ"/>
+							</action>
+						</event>
+					</button>
+				</item>
+				<item row="5" col="3" caption="UFA iznos" textposition="left" >
+					<textedit name="txtUfaIzn" datavalue="~dtQureyGla.@ufaiznos" value="0" format="n2"/>
+				</item>
+				<item row="5" col="4" caption="Trošak" textposition="left" >
+					<textedit name="txtTrosak" datavalue="~dtQureyGla.@zaviznos" value="0" format="n2"/>
+				</item>
+				<item row="5" col="5" caption="Rabat po dokumentu" textposition="left" >
+					<textedit name="txtRabat" datavalue="~dtQureyGla.@rabatgla" value="0" format="n2"/>
+				</item>
+				<rowsdefinition>
+					<row position="5" size="50"/>
+					<row position="6" size="100%"/>
+				</rowsdefinition>
+				<columnsdefinition>
+					<column position="1" size="300"/>
+					<column position="2" size="100"/>
+					<column position="3" size="200"/>
+					<column position="4" size="200"/>
+					<column position="5" size="200"/>
+					<column position="6" size="100%"/>
+				</columnsdefinition>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnStavke" caption="Stavke">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun scalar" value="~dtInsert">
+							<parameter name="maloprodajaglaid" />
+						</action>
+						<action type="form close" />
+						<action type="form open" value="frmIzmjeni">
+							<parameter name="id" value="$maloprodajaglaid"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel" >
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spMPDajTrgovinaNG" name="dtNapuniTrgovinu">
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@vrstatrg" value="M" />
+			</data>
+			<data command="select orgshemaid from trgovina where trgovinaid = @trgovinaid" type="text" name="dtOrgShema">
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+			</data>		
+			<data command="spmpDajVrstaDok" name="dtNapuniVrsDok">
+				<parameter name="@aktivni" value="1" />
+				<parameter name="@sifra" value="~dtVrstaDok.@Sifra" />
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+			</data>			
+			<data command="spMPDajOsobe" name="dtNapuniOsobu">
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+			</data>
+			<data command="spTraziPartneri" name="dtOdaberiPartneri">
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+			</data> 
+
+			<data command="spMPInsertGlaIdetNG" name="dtInsert">
+				<parameter name="@action" value="1" />
+				<parameter name="@sifradok" value="~dtVrstaDok.@Sifra" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@datumdok" value="#datDok" />
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+				<parameter name="@vrstadokid" value="#txtVrsta" />
+				<parameter name="@osobeid" value="#cmbOdgOsoba" />
+				<parameter name="@partneriid" value="#srcPartner" />
+				<parameter name="@orgshemaid" value="$orgshema" />
+				<parameter name="@napomena" value="#txtUra" />
+				<parameter name="@ufaiznos" value="0" type="decimal"/>
+				<parameter name="@zaviznos" value="#txtTrosak" type="decimal"/>
+				<parameter name="@AFaktureDobId" value="0" type="decimal"/>
+				<parameter name="@FaktureDobId" value="0" type="decimal"/>				
+			</data>
+		</datalist>
+
+	</form>
+</root>

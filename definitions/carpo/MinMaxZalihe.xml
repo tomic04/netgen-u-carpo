@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<form name="frmMaster" type="master" caption="Ažuriranje minimalnih i maksimalnih zaliha">
+		<event type="oninit">
+			<action type="variable value">
+				<parameter name="pomocna" value="0" type="int"/>
+				<parameter name="izbor" value="0" type="int"/> 
+				<parameter name="indKolicina" value="1" type="int"/>
+				<parameter name="indPromet" value="1" type="int"/> 
+				<parameter name="skladiste" value="$skladiste"/>
+			</action>
+		</event>
+		<event type="onload">
+			<action type="form open" value="frmMinMaxZalihaFilter">
+				<parameter name="skladiste" value="$skladiste"/>
+				<parameter name="indKolicina" value="1"/>
+				<parameter name="indPromet" value="1"/>
+			</action>
+		</event>
+		<managerlayout>
+			<tree name="tree" caption="Klase" valuefield="id" expandallonload="true" dataname="dtKlmasterRobaTree" searchfield="id"  >
+				<event type="focusedrowchanged"  >
+					<action type="control populate" value="#grdGlava" />
+					<action type="variable value" value="$pomocna">
+						<parameter value="1"/>
+					</action>
+				</event>
+				<fields>
+					<field name="caption" />
+				</fields>
+				<menu>
+					<menuitem caption="Prikaži i ispod">
+						<event type="click">
+							<action type="variable value" value="$pomocna">
+								<parameter  value="2"/>
+							</action>
+							<action type="control populate" value="#grdGlava"/>
+						</event>
+					</menuitem>
+				</menu>
+			</tree>
+			<grid name="grdGlava" type="master" keyfield="SktRobaMinMaxId" dataname="dtMinMaxZaliheQuery" searchfield="RobaId" showgrouppanel="False" multiselect="true" key="Robaid" savelayout="true" >
+				<fields>
+					<field name="RobaId" visible="false"/>
+					<field name="KlmasterRobaId" visible="false"/>
+					<field name="Skladiste" caption="Skladište" fixwidth="200"/>
+					<field name="KlmasterRobaNaziv" caption="Klasifikacija" fixwidth="200"/>
+					<field name="Sifra" caption="Šifra" showtotalsum="false" fixwidth="50"/>
+					<field name="RobaNaziv" caption="Roba" fixwidth="200"/>
+					<field name="JM" caption="JM" />
+					<field name="KolicinaMin"  editable="true" caption="Min. Zaliha" />
+					<field name="KolicinaMax"  editable="true" caption="Max. Zaliha" />
+				</fields>
+			<event type="cellvaluechanged">
+				<action if="#grdGlava.focusedfield==KolicinaMin&amp;&amp;#grdGlava.focusedvalue&lt;0">
+					<action type="message" value="Nije dozvoljen unos minimalne zalihe s minus predznakom"/>
+				</action>
+				<action elseif="#grdGlava.focusedfield==KolicinaMax&amp;&amp;#grdGlava.focusedvalue&lt;0">
+					<action type="message" value="Nije dozvoljen unos maksimalne zalihe s minus predznakom"/>
+				</action>
+				<action elseif="#grdGlava.focusedfield==KolicinaMax&amp;&amp;#grdGlava.focusedvalue&lt;0">
+					<action type="message" value="Nije dozvoljen unos maksimalne zalihe s minus predznakom"/>
+				</action>
+				<action else="">
+					<action type="datarun nonquery" value="~dtMinMaxZalihaInsert"/> 
+				</action>
+				<action type="control populate keepfocus" value="#grdGlava" /> 
+			</event>
+				<styles>
+					<!-- bojanje grida ovisno o tome je li roba imala promet ******		
+					<style name="bold" value="blue" if="#grdGlava.@RobaPromet==0" type="int" /> 
+					<style name="fontcolor" value="black" if="#grdGlava.@RobaPromet==1" type="int" />
+					<style name="fontcolor" value="blue" else="" /> -->
+				</styles>	
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="Filter" caption="Filter">
+					<event type="click">
+						<action type="form open" value="frmMinMaxZalihaFilter">
+							<parameter name="indKolicina" value="$indKolicina"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="btnSearch" caption="Pronađi" >
+					<event type="click">		
+						<action type="search" value="dtSearch"></action>
+					</event>
+				</button>
+				<button name="btnIzmjeni" caption="Izmijeni više stavaka" width="120" >
+					<event type="click">
+						<action type="form open" value="frmIzmjeniMultSelect">
+							<parameter name="multi" value="#grdGlava.selectedids"/>
+							<parameter name="skladiste" value="$skladiste"/>
+						</action>
+						<action type="control populate keepfocus"  value="#grdGlava"/>
+					</event>
+				</button>			
+			</buttons>
+		</panelbuttons>
+		<datalist>
+		<data command="spTraziRobaCarpo" name="dtSearch" >
+<!-- 		<parameter name="@Table" value="SktRobaMinMax" /> -->
+			<parameter name="@Action" value="Roba" />
+			<parameter name="@Prikazi_Dodatno" value="1" />
+			<parameter name="@Uvjet" value="#btnSearch.searchtext" />
+		</data>		
+		<data command="spTreeKlMasterRoba" name="dtKlmasterRobaTree">
+		</data>
+		<data command="spSktMinMaxZalihaQuery" name="dtMinMaxZaliheQuery">
+				<parameter name="@id" value="#tree.@Value" />
+				<parameter name="@SkladisteId" value="$skladiste" />
+				<parameter name="@indKolicina" value="1" if="$indKolicina==false" />
+				<parameter name="@indKolicina" value="2" if="$indKolicina==true" /> 
+				<parameter name="@izbor" value="1" if="$pomocna==1"/>
+				<parameter name="@izbor" value="2" if="$pomocna==2"/>
+				<parameter name="@indPromet" value="1" if="$indPromet==false" />
+				<parameter name="@indPromet" value="2" if="$indPromet==true" /> 
+			</data>
+			<data  command="spSktMinMaxZalihaInsert" name="dtMinMaxZalihaInsert">
+				<parameter name="@skladisteid" value="$skladiste" />
+				<parameter name="@robaid" value="#grdGlava.@robaid" />
+				<parameter name="@Vrsta" value="#grdGlava.focusedfield" />
+				<parameter name="@kolicina" value="#grdGlava.focusedvalue"/>
+				<parameter name="@operateriId" value="@@operateriId"></parameter>
+			</data>
+	</datalist>
+	</form>
+	<form name="frmMinMaxZalihaFilter" path="frmMinMaxZalihaFilter.xml"></form>
+	<form name="frmIzmjeniMultSelect" path="frmIzmjeniMultSelect.xml"></form> 	
+</root>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v. 1.0.2. 17.08.2021. IF - bug fix u layoutu - dodan atribut minsize ="200"-->
+<!-- v  1.0.1. panel 2 izmjene cols=1 umjesto 10 i sklonjen colspan -->
+<root version="1.0.2.">	
+	<form name="frmMaster" type="master" caption="Pdv Netiranje" statusbar="true" template="splitter" maximized="true" splitterposition="50" spliterfixed="true">
+		<event type="shown">
+
+			<action type="control enable" value="#btnProknjizi" if="#grdGlavni.rowcount!=0"/>  
+			<action type="control disable" value="#btnProknjizi" else=""/>
+		</event>
+		<layout name="panel1" autotaborder="false" type="collapsable" itemspadding="1" savevalue="app" minsize="200">
+			<group cols="4" rows="9" groupbordervisible="true" >
+				<columnsdefinition>
+					<column size="50" position="1" /> 
+					<column size="50" position="3" /> 
+				</columnsdefinition>
+
+				<item row="2" col="1" colspan="4" caption="Datum Zaključka:" fontbold="true" >
+					<comboedit name="cmbDatum" valuefield="DatumVrijeme" displayfield="DatumZakljucka" dataname="~dtDatum" tabindex="2" allownull="false" required="true"/>
+				</item>
+				<item row="3" col="1" colspan="4" caption="Konto netiranja:" fontbold="true" >
+					<comboedit name="cmbKontoNovi" valuefield="KntPlanAId" displayfield="KNaziv" dataname="~dtKonto" savevalue="app" tabindex="3" required="true"/>
+				</item>
+				<item row="4" col="1" colspan="4" caption="Vrsta temeljnice netiranja:" fontbold="true" >
+					<comboedit name="cmbVrstaTemeljnice" valuefield="VrstaDokId" displayfield="Opis" dataname="~dtTemeljnica" savevalue="app" tabindex="4" required="true"/>
+				</item>
+
+
+			</group>
+		</layout> 
+
+		<layout name="panel2" >  
+			<group  cols="1" rows="1"  bordervisible="false" textposition="left" >
+				<item row="1" col="1">
+					<grid name="grdGlavni" dataname="~dtMGrid" type="master" multiselect="true"  expandallonload="true" showfooter="false" bestfitonrefresh="true" showgrupedcolumns="true" savelayout="true">
+
+						<fields>
+							<field name="Konto" caption="Konto" minwidth="100"/> 
+							<field name="Datumdokumenta" caption="Dat. dokumenta" minwidth="100"/> 
+							<field name="Duguje" caption="Duguje" minwidth="100" />
+							<field name="Potrazuje" caption="Potražuje" minwidth="100" />
+							<field name="Saldo" caption="Saldo" minwidth="100"/>  
+							<field name="DatumUnosa" caption="Dat. unosa" minwidth="100"/> 
+							<field name="Opis" caption="Opis" minwidth="100"/> 
+						</fields>
+
+
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPrikaži" caption="Prikaži" tabindex="5">
+					<event type="click" waittype="progress" waitcaption="Obrada" waittext="Učitavanje stavaka..." sleep="2000">
+
+						<action type="control populate" value="#grdGlavni"/>
+						<action type="control enable" value="#btnProknjizi" if="#grdGlavni.rowcount!=0"/>  
+						<action type="control disable" value="#btnProknjizi" else=""/>
+					</event>
+				</button> 
+				<button name="btnProknjizi" caption="Proknjiži"> 
+					<event type="click"> 
+
+						<action type="confirm" value="Jeste li sigurni?" > 
+							<action type="datarun reader" value="~dtProknjizi">
+
+								<action type="message" value="~dtProknjizi.@poruka" />
+
+							</action>
+							<action type="control datasourceempty" value="#grdGlavni"/>
+
+						</action>
+
+
+
+
+						<action type="control disable" value="#btnProknjizi" />
+					</event>
+
+				</button>
+
+				<button name="btnIzlaz" caption="Izlaz" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnUpute" caption="Uputi me" dock="right">
+
+					<event type="click">
+						<action type="message" value="Ova funkcionalnost trenutno nije dostupna, molimo kontaktirajte Spin!"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCKntPDVNetiranjeQuery" name="dtKonto">
+				<parameter name="@Action" value="1"/>
+			</data>
+			<data command="spCKntPDVNetiranjeQuery" name="dtTemeljnica">
+				<parameter name="@Action" value="2"/>
+			</data>
+			<data command="spCKntPDVNetiranjeQuery" name="dtDatum">
+				<parameter name="@Action" value="3"/>
+			</data>
+
+			<data command="spCKntTemTraziPartneri" name="dtPartneri">
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>	
+			<data command="spCKntPDVNetiranjeQuery" name="dtMGrid" timeout="200">
+				<parameter name="@Action" value="4"/> 
+				<parameter name="@operateriid" value="@@operateriid"/> 
+				<parameter name="@DatumDo" value="#cmbDatum"/> 
+				<parameter name="@NoviKonto" value="#cmbKontoNovi" type='int'/> 
+				<parameter name="@vrstadokid" value="#cmbVrstaTemeljnice" type='int'/> 
+
+			</data> 
+			<data command="spCKntPDVNetiranjeAzur" name="dtProknjizi" timeout="200">
+				<parameter name="@Action" value="1"/> 
+				<parameter name="@operateriid" value="@@operateriid"/> 
+				<parameter name="@DatumDo" value="#cmbDatum"/> 
+				<parameter name="@NoviKonto" value="#cmbKontoNovi" type='int'/> 
+				<parameter name="@vrstadokid" value="#cmbVrstaTemeljnice" type='int'/> 
+
+
+			</data> 
+
+
+
+		</datalist>
+	</form>
+
+
+
+</root>

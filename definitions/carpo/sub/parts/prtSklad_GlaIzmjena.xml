@@ -1,0 +1,204 @@
+<parts>
+	<part name="partGlaIzmjenaInit">
+		<method name="fnRobaInfo" dll="RobaInfoNet" class="RobaInfo.frmMain" method="Open" />	
+		<method name="fnDimenzijeGla" dll="Dimenzije" class="DimenzijeNet.Dimenzije" method="run" />
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" />	
+			<action type="datarun reader" value="~dtDetaljUkupno" />
+			<action type="variable value">
+				<parameter name="Izmjena" value="1" />
+			</action>			
+		</event>	
+	</part>
+	<part name="partGlaIzmjenaLoad">
+		<event type="load">
+			<action type="control populate" value="#grdDetalj"/>
+			<action type="control populate" value="#grdDimenzije" if="global.$IndDimenzije==1"/>			
+			<action type="control disable" value="#btnEditDetalj,#btnDelDetalj" if="$Status!=1||#grdDetalj.rowcount==0||$Smije!=1"/>
+			<action type="control enable" value="#btnEditDetalj,#btnDelDetalj" else="" />
+			<action type="control disable" value="#btnAddDetalj,#btnSpremi,#btnDimenzije" if="$Status!=1||$Smije!=1"/>
+			<action type="control enable" value="#btnAddDetalj,#btnSpremi,#btnDimenzije" else="" />			
+			<action type="control disable" value="#btnRobaInfo" if="#grdDetalj.rowcount==0" />
+			<action type="control enable" value="#btnRobaInfo" else="" />
+			<action if="Global.$VisibleSkladisteUlaza==True">
+				<action type="control disable" value="#cmbSkladisteUlaza" if="~dtGet.@SkladisteUlazaEnable==False" />
+				<action type="control enable" value="#cmbSkladisteUlaza" else="" />	
+			</action>								
+			<action if="global.$IndDonos==True">
+				<action type="control disable" value="#btnDonesi" if="$Status!=1||$Smije!=1"/>
+				<action type="control enable" value="#btnDonesi" else="" />
+			</action>
+			<action type="control disable" value="#btnPrintDok" if="parent.#grdGlava.@SmijeIspisati==0"/>
+			<action type="control enable" value="#btnPrintDok" else="" />			
+		</event>	
+	</part>
+	<part name="partGlaIzmjenaShown">
+		<event type="shown">	
+			<action type="variable value">
+				<parameter name="IndLoad" value="1" />
+			</action>
+			<action type="variable value">
+				<parameter name="KolicinaNula" value="~dtGet.@KolicinaNula" />
+			</action>			
+			<action type="control focus" value="#btnAddDetalj"/>		
+			<action type="formcaption" value="{Global.$VrstaPromNaziv} br. {~dtGet.@Broj}"/>
+			<action type="control value" value="txtKolicina">
+				<parameter value="~dtDetaljUkupno.@Kolicina" />
+            </action>
+			<action type="control value" value="txtVrijednost">
+				<parameter value="~dtDetaljUkupno.@Vrijednost" />
+            </action>	
+			<action type="control visible" value="#btnWMS" if="Global.$WMSDok==False">
+				<parameter value="false"/>
+			</action>			
+			<action type="footer text" value="Broj stavaka: {#grdDetalj.rowcount}"/>			
+		</event>	
+	</part>
+	<part name="partGlaIzmjenaButtons">
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="&amp;SPREMI" type="add" >
+					<event type="click">
+						<action type="tab focus" value="tabOsnovno"/>					
+						<action type="validate"/>
+						<action if="#cmbSkladiste==#cmbSkladisteUlaza&amp;&amp;Global.$VisibleSkladisteUlaza==True">
+							<action type="message" value="'Skladište izlaza i ulaza moraju biti različiti.'"/>
+							<action type="control focus" value="#cmbSkladisteUlaza"/>							
+						</action>
+						<action elseif="#cmbSkladiste.@Planski!=#cmbSkladisteUlaza.@Planski&amp;&amp;Global.$VisibleSkladisteUlaza==True">
+							<action type="message" value="'Oba se skladišta moraju voditi ili po planskim ili po stvarnim cijenama.'"/>
+							<action type="control focus" value="#cmbSkladisteUlaza"/>							
+						</action>											
+						<action else="">						
+							<action type="datarun nonquery" value="~dtSktGlaEdit"/>
+							<action type="form close"/>
+						</action>							
+					</event>
+				</button>			
+				<button name="btnStatus" caption="PRO&amp;MIJENI STATUS" type="" function="Status">
+					<event type="click">
+						<action type="tab focus" value="tabOsnovno"/>
+						<action type="validate"/>
+						<action if="#cmbSkladiste==#cmbSkladisteUlaza&amp;&amp;Global.$VisibleSkladisteUlaza==True">
+							<action type="message" value="'Skladište izlaza i ulaza moraju biti različiti.'"/>
+							<action type="control focus" value="#cmbSkladisteUlaza"/>							
+						</action>
+						<action elseif="#cmbSkladiste.@Planski!=#cmbSkladisteUlaza.@Planski&amp;&amp;Global.$VisibleSkladisteUlaza==True">
+							<action type="message" value="'Oba se skladišta moraju voditi ili po planskim ili po stvarnim cijenama.'"/>
+							<action type="control focus" value="#cmbSkladisteUlaza"/>							
+						</action>											
+						<action else="">												
+							<action type="datarun nonquery" value="~dtSktGlaEdit" if="$Status==1&amp;&amp;$Smije==1"/>
+							<action type="variable value">
+								<parameter name="VratiStatus" value="0" type="int" />
+							</action>					
+							<action type="datarun scalar" value="Global.dtStatusiProvjera"/>
+							<action type="form open" value="frmPromijeniStatus">
+								<parameter name="SktPrometGlaId" value="$SktPrometGlaId" />
+								<parameter name="VratiStatus" value="$VratiStatus" />
+								<parameter name="NaslovTekst" value="Promijeni status" />
+							</action>
+							<action type="form close" if="Global.$IndStatusOdustani==0"/>	
+						</action>							
+					</event>
+				</button>
+				<button name="btnPrintDok" caption="IS&amp;PIŠI" dataname="Global.dtPrint" displayfield="Opis" >
+					<event type="click">
+						<action type="validate"/>
+						<action if="#cmbSkladiste==#cmbSkladisteUlaza&amp;&amp;Global.$VisibleSkladisteUlaza==True">
+							<action type="message" value="'Skladište izlaza i ulaza moraju biti različiti.'"/>
+							<action type="control focus" value="#cmbSkladisteUlaza"/>							
+						</action>
+						<action elseif="#cmbSkladiste.@Planski!=#cmbSkladisteUlaza.@Planski&amp;&amp;Global.$VisibleSkladisteUlaza==True">
+							<action type="message" value="'Oba se skladišta moraju voditi ili po planskim ili po stvarnim cijenama.'"/>
+							<action type="control focus" value="#cmbSkladisteUlaza"/>							
+						</action>											
+						<action else="">						
+							<action type="datarun nonquery" value="~dtSktGlaEdit" if="$Status==1&amp;&amp;$Smije==1"/>
+							<action type="control print" value="parent.#grdGlava">
+								<action type="print template" value="#btnPrintDok.@Template">
+									<parameter name="id" value="$SktPrometGlaId" />
+								</action>
+							</action>	
+						</action>
+					</event>
+				</button>				
+				<button name="btnDimenzije" caption="&amp;DIMENZIJE" >
+					<event type="click">
+						<action type="validate"/>
+						<action if="#cmbSkladiste==#cmbSkladisteUlaza&amp;&amp;Global.$VisibleSkladisteUlaza==True">
+							<action type="message" value="'Skladište izlaza i ulaza moraju biti različiti.'"/>
+							<action type="control focus" value="#cmbSkladisteUlaza"/>							
+						</action>
+						<action elseif="#cmbSkladiste.@Planski!=#cmbSkladisteUlaza.@Planski&amp;&amp;Global.$VisibleSkladisteUlaza==True">
+							<action type="message" value="'Oba se skladišta moraju voditi ili po planskim ili po stvarnim cijenama.'"/>
+							<action type="control focus" value="#cmbSkladisteUlaza"/>							
+						</action>											
+						<action else="">						
+							<action type="datarun nonquery" value="~dtSktGlaEdit" if="$Status==1&amp;&amp;$Smije==1"/>		
+						</action>							
+						<action type="method run" value="fnDimenzijeGla">
+							<parameter name="server" value="@@server" />
+							<parameter name="database" value="@@database" />
+							<parameter name="username" value="" />
+							<parameter name="password" value="" />
+							<parameter name="OperateriId" value="@@operateriid" />
+							<parameter name="Parent" value="-99999" />
+							<parameter name="pTop" value="0" />
+							<parameter name="pLeft" value="0" />
+							<parameter name="path" value="" />
+							<parameter name="tip" value="SktPrometGlaId" />
+							<parameter name="id" value="$SktPrometGlaId" />
+							<parameter name="glaid" value="0" />
+						</action>
+					</event>
+				</button>	
+				<button name="btnWMS" caption="&amp;WMS" function="WMS">
+					<event type="click">
+						<action type="confirm" value="Želite li poslati u WMS dokument br. {#txtBroj}?">
+							<action type="datarun nonquery" value="~dtSktGlaEdit" if="$Status==1&amp;&amp;$Smije==1"/>
+							<action type="datarun nonquery" value="Global.dtWMSPosalji" />			
+							<action type="form close"/>
+							<!-- <action type="control refreshrow" value="parent.#grdGlava"> -->
+								<!-- <parameter value="Global.dtGlaRefreshRow"/> -->
+							<!-- </action> -->
+						</action>						
+					</event>
+				</button>				
+				<button name="btnZatvori" caption="ZATVORI" type="cancel">
+				</button>							
+			</buttons>
+		</panelbuttons>	
+	</part>
+	<part name="partGlaIzmjenaDataList">
+		<datalist>
+			<data command="spSklad_Gla_Query" name="dtGet">
+				<parameter name="@SktPrometGlaId" value="$SktPrometGlaId" />
+			</data>		
+			<data command="spSklad_Gla_Izmjena" name="dtSktGlaEdit">
+				<parameter name="@SktPrometGlaId" value="$SktPrometGlaId" />
+				<parameter name="@OrgShemaId" value="#cmbOrgShema" />
+				<parameter name="@DatumDok" value="#datDatumDok" />
+				<parameter name="@SkladisteId" value="#cmbSkladiste" />
+				<parameter name="@OrgDok" value="#txtOpis" />
+				<parameter name="@OsobeId" value="#cmbOsoba" />
+				<parameter name="@Memo" value="#MemoGlava" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+				<parameter name="@HrKadroviId" value="#srcOsoba" if="Global.$VisibleGlaOsoba==True"/>
+				<parameter name="@VozacId" value="#srcVozac" if="Global.$VisibleGlaVozac==True"/>
+				<parameter name="@PartneriId" value="#srcPartner" if="Global.$VisibleGlaPartner==True"/>
+				<parameter name="@ParStruId" value="#srcParStru" if="Global.$VisibleGlaParStru==True"/>
+				<parameter name="@OsobeParId" value="#cmbKontakt" if="Global.$VisibleGlaKontakt==True"/>	
+				<parameter name="@Skladiste2Id" value="#cmbSkladisteUlaza" if="Global.$VisibleSkladisteUlaza==True"/>				
+				<parameter name="@RnNaloziId" value="#srcRadniNalog" if="Global.$VisibleRadniNalog==True"/>
+			</data>		
+			<data command="spSklad_Det_Ukupno" name="dtDetaljUkupno">
+				<parameter name="@SktPrometGlaId" value="$SktPrometGlaId" />					
+			</data>
+			<data command="spSklad_Det_Brisanje" name="dtDetDelete">
+				<parameter name="@SktPrometDetId" value="#grdDetalj.@SktPrometDetId" />
+				<parameter name="@SktPrometGlaId" value="$SktPrometGlaId" />
+			</data>				
+		</datalist>			
+	</part>
+</parts>

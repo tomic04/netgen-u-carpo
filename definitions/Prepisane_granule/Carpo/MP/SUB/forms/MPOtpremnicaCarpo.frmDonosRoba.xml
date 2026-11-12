@@ -1,0 +1,113 @@
+<root>
+	<form name="frmDonosRoba" caption="Donos iz tražilice robe" width="300">
+		<event type="init">
+			<action type="datarun reader" value="global.dtVrstaDok"/>
+		</event>
+		<layout>
+			<group rows="2" cols="1">
+				<group row="1" col="1" rows="2" cols="3" groupbordervisible="false">
+					<item row="1" col="1" caption="Klasa Robe" textposition="left">
+						<comboedit name="cmbKlasa" displayfield="naziv" valuefield="KlMasterRobaId" dataname="~dtKlase">
+						</comboedit>
+					</item>
+					<item row="2" col="1" caption="Tražilica" textposition="left">
+						<textedit name="txtRoba">
+						</textedit>
+					</item>
+					<item row="1" col="2" caption="Pokaži i podklase" textposition="right">
+						<checkedit name="chkPodklasa">
+						</checkedit>
+					</item>
+					<item row="2" col="2">
+						<button name="btSearch" caption="Pokaži">
+							<event type="click">
+								<action type="control populate" value="#grdDonos" />
+								<action type="control visible" value="#grdDonos"  >
+									<parameter value="true" if="#grdDonos.rowcount&gt;0"/>
+								</action>
+							</event>
+						</button>
+					</item>
+					<item row="1" col="3">
+					</item>
+					<item row="2" col="3">
+					</item>
+					<columnsdefinition>
+						<column position="1" size="400" /> 
+					</columnsdefinition>
+					<rowsdefinition>
+						<row position="2" size="40" />
+					</rowsdefinition>
+				</group>
+				<group row="2" col="1" rows="1" cols="1" groupbordervisible="false">
+					<item row="1" col="1" caption="Stavke za donos">
+						<grid name="grdDonos"  dataname="~dtDohvati" visible="false" netgenfields="true" keyfield="robaid">
+							<fields>
+								<field name="Šifra1300" fixed="true"/>
+								<field name="Klasa2000" fixed="true"/>
+								<field name="Naziv robe2500" fixed="true"/>
+								<field name="JM0600" />
+								<field name="Pakovanje0800" />
+								<field name="Nar količina1000" editable="true" formatstring="n2"/>
+								<field name="MP stanje1100" />
+								<field name="VP stanje1100" /> 
+								<field name="MPC1000" />
+							</fields>
+							<styles>
+								<style name="bold" value="true" if="#grdDonos.@Nar količina1000&gt;0" />
+							</styles>
+						</grid>
+					</item>
+				</group>
+				<rowsdefinition>
+					<row position="2" size="200" />
+				</rowsdefinition>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPull" caption="Prebaci">
+					<event type="click">
+						<action type="control foreachrow " value="#grdDonos">
+							<action type="datarun nonquery" value="~dtDodaj" if="#grdDonos.@Nar količina1000&gt;0"/>
+							<action type="datarun nonquery" value="~dpProracun" if="#grdDonos.@Nar količina1000&gt;0"/>
+						</action>
+<!-- promjena u stori polja Nar.količina1000 u Nar količina1000 radi if uvjeta -->
+						<action type="form close" />								
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="select KlMasterRobaId, naziv,sortkey from KlMasterRoba order by sortkey" type="text" name="dtKlase">
+			</data>
+			<data command="spMPDonosNaIzdatnicuNG" name="dtDohvati">
+				<parameter name="@trgovinaid" value="$trgovinaid" />
+				<parameter name="@skladisteid" value="$skladiste" />
+				<parameter name="@klasaid" value="#cmbKlasa" />
+				<parameter name="@trazilica" value=""  if="#txtRoba==null"/>
+				<parameter name="@trazilica" value="#txtRoba" else=""/>
+			</data>
+			<data command="spMPInsertGlaIdetNG" name="dtDodaj">
+				<parameter name="@action" value="3"/>
+				<parameter name="@robaid" value="#grdDonos.@robaid"/>
+				<parameter name="@id" value="$id"/>
+				<parameter name="@NabCijena" value="#grdDonos.@nabid" />
+				<parameter name="@kolicinaulaz" value="#grdDonos.@Nar količina1000" />
+				<parameter name="@mpcijena" value="#grdDonos.@MPC1000" />
+				<parameter name="@mpcijenaorg" value="#grdDonos.@MPC1000" />
+				<parameter name="@rabatdp" value="$rabat" />
+				<parameter name="@sifradok" value="~dtVrstaDok.@Sifra" />
+			</data>
+			<data command="spPKdajTroskoveNG" name="dpProracun">
+				<parameter name="@id" value="$id" />
+				<parameter name="@trgovinaid" value="$trgovinaid"/>
+				<parameter name="@datum" value="$datumdok"/>
+				<parameter name="@vrstadokid" value="~dtVrstaDok.@vrstadokid"/>
+				<parameter name="@dodaj" value="1"/>
+			</data>
+		</datalist>
+	</form>
+</root>

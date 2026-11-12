@@ -1,0 +1,134 @@
+<root>
+<form name="frmDonos" caption="Donos" fixedsize="false" width="800" height="570">
+		<event type="load">		
+			<action type="control populate" value="#grdDonos"></action>		
+		</event>
+        <layout textposition="top" itemspadding="1">
+            <group cols="1" rows="1" groupbordervisible="false">
+                <group cols="1" rows="1" groupbordervisible="false">
+                    <item row="1" col="1" highlight="false">
+                        <grid name="grdDonos" dataname="dtAsortimanGet" >
+                            <fields>
+                                <field name="Klasarobe" caption="Klasa robe" />
+                                <field name="Sifra" caption="Šifra" />
+                                <field name="Roba" caption="Roba" />
+                                <field name="Kolicina" caption="Količina" editable="true" formatstring="n3"/>
+                                <field name="Cijena" caption="Cijena (kn)" />
+                                <field name="JM" caption="JM" />
+                            </fields>
+ 				 			<styles>
+								<style name="bold" if="#grdDonos.@Kolicina&gt;0" />
+							</styles>
+                        </grid>
+                    </item>
+                </group>
+            </group>
+        </layout>
+        <panelbuttons>
+            <buttons>
+                <button caption="DONESI" type="add" dock="right">
+                    <event type="click">
+                        <action type="control foreachrow " value="#grdDonos">						
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="RobaId" value="#grdDonos.@robaid" />
+							</action>							
+							<action type="datarun reader" value="Global.dtRobaCijena" if="#grdDonos.@Kolicina&gt;0"/>
+							<action type="datarun reader" value="~dtKolPak" if="#grdDonos.@Kolicina&gt;0"/>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="Rabat" value="~dtRobaCijena.@Rabat" />
+							</action>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="Rabat1" value="~dtRobaCijena.@Rabat1" />
+							</action>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="Rabat2" value="~dtRobaCijena.@Rabat2" />
+							</action>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="Rabat3" value="~dtRobaCijena.@Rabat3" />
+							</action>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="Rabat4" value="~dtRobaCijena.@Rabat4" />
+							</action>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="Rabat5" value="~dtRobaCijena.@Rabat5" />
+							</action>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="Cassa" value="~dtRobaCijena.@Cassa" />
+							</action>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="NaknadaNZ" value="~dtRobaCijena.@NaknadaNZ" />
+							</action>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="NaknadaPO" value="~dtRobaCijena.@NaknadaPO" />
+							</action>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="NaknadaTR" value="~dtRobaCijena.@NaknadaTR" />
+							</action>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="Odgoda" value="~dtRobaCijena.@Odgoda" />
+							</action>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="NabCijena" value="~dtRobaCijena.@CijenaNabavna" />
+							</action>
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="KupUgovoriDetId" value="~dtRobaCijena.@KupUgovoriDetId" />
+							</action>								
+							<action type="variable value" if="#grdDonos.@Kolicina&gt;0">
+								<parameter name="PakKolicina" value="~dtKolPak.@PakKolicina" />
+							</action>													
+                            <action type="datarun nonquery" value="~dtAsortimanDonesi" if="#grdDonos.@Kolicina&gt;0"></action>
+                        </action>						
+						<action type="control populate" value="parent.#grdRoba" />
+                        <action type="form close"></action>				
+                    </event>
+                </button>
+                <button caption="ODUSTANI" type="cancel" dock="right" />
+            </buttons>
+        </panelbuttons>
+        <datalist>
+            <data command="spParAsortimanDonos" name="dtAsortimanGet">
+				<parameter name="@Action" type="int" value="0" />
+				<parameter name="@PartneriId" type="int" value="$PartneriId" />
+				<parameter name="@SkladisteId" type="int" value="$SkladisteId" />
+				<parameter name="@OrgShemaId" type="int" value="$OrgShemaId" />
+				<parameter name="@Devizna" type="int" value="1" if="$DevValuteId!=null"/>
+				<parameter name="@Devizna" type="int" value="0" else=""/>				
+			</data>	
+           <data command="select case when @PakJMId is null then null else case when @Faktor = 0 then @Kolicina else @Kolicina / @Faktor end end as PakKolicina" type="text" name="dtKolPak">
+                <parameter name="@Kolicina" value="#grdDonos.@Kolicina" />
+                <parameter name="@Faktor" value="#grdDonos.@faktor" />
+				<parameter name="@PakJMId" value="#grdDonos.@jm2id" />
+            </data>				
+            <data command="spProd_PonDet_Unos" name="dtAsortimanDonesi">
+                <parameter name="@ProPonGlaId" value="$ProPonGlaId" />
+                <parameter name="@RobaId" value="#grdDonos.@robaid" />
+                <parameter name="@Opcija" type="int" value="0" />
+                <parameter name="@Kolicina" value="#grdDonos.@Kolicina" />
+                <parameter name="@NettoCijenaKn" value="#grdDonos.@Cijena" />
+				<parameter name="@NettoCijenaBod" value="#grdDonos.@netocijenabod" />
+                <parameter name="@BruttoCijenaKn" value="#grdDonos.@bruttocijenakn" />
+                <parameter name="@BruttoCijenaBod" value="#grdDonos.@bruttocijenabod" />
+                <parameter name="@Porez" value="#grdDonos.@Stopa" />
+				<parameter name="@VrCjenikId" value="#grdDonos.@VrCjenikId" />
+				<parameter name="@RokPlacanja" value="$Odgoda" />
+ 				<parameter name="@Rabat1" value="$Rabat1"/>
+				<parameter name="@Rabat2" value="$Rabat2"/>
+				<parameter name="@Rabat3" value="$Rabat3"/>
+				<parameter name="@Rabat4" value="$Rabat4"/>
+				<parameter name="@Rabat5" value="$Rabat5"/>					
+                <parameter name="@Rabat" value="$Rabat" />
+                <parameter name="@Cassa" value="$Cassa" />
+                <parameter name="@NabCijena" value="$NabCijena" />				
+ 				<parameter name="@NaknadaTR" value="$NaknadaTR" type="decimal"/>
+				<parameter name="@NaknadaPO" value="$NaknadaPO" type="decimal"/>
+				<parameter name="@NaknadaNZ" value="$NaknadaNZ" type="decimal"/>	
+				<parameter name="@PakKolicina" value="$PakKolicina"/>
+				<parameter name="@PakJMId" value="#grdDonos.@jm2id" type="int"/>
+				<parameter name="@PakFaktor" value="#grdDonos.@faktor" type="decimal" if="#grdDonos.@jm2id!=null"/>
+				<parameter name="@PakFaktor" value="null" type="decimal" else=""/>
+				<parameter name="@PakFaktorFix" value="#grdDonos.@pakfaktorfix" type="int"/>  
+				<parameter name="@KupUgovoriDetId" value="$KupUgovoriDetId" type="int"/>				
+            </data>
+	    </datalist>
+    </form>
+</root>

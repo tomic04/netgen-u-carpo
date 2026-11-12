@@ -1,0 +1,153 @@
+<root>
+	<form name="frmMaster" type="master" caption="Urednik djelatnosti partnera">
+		<event type="load">
+			<action if="#grdDetalj.rowcount==0" type="control disable" value="#btnObrisi" />
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Klase Partnera" />
+				<comboitem value="Zemljovid" />
+				<comboitem value="Djelatnosti" />
+				<event type="valuechanged">
+					<action type="variable value" value="global.filter">
+						<parameter value="#filter" />
+					</action>
+				</event>
+			</lookup>
+			<tree name="tree" dataname="dtTreeData" filtermode="smart" expandedlevel="1">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdMaster" />
+				</event>
+				<fields>
+					<field name="Naziv" />
+				</fields>
+			</tree>
+			<grid name="grdMaster" type="master" dataname="dtGrid" savelayout="true" key="PartneriId" autopopulate="true" multiselect="true" bestfitonrefresh="true">
+				<fields inherited="true">
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetalj" />
+					<action if="#grdDetalj.rowcount==0" type="control disable" value="#btnObrisi" />
+					<action if="#grdDetalj.rowcount!=0" type="control enable" value="#btnObrisi" />
+				</event>
+			</grid>
+			<grid name="grdDetalj" type="detail" async="true" savelayout="true" bestfitonrefresh="true" dataname="dtDetail">
+				<fields>
+					<field name="Djelatnost" caption="Djelatnost" />
+					<field name="Oznaka" caption="Oznaka" />
+					<field name="OsnovnaDj" caption="Osnovna djelatnost" edittype="bit" editable="true"/>
+				</fields>
+				<event type="cellvaluechanged">
+					<action type="datarun nonquery" value="~dtUpdate" />
+					<action type="control refreshvalue" value="#grdDetalj" />
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="DODAJ" type="">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+						</action>
+						<action if="#grdDetalj.rowcount==0" type="control disable" value="#btnObrisi" />
+						<action if="#grdDetalj.rowcount!=0" type="control enable" value="#btnObrisi" />
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete" function="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati djelatnost '{#grdDetalj.@Djelatnost}' pridruženu partneru '{#grdMaster.@Partner}'?">
+							<action type="datarun nonquery" value="~dtDelete">
+								<action type="control populate" value="#grdDetalj" />
+							</action>
+						</action>
+						<action if="#grdDetalj.rowcount==0" type="control disable" value="#btnObrisi" />
+						<action if="#grdDetalj.rowcount!=0" type="control enable" value="#btnObrisi" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spParDjelatnosti_Carpo_Query" name="dtTreeData" if="global.$filter==Klase Partnera">
+				<parameter name="@action" value="9" />
+			</data>
+			<data command="spParDjelatnosti_Carpo_Query" name="dtTreeData" if="global.$filter==Zemljovid">
+				<parameter name="@action" value="4" />
+			</data>
+			<data command="spParDjelatnosti_Carpo_Query" name="dtTreeData" if="global.$filter==Djelatnosti">
+				<parameter name="@action" value="6" />
+			</data>
+			<data command="spParDjelatnosti_Carpo_Query" name="dtGrid" if="global.$filter==Klase Partnera">
+				<parameter name="@action" value="0" type="int" />
+				<parameter name="@Id" value="#tree.@Id" />
+			</data>
+			<data command="spParDjelatnosti_Carpo_Query" name="dtGrid" if="global.$filter==Zemljovid">
+				<parameter name="@action" value="5" type="int" />
+				<parameter name="@Id" value="#tree.@Id" />
+				<parameter name="@DrzaveId" value="#tree.@drzaveid" if="global.$filter==Zemljovid" />
+				<parameter name="@ZupanijeId" value="#tree.@zupanijeid" if="global.$filter==Zemljovid" />
+				<parameter name="@MjestaId" value="#tree.@mjestaid" if="global.$filter==Zemljovid" />
+			</data>
+			<data command="spParDjelatnosti_Carpo_Query" name="dtGrid" if="global.$filter==Djelatnosti">
+				<parameter name="@action" value="7" type="int" />
+				<parameter name="@Id" value="#tree.@Id" />
+			</data>
+			<data command="spParDjelatnosti_Carpo_Query" name="dtDetail">
+				<parameter name="@action" value="1" />
+				<parameter name="@Id" value="#grdMaster.@PartneriId" />
+			</data>
+			<data command="spParDjelatnosti_Carpo_Azur" name="dtDelete">
+				<parameter name="@Action" value="2" />
+				<parameter name="@ID" value="#grdDetalj.@lnParDjeId" />
+			</data>
+			<data command="spParDjelatnosti_Carpo_Azur" name="dtUpdate">
+				<parameter name="@Action" value="3" />
+				<parameter name="@ID" value="#grdDetalj.@lnParDjeId" />
+				<parameter name="@OsnovnaDjInd" value="0" if="#grdDetalj.@OsnovnaDj==false" />
+				<parameter name="@OsnovnaDjInd" value="1" if="#grdDetalj.@OsnovnaDj==true" />
+				<parameter name="@PartneriId" value="#grdMaster.@PartneriId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUpsert" caption="Dodavanje nove djelatnosti partneru {parent.#grdMaster.@Partner}" saveformlayout="true" width="500" height="150">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" />
+		</event>
+		<layout>
+			<group cols="1" rows="2">
+				<item row="1" col="1" caption="Djelatnost">
+					<combotreeedit name="cmbDjelatnosti" valuefield="DjelatnostiId" displayfield="Naziv" dataname="dtGet" />
+				</item>
+				<item row="2" col="1" caption="Osnovna djelatnost" highlight="false">
+					<checkedit name="chkOsnovna" caption="Osnovna djelatnost" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI" type="add" dock="left">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtSpremi">
+						</action>
+						<action type="control populate" value="parent.#grdDetalj" />
+						<action type="control refreshvalue" value="parent.#grdDetalj" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button caption="ODUSTANI" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spParDjelatnosti_Carpo_Azur" name="dtSpremi">
+				<parameter name="@Action" value="1" />
+				<parameter name="@PartneriId" value="parent.#grdMaster.@PartneriId" />
+				<parameter name="@DjelatnostiId" value="#cmbDjelatnosti" />
+				<parameter name="@OsnovnaDjInd" value="0" if="#chkOsnovna==false" />
+				<parameter name="@OsnovnaDjInd" value="1" if="#chkOsnovna==true" />
+			</data>
+			<data command="spParDjelatnosti_Carpo_Query" name="dtGet">
+				<parameter name="@Action" value="8" />
+			</data>
+		</datalist>
+	</form>
+</root>

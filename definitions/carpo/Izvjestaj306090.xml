@@ -1,0 +1,135 @@
+<!--v.1.0.2. 6.7.2020. AA uvjeti za prvi čvor Id -1, a ne 0-->
+<!--v.1.0.1. 31.10.2017. AA spCKntTrenutnoStanjePartneraDrvo-->
+<!--v 1.0.0. početna verzija, jupiter2012 spin20160126-->
+<root loglevel="3" version="1.0.1.">
+	<form type="master" name="frmIzvjestaj306090" >
+		<event type="init">
+			<action type="variable value">
+				<parameter name="global.$Datum" value="now" type="date"/>
+			</action>
+		</event>
+		<event type="load">
+			<action type="variable value" >
+				<parameter name="Ind" value="0" type="int"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="form caption" value="Prikaz do datuma valute {global.$Datum::dd.MM.yyy}"/>
+		</event>
+		<managerlayout>
+			<lookup name="filter">	
+				<event type="valuechanged">
+					<!--<action type="control populate" value="#grdGlavni"/>-->
+				</event>
+				<comboitem value="Kupci - klasifikacija"/>
+				<comboitem value="Kupci - zemljovid"/>
+				<comboitem value="Dobavljači - klasifikacija"/>
+				<comboitem value="Dobavljači - zemljovid"/>		
+		    </lookup>
+			<tree name="trDrvo" dataname="~dtDrvo" key="id" expandedlevel="1">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlavni" if="#trDrvo.@id==0"/>
+					<action type="datarun reader" value="~dtZarezFilter" if="#filter==Kupci - klasifikacija&amp;&amp;#trDrvo.@id!=0"/>
+					<action type="datarun reader" value="~dtZarezFilter" if="#filter==Dobavljači - klasifikacija&amp;&amp;#trDrvo.@id!=0"/>					
+					<action type="control datasource filter" value="#grdGlavni" if="#filter==Kupci - klasifikacija&amp;&amp;#trDrvo.@id!=0">
+						<parameter name="FilterKolona" type="contains" value="~dtZarezFilter.@idfilter"/>
+						<parameter name="FilterKolona" type="startswith" value="#trDrvo.@id" condition="or"/>
+					</action>
+					<action type="control datasource filter" value="#grdGlavni" if="#filter==Dobavljači - klasifikacija&amp;&amp;#trDrvo.@id!=0">
+						<parameter name="FilterKolona" type="contains" value="~dtZarezFilter.@idfilter"/>
+						<parameter name="FilterKolona" type="startswith" value="#trDrvo.@id" condition="or"/>
+					</action>					
+					<action type="control datasource filter" value="#grdGlavni" if="#trDrvo.@tip==drzava">
+						<parameter name="DrzaveId" type="equal" value="#trDrvo.@id"/>
+					</action>
+					<action type="control datasource filter" value="#grdGlavni" if="#trDrvo.@tip==zupanija">
+						<parameter name="ZupanijeId" type="equal" value="#trDrvo.@id"/>
+					</action>		
+					<action type="control datasource filter" value="#grdGlavni" if="#trDrvo.@tip==mjesto">
+						<parameter name="MjestaId" type="equal" value="#trDrvo.@id"/>
+					</action>						
+				</event>
+				<fields>
+					<field name="Naziv"/>
+				</fields>
+			</tree>
+			<grid type="master" name="grdGlavni" dataname="~dtGlavni" showfooter="true" multiselect="true" savelayout="true" fieldsmartspaces="false">
+				<print caption="Prikaz do datuma valute {global.$Datum::dd.MM.yyyy}"
+						captionalign="center"
+						header="{#filter} \n \n"
+						headeralign="center"/>
+				<fields inherited="true">
+					<field name="DatumZadnjeUplate" caption="Datum zadnje uplate"/>
+					<field name="FilterKolona" visible="false"/>
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnDatum" caption="DO DATUMA">
+					<event type="click">
+						<action type="form open" value="frmDatum"/>
+						<action type="control populate" value="#grdGlavni"/>
+						<action type="control focus" value="#trDrvo" if="#filter==Kupci - klasifikacija||#filter==Dobavljači - klasifikacija">
+							<parameter value="0"/>
+						</action>
+						<action type="control focus" value="#trDrvo" if="#filter==Kupci - zemljovid||#filter==Dobavljači - zemljovid">
+							<parameter value="0" type="int"/>
+						</action>						
+						<action type="form caption" value="Prikaz do datuma valute {global.$Datum::dd.MM.yyy}"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDrvo" command="spCKntTrenutnoStanjePartneraDrvo">
+				<parameter name="@Action" value="1" if="#filter==Kupci - klasifikacija||#filter==Dobavljači - klasifikacija"/>
+				<parameter name="@Action" value="2" if="#filter==Kupci - zemljovid||#filter==Dobavljači - zemljovid"/>
+			</data>
+			<data name="dtGlavni" command="spCKnt306090">
+				<parameter name="@Action" value="1" if="#filter==Kupci - klasifikacija"/>
+				<parameter name="@Action" value="1" if="#filter==Kupci - zemljovid"/>
+				<parameter name="@Action" value="2" if="#filter==Dobavljači - klasifikacija"/>
+				<parameter name="@Action" value="2" if="#filter==Dobavljači - zemljovid"/>
+				<parameter name="@DatumDo" value="global.$Datum"/>			 
+			</data>
+			<data name="dtZarezFilter" command="spCKnt306090">
+				<parameter name="@Action" value="100"/>
+				<parameter name="@SortKey" value="#trDrvo.@id"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDatum" caption="Prikaži do datuma">
+		<event type="load">
+			<action type="control value" value="#datDatum">
+				<parameter value="global.$Datum"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="2" rows="1" groupbordervisible="false">
+				<columnsdefinition>
+					<column size="150" position="1"/>
+				</columnsdefinition>
+				<item col="1" row="1" caption="Datum:" textposition="left" >
+					<dateedit name="datDatum">
+						<event type="valuechanged">
+							<action type="variable value">
+								<parameter name="global.$Datum" value="#datDatum"/>
+							</action>
+						</event>
+					</dateedit>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPrihvati" caption="Prihvati">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+	</form>
+</root>

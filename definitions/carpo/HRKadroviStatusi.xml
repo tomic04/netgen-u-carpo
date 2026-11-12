@@ -1,0 +1,186 @@
+﻿<root>
+
+  <!--******************************************GLAVNA FORMA****************************************-->
+  <form name="frmHRKadroviStatusi" type="master" caption="Djelatnici i statusi za obračun doprinosa" fixedsize="true" width="1000" height="500" >
+    
+    <event type="onload">
+      <action type="control populate" value="#grdStatusi" />
+    </event>
+
+    <layout textposition="left" >
+    <!--glavna grupa-->
+      <group cols="1" rows="2" groupbordervisible="false">
+        <!--grupa s tražilicama-->
+        <group col="1" row="1" cols="6" rows="1" spacing="2,2,2,1">
+          <item col="1" row="1" caption="Djelatnik:" colspan="2">
+            <searchedit name="srcDjelatnik" fieldvalue="HRKadroviId" fieldtext="Djelatnik" dataname="~dtDjelatnikPretraga" required="true"/>
+          </item>
+          <item col="3" row="1" caption="Status:" colspan="2">
+            <comboedit name="cmbStatus"  valuefield="HRDopstatusiId" displayfield="Naziv" dataname="~dtStatusi" required="true"/>
+          </item>
+          <item col="5" row="1" caption="Datum:">
+            <dateedit name="datDatumOd" value="now" required="true"/>
+          </item>
+          <item col="6" row="1">
+            <button name="btnDodaj"  caption="Dodaj" >
+              <event type="click">
+                <action type="validate" />
+                <action type="datarun reader" value="~dtKontrola"/>
+                <action type="datarun reader" value="dtDodaj" if="~dtKontrola.@Id==0">
+                  <action type="control refreshvalue" value="##"/>
+                </action>
+                <action type="message" value="~dtKontrola.@Poruka" else="~dtKontrola.@Id!=0"/>                
+                <action type="control populate" value="#grdStatusi"/>
+                <action type="control focus" value="#srcDjelatnik"/>
+              </event>
+            </button>
+          </item>
+        </group>
+        <!--grupa sa gridom-->
+        <group col="1" row="2" cols="1" rows="1" spacing="2,2,1,2">
+          <item col="1" row="1">
+            <grid name="grdStatusi" dataname="dtPregledStatusi" bestfitonrefresh="True" fieldsmartspaces="false">
+              <menu>
+                <menuitem caption="Izmijeni" sort="1">
+                  <event type="click">
+                    <action type="form open" value="frmIzmjena">
+                      <parameter name="HRKadroviDopStatusiId" value="#grdStatusi.@HRKadroviDopStatusiId"/>
+                    </action>
+                    <action type="control refreshvalue" value="#grdStatusi"/>
+                  </event>
+                </menuitem>
+                <menuitem caption="Obriši" sort="2">
+                  <event type="click">
+                    <action type="datarun reader" value="~dtKontrolaBrisanje"/>
+                    <action type="confirm" value="Da li ste sigurni da želite obrisati status za odabranog djelatnika?" if="~dtKontrolaBrisanje.@Id==0">
+                      <action type="datarun reader" value="~dtObrisi"  />
+                      <action type="control populate" value="#grdStatusi"/>
+                    </action>
+                    <action type="message" value="~dtKontrolaBrisanje.@Poruka" if="#dtKontrolaBrisanje.@Id!=0"/>                 
+                  </event>
+                </menuitem>
+              </menu>
+            </grid> 
+          </item>
+        </group>
+      </group>
+    </layout>
+    
+    <panelbuttons>
+      <buttons>
+        <button caption="Izlaz" type="cancel" dock="right">
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>      
+
+    <datalist>
+      <data command="spHRKadroviDopStatusi_CP" name="dtDjelatnikPretraga">
+        <parameter name="@Action" value="Djelatnik_src"/>
+        <parameter name="@Tekst" value="#srcDjelatnik.text"/>
+      </data>
+      <data command="spHRKadroviDopStatusi_CP" name="dtStatusi">
+        <parameter name="@Action" value="Statusi_cmb"/>
+      </data>
+      <data command="spHRKadroviDopStatusi_CP" name="dtPregledStatusi">
+        <parameter name="@Action" value="Djelatnik_status"/>
+      </data>
+      <data command="spHRKadroviDopStatusi_CP" name="dtKontrola">
+        <parameter name="@Action" value="Kontrola_Unos"/>
+        <parameter name="@HRKadroviId" value="#srcDjelatnik"/>
+        <parameter name="@Datum" value="#datDatumOd"/>
+      </data>
+      <data command="spHRKadroviDopStatusi_CP" name="dtKontrolaBrisanje">
+        <parameter name="@Action" value="Kontrola_brisanje"/>
+        <parameter name="@HRKadroviId" value="#grdStatusi.@HRKadroviId"/>
+      </data>
+      <data command="spHRKadroviDopStatusi_CP" name="dtDodaj">
+        <parameter name="@Action" value="Unos"/>
+        <parameter name="@HRKadroviId" value="#srcDjelatnik"/>
+        <parameter name="@HRDopstatusiId" value="#cmbStatus"/>
+        <parameter name="@Datum" value="#datDatumOd"/>
+        <parameter name="@OperateriId" value="@@OperateriId"/>
+      </data>
+      <data command="spHRKadroviDopStatusi_CP" name="dtObrisi">
+        <parameter name="@Action" value="Brisanje"/>
+        <parameter name="@HRKadroviDopStatusiId" value="#grdStatusi.@HRKadroviDopStatusiId"/>
+      </data>
+    </datalist>
+  </form>
+ 
+  <!--*******************************************KRAJ GLAVNA FORMA**************************************************-->
+
+  <form name="frmIzmjena" caption="Izmjena statusa za obračun doprinosa" fixedsize="true" >
+
+    <event type="oninit">
+      <action type="datarun reader" value="~dtGet" if="$HRKadroviDopStatusiId!=0" />
+    </event>
+
+    <layout textposition="left" >
+      <!--glavna grupa-->
+      <group cols="1" rows="3" spacing="2,2,2,2">
+          <item col="1" row="1" caption="Djelatnik:" colspan="2">
+            <searchedit name="srcDjelatnik" fieldvalue="HRKadroviId" fieldtext="Djelatnik" dataname="~dtDjelatnikPretraga" datavalue="~dtGet.@HRKadroviId" datatext="~dtGet.@Djelatnik" required="true"/>
+          </item>
+          <item col="1" row="2" caption="Status:" colspan="2">
+            <comboedit name="cmbStatus"  valuefield="HRDopstatusiId" displayfield="Naziv" dataname="~dtStatusi" datavalue="~dtGet.@HRDopstatusiId" required="true"/>
+          </item>
+          <item col="1" row="3" caption="Datum:">
+            <dateedit name="datDatumOd" datavalue="~dtGet.@Datum" required="true"/>
+          </item>
+       </group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi"  caption="Spremi" dock="left">
+            <event type="click">
+              <action type="datarun reader" value="~dtKontrolaIzmjena"/>
+              <action type="datarun reader" value="dtSpremi" if="~dtKontrolaIzmjena.@Id==0">
+                <action type="form close"/>
+              </action>
+             <action type="message" value="~dtKontrolaIzmjena.@Poruka" else="~dtKontrolaIzmjena.@Id!=0"/>
+            </event>
+        </button>
+        <button caption="Izlaz" type="cancel" dock="right">
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spHRKadroviDopStatusi_CP" name="dtDjelatnikPretraga">
+        <parameter name="@Action" value="Djelatnik_src"/>
+        <parameter name="@Tekst" value="#srcDjelatnik.text"/>
+      </data>
+      <data command="spHRKadroviDopStatusi_CP" name="dtStatusi">
+        <parameter name="@Action" value="Statusi_cmb"/>
+      </data>
+      <data command="spHRKadroviDopStatusi_CP" name="dtGet">
+        <parameter name="@Action" value="Djelatnik_statusEdit"/>
+        <parameter name="@HRKadroviDopStatusiId" value="$HRKadroviDopStatusiId"/>
+      </data>
+      <data command="spHRKadroviDopStatusi_CP" name="dtKontrolaIzmjena">
+        <parameter name="@Action" value="Kontrola_Izmjena"/>
+        <parameter name="@HRKadroviDopStatusiId" value="$HRKadroviDopStatusiId"/>
+        <parameter name="@HRKadroviId" value="#srcDjelatnik"/>
+        <parameter name="@Datum" value="#datDatumOd"/>
+      </data>
+      <data command="spHRKadroviDopStatusi_CP" name="dtSpremi">
+        <parameter name="@Action" value="Izmjena"/>
+        <parameter name="@HRKadroviDopStatusiId" value="$HRKadroviDopStatusiId"/>
+        <parameter name="@HRKadroviId" value="#srcDjelatnik"/>
+        <parameter name="@HRDopstatusiId" value="#cmbStatus"/>
+        <parameter name="@Datum" value="#datDatumOd"/>
+        <parameter name="@OperateriId" value="@@OperateriId"/>
+      </data>     
+    </datalist>
+  </form>
+  
+</root>
+
+

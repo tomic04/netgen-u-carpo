@@ -1,0 +1,410 @@
+<root>
+	<form name="frmAzuriranjeVirmani" caption="Vrsta isplate : {~dtGet.@Naziv} " width="100" height="300" saveformlayout="true">
+		<event type='init'>
+			<action type="datarun reader" value="~dtGet" if="$oopisstavkeid!=null"/>
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdVirmaniTaba" />
+			<action type="control disable" value="#btnIzmjeni,#btnObrisi" if="#grdVirmaniTaba==null"/>
+			<action type="control enable" value="#btnIzmjeni,#btnObrisi" else=""/>
+		</event>
+		<layout>
+			<group rows="1" cols="1" groupbordervisible="false">
+				<item row="1" col="1" >
+					<grid name="grdVirmaniTaba" key="OOPVirmaniIsId" dataname="dtVirman" fieldsmartspaces="false">
+					</grid>		
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="Unesi" type="add" >
+					<event type="click">	
+						<action type="form open" value="frmUnosVirmana" >
+							<parameter  name="OOPIsStavkeId" value="parent.#grdDrugiDohodak.@oopisstavkeid" type="int"/>
+							<parameter  name="Tip" value="unos"/>
+							<parameter  name="name" value="Unos novog virmana"/>
+						</action>
+						<action type="control enable" value="#btnObrisi,#btnIzmjeni" />
+					</event>
+				</button>
+				<button name="btnIzmjeni" caption="Izmjeni" type="add">
+					<event type="click">	
+						<action type="form open" value="frmUnosVirmana" >
+							<parameter name="OOPVirmaniIsId" value="#grdVirmaniTaba.@OOPVirmaniIsId"/>
+							<parameter name="OOPIsStavkeId" value="parent.#grdDrugiDohodak.@oopisstavkeid" type="int"/>
+							<parameter name="Partneriid" value="#grdVirmaniTaba.@Partneriid" />
+							<parameter  name="Tip" value="izmjena"/>
+							<parameter  name="name" value="Izmjena virmana"/>
+						</action>
+						<action type="control refreshvalue" value="#grdVirmaniTaba" />
+					</event>
+				</button>
+				<button name="btnObrisi" caption="Obriši" type="delete">
+					<event type="click">	
+						<action type="confirm" value="Da li ste sigurni da želite obrisati {parent.#grdVirmani.@Stavka}?">
+							<action type="datarun nonquery" value="~dtBrisiVirm">
+
+							</action>
+						</action>
+						<action type="control populate" value="#grdVirmaniTaba"/>
+						<action type="control disable" value="#btnObrisi,#btnIzmjeni" if="#grdVirmaniTaba==null"/>
+					</event>
+				</button>				
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+					<action type="form close"/>	
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="dtGet">
+				<parameter name="@action" value="dtGrid" />
+				<parameter name="@oopisstavkeid" value="$oopisstavkeid"/>
+			</data>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="dtVirman">
+				<parameter name="@action" value="tabV"/>
+				<parameter name="@oopisstavkeid" value="$oopisstavkeid"/>
+			</data>
+			<data command="spDDDefaultIsplateAzur_Jadranka" name="dtBrisiVirm">
+				<parameter name="@action" value="brisanjeVirmana" />
+				<parameter name="@OOPVirmaniIsId" value="#grdVirmaniTaba.@OOPVirmaniIsId" />
+			</data>
+		</datalist>
+	</form>
+
+
+
+	<form name="frmUnosVirmana" caption="$name" saveformlayout="true">
+		<event type='init'>
+			<action type="datarun reader" value="dtGetV" if="$OOPVirmaniIsId!=null"/>
+		</event>
+		<event type="onload">
+			<action type="control disable" value="#txtPlatitelj1,#txtPlatitelj2,#txtPrimatelj1,#txtPrimatelj2" />
+		</event>
+		<event type="shown">
+			<action if="$Tip==izmjena">
+				<action type="control value" value="cmbBrojRacuna">
+					<parameter value="~dtGetV.@Nalogodavacziroid" text="~dtGetV.@Nalogodavacziro"/>
+				</action>
+				<action type="control value" value="cmbBrojR">
+					<parameter text="~dtGetV.@parziro" value="~dtGetV.@parziroid" />
+				</action>
+				<action type="control value" value="#srcPrimatelj">
+					<parameter text="~dtGetV.@Primatelj" value="~dtGetV.@partneriid" />
+				</action>
+				<action type="control value" value="#txtPrimatelj2">
+					<parameter value="~dtGetV.@MjestoPR" />
+				</action>
+				<action type="control value" value="#txtPrimatelj1">
+					<parameter value="~dtGetV.@AdresaPR" />
+				</action>
+				<action type="control value" value="#txtPlatitelj1">
+					<parameter value="~dtGetV.@AdresaP" />
+				</action>
+				<action type="control value" value="#txtPlatitelj2">
+					<parameter value="~dtGetV.@MjestoP" />
+				</action>
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="1" bordervisible="false" >
+				<group rows="16" cols="3" spacing="2,2,2,2" caption="Elementi naloga za plaćanje">
+					<columnsdefinition>
+						<column position="1" size="50%"/>
+						<column position="2" size="30%"/>
+						<column position="3" size="5%"/>
+					</columnsdefinition>
+					<item row="1" col="1" caption="Vrsta virmana:" textposition="left">
+						<comboedit name="cmbVrstaVirmana" valuefield="OOPIsStavkeTipId" displayfield="Naziv" dataname="~dtVrstaVirmana" allownull="false" datavalue="~dtGetV.@oopisstavketipid" required="true" >
+						</comboedit>
+					</item>
+					<item row="1" col="2" caption="Skupni virman:" textposition="left" colspan="2">
+						<checkedit name="chckSkupniVirman" value="0" highlight="false" datavalue="~dtGetV.@indskupni"/>
+					</item>
+					<item row="2" col="1" caption="Platitelj:" textposition="left">
+						<searchedit name="srcPlatitelj" dataname="~dtTrazi" fieldtext="Naziv" fieldvalue="PartneriId" required="true" datavalue="~dtGetV.@NalogodavacId" datatext="~dtGetV.@Platitelj">
+							<event type="valuechanged">
+								<action if="#srcPlatitelj!=null">
+									<action type="datarun reader" value="~getZiroR">
+										<action type="control populate" value="#cmbBrojRacuna"/>
+									</action>
+									<action type="datarun reader" value="~getPlatitelj">
+										<action type="control value" value="#txtPlatitelj1">
+											<parameter value="~getPlatitelj.@Adresa" />
+										</action>
+										<action type="control value" value="#txtPlatitelj2">
+											<parameter value="~getPlatitelj.@Naziv" />
+										</action>
+									</action>
+								</action>
+							</event>	
+						</searchedit>
+					</item>
+					<item row="2" col="2" caption="Broj računa:" textposition="left">
+						<comboedit name="cmbBrojRacuna" valuefield="ParZiroId" displayfield="IBAN" dataname="~getZiroR" allownull="false" required="true">
+						</comboedit>
+					</item>
+					<item row="2" col="3" >
+						<button name="btnRacun" caption="Unesi">
+							<event type="click">
+								<action type="form open" value="frmBrojRacuna" >
+									<parameter name="PartneriId" value="#srcPlatitelj"/>
+									<action type="control populate" value="#cmbBrojRacuna"/>
+								</action>							
+							</event>
+						</button>
+					</item>
+					<item row="3" col="1" caption=" " textposition="left">
+						<textedit name="txtPlatitelj1" highlight="false" columnautowidth="false"/>
+					</item>
+					<item row="4" col="1" caption=" " textposition="left">
+						<textedit name="txtPlatitelj2" highlight="false"/>
+					</item>
+					<item row="5" col="1" caption="Model:" textposition="left">
+						<textedit name="txtModel1" highlight="false" datavalue="~dtGetV.@pzvbrzad1" required="true"/>
+					</item>
+					<item row="6" col="1" caption="Poziv na broj zaduženja:" textposition="left">
+						<textedit name="txtPozivNaBroj" highlight="false" datavalue="~dtGetV.@pzvbrzad2"/>
+					</item>
+					<item row="7" col="1" caption="Primatelj:" textposition="left">
+						<searchedit name="srcPrimatelj" dataname="~dtTrazi1" fieldtext="Naziv" fieldvalue="PartneriId" required="true">
+							<event type="valuechanged">
+								<action if="#srcPrimatelj!=null">
+									<action type="datarun reader" value="~getZiroR">
+										<action type="control populate" value="#cmbBrojR"/>
+									</action>
+									<!--Popunavanje txt adrese i mjesta i grida preko tražilice-->
+									<action type="datarun reader" value="~getPrimatelj">
+										<action type="control value" value="#txtPrimatelj1">
+											<parameter value="~getPrimatelj.@Adresa" />
+										</action>
+										<action type="control value" value="#txtPrimatelj2">
+											<parameter value="~getPrimatelj.@Naziv" />
+										</action>
+									</action>
+								</action>
+							</event>
+						</searchedit>
+					</item>
+					<item row="7" col="2" caption="Broj računa:" textposition="left">
+						<comboedit name="cmbBrojR" valuefield="ParZiroId" displayfield="IBAN" dataname="~getZiro" allownull="false" >
+						</comboedit>
+					</item>
+					<item row="7" col="3" >
+						<button name="btnRacun" caption="Unesi">
+							<event type="click">
+								<action type="form open" value="frmBrojRacuna" >
+									<parameter name="PartneriId" value="#srcPrimatelj"/>
+									<action type="control populate" value="parent.#cmbBrojR"/>
+								</action> 
+							</event>
+						</button>
+					</item>
+					<item row="8" col="1" caption=" " textposition="left">
+						<textedit name="txtPrimatelj1" highlight="false"/>
+					</item>
+					<item row="9" col="1" caption=" " textposition="left">
+						<textedit name="txtPrimatelj2" highlight="false"/>
+					</item>
+					<item row="10" col="1" caption="Model:" textposition="left">
+						<textedit name="txtModel2" highlight="false" datavalue="~dtGetV.@pzvbrod1" required="true"/>
+					</item>
+					<item row="11" col="1" caption="Poziv na broj odobrenja:" textposition="left">
+						<textedit name="txtPozivNaBrojO" highlight="false" datavalue="~dtGetV.@pzvbrod2"/>
+					</item>
+					<item row="12" col="1" caption="Opis plaćanja:" textposition="left">
+						<textedit name="txtOpis" highlight="false" datavalue="~dtGetV.@Svrha1"/>
+					</item>
+					<item row="12" col="2" caption="Statičko obiježje:" colspan="2" textposition="left">
+						<textedit name="txtStatičko" highlight="false" datavalue="~dtGetV.@Sifra1"/>
+					</item>
+					<item row="13" col="1" caption=" " textposition="left">
+						<textedit name="txtOpis1" highlight="false" datavalue="~dtGetV.@Svrha2"/>
+					</item>
+					<item row="13" col="2" colspan="2" caption=" " textposition="left">
+						<textedit name="txtStatičko1" highlight="false" datavalue="~dtGetV.@Sifra2"/>
+					</item>
+					<item row="14" col="1" caption=" " textposition="left">
+						<textedit name="txtOpis2" highlight="false" datavalue="~dtGetV.@Svrha3"/>
+					</item>
+					<item row="14" col="2" caption="Šifra opisa plaćanja:" colspan="2" textposition="left">
+						<textedit name="txtSifra" highlight="false" datavalue="~dtGetV.@Sifra3"/>
+					</item>
+					<item row="15" col="1" caption="Datum valute:" textposition="left">
+						<dateedit name="dtDatumV" value="now" highlight="false" datavalue="~dtGetV.@DatumUnosa">		 
+						</dateedit>
+					</item>
+					<item row="16" col="1" caption="Datum podnošenja:" textposition="left">
+						<dateedit name="dtDatumP" value="now" highlight="false" datavalue="~dtGetV.@DatumPodnosenja">		 
+						</dateedit>
+					</item>
+					<item row="16" col="2" caption="Iznos:" colspan="2" textposition="left">
+						<textedit name="txtIznos" highlight="false" datavalue="~dtGetV.@iznostemplate" format="n2" value="0" required="true"/>
+					</item>
+				</group>
+			</group>	
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate" />			
+						<action type="datarun reader" value="~AddVirman" if="$Tip==unos">			
+							<action type="control populate" value="parent.#grdVirmaniTaba">
+								<action type="control focus" value="parent.#grdVirmaniTaba">
+									<parameter value="~AddVirman.@novi" type="int"/>
+								</action>
+							</action>
+							<action type="message" value="~AddVirman.@Poruka" />					
+							<action if="~AddVirman.@msg==1">
+								<action type="control refreshvalue" value="##"/>
+							</action> 							 
+						</action>
+						<action type="datarun reader" value="~EditVirman" else="">
+							<action type="message" value="~EditVirman.@poruka" />
+							<action if="~EditVirman.@msg==1">
+								<action type="form close"/>
+							</action> 		
+						</action>						
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+					<action type="form close"/>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="dtGet">
+				<parameter name="@action" value="dtGrid" />
+				<parameter name="@oopisstavkeid" value="$oopisstavkeid"/>
+			</data>
+
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="dtVrstaVirmana">
+				<parameter name="@action" value="cmbVrstaVirmana" />
+			</data>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="dtTrazi">
+				<parameter name="@Action" value="Trazi" />
+				<parameter name="@tekst" value="#srcPlatitelj.text" />
+			</data>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="dtTrazi1">
+				<parameter name="@Action" value="Trazi" />
+				<parameter name="@tekst" value="#srcPrimatelj.text" />
+			</data>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="getPlatitelj">
+				<parameter name="@Action" value="getPlatitelja" />
+				<parameter name="@PartneriId" value="#srcPlatitelj.@PartneriId" />
+			</data>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="getPrimatelj">
+				<parameter name="@Action" value="getPlatitelja" />
+				<parameter name="@PartneriId" value="#srcPrimatelj.@PartneriId" />
+			</data>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="getZiroR">
+				<parameter name="@Action" value="getZiro" />
+				<parameter name="@PartneriId" value="#srcPlatitelj" />
+			</data>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="getZiro">
+				<parameter name="@Action" value="getZiro" />
+				<parameter name="@PartneriId" value="#srcPrimatelj" />
+			</data>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="dtGetV">
+				<parameter name="@action" value="getVirmane" />
+				<parameter name="@OOPVirmaniIsId" value="$OOPVirmaniIsId" />
+			</data>
+			<data command="spDDDefaultIsplateAzur_Jadranka" name="AddVirman">
+				<parameter name="@action" value="unosVirmana" />
+				<parameter name="@OOPIsStavkeId" value="$OOPIsStavkeId" />
+				<parameter name="@OOPIsStavkeTipId" value="#cmbVrstaVirmana" />
+				<parameter name="@IndSkupni" value="#chckSkupniVirman" />
+				<parameter name="@NalogodavacId" value="#srcPlatitelj" />
+				<parameter name="@NalogodavacZiroId" value="#cmbBrojRacuna" />
+				<parameter name="@NalogodavacZiro" value="#cmbBrojRacuna.text" />
+				<parameter name="@PzvbrZad1" value="#txtModel1" />
+				<parameter name="@PzvbrZad2" value="#txtPozivNaBroj" />
+				<parameter name="@PzvbrOd1" value="#txtModel2" />
+				<parameter name="@Partneriid" value="#srcPrimatelj" />
+				<parameter name="@ParZiroId" value="#cmbBrojR" />
+				<parameter name="@PartneriZiro" value="#cmbBrojR.text" />
+				<parameter name="@PzvbrOd2" value="#txtPozivNaBrojO" />
+				<parameter name="@Svrha1" value="#txtOpis" />
+				<parameter name="@Svrha2" value="#txtOpis1" />
+				<parameter name="@Svrha3" value="#txtOpis2" />
+				<parameter name="@Sifra1" value="#txtStatičko" />
+				<parameter name="@Sifra2" value="#txtStatičko1" />
+				<parameter name="@Sifra3" value="#txtSifra" />
+				<parameter name="@DatumUnosa" value="#dtDatumV" />
+				<parameter name="@DatumPodnosenja" value="#dtDatumP" />
+				<parameter name="@IznosTemplate" value="#txtIznos" />
+			</data>
+			<data command="spDDDefaultIsplateAzur_Jadranka" name="EditVirman">
+				<parameter name="@action" value="izmjenaVirmana" />
+				<parameter name="@OOPVirmaniIsId" value="$OOPVirmaniIsId" />
+				<parameter name="@OOPIsStavkeId" value="$OOPIsStavkeId" />
+				<parameter name="@OOPIsStavkeTipId" value="#cmbVrstaVirmana" />
+				<parameter name="@IndSkupni" value="#chckSkupniVirman" />
+				<parameter name="@NalogodavacId" value="#srcPlatitelj" />
+				<parameter name="@NalogodavacZiroId" value="#cmbBrojRacuna" />
+				<parameter name="@NalogodavacZiro" value="#cmbBrojRacuna.text" />
+				<parameter name="@PzvbrZad1" value="#txtModel1" />
+				<parameter name="@PzvbrZad2" value="#txtPozivNaBroj" />
+				<parameter name="@PzvbrOd1" value="#txtModel2" />
+				<parameter name="@Partneriid" value="#srcPrimatelj" />
+				<parameter name="@ParZiroId" value="#cmbBrojR" />
+				<parameter name="@PartneriZiro" value="#cmbBrojR.text" />
+				<parameter name="@PzvbrOd2" value="#txtPozivNaBrojO" />
+				<parameter name="@Svrha1" value="#txtOpis" />
+				<parameter name="@Svrha2" value="#txtOpis1" />
+				<parameter name="@Svrha3" value="#txtOpis2" />
+				<parameter name="@Sifra1" value="#txtStatičko" />
+				<parameter name="@Sifra2" value="#txtStatičko1" />
+				<parameter name="@Sifra3" value="#txtSifra" />
+				<parameter name="@DatumUnosa" value="#dtDatumV" />
+				<parameter name="@DatumPodnosenja" value="#dtDatumP" />
+				<parameter name="@IznosTemplate" value="#txtIznos" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmBrojRacuna" caption="Unos broja računa :: {$primatelj} " width="100" height="300" saveformlayout="true">
+		<layout>
+			<group rows="2" cols="1" highlight="false">
+				<item row="1" col="1" caption="Broj računa:" textposition="left" >
+					<textedit name="txtBrojRacuna" highlight="false" required="true"/>
+				</item>
+				<item row="2" col="1" caption="Banka:" textposition="left" >
+					<searchedit name="srcBanka" valuefield="partneriid" textfield="Naziv" dataname="~dtTrazi" required="true"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate" />	
+
+						<action type="datarun reader" value="~AddUnosBR" >	
+							<action type="control value" value="parent.#cmbBrojRacuna">	
+								<parameter value="~AddUnosBR.@noviRacun"/>
+							</action>						
+							<action type="form close"/>							 
+						</action>
+					</event>
+				</button>				
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+					<action type="form close"/>	
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="dtTrazi">
+				<parameter name="@Action" value="Banka" />
+				<parameter name="@tekst" value="#srcBanka.text" />
+			</data>
+			<data command="spDDDefaultIsplateAzur_Jadranka" name="AddUnosBR">
+				<parameter name="@action" value="unos_BrRacuna" />
+				<parameter name="@PartneriId" value="$PartneriId" />
+				<parameter name="@IBAN" value="#txtBrojRacuna" />
+				<parameter name="@BankeId" value="#srcBanka" />
+			</data>
+		</datalist>
+	</form>
+</root>

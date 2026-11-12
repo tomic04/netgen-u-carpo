@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+13.09.2019 DH za HGK PT 47955 
+-->
+<root version="1.0.0.3">
+	<!-- <event type=""> -->
+	<!-- <action type="form open" value="Filter">  -->
+	<!-- <parametar name="" value="#grdGrid.@"/>  -->
+	<!-- </action> -->
+	<!-- </event> -->
+
+	<form name="master" type="master" caption="Pregled troškova EU">
+		<!--pozivanje parametar forme pri inicijalizaciji glavne forme-->
+		<event type="init">	
+				
+				<action type="datarun scalar" value="Global.~dtNazivFirme">
+					<parameter name="NazivFirme"/>
+				</action>
+			<action type="variable value">
+				<parameter name="Global.$DatumOd" value="null"  />
+				<parameter name="Global.$DatumDo" value="null"  />
+				<parameter name="Global.$Datum" value="1"  />
+				<parameter name="Global.$VrstaDatuma" value="null"  />
+				<parameter name="Global.$NacinPlac" value="null" type="int" />
+				<parameter name="Global.$Broj" value="null"  />
+				<parameter name="Global.$PartneriId" value="null"  />
+				<parameter name="Global.$DioKonta" value="null"  />
+				<parameter name="Global.$Konto" value="null"  />
+				<parameter name="Global.$VrstaPromId" value="null"   />
+				<parameter name="Global.$OrgShemaId" value="null"  />
+				<parameter name="Global.$DimVrsteId" value="null"  />
+				<parameter name="Global.$DimenzijeId" value="null"  />
+				<parameter name="Global.$VrstaDokId" value="null"  />
+				<parameter name="Global.$OperaterId" value="null"  />
+				<parameter name="Global.$Iznos" value="null"  />
+				<parameter name="Global.$PartneriNaziv" value="null" />
+				<parameter name="Global.$NacPlacNaziv" value="null" />
+				<parameter name="Global.$KontoOznaka" value="null" />
+				<parameter name="Global.$VrstaPromNaziv" value="null" />
+				<parameter name="Global.$OrgShemaNaziv" value="null" />
+				<parameter name="Global.$DimVrsteNaziv" value="null" />
+				<parameter name="Global.$DimenzijeNaziv" value="null" />
+				<parameter name="Global.$VrstaDokNaziv" value="null" />
+				<parameter name="Global.$OperaterNaziv" value="null" />
+				<parameter name="global.$Close" value="false" type="bool"/>	
+			</action>
+		</event> 
+		<event type="load">
+			 <action type="form open" value="frmFilter"/>
+			 <action type="variable value" value="global.$Close" if="dialogresult==cancel"> 
+				 <parameter value="true" type="bool"/> 
+			 </action> 
+		</event>
+		<event type="shown">
+			
+			 <action type="form close" if="global.$Close==true"/>
+			 		
+			<!-- <action type="control focus" value="#grdGrid"/>			  -->
+		</event>
+		<managerlayout>
+
+			<grid name="grdGrid" async="true" type="master" autopopulate="false" key="KntPrometId" bestfitonrefresh="True"  multiselect="true" dataname="dtMaster" savelayout="true" > <!--printcaption="Pregled prometa za period od {Global.$DatumOd::dd.MM.yyyy.} do {Global.$DatumDo::dd.MM.yyyy}"-->
+
+
+					<event type="focusedrowchanged">
+							<action type="variable value" >
+								<parameter name="Global.$KntPrometId" value="#grdGrid.@KntPrometId" type="int" if="#grdGrid.rowcount!=0"/>
+	
+							</action>	
+							
+					
+					
+							<action if="#grdGrid.@Status=='Odobrenje odrađeno'" >
+								<action type="control disable" value="#btnprijava, #btnOdobrenje" />
+								<action type="control enable" value="#btnPonisti" />								
+							</action>
+							<action if="#grdGrid.@Status=='Čeka prijavu'" >
+								<action type="control disable" value="#btnOdobrenje" /> 
+								<action type="control disable" value="#btnPonisti" /> 
+								<action type="control enable" value="#btnprijava" /> 
+							</action>
+							<action if="#grdGrid.@Status=='Čeka odobrenje'" >
+								<action type="control disable" value="#btnPrijava" /> 
+								<action type="control enable" value="#btnOdobrenje" />
+								<action type="control enable" value="#btnPonisti" /> 								
+							</action>
+							
+							<action if="Global.$KntPrometId==null" type="control disable" value="#btnprijava, #btnOdobrenje"  />							
+						
+					</event>
+					
+					<styles>
+						<style name="fontcolor" value="red" if="#grdGrid.@Status=='Čeka prijavu'" />
+						<style name="fontcolor" value="blue" if="#grdGrid.@Status=='Čeka odobrenje'" />
+						<style name="fontcolor" value="green" if="#grdGrid.@Status=='Odobrenje odrađeno'" />
+
+					</styles>
+					
+
+				<print caption="Pregled troškova EU" header="{$NazivFirme}\nPregled troškova za period od {Global.$DatumOd::dd.MM.yyyy.} do {Global.$DatumDo::dd.MM.yyyy}\nVrsta Datuma: {Global.$VrstaDatuma}\n"
+					subheader="Broj dokumenta: {Global.$Broj}	Partner: {Global.$PartneriNaziv} Način plaćanja: {Global.$NacPlacNaziv} Dio konta: {Global.$DioKonta} Konto: {Global.$KontoOznaka} Vrsta prometa: {Global.$VrstaPromNaziv}
+						Vrsta dok: {Global.$VrstaDokNaziv} Org shema: {Global.$OrgShemaNaziv} Vrste dimenzije: {Global.$DimVrsteNaziv} Dimenzije: {Global.$DimenzijeNaziv} Operater: {Global.$OperaterNaziv} Iznos: {Global.$Iznos}\n"
+				     captionalign="center">
+				</print>
+			</grid>
+		</managerlayout>
+		
+		<panelbuttons displaycontrolsprint="true"> 
+			<buttons> 
+				<button name="btnParametri" caption="Parametri" >
+					<event type="click">
+						<action type="form open" value="frmFilter"/>
+					</event>
+				</button>
+<!--				<button name="btnIspis" caption="Ispis">
+					<event type="click">
+						<action type="variable value" >
+							<parameter name="@ID" value="#grdGrid.selectedids" />
+						</action>
+						<action type="datarun nonquery" value="global.~dtIdIzbor">
+							<parameter name="@ID" value="#grdGrid.selectedids" />
+						</action>
+						<action type="print" value="repx:rptZbrojniNalogArhiva">
+						<!{1}**TODO: ispis kao u staroj granuli**{1}>
+						</action>
+					</event>
+				</button>-->
+				
+				<button name="btnprijava" caption="Prijava">			
+				<event type="click">
+					<!-- <action type ="variable value" > -->
+						<!-- <parameter name="KntPrometId" value="null"/> -->
+					<!-- </action> -->
+				
+					<action type ="Form open" value="frmPrijava"></action>
+	
+					<!-- popuni varijablu i fokusiraj se na spremljeni podatak, paziti na varijablu u parent formi tj odakle se poziva -->
+					<action type="control populate" value="#grdGrid"> 
+						<action type="control focus" value="#grdGrid">
+							<parameter value="global.$KntPrometId" ></parameter>
+						</action> 
+					</action>
+					
+				</event>
+			</button>
+			
+			
+			<button name="btnOdobrenje" caption="Odobrenje">			
+				<event type="click">
+					<!-- <action type ="variable value" > -->
+						<!-- <parameter name="KntPrometId" value="null"/> -->
+					<!-- </action> -->
+				
+					<action type ="Form open" value="frmOdobrenje"></action>
+
+					
+									
+					<!-- popuni varijablu i fokusiraj se na spremljeni podatak, paziti na varijablu u parent formi tj odakle se poziva -->
+					<!-- popuni varijablu i fokusiraj se na spremljeni podatak, paziti na varijablu u parent formi tj odakle se poziva -->
+					<action type="control populate" value="#grdGrid"> 
+						<action type="control focus" value="#grdGrid">
+							<parameter value="global.$KntPrometId" ></parameter>
+						</action> 
+					</action>
+					
+				</event>
+			</button>
+			
+			<button name="btnPonisti" caption="Poništi akciju">			
+				<event type="click">
+					<!-- <action type="variable value"> -->
+								<!-- <parameter name="KntPlanOtplateKreditaId" value="#grdGrid.@KntPlanOtplateKreditaId" />								 -->
+							<!-- </action> -->
+							<action type="confirm" value="Želite li doista poništiti odabranu stavku?">							
+								<action type="datarun nonquery" value="~dtPonisti">
+									<action type="control populate keepfocus" value="#grdGrid" />
+									 									 
+								</action>
+							</action>	
+						<!-- <action type="message" value="global.$KntPrometId"/>							 -->
+				</event>
+			</button>
+			</buttons>
+			
+			
+		</panelbuttons>
+		<datalist>
+			<data command="spCKntTroskoviEUQuery" name="dtMaster" timeout="400">
+
+				<parameter name="@Action" value="Global.$Datum" /> 
+				<parameter name="@DatumOd" value="Global.$DatumOd" /> 
+				<parameter name="@DatumDo" value="Global.$DatumDo" /> 
+				<parameter name="@IDVRD" value="Global.$VrstaDokId" />  
+				<parameter name="@IDOrg" value="Global.$OrgShemaId"/> 
+				<parameter name="@IDPAR" value="Global.$PartneriId"/> 
+				<parameter name="@IDOper" value="Global.$OperaterId"/> 
+				<parameter name="@BrojDok" value="Global.$Broj"/> 
+				<parameter name="@IDVRP" value="Global.$VrstaPromId"/> 
+				<parameter name="@KntPlanAid" value="Global.$Konto"/> 
+				<parameter name="@Konto" value="Global.$DioKonta"/> 
+				<parameter name="@DimVrsteId" value="Global.$DimVrsteId"/> 
+				<parameter name="@DimenzijeId" value="Global.$DimenzijeId"/>  
+				<parameter name="@KntNacinPlacId" value="Global.$NacinPlac"/>  
+				<parameter name="@Iznos" value="Global.$Iznos"/>  
+			</data>
+			
+		<data command="spCKntTroskoviEUAzur" name="dtPonisti"> 
+			 <parameter name="@action" value="Poništi"></parameter> 
+			 <parameter name="@KntPrometId" value="global.$KntPrometId"></parameter> 
+		</data>
+		</datalist>
+	</form>
+
+	<form caption="Pregled troškova EU" name="frmFilter" width="1400" height="350" > <!-- fixedsize="true"-->
+		<event type="load">
+			<action type="datarun scalar" value="Global.~dtNazivPartnera">	
+				<parameter name="NazivPar" />
+			</action>
+<!--			<action type="message" value="{Global.$PartneriNaziv}"/>
+			<action type="message" value="{$NazivPar}"/>-->
+		</event>
+		<event type="shown">
+			<action type="variable value">
+				<parameter name="Global.$PartneriNaziv" value="$NazivPar"   />
+			</action>
+			<action type="datarun scalar" value="~dtPrviDanMjeseca">
+				<parameter name="StartOfYear" />				
+			</action>	
+			<action type="control value" value="#datDatumOd"> 
+				<parameter value="$StartOfYear"	if="Global.$DatumOd==null" />
+				<parameter value="Global.$DatumOd"	elseif="Global.$DatumOd!=null"/>
+			</action> 		
+			<action type="control value" value="#datDatumDo"> 
+				<parameter value="now" if="Global.$DatumDo==null" />
+				<parameter value="Global.$DatumDo" elseif="Global.$DatumDo!=null"/>
+			</action> 	
+			<action type="control value" value="#cmbDatum">
+				<parameter value="Global.$Datum" />
+			</action>
+			<!-- <action type="control value" value="#cmbNacinPlac"> -->
+				<!-- <parameter value="Global.$NacinPlac" /> -->
+			<!-- </action> -->
+			<!-- <action type="control value" value="#txtBrojDok"> -->
+				<!-- <parameter value="Global.$Broj" /> -->
+			<!-- </action> -->
+			<!-- <action type="control value" value="#srcPartner"> -->
+				<!-- <parameter value="Global.$PartneriId" text="Global.$PartneriNaziv"/> -->
+			<!-- </action> -->
+			<action type="control value" value="#txtDioKonta">
+				<parameter value="Global.$DioKonta" />
+			</action>	
+			<action type="control value" value="#cmbKonto">
+				<parameter value="Global.$Konto" />
+			</action>	
+			<!-- <action type="control value" value="#cmbVrstaDok"> -->
+				<!-- <parameter value="Global.$VrstaDokId" /> -->
+			<!-- </action>	 -->
+			<!-- <action type="control value" value="#cmbVrstaProm"> -->
+				<!-- <parameter value="Global.$VrstaPromId" /> -->
+			<!-- </action>	 -->
+			<!-- <action type="control value" value="#cmbOrgShema"> -->
+				<!-- <parameter value="Global.$OrgShemaId" /> -->
+			<!-- </action> -->
+			<!-- <action type="control value" value="#cmbDimVrste"> -->
+				<!-- <parameter value="Global.$DimVrsteId" /> -->
+			<!-- </action> -->
+			<!-- <action type="control value" value="#cmbDimenzije"> -->
+				<!-- <parameter value="Global.$DimenzijeId" /> -->
+			<!-- </action>	 -->
+
+			<!-- <action type="control value" value="#cmbOperater"> -->
+				<!-- <parameter value="Global.$OperaterId" /> -->
+			<!-- </action>		 -->
+			<!-- <action type="control value" value="#txtIznos"> -->
+				<!-- <parameter value="Global.$Iznos" /> -->
+			<!-- </action>	 -->
+
+			
+		</event> 
+			
+
+		<layout textposition="top">
+			<group rows="6" cols="1">
+			
+
+				
+					<item col="1" row="1"  caption=" " textvisible="false" fontsizedelta="2">
+						<comboedit name="cmbDatum" dataname="Global.dtDatumCombo" displayfield="Naziv" valuefield="action" autopopulate="true" allownull="false">
+						</comboedit>
+					</item>
+
+					
+						<item col="1" row="2" caption="Datum od:" fontsizedelta="2"> 
+							<dateedit name="datDatumOd" >
+
+							</dateedit>
+						</item>
+						<item col="1" row="3" caption="Datum do:" fontsizedelta="2">
+							<dateedit name="datDatumDo" value="now" >
+		
+							</dateedit>
+						</item>
+
+					
+				
+					<item col="1" row="4"  caption="Dio konta:" fontsizedelta="2" >
+						<textedit name="txtDioKonta" >
+						</textedit>
+					</item>
+					<item col="1" row="5" caption="Konto:" fontsizedelta="2" textvisible="false">
+					<combomultiedit name="cmbKonto" valuefield="KntPlanAId" displayfield="Naziv" dataname="Global.~dtKontoCombo" fontsizedelta="2" allownull="true"/>
+
+					</item>
+
+					<!-- <item col="1" row="4"  caption="Org. shema:" fontsizedelta="2"> -->
+						<!-- <combomultiedit name="cmbOrgShema" dataname="Global.~dtOrgShemaCombo" displayfield="naziv" valuefield="orgshemaid" autopopulate="true" allownull="true"> -->
+						<!-- </combomultiedit> -->
+					<!-- </item> -->
+
+					<item col="1" row="6"  caption="Dimenzije:" fontsizedelta="2">
+						<comboedit name="cmbDimenzije" dataname="global.~dtDimenzijeCombo" displayfield="Dimenzije" valuefield="dimenzijeid" autopopulate="true" allownull="true">
+						</comboedit>
+					</item>
+					
+
+				
+			</group>			
+		</layout> 
+		<datalist>
+			<data type="text" name="dtPrviDanMjeseca" command="SELECT DATEADD(m, DATEDIFF(m, 0, GETDATE()), 0) as StartOfYear"/>
+		</datalist>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Pokaži">
+					<event type="click">
+						<!--<action type="validate"/>-->
+						<action type="variable value">
+							<parameter name="Global.$DatumOd" value="#datDatumOd"  />
+							<parameter name="Global.$DatumDo" value="#datDatumDo"  />
+							<parameter name="Global.$Datum" value="#cmbDatum"  />
+							<parameter name="Global.$NacinPlac" value="#cmbNacinPlac" type="int" />
+							<parameter name="Global.$Broj" value="#txtBrojDok"  />
+							<parameter name="Global.$PartneriId" value="#srcPartner"  />
+							<parameter name="Global.$DioKonta" value="#txtDioKonta"  />
+							<parameter name="Global.$Konto" value="#cmbKonto"  />
+							<parameter name="Global.$VrstaPromId" value="#cmbVrstaProm"  />
+							<parameter name="Global.$OrgShemaId" value="#cmbOrgShema" />
+							<parameter name="Global.$DimVrsteId" value="#cmbDimVrste"  />
+							<parameter name="Global.$DimenzijeId" value="#cmbDimenzije"  />
+							<parameter name="Global.$VrstaDokId" value="#cmbVrstaDok"  />
+							<parameter name="Global.$OperaterId" value="#cmbOperater"  />
+							<parameter name="Global.$Iznos" value="#txtIznos"  />
+							<parameter name="Global.$PartneriNaziv" value="#srcPartner.@Naziv"/>
+							<parameter name="Global.$VrstaDatuma" value="#cmbDatum.@Naziv"/>
+							<parameter name="Global.$NacPlacNaziv" value="#cmbNacinPlac.@Naziv" />
+							<parameter name="Global.$KontoOznaka" value="#cmbKonto.@konto" />
+							<parameter name="Global.$VrstaPromNaziv" value="#cmbVrstaProm.@opis" />
+							<parameter name="Global.$OrgShemaNaziv" value="#cmbOrgShema.@naziv" />
+							<parameter name="Global.$DimVrsteNaziv" value="#cmbDimVrste.@naziv" />
+							<parameter name="Global.$DimenzijeNaziv" value="#cmbDimenzije.@Dimenzije" />
+							<parameter name="Global.$VrstaDokNaziv" value="#cmbVrstaDok.@Opis" />
+							<parameter name="Global.$OperaterNaziv" value="#cmbOperater.@Naziv" />
+						</action>
+						<action type="form close"/>
+						<action type="control populate" value="parent.#grdGrid" />
+
+
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" name="btnOdustani">
+					<event type="click">
+						<action type="variable value" value="global.$Close" > 
+							<parameter value="true" type="bool"/> 
+						</action> 
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>	
+
+
+	</form>
+	
+	<form name="frmInfoDisabled"  caption="Info" >
+
+		<layout textposition="top" >
+			<group cols="1" rows="1" >
+				<group cols="1" rows="1" groupbordervisible="false">
+					<item col="1" row="1" caption="Ova funkcionalnost trenutno nije dostupna, molim kontaktirajte Spin!">
+					</item>					
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOdustani" caption="OK" dock="right" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	
+	<datalist>
+		<data command="spCKntTroskoviEUQuery" name="dtDatumCombo">
+			<parameter name="@Action" value="5"/>
+		</data>
+		<data command="spCKntTroskoviEUQuery" name="dtNacPlacCombo"> 
+			<parameter name="@Action" value="6"/>  
+		</data>	 
+		<!-- <data command="spCKntTroskoviEUQuery" name="dtVrstaPromCombo">  -->
+			<!-- <parameter name="@Action" value="7"/>   -->
+		<!-- </data>	 -->
+		<!-- <data command="spCKntTroskoviEUQuery" name="dtOrgShemaCombo">  -->
+			<!-- <parameter name="@Action" value="8"/>   -->
+		<!-- </data>	 -->
+		<!-- <data command="spCKntTroskoviEUQuery" name="dtDimVrsteCombo">  -->
+			<!-- <parameter name="@Action" value="9"/>   -->
+		<!-- </data>	 -->
+		<data command="spCKntTroskoviEUQuery" name="dtDimenzijeCombo"> 
+			<parameter name="@Action" value="10"/>  
+			<!-- <parameter name="@DimVrsteId" value="#cmbDimVrste"/>   -->
+		</data>	
+		<!-- <data command="spCKntTroskoviEUQuery" name="dtVrstaDokCombo">  -->
+			<!-- <parameter name="@Action" value="11"/>   -->
+			<!-- <parameter name="@IDVRP" value="Global.$VrstaPromId"/>  -->
+		<!-- </data>	 -->
+		<!-- <data command="spCKntTroskoviEUQuery" name="dtOperaterCombo">  -->
+			<!-- <parameter name="@Action" value="12"/>   -->
+		<!-- </data>	 -->
+		<data command="spCKntTroskoviEUQuery" name="dtKontoCombo"> 
+			<parameter name="@Action" value="13"/>  
+		</data>	
+		<data command="spCKntTroskoviEUQuery" name="dtNazivFirme"> 
+			<parameter name="@Action" value="14"/>  
+		</data>	
+		<!-- <data command="spCKntTroskoviEUQuery" name="dtNazivPartnera">  -->
+			<!-- <parameter name="@Action" value="15"/>   -->
+			<!-- <parameter name="@IDPar" value="Global.$PartneriId"/>   -->
+		<!-- </data>	 -->
+		
+		<data command="spCKntTroskoviEUAzur" name="dtPonisti"> 
+			 <parameter name="@action" value="Poništi"></parameter> 
+			 <parameter name="@ID" value="global.$KntPrometId"></parameter> 
+		</data>
+	</datalist>
+	
+	<form name="frmPrijava" path="frmPrijava.xml"></form> 
+	<form name="frmOdobrenje" path="frmOdobrenje.xml"></form>
+
+	
+
+	
+</root>

@@ -1,0 +1,101 @@
+<root version="1.0.0.1">
+	<form name="frmTemGlava" caption="Temeljnica" fixedsize="true">
+		<event type="init"> 
+			<action type="datarun reader" value="~dtVrstaDok" />
+			<action type="datarun reader" value="~dtTekucaGodina" />
+			<parameter name="Global.$Sifra" value="$Sifra" type="int"/>
+		</event>
+		<event type="shown">
+			<action type="control focus" value="#datTemDatum"/>		
+			<action type="control refreshvalue" value="#txtBrojTem"/>		
+		</event>
+		<layout itemspadding="2">
+			<group cols="2" rows="3" groupbordervisible="true">
+				<columnsdefinition>
+					<column size="40%" position="1" />
+					<column size="60%" position="2" />	
+				</columnsdefinition>
+				<item col="1" row="1" caption="Datum:">
+					<dateedit  name="datTemDatum"  value="now" required="true"/>
+				</item>
+				<item col="1" row="2" colspan="2" caption="Vrsta dokumenta:">
+					<comboedit name="cmbVrstaDok" autopopulate="true" required="true" valuefield="VrstaDokId" displayfield="Opis" datavalue="~dtVrstaDok.@VrstaDokId" dataname="dtVrstaDok">
+						<event type="valuechanged" raiseonload="false" > 
+							<action type="datarun reader" value="~dtBrojDokNovi" if="#cmbVrstaDok!=null"/>
+							<action type="control value" value="#txtBrojTem" if="#cmbVrstaDok!=null">
+								<parameter value="~dtBrojDokNovi.@BrojDok"/>
+							</action>
+						</event>
+						<event type="leave" raiseonload="false">
+							<action type="datarun reader" value="~dtBrojDokNovi" if="#cmbVrstaDok!=null"/>
+							<action type="control value" value="#txtBrojTem" if="#cmbVrstaDok!=null">
+								<parameter value="~dtBrojDokNovi.@BrojDok"/>
+							</action>
+						</event>
+					</comboedit>
+				</item>
+				<item col="1" row="3" caption="Broj:" colspan="2">
+					<textedit name="txtBrojTem" required="true" datavalue="~dtBrojDokNovi.@BrojDok"/>
+				</item>
+			</group>	
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnAdd" caption="&amp;Spremi" dock="left">
+					<event type="click">
+                              <action type="validate"/>
+						<!--AA message-->
+						<action type="message" value="Datum je izvan dopuštenog razdoblja knjiženja!" if="#datTemDatum&lt;Global.$BlokadaOd||#datTemDatum>Global.$BlokadaDo"/>
+						<action else="">
+							<action type="datarun scalar" value="~dtSpremi">
+								<!-- <parameter name="parent.$Noviid" /> -->
+								<parameter name="Global.$KntTemId" />							
+							</action>
+							<action type="datarun reader" value="~dtStorno" />
+							<action type="variable value" >
+								<parameter name="Global.$Sifra" value="~dtStorno.@Sifra"/>
+							</action> 
+							<action type="variable value" >
+								<parameter name="Global.$VrstaDokId" value="#cmbVrstaDok"/>
+							</action>							
+							<action type="form close"/>
+						</action>
+						<!---->
+					</event>
+				</button>
+				<button caption="ODUSTANI" type="cancel" dock="right" >
+				   <event type="click">
+						<action type="variable value" value="parent.$Izadji">
+							<parameter value="true" type="bool"/>
+						</action>
+					</event>
+				</button>	
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCKntTemQuery" name="dtBrojDokNovi">
+				<parameter name="@action" value="6" />
+				<parameter name="@Id" value="#cmbVrstaDok" />
+				<!--AA-->
+				<!-- <parameter name="@DatumKnjizenja" value="parent.#grdGlava.@DatumKnjizenja" if="parent.#grdGlava.rowcount!=0"/> -->
+				<!-- <parameter name="@DatumKnjizenja" value="~dtTekucaGodina.@godina" else=""/> -->
+				<parameter name="@DatumKnjizenja" value="#datTemDatum"/>
+				<!---->
+			</data>	
+			<data command="spCKntTemAzur" name="dtSpremi">
+				<parameter name="@action" value="0" />
+				<parameter name="@BrojDok" value="#txtBrojTem" />
+				<parameter name="@DatumKnjizenja" value="#datTemDatum" />
+				<parameter name="@Duguje" value="0" />
+				<parameter name="@Potrazuje" value="0" />
+				<parameter name="@Status" value="0" />
+				<parameter name="@VrstaDokId" value="#cmbVrstaDok" />
+			</data>	
+			<data command="select vd.VrstaDokId,vd.Opis,vd.Prefix,vp.Sifra from VrstaDok vd,VrstaProm vp where vd.VrstaPromId in (select VrstaPromId from VrstaProm where Projekt = 'K') And vd.VrstaPromId = vp.VrstaPromId order by vd.opis" type="text" name="dtVrstaDok"/>
+			<data command="select cast(year(getdate())as char(4)) + '0101' as godina " type="text" name="dtTekucaGodina"/>
+			<data command="select vp.sifra from vrstaprom vp inner join vrstadok vd on vp.vrstapromid=vd.vrstapromid where vrstadokid=(select vrstadokid from knttem where knttemid=@KntTemId)" type="text" name="dtStorno">
+				<parameter name="@KntTemId" value="Global.$KntTemId" type="int"/>
+			</data>	
+		</datalist>
+	</form>
+</root>

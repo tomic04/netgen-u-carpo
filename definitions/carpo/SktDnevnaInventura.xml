@@ -1,0 +1,210 @@
+﻿<root>
+	<form name="frmMaster" type="master" caption="Dnevna inventura robe">
+		<event type="init">
+			<action type="variable value">
+			</action>
+			<action type="variable value">
+				<parameter name="Boja" value="#ff00000" />
+			</action>
+			<action type="variable value">
+				<parameter name="operateriid" value="@@operateriid" />
+				<!-- <parameter name="Global.SktDnevnaInventGlaId" type="int" /> -->
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control populate" value="#grdMaster" />
+		</event>
+		<managerlayout>
+			<grid name="grdMaster" type="master" wordwrap="true" dataname="Global.~dtMaster" key="SktDnevnaInventGlaId" autopopulate="false" async="true" savelayout="true" layoutversion="1">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetalj" />
+					<action type="control enable" value="#btnZakljuci,#btnObrisi,#btnIspis" if="#grdMaster.@Status==Otvoren||#grdMaster.rowcount==0"/>
+					<action type="control disable" value="#btnZakljuci,#btnObrisi,#btnIspis" if="#grdMaster.@Status==Zaključen||#grdMaster.rowcount==0"/>
+					<action type="menu disable" value="#menPonistiZakljucak" if="#grdMaster.@Status==Otvoren" />
+					<action type="menu enable" value="#menPonistiZakljucak" else=""/>
+				</event>
+				<fields inherited="true">
+					<field name="Skladište" fixwidth="300" />
+					<field name="Datum" fontbold="true" />
+					<field name="Skladište zaliha" fixwidth="550" />
+				</fields>
+				<menu>
+					<menuitem name="menPonistiZakljucak" caption="Poništi zaključak">
+						<event type="click">
+							<action type="datarun nonquery" value="Global.~dtZakljucakPonisti">
+								<action type="control populate" value="#grdMaster" />
+							</action>
+						</event>
+					</menuitem>
+				</menu>
+				<styles>
+					<style name="fontcolor" value="black" if="#grdMaster.@Status==Otvoren" />
+					<style name="fontcolor" value="blue" else="" />
+				</styles>
+			</grid>
+			<grid name="grdDetalj" showgrouppanel="false" showautofilterrow="true" savelayout="false" bestfitonrefresh="true" keyfield="SktDnevnaInventDetId">
+				<data command="spSktDnevnaInventDetQuery" name="~dtDetalj">
+					<parameter name="@id" value="#grdMaster.@SktDnevnaInventGlaId" />
+				</data>
+				<fields>
+					<field name="Naziv" fixwidth="300" fontbold="true" fixed="true"/>
+					<field name="Šifra" fixwidth="60" />
+					<field name="StanjeSkladiste" fixwidth="100" format="n0"/>
+					<field name="StanjeZbirno" fixwidth="100" format="n0"/>
+					<field name="StanjeZaliha" caption="Stanje Zaliha ZP \n kom" fixwidth="127" type="decimal" editable="true" format="n0"/>
+					<field name="StanjeSkladIzbrojano" caption="Sklad. stanje izbrojano \n kom" fixwidth="139" type="decimal" editable="true" format="n0"/>
+					<field name="StanjeZalihaPAK" caption="Stanje Zaliha ZP \n paketi" fixwidth="140" type="decimal" editable="true" format="n2"/>
+					<field name="StanjeSkladIzbrojanoPAK" caption="Sklad. stanje izbrojano \n paketi" fixwidth="140" type="decimal" editable="true" format="n2"/>
+					<field name="StanjeUkupno" fixwidth="100" format="n0"/>
+				</fields>
+				<event type="init">
+					<action type="variable value" />
+					<action type="control populate" value="#grdMaster" />
+				</event>
+				<event type="cellvaluechanged">
+					<action if="#grdDetalj.focusedfield==StanjeZaliha&amp;&amp;#grdDetalj.focusedvalue&lt;0">
+						<action type="message" value="'Nije dozvoljen unos zalihe s minus predznakom.'"/>
+					</action>
+					<action elseif="#grdDetalj.focusedfield==StanjeSkladIzbrojano&amp;&amp;#grdDetalj.focusedvalue&lt;0">
+						<action type="message" value="'Nije dozvoljen unos zalihe s minus predznakom.'"/>
+					</action>
+					<action elseif="#grdDetalj.focusedfield==StanjeZalihaPAK&amp;&amp;#grdDetalj.focusedvalue&lt;0">
+						<action type="message" value="'Nije dozvoljen unos zalihe s minus predznakom.'"/>
+					</action>
+					<action elseif="#grdDetalj.focusedfield==StanjeSkladIzbrojanoPAK&amp;&amp;#grdDetalj.focusedvalue&lt;0">
+						<action type="message" value="'Nije dozvoljen unos zalihe s minus predznakom.'"/>
+					</action>
+					<action else="">
+						<action type="datarun nonquery" value="~dtDetaljUpdate"/>
+					</action>
+					<action type="control populate " value="#grdDetalj" />
+				</event>
+				<event type="showingeditor">
+					<action type="editor allow" value="true" if="#grdMaster.@Status=='Otvoren'"/>
+					<action type="editor allow" else="">
+						<action type="message" value="'Nije moguće unijeti količinu jer je dokument zaključen11.'"/>
+					</action>
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="&amp;UNESI" type="add">
+					<event type="click">
+						<action type="form open" value="frmUnos">
+							<parameter name="SktDnevnaInventGlaId" value="null" />
+						</action>
+					</event>
+				</button>
+				<button name="btnUnesiRobu" caption="&amp;Dodaj robu" type="add">
+					<event type="click">
+						<action type="form open" value="frmUnosRobe">
+							<parameter name="SktDnevnaInventGlaId" value="#grdMaster.@SktDnevnaInventGlaId" />
+						</action>
+					</event>
+				</button>
+				<button name="btnUnesiRobu" caption="&amp;Obriši robu" type="add">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati označenu robu?">
+							<action type="datarun nonquery" value="Global.~dtDeleteRoba">
+								<action type="control populate" value="#grdDetalj" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnOsvjezi" image="refresh" imagelocation="middleleft" caption="&amp;OSVJEŽI" type="add">
+					<event type="click">
+						<action type="confirm" value="Želite li osvježiti stanje za označenu inventuru?">
+							<action waittype="progress" waitcaption="Obrada" waittext="osvježavam stanje..." >
+
+
+							<action type="datarun nonquery" value="Global.~dtDetRefresh">
+								<parameter name="SktDnevnaInventGlaId" value="#grdMaster.@SktDnevnaInventGlaId" />
+								<action type="control populate" value="#grdDetalj" />
+							</action>
+	</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnZakljuci" caption="ZAKLJUČI" type="edit">
+					<event type="click">
+						<action type="confirm" value="Želite li zaključiti dokument?">
+							<action type="datarun nonquery" value="Global.~dtZakljucak">
+								<action type="control populate" value="#grdMaster" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati dokument?">
+							<action type="datarun nonquery" value="Global.~dtDelete">
+								<action type="control populate" value="#grdMaster" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnIspis" caption="ISPIŠI">
+					<event type="click">
+						<action type="print" value="repx:rptSktDnevnaInvent">
+							<parameter name="id" value="#grdMaster.@SktDnevnaInventGlaId" type="int"/>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spSktDnevnaInventDetUpdate" name="dtDetaljUpdate">
+				<parameter name="@SktDnevnaInventDetId" value="#grdDetalj.@SktDnevnaInventDetId" />
+				<!-- <parameter name="@StanjeZaliha" value="#grdDetalj.@StanjeZaliha" />
+				<parameter name="@StanjeSkladIzbrojano" value="#grdDetalj.@StanjeSkladIzbrojano" />
+				<parameter name="@StanjeZalihaPAK" value="#grdDetalj.@StanjeZalihaPAK" />
+				<parameter name="@StanjeSkladIzbrojanoPAK" value="#grdDetalj.@StanjeSkladIzbrojanoPAK" /> -->
+				<parameter name="@Value" value="#grdDetalj.focusedfield" />
+				<parameter name="@Kolona" value="#grdDetalj.focusedvalue"/>
+				<parameter name="@RobaId" value="#grdDetalj.@RobaId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUnos" path="frmUnos.xml" />
+	<form name="frmUnosRobe" path="frmUnosRobe.xml" />
+	<datalist>
+		<data command="spSktDnevnaInventGlaQuery" name="dtMaster" />
+		<data command="spSktDnevnaInventZakljucak" name="dtZakljucak">
+			<parameter name="@ID" value="#grdMaster.@SktDnevnaInventGlaId" />
+			<parameter name="@OperaterZakljuckaId" value="@@operateriid"/>
+		</data>
+		<data command="spSktDnevnaInventZakljucakPonisti" name="dtZakljucakPonisti">
+			<parameter name="@ID" value="#grdMaster.@SktDnevnaInventGlaId" />
+			<parameter name="@OperaterPonistavanjaZakljuckaId" value="@@operateriid"/>
+		</data>
+		<data command="spSktDnevnaInventGlaDelete" name="dtDelete">
+			<parameter name="@ID" value="#grdMaster.@SktDnevnaInventGlaId"/>
+		</data>
+		<data command="spNG_Combo" name="dtKlMasterRoba">
+			<parameter name="@Action" value="KlMasterRoba"/>
+		</data>
+		<data command="spNG_Combo" name="dtSkladiste">
+			<parameter name="@Action" value="skladiste"/>
+			<parameter name="@Ind" value="1"/>
+			<parameter name="@Oznaka" value="viSkladistaPravaIzvjestaji"/>
+		</data>
+		<data command="spKomercStanjeSklad_ComboGrupaSkladista" name="dtGrupaSkladista" />
+		<data command="spSktDnevnaInventGlaQuery" name="~dtGet">
+			<parameter name="@ID" value="Global.$SktDnevnaInventGlaId" />
+		</data>
+		<data command="spNG_Combo" name="dtOrgShema">
+			<parameter name="@Action" value="OrgShema"/>
+		</data>
+		<data command="spDajPopisSkladista" name="dtOznacenaSkladista">
+			<parameter name="@niz" value="#cmbSkladiste" type="string"/>
+		</data>
+		<data command="spSktDnevnaInventDetDelete" name="dtDeleteRoba">
+			<parameter name="@ID" value="#grdMaster.@SktDnevnaInventGlaId"/>
+			<parameter name="@SktDnevnaInventDetId" value="#grdDetalj.@SktDnevnaInventDetId"/>
+		</data>
+		<data command="spSktDnevnaInventDetRefresh" name="dtDetRefresh">
+			<parameter name="@SktDnevnaInventGlaId" value="#grdMaster.@SktDnevnaInventGlaId"/>
+		</data>
+	</datalist>
+</root>

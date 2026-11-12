@@ -1,0 +1,183 @@
+<root>   
+    <form type="master" caption="Vrste planiranih faktura" saveformsize="false">
+	<event type="load">
+		<action type="control populate" value="#grdMaster" />
+	</event>
+        <managerlayout>			
+					<grid name="grdMaster" type="master" key="PtPlanFaktureVrstaDokId" dataname="~dtGrid">
+						<event type="cellvaluechanged">
+							<action type="datarun scalar" value="~dtCheck"/>
+						</event>
+						<fields inherited="true">
+							<field name="Naziv" minwidth="100"/>
+							<field name="ActiveInd" caption="Aktivno" editable="true" edittype="bit"/>					
+						</fields>				
+            		</grid>				            
+        </managerlayout>
+        <panelbuttons>
+            <buttons>               
+                <button name="btnUnesi" caption="UNESI">
+					<event type="click">
+						<action type="form open" value="frmUnos"/>
+                        <action type="control populate keepfocus" value="#grdMaster"/>
+					</event>
+				</button>
+                <button name="btnIzmjeni" caption="IZMIJENI">
+					<event type="click">
+						<action type="form open" value="frmIzmjena">
+							<parameter name="Id" value="#grdMaster.@PtPlanFaktureVrstaDokId" type="int"/>
+							<parameter name="Naziv" value="#grdMaster.@Naziv" type="string"/>
+							<parameter name="Aktivno" value="#grdMaster.@ActiveInd" type="bool"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster"/>						
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI">
+                        <event type="click">
+							<action type="form open" value="frmObrisi">	
+								<parameter name="Id" value="#grdMaster.@PtPlanFaktureVrstaDokId" type="int"/>
+							</action>						
+							<action type="control populate" value="#grdMaster" />
+						</event>
+					</button>
+            </buttons>
+    </panelbuttons>
+    <datalist>
+			<data command="spPtPlanFaktureVrstaDokQuery" name="dtGrid">
+				<parameter name="@Action" value="1"/>
+			</data>
+			<data command="spPtPlanFaktureVrstaDokAzur" name="dtCheck">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@ActiveInd" value="#grdMaster.@ActiveInd"/>
+				<parameter name="@Id" value="#grdMaster.@PtPlanFaktureVrstaDokId"/>
+			</data>
+	</datalist>
+    </form> 
+
+	<form name="frmUnos" caption="Vrste planiranih faktura – Unos" saveformsize="false" fixedsize = "true" width="400">
+		<layout textposition="left" itemspadding="3">
+			<group cols="3" rows="2" col="1" row="1"> 				
+				<item col="1" row="1" caption="Naziv:" colspan="3">
+					<textedit name="txtNaziv" />
+				</item>
+				<item col="1" row="2" textvisible="true" colspan="3" >
+						<checkedit name="chkAktivno" caption=" Aktivno " value="1" />
+					</item>
+			</group>
+		</layout>
+		<panelbuttons>
+				<buttons>
+					<button name="btnUnesi" caption="SPREMI">
+							<event type="click">
+								<action type="datarun reader" value="~dtNameCheck"/>
+            					<action type="variable value">
+                					<parameter name="NazivInd" value="~dtNameCheck.@Naziv" type="int"/>
+            					</action>
+								<action type="message" value="Postoji vrsta planirane fakture sa unesenim nazivom!\nVrsta planirane fakture mora biti jedinstveni podatak!" if="$NazivInd!=0"/>
+								<action type="datarun nonquery" value="~dtUnos" else="">
+									<action type="form close"/>
+								</action>
+							</event>
+						</button>
+					<button name="btnOdustani" caption="ODUSTANI" dock="right" type="cancel"/>
+				</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spPtPlanFaktureVrstaDokAzur" name="dtUnos">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				<parameter name="@ActiveInd" value="#chkAktivno"/>
+			</data>
+			<data command="spPtPlanFaktureVrstaDokQuery" name="dtNameCheck">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@InsertInd" value="1"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				<parameter name="@PtPlanFaktureVrstaDokId" value="null"/>
+			</data>
+		</datalist>
+	</form>  
+
+	<form name="frmIzmjena" caption="Vrste planiranih faktura – Izmjena"  saveformsize="false" fixedsize = "true" width="400">
+	<event type="load">
+		<action type="control value" value="#txtNaziv" >
+			<parameter value="$Naziv"/>
+		</action>
+		<action type="control value" value="#ChkAktivno" >
+			<parameter value="$Aktivno"/>
+		</action>
+	</event>
+		<layout textposition="left" itemspadding="3">
+			<group cols="3" rows="2" col="1" row="1"> 				
+				<item col="1" row="1" caption="Naziv:" colspan="3">
+					<textedit name="txtNaziv" />
+				</item>
+				<item col="1" row="2" textvisible="true" colspan="3" >
+						<checkedit name="chkAktivno" caption=" Aktivno " value="$Aktivno" />
+					</item>
+			</group>
+		</layout>
+		<panelbuttons>
+				<buttons>
+					<button name="btnUnesi" caption="SPREMI">
+							<event type="click">
+							<action type="datarun reader" value="~dtNameCheck"/>
+            					<action type="variable value">
+                					<parameter name="NazivInd" value="~dtNameCheck.@Naziv" type="int"/>
+            					</action>
+								<action type="message" value="Postoji vrsta planirane fakture sa unesenim nazivom!\nVrsta planirane fakture mora biti jedinstveni podatak!" if="$NazivInd!=0"/>
+								<action type="datarun nonquery" value="~dtIzmjeni" else="">
+									<action type="form close"/>
+								</action>								
+							</event>
+						</button>
+					<button name="btnOdustani" caption="ODUSTANI" dock="right" type="cancel"/>
+				</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spPtPlanFaktureVrstaDokAzur" name="dtIzmjeni">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Id" value="$Id"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				<parameter name="@ActiveInd" value="#chkAktivno"/>
+			</data>
+			<data command="spPtPlanFaktureVrstaDokQuery" name="dtNameCheck">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@InsertInd" value="0"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				<parameter name="@PtPlanFaktureVrstaDokId" value="$Id"/>
+			</data>
+		</datalist>
+	</form>  
+
+	<form name="frmObrisi" caption="Vrste planiranih faktura – Brisanje" saveformsize="false" fixedsize = "true" width="400">
+		<layout textposition="center" itemspadding="3">
+			<group cols="1" rows="3" col="1" row="1" groupbordervisible="false"> 				
+				<item col="1" row="2" colspan="2" fontbold="false">
+					<labeledit name="lblText" value="Želite li obrisati odabranu vrstu planirane fakture?" textposition="center"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+				<buttons>
+					<button name="btnDa" caption="OBRIŠI">
+							<event type="click">
+							<action type="datarun reader" value="~dtObrisi"/>
+								<action type="variable value">
+                					<parameter name="Error" value="~dtObrisi.@Result" type="int"/>
+            					</action>
+								<action type="form close" if="$Error==0"/>
+								<action type="message" value="                         Brisanje nije moguće!\nOdabrana vrsta planirane fakture vezana je za dokument!" else=""/>
+							</event>
+						</button>
+					<button name="btnNe" caption="ODUSTANI" dock="right" type="cancel"/>
+				</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spPtPlanFaktureVrstaDokAzur" name="dtObrisi">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@Id" value="$Id"/>
+			</data>
+		</datalist>
+	</form> 
+    
+</root>

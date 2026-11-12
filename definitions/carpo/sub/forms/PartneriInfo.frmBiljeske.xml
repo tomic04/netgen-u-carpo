@@ -1,0 +1,183 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <form name="frmBiljeske" caption="Bilješke" width="690" height="400" fixedsize="true">         <!-- provjeriti width, da li će ga grid razvući kada primi podatke ! -->
+    <event type="load">
+      <action type="control populate" value="#grdBiljeske"/>
+    </event>
+    <event type="shown">
+      <action type="control focus" value="#grdBiljeske"/>
+    </event>
+    <layout>
+      <group cols="1" rows="2" col="1" row="1" groupbordervisible="false">
+        <item col="1" row="1" highlight="false">
+          <grid name="grdBiljeske" dataname="dtGridBiljeske">
+            <!-- čekam Igora -->
+            <fields>
+              <field name="Kada" />
+              <field name="Sati" />
+              <field name="Tko" />
+              <field name="S kim" caption="S kim"/>
+              <field name="O čemu" caption="O čemu"/>
+              <field name="Vrsta" />
+              <field name="Zabilježio" />
+              <!-- + polje Sadržaj -->
+            </fields>
+          </grid>
+        </item>
+        <group cols="3" rows="1" col="1" row="2" spacing="3,3,3,3" groupbordervisible="false">
+          <columnsdefinition>
+            <column position="2" size="40"/>
+          </columnsdefinition>
+          <item col="1" row="1" highlight="false">
+            <checkedit name="chkPokazi" caption="Pokaži prvih" value="false">
+              <event type="valuechanged">
+                <action type="control enable" value="#txtKolicina,#lblRedaka" if="#chkPokazi==true">
+                  <action type="control focus" value="#txtKolicina"/>
+                  <action type="control populate" value="#grdBiljeske"/>
+                </action>
+                <action type="control disable" value="#txtKolicina,#lblRedaka" else="">
+                  <action type="control populate" value="#grdBiljeske"/>
+                </action>
+              </event>
+            </checkedit>>
+          </item>
+          <item col="2" row="1" highlight="false">
+            <textedit name="txtKolicina" format="f0" enabled="false" value="5">
+              <event type="valuechanged">
+                <action type="control populate" value="#grdBiljeske" if="#txtKolicina!=null"/>
+              </event>
+            </textedit>
+          </item>
+          <item col="3" row="1" highlight="false" padding="0,0,5,0">
+            <labeledit name="lblRedaka" value="redaka sadržaja" enabled="false"/>
+          </item>
+        </group>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button caption="DODAJ" dock="left" enabled="false">
+          <event type="click">
+            <action type="form open" value="frmBiljeskeEdit">
+              <parameter name="PartneriId" value="$PartneriId"/>
+            </action>
+            <action type="control populate" value="#grdBiljeske"/>
+          </event>
+        </button>
+        <button caption="IZMIJENI" dock="left" enabled="false">
+          <event type="click">
+            <action type="form open" value="frmBiljeskeEdit">
+              <parameter name="PartneriId" value="$PartneriId"/>
+              <parameter name="ParKontaktId" value="#grdBiljeske.@ParKontaktId"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdBiljeske"/>
+          </event>
+        </button>
+        <button caption="OBRIŠI" dock="left" enabled="false">
+          <event type="click">
+            <action type="confirm" value="Da li sigurno želite obrisati označenu bilješku?">
+              <action type="datarun nonquery" value="dtBiljeskeDelete"/>
+              <action type="control populate" value="#grdBiljeske"/>
+            </action>
+          </event>
+        </button>
+        <button caption="IZAĐI" begingroup="true" dock="right">
+          <event type="click">
+            <action type="form close"/>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spParKontaktQuery" name="dtGridBiljeske" if="#chkPokazi==false">
+        <parameter name="@Action" value="10"/>
+        <parameter name="@PartneriId" value="$PartneriId"/>
+      </data>
+      <data command="spParKontaktQuery" name="dtGridBiljeske" else="">
+        <parameter name="@Action" value="11"/>
+        <parameter name="@PartneriId" value="$PartneriId"/>
+        <parameter name="@PrvihN" value="#txtKolicina"/>
+      </data>
+      <data command="spParKontaktAzur" name="dtBiljeskeDelete">
+        <parameter name="@Action" value="2"/>
+        <parameter name="@ParKontaktId" value="#grdBiljeske.@ParKontaktId"/>
+      </data>
+    </datalist>
+  </form>
+
+  <form name="frmBiljeskeEdit" caption="Bilješka" width="400" height="330" fixedsize="true">
+    <event type="init">
+      <action type="datarun reader" value="~dtGetDate" if="$ParKontaktId==null"/>
+      <action type="datarun reader" value="~dtGet" if="$ParKontaktId!=null"/>
+      <action type="datarun reader" value="~dtGetDateEdit" if="$ParKontaktId!=null"/>
+    </event>
+    <layout>
+      <group cols="2" rows="5" col="1" row="1" groupbordervisible="false">
+        <item caption="Tko:" col="1" row="1" highlight="false">
+          <comboedit name="cmbTko" valuefield="OsobeId" displayfield="Naziv" datavalue="~dtGet.@OsobeId" dataname="dtOsobe"/>
+        </item>
+        <item caption="Kada:" col="1" row="2" highlight="false">
+          <textedit name="txtKada" formattype="datetime" format="dd/MM/yyyy HH:mm" datavalue="~dtGetDateEdit.@Kada" required="true"/>
+        </item>
+        <item caption="S kime:" col="1" row="3" highlight="false">
+          <comboedit name="cmbSKim" valuefield="OsobeId" displayfield="Naziv" datavalue="~dtGet.@OsobeParId" dataname="dtOsobe"/>
+        </item>
+        <item caption="Vrsta:" col="1" row="4" highlight="false">
+          <comboedit name="cmbVrsta" valuefield="ParKontaktVrstaId" displayfield="Naziv" datavalue="~dtGet.@ParKontaktVrstaId" dataname="dtVrsta"/>
+        </item>
+        <item caption="O čemu:" col="1" row="5" highlight="false">
+          <textedit name="txtOCemu" datavalue="~dtGet.@Tema" required="true"/>
+        </item>
+        <item caption="Što:" col="2" row="1" rowspan="5" highlight="false">
+          <memoedit name="txtSto" fontbold="true" datavalue="~dtGet.@Sadrzaj" required="true"/>
+        </item>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="SPREMI">
+          <event type="click">
+            <action type="validate"/>
+            <action type="datarun nonquery" value="~dtBiljeskeAdd" if="$ParKontaktId==null"/>
+            <action type="datarun nonquery" value="~dtBiljeskeEdit" else=""/>
+            <action type="form close"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spParKontaktQuery_Carpo" name="dtGet">
+        <parameter name="@Action" value="12"/>
+        <parameter name="@ParKontaktId" value="$ParKontaktId"/>
+      </data>
+      <data command="spOsobeQuery_Carpo" name="dtOsobe">
+        <parameter name="@Action" value="16"/>
+      </data>
+      <data command="select CONVERT(VARCHAR(20),GETDATE(),113) as Kada" type="text" name="dtGetDate"/>
+      <data command="select CONVERT(VARCHAR(20),'{~dtGet.@vrijeme}',113) as Kada" type="text" name="dtGetDateEdit"/>
+      <data command="select * from parkontaktvrsta" type="text" name="dtVrsta"/>
+      <data command="spParKontaktAzur_Carpo" name="dtBiljeskeAdd">
+        <parameter name="@Action" value="0"/>
+        <parameter name="@PartneriId" value="$PartneriId"/>
+        <parameter name="@OsobeId" value="#cmbTko"/>
+        <parameter name="@OsobeParId" value="#cmbSKim"/>
+        <parameter name="@ParKontaktVrstaId" value="#cmbVrsta"/>
+        <parameter name="@Datum" value="#txtKada"/>
+        <parameter name="@OperateriId" value="@@operateriid"/>
+        <parameter name="@Tema" value="#txtOCemu"/>
+        <parameter name="@Sadrzaj" value="#txtSto"/>
+      </data>
+      <data command="spParKontaktAzur_Carpo" name="dtBiljeskeEdit">
+        <parameter name="@Action" value="1"/>
+        <parameter name="@OsobeId" value="#cmbTko"/>
+        <parameter name="@OsobeParId" value="#cmbSKim"/>
+        <parameter name="@ParKontaktVrstaId" value="#cmbVrsta"/>
+        <parameter name="@Datum" value="#txtKada"/>
+        <parameter name="@Tema" value="#txtOCemu"/>
+        <parameter name="@Sadrzaj" value="#txtSto"/>
+        <parameter name="@ParKontaktId" value="$ParKontaktId"/> 
+      </data>
+    </datalist>
+  </form>
+</root>

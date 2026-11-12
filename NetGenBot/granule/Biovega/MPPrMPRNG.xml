@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+
+<PROJECT  
+	ONLOAD=":FORM1"  		
+	CMD1CAPTION="Parametri:FORM1" 
+	DETAILGRID="spmpPregRacNG @action=2, @ID=@@id"
+	CMD2CAPTION="" 
+	CMD3CAPTION="Analiza fiskalizacije:ANALFISK" 
+	CMD4CAPTION="Plaćanje:PLACANJE"
+	CMD5CAPTION="" 
+	CMD6CAPTION="Print dok.:vrstadokid-mpblagajnagla"  
+	PAGEHEADERCENTER="Pregled računa MP @@NoviRed Od @@datumod do @@datumdo"
+	PAGEHEADERRIGHT="@@tkosmomi"
+	MASTERDBLCLICK="PLACANJE"
+	GROUPBYBOXVISIBLE="TRUE" 
+	CHECKBOXVISIBLE="FALSE"
+	TOTALROWVISIBLE="TRUE"
+	DETTOTALROWVISIBLE="TRUE"
+	DETCHECKBOXVISIBLE="FALSE"
+	POPUPMASTER=""> 
+ 
+
+  <NAME>Pregled računa MP </NAME>
+  <CAPTION>Pregled računa MP </CAPTION>
+
+
+
+  <MASTERCOLUMNS>
+    <COLUMN INDEX="" NAME="PDV1100" WIDTH="1500" CAPTION="" FORMAT="##,##0.0000" VISIBLE="" AGREGATEFUNCTION="2"/>
+  </MASTERCOLUMNS>
+
+  <DETAILCOLUMNS>
+    <COLUMN INDEX="" NAME="PDV1000" WIDTH="1500" CAPTION="" FORMAT="##,##0.0000" VISIBLE="" AGREGATEFUNCTION="2"/>
+  </DETAILCOLUMNS>
+
+  
+<FORM1 	
+	FILLEXPLORER="TRUE" 
+	WIDTH="9000" 
+	ONSUBMIT="spmpPregRacNG @action=1, @operateriid = @@operateriid, @trgovinaid = @@xtrgovinaid, @datumod = @@datumod, @datumdo = @@datumdo, @storno = @@storno, @operid = @@operid, @kntnacinplacid = @@kntnacinplacid, @indpopust=@@indpopust !!" 
+	ONLOAD="select @@datumod as datumod, @@datumdo as datumdo, @@xtrgovinaid as trgovinaid, char(13)+char(10) as NoviRed" 
+	HEIGHT="4000" 
+	CAPTION="Parametri" 
+	BORDERSTYLE="3" 
+	CMD1CAPTION="Pokaži" 
+	CMD2CAPTION="Odustani"> 
+
+	<INPUT TYPE="combo" NAME="xtrgovinaid" CAPTION="Trgovina*" TOP="400" LEFT="1200" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="TRUE" SQL="spMPDajTrgovinaNG @operateriid=@@operateriid" ONLOSTFOCUS="select 'refresh' as operid"/>
+	<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od*" TOP="750" LEFT="1200"  HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE"/>
+	<INPUT TYPE="date" NAME="datumdo" CAPTION=" do*" TOP="750" LEFT="3200" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE"/>
+	<INPUT TYPE="combo" NAME="kntnacinplacid" CAPTION="Način plaćanja*" TOP="1100" LEFT="1200"  WIDTH="5500" HEIGHT="320" ALLOWEMPTY="TRUE" 
+		SQL="select m.kntnacinplacid, max(knt.Naziv) as naziv from mpnacnaplate m with(nolock) inner join kntnacinplac knt with(nolock) on m.kntnacinplacid=knt.kntnacinplacid 
+			 where (m.trgovinaid=@@trgovinaid or @@trgovinaid is null) group by m.kntnacinplacid"/>
+	<INPUT TYPE="checkbox" NAME="indpopust" TOP="1450" LEFT="1200" WIDTH="3500" HEIGHT="320" CAPTION="pokaži samo mp račune kojima je odobren rabat"/>
+	<INPUT TYPE="combo" NAME="storno" CAPTION="Storno*" TOP="1800" LEFT="1200"  WIDTH="5500" HEIGHT="320" ALLOWEMPTY="FALSE" SQL="select 0 as storno, 'Svi mp računi' as naziv union all select 1, 'Stornirani' "/>
+	<INPUT TYPE="combo" NAME="operid" CAPTION="Operater*" TOP="2150" LEFT="1200"  WIDTH="5500" HEIGHT="320" ALLOWEMPTY="TRUE" 
+		SQL="select l.Operateriid AS operid, o.naziv  
+						from dbo.LnTrgovinaOperateri l with(nolock)
+						inner join dbo.Trgovina t with(nolock) on l.trgovinaid = t.trgovinaid
+						left outer join ssOperateri o with(nolock) on l.Operateriid = o.OperateriID
+						left outer join trgovineprava tp with(nolock) on l.operateriid = tp.operaterid and l.trgovinaid = tp.trgovinaid 
+						left outer join odjel od with(nolock) on l.odjelid = od.odjelid
+						where (l.trgovinaid = @@xtrgovinaid or @@xtrgovinaid is null)
+						order by l.nazivopr"/>
+
+</FORM1>
+
+	
+<PLACANJE
+	FILLEXPLORER="TRUE" 
+	WIDTH="7000" 
+	ONSUBMIT="" 
+	ONLOAD="" 
+	HEIGHT="5000" 
+	CAPTION="Stavke prometa" 
+	BORDERSTYLE="3" 
+	CMD1CAPTION="" 
+	CMD2CAPTION="Odustani"> 
+
+	<INPUT TYPE="grid" 
+		NAME="stavke" 
+		REFRESHAFTERCHILD="TRUE"
+		CHECKBOXVISIBLE="FALSE"	
+		CAPTION="_ay" 
+		TOP="200" 
+		LEFT="200"  
+		WIDTH="6000" 
+		HEIGHT="3000" 
+		SQL="spmpPregRacNG @action=3, @id = @@id" /> 
+
+</PLACANJE>
+
+
+<ANALFISK 	
+	FILLEXPLORER="TRUE"
+	WIDTH="8600"
+	ONSUBMIT=""
+	ONLOAD=""
+	HEIGHT="8000"
+	CAPTION="Analziza fiskalizacije "
+	BORDERSTYLE="3"
+	CMD1CAPTION=""
+	CMD2CAPTION="Odustani">
+
+	<INPUT TYPE="grid"
+		NAME="analfisk"
+		REFRESHAFTERCHILD="TRUE"
+		CHECKBOXVISIBLE="FALSE"	
+		CAPTION="_ay"
+		TOP="200"
+		LEFT="200"
+		WIDTH="8400"
+		HEIGHT="6500"
+		SQL="spmpPregRacNG @action=6, @datumod = @@datumod, @datumdo = @@datumdo, @trgovinaid = @@xtrgovinaid " />
+
+</ANALFISK>
+
+</PROJECT> 

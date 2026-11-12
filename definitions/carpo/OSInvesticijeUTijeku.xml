@@ -1,0 +1,245 @@
+﻿<root version="1.2">
+
+  <!-- 1.1. subforme OSInvesticijeUTijeku.frmAktivacija
+                     OSInvesticijeUTijeku.frmDeaktivacija
+                     OSInvesticijeUTijeku.frmUnosDok
+                     OSInvesticijeUTijeku.frmUnosInv
+            - MZ disable gumba na loadu ukoliko je OSImovinaIT prazno -->
+  <!-- 1.2. - MZ dodan prikaz konta pripreme kod prikaza dokumenata -->
+
+  <form name="frmMaster" type="master" caption="Investicije u tijeku">
+
+    <event type="init">
+      <action type="variable value">
+        <parameter name="Click" value="" type="string"/>
+      </action>
+    </event>
+    <event type="onload">
+      <action type="control disable" value="#btnIzmjena,#btnBrisanje,#btnAktiv,#btnDeaktiv" if="#grdMaster.rowcount==0" />
+      <action type="control enable" value="#btnIzmjena,#btnBrisanje,#btnAktiv,#btnDeaktiv" else=""/>
+    </event>
+
+    <managerlayout>
+      <!--filter drveta-->
+      <lookup name="filter" >
+        <comboitem value="Vremenska podjela"/>
+        <comboitem value="Statusi" />
+        <event type="valuechanged">
+          <action type="variable value">
+            <parameter name="global.filter" value="#filter" />
+          </action>
+        </event>
+      </lookup>
+
+      <!--*****stablo*****-->
+      <tree name="tree"  keyfield="OSImovinaITId"  filtermode="smart" expandfirst="true" >
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdMaster" />
+        </event>
+        <data if="#filter==Vremenska podjela" command="spOSImovinaIT_QueryCP">
+          <parameter name="@Action" value="Vremenska_tree" />
+        </data>
+        <data if="#filter==Statusi" command="spOSImovinaIT_QueryCP" >
+          <parameter name="@Action" value="Statusi_tree" />
+        </data>
+        <fields>
+          <field name="Name" />
+        </fields>
+      </tree>
+
+      <!--Master grid-->
+      <grid name="grdMaster" key="OSImovinaITId" type="master" async="true" preventfocusgroup="false" fieldsmartspaces="false" bestfitonrefresh="true" >
+        <event type="focusedrowchanged">
+          <!--<action type="message" value="Test!"/>-->
+          <action type="control populate" value="#grdDetalj" />
+          <action type="control enable" value="#btnDeaktiv" if="#grdMaster.@DatumAktiviranja!=null"/>
+          <action type="control disable" value="#btnDeaktiv" else="" />
+          <action type="control enable" value="#btnIzmjena,#btnBrisanje" if="#grdMaster.@DatumAktiviranja==null"/>
+          <action type="control disable" value="#btnIzmjena,#btnBrisanje" else="" />
+          <action type="control enable" value="#btnAktiv" if="#grdDetalj.rowcount!=0&amp;&amp;#grdMaster.@DatumAktiviranja==null"/>
+          <action type="control disable" value="#btnAktiv" else=""/>
+          <action type="menu enable" value="#menUnos,#menIzmjena,#menBrisanje" if="#grdMaster.@DatumAktiviranja==null" />
+          <action type="menu disable" value="#menUnos,#menIzmjena,#menBrisanje" else=""/>
+        </event>
+        <fields inherited="true">
+          <field name="DatumAktiviranja" caption="Datum aktivacije"/>
+        </fields>
+        <menu>
+          <menuitem name="menUnos" caption="Unesi novi dokument" sort="1" function="UnesiDokumentInvest">
+            <event type="click">
+              <action type="form open" value="frmUnosDok" >
+                <parameter name="OSImovinaITId" value="#grdMaster.@OSImovinaITId" type="int" />
+                <parameter name="OSPrometITId" value="0" type="int" />
+                <parameter name="Caption" value="Unos dokumenta"/>
+                <parameter name="Tip" value="Unos"/>
+              </action>
+              <action type="control populate keepfocus" value="#grdMaster" />
+            </event>
+          </menuitem>
+        </menu>
+        <data command="spOSImovinaIT_QueryCP" if="#filter==Vremenska podjela" >
+          <parameter name="@Action" value="Master_query"  />
+          <parameter name="@Godina" value="#tree.@Godina" />
+          <parameter name="@Mjesec" value="#tree.@Mjesec" />
+        </data>
+        <data command="spOSImovinaIT_QueryCP" if="#filter==Statusi" >
+          <parameter name="@Action" value="Master_query"  />
+          <parameter name="@OSStatusiId" value="#tree.@Id" />
+        </data>
+      </grid>
+
+      <grid name="grdDetalj"  async="True" dataname="dtDetalj" bestfitonrefresh="true" key="OSPrometITId" multiselect="true" fieldsmartspaces="false" >
+
+        <fields inherited="true">
+          <field name="DatumDok" caption="Datum dokumenta"/>
+          <field name="NazDok" caption="Naziv dokumenta"/>
+          <field name="BrojDok" caption="Broj dokumenta"/>
+          <field name="Dobavljac" caption="Dobavljač "/>
+          <field name="NabavaDug" caption="Iznos" />
+          <field name="VrstaProm" caption="Vrsta izv.dokumenta" />
+          <field name="IzvBroj" caption="Broj izv.dokumenta" />
+          <field name="Konto" caption="Konto pripreme" />
+        </fields>
+
+        <menu>
+          <menuitem name="menIzmjena" caption="Izmijeni dokument" sort="1" function="IzmijeniDokumentInvest">
+            <event type="click">
+              <action type="form open" value="frmUnosDok" >
+                <parameter name="OSPrometITId" value="#grdDetalj.@OSPrometITId" type="int" />
+                <parameter name="Caption" value="Izmjena dokumenta"/>
+                <parameter name="Tip" value="Izmjena"/>
+              </action>
+              <action type="control populate keepfocus" value="#grdMaster" />
+            </event>
+          </menuitem>
+          <menuitem name="menBrisanje" caption="Obriši dokument" sort="2" function="ObrisiDokumentInvest">
+            <event type="click">
+              <action type="confirm" value="Da li ste sigurni da želite obrisati odabrani dokument?" >
+                <action type="datarun reader" value="~dtDelDok"  />
+              </action>
+              <action type="control populate" value="#grdDetalj" />
+            </event>
+          </menuitem>
+        </menu>
+      </grid>
+    </managerlayout>
+
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnos" caption="Unos nove investicije" function="UnesiInvest">
+          <event type="click">
+            <action type="form open" value="frmUnosInv">
+              <parameter name="Caption" value="Unos nove investicije"/>
+              <parameter name="Tip" value="Unos novo"/>
+              <parameter name="OSImovinaITId" value="0"/>
+            </action>
+            <action if="dialogresult!=cancel">
+              <action type="control populate" value="#tree">
+                <action type="control focus" value="#tree">
+                  <parameter value="$TreeFocus"/>
+                </action>
+              </action>
+              <action type="control focus" value="#grdMaster">
+                <parameter value="$MasterFocus"/>
+              </action>
+            </action>
+          </event>
+        </button>
+        <button name="btnIzmjena" caption="Izmjena investicije" function="IzmijeniInvest">
+          <event type="click">
+            <action type="form open" value="frmUnosInv">
+              <parameter name="Caption" value="Izmjena investicije"/>
+              <parameter name="Tip" value="Izmjena"/>
+              <parameter name="OSImovinaITId" value="#grdMaster.@OSImovinaITId"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdMaster" />
+          </event>
+        </button>
+        <button name="btnBrisanje" caption="Brisanje investicije" function="ObrisiInvest">
+          <event type="click">
+            <action type="confirm" value="Da li ste sigurni da želite obrisati odabranu investiciju u tijeku?">
+              <action type="datarun reader" value="~dtDelete" waittype="progress" waitcaption="Pričekajte..." waittext="..brisanje u tijeku...">
+                <action type="message" value="~dtDelete.@Poruka" />
+                <action type="control populate" value="#grdMaster" >
+                  <action type="control focus" value="#grdMaster"/>
+                </action>
+                <action type="control populate" value="#grdDetalj" />
+              </action>
+            </action>
+          </event>
+        </button>
+        <button name="btnAktiv" caption="Aktiviranje investicije" function="AktiviranjeInvest">
+          <event type="click">
+            <action type="form open" value="frmAktivacija">
+              <parameter name="Caption" value="Aktivacija investicije"/>
+              <parameter name="Tip" value="Aktivacija"/>
+              <parameter name="OSImovinaITId" value="#grdMaster.@OSImovinaITId"/>
+              <parameter name="OSImovinaId" value="#grdMaster.@OSImovinaId"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdMaster" />
+          </event>
+        </button>
+        <button name="btnDeaktiv" caption="Deaktiviranje investicije" function="DeaktiviranjeInvest">
+          <event type="click">
+            <action type="datarun reader" value="~dtKontrolaDeaktivacije"/>
+            <action type="message" value="~dtKontrolaDeaktivacije.@Poruka" if="~dtKontrolaDeaktivacije.@IndGreska==1"/>
+            <action type="form open" value="frmDeaktivacija" if="~dtKontrolaDeaktivacije.@IndGreska==0">
+              <parameter name="Caption" value="Deaktivacija investicije"/>
+              <parameter name="Tip" value="Deaktivacija"/>
+              <parameter name="OSImovinaITId" value="#grdMaster.@OSImovinaITId"/>
+              <parameter name="OSImovinaId" value="#grdMaster.@OSImovinaId"/>
+              <parameter name="DatumAktiviranja" value="#grdMaster.@DatumAktiviranja"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdMaster" />
+            <action type="control enable" value="#btnDeaktiv" if="#grdMaster.@DatumAktiviranja!=null"/>
+            <action type="control disable" value="#btnDeaktiv" else="" />
+            <action type="control enable" value="#btnIzmjena,#btnBrisanje" if="#grdMaster.@DatumAktiviranja==null"/>
+            <action type="control disable" value="#btnIzmjena,#btnBrisanje" else="" />
+            <action type="control enable" value="#btnAktiv" if="#grdDetalj.rowcount!=0&amp;&amp;#grdMaster.@DatumAktiviranja==null"/>
+            <action type="control disable" value="#btnAktiv" else=""/>
+            <action type="menu enable" value="#menUnos,#menIzmjena,#menBrisanje" if="#grdMaster.@DatumAktiviranja==null" />
+            <action type="menu disable" value="#menUnos,#menIzmjena,#menBrisanje" else=""/>
+            <action type="control populate keepfocus" value="#grdMaster" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spOSImovinaIT_QueryCP" name="dtDetalj">
+        <parameter name="@Action" value="Detalj_query"/>
+        <parameter name="@OSImovinaITId" value="#grdMaster.@OSImovinaITId"/>
+      </data>
+      <data command="spOSImovinaIT_HelpCP" name="dtKontrolaDeaktivacije">
+        <parameter name="@Action" value="Kontrola_blokade_deakt"/>
+        <parameter name="@DatumAktiviranja" value="#grdMaster.@DatumAktiviranja"/>
+      </data>
+      <data command="spOSImovinaIT_AzurCP" name="dtDelete">
+        <parameter name="@Action" value="Brisanje" />
+        <parameter name="@OSImovinaITId" value="#grdMaster.@OSImovinaITId" />
+      </data>
+      <data command="spOSImovinaIT_AzurCP" name="dtDelDok">
+        <parameter name="@Action" value="Delete_dok" />
+        <parameter name="@OSPrometITId" value="#grdDetalj.@OSPrometITId" />
+      </data>
+      <data command="spOSImovinaIT_AktivacijaCP" name="dtKontrola">
+        <parameter name="@Action" value="Kontrola_deaktivacije" />
+        <parameter name="@OSImovinaId" value="#grdMaster.@OSImovinaId" />
+        <parameter name="@DatumAktiviranja" value="#grdMaster.@DatumAktiviranja" />
+      </data>
+      <data command="spOSImovinaIT_AktivacijaCP" name="dtDeakt">
+        <parameter name="@Action" value="Deaktivacija" />
+        <parameter name="@OSImovinaId" value="#grdMaster.@OSImovinaId" />
+      </data>
+    </datalist>
+  </form>
+
+  <form name="frmUnosInv" path="frmUnosInv.xml"/>
+  <form name="frmUnosDok" path="frmUnosDok.xml"/>
+  <form name="frmAktivacija" path="frmAktivacija.xml"/>
+  <form name="frmDeaktivacija" path="frmDeaktivacija.xml"/>
+
+</root>
+
+

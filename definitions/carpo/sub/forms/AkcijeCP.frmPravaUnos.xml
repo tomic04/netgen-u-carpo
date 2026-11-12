@@ -1,0 +1,276 @@
+<root>
+
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::     FORM ZA UNOS PRAVA      :::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+    <form name="frmPravaUnos" fixedsize="true" caption="OPERATERI" height="500" width="900">
+
+        <event type="load">
+            <!-- ispunjevanje grida s operaterima kojima će se dodijeljivati prava-->
+            <action type="control populate" value="grdOperateri" />
+
+            <!-- ispuni multicomboedit akcija s akcijama odabranim u parent master gridu-->
+            <action type="control value" value="#cmbAkcija">
+                <parameter value="parent.#grdMaster.selectedids" />
+            </action>
+
+            <action type="datarun reader" value="~dtCmbOrgshema">
+                <!-- ako se prikaz org jedinica uspješno generira (ako nema SQL errora i nisu odabrane akcije koje se odnose
+                    na različite tablice)-->
+                <!-- popuni label uz combo koji prikazuje čime je combo ispunjen (orgshema, sitklase ili dr.)-->
+                <!-- popuni combo-->
+                <!-- enable combo-->
+                <action if="$indGreske==0">
+                    <action type="control value" value="#lblLabela">
+                        <parameter value="~dtCmbOrgshema.@Labela" />
+                    </action>
+                    <action type="control populate" value="#cmbOrg" />
+                    <action type="control enable" value="#cmbOrg" />
+                </action>
+
+                <!-- ako combo nije uspješno generiran-->
+                <!-- disable kontrolu-->
+                <!-- isprazni label uz combo-->
+                <!-- isprazni combo-->
+                <action else="">
+                    <action type="control disable" value="#cmbOrg" />
+                    <action type="control value" value="#cmbOrg">
+                        <parameter value="null" />
+                    </action>
+                    <action type="control refreshvalue" value="#lblLabela" />
+                </action>
+            </action>
+
+            <!-- $sortExists je output parametar, nije u SELECT-u-->
+            <!-- ako tablica na koju se odnosi akcija nema definirani sortKey-->
+            <!-- disable check I ispod-->
+            <!-- inače enable-->
+            <action if="$sortExists==0" type="control disable" value="#chkIspod" />
+            <action else="" type="control enable" value="#chkIspod" />
+
+        </event>
+
+        <layout textposition="left" itemspadding="3">
+
+            <group rows="1" cols="2" groupbordervisible="false">
+
+                <columnsdefinition>
+                    <column position="1" size="50%" />
+                    <column position="2" size="50%" />
+                </columnsdefinition>
+
+                <group spacing="3,3,0,0" row="1" col="1" rows="1" cols="1" caption="Odabrani operateri" padding="2,2,2,2">
+
+                    <item row="1" col="1">
+
+                        <!-- GRID s operaterima-->
+                        <grid name="grdOperateri" dataname="dtGrdOperateri" key="OperateriId" bestfitonrefresh="true" multiselect="true" fieldsmartspaces="false">
+                            <fields inherited="true">
+                                <field name="Naziv" caption="Operater" />
+                            </fields>
+                        </grid>
+
+                    </item>
+
+                </group>
+
+                <group spacing="3,3,0,0" row="1" col="2" rows="5" cols="2" caption="Podaci o akciji" padding="2,2,2,2">
+
+                    <item row="1" col="1" colspan="2" caption="Akcije" highlight="false">
+                        <combomultiedit name="cmbAkcija" dataname="dtCmbAkcija" displayfield="Naziv" valuefield="AkcijeId" showmultiselecttext="false" required="true">
+                            <!-- napuštanjem combo-a s akcijama (odnosno nakon odabira akcija)-->
+                            <event type="leave">
+                                <!-- ako nije odabrana akcija-->
+                                <!-- disable combo s org shemama (jer je akcija potrebna da combo za orgsheme zna koju tablicu
+                                    generirati)-->
+                                <!-- isprazni combo s orgshemama-->
+                                <!-- isprazni label uz combo s orgshemama-->
+                                <action if="#cmbAkcija==''||#cmbAkcija==null">
+                                    <action type="control disable" value="#cmbOrg" />
+                                    <action type="control value" value="#cmbOrg">
+                                        <parameter value="null" />
+                                    </action>
+                                    <action type="control refreshvalue" value="#lblLabela" />
+                                </action>
+                                <!-- ako je odabrana akcija/akcije-->
+                                <action else="" type="datarun reader" value="~dtCmbOrgshema">
+                                    <!-- ako je akcija prošla provjeru (nije odabrano više akcija koje se odnose na različite 
+                                        tablice)-->
+                                    <!-- popuni labelu comboa s orgshemama-->
+                                    <!-- popuni combo s orgshemama (s podacima iz tablice na koju se odnose odabrane akcije)-->
+                                    <!-- enable combo s orgshemama-->
+                                    <action if="$indGreske==0">
+                                        <action type="control value" value="#lblLabela">
+                                            <parameter value="~dtCmbOrgshema.@Labela" />
+                                        </action>
+                                        <action type="control populate" value="#cmbOrg" />
+                                        <action type="control enable" value="#cmbOrg" />
+                                    </action>
+
+                                    <!-- ako su odabrane akcije koje se odnose na više različitih tablica, ili SQL error-->
+                                    <!-- disable combo s orgshemama-->
+                                    <!-- isprazni combo s orgshemama-->
+                                    <!-- isprazni labelu za taj combo-->
+                                    <!-- ispiši error poruku-->
+                                    <action else="">
+                                        <action type="control disable" value="#cmbOrg" />
+                                        <action type="control value" value="#cmbOrg">
+                                            <parameter value="null" />
+                                        </action>
+                                        <action type="control refreshvalue" value="#lblLabela" />
+                                    </action>
+                                </action>
+
+                                <!-- ako tablica na koju se odnosi akcija nema definirani sortKey-->
+                                <!-- disable check I ispod-->
+                                <!-- inače enable-->
+                                <action if="$sortExists==0" type="control disable" value="#chkIspod" />
+                                <action else="" type="control enable" value="#chkIspod" />
+                            </event>
+
+                        </combomultiedit>
+                    </item>
+
+                    <item row="2" col="1">
+                        <labeledit name="lblLabela" dataname="~dtLabele" required="true" />
+                    </item>
+
+                    <item row="2" col="2" highlight="false">
+                        <combomultiedit name="cmbOrg" dataname="dtCmbOrgshema" displayfield="Naziv" valuefield="Id" showmultiselecttext="false" required="true">
+                            <!-- po napuštanju orgshema combo-a-->
+                            <event type="leave">
+
+                                <!-- provjeraOrg-->
+                                <!-- provjerava jesu li u combo-u odabrane sve dostupne org. jedinice-->
+                                <action type="datarun reader" value="~dtProvjeraOrg">
+
+                                    <!-- ako jesu, odčekiraj check i ispod, disable check-->
+                                    <action if="$zacekirano==0">
+                                        <action type="control value" value="#chkIspod">
+                                            <parameter value="0" />
+                                        </action>
+                                        <action type="control disable" value="#chkIspod" />
+                                    </action>
+
+                                    <!-- ako nisu, I AKO $SortExists, enable check-->
+                                    <action elseif="$zacekirano==1&amp;&amp;$sortExists==1">
+                                        <action type="control enable" value="#chkIspod" />
+                                    </action>
+                                </action>
+                            </event>
+
+                        </combomultiedit>
+                    </item>
+
+                    <item row="3" col="1" colspan="2" caption="I ispod" highlight="false">
+                        <checkedit name="chkIspod" />
+                    </item>
+
+                    <item row="4" col="1" colspan="2" caption="Kriterij" highlight="false">
+                        <textedit name="txtKriterij" />
+                    </item>
+
+                </group>
+
+            </group>
+
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+                <button caption="SPREMI" name="btnSpremi">
+                    <event type="click">
+                        <action type="validate" />
+
+                        <!-- ako je spremanje uspješno, control populate detalj grid-->
+                        <!-- i isprazni kontrole za sljedeći unos-->
+                        <action type="datarun reader" value="dtUnosIzmjenaPrava">
+                            <action if="$indGreske==0">
+                                <action type="control populate" value="parent.#grdDetalj">
+                                    <action type="control enable" value="parent.#btnKopiranje,parent.#btnObrisi" />
+
+                                </action>
+
+                                <action type="control refreshvalue" value="##" />
+                                <action type="control disable" value="#cmbOrg" />
+
+                                <action type="message" value="$poruka" />
+                            </action>
+
+                        </action>
+                    </event>
+                </button>
+                <button caption="ODUSTANI" name="btnOdustani" dock="right">
+                    <event type="click">
+                        <action type="form close" />
+                    </event>
+                </button>
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+
+            <!-- COMBO AKCIJA-->
+            <data command="spDneEv_Akcije_Help_CP" name="dtCmbAkcija">
+                <parameter name="@action" value="cmbAkcije" />
+            </data>
+
+            <!-- COMBO ORGSHEMA-->
+            <data command="spDneEv_Akcije_Help_CP" name="dtCmbOrgshema">
+                <parameter name="@action" value="cmbOrgShema" />
+
+                <parameter name="@odabrani" value="#cmbAkcija" />
+                <parameter name="@sortExists.output.int" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+            <!-- PROVJERA JE LI KLIK NA OZNAČI SVE, I IMA LI TABLICA SORTKEY-->
+            <!-- definira hoće li biti disable-an chkIispod-->
+            <data command="spDneEv_Akcije_Help_CP" name="dtProvjeraOrg">
+                <parameter name="@action" value="cmbOrgShema" />
+                <parameter name="@provjeraOrg" value="1" />
+                <parameter name="@odabrani" value="#cmbAkcija" />
+                <parameter name="@odabraniOrg" value="#cmbOrg" />
+                <parameter name="@sortExists.output.int" />
+                <parameter name="@zacekirano.output.int" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+            <!-- DT ZA PUNJENJE LABELE UZ COMBO ZA ORGSHEME (POŠTO NE MORA BITI ORGSHEMA TABLICA O KOJOJ SE GOVORI)-->
+            <data command="spDneEv_Akcije_Help_CP" name="dtLabele">
+                <parameter name="@action" value="dohvati_labele" />
+                <parameter name="@odabrani" value="#cmbAkcija" />
+            </data>
+
+            <!-- PUNJENJE GRIDA S OPERATERIMA-->
+            <data command="spDneEv_Akcije_Query_CP" name="dtGrdOperateri">
+                <parameter name="@action" value="grid_operateri" />
+            </data>
+
+            <!-- UNOS PRAVA-->
+            <!-- NEMA IZMJENE-->
+            <data command="spDneEv_Akcije_Azur_Prava_CP" name="dtUnosIzmjenaPrava">
+                <parameter name="@action" value="unos_prava" />
+
+                <parameter name="@operateri" value="#grdOperateri.selectedids" />
+
+                <parameter name="@Akcije" value="#cmbAkcija" />
+                <parameter name="@tabliceId" value="#cmbOrg" />
+                <parameter name="@chkIspod" value="#chkIspod" />
+                <parameter name="@Kriterij" value="#txtKriterij" />
+
+                <parameter name="@operateriid" value="@@operateriid" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+        </datalist>
+
+    </form>
+    
+</root>

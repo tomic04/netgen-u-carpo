@@ -1,0 +1,136 @@
+<!--
+25.11.2022. MB maknula prošireni grid
+-->
+
+<root>
+	<form name="frmKopiraj" caption="Kopiranje dokumenta" fixedsize="false">
+		<event type="shown">
+			<action type="control value" value="#cmbSkladiste">
+				<parameter value="parent.#grdGlava.@skladisteid"/>
+			</action>
+			<action type="control value" value="#cmbVrstaDok">
+				<parameter value="parent.#grdGlava.@vrstadokid"/>
+			</action>			
+			<action type="control value" value="#srcPartner">
+				<parameter value="parent.#grdGlava.@partneriid" text="parent.#grdGlava.@partnernaziv"/>
+			</action>				
+			<action type="control value" value="#srcParstru">
+				<parameter value="parent.#grdGlava.@parstruid" text="parent.#grdGlava.@parstru"/>
+			</action>							
+		</event>		
+		<layout textposition="left" itemspadding="3">
+			<group cols="1" rows="1">
+				<group rows="6" cols="1" row="1" col="1" entermovenextcontrol="true" groupbordervisible="false">
+					<item row="1" col="1" caption="Datum:" >
+						<dateedit name="datDatum" required="true" entermovenextcontrol="true" value="now" />
+					</item>				
+					<item caption="Vrsta dokumenta:" row="2" col="1">
+						<comboedit name="cmbVrstaDok" valuefield="VrstaDokId" displayfield="Opis" datavalue="#dtGet.@VrstaDokId" dataname="Global.dtVrstaDokGet" required="true"/>
+					</item>
+					<item caption="Partner:" row="3" col="1" >
+						<searchedit netgenfields="true" name="srcPartner" required="true" fontbold="true" dataname="Global.dtPartneri" fieldtext="NazivId" fieldvalue="partneriid" datavalue="#dtGet.@PartneriId" datatext="#dtGet.@PartnerNaziv">
+							<event type="valuechanged">
+								<action type="variable value">
+									<parameter name="PartneriId" value="#srcPartner" />
+								</action>	
+								<action type="variable value">
+									<parameter name="IndPromijenjeno" value="1" />
+								</action>																
+								<action type="variable value">
+									<parameter name="IndLoad" value="0" />
+								</action>								
+							</event>
+							<event type="leave">						
+								<action type="datarun reader" value="Global.dtDajPartnera" if="#srcPartner!=null"/>						
+								<action type="control value" value="#srcParstru" if="#srcPartner!=null&amp;&amp;#srcPartner.@BrojLokacija_Id==1">
+									<parameter value="~dtDajPartnera.@parstruid" text="~dtDajPartnera.@Naziv"/>
+								</action>
+								<action type="form open" value="frmLokacije" if="#srcPartner.@BrojLokacija_Id!=null&amp;&amp;#srcPartner.@BrojLokacija_Id&gt;1&amp;&amp;$IndPromijenjeno==1">
+									<parameter name="PartneriId" value="#srcPartner" />
+									<parameter name="IndLokacija" value="1" />
+									<parameter name="ParStruId" value="#srcParstru" />
+								</action>
+								<action type="control refreshvalue" value="#srcParstru" if="#srcPartner==null"/>
+								<action type="variable value">
+									<parameter name="IndLokacija" value="0" />
+								</action>
+								<action type="variable value">
+									<parameter name="IndPromijenjeno" value="0" />
+								</action>							
+							</event>
+						</searchedit>
+					</item>
+					<item caption="Lokacija:" row="4" col="1">
+						<searchedit netgenfields="true" name="srcParstru" required="true" dataname="Global.dtParstru" fieldtext="NazivId" fieldvalue="ParStruId" datavalue="#dtGet.@ParStruId" datatext="#dtGet.@ParStruNaziv" autopopulate="false" >
+							<event type="leave">
+								<action type="datarun reader" value="Global.dtDajPartnera" if="#srcParstru!=null"/>
+								<action type="control value" value="#srcPartner" if="#srcPartner==null&amp;&amp;#srcParstru!=null">
+									<parameter value="~dtDajPartnera.@partneriid" text="~dtDajPartnera.@Naziv"/>
+								</action>
+							</event>			
+						</searchedit>
+					</item>
+					<item caption="Skladište:" row="5" col="1">
+						<comboedit name="cmbSkladiste" valuefield="SkladisteId" displayfield="Opis" datavalue="#dtGet.@SkladisteId" dataname="Global.dtSkladiste" required="true"/>
+					</item>
+					<item caption="Storno" row="6" col="1" highlight="false" >
+						<checkedit caption="Količina u suprotan predznak" name="chkStorno" enabled="" />
+					</item>						
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="KOPIRAJ" type="add" dock="left">
+					<event type="click">
+						<action type="datarun scalar" value="~dtProvjeraUnosSmije">
+							<parameter name="Error"/>
+						</action> 
+						<action if="$Error!=0">
+							<action type="message" value="Ne možete kopirati dokument jer nemate pravo na status za izabranu vrstu dokumenta!" if="$Error!=0" />
+						</action>
+						<action else="">					
+							<action type="validate" />
+							<action type="datarun reader" value="~dtKopiraj"/>
+							<action type="variable value">
+								<parameter name="ProNotpGlaId" value="~dtKopiraj.@ProNotpGlaId"/>
+							</action>
+					     	<action type="variable value" value="Global.$DokId">
+								<parameter value="$ProNotpGlaId" />
+						    </action>
+							<action type="datarun scalar" value="Global.dtDajNode">
+								<parameter name="Tree_node" />
+							</action>
+							<action type="control focus" value="parent.#tree" if="parent.#tree.Id!=$Tree_node">
+								<parameter value="$Tree_node"/>
+							</action>
+							<action type="control populate" value="parent.#grdGlava" >
+							  <action type="control focus" value="parent.#grdGlava">
+								<parameter value="$ProNotpGlaId" />
+							  </action>
+							</action>
+							<action type="form close" />
+						</action>
+					</event>
+				</button>
+				<button caption="ODUSTANI" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_NotpGla_Kopiraj" name="dtKopiraj">
+				<parameter name="@Id" value="$ProNOtpGlaId" />
+				<parameter name="@vrstadokid" value="#cmbVrstaDok" />
+				<parameter name="@storno" value="#chkStorno" />
+				<parameter name="@PartneriId" value="#srcPartner" />
+				<parameter name="@ParStruId" value="#srcParstru" />
+				<parameter name="@SkladisteId" value="#cmbSkladiste" />
+				<parameter name="@Datum" value="#datDatum" />
+				<parameter name="@operateriid" value="@@OperateriId" />
+			</data>
+			<data command="spProvjeraUnosaPoOperateru" name="dtProvjeraUnosSmije">
+				<parameter name="@VrstaDokId" value="#cmbVrstaDok" />
+				<parameter name="@operateriid" value="@@OperateriId" />
+			</data>				
+		</datalist>
+	</form>
+</root>

@@ -1,0 +1,520 @@
+﻿<!-- radio na Jupiter2019 Spin2 -->
+<root>
+	<form type="master" name="frmMaster">
+		<event type="init">
+			<action type="datarun reader" value="Global.dtPubVars"/>
+			<action type="datarun reader" value="Global.dtgetKunski"/>
+			<action type="variable value">
+				<parameter name="Global.VrCjenikId" value="~dtPubVars.@MasterCjenikId" type="int"/>
+			</action>
+			<action type="variable value">
+				<parameter name="Global.CjenikNaknade" value="~dtPubVars.@CjenikNaknade" type="int" />
+			</action>
+			<action type="variable value">
+				<parameter name="Global.IndKunski" value="~dtgetKunski.@Kunski" type="int" />
+			</action>
+			<action type="variable value">
+				<parameter name="Global.CjenikFlash" value="1" type="int"/>
+			</action>
+		</event>
+		<event type="load">
+			<action type="datarun reader" value="Global.dtgetKunskiUlaz"/>
+
+			<action type="variable value">
+				<parameter name="Global.CjenikNaziv" value="~dtgetKunskiUlaz.@NazivCjenika"/>
+			</action>
+
+			<action type="control caption" value="#btnCjenikCaption">
+				<parameter value="Cjenik: {global.$CjenikNaziv}"/>
+			</action>
+
+			<action type="control populate" value="#tree" />
+			<action type="variable value">
+				<parameter name="Global.vrstaCijene" value="PC"/>
+			</action>	
+			<action type="form open" value="frmCjenik"/>
+		</event>
+		<event type="shown">
+			<action type="form caption" value="Manager cjenika - {Global.$CjenikNaziv}" if="Global.$CjenikNaziv!=null"/>
+			<action type="form caption" value="Manager cjenika" else=""/>
+			<!--<action type="control caption" value="#btnCjenikCaption">
+				<parameter value="Cjenici"/>
+			</action>-->	
+			<action type="variable value">
+				<parameter name="Global.CjenikFlash" value="0" type="int"/>
+			</action>			
+		</event>
+		<managerlayout>
+			 <lookup name="filter"> 
+				<comboitem value="Robna klasifikacija" searchfield="SearchKeyId" /> 
+			 </lookup> 
+			<!-- TREE -->
+			<tree name="tree" key="id" filtermode="smart" autopopulate="false" expandallonload="true">
+				<data command="spTreeKlaseRobe" />
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava" />
+				</event>
+				<fields>
+					<field name="Name" />
+				</fields>
+			</tree>
+			<!-- glava -->
+			<grid name="grdGlava" key="RobaId" type="master" dataname="~glaGrid" bestfitonrefresh="true" savelayout="true" searchfield="KeyId">
+				<!-- puni detalj grid na focusedrowchanged -->
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdProdajna" />
+					<action type="control populate" value="#grdNabavna" />
+					<action type="control populate" value="#grdMaloprodajna" />
+				</event>
+				<fields inherited="true">
+					<!-- <field name="KeyId" caption="KeyId" visible="false"/>	 -->
+					<field name="Sifra" fontbold="true" caption="Šifra" />
+					<field name="RobaNaziv" fontbold="true" caption="Roba" />
+					<field name="JMNaziv" caption="JM" />
+					<field name="NabavnaCij" caption="Nabavna cijena" />
+					<field name="NetoCijenaKn" caption="VP neto cijena" />
+					<field name="BrutoCijenaKn" caption="VP bruto cijena" />
+					<field name="MPCijenaKN" caption="MP Cijena" />
+					<field name="KlasaNaziv" caption="Klasa robe" />
+					<field name="Cjenik" caption="Cjenik" />
+					<field name="RUC" caption="RUC" />
+					<field name="MarzaP" caption="VP marža (%)" />
+					<field name="MPRUC" caption="MPRUC" />
+					<field name="MPMarzaP" caption="MP marža (%)" />
+					<field name="Publiciran" caption="Publiciran" />
+					<field name="Barcode" caption="Barcode" />
+				</fields>
+				<!--<styles>
+					<style name="fontcolor" value="green" if="#grdGlava.@Status=='Zaključen'" />
+					<style name="fontcolor" value="gray" elseif="#grdGlava.@formatid==gray" />
+					<style name="fontcolor" value="blue" if="#grdGlava.@formatid==blue" />
+				</styles>-->
+				<!-- glava click eventi -->
+				<!-- double left click otvara formu za izmjenu -->
+				<!--<event type="doubleclick">
+					<action type="variable value" value="Global.$OperaterLockId">
+						<parameter value="#grdGlava.@KupUgovoriGlaId" />
+					</action>
+					<action type="form open" value="frmKupIzmjena">
+						<parameter name="KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId" />
+					</action>
+				</event>-->
+				<!-- desni klik nudi status opcije -->
+				<!--<menu name="meni">
+					<menuitem caption="Vrati status" name="vratistatus">
+						<event type="click">
+							<action type="datarun nonquery" value="~dtPromjeniStatus" />
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</event>
+					</menuitem>
+					<menuitem caption="Povijest statusa" name="povijeststatusa">
+						<event type="click">
+							<action type="form open" value="frmKupPovijestStatusa">
+								<parameter name="KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId" />
+							</action>
+						</event>
+					</menuitem>
+				</menu>-->
+			</grid>
+			<!-- detail -->
+			<tabs name="detTabs">
+				<event type="selectedtabchanged">
+					<action if="#detTabs.selectedtab==tabProdajnaCijena">
+						<action type="variable value">
+							<parameter name="Global.vrstaCijene" value="PC"/>
+						</action>					
+						<action type="control caption" value="#btnUnesi" >
+							<parameter value="Unesi PC"/>
+						</action>
+						<action type="control caption" value="#btnIzmijeni" >
+							<parameter value="Izmijeni PC"/>
+						</action>
+						<action type="control caption" value="#btnObrisi" >
+							<parameter value="Obriši PC"/>
+						</action>						
+					</action>
+					<action elseif="#detTabs.selectedtab==tabNabavnaCijena">
+						<action type="variable value">
+							<parameter name="Global.vrstaCijene" value="NC"/>
+						</action>					
+						<action type="control caption" value="#btnUnesi" >
+							<parameter value="Unesi NC"/>
+						</action>
+						<action type="control caption" value="#btnIzmijeni" >
+							<parameter value="Izmijeni NC"/>
+						</action>
+						<action type="control caption" value="#btnObrisi" >
+							<parameter value="Obriši NC"/>
+						</action>						
+					</action>
+					<action else="">
+						<action type="variable value">
+							<parameter name="Global.vrstaCijene" value="MC"/>
+						</action>					
+						<action type="control caption" value="#btnUnesi" >
+							<parameter value="Unesi MC"/>
+						</action>
+						<action type="control caption" value="#btnIzmijeni" >
+							<parameter value="Izmijeni MC"/>
+						</action>
+						<action type="control caption" value="#btnObrisi" >
+							<parameter value="Obriši MC"/>
+						</action>						
+					</action>
+				</event>
+				<tab name="tabProdajnaCijena" caption="Prodajna cijena">
+					<grid name="grdProdajna" dataname="~detGridProdajna" bestfitonrefresh="true">
+						<fields inherited="true">
+							<field name="Sifra" fontbold="true" caption="Šifra" />
+							<field name="Naziv" fontbold="true" caption="Roba" />
+							<field name="Datum" caption="Datum" />
+							<field name="NetoCijena" caption="Neto cijena" />
+							<field name="BrutoCijena" caption="Bruto cijena" />
+							<field name="Akcija" caption="Akcija" />
+							<field name="Operater" caption="Operater" />
+							<field name="VrijemeUnosa" caption="Vrijeme unosa" />
+							<field name="ZadnjaIzmjena" caption="Zadnja izmjena" />
+						</fields>
+
+					</grid>
+				</tab>
+
+				<tab name="tabNabavnaCijena" caption="Nabavna cijena">
+					<grid name="grdNabavna" dataname="~detGridNabavna" bestfitonrefresh="true">
+						<fields inherited="true">
+							<field name="Sifra" fontbold="true" caption="Šifra" />
+							<field name="Naziv" fontbold="true" caption="Roba" />
+							<field name="Datum" caption="Datum" />
+							<field name="NabavnaCijena" caption="Nabavna cijena" />
+							<field name="FakCijena" caption="Fakturna cijena" />							
+							<field name="Operater" caption="Operater" />
+							<field name="VrijemeUnosa" caption="Vrijeme unosa" />
+							<field name="ZadnjaIzmjena" caption="Zadnja izmjena" />
+						</fields>
+					</grid>
+				</tab>
+
+				<tab name="tabMPCijena" caption="MP cijena">
+					<grid name="grdMaloprodajna" dataname="~detGridMaloprodajna" bestfitonrefresh="true">
+						<fields inherited="true">
+							<field name="Sifra" fontbold="true" caption="Šifra" />
+							<field name="Naziv" fontbold="true" caption="Roba" />
+							<field name="Datum" caption="Datum" />
+							<field name="MPCijenaKN" caption="MP cijena" />
+							<field name="Akcija" caption="Akcija" />
+							<field name="Operater" caption="Operater" />
+							<field name="VrijemeUnosa" caption="Vrijeme unosa" />
+							<field name="ZadnjaIzmjena" caption="Zadnja izmjena" />
+						</fields>
+					</grid>
+				</tab>
+			</tabs>
+		</managerlayout>
+
+		<!-- master buttons -->
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnCjenikCaption" caption="" width="200">
+					<event type="click">
+						<action type="form open" value="frmCjenik" />
+						<action type="form caption" value="Manager cjenika - {Global.$CjenikNaziv}" />
+						<action type="control populate keepfocus" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="btnUnesi" caption="&amp;Unesi PC" type="add" displayfield="Opis" function="Unesi">
+					<event type="click">
+						<action type="form open" value="frmUnesi">
+							<parameter name="RobaId" value="#grdGlava.@RobaId" />
+							<parameter name="RobaNaziv" value="#grdGlava.@RobaNaziv" />
+							<parameter name="TipForme" value="0" />
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="Izmijeni PC" function="Izmjeni">
+					<event type="click">
+						<action type="form open" value="frmIzmijeni">
+							<parameter name="RobaId" value="#grdGlava.@RobaId" />
+							<parameter name="RobaNaziv" value="#grdGlava.@RobaNaziv" />
+							<parameter name="TipForme" value="1" />
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="btnObrisi" caption="Obriši" type="delete" function="Obrisi">
+					<event type="click">
+						<action if="#detTabs.selectedtab==tabProdajnaCijena">
+							<action if="#grdProdajna.@Akcija==" type="confirm" value="Želite li obrisati prodajnu cijenu?">
+								<action type="datarun nonquery" value="Global.dtObrisiPC" />
+							</action>
+							<action if="#grdProdajna.@Akcija!=" type="confirm" value="Odabrana stavka dio je akcije. Brisanje stavke obrisat će cijelu akciju. Jeste li sigurni?">
+								<action type="datarun nonquery" value="Global.dtObrisiPC" />
+							</action>
+							<action type="control populate" value="#grdglava" />
+						</action>
+						
+						<action elseif="#detTabs.selectedtab==tabMPCijena">
+							<action if ="#grdMaloprodajna.@Akcija==" type="confirm" value="Želite li obrisati maloprodajnu cijenu?" >
+								<action type="datarun nonquery" value="Global.dtObrisiMPC"/>
+							</action>
+							<action if ="#grdMaloprodajna.@Akcija!=" type="confirm" value="Odabrana stavka dio je akcije. Brisanje stavke obrisat će cijelu akciju. Jeste li sigurni?" >
+								<action type="datarun nonquery" value="Global.dtObrisiMPC"/>
+							</action>
+							<action type="control populate" value="#grdglava" />
+						</action>
+						<action else="">
+							<action type="confirm" value="Želite li obrisati nabavnu cijenu?">
+								<action type="datarun nonquery" value="Global.dtObrisiNC">
+								</action>
+								<action type="control populate" value="#grdglava" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnUnseiSve" caption="Unesi sve">
+					<event type="click">
+						<action type="form open" value="frmUnesiSve">
+							<parameter name="RobaId" value="#grdGlava.@RobaId" />
+							<parameter name="RobaNaziv" value="#grdGlava.@RobaNaziv" />
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="btnSviCjenici" caption="Svi cjenici">
+					<event type="click">
+						<action type="form open" value="frmSviCjenici">
+							<parameter name="RobaId" value="#grdGlava.@RobaId" />
+							<parameter name="RobaNaziv" value="#grdGlava.@RobaNaziv" />
+						</action>
+					</event>
+				</button>
+				<button name="btnPronadi" caption="Pronađi">
+					<event type="click">
+						<!-- <action type="form open" value="frmPronadji" />
+						<action type="control populate keepfocus" value="#grdGlava" /> -->
+						<action type="search" value="Global.dtSearch"/>
+					</event>
+				</button>			
+				<button name="btnFilter" caption="Filter">
+					<dropdownitem name="btnNije" caption="NIJE U CJENIKU" >
+						<event type="click">
+							<action type="form open" value="frmNijeUCjeniku" />
+							<action type="control populate" value="#grdglava" />
+						</event>
+					</dropdownitem>
+					<dropdownitem name="btnUmirovljeno" caption="UMIROVLJENO" >
+					</dropdownitem>
+					<dropdownitem name="btnPrometni" caption="U PROMETU" >
+					</dropdownitem>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<!--<form name="frmUnesi" path="frmUnesi.xml"/>-->
+
+		<!-- lokalni dataset -->
+		<datalist>
+			<data command="spProd_Cjenik_MasterGrid" name="glaGrid">
+				<parameter name="@KlMasterRobaId" value="#tree.@value" />
+				<parameter name="@VrCjenikId" value="global.$VrCjenikId" />
+				<parameter name="@prikazi_ispod" value="1" />
+			</data>
+
+			<data command="spProd_Cjenik_GridProdajna" name="detGridProdajna">
+				<parameter name="@RobaId" value="#grdGlava.@RobaId" />
+				<parameter name="@VrCjenikId" value="global.$VrCjenikId" />
+			</data>
+
+			<data command="spProd_Cjenik_GridNabavna" name="detGridNabavna">
+				<parameter name="@RobaId" value="#grdGlava.@RobaId" />
+				<parameter name="@VrCjenikId" value="global.$VrCjenikId" />
+			</data>
+
+			<data command="spProd_Cjenik_GridMaloprodajna" name="detGridMaloprodajna">
+				<parameter name="@RobaId" value="#grdGlava.@RobaId" />
+				<parameter name="@VrCjenikId" value="global.$VrCjenikId" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmCjenik" caption="Odaberite cjenik" fixedsize="false">
+		<event type="shown">
+			<action if="global.$CjenikFlash==1">
+				<action type="datarun reader" value="Global.dtgetKunski"/>
+				<action type="variable value">
+					<parameter name="Global.CjenikNaziv" value="#cmbCjenik.@Opis"/>
+				</action>
+				<action type="variable value">
+					<parameter name="Global.VrCjenikId" value="#cmbCjenik.@VrCjenikId"/>
+				</action>
+				<action type="form close"/>
+				<action type="control caption" value="parent.#btnCjenikCaption">
+					<parameter value="Cjenik: {#cmbCjenik.@Opis}"/>
+				</action>
+				<action type="variable value">
+					<parameter name="Global.IndKunski" value="~dtgetKunski.@Kunski"/>
+				</action>
+			</action>
+		</event>
+		<event type="close">
+		</event>
+		<layout textposition="top" itemspadding="1">
+			<group cols="1" rows="1" groupbordervisible="false">
+				<item col="1" row="1" caption="Cjenik:" >
+					<comboedit name="cmbCjenik" valuefield="VrCjenikId" displayfield="Opis" dataname="dtCjenikGet" savevalue="app">
+					</comboedit>
+				</item>
+			</group>				
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="PRIHVATI" dock="right">
+					<event type="click">
+						<action type="datarun reader" value="Global.dtgetKunski"/>
+						<action type="variable value">
+							<parameter name="Global.CjenikNaziv" value="#cmbCjenik.@Opis"/>
+						</action>
+						<action type="variable value">
+							<parameter name="Global.VrCjenikId" value="#cmbCjenik.@VrCjenikId"/>
+						</action>
+						<action type="form close"/>
+						<action type="control caption" value="parent.#btnCjenikCaption">
+							<parameter value="Cjenik: {#cmbCjenik.@Opis}"/>
+						</action>
+						<action type="variable value">
+							<parameter name="Global.IndKunski" value="~dtgetKunski.@Kunski"/>
+						</action>
+					</event>
+				</button>
+				<button caption="ODUSTANI" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spVrCjenikQuery" name="dtCjenikGet">
+				<parameter name="@action" value="0"/>
+			</data>			
+		</datalist>				
+	</form>
+
+	<form name="frmPronadji" caption="Pronađi" fixedsize="false">
+		<event type="shown">
+		</event>
+		<event type="close">
+		</event>
+		
+		<layout textposition="top" itemspadding="1">
+			<group cols="1" rows="1" groupbordervisible="false">
+				<item row="1" col="1" caption="Roba" textposition="left">
+					<searchedit name="srcRoba" fieldtext="NazivId" fieldvalue="robaid" dataname="global.dtPuniRobu" required="true" datavalue="" datatext="" entermovenextcontrol="false">
+					<!--<searchedit  name="srcRoba"  dataname="Global.dtRoba" fieldtext="NazivId" fieldvalue="robaid"  datavalue="~dtDetquery.@RobaId" datatext="~dtDetquery.@RobaNaziv">-->
+
+					</searchedit>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="PRONAĐI" dock="right">
+					<event type="click">
+
+					</event>
+				</button>
+				<button caption="ODUSTANI" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spVrCjenikQuery" name="dtCjenikGet">
+				<parameter name="@action" value="0"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!-- forme -->
+	<form name="frmUnesi" path="frmUnesi.xml" />
+	<form name="frmIzmijeni" path="frmIzmijeni.xml"/>
+	<form name="frmSviCjenici" path="frmSviCjenici.xml"/>
+	<form name="frmNijeUCjeniku" path="frmNijeUCjeniku.xml"/>
+	<form name="frmUnesiSve" path="frmUnesiSve.xml" />
+
+
+	<!-- globalni datalist -->
+	<datalist>
+		<data command="spng_combo" name="dtPuniCjenik">
+			<parameter name="@action" value="VrCjenik" />
+		</data>
+		<data command="spng_combo" name="dtPuniNaplatu">
+			<parameter name="@action" value="ProNacinNaplate" />
+		</data>
+		<data command="spng_combo" name="dtPuniIsporuku">
+			<parameter name="@action" value="ProNacinIsporuke" />
+		</data>
+	
+		<data command="spProd_Cjenik_partSQL_Forma" name="dtPartFrmCijena" />
+
+		<data command="spProd_Cjenik_partSQL_FormaSve" name="dtPartFrmCijenaSve" />
+		
+		<data command="spVrCjenikQuery" name="dtVrCjenik">
+			<parameter name="@action" value="0"/>
+		</data>
+
+		<data command="spDajPubVarse" name="dtPubVars" />
+		
+		<data command="spProd_Cjenik_getVrstaCjenika" name="dtgetKunski">
+			<parameter name="@VrCjenikiD" value="#cmbCjenik"/>
+		</data>
+
+		<data command="spProd_Cjenik_getVrstaCjenika" name="dtgetKunskiUlaz">
+			<parameter name="@VrCjenikiD" value="global.$VrCjenikId"/>
+		</data>
+
+		<data command="spProd_Cjenik_ObrisiPC" name="dtObrisiPC">
+			<parameter name="@Id" value="#grdProdajna.@CjenikPrometId"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+		</data>
+
+		<data command="spProd_Cjenik_ObrisiMPC" name="dtObrisiMPC">
+			<parameter name="@Id" value="#grdMaloprodajna.@CjenikMPPrometId"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+		</data>
+
+		<data command="spProd_Cjenik_ObrisiNC" name="dtObrisiNC">
+			<parameter name="@Id" value="#grdNabavna.@CjenikNabPrometId"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+		</data>
+
+		<data command="spTraziRoba" name="dtPuniRobu">
+			<parameter name="@action" value="Roba"/>
+			<parameter name="@Uvjet" value="#srcRoba.text"/>
+			<parameter name="@PokaziVPCijene" value="0"/>
+			<parameter name="@PokaziNabCijene" value="0"/>
+			<parameter name="@Retired" value="0"/>
+			<parameter name="@Prikazi_Dodatno" value="0"/>
+			<parameter name="@PokaziStanje" value="0"/>
+			<parameter name="@SkladisteId" value=""/>
+		</data>
+		
+		<data command="spProd_Cjenik_ProdCijena_Query" name="dtQueryPC">
+			<parameter name="@Id" value="parent.#grdProdajna.@CjenikPrometId" />
+		</data>
+
+		<data command="spProd_Cjenik_NabCijena_Query" name="dtQueryNC">
+			<parameter name="@Id" value="parent.#grdNabavna.@CjenikNabPrometId" />
+		</data>
+
+		<data command="spProd_Cjenik_MPCijena_Query" name="dtQueryMC">
+			<parameter name="@Id" value="parent.#grdMaloprodajna.@CjenikMPPrometId" />
+		</data>
+		<data command="spCarpoSearch" name="dtSearch">
+			<parameter name="@Table" value="Roba"/>
+			<parameter name="@Pojam" value="#btnPronadi.searchtext"/>
+		</data>
+	</datalist>
+</root>

@@ -1,0 +1,84 @@
+<root>
+  <form name="frmKupKopiraj" type="master" caption="Kopiranje ugovora" width="300" height="200" saveformsize="false">
+    <event type="init">
+      <action type="datarun reader" value="~dtGet" />
+    </event>
+    <event type="load">
+      <action type="control value" value="#chkKopirajStavke">
+        <parameter value="true" />
+      </action>
+      <action type="variable value" >
+        <parameter name="partneriId" value="~dtGet.@partneriId" type="int"/>
+      </action>
+    </event>
+    <layout>
+      <group rows="2" cols="1">
+          <group rows="1" cols="1" col="1" row="1" bordervisible="false" >
+            <item row="1" col="1" caption="Partner:">
+                <searchedit name="srcPartner" fontbold="true" fieldtext="NazivId" fieldvalue="PartneriId" datavalue="~dtGet.@PartneriId" 
+                   datatext="~dtGet.@PartnerNaziv" dataname="~dtPartneri">
+                <event type="valuechanged">
+                  <action type="control disable" value="#chkKopirajLokacije" if="#srcPartner!=$partneriId" >
+                  </action>
+                    <action type="control enable" value="#chkKopirajLokacije" else="" />
+                  <action type="control refreshvalue" value="#chkKopirajLokacije" if="#srcPartner!=$partneriId"/>
+                </event>
+              </searchedit>
+            </item>
+          </group>
+          <group rows="2" cols="2" col="1" row="2" bordervisible="false" >
+            <item row="2" col="1" caption="Prekopiraj stavke:" textposition="left">
+              <checkedit name="chkKopirajStavke" value="" />
+            </item>
+            <item row="2" col="2" caption="Prekopiraj lokacije:" textposition="left">
+              <checkedit name="chkKopirajLokacije" value="" />
+            </item>
+          </group>
+        </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnKupKopiraj"  caption="Kopiraj">
+          <event type="click">
+            <action type="datarun scalar" value="~dtKupKopiraj">
+              <parameter name="KupUgovoriGlaId" />
+            </action>
+            <action type="variable value" value="Global.$OperaterLockId">
+              <parameter value="$KupUgovoriGlaId" />
+            </action>
+            <action type="control populate" value="parent.#tree"/>
+            <action type="control focus" value="parent.#tree">
+              <parameter value="#srcPartner"/>
+            </action>
+            <action type="form close" />
+            <action type="form open" value="frmKupIzmjena">
+              <parameter name="KupUgovoriGlaId" value="$KupUgovoriGlaId"/>
+              <parameter name="kopiranje" value="1" />
+            </action>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Odustani" type="cancel" dock="right"/>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spProd_KupUgoIzmjena_PuniFormu" name="dtGet">
+        <parameter name="@KupUgovoriGlaId" value="$KupUgovoriGlaId" />
+      </data>
+      <data command="spTraziPartneri" name="dtPartneri">
+        <parameter name="@action" value="Partneri" />
+        <parameter name="@Uvjet" value="#srcPartner.text" />
+      </data>
+      <data command="spProd_KupUgo_KopirajUgovor" name="dtKupKopiraj">
+        <parameter name="@KupUgovoriGlaId" value="parent.#grdGlava.@KupUgovoriGlaId" />
+        <parameter name="@PartneriId" value="#srcPartner" />
+        <parameter name="@OperateriId" value="@@OperateriId" />
+        <parameter name="@kopiraj_lokacije" value="0" if="#chkKopirajLokacije==false" />
+        <parameter name="@kopiraj_lokacije" value="1" else="" />
+        <parameter name="@prenesi_stavke" value="0" if="#chkKopirajStavke==false" />
+        <parameter name="@prenesi_stavke" value="1" else="" />
+      </data>
+    </datalist>
+  </form>
+</root>
+
+

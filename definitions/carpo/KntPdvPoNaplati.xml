@@ -1,0 +1,204 @@
+<root>
+	<form type="master" name="frmGlavni" maximized="true" template="splitter" caption="PDV po naplati">
+		<event type="load">
+			<action type="datarun reader" value="~dtPrviDan"/>
+		</event>
+		<event type="shown">
+			<action type="control value" value="#datOd">
+				<parameter value="~dtPrviDan.@prvidan"/>
+			</action>
+			<action type="control value" value="#datDo">
+				<parameter value="now" type="date"/>
+			</action>	
+			<!-- <action type="control disable" value="#btnProknjizi"/> -->
+		</event>
+		<layout name="panel1" type="collapsable">
+			<group cols="1" rows="3" height="50" groupbordervisible="false">
+				<columnsdefinition>
+					<column size="200" position="1"/>
+				</columnsdefinition>
+				<rowsdefinition>
+					<row size="50" position="1"/>
+				</rowsdefinition>
+				<item col="1" row="1" caption="Datum od:" tabindex="0">
+					<dateedit name="datOd"/>
+				</item>
+				<item col="1" row="2" caption="Datum do:" tabindex="1">
+					<dateedit name="datDo"/>
+				</item>
+				<item col="1" row="3"/>
+			</group>
+		</layout>
+		<layout name="panel2">
+			<group cols="1" rows="1">
+				<item col="1" row="1">
+					<grid name="grdGlavni" dataname="~dtGlavni" showfooter="true" netgenfields="false"  multiselect="true"  allowfilter="true"  bestfitonrefresh="true">
+						<!-- <fields inherited="true"/> -->
+						<fields inherited="true">
+							<field name="Knjiga" caption="Knjiga" groupindex="1"/>
+
+						</fields>
+						<print caption="PDV po stjecanju" captionalign="center" header="Razdoblje od {#datOd::dd.MM.yyyy} do {#datDo::dd.MM.yyyy} \n"/>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPokazi" caption="Izračun PDV po naplati">
+					<event type="click">
+						<action type="control populate" value="#grdGlavni"/>
+						<action type="panel collapse" value="panel1" if="#grdGlavni.rowcount!=0"/>						
+						<!-- <action type="control disable" value="#btnProknjizi" if="#grdGlavni.rowcount==0"/> -->
+						<!-- <action type="control enable" value="#btnProknjizi" if="#grdGlavni.rowcount!=0"/>						 -->
+					</event>
+				</button>
+				<!-- <button name="btnProknjizi" caption="PROKNJIŽI"> -->
+					<!-- <event type="click"> -->
+						<!-- <action type="confirm" value="Jeste li sigurni da želite prenijeti stavke u Knjigu IRA?"/> -->
+						<!-- <action type="datarun nonquery" value="~dtProknjizi"/> -->
+						<!-- <action type="control populate" value="#grdGlavni"/> -->
+						<!-- <action type="control disable" value="#btnProknjizi" if="#grdGlavni.rowcount==0"/> -->
+						<!-- <action type="control enable" value="#btnProknjizi" if="#grdGlavni.rowcount!=0"/>							 -->
+					<!-- </event> -->
+				<!-- </button> -->
+				<button name="btnKonfiguratorURA" caption="URA postavke" tooltip="Urednik knjiga ulaznih računa za PDV po naplati.">
+					<event type="click">
+						<action type="form open" value="frmKonfiguratorURA"/>
+						<action type="datarun reader" value="~dtProvjere"/>							
+						<action type="control populate" value="#grdGlavni"/>
+					</event>
+				</button>
+				<button name="btnKonfiguratorIRA" caption="IRA postavke" tooltip="Urednik knjiga izlaznih računa za PDV po naplati.">
+					<event type="click">
+						<action type="form open" value="frmKonfiguratorIRA"/>
+						<!-- <action type="datarun reader" value="~dtDatumZakljucka"/> -->
+						<!-- <action type="variable value" value="$DatumZakljucka"> -->
+							<!-- <parameter value="~dtDatumZakljucka.@DatumZakljucka"/> -->
+						<!-- </action> -->
+						<action type="datarun reader" value="~dtProvjere"/>							
+						<action type="control populate" value="#grdGlavni"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGlavni" command="spCKntPdvPoNaplatiQuery">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@DatOd" value="#datOd"/>
+				<parameter name="@DatDo" value="#datDo"/>				
+			</data>
+			<data name="dtProknjizi" command="spCKntPdvPoNaplatiQuery">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@DatOd" value="#datOd"/>
+				<parameter name="@DatDo" value="#datDo"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+			</data>			
+			<data type="text" name="dtPrviDan" command="SELECT cast(CONVERT(VARCHAR(8), DATEADD(yy, DATEDIFF(yy,0,getdate()), 0), 112) as datetime) as prvidan"/>
+		</datalist>
+	</form>
+	
+	<form name="frmKonfiguratorURA" width="300" height="500" caption="Izbor knjiga ulaznih računa" saveformsize="true">
+		<event type="shown">
+			<action type="datarun reader" value="~dtKnjigeZaObracun"/>
+			<action type="control populate" value="#grdKonfigurator"/>
+			<action type="control selectedrows" value="#grdKonfigurator">
+				<parameter value="~dtKnjigeZaObracun.@NizId"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="1">
+				<item col="1" row="1" groupbordervisible="true">
+					<grid name="grdKonfigurator" bestfitonrefresh="true" autopopulate="false" dataname="~dtKonfigurator" key="KntVrsteKnjigaUraId" showcheckboxes="true" showautofilterrow="false" showgrouppanel="false">
+						<fields>
+							<field name="NazivKnjige" caption="NAZIV KNJIGE"/>
+							<field name="PDV" caption="PDV OZNAKA"/>
+							<field name="Pdvponaplati" caption="PDV PO NAPLATI"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI" tabindex="2">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtKnjigeZaObracunAzur"/>
+						<action type="form close"/>	
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" tabindex="3">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtKonfigurator" command="spCKntPdvPoNaplatiPostavkeAzur">
+				<parameter name="@Action" value="4"/>
+			</data>
+			<data name="dtKnjigeZaObracun" command="spCKntPdvPoNaplatiPostavkeAzur">
+				<parameter name="@Action" value="5"/>
+			</data>	
+			<data name="dtKnjigeZaObracunAzur" command="spCKntPdvPoNaplatiPostavkeAzur">
+				<parameter name="@Action" value="6"/>
+				<!-- <parameter name="@NizId" value="#grdKonfigurator.selectedids.table"/>  -->
+				<!--sql2000(80)-->
+				<parameter name="@NizId" value="#grdKonfigurator.selectedids"/>
+			</data>					
+		</datalist>
+	</form>
+	
+		<form name="frmKonfiguratorIRA" width="300" height="500" caption="Izbor knjiga izlaznih računa" saveformsize="true">
+		<event type="shown">
+			<action type="datarun reader" value="~dtKnjigeZaObracun"/>
+			<action type="control populate" value="#grdKonfigurator"/>
+			<action type="control selectedrows" value="#grdKonfigurator">
+				<parameter value="~dtKnjigeZaObracun.@NizId"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="1">
+				<item col="1" row="1" groupbordervisible="true">
+					<grid name="grdKonfigurator" bestfitonrefresh="true" autopopulate="false" dataname="~dtKonfigurator" key="KntVrsteKnjigaIraId" showcheckboxes="true" showautofilterrow="false" showgrouppanel="false">
+						<fields>
+							<field name="NazivKnjige" caption="NAZIV KNJIGE"/>
+							<field name="PDV" caption="PDV OZNAKA"/>
+							<field name="Pdvponaplati" caption="PDV PO NAPLATI"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI" tabindex="2">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtKnjigeZaObracunAzur"/>
+						<action type="form close"/>	
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" tabindex="3">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtKonfigurator" command="spCKntPdvPoNaplatiPostavkeAzur">
+				<parameter name="@Action" value="44"/>
+			</data>
+			<data name="dtKnjigeZaObracun" command="spCKntPdvPoNaplatiPostavkeAzur">
+				<parameter name="@Action" value="55"/>
+			</data>	
+			<data name="dtKnjigeZaObracunAzur" command="spCKntPdvPoNaplatiPostavkeAzur">
+				<parameter name="@Action" value="66"/>
+				<!-- <parameter name="@NizId" value="#grdKonfigurator.selectedids.table"/>  -->
+				<!--sql2000(80)-->
+				<parameter name="@NizId" value="#grdKonfigurator.selectedids"/>
+			</data>					
+		</datalist>
+	</form>
+</root>

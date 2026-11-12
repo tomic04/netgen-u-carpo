@@ -1,0 +1,462 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Carpo Devex_26 — demo granula za Iter5/Iter6 novitete.
+  Self-contained: type="text" SQL (nema custom SP).
+  Pokreni u Carpo.TestShell / Lite na bilo kojoj SQL bazi s pravima za SELECT.
+-->
+<root version="1.2" loglevel="3">
+
+	<!-- ========== Editor: dxsearchmode + lookup ========== -->
+	<form name="frmStavka" type="dialog" caption="NOVO: Lookup + TokenEdit" width="560" height="400" fixedsize="true">
+		<event type="shown">
+			<action type="control populate" value="#cmbPartner,#cmbPartner2,#tokTagovi"/>
+		</event>
+		<layout textposition="left" itemspadding="4">
+			<group rows="6" cols="2">
+				<item row="1" col="1" caption="Naziv:"/>
+				<item row="1" col="2">
+					<textedit name="txtNaziv" datavalue="#grdMaster.@naziv"/>
+				</item>
+				<item row="2" col="1" caption="Partner AutoSearch:"/>
+				<item row="2" col="2">
+					<!-- B5: dxsearchmode=autosearch -->
+					<comboedit name="cmbPartner"
+						valuefield="id"
+						displayfield="naziv"
+						dataname="~dtPartner"
+						dxsearchmode="autosearch"
+						filtermode="contains"
+						autopopulate="true"
+						nulltext="Tipkaj npr. om / al / beta..."/>
+				</item>
+				<item row="3" col="1" caption="Partner AutoComplete:"/>
+				<item row="3" col="2">
+					<!-- B10: dxsearchmode=autocomplete + immediatepopup=false -->
+					<comboedit name="cmbPartner2"
+						valuefield="id"
+						displayfield="naziv"
+						dataname="~dtPartner"
+						dxsearchmode="autocomplete"
+						immediatepopup="false"
+						filtermode="contains"
+						autopopulate="true"
+						nulltext="Autocomplete (popup nije odmah)"/>
+				</item>
+				<item row="4" col="1" caption="Partner AutoSuggest:"/>
+				<item row="4" col="2">
+					<!-- B10: autosuggest + $DxLookupSearch server filter -->
+					<comboedit name="cmbPartner3"
+						valuefield="id"
+						displayfield="naziv"
+						dataname="~dtPartnerSuggest"
+						dxsearchmode="autosuggest"
+						filtermode="contains"
+						autopopulate="false"
+						nulltext="AutoSuggest: tipkaj om / ju..."/>
+				</item>
+				<item row="5" col="1" caption="Tagovi (TokenEdit):"/>
+				<item row="5" col="2">
+					<!-- B9: DX TokenEdit — EditValue = CSV; allowcustom tipka nove tokene -->
+					<tokenedit name="tokTagovi"
+						valuefield="id"
+						displayfield="naziv"
+						dataname="~dtTagovi"
+						separator=","
+						allowcustom="true"
+						autopopulate="true"
+						nulltext="Odaberi / tipkaj tag..."/>
+				</item>
+				<item row="6" col="1" caption="Iznos:"/>
+				<item row="6" col="2">
+					<textedit name="txtIznos" datavalue="#grdMaster.@iznos"/>
+				</item>
+				<rowsdefinition>
+					<row position="1" size="28"/>
+					<row position="2" size="28"/>
+					<row position="3" size="28"/>
+					<row position="4" size="28"/>
+					<row position="5" size="36"/>
+					<row position="6" size="28"/>
+				</rowsdefinition>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnShowTags" caption="Prikaži tagove">
+					<event type="click">
+						<action type="message" value="TokenEdit EditValue (CSV): {#tokTagovi}"/>
+					</event>
+				</button>
+				<button name="btnOk" caption="Zatvori">
+					<event type="click">
+						<action type="form close" value="true"/>
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtPartner" type="text" command="SELECT * FROM (VALUES (1,N'Alpha d.o.o.'),(2,N'Beta Trade'),(3,N'Gamma Soft'),(4,N'Delta Partner'),(5,N'Omega Logistics'),(6,N'Sigma Consulting'),(7,N'Nova Tehnika'),(8,N'Jupiter Demo')) AS t(id,naziv)"/>
+			<!-- B10 AutoSuggest: SQL filter via $DxLookupSearch (set in AutoSuggest handler) -->
+			<data name="dtPartnerSuggest" type="text" command="SELECT * FROM (VALUES (1,N'Alpha d.o.o.'),(2,N'Beta Trade'),(3,N'Gamma Soft'),(4,N'Delta Partner'),(5,N'Omega Logistics'),(6,N'Sigma Consulting'),(7,N'Nova Tehnika'),(8,N'Jupiter Demo')) AS t(id,naziv) WHERE (@q IS NULL OR @q = N'' OR naziv LIKE N'%' + @q + N'%')">
+				<parameter name="@q" value="$DxLookupSearch"/>
+			</data>
+			<data name="dtTagovi" type="text" command="SELECT * FROM (VALUES (N'hitno',N'Hitno'),(N'partner',N'Partner'),(N'demo',N'Demo'),(N'audit',N'Audit'),(N'dx26',N'DX 26')) AS t(id,naziv)"/>
+		</datalist>
+	</form>
+
+	<!-- ========== B6 VirtualServerMode 50k demo (paging SP) ========== -->
+	<form name="frmBigGridVsm" type="dialog" caption="B6: VirtualServerMode 50k (paging SP)" width="900" height="560" fixedsize="true">
+		<event type="shown">
+			<action type="control populate" value="#grdBigVsm"/>
+		</event>
+		<layout textposition="top" itemspadding="4">
+			<group rows="2" cols="1">
+				<item row="1" col="1" caption="Scroll / sort / Find — SP sp_DxAudit26_BigGrid_Page (@Skip/@Take/@Sort/@Filter). Nije full DataTable."/>
+				<item row="2" col="1">
+					<grid name="grdBigVsm"
+						key="Id"
+						dataname="~dtBigGridVsm"
+						virtualservermode="true"
+						findpanel="true"
+						showautofilterrow="true"
+						bestfitonrefresh="false"
+						savelayout="false">
+						<fields>
+							<field name="Id" caption="ID" minwidth="60"/>
+							<field name="Naziv" caption="Naziv" minwidth="160"/>
+							<field name="Status" caption="Status" minwidth="60"/>
+							<field name="Kategorija" caption="Kategorija" minwidth="90"/>
+							<field name="Iznos" caption="Iznos" minwidth="90"/>
+							<field name="Datum" caption="Datum" minwidth="90"/>
+							<field name="PartnerId" caption="Partner" minwidth="70"/>
+							<field name="Opis" caption="Opis" minwidth="140"/>
+						</fields>
+					</grid>
+				</item>
+				<rowsdefinition>
+					<row position="1" size="36"/>
+					<row position="2" size="1" type="percent"/>
+				</rowsdefinition>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnVsmRefresh" caption="Refresh (rebind)">
+					<event type="click">
+						<action type="control populate" value="#grdBigVsm"/>
+					</event>
+				</button>
+				<button name="btnVsmForeachWarn" caption="Test foreachrow (unsupported)">
+					<event type="click">
+						<action type="control foreachrow" value="#grdBigVsm">
+							<action type="message" value="ne bi smjelo doći ovdje"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnVsmClose" caption="Zatvori">
+					<event type="click">
+						<action type="form close" value="true"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<!-- Default type = stored procedure (not type=text). Binder calls SP with paging params. -->
+			<data name="dtBigGridVsm" command="sp_DxAudit26_BigGrid_Page"/>
+		</datalist>
+	</form>
+
+	<!-- ========== B8 lazy tree demo (expand → $TreeParentId) ========== -->
+	<form name="frmLazyTree" type="dialog" caption="B8: Lazy tree (expand-on-demand)" width="480" height="420" fixedsize="true">
+		<event type="shown">
+			<action type="control populate" value="#trLazy"/>
+		</event>
+		<layout textposition="top" itemspadding="4">
+			<group rows="2" cols="1">
+				<item row="1" col="1" caption="Rootovi na loadu — klikni + za SQL child ($TreeParentId)"/>
+				<item row="2" col="1">
+					<tree name="trLazy"
+						key="id"
+						parentfield="parentid"
+						dataname="~dtTreeLazy"
+						lazy="true"
+						showcolumns="true"
+						expandallonload="false"
+						showautofilterrow="false">
+						<fields>
+							<field name="caption" caption="Lazy grana"/>
+						</fields>
+					</tree>
+				</item>
+				<rowsdefinition>
+					<row position="1" size="28"/>
+					<row position="2" size="1" type="percent"/>
+				</rowsdefinition>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnLazyRefresh" caption="Refresh roots">
+					<event type="click">
+						<action type="control populate" value="#trLazy"/>
+					</event>
+				</button>
+				<button name="btnLazyClose" caption="Zatvori">
+					<event type="click">
+						<action type="form close" value="true"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<!-- Root: @ParentId NULL; expand: parentid = @ParentId. haschildren → expand glyph prije loada. -->
+			<data name="dtTreeLazy" type="text" command="WAITFOR DELAY '00:00:00.300'; SELECT id, parentid, caption, haschildren FROM (VALUES (1,CAST(NULL AS int),N'Root A (expand me)',1),(10,CAST(NULL AS int),N'Root B (expand me)',1),(2,1,N'Child A-1',0),(3,1,N'Child A-2 (ima unuke)',1),(4,3,N'Grandchild A-2-1',0),(11,10,N'Child B-1',0),(12,10,N'Child B-2',0)) AS t(id,parentid,caption,haschildren) WHERE (@ParentId IS NULL AND parentid IS NULL) OR (parentid = @ParentId)">
+				<parameter name="@ParentId" value="$TreeParentId" type="int"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!-- ========== Manager: tree + master + detail ========== -->
+	<form name="DxAudit26_Demo" type="master" caption="DX Audit 26 — FindPanel / Async / SearchMode">
+		<event type="shown">
+			<action type="control populate" value="#trFilter,#grdMaster"/>
+		</event>
+
+		<managerlayout>
+			<!-- B2 + B5 + B8: Find Panel + FilterMode.Smart + async populate -->
+			<tree name="trFilter"
+				key="id"
+				parentfield="parentid"
+				dataname="~dtTree"
+				async="true"
+				asynccaption="Učitavam filter tree…"
+				findpanel="true"
+				filtermode="smart"
+				showcolumns="true"
+				expandallonload="true"
+				showautofilterrow="true">
+				<fields>
+					<field name="caption" caption="Filter (FindPanel + smart)"/>
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdMaster"/>
+				</event>
+			</tree>
+
+			<!-- B1 + B3: Find Panel + async background fetch (+ FormatRules / styles) -->
+			<grid name="grdMaster"
+				type="master"
+				key="id"
+				dataname="~dtMaster"
+				async="true"
+				asynccaption="Učitavam master…"
+				findpanel="true"
+				emptymessage="Nema stavki za odabrani filter."
+				filtereditor="true" editform="true"
+				columnchooser="true"
+				showcheckboxes="true"
+				showautofilterrow="true"
+				bestfitonrefresh="true"
+				savelayout="false"
+				>
+				<data type="text" command="WAITFOR DELAY '00:00:01'; SELECT id, naziv, status, iznos, datum FROM (VALUES (1,N'Stavka Alpha',1,120,CAST(GETDATE() AS date)),(2,N'Stavka Beta',1,340,CAST(GETDATE()-1 AS date)),(3,N'Stavka Gamma',0,55,CAST(GETDATE()-2 AS date)),(4,N'Stavka Delta',1,890,CAST(GETDATE()-3 AS date)),(5,N'Stavka Omega',0,210,CAST(GETDATE()-4 AS date)),(6,N'Stavka Sigma',1,45,CAST(GETDATE()-5 AS date)),(7,N'Stavka Nova',1,670,CAST(GETDATE()-6 AS date)),(8,N'Stavka Jupiter',0,150,CAST(GETDATE()-7 AS date))) AS t(id,naziv,status,iznos,datum) WHERE (@TreeId IS NULL OR @TreeId &lt;= 1 OR (@TreeId = 2 AND status = 1) OR (@TreeId = 3 AND status = 0))">
+					<parameter name="@TreeId" value="#trFilter.@id" type="int"/>
+				</data>
+				<fields>
+					<field name="id" caption="ID" minwidth="50"/>
+					<field name="naziv" caption="Naziv" minwidth="160" editable="true"/>
+					<field name="status" caption="Status" minwidth="70"/>
+					<field name="iznos" caption="Iznos" minwidth="90" editable="true"/>
+					<field name="datum" caption="Datum" minwidth="90"/>
+				</fields>
+				<styles>
+					<style name="bold" value="true" if="#grdMaster.@status==1"/>
+					<style name="backcolor" value="#e8f4e8" if="#grdMaster.@status==1"/>
+					<style name="backcolor" value="#fce8e8" if="#grdMaster.@status==0"/>
+					<formatrule name="databar" field="iznos" valuetype="number">
+						<parameter name="low" value="0"/>
+						<parameter name="high" value="1000"/>
+					</formatrule>
+				</styles>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetail"/>
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmStavka"/>
+				</event>
+			</grid>
+
+			<!-- Detail: findpanel=allow (Ctrl+F, nije pinned) + empty message -->
+			<grid name="grdDetail"
+				key="id"
+				dataname="~dtDetail"
+				findpanel="allow"
+				emptymessage="Nema detail redova — odaberi master stavku."
+				showautofilterrow="true"
+				bestfitonrefresh="true">
+				<data type="text" command="SELECT id, masterid, opis, kolicina FROM (VALUES (101,1,N'Stavka Alpha / linija 1',2),(102,1,N'Stavka Alpha / linija 2',1),(201,2,N'Stavka Beta / linija 1',4),(301,3,N'Stavka Gamma / linija 1',1),(401,4,N'Stavka Delta / linija 1',3),(402,4,N'Stavka Delta / linija 2',2),(501,5,N'Stavka Omega / linija 1',1),(601,6,N'Stavka Sigma / linija 1',5),(701,7,N'Stavka Nova / linija 1',2),(801,8,N'Stavka Jupiter / linija 1',1)) AS t(id,masterid,opis,kolicina) WHERE masterid = ISNULL(@MasterId,0)">
+					<parameter name="@MasterId" value="#grdMaster.@id" type="int"/>
+				</data>
+				<fields>
+					<field name="id" caption="ID"/>
+					<field name="opis" caption="Opis"/>
+					<field name="kolicina" caption="Kol."/>
+				</fields>
+			</grid>
+		</managerlayout>
+
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<!-- Refresh: async=true na masteru → SQL ide u background (~1s WAITFOR), loading panel -->
+				<button name="btnRefresh" caption="1) Refresh grid async (~1s)">
+					<event type="click">
+						<action type="control populate" value="#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnRefreshTree" caption="1b) Refresh tree async (~0.5s)">
+					<event type="click">
+						<action type="control populate" value="#trFilter"/>
+					</event>
+				</button>
+				<button name="btnLazyTree" caption="1c) Lazy tree (expand)">
+					<event type="click">
+						<action type="form open" value="frmLazyTree"/>
+					</event>
+				</button>
+				<button name="btnBigGridVsm" caption="9) Big grid 50k (dialog)" begingroup="true">
+					<event type="click">
+						<action type="form open" value="frmBigGridVsm"/>
+					</event>
+				</button>
+				<!-- Runtime Find: true/always (pinned) | allow (Ctrl+F) | false -->
+				<button name="btnFindOn" caption="2) Find always (pinned)" begingroup="true">
+					<event type="click">
+						<action type="control attribute" value="#grdMaster">
+							<parameter name="findpanel" value="true"/>
+						</action>
+						<action type="control attribute" value="#trFilter">
+							<parameter name="findpanel" value="true"/>
+						</action>
+						<action type="message" value="Find pinned (always). Highlight + Clear. Tipkaj npr. Aktiv / Alpha."/>
+					</event>
+				</button>
+				<button name="btnFindAllow" caption="2a) Find allow (Ctrl+F)">
+					<event type="click">
+						<action type="control attribute" value="#grdMaster">
+							<parameter name="findpanel" value="allow"/>
+						</action>
+						<action type="control attribute" value="#grdDetail">
+							<parameter name="findpanel" value="allow"/>
+						</action>
+						<action type="message" value="Find allow: traka nije pinned — otvori s Ctrl+F (ili meni). Detail koristi allow po defaultu."/>
+					</event>
+				</button>
+				<button name="btnFindOff" caption="2b) Sakrij Find traku">
+					<event type="click">
+						<action type="control attribute" value="#grdMaster">
+							<parameter name="findpanel" value="false"/>
+						</action>
+						<action type="control attribute" value="#trFilter">
+							<parameter name="findpanel" value="false"/>
+						</action>
+						<action type="message" value="Find traka sakrivena."/>
+					</event>
+				</button>
+				<!-- AutoSearch: otvori dijalog i tipkaj u Partner -->
+				<button name="btnEditForm" caption="3) EditForm (F2 na master)">
+					<event type="click">
+						<action type="message" value="Selektiraj red u MASTER gridu i pritisni F2 — otvara se DevExpress EditForm (editform=&quot;true&quot;). Double-click i dalje otvara Lookup demo."/>
+					</event>
+				</button>
+				<button name="btnEdit" caption="4) Lookup AutoSearch" begingroup="true">
+					<event type="click">
+						<action type="form open" value="frmStavka"/>
+					</event>
+				</button>
+				<!-- Audit: transakcija OK vs FAIL (fail ide u log, LastTransactionSuccess=fail) -->
+				<button name="btnTranOk" caption="5) Transaction OK">
+					<event type="click">
+						<action type="transaction">
+							<action type="datarun reader" value="~dtTranOk"/>
+						</action>
+						<action type="message" value="Očekivano: success. Rezultat={transaction}"/>
+					</event>
+				</button>
+				<button name="btnTranFail" caption="5b) Transaction FAIL">
+					<event type="click">
+						<action type="transaction">
+							<action type="datarun reader" value="~dtTranFail"/>
+						</action>
+						<action type="message" value="Očekivano: fail (+ greška u Carpo logu). Rezultat={transaction}"/>
+					</event>
+				</button>
+				<!-- B12: Column Chooser -->
+				<button name="btnColChooser" caption="6) Column Chooser" begingroup="true">
+					<event type="click">
+						<action type="control attribute" value="#grdMaster">
+							<parameter name="columnchooser" value="true"/>
+						</action>
+					</event>
+				</button>
+				<!-- A9: prefer #grid.selectedids → 1 SQL; avoid foreachrow + datarun (N+1) -->
+				<button name="btnBatchIds" caption="7) Batch selectedids (1 SQL)">
+					<event type="click">
+						<action type="datarun reader" value="~dtBatchIds" if="#grdMaster.selectedids!=null"/>
+						<action type="message" value="A9 preferred: 1 SQL. IDs={#grdMaster.selectedids}  count={#dtBatchIds.@cnt}" if="#grdMaster.selectedids!=null"/>
+						<action type="message" value="Označi redove checkboxom pa ponovi." if="#grdMaster.selectedids==null"/>
+					</event>
+				</button>
+				<button name="btnForeachN1" caption="7b) foreachrow N× SQL (anti)">
+					<event type="click">
+						<action type="control foreachrow selected" value="#grdMaster">
+							<action type="datarun reader" value="~dtPerRow"/>
+						</action>
+						<action type="message" value="A9 anti-pattern: N SQL (po označenom redu). Preferiraj gumb 7 / selectedids."/>
+					</event>
+				</button>
+				<!-- Wave 8: Fiscal/Outlook extract — demo dry-run (bez cert/Outlook/SOAP) -->
+				<button name="btnOutlookDemo" caption="8) Outlook demo (dry-run)" begingroup="true">
+					<event type="click">
+						<action type="outlook">
+							<parameter name="demo" value="true"/>
+							<parameter name="procedure" value="unused-in-demo"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnFiscalDemo" caption="8b) ZKI+JIR demo (dry-run)">
+					<event type="click">
+						<action type="ZKI">
+							<parameter name="demo" value="true"/>
+							<parameter name="loadZKI" value="~dtZkiDemo"/>
+						</action>
+						<action type="JIR">
+							<parameter name="demo" value="true"/>
+							<parameter name="loadJIR" value="~dtJirDemo"/>
+							<parameter name="saveZKIJIRUUD" value="~dtJirDemo"/>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data name="dtTree" type="text" command="WAITFOR DELAY '00:00:00.500'; SELECT * FROM (VALUES (1,CAST(NULL AS int),N'Sve stavke'),(2,1,N'Samo aktivni (status=1)'),(3,1,N'Samo neaktivni (status=0)'),(10,CAST(NULL AS int),N'Demo grana'),(11,10,N'Podgrana A'),(12,10,N'Podgrana B')) AS t(id,parentid,caption)"/>
+			<data name="dtMaster" type="text" command="SELECT 1 AS id"/>
+			<data name="dtDetail" type="text" command="SELECT 1 AS id"/>
+			<data name="dtTranOk" type="text" command="SELECT 1 AS ok"/>
+			<data name="dtTranFail" type="text" command="SELECT 1/0 AS boom"/>
+			<!-- A9 batch: one round-trip using #grdMaster.selectedids (CSV) -->
+			<data name="dtBatchIds" type="text" command="SELECT COUNT(*) AS cnt FROM (VALUES (1),(2),(3),(4),(5),(6),(7),(8)) AS t(id) WHERE CHARINDEX(',' + CAST(id AS varchar(10)) + ',', ',' + ISNULL(@Ids,'') + ',') &gt; 0">
+				<parameter name="@Ids" value="#grdMaster.selectedids"/>
+			</data>
+			<!-- A9 anti: intentional N+1 — one SELECT per selected row -->
+			<data name="dtPerRow" type="text" command="SELECT 1 AS ok WHERE @Id IS NOT NULL">
+				<parameter name="@Id" value="#grdMaster.@id" type="int"/>
+			</data>
+			<!-- Placeholders for ZKI/JIR demo attrs (dry-run ne čita ove datasete) -->
+			<data name="dtZkiDemo" type="text" command="SELECT 1 AS ok"/>
+			<data name="dtJirDemo" type="text" command="SELECT 1 AS ok"/>
+		</datalist>
+	</form>
+</root>

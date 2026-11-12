@@ -1,0 +1,421 @@
+<root>
+	<form type="master" caption="Skladište">
+		<event type="focusedrowchanged">
+			<action type="control enable" value="#btnDelete" if="#grdMaster.rowcount!=0"/>
+			<action type="control disable" value="#btnDelete" else=""/>
+			<action type="control enable" value="#btnEdit" if="#grdMaster.rowcount!=0"/>
+			<action type="control disable" value="#btnEdit" else=""/>
+		</event>
+		<managerlayout>
+			<grid name="grdMaster" type="master" dataname="Global.~dtMaster" key="skladisteid" autopopulate="true" async="true" savelayout="true" multiselect="true">
+				<fields inherited="true">
+					<field name="Oznaka" caption="Oznaka"/>
+					<field name="Opis" caption="Opis"/>
+					<field name="Tip" caption="Tip"/>
+					<field name="Organizacijska shema" caption="Organizacijska \nshema"/>
+					<field name="Metoda" caption="Metoda" />
+					<field name="Dozvoljeni minus" caption="Dozvoljeni\nminus"/>
+					<field name="RobaInfo" caption="Prikaz na\nroba info" />
+					<field name="SerBroInd" caption="Praćenje po\nserijskim brojevima" />
+					<field name="RegalnoInd" caption="Regalno skladište" />
+					<field name="TrosarinskoInd" caption="Trošarinsko" />
+					<field name="Slijedivost" caption="Slijedivost" />
+					<field name="KNT Zalihe" caption="Konto\nzalihe"/>
+					<field name="KNT Rashoda" caption="Konto\nrashoda" />
+					<field name="KNT Prihoda" caption="Konto\nprihoda"/>
+					<field name="KNT PrihodaDEV" caption="Konto\nprihoda\nDEV" />
+					<field name="Dodatna oznaka" caption="Dodatna\noznaka" />
+					<field name="Trošarinsko" caption="Trošarinsko\nskladište" />
+					<field name="Org. Shema Zalihe" caption="Organizacijska\nshema\nzalihe" />
+					<field name="Org. Shema Troška" caption="Organizacijska\nshema\ntroška" />
+					<field name="Međuskladišnica" caption="Međuskladišnica" />
+					<field name="Odgovorna osoba" caption="Odgovorna osoba" />
+				</fields>
+				<event type="doubleclick">
+					<action type="form open" value="frmSkladEdit">
+						<parameter name="skladisteid" value="#grdMaster.@SkladisteId" />
+					</action>
+				</event>
+				<event type="focusedrowchanged">
+					<action type="variable value">
+						<parameter name="skladisteid" value="#grdMaster.@skladisteid" />
+					</action>
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnInsert" caption="&amp;UNESI" function="Unos" type="add">
+					<event type="click">
+						<action type="form open" value="frmSkladInsert">
+							<parameter name="skladisteId" value="null" />
+						</action>
+					</event>
+				</button>
+				<button name="btnEdit" caption="&amp;IZMIJENI" function="Izmjena" type="">
+					<event type="click">
+						<action type="form open" value="frmSkladEdit">
+							<parameter value="#grdMaster.@skladisteid" name="SkladisteID" />
+						</action>
+					</event>
+				</button>
+				<button name="btnDelete" caption="&amp;OBRIŠI" function="Brisanje" type="">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati odabrana skladište?">
+							<action type="control foreachrow selected" value="#grdMaster">
+								<action type="datarun nonquery" value="Global.~dtDelete"></action>
+							</action>
+						</action>
+						<action type="control enable" value="#btnDelete" if="#grdMaster.rowcount!=0"/>
+						<action type="control disable" value="#btnDelete" else=""/>
+						<action type="control enable" value="#btnEdit" if="#grdMaster.rowcount!=0"/>
+						<action type="control disable" value="#btnEdit" else=""/>
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnPrint" caption="IS&amp;PIŠI" type="">
+					<event type="click">
+						<action type="control printcontrol" value="#grdMaster"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmSkladInsert" caption="Unos novog skladišta">
+		<layout groupbordervisible="false" textposition="left">
+			<part name="prtStavka" path="Skladiste.xml" />
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnInsert" caption="PRIHVATI" type="add" img="add">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="global.~dtInsert">
+							<parameter name="SkladisteID" />
+						</action>
+						<action type="control populate" value="parent.#grdMaster" />
+						<action type="form close" />
+						<action type="control focus" value="parent.#grdMaster">
+							<parameter value="$SkladisteId"  type="int" />
+						</action>
+						<action type="control enable" value="parent.#btnDelete" if="parent.#grdMaster.rowcount!=0"/>
+						<action type="control disable" value="parent.#btnDelete" else=""/>
+						<action type="control enable" value="parent.#btnEdit" if="parent.#grdMaster.rowcount!=0"/>
+						<action type="control disable" value="parent.#btnEdit" else=""/>
+					</event>
+				</button>
+				<button name="btnEdit" caption="ODUSTANI" type="cancel" dock="right"></button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmSkladEdit" caption="Izmjena skladišta">
+		<event type="init">
+			<action type="datarun reader" value="global.~dtGetOrgShema" />
+			<action type="datarun reader" value="global.~dtOdabirMetode" />
+			<action type="datarun reader" value="global.~dtOdabirCjenika" />
+			<action type="datarun reader" value="global.~dtGet" />
+		</event>
+		<layout groupbordervisible="false" textposition="left">
+			<part name="prtStavka" path="Skladiste.xml" />
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnInsert" caption="IZMIJENI" type="add" img="add">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="global.~dtUpdate"></action>
+						<action type="control populate" value="parent.#grdMaster" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnEdit" caption="ODUSTANI" type="cancel" dock="right"></button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<parts>
+		<part name="prtStavka">
+			<group cols="1" rows="5" groupbordervisible="false">
+				<group padding="1" groupbordervisible="True" cols="3" rows="7" col="1" row="1" caption="Podaci o skladištu">
+					<item caption="Opis:" col="1" row="1" colspan="3">
+						<textedit name="txtOpis" datavalue="~dtGet.@Opis" required="true"/>
+					</item>
+					<item caption="Oznaka:" col="1" row="2">
+						<textedit name="txtOznaka" datavalue="~dtGet.@Oznaka" required="true"/>
+					</item>
+					<item caption="Tip:" col="2" row="2" >
+						<textedit name="txtTip" datavalue="~dtGet.@Tip" required="true" tooltip="Tip skladišta može biti: G,O,S ili T" />
+					</item>
+					<item caption="Dodatna oznaka:" col="3" row="2">
+						<textedit name="txtDodOznaka" datavalue="~dtGet.@RegOznaka" />
+					</item>
+					<item caption="Org. Shema:" col="1" row="3" colspan="3">
+						<comboedit name="txtOrgShema" dataname="global.dtGetOrgShema" valuefield="ID" displayfield="Naziv" datavalue="~dtGet.@OrgShemaID" required="true"/>
+					</item>
+					<item caption="Metoda:" col="1" row="4" colspan="3">
+						<comboedit name="cmbMetoda" valuefield="Id" displayfield="Naziv" datavalue="~dtGet.@metodaRobnoMat" dataname="global.dtOdabirMetode" required="true"/>
+					</item>
+					<item caption="Cjenik:" col="1" row="5" colspan="3">
+						<comboedit name="cmbCjenik" valuefield="VrCjenikId" displayfield="Opis" datavalue="~dtGet.@VrCjenikId" dataname="global.dtOdabirCjenika"/>
+					</item>
+					<item caption="Odgovorna osoba:" col="1" row="6" colspan="3">
+						<comboedit name="cmbOsobe" valuefield="OsobeId" displayfield="Osoba" datavalue="~dtGet.@OsobeID" dataname="global.dtNaseOsobe" tooltip="Odabir odgovorne osobe na skladištu"/>
+					</item>
+					<item caption="Grupa:" col="1" row="7" colspan="3">
+						<textedit name="txtGrupa" datavalue="~dtGet.@Grupa" />
+					</item>
+				</group>
+				<group padding="1" groupbordervisible="True" cols="1" rows="7" col="1" row="2" caption="Detalji">
+					<item caption=" " col="1" row="1">
+						<checkedit name="chkRobaInfoInd" caption="Prikaz na roba info" datavalue="~dtGet.@RobaInfoInd" />
+					</item>
+					<item caption=" " col="1" row="2">
+						<checkedit name="chkIndminus" caption="Dozvoljen minus na stanju" datavalue="~dtGet.@IndMinus" />
+					</item>
+					<item caption=" " col="1" row="3">
+						<checkedit name="chkSerBrojInd" caption="Praćenje po serijskim brojevima" datavalue="~dtGet.@SerBroInd" />
+					</item>
+					<item caption=" " col="1" row="4">
+						<checkedit name="chkRegalnoInd" caption="Regalno skladište" datavalue="~dtGet.@RegalnoInd" />
+					</item>
+					<item caption=" " col="1" row="5">
+						<checkedit name="chkTrosarinskoInd" caption="Trošarinsko" datavalue="~dtGet.@TrosarinskoInd" />
+					</item>
+					<item caption=" " col="1" row="6">
+						<checkedit name="chkKkvalObavezan" caption="Sljedivost" datavalue="~dtGet.@KkvalObavezan" />
+					</item>
+					<item caption=" " col="1" row="7">
+						<checkedit name="chkMskl" caption="Međuskladišnica u 2 koraka" datavalue="~dtGet.@MsklNeZakljucujeUlaz"  />
+					</item>
+				</group>
+				<group padding="1" groupbordervisible="True" cols="1" rows="2" col="1" row="3" caption="Konsignacija">
+					<item caption="Partner:" row="6" col="1" fontbold="true">
+						<searchedit netgenfields="true" name="srcPartner" fontbold="true" dataname="Global.dtPartneri" fieldtext="NazivId" fieldvalue="partneriid" datavalue="Global.~dtGet.@PartneriId" datatext="Global.~dtGet.@PartnerNaziv">
+							<event type="valuechanged">
+								<action type="variable value">
+									<parameter name="PartneriId" value="#srcPartner" />
+								</action>
+								<action type="variable value">
+									<parameter name="IndPromijenjeno" value="1" />
+								</action>
+								<action type="variable value">
+									<parameter name="IndLoad" value="0" />
+								</action>
+							</event>
+							<event type="leave">
+								<action type="variable value">
+									<parameter name="PartneriId" value="#srcPartner"/>
+								</action>
+								<action type="datarun reader" value="Global.dtDajPartnera" if="#srcPartner!=null"/>
+								<action type="control value" value="#srcParstru" if="#srcPartner!=null&amp;&amp;#srcPartner.@BrojLokacija_Id==1">
+									<parameter value="Global.~dtDajPartnera.@parstruid" text="Global.~dtDajPartnera.@Naziv"/>
+								</action>
+								<action type="form open" value="frmLokacije" if="#srcPartner!=null&amp;&amp;#srcPartner.@BrojLokacija_Id!=1&amp;&amp;$IndPromijenjeno==1">
+									<parameter name="PartneriId" value="#srcPartner" />
+									<parameter name="IndLokacija" value="1" />
+									<parameter name="ParStruId" value="#srcParstru" />
+								</action>
+								<action type="control value" value="#srcParstru" if="#srcPartner==null">
+									<parameter value="null"/>
+								</action>
+								<action type="variable value">
+									<parameter name="IndLokacija" value="0" />
+								</action>
+								<action type="variable value">
+									<parameter name="IndPromijenjeno" value="0" />
+								</action>
+							</event>
+						</searchedit>
+					</item>
+					<item caption="Lokacija:" row="2" col="1">
+						<searchedit netgenfields="true" name="srcParstru" dataname="Global.dtParstru" fieldtext="NazivId" fieldvalue="ParStruId" datavalue="~dtGet.@ParStruId" datatext="~dtGet.@ParStruNaziv" >
+							<event type="leave">
+								<action type="datarun reader" value="Global.dtDajPartnera" if="#srcParstru!=null"/>
+								<action type="control value" value="#srcPartner" if="#srcPartner==null&amp;&amp;#srcParstru!=null">
+									<parameter value="~dtDajPartnera.@partneriid" text="~dtDajPartnera.@Naziv"/>
+								</action>
+							</event>
+						</searchedit>
+					</item>
+				</group>
+				<group padding="1" groupbordervisible="True" cols="2" rows="4" col="1" row="4" caption="Konta">
+					<item row="1" col="1" caption="Prihoda:" fontbold="">
+						<searchedit name="srcPrihoda" dataname="global.~dtKontoPrihoda" fontsizedelta="1" fieldtext="Konto" fieldvalue="id" function="srcPrihoda" datavalue="~dtGet.@KontoPrihod" datatext="~dtGet.@KontoPrihod"></searchedit>
+					</item>
+					<item row="1" col="2" caption="Prihoda dev:" fontbold="">
+						<searchedit name="srcPrihodaDev" dataname="global.~dtKontoPrihodaDev" fontsizedelta="1" fieldtext="Konto" fieldvalue="id" function="srcPrihodaDev" datavalue="~dtGet.@KontoPrihodDev" datatext="~dtGet.@KontoPrihodDev">
+							<event type="valuechanged"></event>
+						</searchedit>
+					</item>
+					<item row="2" col="1" caption="Rashoda:" fontbold="">
+						<searchedit name="srcRashoda" dataname="global.~dtKontoRashoda" fontsizedelta="1" fieldtext="Konto" fieldvalue="id" function="srcRashoda" datavalue="~dtGet.@KontoRashod" datatext="~dtGet.@KontoRashod">
+							<event type="valuechanged"></event>
+						</searchedit>
+					</item>
+					<item row="2" col="2" caption="Zaliha:" fontbold="">
+						<searchedit name="srcZaliha" dataname="global.~dtKontoZaliha" fontsizedelta="1" fieldtext="Konto" fieldvalue="id" function="srcZaliha" datavalue="~dtGet.@Kontozaliha" datatext="~dtGet.@KontoZaliha">
+							<event type="valuechanged"></event>
+						</searchedit>
+					</item>
+					<item row="3" col="1" caption="Org. shema zalihe:" fontbold="" colspan="2">
+						<comboedit name="txtOrgShemaZalihe" dataname="global.dtGetOrgShema" valuefield="Id" displayfield="naziv" datavalue="~dtGet.@OrgShemaZalId"/>
+					</item>
+					<item row="4" col="1" caption="Org. shema troška:" fontbold="" colspan="2">
+						<comboedit name="txtOrgShemaPrihoda" dataname="global.dtGetOrgShema" valuefield="id" displayfield="naziv" datavalue="~dtGet.@OrgShemaTrosID"/>
+					</item>
+				</group>
+			</group>
+		</part>s
+
+	</parts>
+	<form name="frmLokacije" caption="Odabir lokacije" fixedsize="false" width="800" height="570">
+		<event type="onshown">
+			<action type="control focus" value="#grdLokacije"/>
+		</event>
+		<layout textposition="top" itemspadding="1">
+			<group cols="1" rows="1" groupbordervisible="false">
+				<group cols="1" rows="1" groupbordervisible="false">
+					<item row="1" col="1" highlight="false">
+						<grid netgenfields="true" name="grdLokacije" autopopulate="true" dataname="Global.dtParstru" >
+							<fields>
+								<field name="Lokacija3000" caption="Lokacija" />
+								<field name="Šifra lokacije" caption="Šifra" />
+								<field name="Adresa" caption="Adresa" />
+								<field name="Mjesto" caption="Mjesto"/>
+								<field name="Partner" caption="Partner" />
+							</fields>
+							<event type="keydown" value="13">
+								<action type="form close"></action>
+								<action type="control value" value="parent.#srcParstru">
+									<parameter value="#grdLokacije.@parstruid" text="#grdLokacije.@Lokacija3000"/>
+								</action>
+							</event>
+						</grid>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="ODABERI" dock="left">
+					<event type="click">
+						<action type="form close"></action>
+						<action type="control value" value="parent.#srcParstru">
+							<parameter value="#grdLokacije.@parstruid" text="#grdLokacije.@Lokacija3000"/>
+						</action>
+					</event>
+				</button>
+				<button caption="ODUSTANI" dock="right">
+					<event type="click">
+						<action type="form close"></action>
+						<action type="datarun reader" value="Global.dtProvjeriPartnera"/>
+						<action type="control value" value="parent.#srcParstru" if="~dtProvjeriPartnera.@Ind_Provjera==0">
+							<parameter value="null"/>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<datalist>
+		<data command="spSklad_Skladiste_Get" name="dtGet" >
+			<parameter name="@Skladisteid" value="$SkladisteID" />
+		</data>
+		<data command="spTraziOsobe" name="dtNaseOsobe">
+			<parameter name="@Action" value="NaseOsobe" />
+		</data>
+		<data command="spSklad_Skladiste_Grid" name="dtMaster" />
+		<data command="spSklad_Skladista_Insert" name="dtInsert">
+			<parameter name="@Opis" value="#txtOpis"/>
+			<parameter name="@Oznaka" value="#txtOznaka"/>
+			<parameter name="@Tip" value="#txtTip"/>
+			<parameter name="@RegOznaka" value="#txtDodOznaka"/>
+			<parameter name="@OrgShemaId" value="#txtOrgShema"/>
+			<parameter name="@VrCjenikId" value="#cmbCjenik"/>
+			<parameter name="@RobaInfoInd" value="#chkRobaInfoInd"/>
+			<parameter name="@IndMinus" value="#chkIndMinus"/>
+			<parameter name="@SerBroInd" value="#chkSerBrojInd"/>
+			<parameter name="@RegalnoInd" value="#chkRegalnoInd"/>
+			<parameter name="@TrosarinskoInd" value="#chkTrosarinskoInd"/>
+			<parameter name="@Partneriid" value="#srcPartner"/>
+			<parameter name="@ParStruId" value="#srcParStru"/>
+			<parameter name="@KontoPrihod" value="#srcPrihoda"/>
+			<parameter name="@KontoRashod" value="#srcRashoda"/>
+			<parameter name="@KontoZaliha" value="#srcZaliha"/>
+			<parameter name="@KkvalObavezan" value="#chkKkvalObavezan" />
+			<parameter name="@KontoPrihodDev" value="#srcPrihodaDev" />
+			<parameter name="@MetodaRobnoMat" value="#cmbMetoda" />
+			<parameter name="@osobeid" value="#cmbOsobe" />
+			<parameter name="@OrgShemaZalId" value="#txtOrgShemaZalihe"/>
+			<parameter name="@OrgShemaTrosId" value="#txtOrgShemaPrihoda"/>
+			<parameter name="@MsklNeZakljucujeUlaz" value="#chkMskl"/>
+			<parameter name="@grupa" value="#txtGrupa" />
+		</data>
+		<data command="spSklad_Skladista_Delete" name="dtDelete">
+			<parameter name="@ID" value="#grdMaster.@SkladisteId"/>
+		</data>
+		<data command="spNG_Combo" name="dtGetOrgShema">
+			<parameter name="@Action" value="orgshema" />
+			<parameter name="@Ind" value="1" />
+			<parameter name="@ime_kontrole" value="ID" />
+		</data>
+		<data command="spSklad_Skladiste_OdabirMetode" name="dtOdabirMetode" />
+		<data command="spNG_Combo" name="dtOdabirCjenika">
+			<parameter name="@Action" value="VrCjenik" />
+		</data>
+		<data command="spDajPartnera" name="dtDajPartnera">
+			<parameter name="@id" value="#srcParstru" />
+			<parameter name="@partneriid" value="#srcPartner" />
+		</data>
+		<data command="spTraziParstru" name="dtParstru">
+			<parameter name="@action" value="Parstru"/>
+			<parameter name="@Ind_Postotak" value="1"/>
+			<parameter name="@Uvjet" value="" if="$IndLokacija==1"/>
+			<parameter name="@Uvjet" value="#srcParstru.text" else=""/>
+			<parameter name="@PartneriId" value="$PartneriId"/>
+		</data>
+		<data command="spTraziPartneri" name="dtPartneri">
+			<parameter name="@Action" value="Partneri" />
+			<parameter name="@Uvjet" value="#srcPartner.text" />
+			<parameter name="@broj_lokacija" value="1" />
+		</data>
+		<data command="spSklad_Skladiste_OdabirKonta" name="dtKontoPrihoda">
+			<parameter name="@konto" value="#srcPrihoda.text" />
+		</data>
+		<data command="spSklad_Skladiste_OdabirKonta" name="dtKontoPrihodaDev">
+			<parameter name="@konto" value="#srcPrihodaDev.text" />
+		</data>
+		<data command="spSklad_Skladiste_OdabirKonta" name="dtKontoRashoda">
+			<parameter name="@konto" value="#srcRashoda.text" />
+		</data>
+		<data command="spSklad_Skladiste_OdabirKonta" name="dtKontoZaliha">
+			<parameter name="@konto" value="#srcZaliha.text" />
+		</data>
+		<data command="spSklad_Skladista_Update" name="dtUpdate">
+			<parameter name="@ID" value="$SkladisteID" />
+			<parameter name="@Opis" value="#txtOpis"/>
+			<parameter name="@Oznaka" value="#txtOznaka"/>
+			<parameter name="@Tip" value="#txtTip"/>
+			<parameter name="@RegOznaka" value="#txtDodOznaka"/>
+			<parameter name="@OrgShemaId" value="#txtOrgShema"/>
+			<parameter name="@VrCjenikId" value="#cmbCjenik"/>
+			<parameter name="@RobaInfoInd" value="#chkRobaInfoInd"/>
+			<parameter name="@IndMinus" value="#chkIndMinus"/>
+			<parameter name="@SerBroInd" value="#chkSerBrojInd"/>
+			<parameter name="@RegalnoInd" value="#chkRegalnoInd"/>
+			<parameter name="@TrosarinskoInd" value="#chkTrosarinskoInd"/>
+			<parameter name="@Partneriid" value="#srcPartner"/>
+			<parameter name="@ParStruId" value="#srcParStru"/>
+			<parameter name="@KontoPrihod" value="#srcPrihoda"/>
+			<parameter name="@KontoRashod" value="#srcRashoda"/>
+			<parameter name="@KontoZaliha" value="#srcZaliha"/>
+			<parameter name="@KkvalObavezan" value="#chkKkvalObavezan" />
+			<parameter name="@KontoPrihodDev" value="#srcPrihodaDev" />
+			<parameter name="@MetodaRobnoMat" value="#cmbMetoda" />
+			<parameter name="@osobeid" value="#cmbOsobe" />
+			<parameter name="@OrgShemaZalId" value="#txtOrgShemaZalihe"/>
+			<parameter name="@OrgShemaTrosId" value="#txtOrgShemaPrihoda"/>
+			<parameter name="@MsklNeZakljucujeUlaz" value="#chkMskl"/>
+			<parameter name="@grupa" value="#txtGrupa" />
+		</data>
+	</datalist>
+</root>

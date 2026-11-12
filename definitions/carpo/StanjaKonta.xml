@@ -1,0 +1,405 @@
+<!--jupiter2012, spin20160126-->
+<!--v 1.0.6. 11.2.2020. AA global.Konto maknuto valuetype="int"-->
+<!--v 1.0.5. 16.12.2019. AA timeout-->
+<!--v 1.0.4. 11.4.2018. AA početno stanje za pozivanje kartice konta-->
+<!--v 1.0.3. 8.11.2017. AA izdvojena procedura spCKntPlanAQueryAct3-->
+<!--v 1.0.2. 12.10.2017. AA usklađeno za grupni ispis-->
+<!--v 1.0.1. 10.10.2017. AA dodala multiselect za export u excel-->
+<!--v 1.0.0. početno-->
+<root loglevel="3" version="1.0.6.">
+	<form name="frmGlavni" type="master">
+		<method name="CarpoNew" dll="Carpo" class="Carpo.Gen.Start" method="Run"/>
+		<event type="init">
+			<action type="datarun scalar" value="~dtGetGodina">
+				<parameter name="Godina"/>
+			</action>
+			<!--parametri za karticu konta-->
+			<action type="datarun reader" value="~dtPrviDan" />
+			<action type="variable value" >
+				<parameter name="global.$DatumOd" value="~dtPrviDan.@prvidan" type="date"/>
+				<parameter name="global.$DatumDo" value="now" type="date"/>
+			</action>			
+			<action type="datarun scalar" value="~dtZaglavlje">
+				<parameter name="Zaglavlje"/>
+			</action>	
+			<action type="variable value">
+				<parameter name="global.$IndTrenutno" value="0"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="form caption" value="Stanja konta - trenutno stanje" if="global.$IndTrenutno==0" />
+			<action type="form caption" value="Stanja konta za razdolje: {global.$DatumOd} - {global.$DatumDo}" if="global.$IndTrenutno==1"/>
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Analitika" />
+				<comboitem value="Sintetika" />
+				<comboitem value="Rekapitulacija"/>
+				<event type="valuechanged">
+					<action type="control disable" value="#btnKartica" if="#filter==Rekapitulacija&amp;&amp;#filter==Sintetika"/>
+					<action type="control enable" value="#btnKartica" if="#filter!=Rekapitulacija&amp;&amp;#filter==Sintetika"/>
+				</event>
+			</lookup>		
+			<tree name="trDrvo" expandedlevel="1" key="id" valuefield="KntPlanSId" dataname="~dtDrvo">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlavni"/>
+				</event>
+				<fields>
+					<field name="Name" />
+				</fields>
+			</tree>
+			<grid name="grdGlavni" type="master" enableappearanceoddrow="false" bestfitonrefresh="true" dataname="~dtGlavni" savelayout="true"  multiselect="true">
+				<!--showfooter="True" izbaceno zbog analitike i sintetike-->
+				<event type="focusedrowchanged">
+					<action type="control disable" value="#btnKartica, #btnGrupniIspis" if="#grdGlavni.@ind!=A"/>
+					<action type="control enable" value="#btnKartica, #btnGrupniIspis" if="#grdGlavni.@ind==A"/>
+					<action type="variable value">
+						<parameter name="global.$Konto" value="#grdGlavni.@konto"/>
+						<parameter name="global.$KontoNaziv" value="#grdGlavni.@Naziv"/>
+					</action>
+				</event>
+				<fields>
+					<field name="Konto"/>
+					<field name="Naziv"/>
+					<field name="PS" caption="Početno stanje"/>
+					<field name="Duguje"/>
+					<field name="Potrazuje" caption="Potražuje"/>
+					<field name="Saldo"/>
+					<field name="Analitika"/>
+				</fields>
+				<styles>
+					<style name="fontcolor" value="red" if="#grdGlavni.@ind==S&amp;&amp;#filter==Analitika"/>
+					<style name="fontcolor" value="#800000" if="#grdGlavni.@ind==R"/>
+					<style name="fontcolor" value="blue" if="#grdGlavni.@ind==K"/>
+					<style name="bold" value="true" if="#grdGlavni.@Naziv==UKUPNO&amp;&amp;#filter==Rekapitulacija"/>
+				</styles>
+				<print caption="Stanja konta {$Zaglavlje}" captionalign="center" />
+			</grid>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnKartica" caption="KARTICA KONTA">
+					<event type="click">
+						<action type="datarun scalar" value="~dtKntPlanAId">
+							<parameter name="KntPlanAId" value="~dtKntPlanAId.@KntPlanAId" type="int"/>
+						</action>
+						<action type="method run" value="CarpoNew"> 
+							<!--za testiranje-->
+							<!-- <parameter name="moduleid" value="D:\pustanje paketa\KarticaKonta Carpo\KarticaKonta.xml"/> -->
+							<parameter name="moduleid" value="KarticaKonta.xml"/>							
+							<parameter name="global.IndikatorGranulaPrevara" type="var" valuetype="int" value="1"/>
+							<parameter name="global.DatumOd" type="var" valuetype="date" value="global.$DatumOd"/>
+							<parameter name="global.DatumDo" type="var" valuetype="date" value="global.$DatumDo"/>		
+							<parameter name="global.KntPlanAId" type="var" valuetype="int" value="$KntPlanAId"/>
+							<parameter name="global.Konto" type="var" value="#grdGlavni.@konto"/>
+							<parameter name="global.KontoNaziv" type="var" value="#grdGlavni.@Naziv"/>
+							<parameter name="global.PartneriId" type="var" valuetype="int" value="null"/>
+							<parameter name="global.AnalitikaPS" type="var" value="0" />
+						</action>
+					</event>
+				</button>
+				<button name="btnRazdoblje" caption="RAZDOBLJE">
+					<event type="click">
+						<action type="form open" value="frmRazdoblje">
+							<parameter name="IndDrugaGranula" value="1"/>
+						</action>
+						<action type="datarun scalar" value="~dtGodina">
+							<parameter name="Godina"/>
+						</action>						
+						<action type="control populate" value="#grdGlavni"/>
+						<action type="form caption" value="Stanja konta - trenutno stanje" if="global.$IndTrenutno==0"/>
+						<action type="form caption" value="Stanja konta za razdolje: {global.$DatumOd::dd.MM.yyyy} - {global.$DatumDo::dd.MM.yyyy}" if="global.$IndTrenutno==1"/>
+						<action type="datarun scalar" value="~dtZaglavlje">
+							<parameter name="Zaglavlje"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnGrupniIspis" caption="GRUPNI ISPIS">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtTmpDelete"/>
+						<!-- <action type="datarun scalar" value="~dtKntPlanAId"> -->
+							<!-- <parameter name="KntPlanAId" value="~dtKntPlanAId.@KntPlanAId" type="int"/> -->
+						<!-- </action> -->
+						<!-- <action type="datarun nonquery" value="~dtRepxIfExists"/> -->
+						<action type="control foreachrow selected" value="#grdGlavni">
+							<action type="datarun nonquery" value="~dtRepxPuni" if="#grdGlavni.@KntPlanAId!=null"/>
+						</action>
+						<action type="print" value="repx:rptKarticaKonta">
+							<parameter name="PartneriId" value="0"/>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGlavni" command="spCKntStanjaKonta" timeout="200">
+				<parameter name="@Action" value="0" if="#filter==Analitika"/> 
+				<parameter name="@Godina" value="$Godina" if="#filter==Analitika"/>
+				<parameter name="@Action" value="3" if="#filter==Rekapitulacija"/>
+				<parameter name="@Godina" value="$Godina" if="#filter==Rekapitulacija"/>
+				<parameter name="@Action" value="4" if="#filter==Sintetika"/>
+				<parameter name="@Godina" value="$Godina" if="#filter==Sintetika"/>
+				<parameter name="@konto" value="#trDrvo.@Konto" if="#trDrvo.@Nivo!=0"/>
+				<parameter name="@DatumOd" value="global.$DatumOd" if="global.$IndTrenutno==1" />
+				<parameter name="@DatumDo" value="global.$DatumDo" if="global.$IndTrenutno==1"/>
+				<parameter name="@DatumOd" value="null" if="global.$IndTrenutno==0"/>
+				<parameter name="@DatumDo" value="null" if="global.$IndTrenutno==0"/>
+			</data>
+			<data name="dtGetGodina" command="spCKntStanjaKonta">
+				<parameter name="@Action" value="2"/>
+			</data>
+			<data name="dtDrvo" command="spCkntTreeStanjeKonta">
+				<parameter name="@Action" value="0" if="#filter==Analitika"/>
+				<parameter name="@Action" value="1" if="#filter==Sintetika"/>
+				<parameter name="@Action" value="2" if="#filter==Rekapitulacija"/>
+			</data>
+			<data name="dtZaglavlje" command="spCKntStanjaKonta">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@DatumOd" value="global.$DatumOd"/>
+				<parameter name="@DatumDo" value="global.$DatumDo"/>				
+			</data>
+			<data name="dtRepxPuni" command="spCKntRptKarticaKonta">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@KntPlanAId" value="#grdGlavni.@KntPlanAId"/>
+				<parameter name="@DatumOd" value="global.$DatumOd"/> 
+				<parameter name="@DatumDo" value="global.$DatumDo"/>
+			</data>
+			<!-- <data name="dtRepxIfExists" command="spCKntRptKarticaKonta"> -->
+				<!-- <parameter name="@Action" value="1"/> -->
+				<!-- <parameter name="@DatumOd" value="global.$DatumOd"/> -->
+				<!-- <parameter name="@DatumDo" value="global.$DatumDo"/> -->
+			<!-- </data> -->
+			<data name="dtKntPlanAId" command="spCKntPlanAQueryAct3">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@Konto" value="#grdGlavni.@konto"/>
+			</data>
+			<data type="text" name="dtPrviDan" command="select dateadd(yy,datediff(yy,0,getdate()),0) as prvidan"/>
+			<data name="dtTmpDelete" command="spCKntStanjaKonta">
+				<parameter name="@Action" value="6"/>
+			</data>
+			<data name="dtGodina" command="spCKntStanjaKonta">
+				<parameter name="@Action" value="7"/>
+				<parameter name="@DatumOd" value="global.$DatumOd"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmRazdoblje" caption="Odaberite razdoblje">
+		<event type="load">
+			<action type="datarun reader" value="~dtPrviDan" if="$IndDrugaGranula==1"/>	
+			<!-- <action type="control value" value="#datRazOd" if="$IndDrugaGranula==1"> -->
+				<!-- <parameter value="~dtPrviDan.@prvidan" type="date"/> -->
+			<!-- </action> -->
+			<!-- <action type="control value" value="#datRazDo" if="$IndDrugaGranula==1"> -->
+				<!-- <parameter value="now" type="date"/> -->
+			<!-- </action> -->
+			<!-- <action type="control value" value="#datRazOd" if="$IndDrugaGranula==0"> -->
+				<!-- <parameter value="global.$DatumOd"/> -->
+			<!-- </action> -->
+			<!-- <action type="control value" value="#datRazDo" if="$IndDrugaGranula==0"> -->
+				<!-- <parameter value="global.$DatumDo"/> -->
+			<!-- </action>	 -->
+			<action type="control value" value="#datRazOd" >
+				<parameter value="global.$DatumOd"/>
+			</action>
+			<action type="control value" value="#datRazDo" >
+				<parameter value="global.$DatumDo"/>
+			</action>			
+		</event>
+		<layout>
+			<group cols="3" rows="1">
+				<columnsdefinition>
+					<column size="100" position="1"/>
+					<column size="130" position="2"/>
+					<column size="130" position="3"/>
+				</columnsdefinition>
+				<item col="1" row="1">
+					<button name="btnRazdIzbor" caption="Razdoblje">
+						<dropdownitem caption="Ovaj tjedan">
+							<event type="click">
+								<action type="variable value">
+									<parameter name="Datum" value="1"/>
+								</action>							
+								<action type="datarun reader" value="~dtTjedan"/>
+								<action type="control value" value="#datRazOd">
+									<parameter value="~dtTjedan.@prvidan"/>
+								</action>
+								<action type="control value" value="#datRazDo">
+									<parameter value="~dtTjedan.@zadnjidan"/>
+								</action>
+							</event>
+						</dropdownitem>
+						<dropdownitem caption="Ovaj mjesec">
+							<event type="click">
+								<action type="variable value">
+									<parameter name="Datum" value="2"/>
+								</action>
+								<action type="datarun reader" value="~dtTjedan"/>
+								<action type="control value" value="#datRazOd">
+									<parameter value="~dtTjedan.@prvidan"/>
+								</action>
+								<action type="control value" value="#datRazDo">
+									<parameter value="~dtTjedan.@zadnjidan"/>
+								</action>							
+							</event>						
+						</dropdownitem>
+						<dropdownitem caption="Ovaj kvartal">
+							<event type="click">
+								<action type="variable value">
+									<parameter name="Datum" value="3"/>
+								</action>
+								<action type="datarun reader" value="~dtTjedan"/>
+								<action type="control value" value="#datRazOd">
+									<parameter value="~dtTjedan.@prvidan"/>
+								</action>
+								<action type="control value" value="#datRazDo">
+									<parameter value="~dtTjedan.@zadnjidan"/>
+								</action>								
+							</event>						
+						</dropdownitem>
+						<dropdownitem caption="Ovo polugodište">
+							<event type="click">
+								<action type="variable value">
+									<parameter name="Datum" value="4"/>
+								</action>
+								<action type="datarun reader" value="~dtTjedan"/>
+								<action type="control value" value="#datRazOd">
+									<parameter value="~dtTjedan.@prvidan"/>
+								</action>
+								<action type="control value" value="#datRazDo">
+									<parameter value="~dtTjedan.@zadnjidan"/>
+								</action>								
+							</event>						
+						</dropdownitem>
+						<dropdownitem caption="Ova godina">
+							<event type="click">
+								<action type="variable value">
+									<parameter name="Datum" value="5"/>
+								</action>
+								<action type="datarun reader" value="~dtTjedan"/>
+								<action type="control value" value="#datRazOd">
+									<parameter value="~dtTjedan.@prvidan"/>
+								</action>
+								<action type="control value" value="#datRazDo">
+									<parameter value="~dtTjedan.@zadnjidan"/>
+								</action>		
+							</event>								
+						</dropdownitem>
+						<dropdownitem caption="Prošli tjedan">
+							<event type="click">
+								<action type="variable value">
+									<parameter name="Datum" value="6"/>
+								</action>
+								<action type="datarun reader" value="~dtTjedan"/>
+								<action type="control value" value="#datRazOd">
+									<parameter value="~dtTjedan.@prvidan"/>
+								</action>
+								<action type="control value" value="#datRazDo">
+									<parameter value="~dtTjedan.@zadnjidan"/>
+								</action>								
+							</event>						
+						</dropdownitem>
+						<dropdownitem caption="Prošli mjesec">
+							<event type="click">
+								<action type="variable value">
+									<parameter name="Datum" value="7"/>
+								</action>
+								<action type="datarun reader" value="~dtTjedan"/>
+								<action type="control value" value="#datRazOd">
+									<parameter value="~dtTjedan.@prvidan"/>
+								</action>
+								<action type="control value" value="#datRazDo">
+									<parameter value="~dtTjedan.@zadnjidan"/>
+								</action>						
+							</event>						
+						</dropdownitem>
+						<dropdownitem caption="Prošli kvartal">
+							<event type="click">
+								<action type="variable value">
+									<parameter name="Datum" value="8"/>
+								</action>
+								<action type="datarun reader" value="~dtTjedan"/>
+								<action type="control value" value="#datRazOd">
+									<parameter value="~dtTjedan.@prvidan"/>
+								</action>
+								<action type="control value" value="#datRazDo">
+									<parameter value="~dtTjedan.@zadnjidan"/>
+								</action>								
+							</event>						
+						</dropdownitem>
+						<dropdownitem caption="Prošlo polugodište">
+							<event type="click">
+								<action type="variable value">
+									<parameter name="Datum" value="9"/>
+								</action>
+								<action type="datarun reader" value="~dtTjedan"/>
+								<action type="control value" value="#datRazOd">
+									<parameter value="~dtTjedan.@prvidan"/>
+								</action>
+								<action type="control value" value="#datRazDo">
+									<parameter value="~dtTjedan.@zadnjidan"/>
+								</action>								
+							</event>						
+						</dropdownitem>
+						<dropdownitem caption="Prošla godina">
+							<event type="click">
+								<action type="variable value">
+									<parameter name="Datum" value="10"/>
+								</action>
+								<action type="datarun reader" value="~dtTjedan"/>
+								<action type="control value" value="#datRazOd">
+									<parameter value="~dtTjedan.@prvidan"/>
+								</action>
+								<action type="control value" value="#datRazDo">
+									<parameter value="~dtTjedan.@zadnjidan"/>
+								</action>															
+							</event>						
+						</dropdownitem>						
+					</button>
+				</item>
+				<item col="2" row="1" caption="Od:" textposition="left">
+					<dateedit name="datRazOd"/>
+				</item>
+				<item col="3" row="1" caption="Do:" textposition="left">
+					<dateedit name="datRazDo"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons> 
+				<button name="btnUredu" caption="U redu">
+					<event type="click">
+						<action type="variable value">
+							<parameter name="global.$DatumOd" value="#datRazOd"/>
+							<parameter name="global.$DatumDo" value="#datRazDo"/>
+						</action>
+						<action type="datarun nonquery" value="~dtDelete"/>
+						<!-- <action type="control populate" value="parent.#grdGlavni"/> -->
+						<action type="variable value">
+							<parameter name="global.$IndTrenutno" value="1"/>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" type="cancel" caption="Odustani"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDelete" command="spCKntKarticaKonta">
+				<parameter name="@Action" value="6"/>
+			</data>
+			<data name="dtTjedan" command="spCKntKarticaKonta">
+				<parameter name="@Action" value="12" if="$Datum==1"/>
+				<parameter name="@Action" value="14" if="$Datum==2"/>
+				<parameter name="@Action" value="15" if="$Datum==3"/>
+				<parameter name="@Action" value="16" if="$Datum==4"/>
+				<parameter name="@Action" value="13" if="$Datum==5"/>
+				<parameter name="@Action" value="17" if="$Datum==6"/>
+				<parameter name="@Action" value="18" if="$Datum==7"/>
+				<parameter name="@Action" value="19" if="$Datum==8"/>
+				<parameter name="@Action" value="20" if="$Datum==9"/>
+				<parameter name="@Action" value="21" if="$Datum==10"/>
+			</data>
+			<data type="text" name="dtPrviDan" command="select dateadd(yy,datediff(yy,0,getdate()),0) as prvidan"/>
+		</datalist>
+	</form>
+</root>

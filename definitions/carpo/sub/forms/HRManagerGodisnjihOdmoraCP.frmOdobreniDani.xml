@@ -1,0 +1,141 @@
+<root version="1.0">
+  <!--
+  19.2.2023. MP - dodao formu frmUnesiOdobreno za proizvoljan unos stavke GO
+  *******************************************************************************************
+  FORMA ZA IZMJENU
+  *******************************************************************************************
+  -->
+  <form name="frmOdobreniDani" caption="$caption" width="550" height="400" >
+	  <event type="shown">
+			<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida	
+				  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+			<action type="variable value" value="global.$RefreshajMaster">
+				<parameter value="0" type="int"/>
+			</action>
+		</event>
+    <layout>
+	<group  rows="1" cols="1" caption="Odobreni dani po stavkama:">
+	<item row="1" col="1">
+		<grid  name="grdMaster" key="HRGodisnjiId" type="master" async="true" dataname="~dtMasterOdobreno" preventfocusgroup="false" fieldsmartspaces="false"  bestfitonrefresh="true" multiselect="true" savelayout="true" netgenfields="true"  showgrouppanel="false" autopopulate="true">
+			<event type="cellvaluechanged">
+				<action type="datarun reader" value="~dtOdobreniDani" />
+				<!-- <action type="control populate keepfocus" value="parent.#grdMaster" /> -->
+				<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida	
+								ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+				<action type="variable value" value="global.$RefreshajMaster">
+					<parameter value="1" type="int"/>
+				</action>
+			</event>
+			<fields>				
+				<field name="CarpoRowNumberColumn" fixed="true" caption="Rbr"/>
+				<field name="Kriterij" editable="false"/>
+				<field name="Brojdana" editable="true" caption="Broj dana"/>
+				<field name="Napomena" editable="true" />
+			</fields>
+		</grid>
+	</item>
+      <!--kraj omotača-->
+	</group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+		<button name="btnUnos" caption="Unesi" dock="left" >
+          <event type="click">
+            <action type="form open" value="frmUnesiOdobreno">
+				<parameter name="HRGodisnjiId" value="$HRGodisnjiid"></parameter>
+				<parameter name="caption" value="Unos odobrenih dana"></parameter>
+			</action>
+			<action type="control populate" value="#grdMaster" />
+			<action type="control populate" value="parent.#grdMaster" />
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Odustani" dock="right" >
+          <event type="click">
+            <action type="form close" />
+			<action type="control populate" value="parent.#grdMaster" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+	  <datalist>
+    <data command="spHRGodisnjiAllCP" name="dtMasterOdobreno">
+	<parameter name="@Action" value="OdobrenoZaGodinu"></parameter>
+	<parameter name="@HRGodisnjiid" value="$HRGodisnjiid"></parameter>		
+    <parameter name="@indGreske.output.int"></parameter>
+	<parameter name="@poruka.output.string"></parameter>
+    </data>
+
+	<data command="spHRGodisnjiAllCP" name="dtOdobreniDani">
+		<parameter name="@Action" value="UpdateOdobreni"></parameter>
+		<parameter name="@HRGodisnjiId" value="#grdMaster.@HRGodisnjiid"></parameter>
+		<parameter name="@HRGodisnjiOdobrenoId" value="#grdMaster.@HRGodisnjiOdobrenoId"></parameter>
+		<parameter name="@Value" value="#grdMaster.focusedvalue" type="string"/>
+		<parameter name="@Kolona" value="#grdMaster.focusedfield"/>
+		<parameter name="@indGreske.output.int"></parameter>
+	    <parameter name="@poruka.output.string"></parameter>
+	</data>
+
+	
+    </datalist>
+  </form>
+    <form name="frmUnesiOdobreno" caption="$caption" width="550" height="400" >
+	  
+    <layout>
+	<group  rows="3" cols="1">
+			<item col="1" row="1" caption="Stavka godišnjeg" highlight="false" textposition="top">
+				<comboedit name="cmbStavkaGO" valuefield="HRGodisnjiDefId" allownull="false" displayfield="Naziv" dataname="~dtStavkeGO" required="true">
+				</comboedit>
+			</item>
+			<item caption="Broj dana" col="1" row="2" textposition="top" highlight="false" >
+				<textedit name="txtDani" tooltip="Broj dana" maxlength="2" nullvalue="0" required="true" format="n0">
+				</textedit>
+			</item>
+			<item col="1" row="3" caption="Napomena" textposition="top" highlight="false" >
+				<memoedit name="memNapomena" />
+			</item>
+      <!--kraj omotača-->
+	</group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+		<button name="btnUnos" caption="Unesi" dock="left" >
+          <event type="click">
+			<action type="validate"/>
+            <action type="datarun reader" value="~dtUnesi" />
+            <action type="form close" />
+			<action type="control populate" value="parent.#grdMaster" />
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Odustani" dock="right" >
+          <event type="click">
+            <action type="form close" />
+			<action type="control populate" value="parent.#grdMaster" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+	<datalist>
+		<data command="spHRGodisnjiAllCP" name="dtStavkeGO">
+			<parameter name="@Action" value="dtGetStavkeGO"></parameter>
+			<parameter name="@HRGodisnjiid" value="$HRGodisnjiid"></parameter>		
+			<parameter name="@indGreske.output.int"></parameter>
+			<parameter name="@poruka.output.string"></parameter>
+		</data>
+
+		<data command="spHRGodisnjiAllCP" name="dtUnesi">
+			<parameter name="@Action" value="UnosOdobreno"></parameter>
+			<parameter name="@HRGodisnjiId" value="$HRGodisnjiid"></parameter>
+			<parameter name="@HRGodisnjiDefId" value="#cmbStavkaGO"></parameter>
+			<parameter name="@Brojdana" value="#txtDani"></parameter>
+			<parameter name="@Napomena" value="#memNapomena" type="string"/>
+			<parameter name="@indGreske.output.int"></parameter>
+			<parameter name="@poruka.output.string"></parameter>
+		</data>
+    </datalist>
+  </form>
+  
+</root>

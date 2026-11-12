@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <form name="frmMaster" type="master" caption="Klasifikacijske oznake">
+   
+      <event type="init">
+        <action type="control populate" value="#grdGrid"/>
+        <action type="datarun reader" value="dtCheckYear"/>
+      </event>
+      <event type="shown">
+        <action type="variable value" >
+          <parameter name="NoviId" value="0" type="int"/>
+        </action>
+
+        <action type="variable value" >
+          <parameter name="Postoji" value="~dtCheckYear.@postoji" type="int"/>
+        </action>
+
+        <action type="control disable" value="#btnCopy" if="$Postoji==1"/>
+        <action type="control enable" value="#btnCopy"  else="" />
+      </event>
+
+    <managerlayout> 
+      <tree name="tree" keyfield="KUPKlasifikacijskeOznakeId" allowselfdrag="true" dataname="datKlasTree" showcolumns="true" autofiltercondition="contains" expandallonload="true" expandedlevel="2">
+        <fields>
+          <field name="NazivKlase" caption="Naziv klase"/>
+          <field name="OznakaKlase" caption="Oznaka klase"/>
+        </fields>
+        <menu>
+          <menuitem caption="UNESI">
+            <part name="prtUnesi">
+            </part>
+          </menuitem>
+          <menuitem caption="IZMIJENI">
+            <part name="prtIzmijeni">
+            </part>
+          </menuitem>
+          <menuitem caption="OBRIŠI">
+            <part name="prtObrisi">
+            </part>
+          </menuitem>
+        </menu>
+      </tree>
+    </managerlayout>
+    <panelbuttons >
+      <buttons type="tree">
+        <button name="btnUnesi" caption="UNESI" type="add" begingroup="true" color="light">
+          <part name="prtUnesi">
+          </part>
+        </button>
+        <button name="btnEdit" caption="IZMIJENI" type="edit">
+          <part name="prtIzmijeni">
+          </part>
+        </button>
+        <button name="btnDelete" caption="OBRIŠI" type="delete">
+          <part name="prtObrisi">
+          </part>
+        </button>
+
+        <button name="btnCopy" caption="KOPIRAJ" type="add" begingroup="true" color="light">
+          <part name="prtCopy">
+          </part>
+        </button>
+        
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spCKUPKlasifikacijskeOznakeTree" name="datKlasTree">
+		    <parameter name="Action" value="getTree" />
+      </data>
+      <data command="spCKUPKlasifikacijskeOznakeTree" name="dtCheckYear">
+        <parameter name="Action" value="checkYear" />
+      </data>
+      
+      <!--<data command="spKlasePartnera_Carpo_TreeAzur" name="datOrgAzur">
+        <parameter name="Action" value="setTree" />
+        <parameter name="TableVar" value="#tree.datasource" />
+      </data>-->
+      <data command="spCKUPKlasifikacijskeOznakeAzur" name="datKlasOznakaDelete">
+        <parameter name="@Action" value="Delete" />
+        <parameter name="@KUPKlasifikacijskeOznakeId" value="#tree" />
+      </data>
+    </datalist>
+  </form>
+  
+  
+  <form name="frmAzur" caption="Klasifikacijske oznake - {$formType}" fixedsize="true">
+    <event type="init">
+      <action type="datarun reader" value="~datGet" if="$Id!=null" />
+    </event>
+    <event type="shown">
+      <action type="control focus" value="#txtNaziv" />
+    </event>
+    <layout textposition="top">
+      <group cols="1" rows="1" if="$Id==null">
+        <group row="1" col="1" cols="1" rows="2" groupbordervisible="false">
+          <part name="prtFormAzur">
+          </part>
+        </group>
+      </group>
+      <group cols="1" rows="2" else="">
+        <part name="prtFormAzur">
+        </part>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button caption="SPREMI" type="add" dock="right">
+          <event type="click">
+            <action type="validate" />
+            <action type="datarun scalar" value="~datAzur" >
+				<parameter name="shemaid"/>
+			<!-- 	<action type="message" value="$shemaid"></action> -->
+			</action>
+            <action type="control populate keepfocus" value="parent.#tree"/>	
+			<action type="control expand" value="parent.#tree">
+				<parameter name="key" value="$shemaid"></parameter>
+			</action>
+            <action type="form close" if="$Id!=null||#chkFormClose==true" />
+          </event>
+        </button>
+        <button caption="ODUSTANI" type="cancel" dock="right" />
+      </buttons>
+    </panelbuttons>
+    <datalist>
+       <data command="spCKUPKlasifikacijskeOznakeAzur" name="datAzur">
+        <parameter name="@Action" value="Add" if="$Id==null" />
+        <parameter name="@Action" value="Edit" else="" />
+        <parameter name="@KUPKlasifikacijskeOznakeId" value="$KUPKlasifikacijskeOznakeId" text="" />
+        <parameter name="@Naziv" value="#txtNaziv" />
+        <parameter name="@Oznaka" value="#txtOznaka" />
+      </data>
+      <data command="spCKUPKlasifikacijskeOznakeTree" name="datGet">
+        <parameter name="@Action" value="GetSingle" />
+        <parameter name="@KUPKlasifikacijskeOznakeId" value="$KUPKlasifikacijskeOznakeId" />
+      </data>
+      <!--<data command="spKlasePartnera_Carpo_Azur" name="datAzur">
+        <parameter name="@Action" value="Add" if="$Id==null" />
+        <parameter name="@Action" value="Edit" else="" />
+        <parameter name="@KlPartneriID" value="$KlPartneriID" text="" />
+        <parameter name="@Naziv" value="#txtNaziv" />
+        <parameter name="@Oznaka" value="#txtOznaka" />
+        <parameter name="@InsertTip" value="in" />
+      </data>
+      <data command="spKlasePartnera_Carpo_Query" name="datGet">
+        <parameter name="@Action" value="GetSingle" />
+        <parameter name="@KlPartneriID" value="$KlPartneriID" />
+      </data>-->
+    </datalist>
+  </form>
+
+  
+  <!--KOPIRANJE-->
+  <form name="frmCopy" caption="Klasif.oznake - {$formType}" fixedsize="true">
+    <event type="init">
+      <action type="datarun reader" value="~datGet"/>
+    </event>
+    <event type="shown">
+      <action type="control focus" value="#txtGodina" />
+    </event>
+    <layout textposition="top">
+      <group cols="1" rows="1" if="$Id==null">
+        <group row="1" col="1" cols="1" rows="2" groupbordervisible="false">
+          <item caption="Godina:" row="1" col="1">
+            <textedit name="txtGodina" required="true" datavalue="~datGet.@godina" fontbold="true" readonly="true"/>
+          </item>
+        </group>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button caption="SPREMI" type="add" dock="left">
+          <event type="click">
+            <action type="validate" />
+            <action type="datarun scalar" value="~datAzur" >
+              <parameter name="KUPKlasifikacijskeOznakeId"/>
+              <!-- 	<action type="message" value="$shemaid"></action> -->
+            </action>
+            <action type="control populate keepfocus" value="parent.#tree"/>
+            <action type="control expand" value="parent.#tree">
+              <parameter name="key" value="$KUPKlasifikacijskeOznakeId"></parameter>
+            </action>
+            <action type="form close"/>
+          </event>
+        </button>
+        <button caption="ODUSTANI" type="cancel" dock="right" />
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spCKUPKlasifikacijskeOznakeAzur" name="datAzur">
+        <parameter name="@Action" value="copy"/>
+      </data>
+      <data command="spCKUPKlasifikacijskeOznakeTree" name="datGet">
+        <parameter name="@Action" value="getYear" />
+      </data>
+    </datalist>
+  </form>
+  <!--KOPIRANJE-->
+  
+  
+  
+  <parts>
+    <part name="prtUnesi">
+      <event type="click">
+        <action type="form open" value="frmAzur">
+          <parameter name="KUPKlasifikacijskeOznakeId" value="#tree" />
+          <parameter name="FormType" value="novi unos" />
+        </action>
+        <!-- <action type="control populate keepfocus" value="#tree" /> -->
+      </event>
+    </part>
+    <part name="prtIzmijeni">
+      <event type="click">
+        <action type="form open" value="frmAzur" if="#tree.@Id!=-1">
+          <parameter name="Id" value="1" />
+          <!--pomoćna varijabla update/insert-->
+          <parameter name="KUPKlasifikacijskeOznakeId" value="#tree" />
+          <parameter name="FormType" value="izmjena" />
+        </action>
+        <action type="control populate keepfocus" value="#tree" />
+      </event>
+    </part>
+    <part name="prtObrisi">
+      <event type="click">
+        <action type="confirm" value="Jeste li sigurni da želite obrisati klasifikacijsku oznaku '{#tree.@Naziv}'?" if="#tree.@Id!=-1">
+          <!--<action type="datarun nonquery" value="~datOrgDelete" />-->
+          <action type="datarun nonquery" value="~datKlasOznakaDelete" />
+          <action type="control populate keepfocus" value="#tree" />
+        </action>
+      </event>
+    </part>
+    <part name="prtCopy">
+      <event type="click">
+        <action type="form open" value="frmCopy">
+          <parameter name="KUPKlasifikacijskeOznakeId" value="#tree" />
+          <parameter name="FormType" value="kopiranje" />
+        </action>
+        <!-- <action type="control populate keepfocus" value="#tree" /> -->
+      </event>
+    </part>
+    
+    <part name="prtFormAzur">
+      <item caption="Naziv:" row="1" col="1">
+        <textedit name="txtNaziv" required="true" datavalue="~datGet.@NazivKlase" fontbold="true" />
+      </item>
+      <item caption="Oznaka:" row="2" col="1">
+        <textedit name="txtOznaka" datavalue="~datGet.@OznakaKlase" maxsize="10"/>
+      </item>
+    </part>
+
+   
+    
+  </parts>
+</root>

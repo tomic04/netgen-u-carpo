@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root version="1.0">
+	<form name="frmMaster" type="master" caption="Obračun">
+		<event type="shown">
+			<action type="control populate keepfocus" value="#grdGlava" />
+		</event>
+		<managerlayout>
+			<tree name="tree" filtermode="smart">			
+				<data command="spFaktureObracun_Query" key="FaktureObracunId" else=""/>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava" />
+				</event>
+				<fields>
+					<field name="Naziv" />
+				</fields>
+			</tree>		
+			<grid name="grdGlava" type="master" key="FaktureObracunDetId" autopopulate="false" showgroupsum="false" dataname="~dtDohvati" savelayout="true" bestfitonrefresh="true" multiselect="true">
+				<menu>	
+					<menuitem caption="NE FAKTURIRAJ" sort="1">
+						<event type="click">
+							<action type="confirm" value="Želite li odabrane stavke označiti da se ne fakturiraju?">
+								<action type="control foreachrow selected" value="#grdGlava">
+									<action type="datarun nonquery" value="Global.dtNeFakturiraj"/>
+								</action>							
+								<action type="control populate" value="#grdGlava" />
+							</action>
+						</event>
+					</menuitem>
+					<menuitem name="menKriticni" caption="NAKNADA ZA KRITIČNE POSLOVE" sort="2">
+						<event type="click">
+							<action type="form open" value="frmKriticni">
+								<parameter name="FaktureObracunDetId" value="#grdGlava.@FaktureObracunDetId" />
+								<parameter name="FPartneriId" value="#grdGlava.@FPartneriId" />
+							</action>
+						</event>
+					</menuitem>
+					<menuitem name="" caption="DONESI SATE IZ OBRAČUNA" sort="2">
+						<event type="click">
+							<action type="form open" value="frmDonosSati">
+								<parameter name="FaktureObracunId" value="#tree.@FaktureObracunId" />
+							</action>
+						</event>
+					</menuitem>						
+				</menu>
+				<event type="doubleclick">					
+					<action type="form open" value="frmDetaljiObracuna"  if="#grdGlava.rowcount&gt;0">
+						<parameter name="FaktureObracunDetId" value="#grdGlava.@FaktureObracunDetId" />
+					</action>
+				</event>				
+				<fields>
+					<field name="DatumFakture" caption="Datum fakture"/>
+					<field name="DatumOd" caption="Datum od"/>
+					<field name="DatumDo" caption="Datum do" />
+					<field name="Ugovor" caption="Broj ugovora" />
+					<field name="VrstaUgovora" caption="Vrsta ugovora" />	
+					<!-- <field name="Partner" caption="Partner" /> -->
+					<field name="PartnerFaktura" caption="Partner za fakturu" />
+					<field name="Šifra" caption="Šifra" />
+					<field name="Roba" caption="Roba" />	
+					<field name="Kolicina" caption="Količina" editable="true"/>
+					<field name="Cijena" caption="Cijena" />	
+					<field name="Rabat" caption="Rabat" />	
+					<field name="RokPlacanja" caption="Rok plaćanja" />
+					<field name="Operater" caption="Operater donosa" />
+					<field name="Faktura" caption="Faktura" />						
+					<field name="Pausal" caption="Paušal" />
+					<field name="Odradjeno" caption="Odrađeno" />
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="menu disable" value="#menKriticni" if="#grdGlava.rowcount==0||#grdGlava.@Cijena!=0||#grdGlava.@FakDetaljId&gt;0"  /> -->
+					<action type="menu enable" value="#menKriticni" else=""/>
+					<action type="control enable" value="#btnPrint" if="#grdGlava.@IndFakturirano==1" />
+					<action type="control disable" value="#btnPrint" else="" />
+					<action type="control enable" value="#btnPovezi" if="#grdGlava.@FaktureId!=null&amp;&amp;#grdGlava.@FakDetaljId==null" />
+					<action type="control disable" value="#btnPovezi" else="" />	
+					<action type="control enable" value="#btnDonesi" if="#grdGlava.@FaktureId==null&amp;&amp;#grdGlava.@FakDetaljId==null" />
+					<action type="control disable" value="#btnDonesi" else="" />					
+				</event>				
+				<styles>
+					<style name="fontcolor" value="green" if="#grdGlava.@IndFakturirano==1" />					
+					<style name="fontcolor" value="red" if="#grdGlava.@IndFakturirano==2" />
+					<style name="fontcolor" value="gray" if="#grdGlava.@IndZaFakturu==0" />
+				</styles>	
+				<event type="cellvaluechanged">
+					<action type="datarun nonquery" value="Global.dtEditGrid" if="#grdGlava.@FakDetaljId==null"/> 
+					<action type="control populate keepfocus" value="#grdGlava"/> 
+				</event>				
+			</grid>
+		</managerlayout>
+		<panelbuttons>		
+			<buttons>
+				<button name="btnUnesi" caption="&amp;Novi obračun" type="add">
+					<event type="click">						
+						<action type="form open" value="frmNoviObracun"/>
+					</event>
+				</button>
+				<button name="btnObnovi" caption="&amp;Obnovi obračun" type="">
+					<event type="click">
+						<action type="message" value="U izradi :)"/>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="&amp;Obriši obračun" type="">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati označeni obračun '{#tree.@Naziv}'?">
+							<action type="datarun nonquery" value="Global.dtDelete">
+								<action type="control populate" value="#tree" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnFakturiraj" caption="&amp;Fakturiraj" type="" begingroup="true">
+					<event type="click">
+						<action type="form open" value="frmFakturiraj">
+							<parameter name="FaktureObracunId" value="#tree.@FaktureObracunId" />
+						</action>
+					</event>
+				</button>	
+				<button name="btnPovezi" caption="Poveži s fakturom" type="">
+					<event type="click">
+						<action type="confirm" value="Želite li povezati stavke obračuna s kreiranim fakturama?">
+							<action type="datarun nonquery" value="Global.dtPovezi">
+								<action type="control populate" value="#grdGlava" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnDonesi" caption="Donesi na fakturu" type="">
+					<event type="click">
+						<action type="variable value" value="SelectedIds">
+							<parameter value="#grdGlava.selectedids" type="string"/>
+						</action>					
+						<action type="datarun scalar" value="Global.dtProvjera">			
+							<parameter name="FPartneriId" value="~dtProvjera.@FPartneriId" />
+						</action>							
+						<action type="form open" value="frmDonesiNaFakturu">	
+							<parameter name="SelectedIds" value="$SelectedIds" type="string" />
+							<parameter name="FPartneriId" value="$FPartneriId" type="int" />
+						</action>
+					</event>
+				</button>				
+				<button name="btnPrint" caption="Is&amp;piši fakturu" dataname="Global.dtPrint" displayfield="Opis" begingroup="true">
+					<event type="click">
+						<action type="control print" value="#grdGlava">
+							<action type="print template" value="#btnPrint.@Template">
+								<parameter name="id" value="#grdGlava.@FaktureId" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnDetalji" caption="Detalji obračuna" begingroup="true">
+					<event type="click">
+						<action type="form open" value="frmDetaljiObracuna">	
+							<parameter name="FaktureObracunDetId" value="#grdGlava.@FaktureObracunDetId" />
+						</action>
+					</event>
+				</button>					
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spFaktureObracun_Grid" name="dtDohvati" timeout="60">
+				<parameter name="@FaktureObracunId" value="#tree.@FaktureObracunId" />
+			</data>				
+		</datalist>		
+	</form>
+	<form name="frmNoviObracun" path="frmNoviObracun.xml"/>
+	<form name="frmFakturiraj" path="frmFakturiraj.xml"/>
+	<form name="frmKriticni" path="frmKriticni.xml"/>
+	<form name="frmDonesiNaFakturu" path="frmDonesiNaFakturu.xml"/>	
+	<form name="frmDonosSati" path="frmDonosSati.xml"/>
+	<form name="frmDetaljiObracuna" path="frmDetaljiObracuna.xml"/>
+	<datalist>
+		<data command="spCarpoPrint" name="dtPrint">
+			<parameter name="@Action" value="GetTemplates" />
+			<parameter name="@Id" value="#grdGlava.@FaktureId" type="int" />
+			<parameter name="@Tablica" value="Fakture" />
+		</data>	
+		<data command="spFaktureObracun_Obrisi" name="dtDelete">
+			<parameter name="@FaktureObracunId" value="#tree.@FaktureObracunId" />
+		</data>
+		<data command="spFaktureObracun_Povezi" name="dtPovezi">
+			<parameter name="@FaktureObracunId" value="#tree.@FaktureObracunId" />
+			<parameter name="@niz" value="#grdGlava.selectedids.table" />
+		</data>		
+		<data command="spFaktureObracun_NeFakturiraj" name="dtNeFakturiraj">
+			<parameter name="@FaktureObracunDetId" value="#grdGlava.@FaktureObracunDetId" />
+		</data>
+		<data command="spProd_GradUgovori_EditGrid" name="dtEditGrid">
+			<parameter name="@vrijednost" value="#grdGlava.focusedvalue" />
+			<parameter name="@kolona" value="#grdGlava.focusedfield" />
+			<parameter name="@tablica" value="FaktureObracunDet" type="string"/>
+			<parameter name="@id" value="#grdGlava.@FaktureObracunDetId" />			
+		</data>
+		<data command="spTraziFakturu" name="dtTraziFak">
+			<parameter name="@uvjet" value="#srcFaktura.text" />
+			<parameter name="@partneriid" value="$FPartneriId" />
+			<parameter name="@samoNezakljucene" value="1"/>
+		</data>
+		<data command="spFaktureObracun_Donesi" name="dtProvjera">
+			<parameter name="@operateriid" value="@@OperateriId"/>
+			<parameter name="@niz" value="$SelectedIds" type="string"/>				
+			<parameter name="@indProvjera" value="1"/>
+        </data>
+		<data command="spTraziPartneri" name="dtPartneri">
+			<parameter name="@Action" value="Partneri" />
+			<parameter name="@Uvjet" value="#srcPartner.text" />
+		</data>
+		<data command="spNG_Combo" name="dtVrsteUgovora">
+			<parameter name="@Action" value="KupUgovoriVrste"/>	
+		</data>			
+	</datalist>	
+</root>

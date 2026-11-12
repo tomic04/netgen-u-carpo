@@ -1,0 +1,206 @@
+<root >
+
+    <form name="frmIzmjenaIsplata" type="detail" caption="$caption" saveformlayout="true" width="620" height="500" fixedsize="true" version="1">
+
+        <event type="load">
+            <action type="control populate" value="#grdIsplate"/>
+
+            <action if="$tip==Brisanje" type="control caption" value="#btnSpremi">
+                <parameter value="OBRIŠI"/>
+            </action>
+        </event>
+        
+        <layout>
+
+            <group rows="2" cols="1" groupbordervisible="false">
+
+                <rowsdefinition>
+                    <row position="1" size="80%"></row>
+                    <row position="2" size="10%"></row>
+                </rowsdefinition>
+
+                <!-- ako je unos isplata, grid ima key HRPartneriId jer se unose isplate za osobe-->
+                <!-- ima i multiselect u slučaju da treba odjednom više ljudi unijeti isplatu-->
+                <group if="$tip==Unos" row="1" col="1" rows="2" cols="1" caption="Partneri" spacing="2,1,2,2">
+
+                    <item row="1" col="1" rowspan="2">
+                        <grid name="grdIsplate" type="master" key="HRPartneriId" dataname="~dtGrid" bestfitonrefresh="true" fieldsmartspaces="false" multiselect="true" showgrouppanel="false">
+                            <fields inherited="true">
+                                
+                            </fields>
+                        </grid>
+                    </item>
+
+                </group>
+
+                <!-- inače je key OOPIsObradeGlaId (jer se radi o izmjeni/brisanju glava)-->
+                <group else="" row="1" col="1" rows="2" cols="1" caption="Isplate za {$akcija}" spacing="2,1,2,2">
+
+                    <item row="1" col="1" rowspan="2">
+                        <grid name="grdIsplate" type="master" key="OOPIsObradeGlaId" dataname="~dtGrid" bestfitonrefresh="true" fieldsmartspaces="false">
+                            <fields inherited="true">
+                                
+                            </fields>
+                        </grid>
+                    </item>
+
+                </group>
+
+                <!-- ako akcije JE brisanje, ne prikazuje se ova grupa s iznosima za unijeti, nego grupa s jednim labelom-->
+                <group if="$tip!=Brisanje" row="2" col="1" rows="1" cols="3" caption="Iznos za isplatu" spacing="2,1,2,2">
+				<columnsdefinition>
+            <column position="1" size="34%" />
+            <column position="2" size="33%" />
+            <column position="3" size="33%" />
+          </columnsdefinition>
+
+                    <item row="1" col="1" caption="Neto" highlight="false" textposition="left">
+                        <textedit name="txtNeto" format="n2" value="0">
+                            <event type="valuechanged">
+                                <action if="#txtNeto!=0" type="control disable" value="#txtBruto"></action>
+                                <action else="" type="control enable" value="#txtBruto"></action>
+                            </event>
+                        </textedit>
+                    </item>
+
+                    <item row="1" col="2" caption="Bruto" highlight="false" textposition="left">
+                        <textedit name="txtBruto" format="n2" value="0">
+                            <event type="valuechanged">
+                                <action if="#txtBruto!=0" type="control disable" value="#txtNeto"></action>
+                                <action else="" type="control enable" value="#txtNeto"></action>
+                            </event>
+                        </textedit>
+                    </item>
+
+                    <item row="1" col="3" caption="Vaučer" highlight="false" textposition="left">
+                        <textedit name="txtVaucer" format="n2" value="0">
+                            <!-- <event type="valuechanged"> -->
+                                <!-- <action if="#txtVaucer!=0" type="control disable" value="#txtBruto,#txtNeto"></action> -->
+                                <!-- <action else="" type="control enable" value="#txtBruto,#txtNeto"></action> -->
+                            <!-- </event> -->
+                        </textedit>
+                    </item>
+
+                </group>
+
+                <!-- grupa koja se ispisuje kada se radi brisanje-->
+                <group else="" row="2" col="1" rows="1" cols="1" groupbordervisible="false" spacing="2,1,2,2">
+                    <item row="1" col="1" spacing="3,3,3,3">
+                        <labeledit name="lblPitanje" value="Jeste li sigurni da želite obrisati sve isplate navedene u gridu?" fontsizedelta="3" fontbold="true"></labeledit>
+                    </item> 
+                </group>
+
+            </group>
+
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+        
+                <button name="btnSpremi" caption="SPREMI">
+                
+                    <event type="click">
+                        <action type="validate"/>
+                
+                        <!-- ako se radi unos, forma se ne zatvara, nakon unosa se refresha brojač stavki na obradi za osobe, i vrijednosti u poljima za iznose-->
+                        <action type="datarun reader" value="~dtUnosStavki" if="$tip==Unos">
+                
+                            <action if="$indgreske==0">
+                                <action type="control refreshvalue" value="##,!#grdIsplate"></action>
+                                <action type="control populate keepfocus" value="#grdIsplate"></action>
+                                <action type="control enable" value="##"></action>
+                            </action>
+                
+                        </action>
+                        <!-- ako se radi o izmjeni ili brisanju, forma se zatvara-->
+                        <action type="datarun reader" value="~dtIzmjenaStavki" if="$tip==Izmjena">
+                
+                            <action if="$indgreske==0" type="form close"></action>
+                
+                        </action>
+						
+						
+						<!-- ako se radi o izmjeni ili brisanju vaucera-->
+                        <action type="datarun reader" value="~dtIzmjenaVaucera" if="#txtVaucer!=0">
+                
+                            <action if="$indgreske==0" type="form close"></action>
+                
+                        </action>
+						
+	
+                        <action type="datarun reader" value="~dtBrisanjeStavki" if="$tip==Brisanje">
+                
+                            <action if="$indgreske==0" type="form close"></action>
+                
+                        </action>
+
+                        <action type="message" value="$poruka" if="$indGreske==0"/>
+                    </event>
+                
+                </button>
+
+                <button name="btnOdustani" caption="ODUSTANI" dock="right">
+                    <event type="click">
+                        <action type="form close"/>
+                    </event>
+                </button>
+        
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+            <!-- ako je unos, ispisuje se grid sa svim partnerima kojima se može unijeti isplata-->
+            <!-- inače se ispisuje grid sa selectedids glavama iz parent forme-->
+            <data command="spDD_Help_CP" name="dtGrid">
+                <parameter name="@action" value="partneriGrid" if="$tip==Unos"/>
+                <parameter name="@action" value="isplateGrid" else=""/>
+
+                <parameter name="@oopisobradeId" value="$oopisobradeid"/>
+
+                <parameter name="@selectedids" value="parent.#grdDD.selectedids" if="$tip!=Unos"/>
+            </data>
+
+            <data command="spDDObradeDjelatniciAzur_CP" name="dtUnosStavki">
+                <parameter name="@action" value="unos_isplata"/>
+                <parameter name="@oopisobradeId" value="$oopisobradeid"/>
+                <parameter name="@selectedids" value="#grdIsplate.selectedids"/>
+
+                <parameter name="@bruto" value="#txtBruto"/>
+                <parameter name="@neto" value="#txtNeto"/>
+                <parameter name="@vaucer" value="#txtVaucer"/>
+
+                <parameter name="@poruka.output.string"/>
+                <parameter name="@indGreske.output.int"/>
+            </data>
+            <data command="spDDObradeDjelatniciAzur_CP" name="dtIzmjenaStavki">
+                <parameter name="@action" value="5"/>
+                <parameter name="@oopisobradeId" value="$oopisobradeid"/>
+                <parameter name="@selectedids" value="parent.#grdDD.selectedids"/>
+
+                <parameter name="@bruto" value="#txtBruto"/>
+                <parameter name="@neto" value="#txtNeto"/>
+
+
+                <parameter name="@poruka.output.string"/>
+                <parameter name="@indGreske.output.int"/>
+            </data>
+			<data command="spDDObradeDjelatniciAzur_CP" name="dtIzmjenaVaucera">
+                <parameter name="@action" value="vaucer"/>
+                <parameter name="@oopisobradeId" value="$oopisobradeid"/>
+                <parameter name="@selectedids" value="parent.#grdDD.selectedids"/>
+                <parameter name="@vaucer" value="#txtVaucer"/>
+                <parameter name="@poruka.output.string"/>
+                <parameter name="@indGreske.output.int"/>
+            </data>
+            <data command="spDDObradeDjelatniciAzur_CP" name="dtBrisanjeStavki">
+                <parameter name="@action" value="7"/>
+                <parameter name="@selectedids" value="parent.#grdDD.selectedids"/>
+
+                <parameter name="@poruka.output.string"/>
+                <parameter name="@indGreske.output.int"/>
+            </data>
+        </datalist>
+
+    </form>
+
+</root>

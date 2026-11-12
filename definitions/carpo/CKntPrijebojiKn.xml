@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+4.11.2020. v.1.0.1.13 AA opcija podizanja forme za izmjenu datuma knjiženja preko spCKntKompPostavke
+22.5.2020. v.1.0.1.12 AA izbornik vrste obični ili koop (do sada koop samo iz KupciDobOtkup)
+10.1.2020. v.1.0.1.11 AA timeout na Proknjizi
+3.4.2019. v.1.0.1.10 AA dodala Preglednik (dobavljači DMS) 
+06.09.2018. v.1.0.1.9 PJ maknuo OpisKnjiženja D i V, BrojURA iz GrdDetalj
+29.08.2018. v.1.0.1.7 PJ dodao #btnRacun koji poziva frmFakturaRacun, dodao OpisKnjiženja D i V, BrojURA u grdDetalj
+20.06.2018. v.1.0.1.6 PJ omogućio slanje datuma zaključka pri knjiženju iz granule, promjena u uvijetu za bojanje grida, izbačena kolona Proknjizena
+25.04.2018. v.1.0.1.5 PJ dodao OrgShema u detalj grid
+27.10.2017. v.1.0.1.4 PJ bugfix s focusom na izmijeni
+20.10.2017. v.1.0.1.3 PJ grupiranje po DatumValute u svim komp/dob gridovima, brojač se okida na spremi/zaključi forme, drvo sa čvorom "sve"
+17.10.2017. v.1.0.1.2 PJ dodao permissione na unos, izmjenu, brisanje, zaključak, knjiženje i poništavanje zaključka
+29.09.2017. v.1.0.1.1 PJ dodao kolonu Oznaka, dodana provjera verižne kompenzacije
+31.08.2017. v.1.0.1.0 PJ dodao kolonu DatumDokumenta ma grdDuznik i grdVjerovnik
+03.08.2017. v.1.0.0.9 PJ dodao enable/disable buttona kod unosa, AA dodala na grdGlava kolone TemBrojDok i TemOpis
+11.07.2017. v.1.0.0.8 PJ dodao VrstaDokumenta na grid
+09.06.2017. v.1.0.0.7 PJ dodao kolonu upozorenje na gridove (prikazuje kad je račun već na nekom drugom prijeboju)
+07.06.2017. v.1.0.0.6 PJ omogućeno pozivanje iz granule KupciDobOtkup
+05.06.2017. v.1.0.0.5 PJ stora za brojčanik se ne okida na izmijeni, osim kad se ne izmijeni datum, po izmjeni iznosa u edit gridu automatski se začekira taj redak.
+19.05.2016. v.1.0.0.4 PJ ukljucen fokus na izmjeni bez obzira je li broj mjenjan ili ne
+18.05.2016. v.1.0.0.3 PJ bugfix fokusa
+17.05.2017. v.1.0.0.2 PJ omogućio sharanje frmPrijeboj
+15.05.2017. v.1.0.0.1 PJ dodao fokus na node posljednjeg unusa pri otvaranju granule
+03.05.2017. v.1.0.0.0 PJ prva beta sa svim funkcionalnostima, razvijano na Jupiter2008r2/Zito2
+13.04.2017. PJ init
+-->
+<root version="1.0.1.13" loglevel="3">
+
+<form name="frmPromet" path="frmPromet.xml"/>
+<form name="frmPrijeboj" path="frmPrijeboj.xml"/>
+<form name="frmFakturaRacun" path="IOSObrazac.frmFakturaRacun.xml"/>
+<form name="frmDMS" path="KnjigaUra.frmDMS.xml"/>
+<form name="frmMaster" type="master" caption="Prijeboji">
+	<event type="shown">
+		<action type="datarun scalar" value="Global.~dtFindNode">
+			<parameter name="findnode" value="findnode" />
+		</action>
+		<action type="control focus" value="#tree" >
+			<parameter value="$findnode"  /> 
+		</action>
+	</event>		
+		<managerlayout>
+			<event type="shown">
+				<action type="variable value" >
+					<parameter name="NewKntKompMasterId" value="0" type="int"/>
+					<parameter name="CurrentKntKompMasterId" value="0" type="int"/>
+				</action>			
+			</event>
+			<lookup name="filter">
+				<comboitem value="DatumKompenzacija" />
+			    <comboitem value="StatusiKompenzacija" />
+            </lookup>
+			<tree name="tree" allowdrop="true" allowdrag="true" allowdragmultiple="true"  expandedlevel="1" key="id">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava" />
+					<action if="#grdGlava.rowcount==0" type="control disable" value="#btnIzmjeni, #btnObrisi, #btnZakljuci, #btnProknjizi, #btnIspisi, #btnRacun"  />	
+					<action type="control enable" value="#btnIzmjeni, #btnObrisi, #btnZakljuci, #btnProknjizi, #btnIspisi, #btnRacun"  elseif="#grdGlava.rowcount!=0" />				
+				</event>
+				<data command="spCKntPrijebojiKnTree"  elseif="#filter==DatumKompenzacija"  >
+					<parameter name="@Action" value="1" />
+				</data>
+				<data command="spCKntPrijebojiKnTree" if="#filter==StatusiKompenzacija" >
+					<parameter name="@Action" value="0" />
+				</data>
+				<fields>
+					<field name="caption" />
+				</fields>
+			</tree>
+			<grid name="grdGlava" type="master" async="true"  multiselect="true"  savelayout="true" bestfitonrefresh="true" key="KntKompMasterId" > 
+				<event type="doubleclick">					
+						<action type="variable value">
+							<parameter name="IndUnosa" value="0" type="int" />
+						</action>						
+						<action type="form open" value="frmPrijeboj"/>
+						<action type="control populate keepfocus" value="#grdGlava"/>
+				</event>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetalj" />
+				</event>
+				<data command="spCKntKompMasterQuery" >
+					<parameter name="@Zak"  value="#tree.@value" if="#filter==StatusiKompenzacija" />
+					<parameter name="@node"  value="#tree.@value" if="#filter==DatumKompenzacija" />				
+				</data>
+				<fields>
+					<field name="Broj" />
+					<field name="Datum" />
+					<field name="VrstaDokumenta" />
+					<field name="Partner" caption="Naziv Partnera"/>
+					<field name="DuznikIznos" caption="Dužnik Iznos"/>
+					<field name="VjerovnikIznos" caption="Vjerovnik Iznos"/>
+					<field name="Saldo" />
+					<field name="DatumVal" caption="Datum Valute"/>
+					<field name="Status" />
+					<!--<field name="Proknjizena" caption="Proknjiženo"/>-->
+					<field name="TemOpis" caption="Temeljnica"/>
+					<field name="TemBrojDok" caption="Broj temeljnice"/>
+					<field name="Napomena" />
+					<field name="Operater" />
+					<field name="OperaterAkt" />
+				</fields>
+				<styles>
+					<style name="fontcolor" value="#0000ff" if="#grdGlava.@Zakljucena==1&amp;&amp;#grdGlava.@TemBrojDok!=''" />
+                    <style name="fontcolor" value="#008000" if="#grdGlava.@Zakljucena==1&amp;&amp;#grdGlava.@TemOpis==Neproknjiženo"  />				
+                </styles>
+				<menu>
+					<menuitem name="mn1" caption="Poništi zaključak"  function="PonistiZakljucak">
+						<event type="click">
+							<action type="datarun nonquery" value="Global.~dtPonistizakljucak" />
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</event>
+					</menuitem>
+				</menu>
+			</grid>
+			<grid name="grdDetalj" type="detail" async="true"   savelayout="true" bestfitonrefresh="true" > 
+				<data command="spCKntKompMasterQuery" >
+					<parameter name="@Action"  value="10"  />
+					<parameter name="@Id"  value="#grdGlava.@KntKompMasterId"  />				
+				</data>
+				<event type="focusedrowchanged">
+								<action type="control disable" value="#btnRacun" if="#grdDetalj.@FaktureId==null"/>
+								<action type="control enable" value="#btnRacun" else=""/>
+					
+				</event>
+				<fields>
+					<field name="KontoD" caption="Konto" />
+					<field name="BrojD"  caption="Račun"/>
+					<field name="DatumDokD" caption="Datum"/>
+					<field name="DatumValuteD" caption="Valuta"/>
+					<field name="IznosD" caption="Iznos"/>
+					<field name="DatumValute2D" caption="Valuta2"/>
+					<field name="OrgShemaDuznik" caption="Org.Shema"/>
+					<field name="Razmak" caption=" - " />
+					<field name="KontoV" caption="Konto" />
+					<field name="BrojV"  caption="Račun"/>
+					<field name="DatumDokV" caption="Datum"/>
+					<field name="DatumValuteV" caption="Valuta"/>
+					<field name="IznosV" caption="Iznos"/>
+					<field name="OrgShemaVjerovnik" caption="Org.Shema"/>
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons> 
+			<buttons>
+				<button name="btnUnesi" caption="Dodaj" function="unos" dataname="~dtVrstaDokIzbor" displayfield="Opis">
+					<event type="click">
+						<action type="variable value">
+								<parameter name="IndUnosa" value="1" type="int"/>
+						</action>
+						<action type="datarun scalar" value="Global.~dtGetId">
+							<parameter name="CurrentKntKompMasterId" value="KntKompMasterId" />
+						</action>
+						<action type="form open" value="frmPrijeboj" if="#btnUnesi.@Prefix==PRIK">
+							<parameter name="KoopInd" value="1" type="int"/>
+						</action>
+						<action type="form open" value="frmPrijeboj" else="">
+							<parameter name="KoopInd" value="0" type="int"/>
+						</action>						
+						<action type="control populate keepfocus" value="#grdGlava"/>
+						<action type="datarun scalar" value="Global.~dtGetId">
+							<parameter name="NewKntKompMasterId" value="KntKompMasterId" />
+						</action>
+						<action type="datarun scalar" value="Global.~dtFindNode">
+							<parameter name="findnode" value="findnode" />
+						</action>
+						<action type="control focus" value="#tree" if="$CurrentKntKompMasterId!=$NewKntKompMasterId" >
+							<parameter value="$findnode" /> 
+						</action>
+						<action type="control focus" value="#grdGlava" if="$CurrentKntKompMasterId!=$NewKntKompMasterId" >
+							<parameter value="$NewKntKompMasterId" type="int"/> 
+						</action>
+						<action type="control enable" value="#btnIzmjeni, #btnObrisi, #btnZakljuci, #btnProknjizi, #btnIspisi, #btnRacun"  if="#grdGlava.rowcount!=0" />
+						<action elseif="#grdGlava.rowcount==0" type="control disable" value="#btnIzmjeni, #btnObrisi, #btnZakljuci, #btnProknjizi, #btnIspisi, #btnRacun"  />
+					</event>
+				</button>
+				<button name="btnIzmjeni" caption="Izmjeni" function="izmjena">
+					<event type="click">
+						<action type="variable value">
+							<parameter name="IndUnosa" value="0" type="int" />
+							<parameter name="KntKompMasterId" value="#grdGlava.@KntKompMasterId" type="int" />
+							<parameter name="NewKntKompMasterId" value="#grdGlava.@KntKompMasterId" type="int" />
+						</action>						
+						<action type="form open" value="frmPrijeboj"/>
+						<action type="control populate keepfocus" value="#grdGlava"/>
+						<action type="datarun scalar" value="Global.~dtFindNode">
+							<parameter name="findnode" value="findnode" />
+						</action>
+						<action type="control focus" value="#tree"  >
+							<parameter value="$findnode" /> 
+						</action>
+						<action type="control focus" value="#grdGlava" >
+							<parameter value="$KntKompMasterId" type="int" /> 
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="Obriši" function="brisanje">
+					<event type="click">
+						<action type="variable value">
+							<parameter name="Broj" value="#grdGlava.@Broj" />
+						</action>	
+						<action type="confirm" value="Želite li doista obrisati prijeboj br. {$Broj}">												
+							<action type="datarun nonquery" value="Global.~dtObrisi">
+								<action type="control populate keepfocus" value="#grdGlava" />
+								<action if="#grdGlava.rowcount==0" type="control disable" value="#btnIzmjeni, #btnObrisi, #btnZakljuci, #btnProknjizi, #btnIspisi, #btnRacun"  />	
+								<action type="control enable" value="#btnIzmjeni, #btnObrisi, #btnZakljuci, #btnProknjizi, #btnIspisi, #btnRacun"  elseif="#grdGlava.rowcount!=0" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnZakljuci" caption="Zaključi" function="zakljucak">
+					<event type="click">
+						<action type="datarun nonquery" value="Global.~dtZakljucak" />
+						<action type="control populate keepfocus" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="btnProknjizi" caption="Proknjiži" function="proknjizi">
+					<event type="click">
+						<!--otvaramo formu izbora datuma ili ne pa prepisujemo datum s komp.-->
+						<action type="datarun reader" value="~dtPrepisiDatum"/>
+						<action type="form open" value="frmProknjizi" if="~dtPrepisiDatum.@IndDatumKnj==1"/>
+						<action type="datarun nonquery" value="~dtProknjiziOdmah" else=""/>
+						<action type="control populate keepfocus" value="#grdGlava"/>
+					</event>
+				</button>
+				<button name="btnIspisi" caption="Ispiši" dataname="Global.~dtPrint" displayfield="Opis"  >
+					<event type="click">
+						<action type="control print" value="#grdGlava">
+							<action type="print template" value="#btnIspisi.@Template">
+								<parameter name="id" value="#grdGlava.@KntKompMasterId" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnRacun" caption="&amp;Račun" >   
+					<event type="click">
+						<action type="form open" value="frmFakturaRacun" >
+							<parameter name="FaktureId" value="#grdDetalj.@FaktureId"/>
+							<parameter name="StatusFak" value="2"/>
+							<!--<parameter name="PartneriId" value="#grdGlava.@gridPid"/>-->
+						</action>
+						<!-- <action type="form open" value="frmRacun" if="global.$Tablica==FaktureDob&amp;&amp;#grdGlavni.@slozi==2"/> -->
+					</event>
+				</button>
+				<button name="btnPreglednik" caption="Preglednik" tooltip="Pregled skeniranih dokumenata vezanih za konto dobavljača">
+					<event type="click">
+						<action type="datarun reader" value="global.~dtPoveziKupFaktureDobSkener"/>
+						<action type="form open" value="frmDMS" if="~dtPoveziKupFaktureDobSkener.@KupSkenerId!=null">
+							<parameter name="KupSkenerId" value="~dtPoveziKupFaktureDobSkener.@KupSkenerId"/>
+						</action>
+						<!-- <action type="form open" value="frmDMS" if="~dtPoveziKupFaktureDobSkener.@KupPrometId!=null"> -->
+							<!-- <parameter name="KupPrometId" value="~dtPoveziKupFaktureDobSkener.@KupPrometId"/> -->
+						<!-- </action>-->				
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons> 
+		<datalist>
+			<data name="dtVrstaDokIzbor" command="spCKntKompVrstaDok">
+				<parameter name="@Action" value="1"/>
+			</data>
+			<data name="dtPrepisiDatum" command="spCKntKompPostavke">
+				<parameter name="@Action" value="1"/>
+			</data>	
+			<data name="dtProknjiziOdmah" command="spCKntKompProknjizi" timeout="200">
+				<parameter name="@Action"  value="0" />
+				<parameter name="@KntKompMasterId" value="#grdGlava.@KntKompMasterId"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>	
+				<parameter name="@DatumKnjizenja"  value="#grdGlava.@Datum"/>			
+			</data>			
+		</datalist>
+	</form>
+	
+	<form caption="Proknjiži" name="frmProknjizi" fixedsize="true"> 
+		<event type="shown">
+		<!--TODO setaj varijable po potrebi-->	
+		</event> 
+		<layout textposition="top">
+			<group rows="1" cols="1">
+				<item col="1" row="1" colspan="2" caption="Datum knjiženja:">
+					<dateedit name="datDatumKnjizenja" value="now" required="true"/>
+				</item>
+			</group> 
+		</layout> 
+		<panelbuttons>
+			<buttons>
+				<button name="btnProknjizi" caption="Proknjiži">
+					<event type="click">
+						<action type="datarun nonquery" value="Global.~dtProknjizi" />
+						<action type="form close"/>
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" name="btnOdustani">
+					<!-- <event type="click"> -->
+						<!-- <action type="form close"/> -->
+					<!-- </event> -->
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	
+	<datalist>
+		<data command="spCKntKompQuery" name="dtPocetni">
+			<parameter name="@Action"  value="0" />
+			<parameter name="@OperateriId"  value="@@operateriid" />
+		</data>
+		<data command="spCKntKompMasterAzur" name="dtZakljuci">
+				<parameter name="@Action"  value="111" if="parent.$IndUnosa==1"/>
+				<parameter name="@Action"  value="122" if="parent.$IndUnosa!=1" />
+				<parameter name="@id"  value="parent.#grdGlava.@KntKompMasterId" />
+				<parameter name="@Datum"  value="#datDatum" />
+				<parameter name="@Napomena"  value="#txtNapomena" />
+				<parameter name="@DuznikId"  value="#srcPartner" />
+				<parameter name="@DatumVal"  value="#datDatumValute" />
+				<parameter name="@OperateriId"  value="@@operateriid" />
+				<parameter name="@SelectedDuznik"  value="#grdDuznik.selectedids.table"  />
+				<parameter name="@SelectedVjerovnik"  value="#grdVjerovnik.selectedids.table" />				
+		</data>
+		<data command="spCKntKompQuery" name="dtOcistiTablice">
+			<parameter name="@Action"  value="1" />
+			<parameter name="@OperateriId"  value="@@operateriid" />
+		</data>
+		<data command="spCKntKompQuery" name="dtFindNode">
+			<parameter name="@Action"  value="14" />
+			<parameter name="@id"  value="$NewKntKompMasterId" />
+		</data>
+		<data command="spCKntKompQuery" name="dtGetId">
+			<parameter name="@Action"  value="15" />
+		</data>
+		<data command="spCKntKompMasterAzur" name="dtObrisi">
+			<parameter name="@Action"  value="222" />
+			<parameter name="@id"  value="#grdGlava.@KntKompMasterId" />
+		</data>
+		<data command="spCKntKompMasterAzur" name="dtZakljucak">
+			<parameter name="@Action"  value="10" />
+			<parameter name="@id"  value="#grdGlava.@KntKompMasterId" />
+			<parameter name="@OperateriId"  value="@@operateriid" />
+			<parameter name="@Zakljucena"  value="1" />				
+		</data>
+		<data command="spCKntKompProknjizi" name="dtProknjizi" timeout="200">
+			<parameter name="@Action"  value="0" />
+			<parameter name="@KntKompMasterId"  value="parent.#grdGlava.@KntKompMasterId" />
+			<parameter name="@OperateriId"  value="@@operateriid" />	
+			<parameter name="@DatumKnjizenja"  value="#datDatumKnjizenja" />			
+		</data>
+		<data command="spCKntKompProknjizi" name="dtPonistizakljucak">
+			<parameter name="@Action"  value="1" />
+			<parameter name="@KntKompMasterId"  value="#grdGlava.@KntKompMasterId" />
+			<parameter name="@OperateriId"  value="@@operateriid" />			
+		</data>
+		<data command="spCarpoPrint" name="dtPrint">
+			<parameter name="@Action" value="GetTemplates" />
+			<parameter name="@Id" value="#grdGlava.@KntKompMasterId" type="int" />
+			<parameter name="@Tablica" value="KntKompMaster" />
+		</data>	
+		<data name="dtPoveziKupFaktureDobSkener" command="spCKntDMS">
+			<parameter name="@Action" value="1"/>
+			<parameter name="@Id" value="#grdDetalj.@FaktureDobId"/>
+		</data>				
+	</datalist>
+</root>

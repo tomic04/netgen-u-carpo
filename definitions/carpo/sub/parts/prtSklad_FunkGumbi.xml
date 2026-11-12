@@ -1,0 +1,195 @@
+<parts>
+	<part name="partGumbi">
+		<buttons>
+			<button name="btnUnesi" caption="&amp;UNESI" type="add" dataname="Global.dtVrstaDok" displayfield="Opis" function="Unos">
+				<event type="click">
+					<action type="form open" value="frmSkladGlaUnos">
+						<parameter name="VrstaDokId" value="#btnUnesi.@VrstaDokId" />
+					</action>
+					<action if="Global.$OpenEditForm==1">
+						<action type="datarun reader" value="Global.dtDajNode"/>				
+						<action type="control focus" value="#tree" if="~dtDajNode.@Vrijednost!=#tree.@Id">
+							<parameter value="~dtDajNode.@Vrijednost"/>
+						</action>										
+						<action type="control populate" value="#grdGlava" if="~dtDajNode.@Vrijednost==#tree.@Id"/>						
+						<action type="control focus" value="#grdGlava">
+							<parameter value="global.$DokId" />
+						</action>
+						<action type="variable value">
+							<parameter name="$SktPrometGlaId" value="global.$DokId" />
+						</action>								
+						<action type="form open" value="frmSkladGlaIzmjena">
+							<!-- <parameter name="SktPrometGlaId" value="#grdGlava.@SktPrometGlaId"/> -->
+							<!-- <parameter name="Status" value="#grdGlava.@Status"/> -->
+							<!-- <parameter name="Smije" value="#grdGlava.@Smije"/> -->
+							<parameter name="SktPrometGlaId" value="$SktPrometGlaId"/>
+							<parameter name="Status" value="1"/>
+							<parameter name="Smije" value="1"/>							
+						</action>											
+						<action type="control refreshrow" value="#grdGlava">
+							<parameter value="Global.dtGlaRefreshRow"/>
+						</action>											
+						<action type="control populate" value="#grdDetalj" />
+						<action type="control populate" value="#grdDimenzije" if="global.$IndDimenzije==1"/>
+						<action type="control enable" value="#btnPromijeniStatus" if="#grdGlava.rowcount&gt;0&amp;&amp;#grdGlava.@Zaključeno!=Zaključen"/>
+						<action type="control disable" value="#btnPromijeniStatus" else=""/>
+						<action type="control disable" value="#btnStorniraj" if="#grdGlava.rowcount==0||#grdGlava.@Storno&gt;0||#grdGlava.@Zaključeno!=Zaključen"/>
+						<action type="control enable" value="#btnStorniraj" else="" />	
+						<action type="control disable" value="#btnObrisi" if="#grdGlava.rowcount==0||#grdGlava.@Status==2||#grdGlava.@Status==0||#grdGlava.@Smije==0"  />
+						<action type="control enable" value="#btnObrisi"  else="" />							
+					</action>
+				</event>
+			</button>
+			<button name="btnIzmijeni" caption="&amp;IZMIJENI" function="Izmjena">
+				<event type="click">				
+						<action type="variable value" value="Global.$DokId">
+						<parameter  value="#grdGlava.@SktPrometGlaId" type="int"/>
+					</action>				
+					<action type="form open" value="frmSkladGlaIzmjena" if="#grdGlava.rowcount&gt;0">
+						<parameter name="SktPrometGlaId" value="#grdGlava.@SktPrometGlaId" />
+						<parameter name="Status" value="#grdGlava.@Status" />
+						<parameter name="Smije" value="#grdGlava.@Smije" />
+					</action>
+					<action type="control refreshrow" value="#grdGlava">
+                        <parameter value="Global.dtGlaRefreshRow"/>
+                    </action>
+					<action type="control populate" value="#grdDetalj" />
+					<action type="control populate" value="#grdDimenzije" if="global.$IndDimenzije==1"/>
+					<action type="control enable" value="#btnPromijeniStatus" if="#grdGlava.rowcount&gt;0&amp;&amp;#grdGlava.@Zaključeno!=Zaključen"/>
+					<action type="control disable" value="#btnPromijeniStatus" else=""/>
+					<action type="control disable" value="#btnStorniraj" if="#grdGlava.rowcount==0||#grdGlava.@Storno&gt;0||#grdGlava.@Zaključeno!=Zaključen"/>
+					<action type="control enable" value="#btnStorniraj" else="" />	
+					<action type="control disable" value="#btnObrisi" if="#grdGlava.rowcount==0||#grdGlava.@Status==2||#grdGlava.@Status==0||#grdGlava.@Smije==0"  />
+					<action type="control enable" value="#btnObrisi"  else="" />						
+				</event>
+			</button>
+			<button name="btnObrisi" caption="&amp;OBRIŠI" function="Brisanje" >
+				<event type="click">
+					<action type="datarun scalar" value="Global.dtOperaterLock"/>
+					<action type="confirm" value="Želite li obrisati dokument br. {#grdGlava.@Broj}?">
+						<action type="datarun nonquery" value="Global.dtGlavaObrisi" >
+							<action type="control populate" value="#grdGlava" />
+						</action>
+					</action>
+				</event>				
+			</button>
+			<button name="btnStorniraj" caption="STORNIRAJ" function="Storniranje" >
+				<event type="click">
+					<action type="datarun scalar" value="Global.dtOperaterLock"/>
+					<action type="confirm" value="Želite li stornirati dokument br. {#grdGlava.@Broj}?">
+						<action type="form open" value="frmSkladStorniraj">
+							<parameter name="SktPrometGlaId" value="#grdGlava.@SktPrometGlaId" />
+						</action>				
+					</action>
+				</event>
+			</button>
+			<button name="btnKopiraj" caption="&amp;KOPIRAJ" dataname="Global.dtVrstaDok" displayfield="Opis" function="Kopiranje">
+				<event type="click">
+					<action type="datarun scalar" value="Global.dtKopiraj">
+						<parameter name="SktPrometGlaId" />
+					</action>
+					<action type="variable value" value="Global.$DokId">
+						<parameter value="$SktPrometGlaId" />
+					</action>					
+					<action type="datarun scalar" value="Global.dtDajNode">
+						<parameter name="Tree_node" />
+					</action>					
+					<action type="control focus" value="#tree" if="#tree.Id!=$Tree_node">
+					  <parameter value="$Tree_node"/>
+					</action>							
+					<action type="control populate" value="#grdGlava" >
+						<action type="control focus" value="#grdGlava">
+							<parameter value="$SktPrometGlaId" />
+						</action>
+					</action>						
+				</event>
+			</button>			
+			<button name="btnPromijeniStatus" caption="PRO&amp;MIJENI STATUS" type="" function="Status">
+				<event type="click">
+					<action type="variable value">
+						<parameter name="VratiStatus" value="0" type="int" />
+					</action>						
+					<action type="datarun scalar" value="Global.dtOperaterLock"/>
+					<action type="datarun scalar" value="Global.dtStatusiProvjera"/>
+					<action type="datarun scalar" value="Global.dtProvjeraViseStatusa">
+						<parameter name="IstiStatusi" />
+					</action>
+					<action if="$IstiStatusi==0">
+						<action type="message" value="Nije moguće promijeniti status dokumentima kojima se status razlikuje"/>
+					</action>
+					<action else="">
+						<action type="form open" value="frmPromijeniStatus" if="#grdGlava.rowcount&gt;0">
+							<parameter name="SktPrometGlaId" value="#grdGlava.@SktPrometGlaId" />
+							<parameter name="VratiStatus" value="$VratiStatus" />
+							<parameter name="NaslovTekst" value="Promijeni status" />
+							<parameter name="IzPodloge" value="1" />
+						</action>
+						<action type="control populate keepfocus" value="#grdglava" />
+					</action>					
+				</event>
+			</button>
+			<button name="btnWMS" caption="&amp;WMS" function="WMS">
+				<event type="click">
+					<action type="datarun scalar" value="Global.dtOperaterLock"/>
+					<action type="confirm" value="Želite li poslati u WMS dokument br. {#grdGlava.@Broj}?">
+						<action type="datarun nonquery" value="Global.dtWMSPosalji" >
+							<action type="control populate" value="#grdGlava" />
+						</action>				
+						<action type="control refreshrow" value="#grdGlava">
+							<parameter value="Global.dtGlaRefreshRow"/>
+						</action>
+					</action>						
+				</event>
+			</button>			
+			<button name="btnProvedi" caption="PROVE&amp;DI" function="Provedi">
+				<event type="click">
+				</event>
+			</button>
+			<button name="btnRekapitulacija" caption="R&amp;EKAPITULACIJA" width="105">
+				<event type="click">
+					<action type="form open" value="frmSkladGlaRekap"/>
+				</event>
+			</button>			
+			<button name="btnPrint" caption="IS&amp;PIŠI" dataname="Global.dtPrint" displayfield="Opis" >
+				<event type="click">
+					<action type="control print" value="#grdGlava">
+						<action type="print template" value="#btnPrint.@Template">
+							<parameter name="id" value="#grdGlava.@SktPrometGlaId" />
+						</action>
+					</action>
+				</event>
+			</button>																							
+			<button name="btnSearch" caption="PRO&amp;NAĐI">
+				<event type="click">		
+					<action type="search" value="Global.dtSearch" ></action>
+				</event>
+			</button>
+			<button name="btnKonfig" caption="POSTAVKE" begingroup="true">
+			  <event type="click">
+				<action type="form open" value="frmSkladGlaKonfig">
+				  <parameter name="VrstaProm" value="Global.$VrstaPromSifra" />
+				  <parameter name="OperateriId" value="@@operateriid" />
+				</action>
+				<action type="control value" value="#filter" if="Global.$DrvoFilter==0">
+					<parameter value="Vremenska podjela"/>
+				</action>				
+				<action type="control value" value="#filter" if="Global.$DrvoFilter==1">
+					<parameter value="Skladište"/>
+				</action>
+				<action type="control value" value="#filter" if="Global.$DrvoFilter==2">
+					<parameter value="Statusi"/>
+				</action>
+				<action type="control value" value="#filter" if="Global.$DrvoFilter==3">
+					<parameter value="Vremenska podjela bez skladišta"/>
+				</action>				
+				<action type="control populate" value="#tree" if="Global.$DrvoFilter==0&amp;&amp;global.$filter==Vremenska podjela"/>				
+				<action type="control populate" value="#tree" if="Global.$DrvoFilter==1&amp;&amp;global.$filter==Skladište"/>				
+				<action type="control populate" value="#tree" if="Global.$DrvoFilter==2&amp;&amp;global.$filter==Statusi"/>					
+				<action type="control focus" value="#tree">
+					<parameter value="~dtDrvoPozicija.@Poz" type="string"/>
+				</action> 				
+			  </event>
+			</button>			
+		</buttons>
+	</part>
+</parts>

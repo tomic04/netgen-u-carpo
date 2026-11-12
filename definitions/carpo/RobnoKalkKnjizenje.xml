@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+20.06.2017. PJ init
+-->
+<root version="1.0.0.0" loglevel="3">
+	<form name="frmMaster" type="master" caption="Robne kalkulacije">
+			<!--TODO: ovdje uvaliti fokus na partnera kad se poziva iz druge granule  
+		<event type="shown">
+			<action type="datarun scalar" value="Global.~dtFindNode">
+				<parameter name="findnode" value="findnode" />
+			</action>
+			<action type="control focus" value="#tree" >
+				<parameter value="$findnode"  />  
+			</action>
+		</event>-->
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Partneri" />
+			    <comboitem value="Statusi" />
+				<comboitem value="VremenskaPodjela" />
+            </lookup>
+			<tree name="tree"  key="id">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava" />
+				</event>
+			<!--TODO: ovdje sredi da se kontrole enablaju disablaju kad je rowcount 0 -->
+<!--				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava" />
+					<action if="#grdGlava.rowcount==0" type="control disable" value="#btnIzmjeni, #btnObrisi, #btnZakljuci, #btnProknjizi, #btnIspisi"  />	
+					<action type="control enable" value="#btnIzmjeni, #btnObrisi, #btnZakljuci, #btnProknjizi, #btnIspisi"  elseif="#grdGlava.rowcount!=0" />
+				</event>-->
+				<data command="spCKntRobnoKalkKnjizenjeTree"  elseif="#filter==Partneri"  >
+					<parameter name="@action" value="0" />
+				</data>
+				<data command="spCKntRobnoKalkKnjizenjeTree"  elseif="#filter==VremenskaPodjela"  >
+					<parameter name="@action" value="1" />
+				</data>
+				<data command="spCKntRobnoKalkKnjizenjeTree"  elseif="#filter==Statusi"  >
+					<parameter name="@action" value="2" />
+				</data>
+				<fields>
+					<field name="caption" />
+				</fields>
+			</tree>
+			<grid name="grdGlava" type="master" async="true"  multiselect="true"  savelayout="true" bestfitonrefresh="true" key="RobnoKalkGlaId"> 
+<!--				TODO: ovdje uvaliti da diže formu za povezivanje
+				<event type="doubleclick">					
+						<action type="variable value">
+							<parameter name="IndUnosa" value="0" type="int" />
+						</action>						
+						<action type="form open" value="frmPrijeboj"/>
+						<action type="control populate keepfocus" value="#grdGlava"/>
+				</event>-->
+				<data command="spRobnoKalkKnjizenje" >
+					<parameter name="@action"  value="1"  />
+					<parameter name="@partneriid"  value="#tree.@value" if="#filter==Partneri" />
+					<parameter name="@IndStatus"  value="#tree.@value" if="#filter==Statusi" />	
+					<parameter name="@DatumDo"  value="#tree.@value" if="#filter==VremenskaPodjela" />						
+				</data>
+<!--				TODO: definiraj fieldove, vidi s Dariom
+				<fields>
+					<field name="Broj" />
+				</fields>-->
+				<!--TODO: definiraj boje po uvijetima, pogledaj storu, polje formatid, i onda to makni iz store-->
+				<styles>
+					<style name="fontcolor" value="red" if="#grdGlava.@Status==Zaključen" />  
+					<style name="fontcolor" value="blue" if="#grdGlava.@Status==Proknjižen" />   					
+                </styles>
+				<menu>
+					<menuitem caption="Poništi vezu">
+						<event type="click">
+							<action type="datarun nonquery" value="Global.~dtPonistiVezu" />
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</event>
+					</menuitem>
+					<menuitem caption="Poništi temeljnicu">
+						<event type="click">
+							<action type="datarun nonquery" value="Global.~dtPonistiKnjizenje" />
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</event>
+					</menuitem>
+				</menu>
+			</grid>
+		</managerlayout>
+		<panelbuttons> 
+			<buttons>
+				<button name="btnPovezi" caption="Poveži s UFA-om" >
+				<!--TODO: ovdje omogućiti da se na poveži odmah kresene datarun kad se granula poziva iz knjige URA-->
+					<event type="click">
+<!--						TODO: sredi formu za povezivanje, datarun ako treba i var value
+						<action type="variable value">
+								<parameter name="IndUnosa" value="1" type="int"/>
+						</action>
+						<action type="datarun scalar" value="Global.~dtGetId">
+							<parameter name="CurrentKntKompMasterId" value="KntKompMasterId" />
+						</action>-->
+						<action type="form open" value="frmPovezi"/>
+						<action type="control populate keepfocus" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="btnPonisti" caption="Poništi vezu na UFA" >
+					<event type="click">
+						<action type="confirm" value="Želite li doista obrisati veze na UFA za odabranim kalkulacijama?">	
+							<action type="datarun nonquery" value="Global.~dtPonistiVezu">
+								<action type="control populate keepfocus" value="#grdGlava" />
+							</action>
+							<!--TODO: enable/disable kontrola za rowcount=0-->
+						</action>
+					</event>
+				</button>
+				<button name="btnProknjizi" caption="Proknjiži na temeljnici" >
+					<event type="click">
+						<action type="confirm" value="Želite li doista proknjižiti odabrane kalkulacije?">	
+							<action type="datarun nonquery" value="Global.~dtProknjizi">
+								<action type="control populate keepfocus" value="#grdGlava" />
+							</action>
+							<!--TODO: enable/disable kontrola za rowcount=0-->
+						</action>
+					</event>
+				</button>
+				<button name="btnPonistiKnjizenje" caption="Poništi temeljnicu" >
+					<event type="click">
+						<action type="confirm" value="Želite li doista poništiti knjiženje za odabrane kalkulacije?">	
+							<action type="datarun nonquery" value="Global.~dtPonistiKnjizenje">
+								<action type="control populate keepfocus" value="#grdGlava" />
+							</action>
+							<!--TODO: enable/disable kontrola za rowcount=0-->
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons> 
+	</form>
+	
+	<form name="frmPovezi" caption="Izbor fakture">
+		<event type="onload">
+			<action type="control populate" value="#grdIzborFaktura" />
+			<action type="variable value">
+				<parameter name="$SelectedIDs" value="parent.#grdGlava.selectedids"  />
+			</action>
+		</event>
+		<layout textposition="left" itemspadding="2" >
+			<group cols="1" rows="1" >
+				<group cols="2" rows="2" groupbordervisible="false">
+					<rowsdefinition>
+						<row size="30" position="1" />
+						<row size="100%" position="2" />
+					</rowsdefinition>
+					<item col="1" row="2" colspan="2" >
+						<grid name="grdIzborFaktura" async="true" dataname="Global.~dtIzborFaktura"  showfooter="True" key="fakturedobid" autowidth="true" savelayout="true" >
+<!--							TODO: napraviti storu, definirati polja
+							<fields>	
+								<field name="Konto"   />
+							</fields>-->
+						</grid>
+						
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+            <buttons>
+				<button name="btnPovezi" caption="Poveži" >
+					<event type="click">
+						<action type="variable value">
+							<parameter name="Global.$FaktureDobId" value="#grdIzborFaktura.@FaktureDobId"  />
+							<parameter name="Global.$SelectedIDs" value="$SelectedIDs"  />
+						</action>
+                            <action type="datarun nonquery" value="Global.~dtPovezi" >
+								<action type="form close" />								
+							</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	
+	<datalist>
+		<data command="spRobnoKalkKnjizenje" name="dtPovezi">
+			<parameter name="@Action"  value="2" />
+			<parameter name="@SelectedIDs"  value="Global.$SelectedIDs" />
+			<parameter name="@OperateriId"  value="@@OperateriId" />
+			<parameter name="@FaktureDobId"  value="Global.$FaktureDobId" />		
+		</data>
+		<data command="spRobnoKalkKnjizenje" name="dtProknjizi">
+			<parameter name="@Action"  value="3" />
+			<parameter name="@SelectedIDs"  value="#grdGlava.selectedids" />
+		</data>
+		<data command="spRobnoKalkKnjizenje" name="dtPonistiKnjizenje">
+			<parameter name="@Action"  value="4" />
+			<parameter name="@SelectedIDs"  value="#grdGlava.selectedids" />
+		</data>
+		<data command="spRobnoKalkKnjizenje" name="dtPonistiVezu">
+			<parameter name="@Action"  value="5" />
+			<parameter name="@SelectedIDs"  value="#grdGlava.selectedids" />
+		</data>
+		<data command="spRobnoKalkKnjizenje" name="dtIzborFaktura">
+			<parameter name="@Action"  value="6" />
+			<parameter name="@partneriid"  value="parent.#grdGlava.@PartneriId" />
+		</data>
+	</datalist>
+</root>

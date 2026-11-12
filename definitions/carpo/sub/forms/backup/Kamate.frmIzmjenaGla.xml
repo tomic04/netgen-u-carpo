@@ -1,0 +1,98 @@
+<root>
+	<form name="frmIzmjenaGla" statusbar="true" width="700" height="200">
+		<event type="shown">
+			<action type="form caption" value="Izmjena zaglavlja" if="$Obracun==null"/>
+			<action type="form caption" value="Potvrda/izmjena kamate i razdoblje obračuna" else=""/>
+			<action type="control disable" value="#txtBrObr,#datDatum" if="$Obracun!=null"/>
+			<action type="control caption" value="#btnOk" if="$Obracun==null">
+				<parameter value="SPREMI"/>
+			</action>
+			<action type="control caption" value="#btnOk" if="$Obracun!=null">
+				<parameter value="OBRAČUNAJ"/>
+			</action>
+			<action type="datarun reader" value="~dtGet"/>
+			<action type="control value" value="#datDatum">
+				<parameter value="~dtGet.@DatumDok"/>
+			</action>
+			<action type="control refreshvalue" value="#srcPartner">
+				<!-- <parameter value="~dtGet.@PartneriId"/> -->
+			</action>
+			<action type="control value" value="#cmbKamata">
+				<parameter value="~dtGet.@kteVrsteStopaID"/>
+			</action>
+			<action type="control value" value="#datOd">
+				<parameter value="~dtGet.@datOd"/>
+			</action>
+			<action type="control value" value="#datDo">
+				<parameter value="~dtGet.@datDo"/>
+			</action>
+			<action type="control value" value="#txtBrObr">
+				<parameter value="~dtGet.@BrObr"/>
+			</action>
+			<action type="control value" value="#txtMinIznos">
+				<parameter value="~dtGet.@MinIznos"/>
+			</action>
+			<action type="control disable" value="#srcPartner"/>
+		</event>
+		<layout>
+			<part name="prtKamate" path="prtKamate.xml"/>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOk" caption="Spremi">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun reader" value="~dtDatumProvjera"/>
+						<action type="message" value="Stopa nije definirana za cijelo razdoblje obračuna!" if="~dtDatumProvjera.@Ind==-1"/>
+						<action elseif="~dtDatumProvjera.@Ind==1">
+							<action if="$Obracun==null">
+								<action type="datarun scalar" value="~dtIzmjenaGla">
+									<parameter name="kntKteGlavaId"/>
+								</action>
+								<action type="form close"/>
+							</action>
+							<action if="$Obracun!=null">
+								<action type="datarun nonquery" value="~dtIzmjenaGla"/>
+								<action type="datarun nonquery" value="~dtObracun"/>
+								<action type="form close"/>
+								<action type="form open" value="frmJedObracun">
+									<parameter name="kntKteGlavaId" value="$kntKteGlavaId"/>
+								</action>						
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnCancel" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtObracun" command="spCkntKteObracun">
+				<parameter name="@ID" value="$kntKteGlavaId"/>
+			</data>
+			<data name="dtGet" command="spCKteGlavaQuery">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Id" value="$kntKteGlavaId"/>
+			</data>
+			<data name="dtKamate" command="spCKntKtePopuniKontrole">
+				<parameter name="@Action" value="vrste"/>
+			</data>
+			<data name="dtIzmjenaGla" command="spCKteGlavaAzur">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$kntKteGlavaId"/>
+				<parameter name="@OperaterID" value="@@operateriid"/>
+				<parameter name="@DatumDok" value="#datDatum"/>
+				<parameter name="@kteVrsteStopaId" value="#cmbKamata"/>
+				<parameter name="@DatOd" value="#datOd"/>
+				<parameter name="@DatDo" value="#datDo"/>
+				<parameter name="@PartneriId" value="#srcPartner"/>
+				<parameter name="@BrObr" value="#txtBrObr"/>
+				<parameter name="@MinIznos" value="#txtMinIznos"/>
+			</data>
+			<data name="dtDatumProvjera" command="spCKntKteProvjere">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Datum" value="#datOd"/>
+				<parameter name="@KteVrsteStopaId" value="#cmbKamata"/>
+			</data>			
+		</datalist>
+	</form>
+</root>

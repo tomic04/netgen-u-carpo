@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+
+<PROJECT
+	ONLOAD=":FILTERFORM"
+	BUTTONS="Parametri:FILTERFORM#Dodaj:INSERTFORM#Izmjeni:UPDATEFORM#Print dok.:vrstadokid-mpinventuragla"
+	DETAILGRID="spMPInventuraTotalGenNG @action = 4, @id=@@id"
+	POPUPMASTER="Filter:FILTERFORM#Izmjeni:UPDATEFORM" 
+	MASTERDBLCLICK="UPDATEFORM"
+	GROUPBYBOXVISIBLE="TRUE" 
+	CHECKBOXVISIBLE="FALSE"
+	TOTALROWVISIBLE="TRUE"
+	COMMANDTIMEOUT="300"
+	DETTOTALROWVISIBLE="TRUE"
+	DETCHECKBOXVISIBLE="FALSE"
+   SETDEFAULTS="select dbo.fnTkoSmoMi() as tkosmomi"
+    PAGEHEADERRIGHT="@@tkosmomi"
+  PAGEHEADERLEFT="Od @@datumod do @@datumdo"
+	REPORT="">
+
+	
+<NAME>MP Inventura - POPIS </NAME>
+<CAPTION>MP Inventura - POPIS </CAPTION>
+
+
+
+<FILTERFORM
+	NAME="FILTERFORM" HEIGHT="3254" WIDTH="6710"
+	CAPTION="Upišite uvjete prikaza "
+	ONSUBMIT="spMPInventuraTotalGenNG @action = 1, @operateriid= @@operateriid, "
+	ONLOAD="select @@datumod as datumod, @@datumdo as datumdo, @@trgovinaid as trgovinaid"
+	FILLEXPLORER="TRUE"
+	NEXTFORM=""
+	CMD1CAPTION="Pokaži"
+	CMD2CAPTION="Odustani">
+
+	<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od" />
+	<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do" />
+	<INPUT TYPE="combo" NAME="trgovinaid" ALLOWEMPTY="TRUE" CAPTION="Trgovina" ONLOSTFOCUS=""
+		   SQL="spMPDajTrgovinaNG @operateriid=@@operateriid" />
+	<INPUT TYPE="combo" NAME="status" ALLOWEMPTY="TRUE" CAPTION="Status"
+		   SQL="select 1 as status,&apos;Otvoren&apos; as naziv  union all select 2 as status,&apos;Zaključen &apos; as naziv " />
+</FILTERFORM>
+
+	
+<INSERTFORM 
+	NAME="INSERTFORM" HEIGHT="8500" WIDTH="12000"
+	CAPTION="Unos dokumenta MP Inventura-POPIS"
+	ONLOAD="select convert(varchar,getdate(),112) as datumdok, 1 as donosdokument"
+	NEXTFORM="UPDATEFORM"
+	FOCUS='datumdok'>
+
+	<INPUT TYPE="frame"  NAME="fr1"  CAPTION="Zaglavlje:" TOP="28" LEFT="50" WIDTH="11500" HEIGHT="2200" STYLE="1" DOCK="1"/>
+	
+	<INPUT TYPE="text"   NAME="broj"        CAPTION="_Broj*"	TOP="400" LEFT="1000" WIDTH="3500" HEIGHT="280" ENABLED="FALSE"  />
+	<INPUT TYPE="date"   NAME="datumdok"    CAPTION="Datum*"     TOP="400" LEFT="6500" WIDTH="1500"  />
+	<INPUT TYPE="combo"  NAME="trgovinaid"  CAPTION="Trgovina*"  TOP="750"  LEFT="1000" WIDTH="3500"  ALLOWEMPTY="FALSE" ENABLED="TRUE" 
+		   SQL="spMPDajTrgovinaNG @operateriid=@@operateriid" ONLOSTFOCUS="select 'refresh' as osobeid"/>
+	<INPUT TYPE="combo"  NAME="osobeid"		CAPTION="Odgovorna osoba*"  TOP="750"  LEFT="6500" SQL="spMPDajosobe @trgovinaid = @@trgovinaid"  WIDTH="3500"/>
+	<INPUT TYPE="text"   NAME="napomena"    CAPTION="Napomena*"       TOP="1100" LEFT="1000" WIDTH="10000"  />
+  <INPUT TYPE="check"   NAME="donosdokument"    CAPTION="Donos stavki sa dokumenta inventure"     TOP="1500" LEFT="1000" WIDTH="1500"  />
+	<INPUT TYPE="button" NAME="ok"          CAPTION="Stavke >>"  TOP="1700" LEFT="5000"  ANCHOR="6"
+		   ONCLICK="spMPInventuraTotalGenNG @action=22, @operateriid = @@operateriid, ++#Ok"  />
+	<INPUT TYPE="button" NAME="cancel"      CAPTION="Odustani (Esc)"  TOP="1700" LEFT="8000"  ANCHOR="6" ONCLICK="close"  />
+</INSERTFORM>
+
+
+<UPDATEFORM
+	NAME="UPDATEFORM" HEIGHT="8600" WIDTH="12000"
+	CAPTION="Ažuriranje stavaka dokumenta MP Inventura-POPIS"
+	ONLOAD="if (select status from mpinventuragla where mpinventuraglaid = @@ID ) = 2 begin 
+				exec spRaiserror 69001, &apos;Dokument je zaključen. Ne može se više ispravljati !&apos; 
+			end	else begin 
+				exec spMPInventuraTotalGenNG @action=11,@ID=@@ID end"
+	NEXTFORM=""
+	FOCUS="robaid"
+  ONLOADED="spmpOperaterlock @action = 1, @id = @@id, @operateriid = @@operateriid, @tablica='mpinventuragla'"
+  ONESCKEY="spmpOperaterlock @action = 2, @id = @@id, @operateriid = @@operateriid, @tablica='mpinventuragla'#Ok"
+  ONCLOSED="spmpOperaterlock @action = 2, @id = @@id, @operateriid = @@operateriid, @tablica='mpinventuragla'#Ok"
+  >
+
+	<INPUT TYPE="frame"  NAME="fr4"           CAPTION=""  WIDTH="1800" STYLE="1" DOCK="4" />
+	<INPUT TYPE="frame"  NAME="fr2"           CAPTION="Nova stavka dokumenta :" TOP="2650" LEFT="50" WIDTH="11500" HEIGHT="1300"   STYLE="1" DOCK="1"  />
+	<INPUT TYPE="frame"  NAME="fr1"           CAPTION="Zaglavlje:" TOP="28" LEFT="50" WIDTH="11500" HEIGHT="1600"  STYLE="1" DOCK="1" />
+	<INPUT TYPE="frame"  NAME="fr3"           CAPTION=""  HEIGHT="800"  STYLE="1" DOCK="2" />
+
+	<INPUT TYPE="text"   NAME="broj"        CAPTION="_Broj*"	TOP="400" LEFT="1000" WIDTH="3500" HEIGHT="280" ENABLED="FALSE"  />
+	<INPUT TYPE="date"   NAME="datumdok"    CAPTION="Datum*"     TOP="400" LEFT="6500" WIDTH="1500"  />
+	<INPUT TYPE="combo"  NAME="trgovinaid"  CAPTION="Trgovina*"  TOP="750"  LEFT="1000" WIDTH="3500"  ALLOWEMPTY="FALSE" ENABLED="FALSE"
+		   SQL="spMPDajTrgovinaNG @operateriid=@@operateriid" ONLOSTFOCUS="select 'refresh' as osobeid"/>
+	<INPUT TYPE="combo"  NAME="osobeid"		CAPTION="Odgovorna osoba*"  TOP="750"  LEFT="6500" SQL="spMPDajosobe @trgovinaid = @@trgovinaid"  WIDTH="3500"/>
+	<INPUT TYPE="text"   NAME="napomena"    CAPTION="Napomena*"       TOP="1100" LEFT="1000" WIDTH="10000"  />
+
+	<INPUT TYPE="search" NAME="Robaid"  CAPTION="Roba:*" TOP="2000" LEFT="800" HEIGHT="302" WIDTH="8000" VISIBLE="TRUE"
+		   SQL="spMPRobaZaMPNG @trgovinaid = @@trgovinaid , @trazi = '@@searchboxrobaid', @partneriid = @@partneriid, @skladisteid = @@skladisteid" 
+		   ONLOSTFOCUS="exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid" ENABLED="TRUE"/>
+	<INPUT TYPE="number" NAME="kolicinastvarna" CAPTION="Količina:*"  TOP="2350" LEFT="800" HEIGHT="302" WIDTH="1500" VISIBLE="TRUE" DECIMALS="4" ENABLED="TRUE"/>
+
+	<INPUT TYPE="button" NAME="OK" CAPTION="Dodaj (F8)" TOP="2350" LEFT="10000" WIDTH="1106" HEIGHT="422" HOTKEY="F8"
+		   ONCLICK="spMPInventuraTotalGenNG @action=3, @id = @@id, @robaid = @@robaid, @kolicinastvarna = @@kolicinastvarna
+					#select '' as roba , 'robaid' as focus, robaid = null, kolicinastvarna = 0, 'refreshmovelast' as stavke "  />
+
+
+	<INPUT TYPE="grid" DOCK="5"
+		NAME="stavke"
+		REFRESHAFTERCHILD="TRUE"
+		CAPTION="Stavke"
+		TOP="3500" LEFT="100" WIDTH="10500" HEIGHT="6800"
+		POPUP="Obriši:BRISISTAVKU"
+		ONDBLCLICK=":IZMJENISTAVKU"
+		CHECKBOXVISIBLE="FALSE"
+		GROUPBYBOXVISIBLE="TRUE"
+		TOTALROW="TRUE"
+    EDITCOLUMNS="[Količina1000]"
+    ONCELLEDITED="spMPInventuraTotalGenNG @action = 33, @stavke = @@stavke, @kolicinastvarna = @(stavke..Količina1000)"
+		SQL="spMPInventuraTotalGenNG @action = 4,@id=@@id" />
+
+	<INPUT TYPE="button" NAME="donesi"  CAPTION="Donesi" TOP="4000" LEFT="10300" WIDTH="1400" HEIGHT="322" ANCHOR="9" ONCLICK=":DONESI" VISIBLE="FALSE"  />
+	<INPUT TYPE="button" NAME="ispravi" CAPTION="Ispravi (F9)" TOP="4600" LEFT="10300" WIDTH="1400" HEIGHT="322" ANCHOR="9" HOTKEY="F9" ONCLICK=":IZMJENISTAVKU"  />
+	<INPUT TYPE="button" NAME="obrisi"  CAPTION="Obriši (F10)" TOP="5200" LEFT="10300" WIDTH="1400" HEIGHT="322" ANCHOR="9" HOTKEY="F10" ONCLICK=":BRISISTAVKU#select 'refresh' as stavke"  />
+	
+	<INPUT TYPE="button" NAME="ok"          CAPTION="Spremi (F2)"  TOP="7700" LEFT="1000" HOTKEY="F2"
+		   ONCLICK="spMPInventuraTotalGenNG 222, @id = @@id, @operateriid=@@operateriid, @datumdok = @@datumdok, @osobeid = @@osobeid, @napomena = '@@napomena'#Ok"  />
+	<INPUT TYPE="button" NAME="cancel"      CAPTION="Odustani (Esc)"  TOP="7700" LEFT="8000" ONCLICK="close"  />
+</UPDATEFORM>
+
+  <DONESI
+	  NAME="DONESI"
+	  HEIGHT="2902" WIDTH="5502"
+	  CAPTION="Donos sa : " 	>
+
+    <INPUT TYPE="frame" NAME="frm"     CAPTION=""      TOP="50" LEFT="50" WIDTH="5100" HEIGHT="1500" />
+    <INPUT TYPE="button" NAME="ok"     CAPTION="Donos iz robe "      TOP="500" LEFT="456" WIDTH="2106" HEIGHT="322" ONCLICK=":DONOSIZROBE#OK"  HOTKEY="F2" />
+    <INPUT TYPE="button" NAME="ok"     CAPTION="Donos prometa"      TOP="1000" LEFT="456" WIDTH="2106" HEIGHT="322" ONCLICK=":DONESIPROMET#OK"  HOTKEY="F2" />
+    <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani"            TOP="1800" LEFT="3500" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+  </DONESI >
+
+  <DONOSIZROBE
+	    FILLEXPLORER=""
+	    WIDTH="11500"
+	    ONSUBMIT=""
+	    ONLOAD="select '' as trazilica, null as klasaid, 0 as podklase"
+	    HEIGHT="10000"
+	    CAPTION="Donos iz tražilice robe " >
+
+    <INPUT TYPE="combo"    NAME="klasaid"   ALLOWEMPTY="TRUE" CAPTION="Klasa Robe*" TOP="200" LEFT="1500" SQL="select KlMasterRobaId, naziv,sortkey from KlMasterRoba order by sortkey"  />
+    <INPUT TYPE="checkbox" NAME="podklase"  CAPTION="Pokaži i podklase" TOP="200" LEFT="6000"    />
+    <INPUT TYPE="text"     NAME="trazilica" CAPTION="Tražilica*"  TOP="600" LEFT="1500" SQL=""  />
+
+    <INPUT TYPE="button"   NAME="pokazi"    CAPTION="Pokaži" TOP="600" LEFT="6000"  SQL="" ONCLICK="select 'refresh' as donosr#select 'visible' as donosr" />
+
+    <INPUT TYPE="grid"
+      NAME="donosr"
+      TOP="1700"
+      LEFT="200"
+      WIDTH="11000"
+      HEIGHT="7000"
+      CHECKBOXVISIBLE="FALSE"
+      TOTALROWVISIBLE="FALSE"
+      EDITCOLUMNS="[Količina popisana1000]"
+      GROUPBYBOXVISIBLE="FALSE"
+      CAPTION="_Stavke za donos sa ručnog terminala"
+      REFRESHAFTERCHILD="TRUE"
+      VISIBLE="FALSE"
+      SQL="spMPDonosNaIzdatnicuNG @action=2, @trgovinaid=@@trgovinaid, @klasaid = @@klasaid, @trazilica = '@@trazilica' " />
+
+    <INPUT TYPE="button" NAME="ok"     CAPTION="Prebaci"  TOP="9000" LEFT="456" WIDTH="1106" HEIGHT="322"
+         ONCLICK="FOREACHROW(donosr)#if @(donosr..Količina popisana1000) > 0 begin
+					        exec spMPInventuraTotalGenNG @action=3, @id = @@id, @robaid = @@donosr, @kolicinastvarna = @(donosr..Količina popisana1000)
+                  end
+                  #Ok"  HOTKEY="F2" />
+    <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="9000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+  </DONOSIZROBE>
+  
+<DONESIPROMET 
+	NAME="DONESIPROMET" HEIGHT="2500" WIDTH="4000" 
+	REFRESHAFTERCHILD="" 
+	CAPTION="Donos prometa u periodu " 
+	ONSUBMIT="spMPInventuraTotalGenNG 55, @operateriid = @@operateriid, @id = @@id, @datumdok = @@datumdok,"
+	ONLOAD="select getdate() as datumod, getdate() as datumdo" 
+	CMD1CAPTION="Donesi" CMD2CAPTION="Odustani" >
+
+	<INPUT TYPE="date" NAME="datumod" HEIGHT="302" WIDTH="1498" VISIBLE="TRUE" VALUE="DATE1" CAPTION="Datum od" ENABLED="TRUE" CHECKBOX="FALSE"/>
+	<INPUT TYPE="date" NAME="datumdo" HEIGHT="302" WIDTH="1498" VISIBLE="TRUE" VALUE="DATE1" CAPTION="Datum do" ENABLED="TRUE" CHECKBOX="FALSE"/>
+</DONESIPROMET>
+
+
+<BRISISTAVKU 
+	NAME="BRISISTAVKU" HEIGHT="4000" WIDTH="6500" 
+	REFRESHAFTERCHILD="" 
+	CAPTION="Brisanje " 
+	ONLOAD="spMPInventuraTotalGenNG @action = 44, @stavke=@@stavke">
+
+	<INPUT TYPE="text" NAME="sifra" TOP="400" LEFT="1200" HEIGHT="317" WIDTH="2500" VISIBLE="TRUE" CAPTION="Šifra:*" ENABLED="FALSE"/>
+	<INPUT TYPE="text" NAME="NazivRobe" TOP="750" LEFT="1200" HEIGHT="317" WIDTH="5000" VISIBLE="TRUE" CAPTION="Naziv robe:*" ENABLED="FALSE"/>
+
+	<INPUT TYPE="check"   NAME="Brisijedan"    CAPTION="Obrisati odabranu stavku" TOP="1300" LEFT="500" WIDTH="3500" SQL=""  />
+	<INPUT TYPE="check"   NAME="brisisve"    CAPTION="Obrisati sve stavke dokumenta" TOP="1800" LEFT="500" WIDTH="3500" SQL=""  />
+
+	<INPUT TYPE="button" NAME="OK" CAPTION="Obriši (F2)" TOP="2600" LEFT="1000" WIDTH="1106" HEIGHT="422" HOTKEY="F2"
+		   ONCLICK="spMPInventuraTotalGenNG @action = 333, @stavke=@@stavke, @brisisve = @@brisisve , @brisijedan = @@brisijedan#select 'refresh' as stavke#OK"  />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani (Esc)" TOP="2600" LEFT="2500" HEIGHT="422" ONCLICK="close"  />
+</BRISISTAVKU>
+
+	
+<IZMJENISTAVKU 
+	NAME="IZMJENISTAVKU" HEIGHT="3000" WIDTH="6500"
+	REFRESHAFTERCHILD="" 
+	CAPTION="Ispravak stavke"
+	ONLOAD="spMPInventuraTotalGenNG @action = 44, @stavke = @@stavke">
+
+
+	<INPUT TYPE="text" NAME="sifra" TOP="400" LEFT="1160" HEIGHT="317" WIDTH="2500" VISIBLE="TRUE" CAPTION="Šifra:*" ENABLED="FALSE"/>
+	<INPUT TYPE="text" NAME="NazivRobe" TOP="750" LEFT="1160" HEIGHT="317" WIDTH="5000" VISIBLE="TRUE" CAPTION="Naziv robe:*" ENABLED="FALSE"/>
+	<INPUT TYPE="number" NAME="kolicinastvarna" TOP="1100" LEFT="1160" HEIGHT="302" WIDTH="1000" VISIBLE="TRUE" CAPTION="Količina:*" DECIMALS="4" ENABLED="TRUE"/>
+
+	<INPUT TYPE="button" NAME="OK" CAPTION="Izmjeni (F2)" TOP="2000" LEFT="1000" WIDTH="1106" HEIGHT="422"  HOTKEY="F2"
+		   ONCLICK="spMPInventuraTotalGenNG @action = 33, @stavke = @@stavke,@kolicinastvarna = @@kolicinastvarna #select 'refresh' as stavke#OK"  />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani (Esc)" TOP="2000" LEFT="2500"  HEIGHT="422" ONCLICK="close"  />
+</IZMJENISTAVKU>
+
+
+</PROJECT>

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<form name="master" type="master" caption="Urednik zemljovida">
+		<managerlayout>
+			<tree name="tree" caption="Države - Županije" autopopulate="true" expandallonload="True">
+				<data command="spJDrzaveUrednik">
+					<parameter name="@Action" value="tree"/>
+				</data>
+				<fields>
+					<field name="Naziv" />
+				</fields>
+			</tree>		
+			<grid name="grdGrid" type="master" bestfitonrefresh="True">
+				<event type="focusedrowchanged">
+					<action type="control enable" value="#cmdEdit,#cmdDelete" if="#grdGrid.rowcount!=0" />
+					<action type="control disable" value="#cmdEdit,#cmdDelete" else="" />
+				</event>
+				<data command="spJDrzaveUrednik">
+					<parameter name="@Action" value="mjesta"/>
+					<parameter name="@DrzaveId" if="#tree.level==0" value="#tree"/>
+					<parameter name="@ZupanijeId" if="#tree.level==1" value="#tree"/>
+				</data>
+				<fields>
+					<field name="naziv" caption="Naziv mjesta" fixwidth="200" fontbold="True" />
+					<field name="HptPoziv" caption="Pozivni broj" />
+					<field name="HptBroj" caption="Poštanski broj" />	
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button caption="UNESI" type="add">
+					<event type="click">
+						<action type="form open" value="frmMjesto" />
+						<action type="control populate" value="#grdGrid" />
+					</event>
+				</button>
+				<button name="cmdEdit" caption="IZMIJENI" type="edit">
+					<menuitem control="#grdGrid"/>
+					<event type="click">
+						<action type="form open" value="frmMjesto">
+							<parameter name="MjestaId" value="#grdGrid.@MjestaId" />
+						</action>
+						<action type="control populate keepfocus" value="#grdGrid" />
+					</event>
+				</button>
+				<button name="cmdDelete" caption="OBRIŠI" type="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati mjesto?">
+							<action type="datarun nonquery" value="~datDelete" />
+						</action>
+						<action type="control populate" value="#grdGrid" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spJDrzaveUrednikAzur" name="datDelete">
+				<parameter name="@Action" value="Delete"/>
+				<parameter name="@MjestaId" value="#grdGrid.@MjestaId"/>
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmMjesto" caption="Mjesto" width="320">
+		<event type="oninit">
+			<action type="datarun reader" value="~datGet" if="$MjestaId!=null" />
+		</event>
+		<event type="onshown">
+			<action type="control disable" value="#cmbZupanije" if="$MjestaId==null"/>
+		</event>
+		<!--         <event type="onshown">
+            <action type="controlenable" value="cmbZupanije" if="$MjestaId!=null" />
+        </event>	 -->	
+		<layout textposition="top" itemspadding="4">
+			<group cols="1" rows="1">
+				<group cols="2" rows="4">
+					<item caption="Naziv:" row="1" col="1" colspan="2">
+						<textedit name="txtMjesto" required="True" datavalue="#datGet.@Naziv" />
+					</item>
+					<item caption="Poštanski broj:" row="2" col="1">
+						<textedit name="txtHptBroj"  required="True" datavalue="#datGet.@HptBroj" />
+					</item>
+					<item caption="Pozivni broj:" row="2" col="2">
+						<textedit name="txtHptPoziv" required="True" datavalue="#datGet.@HptPoziv" />
+					</item>
+					<item caption="Država:" row="3" col="1" colspan="2">
+						<comboedit name="cmbDrzava" valuefield="DrzaveId" displayfield="Naziv" datavalue="#datGet.@DrzaveId">
+							<data command="spJDrzaveUrednik">
+								<parameter name="@Action" value="Drzave"/>
+							</data>
+							<event type="valuechanged">
+								<action type="control enable" value="#cmbZupanije" if="#cmbDrzava!=null" />
+								<action type="control disable" value="#cmbZupanije" else="" />
+								<action type="control populate" value="#cmbZupanije" />
+							</event>
+						</comboedit>
+					</item>					
+					<item caption="Županija:" row="4" col="1" colspan="2">
+						<comboedit name="cmbZupanije" valuefield="ZupanijeId" displayfield="Naziv" datavalue="#datGet.@ZupanijeId" >
+							<data command="spJDrzaveUrednik">
+								<parameter name="@Action" value="Zupanije"/>
+								<parameter name="@DrzaveId" value="#cmbDrzava"/>
+							</data>
+						</comboedit>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI" type="add" dock="right">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="~datEdit" if="$MjestaId!=null"/>
+						<action type="datarun nonquery" value="~datAdd" else=""/>
+	<!--					<action type="datarun scalar" value="~datAdd" >
+                            <parameter name="MjestaId" value="$MjestaId" />
+                        </action>-->
+						<action type="form close" if="$MjestaId!=null" />
+					</event>
+				</button>
+				<button caption="ODUSTANI" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spJDrzaveUrednikAzur" name="datAdd">
+				<parameter name="@Action" value="Add"/>
+				<parameter name="@Mjesto" value="#txtMjesto"/>
+				<parameter name="@HptBroj" value="#txtHptBroj"/>
+				<parameter name="@HptPoziv" value="#txtHptPoziv"/>
+				<parameter name="@ZupanijeId" value="#cmbZupanije"/>
+			</data>
+			<data command="spJDrzaveUrednikAzur" name="datEdit">
+				<parameter name="@Action" value="Edit"/>
+				<parameter name="@MjestaId" value="$MjestaId"/>
+				<parameter name="@Mjesto" value="#txtMjesto"/>
+				<parameter name="@HptBroj" value="#txtHptBroj"/>
+				<parameter name="@HptPoziv" value="#txtHptPoziv"/>
+				<parameter name="@ZupanijeId" value="#cmbZupanije"/>
+			</data>
+			<data command="spJDrzaveUrednik" name="datGet">
+				<parameter name="@Action" value="Mjesta"/>
+				<parameter name="@MjestaId" value="$MjestaId"/>
+			</data>
+		</datalist>
+	</form>
+</root>

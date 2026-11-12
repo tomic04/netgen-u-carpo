@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root version="1.0">
+	<form name="frmMaster"  type="master" caption="Kontrola PDV-a">
+		<event type="load">
+			<action type="form open" value="frmFilterForm"/>
+			<action type="variable value" value="global.$Close" if="dialogresult==cancel"> 
+				<parameter value="true" type="bool"/> 
+			</action> 
+		</event>
+		<event type="shown">
+			<action type="form close" if="global.$Close==true"/> 
+		</event>
+		<managerlayout>
+			<grid name="grdMaster" async="true" type="master" multiselect="true" autopopulate="false" key="RBR"  dataname="dtMaster" savelayout="true" bestfitonrefresh="true" >
+				<event type="doubleclick">
+					<action type="form open" value="spCKntKontrolaPDVa" >
+						<parameter name="KnjigaId" value="#grdMaster.@Knjigaid"/>
+					</action>	
+				</event>
+				<data command="spCKntKontrolaPDVa">		
+						<parameter name="@DatOd" value="#datDatOd"/>
+						<parameter name="@DatDo" value="#datDatDo" />
+						<parameter name="@Knjiga" value="#cmbKnjiga" type="int"/>
+						<parameter name="@Vrsta" value="#cmbVrsta" type="int"/>
+						<parameter name="@Konto" value="#txtKonto" />
+				</data>
+						<fields inherited = "true">	
+							<!-- <field name="RBR0600" caption="RBR" /> -->
+							<!-- <field name="UFA0800" caption="UFA" />  -->							
+							<!-- <field name="K9999_1200" caption="K9999_" /> -->
+							<!-- <field name="kUKP" caption="kUKP" /> -->
+													
+						</fields>	
+			<print  caption="U periodu od: {global.$DatOd::dd.MM.yyyy} - {global.$DatDo::dd.MM.yyyy}" 
+			captionalign="right"/>
+
+				
+			</grid>
+		</managerlayout>
+		<panelbuttons> 
+			<buttons> 
+				<button name="btnParametri" caption="Prikaz" dock="left" >
+					<event type="click">
+						<action type="form open" value="frmFilterForm"/>
+					</event>
+				</button>
+				<button name="btnIspis" caption="Ispiši"  dock="left" >
+				<event type="click">
+					<action type="control printcontrol" value="#grdMaster"/>
+				</event>
+				</button>
+				<button name="btnCiscenje" caption="Čišćenje Grida"  dock="right" >
+				<event type="click">
+					<action type="control datasource empty" value="#grdMaster"/>
+				</event>
+				</button>
+				<button name="btnOdustani" caption="Izlaz" type="cancel" dock="right">
+					<event type="click">
+						<action type="variable value" value="global.$Close" > 
+							<parameter value="true" type="bool"/> 
+						</action> 
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmFilterForm"  caption="Izaberi parametre upita">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet"/>
+		</event>
+		<layout textposition="top">
+		<group rows="4" cols="2" colspan="2">
+			<item col="1" row="1" caption="Razdoblje:" > 
+				<dateedit name="datDatOd" value="" datavalue="~dtSetDatum.@DatOd" required="true"  savevalue="app" >
+				<event type= "valuechanged">
+				<action type="variable value" value="global.$DatOd" > 
+							<parameter value="#datDatod" type="datetime"/> 
+						</action> 
+				</event>
+				</dateedit>
+			</item>
+			<item col="2" row="1" caption="do:" >
+				<dateedit name="datDatDo" value="" datavalue="~dtSetDatum.@DatDo" required="true"  savevalue="app">
+				</dateedit>
+			</item>
+			<item col="1" row="2"  caption="Knjiga:" colspan="2">
+				<comboedit name="cmbKnjiga" required="true" autopopulate="true" dataname="dtKnjiga" valuefield="KnjigaId" displayfield="Naziv" datavalue="~dtGet.@Knjiga" savevalue="app">
+				<event type="valuechanged">
+				<action type="control populate" value="#cmbVrsta"/>
+				</event>
+				</comboedit>
+				
+			</item>
+			<item col="1" row="3"  caption="Vrsta:" colspan="2" >
+				<comboedit name="cmbVrsta" required="true" dataname="dtVrsta" valuefield="VrstaId" displayfield="Vrsta" datavalue="~dtGet.@VrstaId" savevalue="app"/>
+				
+			</item>
+			<item col="1" row="4"  caption="Grupa konta:" >
+				<textedit name="txtKonto" savevalue="app" >
+				</textedit>
+			</item>
+		</group>
+		</layout>
+		<panelbuttons>
+		<buttons>
+			<button name="btnPokaži" caption="Pokaži">
+				<event type="click">
+				<action type="control populate" value="parent.#grdMaster"/>
+					<action type="variable value">
+							<parameter name="global.DatOd" value="#datDatOd"/>
+							<parameter name="global.DatDo" value="#datDatDo"/>
+							<parameter name="global.Knjiga" value="#cmbKnjiga" type="int"/>
+							<parameter name="global.Vrsta" value="#cmbVrsta" type="int"/>
+							<parameter name="global.Konto" value="#txtKonto" />
+					</action>
+					
+					<action type="form close"/>
+					
+				</event>
+			</button>
+			
+			<button name="btnOdustani" caption="Odustani" type="cancel">
+					<event type="click">
+						<action type="variable value" value="global.$Close" > 
+							<parameter value="true" type="bool"/> 
+						</action> 
+						<action type="form close"/>
+					</event>
+			</button>
+		</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCKntKontrolaPDVaQuery" name="dtKnjiga">
+				<parameter name="@action" value="1" />
+			</data>
+			<data command="spCKntKontrolaPDVaQuery" name="dtVrsta">
+				<parameter name="@action" value="2" />
+				<parameter name="@knjiga" value="#cmbKnjiga" />
+			</data>
+			<data command="select cast(cast(year(getdate()) as CHAR(4))+'0101' as DATE) as DatOd,cast(getdate() as date) as DatDo" type="text" name="dtSetDatum"/>
+		</datalist>
+	</form>
+	
+</root>

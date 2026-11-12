@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+
+<PROJECT  
+		ONLOAD=":FORM1"  		
+		REPORT="" 	
+		BUTTONS="Parametri:FORM1#Etikete:MULTISELECTETIKETE" 
+		MASTERDBLCLICK=""
+		MULTIGRIDLAYOUT="TRUE"
+	    POPUPMASTER=""
+		CHECKBOXVISIBLE="TRUE"
+		PAGEHEADERCENTER="Lista dokumenata za naljepnice"
+    PAGEHEADERLEFT="Od @@datumod do @@datumdo ##Trgovina : @@trgovina"
+    PAGEFOOTERCENTER=""
+    PAGEFOOTERLEFT=""
+    PAGEFOOTERRIGHT=""
+    PAGEORIENTATION="LANDSCAPE"
+
+		DETAILGRID="spMPQueryGlaIDetNG @action=2, @id = @@ID, @vrstadokid=@@vrstadokid, @vrstapromid=@@vrstapromid "
+		DETCHECKBOXVISIBLE="FALSE"
+    DETTOTALROWVISIBLE="FALSE"
+    SETDEFAULTS="select dbo.fnTkoSmoMi() as tkosmomi"
+    PAGEHEADERRIGHT="@@tkosmomi">
+
+
+	<NAME>Pregled dokumenata maloprodaje za štampanje etiketa </NAME>
+	<CAPTION>Pregled dokumenata maloprodaje za štampanje etiketa </CAPTION>
+
+
+<FORM1 	FILLEXPLORER="TRUE" 
+		  WIDTH="8500" 
+		  ONSUBMIT="spMPEtikete @action=4, @operateriid = @@operateriid," 
+		  ONLOAD="select @@datumod as datumod, @@datumdo as datumdo " 
+		  HEIGHT="5500" 
+		  CAPTION="Parametri" 
+		  BORDERSTYLE="3" 
+		  CMD1CAPTION="Pokaži" 
+		  CMD2CAPTION="Odustani" 
+		  CMD3CAPTION="" 
+		  CHILDFORM="">
+
+
+		<INPUT TYPE="combo" 
+			NAME="trgovinaid" 
+			CAPTION="Trgovina" 
+			WIDTH="5500" 
+			HEIGHT="320" 
+			TABINDEX="1" 
+			ALLOWEMPTY="FALSE" 
+			SQL="spMPDajTrgovinaNG @operateriid = @@operateriid"/>
+
+		<INPUT TYPE="date" 
+			NAME="datumod" 
+			CAPTION="Datum od" 
+			VALUE="DATE2" 
+			HEIGHT="320" 
+			WIDTH="1500" 
+			TABINDEX="2" 
+			CHECKBOX="FALSE"/>
+
+		<INPUT TYPE="date" 
+			NAME="datumdo" 
+			CAPTION="Datum do" 
+			VALUE="DATE" 
+			HEIGHT="320" 
+			WIDTH="1500" 
+			TABINDEX="3" 
+			CHECKBOX="FALSE"/>
+
+		<INPUT TYPE="combo" 
+			CAPTION="Vrsta prometa" 
+			NAME="vrstapromid" 
+			ALLOWEMPTY="TRUE" 
+			ONLOSTFOCUS="select 'refresh' as vrstadokid"
+			SQL="spMPDajVrstaProm" 
+			TEXT=""
+			TABINDEX="5" 
+			WIDTH="5000" 
+			HEIGHT="320"/>
+			
+		<INPUT TYPE="combo" 
+			CAPTION="Vrsta dokumenta " 
+			NAME="vrstadokid " 
+			ALLOWEMPTY="TRUE" 
+			SQL="spMPDajVrstaDok @vrstapromid = @@vrstapromid " 
+			TEXT=""
+			TABINDEX="6" 
+			WIDTH="5000" 
+			HEIGHT="320"/>
+
+
+</FORM1>
+
+
+<MULTISELECTETIKETE	FILLEXPLORER="TRUE" 
+	   WIDTH="7000" 
+	   ONSUBMIT="" 
+	   ONLOADED="select  'refresh' as template" 
+	   HEIGHT="5000" 
+	   CAPTION="Štampanje etiketa " 
+	   BORDERSTYLE="3" 
+	   CMD3CAPTION="" 
+	   NEXTFORM=""
+     FOCUS="MPEtiketeTemplatesID"
+	   REFRESHAFTERCHILD="TRUE">
+		
+			
+    <INPUT TYPE="combo" NAME="nacin" CAPTION="Tip ispisa*" TOP="200" LEFT="1400" WIDTH="2996" HEIGHT="294" SQL="select 2 as nacinid, 'Po robi'  as naziv union all select '21' as nacinid, 'Po količini ' as Naziv " ENABLED="TRUE" VISIBLE="TRUE" />
+    <INPUT TYPE="combo" NAME="template" CAPTION="Vrsta ispisa*" TOP="600" LEFT="1400" WIDTH="2996" HEIGHT="294"
+           SQL="select template as templateid, opis from MPEtiketeTemplates where oznaka = '#MPEtiketeNG' and status = 1" ENABLED="TRUE" ALLOWEMPTY="FALSE"/>
+    
+    <INPUT TYPE="grid" NAME="stavke" CAPTION="Štampanje iz Jupitera" TOP="900" LEFT="1400" WIDTH="5250" HEIGHT="2968" SQL="select g.maloprodajaglaid,g.datumdok,g.broj, v.opis from totalgenmultiselecttemp t inner join maloprodajagla g on t.id=g.maloprodajaglaid inner join vrstadok v on g.vrstadokid=v.vrstadokid where t.operateriid=@@operateriid"  
+		PAGEHEADERRIGHT=""  
+        PAGEHEADERCENTER="Lista dokumenata za naljepnice"
+        PAGEHEADERLEFT="Od @@datumod do @@datumdo ##Trgovina : @@trgovina"
+        PAGEFOOTERCENTER=""
+        PAGEFOOTERLEFT=""
+        PAGEFOOTERRIGHT=""
+        PAGEORIENTATION="LANDSCAPE"
+		CHECKBOXVISIBLE="FALSE"
+ />
+    <INPUT TYPE="button" NAME="" CAPTION="Ukloni dokument" TOP="1080" LEFT="140" WIDTH="1050" HEIGHT="322" ONCLICK="delete from totalgenmultiselecttemp where id=@@stavke and operateriid=@@operateriid#select 'refresh' as stavke"  />
+    <INPUT TYPE="button" NAME="" CAPTION="Ispis iz jupitera" TOP="3940" LEFT="1400" WIDTH="1386" HEIGHT="406" 
+       ONCLICK=":@@template(@trgovinaid=@@trgovinaid, @operateriid=@@operateriid, @nacin=@@nacin, @jupiter=1)"  />
+	  <INPUT TYPE="button" NAME="" CAPTION="Ispis iz WInLabel" TOP="3740" LEFT="2224" WIDTH="1386" HEIGHT="406" ONCLICK="spMPPripremaNaljepnica @trgovinaid=@@trgovinaid, @action = 1, @id =@@stavke, @nacin = 2, @winlabel = 1 , @operateriid=@@operateriid" ENABLED="FALSE"  VISIBLE="FALSE" />
+	  <INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="3940" LEFT="5336" WIDTH="1050" HEIGHT="406" ONCLICK="CLOSE#delete from totalgenmultiselecttemp where operateriid =  @@operateriid"  />
+
+			
+			
+</MULTISELECTETIKETE>
+
+
+
+</PROJECT>

@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT 
+	SETDEFAULTS="spMPPermissionNG @action = 0, @operateriid = @@operateriid, @object = '@@xmlname', @sifradok = '119'#select dbo.fnTkoSmoMi() as tkosmomi"
+	ONLOAD2="select 'Dodaj' = case when @@dodaj=1 then 'enable' else 'disable' end , 'Izmjeni' = case when @@izmjeni=1 then 'enable' else 'disable' end ,
+		'Zaključi' = case when @@zakljuci=1 then 'enable' else 'disable' end, 'Obrisi' = case when @@Obrisi=1 then 'enable' else 'disable' end , 
+		'Storno' = case when @@storno=1 then 'enable' else 'disable' end , 'otkljucaj' = case when @@otkljucaj=1 then 'enable' else 'disable' end " 
+	DETAILGRID="spMPIzdatnicaSKLMP @action = 904, @id=@@id"
+	MASTERDBLCLICK="UPDATE_FORM"
+	BUTTONS="Filter:FILTERFORM#Izmjeni:UPDATE_FORM#Zaključi:ZAKLJUCI#Print dok.:vrstadokid-Maloprodajagla" 
+	POPUPMASTER="Filter:FILTERFORM#Izmjeni:UPDATE_FORM#Zaključi:ZAKLJUCI#Otključaj:OTKLJUCAJ" 
+	TREE="Danas:DANAS_FORM#Jučer:JUCER_FORM#spMPTreeNG @action=1:TEKUCIMJESEC_FORM#Prošli mjesec:PROSLIMJESEC_FORM#spMPTreeNG @action=2:FILTERODDO_FORM#spMPTreeNG @action=3:FILTERODDO_FORM#spMPTreeNG @action=4:FILTEROPERATERIFORM"
+	GROUPBYBOXVISIBLE="TRUE" 
+	ONLOAD="select vrstadokid from vrstadok where vrstapromid in (select vrstapromid from vrstaprom where sifra = '119') and mpizdatnicaZakljuci = 0 "   
+	CHECKBOXVISIBLE="FALSE"
+	TOTALROWVISIBLE="FALSE"
+	DETCHECKBOXVISIBLE="FALSE"	
+	DETTOTALROWVISIBLE="FALSE"
+	REPORT="">
+
+
+
+	<NAME>Povratnica iz MP - KONTINGENTI</NAME>
+	<CAPTION>Povratnica iz MP - KONTINGENTI </CAPTION>
+
+
+<DANAS_FORM         FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=12, @operateriid=@@operateriid, @node='danas', @sifradok = '119', @vrstadokid = @@vrstadokid, @nenc = 1, @veceodstatusa = 1, @skl = 1" />
+<JUCER_FORM         FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=12, @operateriid=@@operateriid, @node='jucer', @sifradok = '119', @vrstadokid = @@vrstadokid, @nenc = 1, @veceodstatusa = 1, @skl = 1"  />
+<TEKUCIMJESEC_FORM  FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=12, @operateriid=@@operateriid, @node='ovajmj', @sifradok = '119', @vrstadokid = @@vrstadokid, @nenc = 1, @veceodstatusa = 1, @skl = 1" />
+<PROSLIMJESEC_FORM  FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=12, @operateriid=@@operateriid, @node='proslimj', @sifradok = '119', @vrstadokid = @@vrstadokid, @nenc = 1, @veceodstatusa = 1, @skl = 1" />
+<FILTERODDO_FORM    FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=12, @operateriid=@@operateriid, @node='@@node', @sifradok = '119', @vrstadokid = @@vrstadokid, @nenc = 1, @veceodstatusa = 1, @skl = 1" />
+
+
+
+<UPDATE_FORM 
+		CAPTION="Izmjeni dokument [ @@id ]" 
+		HEIGHT="9500" 
+		WIDTH= "11000" 
+		FILLEXPLORER="" 
+		FOCUS="robaid"
+		ONESCKEY="spmpOperaterlock @action = 2, @id = @@id, @operateriid = @@operateriid#exec spmpDonesiAmbalazu @action = 1, @maloprodajaglaid = @@id#spMPInsertGlaIdetNG @action=2,@id = @@id,@operateriid=@@operateriid,@sifradok = '119',@datumdok= @@datumdok, @napomena = '@@napomena',@osobeid = @@osobeid, @skladisteid = @@sskladisteid, @osobe2id =@@osobe2id , @nacinplacanjaid = @@nacinplacanjaid #Ok"
+		ONLOADED="spmpOperaterlock @action = 1, @id = @@id, @operateriid = @@operateriid "
+		ONLOAD="if (select status from maloprodajagla where maloprodajaglaid = @@ID ) = 2 and (select dbo.fnMPDajSKTID(1,@@id) ) is not null begin 
+					exec spRaiserror 69001, &apos;Dokument je zaprimljen . Ne može se više ispravljati !&apos;
+					end
+				else begin
+				if @@id = 0  begin 
+					exec spRaiserror 69001, &apos;Niste odabrali dokument !&apos;
+				end 
+				else begin 
+					exec spMPQueryGlaIDetNG @action=3 ,@ID=@@ID, @operateriid = @@operateriid
+				end end " 
+		ONLOAD2="select 1 as ispravak">
+
+		<INPUT TYPE="frame"  NAME="fr1"           CAPTION="Zaglavlje:" TOP="28" LEFT="56" WIDTH="10300" HEIGHT="1900"   />
+		<INPUT TYPE="date"   NAME="datumdok"      CAPTION="Datum*" TOP="210" LEFT="1490" WIDTH="1596" HEIGHT="280" SQL="" ENABLED="FALSE" />
+		<INPUT TYPE="text"   NAME="broj"          CAPTION="Broj*" TOP="210" LEFT="3780" WIDTH="2002" HEIGHT="280" SQL="" ENABLED="FALSE" />
+		<INPUT TYPE="combo"  NAME="trgovinaid"    CAPTION="Trgovina*" TOP="554" LEFT="1490" WIDTH="3500" HEIGHT="294" ALLOWEMPTY="FALSE" ENABLED="FALSE" SQL="spMPDajTrgovina @operateriid=@@operateriid" />
+		<INPUT TYPE="combo"  NAME="sskladisteid"   CAPTION="Skladište*" TOP="854" LEFT="1490" WIDTH="3500" HEIGHT="294" ALLOWEMPTY="FALSE" SQL="spMPDajSkladiste @trgovinaid = @@trgovinaid ,@operateriid=@@operateriid"  />
+		<INPUT TYPE="text"   NAME="napomena"      CAPTION="Napomena*" TOP="1190" LEFT="1490" WIDTH="3568" HEIGHT="280" ALLOWEMPTY="TRUE" SQL=""  />
+		<INPUT TYPE="number" NAME="ispravak"      CAPTION="" TOP="-1190" VISIBLE="FALSE" LEFT="1490" WIDTH="3568" HEIGHT="280" ALLOWEMPTY="TRUE" SQL=""  />
+		<INPUT TYPE="combo"  NAME="osobeid "      CAPTION="Odgovorna osoba*" TOP="1490" LEFT="1490" WIDTH="2568" HEIGHT="280" ALLOWEMPTY="FALSE" SQL="spMPDajOsobe @trgovinaid = @@trgovinaid"  />
+
+		<INPUT TYPE="grid" 
+			   NAME="stavke" 
+			   REFRESHAFTERCHILD="" 
+			   CAPTION="Stavke" 
+			   TOP="2140" LEFT="56" WIDTH="8750" HEIGHT="5078"
+			   TABINDEX="-1"
+			   AFTERREFRESH="select cmpiznos from maloprodajagla where maloprodajaglaid = @@id"
+			   POPUP=""
+			   ONDBLCLICK="if coalesce((select kkvalobavezan from roba where robaid = @@gridstavkerobaid),0) = 1 and coalesce((select kkvalobavezan from skladiste where skladisteid = @@skladisteid),0) = 1 begin select 'KONTIGENTI' as form end" 
+			   EDITCOLUMNS=""
+			   ONCELLEDITED=""
+			   CHECKBOXVISIBLE="FALSE"	
+			   PAGEHEADERCENTER="Dokument br.@@broj"
+			   PAGEHEADERRIGHT=""
+			   PAGEHEADERLEFT="Datum: @@datum##Trgovina: @@trgovina"
+			   PAGEFOOTERCENTER=""
+			   PAGEFOOTERLEFT=""
+			   PAGEFOOTERRIGHT="@@tkosmomi"
+			   PAGEORIENTATION="LANDSCAPE"
+			   GROUPBYBOXVISIBLE="FALSE"
+			   TOTALROW="FALSE"
+			   SQL="spMPIzdatnicaSKLMP @action = 904, @id=@@id" />
+
+		<INPUT TYPE="number" NAME="cmpiznos" CAPTION="Ukupno*" TOP="7322" LEFT="6594" WIDTH="2100" HEIGHT="280" SQL="" TABINDEX ="-1"  BACKCOLOR="greenyellow" STYLE="1"/>
+	
+		<INPUT TYPE="button" NAME="OK" CAPTION="Spremi (F2)" TOP="7840" LEFT="196" WIDTH="1106" HEIGHT="322" 
+			   ONCLICK="spmpOperaterlock @action = 2, @id = @@id, @operateriid = @@operateriid#exec spmpDonesiAmbalazu @action = 1, @maloprodajaglaid = @@id#spMPInsertGlaIdetNG @action=2,@id = @@id,@operateriid=@@operateriid,@sifradok = '119',@datumdok= @@datumdok, @napomena = '@@napomena',@osobeid = @@osobeid, @skladisteid = @@sskladisteid, @osobe2id =@@osobe2id , @nacinplacanjaid = @@nacinplacanjaid #Ok"  />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="7840" LEFT="1456" WIDTH="1106" HEIGHT="322" 
+			   ONCLICK="spmpOperaterlock @action = 2, @id = @@id, @operateriid = @@operateriid#Ok"  />
+	
+		<INPUT TYPE="button" NAME="ispravi" CAPTION="Odabir kontingenta" TOP="3000" LEFT="9000" WIDTH="1400" HEIGHT="630" 
+			   ONCLICK="if coalesce((select kkvalobavezan from roba where robaid = @@gridstavkerobaid),0) = 1 and coalesce((select kkvalobavezan from skladiste where skladisteid = @@skladisteid),0) = 1 begin select 'KONTIGENTI' as form end
+						#select 'refresh' as stavke"  />
+
+</UPDATE_FORM>
+
+
+	<KONTIGENTI
+		FILLEXPLORER=""
+		WIDTH="8000"
+		ONSUBMIT=""
+		ONLOAD="spMPQueryGlaIDetNG @action = 5, @id = @@stavke"
+		ONLOADED="select @@detid as detid, @@ispravak as ispravak, 0 as svaskladista, 0 as svikontigenti, @@kolicina as kolicina"
+		HEIGHT="5000"
+		FOCUS="Prebaci"
+		CAPTION="Odaberite kontigente ">
+
+		<INPUT TYPE="number" NAME="detid" CAPTION="" DECIMALS="0" TOP="-7322" VISIBLE="FALSE" LEFT="6594" WIDTH="2100" HEIGHT="280" SQL="" TABINDEX ="-1"  BACKCOLOR="greenyellow" STYLE="1"/>
+
+		<INPUT TYPE="grid"
+			NAME="kontigenti"
+			TOP="200"
+			LEFT="200"
+			WIDTH="7500"
+			HEIGHT="3000"
+			CHECKBOXVISIBLE="FALSE"
+			TOTALROWVISIBLE="FALSE"
+			EDITCOLUMNS="[Količina1000]"
+			ONCELLEDITED=""
+			GROUPBYBOXVISIBLE="FALSE"
+			CAPTION="_Popis kontingenata odabrane robe"
+			REFRESHAFTERCHILD="TRUE"
+			VISIBLE="TRUE"
+			SQL="exec spmpDajKontigente @action = 11 , @robaid = @@gridstavkerobaid, @ispravak = @@ispravak, @skladisteid = @@skladisteid, @kolicina = @@kolicina, @id = @@id, @vrstadokid = @@vrstadokid, @maloprodajadetid = @@stavke, @svikontigenti = @@svikontigenti, @svaskladista = @@svaskladista" />
+		
+		<INPUT TYPE="checkbox" NAME="svikontigenti"  TOP="3400" LEFT="1000" CAPTION="Pokaži kontigente sa stanjem 0 " WIDTH="3000" ONCLICK="select 'refresh' as kontigenti"/>
+		<INPUT TYPE="checkbox" NAME="svaskladista"  TOP="3400" LEFT="4000" CAPTION="Pokaži kontigente sa svih skladišta " WIDTH="3000" ONCLICK="select 'refresh' as kontigenti"/>
+
+		<INPUT TYPE="button" NAME="Prebaci"     CAPTION="Prebaci"  TABINDEX="0" TOP="3900" LEFT="456" WIDTH="1106" HEIGHT="322"
+			   ONCLICK="exec spmpDajKontigente @action = 7,  @id = @@id, @robaid = @@gridstavkerobaid
+			   #FOREACHROW(kontigenti)#exec spmpDajKontigente @action = 2, @kkvalglaid = @(kontigenti..kkvalglaid), @id = @@id, @vrstadokid = @@vrstadokid, @robaid = @@gridstavkerobaid, @kolicinaulaz = @(kontigenti..[Ulaz1000]), @kolicinaizlaz = @(kontigenti..Izlaz1000), @raspolozivo = @(kontigenti..Raspoloživo1000), @kolicinakont =  @(kontigenti..Količina1000), @kolicina = @@kolicina, @maloprodajadetid = @@stavke 
+			   #exec spmpDajKontigente @action = 33, @id = @@id, @ispravak = @@ispravak, @vrstadokid = @@vrstadokid, @robaid = @@gridstavkerobaid, @kolicina = @@kolicina, @mpcijena = @@mpcijena, @nabcijena = @@nabcijenaskl, @maloprodajadetid = @@stavke
+				#select cmpiznos from maloprodajagla where maloprodajaglaid = @@id
+				#select '' as roba , 'robaid' as focus, robaid = null, kolicina = 0, nabcijena = 0, mpcijena = 0, sktstanje = 0, 'refreshmovelast' as stavke 
+				#select 'refresh' as robaid , 'refresh' as kolicina   #select null as detid#OK"/>
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="3900" LEFT="2256" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	</KONTIGENTI>
+
+
+
+
+<FILTERFORM 
+	NAME="FILTERFORM" 
+	HEIGHT="4254" WIDTH="6710" 
+	CAPTION="Upišite uvjete prikaza " 
+	ONSUBMIT="spMPQueryGlaIDetNG @action = 12,  @sifradok = '119', @operateriid= @@operateriid, @vrstadokid = @@vrstadokid, @datumod = @@datumod , @datumdo = @@datumdo, @trgovinaid = @@trgovinaid, @skladisteid = @@skladisteid, @trazibroj = '@@trazibroj', @status = @@status!!"
+	ONLOAD="select @@datumod as datumod, @@datumdo as datumdo, @@trgovinaid as trgovinaid,@@skladisteid as skladisteid" 
+	FILLEXPLORER="TRUE">
+	
+	<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od" DEFAULT="firstdayofyear"/>
+	<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do" DEFAULT="today"/>
+	<INPUT TYPE="combo" NAME="trgovinaid" ALLOWEMPTY="TRUE" CAPTION="Trgovina" ONLOSTFOCUS="select 'refresh' as skladisteid" SQL="spMPDajTrgovina @operateriid = @@operateriid " />
+	<INPUT TYPE="combo" NAME="skladisteid" ALLOWEMPTY="TRUE" CAPTION="Skladište" SQL="spmpDajSkladiste @trgovinaid = @@trgovinaid , @operateriid = @@operateriid" />
+	<INPUT TYPE="combo" NAME="status" ALLOWEMPTY="true" CAPTION="Status" SQL="select 0 as status,&apos;Otvoren&apos; as naziv  union all select 1 as status,&apos;Naloženo &apos; as naziv union all select 2 as status,&apos;Zaprimljeno &apos; as naziv" />
+	<INPUT TYPE="text"	 NAME="trazibroj"  WIDTH="2500" ALLOWEMPTY="TRUE" CAPTION="Broj dokumenta" ONLOSTFOCUS=""/>
+	
+	<INPUT TYPE="button" NAME="ok" HOTKEY="" WIDTH="1000" CAPTION="Pokaži" TOP ="3000" LEFT="1200" ONCLICK="Ok"  />
+	<INPUT TYPE="button" NAME="cancel" WIDTH="1000" CAPTION="Odustani" ONCLICK="close" TOP ="3000" LEFT="3000"  />
+
+</FILTERFORM>
+
+
+
+<ZAKLJUCI 
+	NAME="ZAKLJUCI" 
+	HEIGHT="3197" WIDTH="5501" 
+	CAPTION="Zaključiti dokument  ?" 
+	ONSUBMIT=" "
+	ONLOAD="spmpOperaterlock @action = 3, @id = @@id, @operateriid = @@operateriid"
+	ONLOADED="if (select status from maloprodajagla  where maloprodajaglaid = @@ID ) = 1 and dbo.fnMPDajSktId(1,@@id) is not null begin 
+				exec spRaiserror 69001, &apos;Dokument je zaključen. Ne može se ponovno zaključiti !&apos;
+			end	else begin
+			if @@id = 0  begin 
+				exec spRaiserror 69001, &apos;Niste odabrali dokument !&apos;
+			end else begin 
+				exec spMPQueryGlaIDetNG @action=3 ,@ID=@@ID, @operateriid = @@operateriid end end" 
+	FILLEXPLORER="">
+	
+	<INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="2304" HEIGHT="317" WIDTH="2794" CAPTION="_broj" TABINDEX="1" ENABLED="FALSE"/>
+	<INPUT TYPE="label" NAME="Label55" TOP="360" LEFT="288"	 HEIGHT="288" WIDTH="1728" CAPTION="Broj dokumenta:" />
+	<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite zaključiti dokument  ? " />
+	<INPUT TYPE="button" NAME="ok" HOTKEY="" WIDTH="1000" CAPTION="Zaključi" TOP ="1900" LEFT="1200"
+		   ONCLICKne="exec spmpDonesiAmbalazu @action = 1, @maloprodajaglaid = @@id#spMPZakljuciSklNG @action = 1, @id=@@id#OK"
+		   ONCLICK="OK#exec spmpDonesiAmbalazu @action = 1, @maloprodajaglaid = @@id#spMPIzdatnicaSKLMP @action = 0, @operateriid = @@operateriid, @id = @@id"/>
+	<INPUT TYPE="button" NAME="cancel" WIDTH="1000" CAPTION="Odustani" ONCLICK="close" TOP ="1900" LEFT="3000"  />
+
+</ZAKLJUCI>
+
+
+
+	<OTKLJUCAJ 
+		 NAME="OTKLJUCAJ" HEIGHT="3197" WIDTH="5501" 
+		 CAPTION="Otključavanje dokumenta  ?" 
+		 ONSUBMIT="spMPOdkljucajDokNG @id=@@id, @skl = 1 , "
+		 ONLOAD="if (select status from maloprodajagla where maloprodajaglaid= @@ID ) &lt;> 2 begin 
+                        exec spRaiserror 69001, 'Dokument nije zaključen. Ne može se više otključavati!' 
+						end
+						else begin
+                        exec spMPQueryGlaIDetNG @action=3,@ID=@@ID
+					end"
+		 FILLEXPLORER="" 
+		 CMD1CAPTION="Otključaj" CMD2CAPTION="Odustani"
+		>
+		<INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="2304" HEIGHT="317" WIDTH="2779"  ENABLED="FALSE"/>
+		<INPUT TYPE="label" NAME="Label57" TOP="360" LEFT="288" HEIGHT="288" WIDTH="1728" BOLD="FALSE" CAPTION="Broj dokumenta:" />
+		<INPUT TYPE="label" NAME="stat" TOP="1267" LEFT="374" HEIGHT="418" WIDTH="4003"  BOLD="TRUE" CAPTION="Jeste li sigurni da želite otključati dokument  ? " />
+</OTKLJUCAJ>
+
+
+
+	<IZMJENISTAVKU NAME="IZMJENISTAVKU"
+		HEIGHT="2902" WIDTH="7502"
+		CAPTION="Ispravak stavke"
+		FOCUS="kolicina"
+		ONLOADED="select kolicinaulaz as oldkolicina, @@stavke as detid, 1 as ispravak   from maloprodajadet where maloprodajadetid = @@stavke "
+		ONLOAD="spMPQueryGlaIDetNG @action = 5,  @id= @@stavke" >
+
+		<INPUT TYPE="number" NAME="oldkolicina"  TOP="199" CAPTION="" HEIGHT="302" WIDTH="1206"  DECIMALS="4" TABINDEX="0" ENABLED="TRUE" VISIBLE="FALSE" />
+		<INPUT TYPE="number" NAME="detid"  DECIMALS="0" TOP="199" CAPTION="" HEIGHT="302" WIDTH="1206"   TABINDEX="0" ENABLED="TRUE" VISIBLE="FALSE" />
+		<INPUT TYPE="number" NAME="ispravak"  DECIMALS="0" TOP="199" CAPTION="" HEIGHT="302" WIDTH="1206"   TABINDEX="0" ENABLED="TRUE" VISIBLE="FALSE" />
+		<INPUT TYPE="text"   NAME="userid"        CAPTION="Šifra" HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE" />
+		<INPUT TYPE="text"   NAME="roba"          CAPTION="Naziv robe" HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE" />
+		<INPUT TYPE="number" NAME="kolicina"  CAPTION="Količina" HEIGHT="302" WIDTH="1206"  DECIMALS="4" TABINDEX="0" ENABLED="TRUE"
+							ONLOSTFOCUS="if coalesce((select kkvalobavezan from roba where robaid = @@robaid ),0) =1 and coalesce((select kkvalobavezan from skladiste where skladisteid = @@skladisteid),0) = 1 and @@kolicina &lt;> @@oldkolicina 
+									begin exec spmpDajKontigente @action = 11 , @robaid = @@robaid , @skladisteid = @@skladisteid, @kolicina = @@kolicina, @oldkolicina = @@oldkolicina, @operateriid = @@operateriid, @maloprodajadetid = @@stavke, @kontrola = 1 end
+								 #if coalesce((select kkvalobavezan from roba where robaid = @@robaid ),0) =1 and coalesce((select kkvalobavezan from skladiste where skladisteid = @@skladisteid),0) = 1 and @@kolicina &lt;> @@oldkolicina and @@kolicina &lt;> 0 begin select   'KONTIGENTI' as form end"
+/>
+		<INPUT TYPE="button" NAME="ok"            CAPTION="Spremi (F2)"  TOP="2000" LEFT="456" WIDTH="1106" TABINDEX="1" HEIGHT="322" ONCLICK="spMPInsertGlaIdetNG @action = 4, @maloprodajadetid = @@stavke , @id = @@id, @kolicinaulaz = @@kolicina, @kolicinanaruceno = @@kolicina#select cmpiznos from maloprodajagla where maloprodajaglaid = @@id#Ok"  HOTKEY="F2" />
+		<INPUT TYPE="button" NAME="cancel"        CAPTION="Odustani" TOP="2000" LEFT="1756" WIDTH="1106" TABINDEX="2" HEIGHT="322" ONCLICK="close"  />
+	</IZMJENISTAVKU>
+
+
+
+
+</PROJECT>

@@ -1,0 +1,530 @@
+<root version="2.0">
+	<!--
+  Komentari:
+  19.06.2023. Mihajlo - Prosječni prirez na 6 decimala, prikaz polja na 6 decimala - ver 4
+  29.03.2023. Mihajlo - dodao poziv forme za račun partnera-na virmanu - ver 3
+  13.11.2021. Mihajlo - dodao poziv forme za Kopiranje - ver 2.
+  4.11.2021. Mihajlo - podesio granulu da može raditi i za slučaj starih VB6 koji su vezani na MjestaId (provjer na initu preko dtGetIzvorOpcine i dodao formu frmUNosVB6)
+  9.9.2021. Marin - namjestio caption uz checkedit  
+  20.03.2021. Mihajlo Pavić - kreirao granulu ver 1.0.
+  -->
+	<!--
+  *******************************************************************************************
+  POČETNA FORMA
+  *******************************************************************************************
+  -->
+	<form name="frmPocetna" caption="Porezne općine" width="800" height="500" fixedsize="true" saveformsize="false" showversion="true" version="4.0">
+		<event type="init">
+			<action type="datarun reader" value="~dtGetIzvorOpcine"/>
+			<action type="datarun reader" value="~dtGrid"/>
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdGrid">     </action>
+			<action type="control enable" value="#btnIzmjena,#btnBrisanje" if="#grdGrid.rowcount!=0"/>
+			<action type="control disable" value="#btnIzmjena,#btnBrisanje" else=""/>
+		</event>
+		<event type="shown">
+			<!-- <action type="message" value="~dtGetIzvorOpcine.@IzvorOpcine"/> -->
+			<action type="variable value" value="global.IzvorOpcine">
+				<parameter value="~dtGetIzvorOpcine.@IzvorOpcine" type="int"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="5" groupbordervisible="false">
+				<item caption="" col="1" row="1" rowspan="5" textposition="left">
+					<grid name="grdGrid" key="ID" dataname="~dtGrid" preventfocusgroup="false" fieldsmartspaces="false" bestfitonrefresh="true" showgrouppanel="false" multiselect="true">
+						<fields inherited="true">
+							<field name="Prosječni prirez" format="n6"/>
+						</fields>
+						<event type="doubleclick">
+							<action if="global.$IzvorOpcine==0">
+								<action type="form open" value="frmUnosVB6">
+									<parameter name="caption" value="Izmjena općine {#grdGrid.@Naziv}"/>
+									<parameter name="Id" value="#grdGrid.@ID"/>
+									<parameter name="Tip" value="izmjena"/>
+								</action>
+							</action>
+							<action if="global.$IzvorOpcine==1">
+								<action type="form open" value="frmUnos">
+									<parameter name="caption" value="Izmjena općine {#grdGrid.@Naziv}"/>
+									<parameter name="Id" value="#grdGrid.@ID"/>
+									<parameter name="Tip" value="izmjena"/>
+								</action>
+							</action>
+							<action type="control populate keepfocus" value="#grdGrid"/>
+						</event>
+					</grid>
+				</item>
+			</group>
+			<!--kraj omotača-->
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnos" caption="Unesi">
+					<event type="click">
+						<action if="global.$IzvorOpcine==0">
+							<action type="form open" value="frmUnosVB6">
+								<parameter name="caption" value="Unos"/>
+								<parameter name="Id" value="0"/>
+							</action>
+						</action>
+						<action if="global.$IzvorOpcine==1">
+							<action type="form open" value="frmUnos">
+								<parameter name="caption" value="Unos"/>
+								<parameter name="Id" value="0"/>
+							</action>
+						</action>
+						<action type="control populate keepfocus" value="#grdGrid"/>
+					</event>
+				</button>
+				<button name="btnIzmjena" caption="Izmijeni">
+					<event type="click">
+						<action type="form open" value="frmUnos" if="global.$IzvorOpcine==1">
+							<parameter name="caption" value="Izmjena općine {#grdGrid.@Naziv}"/>
+							<parameter name="Id" value="#grdGrid.@ID"/>
+							<parameter name="Tip" value="izmjena"/>
+						</action>
+						<action type="form open" value="frmUnosVB6" if="global.$IzvorOpcine==0">
+							<parameter name="caption" value="Izmjena općine {#grdGrid.@Naziv}"/>
+							<parameter name="Id" value="#grdGrid.@ID"/>
+							<parameter name="Tip" value="izmjena"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGrid"/>
+					</event>
+				</button>
+				<button name="btnBrisanje" caption="Obriši">
+					<event type="click">
+						<action type="form open" value="frmBrisanje">
+							<parameter name="caption" value="Brisanje odabranih zapisa"/>
+							<parameter name="selectedids" value="#grdGrid.selectedids"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGrid"/>
+						<action type="control disable" value="#btnBrisanje,#btnIzmjena" if="#grdGrid==null"/>
+					</event>
+				</button>
+				<button name="btnPopis" caption="Virmani">
+					<event type="click">
+						<action if="global.$IzvorOpcine==0">
+							<action type="form open" value="frmVirmani">
+								<parameter name="caption" value="Virmani za općinu {#grdGrid.@Općina}"/>
+								<parameter name="OOPId" value="#grdGrid.@MjestaId"/>					
+								<parameter name="Banka" value="#grdGrid.@Općina"/>
+								<parameter name="OOPOznaka" value="PO"/>
+								<!-- kod naloga za banke želim da se popuni primatelj s ID-om banke za koju je nalog -->
+								<!-- ovu opciju ne želim koristiti na nalozima doprinosa jer OOPId = OOPDoprinosiId pa nema smisla -->
+								<!-- ovu opciju ne želim koristiti na nalozima poreza jer OOPId = OOPMjestaPorezId pa nema smisla -->
+								<!-- ovu opciju ne želim koristiti na nalozima obustava jer OOPId = OOPObustaveGlaId pa nema smisla -->
+							</action>
+						</action>
+						<action if="global.$IzvorOpcine==1">
+							<action type="form open" value="frmVirmani">
+								<parameter name="caption" value="Virmani za općinu {#grdGrid.@Općina}"/>
+								<parameter name="OOPId" value="#grdGrid.@OOPMjestaPorezId" if="global.$IzvorOpcine==1"/>			
+								<parameter name="Banka" value="#grdGrid.@Općina"/>
+								<parameter name="OOPOznaka" value="PO"/>
+								<!-- kod naloga za banke želim da se popuni primatelj s ID-om banke za koju je nalog -->
+								<!-- ovu opciju ne želim koristiti na nalozima doprinosa jer OOPId = OOPDoprinosiId pa nema smisla -->
+								<!-- ovu opciju ne želim koristiti na nalozima poreza jer OOPId = OOPMjestaPorezId pa nema smisla -->
+								<!-- ovu opciju ne želim koristiti na nalozima obustava jer OOPId = OOPObustaveGlaId pa nema smisla -->
+							</action>
+						</action>
+						
+						<action type="control populate keepfocus" value="#grdGrid"/>
+					</event>
+				</button>
+				<button name="btnResetProsjecniPrirez" caption="Poništi prosječnu stopu" dock="right">
+					<event type="click">
+						<action type="form open" value="frmResetProsjecniPrirez">
+							<parameter name="caption" value="Poništavanje stopa prosječnog prireza"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGrid"/>
+						<action type="control disable" value="#btnBrisanje,#btnIzmjena" if="#grdGrid==null"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spPlaceOpcine_CP" name="dtGetIzvorOpcine">
+				<parameter name="@action" value="dtGetIzvorOpcine"/>
+			</data>
+			<data command="spPlaceOpcine_CP" name="dtGrid">
+				<parameter name="action" value="MASTER"/>
+			</data>
+		</datalist>
+	</form>
+	<!--
+  *******************************************************************************************
+  FORMA ZA UNOS/IZMJENU - nova priča - veza na OOPMjestaPorezId
+  *******************************************************************************************
+  -->
+	<form name="frmUnos" caption="$caption" width="400" height="300">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$Id!=0"/>
+		</event>
+		<event type="load">
+			<action type="control disable" value="#btnUnos,#btnOdustani" if="$Id==null"/>
+		</event>
+		<layout>
+			<group cols="2" rows="7" groupbordervisible="false">
+				<columnsdefinition>
+					<column position="1" size="50%"/>
+					<column position="2" size="50%"/>
+				</columnsdefinition>
+				<item caption="Naziv" col="1" row="1" textposition="top" highlight="false" colspan="2">
+					<textedit name="txtNaziv" datavalue="~dtget.@Naziv" allownull="false" required="true" maxlength="50"/>
+				</item>
+				<item caption="Općina" col="1" row="2" textposition="top" highlight="false" colspan="2">
+					<textedit name="txtOpcina" datavalue="~dtget.@PoreznaOpcina" allownull="false" required="true" format="[0-9]{4,4}" formattype="regex" maxlength="4" tooltip="Općina je brojčana oznaka na 4 znaka"/>
+				</item>
+				<item caption="Uprava" col="1" row="3" textposition="top" highlight="false" colspan="2">
+					<textedit name="txtUprava" datavalue="~dtget.@PoreznaUprava" allownull="false" required="true" format="[0-9]{3,3}" formattype="regex" maxlength="3" tooltip="Uprava je brojčana oznaka na 3 znaka"/>
+				</item>
+				<item caption="Postotak prireza" col="1" row="4" textposition="top" highlight="false" colspan="1">
+					<textedit name="txtPostotak" value="0" datavalue="~dtget.@Postotak" allownull="false" required="true" format="n2" tooltip="Stopa prireza za odabranu općinu"/>
+				</item>
+				<item caption="Prosječna stopa prireza" col="2" row="4" textposition="top" highlight="false" colspan="1">
+					<textedit name="txtProsjecniPrirez" value="0" datavalue="~dtget.@ProsjecniPrirez" allownull="false" required="true" format="n6" tooltip="Stopa prosječnog prireza za odabranu općinu - koristi se samo na konačnom obračunu poreza na dohodak"/>
+				</item>
+				<item caption="Konto porez duguje" col="1" row="5" textposition="top" highlight="false">
+					<comboedit name="cmbKntPorezDug" valuefield="KntPlanaId" displayfield="Konto" required="false" dataname="~dtGetKonta" allownull="true" datavalue="~dtGet.@KntplanaIdDugPo"/>
+				</item>
+				<item caption="Konto porez potražuje" col="2" row="5" textposition="top" highlight="false">
+					<comboedit name="cmbKntPorezPot" valuefield="KntPlanaId" displayfield="Konto" required="false" dataname="~dtGetKonta" allownull="true" datavalue="~dtGet.@KntplanaIdPotPo"/>
+				</item>
+				<item caption="Konto prirez duguje" col="1" row="6" textposition="top" highlight="false">
+					<comboedit name="cmbKntPrirezDug" valuefield="KntPlanaId" displayfield="Konto" required="false" dataname="~dtGetKonta" allownull="true" datavalue="~dtGet.@KntplanaIdDugPr"/>
+				</item>
+				<item caption="Konto prirez potražuje" col="2" row="6" textposition="top" highlight="false">
+					<comboedit name="cmbKntPrirezPot" valuefield="KntPlanaId" displayfield="Konto" required="false" dataname="~dtGetKonta" allownull="true" datavalue="~dtGet.@KntplanaIdPotPr"/>
+				</item>
+				<item col="1" row="7" highlight="false">
+					<checkedit caption="Umirovljeno" name="chkUmirovljeno" datavalue="~dtget.@Umirovljeno"/>
+				</item>
+			</group>
+			<!--kraj omotača-->
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnos" caption="Spremi">
+					<event type="click">
+						<action type="validate"/>
+						<!-- unos -->
+						<action if="$Id==0">
+							<action type="datarun reader" value="~dtUnos">
+								<action type="control populate" value="parent.#grdGrid">
+									<action type="control focus" value="parent.#grdGrid">
+										<!-- <parameter value="~dtUnos.@noviID"/> -->
+										<parameter value="$noviID"/>
+										<!-- output varijabla -->
+									</action>
+								</action>
+								<action type="control enable" value="parent.#btnIzmjena,parent.#btnBrisanje"/>
+							</action>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<action type="form close"/>
+							</action>
+						</action>
+						<!-- izmjena -->
+						<action if="$Id!=0">
+							<action type="datarun reader" value="~dtIzmjena"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<action type="form close"/>
+							</action>
+							<!--<action type="form close"></action>-->
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spPlaceOpcine_CP" name="dtGet">
+				<parameter name="@action" value="dtGet"/>
+				<parameter name="@id" value="$Id"/>
+			</data>
+			<data command="spPlaceOpcine_CP" name="dtGetKonta">
+				<parameter name="@action" value="dtGetKonta"/>
+			</data>
+			<data command="spPlaceOpcine_CP" name="dtMjesta">
+				<parameter name="@Action" value="Konto_ispravka"/>
+				<parameter name="@Tekst" value="#srcIspravak.text"/>
+			</data>
+			<data command="spPlaceOpcine_CP" name="dtUnos">
+				<parameter name="@action" value="UNOS"/>
+				<!-- <parameter name="@Id" value="$noviID"></parameter> -->
+				<parameter name="@Id.output.int" variablename="noviID"/>
+				<parameter name="@naziv" value="#txtNaziv"/>
+				<parameter name="@poreznaopcina" value="#txtOpcina"/>
+				<parameter name="@poreznauprava" value="#txtUprava"/>
+				<parameter name="@postotak" value="#txtpostotak"/>
+				<parameter name="@prosjecniprirez" value="#txtProsjecniPrirez"/>
+				<parameter name="@KntplanaIdDugPo" value="#cmbKntPorezDug"/>
+				<parameter name="@KntplanaIdPotPo" value="#cmbKntPorezPot"/>
+				<parameter name="@KntplanaIdDugPr" value="#cmbKntPrirezDug"/>
+				<parameter name="@KntplanaIdPotPr" value="#cmbKntPrirezPot"/>
+				<parameter name="@umirovljeno" value="#chkUmirovljeno"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<data command="spPlaceOpcine_CP" name="dtIzmjena">
+				<parameter name="@action" value="IZMJENA"/>
+				<parameter name="@id" value="$Id"/>
+				<parameter name="@naziv" value="#txtNaziv"/>
+				<parameter name="@poreznaopcina" value="#txtOpcina"/>
+				<parameter name="@poreznauprava" value="#txtUprava"/>
+				<parameter name="@postotak" value="#txtpostotak"/>
+				<parameter name="@prosjecniprirez" value="#txtProsjecniPrirez"/>
+				<parameter name="@KntplanaIdDugPo" value="#cmbKntPorezDug"/>
+				<parameter name="@KntplanaIdPotPo" value="#cmbKntPorezPot"/>
+				<parameter name="@KntplanaIdDugPr" value="#cmbKntPrirezDug"/>
+				<parameter name="@KntplanaIdPotPr" value="#cmbKntPrirezPot"/>
+				<parameter name="@umirovljeno" value="#chkUmirovljeno"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+	
+	<!--
+  *******************************************************************************************
+  FORMA ZA UNOS/IZMJENU - stari VB6 - veza na MjestaId
+  *******************************************************************************************
+  -->
+	<form name="frmUnosVB6" caption="$caption" width="400" height="300">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$Id!=0"/>
+		</event>
+		<event type="load">
+			<action type="control disable" value="#btnUnos,#btnOdustani" if="$Id==null"/>
+		</event>
+		<layout>
+			<group cols="2" rows="7" groupbordervisible="false">
+				<columnsdefinition>
+					<column position="1" size="50%"/>
+					<column position="2" size="50%"/>
+				</columnsdefinition>
+				<item caption="Mjesto" col="1" row="1" textposition="top" highlight="false" colspan="2">
+					<searchedit name="srcMjesto" fieldvalue="MjestaId" fieldtext="Naziv" dataname="dtMjesta" datavalue="~dtGet.@MjestaId" datatext="~dtGet.@Naziv" allownull="false" required="true"/>
+				</item>
+				<item caption="Općina" col="1" row="2" textposition="top" highlight="false" colspan="2">
+					<textedit name="txtOpcina" datavalue="~dtget.@PoreznaOpcina" allownull="false" required="true" format="[0-9]{4,4}" formattype="regex" maxlength="4" tooltip="Općina je brojčana oznaka na 4 znaka"/>
+				</item>
+				<item caption="Uprava" col="1" row="3" textposition="top" highlight="false" colspan="2">
+					<textedit name="txtUprava" datavalue="~dtget.@PoreznaUprava" allownull="false" required="true" format="[0-9]{3,3}" formattype="regex" maxlength="3" tooltip="Uprava je brojčana oznaka na 3 znaka"/>
+				</item>
+				<item caption="Postotak prireza" col="1" row="4" textposition="top" highlight="false" colspan="1">
+					<textedit name="txtPostotak" value="0" datavalue="~dtget.@Postotak" allownull="false" required="true" format="n2" tooltip="Stopa prireza za odabranu općinu"/>
+				</item>
+				<item caption="Prosječna stopa prireza" col="2" row="4" textposition="top" highlight="false" colspan="1">
+					<textedit name="txtProsjecniPrirez" value="0" datavalue="~dtget.@ProsjecniPrirez" allownull="false" required="true" format="n6" tooltip="Stopa prosječnog prireza za odabranu općinu - koristi se samo na konačnom obračunu poreza na dohodak"/>
+				</item>
+				<item caption="Konto porez duguje" col="1" row="5" textposition="top" highlight="false">
+					<comboedit name="cmbKntPorezDug" valuefield="KntPlanaId" displayfield="Konto" required="false" dataname="~dtGetKonta" allownull="true" datavalue="~dtGet.@KntplanaIdDugPo"/>
+				</item>
+				<item caption="Konto porez potražuje" col="2" row="5" textposition="top" highlight="false">
+					<comboedit name="cmbKntPorezPot" valuefield="KntPlanaId" displayfield="Konto" required="false" dataname="~dtGetKonta" allownull="true" datavalue="~dtGet.@KntplanaIdPotPo"/>
+				</item>
+				<item caption="Konto prirez duguje" col="1" row="6" textposition="top" highlight="false">
+					<comboedit name="cmbKntPrirezDug" valuefield="KntPlanaId" displayfield="Konto" required="false" dataname="~dtGetKonta" allownull="true" datavalue="~dtGet.@KntplanaIdDugPr"/>
+				</item>
+				<item caption="Konto prirez potražuje" col="2" row="6" textposition="top" highlight="false">
+					<comboedit name="cmbKntPrirezPot" valuefield="KntPlanaId" displayfield="Konto" required="false" dataname="~dtGetKonta" allownull="true" datavalue="~dtGet.@KntplanaIdPotPr"/>
+				</item>
+				<item col="1" row="7" highlight="false">
+					<checkedit caption="Umirovljeno" name="chkUmirovljeno" datavalue="~dtget.@Umirovljeno"/>
+				</item>
+			</group>
+			<!--kraj omotača-->
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnos" caption="Spremi">
+					<event type="click">
+						<action type="validate"/>
+						<!-- unos -->
+						<action if="$Id==0">
+							<action type="datarun reader" value="~dtUnos">
+								<action type="control populate" value="parent.#grdGrid">
+									<action type="control focus" value="parent.#grdGrid">
+										<!-- <parameter value="~dtUnos.@noviID"/> -->
+										<parameter value="$noviID"/>
+										<!-- output varijabla -->
+									</action>
+								</action>
+								<action type="control enable" value="parent.#btnIzmjena,parent.#btnBrisanje"/>
+							</action>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<action type="form close"/>
+							</action>
+						</action>
+						<!-- izmjena -->
+						<action if="$Id!=0">
+							<action type="datarun reader" value="~dtIzmjena"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<action type="form close"/>
+							</action>
+							<!--<action type="form close"></action>-->
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spPlaceOpcine_CP" name="dtGetIzvorOpcine">
+				<parameter name="@action" value="dtGetIzvorOpcine"/>
+			</data>
+			<data command="spPlaceOpcine_CP" name="dtGet">
+				<parameter name="@action" value="dtGet"/>
+				<parameter name="@id" value="$Id"/>
+			</data>
+			<data command="spPlaceOpcine_CP" name="dtGetKonta">
+				<parameter name="@action" value="dtGetKonta"/>
+			</data>
+			<data command="spPlaceOpcine_CP" name="dtMjesta">
+				<parameter name="@Action" value="dtMjesta"/>
+				<parameter name="@Tekst" value="#srcMjesto.text"/>
+			</data>
+			<data command="spPlaceOpcine_CP" name="dtUnos">
+				<parameter name="@action" value="UNOS"/>
+				<!-- <parameter name="@Id" value="$noviID"></parameter> -->
+				<parameter name="@Id.output.int" variablename="noviID"/>
+				<parameter name="@mjestaId" value="#srcMjesto"/>
+				<parameter name="@poreznaopcina" value="#txtOpcina"/>
+				<parameter name="@poreznauprava" value="#txtUprava"/>
+				<parameter name="@postotak" value="#txtpostotak"/>
+				<parameter name="@prosjecniprirez" value="#txtProsjecniPrirez"/>
+				<parameter name="@KntplanaIdDugPo" value="#cmbKntPorezDug"/>
+				<parameter name="@KntplanaIdPotPo" value="#cmbKntPorezPot"/>
+				<parameter name="@KntplanaIdDugPr" value="#cmbKntPrirezDug"/>
+				<parameter name="@KntplanaIdPotPr" value="#cmbKntPrirezPot"/>
+				<parameter name="@umirovljeno" value="#chkUmirovljeno"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<data command="spPlaceOpcine_CP" name="dtIzmjena">
+				<parameter name="@action" value="IZMJENA"/>
+				<parameter name="@id" value="$Id"/>
+				<parameter name="@mjestaId" value="#srcMjesto"/>
+				<parameter name="@poreznaopcina" value="#txtOpcina"/>
+				<parameter name="@poreznauprava" value="#txtUprava"/>
+				<parameter name="@postotak" value="#txtpostotak"/>
+				<parameter name="@prosjecniprirez" value="#txtProsjecniPrirez"/>
+				<parameter name="@KntplanaIdDugPo" value="#cmbKntPorezDug"/>
+				<parameter name="@KntplanaIdPotPo" value="#cmbKntPorezPot"/>
+				<parameter name="@KntplanaIdDugPr" value="#cmbKntPrirezDug"/>
+				<parameter name="@KntplanaIdPotPr" value="#cmbKntPrirezPot"/>
+				<parameter name="@umirovljeno" value="#chkUmirovljeno"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+	<!--
+  *******************************************************************************************
+  FORMA ZA BRISANJE
+  *******************************************************************************************
+  -->
+	<form name="frmBrisanje" caption="$caption" width="400" height="150" fixedsize="true" saveformsize="false">
+		<event type="shown">
+			<action type="control value" value="#lblPitanje">
+				<parameter value="Jeste li sigurni da želite obrisati odabrane zapise?"/>
+			</action>
+		</event>
+		<layout>
+			<!--omotač-->
+			<group cols="1" rows="1" groupbordervisible="true">
+				<item col="1" row="1" highlight="false">
+					<labeledit name="lblPitanje" fontsizedelta="2" value=""/>
+				</item>
+			</group>
+			<!--kraj omotača-->
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnBrisi" caption="OBRIŠI" type="del">
+					<event type="click">
+						<!-- Okini storu -->
+						<action type="datarun reader" value="~dtBrisanje"/>
+						<action if="$indGreske==0">
+							<action type="control populate keepfocus" value="parent.#grdGrid"/>
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spPlaceOpcine_CP" name="dtBrisanje">
+				<parameter name="@Action" value="BRISANJE_VISE" type="string"/>
+				<parameter name="@selectedids" value="$selectedids"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmResetProsjecniPrirez" caption="$caption" width="400" height="150" fixedsize="true" saveformsize="false">
+		<event type="shown">
+			<action type="control value" value="#lblPitanje">
+				<parameter value="Jeste li sigurni da želite poništiti stope prosječnih prireza?"/>
+			</action>
+		</event>
+		<layout>
+			<!--omotač-->
+			<group cols="1" rows="1" groupbordervisible="true">
+				<item col="1" row="1" highlight="false">
+					<labeledit name="lblPitanje" fontsizedelta="2" value=""/>
+				</item>
+			</group>
+			<!--kraj omotača-->
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnReset" caption="PONIŠTI" type="del">
+					<event type="click">
+						<!-- Okini storu -->
+						<action type="datarun reader" value="~dtReset"/>
+						<action if="$indGreske==0">
+							<action type="control populate keepfocus" value="parent.#grdGrid"/>
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spPlaceOpcine_CP" name="dtReset">
+				<parameter name="@Action" value="Reset_prosjecni_prirez" type="string"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+	<!--includane forme-->
+	<form name="frmVirmani" path="Place.frmVirmani.xml"/>
+	<form name="frmVirmanEdit" path="Place.frmVirmani.xml"/>
+	<form name="frmVirmanBrisi" path="Place.frmVirmani.xml"/>
+	<form name="frmVirmanKopiranje" path="Place.frmVirmani.xml"/>
+  <form name="frmVirmanUnesiRacun" path="Place.frmVirmani.xml"/>
+</root>

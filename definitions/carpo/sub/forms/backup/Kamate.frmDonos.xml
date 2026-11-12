@@ -1,0 +1,249 @@
+<root>
+  <form path="Kamate.frmPodaci.xml" name="frmPodaci"/>
+  <form path="Kamate.frmObracun.xml" name="frmObracun"/>
+  <form name="frmDonos" caption="Donos stavaka za obračun kamata za više partnera" width="1000" height="700">
+    <event type="shown">
+      <action type="datarun reader" value="~dtPrviDan"/>
+      <action type="control value" value="#datOd">
+        <parameter value="~dtPrviDan.@Datum"/>
+      </action>
+      <action type="control value" value="#datDo">
+        <parameter value="now" type="date"/>
+      </action>
+      <action type="control value" value="#datDatum">
+        <parameter value="now" type="date"/>
+      </action>
+    </event>
+    <layout>
+      <group cols="2" rows="3">
+        <columnsdefinition>
+          <column position="1" size="20%"/>
+          <column position="2" size="80%"/>
+        </columnsdefinition>
+        <item col="1" row="1" rowspan="1" caption="Partner:">
+          <searchedit type="partner" name="srcPartner" fieldtext="Naziv" savevalue="session" fieldvalue="PartneriId" required="true">
+            <event type="valuechanged">
+              <action type="control value" value="#txtBrFak,#txtOpis">
+                <parameter value="null"/>
+              </action>
+            </event>
+          </searchedit>
+        </item>
+		<item col="1" row="2"/>
+        <group col="2" row="1" cols="6" rows="1" caption="Slobodan unos">
+          <item col="1" row="1" caption="Broj fakture:">
+            <textedit name="txtBrFak" />
+          </item>
+          <item col="2" row="1" caption="Opis:">
+            <textedit name="txtOpis"/>
+          </item>
+          <item col="3" row="1" caption="Datum:">
+            <dateedit name="datDatum"/>
+          </item>
+          <item col="4" row="1" caption="Duguje:">
+            <textedit name="txtDuguje" value="0" format="n2"/>
+          </item>
+          <item col="5" row="1" caption="Potražuje:">
+            <textedit name="txtPotrazuje" value="0" format="n2"/>
+          </item>
+          <item col="6" row="1">
+            <button name="btnUnos" caption="Unesi">
+              <event type="click">
+                <action type="datarun nonquery" value="~dtUnosStavke">
+                  <parameter name="@ID"/>
+                </action>
+                <action type="control value" value="#txtDuguje,#txtPotrazuje">
+                  <parameter value="0"/>
+                </action>
+                <action type="control populate" value="#grdMulti"/>
+                <action type="control focus" value="#txtBrFak"/>
+              </event>
+            </button>
+          </item>
+        </group>
+        <group col="2" row="2" cols="6" rows="1" caption="Donos salda konti">
+          <item col="1" row="1" caption="Analitički konto:">
+            <comboedit name="cmbKonto" dataname="~dtKonto" valuefield="KntPlanAId" displayfield="Konto"/>
+          </item>
+          <item col="2" row="1" caption="Datum od:">
+            <dateedit name="datOd"/>
+          </item>
+          <item col="3" row="1" caption="Datum do:">
+            <dateedit name="datDo"/>
+          </item>
+          <item col="4" row="1" caption="Valuta">
+            <comboedit name="cmbValuta" dataname="~dtValuta" valuefield="ValuteId" displayfield="Naziv"/>
+          </item>
+          <item col="5" row="1" caption="Računi">
+            <comboedit name="cmbRc" dataname="~dtCombo" valuefield="Id" displayfield="Value" value="0"/>
+          </item>
+          <item col="6" row="1">
+            <button name="btnDonos" caption="Donesi">
+              <event type="click">
+                <action type="datarun nonquery" value="~dtSCDonos"/>
+                <action type="control value" value="#cmbKonto,#cmbValuta,#cmbRc">
+                  <parameter value="null"/>
+                </action>
+                <action type="control populate" value="#grdMulti"/>
+                <action type="control focus" value="#srcPartner"/>
+              </event>
+            </button>
+          </item>
+        </group>
+        <item col="1" row="3" colspan="2">
+          <grid name="grdMulti" dataname="~dtGrdMulti" key="tmpKteDetaljId" multiselect="true" bestfitonrefresh="true">
+            <fields>
+              <field name="Partner"/>
+              <field name="BrojFak" caption="Broj računa"/>
+              <field name="Datum" caption="Datum valute"/>
+              <field name="Opis"/>
+              <field name="Duguje"/>
+              <field name="Potrazuje" caption="Potražuje"/>
+              <field name="Ind" hidden="true"/>
+            </fields>
+          </grid>
+        </item>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnSave" caption="SPREMI">
+          <event type="click">
+            <action type="datarun reader" value="~dtBrojcanik"/>
+            <action type="variable value">
+              <parameter name="brObr" value="~dtBrojcanik.@BrObr"/>
+            </action>
+            <action type="datarun reader" value="~dtSpremi"/>
+            <action type="form close"/>
+          </event>
+        </button>
+        <button name="btnDelete" caption="OBRIŠI">
+          <dropdownitem caption="Stavku">
+            <event type="click">
+              <action type="confirm" value="Jeste li sigurni da želite obrisati stavku?">
+                <action type="datarun nonquery" value="~dtObrisiSt"/>
+                <action type="control populate keepfocus" value="#grdMulti"/>
+              </action>
+            </event>
+          </dropdownitem>
+          <dropdownitem caption="Račun">
+            <event type="click">
+              <action type="confirm" value="Jeste li sigurni da želite obrisati račun: {#grdMulti.@BrojFak}?">
+                <action type="datarun nonquery" value="~dtObrisiRc"/>
+                <action type="control populate keepfocus" value="#grdMulti"/>
+              </action>
+            </event>
+          </dropdownitem>
+          <dropdownitem caption="Partnera">
+            <event type="click">
+              <action type="confirm" value="Jeste li sigurni da želite obrisati partnera: {#grdMulti.@Partner}?">
+                <action type="datarun nonquery" value="~dtObrisiPrt"/>
+                <action type="control populate keepfocus" value="#grdMulti"/>
+              </action>
+            </event>
+          </dropdownitem>
+          <dropdownitem caption="Dokument">
+            <event type="click">
+              <action type="confirm" value="Jeste li sigurni da želite obrisati dokument?">
+                <action type="datarun nonquery" value="~dtObrisiSve"/>
+                <action type="control populate keepfocus" value="#grdMulti"/>
+              </action>
+            </event>
+          </dropdownitem>
+        </button>
+        <button name="btnObracun" caption="OBRAČUNAJ">
+          <event type="click">
+            <action type="form close"/>
+            <action type="form open" value="frmPodaci">
+              <parameter name="ID" value="$tmpGlava"/>
+              <parameter name="Datum" value="$Datum"/>
+            </action>
+          </event>
+        </button>
+        <button name="btnPrint" caption="ISPIS SUČELJA" dock="right">
+          <event type="click">
+            <action type="control printcontrol" value="#grdMulti" />
+          </event>
+        </button>
+        <!-- <button name="btnUpute" caption="Uputi me" dock="right"> -->
+          <!-- <event type="click"> -->
+            <!-- <action type="message" value="Ova funkcionalnost trenutno nije dostupna, molimo kontaktirajte Spin!"/> -->
+          <!-- </event> -->
+        <!-- </button> -->
+        <button name="btnExit" caption="IZLAZ" dock="right">
+          <event type="click">
+            <action type="confirm" value="Jeste li sigurni da želite odustati? Stavke obračuna neće biti spremljene!">
+              <action type="form close"/>
+            </action>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data name="dtSpremi" command="spCKteSpremiMultiDetalj">
+        <parameter name="@tmpKteGlavaID" value="$tmpGlava"/>
+        <parameter name="@OperateriID" value="@@operateriid"/>
+        <parameter name="@BrObr" value="$brObr"/>
+      </data>
+      <data name="dtBrojcanik" command="spCKntKteBroj">
+        <parameter name="@Datum" value="$Datum"/>
+      </data>
+      <data name="dtPrviDan" command="select datename(year, getdate()) + '0101' as Datum" type="text"/>
+      <data name="dtGrdMulti" command="spCKteDetaljQuery">
+        <parameter name="@Action" value="2"/>
+        <parameter name="@Id" value="$tmpGlava"/>
+      </data>
+      <data name="dtSCDonos" command="spCKteDonosMulti">
+        <parameter name="@PArID" value="#srcPartner"/>
+        <parameter name="@kntPlanAID" value="#cmbKonto"/>
+        <parameter name="@Datumod" value="#datOd"/>
+        <parameter name="@DatumDo" value="#datDo"/>
+        <parameter name="@zatvoreni" value="#cmbRc"/>
+        <parameter name="@Valuteid" value="#cmbValuta"/>
+        <parameter name="@tmpKteGlavaId" value="$tmpGlava"/>
+      </data>
+      <data name="dtObrisiSt" command="spCKteDetaljAzur">
+        <parameter name="@Action" value="4"/>
+        <parameter name="@DelInd" value="Stavke"/>
+        <parameter name="@SelectedId" value="#grdMulti.selectedids.table"/>
+        <parameter name="@Datum" value="#grdMulti.@Datum"/>
+      </data>
+      <data name="dtObrisiRc" command="spCKteDetaljAzur">
+        <parameter name="@Action" value="4"/>
+        <parameter name="@DelInd" value="Racun"/>
+        <parameter name="@SelectedId" value="#grdMulti.selectedids.table"/>
+        <parameter name="@Datum" value="#grdMulti.@Datum"/>
+      </data>
+      <data name="dtObrisiPrt" command="spCKteDetaljAzur">
+        <parameter name="@Action" value="4"/>
+        <parameter name="@DelInd" value="Partner"/>
+        <parameter name="@SelectedId" value="#grdMulti.selectedids.table"/>
+        <parameter name="@Datum" value="#grdMulti.@Datum"/>
+      </data>
+      <data name="dtObrisiSve" command="spCKteDetaljAzur">
+        <parameter name="@Action" value="4"/>
+        <parameter name="@DelInd" value="Sve"/>
+        <parameter name="@ID" value="$tmpGlava"/>
+        <parameter name="@Datum" value="#grdMulti.@Datum"/>
+      </data>
+      <data name="dtPrviDan" command="select dateadd(year, 0, datename(year, getdate()) + '0101') as Datum" type="text"/>
+      <data name="dtKonto" command="spCKntKtePopuniKontrole">
+        <parameter name="@Action" value="konto"/>
+      </data>
+      <data name="dtValuta" command="spCKntKtePopuniKontrole">
+        <parameter name="@Action" value="valuta"/>
+      </data>
+      <data name="dtCombo" type="text" command="select 0 as Id,'Svi' as Value union select 1,'Zatvoreni' union select 2,'Otvoreni'"/>
+      <data name="dtUnosStavke" command="spCKteDetaljAzur">
+        <parameter name="@Action" value="3"/>
+        <parameter name="@ID" value="$tmpGlava"/>
+        <parameter name="@BrojFak" value="#txtBrFak"/>
+        <parameter name="@Opis" value="#txtOpis"/>
+        <parameter name="@Datum" value="#datDatum"/>
+        <parameter name="@Duguje" value="#txtDuguje"/>
+        <parameter name="@Potrazuje" value="#txtPotrazuje"/>
+        <parameter name="@PartneriId" value="#srcPartner"/>
+      </data>
+    </datalist>
+  </form>
+</root>

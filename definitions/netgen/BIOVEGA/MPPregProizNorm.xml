@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+<PROJECT  
+    ONLOAD=":FILTERFORM"  
+    CMD1CAPTION="Parametri:FILTERFORM"
+    CMD2CAPTION="Dodaj:INSERTFORM"
+	CMD3CAPTION="Izmjeni:UPDATEFORM"
+    CMD4CAPTION="" 
+    CMD5CAPTION="(De)Aktiviraj:STATUSA" 
+    CMD6CAPTION="Ispis:repx/rptMPProizvodi(@id = @@id)"   
+    CMD7CAPTION="Kopiraj:COPY_FORM"   
+    CMD8CAPTION="Zamjena sastavnice:KOPIRAJSASTAV"
+	CMD10CAPTION="Prenesi NC proizvoda u cjenik:NCPROCJENIK"
+	CHECKBOXVISIBLE="FALSE"
+	DETCHECKBOXVISIBLE="FALSE"
+    GROUPBOXVISIBLE="FALSE"
+    TOTALROWVISIBLE="FALSE"
+    DETTOTALROWVISIBLE="FALSE"
+	COMMANDTIMEOUT="500"
+    REPORT="" 
+	  DETAILGRID = ""
+    MASTERDBLCLICK=""
+    POPUPMASTER="Filter:FILTERFORM"
+   PAGEHEADERLEFT=""
+   PAGEHEADERRIGHT="@@tkosmomi"
+   SETDEFAULTS="select dbo.fnTkoSmoMi() as tkosmomi">
+
+
+
+  <MASTERCOLUMNS>
+    <COLUMN INDEX="9" NAME="KOLIČINA0900" CAPTION="" FORMAT="#,###0.###0" AGREGATEFUNCTION="0" />
+    <COLUMN INDEX="10" NAME="NC1000" CAPTION="" FORMAT="#,###0.###0" AGREGATEFUNCTION="0" />
+  </MASTERCOLUMNS>
+
+
+  <NAME>Pregled proizvoda i normativa </NAME>
+  <CAPTION>Pregled proizvoda i normativa</CAPTION>
+ 
+  <KOMENTAR> </KOMENTAR>
+
+
+	<FILTERFORM 
+			FILLEXPLORER="TRUE" 
+			REPORT=""  
+			WIDTH="6300" 
+			ONSUBMIT="spMPProizvodiGlaIdet @action = 8,  @operateriid= @@operateriid, " 
+			ONLOAD="select @@datumod as datumod, @@datumdo as datumdo, @@trgovinaid as trgovinaid" 
+      ONLOADED="select @@status as status"
+			HEIGHT="3000" 
+			CAPTION="Upišite uvjete pregleda "  
+			BORDERSTYLE="3" 
+			CMD1CAPTION="Pokaži" 
+			CMD2CAPTION="Odustani" 
+			CMD3CAPTION=""  
+			NEXTFORM=""  >
+    
+    <INPUT TYPE="search" NAME="robaid" CAPTION="Proizvod:*" WIDTH="4000" TOP="400" LEFT="1500"
+           SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid', @mpsirovina = 0 " ALLOWEMPTY="TRUE" />
+    
+    <INPUT TYPE="search" NAME="robanormid" CAPTION="Roba iz normativa:*" WIDTH="4000" TOP="800" LEFT="1500"
+           SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobanormid'" ALLOWEMPTY="TRUE" />
+    
+    <INPUT TYPE="combo" NAME="status" ALLOWEMPTY="FALSE" CAPTION="Status normativa:*" TOP="1200" LEFT="1500" WIDTH="4000"
+           SQL="select 0 as id, 'Svi' as naziv union all select 1 as id, 'Aktivni' as naziv union all select 2 as id, 'Neaktivni' as naziv" />
+
+    <INPUT TYPE="check" NAME="nc0" ALLOWEMPTY="FALSE" CAPTION="NC = 0 :" TOP="1600" LEFT="1500" WIDTH="4000"
+           SQL="" />
+
+  </FILTERFORM>
+
+  <INSERTFORM
+    REFRESHAFTERCHILD=""
+    WIDTH="12000"
+    ONLOAD=""
+    ONSUBMIT="spMPProizvodiGlaIdet @action = 2, @operateriid = @@operateriid, "
+    HEIGHT="6100"
+    CAPTION="Unos Proizvoda i normativa"
+    MASTERDBLCLICK=""
+    ONLOADED=""
+    BORDERSTYLE="3"
+    CMD1CAPTION="Normativ>>>"
+    CMD2CAPTION="Odustani"
+    FOCUS="robaid"
+    NEXTFORM="UPDATEFORM"  >
+
+    <INPUT TYPE="TRAZILICA" NAME="Robaid" CAPTION="Proizvod"  SQL="viRoba#robaid#Naziv%#userid#barcode#robakod" WIDTH="5000" HEIGHT="320"/>
+    
+
+  </INSERTFORM>
+
+  <UPDATEFORM
+    FILLEXPLORER=""
+    REPORT=""
+    WIDTH="11000"
+    ONLOAD="if coalesce((select ind from mpproizvodigla where mpproizvodiglaid = @@id ),0) = 1  or (select datumdo from mpproizvodigla where mpproizvodiglaid = @@id ) is not null begin 
+			exec spRaiserror 69001, 'Proizvod je aktivan ili je bio aktivan. Ne može se više ispravljati !' 
+		end
+		else begin
+			exec spMPProizvodiGlaIdet @action=3,@mpproizvodiglaid=@@id
+		end"
+    ONSUBMIT=""
+    HEIGHT="6300"
+    CAPTION="Ažuriranje normativa"
+    MASTERDBLCLICK=""
+    BORDERSTYLE="3"
+    CMD1CAPTION="Spremi"
+    CMD2CAPTION="Odustani"
+    CMD3CAPTION=""
+    CMD4CAPTION="Dodaj:DODAJSTAVKU"
+    CMD5CAPTION=""
+    CMD6CAPTION="Obriši:BRISISTAVKU"
+    NEXTFORM=""  >
+
+    <INPUT TYPE="text" CAPTION="Proizvod" NAME="naziv" WIDTH="5000" STYLE="1" ENABLED="FALSE" HEIGHT="320"/>
+    <INPUT TYPE="text" CAPTION="JM" NAME="jm" WIDTH="5000" STYLE="1" ENABLED="FALSE" HEIGHT="320"/>
+    <INPUT TYPE="number" CAPTION="" NAME="mpproizvodiglaid" WIDTH="5000" STYLE="1" ENABLED="FALSE" HEIGHT="320" VISIBLE="FALSE" DECIMALS="0"/>
+
+    <INPUT TYPE="grid"
+      NAME="stavkenorm"
+      REFRESHAFTERCHILD="TRUE"
+      CHECKBOXVISIBLE="FALSE"
+      LEFT="100"
+      CAPTION=""
+      WIDTH="10500"
+      HEIGHT="3700"
+      TABINDEX="5"
+      SQL="spMPProizvodiGlaIdet @action = 4,@mpproizvodiglaid=@@id" >
+      <COLUMN INDEX="" NAME="Količina1200" WIDTH="" CAPTION="Količina" FORMAT="#,##0.0000000000" VISIBLE="TRUE" />
+    </INPUT>
+  </UPDATEFORM>
+
+  <DODAJSTAVKU
+    FILLEXPLORER=""
+          REPORT=""
+          WIDTH="7500"
+          ONSUBMIT=""
+          ONLOAD=""
+          HEIGHT="3600"
+          CAPTION="Prijava nove sirovine"
+          BORDERSTYLE="3"
+          CMD1CAPTION=""
+    CMD2CAPTION="">
+
+    <INPUT TYPE="search" CAPTION="Sirovina*" NAME="Robaid" TOP="500" LEFT="1500" WIDTH="5000" HEIGHT="320" 
+           SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid'" STYLE="1"  
+           ONLOSTFOCUS="select jm.naziv as jm0600 from jm jm inner join roba r on jm.jmid = r.jmid where r.robaid = @@robaid"/>
+    <INPUT TYPE="text" NAME="jm0600" CAPTION="JM*"  TOP="900" LEFT="1500"  WIDTH="1000" STYLE="1" ENABLED="FALSE" HEIGHT="320"/>
+    <INPUT TYPE="number" NAME="kolicina" CAPTION="Količina*" LEFT="1500" TOP="1500" WIDTH="1500" HEIGHT="320" DECIMALS="10" />
+    <INPUT TYPE="checkbox" NAME="rezervni" CAPTION="Rezervna sirovina*" LEFT="1500" TOP="2000" WIDTH="3500" HEIGHT="320" DECIMALS="0" />
+    <INPUT TYPE="button" NAME="Spremi"  CAPTION="Spremi" TOP="2500" LEFT="500" WIDTH="1400" HEIGHT="322" TABINDEX="3"
+      ONCLICK="exec spMPProizvodiGlaIdet @action=5, @mpproizvodiglaid =@@mpproizvodiglaid, @robaid = @@robaid, @kolicina = @@kolicina, @rezervni = @@rezervni#OK"  />
+    <INPUT TYPE="button" NAME="Odustani"  CAPTION="Odustani" TOP="2500" LEFT="2000" WIDTH="1400" HEIGHT="322" TABINDEX="4" ONCLICK="close"  />
+  </DODAJSTAVKU>
+
+  <BRISANJE
+	WIDTH="7500"
+	ONSUBMIT="exec spMPProizvodiGlaIdet @action=15,@MPproizvodiglaid=@@ID,"
+	ONLOAD="exec spMPProizvodiGlaIdet @action=3,@MPproizvodiglaid=@@ID"
+	HEIGHT="3200"
+	CAPTION="Brisanje proizvoda i normativa ?"
+	BORDERSTYLE="3"
+	CMD1CAPTION="Obriši"
+	CMD2CAPTION="Odustani"
+	BOLD="TRUE">
+
+    <INPUT TYPE="text" NAME="naziv" CAPTION="Proizvod" STYLE="1" WIDTH="4500" HEIGHT="320" BOLD="TRUE" ENABLED="FALSE" />
+    <INPUT TYPE="label" NAME="stat" BOLD="TRUE" TOP="1400" LEFT="400" WIDTH="3500" STYLE="1" FORECOLOR="RED" SIZE="10" CAPTION="Jeste li sigurni da želite obisati proizvod i normativ  ? "/>
+
+  </BRISANJE>
+
+
+  <BRISISTAVKU
+    WIDTH="5500"
+    ONSUBMIT="delete mpproizvodidet where mpproizvodidetid = @@stavkenorm"
+    ONLOAD="spMPProizvodiGlaIdet @action = 6, @mpproizvodidetid=@@stavkenorm"
+    HEIGHT="3200"
+    CAPTION="Brisanje stavke"
+    BORDERSTYLE="3"
+    CMD1CAPTION="Obriši"
+    CMD2CAPTION="Odustani" >
+
+    <INPUT TYPE="label" NAME="stat"  LEFT="100" TOP="300" BOLD="TRUE" WIDTH="3500" CAPTION="Jeste li sigurni da želite obrisati stavku ? "/>
+    <INPUT TYPE="number"  KOMENTAR="ova kontrola služi samo da sačuva ID stavke , pozicionirana je tako da se nevidi na formi" NAME="mpproizvodidetid" TOP="5600" LEFT="2200" CAPTION="mpproizvodidetid" WIDTH="2500" HEIGHT="320" ENABLED="FALSE" DECIMALS="0" />
+
+  </BRISISTAVKU>
+
+
+  <STATUSA
+     WIDTH="7500"
+     ONSUBMIT="exec spMPProizvodiGlaIdet @action=76, @MPproizvodiglaid = @@id, @operateriid= @@operateriid,"
+     ONLOAD="exec spMPProizvodiGlaIdet @action=3, @MPproizvodiglaid=@@id"
+     HEIGHT="3200"
+     CAPTION="(De)Aktiviranje proizvoda i normativa ?"
+     BORDERSTYLE="3"
+     CMD1CAPTION="Ažuriraj"
+     CMD2CAPTION="Odustani"
+     BOLD="TRUE"	>
+
+    <INPUT TYPE="text" NAME="naziv" CAPTION="Proizvod" WIDTH="4500" HEIGHT="320" BOLD="TRUE" ENABLED="FALSE" />
+    <INPUT TYPE="date" NAME="datumod" CAPTION="Datum (de)aktiviranja" VALUE="DATE1" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE"/>
+    <INPUT TYPE="label1a" NAME="stat" BOLD="TRUE" TOP="1400" LEFT="400" WIDTH="3500" STYLE="1" FORECOLOR="RED" SIZE="10" CAPTION="OBAVIJEST: U slučaju aktiviranja proizvoda i normativa "/>
+    <INPUT TYPE="label2a" NAME="stat" BOLD="TRUE" TOP="1700" LEFT="1750" WIDTH="3500" STYLE="1" FORECOLOR="RED" SIZE="10" CAPTION="Stari aktivni normativ će biti ugašen. "/>
+	  
+  </STATUSA>
+
+
+	<COPY_FORM
+		WIDTH="7500"
+		ONSUBMIT="exec spMPProizvodiGlaIdet @action=22,@MPproizvodiglaid=@@ID"
+		ONLOAD=""
+		HEIGHT="1500"
+		CAPTION="Kopiranje normativa"
+		BORDERSTYLE="3"
+		CMD1CAPTION="Kopiraj"
+		CMD2CAPTION="Odustani"
+		BOLD="TRUE"
+		FILLEXPLORER="">
+
+		<INPUT TYPE="label" NAME="stat" BOLD="TRUE" TOP="400" LEFT="400" WIDTH="3500" STYLE="1" SIZE="10" CAPTION="Jeste li sigurni da želite kopirati ovaj normativ? "/>
+		
+		
+		
+	</COPY_FORM>
+
+
+	<KOPIRAJSASTAV
+   FILLEXPLORER=""
+   REPORT=""
+   WIDTH="11000"
+   ONLOAD=""
+   ONSUBMIT=""
+   HEIGHT="8000"
+   CAPTION="Izmjena sastavnice na normativima"
+   MASTERDBLCLICK=""
+   BORDERSTYLE="3"
+   CMD1CAPTION=""
+   CMD2CAPTION=""
+   CMD3CAPTION=""
+   CMD4CAPTION=""
+   CMD5CAPTION=""
+   CMD6CAPTION=""
+   NEXTFORM=""  >
+
+		<INPUT TYPE="search" CAPTION="Sirovina sa*" NAME="Robaid" TOP="500" LEFT="1500" WIDTH="5000" HEIGHT="320"
+		  SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid'" STYLE="1"
+		  ONLOSTFOCUS="select 'refresh' as Proizvodisastavnice"/>
+
+
+		<INPUT TYPE="grid"
+		  NAME="Proizvodisastavnice"
+		  REFRESHAFTERCHILD="TRUE"
+		  CHECKBOXVISIBLE="FALSE"
+			    SKIPDEFAULTLOAD="TRUE"
+		  LEFT="1500"
+		TOP="1000"
+		  CAPTION="Proizvodi*"
+		  WIDTH="8000"
+		  HEIGHT="3500"
+		  TABINDEX=""
+		  SQL="spMPProizvodiGlaIdet @action = 100,  @operateriid= @@operateriid, @robaid=@@robaid" >
+			<COLUMN INDEX="" NAME="Količina0900" WIDTH="" CAPTION="Količina" FORMAT="#,##0.000000" VISIBLE="TRUE" />
+		</INPUT>
+
+		<INPUT TYPE="search" CAPTION="Sirovina na*" NAME="Roba2id" TOP="5000" LEFT="1500" WIDTH="5000" HEIGHT="320"
+  SQL="spMPRobaZaMPNG @trazi = '@@searchboxRoba2id'" STYLE="1"
+  ONLOSTFOCUS=""/>
+
+		<INPUT TYPE="button" NAME="Spremi"  CAPTION="Spremi" TOP="5500" LEFT="500" WIDTH="1400" HEIGHT="322" TABINDEX="3"
+	 ONCLICK="spMPProizvodiGlaIdet @action = 101,  @operateriid= @@operateriid, @robaid=@@robaid, @roba2id=@@roba2id#OK"  />
+		<INPUT TYPE="button" NAME="Odustani"  CAPTION="Odustani" TOP="5500" LEFT="2000" WIDTH="1400" HEIGHT="322" TABINDEX="4" ONCLICK="close"  />
+		
+	</KOPIRAJSASTAV>
+
+	<NCPROCJENIK
+   FILLEXPLORER=""
+		 REPORT=""
+		 WIDTH="7500"
+		 ONSUBMIT=""
+		 ONLOAD="if (select ind from mpproizvodigla where mpproizvodiglaid=@@id) &lt;&gt; 1 begin
+		exec spRaiserror 69001, &apos;Normativ nije aktivan i nemože se proknjižiti NC &apos;
+end else begin exec spMPProizvodiGlaIdet @action = 200, @mpproizvodiglaid=@@id end"
+		 HEIGHT="5000"
+		 CAPTION="Ažuriraj NC proizvoda u cjenik"
+   VERSION="1.2"
+		 BORDERSTYLE="3"
+		 CMD1CAPTION=""
+   CMD2CAPTION="">
+
+		<INPUT TYPE="number" NAME="robaid"  DECIMALS="0" TOP="10" CAPTION="" HEIGHT="302" WIDTH="100"   TABINDEX="0" ENABLED="FALSE" VISIBLE="FALSE" />
+
+		<INPUT TYPE="text"   NAME="userid"        CAPTION="Šifra" HEIGHT="500" WIDTH="4997"  TABINDEX="1" ENABLED="FALSE" />
+		<INPUT TYPE="text"   NAME="roba"          CAPTION="Naziv robe" HEIGHT="1000" WIDTH="4997"  TABINDEX="2" ENABLED="FALSE" />
+		<INPUT TYPE="number" NAME="nabcijena"  CAPTION="Nabavna cijena" HEIGHT="1500" WIDTH="1206"  DECIMALS="4" TABINDEX="3" ENABLED="FALSE" />
+		
+		<INPUT TYPE="combo"   NAME="vrcjenik"          CAPTION="Cjenik" HEIGHT="2000" WIDTH="4997"  TABINDEX="4" ENABLED="FALSE" 
+			   SQL="select vrcjenikid, opis from vrcjenik where vrcjenikid=15" />
+		<INPUT TYPE="date"   NAME="datumdok"          CAPTION="Datum važenja" HEIGHT="2500" WIDTH="4997"  TABINDEX="4" ENABLED="FALSE"
+			   />
+		
+		<INPUT TYPE="button" NAME="Spremi"  CAPTION="Spremi" TOP="3500" LEFT="500" WIDTH="1400" HEIGHT="322" TABINDEX="5"
+		  ONCLICK="spProd_Cjenik_NabCijena_Unos @RobaId=@@RobaId, @str=@@vrcjenik, @ind='NC', @DatumOd=@@DatumDok, @OperateriId= @@operateriid, @cijena=@@nabcijena#OK"  />
+		<INPUT TYPE="button" NAME="Odustani"  CAPTION="Odustani" TOP="3500" LEFT="2000" WIDTH="1400" HEIGHT="322" TABINDEX="6" ONCLICK="close"  />
+	</NCPROCJENIK>
+
+</PROJECT>
+ 

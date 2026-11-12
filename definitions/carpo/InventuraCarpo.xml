@@ -1,0 +1,1433 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<form name="frmMaster" type="master" caption="Inventure">
+		<event type="init">
+			<action type="variable value">
+				<parameter name="Global.Conflict" value="0"/>
+			</action>
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Vremenska podjela"/>
+				<comboitem value="Status"/>
+				<comboitem value="Operateri"/>
+				<comboitem value="Odgovorne osobe"/>
+				<event type="valuechanged" raiseonload="True">
+					<action type="variable value">
+						<parameter name="global.filter" value="#filter"/>
+					</action>
+				</event>
+			</lookup>
+			<tree name="tree" key="Id">
+				<data command="VremenskaPodjela" type="integrated" if="#filter==Vremenska podjela"/>
+				<data command="spCKntInventuraTree" if="#filter==Operateri">
+					<parameter name="@Action" value="Operateri"/>
+				</data>
+				<data command="spCKntInventuraTree" if="#filter==Odgovorne osobe">
+					<parameter name="@Action" value="OO"/>
+				</data>
+				<data command="spCKntInventuraTree" if="#filter==Status">
+					<parameter name="@Action" value="Status"/>
+				</data>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava"/>
+				</event>
+				<fields>
+					<field name="Name"/>
+				</fields>
+			</tree>
+			<grid name="grdGlava" type="master" key="SktInventuraGlaId" dataname="~dtMaster">
+				<fields>
+					<field name="DatumDok" caption="Datum inventure"/>
+					<field name="SkladisteNaziv" caption="Skladište"/>
+					<field name="tipStr" caption="Tip"/>
+					<field name="KlasaNaziv" caption="Klasifikacija"/>
+					<field name="StatusStr" caption="Status"/>
+					<field name="Inicijali" caption="Operater"/>
+					<field name="OsobaNaziv" caption="Odgovorna osoba"/>
+					<field name="DatumPopisa" caption="Datum popisa"/>
+					<field name="OrgShemaNaziv" caption="OrgShema"/>
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control enable" value="#btnIzmijeni, #btnObrisi, #btnZakljuci, #btnPonZak" if="#grdGlava.rowcount!=0"/>
+					<action type="control disable" value="#btnIzmijeni, #btnObrisi, #btnZakljuci, #btnPonZak" else=""/>
+					<action type="control disable" value="#btnObrisi, #btnZakljuci" if="#grdGlava.@Status==2"/>
+					<action type="control enable" value="#btnObrisi, #btnZakljuci" else=""/>
+					<action type="variable value">
+						<parameter name="SktInventuraGlaId" value="#grdGlava.@SktInventuraGlaId"/>
+					</action>
+					<action type="control populate" value="#grdDetail"/>
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmStavke">
+						<parameter name="SktInventuraGlaId" value="#grdGlava.@SktInventuraGlaId"/>
+					</action>
+					<action type="control populate keepfocus" value="#grdGlava"/>
+				</event>
+				<styles>
+					<style name="fontcolor" value="#008000" if="@Status==2"/>
+				</styles>
+			</grid>
+			<grid name="grdDetail" dataname="~dtDetail">
+				<fields>
+					<field name="UserId" caption="Roba"/>
+					<field name="RobaNaziv" caption="Naziv"/>
+					<field name="JMNaziv" caption="JM"/>
+					<field name="KKvalGla_broj" caption="Kontingent"/>
+					<field name="KolicinaStvarnaKorigirana" caption="Popisana kol."/>
+					<field name="DatumPopisa" caption="Datum popisa"/>
+					<field name="KolicinaPeriodUlaz" caption="Ulaz kol."/>
+					<field name="KolicinaPeriodIzlaz" caption="Izlaz kol."/>
+					<field name="KolicinaStvarna" caption="Stvarna kol."/>
+					<field name="KolicinaKnjizna" caption="Knjižna kol."/>
+					<field name="Cijena" caption="Cijena"/>
+					<field name="Klasifikacija" caption="Klasifikacija"/>
+					<field name="konto" caption="Konto"/>
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="UNESI" type="add" function="Unos">
+					<event type="click">
+						<action type="form open" value="frmUnos"/>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit" function="Izmjena">
+					<event type="click">
+						<action type="form open" value="frmStavke">
+							<parameter name="SktInventuraGlaId" value="#grdGlava.@SktInventuraGlaId"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava"/>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete" function="Brisanje">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati inventuru od '{#grdGlava.@DatumDok}'?"/>
+						<action type="datarun scalar" value="~dtCheckDetail">
+							<parameter name="CD"/>
+						</action>
+						<action type="confirm" value="Na inventuri postoje popisane količine. Želite li nastaviti s brisanjem?" if="$CD==1"/>
+						<action type="datarun nonquery" value="~dtDelete"/>
+						<action type="control populate" value="#grdGlava"/>
+					</event>
+				</button>
+				<button name="btnZakljuci" caption="ZAKLJUČI" function="Zakljucak">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite zaključiti inventuru?"/>
+						<action type="datarun nonquery" value="~dtZakljuci"/>
+						<action type="control populate keepfocus" value="#grdGlava"/>
+					</event>
+				</button>
+				<button name="btnPonZak" caption="PONIŠTI ZAKLJUČAK" function="PonistiZakljucak">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite poništiti zaključak inventure?"/>
+						<action type="datarun nonquery" value="~dtPonisti"/>
+						<action type="control populate keepfocus" value="#grdGlava"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtCheckDetail" command="spSktInventuraDetQueryCarpo">
+				<parameter name="@Action" value="CD"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+			</data>
+			<data command="spSktInventuraGlaQueryCarpo" name="dtMaster">
+				<parameter name="@Action" value="Vremenska podjela" if="global.$filter==Vremenska podjela"/>
+				<parameter name="@Action" value="Status" if="global.$filter==Status"/>
+				<parameter name="@Action" value="Operateri" if="global.$filter==Operateri"/>
+				<parameter name="@Action" value="Odgovorne osobe" if="global.$filter==Odgovorne osobe"/>
+				<parameter name="@DatumOd" value="#tree.@DatumOd" if="global.$filter==Vremenska podjela"/>
+				<parameter name="@DatumDo" value="#tree.@DatumDo" if="global.$filter==Vremenska podjela"/>
+				<parameter name="@Status" value="#tree.@Status" if="global.$filter==Status"/>
+				<parameter name="@OperateriId" value="#tree.@Id" if="global.$filter==Operateri"/>
+				<parameter name="@OsobeId" value="#tree.@Id" if="global.$filter==Odgovorne osobe"/>
+			</data>
+			<data command="spSktInventuraDetQueryCarpo" name="dtDetail">
+				<parameter name="@Action" value="Detalji"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+			</data>
+			<data name="dtZakljuci" command="spSktInventuraGlaAzurCarpo" timeout="10">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@Id" value="$SktInventuraGlaId"/>
+			</data>
+			<data name="dtPonisti" command="spSktInventuraGlaAzurCarpo" timeout="10">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@Id" value="$SktInventuraGlaId"/>
+			</data>
+			<data name="dtDelete" command="spSktInventuraGlaAzurCarpo" timeout="10">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@Id" value="$SktInventuraGlaId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUnos" caption="Inventura - skladišna" width="1400">
+		<layout textposition="left" itemspadding="3" focusdirection="downthenacross">
+			<group rows="3" cols="2" row="1" col="1" spacing="3">
+				<item caption="Skladište:" row="1" col="1" fontsizedelta="1">
+					<comboedit name="cmbSkladiste" required="True" valuefield="SkladisteId" displayfield="Opis" dataname="Global.~dtSkladiste"/>
+				</item>
+				<item caption="Datum inventure:" row="1" col="2" fontsizedelta="1">
+					<dateedit name="datDatumDok" required="True" value="now"/>
+				</item>
+				<item caption="OrgShema:" row="2" col="1" fontsizedelta="1">
+					<comboedit name="cmbOrgShema" required="True" valuefield="OrgShemaId" displayfield="Naziv" dataname="Global.~dtOrgShema"/>
+				</item>
+				<item caption="Klasifikacija:" row="2" col="2" fontsizedelta="1">
+					<combotreeedit name="cmbKlasaRobe" valuefield="ID" displayfield="Naziv" dataname="Global.~dtKlasaRobe">
+						<event type="rowclick">
+							<action type="disallow" if="#cmbKlasaRobe.@ID==-999999"/>
+						</event>
+					</combotreeedit>
+				</item>
+				<item caption="Odgovorna osoba:" row="3" col="1" fontsizedelta="1">
+					<comboedit name="cmbOsobe" required="True" valuefield="OsobeId" displayfield="Naziv" dataname="Global.~dtOdgovornaOsoba"/>
+				</item>
+				<item caption="Datum popisa:" row="3" col="2" fontsizedelta="1">
+					<dateedit name="datDatumPopisa" required="True" value="now"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="ODUSTANI" type="cancel" dock="right" tabindex="1"/>
+				<button name="btnStavke" caption="STAVKE >>" dock="right" tabindex="0">
+					<event type="click">
+						<action type="validate">
+							<action type="datarun scalar" value="Global.~dtOtvori">
+								<parameter name="SktInventuraGlaId"/>
+							</action>
+							<action type="datarun reader" value="Global.~dtGetKey"/>
+							<action type="variable value">
+								<parameter name="Global.ID" value="Global.~dtGetKey.@ID"/>
+							</action>
+							<action type="control focus" value="parent.#tree">
+								<parameter value="Global.$ID"/>
+							</action>
+							<action type="control populate" value="parent.#grdGlava"/>
+							<action type="control focus" value="parent.#grdGlava">
+								<parameter value="$SktInventuraGlaId"/>
+							</action>
+							<action type="control populate" value="parent.#grdDetail"/>
+							<action type="form close"/>
+							<action type="form open" value="frmStavke">
+								<parameter name="SktInventuraGlaId" value="$SktInventuraGlaId"/>
+								<parameter name="Indikator" value="1"/>
+							</action>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmStavke" caption="{parent.#grdGlava.@tipStr}" width="900" height="700" saveformsize="false">
+		<!--Indikator 0 izmjena, 1 unos-->
+		<event type="init">
+			<action if="$Indikator==1">
+				<action type="datarun reader" value="~dtPraviCjenik"/>
+				<action type="variable value">
+					<parameter name="PC" value="~dtPraviCjenik.@VrCjenikId"/>
+				</action>
+				<action type="datarun nonquery" value="~dtCjenikSklad"/>
+			</action>
+			<action type="datarun reader" value="~dtDohvati"/>
+			<action type="variable value">
+				<parameter name="global.DatumDok" value="~dtDohvati.@DatumDok"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control disable" value="#btnStavkeIzmijeni, #btnStavkePrijenos" if="Indikator==1"/>
+			<action type="control disable" value="#btnStavkeDonosRob" if="parent.#grdGlava.@Status==0||parent.#grdGlava.@Status==1"/>
+			<action type="control disable" value="#btnStavkeDodaj,#btnStavkeIzmijeni,#btnStavkePopuniPopis,#btnStavkeZakljuci,#cmbOsobe,#cmbSkladiste,#datDatumDok,#datDatumPopisa,#memGlava" if="parent.#grdGlava.@Status==2"/>
+			<action type="control populate" value="#grdRoba,#grdInvLista,#grdInvRazlike"/>
+			<action type="control disable" value="#btnStavkeIzmijeni,#btnStavkeZakljuci" if="#grdRoba.rowcount==0"/>
+		</event>
+		<layout textposition="left" itemspadding="3">
+			<group cols="1" rows="2" groupbordervisible="false">
+				<group cols="2" rows="3" col="1" row="1">
+					<item caption="Skladište:" row="1" col="1">
+						<comboedit name="cmbSkladiste" datavalue="~dtDohvati.@SkladisteId" valuefield="SkladisteId" displayfield="Opis" dataname="Global.~dtSkladiste" enabled="false" required="true"/>
+					</item>
+					<item caption="Datum inventure:" row="1" col="2">
+						<dateedit name="datDatumDok" datavalue="~dtDohvati.@DatumDok" required="true"/>
+					</item>
+					<item caption="OrgShema:" row="2" col="1">
+						<comboedit name="cmbOrgShema" datavalue="~dtDohvati.@OrgShemaId" required="true" valuefield="OrgShemaId" displayfield="Naziv" dataname="Global.~dtOrgShema" enabled="false"/>
+					</item>
+					<item caption="Klasifikacija:" row="2" col="2">
+						<combotreeedit name="cmbKlasaRobe" datavalue="~dtDohvati.@KlasaId" valuefield="Id" displayfield="Naziv" dataname="Global.~dtKlasaRobe" enabled="false"/>
+					</item>
+					<item caption="Odgovorna osoba:" row="3" col="1">
+						<comboedit name="cmbOsobe" datavalue="~dtDohvati.@OsobeId" required="true" valuefield="OsobeId" displayfield="Naziv" dataname="Global.~dtOdgovornaOsoba"/>
+					</item>
+					<item caption="Datum popisa:" row="3" col="2">
+						<dateedit name="datDatumPopisa" datavalue="~dtDohvati.@DatumPopisa" enabled="false" required="true"/>
+					</item>
+				</group>
+				<group rows="7" cols="2" row="2" col="1" spacing="3" groupbordervisible="false">
+					<columnsdefinition>
+					<!--dobar trik sa stupcima-->
+						<column size="100%" position="1"/>
+						<column size="120" position="2"/>
+					</columnsdefinition>
+					<tabs name="tabs" row="1" col="1" padding="4" rowspan="7">
+						<!--stavke-->
+						<group name="tabGlavni" rows="2" cols="7" caption="Popisna lista inventure">
+							<rowsdefinition>
+								<row position="1" size="90%"/>
+								<row position="2" size="10%"/>
+							</rowsdefinition>
+							<item row="1" col="1" colspan="7" highlight="False">
+								<grid name="grdRoba" dataname="~dtGrdRoba" key="SktInventuraDetId" savelayout="true">
+									<event type="doubleclick">
+										<action if="parent.#grdGlava.@Status!=2">
+											<action type="form open" value="frmRobaIzmj">
+												<parameter name="IndikatorRoba" value="0"/>
+												<parameter name="SktInventuraDetId" value="#grdRoba.@SktInventuraDetId"/>
+												<parameter name="SktInventuraGlaId" value="#grdRoba.@SktInventuraGlaId"/>
+												<parameter name="RobaId" value="#grdRoba.@RobaId"/>
+											</action>
+											<action type="datarun nonquery" value="Global.~dtEmptyTemp" if="dialogresult==cancel"/>
+										</action>
+									</event>
+									<fields>
+										<field name="UserId" caption="Roba"/>
+										<field name="RobaNaziv" caption="Naziv"/>
+										<field name="JMNaziv" caption="JM"/>
+										<field name="KKvalGla_broj" caption="Kontingent"/>
+										<field name="KolicinaStvarnaKorigirana" caption="Popisana kol." editable="true" clearvalueonprint="true"/>
+										<field name="DatumPopisa" caption="Datum popisa" editable="true" edittype="date" clearvalueonprint="true"/>
+										<field name="KolicinaPeriodUlaz" caption="Ulaz kol."/>
+										<field name="KolicinaPeriodIzlaz" caption="Izlaz kol."/>
+										<field name="KolicinaStvarna" caption="Stvarna kol."/>
+										<field name="KolicinaKnjizna" caption="Knjižna kol."/>
+										<field name="Cijena" caption="Cijena"/>
+										<field name="Klasifikacija" caption="Klasifikacija"/>
+										<field name="konto" caption="Konto"/>
+									</fields>
+									<event type="showingeditor">
+										<action type="editor allow" value="true" if="parent.#grdGlava.@Status!=2"/>
+									</event>
+									<event type="cellvaluechanged">
+										<action type="datarun nonquery" value="~dtUpdateRoba"/>
+										<action type="control populate" value="#grdRoba,#grdInvLista,#grdInvRazlike"/>
+									</event>
+									<print headerscale="false" imagepath="\\SPIN-SQL\JupiterSrv\Carpo\DodatniFooter.png" header="Popisna lista inventure\n\nSkladište: {parent.#grdGlava.@SkladisteNaziv}\nDatum: {parent.#grdGlava.@DatumPopisa::dd.MM.yyyy}\nKlasifikacija: {#cmbKlasaRobe.@Naziv}" headeralign="center"/>
+									<styles>
+										<style name="fontcolor" value="red" if="#grdRoba.@Cijena==0||#grdRoba.@Cijena&lt;0"/>
+									</styles>
+								</grid>
+							</item>
+							<item row="2" col="3">
+								<button name="btnStavkeIspisi" caption="Ispiši popisnu listu" dock="right">
+									<event type="click">
+										<action type="control printcontrol" value="#grdRoba"/>
+									</event>
+								</button>
+							</item>
+							<item row="2" col="1">
+								<button caption="Dodaj" name="btnStavkeDodaj">
+									<event type="click">
+										<action type="form open" value="frmRoba">
+											<parameter name="IndikatorRoba" value="1"/>
+											<parameter name="SktInventuraGlaId" value="$SktInventuraGlaId"/>
+											<parameter name="DatumPopisa" value="#datDatumPopisa"/>
+										</action>
+										<action type="control populate" value="#grdRoba,#grdInvLista,#grdInvRazlike"/>
+										<action type="control enable" value="#btnStavkeIzmijeni,#btnStavkeZakljuci" if="#grdRoba.rowcount!=0"/>
+										<action type="datarun nonquery" value="Global.~dtEmptyTemp" if="dialogresult==cancel"/>
+									</event>
+								</button>
+							</item>
+							<item row="2" col="2">
+							<button caption="Izmijeni" name="btnStavkeIzmijeni">
+								<event type="click">
+									<action type="form open" value="frmRobaIzmj">
+										<parameter name="IndikatorRoba" value="0"/>
+										<parameter name="SktInventuraDetId" value="#grdRoba.@SktInventuraDetId"/>
+										<parameter name="SktInventuraGlaId" value="#grdRoba.@SktInventuraGlaId"/>
+										<parameter name="RobaId" value="#grdRoba.@RobaId"/>
+									</action>
+									<action type="datarun nonquery" value="Global.~dtEmptyTemp" if="dialogresult==cancel"/>
+								</event>
+								</button>
+							</item>
+						</group>
+						<!--inventurna lista-->
+						<group name="tabLista" rows="2" cols="7" caption="Inventurna lista" readonly="true">
+							<rowsdefinition>
+								<row position="1" size="90%"/>
+								<row position="2" size="10%"/>
+							</rowsdefinition>
+							<item row="1" col="1" colspan="7">
+								<grid name="grdInvLista" dataname="~dtInvLista" showfooter="true" savelayout="true">
+									<fields>
+										<field name="Klasifikacija" caption="Klasa"/>
+										<field name="UserId" caption="Roba" showtotalsum="false"/>
+										<field name="RobaNaziv" caption="Naziv"/>
+										<field name="JMNaziv" caption="JM"/>
+										<!-- <field name="" caption="Kontigent"/> -->
+										<field name="kolicinastvarnakorigirana" caption="Popisana količina"/>
+										<field name="datumpopisa" caption="Datum popisa"/>
+										<field name="kolicinaperiodulaz" caption="Ulaz količina"/>
+										<field name="kolicinaperiodizlaz" caption="Izlaz količina"/> 
+										<!--mozda obrnuto s kolicinastvarnakorigirana-->
+										<field name="kolicinastvarna" caption="Stvarna količina"/>
+										<field name="kolicinaknjizna" caption="Knjižna količina"/>
+										<field name="kolvisak" caption="Višak količina"/>
+										<field name="kolmanjak" caption="Manjak količina"/>
+										<field name="cijena" caption="Cijena"/>
+										<field name="vrijednoststvarna" caption="Stvarna vrijednost"/>
+										<field name="vrijednostknjizna" caption="Knjižna vrijednost"/>
+										<field name="vrijednostvisak" caption="Višak vrijednost"/>
+										<field name="vrijednostmanjak" caption="Manjak vrijednost"/>
+										<field name="konto" caption="Konto"/>
+									</fields>
+									<print headerscale="false" imagepath="\\SPIN-SQL\JupiterSrv\Carpo\DodatniFooter.png" header="Inventurna lista - skladišna\n\nSkladište: {parent.#grdGlava.@SkladisteNaziv}\nDatum: {parent.#grdGlava.@DatumPopisa::dd.MM.yyyy}\nKlasifikacija: {#cmbKlasaRobe.@Naziv}" headeralign="center"/>
+									<styles>
+										<style name="fontcolor" value="blue" if="#grdInvLista.@kolvisak&gt;0"/>
+										<style name="fontcolor" value="red" if="#grdInvLista.@kolmanjak&gt;0"/>
+									</styles>
+								</grid>
+							</item>
+							<item row="2" col="4">
+								<button name="btnInvListaIspisi" caption="Ispiši inventurnu listu" dock="right">
+									<event type="click">
+										<action type="control printcontrol" value="#grdInvLista"/>
+									</event>
+								</button>
+							</item>
+						</group>
+						<!--inventurne razlike-->
+						<group name="tabRazlike" rows="2" cols="7" caption="Inventurne razlike">
+							<rowsdefinition>
+								<row position="1" size="90%"/>
+								<row position="2" size="10%"/>
+							</rowsdefinition>
+							<item row="1" col="1" colspan="7">
+								<grid name="grdInvRazlike" dataname="~dtInvRazlike" showfooter="true" savelayout="true">
+									<fields>
+										<field name="Klasifikacija" caption="Klasa"/>
+										<field name="UserId" caption="Roba" showtotalsum="false"/>
+										<field name="RobaNaziv" caption="Naziv"/>
+										<field name="JMNaziv" caption="JM"/>
+										<!-- <field name="" caption="Kontigent"/> -->
+										<field name="kolicinastvarnakorigirana" caption="Popisana količina"/>
+										<field name="DatumPopisa" caption="Datum popisa"/>
+										<field name="kolicinaperiodulaz" caption="Ulaz količina"/>
+										<field name="kolicinaperiodizlaz" caption="Izlaz količina"/>
+										<field name="kolicinastvarna" caption="Stvarna količina"/>
+										<field name="kolicinaknjizna" caption="Knjižna količina"/>
+										<field name="kolvisak" caption="Višak količina"/>
+										<field name="kolmanjak" caption="Manjak količina"/>
+										<field name="cijena" caption="Cijena"/>
+										<field name="vrijednoststvarna" caption="Stvarna vrijednost"/>
+										<field name="vrijednostknjizna" caption="Knjižna vrijednost"/>
+										<field name="vrijednostvisak" caption="Višak vrijednost"/>
+										<field name="vrijednostmanjak" caption="Manjak vrijednost"/>
+										<field name="konto" caption="Konto"/>
+									</fields>
+									<print headerscale="false" imagepath="\\SPIN-SQL\JupiterSrv\Carpo\DodatniFooter.png" header="Inventurne razlike - skladišna inventura\n\nSkladište: {parent.#grdGlava.@SkladisteNaziv}\nDatum: {parent.#grdGlava.@DatumPopisa::dd.MM.yyyy}\nKlasifikacija: {#cmbKlasaRobe.@Naziv}" headeralign="center"/>
+									<styles>
+										<style name="fontcolor" value="blue" if="#grdInvRazlike.@kolvisak&gt;0"/>
+										<style name="fontcolor" value="red" if="#grdInvRazlike.@kolmanjak&gt;0"/>
+									</styles>
+								</grid>
+							</item>
+							<item row="2" col="4">
+								<button name="btnInvRazlikeIspisi" caption="Ispiši inventurne razlike" dock="right">
+									<event type="click">
+										<action type="control printcontrol" value="#grdInvRazlike"/>
+									</event>
+								</button>
+							</item>
+						</group>
+						<!--napomena-->
+						<group caption="Napomena" rows="1" cols="1">
+							<item row="1" col="1">
+								<memoedit name="memGlava" datavalue="~dtDohvati.@Memo"/>
+							</item>
+						</group>
+					</tabs>
+					<group row="1" col="2" rowspan="7" rows="14" cols="1" groupbordervisible="false">
+						<item row="1" col="1">
+							<button caption="Priprema" name="btnStavkePriprema" enabled="false">
+								<event type="click">
+									<action type="message" value="poruka"/>
+									<action type="form open" value="frmPriprema"/>
+								</event>
+							</button>
+						</item>
+						<item row="2" col="1">
+							<button caption="Prijenos" name="btnStavkePrijenos" enabled="false"></button>
+						</item>
+						<item row="3" col="1">
+							<button caption="Donos iz skla. posl." name="btnStavkeDonosSkla" function="DonosSkla">
+								<event type="click">
+									<action type="form open" value="frmDonosSkla"/>
+									<action type="control populate" value="#grdRoba,#grdInvLista,#grdInvRazlike"/>
+									<action type="control enable" value="#btnStavkeIzmijeni,#btnStavkeZakljuci" if="#grdRoba.rowcount!=0&amp;&amp;parent.#grdGlava.@Status==0"/>
+								</event>
+							</button>
+						</item>
+						<item row="4" col="1">
+							<button caption="Donos iz rob. mat. posl." name="btnStavkeDonosRob" function="DonosRob">
+								<event type="click">
+									<action type="datarun scalar" value="~dtNezatvoreni">
+										<parameter name="Nezatvoreni"/>
+									</action>
+									<action if="$Nezatvoreni!=1">
+										<action type="datarun nonquery" value="~dtDonosRob"/>
+										<action type="form caption" value="Robno materijalna inv."/>
+										<action type="control populate" value="#grdRoba,#grdInvLista,#grdInvRazlike"/>
+										<action type="message" value="'Donos iz robno materijalnog poslovanja dovršen!'"/>
+									</action>
+									<action if="$Nezatvoreni==1">
+										<action type="message" value="'Za datum inventure i skladište postoje nezatvoreni izlazi. Potrebno ih je zatvoriti kako bi mogli napraviti donos iz robno materijalnog poslovanja!'"/>
+									</action>
+								</event>
+							</button>
+						</item>
+						<item row="5" col="1">
+							<button caption="Popuni popis. kol." name="btnStavkePopuniPopis" function="DonosKnjizKol">
+								<event type="click">
+									<action type="form open" value="frmPopisKol">
+										<parameter name="SktInventuraGlaId" value="$SktInventuraGlaId"/>
+									</action>
+								</event>
+							</button>
+						</item>
+						<item row="8" col="1" rowspan="7"/>
+					</group>
+				</group>					
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnStavkeSpremi" caption="Spremi" dock="right">
+					<event type="click">
+						<action type="validate">
+							<action if="parent.#grdGlava.@Status!=2">
+								<action type="form open" value="frmPromDatInv" if="#datDatumDok!=global.$DatumDok"/>
+								<action type="datarun nonquery" value="~dtSpremi"/>
+								<action type="control populate keepfocus" value="parent.#grdGlava"/>
+								<action type="control populate" value="parent.#grdDetail"/>
+							</action>
+							<action type="form close" if="#datDatumDok==global.$DatumDok"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnStavkeZakljuci" caption="Zaključi" dock="right" function="Zakljucak">
+				<event type="click">
+					<action type="validate">
+						<action type="datarun nonquery" value="~dtSpremi"/>
+						<action type="datarun nonquery" value="~dtZakljuci"/>
+						<action type="control enable" value="#btnStavkeDonosSkla,#btnStavkeDonosRob"/>
+						<action type="control disable" value="#btnStavkeDodaj,#btnStavkeIzmijeni,#btnStavkePopuniPopis,#btnStavkeZakljuci,#cmbKlasaRobe,#cmbOsobe,#cmbSkladiste,#datDatumDok,#datDatumPopisa,#memGlava"/>
+						<action type="control populate keepfocus" value="parent.#grdGlava"/>
+						<action type="control populate" value="parent.#grdDetail"/>
+					</action>
+				</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtNezatvoreni" command="spNezatvoreniIzlazDonos">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@SkladisteId" value="#cmbSkladiste"/>
+				<parameter name="@DatumDo" value="#datDatumDok"/>
+				<parameter name="@KlRoba" value="#cmbKlasaRobe"/>
+			</data>
+			<data name="dtPraviCjenik" command="spSktInventuraGlaQueryCarpo">
+				<parameter name="@Action" value="PC"/>
+				<parameter name="@ID" value="$SktInventuraGlaId"/>
+			</data>
+			<data name="dtCjenikSklad" command="spSktInventuraDetAzurCarpo" timeout="10">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@VrCjenikId" value="$PC"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+			</data>
+			<data name="dtSpremi" command="spSktInventuraGlaAzurCarpo" timeout="10">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$SktInventuraGlaId"/>
+				<parameter name="@DatumDok" value="#datDatumDok"/>
+				<parameter name="@OsobeId" value="#cmbOsobe"/>
+				<parameter name="@Memo" value="#memGlava"/>
+			</data>
+			<data name="dtZakljuci" command="spSktInventuraGlaAzurCarpo" timeout="10">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@Id" value="$SktInventuraGlaId"/>
+			</data>
+			<data name="dtSkladiste" command="spSkladisteQueryCarpo">
+				<parameter name="@Action" value="0"/>
+			</data>
+			<data name="dtOdgovornaOsoba" command="spOsobeQueryCarpo">
+				<parameter name="@Action" value="16" />
+			</data>
+			<data name="dtDohvati" command="spSktInventuraGlaQueryCarpo">
+				<parameter name="@Action" value="Inventura"/>
+				<parameter name="@ID" value="$SktInventuraGlaId"/>
+			</data>
+			<data name="dtGrdRoba" command="spCSktInventuraDetQuery">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+			</data>
+			<data name="dtNapomena" command="spCSktInventuraDetQuery">
+				<parameter name="@Action" value="5"/>
+			</data>
+			<data name="dtUpdateRoba" command="spSktInventuraDetAzurCarpo" timeout="10">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="#grdRoba.@SktInventuraDetId"/>
+				<parameter name="@RobaId" value="#grdRoba.@RobaId"/>
+				<parameter name="@KolicinaStvarna" value="#grdRoba.@KolicinaStvarnaKorigirana" type="decimal"/>
+				<parameter name="@KolicinaKnjizna" value="#grdRoba.@KolicinaKnjizna"/>
+				<parameter name="@Cijena" value="#grdRoba.@Cijena"/>
+				<parameter name="@DatumPopisa" value="#grdRoba.@DatumPopisa"/>
+			</data>
+			<data name="dtInvLista" command="spCSktInventuraDetQuery">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+			</data>
+			<data name="dtInvRazlike" command="spCSktInventuraDetQuery">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+			</data>
+			<data name="dtDonosRob" command="spSktInventuraDetAzurCarpo" timeout="10">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmRoba" caption="Stavka inventure" height="400" width="600">
+		<event type="load">
+			<action type="control value" value="#datDatum">
+				<parameter value="$DatumPopisa"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control populate" value="#grdSerBroj"/>
+		</event>
+		<layout textposition="left" itemspadding="3">
+			<group rows="7" cols="8">
+				<columnsdefinition>
+					<column position="1" size="25%"/>
+					<column position="2" size="30"/>
+					<column position="3" size="25%"/>
+					<column position="4" size="30"/>
+					<column position="5" size="25%"/>
+					<column position="6" size="30"/>
+					<column position="7" size="25%"/>
+					<column position="8" size="30"/>
+				</columnsdefinition>
+				<item row="1" col="1" textvisible="False" fontsizedelta="1" caption="Roba:" colspan="8">
+					<searchedit name="srcRoba" dataname="~dtRoba" fontsizedelta="1" fontbold="True" entermovenextcontrol="False" fieldtext="NazivId" fieldvalue="RobaId" required="True">
+						<event type="valuechanged" raiseonload="False">
+							<action type="validate" if="#srcRoba!=null">
+								<action type="datarun reader" value="~dtProvjeriStanje"/>
+								<action type="control value" value="#txtZatecenoPak">
+									<parameter value="~dtProvjeriStanje.@KolicinaPak"/>
+								</action>
+								<action type="control value" value="#txtZateceno">
+									<parameter value="~dtProvjeriStanje.@Kolicina"/>
+								</action>
+								<action type="variable value">
+									<parameter name="Faktor" value="#srcRoba.@Faktor_Id"/>
+								</action>
+								<action type="variable value">
+									<parameter name="FaktorFix" value="#srcRoba.@FaktorFix_Id"/>
+								</action>
+								<action type="variable value">
+									<parameter name="BrDecimalaDodJM" value="#srcRoba.@BrDecimala_DodJmId"/>
+								</action>
+								<action type="variable value">
+									<parameter name="BrDecimalaJM" value="#srcRoba.@BrDecimala_JmId"/>
+								</action>
+								<action type="control enable" value="#txtKolicina" if="#srcRoba.@DefaultInd_Id==1"/>
+								<action type="control disable" value="#txtKolicina" if="#srcRoba.@DefaultInd_Id!=1"/>
+								<action type="control value" value="#lblKolicinaPakJM, #lblZatecenoPakJM">
+									<parameter value="#srcRoba.@JM"/>
+								</action>
+								<action type="control value" value="#lblKolicinaJM, #lblZatecenoJM">
+									<parameter value="#srcRoba.@Dodatna JM"/>
+								</action>
+								<action type="control enable" value="#txtSerBroj, #grdSerBroj"/>
+							</action>
+							<action type="control enable" value="#srcKontingent" if="#srcRoba.@KKvalObavezan_Id==1"/>
+							<action type="control disable" value="#srcKontingent" if="#srcRoba.@KKvalObavezan_Id!=1"/>
+							<action type="variable value">
+								<parameter name="Ind_Kol" value="1"/>
+							</action>
+							<action type="datarun reader" value="~dtKolicina"/>
+							<action type="control value" value="#txtKolicina">
+								<parameter value="~dtKolicina.@Kolicina"/>
+							</action>
+							<action type="control attribute" value="#txtZatecenoPak, #txtKolicinaPak">
+								<parameter name="format" value="n{#srcRoba.@BrDecimala_JmId}"/>
+							</action>
+							<action type="control attribute" value="#txtZateceno, #txtKolicina">
+								<parameter name="format" value="n{#srcRoba.@BrDecimala_DodJmId}"/>
+							</action>
+						</event>
+					</searchedit>
+				</item>
+				<item row="2" col="1" caption="Zatečeno:" textposition="top">
+					<textedit name="txtZatecenoPak" value="0" format="n2" fontsizedelta="1" fontbold="True" enabled="false"/>
+				</item>
+				<item row="2" col="2" padding="0,0,20,0">
+					<labeledit name="lblZatecenoPakJM" value="kom"/>
+				</item>
+				<item row="2" col="3" caption="Količina:" textposition="top">
+					<textedit name="txtKolicinaPak" value="0" format="n2" fontsizedelta="1" fontbold="True" type="decimal">
+						<event type="valuechanged" raiseonload="False">
+							<action type="variable value">
+								<parameter name="Ind_Kol" value="1"/>
+							</action>
+							<action type="datarun reader" value="~dtKolicina"/>
+							<action type="control value" value="#txtKolicina">
+								<parameter value="~dtKolicina.@Kolicina"/>
+							</action>
+						</event>
+					</textedit>
+				</item>
+				<item row="2" col="4" padding="0,0,20,0">
+					<labeledit name="lblKolicinaPakJM" value="kom"/>
+				</item>
+				<item row="2" col="5" caption="Zatečeno d.:" textposition="top">
+					<textedit name="txtZateceno" value="0" format="n2" fontsizedelta="1" fontbold="True" enabled="false"/>
+				</item>
+				<item row="2" col="6" padding="0,0,20,0">
+					<labeledit name="lblZatecenoJM" value="kom"/>
+				</item>
+				<item row="2" col="7" caption="Količina d.:" textposition="top">
+					<textedit name="txtKolicina" value="0" format="n2" fontsizedelta="1" fontbold="True" type="decimal">
+						<event type="valuechanged" raiseonload="False">
+							<action type="variable value">
+								<parameter name="Ind_Kol" value="0"/>
+							</action>
+							<action type="datarun reader" value="~dtKolicina" if="$FaktorFix==1"/>
+							<action type="control value" value="#txtKolicinaPak" if="$FaktorFix==1">
+								<parameter value="~dtKolicina.@Kolicina"/>
+							</action>
+						</event>
+					</textedit>
+				</item>
+				<item row="2" col="8" padding="0,0,20,0">
+					<labeledit name="lblKolicinaJM" value="kom"/>
+				</item>
+				<item row="3" col="1" caption="Kontingent:" colspan="8">
+					<searchedit name="srcKontingent" dataname="~dtKontingent" fieldtext="Broj" fieldvalue="KKvalGlaId" enabled="false"/>
+				</item>
+				<item row="4" col="1" caption="Cijena:" colspan="8">
+					<textedit name="txtCijena" value="0" format="n2"/>
+				</item>
+				<item row="5" col="1" caption="Datum popisa:" colspan="8">
+					<dateedit name="datDatum" value="$DatumPopisa"/>
+				</item>
+				<item row="6" col="1" caption="Serijski broj:" textposition="left" colspan="8">
+					<textedit name="txtSerBroj" fontsizedelta="1" entermovenextcontrol="False" enabled="False">
+						<event type="keydown" value="13">
+							<action type="datarun nonquery" value="~dtDodajSerTemp"/>
+							<action type="control value" value="#txtSerBroj">
+								<parameter value=""/>
+							</action>
+							<action type="control populate" value="#grdSerBroj"/>
+						</event>
+					</textedit>
+				</item>
+				<item row="7" col="1" textposition="left" colspan="8">
+					<grid name="grdSerBroj" dataname="~dtSerTemp" enabled="False">
+						<fields>
+							<field name="SerBroj" editable="true"/>
+						</fields>
+						<event type="showingeditor">
+							<action type="editor allow" value="true"/>
+						</event>
+						<event type="cellvaluechanged">
+							<action type="datarun nonquery" value="~dtUpdateSerBroj"/>
+						</event>
+						<event type="keydown" value="46">
+							<action type="datarun nonquery" value="~dtUkloniSerBroj"/>
+							<action type="control populate" value="#grdSerBroj"/>
+						</event>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Spremi" dock="right">
+					<event type="click">
+						<!-- ako su obje količine 0 -->
+						<action type="validate" if="#txtKolicinaPak==0&amp;&amp;#txtZatecenoPak==0">
+							<action type="form open" value="frmDonosSkla"/>
+							<action type="form close"/>
+						</action>
+						<!-- ako je sve u redu s količinama -->
+						<action type="validate" else="">
+							<action type="datarun reader" value="~dtPostoji"/>
+							<action type="variable value">
+								<parameter name="SktInventuraDetId" value="~dtPostoji.@SktInventuraDetId"/>
+							</action>
+							<!-- ako se roba već nalazi na inventuri -->
+							<action type="form open" value="frmUpit" if="#srcRoba==~dtPostoji.@RobaId&amp;&amp;Global.$Conflict==0">
+								<parameter name="SktInventuraGlaId" value="$SktInventuraGlaId"/>
+								<parameter name="SktInventuraDetId" value="$SktInventuraDetId"/>
+								<parameter name="Roba" value="#srcRoba"/>
+								<parameter name="Kolicina" value="#txtKolicinaPak"/>
+								<parameter name="JM" value="#lblKolicinaPakJM"/>
+							</action>
+							<!-- ako se roba već nalazi na inventuri i tijekom cijele sesije želimo PRIBRAJATI konfliktne količine -->
+							<action type="validate" if="#srcRoba==~dtPostoji.@RobaId&amp;&amp;Global.$Conflict==1">
+								<action type="datarun scalar" value="~dtVratiNovu">
+									<parameter name="NovaKolicina"/>
+								</action>
+								<action type="datarun nonquery" value="~dtPribrojiKol"/>
+								<action type="message" value="'Podaci o robi na ovoj inventuri su sada ažurirani, a količine zbrojene.'"/>
+							</action>
+							<!-- ako se roba već nalazi na inventuri i tijekom cijele sesije želimo MIJENJATI konfliktne količine -->
+							<action type="validate" if="#srcRoba==~dtPostoji.@RobaId&amp;&amp;Global.$Conflict==2">
+								<action type="datarun nonquery" value="~dtZamjeniKol"/>
+								<action type="message" value="'Podaci o robi na ovoj inventuri su sada ažurirani.'"/>
+							</action>
+							<!-- ako se roba već nalazi na inventuri i tijekom cijele sesije želimo ODBACITI bilo kakve promjene -->
+							<action type="message" value="'Unos poništen, roba se već nalazi na ovoj inventuri.'" if="#srcRoba==~dtPostoji.@RobaId&amp;&amp;Global.$Conflict==3"/>
+							<!-- dodaj novu stavku se već ne nalazi na inventuri -->
+							<action type="datarun nonquery" value="~dtDodaj" if="#srcRoba!=~dtPostoji.@RobaId"/>
+							<!-- spremi serijske brojeve i isprazni pomoćnu tablicu -->
+							<action type="validate" if="#grdSerBroj.rowcount!=0">
+								<action type="datarun nonquery" value="~dtDodajSer"/>
+								<action type="datarun nonquery" value="Global.~dtEmptyTemp"/>
+							</action>
+							<action type="control value" value="##, !#txtKolicinaPak, !#txtZatecenoPak, !#txtKolicina, !#txtZateceno, !#txtCijena, !#datDatum">
+								<parameter value=""/>
+							</action>
+							<action type="control value" value="#txtKolicinaPak, #txtZatecenoPak, #txtKolicina, #txtZateceno, #txtCijena">
+								<parameter value="0"/>
+							</action>
+							<action type="control value" value="#datDatum">
+								<parameter value="$DatumPopisa"/>
+							</action>
+							<action type="control enable" value="#txtKolicina"/>
+							<action type="control populate" value="#grdSerBroj"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" dock="right">
+					<event type="click">
+						<action type="datarun nonquery" value="Global.~dtEmptyTemp"/>
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtKolicina" command="spProd_DodJM_Kalk">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@Kolicina" value="#txtKolicinaPak" if="$Ind_Kol==1"/>
+				<parameter name="@Kolicina" value="#txtKolicina" if="$Ind_Kol==0"/>
+				<parameter name="@br_decimala" value="$BrDecimalaJM" if="$Ind_Kol==1"/>
+				<parameter name="@br_decimala" value="$BrDecimalaDodJM" if="$Ind_Kol==0"/>
+				<parameter name="@Ind" value="$Ind_Kol"/>
+				<parameter name="@Faktor" value="$Faktor"/>
+			</data>
+			<data name="dtProvjeriStanje" command="spSktStanjeQueryCarpo">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@RobaId" value="#srcRoba"/>
+				<parameter name="@SkladisteId" value="parent.#cmbSkladiste"/>
+			</data>
+			<data name="dtKontingent" command="spTraziKKvalGla">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@Uvjet" value="#srcKontingent.text"/>
+				<parameter name="@RobaId" value="#srcRoba"/>
+				<parameter name="@SkladisteId" value="parent.#cmbSkladiste"/>
+				<parameter name="@ImaStanje" value="1"/>
+			</data>
+			<data name="dtVratiNovu" command="spSktInventuraDetAzurCarpoKonflikt">
+				<parameter name="@Action" value="Pribroj1"/>
+				<parameter name="@ID" value="$SktInventuraDetId"/>
+				<parameter name="@NovaKolicina" value="#txtKolicinaPak"/>
+			</data>
+			<data name="dtPribrojiKol" command="spSktInventuraDetAzurCarpo" timeout="10">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$SktInventuraDetId"/>
+				<parameter name="@KolicinaStvarna" value="$NovaKolicina"/>
+				<parameter name="@Cijena" value="#txtCijena"/>
+				<parameter name="@DatumPopisa" value="#datDatum"/>
+			</data>
+			<data name="dtZamjeniKol" command="spSktInventuraDetAzurCarpo" timeout="10">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$SktInventuraDetId"/>
+				<parameter name="@KolicinaStvarna" value="#txtKolicinaPak"/>
+				<parameter name="@Cijena" value="#txtCijena"/>
+				<parameter name="@DatumPopisa" value="#datDatum"/>
+			</data>
+			<data name="dtDodajSer" command="spSerBroj">
+				<parameter name="@Action" value="SAVE"/>
+			</data>
+			<data name="dtDodaj" command="spSktInventuraDetAzurCarpo" timeout="10">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+				<parameter name="@RobaId" value="#srcRoba"/>
+				<parameter name="@KolicinaStvarna" value="#txtKolicinaPak"/>
+				<parameter name="@KolicinaKnjizna" value="#txtZatecenoPak"/>
+				<parameter name="@Cijena" value="#txtCijena"/>
+				<parameter name="@KKvalGlaId" value="#srcKontingent"/>
+				<parameter name="@DatumPopisa" value="#datDatum"/>
+			</data>
+			<data name="dtSerTemp" command="spSerBroj">
+				<parameter name="@Action" value="SELECT"/>
+			</data>
+			<data name="dtUkloniSerBroj" command="spSerBroj">
+				<parameter name="@Action" value="DELETE"/>
+				<parameter name="@SerBroj" value="#grdSerBroj.@SerBroj"/>
+			</data>
+			<data name="dtUpdateSerBroj" command="spSerBroj">
+				<parameter name="@Action" value="UPDATE"/>
+				<parameter name="@SerBroj" value="#grdSerBroj.@SerBroj"/>
+				<parameter name="@Id" value="#grdSerBroj.@Id"/>
+			</data>
+			<data name="dtDodajSerTemp" command="spSerBroj">
+				<parameter name="@Action" value="INSERT"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+				<parameter name="@RobaId" value="#srcRoba" type="int"/>
+				<parameter name="@SerBroj" value="#txtSerBroj"/>
+			</data>
+			<data name="dtRoba" command="spTraziRoba">
+				<parameter name="@Action" value="Roba"/>
+				<parameter name="@Uvjet" value="#srcRoba.text"/>
+				<parameter name="@Prikazi_Dodatno" value="1"/>
+			</data>
+			<data name="dtPostoji" command="spSktInventuraDetQueryCarpo">
+				<parameter name="@Action" value="Postoji"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+				<parameter name="@RobaId" value="#srcRoba"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUpit" caption="Upit" width="550">
+		<event type="init">
+			<action type="datarun reader" value="~dtPostoji"/>
+			<action type="variable value">
+				<parameter name="KolicinaPostoji" value="~dtPostoji.@StvarnaKolicina"/>
+			</action>
+		</event>
+		<layout>
+			<group rows="3" cols="6">
+				<item row="1" col="1" height="25" colspan="6" fontsizedelta="1" caption="Stavka koju unosite: {~dtPostoji.@UserId} - već postoji na inventuri, u količini od {$KolicinaPostoji} {~dtPostoji.@JMNaziv}!"/>
+				<item row="2" col="1" height="25" colspan="6" fontsizedelta="1" caption="Želite li ovih {$Kolicina},00 {$JM} pribrojiti već unesenoj količini, zamijeniti unesenu količinu s ovom ili odustati od ovog unosa?"/>
+				<item row="3" col="1" height="50">
+					<button name="btnPribrojiKol" caption="Pribroji količinu"><!-- količinu zbroji, ostalo izmijeni -->
+						<event type="click">
+							<action type="datarun scalar" value="~dtVratiNovu">
+								<parameter name="NovaKolicina"/>
+							</action>
+							<action type="datarun nonquery" value="~dtPribrojiKol"/>
+							<action type="form close"/>
+						</event>
+					</button>
+				</item>
+				<item row="3" col="2" height="50">
+					<button name="btnZamjeniKol" caption="Zamjeni količinu"><!-- količinu izmijeni, ostalo izmijeni -->
+						<event type="click">
+							<action type="datarun nonquery" value="~dtZamjeniKol"/>
+							<action type="form close"/>
+						</event>
+					</button>
+				</item>
+				<item row="3" col="3" height="50">
+					<button name="btnOdustaniU" caption="Odustani od unosa"><!-- odustajanje od promjene -->
+						<event type="click">
+							<action type="form close"/>
+						</event>
+					</button>
+				</item>
+				<item row="3" col="4" height="50">
+					<button name="btnPribrojiSvi" caption="Pribroji svima" tooltip="Ova opcija će se automatski primijeniti za sve konfliktne situacije tijekom ove sesije."><!-- isto kao i 1., ali ne pita za izbor već za sva konfliktna dodavanja pribraja -->
+						<event type="click">
+							<action type="variable value">
+								<parameter name="Global.Conflict" value="1"/>
+							</action>
+							<action type="form close"/>
+						</event>
+					</button>
+				</item>
+				<item row="3" col="5" height="50">
+					<button name="btnZamjeniSvi" caption="Zamjeni svima" tooltip="Ova opcija će se automatski primijeniti za sve konfliktne situacije tijekom ove sesije."><!-- isto kao i 2., ali ne pita za izbor već za sva konfliktna dodavanja mijenja -->
+						<event type="click">
+							<action type="variable value">
+								<parameter name="Global.Conflict" value="2"/>
+							</action>
+							<action type="form close"/>
+						</event>
+					</button>
+				</item>
+				<item row="3" col="6" height="50">
+					<button name="btnOdustaniS" caption="Odustani od svega" tooltip="Ova opcija će se automatski primijeniti za sve konfliktne situacije tijekom ove sesije."><!-- isto kao i 3., ali ne pita za izbor već za sva konfliktna dodavanja odustaje od promjene -->
+						<event type="click">
+							<action type="variable value">
+								<parameter name="Global.Conflict" value="3"/>
+							</action>
+							<action type="form close"/>
+						</event>
+					</button>
+				</item>
+			</group>
+		</layout>
+		<datalist>
+			<data name="dtVratiNovu" command="spSktInventuraDetAzurCarpoKonflikt">
+				<parameter name="@Action" value="Pribroj1"/>
+				<parameter name="@ID" value="$SktInventuraDetId"/>
+				<parameter name="@NovaKolicina" value="parent.#txtKolicinaPak"/>
+			</data>
+			<data name="dtPribrojiKol" command="spSktInventuraDetAzurCarpo" timeout="10">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$SktInventuraDetId"/>
+				<parameter name="@KolicinaStvarna" value="$NovaKolicina"/>
+				<parameter name="@Cijena" value="parent.#txtCijena"/>
+				<parameter name="@DatumPopisa" value="parent.#datDatum"/>
+			</data>
+			<data name="dtZamjeniKol" command="spSktInventuraDetAzurCarpo" timeout="10">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$SktInventuraDetId"/>
+				<parameter name="@KolicinaStvarna" value="parent.#txtKolicinaPak"/>
+				<parameter name="@Cijena" value="parent.#txtCijena"/>
+				<parameter name="@DatumPopisa" value="parent.#datDatum"/>
+			</data>
+			<data name="dtPostoji" command="spSktInventuraDetQueryCarpo">
+				<parameter name="@Action" value="Postoji"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+				<parameter name="@RobaId" value="$Roba"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmRobaIzmj" caption="Stavka inventure" height="400" width="600">
+		<event type="init">
+			<action type="datarun reader" value="~dtDohvati"/>
+			<action type="datarun nonquery" value="~dtPuniTemp"/>
+		</event>
+		<event type="shown">
+			<action type="control populate" value="#grdSerBroj"/>
+		</event>
+		<layout textposition="left" itemspadding="3">
+			<group rows="7" cols="8">
+				<columnsdefinition>
+					<column position="1" size="25%"/>
+					<column position="2" size="30"/>
+					<column position="3" size="25%"/>
+					<column position="4" size="30"/>
+					<column position="5" size="25%"/>
+					<column position="6" size="30"/>
+					<column position="7" size="25%"/>
+					<column position="8" size="30"/>
+				</columnsdefinition>
+				<item row="1" col="1" textvisible="False" fontsizedelta="1" caption="Roba:" colspan="8">
+					<searchedit name="srcRoba" fontsizedelta="1" fontbold="True" entermovenextcontrol="False" datavalue="~dtDohvati.@RobaId" datatext="~dtDohvati.@RobaNaziv" enabled="false">
+						<event type="valuechanged" raiseonload="True">
+							<action type="validate" if="#srcRoba!=null">
+								<action type="datarun reader" value="~dtProvjeriStanje"/>
+								<action type="control value" value="#txtZatecenoPak">
+									<parameter value="~dtProvjeriStanje.@KolicinaPak"/>
+								</action>
+								<action type="control value" value="#txtZateceno">
+									<parameter value="~dtProvjeriStanje.@Kolicina"/>
+								</action>
+								<action type="datarun reader" value="~dtRoba"/>
+								<action type="variable value">
+									<parameter name="Faktor" value="~dtRoba.@Faktor_Id"/>
+								</action>
+								<action type="variable value">
+									<parameter name="FaktorFix" value="~dtRoba.@FaktorFix_Id"/>
+								</action>
+								<action type="variable value">
+									<parameter name="BrDecimalaDodJM" value="~dtRoba.@BrDecimala_DodJmId"/>
+								</action>
+								<action type="variable value">
+									<parameter name="BrDecimalaJM" value="~dtRoba.@BrDecimala_JmId"/>
+								</action>
+								<action type="control enable" value="#txtKolicina" if="~dtRoba.@DefaultInd_Id==1"/>
+								<action type="control disable" value="#txtKolicina" if="~dtRoba.@DefaultInd_Id!=1"/>
+								<action type="control value" value="#lblKolicinaPakJM, #lblZatecenoPakJM">
+									<parameter value="~dtRoba.@JM"/>
+								</action>
+								<action type="control value" value="#lblKolicinaJM, #lblZatecenoJM">
+									<parameter value="~dtRoba.@Dodatna JM"/>
+								</action>
+								<action type="control enable" value="#txtSerBroj, #grdSerBroj"/>
+							</action>
+							<action type="control enable" value="#srcKontingent" if="~dtRoba.@KKvalObavezan_Id==1"/>
+							<action type="control disable" value="#srcKontingent" if="~dtRoba.@KKvalObavezan_Id!=1"/>
+							<action type="variable value">
+								<parameter name="Ind_Kol" value="1"/>
+							</action>
+							<action type="datarun reader" value="~dtKolicina"/>
+							<action type="control value" value="#txtKolicina">
+								<parameter value="~dtKolicina.@Kolicina"/>
+							</action>
+							<action type="control attribute" value="#txtZatecenoPak, #txtKolicinaPak">
+								<parameter name="format" value="n{~dtRoba.@BrDecimala_JmId}"/>
+							</action>
+							<action type="control attribute" value="#txtZateceno, #txtKolicina">
+								<parameter name="format" value="n{~dtRoba.@BrDecimala_DodJmId}"/>
+							</action>
+						</event>
+					</searchedit>
+				</item>
+				<item row="2" col="1" caption="Zatečeno:" textposition="top">
+					<textedit name="txtZatecenoPak" value="0" format="n2" fontsizedelta="1" fontbold="True" enabled="false" datavalue="~dtDohvati.@KolicinaKnjizna"/>
+				</item>
+				<item row="2" col="2" padding="0,0,20,0">
+					<labeledit name="lblZatecenoPakJM" value="kom"/>
+				</item>
+				<item row="2" col="3" caption="Količina:" textposition="top">
+					<textedit name="txtKolicinaPak" value="0" format="n2" fontsizedelta="1" fontbold="True" type="decimal" datavalue="~dtDohvati.@KolicinaStvarna">
+						<event type="valuechanged" raiseonload="True">
+							<action type="variable value">
+								<parameter name="Ind_Kol" value="1"/>
+							</action>
+							<action type="datarun reader" value="~dtKolicina"/>
+							<action type="control value" value="#txtKolicina">
+								<parameter value="~dtKolicina.@Kolicina"/>
+							</action>
+						</event>
+					</textedit>
+				</item>
+				<item row="2" col="4" padding="0,0,20,0">
+					<labeledit name="lblKolicinaPakJM" value="kom"/>
+				</item>
+				<item row="2" col="5" caption="Zatečeno d.:" textposition="top">
+					<textedit name="txtZateceno" format="n2" fontsizedelta="1" fontbold="True" enabled="false"/>
+				</item>
+				<item row="2" col="6" padding="0,0,20,0">
+					<labeledit name="lblZatecenoJM" datavalue="~dtDohvati.@JMNaziv"/>
+				</item>
+				<item row="2" col="7" caption="Količina d.:" textposition="top">
+					<textedit name="txtKolicina" format="n2" fontsizedelta="1" fontbold="True" type="decimal">
+						<event type="valuechanged" raiseonload="True">
+							<action type="variable value">
+								<parameter name="Ind_Kol" value="0"/>
+							</action>
+							<action type="datarun reader" value="~dtKolicina" if="$FaktorFix==1"/>
+							<action type="control value" value="#txtKolicinaPak" if="$FaktorFix==1">
+								<parameter value="~dtKolicina.@Kolicina"/>
+							</action>
+						</event>
+					</textedit>
+				</item>
+				<item row="2" col="8" padding="0,0,20,0">
+					<labeledit name="lblKolicinaJM" datavalue="~dtDohvati.@JMNaziv"/>
+				</item>
+				<item row="3" col="1" caption="Kontingent:" colspan="8">
+					<searchedit name="srcKontingent" datavalue="~dtDohvati.KKvalGlaId" datatext="~dtDohvati.@KKvalGla_broj" enabled="false"/>
+				</item>
+				<item row="4" col="1" caption="Cijena:" colspan="8">
+					<textedit name="txtCijena" value="0" format="n2" datavalue="~dtDohvati.@Cijena"/>
+				</item>
+				<item row="5" col="1" caption="Datum:" colspan="8">
+					<dateedit name="datDatum" value="now" required="True" datavalue="~dtDohvati.@DatumPopisa"/>
+				</item>
+				<item row="6" col="1" caption="Serijski broj:" textposition="left" colspan="8">
+					<textedit name="txtSerBroj" fontsizedelta="1" entermovenextcontrol="False">
+						<event type="keydown" value="13">
+							<action type="datarun nonquery" value="~dtDodajSerTemp"/>
+							<action type="control value" value="#txtSerBroj">
+								<parameter value=""/>
+							</action>
+							<action type="control populate" value="#grdSerBroj"/>
+						</event>
+					</textedit>
+				</item>
+				<item row="7" col="1" textposition="left" colspan="8">
+					<grid name="grdSerBroj" dataname="~dtSerTemp">
+						<fields>
+							<field name="SerBroj" editable="true"/>
+						</fields>
+						<event type="showingeditor">
+							<action type="editor allow" value="true"/>
+						</event>
+						<event type="cellvaluechanged">
+							<action type="datarun nonquery" value="~dtUpdateSerBroj"/>
+						</event>
+						<event type="keydown" value="46">
+							<action type="datarun nonquery" value="~dtUkloniSerBroj"/>
+							<action type="control populate" value="#grdSerBroj"/>
+						</event>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Spremi" dock="right">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtIzmijeni"/>
+						<action type="datarun nonquery" value="~dtIzmijeniSer" if="#grdSerBroj.rowcount!=0"/>
+						<action type="datarun nonquery" value="Global.~dtEmptyTemp" if="#grdSerBroj.rowcount!=0"/>
+						<action type="control populate" value="parent.#grdRoba,parent.#grdInvLista,parent.#grdInvRazlike"/>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" dock="right">
+					<event type="click">
+						<action type="datarun nonquery" value="Global.~dtEmptyTemp"/>
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtRoba" command="spTraziRoba">
+				<parameter name="@Action" value="Roba"/>
+				<parameter name="@Uvjet" value="#srcRoba.text"/>
+				<parameter name="@Prikazi_Dodatno" value="1"/>
+			</data>
+			<data name="dtProvjeriStanje" command="spSktStanjeQueryCarpo">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@RobaId" value="#srcRoba"/>
+				<parameter name="@SkladisteId" value="parent.#cmbSkladiste"/>
+			</data>
+			<data name="dtKolicina" command="spProd_DodJM_Kalk">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@Kolicina" value="#txtKolicinaPak" if="$Ind_Kol==1"/>
+				<parameter name="@Kolicina" value="#txtKolicina" if="$Ind_Kol==0"/>
+				<parameter name="@br_decimala" value="$BrDecimalaJM" if="$Ind_Kol==1"/>
+				<parameter name="@br_decimala" value="$BrDecimalaDodJM" if="$Ind_Kol==0"/>
+				<parameter name="@Ind" value="$Ind_Kol"/>
+				<parameter name="@Faktor" value="$Faktor"/>
+			</data>
+			<data name="dtIzmijeniSer" command="spSerBroj">
+				<parameter name="@Action" value="SAVEFROMUPDATE"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+				<parameter name="@RobaId" value="$RobaId" type="int"/>
+			</data>
+			<data name="dtIzmijeni" command="spSktInventuraDetAzurCarpo" timeout="10">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$SktInventuraDetId"/>
+				<parameter name="@KolicinaStvarna" value="#txtKolicinaPak"/>
+				<parameter name="@Cijena" value="#txtCijena"/>
+				<parameter name="@DatumPopisa" value="#datDatum"/>
+			</data>
+			<data name="dtDohvati" command="spSktInventuraDetQueryCarpo">
+				<parameter name="@Action" value="Detalj1"/>
+				<parameter name="@SktInventuraDetId" value="$SktInventuraDetId"/>
+			</data>
+			<data name="dtPuniTemp" command="spSerBroj">
+				<parameter name="@Action" value="FILL"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+				<parameter name="@RobaId" value="$RobaId" type="int"/>
+			</data>
+			<data name="dtSerTemp" command="spSerBroj">
+				<parameter name="@Action" value="SELECT"/>
+			</data>
+			<data name="dtUkloniSerBroj" command="spSerBroj">
+				<parameter name="@Action" value="DELETE"/>
+				<parameter name="@SerBroj" value="#grdSerBroj.@SerBroj"/>
+			</data>
+			<data name="dtUpdateSerBroj" command="spSerBroj">
+				<parameter name="@Action" value="UPDATE"/>
+				<parameter name="@SerBroj" value="#grdSerBroj.@SerBroj"/>
+				<parameter name="@Id" value="#grdSerBroj.@Id"/>
+			</data>
+			<data name="dtDodajSerTemp" command="spSerBroj">
+				<parameter name="@Action" value="INSERT"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+				<parameter name="@RobaId" value="#srcRoba" type="int"/>
+				<parameter name="@SerBroj" value="#txtSerBroj"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDonosSkla" caption="Donos iz skladišnog poslovanja" width="300">
+		<layout>
+			<group rows="2" cols="1">
+				<item row="1" col="1">
+					<labeledit value="Izaberite cjenik po kojem će se raditi skladišna inventura" fontsizedelta="1"/>
+				</item>
+				<item row="2" col="1">
+					<comboedit name="cmbCjenik" dataname="~dtCjenik" valuefield="VrCjenikId" displayfield="Opis" value="1"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOK" caption="U redu">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtCjenikSklad"/>
+						<action type="form close"/>
+						<action type="message" value="'Donos iz skladišnog poslovanja dovršen!'"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtCjenik" command="spSktInventuraDetQueryCarpo">
+				<parameter name="@Action" value="Cjenik"/>
+			</data>
+			<data name="dtCjenikSklad" command="spSktInventuraDetAzurCarpo" timeout="10">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@VrCjenikId" value="#cmbCjenik"/>
+				<parameter name="@SktInventuraGlaId" value="parent.$SktInventuraGlaId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmPopisKol" caption="Popis količine">
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<labeledit value="Preskoči već popunjene količine. Jeste li sigurni?" fontsizedelta="1"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+				<button name="btnPopSkip" caption="Popuni i preskoči">
+					<event type="click">
+						<action type="form close"/>
+						<action type="form open" value="frmPopSkip">
+							<parameter name="SktInventuraGlaId" value="$SktInventuraGlaId"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnPopSve" caption="Popuni sve">
+					<event type="click">
+						<action type="form close"/>
+						<action type="form open" value="frmPopSve">
+							<parameter name="SktInventuraGlaId" value="$SktInventuraGlaId"/>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmPopSkip" caption="Popuni i preskoči">
+		<layout>
+			<group rows="3" cols="3">
+				<item row="1" col="2">
+					<labeledit value="UPOZORENJE!" fontsizedelta="1"/>
+				</item>
+				<item row="2" col="1" colspan="3">
+					<labeledit value="Sve popisane količine koje nisu ranije unesene biti će popunjene knjižnim količinama!" fontsizedelta="1"/>
+				</item>
+				<item row="3" col="2">
+					<labeledit value="Jeste li sigurni?" fontsizedelta="1"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnNE" caption="NE" type="cancel"/>
+				<button name="btnDA" caption="DA">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtDA"/>
+						<action type="form close"/>
+						<action type="message" value="'Količine su uspješno ažurirane!'"/>
+						<action type="control populate" value="parent.#grdRoba,parent.#grdInvLista,parent.#grdInvRazlike"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDA" command="spSktInventuraDonosKnjizKol">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmPopSve" caption="Popuni sve">
+		<layout>
+			<group rows="3" cols="3">
+				<item row="1" col="2">
+					<labeledit value="UPOZORENJE!" fontsizedelta="1"/>
+				</item>
+				<item row="2" col="1" colspan="3">
+					<labeledit value="Sve ranije unesene popisane količine biti će prepisane trenutnim knjižnim količinama!" fontsizedelta="1"/>
+				</item>
+				<item row="3" col="2">
+					<labeledit value="Jeste li sigurni?" fontsizedelta="1"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnNE" caption="NE" type="cancel"/>
+				<button name="btnDA" caption="DA">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtDA"/>
+						<action type="form close"/>
+						<action type="message" value="'Količine su uspješno ažurirane!'"/>
+						<action type="control populate" value="parent.#grdRoba,parent.#grdInvLista,parent.#grdInvRazlike"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDA" command="spSktInventuraDonosKnjizKol">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@SktInventuraGlaId" value="$SktInventuraGlaId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmPromDatInv" caption="Promjena datuma inventure">
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<labeledit value="Želite li promijeniti datum inventure?" fontsizedelta="1"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDA" caption="DA">
+					<event type="click">
+						<!-- <action type="variable value"> -->
+							<!-- <parameter name="global.$DatumDok" value=" -->
+						<!-- </action> -->
+						<action type="form close"/>
+						<action type="form open" value="frmDonosSkla"/>
+						<action type="control populate" value="parent.#grdRoba,parent.#grdInvLista,parent.#grdInvRazlike"/>
+						<action type="control enable" value="parent.#btnStavkeIzmijeni,parent.#btnStavkeZakljuci" if="#grdRoba.rowcount!=0&amp;&amp;parent.#grdGlava.@Status!=2"/>
+						<!-- <action type="form close"/> -->
+					</event>
+				</button>
+				<button name="btnNE" caption="NE" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<datalist>
+		<data name="dtGetKey" command="spInventuraGetKey">
+			<parameter name="@Action" value="VP" if="global.$filter==Vremenska podjela"/>
+			<parameter name="@Action" value="STATUS" if="global.$filter==Status"/>
+			<parameter name="@Action" value="OPERATERI" if="global.$filter==Operateri"/>
+			<parameter name="@Action" value="OO" if="global.$filter==Odgovorne osobe"/>
+			<parameter name="@ID" value="$SktInventuraGlaId"/>
+		</data>
+		<data name="dtEmptyTemp" command="spSerBroj">
+			<parameter name="@Action" value="EMPTY"/>
+		</data>
+		<data command="spSktInventuraGlaAzurCarpo" name="dtOtvori" timeout="10">
+			<parameter name="@Action" value="0"/>
+			<parameter name="@DatumDok" value="#datDatumDok"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+			<parameter name="@SkladisteId" value="#cmbSkladiste"/>
+			<parameter name="@OrgShemaId" value="#cmbOrgShema"/>
+			<parameter name="@Status" value="0"/>
+			<parameter name="@OsobeId" value="#cmbOsobe"/>
+			<parameter name="@Memo" value=""/>
+			<parameter name="@KlMasterRobaId" value="#cmbKlasaRobe" if="#cmbKlasaRobe>0"/>
+			<parameter name="@KlKlRobaId" value="#cmbKlasaRobe" if="#cmbKlasaRobe&lt;0"/>
+			<parameter name="@Sort" value="0"/>
+			<parameter name="@DatumPopisa" value="#datDatumPopisa"/>
+		</data>
+		<data command="spSktInventuraUnosQueryCarpo" name="dtSkladiste">
+			<parameter name="@Action" value="Skladiste"/>
+		</data>
+		<data command="spSktInventuraUnosQueryCarpo" name="dtOrgShema">
+			<parameter name="@Action" value="OrgShema"/>
+		</data>
+		<data command="spSktInventuraUnosQueryCarpo" name="dtOdgovornaOsoba">
+			<parameter name="@Action" value="Osoba"/>
+		</data>
+		<data command="spInvKlasCarpo" name="dtKlasaRobe"/>
+	</datalist>
+</root>

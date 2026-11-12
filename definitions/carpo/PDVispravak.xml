@@ -1,0 +1,484 @@
+<root loglevel="5">
+	<!--24.12.2024. AČ init-->
+	<form name="frmPDVispravak" type="master" caption="PDV ispravak">
+		<event type="load">
+		</event>
+		<event type="shown">
+			<action type="form open" value="frmParametri"/>
+			<action type="variable value" value="global.$Close" if="dialogresult==cancel">
+				<parameter value="true" type="bool"/>
+			</action>
+			<action type="form close" if="global.$Close==true"/>
+		</event>
+		<managerlayout>
+			<grid name="grdGlavni" key="IdDok" type="master" multiselect="true" autopopulate="false" dataname="~dtGlavni" savelayout="true">
+				<event type="doubleclick">
+					<action type="form open" value="frmIspravak">
+						<parameter name="IdDok" value="#grdGlavni.@IdDok"/>
+						<parameter name="KntPlanAId" value="#grdGlavni.@KntPlanAId"/>
+						<parameter name="PartneriId" value="#grdGlavni.@PartneriId"/>
+						<parameter name="PartnerNaziv" value="#grdGlavni.@Naziv"/>
+					</action>
+					<action type="control populate" value="#grdGlavni"/>
+					<!-- <action type="control focus" value -->
+				</event>
+				<menu>
+					<menuitem name="menPonistiStavku" caption="Poništi stavku">
+						<event type="click">
+							<action type="confirm" value="Želite li poništiti izmjene na označenim stavkama?">
+								<action type="foreachrow selected" value="#grdGlavni">
+									<action type="datarun nonquery" value="~dtPonisti"/>
+								</action>
+								<action type="control populate keepfocus" value="#grdGlavni"/>
+							</action>
+						</event>
+					</menuitem>
+				</menu>
+				<fields>				
+					<field name="Broj" caption="Broj računa"/>
+					<field name="DatumDok" caption="Datum računa"/>
+					<field name="PorezniBroj" caption="OIB"/>
+					<field name="Naziv" caption="Partner"/>
+					<field name="DatumValute" caption="Datum valute"/>
+					<field name="Osnovica5" caption="Osnovica\n5%"/>
+					<field name="PDV5" caption="Ispravljeni porez\n5%"/>
+					<field name="Osnovica13" caption="Osnovica\n13%"/>
+					<field name="PDV13" caption="Ispravljeni porez\n13%"/>
+					<field name="Osnovica25" caption="Osnovica\n25%"/>
+					<field name="PDV25" caption="Ispravljeni porez\n25%"/>
+					<field name="Kasni" caption="Kasni"/>
+					<field name="IznosRacuna" caption="Iznos računa"/>
+					<field name="IznosPDV" caption="Iznos PDV-a"/>
+					<!-- <field name="iznosUkupno" caption="Iznos sa PDV-om"/> -->
+					<field name="potrazuje" caption="Plaćeni iznos"/>
+					<field name="saldo" caption="Neplaćeni dio"/>
+					<field name="PDVf" caption="PDV s fakture"/>
+					<field name="Konto" caption="Konto"/>
+					<!-- <field name="IznosRacunaEdited" caption="Iznos računa \nizmjena"/> -->
+					<!-- <field name="editPDV" caption="Iznos PDV-a \nizmjena"/> -->
+					<!-- <field name="Error" caption="Napomena"/> -->
+					<!-- <field name="Duguje" caption="Duguje"/> -->
+					<field name="KntPlanAId" visible="false"/>
+					<field name="PartneriId" visible="false"/>
+					
+				</fields>
+				<styles>
+					<style name="backgroundcolor" value="#FAFEB5" if="#grdGlavni.fieldname==IznosRacunaEdited||#grdGlavni.fieldname==editPDV"/>
+					<style name="fontcolor" value="red" if="#grdGlavni.@Error!=null&amp;&amp;#grdGlavni.@Error!="/>
+					<style name="fontcolor" value="blue" if="#grdGlavni.@IznosRacunaEdited>0||#grdGlavni.@editPDV>0"/>
+				</styles>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnParametri" caption="&amp;PARAMETRI">
+					<event type="click">
+						<action type="form open" value="frmParametri"/>
+					</event>
+				</button>
+				<button name="btnIspravak" caption="&amp;ISPRAVAK">
+					<event type="click">
+						<action type="form open" value="frmIspravak">
+							<parameter name="IdDok" value="#grdGlavni.@IdDok"/>
+							<parameter name="KntPlanAId" value="#grdGlavni.@KntPlanAId"/>
+							<parameter name="PartneriId" value="#grdGlavni.@PartneriId"/>
+							<parameter name="PartnerNaziv" value="#grdGlavni.@Naziv"/>
+						</action>
+						<action type="control populate" value="#grdGlavni"/>
+						<!-- <action type="control refreshrow" value="#grdGlavni"> -->
+							<!-- <parameter value="~dtGlavaOne"/> -->
+						<!-- </action> -->
+						<!-- <action type="control populate keepfocus" value="#grdGlavni"/> -->
+					</event>
+				</button>
+				<button name="btnObrisi" caption="&amp;OBRIŠI RAČUN">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati odabrane račune?">
+							<action type="control foreachrow selected" value="#grdGlavni">
+								<action type="datarun nonquery" value="~dtObrisi"/>
+							</action>
+							<action type="control populate keepfocus" value="#grdGlavni"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIspis" caption="I&amp;SPIS">
+					<event type="click">
+						<action type="print" value="repx:rptIspravakPDV">
+							<parameter name="DatumOd" value="Global.$datDatumOd"/>
+							<parameter name="DatumDo" value="Global.$datDatumDo"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnEPorezna" caption="&amp;ePOREZNA">
+					<event type="click">
+						<action type="form open" value="frmEPorezna">
+							<parameter name="DatumOd" value="$DatumOd"/>
+							<parameter name="DatumDo" value="$DatumDo"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlavni"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGlavni" command="spKntIspravakPDVQuery">
+				<parameter name="@Action" value="3"/>
+			</data>
+			<data name="dtPonisti" command="spKntOPZSTATAzur">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@DokId" value="#grdGlavni.@DokId"/>
+				<parameter name="@PartneriId" value="#grdGlavni.@PartneriId"/>
+				<parameter name="@KntPlanAId" value="#grdGlavni.@KntPlanAId"/>
+			</data>
+			<data name="dtObrisi" command="spKntIspravakPDVAzur">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@IdDok" value="#grdGlavni.@IdDok"/>
+				<parameter name="@KntPlanAId" value="#grdGlavni.@KntPlanAId"/>
+				<parameter name="@PartneriId" value="#grdGlavni.@PartneriId"/>
+			</data>
+			<data name="dtGlavaOne" command="spKntIspravakPDVQuery">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@IdDok" value="#grdGlavni.@IdDok"/>
+				<parameter name="@KntPlanAId" value="#grdGlavni.@KntPlanAId"/>
+				<parameter name="@PartneriId" value="#grdGlavni.@PartneriId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmParametri" caption="Parametri za dohvat podataka za Ispravak PDV-a" saveformsize="true">
+		<layout>
+			<group cols="2" rows="3" groupbordervisible="false">
+				<columnsdefinition>
+					<column position="1" size="200"/>
+					<column position="2" size="100"/>
+				</columnsdefinition>
+				<item row="1" col="1" colspan="2" caption="Konto:">
+					<combomultiedit name="cmbKonto" valuefield="KntPlanAId" displayfield="Konto" dataname="~dtKonto" savevalue="app" tabindex="0"/>
+				</item>
+				<item row="2" col="1" colspan="1" caption="Datum od">
+					<dateedit name="datDatumOd" tabindex="1" value="now" savevalue="app"/>
+				</item>
+				<item row="3" col="1" colspan="1" caption="Datum do">
+					<dateedit name="datDatumDo" tabindex="1" value="now" savevalue="app"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPrikazi" caption="PRIKAŽI">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtNapuniTablicu"/>
+						<action type="variable value">
+							<parameter name="Global.$datDatumOd" value="#datDatumOd" type="date"/>
+							<parameter name="Global.$datDatumDo" value="#datDatumDo" type="date"/>
+						</action>
+						<action type="control populate" value="parent.#grdGlavni"/>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtNapuniTablicu" command="spKntIspravakPDVQuery">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@nizkonto" value="#cmbKonto"/>
+				<parameter name="@DatumOd" value="#datDatumOd"/>
+				<parameter name="@DatumDo" value="#datDatumDo"/>
+			</data>
+			<data name="dtKonto" command="spKntIspravakPDVQuery">
+				<parameter name="@Action" value="2"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmIspravak" caption="Izmjena PDV-a" saveformsize="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet"/>
+		</event>
+		<event type="shown">
+			<action type="control value" value="#txtPartner">
+				<parameter value="$PartnerNaziv"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="2">
+				<group cols="3" rows="3" col="1" row="1" groupbordervisible="false">
+					<item row="1" col="1" colspan="3" caption="Konto:">
+						<comboedit name="cmbKonto" valuefield="KntPlanAId" displayfield="Naziv" dataname="~dtKonto" datavalue="~dtGet.@KntPlanaId" enabled="false"/>
+					</item>
+					<item col="1" row="2" colspan="3" caption="Partner:">
+						<textedit name="txtPartner" enabled="false"/>
+					</item>
+					<item col="1" row="3" colspan="3" caption="Broj računa:">
+						<textedit name="txtBroj" datavalue="~dtGet.@Broj" enabled="false"/>
+					</item>
+				</group>
+				<group caption="Ispravak porezne osnovice" cols="3" rows="5" col="1" row="2" >
+					<columnsdefinition>
+						<column position="1" size="5%" />
+						<column position="2" size="100" />
+						<column position="3" size="100" />
+					</columnsdefinition>
+					<item col="1" row="1">
+						<labeledit value="5%"/>
+					</item>
+					<item col="1" row="2">
+						<labeledit value="13%"/>
+					</item>
+					<item col="1" row="3">
+						<labeledit value="25%"/>
+					</item>
+					<item col="1" row="4">
+						<labeledit value="Ukupno"/>
+					</item>
+					<item col="1" row="5">
+						<labeledit value="Iznos s PDV-om"/>
+					</item>
+					<item col="2" row="1" caption="Osnovica:">
+						<textedit name="txtOsnovica5" datavalue="~dtGet.@Osnovica5" format="n2">
+							<event type="leave">
+								<action type="datarun reader" value="~dtUkupno"/>
+								<action type="control value" value="#txtUkupnoOsn">
+									<parameter value="~dtUkupno.@Iznos"/>
+								</action>
+								<action type="datarun reader" value="~dtIzracunaj5"/>
+								<action type="control value" value="#txtPDV5">
+									<parameter value="~dtIzracunaj5.@PDV5"/>
+								</action>
+							</event>
+						</textedit>
+					</item>
+					<item col="3" row="1" caption="Iznos PDV-a:">
+						<textedit name="txtPDV5" datavalue="~dtGet.@PDV5" format="n2">
+							<event type="leave">
+								<action type="datarun reader" value="~dtUkupnoPDV"/>
+								<action type="control value" value="#txtUkupnoPDV">
+									<parameter value="~dtUkupnoPDV.@Iznos"/>
+								</action>
+							</event>
+						</textedit>
+					</item>
+					<item col="2" row="2" >
+						<textedit name="txtOsnovica13" datavalue="~dtGet.@Osnovica13" format="n2">
+							<event type="leave">
+								<action type="datarun reader" value="~dtUkupno"/>
+								<action type="control value" value="#txtUkupnoOsn">
+									<parameter value="~dtUkupno.@Iznos"/>
+								</action>
+								<action type="datarun reader" value="~dtIzracunaj13"/>
+								<action type="control value" value="#txtPDV13">
+									<parameter value="~dtIzracunaj13.@PDV13"/>
+								</action>
+							</event>
+						</textedit>
+					</item>
+					<item col="3" row="2" >
+						<textedit name="txtPDV13" datavalue="~dtGet.@PDV13" format="n2">
+							<event type="leave">
+								<action type="datarun reader" value="~dtUkupnoPDV"/>
+								<action type="control value" value="#txtUkupnoPDV">
+									<parameter value="~dtUkupnoPDV.@Iznos"/>
+								</action>
+							</event>
+						</textedit>
+					</item>
+					<item col="2" row="3" >
+						<textedit name="txtOsnovica25" datavalue="~dtGet.@Osnovica25" format="n2">
+							<event type="leave">
+								<action type="datarun reader" value="~dtUkupno"/>
+								<action type="control value" value="#txtUkupnoOsn">
+									<parameter value="~dtUkupno.@Iznos"/>
+								</action>
+								<action type="datarun reader" value="~dtIzracunaj25"/>
+								<action type="control value" value="#txtPDV25">
+									<parameter value="~dtIzracunaj25.@PDV25"/>
+								</action>
+							</event>
+						</textedit>
+					</item>
+					<item col="3" row="3">
+						<textedit name="txtPDV25" datavalue="~dtGet.@PDV25" format="n2">
+							<event type="leave">
+								<action type="datarun reader" value="~dtUkupnoPDV"/>
+								<action type="control value" value="#txtUkupnoPDV">
+									<parameter value="~dtUkupnoPDV.@Iznos"/>
+								</action>
+							</event>
+						</textedit>
+					</item>
+					<item col="2" row="4" enabled="false">
+						<textedit name="txtUkupnoOsn" datavalue="~dtGet.@IznosOsnovica" enabled="false" format="n2">
+							<event type="valuechanged">
+								<action type="datarun reader" value="~dtUkupnoSPDV"/>
+								<action type="control value" value="#txtIznosSPDV">
+										<parameter value="~dtUkupnoSPDV.@Iznos"/>
+								</action>
+							</event>
+						</textedit>
+					</item>
+					<item col="3" row="4" enabled="false">
+						<textedit name="txtUkupnoPDV" datavalue="~dtGet.@IznosPDV" enabled="false" format="n2">
+							<event type="valuechanged">
+								<action type="datarun reader" value="~dtUkupnoSPDV"/>
+								<action type="control value" value="#txtIznosSPDV">
+										<parameter value="~dtUkupnoSPDV.@Iznos"/>
+								</action>
+							</event>
+						</textedit>
+					</item>
+					<item col="2" row="5" colspan="2" enabled="false">
+						<textedit name="txtIznosSPDV" datavalue="~dtGet.@IznosRn" enabled="false" format="n2"/>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPrihvati" caption="PRIHVATI">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtAzur"/>
+						<action type="control populate" value="parent.#grdGlavni" />
+						<action type="control focus" value="parent.#grdGlavni">
+							<parameter value="$IdDok"/>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGet" command="spKntIspravakPDVQuery">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@IdDok" value="$IdDok"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+				<parameter name="@PartneriId" value="$PartneriId"/>
+			</data>
+			 <data name="dtKonto" command="spKntOPZSTAT"> 
+				 <parameter name="@Action" value="4"/> 
+			 </data> 
+			 <data command="spCKntTemTraziPartneri" name="dtGetPartneri"> 
+				 <parameter name="@Action" value="Partneri"/> 
+				 <parameter name="@broj_lokacija" value="1"/> 
+			 </data> 
+			<data name="dtAzur" command="spKntIspravakPDVAzur">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@IdDok" value="$IdDok"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@IznosRn" value="#txtUkupnoOsn"/>
+				<parameter name="@IznosPDV" value="#txtUkupnoPDV"/>
+				<parameter name="@Osnovica5" value="#txtOsnovica5"/>
+				<parameter name="@Osnovica13" value="#txtOsnovica13"/>
+				<parameter name="@Osnovica25" value="#txtOsnovica25"/>
+				<parameter name="@PDV5" value="#txtPDV5"/>
+				<parameter name="@PDV13" value="#txtPDV13"/>
+				<parameter name="@PDV25" value="#txtPDV25"/>
+			</data>
+			<data name="dtUkupnoSPDV" command="select @Par1+@Par2 as Iznos" type="text">
+				<parameter name="@Par1" value="#txtUkupnoOsn"/>
+				<parameter name="@Par2" value="#txtUkupnoPDV"/>
+			</data>	
+			<data name="dtUkupno" command="select @Par1+@Par2+@Par3 as Iznos" type="text">				
+				<parameter name="@Par1" value="#txtOsnovica5"/>
+				<parameter name="@Par2" value="#txtOsnovica13"/>
+				<parameter name="@Par3" value="#txtOsnovica25"/>
+			</data>
+			<data name="dtUkupnoPDV" command="select @Par1+@Par2+@Par3 as Iznos" type="text">				
+				<parameter name="@Par1" value="#txtPDV5"/>
+				<parameter name="@Par2" value="#txtPDV13"/>
+				<parameter name="@Par3" value="#txtPDV25"/>
+			</data>
+			<data name="dtIzracunaj25" command="select @Osnovica25*0.25 as PDV25" type="text">
+				<parameter name="@Osnovica25" value="#txtOsnovica25" type="decimal"/>
+			</data>
+			<data name="dtIzracunaj5" command="select @Osnovica5*0.05 as PDV5" type="text">
+				<parameter name="@Osnovica5" value="#txtOsnovica5" type="decimal"/>
+			</data>
+			<data name="dtIzracunaj13" command="select @Osnovica13*0.13 as PDV13" type="text">
+				<parameter name="@Osnovica13" value="#txtOsnovica13" type="decimal"/>
+			</data>
+			<data name="dtPostotak" command="spCKntOPZSTATHelp">
+				<parameter name="@Action" value="postotak"/>
+				<parameter name="@Par1" value="#txtIznosRacuna"/>
+				<parameter name="@Stopa" value="$Stopa"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmEPorezna" caption="ePorezna" saveformsie="true">
+		<event type="onload">
+			<action type="datarun reader" value="~dtGetPutanja"/>
+			<action type="control value" value="#brwDatoteka">
+				<parameter value="~dtGetPutanja.@Putanja" />
+			</action>
+		</event>
+		<layout textposition="left" >
+			<group cols="1" rows="1" >
+				<item col="1" row="1" caption="Putanja spremanja:"  textposition="left" highlight="false" colspan="1">
+					<browseedit name="brwDatoteka" type="folder" required="true"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- <button name="btnPromjeni" caption="Promijeni" dock="left"> -->
+					<!-- <event type="click"> -->
+						<!-- <action type="datarun nonquery" value="Global.~dtPromjeni" > -->
+							<!-- <action type="form close" /> -->
+						<!-- </action> -->
+					<!-- </event> -->
+				<!-- </button> -->
+				<button name="btnEPorezna" caption="ePorezna" dock="left" >
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun reader" value="~dtSetPutanja"/>
+						<action type="datarun reader" value="~dtPisiXML"/>
+						<action type="variable value">
+							<parameter name="KreiranjeXMLSucces" value="$Success" />
+						</action>
+
+						<!-- <action type="message" value="$SepaSucces" /> -->
+						<!-- ako je uspješno formiranje xml-a nastavi -->
+						<action if="$KreiranjeXMLSucces==1">
+							<action type="text export">
+								<parameter name="filePath" value="#brwDatoteka"/>
+								<parameter name="fileName" value="$nazivDatoteke"/>
+								<parameter name="extension" value="xml" />
+								<parameter name="showOpenFileDialog" value="true" />
+								<parameter name="textContent" value="$xml"/>
+							</action>		  
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKntIspravakPDVXML" name="dtPisiXML">
+				<parameter name="@action" value="1" />
+				<parameter name="@DatumOd" value="Global.$datDatumOd" />
+				<parameter name="@DatumDo" value="Global.$datDatumDo" />
+				<parameter name="@xml.output.string"/>
+				<parameter name="@nazivDatoteke.output.string"/>
+				<parameter name="@success.output.int"/>
+			</data>
+			<data command="spKntIspravakPDVXML" name="dtGetPutanja">
+				<parameter name="@action" value="2" />
+				<parameter name="@operateriid" value="@@operateriid" />
+			</data>
+			<data command="spKntIspravakPDVXML" name="dtSetPutanja">
+				<parameter name="@action" value="3" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@putanja" value="#brwDatoteka" />
+			</data>
+		</datalist>
+	</form>
+</root>

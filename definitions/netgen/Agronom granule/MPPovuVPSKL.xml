@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT  
+	SETDEFAULTS="spmpPermissionNG @action = 0, @operateriid = @@operateriid, @object= '@@xmlname',  @sifradok = '119' #select dbo.fnTkoSmoMi() as tkosmomi "
+	ONLOAD2="select 'Dodaj' = case when @@dodaj=1 then 'enable' else 'disable' end , 'Izmjeni' = case when @@izmjeni=1 then 'enable' else 'disable' end , 'Zakljuci' = case when @@Zakljuci=1 then 'enable' else 'disable' end, 'Obrisi' = case when @@Obrisi=1 then 'enable' else 'disable' end , 'Storno' = case when @@storno=1 then 'enable' else 'disable' end , 'otkljucaj' = case when @@otkljucaj=1 then 'enable' else 'disable' end "
+	DETAILGRID="spMPIzdatnicaSKLMP @action = 904,@id=@@id"
+	MASTERDBLCLICK=""
+	CMD1CAPTION="&amp;Parametri:FILTERFORM"
+	CMD2CAPTION=""
+	CMD3CAPTION=""
+	CMD4CAPTION="&amp;Zaključi:ZAKLJUCI"
+	CMD5CAPTION=""
+	CMD6CAPTION="&amp;Print dok.:vrstadokid-MaloprodajaGla"
+	CMD7CAPTION="Lista"
+	CMD8CAPTION=""
+	POPUPMASTER="Parametri:FILTERFORM#Zaključi:ZAKLJUCI#Otključaj:PONISTI"
+	TREE="Danas:DANAS_FORM#Jučer:JUCER_FORM#spMPTreeNG @action=1:TEKUCIMJESEC_FORM#Prošli mjesec:PROSLIMJESEC_FORM#spMPTreeNG @action=2:FILTERODDO_FORM#spMPTreeNG @action=3:FILTERODDO_FORM#spMPTreeNG @action=4:FILTEROPERATERIFORM"
+	GROUPBYBOXVISIBLE="TRUE" ONLOAD=""
+	CHECKBOXVISIBLE="FALSE"
+	TOTALROWVISIBLE="FALSE"
+	COMMANDTIMEOUT="300"
+	DETTOTALROWVISIBLE="FALSE"
+	REPORT=""
+   PAGEHEADERLEFT="Od @@datumod do @@datumdo"
+     PAGEHEADERRIGHT="@@tkosmomi"
+     >
+
+	<NAME>Povrat iz MP u VP </NAME>
+	<CAPTION>Povrat iz MP u VP </CAPTION>
+
+
+<DANAS_FORM         FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=12,@operateriid=@@operateriid,@node='danas', @sifradok = '119'" />
+<JUCER_FORM         FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=12,@operateriid=@@operateriid,@node='jucer', @sifradok = '119'" />
+<TEKUCIMJESEC_FORM  FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=12,@operateriid=@@operateriid,@node='ovajmj', @sifradok = '119'" />
+<PROSLIMJESEC_FORM  FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=12,@operateriid=@@operateriid,@node='proslimj',@sifradok = '119'" />
+<FILTERODDO_FORM    FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=12,@operateriid=@@operateriid,@node='@@node', @sifradok = '119'" />
+
+
+<FILTERFORM 
+	NAME="FILTERFORM" HEIGHT="4800" WIDTH="8000"
+	CAPTION="Upišite uvjete prikaza "
+	ONSUBMIT="spMPQueryGlaIDetNG @action=12, @operateriid= @@operateriid, "
+	ONLOAD=""
+	FILLEXPLORER="TRUE"
+	NEXTFORM=""
+	CMD1CAPTION="Pokaži"
+	CMD2CAPTION="Odustani">
+	
+	<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od" />
+	<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do" />
+	<INPUT TYPE="combo" NAME="vrstadokid" ALLOWEMPTY="TRUE" CAPTION="Vrsta dokumenta" ONLOSTFOCUS="" SQL="spMPDajVrstadok  @sifra = '119', @aktivni=1 " />
+	<INPUT TYPE="combo" NAME="trgovinaid" ALLOWEMPTY="TRUE" CAPTION="Trgovina" ONLOSTFOCUS="" SQL="spMPDajTrgovina @operateriid = @@operateriid " />
+	<INPUT TYPE="combo" NAME="skladisteid" ALLOWEMPTY="TRUE" CAPTION="Skladište" ONLOSTFOCUS="" SQL="spmpdajskladiste @operateriid=@@operateriid" />
+	<INPUT TYPE="combo" NAME="status" ALLOWEMPTY="true" CAPTION="Status" SQL="select 1 as status,'Ne zaprimljeno' as naziv  union all select 2 as status,'Zaprimljeno' as naziv " />
+</FILTERFORM>
+
+
+<ZAKLJUCI 
+	NAME="ZAKLJUCI" HEIGHT="3200" WIDTH="5500" 
+	CAPTION="Zaprimi dokument  ?" 
+	ONSUBMIT="exec spMPIzdatnicaSKLMP @action = 0,@operateriid = @@operateriid, @id=@@id "
+	ONLOAD="if (select status from maloprodajagla where maloprodajaglaid= @@ID ) = 2 and (select dbo.fnMPDajsktid(1,@@id)) is not null begin 
+				exec spRaiserror 69001, 'Dokument je već zaprimljen. Ne može se više zaprimati!' 
+			end else begin if @@id = 0  begin 
+				exec spRaiserror 69001, &apos;Niste odabrali dokument !&apos;
+			end	else begin
+				(select broj from maloprodajagla where maloprodajaglaid = @@id) end end" 
+	FILLEXPLORER="" 	
+	CMD1CAPTION="Zaključi" 
+	CMD2CAPTION="Odustani" >
+	
+	<INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="2304" HEIGHT="317" WIDTH="2794" CAPTION="_broj" TABINDEX="1" ENABLED="FALSE"/>
+	<INPUT TYPE="label" NAME="Label55" TOP="360" LEFT="288"	 HEIGHT="288" WIDTH="1728" CAPTION="Broj dokumenta:" />
+	<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite zaključiti zaprimanje dokumenta  ? " />
+</ZAKLJUCI>
+
+
+<PONISTI
+	WIDTH="5500" 
+	ONSUBMIT="spMPIzdatnicaSKLMP @action = 4 , @id=@@id" 
+	ONLOAD="if (select dbo.fnMPDajsktid(1,@@id)) is null  begin 
+				exec spRaiserror 69001, 'Dokument nije zaprimljen. Ne može se poništiti zaprimanje !' 
+			end	else begin if @@id = 0  begin 
+				exec spRaiserror 69001, &apos;Niste odabrali dokument !&apos;
+			end	else begin
+				(select broj from maloprodajagla where maloprodajaglaid = @@id) end end"		
+	HEIGHT="3200" 
+	CAPTION="Poništiti zaprimanje ?" 
+	CMD1CAPTION="Poništi"         
+	CMD2CAPTION="Odustani">
+	
+	<INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="2304" HEIGHT="317" WIDTH="2794" CAPTION="_broj" TABINDEX="1" ENABLED="FALSE"/>
+	<INPUT TYPE="label" NAME="Label55" TOP="360" LEFT="288"	 HEIGHT="288" WIDTH="1728" CAPTION="Broj dokumenta:" />
+	<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite poništiti zaprimanje dokumenta  ? " />
+</PONISTI>
+
+</PROJECT>
+

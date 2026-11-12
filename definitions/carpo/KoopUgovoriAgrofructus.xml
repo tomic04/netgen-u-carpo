@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root version="1.0.0.0">
+  <form name="frmMaster" type="master" caption="Kooperantski ugovori">
+    <event type="init">
+      <action type="variable value">
+        <parameter name="PartneriId" value="null" type="int"/>
+        <parameter name="Godina" value="null" type="int" />
+        <parameter name="RobaId" value="null" type="int" />
+      </action>
+      <action type="form open" value="frmParametri"/>
+    </event>
+    <managerlayout>
+      <grid name="grdMaster" type="master" key="UgovorId">
+        <event type="focusedrowchanged">
+          <action type="control disable" value="#btnIzmjeni" if="#grdMaster.rowcount==0" />
+          <action type="control enable" value="#btnIzmjeni" else="" />
+          <action type="control disable" value="#btnObrisi" if="#grdMaster.rowcount==0" />
+          <action type="control enable" value="#btnObrisi" else="" />
+          <action type="control populate" value="#grdRabati" />
+          <action type="control populate" value="#grdLimiti" />
+          <action type="control populate" value="#grdPrinosi" />
+        </event>
+        <data command="spOtkupUgovor_Query">
+          <parameter name="action" value="main" />
+          <parameter name="partneriid" value="$Partneri" />
+          <parameter name="godina" value="$Godina" />
+          <parameter name="robaid" value="$RobaId" />
+        </data>
+        <fields>
+          <field name="Datum" caption="Datum ugovora" fixwidth="90" />
+          <field name="BrojUgovora" caption="Broj" fixwidth="200" />
+          <field name="PartnerSifra" caption="Šifra kooperanta" fixwidth="100" />
+          <field name="PartnerNaziv" caption="Kooperanta" fixwidth="150" />
+          <field name="RobaSifra" caption="Šifra robe" fixwidth="125" />
+          <field name="RobaNaziv" caption="Naziv robe" fixwidth="225" />
+           <field name="OrgShemaNaziv" caption="Org. shema" fixwidth="200" />
+          <field name="RokIsporuke" caption="Rok isporuke" fixwidth="90" />
+          <field name="Godina" caption="Godina" fixwidth="70" />
+          <field name="RokIsplate" caption="Rok isplate" fixwidth="70" />
+          <field name="Povrsina" caption="Površina (ha)" fixwidth="80" />
+          <field name="DatumSijanja" caption="Datum sijanja" fixwidth="90" />
+          <field name="Cijena" caption="Cijena (kn)" fixwidth="70" />
+          <field name="Kolicina" caption="Količina (kg)" fixwidth="80" />
+          <field name="OdgOsoba" caption="Odg. osoba" fixwidth="100" />
+          <field name="StariBrojUgovora" caption="Stari broj" fixwidth="100" />
+          <field name="Napomena" caption="Napomena" fixwidt="200" />       
+        </fields>
+        <styles>
+        </styles>
+      </grid>
+
+      <tabs>
+        <tab caption="Rabati">
+          <grid name="grdRabati" dataname="~dtRabati" key="KlMasterRobaId" autopopulate="true">
+            <fields>
+              <field name="Naziv" fixwidth="250" fontbold="true" />
+              <field name="Rabat" minwidth="100" />
+            </fields>
+          </grid>
+        </tab>
+        <tab caption="Limiti">
+          <grid name="grdLimiti" dataname="~dtLimiti" key="KlMasterRobaId" autopopulate="true" showtotalsum="true" showfooter="true">
+            <fields>
+              <field name="Naziv" fixwidth="250" fontbold="true" />
+              <field name="Limit" minwidth="100" />
+            </fields>
+          </grid>
+        </tab>
+        <tab caption="Prinosi">
+          <grid name="grdPrinosi" dataname="~dtPrinosi" key="OtkupUgovorPrinosiId" autopopulate="true">
+            <fields>
+              <field name="Mjesec" fixwidth="100" fontbold="true" />
+              <field name="Prinos" minwidth="100" />
+              <field name="Cijena" minwidth="100" />
+            </fields>
+          </grid>
+        </tab>
+      </tabs>
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnParametri" caption="PARAMETRI">
+          <event type="click">
+            <action type="form open" value="frmParametri" />
+            <action type="control populate keepfocus" value="#grdMaster" />
+          </event>
+        </button>
+        <button name="btnUnesi" caption="UNESI" type="add">
+          <event type="click">
+            <action type="form open" value="frmUpsert">
+              <parameter name="UgovorId" value="null" type="int" />
+              <parameter name="FormCaption" value="Unos" />
+              <parameter name="Broj" value="" />
+            </action>
+          </event>
+        </button>
+        <button name="btnIzmjeni" caption="IZMJENI" type="edit">
+          <menuitem control="#grdMaster"/>
+          <event type="click">
+            <action type="form open" value="frmUpsert" if="#grdMaster.rowcount>0">
+              <parameter name="UgovorId" value="#grdMaster.@UgovorId" />
+              <parameter name="FormCaption" value="Izmjena" />
+              <parameter name="Broj" value="#grdMaster.@BrojUgovora" />
+              <!--<action type="control populate keepfocus" value="#grdMaster" />-->
+            </action>
+          </event>
+        </button>
+        <button name="btnObrisi" caption="OBRIŠI" type="delete">
+          <event type="click">
+            <action type="confirm" value="Želite li obrisati ugovor broj '{#grdMaster.@BrojUgovora}'?" if="#grdMaster.rowcount>0">
+              <action type="datarun nonquery" value="~dtDelete">
+                <action type="control populate" value="#grdMaster" />
+              </action>
+            </action>
+          </event>
+        </button>
+        <button name="btnLimitObnovi" caption="OSVJEŽI LIMIT">
+          <event type="click">
+            <action type="confirm" value="Želite li osvježiti limite za ugovor broj '{#grdMaster.@BrojUgovora}'?" if="#grdMaster.rowcount>0">
+              <action type="datarun nonquery" value="~dtLimitOsvjezi">
+                <action type="control populate keepfocus" value="#grdMaster" />
+              </action>
+            </action>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spOtkupUgovor_Azur" name="dtDelete">
+        <parameter name="action" value="delete" />
+        <parameter name="id" value="#grdMaster.@UgovorId" />
+      </data>
+      <data command="spOtkupUgovor_Query" name="dtRabati">
+        <parameter name="action" value="rabati" />
+        <parameter name="id" value="#grdMaster.@UgovorId" />
+      </data>
+      <data command="spOtkupUgovor_Query" name="dtLimiti">
+        <parameter name="action" value="limiti" />
+        <parameter name="id" value="#grdMaster.@UgovorId" />
+      </data>
+      <data command="spOtkupUgovorPrinosi_Query" name="dtPrinosi">
+        <parameter name="action" value="main" />
+        <parameter name="ugovorid" value="#grdMaster.@UgovorId" />
+      </data>
+      <data command="spOtkupUgovor_Limiti_Osvjezi" name="dtLimitOsvjezi">
+        <parameter name="ugovorid" value="#grdMaster.@UgovorId" />
+        <parameter name="operateriid" value="@@OperateriId" />
+      </data>
+    </datalist>
+  </form>
+
+  <form name="frmParametri" caption="Parametri">
+    <layout textposition="top" itemspadding="4">
+      <group cols="1" rows="4">
+        <item caption="Godina" row="1" col="1">
+          <textedit name="txtGodina" format="d4"/>
+        </item>
+        <item caption="Kooperant" row="2" col="1">
+          <searchedit name="srcKooperant" fontbold="false" netgenfields="true"
+                      fieldtext="" filedvalue="PartneriId"
+                      dataname="Global.dtPartneri" />
+        </item>
+        <item caption="Roba" row="3" col="1">
+          <searchedit name="srcRoba" dataname="Global.dtRoba"
+                      fieldtext="NazivId" fieldvalue="robaid"
+                      netgenfields="true" />
+        </item>      
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnOK" caption="PRIKAŽI" dock="right">
+          <event type="click">
+            <action type="variable value">
+              <parameter name="parent.PartneriId" value="#srcKooperant" />
+              <parameter name="parent.Godina" value="#txtGodina" />
+              <parameter name="parent.RobaId" value="#srcRoba" />
+            </action>
+            <action type="form close"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right" />
+      </buttons>
+    </panelbuttons>
+  </form>
+
+  <form name="frmUpsert" width="1000" caption="{$FormCaption} ugovora {$Broj}">
+    <event type="oninit">
+      <action type="datarun reader" value="dtUgovor" if="$UgovorId!=null" />
+    </event>
+    <event type="load">
+      <action type="control disable" value="#grdRabati" if="$UgovorId==null"/>
+      <action type="control disable" value="#grdLimiti" if="$UgovorId==null"/>
+      <action type="control disable" value="#grdPrinosi" if="$UgovorId==null"/>
+      <action type="control caption" value="#btnSpremi" if="$UgovorId==null">
+        <parameter value="UNESI" />
+      </action>
+      <action type="control caption" value="#btnSpremi" else="">
+        <parameter value="SPREMI" />
+      </action>
+      <action type="variable value"  if="$UgovorId==null">
+        <parameter name="IsInsert" value="1" />
+      </action>
+      <action type="variable value"  else="">
+        <parameter name="IsInsert" value="0" />
+      </action>
+    </event>
+    <event type="close">
+      <action type="control populate" value="parent.#grdMaster">
+        <action type="control focus" value="parent.#grdMaster">
+          <parameter value="$UgovorId" />
+        </action>
+      </action>
+    </event>
+
+    <layout textposition="top" itemspadding="4">
+      <group cols="2" rows="1">
+        <columnsdefinition>
+          <column position="1" size="400" />
+        </columnsdefinition>
+        <group caption="Osnovni podaci" cols="2" rows="10" col="1" row="1">
+          <item caption="Broj ugovora" row="1" col="1">
+            <textedit name="txtBroj" datavalue="~dtUgovor.@BrojUgovora" enabled="false" />
+          </item>
+          <item caption="Datum ugovora" row="1" col="2">
+            <dateedit name="dtDatum" datavalue="~dtUgovor.@Datum" required="true" />
+          </item>
+          <item caption="Kooperant" row="2" col="1" colspan="2">
+            <searchedit name="srcKooperant" fontbold="false" netgenfields="true"
+                        fieldtext="NazivId" fieldvalue="PartneriId"
+                        datavalue="~dtUgovor.@KooperantiId" datatext="~dtUgovor.@PartnerNaziv"
+                        dataname="Global.dtPartneri" required="true" />
+          </item>
+          <item caption="Roba" row="3" col="1" colspan="2">
+            <searchedit name="srcRoba" dataname="Global.dtRoba"
+                        fieldtext="NazivId" fieldvalue="robaid"
+                        datavalue="~dtUgovor.RobaId" datatext="~dtUgovor.RobaNaziv"
+                        netgenfields="true" required="true">
+              <event type="leave">
+                <action type="datarun reader" value="~dtKolicina" />
+                <action type="control value" value="txtKolicina">
+                  <parameter value="~dtKolicina.Kolicina" />
+                </action>
+                <action type="control value" value="txtCijena">
+                  <parameter value="~dtKolicina.Cijena" />
+                </action>
+              </event>
+            </searchedit>
+          </item>
+          <item caption="Org. shema" row="4" col="1" colspan="2">
+            <searchedit name="srcOrgShema" fontbold="false" netgenfields="true"
+                        fieldtext="Naziv" filedvalue="OrgShemaId"
+                        datavalue="~dtUgovor.@OrgShemaId" datatext="~dtUgovor.@OrgShemaNaziv"
+                        dataname="Global.dtOrgShema" required="true" />
+          </item>
+          <item caption="Rok isporuke" row="5" col="1">
+            <dateedit name="dtDatumIsporuke" required="true" datavalue="#dtUgovor.@RokIsporuke" >
+              <event type="leave">
+                <action type="datarun reader" value="~dtGodina"/>
+                <action type="control value" value="txtGodina">
+                  <parameter value="~dtGodina.Godina"/>
+                </action>
+              </event>
+            </dateedit>
+          </item>
+          <item caption="Godina" row="5" col="2">
+            <textedit name="txtGodina" format="d4" datavalue="#dtUgovor.@Godina" enabled="false" />
+          </item>
+          <item caption="Rok isplate" row="6" col="1">
+            <textedit name="txtRokIsplate" format="d3" datavalue="#dtUgovor.@RokIsplate" />
+          </item>
+          <item caption="Stari broj" row="6" col="2">
+            <textedit name="txtStariBroj" datavalue="#dtUgovor.@StariBrojUgovora" />
+          </item>
+          <item caption="Površina (ha)" row="7" col="1">
+            <textedit name="txtPovrsina" format="f2" datavalue="#dtUgovor.@Povrsina">
+              <event type="valuechanged">
+                <action type="datarun reader" value="~dtKolicina" />
+                <action type="control value" value="txtKolicina">
+                  <parameter value="~dtKolicina.Kolicina" />
+                </action>
+              </event>
+            </textedit>
+          </item>
+          <item caption="Datum sijanja" row="7" col="2">
+            <dateedit name="dtDatumSijanja" datavalue="#dtUgovor.@DatumSijanja" />
+          </item>
+          <item caption="Cijena (kn)" row="8" col="1">
+            <textedit name="txtCijena" format="f2" datavalue="#dtUgovor.@Cijena" />
+          </item>
+          <item caption="Količina (kg)" row="8" col="2">
+            <textedit name="txtKolicina" format="f2" datavalue="#dtUgovor.@Kolicina" />
+          </item>
+          <item caption="Odg. osoba" row="9" col="1" colspan="2">
+            <comboedit name="cmbOsoba" datavalue="#dtUgovor.OsobeId" valuefield="OsobeId" displayfield="Naziv" dataname="Global.dtOsobe" />
+          </item>
+          <item caption="Napomena" row="10" col="1" colspan="2">
+            <memoedit name="txtNapomena" datavalue="#dtUgovor.@Napomena" />
+          </item>
+        </group>
+        <tabs col="2" row="1">
+          <group caption="Rabati" cols="1" rows="1">
+            <item row="1" col="1">
+              <grid name="grdRabati" dataname="Global.dtRabati" key="KlMasterRobaId" autopopulate="true">
+                <event type="cellvaluechanged">
+                  <action type="datarun nonquery" value="~dtRabatiUpdate" />
+                  <action type="control populate keepfocus" value="#grdRabati" />
+                </event>
+                <fields>
+                  <field name="Naziv" fixwidth="250" fontbold="true" />
+                  <field name="Rabat" editable="true" minwidth="100" />
+                </fields>
+              </grid>
+            </item>
+          </group>
+          <group caption="Limiti" cols="1" rows="1">
+            <item row="1" col="1">
+              <grid name="grdLimiti" dataname="Global.dtLimiti" key="KlMasterRobaId" autopopulate="true" showtotalsum="true" showfooter="true">
+                <event type="cellvaluechanged">
+                  <action type="datarun nonquery" value="~dtLimitiUpdate" />
+                  <action type="control populate keepfocus" value="#grdLimiti" />
+                </event>
+                <fields>
+                  <field name="Naziv" fixwidth="250" fontbold="true" />
+                  <field name="Limit" editable="true" minwidth="100" />
+                </fields>
+              </grid>
+            </item>
+          </group>
+          <group caption="Prinosi" rows="2" cols="1">
+            <item row="1" col="1">
+              <grid name="grdPrinosi" dataname="Global.dtPrinosi" key="OtkupUgovorPrinosiId" autopopulate="true">
+                <event type="cellvaluechanged">
+                  <action type="datarun nonquery" value="~dtPrinosiUpdate" />
+                </event>
+                <fields>
+                  <field name="Mjesec" fixwidth="100" fontbold="true" />
+                  <field name="Prinos" editable="true" minwidth="100" />
+                  <field name="Cijena" editable="true" minwidt="100" />
+                </fields>
+              </grid>
+            </item>
+          </group>
+        </tabs>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button caption="SPREMI" type="add" dock="right" name="btnSpremi">
+          <event type="click">
+            <action type="validate" />
+            <action type="datarun scalar" value="Global.~dtEdit" if="$UgovorId!=null">
+              <parameter name="Id" />
+            </action>
+            <action type="datarun scalar" value="Global.~dtAdd" else="">
+              <parameter name="Id" />
+            </action>
+            <action type="variable value">
+              <parameter name="UgovorId" value="$Id" />
+            </action>
+            <action type="form close" />
+            <!--<action type="form open" value="frmUpsert" if="$IsInsert==1">
+              <parameter name="UgovorId" value="#grdMaster.@UgovorId" />
+              <parameter name="FormCaption" value="Izmjena" />
+              <parameter name="Broj" value="#grdMaster.@BrojUgovora" />
+            </action>-->
+          </event>
+        </button>
+        <button caption="ODUSTANI" type="cancel" dock="right" />
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spOtkupUgovor_Query" name="dtUgovor">
+        <parameter name="action" value="id" />
+        <parameter name="id" value="$UgovorId" />
+      </data>
+      <data command="select year(@datum) as Godina" type="text" name="dtGodina">
+        <parameter name="@datum" value="#dtDatumIsporuke" />
+      </data>
+      <data command="spOtkupUgovor_Azur" name="dtRabatiUpdate">
+        <parameter name="action" value="rabati" />
+        <parameter name="id" value="$UgovorId" />
+        <parameter name="klmasterrobaid" value="#grdRabati.@KlMasterRobaId" />
+        <parameter name="operateriid" value="@@OperateriId" />
+        <parameter name="rabat" value="#grdRabati.@Rabat" type="decimal" />
+      </data>
+      <data command="spOtkupUgovor_Azur" name="dtLimitiUpdate">
+        <parameter name="action" value="limiti" />
+        <parameter name="id" value="$UgovorId" />
+        <parameter name="klmasterrobaid" value="#grdLimiti.@KlMasterRobaId" />
+        <parameter name="operateriid" value="@@OperateriId" />
+        <parameter name="limit" value="#grdLimiti.@Limit" type="decimal" />
+      </data>
+      <data command="spOtkupUgovorPrinosi_Azur" name="dtPrinosiUpdate">
+        <parameter name="ugovorid" value="$UgovorId" />
+        <parameter name="mjesec" value="#grdPrinosi.@Mjesec" />
+        <parameter name="prinos" value="#grdPrinosi.@Prinos" type="decimal" />
+        <parameter name="cijena" value="#grdPrinosi.@Cijena" type="decimal" />
+      </data>
+      <data command="spOtkupUgovor_Defaults_Query" name="dtKolicina">
+        <parameter name="action" value="kolicina" />
+        <parameter name="robaid" value="#srcRoba" />
+        <parameter name="povrsina" value="#txtPovrsina" type="decimal"/>
+      </data>
+    </datalist>
+  </form>
+
+  <datalist>
+    <data command="spOtkupUgovor_Combo_Query" name="dtKulture">
+      <parameter name="action" value="kulture"/>
+    </data>
+    <data command="spTraziPartneri" name="dtPartneri">
+      <parameter name="@Action" value="Partneri" />
+      <parameter name="@Uvjet" value="#srcKooperant.text" />
+    </data>
+    <data command="spOtkupUgovor_Combo_Query" name="dtOtkupnoMjesto">
+      <parameter name="action" value="otkupno_mjesto" />
+    </data>
+    <data command="spOrgShemaQuery" name="dtOrgShema">
+      <parameter name="action" value="2" />
+      <parameter name="ID" value="null" />
+      <parameter name="naziv" value="#srcOrgShema.text" />
+    </data>
+    <data command="spOtkupUgovor_Query" name="dtRabati">
+      <parameter name="action" value="rabati" />
+      <parameter name="id" value="$UgovorId" />
+    </data>
+    <data command="spOtkupUgovor_Query" name="dtLimiti">
+      <parameter name="action" value="limiti" />
+      <parameter name="id" value="$UgovorId" />
+    </data>
+    <data command="spOtkupUgovorPrinosi_Query" name="dtPrinosi">
+      <parameter name="action" value="main" />
+      <parameter name="ugovorid" value="$UgovorId" />
+    </data>
+    <data command="spOtkupUgovor_Azur" name="dtAdd">
+      <parameter name="action" value="insert" />
+      <parameter name="operateriid" value="@@OperateriId" />
+      <parameter name="datum" value="#dtDatum" />
+      <parameter name="partneriid" value="#srcKooperant" />
+      <parameter name="robaid" value="#srcRoba" />
+      <parameter name="povrsina" value="#txtPovrsina" type="decimal" />
+      <parameter name="rokisporuke" value="#dtDatumIsporuke" />
+      <parameter name="rokisplate" value="#txtRokIsplate" />
+      <parameter name="datumsijanja" value="#dtDatumSijanja" />
+      <parameter name="cijena" value="#txtCijena" type="decimal" />
+      <parameter name="kolicina" value="#txtKolicina" type="decimal" />
+      <parameter name="orgshemaid" value="#srcOrgShema" />
+      <parameter name="staribrojugovora" value="#txtStariBroj" />
+      <parameter name="napomena" value="#txtNapomena" />
+      <parameter name="osobeid" value="#cmbOsoba" />
+    </data>
+    <data command="spOtkupUgovor_Azur" name="dtEdit">
+      <parameter name="action" value="update" />
+      <parameter name="id" value="$UgovorId" />
+      <parameter name="operateriid" value="@@OperateriId" />
+      <parameter name="datum" value="#dtDatum" />
+      <parameter name="partneriid" value="#srcKooperant" />
+      <parameter name="robaid" value="#srcRoba" />
+      <parameter name="povrsina" value="#txtPovrsina" type="decimal" />
+      <parameter name="rokisporuke" value="#dtDatumIsporuke" />
+      <parameter name="rokisplate" value="#txtRokIsplate" />
+      <parameter name="datumsijanja" value="#dtDatumSijanja" />
+      <parameter name="cijena" value="#txtCijena" type="decimal" />
+      <parameter name="kolicina" value="#txtKolicina" type="decimal" />
+      <parameter name="orgshemaid" value="#srcOrgShema" />
+      <parameter name="staribrojugovora" value="#txtStariBroj" />
+      <parameter name="napomena" value="#txtNapomena" />
+      <parameter name="osobeid" value="#cmbOsoba" />
+    </data>
+    <data command="spTraziRoba" name="dtRoba">
+      <parameter name="@action" value="Roba"/>
+      <parameter name="@Uvjet" value="#srcRoba.text"/>
+      <parameter name="@PokaziVPCijene" value="0"/>
+      <parameter name="@PokaziNabCijene" value="0"/>
+      <parameter name="@Retired" value="0"/>
+    </data>
+    <data command="spOtkupUgovor_Combo_Query" name="dtOsobe">
+      <parameter name="@action" value="osobe" />
+    </data>
+  </datalist>
+</root>

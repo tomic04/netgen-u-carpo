@@ -1,0 +1,209 @@
+<root>
+	<!--
+  Komentari:
+  4.11.2025. MP - PERMISSION -> FUNCTION NAME
+  03.09.2024. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmVjestine" caption="Vještine za {parent.#txtPrezime} {parent.#txtIme}" width="850" height="350" >
+		<event type="load">
+			<action type="control populate" value="#grdVjestine"/>		
+			<action type="control disable" value="#btnIzmjenaV,btnBrisanjeV" if="#grdVjestine.rowcount==0"/>
+
+		</event>
+		<layout>
+			<group cols="1" rows="2" groupbordervisible="false">
+				<group cols="1" rows="1" groupbordervisible="true" col="1" row="1" spacing="2,2,2,1">
+					<item row="1" col="1" highlight="false">
+						<grid name="grdVjestine" key="hrvjestineid" dataname="~dtVjestine" multiselect="true" savelayout="true" fieldsmartspaces="false" showgrouppanel="false" bestfitonrefresh="true">
+							<fields inherited="true">
+							</fields>
+							<event type="doubleclick">
+								<action type="form open" value="frmUnosIzmjenaVjestine">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviVjestineId" value="#grdVjestine.@HRKadroviVjestineId" />	
+									<parameter name="Caption" value="Izmjena vještine za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdVjestine"/>	
+							    <action type="control populate" value="parent.#grdPodaci"/>									
+							</event>
+						</grid>
+					</item>
+				</group>
+				<group cols="8" rows="1" groupbordervisible="true" col="1" row="2" spacing="2,2,1,2">
+					<item row="1" col="1" highlight="false" height="40">
+						<button name="btnUnos" caption="Dodaj" function="UNOS_VJESTINE"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaVjestine"> 
+									<parameter name="Caption" value="Unos vještine za {parent.#txtPrezime} {parent.#txtIme}"/>		
+									<parameter name="HRKadroviVjestineId" value="0"/>   
+									<parameter name="HRKadroviId" value="$HRKadroviId" />	
+
+								</action>  
+								<action type="control populate keepfocus" value="#grdVjestine"/>
+							<action type="control populate" value="parent.#grdPodaci"/>								
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="2" highlight="false" height="40" >
+						<button name="btnIzmjenaV" caption="Izmjeni" function="IZMJENA_VJESTINE"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaVjestine">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviVjestineId" value="#grdVjestine.@HRKadroviVjestineId" />	
+									<parameter name="Caption" value="Izmjena vještine za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdVjestine"/>	
+								<action type="control populate" value="parent.#grdPodaci"/>								
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="3" highlight="false" height="40">
+						<button name="btnBrisanjeV" caption="Obriši" function="BRISANJE_VJESTINE"> 
+							<event type="click">   
+								<action type="confirm" value="Jeste li sigurni da želite obrisati izabrani zapis?">
+									<action type="datarun nonquery" value="~dtBrisanjeVjestine">
+
+									</action>
+								</action>
+								<action type="control populate" value="#grdVjestine,parent.#grdPodaci"></action>    
+								<action type="control disable" value="#btnIzmjenaV,btnBrisanjeV" if="#grdVjestine.rowcount==0"/>
+							</event>  
+						</button>
+					</item>
+
+					<item row="1" col="4" colspan="4" highlight="false" height="40"/>
+					<item row="1" col="8" highlight="false" height="40">
+						<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+							<event type="click">
+								<action type="form close" />
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+
+		</layout>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_Vjestine_CP" name="dtVjestine">
+				<parameter name="@action" value="grid_vjestine" />
+				<parameter name="@hrkadroviid" value="$HRKadroviId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Vjestine_CP" name="dtBrisanjeVjestine">
+				<parameter name="@action" value="brisanje"/>
+				<parameter name="@HRKadroviVjestineId" value="#grdVjestine.@HRKadroviVjestineId"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!-- FORMA ZA UNOS,IZMJENU ZAPOSLENJA -->
+	<form name="frmUnosIzmjenaVjestine" caption="$Caption" width="380" height="200" >
+		<event type="init">
+			<action type="datarun reader" value="~dtGetVjestine" if="$HRKadroviVjestineId!=0" />
+		</event>
+		<event type="shown">
+
+		</event>
+		<layout>
+			<group cols="2" rows="7" groupbordervisible="true">
+				<item row="1" col="1" caption="Vještina:" highlight="false" colspan="2">
+					<comboedit name="cmbVjestine" valuefield="HRVjestineId" displayfield="Naziv" required="true" dataname="~dtVjestine" datavalue="~dtGetVjestine.@HRVjestineId"/>
+				</item>
+				<item row="2" col="1" caption="Datum:"  highlight="false" colspan="2">
+					<dateedit name="dtDatum" value="now"  datavalue="~dtGetVjestine.@Datum">
+					</dateedit>
+				</item>
+				<item row="3" col="1" caption="Dokument:" highlight="false" colspan="2">
+					<textedit name="txtDokument" datavalue="~dtGetVjestine.@Dokument"/>
+				</item>
+				<item row="4" col="1" caption="Izdao:" highlight="false" colspan="2" rowspan="2">
+					<memoedit name="memoIzdao" datavalue="~dtGetVjestine.@Izdao"/>
+				</item>
+				<item row="6" col="1" caption="Napomena:" highlight="false" colspan="2" rowspan="2">
+					<memoedit name="memoNapomena" datavalue="~dtGetVjestine.@Napomena"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+					    <action type="validate"/>
+						<action if="$HRKadroviVjestineId==0">
+							<action type="datarun reader" value="~dtUnosVjestine">
+								<action type="control populate" value="parent.#grdVjestine">
+									<action type="control focus" value="parent.#grdVjestine">
+										<parameter value="$noviID"/>
+									</action>
+								</action>
+							</action>
+							<action type="control enable" value="parent.#btnIzmjenaV,parent.#btnBrisanjeV"/>
+						</action>
+						<action if="$indGreske==0">
+							<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+							<action type="variable value" value="global.$RefreshajMaster">
+								<parameter value="1" type="int"/>
+							</action>
+							<action type="message" value="Uspješno spremljeno!"/>
+							<action type="form close" />
+						</action>
+						<action if="$HRKadroviVjestineId!=0">
+							<action type="datarun reader" value="~dtIzmjenaVjestine"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+								<action type="variable value" value="global.$RefreshajMaster">
+									<parameter value="1" type="int"/>
+								</action>
+								<action type="form close"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_Vjestine_CP" name="dtVjestine">
+				<parameter name="@action" value="cmb_vjestine"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Vjestine_CP" name="dtGetVjestine">
+				<parameter name="@action" value="getVjestine" />
+				<parameter name="@hrkadroviid" value="$hrkadroviid" type="int"/>
+				<parameter name="@HRKadroviVjestineId" value="$HRKadroviVjestineId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Vjestine_CP" name="dtUnosVjestine">
+				<parameter name="@action" value="unos"/>
+				<parameter name="@HRKadroviVjestineId.output.int" variablename="noviID"></parameter>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@HRVjestineId"  value="#cmbVjestine" />
+				<parameter name="@Datum"  value="#dtDatum" />
+				<parameter name="@Dokument"  value="#txtDokument" />
+				<parameter name="@Izdao"  value="#memoIzdao" />
+				<parameter name="@Napomena"  value="#memoNapomena" />
+				<parameter name="@indGreske.output.int"/>			
+			</data>
+			<data command="spHRManagerMaster_Podaci_Vjestine_CP" name="dtIzmjenaVjestine">
+				<parameter name="@action" value="izmjena"/>
+				<parameter name="@HRKadroviVjestineId" value="$HRKadroviVjestineId"></parameter>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@HRVjestineId"  value="#cmbVjestine" />
+				<parameter name="@Datum"  value="#dtDatum" />
+				<parameter name="@Dokument"  value="#txtDokument" />
+				<parameter name="@Izdao"  value="#memoIzdao" />
+				<parameter name="@Napomena"  value="#memoNapomena" />
+				<parameter name="@indGreske.output.int"/>			
+			</data>
+
+		</datalist>
+	</form>
+</root>

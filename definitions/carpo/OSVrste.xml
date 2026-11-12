@@ -1,0 +1,182 @@
+﻿
+<root version="1.1">
+  
+  <!--1.1. MZ - maxlength na oznaka-->
+  
+  <form name="frmMaster" type="master" caption="Vrste osnovnih sredstava">
+
+    <managerlayout>
+      <tree name="tree"  allowselfdrag="true" dataname="dtOsVrsteTree" showcolumns="true" showautofilterrow="false" expandallonload="true" expandedlevel="2">
+        <fields>
+          <field name="Naziv" />
+          <field name="Oznaka" />
+          <field name="NazivP" caption="Predložak" />
+        </fields>
+      </tree>
+
+    </managerlayout>
+
+    <panelbuttons displaycontrolsprint="false">
+
+
+      <!--Za drag and drop spremanje/odustajanje-->
+      <buttons type="tree">
+        <button name="btnDrag" caption="Spremi promjene" type="selfdrag" function="SpremiPromjeneVrste">
+          <event type="click">
+            <action type="datarun nonquery" value="~dtOsVrsteAzur" />
+            <action type="control defaultmode" value="#tree" />
+          </event>
+        </button>
+
+        <button name="btnDrag" caption="Odustani" type="selfdragcancel">
+          <event type="click">
+            <action type="confirm" value="Želite odustati od reorganizacije?">
+              <action type="control populate" value="#tree" />
+              <action type="control dragmode" value="#tree" />
+            </action>
+          </event>
+        </button>
+        <button name="btnUnesi" caption="Unos nove vrste" type="add" begingroup="true" function="UnesiVrste">
+          <event type="click">
+            <action type="form open" value="frmPromjena">
+              <parameter name="OsVrsteId" value="#tree" />
+              <parameter name="FormType" value="unos" />
+            </action>
+          </event>
+        </button>
+
+        <button name="btnEdit" caption="Izmjena vrste" type="edit" function="IzmijeniVrste">
+          <event type="click">
+            <action type="form open" value="frmPromjena" if="#tree.@Id!=-1">
+              <parameter name="Id" value="1" />
+              <parameter name="OsVrsteId" value="#tree" />
+              <parameter name="FormType" value="izmjena" />
+            </action>
+            <action type="control populate keepfocus" value="#tree" />
+          </event>
+        </button>
+
+        <button name="btnDelete" caption="Brisanje vrste" type="delete" function="ObrisiVrste">
+          <event type="click">
+            <action type="confirm" value="Jeste li sigurni da želite obrisati vrstu?" if="#tree.@ID!=-1">
+              <action type="datarun nonquery" value="~dtOsVrsteDelete" />
+            </action>
+            <action type="control populate keepfocus" value="#tree" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spOsVrsteQueryCP" name="dtOsVrsteTree">
+        <parameter name="@Action" value="getTree" />
+      </data>
+      <data command="spOsVrsteTreeAzurCP" name="dtOsVrsteAzur">
+        <parameter name="@Action" value="setTree" />
+        <parameter name="@TableVar" value="#tree.datasource" />
+      </data>
+      <data command="spOsVrsteAzurCP" name="dtOsVrsteDelete">
+        <parameter name="@Action" value="brisanje" />
+        <parameter name="@OsVrsteId" value="#tree"/>
+        <parameter name="@Naziv" value="#txtNaziv" />
+        <parameter name="@Oznaka" value="#txtOznaka" />
+      </data>
+    </datalist>
+  </form>
+
+  <!--FORMA ZA UNOS/IZMJENU VRSTE-->
+
+  <form name="frmPromjena" caption="Vrste - {$formType}" height="250" width="400" fixedsize="true">
+    <event type="init">
+      <action type="datarun reader" value="~dtGet" if="$Id!=null" />
+    </event>
+
+    <layout textposition="left">
+      <group cols="1" rows="2" if="$Id==null">
+        <group row="1" col="1" cols="1" rows="1" caption="pozicioniranje u odnosu na selektiranu stavku" spacing="0,0,0,10">
+          <group row="1" col="1" rows="1" cols="5" groupbordervisible="false">
+            <item row="1" col="1" highlight="false">
+              <radioedit name="rdo1" caption="Unutar" value="true" />
+            </item>
+            <item row="1" col="2" highlight="false">
+              <radioedit name="rdo2" caption="Iza" enabled="false" />
+            </item>
+            <item row="1" col="3" highlight="false">
+              <radioedit name="rdo3" caption="Ispred" enabled="false" />
+            </item>
+            <item row="1" col="4">
+            </item>
+            <item row="1" col="5" highlight="false">
+              <checkedit name="chkFormClose" value="true" tooltip="Zatvori formu nakon spremanja" />
+            </item>
+          </group>
+        </group>
+        <group row="2" col="1" cols="1" rows="3" groupbordervisible="false">
+          <item caption="Naziv:" col="1" row="1"  >
+            <textedit name="txtNaziv" required="true" datavalue="~dtGet.@Naziv"/>
+          </item>
+          <item caption="Oznaka:" col="1" row="2">
+            <textedit name="txtOznaka" required="true" datavalue="~dtGet.@Oznaka" maxlength="10"/>
+          </item>
+          <item caption="Predložak:" row="3" col="1">
+            <comboedit name="cmbTemplate"  valuefield="OSDodPodaciTemplateId" displayfield="NazivP" datavalue="~dtGet.@OSDodPodaciTemplateId" dataname="~dtTemplate"/>
+          </item>
+        </group>
+      </group>
+      <group cols="1" rows="3" else="">
+        <item caption="Naziv:" col="1" row="1"  >
+          <textedit name="txtNaziv" required="true" datavalue="~dtGet.@Naziv"/>
+        </item>
+        <item caption="Oznaka:" col="1" row="2">
+          <textedit name="txtOznaka" required="true" datavalue="~dtGet.@Oznaka" />
+        </item>
+        <item caption="Predložak:" row="3" col="1">
+          <comboedit name="cmbTemplate"  valuefield="OSDodPodaciTemplateId" displayfield="NazivP" datavalue="~dtGet.@OSDodPodaciTemplateId" dataname="~dtTemplate"/>
+        </item>
+      </group>
+    </layout>
+
+
+    <panelbuttons>
+      <buttons>
+        <button caption="Spremi" type="add" dock="left">
+          <event type="click">
+            <action type="validate" />
+            <action type="datarun scalar" value="~dtAzur" >
+              <parameter name="Vrsid"/>
+              <!--<action type="message" value="$ID"></action>-->
+            </action>
+            <action type="control populate keepfocus" value="parent.#tree"/>
+            <action type="control expand" value="parent.#tree">
+              <parameter name="key" value="$Vrsid"></parameter>
+            </action>
+            <action type="form close" if="$Id!=null||#chkFormClose==true" />
+          </event>
+        </button>
+        <button caption="Odustani" type="cancel" dock="right" />
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spOsVrsteQueryCP" name="dtTemplate">
+        <parameter name="@Action" value="GetTemplate" />
+      </data>
+      <data command="spOsVrsteAzurCP" name="dtAzur">
+        <parameter name="@Action" value="Unos" if="$Id==null" />
+        <parameter name="@Action" value="Izmjena" else="" />
+        <parameter name="@OsVrsteId" value="$OsVrsteId" text="" />
+        <parameter name="@Naziv" value="#txtNaziv" />
+        <parameter name="@Oznaka" value="#txtOznaka" />
+        <parameter name="@OSDodPodaciTemplateId" value="#cmbTemplate" />
+        <parameter name="@InsertTip" value="in" if="#rdo1==true" />
+        <parameter name="@InsertTip" value="down" elseif="#rdo2==true" />
+        <parameter name="@InsertTip" value="up" else="" />
+      </data>
+      <data command="spOsVrsteQueryCP" name="dtGet">
+        <parameter name="@Action" value="GetSingle" />
+        <parameter name="@OsVrsteId" value="$OsVrsteId" />
+      </data>
+    </datalist>
+  </form>
+
+</root>

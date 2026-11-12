@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root version="1.0">
+	<form name="frmMaster" type="master" caption="Min. i max. datumi za skladište">
+		<event type="shown">
+			<action type="control populate keepfocus" value="#grdGlava" />
+		</event>
+		<managerlayout>
+			<grid name="grdGlava" type="master" key="Skladiste_MinMaxDatumId" autopopulate="false" showgroupsum="false" dataname="~dtDohvati" savelayout="true" bestfitonrefresh="true" multiselect="true">
+				<menu>
+					<menuitem name="menPovijest" caption="POVIJEST IZMJENA" sort="1" function="Povijest">
+						<event type="click">
+							<action type="form open" value="frmPovijestIzmjena">
+								<parameter name="Skladiste_MinMaxDatumId" value="#grdGlava.@Skladiste_MinMaxDatumId" />												
+							</action>								
+						</event>					
+					</menuitem>					
+				</menu>	
+				<fields>
+					<field name="Oznaka" caption="Oznaka"/>
+					<field name="Skladiste" caption="Skladište"/>
+					<field name="MinDatum" caption="Min. datum" />
+					<field name="MaxDatum" caption="Max. datum" />					
+					<field name="OrgShema" caption="Org. shema" />	
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control disable" value="#btnIzmijeni,#btnObrisi,#btnMultiEdit" if="#grdGlava.rowcount==0"/>
+					<action type="control enable" value="#btnIzmijeni,#btnObrisi,#btnMultiEdit"  else="" />					
+				</event>
+				<event type="doubleclick">					
+					<action type="form open" value="frmUnos">
+						<parameter name="Skladiste_MinMaxDatumId" value="#grdGlava.@Skladiste_MinMaxDatumId" />
+							<parameter name="Ind_Unos" value="0" />
+							<parameter name="Tekst" value="Izmjena" type="string" />	
+					</action>							
+					<action type="control populate keepfocus" value="#grdGlava" />
+				</event>				
+			</grid>
+		</managerlayout>
+		<panelbuttons>		
+			<buttons>
+				<button name="btnUnesi" caption="&amp;UNESI" type="add">
+					<event type="click">						
+						<action type="form open" value="frmUnos" >
+							<parameter name="Skladiste_MinMaxDatumId" value="null" />
+							<parameter name="Ind_Unos" value="1" />
+							<parameter name="Tekst" value="Unos" type="string"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="&amp;IZMIJENI" type="edit">										
+					<event type="click">
+						<action type="form open" value="frmUnos">
+							<parameter name="Skladiste_MinMaxDatumId" value="#grdGlava.@Skladiste_MinMaxDatumId" />
+							<parameter name="Ind_Unos" value="0" />
+							<parameter name="Tekst" value="Izmjena" type="string" />												
+						</action>							
+					</event>
+				</button>
+				<button name="btnObrisi" caption="&amp;OBRIŠI" type="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati odabrane stavke?">
+							<action type="control foreachrow selected" value="#grdGlava">
+								<action type="datarun nonquery" value="Global.dtDelete"/>							
+							</action>
+						</action>
+						<action type="control populate" value="#grdGlava" />					
+					</event>
+				</button>
+				<button name="btnMultiEdit" caption="&amp;ČAROBNJAK" type="edit" begingroup="true">
+					<event type="click">
+						<action type="form open" value="frmMultiEdit">
+							<parameter name="SelectedIds" value="#grdGlava.selectedids" type="string" />												
+						</action>							
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spSkl_Skladiste_MinMaxDatum_Grid" name="dtDohvati" timeout="60"/>
+		</datalist>		
+	</form>
+	<form name="frmUnos" caption="{$Tekst}" >
+		<event type="init">
+			<action type="datarun reader" value="Global.dtGet" if="$Ind_Unos==0"/>
+		</event>
+		<event type="shown">
+			<action type="control value" value="#datMinDatum" if="#datMinDatum==null">
+				<parameter value="Now"/>
+			</action>			
+			<action type="control value" value="#datMaxDatum" if="#datMaxDatum==null">
+				<parameter value="Now"/>
+			</action>
+			<action type="control disable" value="#cmbSkladiste, #cmbOrgShema" if="$Ind_Unos==0"/>
+			<action type="control focus" value="#cmbSkladiste" if="$Ind_Unos==1"/>
+		</event>
+		<layout textposition="top" itemspadding="3">
+			<group cols="2" rows="3" col="1" row="1">
+				<item caption="Org. shema skladišta:" row="1" col="1" colspan="2">
+					<comboedit name="cmbOrgShema" valuefield="OrgShemaId" displayfield="Naziv" dataname="Global.dtOrgShema">
+						<event type="valuechanged">
+							<action type="control populate" value="#cmbSkladiste" />							
+						</event>
+					</comboedit>
+				</item>				
+				<item caption="Skladište:" row="2" col="1" colspan="2">
+					<combomultiedit name="cmbSkladiste" required="true" valuefield="SkladisteId" displayfield="Opis" datavalue="~dtGet.@SkladisteId" dataname="Global.dtSkladiste" allownull="false" showmultiselecttext="true"/>
+				</item>			
+				<item caption="Min. datum:" row="3" col="1">
+					<dateedit name="datMinDatum" required="true" value="Now" datavalue="~dtGet.@MinDatum"/>
+				</item>
+				<item caption="Max. datum:" row="3" col="2">
+					<dateedit name="datMaxDatum" required="true" value="Now" datavalue="~dtGet.@MaxDatum"/>
+				</item>	
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="&amp;SPREMI">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun scalar" value="Global.dtInsert" if="$Ind_Unos==1">
+							<parameter name="Skladiste_MinMaxDatumId" />
+						</action>													
+						<action type="datarun nonquery" value="Global.dtUpdate" if="$Ind_Unos==0"/>
+						
+						<action type="control populate" value="parent.#grdGlava" />
+						<action type="control focus" value="parent.#grdGlava" if="$Ind_Unos==1">
+							<parameter value="$Skladiste_MinMaxDatumId" />
+						</action>	
+						<action type="form close"/>						
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel" />
+			</buttons>
+		</panelbuttons>	
+	</form>
+	<form name="frmPovijestIzmjena" caption="Povijest izmjena" width="600" height="400" >
+		<layout textposition="top" itemspadding="3">
+			<group cols="1" rows="1" >
+				<item col="1" row="1" highlight="False" >
+					<grid name="grdLog" dataname="global.dtPovijest" autopopulate="true" >								
+						<fields>
+							<field name="Oznaka" caption="Oznaka"/>
+							<field name="Skladiste" caption="Skladište"/>
+							<field name="MinDatum" caption="Min. datum" />
+							<field name="MaxDatum" caption="Max. datum" />	
+							<field name="DatumIzmjene" caption="Vrijeme izmjene" formatstring="dd.MM.yyyy. HH:mm:ss"/>
+							<field name="OperaterIzmjene" caption="Operater izmjene" />
+							<field name="Akcija" caption="Akcija" />
+						</fields>						
+					</grid>
+				</item>					
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOdustani" caption="ZATVORI" type="cancel"/>
+			</buttons>
+		</panelbuttons>		
+	</form>
+	<form name="frmMultiEdit" caption="Izmijeni više" >
+		<event type="shown">
+			<action type="control value" value="#datMinDatum" if="#datMinDatum==null">
+				<parameter value="Now"/>
+			</action>			
+			<action type="control value" value="#datMaxDatum" if="#datMaxDatum==null">
+				<parameter value="Now"/>
+			</action>
+		</event>
+		<layout textposition="top" itemspadding="3">
+			<group cols="2" rows="1" col="1" row="1">		
+				<item caption="Min. datum:" row="1" col="1">
+					<dateedit name="datMinDatum" required="true" value="Now" datavalue="~dtGet.@MinDatum"/>
+				</item>
+				<item caption="Max. datum:" row="1" col="2">
+					<dateedit name="datMaxDatum" required="true" value="Now" datavalue="~dtGet.@MaxDatum"/>
+				</item>	
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="&amp;SPREMI">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="Global.dtUpdate"/>
+						<action type="form close"/>
+						<action type="control populate" value="parent.#grdGlava" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel" />
+			</buttons>
+		</panelbuttons>		
+	</form>		
+	<datalist>
+		<data command="spSkl_Skladiste_MinMaxDatum_Brisanje" name="dtDelete">
+			<parameter name="@id" value="#grdGlava.@Skladiste_MinMaxDatumId" />
+		</data>		
+		<data command="spSkl_Skladiste_MinMaxDatum_Izmjena" name="dtUpdate">
+			<parameter name="@id" value="null" if="$Skladiste_MinMaxDatumId==null"/>
+			<parameter name="@id" value="$Skladiste_MinMaxDatumId" else=""/>
+			<parameter name="@strskl" value="$SelectedIds" type="string" if="$Skladiste_MinMaxDatumId==null"/>
+			<parameter name="@strskl" value="null" else=""/>			
+			<parameter name="@mindatum" value="#datMinDatum" />
+			<parameter name="@maxdatum" value="#datMaxDatum" />
+		</data>		
+		<data command="spSkl_Skladiste_MinMaxDatum_Unos" name="dtInsert">
+			<parameter name="@strskl" value="#cmbSkladiste" type="string"/>
+			<parameter name="@mindatum" value="#datMinDatum" />
+			<parameter name="@maxdatum" value="#datMaxDatum" />
+		</data>
+		<data command="spSkl_Skladiste_MinMaxDatum_Query" name="dtGet">
+			<parameter name="@id" value="$Skladiste_MinMaxDatumId" />
+		</data>		
+		<data command="spNG_Combo" name="dtSkladiste">
+			<parameter name="@action" value="Skladiste" />
+			<parameter name="@ind" value="1" />
+			<parameter name="@filter_kolona" value="OrgShemaId" if="#cmbOrgShema!=null"/>
+			<parameter name="@filter_vrijednost" value="#cmbOrgShema" if="#cmbOrgShema!=null"/>
+		</data>			
+		<data command="spSkl_Skladiste_MinMaxDatum_Povijest" name="dtPovijest">
+			<parameter name="@id" value="parent.#grdGlava.@SkladisteId" />
+		</data>	
+		<data command="spNG_Combo" name="dtOrgShema">
+			<parameter name="@Action" value="OrgShema"/>	
+			<parameter name="@Ind" value="2"/>
+		</data>		
+	</datalist>	
+</root>

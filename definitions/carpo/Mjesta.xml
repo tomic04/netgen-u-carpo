@@ -1,0 +1,146 @@
+<root>
+	<form name="frmMaster" type="master" caption="Mjesta">
+		<managerlayout>
+			<grid name="grdMaster" type="master" showautofilterrow="true" dataname="global.dtMaster" key="MjestaId" savelayout="true" statusbar="true" bestfitonrefresh="true" multiselect="true">
+				<event type="doubleclick">
+					<action type="form open" value="frmMjestaInsertEdit" if="#grdMaster.rowcount&gt;0">
+						<parameter name="MjestaId" value="#grdMaster.@MjestaId" />
+					</action>
+					<action type="control populate keepfocus" value="#grdMaster" />
+				</event>
+				<fields inherited="false">
+					<field caption="Naziv mjesta" name="Naziv" />
+					<field caption="Poštanski broj" name="HptBroj" />
+					<field caption="Pozivni broj" name="HPTPoziv" />
+					<field caption="Županija" name="ZupanijeNaziv" />
+					<field caption="Država" name="DrzaveNaziv" />
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnUnesi" caption="UNESI" type="add" function="insert">
+					<menuitem control="#grdMaster" sort="1" />
+					<event type="click">
+						<action type="form open" value="frmMjestaInsertEdit">
+							<parameter name="MjestaId" value="null" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit" function="edit">
+					<menuitem control="#grdMaster" sort="2" />
+					<event type="click">
+						<action type="form open" value="frmMjestaInsertEdit" if="#grdMaster.rowcount&gt;0">
+							<parameter name="MjestaId" value="#grdMaster.@MjestaId" />
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete" function="delete">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati označeno mjesto?">
+							<action type="datarun nonquery" value="global.~dtDelete" />
+							<action type="control populate" value="#grdMaster" />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmMjestaInsertEdit" caption="Odjeli">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" />
+		</event>
+		<event type="shown">
+			<action if="$MjestaId!=null">
+				<action type="form caption" value="Izmjena odabranog mjesta" />
+			</action>
+			<action else="">
+				<action type="form caption" value="Unos novog mjesta" />
+			</action>
+		</event>
+		<layout>
+			<group rows="4" cols="1">
+				<item row="1" col="1" caption="Naziv:" highlight="false">
+					<textedit name="txtNazivMjesta" datavalue="~dtGet.@Naziv" required="true" />
+				</item>
+				<item row="2" col="1" caption="Poštanski broj:" highlight="false">
+					<textedit name="txtPostanskiBroj" datavalue="~dtGet.@HptBroj" required="true" maxlength="20" />
+				</item>
+				<item row="3" col="1" caption="Pozivni broj:" highlight="false">
+					<textedit name="txtPozivniBroj" datavalue="~dtGet.@HPTPoziv" required="false" maxlength="5" />
+				</item>
+				<item row="4" col="1" caption="Županija:" highlight="false">
+					<comboedit name="cmbZupanija" required="true" datavalue="#dtGet.@ZupanijeId" displayfield="Naziv" valuefield="ZupanijeId" dataname="global.dtZupanije" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtKontrola">
+							<parameter name="Greska" />
+						</action>
+						<action type="datarun scalar" value="~dtDataEdit" if="$MjestaId!=null">
+							<parameter name="parent.$MjestaId" />
+							<action type="control populate keepfocus" value="parent.#grdMaster" />
+							<action type="form close" if="$Greska!=1" />
+						</action>
+						<action type="datarun scalar" value="~dtDataInsert" if="$MjestaId==null">
+							<parameter name="parent.$MjestaId" />
+							<action type="control populate" value="parent.#grdMaster" />
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="parent.$MjestaId" type="int" />
+							</action>
+						</action>
+						<action type="control refreshvalue" value="txtNazivMjesta" if="$Greska!=1" />
+						<action type="control refreshvalue" value="txtPostanskiBroj" if="$Greska!=1" />
+						<action type="control refreshvalue" value="txtPozivniBroj" if="$Greska!=1" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCMjestaQuery" name="dtGet">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$MjestaId" />
+			</data>
+			<data command="spCMjestaAzur" name="dtDataInsert">
+				<parameter name="@Action" value="0" />
+				<parameter name="@Naziv" value="#txtNazivMjesta" />
+				<parameter name="@HptBroj" value="#txtPostanskiBroj" />
+				<parameter name="@HptPoziv" value="#txtPozivniBroj" />
+				<parameter name="@ZupanijeId" value="#cmbZupanija" />
+			</data>
+			<data command="spCMjestaAzur" name="dtDataEdit">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$MjestaId" />
+				<parameter name="@Naziv" value="#txtNazivMjesta" />
+				<parameter name="@HptBroj" value="#txtPostanskiBroj" />
+				<parameter name="@HptPoziv" value="#txtPozivniBroj" />
+				<parameter name="@ZupanijeId" value="#cmbZupanija" />
+			</data>
+			<data command="spCMjestaAzur" name="dtKontrola">
+				<parameter name="@Action" value="4" />
+				<parameter name="@ID" value="$MjestaId" />
+				<parameter name="@Naziv" value="#txtNazivMjesta" />
+				<parameter name="@HPTPoziv" value="#txtPozivniBroj" />
+				<parameter name="@HptBroj" value="#txtPostanskiBroj" />
+			</data>
+		</datalist>
+	</form>
+	<datalist>
+		<data command="spCMjestaQuery " name="dtMaster">
+			<parameter name="@action" value="0" />
+		</data>
+		<data command="spCMjestaAzur" name="dtDelete">
+			<parameter name="@Action" value="2" />
+			<parameter name="@ID" value="#grdMaster.@MjestaId" />
+		</data>
+		<data command="spCZupanijeQuery" name="dtZupanije">
+			<parameter name="@Action" value="0" />
+		</data>
+	</datalist>
+</root>

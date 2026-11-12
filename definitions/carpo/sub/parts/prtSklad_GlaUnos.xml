@@ -1,0 +1,145 @@
+<parts>
+	<part name="partGlaUnosInit">
+		<event type="init">
+			<action type="datarun reader" value="Global.dtKonfig" />
+			<action type="datarun reader" value="Global.dtPopuniPolja" />
+			<action type="variable value">
+				<parameter name="IndLoad" value="0" />
+			</action>			
+		</event>	
+	</part>
+	<part name="partGlaUnosLoad">
+		<event type="load">
+			<action if="~dtKonfig.@Skladiste==0">
+				<action type="control value" value="#cmbSkladiste" >
+					<parameter value="~dtPopuniPolja.@SkladisteId"/>
+				</action>
+			</action>
+			<action if="~dtKonfig.@Skladiste2==0&amp;&amp;Global.$VisibleSkladisteUlaza==True">
+				<action type="control value" value="#cmbSkladisteUlaza" >
+					<parameter value="~dtPopuniPolja.@Skladiste2Id"/>
+				</action>
+			</action>			
+		</event>	
+	</part>
+	<part name="partGlaUnosShown">
+		<event type="shown">
+			<action if="~dtPopuniPolja.@DatumDok!=null">
+				<action type="control value" value="#datDatumDok" if="~dtKonfig.@Datum==1" >
+					<parameter value="~dtPopuniPolja.@DatumDok"/>
+				</action>
+			</action>			
+			<action if="~dtKonfig.@OrgShema==0">
+				<action type="control value" value="#cmbOrgShema" >
+					<parameter value="~dtPopuniPolja.@OrgShemaId"/>
+				</action>
+			</action>
+			<action else="">
+				<action type="control value" value="#cmbOrgShema" if="#cmbSkladiste.@ImaPravoNaOrgShemu==1">
+					<parameter value="~dtPopuniPolja.@Sklad_OrgShemaId"/>
+				</action>
+			</action>
+			<action if="~dtKonfig.@OdgOsoba==0">
+				<action type="control value" value="#cmbOsoba">
+					<parameter value="~dtPopuniPolja.@OsobeId"/>
+				</action>
+			</action>
+			<action else="">
+				<action type="control value" value="#cmbOsoba">
+					<parameter value="~dtPopuniPolja.@Sklad_OsobeId"/>
+				</action>
+			</action>
+			<action if="global.$VisibleGlaKontakt==true">
+				<action type="control disable" value="#cmbKontakt" if="#srcPartner==null" />
+				<action type="control enable" value="#cmbKontakt" else="" />			
+			</action>	
+		</event>	
+	</part>
+	<part name="partGlaUnosClose">
+		<event type="close">
+			<action type="variable value">
+				<parameter name="Global.OpenEditForm" value="$IndUnos" type="int"/>
+			</action>				
+		</event>	
+	</part>	
+	<part name="partGlaUnosButtons">
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="&amp;UNESI" >
+					<event type="click">
+						<action type="variable value">
+							<parameter name="IndConfirmUnosRN" value="Ne" />
+						</action>
+						<action if="Global.$VisibleRadniNalog==True&amp;&amp;global.$SktRNFors==0&amp;&amp;#srcRadniNalog.@PrnRadniNalogId==null&amp;&amp;#srcRadniNalog.text!=">
+							<action type="confirm" value="Radni nalog s brojem {#srcRadniNalog.text} ne postoji. Želite li ga sada unijeti?">
+								<action type="datarun scalar" value="~dtPrnUnos">
+									<parameter name="PrnRadniNalogId" value="PrnRadniNalogId" />
+								</action>								
+							</action>
+							<action type="variable value">
+								<parameter name="IndConfirmUnosRN" value="Da" />
+							</action> 							
+						</action>
+						<action type="control value" value="#srcRadniNalog" 
+						if="Global.$VisibleRadniNalog==True&amp;&amp;$IndConfirmUnosRN==Ne&amp;&amp;#srcRadniNalog.@PrnRadniNalogId==null">
+							<parameter value="null"/>
+						</action>						
+						<action type="validate"/>				
+						<action if="#cmbSkladiste==#cmbSkladisteUlaza&amp;&amp;Global.$VisibleSkladisteUlaza==True">
+							<action type="message" value="'Skladište izlaza i ulaza moraju biti različiti.'"/>
+							<action type="control focus" value="#cmbSkladisteUlaza"/>							
+						</action>
+						<action elseif="#cmbSkladiste.@Planski!=#cmbSkladisteUlaza.@Planski&amp;&amp;Global.$VisibleSkladisteUlaza==True">
+							<action type="message" value="'Oba se skladišta moraju voditi ili po planskim ili po stvarnim cijenama.'"/>
+							<action type="control focus" value="#cmbSkladisteUlaza"/>							
+						</action>											
+						<action else="">												
+							<action type="datarun scalar" value="~dtSktGlaInsert">
+								<parameter name="SktPrometGlaId" />
+							</action>						
+							<action type="variable value" value="Global.$DokId">
+								<parameter value="$SktPrometGlaId" />
+							</action>
+							<action type="variable value">
+								<parameter name="IndUnos" value="1" />
+							</action>
+							<action type="form close"/>	
+						</action>							
+					</event>
+				</button>										
+				<button name="btnOdustani" caption="ODUSTANI" dock="left">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>	
+	</part>
+	<part name="partGlaUnosDataList">
+		<datalist>
+			<data command="spSklad_Gla_Unos" name="dtSktGlaInsert">
+				<parameter name="@ID" value="null" />
+				<parameter name="@VrstaDokId" value="$VrstaDokId" />
+				<parameter name="@OrgShemaId" value="#cmbOrgShema" />
+				<parameter name="@DatumDok" value="#datDatumDok" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+				<parameter name="@SkladisteId" value="#cmbSkladiste" />
+				<parameter name="@OrgDok" value="#txtOpis" />
+				<parameter name="@OperaterLock" value="@@operateriid" />
+				<parameter name="@OsobeId" value="#cmbOsoba" />
+				<parameter name="@HrKadroviId" value="#srcOsoba" if="Global.$VisibleGlaOsoba==True"/>
+				<parameter name="@VozacId" value="#srcVozac" if="Global.$VisibleGlaVozac==True"/>
+				<parameter name="@PartneriId" value="#srcPartner" if="Global.$VisibleGlaPartner==True"/>
+				<parameter name="@ParStruId" value="#srcParStru" if="Global.$VisibleGlaParStru==True"/>
+				<parameter name="@OsobeParId" value="#cmbKontakt" if="Global.$VisibleGlaKontakt==True"/>
+				<parameter name="@Skladiste2Id" value="#cmbSkladisteUlaza" if="Global.$VisibleSkladisteUlaza==True"/>
+				<parameter name="@RnNaloziId" value="$PrnRadniNalogId" if="Global.$VisibleRadniNalog==True"/>
+			</data>	
+			<data command="spSklad_Prn_Unos" name="dtPrnUnos">
+				<parameter name="@Broj" value="#srcRadniNalog" />
+				<parameter name="@DatumDok" value="#datDatumDok" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+			</data>			
+		</datalist>			
+	</part>
+</parts>

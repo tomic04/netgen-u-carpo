@@ -1,0 +1,968 @@
+<!-- 
+05.04.2023. MB - dodala <action type="datarun reader" value="Global.dtProdPostavke"/>
+29.03.2023. MB - podešene prodpostavke za sakrivanje Poslovnih ugovora i kontingenata
+02.03.2023. MB - popravili fokus unutar Kalkulacije i kontingente
+14.02.2023. MB - dodala $ValutaBaze i $Valuta
+08.02.2023. MJ - maknula (bodovi) uz caption nabavne cijene
+17.11.2022. MB - dodala DisableKalk i permission na disable/enable Kalkulacija
+14.11.2022. MB - dodala permission RokPlacanja
+30.10.2022. AR - dodao IndDokazanaKvaliteta i IndGGC
+26.10.2022. AR - dodao da se kod učitavanja forme uhvati varijabla KKvalGlaId
+19.10.2022. AR - popravak preklapanja polja
+16-09.2022. AR - dodao padajući izbornik za odabir poslovnog ugovora
+19.08.2022. AR - Na klik na Spremi dodao setanje ProNotpDetId na NULL zbog problema s gumbom ambalaža na sljedećoj stavci kod unosa (HD CASE 73955)
+29.07.2022. AR - U OnLoad dodao da se u polje za kontigent stavi % ako se roba vodi po kontigentima
+10.06.2022. MB - dodala permission "NabavnaCijena"
+01.04.2022. MJ - šaljem datum u spProd_DajPorez
+31.12.2021. MB - porez se uzima iz store i šalje u CarpoSpecific
+24.08.2021. MJ - izbacila fixedsize zbog nove verzije carpa 
+-->
+<root>
+	<form name="frmStavkaUnos" caption="Roba">
+		<method name="fnDimenzijeDet" dll="Dimenzije" class="DimenzijeNet.DimenzijeCarpo" method="run" />
+		<event type="init">
+			<action type="datarun reader" value="Global.dtSkladiste" if="$Action==1||$SkladisteId!=null"/>
+			<action type="datarun reader" value="Global.dtDodatniRabati"/>
+			<action type="datarun reader" value="Global.dtProdPostavke"/>
+			<action type="datarun reader" value="~dtDetquery" if ="$Action==1"/>
+			<action type="variable value" >
+				<parameter name="IndDodatniRabati" value="~dtDodatniRabati.@RabatButtonEnabled" />
+			</action>
+			<action if="global.$Kalkulacija==1" function="Kalkulacija">
+				<!-- DisableKalk=0 -enable; 1-disable-->
+				<action type="variable value" >
+					<parameter name="DisableKalk" value="0"/>
+				</action>
+			</action>
+			<action else="">
+				<action type="variable value" >
+					<parameter name="DisableKalk" value="1"/>
+				</action>
+			</action>
+			<action type="variable value" >
+				<parameter name="ProizvodiId" value="~dtDetquery.@ProizvodiId" />
+			</action>
+			<action type="datarun reader" value="~dtProizvod" if="$ProizvodiId!=null"/>
+			<action type="datarun reader" value="Global.dtPubVars"/>
+			<action type="variable value" if="~dtPubVars.@KupUgovoriNacinPlac==1&amp;&amp;~dtPubVars.@KupUgovoriNacinIsporuke==1">
+				<parameter name="ParamZaTIA" value="1" />
+			</action>
+			<action type="variable value" if="$Action==1" >
+				<parameter name="JMNaziv" value="~dtDetquery.@JMNaziv" />
+			</action>
+			<action type="variable value" if="$Action==1" >
+				<parameter name="Faktor" value="~dtDetquery.@Faktor" />
+			</action>
+			<action type="variable value" if="$Action==1" >
+				<parameter name="DodatnaJM" value="~dtDetquery.@Dodatna JM" />
+			</action>
+			<action type="variable value" if="$Action==1">
+				<parameter name="DodatnaJMId" value="~dtDetquery.@Dod_Jm" />
+			</action>
+			<action type="variable value" if="$Action==1">
+				<parameter name="FaktorFix" value="~dtDetquery.@FaktorFix" />
+			</action>
+			<action type="variable value" if="$Action==1">
+				<parameter name="BrDecimalaDodJM" value="~dtDetquery.@BrDecimala_DodJm" />
+			</action>
+			<action type="variable value" if="$Action==1">
+				<parameter name="BrDecimalaJM" value="~dtDetquery.@BrDecimala_Jm" />
+			</action>
+			<action type="variable value" if="$Action==1">
+				<parameter name="NaknadaTR" value="~dtDetquery.@NaknadaTR" />
+			</action>
+			<action type="variable value" if="$Action==1">
+				<parameter name="NaknadaPO" value="~dtDetquery.@NaknadaPO" />
+			</action>
+			<action type="variable value" if="$Action==1">
+				<parameter name="NaknadaNZ" value="~dtDetquery.@NaknadaNZ" />
+			</action>
+			<action type="variable value" if="$ValuteId==null&amp;&amp;$Action==1">
+				<parameter name="Tecaj" value="~dtDetquery.@VrBoda" />
+			</action>
+			<action type="variable value" if="$ValuteId!=null&amp;&amp;$Action==1">
+				<parameter name="Tecaj" value="$Tecaj" />
+			</action>
+			<action type="variable value" if="$ValuteId==null&amp;&amp;$Action!=1">
+				<parameter name="Tecaj" value="~dtPubVars.@NasBod" />
+			</action>
+			<action type="variable value" if="$Action==1">
+				<parameter name="kkvalglaid" value="~dtDetquery.@kkvalglaid" />
+			</action>
+		</event>
+		<event type="load">
+			<!-- <action type="control enable" value="#txtNaknade" if="Global.$CjenikNaknade==1"/>	 -->
+			<action type="control disable" value="#lblNaknade"/>
+			<action type="control enable" value="#btnPovijest" if="$Action==1"/>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="PorezPosto" value="~dtDetquery.@Porez" if="$Action==1" />
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="RabatPosto" value="~dtDetquery.@Rabat" if="$Action==1" />
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="Bod" value="$Tecaj" if="$Action==1" />
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="ValutaTekst" value="Global.$ValutaBaze" />
+			</action>
+			<!--		<action type="control value" value="#cusCalc" if="$ValuteId!=null">
+				<parameter name="BodTekst" value="$Valuta" />
+			</action>		-->
+			<action type="control value" value="#cusCalc" >
+				<parameter name="CassaPosto" value="~dtDetquery.@Cassa" if="$Action==1" />
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="Kolicina" value="~dtDetquery.@Kolicina" if="$Action==1" />
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="Cijena" value="~dtDetquery.@NettoCijenaKn" if="$Action==1" />
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="RabatButtonEnabled" value="~dtDodatniRabati.@RabatButtonEnabled"/>
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="RabatVrijednost1" value="~dtDetquery.@Rabat1" if="$Action==1"/>
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="RabatVrijednost2" value="~dtDetquery.@Rabat2" if="$Action==1"/>
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="RabatVrijednost3" value="~dtDetquery.@Rabat3" if="$Action==1"/>
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="RabatVrijednost4" value="~dtDetquery.@Rabat4" if="$Action==1"/>
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="RabatVrijednost5" value="~dtDetquery.@Rabat5" if="$Action==1"/>
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="SelectedState" value="~dtDetquery.@IndFixVrijednost" if="$Action==1"/>
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="ConnectionString" value="@@connection" type="string" />
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="ChkKalk" value="Global.$ChkKalk" type="string" />
+			</action>
+			<action type="variable value" >
+				<parameter name="NazivRobe" value="~dtDetquery.@RobaNaziv"/>
+				<parameter name="id" value="~dtDetquery.@RobaId" type="int"/>
+			</action>
+			<action type="variable value" >
+				<parameter name="VrstaDokId" value="parent.$VrstaDokId"/>
+			</action>
+			<action type="control disable" value="#srcRoba" if ="$Action==1" />
+			<!-- <action type="control disable" value="#btnSastavnicaAdd" if ="$Action==1&amp;&amp;$ProizvodiId!=null"/> -->
+			<action type="control enable" value="#btnSastavnicaAdd" if ="$Action==1&amp;&amp;$ProizvodiId==null"/>
+			<action type="control enable" value="#btnSastavnicaAdd" if ="$Action!=1&amp;&amp;$ProizvodiId==null&amp;&amp;$RobaId!=null"/>
+			<action type="control enable" value="#btnSastavnicaDelete" if ="$Action==1&amp;&amp;$ProizvodiId!=null"/>
+			<action type="control enable" value="#txtKolicinaPak" if ="$Action==1&amp;&amp;~dtDetquery.@DefaultInd==1"/>
+			<action type="control enable" value="#txtKontingent, #btnKontingenti" if ="$Action==1&amp;&amp;~dtDetquery.@KKvalObavezan==1"/>
+			<action type="control itemcaption" value="txtKolicinaPak">
+				<parameter value="Količina pak. ({$DodatnaJM}):" if="$DodatnaJM!=null"/>
+				<parameter value="Količina pak.:" else=""/>
+			</action>
+			<action type="control itemcaption" value="txtKolicina">
+				<parameter value="Količina ({$JMNaziv}):" if="$JMNaziv!=null"/>
+				<parameter value="Količina:" else=""/>
+			</action>
+			<action type="control attribute" value="txtKolicina">
+				<parameter name="format" value="n{$BrDecimalaJM}"/>
+			</action>
+			<action type="control attribute" value="txtKolicinaPak">
+				<parameter name="format" value="n{$BrDecimalaDodJM}"/>
+			</action>
+			<action type="control value" value="#cmbOrgShema" >
+				<parameter value="parent.#grdRoba.@orgshemaid"/>
+			</action>
+			<!-- <action type="control disable" value="#btnSpremi" if="$Status!=1"/> -->
+			<!-- <action type="control enable" value="#btnSpremi" else="" />						 -->
+		</event>
+		<event type="shown">
+			<action type="control focus" value="#txtKolicina" if ="$Action==1"/>
+			<action type="control focus" value="#srcRoba" else=""/>
+			<action type="datarun reader" value="~dtStanjeSkladista" if ="$Action==1||$SkladisteId!=null"/>
+			<action type="control refreshvalue" value="#lblStvarnoVrijednost"/>
+			<action type="control refreshvalue" value="#lblRaspolozivoVrijednost"/>
+			<action type="control refreshvalue" value="#lblRezerviranoVrijednost"/>
+			<action type="control visible" value="#cmbPosUgovor">
+				<parameter value="false" if ="global.$PosUgovorVisible==0"/>
+			</action>
+			<action type="control visible" value="#txtkontingent, #btnkontingenti">
+				<parameter value="false" if ="global.$Notp_KontigentVidljivost==0"/>
+			</action>			
+			<action type="control visible" value="#chkIndDokazanaKval">
+				<parameter value="false" if="global.$DokazanaKvalitetaVisible==0"/>
+			</action>
+			<action type="control visible" value="#chkIndGGC">
+				<parameter value="false" if="global.$GGCVisible==0"/>
+			</action>
+			<action type="control value" value="#cusCalc" >
+				<parameter name="DisableKalk" value="$DisableKalk" type="int" />
+			</action>
+			<action type="control value" value="#txtKontingent" if="~dtDetquery.@KKvalObavezan==1&amp;&amp;~dtDetquery.@KKvalGlaId!=null">
+				<parameter value="~dtDetquery.@KKvalBroj"/>
+			</action>
+			<action type="control value" value="#txtKontingent" else="">
+				<parameter value="%"/>
+			</action>
+		</event>
+		<event type="close">
+			<action type="variable value">
+				<parameter name="Global.ChkKalk" value="#cusCalc.@ChkKalk" type="string"/>
+			</action>
+			<action type="control focus" value="parent.#grdRoba">
+				<parameter value="$ProNOtpDetId" />
+			</action>
+			<action type="variable value" >
+				<parameter name="kkvalglaid" value="null"/>
+			</action>
+			<action type="datarun nonquery" value="~dtKKvalLink_Delete" >
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="3" row="1" col="1" groupbordervisible="False">
+				<rowsdefinition>
+					<row size="100%" position="3" />
+				</rowsdefinition>
+				<group caption="Roba:" padding="0" cols="3" rows="1" col="1" row="1" spacing="0,0,0,4">
+					<item textvisible="false" row="1" col="1" fontsizedelta="1">
+						<searchedit netgenfields="true" savelayout="true" required="true" name="srcRoba" fontsizedelta="1" fontbold="True" dataname="Global.dtRoba" fieldtext="NazivId" fieldvalue="robaid" entermovenextcontrol="false" datavalue="~dtDetquery.@RobaId" datatext="~dtDetquery.@RobaNaziv">
+							<event type="keydown" value="13">
+								<action if="#srcRoba==null">
+									<action type="control value" value="#srcRoba" if="$UvjetTrazilice==#srcRoba.text||#srcRoba.text==">
+										<parameter value="null" text="$UvjetTrazilice"/>
+									</action>
+								</action>
+							</event>
+							<event type="valuechanged" raiseonload="false">
+								<action type="variable value" >
+									<parameter name="RobaId" value="#srcRoba" type="int"/>
+								</action>
+								<action type="datarun reader" value="Global.dtRobaCijena" if="#srcRoba!=null"/>
+								<!-- <action type="datarun reader" value="~dtNaknade" if="#srcRoba!=null"/>								 -->
+								<action type="datarun reader" value="~dtNaknadeKalk" if="#srcRoba!=null"/>
+								<action type="datarun reader" value="~dtStanjeSkladista" if="#srcRoba!=null"/>
+								<action type="datarun reader" value="~dtFixCijena" if="#srcRoba!=null"/>
+								<action type="datarun reader" value="dtDajPorez"/>
+								<!-- <action type="datarun reader" value="~dtCijena" if="#srcRoba!=null"/> -->
+								<!-- <action type="datarun reader" value="~dtStavkaUvjeti" if="#srcRoba!=null"/> -->
+								<action type="variable value" >
+									<parameter name="PorezPosto" value="~dtDajPorez.@Porez" />
+								</action>
+								<action type="variable value" >
+									<parameter name="VrCjenikId" value="~dtRobaCijena.@VrCjenikId" />
+								</action>
+								<action type="variable value" >
+									<parameter name="FixCijena" value="~dtFixCijena.@fixcijena" />
+								</action>
+								<action type="variable value" >
+									<parameter name="NaknadaTR" value="~dtRobaCijena.@NaknadaTR" />
+								</action>
+								<action type="variable value" >
+									<parameter name="NaknadaPO" value="~dtRobaCijena.@NaknadaPO" />
+								</action>
+								<action type="variable value" >
+									<parameter name="NaknadaNZ" value="~dtRobaCijena.@NaknadaNZ" />
+								</action>
+								<action type="variable value" >
+									<parameter name="KupUgovoriDetId" value="~dtRobaCijena.@KupUgovoriDetId" />
+								</action>
+								<action type="variable value" >
+									<parameter name="Faktor" value="#srcRoba.@Faktor_Id" />
+								</action>
+								<action type="variable value" >
+									<parameter name="FaktorFix" value="#srcRoba.@FaktorFix_Id" />
+								</action>
+								<action type="variable value" >
+									<parameter name="DefaultInd" value="#srcRoba.@DefaultInd_Id" />
+								</action>
+								<action type="variable value" if="#srcRoba!=null">
+									<parameter name="JMNaziv" value="#srcRoba.@JM" />
+								</action>
+								<action type="variable value" >
+									<parameter name="DodatnaJM" value="#srcRoba.@Dodatna JM" />
+								</action>
+								<action type="variable value" >
+									<parameter name="DodatnaJMId" value="#srcRoba.@Dod_JmId" />
+								</action>
+								<action type="variable value" >
+									<parameter name="BrDecimalaDodJM" value="#srcRoba.@BrDecimala_DodJmId" />
+								</action>
+								<action type="variable value" >
+									<parameter name="BrDecimalaJM" value="#srcRoba.@BrDecimala_JmId" />
+								</action>
+								<action type="variable value" >
+									<parameter name="id" value="#srcRoba" type="int"/>
+									<parameter name="NazivRobe" value="#srcRoba.@NazivId"/>
+								</action>
+								<action type="control value" value="#lblNaknade">
+									<parameter value="~dtNaknadeKalk.@Naknade"/>
+								</action>
+								<action type="control value" value="#txtKolicinaPak" if="#srcRoba.@DefaultInd_Id==0">
+									<parameter value="0"/>
+								</action>
+								<action type="control enable" value="#txtKolicinaPak" if="#srcRoba.@DefaultInd_Id==1" />
+								<action type="control disable" value="#txtKolicinaPak" else="" />
+								<action type="control itemcaption" value="txtKolicinaPak">
+									<parameter value="Količina pak. ({$DodatnaJM}):" if="$DodatnaJM!=null"/>
+									<parameter value="Količina pak.:" else=""/>
+								</action>
+								<action type="control enable" value="#txtKontingent, btnKontingenti" if="#srcRoba.@KKvalObavezan_Id==1" />
+								<action type="control disable" value="#txtKontingent, btnKontingenti" else="" />
+								<action type="control value" value="#txtKontingent" if="#srcRoba.@KKvalObavezan_Id==1">
+									<parameter value="%"/>
+								</action>
+								<action type="control itemcaption" value="txtKolicina">
+									<parameter value="Količina ({$JMNaziv}):" if="$JMNaziv!=null"/>
+									<parameter value="Količina:" else=""/>
+								</action>
+								<action type="control value" value="#cusCalc">
+									<parameter name="IsInit" value="1"/>
+								</action>
+								<action type="control value" value="#cusCalc">
+									<parameter name="Bod" value="$Tecaj"/>
+								</action>
+								<action type="control value" value="#bteNabavna">
+									<parameter value="~dtRobaCijena.@CijenaNabavna"/>
+								</action>
+								<action type="control value" value="#cusCalc" if="$ValuteId==null">
+									<parameter name="PorezPosto" value="#srcRoba.@Porez"/>
+								</action>
+								<action type="control value" value="#cusCalc" else="">
+									<parameter name="PorezPosto" value="0"/>
+								</action>
+								<action type="control value" value="#cusCalc">
+									<parameter name="PorezPosto" value="$PorezPosto" />
+								</action>
+								<action type="control value" value="#cusCalc">
+									<parameter name="Cijena" value="~dtRobaCijena.@Cijena"/>
+								</action>
+								<action type="control value" value="#cusCalc" >
+									<parameter name="RabatPosto" value="~dtRobaCijena.@Rabat"/>
+								</action>
+								<action type="control value" value="#cusCalc" >
+									<parameter name="CassaPosto" value="~dtRobaCijena.@Cassa"/>
+								</action>
+								<action type="control value" value="#cusCalc" >
+									<parameter name="RabatVrijednost1" value="~dtRobaCijena.@Rabat1"/>
+								</action>
+								<action type="control value" value="#cusCalc" >
+									<parameter name="RabatVrijednost2" value="~dtRobaCijena.@Rabat2"/>
+								</action>
+								<action type="control value" value="#cusCalc" >
+									<parameter name="RabatVrijednost3" value="~dtRobaCijena.@Rabat3"/>
+								</action>
+								<action type="control value" value="#cusCalc" >
+									<parameter name="RabatVrijednost4" value="~dtRobaCijena.@Rabat4"/>
+								</action>
+								<action type="control value" value="#cusCalc" >
+									<parameter name="RabatVrijednost5" value="~dtRobaCijena.@Rabat5"/>
+								</action>
+								<action type="control value" value="#cusCalc" >
+									<parameter name="NaknadaNZ" value="$NaknadaNZ"/>
+								</action>
+								<action type="control value" value="#cusCalc" >
+									<parameter name="NaknadaPO" value="$NaknadaPO"/>
+								</action>
+								<action type="control value" value="#cusCalc" >
+									<parameter name="NaknadaTR" value="$NaknadaTR"/>
+								</action>
+								<action type="control value" value="#txtRokPlacanja" >
+									<parameter value="~dtRobaCijena.@Odgoda"/>
+								</action>
+								<action type="control value" value="#lblStvarnoVrijednost" if="#srcRoba!=null">
+									<parameter value="~dtStanjeSkladista.@stanje"/>
+								</action>
+								<action type="control value" value="#lblStvarnoVrijednost" else="">
+									<parameter value="0"/>
+								</action>
+								<action type="control value" value="#lblRaspolozivoVrijednost" if="#srcRoba!=null">
+									<parameter value="~dtStanjeSkladista.@raspolozivo"/>
+								</action>
+								<action type="control value" value="#lblRaspolozivoVrijednost" else="">
+									<parameter value="0"/>
+								</action>
+								<action type="control value" value="#lblRezerviranoVrijednost" if="#srcRoba!=null">
+									<parameter value="~dtStanjeSkladista.@rezervirano"/>
+								</action>
+								<action type="control value" value="#lblRezerviranoVrijednost" else="">
+									<parameter value="0"/>
+								</action>
+								<action type="control attribute" value="txtKolicina">
+									<parameter name="format" value="n{$BrDecimalaJM}"/>
+								</action>
+								<action type="control attribute" value="txtKolicinaPak">
+									<parameter name="format" value="n{$BrDecimalaDodJM}"/>
+								</action>
+								<action type="control enable" value="#btnSastavnicaAdd" if="#srcRoba!=null&amp;&amp;$Action!=1" />
+								<action type="control disable" value="#btnSastavnicaAdd" else="" />
+								<action type="control disable" value="#btnSastavnicaDelete" if="#srcRoba==null" />
+								<action type="variable value" if="#srcRoba==null">
+									<parameter name="ProizvodiId" value="null"  />
+								</action>
+								<action type="control value" value="#lblSastavnica">
+									<parameter value="null" if="#srcRoba==null"/>
+								</action>
+								<action type="control focus" value="#srcRoba" if="#srcRoba==null"/>
+								<action type="control focus" value="#txtKolicinaPak" elseif="#srcRoba.@DefaultInd_Id==1"/>
+								<action type="control focus" value="#txtKolicina" else=""/>
+								<action type="control refreshvalue" value="#srcRoba,#txtKolicinaPak,#txtKolicina,#lblNaknade,#txtRokPlacanja,#meNapomena,#txtKontingent" if="#srcRoba==null"/>
+								<action type="control value" value="#lblStvarnoVrijednost" if="#srcRoba==null">
+									<parameter value="0" />
+								</action>
+								<action type="control value" value="#lblRaspolozivoVrijednost" if="#srcRoba==null">
+									<parameter value="0"/>
+								</action>
+								<action type="control value" value="#lblRezerviranoVrijednost" if="#srcRoba==null">
+									<parameter value="0"/>
+								</action>
+								<action type="control value" value="#bteNabavna" if="#srcRoba==null">
+									<parameter value="0"/>
+								</action>
+								<action type="control value" value="#cusCalc" if="#srcRoba==null">
+									<parameter name="ResetCalcValues" value="true"/>
+								</action>
+								<action type="control enable" value="#btnPovijest" if="#srcRoba!=null"/>
+								<action type="control disable" value="#btnPovijest" else=""/>
+							</event>
+						</searchedit>
+					</item>
+					<item row="1" col="2" textvisible="False">
+						<checkedit name="chkIndDokazanaKval" caption="Dokazana kvaliteta" value="0" datavalue="~dtDetquery.@IndDokazanaKval" />
+					</item>
+					<item row="1" col="3" textvisible="False">
+						<checkedit name="chkIndGGC" caption="Global Gap certificirano " value="0" datavalue="~dtDetquery.@IndGGC" />
+					</item>
+				</group>
+				<group cols="4" rows="1" col="1" row="2" padding="2" spacing="0,0,0,4">
+					<columnsdefinition>
+						<column size="30" position="1"/>
+						<column size="30" position="2"/>
+						<column size="30" position="3"/>
+						<column size="100%" position="4"/>
+					</columnsdefinition>
+					<item row="1" col="1" highlight="False" spacing="0" padding="0">
+						<button name="btnSastavnicaAdd" caption="Dodaj" image="add" imagelocation="middlecenter" enabled="false">
+							<event type="click">
+								<action type="form open" value="frmSastavnica" >
+									<parameter name="action" value="9" type="int" />
+									<parameter name="tip" value=" " />
+									<parameter name="id" value="$id" type="int" />
+									<parameter name="NazivRobe" value="$NazivRobe" />
+								</action>
+							</event>
+						</button>
+					</item>
+					<item row="1" col="2" highlight="False" spacing="4,0,0,0" padding="0">
+						<button name="btnSastavnicaEdit" caption="Izmijeni" image="edit" imagelocation="middlecenter" enabled="false" />
+					</item>
+					<item row="1" col="3" highlight="False" spacing="4,0,0,0" padding="0" >
+						<button name="btnSastavnicaDelete" caption="Obriši" image="delete" imagelocation="middlecenter" enabled="false" >
+							<event type="click">
+								<action type="variable value">
+									<parameter name="ProizvodiId" value="null"  />
+								</action>
+								<action type="control value" value="#lblSastavnica">
+									<parameter value="null"  />
+								</action>
+								<action type="control enable" value="#btnSastavnicaAdd" />
+								<action type="control focus" value="#btnSastavnicaAdd"/>
+								<action type="control disable" value="#btnSastavnicaDelete" />
+							</event>
+						</button>
+					</item>
+					<group cols="1" rows="1" col="4" row="1" padding="0" spacing="4,0,0,0"  backgroundcolor="#dcdcdc">
+						<item  row="1" col="1" padding="0,0,2,0">
+							<labeledit name="lblSastavnica" datavalue="~dtProizvod.@Oznaka" prefix="Sastavnica:&lt;b&gt;  " value="..."  sufix="&lt;/b&gt;"/>
+						</item>
+					</group>
+				</group>
+				<group padding="0" groupbordervisible="False" cols="2" rows="1" col="1" row="3">
+					<columnsdefinition>
+						<column size="340" position="1" />
+					</columnsdefinition>
+					<group padding="4" groupbordervisible="True" caption="Kalkulacija..." cols="1" rows="3" col="2" row="1">
+						<rowsdefinition>
+							<row size="20" position="2" />
+						</rowsdefinition>
+						<group groupbordervisible="false" cols="3" rows="2" col="1" row="1">
+							<item caption="Količina pak.:" textposition="top" row="1" col="1">
+								<textedit name="txtKolicinaPak" fontsizedelta="1" fontbold="True" value="0" format="n2" datavalue="~dtDetquery.@KolicinaPak" enabled="false">
+									<event type="leave" raiseonload="false" >
+										<action type="variable value">
+											<parameter name="Ind_Kol" value="0"  />
+										</action>
+										<action type="datarun reader" value="~dtKolicina"/>
+										<action type="control value" value="#txtKolicina">
+											<parameter value="~dtKolicina.@Kolicina" />
+										</action>
+										<action type="datarun reader" value="~dtNaknadeKalk" if="#srcRoba!=null"/>
+										<action type="control value" value="#lblNaknade">
+											<parameter value="~dtNaknadeKalk.@Naknade"/>
+										</action>
+									</event>
+								</textedit>
+							</item>
+							<item caption="Količina:" textposition="top" row="1" col="2">
+								<textedit name="txtKolicina" fontsizedelta="1" fontbold="True" value="0" format="n2" datavalue="~dtDetquery.@Kolicina" required="true">
+									<event type="valuechanged" raiseonload="false" >
+										<action type="control value" value="#cusCalc">
+											<parameter name="Kolicina" value="#txtKolicina" type="decimal"/>
+										</action>
+									</event>
+									<event type="leave" raiseonload="false" >
+										<action type="variable value">
+											<parameter name="Ind_Kol" value="1"  />
+										</action>
+										<action type="datarun reader" value="~dtKolicina" if="$FaktorFix==1"/>
+										<action type="control value" value="#txtKolicinaPak" if="$FaktorFix==1">
+											<parameter value="~dtKolicina.@Kolicina"/>
+										</action>
+										<action type="datarun reader" value="~dtNaknadeKalk" if="#srcRoba!=null"/>
+										<action type="control value" value="#lblNaknade">
+											<parameter value="~dtNaknadeKalk.@Naknade"/>
+										</action>
+									</event>
+								</textedit>
+							</item>
+							<item caption="Nabavna cijena:" textposition="top" row="1" col="3">
+								<buttontextedit name="bteNabavna" fontsizedelta="2" format="n4" value="0" function="NabavnaCijena" datavalue="~dtDetquery.@NabCijena"/>
+							</item>
+							<group padding="0" groupbordervisible="false" cols="2" rows="1" col="1" row="2">
+								<columnsdefinition>
+									<column position="1" size="300"/>
+									<column position="2" size="10%"/>
+								</columnsdefinition>
+								<item caption="Kontingent:" textposition="top" row="1" col="1" >
+									<textedit name="txtKontingent"  datavalue="~dtDetquery.@KKvalBroj" enabled="false" entermovenextcontrol="false">
+										<event type="keydown" value="13">
+											<action type="datarun nonquery" value="dtBrisiKKvalGlaHelper" />
+											<action type="form open" value="frmKontingentOdabir">
+												<parameter name="Broj" value="#txtKontingent" type="string"/>
+												<parameter name="RobaId" value="#srcRoba" />
+												<parameter name="SkladisteId" value="$SkladisteId" />
+												<parameter name="Kolicina" value="#txtKolicina" type="decimal" />
+												<parameter name="ProNotpGlaId" value="$ProNotpGlaId" />
+												<parameter name="ProNotpDetId" value="$ProNotpDetId" />
+											</action>
+											<action type="control value" value="#cusCalc" >
+												<parameter name="ControlForFocus" value="txtCijena" type="string" />
+											</action>
+											<action type="control focus" value="#btnSpremi" if="$DisableKalk==1" />
+										</event>
+									</textedit>
+								</item>
+								<item textposition="top" caption=" " col="2" row="1">
+									<button name="btnKontingenti" image="search" imagelocation="middlecenter" caption="" enabled="false" >
+										<event type="click">
+											<action type="form open" value="frmKontingentiPregled" >
+												<parameter name="ProNotpDetId" value="$ProNotpDetId" />
+											</action>
+										</event>
+									</button>
+								</item>
+							</group>
+							<group row="2" col="3" cols="1" rows="1" alignmode="local" groupbordervisible="false">
+								<item caption="Naknade:" textposition="left" row="1" col="1" >
+									<labeledit name="lblNaknade" textposition="right" value="0" tabstop="false" format="n2" datavalue="~dtDetquery.@Naknade">
+									</labeledit>
+								</item>
+							</group>
+						</group>
+						<item row="2" col="1" textvisible="False" >
+							<separator dark="true" backcolor="gray" />
+						</item>
+						<item row="3" col="1" textvisible="false" highlight="False">
+							<customcontrol name="cusCalc" dll="Carpo.Specific" class="Carpo.Specific.Cjenik.Kalkulacija"/>
+						</item>
+					</group>
+					<group padding="3" cols="2" rows="7" col="1" row="1" backgroundcolor="white" spacing="0,4,0,0">
+						<itemdefault highlight="False" />
+						<columnsdefinition>
+							<column position="1" size="50%"/>
+							<column position="2" size="50%"/>
+						</columnsdefinition>
+						<rowsdefinition>
+							<row size="20" position="2" />
+							<row size="auto" position="3" />
+							<!--<row size="20" position="4" />-->
+							<!--<row size="100%" position="7" />-->
+						</rowsdefinition>
+						<item row="1" col="1" textvisible="False">
+							<daysedit caption="Rok plaćanja (dana)" name="txtRokPlacanja" function="RokPlacanja" datavalue="~dtDetquery.@RokPlacanja" />
+						</item>
+						<group col="2" row="1" padding="0" groupbordervisible="false" cols="3" rows="3" >
+							<columnsdefinition>
+								<column size="50%" position="1" />
+								<column size="50%" position="5" />
+							</columnsdefinition>
+							<itemdefault highlight="False" />
+							<item row="1" col="2" textvisible="False" padding="0">
+								<labeledit value="Stvarno:" />
+							</item>
+							<item row="1" col="3" padding="0">
+								<labeledit textposition="right" name="lblStvarnoVrijednost" value="0" format="n3" datavalue="~dtStanjeSkladista.@stanje" sufix=" {$JMNaziv}"/>
+							</item>
+							<item row="2" col="2" padding="0">
+								<labeledit value="Raspoloživo:" />
+							</item>
+							<item row="2" col="3" padding="0" >
+								<labeledit textposition="right" name="lblRaspolozivoVrijednost" value="0" format="n3" datavalue="~dtStanjeSkladista.@raspolozivo" sufix=" {$JMNaziv}"/>
+							</item>
+							<item row="3" col="2" padding="0">
+								<labeledit value="Rezervirano:" />
+							</item>
+							<item row="3" col="3" padding="0">
+								<labeledit textposition="right" name="lblRezerviranoVrijednost" value="0" format="n3" datavalue="~dtStanjeSkladista.@rezervirano" sufix=" {$JMNaziv}"/>
+							</item>
+						</group>
+						<item row="2" col="1" textvisible="False" colspan="2">
+							<separator />
+						</item>
+						<item row="3" col="1" caption="Napomena:" textvisible="False" colspan="2">
+							<memoedit name="meNapomena" datavalue="~dtDetquery.@Memo"/>
+						</item>
+						<item row="4" col="1" caption="Dodatna napomena:" textvisible="False" colspan="2">
+							<memoedit name="meDodNapomena" datavalue="~dtDetquery.@Memo2"/>
+						</item>
+
+						<item caption="Org shema:" col="1" row="5" colspan="2">
+							<combotreeedit name="cmbOrgShema" valuefield="ID" displayfield="Naziv" datavalue="~dtDetquery.@OrgShemaId" dataname="dtOrgShema" />
+						</item>
+						<item caption="Poslovni ugovor:" col="1" row="6" colspan="2">
+							<comboedit name="cmbPosUgovor" valuefield="PosUgovoriGlaId" displayfield="Broj" datavalue="~dtDetquery.@PosUgovoriGlaId" dataname="dtDajUgovor"/>
+						</item>
+						<group caption="Ispiši" cols="3" rows="1" col="1" row="7" colspan="2">
+							<!-- <itemdefault row="0" col="0" highlight="False" /> -->
+							<item row="1" col="1" textvisible="False">
+								<checkedit name="chkSastavnica" caption="Sastavnicu" value ="0" datavalue="~dtDetquery.@PrintSastavnica" />
+							</item>
+							<item row="1" col="2" textvisible="False">
+								<checkedit name="chkOpis" caption="Opis uz robu" value ="0" datavalue="~dtDetquery.@PrintOpis" />
+							</item>
+							<item row="1" col="3" textvisible="False">
+								<checkedit name="chkNapomena" caption="Napomenu" value="0" datavalue="~dtDetquery.@PrintNapomena" />
+							</item>
+						</group>
+					</group>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="&amp;SPREMI" type="add" dock="right">
+					<event type="click">
+						<action type="variable value">
+							<!-- setiram na 0 jer po defaultu želim spremanje -->
+							<parameter name="PopraviRabat" value="0" />
+						</action>
+						<action type="validate"/>
+						<action type="datarun query" value="~dtProvjeraRabata" if="#cusCalc.@RabatPosto==0">
+							<action if="~dtProvjeraRabata.@Rabat&gt;0">
+								<action type="confirm" value="Rabat ne odgovara ugovorenom!">
+									<parameter name="captionYes" value="Popravi" />
+									<parameter name="captionNo" value="Nastavi" />
+									<action type="variable value" >
+										<parameter name="PopraviRabat" value="1"/>
+									</action>
+								</action>
+							</action>
+						</action>
+						<action if="$PopraviRabat==0">
+							<action type="datarun scalar" value="~dtRobaIzmjena" if="$Action==1"/>
+							<action if="$Action!=1">
+								<action type="datarun scalar" value="~dtRobaUnos" if="$Action!=1">
+									<parameter name="ProNOtpDetId" />
+								</action>
+								<action type="control populate" value="parent.#grdRoba"/>
+								<action type="datarun reader" value="~dtIznos"/>
+								<action type="control value" value="parent.#txtIznosSPDV">
+									<parameter value="~dtIznos.@IznosKn" />
+								</action>
+								<action type="control value" value="parent.#txtIznosBezPDV">
+									<parameter value="~dtIznos.@IznosOsnovica" />
+								</action>
+								<action type="variable value" >
+									<parameter name="UvjetTrazilice" value="#srcRoba.@UvjetId" />
+								</action>
+								<action type="variable value">
+									<parameter name="ProizvodiId" value="null"  />
+								</action>
+								<action type="control value" value="#lblSastavnica">
+									<parameter value="null"  />
+								</action>
+								<action type="control disable" value="#btnSastavnicaAdd" />
+								<action type="control disable" value="#btnSastavnicaDelete" />
+								<action type="control refreshvalue" value="#srcRoba,#txtKolicinaPak,#txtKolicina,#lblNaknade,#txtRokPlacanja,#meNapomena,#chkIndDokazanaKval, #chkIndGGC"/>
+								<action type="control value" value="#lblStvarnoVrijednost">
+									<parameter value="0"/>
+								</action>
+								<action type="control value" value="#lblRaspolozivoVrijednost">
+									<parameter value="0"/>
+								</action>
+								<action type="control value" value="#lblRezerviranoVrijednost">
+									<parameter value="0"/>
+								</action>
+								<action type="control value" value="#cusCalc">
+									<parameter name="ResetCalcValues" value="true"/>
+								</action>
+								<action type="control value" value="#bteNabavna">
+									<parameter value="0"/>
+								</action>
+								<action type="variable value" >
+									<parameter name="kkvalglaid" value="null"/>
+								</action>
+								<action type="variable value" >
+									<parameter name="ProNotpDetId" value="null"/>
+								</action>
+								<action type="control focus" value="#srcRoba"/>
+							</action>
+							<action type="form close" if="$Action==1" />
+							<action type="control populate" value="parent.#grdRoba" />
+							<action type="control populate" value="parent.#grdUvjeti" />
+						</action>
+					</event>
+				</button>
+				<button caption="ODUSTANI" type="cancel" dock="right" >
+					<event type="click">
+						<action type="datarun nonquery" value="~dtKKvalLink_Delete" >
+						</action>
+					</event>
+				</button>
+				<button name="btnPovijest" caption="POVIJEST" dock="left" enabled="false">
+					<event type="click">
+						<action type="form open" value="frmPovijest">
+							<parameter name="RobaId" value="#srcRoba"/>
+							<parameter name="RobaNaziv" value="#srcRoba.text"/>
+							<parameter name="PartneriId" value="$PartneriId"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnDimenzije" caption="DIMENZIJE" dock="left" enabled="true">
+					<event type="click">
+						<action type="method run" value="fnDimenzijeDet">
+							<parameter name="server" value="@@server" />
+							<parameter name="database" value="@@database" />
+							<parameter name="username" value="@@username" />
+							<parameter name="password" value="" />
+							<parameter name="OperateriId" value="@@operateriid" />
+							<parameter name="Parent" value="0" />
+							<parameter name="pTop" value="0" />
+							<parameter name="pLeft" value="0" />
+							<parameter name="path" value="" />
+							<parameter name="tip" value="ProNotpDetId" />
+							<parameter name="id" value="$ProNotpDetId" />
+							<parameter name="glaid" value="0" if="$Action==0"/>
+							<parameter name="glaid" value="$ProNotpGlaId" else=""/>
+						</action>
+					</event>
+				</button>
+				<button name="btnAmbalaza" caption="AMBALAŽA" dock="left" enabled="true">
+					<event type="click">
+						<action type="form open" value="frmAmbalazaGrid">
+							<parameter name="ProNotpDetId" value="$ProNotpDetId"/>
+							<parameter name="ProNotpGlaId" value="$ProNotpGlaId"/>
+							<parameter name="Action_Notp" value="$Action"/>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_NotpDet_Unos" name="dtRobaUnos">
+				<parameter name="@ProNotpGlaId" value="$ProNotpGlaId" />
+				<parameter name="@RobaId" value="#srcRoba" type="int"/>
+				<parameter name="@Kolicina" value="#txtKolicina" type="decimal"/>
+				<parameter name="@NettoCijenaKn" value="#cusCalc.@Cijena" />
+				<parameter name="@NettoCijenaBod" value="#cusCalc.@CijenaBod" />
+				<parameter name="@BruttoCijenaKn" value="#cusCalc.@CijenaPDV" />
+				<parameter name="@BruttoCijenaBod" value="#cusCalc.@CijenaPDVBod" />
+				<parameter name="@NettoVrijednostKn" value="#cusCalc.@Iznos" />
+				<parameter name="@Rabat" value="#cusCalc.@RabatPosto" />
+				<parameter name="@Rabat1" value="#cusCalc.@RabatVrijednost1" if="#cusCalc.@RabatVrijednost1!=null&amp;&amp;$IndDodatniRabati!=0"/>
+				<parameter name="@Rabat1" value="#cusCalc.@RabatPosto" else=""/>
+				<parameter name="@Rabat2" value="#cusCalc.@RabatVrijednost2" if="#cusCalc.@RabatVrijednost2!=null&amp;&amp;$IndDodatniRabati!=0"/>
+				<parameter name="@Rabat2" value="0" else=""/>
+				<parameter name="@Rabat3" value="#cusCalc.@RabatVrijednost3" if="#cusCalc.@RabatVrijednost3!=null&amp;&amp;$IndDodatniRabati!=0"/>
+				<parameter name="@Rabat3" value="0" else=""/>
+				<parameter name="@Rabat4" value="#cusCalc.@RabatVrijednost4" if="#cusCalc.@RabatVrijednost4!=null&amp;&amp;$IndDodatniRabati!=0"/>
+				<parameter name="@Rabat4" value="0" else=""/>
+				<parameter name="@Rabat5" value="#cusCalc.@RabatVrijednost5" if="#cusCalc.@RabatVrijednost5!=null&amp;&amp;$IndDodatniRabati!=0"/>
+				<parameter name="@Rabat5" value="0" else=""/>
+				<parameter name="@Porez" value="#cusCalc.@PorezPosto" />
+				<parameter name="@Cassa" value="#cusCalc.@CassaPosto" />
+				<parameter name="@NabCijena" value="#bteNabavna" if="#bteNabavna!=null"/>
+				<parameter name="@NabCijena" value="0" else=""/>
+				<parameter name="@VrCjenikId" type ="int" value="$VrCjenikId" />
+				<parameter name="@PrintSastavnica" value="#chkSastavnica" />
+				<parameter name="@PrintOpis" value="#chkOpis" />
+				<parameter name="@PrintNapomena" value="#chkNapomena" />
+				<parameter name="@RokPlacanja" value="#txtRokPlacanja" />
+				<parameter name="@ProizvodiId" type ="int" value="$ProizvodiId" />
+				<parameter name="@PakKolicina" value="#txtKolicinaPak" type="decimal"/>
+				<parameter name="@PakFaktor" value="$Faktor" type="decimal"/>
+				<parameter name="@PakFaktorFix" value="$FaktorFix" type="int"/>
+				<parameter name="@PakJMId" value="$DodatnaJMId" type="int"/>
+				<parameter name="@Memo" value="#meNapomena" />
+				<parameter name="@Memo2" value="#meDodNapomena" />
+				<parameter name="@IndFixVrijednost" value="#cusCalc.@SelectedState" type="int"/>
+				<parameter name="@OperateriId" value="@@OperateriId" />
+				<parameter name="@NaknadaTR" value="$NaknadaTR" type="decimal"/>
+				<parameter name="@NaknadaPO" value="$NaknadaPO" type="decimal"/>
+				<parameter name="@NaknadaNZ" value="$NaknadaNZ" type="decimal"/>
+				<parameter name="@kkvalglaid" value="$kkvalglaid" />
+				<parameter name="@PosUgovoriGlaId" value="#cmbPosUgovor"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShema" />
+				<parameter name="@IndDokazanaKval" value="#chkIndDokazanaKval" />
+				<parameter name="@IndGGC" value="#chkIndGGC" />
+			</data>
+
+			<data command="spProd_NOtpDet_Izmjena" name="dtRobaIzmjena">
+				<parameter name="@Id" value="$ProNOtpDetId" />
+				<parameter name="@ProNOtpGlaId" value="$ProNOtpGlaId" />
+				<parameter name="@RobaId" value="#srcRoba" type="int"/>
+				<parameter name="@Kolicina" value="#txtKolicina" type="decimal"/>
+				<parameter name="@NettoCijenaKn" value="#cusCalc.@Cijena" />
+				<parameter name="@NettoCijenaBod" value="#cusCalc.@CijenaBod" />
+				<parameter name="@BruttoCijenaKn" value="#cusCalc.@CijenaPDV" />
+				<parameter name="@BruttoCijenaBod" value="#cusCalc.@CijenaPDVBod" />
+				<parameter name="@Porez" value="#cusCalc.@PorezPosto" />
+				<parameter name="@ProizvodiId" type ="int" value="$ProizvodiId" />
+				<parameter name="@NabCijena" value="#bteNabavna" if="#bteNabavna!=null"/>
+				<parameter name="@NabCijena" value="0" else=""/>
+				<parameter name="@Memo" value="#meNapomena" />
+				<parameter name="@Memo2" value="#meDodNapomena" />
+				<parameter name="@RokPlacanja" value="#txtRokPlacanja" />
+				<parameter name="@PrintSastavnica" value="#chkSastavnica" />
+				<parameter name="@PrintOpis" value="#chkOpis" />
+				<parameter name="@PrintNapomena" value="#chkNapomena" />
+				<parameter name="@Cassa" value="#cusCalc.@CassaPosto" />
+				<parameter name="@NettoVrijednostKn" value="#cusCalc.@Iznos" />
+				<parameter name="@Rabat" value="#cusCalc.@RabatPosto" />
+				<parameter name="@Rabat1" value="#cusCalc.@RabatVrijednost1" if="#cusCalc.@RabatVrijednost1!=null&amp;&amp;$IndDodatniRabati!=0"/>
+				<parameter name="@Rabat1" value="#cusCalc.@RabatPosto" else=""/>
+				<parameter name="@Rabat2" value="#cusCalc.@RabatVrijednost2" if="#cusCalc.@RabatVrijednost2!=null&amp;&amp;$IndDodatniRabati!=0"/>
+				<parameter name="@Rabat2" value="0" else=""/>
+				<parameter name="@Rabat3" value="#cusCalc.@RabatVrijednost3" if="#cusCalc.@RabatVrijednost3!=null&amp;&amp;$IndDodatniRabati!=0"/>
+				<parameter name="@Rabat3" value="0" else=""/>
+				<parameter name="@Rabat4" value="#cusCalc.@RabatVrijednost4" if="#cusCalc.@RabatVrijednost4!=null&amp;&amp;$IndDodatniRabati!=0"/>
+				<parameter name="@Rabat4" value="0" else=""/>
+				<parameter name="@Rabat5" value="#cusCalc.@RabatVrijednost5" if="#cusCalc.@RabatVrijednost5!=null&amp;&amp;$IndDodatniRabati!=0"/>
+				<parameter name="@Rabat5" value="0" else=""/>
+				<parameter name="@PakKolicina" value="#txtKolicinaPak" type="decimal"/>
+				<parameter name="@PakJMId" value="$DodatnaJMId" type="int"/>
+				<parameter name="@PakFaktor" value="$Faktor" type="decimal"/>
+				<parameter name="@PakFaktorFix" value="$FaktorFix" type="int"/>
+				<parameter name="@NaknadaTR" value="$NaknadaTR" type="decimal"/>
+				<parameter name="@NaknadaPO" value="$NaknadaPO" type="decimal"/>
+				<parameter name="@NaknadaNZ" value="$NaknadaNZ" type="decimal"/>
+				<parameter name="@IndFixVrijednost" value="#cusCalc.@SelectedState" type="int"/>
+				<!-- <parameter name="@VrCjenikId" type ="int" value="$VrCjenikId" /> -->
+				<parameter name="@kkvalglaid" value="$kkvalglaid" />
+				<parameter name="@OperateriId" value="@@OperateriId" />
+				<parameter name="@PosUgovoriGlaId" value="#cmbPosUgovor"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShema" />
+				<parameter name="@IndDokazanaKval" value="#chkIndDokazanaKval" />
+				<parameter name="@IndGGC" value="#chkIndGGC" />
+			</data>
+			<data command="spProd_NotpDet_Query" name="dtDetquery">
+				<parameter name="@ID" value="$ProNotpDetId" />
+			</data>
+			<data command="spProd_KupUgovoriProvjeraRabata" name="dtProvjeraRabata">
+				<parameter name="@RobaId" value="#srcRoba" type="int"/>
+				<parameter name="@PartneriId" value="$PartneriId" type="int"/>
+				<parameter name="@ParStruId" value="$ParStruId" type="int"/>
+				<parameter name="@Datum" value="$DatumDok" type="int"/>
+				<parameter name="@VrCjenikId" value="$VrCjenikId" type="int"/>
+			</data>
+			<data command="spProNOtpDetQuery9" name="dtStanjeSkladista">
+				<parameter name="@robaid" value="#srcRoba" />
+				<parameter name="@skladisteid" value="$SkladisteId" />
+			</data>
+			<data command="spProd_DodJM_Kalk" name="dtKolicina">
+				<parameter name="@action" type='int' value="0"/>
+				<parameter name="@Kolicina" type='decimal' value="#txtKolicinaPak" if="$Ind_Kol==0"/>
+				<parameter name="@Kolicina" type='decimal' value="#txtKolicina" if="$Ind_Kol==1"/>
+				<parameter name="@br_decimala" type='int' value="$BrDecimalaDodJM" if="$Ind_Kol==1"/>
+				<parameter name="@br_decimala" type='int' value="$BrDecimalaJM" if="$Ind_Kol==0"/>
+				<parameter name="@Ind" type='int' value="$Ind_Kol"/>
+				<parameter name="@Faktor" type='decimal' value="$Faktor"/>
+			</data>
+			<data command="select cast(@Kolicina * (coalesce(@NaknadaNZ, 0) + coalesce(@NaknadaPO, 0) + coalesce(@NaknadaTR, 0)) as decimal(18,2)) as Naknade" type="text" name="dtNaknadeKalk">
+				<parameter name="@Kolicina" type='decimal' value="#txtKolicina"/>
+				<parameter name="@NaknadaNZ" type='decimal' value="$NaknadaNZ"/>
+				<parameter name="@NaknadaPO" type='decimal' value="$NaknadaPO"/>
+				<parameter name="@NaknadaTR" type='decimal' value="$NaknadaTR"/>
+			</data>
+			<data command="spProizvodiQuery" name="dtProizvod">
+				<parameter name="@Action" type="int" value="1" />
+				<parameter name="@Id" type="int" value="$ProizvodiId" />
+				<parameter name="@Tip" value="' '" />
+				<parameter name="@PonDetId" type="int" value="0" />
+				<parameter name="@RadniNalogId" type="int" value="0" />
+			</data>
+			<!--             <data command="spRobaNaknade" name="dtNaknade">
+                <parameter name="@RobaId" type="int" value="#srcRoba" />
+                <parameter name="@Datum" type="date" value="$DatumDok" />
+            </data>	 -->
+			<data command="spProNOtpDet_Cijena" name="dtFixCijena">
+				<parameter name="@Action" type="int" value="1" />
+				<parameter name="@RobaId" type="int" value="#srcRoba" />
+				<parameter name="@Datum" type="date" value="$DatumDok" />
+				<parameter name="@PartneriId" type="int" value="$PartneriId" />
+				<parameter name="@OrgShemaId" type="int" value="$OrgShemaId" />
+				<parameter name="@ParStruId" type="int" value="$ParStruId" />
+			</data>
+			<data command="spProd_NotpGla_Iznos" name="dtIznos">
+				<parameter name="@ProNotpGlaId" value="$ProNotpGlaId" />
+			</data>
+			<data command="spProd_NotpDet_KKvalLink_Delete" name="dtKKvalLink_Delete">
+				<parameter name="@Gla_Id" value="$ProNotpGlaId" />
+				<parameter name="@OperateriId" value="@@OperaterId" />
+				<parameter name="@Tip" value="ProNotpDetId" type="string"/>
+			</data>
+			<data command="spProd_DajPorez" name="dtDajPorez">
+				<parameter name="@ProNotpGlaId" value="$ProNotpGlaId" />
+				<parameter name="@RobaId" value="#srcRoba" type="int"/>
+				<parameter name="@Datum" type="date" value="$DatumDok" />
+				<!-- <parameter name="@VrstaDokId" value="$VrstaDokId"/> -->
+			</data>
+			<data command="spNG_Combo" name="dtOrgShema">
+				<parameter name="@Action" value="orgshema" />
+				<parameter name="@Ind" value="1" />
+				<parameter name="@ime_kontrole" value="ID" />
+			</data>
+			<data command="spProd_Notp_getPosUgovoriGla" name="dtDajUgovor">
+				<parameter name="@PartneriId" value="$PartneriId" />
+			</data>
+			<data command="spProd_Notp_DeleteKKvalGlaHelper" name="dtBrisiKKvalGlaHelper"/>
+			<!--             <data command="spProNOtpDet_Cijena" name="dtCijena">
+				<parameter name="@Action" type="int" value="null" />
+                <parameter name="@RobaId" type="int" value="#srcRoba" />
+                <parameter name="@Datum" type="date" value="$DatumDok" />
+				<parameter name="@PartneriId" type="int" value="$PartneriId" />
+				<parameter name="@OrgShemaId" type="int" value="$OrgShemaId" />
+				<parameter name="@ParStruId" type="int" value="$ParStruId" />
+				<parameter name="@skladisteid" value="$SkladisteId" />
+				<parameter name="@devizna" value="1" if="$ValuteId!=null"/>
+				<parameter name="@devizna" value="0" else=""/>
+            </data>	 -->
+			<!--             <data command="spKupUgovoriTipQuery" name="dtStavkaUvjeti">
+				<parameter name="@Action" type="int" value="3" />
+                <parameter name="@RobaId" type="int" value="#srcRoba" />
+				<parameter name="@PartneriId" type="int" value="$PartneriId" />
+				<parameter name="@OrgShemaId" type="int" value="$OrgShemaId" />
+				<parameter name="@ParStruId" type="int" value="$ParStruId" />
+				<parameter name="@devizna" value="1" if="$ValuteId!=null"/>
+				<parameter name="@devizna" value="0" else=""/>
+				<parameter name="@ProNacinNaplateId" value="$ProNacinPlacanjaId" if="$ParamZaTIA==1"/>
+				<parameter name="@ProNacinNaplateId" value="null" else=""/>
+				<parameter name="@ProNacinIsporukeId" value="$ProNacinIsporukeId" if="$ParamZaTIA==1"/>
+				<parameter name="@ProNacinIsporukeId" value="null" else=""/>
+				<parameter name="@VrCjenikId" type="int" value="$VrCjenikId" />
+            </data>	 -->
+		</datalist>
+	</form>
+</root>

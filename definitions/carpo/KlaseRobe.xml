@@ -1,0 +1,473 @@
+<!-- 29.07.2025. v.1.0.0.2 FÖ - dodao na click na button if="#tree.@Id!=null" radi pogrešnog otvaranja forme na filter prostoru, maknuo lock na granulu -->
+<!-- 10.03.2025. v.1.0.0.1 FÖ - incijalna verzija -->
+<root version="1.0.0.2">
+	<form name="frmMaster" type="master" caption="Klase robe">
+		<managerlayout>
+			<lookup name="cmbKlase" forcestorelayout="true" bestfitonrefresh="true" savelayout="true" dataname="dtFilter">
+				<event type="valuechanged">
+					<action type="variable value">
+						<parameter name="global.filter" value="#cmbKlase" />
+					</action>
+				</event>
+			</lookup>
+			<tree name="tree" keyfield="KlMasterRobaId" allowselfdrag="true" dataname="dtOrgTree" showcolumns="false" autofiltercondition="contains" expandallonload="true" expandedlevel="2">
+				<event type="focusedrowchanged">
+					<action type="variable value">
+						<parameter name="global.KlKlRobaId" value="#tree.@KlKlRobaId" />
+					</action>
+				</event>
+				<fields>
+					<field name="Naziv" fixed="left" />
+					<field name="Oznaka" />
+				</fields>
+				<styles>
+					<style name="fontcolor" value="#0000cc" if="#tree.@formatid==blue" />
+				</styles>
+				<event type="dragoverself">
+					<action type="drop" value="false" if="#tree.@Id!=-1" />
+				</event>
+			</tree>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="false">
+			<buttons type="tree">
+				<button name="btnDrag" caption="Spremi promjene" type="selfdrag" width="120" image="money" imagelocation="middleleft">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtOrgAzur" />
+						<action type="control defaultmode" value="#tree" />
+					</event>
+				</button>
+				<button name="btnDrag" caption="Odustani" type="selfdragcancel" width="120" image="previous" imagelocation="middleleft">
+					<event type="click">
+						<action type="confirm" value="Želite odustati od reorganizacije?">
+							<action type="control populate" value="#tree" />
+							<action type="control dragmode" value="#tree" />
+						</action>
+					</event>
+				</button>
+				<button name="btnUnesi" caption="Unesi" type="add" begingroup="true" width="120" color="light" image="add" imagelocation="middleleft">
+					<part name="prtUnesi">
+					</part>
+				</button>
+				<button name="btnEdit" caption="Izmijeni" type="edit" width="120" image="edit" imagelocation="middleleft">
+					<part name="prtIzmijeni">
+					</part>
+				</button>
+				<button name="btnDelete" caption="Obriši" type="delete" width="120" image="delete" imagelocation="middleleft">
+					<part name="prtObrisi">
+					</part>
+				</button>
+				<!-- DODANI PRAZNI BUTTONI SA SEPARATOROM DA BI SE GUMBI ZA KLASIFIKACIJE MALO RAZDVOJILI -->
+				<button name="btnPrazno1" visible="false" begingroup="true">
+				</button>
+				<button name="btnPrazno2" visible="false" begingroup="true">
+				</button>
+				<button name="btnPrazno3" visible="false" begingroup="true">
+				</button>
+				<button name="btnPrazno4" visible="false" begingroup="true">
+				</button>
+				<button name="btnDodatno" caption="Dodatna Klasifikacija" type="edit" width="140" begingroup="true">
+					<dropdownitem name="btnDodaj" caption="Unesi novu klasifikaciju">
+						<event type="click">
+							<action type="form open" value="frmUpsert">
+								<parameter name="Id" value="null" />
+								<parameter name="FormType" value="Unos" />
+							</action>
+							<action if="global.$FocusKlKlRobaId!=null">
+								<action type="control populate" value="#cmbKlase">
+								</action>
+								<action type="control value" value="#cmbKlase">
+									<parameter value="global.$FocusNaziv" />
+								</action>
+								<action type="variable value">
+									<parameter name="global.FocusNaziv" value="null" />
+									<parameter name="global.FocusKlKlRobaId" value="null" />
+								</action>
+							</action>
+						</event>
+					</dropdownitem>
+					<dropdownitem name="btnIzmjena" caption="Izmijeni klasifikaciju" if="global.$KlKlRobaId!=null">
+						<event type="click">
+							<action type="form open" value="frmUpsert">
+								<parameter name="Id" value="global.$KlKlRobaId" />
+								<parameter name="FormType" value="Izmjena" />
+							</action>
+							<action if="global.$FocusKlKlRobaId!=null">
+								<action type="control populate" value="#cmbKlase">
+								</action>
+								<action type="control value" value="#cmbKlase">
+									<parameter value="global.$FocusNaziv" />
+								</action>
+								<action type="variable value">
+									<parameter name="global.FocusNaziv" value="null" />
+									<parameter name="global.FocusKlKlRobaId" value="null" />
+								</action>
+							</action>
+						</event>
+					</dropdownitem>
+					<dropdownitem name="btnObrisi" caption="Obriši klasifikaciju" if="global.$KlKlRobaId!=null">
+						<event type="click">
+							<action type="confirm" value="Jeste li sigurni da želite obrisati dodatnu klasifikaciju robe '{global.$filter}'?" if="global.$KlKlRobaId!=null">
+								<action type="datarun nonquery" value="~dtKlasifikacijaDelete" />
+								<action type="control populate keepfocus" value="#tree" />
+							</action>
+							<action type="control populate" value="#cmbKlase">
+							</action>
+							<action type="control value" value="#cmbKlase">
+								<parameter value="Master klasifikacija" />
+							</action>
+						</event>
+					</dropdownitem>
+					<dropdownitem name="btnKopiraj" caption="Kopiraj klasifikaciju">
+						<event type="click">
+							<action type="form open" value="frmKopiraj">
+								<parameter name="Id" value="global.$KlKlRobaId" />
+								<parameter name="FormType" value="Kopiranje" />
+							</action>
+							<action if="global.$FocusKlKlRobaId!=null">
+								<action type="control populate" value="#cmbKlase">
+								</action>
+								<action type="control value" value="#cmbKlase">
+									<parameter value="global.$FocusNaziv" />
+								</action>
+								<action type="variable value">
+									<parameter name="global.FocusNaziv" value="null" />
+									<parameter name="global.FocusKlKlRobaId" value="null" />
+								</action>
+							</action>
+						</event>
+					</dropdownitem>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKlaseRoba_Carpo_Query" name="dtOrgTree">
+				<parameter name="@action" value="tree" />
+				<parameter name="@klklrobaid" value="null" if="global.$filter==Master klasifikacija" />
+				<parameter name="@klklrobaid" value="" if="global.$filter!=Master klasifikacija" />
+				<parameter name="@naziv" value="global.$filter" />
+			</data>
+			<data command="spKlaseRoba_Carpo_TreeAzur" name="dtOrgAzur">
+				<parameter name="@Action" value="setTree" if="global.$KlKlRobaId==null" />
+				<parameter name="@Action" value="setTreeKlKlRoba" if="global.$KlKlRobaId!=null" />
+				<parameter name="@TableVar" value="#tree.datasource" />
+			</data>
+			<data command="spKlMasterRoba_Carpo_Azur" name="dtOrgDelete">
+				<parameter name="@Action" value="Delete" />
+				<parameter name="@Id" value="#tree" />
+			</data>
+			<data command="spKlRoba_Carpo_Azur" name="dtKlDelete">
+				<parameter name="@action" value="delete" />
+				<parameter name="@KlRobaId" value="#tree.@Id" />
+			</data>
+			<data command="spKlKlRoba_Carpo_Azur" name="dtKlasifikacijaDelete">
+				<parameter name="@action" value="delete" />
+				<parameter name="@id" value="global.$KlKlRobaId" />
+			</data>
+			<data command="spKlaseRoba_Carpo_Query" name="dtFilter">
+				<parameter name="@action" value="GetFilterKlasifikacija" />
+			</data>
+		</datalist>
+	</form>
+	<datalist>
+		<data command="spKlaseRoba_Carpo_Query" name="dtGetKlasifikacijaNaziv">
+			<parameter name="@action" value="GetKlasifikacija" />
+			<parameter name="@klklrobaid" value="global.$FocusKlKlRobaId" />
+		</data>
+	</datalist>
+	<form name="frmAzur" caption="Klasa robe - {$formType}" fixedsize="false" width="440">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$Id!=null" />
+		</event>
+		<event type="shown">
+			<action type="control focus" value="#txtNaziv" />
+		</event>
+		<layout textposition="top">
+			<group cols="1" rows="1" if="$Id==null">
+				<group row="1" col="1" cols="1" rows="7" groupbordervisible="false">
+					<part name="prtFormAzur">
+					</part>
+				</group>
+			</group>
+			<group cols="1" rows="7" else="">
+				<part name="prtFormAzur">
+				</part>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI" type="add" dock="right">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtAzur">
+							<parameter name="shemaid" />
+						</action>
+						<action type="control populate keepfocus" value="parent.#tree" />
+						<action type="control expand" value="parent.#tree">
+							<parameter name="key" value="$shemaid">
+							</parameter>
+						</action>
+						<action type="control value" value="#txtNaziv,#txtOznaka,#txtMarža,#txtMaržaMP,#cmbKonto,#chkDostupno,#cmbOsoba">
+							<parameter value="null" />
+						</action>
+						<action type="form close" if="$Id!=null||#chkFormClose==true" />
+						<action type="datarun nonquery" value="~dtOrgAzur" />
+						<action type="control defaultmode" value="parent.#tree" />
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKlaseRoba_Carpo_Combo" name="dtKonto">
+				<parameter name="@action" value="Konto" />
+			</data>
+			<data command="spKlaseRoba_Carpo_Combo" name="dtOsoba">
+				<parameter name="@action" value="Osoba" />
+			</data>
+			<data command="spKlMasterRoba_Carpo_Azur" name="dtAzur">
+				<parameter name="@Action" value="Add" if="$Id==null" />
+				<parameter name="@Action" value="Edit" else="" />
+				<parameter name="@KlMasterRobaID" value="$KlMasterRobaID" text="" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@Oznaka" value="#txtOznaka" />
+				<parameter name="@Marza" value="#txtMarža" />
+				<parameter name="@Marzamp" value="#txtMaržaMP" />
+				<parameter name="@Kntkontazashemuid" value="#cmbKonto" />
+				<parameter name="@Pubind" value="#chkDostupno" />
+				<parameter name="@Osobeplmid" value="#cmbOsoba" />
+				<parameter name="@InsertTip" value="in" />
+			</data>
+			<data command="spKlaseRoba_Carpo_Query" name="dtGet">
+				<parameter name="@Action" value="GetSingleKlMasterRoba" />
+				<parameter name="@KlMasterRobaId" value="$KlMasterRobaId" />
+			</data>
+			<data command="spKlaseRoba_Carpo_TreeAzur" name="dtOrgAzur">
+				<parameter name="@Action" value="setTree" if="global.$KlKlRobaId==null" />
+				<parameter name="@Action" value="setTreeKlKlRoba" if="global.$KlKlRobaId!=null" />
+				<parameter name="@TableVar" value="parent.#tree.datasource" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmAzur2" caption="Klasa robe - {$formType}" fixedsize="false" width="440">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet2" if="$Id!=null" />
+		</event>
+		<event type="shown">
+			<action type="control focus" value="#txtNaziv" />
+		</event>
+		<layout textposition="top">
+			<group cols="1" rows="1" if="$Id==null">
+				<group row="1" col="1" cols="1" rows="2" groupbordervisible="false">
+					<part name="prtFormAzur2">
+					</part>
+				</group>
+			</group>
+			<group cols="1" rows="2" else="">
+				<part name="prtFormAzur2">
+				</part>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Spremi" dock="right">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtAzur2">
+							<parameter name="checkId" />
+						</action>
+						<action type="control populate keepfocus" value="parent.#tree" />
+						<action type="control expand" value="parent.#tree">
+							<parameter name="key" value="$checkId">
+							</parameter>
+						</action>
+						<action type="control value" value="#txtNaziv,#txtOznaka">
+							<parameter value="null" />
+						</action>
+						<action type="form close" if="$Id!=null||#chkFormClose==true" />
+						<action type="datarun nonquery" value="~dtOrgAzur" />
+						<action type="control defaultmode" value="parent.#tree" />
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKlRoba_Carpo_Azur" name="dtAzur2">
+				<parameter name="@Action" value="Add" if="$Id==null" />
+				<parameter name="@Action" value="Edit" else="" />
+				<parameter name="@KlRobaID" value="$KlRobaID" text="" />
+				<parameter name="@KlKlRobaId" value="global.$KlKlRobaId" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@Oznaka" value="#txtOznaka" />
+				<parameter name="@InsertTip" value="in" />
+			</data>
+			<data command="spKlaseRoba_Carpo_Query" name="dtGet2">
+				<parameter name="@Action" value="GetSingleKlRoba" />
+				<parameter name="@KlRobaId" value="$KlRobaId" />
+				<parameter name="@KlKlRobaId" value="global.$KlKlRobaId" />
+			</data>
+			<data command="spKlaseRoba_Carpo_TreeAzur" name="dtOrgAzur">
+				<parameter name="@Action" value="setTree" if="global.$KlKlRobaId==null" />
+				<parameter name="@Action" value="setTreeKlKlRoba" if="global.$KlKlRobaId!=null" />
+				<parameter name="@TableVar" value="parent.#tree.datasource" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUpsert" caption="{$formType} dodatne klasifikacije robe" width="485">
+		<event type="init">
+			<action type="datarun reader" value="~dtGetKlasifikacija" if="$Id!=null" />
+		</event>
+		<layout>
+			<group row="1" col="1" rows="1" cols="1">
+				<item caption="Naziv:" row="1" col="1">
+					<textedit name="txtNaziv" required="true" datavalue="~dtGetKlasifikacija.@Naziv" fontbold="true" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Spremi" dock="right">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtKlKlAzur">
+							<parameter name="NewId" />
+						</action>
+						<action type="variable value">
+							<parameter name="global.FocusKlKlRobaId" value="$NewId" />
+						</action>
+						<action type="datarun reader" value="global.~dtGetKlasifikacijaNaziv" />
+						<action type="variable value">
+							<parameter name="global.FocusNaziv" value="global.~dtGetKlasifikacijaNaziv.@Naziv" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKlKlRoba_Carpo_Azur" name="dtKlKlAzur">
+				<parameter name="@action" value="Upsert" />
+				<parameter name="@id" value="$Id" />
+				<parameter name="@naziv" value="#txtNaziv" />
+			</data>
+			<data command="spKlaseRoba_Carpo_Query" name="dtGetKlasifikacija">
+				<parameter name="@action" value="GetKlasifikacija" />
+				<parameter name="@klklrobaid" value="global.$KlKlRobaId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmKopiraj" caption="{$formType} dodatne klasifikacije robe" width="485">
+		<layout>
+			<group row="1" col="1" rows="1" cols="1">
+				<item caption="Naziv:" row="1" col="1">
+					<textedit name="txtNaziv" required="true" fontbold="true" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Spremi" dock="right">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtKopiraj">
+							<parameter name="NewId" />
+						</action>
+						<action type="variable value">
+							<parameter name="global.FocusKlKlRobaId" value="$NewId" />
+						</action>
+						<action type="datarun reader" value="global.~dtGetKlasifikacijaNaziv" />
+						<action type="variable value">
+							<parameter name="global.FocusNaziv" value="global.~dtGetKlasifikacijaNaziv.@Naziv" />
+						</action>
+						<action type="control populate" value="parent.#tree" />
+						<action type="control refreshvalue" value="##" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKlKlRoba_Carpo_Azur" name="dtKopiraj">
+				<parameter name="@action" value="Copy" />
+				<parameter name="@id" value="$Id" />
+				<parameter name="@naziv" value="#txtNaziv" />
+			</data>
+		</datalist>
+	</form>
+	<parts>
+		<part name="prtUnesi">
+			<event type="click">
+				<action if="#tree.@Id!=null">
+					<action type="form open" value="frmAzur" if="global.$KlKlRobaId==null">
+						<parameter name="KlMasterRobaId" value="#tree" />
+						<parameter name="FormType" value="novi unos" />
+					</action>
+					<action type="form open" value="frmAzur2" if="global.$KlKlRobaId!=null">
+						<parameter name="KlRobaId" value="#tree" />
+						<parameter name="FormType" value="novi unos" />
+					</action>
+				</action>
+			</event>
+		</part>
+		<part name="prtIzmijeni">
+			<event type="click">
+				<action if="#tree.@Id!=null">
+					<action type="form open" value="frmAzur" if="#tree.@Id!=-1&amp;&amp;global.$KlKlRobaId==null">
+						<parameter name="Id" value="1" />
+						<parameter name="KlMasterRobaId" value="#tree" />
+						<parameter name="FormType" value="izmjena" />
+					</action>
+					<action type="form open" value="frmAzur2" if="#tree.@Id!=-1&amp;&amp;global.$KlKlRobaId!=null">
+						<parameter name="Id" value="1" />
+						<parameter name="KlRobaId" value="#tree" />
+						<parameter name="FormType" value="izmjena" />
+					</action>
+				</action>
+			</event>
+		</part>
+		<part name="prtObrisi">
+			<event type="click">
+				<action type="confirm" value="Jeste li sigurni da želite obrisati klasu robe '{#tree.@Naziv}'?" if="#tree.@Id!=-1">
+					<action type="datarun nonquery" value="~dtOrgDelete" if="#tree.@KlKlRobaId==null" />
+					<action type="datarun nonquery" value="~dtKlDelete" if="#tree.@KlKlRobaId!=null" />
+					<action type="control populate keepfocus" value="#tree" />
+					<action type="datarun nonquery" value="~dtOrgAzur" />
+					<action type="control defaultmode" value="#tree" />
+				</action>
+			</event>
+		</part>
+		<part name="prtFormAzur">
+			<item caption="Naziv:" row="1" col="1">
+				<textedit name="txtNaziv" required="true" datavalue="~dtGet.@Naziv" fontbold="true" />
+			</item>
+			<item caption="Oznaka:" row="2" col="1">
+				<textedit name="txtOznaka" datavalue="~dtGet.@Oznaka" maxsize="10" />
+			</item>
+			<item caption="Marža:" row="3" col="1">
+				<textedit name="txtMarža" datavalue="~dtGet.@Marza" type="decimal" format="n2" />
+			</item>
+			<item caption="MP Marža:" row="4" col="1">
+				<textedit name="txtMaržaMP" datavalue="~dtGet.@MarzaMP" type="decimal" format="n2" />
+			</item>
+			<item caption="" row="5" col="1">
+				<checkedit name="chkDostupno" caption="Javno dostupno" textposition="right" datavalue="~dtGet.@PubInd" />
+			</item>
+			<item caption="Konto:" row="6" col="1">
+				<comboedit name="cmbKonto" dataname="dtKonto" valuefield="KntKontaZaShemuId" displayfield="Naziv" datavalue="~dtGet.@KntKontaZaShemuId" />
+			</item>
+			<item caption="Odgovorna osoba:" row="7" col="1">
+				<comboedit name="cmbOsoba" dataname="dtOsoba" valuefield="OsobeId" displayfield="Naziv" datavalue="~dtGet.@OsobeId" />
+			</item>
+		</part>
+		<part name="prtFormAzur2">
+			<item caption="Naziv:" row="1" col="1">
+				<textedit name="txtNaziv" required="true" datavalue="~dtGet2.@Naziv" fontbold="true" />
+			</item>
+			<item caption="Oznaka:" row="2" col="1">
+				<textedit name="txtOznaka" datavalue="~dtGet2.@Oznaka" maxsize="10" />
+			</item>
+		</part>
+	</parts>
+</root>

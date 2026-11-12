@@ -1,0 +1,412 @@
+﻿<root>
+    <form type="master" name="frmMaster" caption="Manager ugovora s kupcima">
+      <method name="funDmsAdd" dll="DmsManagerV1" class="DmsManagerV1.Start" method="AddDocuments" />
+      <method name="funDmsOpen" dll="DmsManagerV1" class="DmsManagerV1.Start" method="OpenDocument" />
+      <method name="funDmsSave" dll="DmsManagerV1" class="DmsManagerV1.Start" method="SaveDocuments" />
+    <event type="init">
+        <action type="variable value">
+            <parameter name="Global.OperaterLockId" value="0" type="int" />
+        </action>
+        <action type="datarun reader" value="~dtGetFilter" />
+        <action type="variable value">
+            <parameter name="FilterInd" value="~dtGetFilter.@filterid" />
+        </action>
+    </event>
+    <event type="onshown">
+    </event>
+    <managerlayout>
+        <!--COMBO-->
+       <lookup name="filter">
+				<comboitem value="Kupci" />
+        <comboitem value="Organizacijske jedinice"  />
+				<event type="valuechanged">
+        <!--mijenjaj i šalji varijablu filter na promjeni-->
+          <action type="variable value" value="global.filter">
+						<parameter value="#filter" />
+					</action>
+          <action type="control populate" value="#tree"/>
+        </event>
+			</lookup>
+      <!--TREE-->
+			<tree name="tree" key="id" filtermode="smart" autopopulate="false" expandallonload="true"> <!--expandedlevel="1"--> 
+        <data command="spProd_KupUgovori_TreeOrgShema"  if="#filter==Organizacijske jedinice" />
+        <data command="spProd_KupUgovori_TreeKupci" else=""/>
+				<event type="focusedrowchanged">
+          <action type="control populate" value="#grdGlava" />
+        </event>
+				<fields>
+					<field name="caption" />
+				</fields>
+			</tree>
+     <!--glava-->
+     <grid name="grdGlava" key="KupUgovoriGlaId" type="master" dataname="~glaGrid" multiselect="true" bestfitonrefresh="true" savelayout="true" showfooter="true" printcaption="Ugovor s kupcima - verzija za ispis">
+      <!--puni detalj grid na focusedrowchanged-->
+      <event type="focusedrowchanged">
+          <action type="control populate" value="#grdDetalj" />
+          <action type="control populate" value="#grdLokacije" />
+          <action type="control populate" value="#grdDms"/>
+			</event>
+      <fields inherited="true">
+          <field name="KupUgovoriGlaID" />
+          <field name="Naziv Partnera" fontbold="true" fixed="left" caption="Naziv partnera"/>
+          <field name="Broj Ugovora" caption="Broj ugovora"/>
+          <field name="Datum Ugovora" caption="Datum ugovora"/>
+          <field name="Vrijedi Do" caption="Vrijedi do"/>
+          <field name="Vrsta Ugovora" caption="Vrsta ugovora"/>
+          <field name="Odg.Osoba" caption="Odgovorna osoba"/>
+          <field name="Org. Shema" caption="Organizacijska shema"/>
+      </fields>
+       <styles>
+					<style name="fontcolor" value="green" if="#grdGlava.@Status=='Zaključen'" />
+					<style name="fontcolor" value="gray" elseif="#grdGlava.@formatid==gray" />
+          <style name="fontcolor" value="blue" if="#grdGlava.@formatid==blue" />
+			</styles>
+      <!--glava click eventi-->
+      <!--double left click otvara formu za izmjenu-->
+                <event type="doubleclick">
+                    <action type="variable value" value="Global.$OperaterLockId">
+                        <parameter value="#grdGlava.@KupUgovoriGlaId" />
+                    </action>
+                    <action type="form open" value="frmKupIzmjena">
+                        <parameter name="KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId"/>
+                    </action>
+                </event>
+                <!--desni klik nudi status opcije-->
+                <menu name="meni">
+                    <menuitem caption="Vrati status" name="vratistatus">
+                        <event type="click">
+                            <action type="datarun nonquery" value="~dtPromjeniStatus" />
+                            <action type="control populate keepfocus" value="#grdGlava" />
+                        </event>
+                    </menuitem>
+                    <menuitem caption="Povijest statusa" name="povijeststatusa">
+                        <event type="click">
+                            <action type="form open" value="frmKupPovijestStatusa">
+                                <parameter name="KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId" />
+                            </action>
+                        </event>
+                    </menuitem>
+                </menu>
+            </grid>
+            <!--detail-->
+            <tabs name="detTabs">
+                <tab name="tabStavke" caption="Stavke">
+                    <grid name="grdDetalj" dataname="~detGrid"   bestfitonrefresh="true" multiselect="true" printcaption="Ugovori s kupcima - detalji">
+                        <fields inherited="true">
+                            <field name="Naziv" fontbold="true" fixed="true"/>
+                            <field name="Šifra" fontbold="true" fixed="true"/>
+                            <field name="Način Naplate" caption="Način naplate" />
+                            <field name="Cijena" format="n4" />
+                            <field name="Način Isporuke" caption="Način isporuke" />
+                            <field name="Cijena S Popustom" caption="Cijena s popustom" format="n4"/>
+                            <field name="Učešće U Povratu" caption="Učešće u povratu" format="n4"/>
+                            <field name="Kolicina" caption="Količina" format="n4"/>
+                            <field name="rABAT1." format="n4"/>
+                            <field name="rABAT2." format="n4"/>
+                            <field name="rABAT3." format="n4"/>
+                            <field name="rABAT4." format="n4"/>
+                            <field name="rABAT5." format="n4"/>
+                            <field name="Ukupni rabat" caption="Ukupni rabat" format="n4"/>
+                            <field name="Cassa" caption="Cassa" format="n4" />
+                            <field name="Ukupni popust" caption="Ukupni popust" format="n4" />
+                            <field name="Paušal" caption="Paušal" />
+                        </fields>
+                        <styles>
+                            <style name="fontcolor" value="black" if="#grdDetalj.@formatid==black" />
+                            <style name="fontcolor" value="blue" if="#grdDetalj.@formatid==blue" />
+                        </styles>
+                    </grid>
+                </tab>
+                <tab name="tabLokacije" caption="Lokacije">
+                    <grid name="grdLokacije" dataname="~grdLok" bestfitonrefresh="true" multiselect="true">
+                        <fields inherited="true"  />
+                         <menu name="meni2">
+                    <menuitem caption="Obriši lokaciju" name="obrisilokaciju">
+                        <event type="click">
+                            <action type="control foreachrow selected" value="#grdLokacije">
+                            <action type="datarun nonquery" value="Global.dtBrisiLok" />
+                                <parameter name="KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId" />
+                                <parameter name="LnKupUgovoriGlaParStruId" value="#grdLokacije.@LnKupUgovoriGlaParStruId" />
+                            </action>
+                            <action type="control populate keepfocus" value="#grdLokacije" /> 
+                        </event>
+                    </menuitem>
+                </menu>
+               </grid>
+              </tab>
+              <tab caption="DMS">
+                  <grid name="grdDms" keyfield="DokID" multiselect="true" dataname="dtDms" showmenuprintitem="false" showmenutools="false" savelayout="true">
+                      <menu>
+			<menuitem caption="Pogledaj">
+                          <event type="click">
+                             <action type="method run" value="funDmsOpen" >
+                              <parameter name="server" value="@@server" />
+                              <parameter name="database" value="@@database" />
+                              <parameter name="username" value="" />
+                              <parameter name="password" value="" />
+                              <parameter name="operateriid" value="@@operateriid" />
+                              <parameter name="dokID" value="#grdDms.@DokID" />
+                              <parameter name="name" value="#grdDms.@naziv" />
+                             </action>
+                          </event>
+                        </menuitem>
+                        <menuitem caption="Spremi na disk">
+                          <event type="click">
+                            <action type="method run" value="funDmsSave">
+                              <parameter name="server" value="@@server" />
+                              <parameter name="database" value="@@database" />
+                              <parameter name="username" value="" />
+                              <parameter name="password" value="" />
+                              <parameter name="operaterid" value="@@operateriid" />
+                              <parameter name="dokIDs" value="#grdDms.selectedids" />
+                            </action>
+                          </event>
+                        </menuitem>
+                        <menuitem caption="Obriši" function="dmsObrisi">
+                            <event type="click">
+                              <action type="confirm" value="Želite li sigurno obrisati označeni(e) dokument(e)?">
+                                  <action type="datarun nonquery" value="~dtDeleteDoc" />
+                                  <action type="control populate" value="#grdDms" />
+                              </action>
+                            </event>
+                        </menuitem>
+                       </menu>
+                      <event type="doubleclick">
+                        <action type="method run" value="funDmsOpen" >
+                            <parameter name="server" value="@@server" />
+                            <parameter name="database" value="@@database" />
+                            <parameter name="username" value="" />
+                            <parameter name="password" value="" />
+                            <parameter name="operateriid" value="@@operateriid" />
+                            <parameter name="dokID" value="#grdDms.@DokID" />
+                            <parameter name="name" value="#grdDms.@naziv" />
+                        </action>
+                      </event>
+                      <fields inherited="true">
+                        <field name="Naziv" fontbold="true" />
+                        <field name="Size" caption="Size [KB]" />
+                      </fields>
+                     
+                  </grid>
+            </tab>
+            </tabs>
+        </managerlayout>
+        <!--master buttons-->
+        <panelbuttons displaycontrolsprint="true">
+            <buttons>
+                <button name="btnUnesi" caption="&amp;Unesi" type="add" displayfield="Opis" >
+					<event type="click">
+						<action type="form open" value="frmKupUnos" />
+					</event>
+				</button>
+        <button name="btnIzmijeni"  caption="Izmijeni">
+            <event type="click">
+                <action type="variable value" value="Global.$OperaterLockId">
+                    <parameter value="#grdGlava.@KupUgovoriGlaId" />
+                    <parameter value="#grdDetalj.@KupUgovoriDetID" />
+                </action>
+						    <action type="form open" value="frmKupIzmjena">
+                    <parameter name="KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId"/>
+                    <parameter name="ID" value="#grdDetalj.@KupUgovoriDetID" />
+                    <parameter name="Odabrani" value="null" />
+                    <parameter name="KlRobaID" value="null" />
+                 </action>
+					  </event>
+        </button>
+        <button name="btnObrisi"  caption="Obriši" type="delete">
+            <event type="click">
+                  <action type="confirm" value="Želite li obrisati odabrani podatak?">  
+                <action type="control foreachrow selected" value="#grdGlava"> 
+                    <action type="datarun nonquery" value="global.~dtDelete"/>
+                    <action type="control populate" value="#grdGlava" />
+                </action>
+                </action>
+            </event>
+        </button>
+        <button name="btnKupKopiraj"  caption="Kopiraj">
+          <event type="click">
+            <action type="form open" value="frmKupKopiraj">
+              <parameter name="KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId" />
+            </action>
+          </event>
+        </button>          
+          <button name="btnCarobnjak"  caption="Čarobnjak">
+              <event type="click">
+                <action type="variable value" value="Global.$OperaterLockId">
+                      <parameter value="#grdGlava.@KupUgovoriGlaId" />
+                </action>
+
+                <action type="form open" value="frmUpitCarobnjak">
+                    <parameter name="KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId" />
+                    <parameter name="status" value="#grdGlava.@Status" />
+                    <parameter name="opis" value="#grdGlava.@opis" />
+                    <parameter name="KupUgovoriDetId" value="#grdDetalj.@KupUgovoriDetId" />
+                </action>
+                    <action type="control populate" value="#grdGlava" />
+                     <action type="control focus" value="#grdGlava" />
+              </event>
+
+          </button>
+          <button name="btnSearch" caption="Pronađi">
+				  	<event type="click">
+					     <action type="form open" value="frmKupSearch" />
+					  </event>
+				  </button>
+          <button name="btnPovezi" caption="&amp;Dodaj dokument" begingroup="true">
+              <event type="click">
+                <action type="method run" value="funDmsAdd">
+                  <parameter name="server" value="@@server" />
+                  <parameter name="database" value="@@database"/>
+                  <parameter name="username" value="" />
+                  <parameter name="password" value="" />
+                  <parameter name="operaterid" value="@@operateriid" />
+                  <parameter name="EntityName" value="KupUgovoriGla" />
+                  <parameter name="entityID" value="#grdGlava.@kupugovoriglaid" />
+                  <parameter name="tipInserta" value="windows" />
+                </action> 
+                <action type="control populate" value="#grdDms" />
+              </event>
+          </button>
+          
+          <button name="btnFilter"  caption="Filter">
+              <event type="click">
+                  <action type="form open" value="frmKupFilter">
+                  </action>
+                  <action type="control populate" value="#grdGlava" />
+
+              </event>
+          </button>
+         </buttons>
+        </panelbuttons>
+        <!--lokalni dataset-->
+        <datalist>
+            <data command="spProd_KupUgoGla_Query" name="glaGrid"  >
+                <parameter name="@id" value="#tree.@id" />
+                <parameter name="@FilterID" value="$filterInd" />
+                <parameter name="@action" value="1" if="#tree.@id==0&amp;&amp;global.$filter==Organizacijske jedinice"/>
+                <parameter name="@action" value="2" elseif="#tree.@id!=0&amp;&amp;global.$filter==Organizacijske jedinice"/>
+                <parameter name="@action" value="3" elseif="#tree.@id==0&amp;&amp;global.$filter==Kupci"/>
+                <parameter name="@action" value="4" elseif="#tree.@id!=0&amp;&amp;global.$filter==Kupci"/>
+            </data>            
+           <data command="spProd_KupUgoDet_Query"  name="detGrid">
+                 <parameter name="@KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId" />
+            </data>     
+          <data command="spProd_KupUgo_KopirajUgovor" name="dtKopirajUgovor">
+            <parameter name="@KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId" />
+            <parameter name="@OperateriId" value="@@OperateriId" />
+        </data>
+        <data command="spProd_KupUgoStatus" name="dtPromjeniStatus">
+            <parameter name="@action" value="1" />
+            <parameter name="@status" value="0" type="int" if="#grdGlava.@Status=='Zaključen'" />
+            <parameter name="@status" value="1" type="int" else="" />
+            <parameter name="@kupugovoriglaid" value="#grdGlava.@KupUgovoriGlaId" />
+            <parameter name="@vrstadokid" value="220" />
+            <parameter name="@operateriid" value="@@operateriid" />
+        </data>	
+         <data command="spProd_KupUgoFilter_GetFilter" name="dtGetFilter">
+            <parameter name="@operateriid" value="@@operateriid" />
+        </data>
+        <data command="spProd_KupUgoLokacije" name="grdLok">
+            <parameter name="@action" value="1" />
+            <parameter name="@KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId" />
+        </data>
+        <data command="spCarpoDMSQuery" name="dtDms">
+          <parameter name="@EntityName" value="KupUgovoriGla"/>
+          <parameter name="@Id" value="#grdGlava.@kupugovoriglaid"/>
+      </data>
+      <data command="spCarpoDMSAzur" name="dtDeleteDoc">
+        <parameter name="@Action" value="Delete"/>
+        <parameter name="@EntityName" value="KupUgovoriGla"/>
+        <parameter name="@selectedids" value="#grdDms.selectedids"/>
+      </data>
+
+        </datalist>
+    </form>
+<!--forme-->
+   <form name="frmKupUnos" path="frmKupUnos.xml" />
+   <form name="frmKupIzmjena" path="frmKupIzmjena.xml" />
+   <form name="frmKupDodajDetalje" path="frmKupDodajDetalje.xml" />
+   <form name="frmKupStavke" path="frmKupStavke.xml"/>
+   <form name="frmKupDodatniUvjeti" path="frmKupDodatniUvjeti.xml" />    
+   <form name="frmPoveziSlokacijama" path="frmPoveziSlokacijama.xml" />
+   <form name="frmKupCarobnjak" path="frmKupCarobnjak.xml" />
+   <form name="frmKupSearch" path="frmKupSearch.xml" />
+   <form name="frmKupFilter" path="frmKupFilter.xml" />
+   <form name="frmKupPovijestStatusa" path="frmKupPovijestStatusa.xml" />
+   <form name="frmKupDodajDetaljeCarobnjak" path="frmKupDodajDetaljeCarobnjak.xml" />
+   <form name="frmKupIzmjeniDetaljeCarobnjak" path="frmKupIzmjeniDetaljeCarobnjak.xml" />
+   <form name="frmKupStavkeCarobnjak" path="frmKupStavkeCarobnjak.xml" />
+   <form name="frmKupDodatniUvjetiCarobnjak" path="frmKupDodatniUvjetiCarobnjak.xml" />
+   <form name="frmKupDodajDetaljeNovo" path="frmKupDodajDetaljeNovo.xml" />
+   <form name="frmKupIzmjeniDetalje" path="frmKupIzmjeniDetalje.xml" />
+   <form name="frmLokacijeSearch" path="frmLokacijeSearch.xml" />
+   <form name="frmLokacije" path="frmLokacije.xml" />
+   <form name="frmKupKopiraj" path="frmKupKopiraj.xml" />
+   <form name="frmUpitCarobnjak" path="frmUpitCarobnjak.xml" />
+   <form name="frmKupCarobnjakBezStavki" path="frmKupCarobnjakBezStavki.xml" />
+   <form name="frmUnosViseRoba" path="frmUnosViseRoba.xml" />
+<!--globalni datalist-->
+    <datalist>
+        <data command="spng_combo" name="dtPuniCjenik">
+            <parameter name="@action" value="VrCjenik" />
+        </data>
+        <data command="spng_combo" name="dtPuniNaplatu">
+            <parameter name="@action" value="ProNacinNaplate" />
+        </data>
+        <data command="spng_combo" name="dtPuniIsporuku">
+            <parameter name="@action" value="ProNacinIsporuke" />
+        </data>
+        <data command="spng_combo" name="dtGetOrgShema">
+            <parameter name="@action" value="orgshema" />
+            <parameter name="@ind" value="0" />
+        </data>
+        <data command="spProd_KupUgoCombo_PuniVrstu" name="dtGetVrsta" />
+        <data command="select @rabat1 + @rabat2 + @rabat3 + @rabat4 + @rabat5 as rabatUK" type="text" name="dtRabat">
+            <parameter name="@rabat1" value="#txtRabat1" type="decimal" />
+            <parameter name="@rabat2" value="#txtRabat2" type="decimal" />
+            <parameter name="@rabat3" value="#txtRabat3" type="decimal" />
+            <parameter name="@rabat4" value="#txtRabat4" type="decimal" />
+            <parameter name="@rabat5" value="#txtRabat5" type="decimal" />
+		    </data>
+        <data command="spKlMasterRobaQueryNG" name="dtPuniKlas">
+            <parameter name="@action" value="11" />
+        </data>
+        <data command="spTraziOsobe" name="dtOdgovornaOsoba">
+			    <parameter name="@Action" value="NaseOsobe" />
+          <parameter name="@uvjet" value="#srcOsobe.text" />
+        </data>
+        <data command="spProd_KupUgo_DeleteUgovor" name="dtDelete" >
+            <parameter name="@KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId" />
+            <parameter name="@status" value="1" type="int" if="#grdGlava.@status=='Zaključen'"/>
+            <parameter name="@status" value="0" type="int" else="" />
+        </data>
+		  <data command="spTraziParstru" name="dtParstru">
+			  <parameter name="@action" value="Parstru"/>
+			  <parameter name="@Ind_Postotak" value="1"/>
+        <parameter name="@Uvjet" value="#srcParstru.text" />
+			  <parameter name="@PartneriId" value="$PartneriId"/>
+		  </data>
+      <data command="spDajPartnera" name="dtDajPartnera">	
+			  <parameter name="@id" value="#srcParstru" />	
+			  <parameter name="@partneriid" value="#srcPartner" />
+		  </data>	
+       <data command="spProd_KupUgoLokacije" name="dtObrisiLokaciju">
+            <parameter name="@action" value="4" />
+            <parameter name="@KupUgovoriGlaId" value="#grdGlava.@KupUgovoriGlaId" />
+        </data> 
+        <data command="spProd_KupUgoLokacije" name="dtBrisiLok">
+            <parameter name="@action" value="7" />
+            <parameter name="@LnKupUgovoriGlaParStruId" value="#grdLokacije.@LnKupUgovoriGlaParStruId" />
+        </data>
+        <data command="spProd_KupUgoLokacije" name="dtBrisiLokSve">
+            <parameter name="@action" value="9" />
+            <parameter name="@KupugovoriGlaID" value="#grdGlava.@KupugovoriGlaID" />
+        </data>
+        <data command="spSecNacinFakturiranja" name="dtDinFak" />
+        <data command="spProd_KupUgoBrisiTempLok" name="dtBrisiSveTempLokacije">
+        </data>
+    
+   </datalist>
+</root>
+
+

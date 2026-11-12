@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT  CMD1CAPTION="Donos:DONOS" ONLOAD="SELECT si.SktInventuraGlaId, si.DatumDok as [Datum dokumenta], si.DatumPopisa as [Datum popisa], s.Opis as Skladište
+	, kl.Naziv as Klasifikacija
+ FROM sktinventuragla si
+INNER JOIN Skladiste s ON s.SkladisteId = si.SkladisteId
+left outer join KlMasterRoba kl on kl.KlMasterRobaId  = si.KlMasterRobaId
+WHERE si.Status = 0 
+and si.DatumDok &gt; &apos;20150101&apos;
+
+" GROUPBYBOXVISIBLE="TRUE" FROZENCOLUMNS="0" CHECKBOXVISIBLE="FALSE" TOTALROWVISIBLE="FALSE" DETCHECKBOXVISIBLE="FALSE" DETTOTALROWVISIBLE="FALSE" 
+DETAILGRID="
+;WITH popis AS (
+	SELECT ce.robaid, ISNULL(ce.kkvalglaid,0) AS kkvalglaid, SUM(ce.kolicina) AS kolicina
+	FROM InventuraCE ce
+	GROUP BY ce.RobaId, ISNULL(ce.kkvalglaid,0)
+)
+select sd.SktInventuraDetId, r.UserId as Šifra, r.Naziv as Roba
+	, kg.broj, kg.Opis, kg.RokTrajanja
+	, sd.KolicinaKnjizna as [Kolicina;Knjižna], sd.KolicinaStvarna as [Kolicina;Stvarna]
+	, i.kolicina as [Kolicina;Terminal], sd.KolicinaKnjizna - i.kolicina as Razlika
+FROM sktinventuradet sd
+INNER JOIN popis i ON i.RobaId = sd.RobaId AND ISNULL(sd.KKvalGlaId,0) = i.kkvalglaid
+inner join roba r on r.RobaId = sd.RobaId
+left outer join KKvalGla kg on kg.KKvalGlaId = sd.KKvalGlaId 
+WHERE sd.SktInventuraGlaId = @@ID
+"
+
+>
+<NAME>Projekt</NAME>
+<CAPTION>Donos na inventuru</CAPTION>
+<KOMENTAR>CallistoII 2.22.0</KOMENTAR>
+<HISTORY>
+23.03.2015. SPIN\sschonberger - STJEPAN-LAP
+</HISTORY>
+
+<DONOS NAME="DONOS" HEIGHT="2837" WIDTH="7085" CAPTION="Donos" REFRESHAFTERCHILD="TRUE" BORDERSTYLE="3">
+	<INPUT TYPE="label" NAME="Label14" TOP="403" LEFT="317" HEIGHT="288" WIDTH="4680" CAPTION="Želite li donijeti stavke s terminala?"/>
+	<INPUT TYPE="button" NAME="buttonOK" TOP="1800" LEFT="317" HEIGHT="331" WIDTH="1080" VISIBLE="TRUE" TEXT="ButtonNG0" CAPTION="Donesi" ENABLED="TRUE" ONCLICK="spSktInventuraCE_Prijenos @sktinventuraglaid = @@ID, @operateriid = @@operateriid
+#OK"/>
+	<INPUT TYPE="button" NAME="buttonCLOSE" TOP="1800" LEFT="1469" HEIGHT="331" WIDTH="1080" VISIBLE="TRUE" TEXT="ButtonNG1" CAPTION="Odustani" ENABLED="TRUE" ONCLICK="CLOSE"/>
+
+</DONOS>
+</PROJECT>

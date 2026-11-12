@@ -1,0 +1,338 @@
+<root>
+	<form name="frmIzmjeni" caption="" width="300">
+		<event type="init">
+			<action type="datarun reader" value="global.dtVrstaDok"/>
+			<action type="datarun reader" value="global.dtPremmision"/>			
+			<action type="datarun reader" value="~dtQureyGla" />
+			<action type="datarun reader" value="~dtIznos"/>
+			<action type="datarun reader" value="~dtNapuniVrsDok"/>
+			<action type="variable value">
+				<parameter name="Ukupno" value="0"/>
+			</action>
+
+		</event>
+
+		<event type="load">
+			<action type="control populate" value="#grdStavke"/>
+			<action type="datarun reader" value="~dtMpc"/>
+
+			<action type="message" value="'Dokument je zaključen. Ne može se više ispravljati !'" if="~dtQureyGla.@status&gt;1"/>
+
+			<action type="control disable" value="#btnAdd" if="#srcRoba=='null'||#txtKol==0"/>
+			<action type="control disable" value="#btnCorrect, #btnDelete " if="#grdStavke.rowcount==0"  />
+			<action type="control disable" value="#cmbTrgovina" />
+			<action type="control disable" value="#txtVrsta" />
+
+			<action type="control disable" value="#txtNC" if="global.dtPremmision.@nenc==1"/>
+			<action type="control disable" value="#txtMar" if="global.dtPremmision.@nenc==1"/>
+			<action type="control disable" value="#txtRab" if="global.dtPremmision.@nenc==1"/>
+		</event>
+		<event type="shown">
+			<action type="form close" if="~dtQureyGla.@status&gt;1" />
+			<action type="form caption" value="Izmjena dokumenta: {~dtQureyGla.@broj}"/>
+			<action type="control focus" value="#srcRoba" />
+		</event>
+		<event type="close">
+		</event>
+
+		<layout>
+
+			<group rows="2" cols="1" >
+
+				<group row="1" col="1" rows="1" cols="1" >
+					<part name="prtZaglavlje" path="prtMPMPPonudaWebCarpo.xml" />
+				</group>
+
+				<group row="2" col="1" rows="3" cols="4" caption="Nova stavka dokumenta :">
+
+					<group row="1" col="1" colspan="3" rows="1" cols="1" >
+						<part name="prtStavke" path="prtMPMPPonudaWebCarpo.xml" />
+					</group>
+
+					<group row="1" col="4" rows="3" cols="1">
+						<item row="2" col="1">
+							<button name="btnAdd" caption="Dodaj">
+								<event type="click">
+									<action type="datarun nonquery" value="~dtDodaj"/>
+									<action type="control populate" value="#grdStavke" />
+									<action type="datarun reader" value="~dtIznos">
+										<action type="control refreshvalue" value="#txtNabU"/>
+										<action type="control refreshvalue" value="#txtMPU"/>
+									</action>
+									<action type="control refreshvalue" value="#srcRoba, #txtJm, #txtKol, #txtRab, #txtNC, #txtMar, #txtMPC, #txtMPI" />
+									<action type="control enable" value="#btnCorrect, #btnDelete " if="#grdStavke.rowcount!=0"  />
+									<action type="control disable" value="#btnAdd" if="#srcRoba=='null'||#txtKol==0"/>
+									<action type="control focus" value="#srcRoba" />
+								</event>
+							</button>
+						</item>
+						<rowsdefinition>
+							<row position="2" size="40" /> 
+							<row position="3" size="100%" /> 
+						</rowsdefinition>
+						<columnsdefinition>
+							<column position="1" size="200"/>
+						</columnsdefinition>
+					</group>
+
+					<group row="2" col="1" rows="1" cols="5" colspan="4">
+						<group row="1" col="1" rows="1" cols="1" colspan="4" >
+							<part name="prtGridStavke" path="prtMPMPPonudaWebCarpo.xml" />
+						</group>
+
+						<group row="1" col="5" rows="1" cols="1" >
+							<group row ="1" col="4" rows ="6" cols="1" >
+								<item row ="1" col="1" rowsize="40">
+									<button name="btnCorrect" caption="Ispravi">
+										<event type="click">
+											<action type="control foreachrow selected" value="#grdStavke">
+												<action type="form open" value="frmIzmjeniStavku">
+													<parameter name="id" value="$id"/>
+													<parameter name="detid" value="#grdStavke.@mpponudadetid"/>
+													<parameter name="datdok" value="#datdok"/>
+												</action>
+											</action>
+											<action type="control populate" value="#grdStavke"/>
+											<action type="datarun reader" value="~dtIznos">
+												<action type="control refreshvalue" value="#txtNabU"/>
+												<action type="control refreshvalue" value="#txtMPU"/>
+											</action>
+											<action type="control focus" value="#srcRoba" />
+										</event>
+									</button>
+								</item>
+								<item row ="2" col="1">
+									<button name="btnDelete" caption="Obriši">
+										<event type="click">
+											<action type="control foreachrow selected" value="#grdStavke">
+												<action type="datarun scalar" value="~dtDeleteProvjera">
+													<parameter name="promet" value="~dtDeleteProvjera.@mpcijenaprometid"/>
+												</action>
+												<action type="message" value="'Stavka se ne može brisati jer je za nju vezana promjena MPC !'" if="$promet!='null'">
+													<action type="variable value">
+														<parameter name="check" value="1" type="int"/>
+													</action>
+												</action>
+												<action type="datarun nonquery" value="~dpDeleteStavka" if="$check!=1"/>
+												<action type="variable value">
+													<parameter name="check" value="0" type="int"/>
+												</action>
+											</action>
+											<action type="control populate" value="#grdStavke"/>
+											<action type="datarun reader" value="~dtIznos">
+												<action type="control refreshvalue" value="#txtNabU"/>
+												<action type="control refreshvalue" value="#txtMPU"/>
+											</action>
+											<action type="control disable" value="#btnCorrect, #btnDelete " if="#grdStavke.rowcount==0"  />
+											<action type="control focus" value="#srcRoba" />
+										</event>
+									</button>
+								</item>
+								<item row ="3" col="1">
+									<button name="btnPDT" caption="Donesi">
+										<event type="click">
+											<action type="form open" value="frmDonos">
+												<parameter name="id" value="$id"/>
+												<parameter name="trgovinaid" value="#cmbTrgovina"/>
+												<parameter name="datdok" value="#datdok"/>
+											</action>
+											<action type="control populate" value="#grdStavke"/>
+											<action type="datarun reader" value="~dtIznos">
+												<action type="control refreshvalue" value="#txtNabU"/>
+												<action type="control refreshvalue" value="#txtMPU"/>
+											</action>
+										</event>
+									</button>	
+								</item>
+								<rowsdefinition>
+									<row position="1" size="40" /> 
+									<row position="2" size="40" />
+									<row position="3" size="40" />
+									<row position="4" size="40" />
+									<row position="5" size="40" />
+								</rowsdefinition>
+								<columnsdefinition>
+									<column position="1" size="200"/>
+								</columnsdefinition>
+							</group>
+						</group>
+					</group>
+					<group row="4" col="1" rows="1" cols="3" >
+						<item row="1" col="2" caption="Ukupna MP vrijednost:" textposition="left" >
+							<textedit name="txtMPU" datavalue="~dtIznos.@cmpiznos" fontbold="True" format="n2" readonly="true">
+							</textedit>
+						</item>
+						<columnsdefinition>
+							<column position="1" size="300"/>
+							<column position="2" size="300"/>
+							<column position="3" size="100%"/>
+						</columnsdefinition>
+					</group>
+
+				</group>
+
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSave" caption="Spremi">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="~dtUpdateGla"/>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spMPPonudaQueryGlaIDetNG" name="dtQureyGla">
+				<parameter name="@action" value="3" />
+				<parameter name="@id" value="$id" />
+				<parameter name="@operateriid" value="@@operaterid" />
+			</data>
+			<data command="spMPPonudaQueryGlaIDetNG" name="dtQureyStavke" >
+				<parameter name="@action" value="2" />
+				<parameter name="@id" value="$id" />
+				<parameter name="@operateriid" value="@@operaterid" />
+				<parameter name="@nenc" value="global.dtPremmision.@nenc" />
+			</data>			
+			<data command="spMPDajTrgovinaNG" name="dtNapuniTrgovinu">
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@vrstatrg" value="V" />
+			</data>
+			<data command="select orgshemaid from trgovina where trgovinaid = @trgovinaid" type="text" name="dtOrgShema">
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+			</data>		
+			<data command="spmpDajVrstaDok" name="dtNapuniVrsDok">
+				<parameter name="@aktivni" value="1" />
+				<parameter name="@sifra" value="~dtVrstaDok.@Sifra" />
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+				
+			</data>	
+<data command="select k.kntnacinplacid, k.naziv  from mpnacnaplate n inner join kntnacinplac k on n.kntnacinplacid = k.kntnacinplacid where trgovinaid = @trgovinaid" type="text" name="dtnacPlac">
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+			</data>
+			<data command="select parstruid, p.naziv as mjesto from parstru p inner join mjesta m on p.mjestaid=m.mjestaid where p.partneriid=@partneriid" type="text" name="dtMjIsporuke">
+				<parameter name="@partneriid" value="#srcPartner" />
+			</data>
+			<data command="select mpnacinisporukeid,  opis  from MPNacinisporuke" type="text" name="dtNapuniNacisporuk">
+			</data> 			
+			<data command="spMPDajOsobe" name="dtNapuniOsobu">
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+			</data>
+			<data command="spTraziPartneri" name="dtOdaberiPartneri">
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+			</data> 
+			<data command="select indfin from trgovina where trgovinaid = @trgovinaid" type="text" name="dtMpc">
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+			</data> 
+			<data command="update mpponudadet set rabatdp = @rabatgla where mpponudaglaid = @id"  type="text" name="dtRabatSve" >
+				<parameter name="@rabatgla" value="#txtRabat" />
+				<parameter name="@id" value="$id" />
+			</data>
+			<data command="spmppopraviglaidetng" name="dtAzurStavke" >
+				<parameter name="@action" value="2" />
+				<parameter name="@id" value="$id" />
+			</data>
+			<data command="spMPRobaZaMPNG" name="dtRoba">
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+				<parameter name="@trazi" value="#srcRoba.text" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@vrstadokid" value="global.dtVrstaDok.@vrstadokid" />
+			</data>
+			<data command="spmpKontrolaOdabraneRobeNG" name="dtKontrolaRoba">
+				<parameter name="@robaid" value="#srcRoba" />
+			</data>
+			<data command="spMPDajArtikalNG" name="dtDajArtikl">
+				<parameter name="@robaid" value="#srcRoba" />
+				<parameter name="@TrgovinaId" value="#cmbTrgovina" />
+				<parameter name="@Skladisteid" value="null" />
+				<parameter name="@datum" value="#datDok" />
+				<parameter name="@partneriid" value="null" />
+				<parameter name="@vrstadokid" value="global.dtVrstaDok.@vrstadokid" />
+				<parameter name="@sifradok" value="global.dtVrstaDok.@sifra" />
+			</data>
+			<data command="select mpiznos+iznospov as cmpiznos , (select vrstatrg from trgovina where trgovinaid = @trgovinaid ) as mpizvp 
+				from mpponudagla where mpponudaglaid = @id" type="text" name="dtIznos">
+				<parameter name="@id" value="$id" />
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+			</data>
+			<data command="spmpKalkNG" name="dpKalkuliraj">
+				<parameter name="@action" value="$action"/>
+				<parameter name="@robaid" value="#srcRoba"/>
+				<parameter name="@kolicinaulaz" value="#txtKol" />
+				<parameter name="@fakcijena" value="#txtFC" />
+				<parameter name="@fakvrijednost" value="#txtFI" />
+				<parameter name="@rabatdp" value="#txtRab" />
+				<parameter name="@nabcijena" value="#txtNC" />
+				<parameter name="@nabvrijednost" value="#txtNI" />
+				<parameter name="@marza" value="#txtMar" />
+				<parameter name="@mpcijena" value="#txtMPC" />
+				<parameter name="@mpcpov" value="#txtMPpov" />
+				<parameter name="@fakmarza" value="#txtMarFC" if="$action==8"/>
+			</data>
+			<data command="spMPPonudaInsertGlaIdetNG" name="dtDodaj">
+				<parameter name="@action" value="3"/>
+				<parameter name="@robaid" value="#srcRoba"/>
+				<parameter name="@id" value="$id"/>
+				<parameter name="@status" value="1"/>
+				<parameter name="@NabCijena" value="#txtNC"/>
+				<parameter name="@fakcijena" value="#txtFC"/>
+				<parameter name="@rabatdp" value="#txtRab"/>
+				<parameter name="@fakvrijednost" value="#fakvrijednost"/>
+				<parameter name="@kolicinaulaz" value="#txtKol"/>
+				<parameter name="@mpcijena" value="#txtMPC"/>
+				<parameter name="@porukagreska" value="1"/>
+			</data>
+			<data command="spMPPonudaInsertGlaIdetNG" name="dtUpdateGla">
+				<parameter name="@action" value="2" />
+				<parameter name="@id" value="$id" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@sifradok" value="~dtVrstaDok.@Sifra" />
+				<parameter name="@status" value="1" />
+				<parameter name="@datumdok" value="#datDok" />
+				<parameter name="@zaviznos" value="" />
+				<parameter name="@napomena" value="#txtNapomena" />
+				<parameter name="@osobeid" value="#cmbOdgOsoba" />
+				<parameter name="@partneriid" value="#srcPartner" />
+				<parameter name="@fakturedobid" value="" />
+				<parameter name="@ufaiznos" value="" />
+				<parameter name="@rabatgla" value="" />
+			</data>
+			<data command="spMPPonudaInsertGlaIdetNG" name="dpDeleteStavka">
+				<parameter name="@action" value="5"/>
+				<parameter name="@id" value="$id"/>
+				<parameter name="@mpponudadetid" value="#grdStavke.@mpponudadetid" />
+				<parameter name="@mpponudaglaid" value="$id" />
+			</data>
+			<data command="select mpcijenaprometid from mpcijenapromet where mpponudadetid = @stavke" type="text" name="dtDeleteProvjera">
+				<parameter name="@stavke" value="#grdStavke.@mpponudadetid"/>
+			</data>
+			<data command="spMPPonudaInsertGlaIdetNG" name="dtObnoviMpc">
+				<parameter name="@action" value="16"/>
+				<parameter name="@id" value="$id"/>
+			</data>
+			<data command="delete from totalgenmultiselecttemp where operateriid = @operateriid" type="text" name="dtTotalCisti">
+				<parameter name="@operateriid" value="@@operateriid"/>
+			</data>
+			<data command="insert into totalgenmultiselecttemp(id,operateriid,hostname,susersname) values(@Stavke,@operateriid,host_name(),suser_sname())" type="text" name="dtTotalPuni">
+				<parameter name="@Stavke" value="#grdStavke.@mpponudadetid"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+			</data>
+
+			<data command="spMPPonudaInsertGlaIdetNG" name="dtIspraviKolicinu">
+				<parameter name="@action" value="4"/>
+				<parameter name="@id" value="$id"/>
+				<parameter name="@mpponudadetid" value="#grdStavke.@mpponudadetid"/>
+				<parameter name="@kolicinaulaz" value="#grdStavke.focusedvalue"/>
+			</data>
+		</datalist>
+
+	</form>
+
+</root>

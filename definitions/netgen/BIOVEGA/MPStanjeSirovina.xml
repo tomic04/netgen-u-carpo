@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT  
+	BUTTONS=""
+	POPUPMASTER="" 
+	MASTERDBLCLICK=":MPKARTICA"
+	GROUPBYBOXVISIBLE="TRUE" 
+	ONLOAD="" 
+	FROZENCOLUMNS="0"
+	COMMANDTIMEOUT="300"
+	 SETDEFAULTS="spMPPermissionNG @action = 0 , @operateriid = @@operateriid, @object = '@@xmlname', @sifradok = '104',  @mpizdatnicaZakljuci = 0 , @trazi = 'zadu'" 
+	CHECKBOXVISIBLE="FALSE"
+ >
+	
+<NAME>Stanje sirovina u MP</NAME>
+<CAPTION>Stanje sirovina u MP</CAPTION>
+	
+
+<MAINFORM 
+	INCLUDE="MPKarticaRobe.xml" 
+	NAME=" MAINFORM " 
+	HEIGHT="10000" 
+	WIDTH="15000"
+	CAPTION="Stanje sirovina u MP"
+	ONLOAD2="SELECT convert(char(4),year(getdate()))+&apos;0101&apos; as datumod, null as kolicinaod, null as kolicinado"
+	 ONLOAD="spMPPermissionNG @action = 0 , @operateriid = @@operateriid, @object = '@@xmlname', @sifradok = '104',  @mpizdatnicaZakljuci = 0 , @trazi = 'zadu'" 
+	MAXIMIZEBOX="TRUE" 
+	WINDOWSTATE="2"
+   PAGEHEADERLEFT="Od @@datumod do @@datumdo"
+      PAGEHEADERRIGHT="@@tkosmomi"
+      SETDEFAULTS="select dbo.fnTkoSmoMi() as tkosmomi">
+
+	<INPUT TYPE="group" NAME="topgroupbox" DOCK="1" CAPTION="Filter" HEIGHT="2700"   />
+	<INPUT TYPE="group" NAME="bottomgroupbox" DOCK="2" HEIGHT="550"  />
+	<INPUT TYPE="grid" NAME="mastergrid" DOCK="5" CHECKBOXVISIBLE="FALSE" 
+		 SQL="if year(@@datumod)&lt;&gt;year(@@datumdo) begin 
+				exec spRaiserror 69001, &apos;Stanje maloprodaje može se pregledavati samo u istoj godini ! Molim ponovite upit !&apos;
+				end exec spMpStanjeSirovina @action=500,@RobaId=@@robaid, @SkladisteId=@@skladisteid, @DatumOd=@@datumod, @DatumDo=@@datumdo,
+				@KlMasterRobaId=@@klmasterrobaid, @status=@@status, @kolicinaod=@@kolicinaod, @kolicinado=@@kolicinado, @kartica=0, @neispravno=0, @komisija=@@komisija, @podklase = @@podklase, @dakolicina = @@dakolicina, @mpsirovina = 1 , @nenc = @@nenc "  
+		 PAGEHEADERCENTER="Stanje sirovina u MP"
+		 PAGEHEADERRIGHT="@@tkosmomi"
+		 PAGEHEADERLEFT="Razdoblje: od @@datumod do @@datumdo  Trgovina: @@comboboxskladisteid"
+		 PAGEFOOTERCENTER=""
+		 PAGEFOOTERLEFT=""
+		 PAGEFOOTERRIGHT=""
+		 PAGEORIENTATION="LANDSCAPE">
+		
+		<COLUMN INDEX="" NAME="stanje1100" WIDTH="" CAPTION="Stanje" FORMAT="#,##0.0000" VISIBLE="TRUE	" />
+		<COLUMN INDEX="" NAME="raspoloživo1000" WIDTH="" CAPTION="Raspoloživo" FORMAT="#,##0.0000" VISIBLE="TRUE	" />
+		<COLUMN INDEX="" NAME="Cijena1200"  AGREGATEFUNCTION="0" />
+
+	</INPUT>
+
+	<INPUT TYPE="combo" NAME="skladisteid" TOP="250" LEFT="1200" WIDTH="4500" SQL="spMPDajTrgovina @operateriid=@@operateriid" ALLOWEMPTY="FALSE" CAPTION="Trgovina:*"/>
+
+  <INPUT TYPE="search"  CAPTION="Klasa robe:*" NAME="klmasterrobaid" TOP="250" LEFT="7000" WIDTH="5500"
+      SQL="spMPDajKlase @trazi = '@@searchboxklmasterrobaid'"/>
+  
+  <!--<INPUT TYPE="combo" NAME="klmasterrobaid" TOP="250" LEFT="7000" WIDTH="5500" 
+         SQL="select KlMasterRobaid, oznaka+&apos;&apos;+naziv as naziv from KlMasterRoba order by SortKey" ALLOWEMPTY="TRUE" CAPTION="Klasa robe:*"/>-->
+	
+  <INPUT TYPE="checkbox" NAME="podklase" CAPTION="i ispod nje" TOP="250" LEFT="12700"/>
+	<INPUT TYPE="search" NAME="robaid" TOP="750" LEFT="1200" WIDTH="5000" SQL="virobabezusluga#robaid#userid%#robakod%#naziv%#barcode" ALLOWEMPTY="TRUE" CAPTION="Roba:*"/>
+	<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od:*" TOP="1250" LEFT="1200" WIDTH="2000"/>
+	<INPUT TYPE="date" NAME="datumdo" CAPTION="do:*" TOP="1250" LEFT="4000" WIDTH="2000"/>
+	<INPUT TYPE="combo" NAME="status" TOP="1250" LEFT="7500" WIDTH="3500" SQL="select 0 as indid, 'Količina = 0 ' as naziv union all select 1, 'Količina > 0 ' union all select -1, 'Količina &lt; 0 ' union all select 2, 'Količina&lt;&gt;0 '" ALLOWEMPTY="TRUE" CAPTION="Stanje:*"/>
+	<INPUT TYPE="number" NAME="kolicinaod" CAPTION="Količina od:*" DECIMALS="2" TOP="1750" LEFT="1200" WIDTH="1000"/>
+	<INPUT TYPE="number" NAME="kolicinado" CAPTION="do:*" DECIMALS="2" TOP="1750" LEFT="3000" WIDTH="1000"/>
+	<INPUT TYPE="checkbox" NAME="dakolicina" CAPTION="Gledaj na količine*" TOP="1750" LEFT="4500" />
+	<INPUT TYPE="combo" NAME="komisija" TOP="1750" LEFT="7500" WIDTH="3500" SQL="select 1 as id, &apos;Sva roba&apos; as naziv union all select 2, &apos;Vlastita roba&apos; union all select 3, &apos;Komisijska roba&apos;" ALLOWEMPTY="FALSE" CAPTION="Vrsta robe:*"/>
+
+	<INPUT TYPE="button" NAME="b0" PARENT="topgroupbox" TOP="1750" LEFT="12000" CAPTION="Pokaži podatke" WIDTH="1500" ONCLICK="select 'refresh' as mastergrid" />
+
+	<INPUT TYPE="button" NAME="b1" CAPTION="Odustani" PARENT="bottomgroupbox" TOP="150" LEFT="200" WIDTH="1500" HEIGHT="322" ONCLICK="close" HOTKEY="" />
+	<INPUT TYPE="button" NAME="b2" CAPTION="Kartica" PARENT="bottomgroupbox" TOP="150" LEFT="2200" WIDTH="1500" HEIGHT="322" ONCLICK=":MPKARTICA" HOTKEY="" />
+	<INPUT TYPE="button" NAME="b3" CAPTION="Obnovi stanje" PARENT="bottomgroupbox" TOP="150" LEFT="4200" WIDTH="1500" HEIGHT="322" ONCLICK=":OBNOVISTANJE" HOTKEY="" />
+	<INPUT TYPE="button" NAME="b4" CAPTION="Obnovi količine" PARENT="bottomgroupbox" TOP="150" LEFT="6200" WIDTH="1500" HEIGHT="322" ONCLICK=":OBNOVIKOL" HOTKEY="" />
+	<INPUT TYPE="button" NAME="b4" CAPTION="Ispis stanja" PARENT="bottomgroupbox" TOP="150" LEFT="8200" WIDTH="1500" HEIGHT="322" ONCLICK="printgrid(mastergrid)" HOTKEY="" />
+</MAINFORM>
+
+
+	
+<OBNOVIKOL 
+	NAME="OBNOVIKOL" 
+	HEIGHT="3000" 
+	WIDTH="6500" 
+	CAPTION="Obnova količine mp stanja" 
+	ONSUBMIT=""
+	ONLOAD="select year(@@datumdo) as godina"
+	CMD1CAPTION="" CMD2CAPTION="">>
+	
+	<INPUT TYPE="label" NAME="Label18" TOP="446" LEFT="245" HEIGHT="490" WIDTH="5443" VISIBLE="TRUE" BOLD="TRUE" CAPTION="Želite obnoviti količinsko stanje mp?"/>
+	<INPUT TYPE="text" NAME="godina" TOP="5000" LEFT="2261" HEIGHT="288" WIDTH="1440" VISIBLE="FALSE" CAPTION="" TABINDEX="" ENABLED="FALSE"/>
+	
+	<INPUT TYPE="button" NAME="ok" CAPTION="Obnovi količine" TOP="1200" LEFT="500" WIDTH="1500" HEIGHT="322" ONCLICK="spMPObnovaMPStanjeNG @Action=1, @trgovinaid=@@skladisteid, @godina = @@godina, @indporuka=1#OK"/>
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="1200" LEFT="2200" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+
+</OBNOVIKOL>
+
+<OBNOVISTANJE 
+	NAME="OBNOVISTANJE" 
+	HEIGHT="3000" 
+	WIDTH="6500"
+	CAPTION="Obnova financijskog iznosa stanja mp" 
+	ONSUBMIT=""
+	ONLOAD="select year(@@datumdo) as godina"
+	CMD1CAPTION="" CMD2CAPTION="">
+	
+	<INPUT TYPE="label" NAME="Label20" TOP="461" LEFT="274" HEIGHT="677" WIDTH="5774" VISIBLE="TRUE" BOLD="TRUE" CAPTION="Želite obnoviti financijski saldo stanja mp?"/>
+	<INPUT TYPE="text" NAME="godina" TOP="5000" LEFT="2304" HEIGHT="288" WIDTH="1440" VISIBLE="FALSE" CAPTION="godina" TABINDEX="" ENABLED="FALSE"/>
+	
+	<INPUT TYPE="button" NAME="ok" CAPTION="Obnovi stanje" TOP="1200" LEFT="500" WIDTH="1500" HEIGHT="322" ONCLICK="spMPObnovaMPStanjeNG @Action=2, @trgovinaid=@@skladisteid, @godina = @@godina, @indporuka=1#OK"/>
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="1200" LEFT="2200" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+
+</OBNOVISTANJE>
+	
+</PROJECT>

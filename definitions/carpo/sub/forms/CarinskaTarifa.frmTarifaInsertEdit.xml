@@ -1,0 +1,141 @@
+<root>
+	<form name="frmTarifaInsertEdit" caption="Carinska tarifa" fixedsize="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet"/>
+			<action type="datarun scalar" value="~dtmaxlengthT">
+				<parameter name="maxlengthT" value="~dtmaxlength.@CHARACTER_MAXIMUM_LENGTH"/>
+			</action>
+			<action type="datarun scalar" value="~dtmaxlengthN">
+				<parameter name="maxlengthN" value="~dtmaxlength.@CHARACTER_MAXIMUM_LENGTH"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control value" value="#datDatum">
+				<parameter value="now"/>
+			</action>
+			<action type="control value" value="#txtStopa1" if="$CarTarifaid==null">
+				<parameter value="0,00"/>
+			</action>
+			<action type="control value" value="#txtStopa1" else="">
+				<parameter value="~dtGet.@stopa1"/>
+			</action>
+			<action type="control value" value="#txtStopa2" if="$CarTarifaid==null">
+				<parameter value="0,00"/>
+			</action>
+			<action type="control value" value="#txtStopa2" else="">
+				<parameter value="~dtGet.@stopa2"/>
+			</action>
+			<action type="control value" value="#txtStopa3" if="$CarTarifaid==null">
+				<parameter value="0,00"/>
+			</action>
+			<action type="control value" value="#txtStopa3" else="">
+				<parameter value="~dtGet.@stopa3"/>
+			</action>
+		</event>
+		<layout textposition="left">
+			<group rows="2" cols="1" bordervisible="false">
+				<group row="1" col="1" rows="4" cols="3" bordervisible="false">
+					<item row="1" col="1" colspan="2" caption="Tarifa:">
+						<textedit name="txtTarifa" datavalue="~dtGet.@CarinskaTarifa" required="true" maxlength="$maxlengthT"/>
+					</item>
+					<item row="2" col="1" colspan="3" caption="Naziv:">
+						<textedit name="txtNaziv" datavalue="~dtGet.@Naziv" required="true" maxlength="$maxlengthN"/>
+					</item>
+					<item row="3" col="1" colspan="3" caption="Konto:">
+						<searchedit name="srcKonto" fieldtext="KontoNaziv" fieldvalue="KntplanAid" datavalue="~dtGet.@KntplanAid" datatext="~dtGet.@KontoNaziv" dataname="~dtKonto" />
+					</item>
+					<item row="4" col="1" colspan="3" caption="Propisana JM:">
+						<comboedit name="cmbJM" dataname="~dtJM" valuefield="JMId" displayfield="Naziv" datavalue="~dtGet.@JMId" datatext="~dtGet.@PropisanaJM"/>
+					</item>
+				</group>
+				<group row="2" col="1" rows="4" cols="2" caption="Porezi">
+					<columnsdefinition>
+						<column size="60%" position="1" />
+						<column size="40%" position="2" />
+					</columnsdefinition>
+					<item row="1" col="1" colspan="2" caption="Datum:" >
+						<dateedit name="datDatum" value="getdate" datavalue="~dtGet.@Datum"/>
+					</item>
+					<item row="2" col="1" caption="Stopa1:">
+						<textedit name="txtStopa1" datavalue="~dtGet.@Stopa1" format="n2" required="true"/>
+					</item>
+					<item row="3" col="1" caption="Stopa2:">
+						<textedit name="txtStopa2" datavalue="~dtGet.@Stopa2" format="n2"/>
+					</item>
+					<item row="4" col="1" caption="Stopa3:">
+						<textedit name="txtStopa3" datavalue="~dtGet.@Stopa3" format="n2"/>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate"/>
+							<action type="datarun scalar" value="~dtDataEdit" if="$CarTarifaid!=null">
+								<parameter name="parent.$CarTarifaid"/>
+							</action>	
+							<action type="datarun scalar" value="~dtDataInsert" else="">
+								<parameter name="parent.$CarTarifaid"/>
+								<action type="control populate" value="parent.#grdMaster"/>
+								<action type="control focus" value="parent.#grdMaster">
+									<parameter value="parent.$CarTarifaid" type="int"/>
+								</action>
+							</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spGetColumnsInfo_carpo" name="dtmaxlengthT">
+				<parameter name="@table_name" value="CarinskaTarifa" />
+				<parameter name="@column_name" value="Tarifa" />
+			</data>
+			<data command="spGetColumnsInfo_carpo" name="dtmaxlengthN">
+				<parameter name="@table_name" value="CarinskaTarifa" />
+				<parameter name="@column_name" value="Naziv" />
+			</data>	
+			<data command="spCarinskaTarifa_Query" name="dtGet">
+				<parameter name="@Action" value="5" />
+				<parameter name="@CarinskaTarifaId" value="$CarTarifaid" />
+			</data>	
+			<data command="spCarinskaTarifa_Query" name="dtKonto">
+				<parameter name="@Action" value="6" />
+				<parameter name="@uvjet" value="#srcKonto.text" />
+			</data>
+			<data command="spCarinskaTarifa_Query" name="dtJM">
+				<parameter name="@Action" value="7" />
+			</data>
+			
+			<data command="spCarinskaTarifa_Azur" name="dtDataInsert">
+				<parameter name="@Action" value="0" />
+				<parameter name="@Tarifa" value="#txtTarifa"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				<parameter name="@KntPlanAid" value="#srcKonto"/>
+				<parameter name="@JMid" value="#cmbJM"/>
+
+				<parameter name="@Datum" value="#datDatum"/>
+				<parameter name="@Stopa1" value="#txtStopa1" type="decimal"/>
+				<parameter name="@Stopa2" value="#txtStopa2" type="decimal"/>
+				<parameter name="@Stopa3" value="#txtStopa3" type="decimal"/>
+				
+			</data>
+			<data command="spCarinskaTarifa_Azur" name="dtDataEdit">
+				<parameter name="@Action" value="1" />
+				<parameter name="@CarinskaTarifaId" value="$CarTarifaid" />
+				<parameter name="@Tarifa" value="#txtTarifa"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				<parameter name="@KntPlanAid" value="#srcKonto"/>
+				<parameter name="@JMId" value="#cmbJM"/>
+				
+				<parameter name="@Datum" value="#datDatum"/>
+				<parameter name="@Stopa1" value="#txtStopa1" type="decimal"/>
+				<parameter name="@Stopa2" value="#txtStopa2" type="decimal"/>
+				<parameter name="@Stopa3" value="#txtStopa3" type="decimal"/>
+			</data>
+		</datalist>
+	</form>
+</root>

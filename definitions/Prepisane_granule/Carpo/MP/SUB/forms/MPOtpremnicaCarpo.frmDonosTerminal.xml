@@ -1,0 +1,103 @@
+<root>
+	<form name="frmDonosTerminal" caption="Donos sa terminala" width="300">
+		<event type="init">
+			<action type="datarun reader" value="global.dtVrstaDok"/>
+			<action type="datarun reader" value="~dtUcitaj"/>
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1" caption="Stavke za donos sa ručnog terminala">
+					<grid name="grdDonos"  dataname="~dtUcitajStavke"  visible="false" netgenfields="true" keyfield="robaid" multiselect="true">
+						<fields>
+							<field name="RBR0500" fixed="true"/>
+							<field name="Šifra1000" fixed="true"/>
+							<field name="Kod robe1400" fixed="true"/>
+							<field name="Naziv artikla/robe3000" fixed="true"/>
+							<field name="JM0500" />
+							<field name="Pakovanje1000" />
+							<field name="Cijena0800" />
+							<field name="Nabavna cijena 0800" />
+							<field name="Stanje MP1200]" /> 
+							<field name="Količina0800" editable="true"/>
+						</fields>
+						<styles>
+								<style name="bold" value="true" if="#grdDonos.@Količina0800&gt;0" />
+							</styles>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPull" caption="Prebaci">
+					<event type="click">
+						<action type="control foreachrow " value="#grdDonos">
+							<action type="datarun nonquery" value="~dtDodaj" if="#grdDonos.@Količina0800&gt;0"/>
+							<action type="datarun nonquery" value="~dpProracun"  if="#grdDonos.@Količina0800&gt;0"/>
+						</action>
+						<action type="form close" />								
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+				<button name="btnIzmjeni" caption="Izmjeni">
+					<event type="click">
+						<action type="form open" value="frmDonosIzmjenaTerminal">
+							<parameter name="donost" value="#grdDonos"/>
+							<parameter name="trgovinaid" value="$trgovinaid"/>
+						</action>
+						<action type="control populate" value="#grdDonos"/>
+					</event>
+				</button>
+				<button name="btnBrisi" caption="Briši" >
+					<event type="click">
+						<action type="confirm" value="Želite li sigurno obrisati stavku {#grdDonos.@Naziv artikla/robe3000} ?"/>
+						<action type="datarun nonquery" value="~dpBrisi">
+							<action type="control refreshvalue" value="#grdDonos"/>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMPPrijenosTerminalNG" name ="dtUcitaj">
+				<parameter name="@action" value="11" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@trgovinaid" value="$trgovinaid" />
+				<parameter name="@trgovinacijena" value="$trgovinaid" />
+				<parameter name="@datumod" value="$datumdok" />
+				<parameter name="@vrstadokid" value="~dtVrstaDok.@vrstadokid" />
+			</data>
+			<data command="spMPPrijenosTerminalNG" name ="dtUcitajStavke">
+				<parameter name="@action" value="33" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@trgovinaid" value="$trgovinaid" />
+				<parameter name="@trgovinacijena" value="$trgovinaid" />
+				<parameter name="@datumod" value="$datumdok" />
+				<parameter name="@vrstadokid" value="~dtVrstaDok.@vrstadokid" />
+			</data>
+			<data command="spMPInsertGlaIdetNG" name="dtDodaj">
+				<parameter name="@action" value="3"/>
+				<parameter name="@robaid" value="#grdDonos.@robaid"/>
+				<parameter name="@id" value="$id"/>
+				<parameter name="@NabCijena" value="#grdDonos.@Nabavna cijena0800" />
+				<parameter name="@kolicinaulaz" value="#grdDonos.Količina0800" />
+				<parameter name="@mpcijena" value="#grdDonos.@cijena0800" />
+				<parameter name="@mpcijenaorg" value="#grdDonos.@cijena0800" />
+				<parameter name="@rabatdp" value="$rabat" />
+				<parameter name="@sifradok" value="~dtVrstaDok.@Sifra" />
+			</data>
+			<data command="spPKdajTroskoveNG" name="dpProracun">
+				<parameter name="@id" value="$id" />
+				<parameter name="@trgovinaid" value="$trgovinaid"/>
+				<parameter name="@datum" value="$datumdok"/>
+				<parameter name="@vrstadokid" value="~dtVrstaDok.@vrstadokid"/>
+				<parameter name="@dodaj" value="1"/>
+			</data>
+			<data command="spMPPrijenosTerminalNG" name="dpBrisi">
+				<parameter name="@action" value="55"/>
+				<parameter name="@id" value="#grdDonos.@ptprijenosid" />
+			</data>
+		</datalist>
+	</form>
+</root>

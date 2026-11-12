@@ -1,0 +1,253 @@
+<root version="1.0">
+  <!--
+  Komentari:
+  8.9.2021. MG - namjestio caption kod checkboxa
+  15.03.2021. Jadranka Vučenović Vojvodić dodano otvaranje forme za izmjenu na dupli klik u master gridu - ver 1.2.
+  05.03.2021. Jadranka Vučenović Vojvodić dodan fokus na novo unsešeno i postavljeno kad je grid 
+              prazan da disabla gumb izmjena i brisanje - ver 1.1.
+  05.03.2021. Jadranka Vučenović Vojvodić - kreirala granulu ver 1.0.
+  -->
+  
+  <!--
+  *******************************************************************************************
+  POČETNA FORMA
+  *******************************************************************************************
+  -->
+  <form name="frmPocetna" caption="Zvanja" width="680" height="500" fixedsize="true" saveformsize="false" showversion="true" version="1.0" >
+    <event type="init">
+      <action type="datarun reader" value="~dtGrid" />
+    </event>
+
+    <event type="load">
+      <action type="control populate" value="#grdGrid" >     </action>
+	  <action type="control enable" value="#btnIzmjena,#btnBrisanje" if="#grdGrid.rowcount!=0"/>
+	  <action type="control disable" value="#btnIzmjena,#btnBrisanje" else=""/>
+    </event>
+
+    <layout>
+      <group cols="1" rows="5" groupbordervisible="false">
+        <item caption="" col="1" row="1" rowspan="5" textposition="left">
+          <grid name="grdGrid" key="ID" dataname="~dtGrid" preventfocusgroup="false" fieldsmartspaces="false"  bestfitonrefresh="true" showgrouppanel="false" multiselect="true">
+		  <event type="doubleclick">
+		  <action type="form open" value="frmUnos">
+              <parameter name="caption" value="Izmjena {#grdGrid.@Naziv}"/>
+              <parameter name="Id" value="#grdGrid.@ID"/>
+			  <parameter name="Tip" value="izmjena"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdGrid"/>
+		  </event>
+          </grid>
+        </item>
+      </group>
+      <!--kraj omotača-->
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnos" caption="Unesi">
+          <event type="click">
+            <action type="form open" value="frmUnos">
+              <parameter name="caption" value="Unos"/>
+              <parameter name="Id" value="0"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdGrid"/>
+          </event>
+        </button>
+        <button name="btnIzmjena" caption="Izmijeni">
+          <event type="click">
+            <action type="form open" value="frmUnos">
+              <parameter name="caption" value="Izmjena {#grdGrid.@Naziv}"/>
+              <parameter name="Id" value="#grdGrid.@ID"/>
+			  <parameter name="Tip" value="izmjena"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdGrid"/>
+          </event>
+        </button>
+        <button name="btnBrisanje" caption="Obriši">
+          <event type="click">
+            <action type="form open" value="frmBrisanje">
+              <parameter name="caption" value="Brisanje odabranih zapisa}"/>
+              <parameter name="selectedids" value="#grdGrid.selectedids"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdGrid"/>
+			<action type="control disable" value="#btnBrisanje,#btnIzmjena" if="#grdGrid==null"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" dock="right" >
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spHRZvanja_CP" name="dtGrid">
+        <parameter name="action" value="MASTER"></parameter>
+      </data>
+    </datalist>
+  </form>
+  
+  <!--
+  *******************************************************************************************
+  FORMA ZA UNOS/IZMJENU
+  *******************************************************************************************
+  -->
+
+  <form name="frmUnos" caption="$caption" width="400" height="300" >
+    <event type="init">
+      <action type="datarun reader" value="~dtGet" if="$Id!=0" />
+    </event>
+    <event type="load">
+      <action type="control disable" value="#btnUnos,#btnOdustani" if="$Id==null"/>
+    </event>
+
+    <layout>
+      <group cols="1" rows="5" groupbordervisible="false" >
+        <item caption="Oznaka" col="1" row="1" textposition="top" highlight="false" >
+          <textedit name="txtOznaka" datavalue="~dtget.@Oznaka" allownull="false" required="true" maxlength="10"></textedit>
+        </item>
+        <item caption="Naziv" col="1" row="2" textposition="top" highlight="false" >
+          <textedit name="txtNaziv" datavalue="~dtget.@Naziv" allownull="false" required="true" maxlength="50"></textedit>
+        </item>
+		<item caption="Spreme" col="1" row="3" textposition="top" highlight="false" >
+          <comboedit name="cmbSpreme" valuefield="HRSpremeId" displayfield="Naziv" required="true" dataname="~dtGetSpreme" datavalue="~dtGet.@hrspremeid" allownull="false" ></comboedit>
+        </item>
+		<item caption="Stupanj" col="1" row="4" textposition="top" highlight="false" >
+          <textedit name="txtStupanj" datavalue="~dtget.@Stupanj" allownull="false" maxlength="10"></textedit>
+        </item>
+		<item col="1" row="5" highlight="false" >
+          <checkedit caption="Umirovljeno" name="chkUmirovljeno" datavalue="~dtget.@Umirovljeno" ></checkedit>
+        </item>
+      </group>
+      <!--kraj omotača-->
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnos" caption="Spremi">
+          <event type="click">
+            <action type="validate"/>
+            <action if="$Id==0">
+              <action type="datarun reader" value="~dtUnos">
+			  <action type="control populate" value="parent.#grdGrid">
+			  <action type="control focus" value="parent.#grdGrid">
+			  <parameter value="$noviID"/>
+			  </action>
+			  </action>
+			  <action type="control enable" value="parent.#btnIzmjena,parent.#btnBrisanje"/>
+			  </action>
+			  <action if="$indGreske==0">
+				<action type="message" value="Uspješno spremljeno!" />
+                <action type="form close" />
+			  </action>
+            </action>
+            <action if="$Id!=0">
+              <action type="datarun reader" value="~dtIzmjena"></action>
+			  <action if="$indGreske==0">
+				<action type="message" value="Uspješno spremljeno!" />
+                <action type="form close" />
+			  </action>
+              
+              <!--<action type="form close"></action>-->
+            </action>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Odustani" dock="right" >
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spHRZvanja_CP" name="dtGet">
+        <parameter name="@action" value="dtGet"></parameter>
+        <parameter name="@id" value="$Id"></parameter>
+      </data>
+	  <data command="spHRZvanja_CP" name="dtGetSpreme">
+        <parameter name="@action" value="dtGetSpreme"></parameter>
+      </data>
+      <data command="spHRZvanja_CP" name="dtUnos">
+        <parameter name="@action" value="UNOS"></parameter>
+		<parameter name="@Id.output.int" variablename="noviID"></parameter>
+        <parameter name="@oznaka" value="#txtOznaka"></parameter>
+        <parameter name="@naziv" value="#txtNaziv"></parameter>
+		<parameter name="@hrspremeid" value="#cmbSpreme"></parameter>
+		<parameter name="@stupanj" value="#txtStupanj"></parameter>
+        <parameter name="@umirovljeno" value="#chkUmirovljeno"></parameter>
+        <parameter name="@indGreske.output.int"></parameter>
+      </data>
+      <data command="spHRZvanja_CP" name="dtIzmjena">
+        <parameter name="@action" value="IZMJENA"></parameter>
+        <parameter name="@id" value="$Id"></parameter>
+        <parameter name="@oznaka" value="#txtOznaka"></parameter>
+        <parameter name="@naziv" value="#txtNaziv"></parameter>
+		<parameter name="@hrspremeid" value="#cmbSpreme"></parameter>
+		<parameter name="@stupanj" value="#txtStupanj"></parameter>
+        <parameter name="@umirovljeno" value="#chkUmirovljeno"></parameter>
+        <parameter name="@indGreske.output.int"></parameter>
+      </data>
+    </datalist>
+  </form>
+
+  <!--
+  *******************************************************************************************
+  FORMA ZA BRISANJE
+  *******************************************************************************************
+  -->
+  <form name="frmBrisanje" caption ="Brisanje" width="400" height="150" fixedsize="true" saveformsize="false" >
+    <event type="shown">
+      <action type ="control value" value="#lblPitanje">
+        <parameter value="Jeste li sigurni da želite obrisati odabrane zapise?"/>
+      </action>
+    </event>
+    <layout>
+
+      <!--omotač-->
+      <group cols="1" rows="1" groupbordervisible="true" >
+        <item col="1" row="1"  highlight="false">
+          <labeledit name="lblPitanje" fontsizedelta="2"  value=""  />
+        </item>
+
+      </group>
+      <!--kraj omotača-->
+
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnBrisi" caption="OBRIŠI" type="del">
+          <event type="click">
+            <!-- Okini storu -->
+
+            <action type="datarun reader" value="~dtBrisanje"/>
+			
+			<action if="$indGreske==0">
+				<action type="control populate keepfocus" value="parent.#grdGrid"/>
+				<action type="form close"/>
+			</action>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right" >
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+
+      <data command="spHRZvanja_CP" name="dtBrisanje">
+        <parameter name="@Action" value="BRISANJE_VISE" type="string"/>
+        <parameter name="@selectedids" value="$selectedids"/>
+        <parameter name="@indGreske.output.int"></parameter>
+      </data>
+    </datalist>
+  </form>
+
+
+
+</root>

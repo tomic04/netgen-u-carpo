@@ -1,0 +1,260 @@
+<!-- 
+27.01.2023 AR dodao slanje	@LnFaktureVrsteid u proceduru za traženje računa.
+02.12.2022 MB dodala <parameter value="Global.$MainValuta"/>
+20220222 MJ dodala Vrsta povezivanja 
+-->
+
+<root>
+	<form name="frmPredujmovi" type="master" caption="Poveži fakture" fixedsize="false" width="1500" height="600">
+		<event type="load">		
+			<action type="control enable" value="#btnObrisi" if="#grdPredujmovi.rowcount!=0&amp;&amp;parent.$StatusFak!=2" />
+			<action type="control disable" value="#btnObrisi" else="" />	
+			<action type="datarun reader" value="~dtIznosFakture"/>	
+			<action type="control disable" value="#btnSpremi,#grdPredujmovi,#srcRacun,#cmbVrstaPovezivanja" if="parent.$StatusFak==2" />			
+			<action type="control enable" value="#btnSpremi,#grdPredujmovi,#srcRacun,#cmbVrstaPovezivanja" else="" />			
+		</event>		
+		<event type="shown">	
+			<action type="datarun reader" value="~dtPredujmoviLabele"/>			
+			<action type="control value" value="#lblValuta" if="$ValutaId!=null">
+				<parameter value="$Valuta"/>
+			</action>			
+			<action type="control value" value="#lblValuta" else="">
+			<!--<parameter value="KN"/>-->
+				<parameter value="Global.$MainValuta"/>
+			</action>				
+			<action type="control value" value="#cmbVrstaPovezivanja" if="#grdPredujmovi.rowcount!=0">
+				<parameter value="#grdPredujmovi.@LNFaktureVrsteId"/>
+			</action>
+			<action type="control value" value="#lblRazlika" if="$ValutaId==null">	
+				<parameter value="~dtPredujmoviLabele.@IznosZaZatvaranje"/>
+			</action>	
+			<action type="control value" value="#lblRazlika" else="">	
+				<parameter value="~dtPredujmoviLabele.@DevIznosZaZatvaranje"/>
+			</action>				
+			<action type="control value" value="#lblZatvoreno" if="$ValutaId==null">	
+				<parameter value="~dtPredujmoviLabele.@Zatvoreno"/>
+			</action>
+			<action type="control value" value="#lblZatvoreno" else="">	
+				<parameter value="~dtPredujmoviLabele.@DevZatvoreno"/>
+			</action>			
+			<action type="variable value" if="$ValutaId==null">
+				<parameter name="IznosFakture" value="~dtIznosFakture.@IznosFakture"/>
+			</action>
+			<action type="variable value" else="">
+				<parameter name="IznosFakture" value="~dtIznosFakture.@DevIznos" />
+			</action>			
+			<action type="control value" value="#lblIznos">	
+				<parameter value="$IznosFakture"/>
+			</action>				
+		</event>		          
+		<layout>
+			<group cols="3" rows="8" col="1" row="1" bordervisible="false">
+				<columnsdefinition>
+					<column position="1" size="300" /> 
+					<column position="2" size="" /> 
+					<column position="3" size="80" /> 
+				</columnsdefinition>
+				<rowsdefinition>
+					<row position="1" size="50" />
+					<row position="2" size="50" /> 
+					<row position="3" size="50" /> 
+					<row position="7" size="150" /> 
+				</rowsdefinition>
+				<item caption="Vrsta povezivanja:" col="1" row="1">
+					<comboedit name="cmbVrstaPovezivanja" valuefield="LNFaktureVrsteId" displayfield="Naziv" dataname="~dtPredujmoviVrste" allownull="false"/>
+				</item>
+				<item caption="Račun:" col="2" row="1">
+					<searchedit name="srcRacun" fontsizedelta="1" fontbold="True" netgenfields="true" fieldtext="Fiskalni broj" fieldvalue="FaktureId" dataname="~dtPredujmoviTrazilica" function="">
+						<event type="keydown" value="13">
+							<action if="#srcRacun!=null">
+								<action type="datarun nonquery" value="~dtPredujmoviUnos"/>
+								<action type="control populate" value="grdPredujmovi"/>
+								<action type="control enable" value="#btnObrisi" if="#grdPredujmovi.rowcount!=0" />
+								<action type="control disable" value="#btnObrisi" else="" />
+								<action type="control value" value="#srcRacun">	
+									<parameter value="null"/>
+								</action>
+								<action type="datarun reader" value="~dtPredujmoviLabele"/>
+								<action type="control value" value="#lblRazlika" if="$ValutaId==null">	
+									<parameter value="~dtPredujmoviLabele.@IznosZaZatvaranje"/>
+								</action>	
+								<action type="control value" value="#lblRazlika" else="">	
+									<parameter value="~dtPredujmoviLabele.@DevIznosZaZatvaranje"/>
+								</action>				
+								<action type="control value" value="#lblZatvoreno" if="$ValutaId==null">	
+									<parameter value="~dtPredujmoviLabele.@Zatvoreno"/>
+								</action>
+								<action type="control value" value="#lblZatvoreno" else="">	
+									<parameter value="~dtPredujmoviLabele.@DevZatvoreno"/>
+								</action>	
+									<action type="control focus" value="#btnOdustani"/>	
+								</action>
+						</event>							
+					</searchedit>
+				</item>
+				<item col="1" row="2" rowspan="6" colspan="2">
+					<grid name="grdPredujmovi" autopopulate="true" dataname="dtPredujmoviGrid" multiselect="true" key="LnFaktureId" showgrouppanel="False" >
+						<fields>
+							<field name="broj" caption="Broj fakture" />
+							<field name="fiskalnibroj" caption="Fiskalni broj"  fontbold="true"/>
+							<field name="IznosFakture" caption="Iznos fakture" />
+							<field name="IznosPoreza" caption="Iznos poreza" />
+							<field name="Zatvoreno" caption="Ukupno zatvoreno" />
+							<field name="IznosZaZatvaranje" caption="Zatvoreno po ovom dok." editable="true" formatstring="n2" if="$ValutaId==null"/>
+							<field name="IznosZaZatvaranje" caption="Zatvoreno po ovom dok." formatstring="n2" if="$ValutaId!=null"/>
+							<field name="DevZatvoreno" caption="Ukupno zatvoreno (dev)" if="$ValutaId!=null"/>
+							<field name="DevIznosZaZatvaranje" caption="Zatvoreno po ovom dok. (dev)" editable="true" formatstring="n2" if="$ValutaId!=null"/>							
+							<field name="Partner" caption="Partner" />
+							<field name="Vrsta" caption="Vrsta povezivanja" />
+						</fields>								
+						<event type="cellvaluechanged">
+							<action type="datarun nonquery" value="~dtPredujmoviUpdate" /> 
+							<action type="datarun nonquery" value="~dtPredujmoviSpremi" /> 
+							<action type="control populate keepfocus" value="#grdPredujmovi"/> 
+							<action type="datarun reader" value="~dtPredujmoviLabele"/>
+							<action type="control value" value="#lblRazlika" if="$ValutaId==null">	
+								<parameter value="~dtPredujmoviLabele.@IznosZaZatvaranje"/>
+							</action>	
+							<action type="control value" value="#lblRazlika" else="">	
+								<parameter value="~dtPredujmoviLabele.@DevIznosZaZatvaranje"/>
+							</action>				
+							<action type="control value" value="#lblZatvoreno" if="$ValutaId==null">	
+								<parameter value="~dtPredujmoviLabele.@Zatvoreno"/>
+							</action>
+							<action type="control value" value="#lblZatvoreno" else="">	
+								<parameter value="~dtPredujmoviLabele.@DevZatvoreno"/>
+							</action>	
+						</event>						
+					</grid>
+				</item>					
+				<item col="3" row="2">
+					<button name="btnObrisi" caption="OBRIŠI">
+						<event type="click">
+							<action type="control foreachrow selected" value="#grdPredujmovi">
+								<action type="datarun nonquery" value="~dtPredujmoviBrisanje"/>
+							</action>						
+							<action type="control populate" value="grdPredujmovi"/>
+							<action type="control enable" value="#btnObrisi" if="#grdPredujmovi.rowcount!=0" />
+							<action type="control disable" value="#btnObrisi" else="" />
+							<action type="datarun reader" value="~dtPredujmoviLabele"/>
+							<action type="control value" value="#lblRazlika" if="$ValutaId==null">	
+								<parameter value="~dtPredujmoviLabele.@IznosZaZatvaranje"/>
+							</action>	
+							<action type="control value" value="#lblRazlika" else="">	
+								<parameter value="~dtPredujmoviLabele.@DevIznosZaZatvaranje"/>
+							</action>				
+							<action type="control value" value="#lblZatvoreno" if="$ValutaId==null">	
+								<parameter value="~dtPredujmoviLabele.@Zatvoreno"/>
+							</action>
+							<action type="control value" value="#lblZatvoreno" else="">	
+								<parameter value="~dtPredujmoviLabele.@DevZatvoreno"/>
+							</action>								
+						</event>						
+					</button>
+				</item>
+									 
+
+									  <group row="8" col="1" cols="5" rows="3" bordervisible="false">
+										 <columnsdefinition>
+										<column position="1" size="40%" /> 
+										<column position="2" size="5%" />
+										<column position="3" size="10%" />
+										<column position="4" size="10%" />
+										<column position="5" size="10%" />
+										 </columnsdefinition>
+										<rowsdefinition>
+										<row position="1" size="30" /> 
+										<row position="2" size="30" /> 
+										<row position="3" size="30%" />
+										   </rowsdefinition>  
+										
+					<item row="1" col="2">
+						<labeledit value="Valuta:" />
+					</item>
+					<item row="1" col="3">
+						<labeledit name="lblValuta" />
+					</item>				
+					<item row="1" col="4">
+						<labeledit value="Iznos fakture:"/>
+					</item>
+					<item row="1" col="5">
+						<labeledit name="lblIznos" value="0" type="money" format="n2"/>
+					</item>				
+					<item row="2" col="4">
+						<labeledit value="Za zatvaranje:"/>
+					</item>
+					<item row="2" col="5">
+						<labeledit name="lblZatvoreno" value="0" type="money" format="n2"/>
+					</item>				
+					 <item row="3" col="4">
+						<labeledit value="Razlika:"/>
+					</item> 
+					 <item row="3" col="5">
+						<labeledit name="lblRazlika" value="0" type="money" format="n2"/>
+					</item>  				
+				</group>
+			</group>            
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtPredujmoviSpremi"/>											
+						<action type="form close"/>
+					</event>								
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>		
+        <datalist>
+            <data command="spProd_Fakture_Povezi_Trazi" name="dtPredujmoviTrazilica">			
+				<parameter name="@Tekst" type="string" value="#srcRacun.text" />	
+				<parameter name="@FaktureId" type="int" value="$FaktureId" />	
+				<parameter name="@ValuteId" type="int" value="$ValutaId" />
+				<parameter name="@LnFaktureVrsteid" type="int" value="#cmbVrstaPovezivanja" />
+			</data>
+			<data command="spNG_Combo" name="dtPredujmoviVrste">
+				<parameter name="@Action" type="string" value="LNFaktureVrste" />			
+			</data>	
+            <data command="spProd_Fakture_Povezi_Grid" name="dtPredujmoviGrid">		
+				<parameter name="@FaktureId" type="int" value="$FaktureId" />	
+			</data>				
+            <data command="spProd_Fakture_Povezi_Unos" name="dtPredujmoviUnos">	
+				<parameter name="@FaktureId" type="int" value="$FaktureId" />	
+				<parameter name="@Fakture2Id" type="int" value="#srcRacun.@FaktureId" />	
+				<parameter name="@Iznos" type="decimal" value="#srcRacun.@Iznos za zatvaranje" if="$ValutaId==null"/>	
+				<parameter name="@Iznos" type="decimal" value="#srcRacun.@Iznos za zatvaranje dev" else=""/>
+				<parameter name="@LNFaktureVrsteId" type="int" value="#cmbVrstaPovezivanja" />	
+				<parameter name="@Tecaj" type="decimal" value="$Tecaj" />
+				<parameter name="@IndDev" type="int" value="0" if="$ValutaId==null"/>
+				<parameter name="@IndDev" type="int" value="1" else=""/>
+				<parameter name="@IznosFakture" value="$IznosFakture" />
+			</data>	
+            <data command="spProd_Fakture_Povezi_EditGrid" name="dtPredujmoviUpdate">		
+				<parameter name="@Iznos" type="decimal" value="#grdPredujmovi.@IznosZaZatvaranje" if="$ValutaId==null"/>	
+				<parameter name="@DevIznos" type="decimal" value="#grdPredujmovi.@DevIznosZaZatvaranje" if="$ValutaId!=null"/>	
+				<parameter name="@LNFaktureId" type="int" value="#grdPredujmovi.@LNFaktureId" />
+				<parameter name="@IndDev" type="int" value="0" if="$ValutaId==null"/>
+				<parameter name="@IndDev" type="int" value="1" else=""/>	
+				<parameter name="@Tecaj" type="decimal" value="$Tecaj" />				
+			</data>				
+            <data command="spProd_Fakture_Povezi_Brisanje" name="dtPredujmoviBrisanje">
+				<parameter name="@LNFaktureId" type="int" value="#grdPredujmovi.@LNFaktureId" />	
+			</data>		
+            <data command="spProd_Fakture_Povezi_Labele" name="dtPredujmoviLabele">			
+				<parameter name="@FaktureTraId" type="int" value="$FaktureId"/>	
+				<parameter name="@FaktureId" type="int" value="null" />	
+			</data>	
+            <data command="spProd_Fakture_Povezi_Update" name="dtPredujmoviSpremi">
+				<parameter name="@FaktureId" type="int" value="$FaktureId" />			
+				<parameter name="@LNFaktureVrsteId" type="int" value="#cmbVrstaPovezivanja" />	
+			</data>
+			<data command="spProd_Fakture_Iznos" name="dtIznosFakture">
+				<parameter name="@FaktureId" type="int" value="$FaktureId" />			
+				<parameter name="@Ind" type="string" value="Glava" />	
+			</data>	
+			<datalist>
+			</datalist>			
+	    </datalist>
+	</form>
+</root>

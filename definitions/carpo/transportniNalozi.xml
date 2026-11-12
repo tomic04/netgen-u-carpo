@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- radio na jupiter2012, spin20160126 -->
+<root>
+	<form name="frmMaster" type="master" caption="Transportni nalozi" width="1100" height="600">
+		<event type="init">
+			<action type="variable value">
+				<parameter name="Global.DokId" value="0" type="int" />
+			</action>
+		</event>
+		<event type="load">
+			<action type="datarun reader" value="~dtDanas" />
+		</event>
+		<event type="shown">
+			<action type="control focus" value="#tree">
+				<parameter value="~dtDanas.@danas" type="int"/>
+			</action>		
+		</event>
+		<managerlayout>
+			<tree name="tree" caption="Vremenska podjela" searchfield="focusid" expandlast="true" >
+				<data command="dbo.spCarpoTreeVrijemeTransRn"  >
+					<parameter name="@tablica" value="sktNalogTransport" />
+					<parameter name="@jucer" value="1" />
+					<parameter name="@danas" value="1" />
+				</data>
+				<fields>
+					<field name="Name" />
+				</fields>
+				<event type="focusedrowchanged"  >
+					<action type="control populate" value="#grdGlava" />
+					<action type="variable value" value="$pomocna">
+						<parameter value="1"/>
+					</action>
+				</event>		
+			</tree>
+			<grid name="grdGlava" type="master" keyfield="sktNalogTransportId" searchfield="sktNalogTransportId" dataname="dtGlava" multiselect="true">
+				<fields>
+				</fields>
+				<styles>
+					<style name="fontcolor" value="green" if="#grdGlava.@statusiId==7" />
+					<style name="fontcolor" value="blue" elseif="#grdGlava.@statusiId==8" />
+					<style name="fontcolor" value="red" elseif="#grdGlava.@statusiId==9" />
+					<style name="fontcolor" value="black" else="" />
+					<style name="backgroundcolor" value="cyan" if="#grdGlava.@FakDetaljId&gt;0"/>
+				</styles>				
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="Unesi">
+					<event type="click">
+						<action type="form open" value="frmTransportniNaloziUnos"/>
+						<action type="control focus" value="#grdGlava">
+							<parameter value="Global.$DokId" />
+						</action>						
+					</event>
+				</button>
+				<button name="btnIzmjeni" caption="Izmjeni">
+					<event type="click">
+						<action type="message" value="Ne možete mijenjati  dokument u ovom statusu!" if="#grdGlava.@Status==Zaključen">						
+						</action>
+						<action type="variable value" value="Global.$DokId">
+							<parameter value="#grdGlava.@sktNalogTransportId" />
+						</action>
+						<action type="form open" value="frmTransportniNaloziIzmjena"  if="#grdGlava.rowcount&gt;0 &amp;&amp;#grdGlava.@Status!=Zaključen" >
+							<parameter name="sktNalogTransportId" value="#grdGlava.@sktNalogTransportId" />
+						</action>
+						<action type="control populate" value="#grdGlava" />
+						<action type="control focus" value="#grdGlava" >
+							<parameter value="Global.$DokId" />
+						</action>
+
+					</event>			
+				</button>
+				<button name="btnObrisi" caption="Obriši">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati dokument broj '{#grdGlava.@Broj}'?">
+							<action type="datarun nonquery" value="~dtSktNalogTransportDelete">
+								<action type="control populate keepfocus" value="#grdGlava" />
+							</action>
+						</action>
+					</event>				
+				</button>
+				<button name="btnStatus" caption="Status">
+					<event type="click">
+						<action type="form open" value="frmTrasnportniNaloziPromjenaStatusa"  if="#grdGlava.rowcount&gt;0">
+							<parameter name="multi" value="#grdGlava.selectedids"/>
+						</action>
+					</event>					
+				</button>
+				<button name="btnFakturiraj" caption="Fakturiraj" >
+					<event type="click">
+						<action type="message" value="Ne možete mjenjati fakturirati dokcument u ovom statusu!" if="#grdGlava.@statusiId==10">						
+						</action>
+						<action type="form open" value="frmTransportniNaloziFakturiranje"  if="#grdGlava.rowcount&gt;0" elseif="#grdGlava.@statusiId==10">
+							<parameter name="multi" value="#grdGlava.selectedids"/> 
+						</action>				
+					</event>
+				</button>
+				<button name="btnSearch" caption="Pronađi" >
+					<event type="click">
+						<action type="search" value="~dtSearch" />
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>	
+		<datalist>
+			<data command="spsktNalogTransportQuery" name="dtGlava">
+				<parameter name="@DatumOd" value="#tree.@DatumOd" />
+				<parameter name="@DatumDo" value="#tree.@DatumDo" />
+			</data>
+			<data command="spsktNalogTransportDelete" name="dtSktNalogTransportDelete">
+				<parameter name="@ID" value="#grdGlava.@sktNalogTransportId" />
+			</data>	
+			<data command="spCarpoSearch" name="dtSearch">
+				<parameter name="@Table" value="SktNalogTransport" />
+				<!--#nazivbuttona.searchtext = tekst upisan u tražilicu-->
+				<parameter name="@Pojam" value="#btnSearch.searchtext" />
+			</data>
+			<data command="SELECT CONVERT(VARCHAR(8), GETDATE(), 112) AS danas" type="text" name="dtDanas" />
+		</datalist>
+	</form>
+	<form name="frmTransportniNaloziUnos" path="frmTransportniNaloziUnos.xml"/>
+	<form name="frmTransportniNaloziIzmjena" path="frmTransportniNaloziIzmjena.xml"/>
+	<form name="frmTrasnportniNaloziPromjenaStatusa" path="frmTrasnportniNaloziPromjenaStatusa.xml"/>	
+	<form name="frmTransportniNaloziFakturiranje" path="frmTransportniNaloziFakturiranje.xml"/>			
+</root>

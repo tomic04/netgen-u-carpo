@@ -1,0 +1,407 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root version="8.0.0.0">
+  <form name="frmGlavna" caption="JSObjekti" type="master">
+    <managerlayout>
+	<lookup name="filter">
+			<comboitem value="Klasa objekata"/>
+	</lookup>
+	<tree name="tree"  key="Id" dataname="global.dtTree" expandallonload="false" >
+
+		<fields>
+			<field name="Naziv" />
+		</fields>
+
+		<event type="focusedrowchanged"  >
+			<action type="control populate" value="#grdGlava" />
+		</event>		
+		
+	</tree>			
+
+	<grid name="grdGlava" type="master" dataname="global.dtGlava" bestfitonrefresh="true" keyfield="JupiterObjectId" key="JupiterObjectId" >
+		<event type="doubleclick">
+			<action type="form open" value="frmIzmjeni" />
+		</event>
+		<event type="focusedrowchanged"  >
+			<action type="control disable" value="#btnIzmjeni, #btnObrisi" if="#grdGlava.rowcount==0"/>,
+			<action type="control enable" value="#btnIzmjeni, #btnObrisi" if="#grdGlava.rowcount>0"/>
+		</event>		
+		<fields inherited="true">
+			<field name="Roba"/>
+			<field name="JM"/>
+			<field name="VPC(bod)"/>
+			<field name="Memo" caption="Memo" fixwidth="400"/>
+			<field name="PLM"/>
+			<field name="Granula"/>
+			<field name="Parametar"/>
+			<field name="Default"/>
+			<field name="Ikona" visible="false" />
+			<field name="Ikona8" visible="false" />
+		</fields>
+	</grid>
+		
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnesi" caption="DODAJ">
+          <event type="click">
+            <action type="form open" value="frmDodajProizvod" />
+			<!-- <action type="control populate keepfocus" value="#grdGlava"/> -->
+          </event>
+        </button>
+        <button name="btnIzmjeni" caption="IZMJENI">
+          <event type="click">
+            <action type="form open" value="frmIzmjeni" />
+			<action type="control populate keepfocus" value="#grdGlava"/>
+			<action type="control enable" value="#btnIzmjeni, #btnObrisi" if="#grdGlava.rowcount>0"/>
+          </event>
+        </button>
+		<button name="btnObrisi" caption="OBRIŠI" type="delete" function="delete">
+			<event type="click">
+				<action type="confirm" value="Želite li obrisati granulu?">
+					<action type="datarun nonquery" value="global.~dtDelete" />
+				</action>
+				<action type="control populate" value="#grdGlava" />
+			</event>
+		</button>
+		<button name="btnIzvjestaj" caption="Izvještaj">
+			<event type="click">
+				<action type="form open" value="frmIzvjestaj">
+					<action type="datarun nonquery" value="global.~dtDelete" />
+				</action>
+			</event>
+		</button>
+      </buttons>
+    </panelbuttons>
+  
+  </form>
+  
+	<form name="frmDodajProizvod" caption="Unos granule" width="380">
+	
+		<event type="init">
+			<action type="datarun reader" value="~dtGetDate"  />
+		</event>
+		
+		<event type="shown">
+			<action type="control value" value="#cmbKlasa">
+			  <parameter value="parent.#tree.@Id" />
+			</action>
+			<action type="control value" value="#srcRoba">
+			  <parameter value="parent.#grdGlava.@robaid" text="parent.#grdGlava.@Roba"/>
+			</action>
+			<action type="control value" value="#datumUnosa">
+			  <parameter value="~dtGetDate.@Date"/>
+			</action>
+			<action type="control value" value="#cmbPLM">
+			  <parameter value="@@operateriid"/>
+			</action>
+		</event>
+	
+		<layout>		
+			<group cols="2" rows="9">
+				<columnsdefinition>
+					<column size="350" position="1" />
+					<column size="500" position="2" />
+				</columnsdefinition>
+				<group  groupbordervisible="false" cols="2" rows="1" col="1" row="1"  >
+					<item caption="Klasa:" col="1" row="1">
+						<combotreeedit name="cmbKlasa" valuefield="Id" displayfield="Naziv" datavalue="" dataname="dtGetKlasa"/>
+					</item>
+					<item caption="Nova roba" row="1" col="2">
+						<checkedit name="chkNova" value="false">
+							<event type="valuechanged">
+								<action type="control visible" value="#srcRoba" if="#chkNova==true">
+									<parameter value="false" />
+								</action>
+								<action type="control visible" value="#srcRoba" else="">
+									<parameter value="true" />
+								</action>
+								<action type="control populate" value="#cmbPLM" />
+								<action type="control enable" value="#memo" if="#chkNova==true" />
+								<action type="control disable" value="#memo" if="#chkNova==false" />
+							</event>
+						</checkedit>
+					</item>
+				</group>
+				<item col="1" row="2" highlight="false" caption="Komercijalni naziv:">
+					<searchedit name="srcRoba" netgenfields="true" fontsizedelta="1" fontbold="True" dataname="dtRoba" fieldtext="NazivId" fieldvalue="robaid" required="true" >
+					</searchedit>
+				</item>
+				<item col="1" row="2" highlight="false" caption="Komercijalni naziv:">
+					<textedit name="srcRobaNew" >
+					</textedit>
+				</item>
+				<item col="1" row="3" highlight="false" caption="Naziv granule:">
+					<textedit name="txtNazivGranule" enabled="true">
+					</textedit>
+				</item>
+				<item col="1" row="4" highlight="false" caption="Kod:">
+					<textedit name="txtKod" enabled="true">
+					</textedit>
+				</item>
+				<item col="1" row="5" highlight="false" caption="Parametar:">
+					<textedit name="txtParametar" enabled="true">
+					</textedit>
+				</item>
+				<item col="1" row="6" highlight="false" caption="Operater:">
+					<comboedit name="cmbPLM" enabled="true" valuefield="Id" displayfield="Naziv" dataname="~dtGetPLM">
+					</comboedit>
+				</item>
+				<item col="1" row="7" highlight="false" caption="DatumUnosa:">
+					<dateedit name="datumUnosa"></dateedit>
+				</item>
+				<item col="1" row="8" highlight="false" caption="Memo:">
+					<memoedit name="memo" enabled="false"/>
+				</item>
+				<item col="1" row="9" highlight="false">
+					<checkedit name="chkDefault" caption="Postavi kao zadano" value="true"/>
+				</item>				
+				<item col="2" row="1"  rowspan="9" caption="     Galerija ikona:" >
+					<customcontrol name="cusIcon" dll="IconChooser" class="IconChooser.Icons" />
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI" >
+					<event type="click">
+						<action type="datarun scalar" value="~dtInsert">
+							<parameter name="newId"/>
+						</action>
+						<action type="control populate" value="parent.#grdGlava">
+							<action type="control focus" value="parent.#grdGlava" >
+								<parameter value="$newId" />
+							</action>
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				
+				<button caption="ODUSTANI" >
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spJSObjekti_KlasaRobe_Query"  name="dtGetKlasa">
+
+			</data>
+			<data command="spJSObjekti_Trazilica" name="dtRoba">
+				<!-- tražilica roba -->
+				<parameter name="@action" value="Roba"/>
+				<parameter name="@Uvjet" value="#srcRoba.text"/>
+				<parameter name="@PokaziVPCijene" value="1"/>
+				<parameter name="@PokaziNabCijene" value="1"/>
+				<parameter name="@Retired" value="0"/>
+				<parameter name="@Prikazi_Dodatno" value="1"/>
+				<parameter name="@PokaziStanje" value="0"/>
+				<parameter name="@SkladisteId" value="null"/>
+				<parameter name="@KlMasterRobaId" value="parent.#grdGlava.@klmasterrobaid" />
+			</data>
+			<data command="spJSObjekti_EditQuery_Unos" name="dtGetUnos">
+				<parameter name="@ID" value="parent.#grdGlava.@JupiterObjectId" />
+			</data>
+			<data command="spJSObjekti_Katalozi" name="dtGetPLM">
+				<parameter name="@action" value="getPLM" />
+			</data>
+			<data command="spJSObjekti_Azur" name="dtInsert">
+				<parameter name="@action" value="insert" />
+				<parameter name="@KlMasterRobaId" value="#cmbKlasa" />
+				<parameter name="@robaNaziv" value="#srcRoba.@Naziv" if="#chkNova==0" />
+				<parameter name="@robaNaziv" value="#srcRobaNew" else="" />
+				<parameter name="@granulaNaziv" value="#txtNazivGranule" />
+				<parameter name="@robaKod" value="#txtKod" />
+				<parameter name="@parametar" value="#txtParametar" />
+				<parameter name="@PLM" value="#cmbPLM" />
+				<!-- <parameter name="@VPC" value="#txtVPC" /> -->
+				<parameter name="@memo" value="#memo" />
+				<parameter name="@icon" value="#cusIcon.@imgName" />
+				<parameter name="@robaid" value="#srcRoba"/>	
+				<parameter name="@indNovaRoba" value="#chkNova" />
+				<parameter name="@OperateriId" value="#cmbPLM" />
+				<parameter name="@DatumUnosa" value="#datumUnosa" />
+				<parameter name="@default" value="#chkDefault" />
+			</data>
+			<data command="select getdate() as Date" name="dtGetDate" type="text" />
+		</datalist>
+	</form>
+	
+	<form name="frmIzmjeni" caption="Izmjena" width="500">
+		<event type="load">
+			<action type="control value" value="#txtGranula">
+				<parameter value="parent.#grdGlava.@Roba" />
+			</action>
+			<action type="control value" value="#txtNazivGranule">
+				<parameter value="parent.#grdGlava.@Granula" />
+			</action>
+			<action type="control value" value="#txtParametar">
+				<parameter value="parent.#grdGlava.@Parametar" />
+			</action>
+			<action type="control value" value="#txtKod">
+				<parameter value="parent.#grdGlava.@RobaKod" />
+			</action>
+			<action type="datarun reader" value="~dtGetPLM" />
+			<action type="control value" value="#cmbPLM">
+				<parameter value="parent.#grdGlava.@PLMId" />
+			</action>
+			<action type="control value" value="#memo">
+				<parameter value="parent.#grdGlava.@Memo" />
+			</action>
+			<action type="control value" value="#chkDefault">
+				<parameter value="parent.#grdGlava.@Default" />
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="7">
+			<!-- komercijalni naziv je roba naziv, naziv granule, kod, parametar, plm, vpc, memo, ikona -->
+				<columnsdefinition>
+					<column size="250" position="1" />
+					<!-- <column size="500" position="2" /> -->
+				</columnsdefinition>
+				<item col="1" row="1" caption="Komercijalni naziv:">
+					<textedit name="txtGranula"></textedit>
+				</item>
+				<item col="1" row="2" caption="Naziv granule:">
+					<textedit name="txtNazivGranule" >
+					</textedit>
+				</item>				
+				<item col="1" row="3" caption="Parametar:">
+					<textedit name="txtParametar" >
+					</textedit>
+				</item>
+				<item col="1" row="4" caption="Kod:">
+					<textedit name="txtKod" >
+					</textedit>
+				</item>		
+				<item col="1" row="5" caption="Operater:">
+					<comboedit name="cmbPLM" enabled="true" valuefield="Id" displayfield="Naziv" dataname="~dtGetPLM">
+					</comboedit>
+				</item>		
+				<item col="1" row="6" caption="Memo">
+					<memoedit name="memo" >
+					</memoedit>
+				</item>			
+				<item col="1" row="7">
+					<checkedit name="chkDefault" caption="Postavi granulu kao zadanu"></checkedit>
+				</item>
+				<!-- <item col="2" row="1" rowspan="7" caption="     Galerija ikona:" > -->
+					<!-- <customcontrol name="cusIcon" dll="IconChooser" class="IconChooser.Icons" /> -->
+				<!-- </item> -->
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI" >
+					<event type="click">
+						<action type="datarun reader" value="~dtUpdate"/>
+						<action type="form close" />
+					</event>
+					<action type="control populate keepfocus" value="parent.#grdGlava"/>
+				</button>
+				
+				<button caption="ODUSTANI" >
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spJSObjekti_Katalozi" name="dtGetPLM">
+				<parameter name="action" value="getPLM" />
+			</data>
+			<data command="spJSObjekti_Azur" name="dtUpdate">
+				<parameter name="action" value="update" />
+				<parameter name="@robaId" value="parent.#grdGlava.@robaid" />
+				<parameter name="@robaKod" value="#txtKod" />
+				<parameter name="@memo" value="#memo" />
+				<parameter name="@parametar" value="#txtParametar" />
+				<parameter name="@default" value="#chkDefault" />
+				<parameter name="@JupiterObjectID" value="parent.#grdGlava.@JupiterObjectId" />
+				<parameter name="@granulaNaziv" value="#txtNazivGranule" />
+				<parameter name="@icon" value="parent.#grdGlava.@Ikona8" />
+				<parameter name="@PLM" value="#cmbPLM" />
+				
+			</data>
+			<data command="spJSObjekti_Katalozi" name="dtGetGranula">
+				<parameter name="action" value="getGranula" />
+			</data>
+			<data command="spJSObjekti_Katalozi" name="dtGetRoba">
+				<parameter name="action" value="getRoba" />
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmIzvjestaj" caption="Izvještaj" width="500">
+		<event type="load">
+		</event>
+		<layout>
+			<group cols="2" rows="4" caption="Filter">
+				<columnsdefinition>
+					<column size="500" position="1" />
+					<!-- <column size="500" position="2" /> -->
+				</columnsdefinition>
+				<item col="1" row="1" caption="Operater:">
+					<comboedit name="cmbPLM" enabled="true" valuefield="Id" displayfield="Naziv" dataname="~dtGetPLM" ></comboedit>
+				</item>
+				<item col="1" row="2" caption="Datum od:">
+					<dateedit name="datumOd" required="true"></dateedit>
+				</item>
+				<item col="1" row="3" caption="Datum do:">
+					<dateedit name="datumDo" required="true"></dateedit>
+				</item>
+				<group cols="1" rows="1" col="1" row="4" caption="Izvještaj">
+					<item col="1" row="1" >
+						<grid name="grdIzvjestaj" dataname="~dtGetGrid"></grid>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Filtriraj" >
+					<event type="click">
+						<action type="validate" />
+						<action type="control populate" value="#grdIzvjestaj" />
+					</event>
+				</button>
+				
+				<button caption="ODUSTANI" >
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spJSObjektiIzvjestaj" name="dtGetGrid">
+				<parameter name="datumOd" value="#datumOd" />
+				<parameter name="datumDo" value="#datumDo" />
+				<parameter name="operateriId" value="#cmbPLM" />
+			</data>
+			<data command="spJSObjekti_Katalozi" name="dtGetPLM">
+				<parameter name="action" value="getPLM" />
+			</data>
+		</datalist>
+	</form>
+	
+	
+   <datalist>
+		<data command="spJSObjekti_Tree_Query" name="dtTree" >
+		</data>
+		<data command="spJSObjekti_MasterQuery" name="dtGlava">
+			<parameter name="@KlMasterRobaId" value="#tree.@Id"/>
+		</data>
+		<data command="spJSObjekti_Azur" name="dtDelete">
+			<parameter name="@action" value="delete" />
+			<parameter name="@JupiterObjectID" value="#grdGlava.@JupiterObjectId" />
+			<parameter name="@robaId" value="#grdGlava.@robaid" />
+		</data>
+	</datalist>
+
+  
+
+</root>

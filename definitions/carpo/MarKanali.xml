@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root version="8.0.0.1">
+	<form name="frmMaster" caption="Marketing kanali" type="master">
+		<managerlayout>
+			<grid name="grdMaster" type="master" dataname="~dtGrid" multiselect="true" key="MarKanalId" savelayout="true" bestfitonrefresh="true">
+				<fields>
+					<field name="Naziv" />
+					<field name="SortKey" />
+					<field name="Aktivan" />
+				</fields>
+				<event type="doubleclick" if="#grdMaster.rowcount&gt;0">
+					<action type="form open" value="frmUpsert">
+						<parameter name="MarKanalId" value="#grdMaster.@MarKanalId" />
+					</action>
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="DODAJ">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="FormType" value=" unos" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmjena" caption="IZMIJENI">
+					<menuitem control="#grdMaster" />
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="MarKanalId" value="#grdMaster.@MarKanalId" />
+							<parameter name="FormType" value=" izmjena" />
+						</action>
+					</event>
+				</button>
+				<button name="btnDelete" caption="OBRIŠI">
+					<menuitem control="#grdMaster" />
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati označeni zapis?" />
+						<action type="datarun nonquery" value="~dtDelete" />
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMarKanalQuery" name="dtGrid">
+				<parameter name="@action" value="0" />
+				<parameter name="@ID" value="0" />
+			</data>
+			<data command="spMarKanalAzur" name="dtDelete">
+				<parameter name="@Action" value="2" />
+				<parameter name="@Id" value="#grdMaster.@MarKanalId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUpsert" caption="Marketing kanali - {$formType}">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" if="$MarKanalId!=null" />
+		</event>
+		<layout>
+			<group rows="3" cols="1" textposition="left">
+				<item row="1" col="1" caption="Naziv:">
+					<textedit name="txtNaziv" datavalue="~dtLoad.@Naziv" required="true" />
+				</item>
+				<item row="2" col="1" caption="SortKey:">
+					<textedit name="txtSortKey" datavalue="~dtLoad.@SortKey" required="true" />
+				</item>
+				<item row="3" col="1" caption="Aktivan" highlight="false">
+					<checkedit  caption="Aktivan" name="chkAktivan"  datavalue="~dtLoad.@Aktivan"  />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action if="$MarKanalId==null">
+							<action type="validate" />
+							<action type="datarun scalar" value="~dtUpsert">
+								<parameter name="NewId" />
+							</action>
+							<action type="control populate" value="parent.#grdMaster" />
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="$NewId" />
+							</action>
+							<action type="control value" value="##">
+								<parameter value="" />
+							</action>
+						</action>
+						<action if="$MarKanalId!=null">
+							<action type="validate" />
+							<action type="datarun nonquery" value="~dtUpsert" />
+							<action type="control populate keepfocus" value="parent.#grdMaster" />
+							<action type="form close" />
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spMarKanalQuery">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$MarKanalId" />
+			</data>
+			<data name="dtUpsert" command="spMarKanalAzur">
+				<parameter name="@Action" value="0" if="$MarKanalId==null" />
+				<parameter name="@Action" value="1" if="$MarKanalId!=null" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@SortKey" value="#txtSortKey" />
+				<parameter name="@Aktivan" value="#chkAktivan" />
+				<parameter name="@ID" value="$MarKanalId" if="$MarKanalId!=null" />
+			</data>
+		</datalist>
+	</form>
+</root>

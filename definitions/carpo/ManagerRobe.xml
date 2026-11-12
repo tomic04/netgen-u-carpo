@@ -1,0 +1,495 @@
+<!-- 24.02.2025 - FÖ - dorada na drag and drop (izmjeni) klasa robe - fokus ostaje na staroj klasi -->
+<root version="1.0.0.1">
+	<form name="frmManagerRobe" type="master" caption="Manager robe" maximized="true" statusbar="true">
+		<method name="CarpoNew" dll="Carpo" class="Carpo.Gen.Start" method="Run" />
+		<event type="shown">
+			<action type="datarun reader" value="global.~dtCheckFilter" />
+			<action type="variable value">
+				<parameter name="NoviId" value="0" type="int" />
+			</action>
+			<action type="variable value">
+				<parameter name="global.IndIspod" value="0" type="int" />
+			</action>
+			<action type="variable value">
+				<parameter name="global.SvaRoba" value="0" type="int" />
+			</action>
+			<action type="variable value">
+				<parameter name="global.StatusRoba" value="global.~dtCheckFilter.@StatusRoba" type="int" />
+			</action>
+			<action type="variable value">
+				<parameter name="global.StatusNaziv" value="global.~dtCheckFilter.@StatusNaziv" />
+			</action>
+			<action type="footer text" value="Filter: {global.$StatusNaziv}" />
+		</event>
+		<event type="close">
+			<action type="datarun nonquery" value="global.~dtPamtiFilter" />
+		</event>
+		<managerlayout>
+			<lookup name="filter" bestfitonrefresh="true" savelayout="true" dataname="dtFilter">
+				<event type="valuechanged">
+					<action type="variable value">
+						<parameter name="global.filter" value="#filter" />
+					</action>
+				</event>
+			</lookup>
+			<tree name="tree" keyfield="Id" dataname="~dtOrgTree" showcolumns="true" autofiltercondition="contains" expandallonload="true" expandedlevel="4" allowdrop="true" allowdrag="true">
+				<fields>
+					<field name="Naziv" />
+				</fields>
+				<event type="click">
+					<action type="variable value" value="global.$IndIspod">
+						<parameter value="0" type="int" />
+					</action>
+				</event>
+				<event type="focusedrowchanged">
+					<action type="variable value">
+						<parameter name="global.KlmasterrobaId" value="#tree.@Id" />
+					</action>
+					<action type="variable value">
+						<parameter name="global.SortKey" value="#tree.@SortKey" />
+					</action>
+					<action type="variable value">
+						<parameter name="global.KlKlRobaId" value="#tree.@KlKlRobaId" />
+					</action>
+					<action type="variable value" value="global.$IndIspod">
+						<parameter value="0" type="int" />
+					</action>
+					<action type="variable value" value="global.$SvaRoba">
+						<parameter value="0" type="int" />
+					</action>
+					<action type="control populate" value="#grdMaster" />
+					<action type="menu disable" value="#mnu1" if="#tree.@Id==-1" />
+					<action type="menu enable" value="#mnu1" if="#tree.@Id!=-1" />
+					<action type="menu disable" value="#mnu2" if="#tree.@Id!=-1" />
+					<action type="menu enable" value="#mnu2" if="#tree.@Id==-1" />
+				</event>
+				<menu>
+					<menuitem caption="Ispod" name="mnu1">
+						<event type="click">
+							<action type="variable value" value="global.$IndIspod">
+								<parameter value="1" type="int" />
+							</action>
+							<action type="control populate" value="#grdMaster" />
+						</event>
+					</menuitem>
+					<menuitem caption="Sva Roba" name="mnu2">
+						<event type="click">
+							<action type="variable value" value="global.$SvaRoba">
+								<parameter value="1" type="int" />
+							</action>
+							<action type="control populate" value="#grdMaster" />
+						</event>
+					</menuitem>
+				</menu>
+				<event type="dragover">
+					<action type="drop allow" value="true" if="#tree.level>0" />
+				</event>
+				<menu type="drop">
+					<menuitem caption="Prenesi" name="mnuPrenesi">
+						<event type="click">
+							<action type="variable value" value="$focusid">
+								<parameter name="focusid" value="#tree.@Id" />
+							</action>
+							<action type="datarun noquery" value="~dtPrenesi" />
+							<action type="control populate" value="#grdMaster" />
+						</event>
+					</menuitem>
+					<menuitem type="separator" />
+					<menuitem caption="Odustani" />
+				</menu>
+			</tree>
+			<grid type="master" name="grdMaster" key="robaId" dataname="dtMaster" multiselect="true" bestfitonrefresh="true" savelayout="true" allowdrag="true">
+				<fields inherited="true">
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="variable value">
+						<parameter name="global.RobaId" value="#grdMaster.@RobaId" />
+					</action>
+					<action if="#grdMaster.@RetiredId==0">
+						<action type="menu enable" value="#mnuRetired" />
+						<action type="menu disable" value="#mnuAktiviran" />
+					</action>
+					<action if="#grdMaster.@RetiredId==1">
+						<action type="menu enable" value="#mnuAktiviran" />
+						<action type="menu disable" value="#mnuRetired" />
+					</action>
+				</event>
+				<event type="doubleclick">
+					<action if="#tree.@KlKlRobaId==null">
+						<action type="form open" value="frmRobaInfoEdit">
+							<parameter name="RobaId" value="#grdMaster.@RobaId" />
+							<parameter name="Roba" value="#grdMaster.@Naziv" />
+							<parameter name="IzManagera" value="1" />
+						</action>
+					</action>
+					<action elseif="#tree.@KlKlRobaId!=null">
+						<action type="form open" value="frmRobaInfoEdit">
+							<parameter name="RobaId" value="#grdMaster.@RobaId" />
+							<parameter name="Roba" value="#grdMaster.@Naziv" />
+							<parameter name="IzManagera" value="2" />
+							<parameter name="KlKlRobaId" value="#tree.@KlKlRobaId" />
+						</action>
+					</action>
+				</event>
+				<menu>
+					<menuitem name="mnuRetired" caption="Umirovi" function="Umirovi">
+						<event type="click">
+							<action type="datarun reader" value="~dtRetired">
+							</action>
+							<action if="~dtRetired.@StringValue!=null">
+								<action type="message" value="Ne može se umiroviti roba koje ima na stanju: {~dtRetired.@StringValue}." />
+							</action>
+							<action type="control populate keepfocus" value="#grdMaster" />
+						</event>
+					</menuitem>
+					<menuitem name="mnuAktiviran" caption="Aktiviraj" function="Aktiviraj">
+						<event type="click">
+							<action type="datarun reader" value="~dtRetired">
+							</action>
+							<action type="control populate keepfocus" value="#grdMaster" />
+						</event>
+					</menuitem>
+					<menuitem name="mnuPromjeniStatus" caption="Promijeni status" function="PromijeniStatus">
+						<event type="click">
+							<action type="datarun reader" value="~dtRetired">
+							</action>
+							<action if="~dtRetired.@StringValue!=null">
+								<action type="message" value="Ne može se umiroviti roba koje ima na stanju: {~dtRetired.@StringValue}." />
+							</action>
+							<action type="control populate keepfocus" value="#grdMaster" />
+						</event>
+					</menuitem>
+				</menu>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="Dodaj" function="Dodaj">
+					<event type="click">
+						<action if="#tree.@KlKlRobaId==null">
+							<action type="form open" value="frmRobaInfoEdit">
+								<parameter name="RobaId" value="null" />
+								<parameter name="IzDodaj" value="1" />
+								<parameter name="IzManagera" value="1" />
+								<parameter name="KlMasterRobaId" value="#tree.@Id" />
+							</action>
+						</action>
+						<action elseif="#tree.@KlKlRobaId!=null">
+							<action type="form open" value="frmRobaInfoEdit">
+								<parameter name="RobaId" value="null" />
+								<parameter name="IzDodaj" value="1" />
+								<parameter name="IzManagera" value="2" />
+								<parameter name="KlKlRobaId" value="#tree.@KlKlRobaId" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="Izmijeni" function="Izmjeni">
+					<event type="click">
+						<action if="#grdMaster.@RobaId!=null">
+							<action if="#tree.@KlKlRobaId==null">
+								<action type="form open" value="frmRobaInfoEdit">
+									<parameter name="RobaId" value="#grdMaster.@RobaId" />
+									<parameter name="Roba" value="#grdMaster.@Naziv" />
+									<parameter name="IzManagera" value="1" />
+								</action>
+							</action>
+							<action elseif="#tree.@KlKlRobaId!=null">
+								<action type="form open" value="frmRobaInfoEdit">
+									<parameter name="RobaId" value="#grdMaster.@RobaId" />
+									<parameter name="Roba" value="#grdMaster.@Naziv" />
+									<parameter name="IzManagera" value="2" />
+									<parameter name="KlKlRobaId" value="#tree.@KlKlRobaId" />
+								</action>
+							</action>
+						</action>
+						<action elseif="#grdMaster.@RobaId==null">
+							<action type="message" value="Odaberite robu koju želite izmijeniti." />
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="Obriši" function="Obrisi">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati odrabranu robu?" />
+						<action type="datarun nonquery" value="~dtObrisi" />
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnIspisi" caption="Ispiši" function="Ispisi">
+					<event type="click">
+						<action type="control printcontrol" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnPronadi" caption="Pronađi" function="Pronadji">
+					<event type="click">
+						<action type="form open" value="frmPronadi" />
+					</event>
+				</button>
+				<button name="btnDodajKonto" caption="Dodaj konto" function="DodajKonto">
+					<event type="click">
+						<action if="global.$KlKlRobaId==null">
+							<action type="form open" value="frmKonto" />
+						</action>
+						<action else="">
+							<action type="message" value="Morate odabrati klasu iz glavne klasifikacije!" />
+						</action>
+					</event>
+				</button>
+				<button caption="Filter">
+					<dropdownitem caption="Pokaži sve">
+						<event type="click">
+							<action type="variable value" value="global.$StatusRoba">
+								<parameter value="2" type="int" />
+							</action>
+							<action type="variable value" value="global.$StatusNaziv">
+								<parameter value="Sva roba" />
+							</action>
+							<action type="control populate" value="#grdMaster" />
+							<action type="footer text" value="Filter: {global.$StatusNaziv}" />
+						</event>
+					</dropdownitem>
+					<dropdownitem caption="Pokaži umirovljene">
+						<event type="click">
+							<action type="variable value" value="global.$StatusRoba">
+								<parameter value="1" type="int" />
+							</action>
+							<action type="variable value" value="global.$StatusNaziv">
+								<parameter value="Samo umirovljena roba" />
+							</action>
+							<action type="control populate" value="#grdMaster" />
+							<action type="footer text" value="Filter: {global.$StatusNaziv}" />
+						</event>
+					</dropdownitem>
+					<dropdownitem caption="Pokaži aktivne">
+						<event type="click">
+							<action type="variable value" value="global.$StatusRoba">
+								<parameter value="0" type="int" />
+							</action>
+							<action type="variable value" value="global.$StatusNaziv">
+								<parameter value="Samo aktivna roba" />
+							</action>
+							<action type="control populate" value="#grdMaster" />
+							<action type="footer text" value="Filter: {global.$StatusNaziv}" />
+						</event>
+					</dropdownitem>
+				</button>
+				<button name="btnRobaInfo" caption="RobaInfo" begingroup="true" function="RobaInfo">
+					<event type="click">
+						<action type="method run" value="CarpoNew">
+							<parameter name="moduleid" value="RobaInfo.xml" />
+							<parameter name="global.RobaId" type="var" valuetype="int" value="#grdMaster.@RobaId" />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKlaseRoba_Carpo_Query" name="dtOrgTree">
+				<parameter name="@action" value="tree" />
+				<parameter name="@klklrobaid" value="null" if="global.$filter==Master klasifikacija" />
+				<parameter name="@klklrobaid" value="" if="global.$filter!=Master klasifikacija" />
+				<parameter name="@naziv" value="global.$filter" />
+			</data>
+			<data command="spRobaManagerQueryCarpo" name="dtMaster">
+				<parameter name="@action" value="1" />
+				<parameter name="@klklrobaid" value="#tree.@KlKlRobaId" />
+				<parameter name="@klmasterrobaid" value="global.$KlmasterrobaId" />
+				<parameter name="@IndIspod" value="global.$IndIspod" />
+				<parameter name="@SvaRoba" value="global.$SvaRoba" />
+				<parameter name="@SortKey" value="global.$SortKey" type="string" />
+				<parameter name="@status" value="global.$StatusRoba" />
+			</data>
+			<data command="spManagerRobeCarpoTreeDragDrop" name="dtPrenesi">
+				<parameter name="@action" value="0" if="global.$KlKlRobaId==null" />
+				<parameter name="@action" value="1" if="global.$KlKlRobaId!=null" />
+				<parameter name="@Id" value="#tree.@Id" />
+				<parameter name="@NizId" value="#grdMaster.selectedids" />
+			</data>
+			<data command="spRobaRetiredCarpo_Azur" name="dtRetired">
+				<parameter name="@NizId" value="#grdMaster.selectedids" />
+			</data>
+			<data command="spRobaCarpo_Azur" name="dtObrisi">
+				<parameter name="@action" value="10" if="global.$KlKlRobaId==null" />
+				<parameter name="@action" value="11" if="global.$KlKlRobaId!=null" />
+				<parameter name="@Id" value="#grdMaster.@RobaId" />
+				<parameter name="@KlRobaId" value="#tree.@Id" if="global.$KlKlRobaId!=null" />
+			</data>
+			<data command="spKlaseRoba_Carpo_Query" name="dtFilter">
+				<parameter name="@action" value="GetFilterKlasifikacija" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmPronadi" caption="Pronađi" height="150" width="340">
+		<layout>
+			<group rows="1" cols="1">
+				<columnsdefinition>
+					<column position="1" size="55%" />
+				</columnsdefinition>
+				<item row="1" col="1" caption="Pojam:" textposition="left">
+					<searchedit name="srcRoba" dataname="~dtTraziRoba" fieldvalue="RobaId" fieldtext="Naziv">
+						<event type="keydown" value="13">
+							<action type="datarun reader" value="global.~dtGetKey" />
+							<action type="variable value">
+								<parameter name="Global.TraziKey" value="global.~dtGetKey.@Id" />
+							</action>
+							<action type="control focus" value="parent.#tree">
+								<parameter value="Global.$Trazikey" />
+							</action>
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="#srcRoba.@RobaId" />
+							</action>
+							<action type="form close" />
+						</event>
+					</searchedit>
+				</item>
+			</group>
+		</layout>
+		<datalist>
+			<data command="spRobaManagerPronadiCarpo" name="dtTraziRoba">
+				<parameter name="@action" value="MasterPronadi" />
+				<parameter name="@uvjet" value="#srcRoba.text" />
+				<parameter name="@klklrobaid" value="global.$KlKlRobaId" />
+				<parameter name="@retired" value="global.$StatusRoba" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmKonto" caption="Izbor konta" width="400" fixedsize="true">
+		<layout>
+			<group rows="5" cols="1">
+				<item row="1" col="1" caption="Konto 1:" textposition="left">
+					<searchedit name="srcKonto1" dataname="~dtKonto1" fieldvalue="KntPlanAId" fieldtext="Konto" />
+				</item>
+				<item row="2" col="1" caption="Konto 2:" textposition="left">
+					<searchedit name="srcKonto2" dataname="~dtKonto2" fieldvalue="KntPlanAId" fieldtext="Konto" />
+				</item>
+				<group row="3" col="1" rows="3" cols="3">
+					<columnsdefinition>
+						<column position="1" size="20%" />
+						<column position="1" size="60%" />
+						<column position="1" size="20%" />
+					</columnsdefinition>
+					<group rows="1" cols="3" row="1" col="1" colspan="3" backgroundcolor="#C0C0C0" groupbordervisible="false">
+						<item row="1" col="1" colspan="3">
+							<labeledit value="Ažuriraj konto na robama..." />
+						</item>
+					</group>
+					<item row="2" col="2">
+						<radioedit name="rdoKlasa" caption="... samo u označenoj klasi" textposition="right" groupindex="1">
+						</radioedit>
+					</item>
+					<item row="3" col="2">
+						<radioedit name="rdoKlasaIspod" caption="... u označenoj klasi i ispod" textposition="right" groupindex="1" value="true">
+						</radioedit>
+					</item>
+				</group>
+				<item col="1" row="4">
+					<separator dark="true" backcolor="gray" />
+				</item>
+				<group row="5" col="1" rows="3" cols="3">
+					<columnsdefinition>
+						<column position="1" size="20%" />
+						<column position="1" size="60%" />
+						<column position="1" size="20%" />
+					</columnsdefinition>
+					<group rows="1" cols="3" row="1" col="1" colspan="3" backgroundcolor="#C0C0C0" groupbordervisible="false">
+						<item row="1" col="1" colspan="3">
+							<labeledit value="Ako konto na robi već postoji..." />
+						</item>
+					</group>
+					<item row="2" col="2">
+						<radioedit name="rdoOstavi" caption="... ostavi postojeći konto" value="true" textposition="right" groupindex="2">
+						</radioedit>
+					</item>
+					<item row="3" col="2">
+						<radioedit name="rdoZamijeni" caption="... zamijeni konto novim" textposition="right" groupindex="2">
+						</radioedit>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate">
+						</action>
+						<action type="datarun nonquery" value="dtSpremi" />
+						<action type="control populate" value="parent.#grdMaster" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spRobaCarpo_Combo" name="dtKonto1">
+				<parameter name="@action" value="MatKonto" />
+				<parameter name="@uvjet" value="#srcKonto1.text" />
+			</data>
+			<data command="spRobaCarpo_Combo" name="dtKonto2">
+				<parameter name="@action" value="MatKonto" />
+				<parameter name="@uvjet" value="#srcKonto2.text" />
+			</data>
+			<data command="spRobaAzurMatKonto" name="dtSpremi">
+				<parameter name="@action" value="0" />
+				<parameter name="@KlmasterrobaId" value="parent.#tree.@Id" />
+				<parameter name="@KlaseIspod" value="0" if="#rdoKlasa==true" />
+				<parameter name="@KlaseIspod" value="1" if="#rdoKlasaIspod==true" />
+				<parameter name="@PromijeniPostojeci" value="0" if="#rdoOstavi==true" />
+				<parameter name="@PromijeniPostojeci" value="1" if="#rdoZamijeni==true" />
+				<parameter name="@KntPlanAid" value="#srcKonto1" />
+				<parameter name="@KntPlanBId" value="#srcKonto2" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmRobaInfoEdit" type="master" caption="Roba: {$Roba} " statusbar="true" template="sidebar" width="1150" height="650">
+		<part name="partFormaRobe" path="prtFormaRobe.xml" />
+	</form>
+	<form name="frmDodatnaJM" caption="Dodatna jedinica mjere" width="840" height="375" fixedsize="false" saveformsize="false">
+		<part name="partDodatnaJM" path="prtRobaUpsert.xml" />
+	</form>
+	<form name="frmDodatniBarkod" caption="Dodatni Barkod" width="300" height="140" fixedsize="false" saveformsize="false">
+		<part name="partDodatniBarkod" path="prtRobaUpsert.xml" />
+	</form>
+	<form name="frmAlterSifra" caption="Partner" width="350" height="170" fixedsize="false" saveformsize="false">
+		<part name="partAlterSifra" path="prtRobaUpsert.xml" />
+	</form>
+	<form name="frmKlasifikacijeUnos" caption="Klasifikacije" width="350" height="170" fixedsize="false" saveformsize="false">
+		<part name="partKlKlRobaUnos" path="prtRobaUpsert.xml" />
+	</form>
+	<form name="frmKlasifikacijeIzmjena" caption="Klasifikacije" width="350" height="170" fixedsize="false" saveformsize="false">
+		<part name="partKlKlRobaIzmjena" path="prtRobaUpsert.xml" />
+	</form>
+	<form name="frmPozicija" caption="Skladištenje" width="350" height="200" fixedsize="false" saveformsize="false">
+		<part name="partPozicija" path="prtRobaUpsert.xml" />
+	</form>
+	<datalist>
+		<data command="spKlaseRobePartQuery" name="dtPartFilter">
+			<parameter name="@Action" value="filter" />
+			<parameter name="@OperateriId" value="@@OperaterId" />
+			<parameter name="@datoteka" value="null" />
+		</data>
+		<data command="spManagerRobeGetKey" name="dtGetKey">
+			<parameter name="@action" value="KlMasterRoba" if="global.$KlKlRobaId==null" />
+			<parameter name="@action" value="KlRoba" if="global.$KlKlRobaId!=null" />
+			<parameter name="@Id" value="#srcRoba.@RobaId" />
+			<parameter name="@KlKlRobaId" value="global.$KlKlRobaId" />
+		</data>
+		<data command="spRobaInfo_CheckPermission" name="dtCheckPermission">
+			<parameter name="@OperateriId" value="@@OperateriId" />
+		</data>
+		<data command="spFormaRobe_CheckPermission" name="dtCheckPermission_FormaRobe">
+			<parameter name="@OperateriId" value="@@OperateriId" />
+		</data>
+		<data command="spManagerRobe_Filter" name="dtPamtiFilter">
+			<parameter name="@action" value="Spremi_Filter" />
+			<parameter name="@StatusRoba" value="global.$StatusRoba" />
+			<parameter name="@StatusNaziv" value="global.$StatusNaziv" />
+			<parameter name="@OperateriId" value="@@OperateriId" />
+		</data>
+		<data command="spManagerRobe_Filter" name="dtCheckFilter">
+			<parameter name="@action" value="Check_Filter" />
+			<parameter name="@OperateriId" value="@@OperateriId" />
+		</data>
+	</datalist>
+</root>

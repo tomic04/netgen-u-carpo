@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--21.1.2020. v 1.0.3 AA filter na load kako bi radi savelayout-->
+<!--21.3.2018. v 1.0.2 PJ spCKntVirmaniArhivaIzvGen, spCKntVirmaniArhivaRepx, dodao kolonu BrojZbrNaloga-->
+<!--27.2.2018. AA spParZiroQuery u spParZiroQueryVA-->
+<!--15.2.2018. AA savelayout-->
+<!--6.11.2017. v 1.0.1. AA $Close za ne podizanje grida na odustani init forme-->
+<!--27.9.2017. v1.0.0. AA uvjetan prikaz kolona s obzirom na mogućnost slobodnog unosa-->
+<root version="1.0.3.">
+	<form name="master" type="master" caption="VirmaniArhiva" saveformsize="false">
+		<event type="init"> 
+			<action type="variable value">
+				<parameter name="Global.$DatumOd" value="null"  />
+				<parameter name="Global.$DatumDo" value="null"/>
+				<parameter name="Global.$PartneriId" value="null" />
+				<parameter name="Global.$PartneriNaziv" value="null" />
+				<parameter name="Global.$IBAN" value="null"  type="int"/>
+				<parameter name="Global.$VirmaniArhivaId" value="null"/>
+				<parameter name="global.$Close" value="false" type="bool"/>
+			</action>
+		</event> 
+		<event type="load">
+			<action type="form open" value="frmFilter"/>
+			<action type="variable value" value="global.$Close" if="dialogresult==cancel">
+				<parameter value="true" type="bool"/>
+			</action>			
+		</event>
+		<event type="shown">
+			<action type="form close" if="global.$Close==true"/>
+		</event>
+		<managerlayout>
+			<grid name="grdGrid" async="true" type="master" autopopulate="false" key="VirmaniArhivaId" bestfitonrefresh="True"  multiselect="true" dataname="dtMaster" savelayout="true">
+				<fields> 
+					<field name="VirmaniArhivaId"/>
+					<field name="NalogodavacIBAN" caption="Nalogodavac IBAN"/> 
+					<field name="PZ" caption="PZ"/> 
+					<field name="PZBZ" caption="PZBZ" /> 
+					<field name="Svrhadoznake" caption="Svrha doznake" /> 
+					<field name="Svrha2doznake" caption="Svrha doznake2" /> 
+					<field name="Svrha3doznake" caption="Svrha doznake3" /> 
+					<field name="Šifra1"  /> 
+					<field name="Šifra2"  /> 
+					<field name="Šifra3"  /> 
+					<field name="Iznos"/> 
+					<field name="U korist" caption="U korist"/> 
+					<field name="PartneriIBAN" caption="Partner IBAN" /> 
+					<field name="PBO" caption="PBO" /> 
+					<field name="Odobrenje" /> 
+					<field name="Mjesto"/> 
+					<field name="Datum"/> 
+					<field name="DatumValute" caption="Datum valute" /> 
+					<field name="DatumIspisa" caption="Datum ispisa" /> 
+					<field name="Rbr" caption="RBr" /> 
+					<field name="Grupa"/> 
+					<!--<field name="!ZbrojniNalog" caption="Zbrojni nalog"/> -->
+					<field name="BrojZbrNaloga" caption="Zbrojni nalog"/> 
+				</fields> 
+			</grid>
+		</managerlayout>		
+		<panelbuttons displaycontrolsprint="true"> 
+			<buttons> 
+				<button name="btnPokazi" caption="&amp;POKAŽI" type="add">
+					<event type="click">
+						<action type="form open" value="frmFilter"/>
+					</event>
+				</button>
+				<button name="btnIspisi" caption="&amp;ISPIŠI">
+					<event type="click">
+						<action type="variable value" >
+							<parameter name="@ID" value="#grdGrid.selectedids" />
+						</action>
+						<action type="datarun nonquery" value="global.~dtIdIzbor">
+							<parameter name="@ID" value="#grdGrid.selectedids" />
+						</action>
+						<action type="print" value="repx:rptZbrojniNalogArhiva">
+							<parameter name="ID" value="#grdGrid.selectedids"/>
+							<parameter name="BrojNaloga" value="#grdGrid.@BrojZbrNaloga"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="&amp;OBRIŠI">
+					<event type="click">
+						<action type="variable value">
+							<parameter name="SelectedIDs" value="#grdGrid.selectedids" />
+							<!--deklariranje varijable koja ce biti proslijeđena kao okidac za brisanje-->						
+						</action>
+						<action type="confirm" value="Svi odabrani virmani bit će izbrisani. Jeste li sigurni?"/>
+						<action type="datarun nonquery" value="Global.~dtObrisi">
+							<parameter name="@ID" value="#grdGrid.selectedids"/>
+							<action type="control populate keepfocus" value="#grdGrid" />
+							<action if="#grdGrid.rowcount==0" type="control disable" value="#btnObrisi"/>
+							<action elseif="#grdGrid.rowcount!=0" type="control enable" value="#btnObrisi"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnVrati" caption="&amp;VRATI">
+					<event type="click">
+						<action type="variable value">
+							<parameter name="SelectedIDs" value="#grdGrid.selectedids" />							
+						</action>
+						<action type="confirm" value="Svi odabrani virmani bit će vraćeni. Jeste li sigurni?"/>
+						<action type="datarun nonquery" value="Global.~dtVrati"/>
+							<parameter name="@ID" value="#grdGrid.selectedids"/>
+						<action type="control populate keepfocus" value="#grdGrid" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCKntVirmaniArhivaIzvGen" name="dtMaster">
+				<parameter name="@Action" value="1" /> 
+				<parameter name="@DatumOd" value="Global.$DatumOd" /> 
+				<parameter name="@DatumDo" value="Global.$DatumDo" /> 
+				<parameter name="@ParZiroId" value="Global.$IBAN" />  
+				<parameter name="@PartneriId" value="Global.$PartneriId"/> 
+			</data>
+		</datalist>
+	</form>
+	<form caption="Izaberite parametre prikaza" name="frmFilter" fixedsize="true"> 
+		<event type="shown">
+			<action type="control value" value="#srcPartneri">
+				<parameter value="Global.$PartneriId" text="Global.$PartneriNaziv"/>
+			</action>
+			<action type="control value" value="#cmbIBAN">
+				<parameter value="Global.$IBAN"/>
+			</action>	
+			<action type="datarun scalar" value="~dtFirstDayOfYear">
+				<parameter name="StartOfYear" />	
+			</action>
+			<action type="control value" value="#datDatumOd"> 
+				<parameter value="$StartOfYear"	if="Global.$DatumOd==null" />
+				<parameter value="Global.$DatumOd"	elseif="Global.$DatumOd!=null"/>
+			</action>
+			<action type="control value" value="#datDatumDo"> 
+				<parameter value="now" if="Global.$DatumDo==null" />
+				<parameter value="Global.$DatumDo" elseif="Global.$DatumDo!=null"/>
+			</action> 	
+		</event> 
+		<layout textposition="top">
+			<group rows="3" cols="2">
+				<item col="1" row="1" caption="Datum od:"> 
+					<dateedit name="datDatumOd" required="true"/>
+				</item>
+				<item col="2" row="1" caption="Datum do:">
+					<dateedit name="datDatumDo" value="now" required="true"/>
+				</item>
+				<item col="1" row="2" colspan="2" caption="Partner" fontsizedelta="1" textvisible="false">
+					<searchedit type="partner" datavalue="#dtPartnerFilter.@PartneriId" name="srcPartneri" dataname="Global.dtPartnerFilter" fontsizedelta="1" fieldvalue="PartneriId" tabindex="0" fieldtext="Naziv"/>
+				</item>
+				<item col="1" row="3" colspan="2" caption="IBAN" fontsizedelta="1" textvisible="false">
+					<comboedit name="cmbIBAN" dataname="Global.dtIBANFilter" displayfield="iban" valuefield="ParZiroId" autopopulate="true"/>
+				</item>
+			</group> 
+		</layout> 
+		<datalist>
+			<data type="text" name="dtFirstDayOfYear" command="SELECT cast(CONVERT(VARCHAR(8), DATEADD(yy, DATEDIFF(yy,0,getdate()), 0), 112) as datetime) AS StartOfYear"/>
+		</datalist>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Pokaži">
+					<event type="click">
+						<action type="validate"/>
+						<action type="variable value">
+							<parameter name="Global.$DatumOd" value="#datDatumOd"/>
+							<parameter name="Global.$DatumDo" value="#datDatumDo"/>
+							<parameter name="Global.$PartneriId" value="#srcPartneri"/>
+							<parameter name="Global.$PartneriNaziv" value="#srcPartneri.@Naziv"/>
+							<parameter name="Global.$IBAN" value="#cmbIBAN"/>
+						</action>
+						<action type="form close"/>
+						<action type="control populate" value="parent.#grdGrid" />
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" name="btnOdustani">
+					<!-- <event type="click"> -->
+						<!-- <action type="form close"/> -->
+					<!-- </event> -->
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>	
+	<datalist>
+		<data command="spCKntVirmaniArhivaRepx" name="dtIdIzbor">
+			<parameter name="@Action" value="2"/>
+			<parameter name="@ID" value="#grdGrid.selectedids" />
+		</data>
+		<data command="spCKntVirmaniArhivaObrisi" name="dtObrisi"> 
+			<parameter name="@Action" value="2"/> 
+			<parameter name="@check2" value="0"/>
+			<parameter name="@ID" value="#grdGrid.selectedids"/>
+		</data> 
+		<data command="spCKntVirmaniArhivaIzvGen" name="dtPartnerFilter" >
+			<parameter name="@Action" value="1"/>
+			<parameter name="@PartneriId" value="#srcPartneri"/>
+		</data>
+		<data  command="spParZiroQueryVA" name="dtIBANFilter">
+			<parameter name="@Action" value="3"/>
+			<parameter name="@ID" value="null"/>
+		</data>
+		<data command="spCKntVirmaniArhivaObrisi" name="dtVrati">
+			<parameter name="@Action" value="1"/>
+			<parameter name="@ID" value="#grdGrid.selectedids"/>
+			<parameter name="@check2" value="0"/>
+		</data>
+	</datalist>	
+</root>

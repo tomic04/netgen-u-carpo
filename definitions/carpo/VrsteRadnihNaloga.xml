@@ -1,0 +1,155 @@
+<root>
+	<form name="frmMain" type="master" caption="Vrste radnih naloga">
+		<managerlayout>
+			<grid name="grdMaster" type="master" dataname="~dtMaster" key="servisvrsternid" bestfitonrefresh="true" savelayout="true">
+				<fields>
+					<field name="naziv" />
+					<field name="sortkey" caption="Redoslijed" />
+					<field name="tiprn" caption="Tip RN" />
+				</fields>
+				<event type="doubleclick">
+					<action type="form open" value="frmIzmijeniVrstu">
+						<parameter name="ID" value="#grdMaster.@servisvrsternid" />
+					</action>
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="Dodaj">
+					<event type="click">
+						<action type="form open" value="frmDodajVrstu" />
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="Izmijeni">
+					<event type="click">
+						<action type="form open" value="frmIzmijeniVrstu">
+							<parameter name="ID" value="#grdMaster.@servisvrsternid" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIzbrisi" caption="Izbriši">
+					<event type="click">
+						<action type="confirm" value="Želite li doista obrisati označeni slog?" />
+						<action type="datarun nonquery" value="~dtIzbrisi" />
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnIspisi" caption="Ispiši">
+					<event type="click">
+						<action type="control printcontrol" value="#grdMaster" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtMaster" command="spServisVrsteTPQueryCarpo">
+				<parameter name="@Action" value="1" />
+			</data>
+			<data name="dtIzbrisi" command="spServisVrsteTPAzurCarpo">
+				<parameter name="@Action" value="2" />
+				<parameter name="@ID" value="#grdMaster.@servisvrsternid" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDodajVrstu" caption="Vrsta radnog naloga">
+		<layout>
+			<group rows="3" cols="1">
+				<item row="1" col="1" caption="Tip radnog naloga">
+					<comboedit name="cmbTipRN" dataname="~dtTip" valuefield="ServisTipoviId" displayfield="Naziv" required="true"/>
+				</item>
+				<item row="2" col="1" caption="Naziv" >
+					<textedit name="txtNaziv" required="true"/>
+				</item>
+				<item row="3" col="1" caption="Redoslijed">
+					<textedit name="txtSortKey" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+					<action type="validate"/>
+						<action type="datarun scalar" value="~dtSpremi">
+							<parameter name="servisvrsternid" />
+						</action>
+						<action type="control populate" value="parent.#grdMaster">
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="$servisvrsternid" type="int" />
+							</action>
+						</action>
+						<action type="control refreshvalue" value="##" />
+						<action type="control focus" value="cmbTipRN"/>
+						<!--
+						<action type="control refreshvalue" value="#cmbTipRN" />
+						<action type="control refreshvalue" value="#txtNaziv" />
+						<action type="control refreshvalue" value="#txtSortKey" />
+						-->
+						<!-- <action type="form close" />
+						<action type="form open" value="frmDodajVrstu" /> -->
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtTip" command="spServisVrsteTPQueryCarpo">
+				<parameter name="@Action" value="2" />
+			</data>
+			<data name="dtSpremi" command="spServisVrsteTPAzurCarpo">
+				<parameter name="@Action" value="0" />
+				<parameter name="@ServisTipoviId" value="#cmbTipRN" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@SortKey" value="#txtSortKey" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmIzmijeniVrstu" caption="Vrsta radnog naloga">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="3" cols="1">
+				<item row="1" col="1" caption="Tip radnog naloga">
+					<comboedit name="cmbTipRN" dataname="~dtTip" valuefield="ServisTipoviId" displayfield="Naziv" datavalue="~dtLoad.@ServisTipoviId" datatext="~dtLoad.@TipRN" required="true" />
+				</item>
+				<item row="2" col="1" caption="Naziv">
+					<textedit name="txtNaziv" datavalue="~dtLoad.@Naziv" required="true" />
+				</item>
+				<item row="3" col="1" caption="Redoslijed">
+					<textedit name="txtSortKey" datavalue="~dtload.@SortKey" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+					<action type="validate"/>
+						<action type="datarun scalar" value="~dtSpremi" />
+						<action type="control populate keepfocus" value="parent.#grdMaster" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spServisVrsteTPQueryCarpo">
+				<parameter name="@Action" value="0" />
+				<parameter name="@ID" value="$ID" />
+			</data>
+			<data name="dtTip" command="spServisVrsteTPQueryCarpo">
+				<parameter name="@Action" value="2" />
+			</data>
+			<data name="dtSpremi" command="spServisVrsteTPAzurCarpo">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ServisTipoviId" value="#cmbTipRN" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@SortKey" value="#txtSortKey" />
+				<parameter name="@ID" value="$ID" />
+			</data>
+		</datalist>
+	</form>
+</root>

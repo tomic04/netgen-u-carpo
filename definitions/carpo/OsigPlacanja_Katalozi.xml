@@ -1,0 +1,239 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root version="1.0.0.1">
+  <form name="frmKatalozi" type="master">
+    <event type="init">
+      <action type="variable value">
+        <parameter name="Katalog" value="" type="string"/>
+      </action>
+      <action type="variable value">
+        <parameter name="Id" value="0" type="int"/>
+      </action>
+    </event>
+    <managerlayout>
+      <tree caption="Katalozi" name="tree" dataname="dtTreeDataGet" key="Katalog">
+        <event type="focusedrowchanged">
+          <action type="variable value" value="$Katalog">
+            <parameter value="#tree.@Katalog"/>
+          </action>
+          <action type="control populate" value="#grdGlava"/>
+        </event>
+        <fields>
+          <field name="Naziv"/>
+        </fields>
+      </tree>
+      <grid name="grdGlava" type="master" dataname="dtGridDataGet" key="Id" bestfitonrefresh="true">
+        <event type="focusedrowchanged">
+          <action type="control enable" value="#btnObrisi" if="#grdGlava.rowcount&gt;0"/>
+          <action type="control disable" value="#btnObrisi" else=""/>
+        </event>
+      </grid>
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnesi" type="add" image="add" caption="&amp;UNESI">
+          <event type="click">
+            <action type="form open" value="frmStavka">
+              <parameter name="Katalog" value="#tree"/>
+              <parameter name="Action" value="unos"/>
+              <parameter name="Header" value="NOVA"/>
+            </action>
+            <action type="control populate" value="#grdGlava">
+              <action type="control focus" value="#grdGlava" if="$Id!=0">
+                <parameter value="$Id"/>
+              </action>
+            </action>
+          </event>
+        </button>
+        <button name="btnIzmijeni" type="edit" image="edit" caption="&amp;IZMIJENI">
+          <event type="click">
+            <action type="form open" value="frmStavka">
+              <parameter name="Katalog" value="#tree"/>
+              <parameter name="Action" value="izmjena"/>
+              <parameter name="Id" value="#grdGlava.@Id"/>
+              <parameter name="Header" value="#grdGlava.@Naziv"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdGlava"/>
+          </event>
+        </button>
+        <button name="btnObrisi" type="delete" image="delete" caption="&amp;OBRIŠI" >
+          <event type="click">
+            <action type="confirm" value="Želite li sigurno obrisati navedenu stavku?">
+              <action type="datarun nonquery" value="~dtStavkaDelete"/>
+              <action type="control populate" value="#grdGlava"/>
+            </action>
+          </event>
+        </button>
+        <button name="btnRole" caption="ROLE OPERATERA" begingroup="true" function="RoleOperatera">
+          <event type="click">
+            <action type="form open" value="frmRoleOperatera"/>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spOsigPKatalogStavkaQuery" name="dtTreeDataGet">        
+        <parameter name="@Action" value="Katalozi"/>
+        <parameter name="@Katalog" value="ListaKataloga"/>
+      </data>
+      <data command="spOsigPKatalogStavkaQuery" name="dtGridDataGet">
+        <parameter name="@Action" value="Katalozi"/>
+        <parameter name="@Katalog" value="$Katalog"/>
+      </data>
+      <data command="spOsigPKatalogStavkaAzur" name="dtStavkaDelete">
+        <parameter name="@Katalog" value="#tree"/>
+        <parameter name="@Action" value="brisanje"/>
+        <parameter name="@Id" value="#grdGlava.@Id"/>
+      </data>
+    </datalist>
+  </form>
+  
+  <form name="frmStavka" caption="Stavka :: {$Header}" fixedsize="true" >
+    <event type="init">
+      <action type="datarun reader" value="~dtGet" if="$Id!=null"/>
+    </event>
+    <layout>
+      <group cols="1" rows="2" bordervisible="false" >
+        <item caption="Naziv:" col="1" row="1">
+          <textedit name="txtNaziv" datavalue="~dtGet.@Naziv"/>
+        </item>
+        <group col="1" row="2" cols="2" rows="1" bordervisible="false" if="$Katalog!=Role">
+          <item caption="Oznaka:" col="1" row="1" width="75%">
+            <textedit name="txtOznaka" datavalue="~dtGet.@Oznaka"/>
+          </item>
+          <item caption=" " col="2" row="1" highlight="false" width="25%">
+            <checkedit caption="Aktivan" name="chkAktivan" value="true" datavalue="~dtGet.@Aktivan"/>
+          </item>  
+        </group>
+        <group col="1" row="2" cols="1" rows="1" bordervisible="false" else="">
+          <item caption="Oznaka:" col="1" row="1">
+            <textedit name="txtOznaka" datavalue="~dtGet.@Oznaka"/>
+          </item>
+        </group>        
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button caption="&amp;SPREMI" dock="right">
+          <event type="click">
+            <!-- izmjena postojećeg -->
+            <action type="datarun nonquery" value="~dtStavkaAzur" if="$Action==izmjena">
+              <action type="form close"/>
+            </action>
+            <!-- unos novog -->
+            <action type="datarun scalar" value="~dtStavkaAzur" else="">
+              <parameter name="NewId"/>
+            </action>
+            <action type="variable value" value="parent.$Id">
+              <parameter value="$NewId"/>
+            </action>
+            <action type="form close"/>
+          </event>
+        </button>
+        <button caption="&amp;ODUSTANI" type="cancel" dock="right"/>
+      </buttons>
+    </panelbuttons>
+      <datalist>
+        <data command="spOsigPKatalogStavkaQuery" name="dtGet">
+          <parameter name="@Action" value="Stavka"/>
+          <parameter name="@Katalog" value="$Katalog"/>
+          <parameter name="@Id" value="$Id"/>
+        </data>
+        <data command="spOsigPKatalogStavkaAzur" name="dtStavkaAzur">
+          <parameter name="@Katalog" value="$Katalog"/>
+          <parameter name="@Action" value="$Action"/>
+          <parameter name="@Id" value="$Id" if="$Action==izmjena"/>
+          <parameter name="@Naziv" value="#txtNaziv"/>
+          <parameter name="@Oznaka" value="#txtOznaka"/>
+          <parameter name="@Aktivan" value="#chkAktivan" if="$Katalog!=Role"/>
+        </data>
+      </datalist>
+  </form>
+  
+  <form caption="Upravljanje rolama operatera" name="frmRoleOperatera" width="600" height="600">
+    <event type="load">
+      <action type="control populate" value="#tree,#grdOperateri"/>
+      <action type="datarun reader" value="~dtSetRoleAsTree"/>
+    </event>
+    <event type="shown">
+      <action type="message" value="U bazi ne postoji niti jedna rola osiguranja plaćanja!" if="~dtSetRoleAsTree.rowcount==0">
+        <action type="form close"/>
+      </action>
+    </event>
+      <layout>
+      <group cols="2" rows="2" bordervisible="false">
+        <item col="1" row="1" width="50%">
+          <labeledit value="Role osiguranja plaćanja:" fontsizedelta="2"/>
+        </item>
+        <item col="2" row="1" width="50%">
+          <labeledit value="Operateri:" fontsizedelta="2"/>
+        </item>
+          <item col="1" row="2" highlight="false">
+          <tree name="tree" showautofilterrow="false" dataname="dtSetRoleAsTree">
+            <event type="focusedrowchanged">
+              <action type="control populate" value="#grdOperateri"/>
+            </event>
+            <fields>
+              <field name="Naziv"/>
+            </fields>
+          </tree>
+        </item>
+        <group col="2" row="2" cols="1" rows="2" bordervisible="false">
+          <item col="1" row="1" highlight="false">
+            <grid name="grdOperateri" showautofilterrow="false" showgrouppanel="false" dataname="dtGetOperateri" key="operateriid">
+              <event type="cellvaluechanged">
+                <action type="datarun nonquery" value="~dtRoleInsert" if="#grdOperateri.@Checked==true">
+                  <action type="control populate keepfocus" value="#grdOperateri"/>
+                </action>
+                <action type="datarun nonquery" value="~dtRoleDelete" else="">
+                  <action type="control populate keepfocus" value="#grdOperateri"/>
+                </action>
+              </event>
+              <fields>
+                <field name="Checked" caption=" " editable="true" edittype="bit"/>
+                <field name="Naziv" caption="Operater"/>
+              </fields>
+              <styles>
+                <style name="fontcolor" value="red" if="#grdOperateri.@Occupied==true"/>
+                <style name="fontcolor" value="blue" if="#grdOperateri.@Checked==true"/>
+                <style name="bold" value="true" if="#grdOperateri.@Checked==true"/>
+              </styles>
+            </grid>  
+          </item>
+          <group col="1" row="2" cols="1" rows="2" caption="Legenda:" spacing="6,6,0,6">
+            <item col="1" row="1">
+              <labeledit prefix="&lt;b&gt;" value="Operateri sa označenom rolom" sufix="&lt;/b&gt;" fontcolor="darkblue"/>
+            </item>
+            <item col="1" row="2">
+              <labeledit value="Operateri sa drugom rolom" fontcolor="red"/>
+            </item>
+          </group>
+        </group>
+            
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button caption="&amp;OK" dock="right" type="cancel"/>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spOsigPKatalogStavkaQuery" name="dtSetRoleAsTree">
+        <parameter name="@Action" value="Katalozi"/>
+        <parameter name="@Katalog" value="Role"/>
+      </data>
+      <data command="spOsigPRoleOperateraQuery" name="dtGetOperateri">
+        <parameter name="@Action" value="setgrid"/>
+        <parameter name="@Id" value="#tree.@Id"/>
+      </data>
+      <data command="spOsigPRoleOperateraAzur" name="dtRoleInsert">
+        <parameter name="@Action" value="insert_update"/>
+        <parameter name="@osigproleid" value="#tree.@Id"/>
+        <parameter name="@operateriid" value="#grdOperateri.@operateriid"/>
+      </data>
+      <data command="spOsigPRoleOperateraAzur" name="dtRoleDelete">
+        <parameter name="@Action" value="delete"/>
+        <parameter name="@operateriid" value="#grdOperateri.@operateriid"/>
+      </data>
+    </datalist>
+  </form>
+</root>

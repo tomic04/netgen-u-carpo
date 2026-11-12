@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root version="8.0.0.1">
+	<form name="master" type="master" caption="Svrha izdavanja">
+		<event type="shown">
+			<action type="variable value" >
+				<parameter name="NoviId" value="0" type="int"/>
+			</action>   			
+		</event>
+		<managerlayout>
+			<!-- <event type="load"> -->
+				<!-- <action type="variable value" > -->
+					<!-- <parameter name="NoviId" value="0" type="int"/> -->
+				<!-- </action>                                            -->
+			<!-- </event>        -->
+			<grid name="grdGrid" dataname="dtGrid" key="SktSvrhaIzdavanjaId" type="master" bestfitonrefresh="True">
+				<!-- Enable/disable buttona, ovisno da li u gridu ima barem jedan zapis ili ne -->
+				<event type="focusedrowchanged">
+					<action type="control enable" value="#btnObrisi" if="#grdGrid.rowcount!=0"/>
+					<action type="control disable" value="#btnObrisi" else=""/>
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmIzdatnicaUpdate"  if="#grdGrid.rowcount&gt;0">
+						<parameter name="SktSvrhaIzdavanjaId" value="#grdGrid.@SktSvrhaIzdavanjaId"/>
+					</action>
+					<action type="control populate" value="#grdGrid">
+						<!-- <action type="control focus" value="#grdGrid"> -->
+							<!-- <parameter value="$NoviId" /> -->
+						<!-- </action>					 -->
+					</action>
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="UNESI" >
+					<menuitem control="#grdGrid"/>
+					<event type="click">
+						<action type="form open" value="frmIzdatnicaInsert">
+					
+						</action>
+						<action type="control populate" value="#grdGrid">
+							<action type="control focus" value="#grdGrid">
+								<parameter value="$NoviId" />
+							</action>
+						</action>	
+					</event>
+				</button>
+
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit">
+					<menuitem control="#grdGrid"/>				
+					<event type="click">
+						<action type="form open" value="frmIzdatnicaUpdate"  if="#grdGrid.rowcount&gt;0">
+							<parameter name="SktSvrhaIzdavanjaId" value="#grdGrid.@SktSvrhaIzdavanjaId"/>
+						</action>
+						<action type="control populate" value="#grdGrid">
+							<!-- <action type="control focus" value="#grdGrid"> -->
+								<!-- <parameter value="$NoviId" /> -->
+							<!-- </action> -->
+						</action>	
+					</event>
+				</button>
+
+				<button name="btnObrisi" caption="OBRIŠI" type="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati svrhu izdavanja: {#grdGrid.@Naziv}?">
+							<action type="datarun nonquery" value="~dtDelete" >
+								<action type="control populate" value="#grdGrid" />
+							</action>
+						</action>
+					</event>
+				</button>
+
+				<button name="btnIspis" caption="ISPIŠI" >
+					<event type="click">
+						<action type="control printcontrol" value="#grdGrid"/>
+					</event>
+				</button>
+				
+				
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spSkt_IzdSvrha_GridQuery" name="dtGrid">
+			</data>
+			<data command="spSkt_IzdSvrha_Delete"  name="dtDelete">
+				<parameter name="@ID" value="#grdGrid.@SktSvrhaIzdavanjaId" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmIzdatnicaInsert" caption="Svrha izdavanja unos" width="400" fixedsize="true">
+
+		<layout >
+			<group cols="1" rows="2" >
+				<item caption="Opis:" col="1" row="1">
+					<textedit name="txtIzdatnica" required="True"   />
+				</item>
+
+				<item caption="Konto:" col="1" row="2">
+					<searchedit name="srcKonto" fieldtext="Konto" fieldvalue="KntPlanAId" dataname="dtGetKonto">
+						
+					</searchedit>
+				</item>	
+			</group>
+		</layout>			
+		<datalist>
+			<data command="spSkt_IzdSvrha_KontoTrazi" name="dtGetKonto">
+				<parameter name="@Konto" value="#srcKonto.text" />
+			</data>
+			<data command="spSkt_IzdSvrha_Insert" name="dtSvrhaInsert">
+				<parameter name="@Naziv" value="#txtIzdatnica" />
+				<parameter name="@KntPlanAId" value="#srcKonto" />
+			</data>
+			
+		</datalist>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun reader" value="~dtSvrhaInsert">
+							<action type="variable value" value="parent.$NoviId">
+								<parameter  value="~dtSvrhaInsert.@ID" type="int"/>
+							</action>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+	</form>
+	
+	<form name="frmIzdatnicaUpdate" caption="Svrha izdavanja izmjena" width="400" fixedsize="true">
+		
+		<event type="init">		
+			<action type="datarun reader" value="~dtGetSvrha" />
+		</event>
+		<event type="shown">
+			<action type="control value" value="#txtIzdatnica" >
+				<parameter value="~dtGetSvrha.@Naziv"/>
+			</action>
+			<action type="control value" value="#srcKonto" >
+				<parameter value="~dtGetSvrha.@KntPlanAId" text="~dtGetSvrha.@Konto"/>
+			</action>
+		</event>
+		
+		<layout >
+			<group cols="1" rows="2" >
+				<item caption="Opis:" col="1" row="1">
+					<textedit name="txtIzdatnica" required="True"   />
+				</item>
+
+				<item caption="Konto:" col="1" row="2">
+					<searchedit name="srcKonto" fieldtext="Konto" fieldvalue="KntPlanAId" dataname="dtGetKonto">
+						
+					</searchedit>
+				</item>	
+			</group>
+		</layout>			
+		<datalist>
+			<data command="spSkt_IzdSvrha_EditQuery" name="dtGetSvrha">
+				<parameter name="@ID" value="$SktSvrhaIzdavanjaId" />
+			</data>
+			<data command="spSkt_IzdSvrha_KontoTrazi" name="dtGetKonto">
+				<parameter name="@Konto" value="#srcKonto.text" />
+			</data>
+			<data command="spSkt_IzdSvrha_Update" name="dtSvrhaUpdate">
+				<parameter name="@ID" value="$SktSvrhaIzdavanjaId" />
+				<parameter name="@Naziv" value="#txtIzdatnica" />
+				<parameter name="@KntPlanAId" value="#srcKonto" />
+			</data>
+			
+		</datalist>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="~dtSvrhaUpdate">
+						</action>
+						<!-- <action type="datarun reader" value="~dtSvrhaUpdate"> -->
+							<!-- <action type="variable value" value="parent.$NoviId"> -->
+								<!-- <parameter  value="~dtSvrhaInsert.@ID" type="int"/> -->
+							<!-- </action> -->
+						<!-- </action> -->
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+	</form>
+
+</root>

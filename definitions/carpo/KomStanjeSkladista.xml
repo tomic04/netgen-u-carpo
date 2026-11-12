@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<form type="master" maximized="true" statusbar="true" name="frmMaster" caption="Komercijalno stanje skladišta" template="splitter">		
+		<event type="init">
+			<action type="datarun reader" value="Global.dtDatumi"/>
+			<action type="datarun reader" value="Global.dtPopisSkladista"/>
+			<action type="variable value">
+				<parameter name="KomStSkl_Period" value="~dtDatumi.@KomStSkl_Period" type="int" />
+			</action>
+			<action type="variable value">
+				<parameter name="Global.KomStSkl_Order" value="~dtDatumi.@KomStSkl_Order" type="int" />
+			</action>			
+			<action type="variable value">
+				<parameter name="Ind_Datumi" value="0" type="int" />
+			</action>
+			<action type="variable value" >
+				<parameter name="IndPokazi" value="0"/>
+			</action>			
+		</event>
+		<event type="onload">
+		 	<action type="control disable" value="#btnRazdoblje,#btnKartica,#btnRekapitulacija,#btnIspisiGrid,#cmbJM,#cmbKolicina,#cmbBroj,#cmbZaliha"/>
+			<action type="control populate" value="#cmbCjenik"/>
+			<action type="control populate" value="#cmbDodatnaKlasa"/>
+			<action type="control populate" value="#cmbKlasa"/>
+			<action type="control value" value="#chkDatumi" if="$KomStSkl_Period==1">
+				<parameter value="true"/>
+			</action>	
+			<action type="control value" value="#chkDatumi" else="">
+				<parameter value="false" />
+			</action>		
+			<action type="control enable" value="#datDatumOd" if="#chkDatumi==true"/>
+			<action type="control disable" value="#datDatumOd" if="#chkDatumi==false"/>	
+			<action type="control enable" value="#datDatumDo" if="#chkDatumi==true"/>
+			<action type="control disable" value="#datDatumDo" if="#chkDatumi==false"/>	
+			<action type="control value" value="#datDatumOd">
+				<parameter value="~dtDatumi.@DatumOd"/>
+			</action>
+			<action type="control value" value="#datDatumDo">
+				<parameter value="~dtDatumi.@DatumDo"/>
+			</action>	
+			<action type="control value" value="#txtDioNaziva">
+				<parameter value=""/>
+			</action>
+			<action type="control value" value="#cmbSkladiste">
+				<parameter value="~dtPopisSkladista.@Skladista"/>
+			</action>			
+		</event>
+		<layout name="panel1" type="collapsable" minsize="300">
+			<group cols="2" rows="14" groupbordervisible="false">
+			        <columnsdefinition>
+                        <column size="28" position="1" />
+                        <column size="270" position="2" />
+                    </columnsdefinition>
+				<item caption="Skladište:" row="1" col="2" textalignmode="left">
+					<combomultiedit name="cmbSkladiste" valuefield="SkladisteId" displayfield="Opis" dataname="Global.dtSkladiste" showmultiselecttext="true"/>
+				</item>
+                <item caption="Roba:" textvisible="" row="2" col="2" fontsizedelta="1" textalignmode="left">
+					<searchedit netgenfields="true" name="srcRoba" fontbold="false" dataname="Global.dtRoba" fieldtext="NazivId" fieldvalue="robaid" entermovenextcontrol="false">				
+						<event type="leave" raiseonload="false">
+							<action type="control value" value="#txtDioNaziva" if="#srcRoba!=null">
+								<parameter value=""/>
+							</action>
+						</event>	
+					</searchedit>
+				</item>
+				<item caption="Dio naziva robe:" row="3" col="2" fontbold="" textalignmode="left">
+					<textedit name="txtDioNaziva" datavalue="#dtGet.@Broj"  fontbold="" nulltext="" textalignmode="">
+						<event type="leave" raiseonload="false">						
+							<action type="control refreshvalue" value="#srcRoba" if="#txtDioNaziva!="/>
+						</event>
+					</textedit>
+				</item>
+				<group col="2" row="4" cols="2" rows="1" groupbordervisible="false">
+			        <columnsdefinition>
+                        <column size="200" position="1" />
+                        <column size="200" position="2" />
+                    </columnsdefinition>				
+					<item caption="Klasa:" row="4" col="1" textalignmode="left">
+						<combomultiedit name="cmbKlasa" valuefield="KlMasterRobaId" displayfield="Naziv" dataname="Global.dtKlMasterRoba" enabled="false"/>
+					</item>
+					<item caption=" " row="4" col="2" highlight="false" >
+						<checkedit caption="i ispod" name="chkKlasaIspod" enabled="false" />
+					</item>				
+				</group>
+				<group col="2" row="5" cols="2" rows="1" groupbordervisible="false">
+			        <columnsdefinition>
+                        <column size="200" position="1" />
+                        <column size="200" position="2" />
+                    </columnsdefinition>				
+						<item caption="Dodatna klasa:" row="5" col="1" textalignmode="left">
+						<combotreeedit name="cmbDodatnaKlasa" valuefield="ID" displayfield="Naziv" dataname="Global.dtDodKlasa" enabled="false"/>
+					</item>	
+					<item caption=" " row="5" col="2" textalignmode="" highlight="false" >
+						<checkedit caption="i ispod"  name="chkDodKlasaIspod" enabled="false" />
+					</item>					
+				</group>				
+				<item caption=" " row="4" col="1" textalignmode="" highlight="false" >
+					<checkedit name="chkKlasa" >
+						<event type="checkedchanged">
+							<action type="control enable" value="#cmbKlasa" if="#chkKlasa==true"/>
+ 							<action type="control disable" value="#cmbKlasa" if="#chkKlasa==false"/>
+							<action type="control enable" value="#chkKlasaIspod" if="#chkKlasa==true"/>
+ 							<action type="control disable" value="#chkKlasaIspod" if="#chkKlasa==false"/>							
+						</event>						
+					</checkedit>
+				</item>		
+				<item caption=" " row="5" col="1" textalignmode="" highlight="false" >
+					<checkedit name="chkDodKlasa" >
+						<event type="checkedchanged">
+							<action type="control enable" value="#cmbDodatnaKlasa" if="#chkDodKlasa==true"/>
+ 							<action type="control disable" value="#cmbDodatnaKlasa" if="#chkDodKlasa==false"/>
+							<action type="control enable" value="#chkDodKlasaIspod" if="#chkDodKlasa==true"/>
+ 							<action type="control disable" value="#chkDodKlasaIspod" if="#chkDodKlasa==false"/>							
+						</event>					
+					</checkedit>
+				</item>		
+				<item caption=" " row="6" col="1" textalignmode="" highlight="false" >
+					<checkedit name="chkDatumi" >
+						<event type="checkedchanged">
+							<action type="control enable" value="#datDatumOd" if="#chkDatumi==true"/>
+ 							<action type="control disable" value="#datDatumOd" if="#chkDatumi==false"/>	
+							<action type="control enable" value="#datDatumDo" if="#chkDatumi==true"/>
+ 							<action type="control disable" value="#datDatumDo" if="#chkDatumi==false"/>
+							<action type="control enable" value="#btnRazdoblje" if="#chkDatumi==true"/>
+ 							<action type="control disable" value="#btnRazdoblje" if="#chkDatumi==false"/>
+							<action type="variable value">
+								<parameter name="Ind_Datumi" value="1" type="int" />
+							</action>
+							<action type="datarun reader" value="Global.dtDatumi"/>							
+							<action type="control value" value="#datDatumOd">
+								<parameter value="~dtDatumi.@DatumOd"/>
+							</action>
+							<action type="control value" value="#datDatumDo">
+								<parameter value="~dtDatumi.@DatumDo"/>
+							</action>							
+						</event>					
+					</checkedit>					
+				</item>	
+				<group col="2" row="6" cols="4" rows="1" groupbordervisible="false">		
+			        <columnsdefinition>
+						<column size="100" position="1" />
+						<column size="100" position="2" />
+						<column size="71" position="3" />
+                    </columnsdefinition>				
+					 <item caption="Od:" row="6" col="1" textalignmode="left">
+						<dateedit name="datDatumOd" value="now" enabled="false">
+							<event type="leave">
+								<action type="datarun scalar" value="Global.dtProvjeriDatume">
+									<parameter name="GodinaRazlika"/>
+								</action>
+								<action type="control disable" value="#btnPokazi" if="$GodinaRazlika==1"/>									
+								<action type="control enable" value="#btnPokazi" else=""/>
+							</event>
+						</dateedit>
+					</item>	 
+					 <item caption="Do:" row="6" col="2" textalignmode="left">
+						<dateedit name="datDatumDo" value="now" enabled="false">	
+							<event type="leave">
+								<action type="datarun scalar" value="Global.dtProvjeriDatume">
+									<parameter name="GodinaRazlika"/>
+								</action>
+								<action type="control disable" value="#btnPokazi" if="$GodinaRazlika==1"/>									
+								<action type="control enable" value="#btnPokazi" else=""/>
+								<action type="message" value="Odabrani datumi moraju biti iz iste godine" if="$GodinaRazlika==1"/>									
+							</event>						
+						</dateedit>
+					</item>
+					<item caption=" " row="6" col="3" textalignmode="left">
+						<part name="prtBtnRazdoblje" path="prtBtnRazdoblje.xml"/>	
+					</item>						
+				</group>
+				<item caption=" " row="7" col="1" textalignmode="" highlight="false">
+					<checkedit name="chkDobavljac">
+						<event type="checkedchanged">
+							<action type="control enable" value="#srcPartner" if="#chkDobavljac==true"/>
+ 							<action type="control disable" value="#srcPartner" if="#chkDobavljac==false"/>									
+						</event>					
+					</checkedit>					
+				</item>					
+                <item caption="St. dobavljač:" textvisible="" row="7" col="2" textalignmode="left">
+					<searchedit netgenfields="true" name="srcPartner" dataname="Global.dtPartneri" fieldtext="NazivId" fieldvalue="partneriid" enabled="false"/>				
+				</item>						
+				<item caption="Cjenik:" row="8" col="2" textalignmode="left" textposition="left">
+					<comboedit name="cmbCjenik" valuefield="VrCjenikId" displayfield="Opis" dataname="Global.dtVrCjenik"/>
+				</item>		
+				<item caption="Količina:" row="9" col="2" textalignmode="left" textposition="left">
+					<comboedit name="cmbBroj" valuefield="brojid" displayfield="Naziv" dataname="Global.dtBroj" allownull="false"/>
+				</item>	
+				<item caption="" row="9" col="1" textalignmode="" highlight="false">
+					<checkedit name="chkKolBroj">
+						<event type="checkedchanged">
+							<action type="control enable" value="#cmbBroj" if="#chkKolBroj==true"/>
+ 							<action type="control disable" value="#cmbBroj" if="#chkKolBroj==false"/>
+						</event>					
+					</checkedit>
+				</item>						
+				<item caption="Količina:" row="10" col="2" textalignmode="left" textposition="left" >
+					<comboedit name="cmbKolicina" valuefield="kolicinaid" displayfield="Naziv" dataname="Global.dtKolicina" allownull="false"/>
+				</item>
+				<item caption="" row="10" col="1" textalignmode="" highlight="false">
+					<checkedit name="chkKolKolicina">
+						<event type="checkedchanged">
+							<action type="control enable" value="#cmbKolicina" if="#chkKolKolicina==true"/>
+ 							<action type="control disable" value="#cmbKolicina" if="#chkKolKolicina==false"/>
+						</event>					
+					</checkedit>
+				</item>		
+				<item caption="Količina:" row="11" col="2" textalignmode="left" textposition="left">
+					<comboedit name="cmbZaliha" valuefield="kolicinaid" displayfield="Naziv" dataname="Global.dtZaliha" allownull="false"/>
+				</item>					
+				<item caption="" row="11" col="1" textalignmode="" highlight="false">
+					<checkedit name="chkKolZaliha">
+						<event type="checkedchanged">
+							<action type="control enable" value="#cmbZaliha" if="#chkKolZaliha==true"/>
+ 							<action type="control disable" value="#cmbZaliha" if="#chkKolZaliha==false"/>
+						</event>					
+					</checkedit>
+				</item>							
+				<group col="1" row="12" cols="1" rows="1" groupbordervisible="false" > 				
+					<item caption="" row="12" col="1" highlight="false">
+						<checkedit caption="    Grupiraj po kontingentu" name="chkKontingent"/>
+					</item>			
+				</group>
+				<group col="1" row="13" cols="3" rows="2" groupbordervisible="true" colspan="2" caption="Jedinica mjere">  
+			        <columnsdefinition>
+						<column size="26" position="1" />
+						<column size="110" position="2" />
+						<column size="110" position="3" />
+                    </columnsdefinition>				
+					<item row="1" col="2" caption="" highlight="false">
+                        <radioedit name="rdoSamoOsnovna" caption="Samo osnovna" value="true">
+                            <event type="checkedchanged">
+                                <action type="control disable" value="#cmbJM" if="#rdoSamoOsnovna==true"/>
+                            </event>
+                        </radioedit>
+                    </item>				
+                    <item row="1" col="3" caption="" highlight="false">
+                        <radioedit name="rdoSveDefinirane" caption="Sve definirane" value="false">
+                            <event type="checkedchanged">
+                                <action type="control disable" value="#cmbJM" if="#rdoSveDefinirane==true"/>
+                            </event>
+                        </radioedit>
+                    </item>					
+				    <item row="2" col="2" caption="" highlight="false">
+                        <radioedit name="rdoSamoJedna" caption="Samo:" value="false">
+                            <event type="checkedchanged">
+                                <action type="control enable" value="#cmbJM" if="#rdoSamoJedna==true"/>
+                            </event>
+                        </radioedit>
+                    </item>
+				    <item row="2" col="3" caption="">
+						<comboedit name="cmbJM" valuefield="JmId" displayfield="Naziv" dataname="Global.dtJM" allownull="false"/>
+                    </item>	
+				</group>					
+			</group>
+		</layout>
+        <layout name="panel2">
+			<group cols="1" rows="1" groupbordervisible="true">
+				<item row="1" col="1">
+					<grid name="grdStavke" async="true" bestfitonrefresh="true" dataname="Global.dtGrid" key="robaid" showfooter="true" savelayout="true" >
+						<fields>
+							<field name="Skladiste" caption="Skladište" />
+							<field name="Klasa" caption="Klasifikacija" />
+							<field name="Naziv"  caption="Roba" />
+							<field name="Sifra" caption="Šifra" showtotalsum="false" showgroupsum="false"/>
+							<field name="stanje" caption="Stanje" formatstring="#,####0.0000" showtotalsum="true" type="decimal"/>
+							<field name="raspolozivo" caption="Raspoloživo" formatstring="#,####0.0000" showtotalsum="true" type="decimal"/>
+							<field name="jm" caption="JM" />
+							<field name="Stanje JM2" caption="Stanje JM2" />
+							<field name="JM2" caption="JM2" />				
+							<field name="NabavnaCij" caption="Nabavna cijena" showgroupsum="true" showtotalsum="true" groupsumtype="average" totalsumtype="average"/>
+							<field name="nabavnavrijednost" caption="Nabavna vrijednost" showtotalsum="true" />
+							<field name="NabavnaCijBod" caption="Nabavna cijena (bod)" showgroupsum="true" showtotalsum="true" groupsumtype="average" totalsumtype="average"/>
+							<field name="nabavnavrijednostbod" caption="Nabavna vrijednost (bod)" showtotalsum="true" />
+							<field name="NetoCijenaKn" caption="Neto cijena" showgroupsum="true" showtotalsum="true" groupsumtype="average" totalsumtype="average"/>
+							<field name="netovrijednostkn" caption="Neto vrijednost" showtotalsum="true" />
+							<field name="BrutoCijenaKn" caption="Bruto cijena" showgroupsum="true" showtotalsum="true" groupsumtype="average" totalsumtype="average"/>
+							<field name="brutovrijednostkn" caption="Bruto vrijednost" showtotalsum="true" />
+							<field name="mpcijenakn" caption="MP cijena" showgroupsum="true" showtotalsum="true" groupsumtype="average" totalsumtype="average"/>
+							<field name="mpvrijednostkn" caption="MP vrijednost" showtotalsum="true" />						
+							<field name="datumulaza" caption="Datum ulaza" />
+							<field name="datumizlaza" caption="Datum izlaza" />							
+							<field name="rezervirano" caption="Rezervirano" formatstring="#,####0.0000" showtotalsum="true" type="decimal"/>
+							<field name="kolicinamin" caption="Min. količina" formatstring="#,####0.0000" showgroupsum="true" showtotalsum="true" groupsumtype="min" totalsumtype="min" type="decimal"/>
+							<field name="kolicinamax" caption="Max. količina" formatstring="#,####0.0000" showgroupsum="true" showtotalsum="true" groupsumtype="max" totalsumtype="max" type="decimal"/>
+							<field name="RobaKod" caption="Kod" />
+							<field name="UserKod" caption="Oznaka" />
+							<field name="Barcode" caption="Barkod" />
+							<field name="nivo1" caption="Nivo 1" />
+							<field name="nivo2" caption="Nivo 2" />
+							<field name="nivo3" caption="Nivo 3" />
+							<field name="nivo4" caption="Nivo 4" />
+							<field name="nivo5" caption="Nivo 5" />
+							<field name="Carinska tarifa" caption="Carinska tarifa" />
+							<field name="Polica" caption="Polica" />
+							<field name="Dodatna klasa robe" caption="Dodatna klasa robe" />
+							<field name="Vrsta dod. klase" caption="Vrsta dod. klase" />
+							<field name="kkvalgla" caption="Kontigent" />
+							<field name="kkvalgla_napomena" caption="Napomena" />
+							<field name="pakovanje" caption="Pakovanje" />
+							<field name="proizvodjac" caption="Proizvođač" />
+							<field name="roktrajanja" caption="Rok trajanja" formatstring="dd.MM.yyyy" showgroupsum="false" showtotalsum="false" />
+							<field name="StarostKontingenta" caption="Starost kontingenta" />
+							<field name="naruceno" caption="Naručeno" formatstring="#,####0.0000" showtotalsum="true" />							
+						</fields>
+						<event type="focusedrowchanged">							
+							<action type="control enable" value="#btnRekapitulacija, #btnKartica" if="#grdStavke.rowcount!=0" />
+							<action type="control disable" value="#btnRekapitulacija, #btnKartica" else="" />
+						</event>
+						<event type="doubleclick">
+							<part name="partGumbKartica" path="prtKomStanjeSkladista.xml" />
+						</event>
+						<print caption="Stanje skladišta {$Skladista}" header="Od {#datDatumOd::dd.MM.yyyy.} do {#datDatumDo::dd.MM.yyyy.}" subheader="" captionalign="" headeralign="" subheaderalign=""/>
+					</grid>
+				</item> 
+			</group>			
+        </layout>
+        <panelbuttons>
+            <buttons>
+                <button name="btnPokazi" caption="Pokaži" dock="left">
+					<event type="click">			
+						<action type="control populate" value="#grdStavke" />
+						<action type="footer text" value="Broj stavaka: {#grdStavke.rowcount}" if="$IndPokazi==0"/>
+						<action type="footer text" value="" else=""/>
+						<action type="control disable" value="##" if="$IndPokazi==0"/>
+						<action type="control enable" value="#grdStavke,#btnIspisiGrid,#btnKartica,#btnRekapitulacija" if="$IndPokazi==0&amp;&amp;#grdStavke.rowcount!=0"/>
+						<action type="control disable" value="#grdStavke,#btnIspisiGrid,#btnKartica,#btnRekapitulacija" else=""/>
+						<action type="control enable" value="#cmbCjenik,#cmbSkladiste,#srcRoba,#txtDioNaziva,#chkKlasa,#chkDodKlasa,#chkDatumi,#chkDobavljac,#chkKolBroj,#chkKolKolicina,#chkKolZaliha,#chkKontingent,#rdoSamoJedna,#rdoSamoOsnovna,#rdoSveDefinirane" if="$IndPokazi==1"/>				
+						<action type="control enable" value="#cmbKlasa,#chkKlasaIspod" if="$IndPokazi==1&amp;&amp;#chkKlasa==true"/>
+						<action type="control enable" value="#cmbDodatnaKlasa,#chkDodKlasaIspod" if="$IndPokazi==1&amp;&amp;#chkDodKlasa==true"/>
+						<action type="control enable" value="#datDatumOd,#datDatumDo,#btnRazdoblje" if="$IndPokazi==1&amp;&amp;#chkDatumi==true"/>
+						<action type="control enable" value="#srcPartner" if="$IndPokazi==1&amp;&amp;#chkDobavljac==true"/>
+						<action type="control enable" value="#cmbKolicina" if="$IndPokazi==1&amp;&amp;#chkKolKolicina==true"/>
+						<action type="control enable" value="#cmbBroj" if="$IndPokazi==1&amp;&amp;#chkKolBroj==true"/>
+						<action type="control enable" value="#cmbZaliha" if="$IndPokazi==1&amp;&amp;#chkKolZaliha==true"/>
+						<action type="control enable" value="#cmbJM" if="$IndPokazi==1&amp;&amp;#rdoSamoJedna==true"/>						
+						<action type="control caption" value="#btnPokazi">
+							<parameter value="Pokaži" if="$IndPokazi==1"/>
+							<parameter value="Uvjeti" else=""/>
+						</action>
+						<action type="variable value" if="$IndPokazi==1">
+							<parameter name="IndPokazi" value="0" />
+						</action>
+						<action type="variable value" else="">
+							<parameter name="IndPokazi" value="1" />
+						</action>				
+					</event>                    
+                </button>					
+                <button caption="Kartica" name="btnKartica" dock="left">
+					<event type="click">
+						<part name="partGumbKartica" path="prtKomStanjeSkladista.xml" />					
+					</event>                     
+                </button>
+                <button caption="Rekapitulacija" name="btnRekapitulacija" dock="left">
+					<event type="click">	
+						<action type="form open" value="frmRekapitulacija" if="#grdStavke.@robaid!=null">
+							<parameter name="DatumOd" value="#datDatumOd" />
+							<parameter name="DatumDo" value="#datDatumDo" />
+							<parameter name="SkladisteId" value="#grdStavke.@skladisteid" />
+							<parameter name="RobaId" value="#grdStavke.@robaid" />
+							<parameter name="KKvalGlaId" value="#grdStavke.@kkvalglaid" />
+							<parameter name="Kontingent" value="#grdStavke.@kkvalgla" />
+							<parameter name="Faktor" value="#grdStavke.@faktor" />
+						</action>
+					</event>                     
+                </button>				
+                <button caption="Zatvori" dock="right">
+					<event type="click">					
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnIspisiGrid" caption="Ispiši">
+					<event type="click">
+						<action type="datarun scalar" value="Global.dtOznacenaSkladista">
+							<parameter name="Skladista"/>
+						</action>						
+						 <action type="control printcontrol" value="#grdStavke"/>	
+					</event>
+				</button>							
+            </buttons>
+        </panelbuttons>	
+		<datalist>
+			<data command="spDatumi" name="dtDajDatum">	
+				<parameter name="@action" value="$varDatAction" />	
+			</data>	
+		</datalist>			
+	</form>
+ 	<form name="frmRekapitulacija" path="frmRekapitulacija.xml"></form>
+	<form name="frmKartica" path="frmKartica.xml"></form>
+	<form name="frmPrikazDok" path="frmPrikazDok.xml"></form>
+	<datalist>
+		<data command="spTraziRoba" name="dtRoba">
+			<parameter name="@action" value="Roba"/>		
+			<parameter name="@Uvjet" value="#srcRoba.text"/>
+			<parameter name="@PokaziVPCijene" value="0"/>
+			<parameter name="@PokaziNabCijene" value="0"/>
+			<parameter name="@Retired" value="0"/>
+			<parameter name="@Prikazi_Dodatno" value="0"/>
+			<parameter name="@PokaziStanje" value="0"/>
+		</data>			
+		<data command="spTraziPartneri" name="dtPartneri">
+			<parameter name="@Action" value="Partneri"/>
+			<parameter name="@Uvjet" value="#srcPartner.text"/>
+		</data>
+		<data command="spNG_Combo" name="dtJM">
+			<parameter name="@Action" value="jm"/>
+		</data>
+		<data command="spNG_Combo" name="dtVrCjenik">
+			<parameter name="@Action" value="VrCjenik"/>
+			<parameter name="@Order" value="Opis"/>
+		</data>
+		<data command="spNG_Combo" name="dtDodKlasa">
+			<parameter name="@Action" value="DodatnaKlasa"/>
+		</data>	
+		<data command="spNG_Combo" name="dtKlMasterRoba">
+			<parameter name="@Action" value="KlMasterRoba"/>
+<!-- 			<parameter name="@Ind" value="1"/>
+			<parameter name="@ime_kontrole" value="ID"/> -->
+		</data>			
+		<data command="spNG_Combo" name="dtSkladiste">
+			<parameter name="@Action" value="skladiste"/>
+			<parameter name="@Ind" value="1"/>
+			<parameter name="@Oznaka" value="viSkladistaPravaIzvjestaji"/>			
+		</data>	
+		<data command="spNG_Combo" name="dtPopisSkladista">
+			<parameter name="@Action" value="PopisSkladista"/>
+			<parameter name="@Oznaka" value="viSkladistaPravaIzvjestaji"/>			
+		</data>			
+		<data command="spKomercStanjeSklad_ComboKolicine" name="dtKolicina">
+			<parameter name="@Action" value="kolicina" type="string"/>
+		</data>
+		<data command="spKomercStanjeSklad_ComboKolicine" name="dtZaliha">
+			<parameter name="@Action" value="zaliha" type="string"/>
+		</data>	
+		<data command="spKomercStanjeSklad_ComboKolicine" name="dtBroj">
+			<parameter name="@Action" value="broj" type="string"/>
+		</data>			
+		<data command="spKomercStanjeSklad_ComboKolicine" name="dtDatumi">
+			<parameter name="@Action" value="datumi" type="string"/>
+			<parameter name="@Ind" value="$Ind_Datumi" type="int"/>
+			<parameter name="@Check" value="0" type="int" if="#chkDatumi==false"/>
+			<parameter name="@Check" value="1" type="int" else=""/>
+		</data>	
+		<data command="spKomercStanjeSklad_Grid" name="dtGrid">
+			<parameter name="@robaid" value="#srcRoba" type="int" if="$IndPokazi==0"/>
+			<parameter name="@robaid" value="0" type="int" else=""/>
+			<parameter name="@vrcjenikid" value="#cmbCjenik" type="int"/>
+			<parameter name="@roba_naziv" value="#txtDioNaziva" type="string"/>			
+			<parameter name="@jm_ind" value="0" type="int" if="#rdoSamoOsnovna==true"/>
+			<parameter name="@jm_ind" value="1" type="int" if="#rdoSveDefinirane==true"/>
+			<parameter name="@jm_ind" value="2" type="int" if="#rdoSamoJedna==true"/>
+			<parameter name="@jmid" value="#cmbJM" type="int" if="#rdoSamoJedna==true"/>
+			<parameter name="@kolicina_nula" value="#cmbBroj" type="int" if="#chkKolBroj==true"/>	
+			<parameter name="@kolicina_max" value="#cmbKolicina" type="int" if="#chkKolKolicina==true"/>			
+			<parameter name="@zaliha_max" value="#cmbZaliha" type="int" if="#chkKolZaliha==true"/>			
+			<parameter name="@kontingenti_groupby" value="1" type="int" if="#chkKontingent==true"/>
+			<parameter name="@partneriid" value="#srcPartner" type="int" if="#chkDobavljac==true"/>
+			<parameter name="@datumod" value="#datDatumOd" if="#chkDatumi==true"/>
+			<parameter name="@datumdo" value="#datDatumDo" if="#chkDatumi==true"/>
+			<parameter name="@dodklase_ispod" value="1" type="int" if="#chkDodKlasaIspod==true"/>
+			<parameter name="@klrobaid" value="#cmbDodatnaKlasa" type="int" if="#chkDodKlasa==true"/>
+			<parameter name="@strskl" value="#cmbSkladiste" type="string"/>
+			<parameter name="@ind_carpo" value="1" type="int"/>
+			<parameter name="@klase_ispod" value="1" type="int" if="#chkKlasaIspod==true"/>
+			<parameter name="@niz_klasa" value="#cmbKlasa" type="string" if="#chkKlasa==true"/>			
+		</data>			
+		<data command="select case when year(@datumod) != year(@datumdo) then 1 else 0 end as GodinaRazlika" type="text" name="dtProvjeriDatume">
+			<parameter name="@datumod" value="#datDatumOd"/>
+			<parameter name="@datumdo" value="#datDatumDo"/>
+		</data>
+		<data command="spDajPopisSkladista" name="dtOznacenaSkladista">
+			<parameter name="@niz" value="#cmbSkladiste" type="string"/>
+		</data>					
+	</datalist>
+</root>

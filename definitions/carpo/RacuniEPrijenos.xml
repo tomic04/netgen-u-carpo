@@ -1,0 +1,173 @@
+<root>
+	<form name="frmGlavni" type="master" caption="Postavke platnog prometa" maximized="true">
+		<event type="shown">
+			<action type="control populate" value="#grdEPrijenos"/>
+		</event>
+		<layout>			
+			<group cols="1" rows="1">
+				<item col="1" row="1">
+					<grid name="grdEPrijenos" dataname="~dtStari" showgrouppanel="false">
+						<fields>
+							<field name="Banka"/>
+							<field name="IBAN"/>
+							<field name="VrstaDokumenta" caption="Vrsta dokumenta"/>
+							<field name="Konto" caption="Prometni konto"/>
+							<field name="PrijelazniKonto" caption="Prijelazni konto"/>
+							<field name="Put" caption="Putanja za zbrojni nalog"/>
+							<field name="PutIzvod" caption="Putanja za izvod"/>
+							<field name="Valuta" caption="Valuta"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="#btnInsert" caption="Unesi">
+					<event type="click">
+						<action type="form open" value="frmEdit">
+							<parameter name="Action" value="1"/>						
+						</action>
+						<action type="control populate" value="#grdEPrijenos"/>
+					</event>
+				</button>				
+				<button name="#btnEdit" caption="Izmijeni">
+					<event type="click">
+						<action type="form open" value="frmEdit">
+							<parameter name="Action" value="2"/>
+							<parameter name="IDBanke" value="#grdEPrijenos.@BankaId"/>
+							<parameter name="EPrijenosId" value="#grdEPrijenos.@EPrijenosId"/>								
+						</action>
+						<action type="control populate" value="#grdEPrijenos"/>
+					</event>
+				</button>				
+				<button name="#btnDelete" caption="Obriši">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati banku?">
+							<action type="datarun nonquery" value="~dtObrisi"/>								
+							<action type="control populate" value="#grdEPrijenos"/>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtStari" command="spCKntEPrijenosQuery">
+				<parameter name="@Action" value="1"/>
+			</data>
+			<data name="dtObrisi" command="spCKntEPrijenosAzur">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@IDBanke" value="#grdEPrijenos.@BankaId"/>
+				<parameter name="@EPrijenosId" value="#grdEPrijenos.@EPrijenosId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmEdit" height="100" width="100">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet"/>
+		</event>
+		<event type="shown">
+			<action type="form caption" value="Unos" if="$IDBanke==null"/>
+			<action type="form caption" value="Izmjena" else=""/>
+			<action type="control visible" value="brwPutanja,#brwPutanjaIzvod" if="$IDBanke!=null">
+				<parameter value="false"/>
+			</action>
+			<action type="control disable" value="#cmbBanka,#cmbIBAN" if="$IDBanke!=null"/>
+		</event>
+		<layout>
+			<group cols="2" rows="9" groupbordervisible="false">
+				<!-- <columnsdefinition> -->
+					<!-- <column size="400" position="1"/> -->
+					<!-- <column size="600" position="2"/> -->
+				<!-- </columnsdefinition> -->
+				<!-- <rowsdefinition> -->
+					<!-- <row size="30" position="7"/> -->
+				<!-- </rowsdefinition> -->
+				<item col="1" row="1" textposition="left" caption="Banka:">
+					<comboedit name="cmbBanka" required="true" dataname="~dtBanka" datavalue="~dtGet.@BankeId" valuefield="PartneriId" displayfield="Naziv">
+						<event type="valuechanged">
+							<action type="control populate" value="#cmbIBAN"/>
+						</event>
+					</comboedit>
+				</item>
+				<item col="1" row="2" textposition="left" caption="IBAN:" >
+					<comboedit name="cmbIBAN" required="true" autopopulate="false" datavalue="~dtGet.@ParZiroId" dataname="~dtIBAN" valuefield="ParZiroId" displayfield="iban"/>
+				</item>
+				<item col="1" row="3" textposition="left" caption="Prometni konto:">
+					<comboedit name="cmbPrometniKonto" required="true" dataname="~dtKonto1" datavalue="~dtGet.@IzKntPlanId" displayfield="Naziv" valuefield="KntPlanAId"/>
+				</item>
+				<item col="1" row="4" textposition="left" caption="Prijelazni konto:">
+					<comboedit name="cmbPrijelazniKonto" dataname="~dtKonto2" datavalue="~dtGet.@PrKntPlanId" displayfield="Naziv" valuefield="KntPlanAId"/>
+				</item>
+				<item col="1" row="5" textposition="left" caption="Vrsta dokumenta:">
+					<comboedit name="cmbVrstaDok" required="true" dataname="~dtVrstaDok" datavalue="~dtGet.@VrstaDokId" valuefield="VrstaDokId" displayfield="Opis"/>
+				</item>
+				<item col="1" row="6" textposition="left" caption="Putanja - zbrojni nalog:">
+					<browseedit name="brwPutanja" type="folder"/>
+				</item>
+				<item col="1" row="7" textposition="left" caption="Putanja - izvod:">
+					<browseedit name="brwPutanjaIzvod"/>
+				</item>
+				<item col="1" row="8" textposition="left" caption="Valuta:">
+					<comboedit name="cmbValuta" dataname="~dtValuta" datavalue="~dtGet.@ValuteId" displayfield="Oznaka" valuefield="ValuteId"/>
+				</item>
+				<item col="1" row="9"/>						
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate">
+							<action type="confirm" value="Jeste li sigurni da ste unijeli ispravne podatke?"/>
+							<action type="datarun nonquery" value="~dtUnesi"/>
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGet" command="spCKntEPrijenosQuery">
+				<parameter name="@Action" value="12"/>
+				<parameter name="@IDBanke" value="$IDBanke"/>
+				<parameter name="@EPrijenosId" value="$EPrijenosId"/>
+			</data>
+			<data name="dtKonto1" command="spCKntEPrijenosKontrole">
+				<parameter name="@Action" value="3"/>
+			</data>
+			<data name="dtKonto2" command="spCKntEPrijenosKontrole">
+				<parameter name="@Action" value="3"/>
+			</data>
+			<data name="dtBanka" command="spCKntEPrijenosKontrole">
+				<parameter name="@Action" value="1"/>
+			</data>
+			<data name="dtIBAN" command="spCKntEPrijenosKontrole">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@ID" value="#cmbBanka"/>
+			</data>
+			<data name="dtVrstaDok" command="spCKntEPrijenosKontrole">
+				<parameter name="@Action" value="4"/>
+			</data>
+			<data name="dtUnesi" command="spCKntEPrijenosAzur">
+				<parameter name="@Action" value="$Action"/>
+				<parameter name="@IDBanke" value="#cmbIBAN"/>
+				<parameter name="@IzKntPlanId" value="#cmbPrometniKonto"/>
+				<parameter name="@PrKntPlanId" value="#cmbPrijelazniKonto"/>
+				<parameter name="@Put" value="#brwPutanja"/>
+				<parameter name="@PutIzvod" value="#brwPutanjaIzvod"/>
+				<parameter name="@VrstaDokId" value="#cmbVrstaDok"/>
+				<parameter name="@ValuteId" value="#cmbValuta"/>
+				<parameter name="@EPrijenosId" value="$EPrijenosId"/>
+			</data>
+			<data name="dtValuta" command="spCKntEPrijenosKontrole">
+				<parameter name="@Action" value="5"/>
+			</data>			
+		</datalist>
+	</form>
+</root>

@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+<PROJECT  
+   ONLOAD="" 
+   TREE="spTreeKlMasterRoba:KLASIFIKACIJA" 
+   DETAILGRID="spMPJMzaMPC @action=4,@robaid=@@robaid"
+   CMD1CAPTION="Traži:FILTERFORM"    
+   CMD2CAPTION="Dodaj:DODAJFORM" 
+   CMD3CAPTION="Izmjeni:UPDATEFORM"
+   CMD4CAPTION="Obriši:DELETEFORM"
+   CMD5CAPTION="Aktiviraj:AKTIVIRAJFORM"
+   CMD6CAPTION="Deaktiviraj:DEAKTIVIRAJFORM"
+   CHECKBOXVISIBLE="FALSE"
+   TOTALROWVISIBLE="FALSE"
+   POPUPMASTER=""
+   TOTALROW="FALSE"
+   DETCHECKBOXVISIBLE="FALSE"
+   DETTOTALROWVISIBLE="FALSE"
+   MASTERDBLCLICK=""
+   SETDEFAULTS="select dbo.fnTkoSmoMi() as tkosmomi"
+      PAGEHEADERRIGHT="@@tkosmomi">
+ 
+  <NAME>Unos dodatne jedinice mjere za izračun MPC</NAME>
+  <CAPTION>Unos dodatne jedinice mjere za izračun MPC</CAPTION>
+ 
+  <KOMENTAR> </KOMENTAR>
+  <AUTOR> MT 23.04.2009.  </AUTOR>
+
+  <KLASIFIKACIJA  FILLEXPLORER="TRUE" ONSUBMIT="spMPJMzaMPC @action=0, @KlasaID=@@node" />
+
+  <FILTERFORM 
+                 WIDTH="11000" 
+                 ONSUBMIT="spMPJMzaMPC @action=0, " 
+                 ONLOAD="" 
+                 HEIGHT="5500" 
+                 CAPTION="Parametri"  
+                 CMD1CAPTION="Gotovo" 
+                 CMD2CAPTION="Izlaz" 
+		 FILLEXPLORER="TRUE" 
+		 >
+  	        <INPUT TYPE="TRAZILICA" CAPTION="Roba:" NAME="robaid" 
+			SQL="ViRobabezusluga#RobaId#Naziv%#Userid#Robakod#%barcode%" 
+			TABINDEX="0"  WIDTH="4500" HEIGHT="320" />        
+		<INPUT TYPE="TRAZILICA" CAPTION="Klasa" NAME="klasaid" SQL="ViKlaseRobe#klmasterrobaid#Naziv%" 
+			TABINDEX="3" 
+			WIDTH="5500" 
+			HEIGHT="320"/> 
+
+	  
+  </FILTERFORM>
+
+  <DODAJFORM 
+                 WIDTH="11000" 
+                 ONSUBMIT="spMPJMzaMPC @action=1, @robaid=@@id, " 
+                 ONLOAD="if exists (select * from jmroba where robaId=@@robaid and ind_cijene=1) begin 
+							exec spRaiserror 69001, &apos;Za navedeni artikal već postoji jedina mjere za izračun MPC (zeleno)!&apos;
+						 end
+						 else begin
+							select robanaziv=(select naziv from roba where robaid=@@id)
+						 end" 
+                 HEIGHT="5500" 
+                 CAPTION="Nova jedinica mjere"  
+                 CMD1CAPTION="Gotovo" 
+                 CMD2CAPTION="Izlaz" 
+		 FILLEXPLORER="" 
+		 >
+  	        <INPUT TYPE="text" CAPTION="_Roba:" NAME="robanaziv" TABINDEX="0"  WIDTH="4500" HEIGHT="320" ENABLED="FALSE"/>        
+  	        <INPUT TYPE="combo" CAPTION="Jedinica mjere:" NAME="jmid" ALLOWEMPTY="FALSE" SQL="SELECT jmId,Naziv FROM jm" TABINDEX="1"  WIDTH="4500" HEIGHT="320" />        
+		<INPUT TYPE="number" NAME="faktor" CAPTION="Faktor konverzije" TEXT="1" WIDTH="1600" HEIGHT="800" TABINDEX="2" DECIMALS="8" />	  
+	  
+  </DODAJFORM>
+  
+
+
+  <UPDATEFORM 
+                 WIDTH="11000" 
+                 ONSUBMIT="" 
+                 ONLOAD="	if @@detid=0 begin
+								exec spRaiserror 69001, &apos;Ne postoji dodatna jedinica mjere za izmjenu!&apos;
+							end
+							if (select coalesce(ind_cijene,0) from jmroba where jmrobaId=@@detid) != 1 begin 
+								exec spRaiserror 69001, &apos;Možete ispravljati samo artikle s jedinicom mjere za izračun MPC (zeleno)!&apos;
+							end
+							else begin
+								select robanaziv=(select naziv from roba where robaid=jmroba.robaid), 
+								jmnaziv=(select naziv from jm where jmid=jmroba.jmid), 
+								faktor , jmrobaid=@@detid
+								from JmRoba 
+								where JmRobaId=@@detid
+							end " 
+                 HEIGHT="2500" 
+                 CAPTION="Izmjena"  
+		 FILLEXPLORER="ONLYDET" 
+		 >
+ 	        <INPUT TYPE="text" CAPTION="_Roba:" NAME="robanaziv" TABINDEX="0"  WIDTH="4500" HEIGHT="320" ENABLED="FALSE"/>        
+  	        <INPUT TYPE="text" CAPTION="_Jedinica mjere:" NAME="jmnaziv" TABINDEX="1"  WIDTH="4500" HEIGHT="320" ENABLED="FALSE"/>        
+		<INPUT TYPE="number" NAME="faktor" CAPTION="Faktor konverzije" TEXT="1" WIDTH="1600" HEIGHT="800" TABINDEX="2" DECIMALS="8" />
+		<INPUT TYPE="button" NAME="ok" TOP="1500" LEFT="100" WIDTH="1100" CAPTION="Spremi" ONCLICK="spMPJMzaMPC @action=2, @id=@@detid, @faktor=@@faktor#Ok" TABINDEX="10" />
+		<INPUT TYPE="button" NAME="cancel" TOP="1500" LEFT="2000" WIDTH="1100" CAPTION="Odustani" ONCLICK="close" TABINDEX="12" />
+
+  </UPDATEFORM>
+
+
+
+  <DELETEFORM
+		WIDTH="5500" 
+		ONSUBMIT="spMPJMzaMPC @action=3, @id=@@detid" 
+		ONLOAD="if @@detid=0 begin
+					exec spRaiserror 69001, &apos;Ne postoji dodatna jedinica mjere za brisanje!&apos;
+				end
+				if (select coalesce(ind_cijene,0) from jmroba where jmrobaId=@@detid) != 1 begin 
+							exec spRaiserror 69001, &apos;Možete obisati samo artikle s jedinicom mjere za izračun MPC (zeleno)!&apos;
+				end
+				else begin
+				 select robanaziv=(select naziv from roba where robaid=jmroba.robaid), 
+				 jmnaziv=(select naziv from jm where jmid=jmroba.jmid), 
+				 faktor from JmRoba where JmRobaId=@@detid
+				end "	
+		HEIGHT="3000" 
+		CAPTION="Obrisati ?" 
+		CMD1CAPTION="Obriši"
+		CMD2CAPTION="Odustani" 
+		FILLEXPLORER=""
+		> 
+	        <INPUT TYPE="text" CAPTION="_Roba:" NAME="robanaziv" TABINDEX="0"  WIDTH="4500" HEIGHT="320" ENABLED="FALSE"/>        
+  	        <INPUT TYPE="text" CAPTION="_Jedinica mjere:" NAME="jmnaziv" TABINDEX="1"  WIDTH="4500" HEIGHT="320" ENABLED="FALSE"/>        
+  </DELETEFORM>
+
+	<AKTIVIRAJFORM
+		  WIDTH="5500"
+		  ONSUBMIT="spMPJMzaMPC @action=5, @id=@@detid"
+		  ONLOAD="if @@detid=0 begin
+								exec spRaiserror 69001, &apos;Ne postoji dodatna jedinica mjere za aktiviranje!&apos;
+				end
+				if (select coalesce(ind_cijene,0) from jmroba where jmrobaId=@@detid) = 1 begin 
+							exec spRaiserror 69001, &apos;Ova jedinica mjere je već aktivna!&apos;
+				end
+				else begin
+					if exists (select * from jmroba where robaId=@@robaid and ind_cijene=1) begin 
+							exec spRaiserror 69001, &apos;Za navedeni artikal već postoji jedina mjere za izračun MPC (zeleno)!&apos;
+					end
+					else begin
+						select robanaziv=(select naziv from roba where robaid=jmroba.robaid), 
+						jmnaziv=(select naziv from jm where jmid=jmroba.jmid), 
+						faktor from JmRoba where JmRobaId=@@detid
+					end
+				end "
+		  HEIGHT="3000"
+		  CAPTION="Aktivirati ?"
+		  CMD1CAPTION="Aktiviraj"
+		  CMD2CAPTION="Odustani"
+		  FILLEXPLORER=""
+		>
+		<INPUT TYPE="text" CAPTION="_Roba:" NAME="robanaziv" TABINDEX="0"  WIDTH="4500" HEIGHT="320" ENABLED="FALSE"/>
+		<INPUT TYPE="text" CAPTION="_Jedinica mjere:" NAME="jmnaziv" TABINDEX="1"  WIDTH="4500" HEIGHT="320" ENABLED="FALSE"/>
+	</AKTIVIRAJFORM>
+
+	<DEAKTIVIRAJFORM
+		  WIDTH="5500"
+		  ONSUBMIT="spMPJMzaMPC @action=6, @id=@@detid"
+		  ONLOAD="if @@detid=0 begin
+								exec spRaiserror 69001, &apos;Ne postoji dodatna jedinica mjere za deaktiviranje!&apos;
+				end
+				if (select coalesce(ind_cijene,0) from jmroba where jmrobaId=@@detid) != 1 begin 
+							exec spRaiserror 69001, &apos;Ova jedinica mjere nije aktivna!&apos;
+				end
+				else begin
+					select robanaziv=(select naziv from roba where robaid=jmroba.robaid), 
+					jmnaziv=(select naziv from jm where jmid=jmroba.jmid), 
+					faktor from JmRoba where JmRobaId=@@detid
+				end "
+		  HEIGHT="3000"
+		  CAPTION="Deaktivirati ?"
+		  CMD1CAPTION="Deaktiviraj"
+		  CMD2CAPTION="Odustani"
+		  FILLEXPLORER=""
+		>
+		<INPUT TYPE="text" CAPTION="_Roba:" NAME="robanaziv" TABINDEX="0"  WIDTH="4500" HEIGHT="320" ENABLED="FALSE"/>
+		<INPUT TYPE="text" CAPTION="_Jedinica mjere:" NAME="jmnaziv" TABINDEX="1"  WIDTH="4500" HEIGHT="320" ENABLED="FALSE"/>
+	</DEAKTIVIRAJFORM>
+
+
+	<IZMJENIFORM
+		WIDTH="5500" 
+		ONSUBMIT="" 
+		ONLOAD="if (select vezanicjenikid from TempPromMPC where TempPromMPCId=@@gridstavkeTempPromMPCId) is not null begin 
+									exec spRaiserror 69001, &apos;Ne možete ispravljati cijenu na veznom cjeniku !&apos;
+				end
+			else begin
+				
+				exec spMPNIvelacijaNG @action=12,@robaid = @@robaid, @datumdok = @@datumdok, @cjenikid  = @@gridstavkecjenikid, @TempPromMPCid = @@gridstavkeTempPromMPCid , @vrcjenikid = @@gridstavkevrcjenikid end"
+		HEIGHT="2500" 
+		CAPTION="Izmjeni cijenu" 
+		FILLEXPLORER=""
+		> 
+
+			<INPUT TYPE="number" NAME="nabcijena" ONLOSTFOCUS="select [dbo].[fnMPKalk] (@@robaid , 2 , @@cijena , @@marza , @@nabcijena) as cijena, 'marza' as focus " CAPTION="Nabavna cijena" TEXT="" WIDTH="1500" HEIGHT="320" TABINDEX="2" DECIMALS="2" />
+			<INPUT TYPE="number" NAME="marza" ONLOSTFOCUS="select [dbo].[fnMPKalk] (@@robaid , 3 , @@cijena , @@marza , @@nabcijena) as cijena, 'cijena' as focus " CAPTION="Marža % " TEXT="" WIDTH="1500" HEIGHT="320" TABINDEX="3" DECIMALS="2" />
+			<INPUT TYPE="number" NAME="cijena" ONLOSTFOCUS="select [dbo].[fnMPKalk] (@@robaid , 1 , @@cijena , @@marza , @@nabcijena) as marza, 'ok' as focus " CAPTION="MP Cijena" TEXT="" WIDTH="1500" HEIGHT="320" TABINDEX="0" DECIMALS="2" />
+
+			<INPUT TOP="5000" TYPE="number" NAME="cjenikid" CAPTION="cjenikid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="0" />
+			<INPUT TOP="5000" TYPE="date" NAME="datumdok" CAPTION="Datum dokumenta:" VALUE="DATE" HEIGHT="320" WIDTH="1500" TABINDEX="-1" CHECKBOX="FALSE" />
+			<INPUT TOP="5000" TYPE="number" NAME="robaid" CAPTION="robaid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+			<INPUT TOP="5000" TYPE="number" NAME="TempPromMPCid" CAPTION="TempPromMPCid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="0" />
+			<INPUT TOP="5000" TYPE="number" NAME="vrcjenikid" ALOWEMPTY ="FALSE" CAPTION="vrcjenikid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="0" />
+
+	  <INPUT TYPE="button" NAME="ok" CAPTION="Spremi " TABINDEX="1" TOP="1500" LEFT="196" WIDTH="1106" HEIGHT="322" ONCLICK="spMPNIvelacijaNG @action=1, @robaid = @@robaid , @TempPromMPCid = @@TempPromMPCid, @cjenikid = @@cjenikid , @datumdok = @@datumdok , @vrcjenikid = @@vrcjenikid , @cijena = @@cijena , @marza = @@marza , @nabcijena  =@@nabcijena#Ok"  />
+	  <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TABINDEX="4" TOP="1500" LEFT="1456" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+
+  </IZMJENIFORM> 
+
+
+</PROJECT>
+ 

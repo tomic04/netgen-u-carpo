@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--27.1.2023. v1.0.0.7. AA uvjetno stari i EUR ispis-->
+<!--24.1.2023. v1.0.0.6. AA EUR ispis-->
+<!--15.10.2021. v1.0.0.5. AA TEMP BUGFIX SUME NA GRUPAMA-->
+<!--3.5.2019.  v1.0.0.4. AA omogućeno retroaktivno kreiranje XML-a-->
+<!--12.3.2019. v1.0.0.3. AA specifična brza verzija s XmlURA.dll i spCKntKnjigaUraXmlKreirajSort.sql-->
+<!--6.2.2019.  v1.0.0.2. AA opcija bez table varijable @NizId i type IdList za sql2000(80)-->
+<root version="1.0.0.7" loglevel="5">
+	<form name="frmMaster" type="master" caption="KNJIGA URA XML">
+		<method name="metXmlGen" dll="XmlURA" class="XmlGen.Create" method="XmlFromCommand"/>
+		<event type="load">
+			<action type="datarun reader" value="~dtDatumZakljucka"/>
+			<action type="variable value" value="$DatumZakljucka">
+				<parameter value="~dtDatumZakljucka.@DatumZakljucka"/>
+			</action>
+			<action type="variable value" value="$DatumPrikaza">
+				<parameter value="~dtDatumZakljucka.@DatumZakljucka"/>
+			</action>
+			<!-- <action type="variable value" value="$IndZakljucka"> -->
+				<!-- <parameter value="1"/> -->
+			<!-- </action>	 -->
+			<action type="variable value" value="$Upozorenje">
+				<parameter value="0"/>
+			</action>			
+		</event>
+		<event type="shown">
+			<!--TEMP BUGFIX SUME NA GRUPAMA-->					
+			<action type="variable value">	
+				<parameter name="IndSume" value="1" type="int"/>				
+			</action>					
+			<action type="control populate" value="#grdGlavni"/>
+			<action type="variable value">	
+				<parameter name="IndSume" value="0" type="int"/>				
+			</action>
+			<!--TEMP BUGFIX SUME NA GRUPAMA-->		
+			<action type="control populate" value="#grdGlavni"/>
+			<action type="form caption" value="KNJIGA URA XML :: Datum zaključka {$DatumZakljucka::dd.MM.yyyy}."/>
+			<action type="datarun reader" value="~dtProvjere"/>
+			<action type="variable value" value="$MaxZakljucak" if="~dtProvjere.@Ind==1">
+				<parameter value="1"/>
+			</action>
+			<action type="variable value" value="$MaxZakljucak" elseif="~dtProvjere.@Ind==-2">
+				<parameter value="0"/>
+			</action>	
+			<!--ako još ne postoji prvi zaključak u 2019.-->
+			<action type="control enable" value="#btnXml" if="$MaxZakljucak==1"/>
+			<action type="control disable" value="#btnXml" elseif="$MaxZakljucak==0"/>		
+		</event>
+		<managerlayout>
+			<grid name="grdGlavni" type="master" autopopulate="false" dataname="~dtGlavni" multiselect="true" bestfitonrefresh="true" savelayout="true" fieldsmartspaces="false" key="KntKnjigaUraId">
+				<fileds inherited="true">
+					<!--inherited kako bi se kroz proceduru moglo lako dodati kolone-->
+				</fileds>
+				<styles>
+					<!--treba li nam crveni redni broj kad ionako se se dodijeli po kreiranju xml-a?-->
+					<!-- <style name="fontcolor" value="red" if="#grdGlavni.@Redni broj==0||#grdGlavni.@Redni broj==null||#grdGlavni.@Redni broj=="/> -->
+					<style name="fontcolor" value="red" if="#grdGlavni.@Upozorenje!="/>					
+					<style name="fontcolor" value="blue" if="#grdGlavni.@BrojDok==OBRAČUN"/>
+					<style name="fontcolor" value="blue" if="#grdGlavni.@BrojDok==OBRAČUN KUMULATIV"/>					
+				</styles>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPrikaz" caption="&amp;DATUM" tooltip="Izbor zaključka knjige ulaznih računa.">
+					<event type="click">
+						<action type="variable value" value="$IndSpremi">
+							<parameter value="0"/>
+						</action>
+						<action type="form open" value="frmDatum">
+							<parameter name="Datum" value="$DatumPrikaza"/>
+						</action>
+						<!--omogućeno kreiranje XML-a za prethodne zaključke-->
+						<!-- <action type="variable value" value="$IndZakljucka" if="$DatumZakljucka==$DatumPrikaza"> -->
+							<!-- <parameter value="1"/> -->
+						<!-- </action> -->
+						<!-- <action type="variable value" value="$IndZakljucka" else=""> -->
+							<!-- <parameter value="0"/> -->
+						<!-- </action> -->
+						<action type="control populate" value="#grdGlavni" if="$IndSpremi==1"/>
+						<action type="form caption" value="KNJIGA URA XML :: Datum zaključka {$DatumPrikaza::dd.MM.yyyy}."/>
+						<!-- <action type="control disable" value="#btnXml" if="$IndZakljucka==0"/> -->
+						<!-- <action type="control enable" value="#btnXml" elseif="$IndZakljucka==1"/> -->
+						<!--ako još ne postoji prvi zaključak u 2019.-->
+						<!-- <action type="control enable" value="#btnXml" if="$MaxZakljucak==1"/> -->
+						<action type="control disable" value="#btnXml" if="$MaxZakljucak==0"/>							
+					</event>
+				</button>
+				<button name="btnKonfigurator" caption="POSTAVKE" tooltip="Izbor knjiga ulaznih računa koje ulaze u elektronsku evidenciju.">
+					<event type="click">
+						<action type="form open" value="frmKonfigurator"/>
+						<!-- <action type="datarun reader" value="~dtDatumZakljucka"/> -->
+						<!-- <action type="variable value" value="$DatumZakljucka"> -->
+							<!-- <parameter value="~dtDatumZakljucka.@DatumZakljucka"/> -->
+						<!-- </action> -->
+						<action type="datarun reader" value="~dtProvjere"/>
+						<action type="variable value" value="$MaxZakljucak" if="~dtProvjere.@Ind==-2">
+							<parameter value="0"/>
+						</action>	
+						<action type="variable value" value="$MaxZakljucak" else="">
+							<parameter value="1"/>
+						</action>							
+						<!--ako još ne postoji prvi zaključak u 2019.-->
+						<action type="control enable" value="#btnXml" if="$MaxZakljucak==1"/>
+						<action type="control disable" value="#btnXml" elseif="$MaxZakljucak==0"/>								
+						<action type="control populate" value="#grdGlavni"/>
+					</event>
+				</button>
+				<button name="btnXml" caption="&amp;XML" tooltip="Dodjela jedinstvenog broja i kreiranje xml datoteke.">
+					<event type="click">
+						<action type="control foreachrow" value="#grdGlavni">
+							<action if="#grdGlavni.@Upozorenje!="> 
+								<action type="variable value" value="$Upozorenje">
+									<parameter value="1"/>
+								</action>
+							</action>
+						</action>	
+						<action type="confirm" value="Postoje neispravni podaci. Jeste li sigurni da želite nastaviti?" if="$Upozorenje==1">
+							<!--dodijeli redni broj-->					
+							<action type="datarun nonquery" value="~dtRedniBroj"/>	
+							<!--osvježi grid-->
+							<action type="control populate" value="#grdGlavni"/>
+							<!--provjera-->
+							<action type="datarun reader" value="~dtProvjere"/>
+							<action type="message" value="Postoje računi bez rednog broja. Nemoguće kreirati xml!" if="~dtProvjere.@Ind==-1"/>
+							<action elseif="~dtProvjere.@Ind==1">
+								<!--kreiraj xml ako svi imaju redni broj-->
+								<action type="method run" value="metXmlGen"> <!--if="$Ispravno==1"-->
+									<parameter name="conn" value="@@connection" />
+									<parameter name="command" value="exec dbo.spCKntKnjigaUraXmlKreirajSort @Action = 1, @DatumZakljucka = '{$DatumZakljucka::yyyyMMdd}', @OperateriId = {@@operateriid}"/>
+									<parameter name="fileName" value="ObrazacURA_{$DatumZakljucka::yyyyMMdd}.xml"/> <!--jednostruki navodnici zbog točke (parsera), skužila da ne treba ako pozivam varijablu-->
+								</action>
+							</action>
+						</action>
+						<action else="">
+							<!--dodijeli redni broj-->					
+							<action type="datarun nonquery" value="~dtRedniBroj"/>	
+							<!--osvježi grid-->
+							<action type="control populate" value="#grdGlavni"/>
+							<!--provjera-->
+							<action type="datarun reader" value="~dtProvjere"/>
+							<action type="message" value="Postoje računi bez rednog broja. Nemoguće kreirati xml!" if="~dtProvjere.@Ind==-1"/>
+							<action elseif="~dtProvjere.@Ind==1">
+								<!--kreiraj xml ako svi imaju redni broj-->
+								<action type="method run" value="metXmlGen"> <!--if="$Ispravno==1"-->
+									<parameter name="conn" value="@@connection" />
+									<parameter name="command" value="exec dbo.spCKntKnjigaUraXmlKreirajSort @Action = 1, @DatumZakljucka = '{$DatumZakljucka::yyyyMMdd}', @OperateriId = {@@operateriid}"/>
+									<parameter name="fileName" value="ObrazacURA_{$DatumZakljucka::yyyyMMdd}.xml"/> <!--jednostruki navodnici zbog točke (parsera), skužila da ne treba ako pozivam varijablu-->
+								</action>
+							</action>							
+						</action>						
+					</event>
+				</button>
+				<button name="btnIspisi" caption="&amp;ISPIS" tooltip="Ispis računa koji ulaze u elektronsku evidenciju.">				
+					<event type="click">
+						<action type="print" value="repx:rptKnjigaUraXmlEur" if="$DatumPrikaza&gt;'01.01.2023 0:00:00'">
+							<parameter name="DatumZakljucka" value="$DatumPrikaza"/>				
+						</action>					
+						<action type="print" value="repx:rptKnjigaUraXml" else="">
+							<parameter name="DatumZakljucka" value="$DatumPrikaza"/>				
+						</action>												
+					</event>					
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDatumZakljucka" command="spCKntKnjigaUraXmlPomoc">
+				<parameter name="@Action" value="0"/>
+			</data>	
+			<data name="dtGlavni" command="spCKntKnjigaUraXmlPrikaz">
+				<parameter name="@Action" value="3" if="$Indsume==1"/>
+				<parameter name="@Action" value="1" else=""/>
+				<parameter name="@DatumZakljucka" value="$DatumZakljucka"/>
+			</data>					
+			<!-- <data name="dtGlavni" command="spCKntKnjigaUraXmlPrikaz" if="$IndZakljucka==1"> -->
+				<!-- <parameter name="@Action" value="1"/> -->
+				<!-- <parameter name="@DatumZakljucka" value="$DatumZakljucka"/> -->
+			<!-- </data> -->
+			<!-- <data name="dtGlavni" command="spCKntKnjigaUraXmlPrikaz" if="$IndZakljucka==0"> -->
+				<!-- <parameter name="@Action" value="1"/> -->
+				<!-- <parameter name="@DatumZakljucka" value="$DatumPrikaza"/> -->
+			<!-- </data>			 -->
+			<data name="dtRedniBroj" command="spCKntKnjigaUraXmlPrikaz">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@DatumZakljucka" value="$DatumZakljucka"/>
+			</data>
+			<data name="dtProvjere" command="spCKntKnjigaUraXmlPomoc">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@DatumZakljucka" value="$DatumZakljucka"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDatum" caption="Izbor datuma za prikaz zaključka" width="500" height="100">
+		<event type="shown">
+			<action type="control value" value="#cmbDatum">
+				<parameter value="$Datum"/>
+			</action>			
+		</event>
+		<layout>
+			<group cols="2" rows="1" groupbordervisible="false">
+				<columnsdefinition>
+					<column size="200" position="1"/>
+				</columnsdefinition>
+				<item col="1" row="1" caption="Datum:" textposition="left">
+					<comboedit name="cmbDatum" dataname="~dtCmbDatum" autopopulate="true" valuefield="Id" displayfield="DatumZakljucka" tabindex="1">
+						
+					</comboedit>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUredu" caption="PRIKAŽI" tabindex="2">
+					<event type="click">
+						<action type="variable value" value="parent.$DatumPrikaza">
+							<parameter value="#cmbDatum" type="date"/>
+						</action>
+						<action type="variable value" value="parent.$DatumZakljucka">
+							<parameter value="#cmbDatum" type="date"/>
+						</action>						
+						<action type="variable value" value="parent.$IndSpremi">
+							<parameter value="1"/>
+						</action>						
+						<action type="form close"/>	
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" tabindex="3">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtCmbDatum" command="spCKntKnjigaUraXmlPomoc">
+				<parameter name="@Action" value="1"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmKonfigurator" width="300" height="500" caption="Izbor knjiga ulaznih računa" saveformsize="true">
+		<event type="shown">
+			<action type="datarun reader" value="~dtKnjigeZaObracun"/>
+			<action type="control populate" value="#grdKonfigurator"/>
+			<action type="control selectedrows" value="#grdKonfigurator">
+				<parameter value="~dtKnjigeZaObracun.@NizId"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="1">
+				<item col="1" row="1" groupbordervisible="true">
+					<grid name="grdKonfigurator" bestfitonrefresh="true" autopopulate="false" dataname="~dtKonfigurator" key="KntVrsteKnjigaUraId" showcheckboxes="true" showautofilterrow="false" showgrouppanel="false">
+						<fields>
+							<field name="NazivKnjige" caption="NAZIV KNJIGE"/>
+							<field name="PDV" caption="PDV"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI" tabindex="2">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtKnjigeZaObracunAzur"/>
+						<action type="form close"/>	
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" tabindex="3">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtKonfigurator" command="spCKntKnjigaUraXmlPomoc">
+				<parameter name="@Action" value="4"/>
+			</data>
+			<data name="dtKnjigeZaObracun" command="spCKntKnjigaUraXmlPomoc">
+				<parameter name="@Action" value="5"/>
+			</data>	
+			<data name="dtKnjigeZaObracunAzur" command="spCKntKnjigaUraXmlPomoc">
+				<parameter name="@Action" value="6"/>
+				<!-- <parameter name="@NizId" value="#grdKonfigurator.selectedids.table"/>  -->
+				<!--sql2000(80)-->
+				<parameter name="@NizId" value="#grdKonfigurator.selectedids"/>
+			</data>					
+		</datalist>
+	</form>
+</root>

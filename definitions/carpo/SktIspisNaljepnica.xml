@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root version="1.1">
+	<form name="frmMaster" type="master" caption="Ispis naljepnica">
+		<event type="init">	
+		</event>
+		<event type="load">
+			<action type="variable value">
+				<parameter name="Indzaplavljeno" value="$indZaplavljeno" />
+			</action>
+		</event>
+		<event type="onshown">
+			<action type="control populate" value="#grdGlava"></action>
+		</event>
+		<managerlayout>
+			<grid name="grdGlava" type="master" editdirection="vertical" key="RobaNaljepniceId" autopopulate="false" showgroupsum="false" dataname="dtGridGlava" savelayout="true" valuechangeonscroll="false" multiselect="true">
+				<event type="focusedrowchanged">
+					<action type="control enable" value="#btnIspisi" if="#grdGlava.rowcount!=0" />
+					<action type="control disable" value="#btnIspisi" else="" />
+				</event>
+				<fields>
+					<field name="Sifra" caption="Šifra" />
+					<field name="Roba" caption="Roba" />							
+					<field name="Kolicina" caption="Količina" editable="true" format="n3"/>
+					<field name="JM" caption="JM" />	
+					<field name="MPCijena" caption="MPC" />	
+					<field name="Klasa" caption="Klasa robe" />
+					<field name="Barcode" caption="Barkod" />
+					<field name="KontingentBroj" caption="Kontingent"/>					
+				</fields>		
+				<event type="cellvaluechanged">
+					<action type="datarun nonquery" value="~dtEditGrid"/> 
+					<action type="control populate keepfocus" value="#grdGlava"/> 
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>		
+			<buttons>
+				<button name="btnDohvati" caption="Dohvati stavke">
+					<event type="click">
+						<action type="form open" value="frmDohvati" />
+						<action type="control populate" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="btnIspisi" caption="Ispiši" >
+					<event type="click" >
+						<action type="form open" value="frmIspisi" >
+							<!-- <parameter name="SelectedIds" value="#grdGlava.selectedids" type="string" /> -->
+						</action>
+					</event>
+				</button>		
+			</buttons>
+		</panelbuttons>		
+		<datalist>
+			<data command="spRobaNaljepnice_Query" name="dtGridGlava" >
+				<parameter name="@OperateriId" value="@@OperateriId" />
+				<parameter name="@Ind_Dohvati" value="0" />
+			</data>
+			<data command="spProd_GradUgovori_EditGrid" name="dtEditGrid">
+				<parameter name="@vrijednost" value="#grdGlava.focusedvalue" />
+				<parameter name="@kolona" value="#grdGlava.focusedfield" />
+				<parameter name="@tablica" value="RobaNaljepnice" type="string"/>
+				<parameter name="@id" value="#grdGlava.@RobaNaljepniceId" />			
+			</data>		
+		</datalist>
+	</form>
+	<form name="frmDohvati" caption="Dohvat stavaka" >
+		<event type="init">
+			<action type="datarun reader" value="Global.dtDatumi"/>
+			<action type="datarun reader" value="Global.dtPopisSkladista"/>
+			<action type="variable value">
+				<parameter name="KomStSkl_Period" value="~dtDatumi.@KomStSkl_Period" type="int" />
+			</action>
+			<action type="variable value">
+				<parameter name="KomStSkl_OznaciPolja" value="~dtDatumi.@KomStSkl_OznaciPolja" type="int" />
+			</action>			
+			<action type="variable value">
+				<parameter name="Global.KomStSkl_Order" value="~dtDatumi.@KomStSkl_Order" type="int" />
+			</action>			
+			<action type="variable value">
+				<parameter name="Ind_Datumi" value="0" type="int" />
+			</action>		
+		</event>
+		<event type="onload">
+		 	<action type="control disable" value="#btnRazdoblje"/>
+			<action type="control populate" value="#cmbKlasa"/>
+			<action type="control value" value="#chkDatumi" if="$KomStSkl_Period==1">
+				<parameter value="true"/>
+			</action>	
+			<action type="control value" value="#chkDatumi" else="">
+				<parameter value="false" />
+			</action>
+			<action type="control value" value="#chkKlasa" if="$KomStSkl_OznaciPolja==1">
+				<parameter value="true"/>
+			</action>	
+			<action type="control value" value="#chkKlasa" else="">
+				<parameter value="false" />
+			</action>	
+			<action type="control enable" value="#datDatumOd,#datDatumDo" if="#chkDatumi==true"/>
+			<action type="control disable" value="#datDatumOd,#datDatumDo" if="#chkDatumi==false"/>	
+			<action type="control enable" value="#cmbKlasa,#chkKlasaIspod,#lblKlasa" if="$KomStSkl_OznaciPolja==1"/>
+			<action type="control disable" value="#cmbKlasa,#chkKlasaIspod,#lblKlasa" else=""/>				
+			<action type="control value" value="#datDatumOd">
+				<parameter value="~dtDatumi.@DatumOd"/>
+			</action>
+			<action type="control value" value="#datDatumDo">
+				<parameter value="~dtDatumi.@DatumDo"/>
+			</action>	
+			<action type="control value" value="#cmbSkladiste">
+				<parameter value="~dtPopisSkladista.@Skladista"/>
+			</action>			
+		</event>		
+		<layout textposition="top" itemspadding="3">
+			<group cols="1" rows="6" col="1" row="1">
+				<item caption="Skladište:" row="1" col="1" textalignmode="left">
+					<combomultiedit name="cmbSkladiste" valuefield="SkladisteId" displayfield="Opis" dataname="Global.dtSkladiste" showmultiselecttext="true"/>
+				</item>	
+                <item caption="Roba:" textvisible="" row="2" col="1" fontsizedelta="1" textalignmode="left">
+					<searchedit netgenfields="true" name="srcRoba" fontbold="false" dataname="Global.dtRoba" fieldtext="NazivId" fieldvalue="robaid" entermovenextcontrol="false">					
+					</searchedit>
+				</item>
+				<group col="1" row="3" cols="6" rows="1" groupbordervisible="false">
+			        <columnsdefinition>
+						<column size="30" position="1" />
+                        <column size="78" position="2" />
+                        <column size="95" position="3" />
+						<column size="30" position="4" />
+						<column size="95" position="5" />
+						<column size="70" position="6" />
+                    </columnsdefinition>
+					<rowsdefinition>
+						<row size="30" position="1" />
+					</rowsdefinition>
+					<item caption="" row="1" col="1" textalignmode="" highlight="false" >
+						<checkedit name="chkDatumi" >
+							<event type="checkedchanged">
+								<action type="control enable" value="#datDatumOd,#datDatumDo,#btnRazdoblje" if="#chkDatumi==true"/>
+								<action type="control disable" value="#datDatumOd,#datDatumDo,#btnRazdoblje" if="#chkDatumi==false"/>	
+								<action type="variable value">
+									<parameter name="Ind_Datumi" value="1" type="int" />
+								</action>
+								<action type="datarun reader" value="Global.dtDatumi"/>							
+								<action type="control value" value="#datDatumOd">
+									<parameter value="~dtDatumi.@DatumOd"/>
+								</action>
+								<action type="control value" value="#datDatumDo">
+									<parameter value="~dtDatumi.@DatumDo"/>
+								</action>							
+							</event>					
+						</checkedit>					
+					</item>
+					<item caption="Od:" row="1" col="2" highlight="false" >
+						<labeledit caption="" value=" " name="lblOd" enabled="false" />
+					</item>						
+					 <item caption="" row="1" col="3" textalignmode="left" textposition="left">
+						<dateedit name="datDatumOd" value="now" enabled="false">
+							<event type="leave">
+								<action type="datarun scalar" value="Global.dtProvjeriDatume">
+									<parameter name="GodinaRazlika"/>
+								</action>
+								<action type="control disable" value="#btnPrihvati" if="$GodinaRazlika==1"/>									
+								<action type="control enable" value="#btnPrihvati" else=""/>
+							</event>
+						</dateedit>
+					</item>	
+					<item caption="Do:" row="1" col="4" highlight="false" >
+						<labeledit caption="" value=" " name="lblDo" enabled="false" />
+					</item>	
+					 <item caption="" row="1" col="5" textalignmode="left" textposition="left">
+						<dateedit name="datDatumDo" value="now" enabled="false">	
+							<event type="leave">
+								<action type="datarun scalar" value="Global.dtProvjeriDatume">
+									<parameter name="GodinaRazlika"/>
+								</action>
+								<action type="control disable" value="#btnPrihvati" if="$GodinaRazlika==1"/>									
+								<action type="control enable" value="#btnPrihvati" else=""/>
+								<action type="message" value="Odabrani datumi moraju biti iz iste godine" if="$GodinaRazlika==1"/>									
+							</event>						
+						</dateedit>
+					</item>
+					<item caption="" row="1" col="6" textalignmode="left">
+						<part name="prtBtnRazdoblje" path="prtBtnRazdoblje.xml"/>	
+					</item>						
+				</group>
+				<group col="1" row="4" cols="4" rows="1" groupbordervisible="false">
+			        <columnsdefinition>
+						<column size="30" position="1" />
+                        <column size="78" position="2" />
+                        <column size="220" position="3" />
+						<column size="80" position="4" />
+                    </columnsdefinition>
+					<rowsdefinition>
+						<row size="30" position="1" />
+					</rowsdefinition>
+					<item caption="" row="1" col="1" textalignmode="" highlight="false" >
+						<checkedit name="chkKlasa" >
+							<event type="checkedchanged">
+								<action type="control enable" value="#cmbKlasa,#chkKlasaIspod,#lblKlasa" if="#chkKlasa==true"/>
+								<action type="control disable" value="#cmbKlasa,#chkKlasaIspod,#lblKlasa" if="#chkKlasa==false"/>					
+							</event>						
+						</checkedit>
+					</item>					
+					<item caption="Klasa:" row="1" col="2" highlight="false" >
+						<labeledit caption="" value=" " name="lblKlasa" enabled="false" />
+					</item>					
+					<item caption="" row="1" col="3" textalignmode="left" textposition="left">
+						<combomultiedit name="cmbKlasa" valuefield="KlMasterRobaId" displayfield="Naziv" dataname="Global.dtKlMasterRoba" enabled="false"/>
+					</item>
+					<item caption="" row="1" col="4" highlight="false" >
+						<checkedit caption="i ispod" name="chkKlasaIspod" enabled="false" />
+					</item>
+				</group>			
+				<group col="1" row="5" cols="1" rows="1" groupbordervisible="false" > 				
+					<item caption="" row="1" col="1" highlight="false">
+						<checkedit caption="    Grupiraj po kontingentu" name="chkKontingent"/>
+					</item>			
+				</group>	
+				<group col="1" row="6" cols="2" rows="1" groupbordervisible="false" > 				
+					<item caption="" row="1" col="1" highlight="false">
+						<radioedit name="rdoIndZaplavljeno" caption="Ispiši zaplavljene stavke" value="true">
+
+						</radioedit>
+					</item>		
+					<item caption="" row="1" col="2" highlight="false">
+						<radioedit name="rdoIndZaplavljenoNe" caption="Ispiši označene stavke">
+						</radioedit>
+					</item>		
+				</group>				
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPrihvati" caption="Prihvati">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="~dtDohvati"/>	
+						<action type="variable value" value="parent.$indZaplavljeno">
+							<parameter value="1"/>
+						</action>					
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spDatumi" name="dtDajDatum">	
+				<parameter name="@action" value="$varDatAction" />	
+			</data>			
+			<data command="spRobaNaljepnice_Query" name="dtDohvati" timeout="120">
+				<parameter name="@OperateriId" value="@@OperateriId" />
+				<parameter name="@Ind_Dohvati" value="1" />				
+				<parameter name="@robaid" value="#srcRoba" type="int"/>
+				<parameter name="@jm_ind" value="0"/>
+				<parameter name="@kontingenti_groupby" value="1" type="int" if="#chkKontingent==true"/>
+				<parameter name="@datumod" value="#datDatumOd" if="#chkDatumi==true"/>
+				<parameter name="@datumdo" value="#datDatumDo" if="#chkDatumi==true"/>
+				<parameter name="@strskl" value="#cmbSkladiste" type="string"/>
+				<parameter name="@klase_ispod" value="1" type="int" if="#chkKlasaIspod==true"/>
+				<parameter name="@niz_klasa" value="#cmbKlasa" type="string" if="#chkKlasa==true"/>				
+			</data>		
+		</datalist>		
+	</form>	
+	<form name="frmIspisi" caption="Ispis naljepnica" >
+		<event type="onshown">
+			<action type="control enable" value="#txtKolicina" if="#rdoKolJedan==true" >
+				<action type="control focus" value="#txtKolicina"></action>
+			</action>
+		</event>	
+		<layout textposition="top" itemspadding="3">		
+			<group cols="1" rows="4" col="1" row="1">		
+				<item caption="Ispis:" row="1" col="1" textalignmode="left">
+					<comboedit name="cmbRepx" valuefield="Ispis" displayfield="Naziv" dataname="Global.dtRepx" required="true" allownull="false"/>
+				</item>
+				<group cols="2" rows="1" col="1" row="2" caption="Prikaži:">
+					<item caption="" row="1" col="1" textalignmode="left">
+						<radioedit name="rdoMPC" caption="MP cijenu" value="true" groupindex="1" savevalue="app"/>
+					</item>	
+					<item caption="" row="1" col="2" textalignmode="left">	
+						<radioedit name="rdoVPC" caption="VP cijenu" groupindex="1" savevalue="app"/>
+					</item>
+				</group>
+				<group cols="4" rows="1" col="1" row="3" caption="Broj naljepnica:">
+					<rowsdefinition>
+						<row size="30" position="1" />
+					</rowsdefinition>					
+					<item caption="" row="1" col="1" textalignmode="left">
+						<radioedit name="rdoKolGrid" caption="količina iz grida" value="true" groupindex="2" savevalue="app"/>
+					</item>	
+					<item caption="" row="1" col="2" textalignmode="left">	
+						<radioedit name="rdoKolJedan" caption="po" groupindex="2" savevalue="app">
+                            <event type="checkedchanged">
+                                <action type="control enable" value="#txtKolicina" if="#rdoKolJedan==true" >
+                                    <action type="control focus" value="#txtKolicina"></action>
+                                </action>
+                                <action type="control disable" value="#txtKolicina" else="#rdoKolJedan==false" >
+                                    <action type="control value" value="#txtKolicina">
+                                        <parameter value="1"/>
+                                    </action>
+                                </action>
+                            </event>							
+						</radioedit>
+					</item>
+					<item caption="" row="1" col="3" textalignmode="left" >	
+						<textedit name="txtKolicina" value="1" format="n0" enabled="false" savevalue="app"/>
+					</item>
+					<item caption="kom" row="1" col="4" textalignmode="left">	
+						<lbledit name="lblKomad" value=""/>
+					</item>					
+				</group>				
+				<group cols="1" rows="4" col="1" row="4" caption="Dodatno">
+					<item caption="Tekst 1" row="1" col="1" textalignmode="auto">
+						<textedit name="txtTekst1" value="" format="string" />
+					</item>
+					<item caption="Tekst 2" row="2" col="1" textalignmode="auto">
+						<textedit name="txtTekst2" value="" format="string" />
+					</item>	
+					<item caption="Tekst 3" row="3" col="1" textalignmode="auto">
+						<textedit name="txtTekst3" value="" format="string" />
+					</item>	
+					<item caption="Tekst 4" row="4" col="1" textalignmode="auto">
+						<textedit name="txtTekst4" value="" format="string" />
+					</item>
+				</group>					
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnIspis" caption="Ispiši">
+					<event type="click">
+						<action type="validate"/>
+						<action type="variable value">
+							<parameter name="Predlozak" value="#cmbRepx.@Predlozak" />
+						</action>
+						<action type="datarun nonquery" value="Global.dtOznaciStavke"/>
+						<action type="print" value="$Predlozak">
+							<parameter name="operateriid" value="@@OperateriId" type="int"/>
+							<parameter name="ind_cijena" value="MPC" if="#rdoMPC==true" type="string"/>
+							<parameter name="ind_cijena" value="VPC" if="#rdoVPC==true" type="string"/>
+							<parameter name="tekst1" value="#txtTekst1" type="string" if="#txtTekst1!=null"/>
+							<parameter name="tekst1" value="1" type="string" if="#txtTekst1=null"/>
+							<parameter name="tekst2" value="#txtTekst2" type="string" if="#txtTekst2!=null"/>
+							<parameter name="tekst2" value="1" type="string" if="#txtTekst1=null"/>
+							<parameter name="tekst3" value="#txtTekst3" type="string" />
+							<parameter name="tekst4" value="#txtTekst4" type="string"/>
+							<parameter name="kol_jedan" value="0" if="#rdoKolGrid==true" type="int"/>
+							<parameter name="kol_jedan" value="#txtKolicina" if="#rdoKolJedan==true" type="int"/>				
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>		
+	</form>	
+	<datalist>
+		<data command="spTraziRoba" name="dtRoba">
+			<parameter name="@action" value="Roba"/>		
+			<parameter name="@Uvjet" value="#srcRoba.text"/>
+			<parameter name="@PokaziVPCijene" value="0"/>
+			<parameter name="@PokaziNabCijene" value="0"/>
+			<parameter name="@Retired" value="0"/>
+			<parameter name="@Prikazi_Dodatno" value="0"/>
+			<parameter name="@PokaziStanje" value="0"/>
+		</data>			
+		<data command="spNG_Combo" name="dtKlMasterRoba">
+			<parameter name="@Action" value="KlMasterRoba"/>
+		</data>	
+		<data command="spNG_Combo" name="dtRepx">
+			<parameter name="@Action" value="RptNaljepnice"/>
+			<parameter name="@Oznaka" value="RobaNaljepnice"/>
+		</data>		
+		<data command="spNG_Combo" name="dtSkladiste">
+			<parameter name="@Action" value="skladiste"/>
+			<parameter name="@Ind" value="1"/>
+			<parameter name="@Oznaka" value="viSkladistaPravaIzvjestaji"/>			
+		</data>	
+		<data command="spNG_Combo" name="dtPopisSkladista">
+			<parameter name="@Action" value="PopisSkladista"/>
+			<parameter name="@Oznaka" value="viSkladistaPravaIzvjestaji"/>			
+		</data>				
+		<data command="spKomercStanjeSklad_ComboKolicine" name="dtDatumi">
+			<parameter name="@Action" value="datumi" type="string"/>
+			<parameter name="@Ind" value="$Ind_Datumi" type="int"/>
+			<parameter name="@Check" value="0" type="int" if="#chkDatumi==false"/>
+			<parameter name="@Check" value="1" type="int" else=""/>
+		</data>			
+		<data command="select case when year(@datumod) != year(@datumdo) then 1 else 0 end as GodinaRazlika" type="text" name="dtProvjeriDatume">
+			<parameter name="@datumod" value="#datDatumOd"/>
+			<parameter name="@datumdo" value="#datDatumDo"/>
+		</data>
+		<data command="spDajPopisSkladista" name="dtOznacenaSkladista">
+			<parameter name="@niz" value="#cmbSkladiste" type="string"/>
+		</data>
+		<data command="spRobaNaljepnice_OznaciZaIspis" name="dtOznaciStavke">
+			<parameter name="@niz" value="parent.#grdGlava.selectedids.table"/>
+		</data>			
+	</datalist>		
+</root>

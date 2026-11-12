@@ -1,0 +1,124 @@
+﻿<root>
+  <form type="master" caption="eOtpremnice import">
+    <method name="ERacImportDll" method="CarpoStart" class="MojERacunImportXml.Start" dll="MojERacunImportXml"/>
+    <method name="Response" method="CarpoResponse" class="MojERacun.Start" dll="MojERacun"/>
+    <method name="OpenInvoicePdf" method="CarpoInvoicePdf" class="MojERacun.Start" dll="MojERacun"/>
+    <managerlayout>
+      <tree name="tree" autopopulate="true" dataname="~dtTree" caption="Vremenska podjela">
+        <fields>
+          <field name="Name"/>
+        </fields>
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdMaster"/>
+        </event>
+      </tree>
+      <grid name="grdMaster" type="master" dataname="~dtGridMaster" bestfitonrefresh="true" keyfield="EDI_OtpUlazGlaId">
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdDetail"/>
+        </event>
+        <event type="doubleclick">
+          <action type="method run" value="OpenInvoicePdf">
+          </action>
+        </event>
+        <fields>
+          <field name="Sender_CompanyID" caption="Sender_CompanyID"/>
+          <field name="Sender_ElectronicMail" caption="Sender_ElectronicMail"/>
+          <field name="Recipient_CompanyID" caption="Recipient_CompanyID"/>
+          <field name="Recipient_ElectronicMail" caption="Recipient_ElectronicMail"/>
+          <field name="Despatch_ID" caption="Despatch_ID"/>
+          <field name="Despatch_IssueDate" caption="Despatch_IssueDate"/>
+          <field name="Supplier_RegistrationName" caption="Supplier_RegistrationName"/>
+          <field name="Supplier_CompanyID" caption="Supplier_CompanyID"/>
+          <field name="Customer_RegistrationName" caption="Customer_RegistrationName"/>
+          <field name="Customer_CompanyID" caption="Customer_CompanyID"/>
+        </fields>
+      </grid>
+      <grid name="grdDetail" dataname="~dtGridDetail" bestfitonrefresh="true" >
+        <fields>
+          <field name="DespatchLine_ID" caption="DespatchLine_ID"/>
+          <field name="DeliveredQuantity" caption="DeliveredQuantity"/>
+          <field name="DeliveredQuantity_UnitCode" caption="DeliveredQuantity_UnitCode"/>
+          <field name="DespatchLine_LineID" caption="DespatchLine_LineID"/>
+          <field name="Description" caption="Description"/>
+          <field name="Name" caption="Name"/>
+          <field name="SellersItemIdentification_ID" caption="SellersItemIdentification_ID"/>
+          <field name="AdditionalItemIdentification_ID" caption="AdditionalItemIdentification_ID"/>
+          <field name="AdditionalItemIdentification_ID_SchemeID" caption="AdditionalItemIdentification_ID_SchemeID"/>
+        </fields>
+      </grid>
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <button caption="UVEZI" name="btnImport">
+          <dropdownitem caption="Sa web servisa">
+            <event type="click">
+              <action type="method run" value="ERacImportDll">
+                <parameter name="cs" value="@@connection"/>
+                <parameter name="operateriId" value="@@operateriid"/>
+                <parameter name="parameter" value="web"/>
+                <parameter name="vrstaPromSifra" value="09"/>
+              </action>
+              <action type="control populate" value="#grdMaster"/>
+            </event>
+          </dropdownitem>
+          <dropdownitem caption="Pretraži sistem">
+            <event type="click">
+              <action type="method run" value="ERacImportDll">
+                <parameter name="cs" value="@@connection"/>
+                <parameter name="operateriId" value="@@operateriid"/>
+                <parameter name="parameter" value="sys"/>
+              </action>
+              <action type="control populate" value="#grdMaster"/>
+            </event>
+          </dropdownitem>
+        </button>
+        <button caption="PRIVITCI" name="btnAttachment">
+          <event type="click">
+            <action type="method run" value="ERacImportDll">
+              <parameter name="cs" value="@@connection"/>
+              <parameter name="operateriId" value="@@operateriid"/>
+              <parameter name="parameter" value="prew"/>
+              <parameter name="id" type="string" value="#grdMaster.selectedids"/>
+              <parameter name="vrstaPromSifra" value="09"/>
+            </action>
+          </event>
+        </button>
+        <button caption="OBRIŠI" name="btnDelete">
+          <event type="click">
+            <menuitem control="#grdMaster" />
+            <action type="confirm" value="Želite li obrisati označenu stavku?"/>
+            <action type="datarun nonquery" value="~dtDelete" />
+            <action type="control populate" value="#grdMaster" />
+            <action type="control populate" value="#grdDetail" />
+          </event>
+        </button>
+        <button caption="ODGOVORI" name="btnResponse" begingroup="true">
+          <event type="click">
+            <action type="message" value="Zbog dorada na servisu Moj-eRačun trenutno nije moguće odgovoriti na eDokument!"/>
+            <!-- <action type="method run" value="Response">
+              <parameter name="cs" value="@@connection" />
+              <parameter name="operateriId" value="@@operateriid"/>
+              <parameter name="id" value="#grdMaster.selectedids"/>
+            </action> -->
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data name="dtGridMaster" command="spEDI_OtpUlaz">
+        <parameter name="@action" value="masterGrid"/>
+        <parameter name="@DatumOd" value="#tree.@DatumOd"/>
+        <parameter name="@DatumDo" value="#tree.@DatumDo"/>
+      </data>
+      <data name="dtTree" type="integrated" command="VremenskaPodjela"/>
+      <data name="dtGridDetail" command="spEDI_OtpUlaz">
+        <parameter name="@action" value="detailGrid"/>
+        <parameter name="@EDI_OtpUlazGlaId" value="#grdMaster.@EDI_OtpUlazGlaId"/>
+      </data>
+      <data name="dtDelete" command="spEDI_OtpUlaz">
+        <parameter name="@action" value="delete"/>
+        <parameter name="@EDI_OtpUlazGlaId" value="#grdMaster.@EDI_OtpUlazGlaId"/>
+      </data>
+    </datalist>
+  </form>
+</root>

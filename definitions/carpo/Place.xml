@@ -1,0 +1,299 @@
+﻿<!--
+1.0.0.13. u partove dodan parametar @datoteka=Place
+1.0.0.12. dodan meni na drvo za Donos iz dnevne evidencije (DneEv) i doznaka (stora spKOD_Donos_Sve)...frmDonosDneEv,frmDonosDoznake
+1.0.0.12. dodan meni na drvo za Donos iz pomoćne evidencije, riješeno disable/enable za pomoćnu evidenciju i akontaciju i mnuBrisiKadrove
+1.0.0.11. dodan TAB Godišnji odmor - HD Žito 53207
+1.0.0.10. dodan meni na drvo za Donos iz pomoćne evidencije, riješeno disable/enable za pomoćnu evidenciju i akontaciju i mnuBrisiKadrove
+1.0.0.9. dodan frmDonosAkontacije
+1.0.0.8. dodan frmDonosPomEvid
+1.0.0.7. dodan frmDonosDnePla
+
+  <form name="frmDonosDnePla"  path="frmDonosDnePla.xml"/>
+
+1.0.0.6. dodan partsql za master doubleclcik 
+        <partsql name="master_doubleclick" dataname="~dtPartMasterDoubleClick" ></partsql>
+
+1.0.0.5. dodan frmStavkeNaObradi 
+  <form name="frmStavkeNaObradi"  path="frmStavkeNaObradi.xml"/>
+
+1.0.0.4. dodan poziv 
+  <form name="frmPregledJOPPD"  path="frmPregledJOPPD.xml"/>
+  <form name="frmPregledVirman"  path="frmPregledVirman.xml"/>
+
+1.0.0.3. dodan poziv frmKorekcija
+         keydown stavio na formu da dobijem skrivene postavke uvijek (ooppubvars, placepostavke)          
+ -->
+<!--1.0.0.2. dodan poziv frmKopiranjeKadroviStavke-->
+<root version="1.0.0.13">
+  <form name="frmMaster" type="master" caption="Plaće">
+
+    <event type="init">
+      <action type="variable value">
+        <parameter name="Click" value="" type="string"/>
+      </action>
+      <action type="variable value">
+        <parameter name="drvoFokusId" value="" type="string"/>
+      </action>
+      <action type="variable value">
+        <parameter name="filterFokus" value="" type="string"/>
+      </action>
+
+    </event>
+
+    <event type="shown">
+      <action type="control focus" value="#tree">
+        <parameter value="$drvoFokusId"/>
+      </action>
+    </event>
+
+    <event type="keydown">
+      <!--INSERT KEY 45, zvjezdica key = 106-->
+      <action if="key==control+106">
+        <!--106 = *-->
+        <!--<action type="message" value="Skrivena forma!"/>-->
+        <action type="form open" value="frmOOPPubVars" >
+          <parameter name="Caption" value="OOPPubvars"/>
+          <parameter name="OperateriId"  value="@@OperateriId" />
+          <parameter name="datoteka"  value="Place" />
+        </action>
+      </action>
+      <!--delete KEY 46, minus key = 109-->
+      <action if="key==control+109">
+
+        <!--109 = - -->
+        <!--<action type="message" value="Skrivena forma!"/>-->
+        <action type="form open" value="frmPlacePostavke" >
+          <parameter name="Caption" value="Postavke granule"/>
+          <parameter name="OperateriId"  value="@@OperateriId" />
+        </action>
+      </action>
+    </event>
+
+
+
+    <managerlayout>
+      <!--filter drveta-->
+      <lookup name="filter" >
+        <comboitem value="Otvorene" />
+        <comboitem value="Zatvorene" />
+        <comboitem value="Sve" />
+        <event type="valuechanged">
+          <action type="variable value">
+            <parameter name="global.filter" value="#filter" />
+          </action>
+
+        </event>
+      </lookup>
+
+      <!--*****stablo*****-->
+      <tree name="tree"  key="value"  filtermode="smart" dataname="dtTree" expandfirst="true">
+
+        <!--na promjenu noda disable/enable meni i refresh master grida-->
+        <event type="focusedrowchanged">
+          <action type="menu disable" value="#mnuBrisanjeObrade,#mnuDodajKadrove, #mnuKopirajKadrove3,#mnuBrisanjePomEvid1,#mnuDonosPomEvid1" if="#tree.@status==1"></action>
+          <action type="menu enable" value="#mnuBrisanjeObrade,#mnuDodajKadrove, #mnuKopirajKadrove3,#mnuBrisanjePomEvid1,#mnuDonosPomEvid1" else="#tree.@status==0"></action>
+
+          <action type="control populate" value="#grdPlace"/>
+
+          <action type="variable value" value="global.OOPObradeId">
+            <parameter value="#tree.@value" type="int"/>
+          </action>
+          <action type="variable value" value="global.OznakaObrade">
+            <parameter value="#tree.@Oznaka" type="string"/>
+          </action>
+
+          <action type="variable value" value="global.Oznaka">
+            <parameter value="#tree.@Oznaka2" type="string"/>
+          </action>
+			
+          <action type="control enable" value="#btnObracun, #btnDonosDnevnaEvidencija,#btnDonosDoznake,#btnStavkeNaObradi" if="#tree.@status==0"></action>
+          <action type="control disable" value="#btnObracun, #btnDonosDnevnaEvidencija,#btnDonosDoznake,#btnStavkeNaObradi" else=""></action>
+
+        </event>
+        <fields>
+          <field name="Naziv" />
+        </fields>
+        <!--desni klik za brisanje-->
+        <!--<part name="Meni_drvo" path="prtPlace.xml"/>-->
+        <partsql name="drvo_meni" dataname="~dtPartDrvoMeni" ></partsql>
+      </tree>
+
+      <!--Grid Glava-->
+      <grid  name="grdPlace" key="OOPObradeGlaId" type="master" async="true" dataname="dtMaster" preventfocusgroup="false" fieldsmartspaces="false"  bestfitonrefresh="true" multiselect="true" savelayout="true" >
+        <fields inherited="true">
+          <!--<field name="Rbr." fixed="true"/>-->
+          <field name="CarpoRowNumberColumn" fixed="true" caption="Rbr"/>
+          <field name="Oznaka-RBR" fixed="true"/>
+          <field name="Djelatnik" fixed="true"/>
+          <field name="Šifra" fixed="true"/>
+          <field name="OIB" fixed="true"/>
+        </fields>
+
+        <!--desni klik za brisanje-->
+        <partsql name="master_meni" dataname="~dtPartMasterMeni" ></partsql>
+
+        <!--double klik na gridu-->
+        <partsql name="master_doubleclick" dataname="~dtPartMasterDoubleClick" ></partsql>
+
+
+        <event type="focusedrowchanged">
+          
+          <action type="control populate" value="#grdObradeDet"/>
+          <action type="control populate" value="#grdOpciPodaci"/>
+          <action type="control populate" value="#grdObustave"/>
+          <action type="control populate" value="#grdDoznake"/>
+          <action type="control populate" value="#grdArhiva"/>
+          <action type="control populate" value="#grdRadnaMjesta"/>
+          <action type="control populate" value="#grdStatusiDoprinosa"/>
+          <action type="control populate" value="#grdGodisnji"/>
+
+          <!--nakon loadanja svega u globalne varijable utrpaj OOPObradeId, OOPOBradeGlaId, HRKadroviId-->
+
+          <action type="variable value" value="global.OOPOBradeGlaId">
+            <parameter value="#grdPlace.@OOPObradeGlaId" type="int"/>
+          </action>
+          <action type="variable value" value="global.HRKadroviId">
+            <parameter value="#grdPlace.@HRKadroviId" type="int"/>
+          </action>
+
+          <action type="menu disable" value="#mnuDodajKadrove1,#mnuDonosUcinka,#mnuKopirajKadrove2,#mnuKopirajKadrove3,#mnuKorekcija,#mnuOsvjeziPodatke,#mnuAzuriranjeDetalja,#mnuUnosDetaljaMulti,#mnuBrisanjeDetaljaMulti,#mnuDonosBolovanja,#mnuDonosUcinka,#mnuBrisanjePomEvid,#mnuDonosPomEvid,#mnuDonosAkontacije,#mnuBrisiKadrove" if="#tree.@status==1"></action>
+          <action type="menu enable" value="#mnuDodajKadrove1,#mnuDonosUcinka,#mnuKopirajKadrove2,#mnuKopirajKadrove3,#mnuKorekcija,#mnuOsvjeziPodatke,#mnuAzuriranjeDetalja,#mnuUnosDetaljaMulti,#mnuBrisanjeDetaljaMulti,#mnuDonosBolovanja,#mnuDonosUcinka,#mnuBrisanjePomEvid,#mnuDonosPomEvid,#mnuDonosAkontacije,#mnuBrisiKadrove" else="#tree.@status==0"></action>
+        </event>
+        
+      </grid>
+
+      <!--<partsql name="grid" dataname="~dtPartMasterGrid" ></partsql>-->
+
+      <!--TABOVI u detalju-->
+      <tabs name="tabs">
+        <event type="selectedtabchanged">
+        </event>
+        <partsql name="tabovi" dataname="~dtPartTabovi"></partsql>
+
+
+      </tabs>
+    </managerlayout>
+
+    <!--gumbi-->
+
+    <panelbuttons>
+      <buttons>
+        <partsql name="button" dataname="~dtPartButton" ></partsql>
+
+      </buttons>
+
+    </panelbuttons>
+
+    <!--datalist-->
+
+    <datalist>
+      <data command="spPlaceTree" name="dtTree">
+        <parameter name="@Action" value="Otvorene_tree" if="global.$filter==Otvorene"/>
+        <parameter name="@Action" value="Zatvorene_tree" elseif="global.$filter==Zatvorene"/>
+        <parameter name="@Action" value="Sve_tree" elseif="global.$filter==Sve"/>
+      </data>
+      <!--data koji puni Master grid grida-->
+      <data command="spPlaceMasterQuery" name="dtMaster">
+        <parameter name="@Action" value="Master"/>
+        <parameter name="@OperateriId"  value="@@OperateriId" />
+        <parameter name="@OOPObradeId" value="#tree.@Value" />
+      </data>
+      <partsql name="data" dataname="~dtPartTabGridovi" ></partsql>
+      <data command="spPlace_help" name="dtInitStavkaUnos">
+        <parameter name="@Action" value="init_unos_stavke"/>
+      </data>
+      <data command="spPlace_help"  name="dtDajPozicije">
+        <parameter name="@Action" value="daj_pozicije_za_unos_stavke" type="string"/>
+        <parameter name="@operateriid" value="@@operateriid"/>
+        <parameter name="@oopstavkeid" value="global.$OOPStavkeUnosId"/>
+      </data>
+
+    </datalist>
+  </form>
+
+  <!--includane forme-->
+
+  <!--desni klik za brisanje-->
+
+  <!--<form name="frmFilter" path="frmFilter.xml"/>
+  <form name="frmEditObrade" path="frmEditObrade.xml"/>
+  <form name="frmDodajKadrove" path="frmDodajKadrove.xml"/>
+  <form name="frmObracun" path="frmObracun.xml"/>
+  <form name="frmOsvjeziPodatke"  path="frmOsvjeziPodatke.xml"/>
+  <form name="frmAzurDetaljaKadar"  path="frmAzurDetaljaKadar.xml"/>
+  <form name="frmBrisanjeObrade"  path="frmBrisanjeObrade.xml"/>
+  <form name="frmUnosDetaljaMulti"  path="frmUnosDetaljaMulti.xml"/>
+  <form name="frmBrisanjeDetaljaMulti"  path="frmBrisanjeDetaljaMulti.xml"/>
+  <form name="frmDonosBolovanja"  path="frmDonosBolovanja.xml"/>
+  <form name="frmDonosUcinka"  path="frmDonosUcinka.xml"/>
+  <form name="frmPlacePostavke"  path="frmPlacePostavke.xml"/>
+  <form name="frmBrisanjeDetalja"  path="frmBrisanjeDetalja.xml"/>
+  <form name="frmBanke"  path="frmBanke.xml"/>
+  <form name="frmBankaVirmani"  path="frmBanke.xml"/>
+  <form name="frmBankaVirmanEdit"  path="frmBanke.xml"/>
+  <form name="frmBankaVirmanBrisi"  path="frmBanke.xml"/>
+  <form name="frmOOPPubVars"  path="frmOOPPubVars.xml"/>
+  <form name="frmKopiranjeKadroviStavke"  path="frmKopiranjeKadroviStavke.xml"/>
+  <form name="frmDonosUcinakAgrar"  path="frmDonosUcinakAgrar.xml"/>
+  <form name="frmKorekcija"  path="frmKorekcija.xml"/>
+  <form name="frmPregledJOPPD"  path="frmPregledJOPPD.xml"/>
+  <form name="frmPregledVirman"  path="frmPregledVirman.xml"/>
+  <form name="frmStavkeNaObradi"  path="frmStavkeNaObradi.xml"/>
+  <form name="frmDonosDnePla"  path="frmDonosDnePla.xml"/>
+  <form name="frmDonosPomEvid"  path="frmDonosPomEvid.xml"/>
+  <form name="frmBrisiDonosPomEvid"  path="frmBrisiDonosPomEvid.xml"/>
+  <form name="frmDonosAkontacije"  path="frmDonosAkontacije.xml"/>
+  <form name="frmDonosDneEv"  path="frmDonosDneEv.xml"/>
+  <form name="frmDonosDoznake"  path="frmDonosDoznake.xml"/>-->
+
+
+
+
+  <partsql name="forme" dataname="~dtPartForme" ></partsql>
+
+  <!--datalist za partove-->
+  <datalist>
+    <data command="spPlacePartQuery" name="dtPartMasterMeni">
+      <parameter name="@Action" value="master_meni"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="Place"/>
+    </data>
+    <data command="spPlacePartQuery" name="dtPartDrvoMeni">
+      <parameter name="@Action" value="drvo_meni"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="Place"/>
+    </data>
+    <data command="spPlacePartQuery" name="dtPartTabovi">
+      <parameter name="@Action" value="tabovi"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="Place"/>
+    </data>
+    <data command="spPlacePartQuery" name="dtPartTabGridovi">
+      <parameter name="@Action" value="data"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="Place"/>
+    </data>
+    <data command="spPlacePartQuery" name="dtPartButton">
+      <parameter name="@Action" value="button"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="Place"/>
+    </data>
+    <data command="spPlacePartQuery" name="dtPartMasterGrid">
+      <parameter name="@Action" value="grid"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="Place"/>
+    </data>
+    <data command="spPlacePartQuery" name="dtPartForme">
+      <parameter name="@Action" value="forme"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="Place"/>
+    </data>
+    <data command="spPlacePartQuery" name="dtPartMasterDoubleClick">
+      <parameter name="@Action" value="master_doubleclick"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="Place"/>
+    </data>
+  </datalist>
+</root>
+
+

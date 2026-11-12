@@ -1,0 +1,151 @@
+
+<root version="1.0">
+
+	<form name="frmNoviUnos_Det" caption="Stavke dokumenta: {parent.#cmbVrstaDok.text} {parent.#txtBroj.@Broj} "  width="500" saveformlayout="true">
+      <event type="oninit">
+        <!--<action type="datarun reader" value="~dtKolicina" />-->
+        <action type="datarun reader" value="~dtGet" if="$OSImovinaSmjestajDetId!=null"/>
+      </event>
+
+      <layout textposition="left" >
+        <group cols="1" rows="5" spacing="2,2,2,2">
+          <item caption="Naziv:" col="1" row="1" >
+            <searchedit name="srcImovina" fieldvalue="OSImovinaId" fieldtext="Naziv" dataname="dtImovina" datavalue="~dtGet.@OSImovinaId" datatext="~dtGet.@Naziv" >
+              <event type="valuechanged" raiseonload="false">
+                <action type="datarun reader" value="~dtKolicina"  />
+                <action type="control value" value="#txtKolicina"  >
+                  <parameter value="~dtKolicina.@kol" />
+                </action>
+                <!-- DATASET OKINUTI KOJI VRAĆA ŽELJENI RED-->
+                <action type="datarun reader" value="~dtImovinaSpec"/>
+                <action type="control value" value="#txtKolicina">
+                  <parameter value="#dtImovinaSpec.@Kolicina"/>
+                </action>
+                <action type="control value" value="#srcDjelatnik">
+                  <parameter value="#dtImovinaSpec.@HrKadroviId" text="#dtImovinaSpec.@Djelatnik"></parameter>
+                </action>
+                <action type="control value" value="#srcLokacija">
+                  <parameter value="#dtImovinaSpec.@SmjestajId" text="#dtImovinaSpec.@NazivSmj"></parameter>
+                </action>
+                <action type="control value" value="#srcOrgShema">
+                  <parameter value="#dtImovinaSpec.@OrgShemaId" text="#dtImovinaSpec.@NazivOrg"></parameter>
+                </action>
+                <action type="variable value" >
+                  <parameter name="DetaljIzTrazilice" value="#srcImovina.@OSImovinaSmjestajDetId" type="int" />
+                </action>
+                <action type="control disable" value="#srcDjelatnik,#srcLokacija,#srcOrgShema" if="~dtImovinaSpec.@Ind==R" />
+              </event>
+            </searchedit>
+          </item>
+          <item caption="Količina:" col="1" row="2" >
+            <textedit name="txtKolicina"  format="n2" textposition="left" datavalue="~dtGet.@Kolicina"/>
+          </item>
+          <item caption="Djelatnik:" col="1" row="3" >
+            <searchedit name="srcDjelatnik" fieldvalue="HRKadroviId" fieldtext="Djelatnik" dataname="dtDjelatnik" datavalue="~dtGet.@HRKadroviId" datatext="~dtGet.@Djelatnik"/>
+          </item>
+          <item caption="Smještaj:" col="1" row="4" >
+            <searchedit name="srcLokacija"  fieldvalue="SmjestajId" fieldtext="NazivSmj" dataname="dtLokacija" datavalue="~dtGet.@SmjestajId" datatext="~dtGet.@NazivLok"/>
+          </item>
+          <item caption="Org.jedinica:" col="1" row="5" >
+            <searchedit name="srcOrgShema" fieldvalue="OrgShemaId" fieldtext="NazivOrg" dataname="dtOrgShema" datavalue="~dtGet.@OrgShemaId" datatext="~dtGet.@NazivOrg"/>
+          </item>        
+        </group>
+      </layout>
+    
+      <panelbuttons>
+        <buttons>
+          <button name="btnIns"  caption="Spremi" type="add"  >
+            <event type="click">
+              <action type="variable value" if="#srcDjelatnik!=null||#srcLokacija!=null||#srcOrgShema!=null">
+                <parameter name="BaremJedna" value="true"/>
+              </action>
+              <action type="variable value" else="">
+                <parameter name="BaremJedna" value="false"/>
+              </action>
+              <action type="datarun reader" value="~dtKontrolaKolicine" />
+                <action type="message" value="~dtKontrolaKolicine.@Poruka" if="~dtKontrolaKolicine.@Id==1" />
+                <action type="message" value="'Djelatnik, lokacija ili org.jedinica moraju biti popunjeni!'" elseif="#srcDjelatnik==null&amp;&amp;#srcLokacija==null&amp;&amp;#srcOrgShema==null"/>
+             
+              <!--action za unos i izmjenu se zove isto - uvjet je dolje u datalist-->
+              <action type="datarun nonquery" value="~dtNoviUnos" else=""/>
+
+              <action type="form close" if="~dtKontrolaKolicine.@Id==0&amp;&amp;$BaremJedna==true" />
+              <action type="control focus" value="#txtKolicina"/>
+            </event>
+          </button>
+          <button caption="Odustani" type="cancel" dock="right">
+            <event type="click"/>
+          </button>
+        </buttons>
+      </panelbuttons>
+
+      <datalist>
+        
+        <data command="spOSImovinaPrometSmjHelp_CP" name="dtOrgShema">
+          <parameter name="@Action" value="OrgShema_src"/>
+          <parameter name="@tekst" value="#srcOrgShema.text"/>
+        </data>
+        <data command="spOSImovinaPrometSmjHelp_CP" name="dtLokacija">
+          <parameter name="@Action" value="Lokacija_src"/>
+          <parameter name="@tekst" value="#srcLokacija.text"/>
+        </data>
+        <data command="spOSImovinaPrometSmjHelp_CP" name="dtDjelatnik">
+          <parameter name="@Action" value="Djelatnik_src"/>
+          <parameter name="@tekst" value="#srcDjelatnik.text"/>
+        </data>
+        <data command="spOSImovinaPrometSmjHelp_CP" name="dtImovina">
+          <parameter name="@Action" value="Imovina_src"/>
+          <parameter name="@tekst" value="#srcImovina.text"/>
+          <parameter name="@OSImovinaSmjestajGlaId" value="$OSImovinaSmjestajGlaId"/>
+        </data>
+         <data command="spOSImovinaPrometSmjHelp_CP" name="dtImovinaSpec">
+          <parameter name="@Action" value="Imovina_src_spec"/>
+          <parameter name="@OSImovinaSmjestajDetId" value="#srcImovina.@OSImovinaSmjestajDetId"/>
+           <parameter name="@OSImovinaSmjestajGlaId" value="$OSImovinaSmjestajGlaId"/>
+        </data>
+        <data command="spOSImovinaPrometSmjHelp_CP" name="dtGet">
+          <parameter name="@Action" value="Trazilice_izmjena"/>
+          <parameter name="@OSImovinaSmjestajDetId" value="$OSImovinaSmjestajDetId"/>
+        </data>
+        <data command="spOSImovinaPrometSmjHelp_CP" name="dtKolicina">
+          <parameter name="@Action" value="Slobodna_kolicina_zaduzenje"/>
+          <parameter name="@OSImovinaId" value="#srcImovina"/>
+          <parameter name="@OSImovinaSmjestajDetId" value="#srcImovina.@OSImovinaSmjestajDetId"/>
+          <parameter name="@OSImovinaSmjestajGlaId" value="$OSImovinaSmjestajGlaId"/>
+        </data>
+        <data command="spOSImovinaPrometSmjHelp_CP" name="dtKontrolaKolicine">
+          <parameter name="@Action" value="Kontrola_kolicine"/>
+          <parameter name="@OSImovinaId" value="#srcImovina"/>
+          <parameter name="@KolicinaKontrola" value="#txtKolicina" type="decimal"/>
+          <parameter name="@OSImovinaSmjestajGlaId" value="$OSImovinaSmjestajGlaId"/>
+          <parameter name="@OSImovinaSmjestajDetId" value="$OSImovinaSmjestajDetId"/>
+        </data>
+        <data command="spOSImovinaPrometSmjAzur_CP" name="dtNoviUnos" if="$OSImovinaSmjestajDetId==0">
+          <parameter name="@Action" value="SmjestajDet_unos"/>
+          <parameter name="@OSImovinaSmjestajGlaId" value="$OSImovinaSmjestajGlaId"/>
+          <parameter name="@OSImovinaId" value="#srcImovina"/>
+          <parameter name="@Kolicina" value="#txtKolicina" />
+          <parameter name="@HRKadroviId" value="#srcDjelatnik" />
+          <parameter name="@SmjestajId" value="#srcLokacija" />
+          <parameter name="@OrgShemaId" value="#srcOrgShema" />
+          <parameter name="@OperateriId" value="@@OperateriId" />
+          <parameter name="@IdUlaza" value="#srcImovina.@OSImovinaSmjestajDetId"/>
+        </data>
+        <data command="spOSImovinaPrometSmjAzur_CP" name="dtNoviUnos" else="">
+          <parameter name="@Action" value="SmjestajDet_izmjena" />
+          <parameter name="@OSImovinaSmjestajGlaId" value="$OSImovinaSmjestajGlaId"/>
+          <parameter name="@OSImovinaSmjestajDetId" value="$OSImovinaSmjestajDetId"/>
+          <parameter name="@OSImovinaId" value="#srcImovina"/>
+          <parameter name="@Kolicina" value="#txtKolicina" />
+          <parameter name="@HRKadroviId" value="#srcDjelatnik" />
+          <parameter name="@SmjestajId" value="#srcLokacija" />
+          <parameter name="@OrgShemaId" value="#srcOrgShema" />
+          <parameter name="@OperateriId" value="@@OperateriId" />
+        </data>
+
+      </datalist>
+    </form>
+
+
+	
+</root>

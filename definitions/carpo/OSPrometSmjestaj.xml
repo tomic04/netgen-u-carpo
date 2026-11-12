@@ -1,0 +1,186 @@
+﻿<root version="1.0">
+
+  <!--1.0 - subforme OSPrometSmjestaj.frmNoviUnos.xml
+                     OSPrometSmjestaj.frmNoviUnos_Det.xml
+          - izbačen type="detalj" sa prikaza detalj grida-->
+
+  <form name="frmMaster" type="master" caption="Imovina - promet smještaj">
+
+    <event type="init">
+      <action type="variable value">
+        <parameter name="Click" value="" type="string"/>
+      </action>
+    </event>
+
+    <managerlayout>
+      <!--filter drveta-->
+      <lookup name="filter" >
+        <comboitem value="Vremenska podjela"/>
+        <comboitem value="Vrsta dokumenta" />
+        <event type="valuechanged">
+          <action type="variable value">
+            <parameter name="global.filter" value="#filter" />
+          </action>
+        </event>
+      </lookup>
+
+      <!--*****stablo*****-->
+      <tree name="tree"  keyfield="OSImovinaSmjestajGlaId"  filtermode="smart" expandfirst="true" >
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdSmjestaj" />
+        </event>
+        <data if="#filter==Vremenska podjela" command="spOSImovinaPrometSmjTree_CP">
+          <parameter name="@Action" value="vremenska_podjela" />
+        </data>
+        <data if="#filter==Vrsta dokumenta" command="spOSImovinaPrometSmjTree_CP" >
+          <parameter name="@Action" value="vrsta_dokumenta" />
+        </data>
+        <fields>
+          <field name="Name" />
+        </fields>
+      </tree>
+
+      <!--Master grid-->
+      <grid name="grdSmjestaj" key="OSImovinaSmjestajGlaId" type="master" async="true" preventfocusgroup="false" fieldsmartspaces="false" bestfitonrefresh="true">
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdSmjestajDet" />
+          <action type="control disable" value="#btnIzmjena,#btnBrisanje,#btnZakljucak" if="#grdSmjestaj.@statusid==2"/>
+          <action type="control enable" value="#btnIzmjena,#btnBrisanje,#btnZakljucak" else=""/>
+          <action type="control disable" value="#btnPonisti" if="#grdSmjestaj.@statusid!=2"/>
+          <action type="control enable" value="#btnPonisti" else=""/>
+        </event>
+        <data command="spOSImovinaPrometSmjQuery_CP" if="#filter==Vremenska podjela" >
+          <parameter name="@Action" value="Master_query"  />
+          <parameter name="@godina" value="#tree.@godina" />
+          <parameter name="@mjesec" value="#tree.@mjesec" />
+        </data>
+        <data command="spOSImovinaPrometSmjQuery_CP" if="#filter==Vrsta dokumenta" >
+          <parameter name="@Action" value="Master_query"  />
+          <parameter name="@godina" value="#tree.@godina" />
+          <parameter name="@mjesec" value="#tree.@mjesec" />
+          <parameter name="@vrstadokid" value="#tree.@vrstadokid" />
+        </data>
+        <fields inherited="true">
+          <field name="DatumDok" caption="Datum dokumenta"/>
+        </fields>
+        <styles>
+          <style name="fontcolor" value="#000000" if="#grdSmjestaj.@statusid==1" />
+          <style name="fontcolor" value="#008000" if="#grdSmjestaj.@statusid==2" />
+        </styles>
+      </grid>
+
+      <grid name="grdSmjestajDet"  async="true" bestfitonrefresh="true" key="OSImovinaSmjestajDetId" multiselect="true" fieldsmartspaces="false" >
+        <data command="spOSImovinaPrometSmjQuery_CP">
+          <parameter name="@Action" value="Detalj_query"/>
+          <parameter name="@OSImovinaSmjestajGlaId" value="#grdSmjestaj.@OSImovinaSmjestajGlaId"/>
+        </data>
+        <fields inherited="true"  >
+        </fields>
+      </grid>
+    </managerlayout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnos" caption="Unos dokumenta" function="UnesiSmj">
+          <event type="click">
+            <action type="form open" value="frmNoviUnos">
+              <parameter name="Caption" value="Unos novog dokumenta"/>
+              <parameter name="Tip" value="Unos novo"/>
+            </action>
+            <action if="dialogresult!=cancel">
+              <action type="control populate" value="#tree"/>
+            </action>
+            <action type="control refreshvalue" value="#grdSmjestaj" />
+          </event>
+        </button>
+        <button name="btnIzmjena" caption="Izmjena dokumenta" function="IzmijeniFin">
+          <event type="click">
+            <action type="datarun reader" value="~dtKontrolaIzmjena"/>
+            <action type="message" value="~dtKontrolaIzmjena.@Poruka" if="~dtKontrolaIzmjena.@IndGreska==1"/>
+            <action type="form open" value="frmNoviUnos" if="~dtKontrolaIzmjena.@IndGreska==0">
+              <parameter name="Caption" value="Izmjena dokumenta"/>
+              <parameter name="OSImovinaSmjestajGlaId" value="#grdSmjestaj.@OSImovinaSmjestajGlaId" type="int" />
+            </action>
+            <action type="control populate keepfocus" value="#grdSmjestaj" />
+            <action type="control populate" value="#grdSmjestajDet"  />
+          </event>
+        </button>
+        <button name="btnBrisanje" caption="Brisanje dokumenta" function="ObrisiSmj">
+          <event type="click">
+            <action type="confirm" value="Želite li obrisati odabrani dokument?">
+              <action type="datarun reader" value="~dtDelete">
+                <action type="message" value="~dtDelete.@Poruka" if="~dtDelete.@IndGreska==1"/>
+                <action type="control populate" value="#grdSmjestaj" >
+                  <action type="control focus" value="#grdSmjestaj"/>
+                </action>
+                <action type="control populate" value="#grdSmjestajDet" />
+              </action>
+            </action>
+          </event>
+        </button>
+        <button name="btnZakljucak" caption="Zaključi dokument" function="ZakljuciSmj">
+          <event type="click">
+            <action type="datarun nonquery" value="~dtZakljuciDok">
+            </action>
+            <action type="control populate keepfocus" value="#grdSmjestaj" >
+            </action>
+          </event>
+        </button>
+        <button name="btnPonisti" caption="Poništi zaključak" function="PonistiZakljucakSmj">
+          <event type="click">
+            <action type="datarun nonquery" value="~dtOtkljucajDok">
+            </action>
+            <action type="control populate keepfocus" value="#grdSmjestaj" >
+            </action>
+          </event>
+        </button>
+        <button name="btnIspis" caption="Ispiši" dataname="Global.dtPrint" displayfield="Opis" function="IspisiSmj">
+          <event type="click">
+            <action type="control print" value="#grdSmjestaj">
+              <action type="print template" value="#btnIspis.@Template">
+                <parameter name="id" value="#grdSmjestaj.@OSImovinaSmjestajGlaId" />
+              </action>
+            </action>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spOSImovinaPrometSmjHelp_CP" name="dtKontrolaIzmjena">
+        <parameter name="@Action" value="Kontrola_blokade"/>
+        <parameter name="@DatumDok" value="#grdSmjestaj.@DatumDok"/>
+      </data>
+      <!--data koji puni oba grida-->
+      <data command="spOSImovinaPrometSmjAzur_CP" name="dtZakljuciDok">
+        <parameter name="@Action" value="ZakljucajDok" />
+        <parameter name="@OSImovinaSmjestajGlaId" value="#grdSmjestaj.@OSImovinaSmjestajGlaId" />
+      </data>
+      <data command="spOSImovinaPrometSmjAzur_CP" name="dtOtkljucajDok">
+        <parameter name="@Action" value="OtkljucajDok" />
+        <parameter name="@OSImovinaSmjestajGlaId" value="#grdSmjestaj.@OSImovinaSmjestajGlaId" />
+      </data>
+      <data command="spOSImovinaPrometSmjAzur_CP" name="dtDelete">
+        <parameter name="@Action" value="Dokument_brisanje" />
+        <parameter name="@OSImovinaSmjestajGlaId" value="#grdSmjestaj.@OSImovinaSmjestajGlaId" />
+      </data>
+
+    </datalist>
+  </form>
+
+  <form name="frmNoviUnos" path="frmNoviUnos.xml"/>
+  <form name="frmNoviUnos_Det" path="frmNoviUnos_Det.xml"/>
+
+
+  <datalist>
+    <data command="spCarpoPrint" name="dtPrint">
+      <parameter name="@Action" value="GetTemplates" />
+      <parameter name="@Id" value="#grdSmjestaj.@OSImovinaSmjestajGlaId" type="int" />
+      <parameter name="@Tablica" value="OSImovinaSmjestajGla" />
+    </data>
+  </datalist>
+
+
+</root>
+
+

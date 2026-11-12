@@ -1,0 +1,174 @@
+<root>
+<form name="frmUnos" caption="Unos narudzbe">
+
+	<event type="init">
+			<action type="datarun reader" value="~dtSutrasnjiDatum"/>
+		</event>
+		<event type="load">	
+			<action type="control value" value="#datDatumIsporuke">
+				<parameter value="~dtSutrasnjiDatum.@SutrasnjiDatum"/>
+			</action>
+		</event>
+
+	<layout>
+		<group cols="1" rows="9">
+			<item col="1" row="1" caption="Broj narudžbe:"  textposition="left">
+				<textedit name="txtBrojNarudzbe" />
+			</item>
+			<item col="1" row="2" caption="Vrsta narudžbe:"  textposition="left" >
+				<comboedit name="cmbVrstaNarudzbe"  valuefield="ProNarudzbeVrstaPrometaId"  displayfield="Naziv" dataname="~dtVrstaNarudzbe"  required="true" />
+			</item>
+			<item col="1" row="3" caption="Datum isporuke:" textposition="left">
+				<dateedit name="datDatumIsporuke" datavalue="~dtSutrasnjiDatum.@SutrasnjiDatum" />
+	        </item>
+			<item col="1" row="4" caption="Naručitelj:" textposition="left">
+				<searchedit name="srcPartner" fieldvalue="PartneriID" dataname="~dtGetPartner" function="srcPartner" required="true">
+					<event type="valuechanged">
+						<action type="control enable" value="#srcOsobe" if="#srcPartner!=null">
+							<action type="control value" value="#srcOsobe">
+								<parameter value="null"/>
+							</action>
+						</action>
+						<action type="control disable" value="#srcOsobe" if="#srcPartner==null">
+							<action type="control value" value="#srcOsobe">
+								<parameter value="null"/>
+							</action>
+						</action>
+						<action type="variable value">
+							<parameter name="PartneriId" value="#srcPartner" />
+						</action>	
+						<action type="variable value">
+							<parameter name="IndPromijenjeno" value="1" />
+						</action>						
+						<action type="variable value">
+							<parameter name="IndLoad" value="0" />
+						</action>					
+                    </event>
+					<event type="leave">
+						<action type="variable value">
+							<parameter name="PartneriId" value="#srcPartner"/>
+						</action>					
+                    	<action type="datarun reader" value="Global.dtDajPartnera" if="#srcPartner!=null"/>						
+						<action type="control value" value="#srcParstru" if="#srcPartner!=null&amp;&amp;#srcPartner.@BrojLokacija_Id==1">
+							<parameter value="~dtDajPartnera.@parstruid" text="~dtDajPartnera.@Naziv"/>
+						</action>
+						<action type="form open" value="frmLokacije" if="#srcPartner!=null&amp;&amp;#srcPartner.@BrojLokacija_Id!=1&amp;&amp;$IndPromijenjeno==1">
+							<parameter name="PartneriId" value="#srcPartner" />
+							<parameter name="IndLokacija" value="1" />
+							<parameter name="ParStruId" value="#srcParstru" />
+						</action>
+						<!-- <action type="control refreshvalue" value="#srcParstru" if="#srcPartner==null"/> -->
+						<action type="control value" value="#srcParstru" if="#srcPartner==null">
+							<parameter value="null"/>
+						</action>						
+						<action type="variable value">
+							<parameter name="IndLokacija" value="0" />
+						</action>
+						<action type="variable value">
+							<parameter name="IndPromijenjeno" value="0" />
+						</action>						
+					</event>
+				</searchedit>
+	        </item>
+			<item netgenfields="true" col="1" row="5" caption="Mjesto isporuke:" textposition="left">
+				<searchedit name="srcParstru" fieldvalue="ParStruId"  datavalue="" dataname="~dtGetParstru">
+					
+				<event type="leave">
+                    	<action type="datarun reader" value="Global.dtDajPartnera" if="#srcParstru!=null"/>
+                        <action type="control value" value="#srcPartner" if="#srcPartner==null&amp;&amp;#srcParstru!=null">
+							<parameter value="~dtDajPartnera.@partneriid" text="~dtDajPartnera.@Naziv"/>
+						</action>
+												
+					</event>				
+				</searchedit>
+	        </item>	
+			<item col="1" row="6" caption="Tko je naručio:"  textposition="left" >
+				<searchedit name="srcOsobe" dataname="~dtTraziOsobe"  fieldtext="Osoba" fieldvalue="OsobeId" function="srcTraziOsobe" />
+			</item>			
+			<item col="1" row="7" caption="Način zaprimanja:"  textposition="left" >
+				<comboedit name="cmbNacinZaprimanja" valuefield="ProNacinZaprimanjaId"  displayfield="Naziv" dataname="~dtNacinZaprimanja" />
+			</item>	
+			<item col="1" row="8" caption="Način otpreme:"  textposition="left" >
+				<comboedit name="cmbNacinOtpreme" valuefield="ProNacinIsporukeId"  displayfield="Naziv" dataname="~dtNacinOtpreme"  />
+			</item>	
+			<item col="1" row="9" caption="Transfer:"  textposition="left" >
+				<searchedit name="srcPartnerTransfer"  fieldvalue="PartneriID" datavalue="" dataname="~dtGetTransfer" function="srcPartner"  />
+			</item>	
+		</group>
+
+		
+	</layout>
+
+<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					 <event type="click">
+					 	<action type="validate" />
+                        <action type="datarun scalar" value="~dtUnos">
+						<parameter name="GlavaId" />
+						</action> 
+						<!-- <action type="message" value="$GlavaId" /> -->
+						<action type="variable value">
+							<parameter name="parent.$GlavaId" value="$GlavaId" />
+							<!-- <action type="message" value="parent.$GlavaId" /> -->
+						</action>
+                        <action type="form close"/>
+						<action type="form open" value="frmIzmjena">
+							<parameter name="GlavaId" value="$GlavaId" />
+							<parameter name="IndKopirano" value="0" />
+						</action>
+							
+                    </event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right" >
+					 <event type="click"> 
+						 <action type="form close"/> 
+					 </event> 
+				</button>
+			</buttons>
+		</panelbuttons>
+	<datalist>
+		<data command="spProd_ProNarudzbe_GetVrstaNarudzbe" name="dtVrstaNarudzbe" />
+		<data command="spSutrasnjiDatum" name="dtSutrasnjiDatum" />
+
+		<data command="spTraziPartneri" name="dtGetPartner">
+			<parameter name="@Action" value="Partneri" />
+			<parameter name="@Uvjet" value="#srcPartner.text" />
+			<parameter name="@broj_lokacija" value="1" />
+		</data>
+		<data command="spTraziParstru" name="dtGetParstru">
+        	<parameter name="@action" value="Parstru" />
+        	<parameter name="@uvjet" value="#srcParstru.text" />
+        	<parameter name="@Partneriid" value="#srcPartner" />
+      	</data>
+		<data command="spTraziOsobe" name="dtTraziOsobe">
+			<parameter name="@Action" value="Osobe" />
+			<parameter name="@PartneriId" value="#srcPartner" />
+		</data>
+		<data command="spProd_ProNarudzbe_GetNacinZaprimanjaNarudzbe" name="dtNacinZaprimanja" />
+		<data command="spCarpo_Combo" name="dtNacinOtpreme">
+			<parameter name="@Action" value="ProNacinIsporuke" />
+		</data>
+
+		<data command="spCKntTemTraziPartneri" name="dtGetTransfer">
+			<parameter name="@Action" value="Partneri" />
+			<parameter name="@Uvjet" value="#srcPartnerTransfer.text" />
+		</data>
+		
+		<data command="spProd_ProNarudzbeGla_Unos" name="dtUnos">
+			<parameter name="@Broj" value="#txtBrojNarudzbe" />
+			<parameter name="@DatumIsporuke" value="#datDatumIsporuke" />
+			<parameter name="@ProNarudzbeVrstaPrometaId" value="#cmbVrstaNarudzbe" />
+			<parameter name="@PartneriId" value="#srcPartner" />
+			<parameter name="@ParStruId" value="#srcParstru" />
+			<parameter name="@OsobeId" value="#srcOsobe" />
+			<parameter name="@ProNacinZaprimanjaId" value="#cmbNacinZaprimanja" />
+			<parameter name="@ProNacinIsporukeId" value="#cmbNacinOtpreme" />
+			<parameter name="@TransferPartneriId" value="#srcPartnerTransfer" />
+			<parameter name="@OperateriId" value="@@operateriid" />
+		</data>
+
+	</datalist>
+</form>
+
+</root>

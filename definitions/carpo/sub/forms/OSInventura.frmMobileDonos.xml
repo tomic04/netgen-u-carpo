@@ -1,0 +1,463 @@
+<root version="2.1">
+
+  <form name="frmMobileDonos" caption="$caption"  width="1100" height ="1000" saveformlayout="true">
+    <event type="init">
+      <action type="datarun reader" value="~dtPopisInventure" />
+    </event>
+    <event type="load">
+      <action type="control disable" value="#btnOsvjezi"/>
+    </event>
+    <layout >
+      <group cols="1" rows="2" spacing="2,2,2,2">
+        <rowsdefinition>
+          <row pos="1" size="30%"></row>
+          <row pos="2" size="70%"></row>
+        </rowsdefinition>
+        <group cols="1" rows="2"  col="1" row="1" groupbordervisible="false" >
+          <rowsdefinition>
+            <row pos="1" size="85%"></row>
+            <row pos="2" size="15%"></row>
+          </rowsdefinition>
+          <item col="1" row="1" caption="Popisi po operateru" fontbold="true" >
+            <grid name="grdPopisInventure" key="MobOSInventuraGlaId" dataname="dtPopisInventure" showautofilterrow="true" fieldsmartspaces="false" multiselect="true" autopopulate="true" showcheckboxes="true" bestfitonrefresh="true" >
+              <fields inherited="true">
+              </fields>
+            </grid>
+          </item>
+          <group cols="6" rows="1"  col="1" row="2" groupbordervisible="false" >
+            <columnsdefinition>
+              <column position="1" size="10%"/>
+              <column position="2" size="10%"/>
+            </columnsdefinition>
+            <item col="1" row="1">
+              <button name="btnDonesi"  caption="Donesi" >
+                <event type="click">
+                  <action type="datarun reader" value="~dtReset"/>
+                  <action type="control populate" value="#grdDetalj"/>
+                  <action type="control populate" value="#grdNovo"/>
+                  <action type="control enable" value="#btnOsvjezi" />
+                  <action type="control disable" value="#btnDonesi" />
+                  <action type="control disable" value="#grdPopisInventure" />
+                </event>
+              </button>
+            </item>
+            <item col="2" row="1">
+              <button name="btnOsvjezi"  caption="Osvježi" >
+                <event type="click">
+                  <action type="datarun nonquery" value="~dtOsvjezi" />
+                  <action type="control selected rows" value="#grdPopisInventure">
+                    <parameter value="" />
+                  </action>
+                  <action type="control attribute" value="#picSlika">
+                    <parameter name="dbimg" value="No image data"/>
+                  </action>
+                  <action type="control attribute" value="#picSlikaN">
+                    <parameter name="dbimg" value="No image data"/>
+                  </action>
+                  <action type="control refreshvalue" value="#grdDetalj"/>
+                  <action type="control refreshvalue" value="#grdNovo"/>
+                  <action type="control enable" value="#btnDonesi" />
+                  <action type="control enable" value="#grdPopisInventure" />
+                  <action type="control disable" value="#btnOsvjezi" />
+                </event>
+              </button>
+            </item>
+            <item col="3" row="1"/>
+            <item col="4" row="1"/>
+            <item col="5" row="1"/>
+            <item col="6" row="1"/>
+          </group>
+        </group>
+
+        <!--OČEKIVANA IMOVINA-->
+        <group cols="1" rows="1" col="1" row="2" >
+          <tabs row="1" col="1" >
+            <group cols="2" rows="1"  col="1" row="1" caption="Pronađena imovina očekivana na inventuri" groupbordervisible="false" >
+              <columnsdefinition>
+                <column position="1" size="50%"/>
+                <column position="2" size="50%"/>
+              </columnsdefinition>
+              <item col="1" row="1"  fontbold="true">
+                <grid name="grdDetalj" dataname="dtDetalj" showautofilterrow="true" fieldsmartspaces="false" bestfitonrefresh="true" >
+                  <event type="cellvaluechanged">
+                    <action type="datarun nonquery" value="~dtUpdateKol" />
+                  </event>
+                  <menu>
+                    <menuitem caption="Analitika" name="menAnalitika">
+                      <event type="click">
+                        <action type="form open" value="frmAnalitika" >
+                          <parameter name="caption" value="Analitika pronađenih količina"/>
+                          <parameter name="MobOSInventuraGlaId" value="#grdPopisInventure.@MobOSInventuraGlaId" />
+                          <parameter name="MobOSinventuraDetId" value="#grdDetalj.@MobOSinventuraDetId" />
+                          <parameter name="OSImovinaId" value="#grdDetalj.@OSImovinaId" />
+                        </action>
+                      </event>
+                    </menuitem>
+                  </menu>
+                  <event type="focusedrowchanged">
+                    <action type="menu disable" value="#menAnalitika" if="#grdDetalj.@OSImovinaId==null"/>
+                    <action type="menu enable" value="#menAnalitika" else="" />
+                    <action type="datarun reader" value="~dtGet"  />
+                    <action type="control value" value="#txtInvBroj"  >
+                      <parameter value="~dtGet.@InvBroj" />
+                    </action>
+                    <action type="control value" value="#txtBarcode"  >
+                      <parameter value="~dtGet.@Barcode" />
+                    </action>
+                    <action type="control value" value="#txtNaziv"  >
+                      <parameter value="~dtGet.@Naziv" />
+                    </action>
+                    <action type="control value" value="#txtOcekivano"  >
+                      <parameter value="~dtGet.@Ocekivano" />
+                    </action>
+                    <action type="control value" value="#memMemo"  >
+                      <parameter value="~dtGet.@Memo" />
+                    </action>
+                    <action if="#grdDetalj.@Fotografija==Da" type="control attribute" value="#picSlika">
+                      <parameter name="dbimg" value="~dtGet.@Slika"/>
+                    </action>
+                    <action if="#grdDetalj.@Fotografija==Ne" type="control attribute" value="#picSlika">
+                      <parameter name="dbimg" value="No image data"/>
+                    </action>
+                  </event>
+                  <fields inherited="true">
+                    <field name="kolicinaInv" caption="Popisana količina" editable="true" format="n2" />
+                  </fields>
+                </grid>
+              </item>
+              <group cols="2" rows="7" col="2" row="1">
+                <item caption="Inventurni broj:" col="1" row="1" fontbold="true">
+                  <textedit name="txtInvBroj" enabled="false" fontbold="true"/>
+                </item>
+                <item caption="Barcode:" col="1" row="2" fontbold="true">
+                  <textedit name="txtBarcode" enabled="false" fontbold="true"/>
+                </item>
+                <item caption="Naziv:" col="1" row="3" fontbold="true">
+                  <textedit name="txtNaziv" enabled="false" fontbold="true"/>
+                </item>
+                <item caption="Očekivana količina:" col="1" row="4" fontbold="true">
+                  <textedit name="txtOcekivano" enabled="false" fontbold="true" format="n2" textposition="left"/>
+                </item>
+                <item caption="Memo:" col="1" row="5" fontbold="true" colspan="2">
+                  <memoedit name="memMemo" enabled="false" fontbold="true"/>
+                </item>
+                <item col="1" row="7"/>
+                <item caption="Slika:" col="2" row="1" fontbold="true" rowspan="4">
+                  <pictureedit name="picSlika" dbimg="" />
+                </item>
+              </group>
+            </group>
+            <!--NEOČEKIVANA IMOVINA-->
+            <group cols="2" rows="1" col="1" row="1" caption="Pronađena imovina koja nije očekivana na inventuri" groupbordervisible="false">
+              <columnsdefinition>
+                <column position="1" size="50%"/>
+                <column position="2" size="50%"/>
+              </columnsdefinition>
+              <item col="1" row="1"  fontbold="true">
+                <grid name="grdNovo" dataname="dtNovo" showautofilterrow="true" fieldsmartspaces="false" bestfitonrefresh="true" >
+                  <menu>
+                    <menuitem caption="Analitika"  name="menAnalitikaN">
+                      <event type="click">
+                        <action type="form open" value="frmAnalitika">
+                          <parameter name="caption" value="Analitika pronađenih količina"/>
+                          <parameter name="MobOSInventuraGlaId" value="#grdPopisInventure.@MobOSInventuraGlaId" />
+                          <parameter name="MobOSInventuraDetId" value="#grdNovo.@MobOSInventuraDetId" />
+                          <parameter name="OSImovinaId" value="#grdNovo.@OSImovinaId" />
+                        </action>
+                      </event>
+                    </menuitem>
+                    <menuitem caption="Prezaduži"  name="menPrezaduzenje">
+                      <event type="click">
+                        <action type="form open" value="frmPrezaduzenje">
+                          <parameter name="caption" value="Prezaduženje"/>
+                          <parameter name="MobOSInventuraGlaId" value="#grdPopisInventure.@MobOSInventuraGlaId" />
+                          <parameter name="MobOSInventuraDetId" value="#grdNovo.@MobOSInventuraDetId" />
+                          <parameter name="OSImovinaId" value="#grdNovo.@OSImovinaId" />
+                        </action>
+                      </event>
+                    </menuitem>
+                  </menu>
+                  <event type="focusedrowchanged">
+                    <action type="menu disable" value="#menAnalitikaN" if="#grdNovo.@OSImovinaId==null"/>
+                    <action type="menu enable" value="#menAnalitikaN" else="" />
+                    <action type="menu disable" value="#menPrezaduzenje" if="#grdNovo.@PrezaduzenjeId==0"/>
+                    <action type="menu enable" value="#menPrezaduzenje" else="" />
+                    <action type="datarun reader" value="~dtGetNovo"  />
+                    <action type="control value" value="#txtInvBrojN"  >
+                      <parameter value="~dtGetNovo.@InvBroj" />
+                    </action>
+                    <action type="control value" value="#txtBarcodeN"  >
+                      <parameter value="~dtGetNovo.@Barcode" />
+                    </action>
+                    <action type="control value" value="#txtNazivN"  >
+                      <parameter value="~dtGetNovo.@Naziv" />
+                    </action>
+                    <action type="control value" value="#txtOcekivanoN"  >
+                      <parameter value="~dtGetNovo.@Ocekivano" />
+                    </action>
+                    <action type="control value" value="#memMemoN"  >
+                      <parameter value="~dtGetNovo.@Memo" />
+                    </action>
+                    <action type="control value" value="#txtOrgShemaZN"  >
+                      <parameter value="~dtGetNovo.@OrgShemaSmj" />
+                    </action>
+                    <action type="control value" value="#txtSmjestajZN"  >
+                      <parameter value="~dtGetNovo.@SmjestajSmj" />
+                    </action>
+                    <action type="control value" value="#txtOsobaZN"  >
+                      <parameter value="~dtGetNovo.@OsobaSmj" />
+                    </action>
+                    <action type="control value" value="#txtOrgShemaFN"  >
+                      <parameter value="~dtGetNovo.@OrgShemaF" />
+                    </action>
+                    <action type="control value" value="#txtSmjestajFN"  >
+                      <parameter value="~dtGetNovo.@SmjestajF" />
+                    </action>
+                    <action type="control value" value="#txtOsobaFN"  >
+                      <parameter value="~dtGetNovo.@OsobaF" />
+                    </action>
+                    <action if="#grdNovo.@Fotografija==Da" type="control attribute" value="#picSlikaN">
+                      <parameter name="dbimg" value="~dtGetNovo.@SlikaN"/>
+                    </action>
+                    <action if="#grdNovo.@Fotografija==Ne" type="control attribute" value="#picSlikaN">
+                      <parameter name="dbimg" value="No image data"/>
+                    </action>
+                  </event>
+                  <fields inherited="true">
+                    <field name="kolicinaInv" caption="Popisana količina"  />
+                  </fields>
+                </grid>
+              </item>
+              <group cols="2" rows="9" col="2" row="1">
+                <item caption="Inventurni broj:" col="1" row="1" fontbold="true">
+                  <textedit name="txtInvBrojN" enabled="false" fontbold="true"/>
+                </item>
+                <item caption="Barcode:" col="1" row="2" fontbold="true">
+                  <textedit name="txtBarcodeN" enabled="false" fontbold="true"/>
+                </item>
+                <item caption="Naziv:" col="1" row="3" fontbold="true">
+                  <textedit name="txtNazivN" enabled="false" fontbold="true"/>
+                </item>
+                <item caption="Očekivana količina:" col="1" row="4" fontbold="true">
+                  <textedit name="txtOcekivanoN" enabled="false" fontbold="true" format="n2" textposition="left"/>
+                </item>
+                <item caption="Memo:" col="1" row="5" fontbold="true" colspan="2">
+                  <memoedit name="memMemoN" enabled="false" fontbold="true"/>
+                </item>
+                <item caption="Org.jedinica zaduženja:" col="1" row="7" fontbold="true">
+                  <textedit name="txtOrgShemaZN" enabled="false" fontbold="true"/>
+                </item>
+                <item caption="Smještaj zaduženja:" col="1" row="8" fontbold="true">
+                  <textedit name="txtSmjestajZN" enabled="false" fontbold="true"/>
+                </item>
+                <item caption="Osoba zaduženja:" col="1" row="9" fontbold="true">
+                  <textedit name="txtOsobaZN" enabled="false" fontbold="true"/>
+                </item>
+                <item caption="Slika:" col="2" row="1" fontbold="true" rowspan="4">
+                  <pictureedit name="picSlikaN" dbimg="" />
+                </item>
+                <item caption="Org.jedinica pronalaska:" col="2" row="7" fontbold="true">
+                  <textedit name="txtOrgShemaFN" enabled="false" fontbold="true"/>
+                </item>
+                <item caption="Smještaj pronalaska:" col="2" row="8" fontbold="true">
+                  <textedit name="txtSmjestajFN" enabled="false" fontbold="true"/>
+                </item>
+                <item caption="Osoba pronalaska:" col="2" row="9" fontbold="true">
+                  <textedit name="txtOsobaFN" enabled="false" fontbold="true"/>
+                </item>
+              </group>
+            </group>
+          </tabs>
+        </group>
+      </group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnesi"  caption="Prenesi" type="add"  >
+          <event type="click">
+            <action type="datarun reader" value="~dtPrijenosInventura" />
+            <action type="form close" />
+          </event>
+        </button>
+        <button caption="Odustani" type="cancel" dock="right">
+          <event type="click">
+            <action type="datarun nonquery" value="~dtOsvjezi" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spOSInventura_MobileCP" name="dtPopisInventure">
+        <parameter name="@Action" value="Grid_popis"/>
+        <parameter name="@OSInventuraGlaId" value="$OSInventuraGlaId" />
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtReset">
+        <parameter name="@Action" value="Grid_reset"/>
+        <parameter name="@SelectedIds" value="#grdPopisInventure.SelectedIds" />
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtDetalj">
+        <parameter name="@Action" value="Grid_detalj"/>
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtNovo">
+        <parameter name="@Action" value="Grid_novo"/>
+        <parameter name="@MobOSInventuraGlaId" value="#grdPopisInventure.@MobOSInventuraGlaId" />
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtOsvjezi">
+        <parameter name="@Action" value="Osvjezi_prikaz"/>
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtAnalitika">
+        <parameter name="@Action" value="Grid_analitika"/>
+        <parameter name="@SelectedIds" value="#grdPopisInventure.SelectedIds" />
+        <parameter name="@OSInventuraDetId" value="#grdDetalj.@OSInventuraDetId" />
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtUpdateKol">
+        <parameter name="@Action" value="Update_Kol"/>
+        <parameter name="@OSInventuraDetId" value="#grdDetalj.@OSInventuraDetId" />
+        <parameter name="@KolicinaPopisana" value="#grdDetalj.@kolicinaInv" />
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtPrijenosInventura">
+        <parameter name="@Action" value="Prenesi_InventuraDet"/>
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtGet">
+        <parameter name="@Action" value="Dohvati_ocekivano"/>
+        <parameter name="@OSInventuraDetId" value="#grdDetalj.@OSInventuraDetId" />
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtGetNovo">
+        <parameter name="@Action" value="Dohvati_neocekivano"/>
+        <parameter name="@MobOsInventuraDetId" value="#grdNovo.@MobOsInventuraDetId" />
+      </data>
+    </datalist>
+  </form>
+
+  <!--*****************************FORMA ZA PRIKAZ ANALITIKE PRONAĐENIH KOLIČINA***********************************-->
+
+  <form name="frmAnalitika" caption="$caption"  width="1000" height="1000" saveformlayout="true">
+    <event type="shown">
+      <action type="control populate" value="#grdAnalitika" />
+    </event>
+    <layout textposition="left" >
+      <group cols="1" rows="1" groupbordervisible="false" >
+        <item col="1" row="1" caption="" fontbold="true" >
+          <grid name="grdAnalitika" dataname="dtAnalitika" showautofilterrow="true" fieldsmartspaces="false" autopopulate="false" bestfitonrefresh="true">
+            <fields inherited="true">
+            </fields>
+            <styles>
+              <style name="backgroundcolor" value="OrangeRed" if="#grdAnalitika.@NeocekivanoId==true" />
+              <style name="backgroundcolor" value="LightGreen" else=""/>
+            </styles>
+          </grid>
+        </item>
+      </group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button caption="Odustani" type="cancel" dock="right">
+          <event type="click"/>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spOSInventura_MobileCP" name="dtAnalitika">
+        <parameter name="@Action" value="Analitika_prikaz"/>
+        <parameter name="@OSImovinaId" value="$OSImovinaId"/>
+        <parameter name="@MobOSInventuraGlaId" value="$MobOSInventuraGlaId"/>
+      </data>
+    </datalist>
+  </form>
+
+  <!--**************************KRAJ FORME ZA PRIKAZ ANALITIKE PRONAĐENIH KOLIČINA***********************************-->
+
+  <!--*****************************FORMA ZA PREZADUŽENJE***********************************-->
+
+  <form name="frmPrezaduzenje" caption="$caption"  width="500" height="400" saveformlayout="true">
+    <event type="init">
+      <action type="datarun reader" value="~dtGet" />
+    </event>
+    <layout textposition="left" >
+      <group cols="1" rows="2" groupbordervisible="false" >
+        <group col="1" row="1" cols="1" rows="4" groupbordervisible="true" spacing="2,2,2,1">
+          <item caption="Inventurni broj:" col="1" row="1" fontbold="true">
+            <textedit name="txtInvBroj" enabled="false" fontbold="true" datavalue="~dtGet.@InvBroj"/>
+          </item>
+          <item caption="Barcode:" col="1" row="2" fontbold="true">
+            <textedit name="txtBarcode" enabled="false" fontbold="true" datavalue="~dtGet.@Barcode"/>
+          </item>
+          <item caption="Naziv:" col="1" row="3" fontbold="true">
+            <textedit name="txtNaziv" enabled="false" fontbold="true" datavalue="~dtGet.@Naziv"/>
+          </item>
+          <item caption="Količina:" col="1" row="4" fontbold="true">
+            <textedit name="txtOcekivano" enabled="false" fontbold="true" format="n2" textposition="left" datavalue="~dtGet.@Ocekivano"/>
+          </item>
+        </group>
+        <group col="1" row="2" cols="1" rows="6" groupbordervisible="true" spacing="2,2,1,2">
+          <item caption="Org.jedinica (trenutno zaduženje):" col="1" row="1" fontbold="true">
+            <textedit name="txtOrgShemaZP" enabled="false" fontbold="true" datavalue="~dtGet.@OrgshemaSmj"/>
+          </item>
+          <item caption="Smještaj (trenutno zaduženje):" col="1" row="2" fontbold="true">
+            <textedit name="txtSmjestajZP" enabled="false" fontbold="true" datavalue="~dtGet.@SmjestajSmj"/>
+          </item>
+          <item caption="Osoba (trenutno zaduženje):" col="1" row="3" fontbold="true">
+            <textedit name="txtOsobaZP" enabled="false" fontbold="true" datavalue="~dtGet.@Osobasmj"/>
+          </item>
+          <item caption="Org.jedinica (novo zaduženje):" col="1" row="4" fontbold="true">
+            <searchedit name="srcOrgShemaZN" fontbold="true" fieldvalue="OrgShemaZNId" fieldtext="OrgShemaF" dataname="dtOrgShema" datavalue="~dtGet.@OrgShemaZNId" datatext="~dtGet.@OrgShemaF"/>
+          </item>
+          <item caption="Smještaj (novo zaduženje):" col="1" row="5" fontbold="true">
+            <searchedit name="srcSmjestajZN" fontbold="true" fieldvalue="SmjestajZNId" fieldtext="SmjestajF" dataname="dtSmjestaj" datavalue="~dtGet.@SmjestajZNId" datatext="~dtGet.@SmjestajF"/>
+          </item>
+          <item caption="Osoba (novo zaduženje):" col="1" row="6" fontbold="true">
+            <searchedit name="srcOsobaZN" fontbold="true" fieldvalue="HRKadroviZNId" fieldtext="OsobaF" dataname="dtHrkadrovi" datavalue="~dtGet.@HRKadroviZNId" datatext="~dtGet.@OsobaF"/>
+          </item>
+        </group>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button caption="Prezaduži"  dock="left">
+          <event type="click">
+            <action type="datarun reader" value="~dtPrezaduzi" />
+            <action type="control refreshvalue" value="parent.#grdNovo" />
+            <action type="form close" />
+          </event>
+        </button>
+        <button caption="Odustani" type="cancel" dock="right">
+          <event type="click"/>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spOSInventura_MobileCP" name="dtGet">
+        <parameter name="@Action" value="Dohvati_neocekivano"/>
+        <parameter name="@MobOsInventuraDetId" value="$MobOsInventuraDetId" />
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtOrgShema">
+        <parameter name="@Action" value="OrgShema_src"/>
+        <parameter name="@tekst" value="#srcOrgShemaZN.text"/>
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtSmjestaj">
+        <parameter name="@Action" value="Smjestaj_src"/>
+        <parameter name="@tekst" value="#srcSmjestajZN.text"/>
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtHrkadrovi">
+        <parameter name="@Action" value="Djelatnik_src"/>
+        <parameter name="@tekst" value="#srcOsobaZN.text"/>
+      </data>
+      <data command="spOSInventura_MobileCP" name="dtPrezaduzi">
+        <parameter name="@Action" value="Prezaduzenje_neocekivano"/>
+        <parameter name="@OSImovinaId" value="$OSImovinaId" />
+        <parameter name="@OrgShemaId" value="#srcOrgShemaZN" />
+        <parameter name="@SmjestajId" value="#srcSmjestajZN" />
+        <parameter name="@HRKadroviId" value="#srcOsobaZN" />
+        <parameter name="@OperateriId" value="@@OperateriId" />
+        <parameter name="@Kolicina" value="#txtOcekivano" />
+      </data>
+    </datalist>
+  </form>
+
+  <!--**************************KRAJ FORME ZA PREZADUŽENJE***********************************-->
+
+
+</root>

@@ -1,0 +1,147 @@
+<!-- 
+25.11.2022. MB dodala control focus
+19.09.2022. MB stavljen ProNotpGlaId kao output
+20.07.2022., AR - dodao da se kod otvaranja forme za izmjenu proslijedi varijabla VrstaDokId da bi se na formi za izmjenu mogao prikazati radni nalog
+05.01.2021., Daz - dodao polje za Radni nalog
+ -->
+<root>
+	<form name="frmDokUnos" caption="Unos dokumenta: {$VrstaDok}" width="370" height="530">
+		<event type="init">
+			<action type="datarun reader" value="Global.dtPubVars"/>
+			<action type="datarun reader" value="Global.dtPopuniPolja"/>
+			<action type="datarun reader" value="Global.dtNacinPlacPremaVrd"/>
+			<action type="datarun reader" value="dtRN_Provjera_VrstaDok"/>
+			<action type="variable value">
+				<parameter name="IndLoad" value="0" />
+			</action>			
+		</event>
+		<event type="shown">
+			<action type="control value" value="#txtBroj">
+				<parameter value="&lt;novi dokument&gt;"/>
+			</action>			
+			<action type="control focus" value="#srcPartner" />			
+			<action type="control disable" value="#txtBroj" />
+			<action type="control disable" value="#cmbKontakt" if="#srcPartner==null" />
+			<action type="control enable" value="#cmbKontakt" else="" />
+			<action type="control disable" value="#bteVrBoda" if="#cmbValuta==null" />
+			<action type="control enable" value="#bteVrBoda" else="" />			
+			<action type="control value" value="#bteVrBoda">
+				<parameter value="~dtPubVars.@NasBod"/>
+			</action>
+			<action type="control value" value="#cmbOrgShema">
+				<parameter value="~dtPopuniPolja.@OrgShemaId"/>
+			</action>
+			<action type="control value" value="#cmbSkladiste">
+				<parameter value="~dtPopuniPolja.@SkladisteId"/>
+			</action>
+			<action type="control value" value="#cmbOsobe">
+				<parameter value="~dtPopuniPolja.@OsobeId"/>
+			</action>	
+			<action type="control value" value="#cmbNacinOtpreme">
+				<parameter value="~dtPopuniPolja.@NacinIsporukeId"/>
+			</action>
+			<action type="variable value" value="NacPlacPremaVrD">
+				<parameter value="~dtNacinPlacPremaVrd.@ProNacinplacanjaid" />
+			</action>			
+			<action if="~dtNacinPlacPremaVrd.@ProNacinplacanjaid==0">
+				<action type="control value" value="#cmbNacinPlacanja">
+					<parameter value="~dtPopuniPolja.@ProNacinNaplateId"/>
+				</action>
+			</action>
+			<action else="">
+				<action type="control value" value="#cmbNacinPlacanja">
+					<parameter value="~dtNacinPlacPremaVrd.@ProNacinplacanjaid"/>
+				</action>
+			</action>
+			<action type="control value" value="#cmbInstrumentPlacanja">
+				<parameter value="~dtPopuniPolja.@KntNacinPlacId"/>
+			</action>	
+			<action if="~dtRN_Provjera_VrstaDok.@Koop==0" type="control visible" value="#srcBrRN">
+				<parameter value="false" />
+			</action>
+			<action else="" type="control visible" value="#srcBrRN">
+				<parameter value="true" />
+			</action>
+		</event>
+		<layout textposition="left" itemspadding="3">
+			<group cols="1" rows="1">
+				<group cols="1" rows="17" col="1" row="1" backgroundcolor="#f5f5f5" groupbordervisible="False">
+					<part name="NotpZaglavlje" path="prtNotp.xml" />
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="UNESI" type="add">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun reader" value="~dtDataInsert">
+				<!--			<parameter name="ProNotpGlaId" />  -->
+						</action>
+						<action type="variable value" value="Global.$DokId">
+							<parameter value="$ProNotpGlaId" />
+						</action>
+						<action type="control populate" value="parent.#grdGlava" />
+						<action type="control focus" value="parent.#grdGlava">
+							<parameter value="$ProNotpGlaId" />
+						</action>						
+						<action type="form close"/>
+						<action type="form open" value="frmDokIzmjena">
+							<parameter name="ProNotpGlaId" value="$ProNotpGlaId"/>
+							<action type="variable value" value="Global.$DokId">
+								<parameter value="$ProNotpGlaId" />
+							</action>
+							<parameter name="Status" value="1"/>
+							<parameter name="NOtpInsert" value="1" />
+							<parameter name="VrstaDok" value="$VrstaDok" />
+						</action>
+					</event>
+				</button>
+				<button caption="ODUSTANI" type="cancel" dock="right"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_NotpGla_Unos" name="dtDataInsert">
+				<parameter name="@Status" value="1" />
+				<parameter name="@OrgShemaId" value="#cmbOrgShema" />
+				<parameter name="@OperateriId" value="@@OperateriId" />
+				<parameter name="@OsobeId" value="#cmbOsobe" />
+				<parameter name="@PartneriId" value="#srcPartner" />
+				<parameter name="@OsobeParId" value="#cmbKontakt" />
+				<parameter name="@VrstaDokId" value="$VrstaDokId" />
+				<parameter name="@DatumDok" value="#datDatumDok" />
+				<parameter name="@VrBoda" value="#bteVrBoda" type="decimal" if="#cmbValuta==null"/>
+				<parameter name="@VrBoda" value="~dtPubVars.@NasBod" type="decimal" else=""/>
+				<parameter name="@VrBodaDev" value="#bteVrBoda" type="decimal" if="#cmbValuta!=null"/>
+				<parameter name="@VrBodaDev" value="0" type="decimal" else=""/>
+				<parameter name="@NacinIsporukeId" value="#cmbNacinOtpreme" />
+				<parameter name="@ParStruId" value="#srcParstru" />
+				<parameter name="@SkladisteId" value="#cmbSkladiste" />
+				<parameter name="@DevValuteId" value="#cmbValuta" />
+				<parameter name="@BrojNarudzbe" value="#txtBrNar" />
+				<parameter name="@id.output.int" variablename="ProNotpGlaId" />
+				<parameter name="@RajonId" value="#cmbRajon" />
+				<parameter name="@DatumIsporuke" value="#datDatumIsporuke" />
+				<parameter name="@ProNacinPlacanjaId" value="#cmbNacinPlacanja" />
+				<parameter name="@KntNacinPlacId" value="#cmbInstrumentPlacanja" />
+				<parameter name="@VrstaPromId" value="Global.$VrstaPromId" />
+				<parameter name="@BodoviId" value="0" />
+				<parameter name="@KupUgovoriId" value="0" />
+				<parameter name="@VrVezano" value="0" />
+				<parameter name="@PovratDok" value="0" />
+				<parameter name="@ProPlaUvjetiId" value="null" />
+				<parameter name="@StatusOtpreme" value="1" />
+				<parameter name="@Opis" value="#txtOpis" />
+				<parameter name="@PrnRadniNalogId" value="#srcBrRN" />
+			</data>
+			<data command="spPrnRadniNalogTrazi" name="dtRadniNalog">
+				<parameter name="@Action" value="2" />
+				<parameter name="@Broj" value="#srcBrRN.text" />
+				<parameter name="@PartneriId" value="#srcPartner" />			
+			</data>
+			<data command="spRN_Provjera_VrstaDok" name="dtRN_Provjera_VrstaDok">
+				<parameter name="@VrstaDokId" value="$VrstaDokId" />
+			</data>			
+		</datalist>
+	</form>
+</root>

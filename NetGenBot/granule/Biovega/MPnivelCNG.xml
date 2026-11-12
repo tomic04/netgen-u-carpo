@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+<PROJECT  
+ONLOAD="spMPNIvelacijaNG @action=3, @operateriid=@@operateriid"
+BUTTONS="Dodaj novu izmjenu MPC:FORM1#Obriši odabrane izmjene MPC:MULTISELECTDELETEFORM#Izmjeni odabranu stavku:UPDATEFORM#Odredi akciju za odabrane robe:MULTISELECTAKCIJAFORM#Proknjiži SVE izmjene MPC:PROKNJIZIFORM#Pregled cjenika:DAJCJENIK#Donesi MPC:DONESI"
+POPUPMASTER="Izmjeni datum odabranim izmjenama MPC:MULTISELECTUPDATEDATUM"
+MASTERDBLCLICK="UPDATEFORM"
+CHECKBOXVISIBLE="TRUE"
+GROUPBYBOXVISIBLE="TRUE"
+TOTALROWVISIBLE="FALSE"
+COMMANDTIMEOUT="600"
+EDITCOLUMNS="[Akcija za WEB1000]"
+ONCELLEDITED="spMPnivelacijaNG @action = 25, @TempPromMPCid = @@id">
+ 
+
+	
+  <NAME>Izmjena MP cijena u cjeniku NG</NAME>
+  <CAPTION>Izmjena MP cijena u cjeniku NG</CAPTION>
+
+
+	<FORM1
+		NAME="FORM1"
+		HEIGHT="3500"
+		WIDTH="7502"
+		ONLOAD=""
+		CAPTION="Unos nove mp cijene robe">
+
+		<INPUT TYPE="button" NAME="ok"     CAPTION="Pojedinačno kalkuliranje mp cijene" TOP="500" LEFT="456" WIDTH="4000" HEIGHT="322" ONCLICK=":DODAJFORM(@robaid=null,@TempPromMPCid=null)#OK"  HOTKEY="" />
+		<INPUT TYPE="button" NAME="ok"     CAPTION="Izmjena mp cijene više roba bez kalkuliranja" TOP="1000" LEFT="456" WIDTH="4000" HEIGHT="322" ONCLICK=":DODAJFORMZBIRNO(@robaid=null)#OK"  HOTKEY="" />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2000" LEFT="5500" WIDTH="1106" HEIGHT="322" ONCLICK="close" />
+
+	</FORM1>
+
+
+	<DODAJFORMZBIRNO
+		WIDTH="15000"
+		ONSUBMIT=""
+		ONLOAD="select getdate()+1 as dat3, null as robaid, null as search, null as klasaid, null as podklase"
+		HEIGHT="9500"
+		CAPTION="Nova nivelacija"
+		ONLOADED="select convert(varchar(10),@@dat3+1,104) as DatDo, 0 as akcija#select 'disable' as DatDo"
+		FILLEXPLORER="" >
+
+		<INPUT TYPE="combo" NAME="vrcjenikid" CAPTION="Vrsta cjenika:*" TOP="500" LEFT="2000" WIDTH="4500" HEIGHT="320" ALLOWEMPTY="FALSE" SQL="spmpDajMPCjenik @operateriid = @@operateriid, @samoglavnicjenici=1"/>
+		<INPUT TYPE="date" NAME="dat3" CAPTION="Datum nivelacije:*" VALUE="DATE" TOP="900" LEFT="2000" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" ONLOSTFOCUS=""/>
+		<INPUT TYPE="check" NAME="akcija" CAPTION="Akcija*" VALUE="" TOP="900" LEFT="5500 " HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE"
+			   ONCLICK="if @@akcija = 1 begin select 'enable' as DatDo end#if @@akcija = 0 begin select 'disable' as DatDo end#select convert(varchar(10),@@dat3+1,112) as DatDo#select @@DatDo as DatDo" ONLOSTFOCUS="" />
+		<INPUT TYPE="date" NAME="DatDo" CAPTION="Datum do kada vrijedi promjena mp cijene:*" VALUE="DATE" TOP="900" LEFT="9500" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" ONCLICK="" ONLOSTFOCUS="select 'refresh' as stavke" />
+
+		<INPUT TYPE="text" CAPTION="Traženje pojma:*" NAME="search" TOP="1300" LEFT="2000" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="TRUE" />
+		<INPUT TYPE="combo" CAPTION="Klasa:*" NAME="klasaid" SQL="select KlMasterRobaId, rtrim(oznaka)+' '+naziv as naziv from KlMasterRoba order by sortkey" ALLOWEMPTY="TRUE" TOP="1700" LEFT="2000" WIDTH="7500" HEIGHT="320"/>
+		<INPUT TYPE="checkbox" NAME="podklase" TOP="2100" LEFT="2500" WIDTH="3500" HEIGHT="320" CAPTION="pokaži i sve podklase"/>
+
+		<INPUT TYPE="button" NAME="ok" CAPTION="POKAŽI ROBU" TOP="2100" LEFT="11500" WIDTH="2000" HEIGHT="322" ONCLICK="if @@dat3 &lt; convert(datetime,convert(varchar(12),getdate())) begin exec spRaiserror 69001, &apos;Nije dozvoljeno unositi promjenu cijena na datum manji od današnjeg ! !&apos; end
+		   else begin select 'refresh' as grid1 end"  />
+		
+		<INPUT TYPE="grid"
+				 NAME="grid1"
+				 REFRESHAFTERCHILD="TRUE"
+				 CAPTION="Odabrana roba*"
+				 SKIPDEFAULTLOAD="TRUE"
+				 TOP="2500"
+				 LEFT="1500"
+				 WIDTH="12800"
+				 HEIGHT="5500"
+				 CHECKBOXVISIBLE="FALSE"
+				 EDITCOLUMNS="Nova cijena1000"
+				 ONCELLEDITED="spMPNIvelacijaNG @action=16, @novacijena=@(grid1..Nova cijena1000), @robaid=@@grid1, @vrcjenikid=@@vrcjenikid#select 'grid1' as focus"
+				 SQL="spMPNIvelacijaNG @action=15, @operateriid=@@operateriid, @search='@@search', @klasaid=@@klasaid, @podklase=@@podklase, @vrcjenikid=@@vrcjenikid, @datumdok=@@dat3"
+				 TOTALROW="FALSE"/>
+
+		<INPUT TYPE="button" NAME="ok" CAPTION="Gotovo" TOP="8300" LEFT="300" WIDTH="1106" HEIGHT="322" 
+			   ONCLICK="spMPNIvelacijaNG @action=17,@operateriid=@@operateriid,@datumdok=@@dat3,@vrcjenikid = @@vrcjenikid, @akcija = @@akcija, @DatDo=@@DatDo#Ok"  />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="8300" LEFT="2000" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+	</DODAJFORMZBIRNO>
+	
+	
+	<DODAJFORMstaro 
+                 WIDTH="11000" 
+                 ONSUBMIT="" 
+                 ONLOAD="select convert(varchar(10),getdate()+1,104) as datumdok, 0 as robaid, null as TempPromMPCid" 
+                 HEIGHT="6500" 
+                 CAPTION="Nova nivelacija"  
+                 CMD1CAPTION="Gotovo" 
+                 CMD2CAPTION="" 
+				 CMD4CAPTION="Izmjeni cijenu:IZMJENIFORM" 
+				 CMD5CAPTION="Dodaj u cjenik:DODAJROBUUCJENIKFORM" 
+				 FILLEXPLORER="">
+	  
+      <INPUT TYPE="search" CAPTION="Roba:*" NAME="robaid" SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid'" ONLOSTFOCUS="exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid" ALLOWEMPTY="FALSE" TOP="500" LEFT="1000" WIDTH="9000" HEIGHT="320" BACKCOLOR="LIGHTYELLOW" HOTKEY="F5"/>
+	  <INPUT TYPE="date" NAME="datumdok" CAPTION="Datum nivelacije:*" VALUE="DATE" TOP="1000" LEFT="2000" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" ONCLICK="" 
+			 ONLOSTFOCUS="select 'refresh' as stavke" />
+	  <neINPUT TYPE="check" NAME="akcija" CAPTION="Akcija*" VALUE="" TOP="1000" LEFT="4000 " HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" ONCLICK="" ONLOSTFOCUS="" />
+
+	  <INPUT TYPE="grid" NAME="stavke" 
+			 REFRESHAFTERCHILD="TRUE" 
+			 CAPTION="Cijene po cjenicima:*" 
+			 TOP="1500" LEFT="2000" WIDTH="8000" HEIGHT="3500" 
+			 SQL="spMPNIvelacijaNG @action=2,@robaid=@@robaid, @datumdok = @@datumdok, @operateriid = @@operateriid" 
+			 CHECKBOXVISIBLE="FALSE" 
+			 GROUPBYBOXVISIBLE="FALSE" 
+			 TOTALROW="FALSE"/>  
+	  
+  </DODAJFORMstaro>
+
+
+	<DODAJFORM
+				   WIDTH="11000"
+				   ONSUBMIT=""
+				   ONLOAD="select convert(varchar(10),getdate()+1,112) as datum2dok, null as robaid, null as TempPromMPCid"
+				   HEIGHT="6500"
+				   CAPTION="Nova nivelacija"
+				   FILLEXPLORER="">
+
+		<INPUT TYPE="search" CAPTION="Roba:*" NAME="robaid" SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid' " ONLOSTFOCUS="exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid#select 'refresh' as stavke" ALLOWEMPTY="FALSE" TOP="500" LEFT="1000" WIDTH="9000" HEIGHT="320" BACKCOLOR="LIGHTYELLOW" HOTKEY="F5"/>
+		<INPUT TYPE="date" NAME="datum2dok" CAPTION="Datum nivelacije:*" VALUE="DATE" TOP="1000" LEFT="2000" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" ONCLICK="" 
+			   ONLOSTFOCUS="select 'refresh' as stavke" />
+		<neINPUT TYPE="check" NAME="akcija" CAPTION="Akcija*" VALUE="" TOP="1000" LEFT="4000 " HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" ONCLICK="" ONLOSTFOCUS="" />
+
+		<INPUT TYPE="grid" NAME="stavke" 
+			   REFRESHAFTERCHILD="TRUE" 
+			   CAPTION="Cijene po cjenicima:*" 
+			   TOP="1500" LEFT="2000" WIDTH="8000" HEIGHT="3500"
+			   SQL="spMPNIvelacijaNG @action=2,@robaid=@@robaid, @datumdok = @@datum2dok, @operateriid = @@operateriid" 
+			   CHECKBOXVISIBLE="FALSE" 
+			   GROUPBYBOXVISIBLE="FALSE" 
+			   TOTALROW="FALSE"/>
+
+
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Gotovo" TOP="5500" LEFT="196" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+		<INPUT TYPE="button" NAME="ok" CAPTION="Izmjeni MP cijenu robe u odabranom cjeniku" TOP="5300" LEFT="3500" WIDTH="2000" HEIGHT="644" ONCLICK=":IZMJENIFORM"  />
+		<INPUT TYPE="button" NAME="ok" CAPTION="Dodaj robu u cjenik" TOP="5300" LEFT="6000" WIDTH="2000" HEIGHT="644" ONCLICK=":DODAJROBUUCJENIKFORM"  />
+
+	</DODAJFORM>
+
+	
+  <UPDATEFORM 
+                 WIDTH="9800" 
+                 ONSUBMIT="" 
+                 ONLOAD="if (select vezanicjenikid from TempPromMPC where TempPromMPCId=@@id) is not null begin 
+					 exec spRaiserror 69001, &apos;Ne možete ispravljati cijenu na vezanom cjeniku !&apos;
+					 end
+					 else begin
+					 if coalesce(@@id,0) = 0 begin 
+			 					exec spRaiserror 69001, &apos;Nemate šta mijenjati  !&apos;
+					 end
+					 else begin
+					 if (select coalesce(akcija,0) from TempPromMPC where TempPromMPCId=@@id) =1 begin 
+					 exec spRaiserror 69001, &apos;Budući da se radi o akciji, podaci nisu dostupni za ispravak ! Potrebno je obrisati početak i kraj akcije i unijeti ponovno ispravne podatke !&apos;
+					 end
+					 else begin
+					 exec spMPNIvelacijaNG @action=12,@datumdok=@@datumdok,@robaid=@@robaid,@TempPromMPCid = @@ID
+					 end end end" 
+				 ONLOADED="if (select coalesce(akcija,0) from TempPromMPC where TempPromMPCId=@@id) = 2 begin
+							select 'disable' as nabcijena, 'disable' as marza, 'disable' as cijena end"
+                 HEIGHT="4500" 
+                 CAPTION="Izmjena nivelacije: @@opis"  
+				 FILLEXPLORER="" >
+	  
+	  <INPUT TYPE="text" CAPTION="Roba:*" NAME="roba" TOP="500" LEFT="1000" SQL="" WIDTH="7000" HEIGHT="320" ENABLED="FALSE" />
+	  <INPUT TYPE="date" NAME="datumdok" CAPTION="Datum nivelacije:*" TOP="1000" LEFT="2000" VALUE="DATE" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" />
+	  <INPUT TYPE="check" NAME="akcija" CAPTION="Akcija*" VALUE="" TOP="1000" LEFT="4000 " HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" ONCLICK="" ONLOSTFOCUS="" ENABLED="FALSE"/>
+
+	  <INPUT TYPE="number" NAME="nabcijena" TOP="1500" LEFT="3500" ONLOSTFOCUS="select [dbo].[fnMPKalk] (@@robaid , 2 , @@cijena , @@marza , @@nabcijena) as cijena, 'marza' as focus " CAPTION="Nabavna cijena:*" WIDTH="1500" HEIGHT="320" DECIMALS="2" />
+	  <INPUT TYPE="number" NAME="marza" TOP="2000" LEFT="3500" ONLOSTFOCUS="select [dbo].[fnMPKalk] (@@robaid , 3 , @@cijena , @@marza , @@nabcijena) as cijena, 'cijena' as focus " CAPTION="Marža %:*" WIDTH="1500" HEIGHT="320" DECIMALS="2" />
+	  <INPUT TYPE="number" NAME="cijena" TOP="2500" LEFT="3500" ONLOSTFOCUS="select [dbo].[fnMPKalk] (@@robaid , 1 , @@cijena , @@marza , @@nabcijena) as marza, 'ok' as focus " CAPTION="MP Cijena:*" WIDTH="1500" HEIGHT="320" DECIMALS="2" />
+
+	  <INPUT TYPE="button" NAME="ok" CAPTION="Spremi " TOP="3500" LEFT="196" WIDTH="1106" HEIGHT="322" ONCLICK="spMPNIvelacijaNG @action=1, @robaid=@@robaid, @TempPromMPCid=@@id, @datumdok=@@datumdok, @cijena=@@cijena, @marza=@@marza, @nabcijena=@@nabcijena, @operateriid=@@operateriid#Ok"  />
+	  <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="3500" LEFT="1456" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+  </UPDATEFORM>
+
+
+
+  <DELETEFORMstaro
+			     WIDTH="6500" 
+			     ONSUBMIT="" 
+				 ONLOAD="if (select vezanicjenikid from TempPromMPC where TempPromMPCId=@@id) is not null begin 
+					exec spRaiserror 69001, &apos;Ne možete brisati cijenu na vezanom cjeniku !&apos;
+					end
+					else begin 
+					if coalesce(@@id,0) = 0 begin 
+								exec spRaiserror 69001, &apos;Nema podataka za brisanje !&apos;
+					end
+					else begin 
+					exec spMPNIvelacijaNG @action=12,@datumdok=@@datumdok,@robaid=@@robaid,@TempPromMPCid = @@ID
+					end end "	
+				 HEIGHT="3500" 
+				 CAPTION="Brisanje nivelacije: @@opis" 
+				 FILLEXPLORER="">
+
+	  <INPUT TYPE="text" CAPTION="Roba:*" NAME="roba" TOP="500" LEFT="1000" SQL="" WIDTH="5000" HEIGHT="320" ENABLED="FALSE" />
+	  <INPUT TYPE="checkbox" TOP = "1000" LEFT="1000" NAME="jedanart" WIDTH="3500" HEIGHT="320" CAPTION="Obrisati odabrani artikal ? (DA/NE) "/>
+	  <INPUT TYPE="checkbox" TOP = "1500" LEFT="1000" NAME="sviart" WIDTH="3500" HEIGHT="320" CAPTION="Obrisati sve artikle ? (DA/NE) "/>
+
+	  <INPUT TYPE="button" NAME="ok" CAPTION="Obriši " TOP="2500" LEFT="196" WIDTH="1106" HEIGHT="322" ONCLICK="spMPNIvelacijaNG @action = 11, @TempPromMPCid=@@id,++#Ok"  />
+	  <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2500" LEFT="1456" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+  </DELETEFORMstaro>
+
+
+	<MULTISELECTDELETEFORM
+				   WIDTH="15000"
+				   ONSUBMIT=""
+				   ONLOAD=""
+				   HEIGHT="6000"
+				   CAPTION="Brisanje pripremljenih izmjena mp cijena"
+				   FILLEXPLORER="">
+
+		<INPUT TYPE="label" NAME="stat" TOP="0800" LEFT="200" WIDTH="10000" HEIGHT="644" BOLD="TRUE"
+			   CAPTION="Želite izbrisati izmjene mp cijene odabranih stavki (koje NE PRIPADAJU vezanom cjeniku) ? Stavke koje pripadaju vezanom cjeniku bit će automatski obrisane brisanjem izmjene mp cijene na glavnom cjeniku . Stavkama koje su akcijske bit će automatski obrisan kraj akcije ." />
+		<INPUT TYPE="grid" NAME="stavkeDEL" CAPTION="Brisanje" TOP="1500" LEFT="1400" WIDTH="13000" HEIGHT="3000"
+			   SQL="spMPNIvelacijaNG @action = 13,@operateriid=@@operateriid, @akcija=2" CHECKBOXVISIBLE="FALSE" TOTALROW="FALSE"/>
+
+		<INPUT TYPE="button" NAME="" CAPTION="Ne obrisati izmjenu mp cijene" TOP="2000" LEFT="140" WIDTH="1050" HEIGHT="644" ONCLICK="delete from totalgenmultiselecttemp where id=@@stavkeDEL and operateriid=@@operateriid#select 'refresh' as stavkeDEL"  />
+
+		<INPUT TYPE="button" NAME="ok" CAPTION="Obriši" TOP="5000" LEFT="300" WIDTH="1106" HEIGHT="322" ONCLICK="FOREACHROW(stavkeDEL)#spMPNIvelacijaNG @action=11,@TempPromMPCid=@@stavkeDEL,@jedanart = 1#ok"  />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="5000" LEFT="2000" WIDTH="1106" HEIGHT="322" ONCLICK="CLOSE#delete from totalgenmultiselecttemp where operateriid =  @@operateriid"  />
+
+	</MULTISELECTDELETEFORM>
+
+	
+	<MULTISELECTAKCIJAFORM
+					   WIDTH="15000"
+					   ONSUBMIT=""
+					   ONLOAD=""
+					   HEIGHT="6000"
+					   CAPTION="Naknadno određivanje akcije pripremljenih izmjena mp cijena"
+					   FILLEXPLORER="">
+		
+		<INPUT TYPE="check" NAME="akcija" CAPTION="Akcija*" VALUE="" TOP="500" LEFT="4500 " HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE"
+				 ONCLICK="if @@akcija = 1 begin select 'enable' as DatDo end#if @@akcija = 0 begin select 'disable' as DatDo end#select convert(varchar(10),@@datumdok+1,112) as DatDo#select @@DatDo as DatDo" ONLOSTFOCUS="" />
+		<INPUT TYPE="date" NAME="DatDo" CAPTION="Datum do kada vrijedi promjena mp cijene:*" VALUE="DATE" TOP="500" LEFT="8500" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" ONCLICK="" ONLOSTFOCUS="select 'refresh' as stavke" />
+
+
+		<INPUT TYPE="grid" NAME="stavkeAKCIJA" CAPTION="Robe kojima se određuje akcijska izmjena mp cijene" TOP="1500" LEFT="1400" WIDTH="13000" HEIGHT="3000"
+			   SQL="spMPNIvelacijaNG @action = 13,@operateriid=@@operateriid, @akcija=1" CHECKBOXVISIBLE="FALSE" TOTALROW="FALSE"/>
+
+		<INPUT TYPE="button" NAME="" CAPTION="Ukloni izmjenu mp cijene iz prikaza" TOP="2000" LEFT="140" WIDTH="1050" HEIGHT="644" ONCLICK="delete from totalgenmultiselecttemp where id=@@stavkeAKCIJA and operateriid=@@operateriid#select 'refresh' as stavkeAKCIJA"  />
+
+		<INPUT TYPE="button" NAME="ok" CAPTION="Unesi akciju" TOP="5000" LEFT="300" WIDTH="1106" HEIGHT="322" ONCLICK="FOREACHROW(stavkeAKCIJA)#if @@akcija = 1 begin exec spMPNIvelacijaNG @action=24, @TempPromMPCid=@@stavkeAKCIJA, @DatDo=@@DatDo, @operateriid=@@operateriid end#ok"  />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="5000" LEFT="2000" WIDTH="1106" HEIGHT="322" ONCLICK="CLOSE#delete from totalgenmultiselecttemp where operateriid =  @@operateriid"  />
+
+	</MULTISELECTAKCIJAFORM>
+	
+	
+	
+	<PROKNJIZIFORM
+			     WIDTH="5500" 
+			     ONSUBMIT="spMPNIvelacijaNG @action=4,@operateriid=@@operateriid" 
+			     ONLOAD="if coalesce(@@id,0) = 0 begin 
+				   exec spRaiserror 69001, &apos;Nema podataka za knjiženje !&apos;
+				   end"	
+			     HEIGHT="2500" 
+		         CAPTION="Proknjižiti ?" 
+			     CMD1CAPTION="Proknjiži"
+			     CMD2CAPTION="Odustani" 
+			     FILLEXPLORER=""> 
+	  
+   	  <INPUT TYPE="label" NAME="stat" TOP="500" LEFT="200" WIDTH="3500" CAPTION="Jeste li sigurni da želite proknjižiti nivelaciju ? " />
+	  
+  </PROKNJIZIFORM> 
+  
+
+  <IZMJENIFORM
+				 WIDTH="6500" 
+				 ONSUBMIT="" 
+				 ONLOAD="if @@robaid is null begin 
+					exec spRaiserror 69001, &apos;Niste odabrali robu !&apos;
+					end else begin
+						if (select vezanicjenikid from TempPromMPC where TempPromMPCId=@@gridstavkeTempPromMPCId) is not null begin 
+						exec spRaiserror 69001, &apos;Ne možete ispravljati cijenu na vezanom cjeniku !&apos;
+						end	else begin
+							if (select count(*) from cjenik where robaid=@@robaid)=0 begin
+							exec spRaiserror 69001, &apos;Nemate podataka za izmjenu cijena ! Kliknite na gumb Dodaj !&apos;
+							end	else begin
+					exec spMPNIvelacijaNG @action=12,@datumdok = @@datum2dok, @cjenikid  = @@gridstavkecjenikid, @TempPromMPCid = @@gridstavkeTempPromMPCid , @vrcjenikid = @@gridstavkevrcjenikid  
+					end end end"
+				 ONLOAD2=""
+				 ONLOADED="select convert(varchar(10),@@datum2dok+1,104) as DatDo, 0 as akcija#select 'disable' as DatDo"
+				 HEIGHT="3500" 
+				 CAPTION="Izmjeni cijenu: @@opis" 
+				 FILLEXPLORER=""> 
+
+	  <INPUT TYPE="number" NAME="nabcijena" TOP="500" LEFT="2000" ONLOSTFOCUS="select [dbo].[fnMPKalk] (@@robaid , 2 , @@cijena , @@marza , @@nabcijena) as cijena, 'marza' as focus " CAPTION="Nabavna cijena:*" WIDTH="1500" HEIGHT="320" DECIMALS="2" />
+	  <INPUT TYPE="number" NAME="marza" TOP="1000" LEFT="2000" ONLOSTFOCUS="select [dbo].[fnMPKalk] (@@robaid , 3 , @@cijena , @@marza , @@nabcijena) as cijena, 'cijena' as focus " CAPTION="Marža %:*" WIDTH="1500" HEIGHT="320" DECIMALS="2" />
+	  <INPUT TYPE="number" NAME="cijena" TOP="1500" LEFT="2000" ONLOSTFOCUS="select [dbo].[fnMPKalk] (@@robaid , 1 , @@cijena , @@marza , @@nabcijena) as marza, 'ok' as focus " CAPTION="MP Cijena:*" WIDTH="1500" HEIGHT="320" DECIMALS="2" />
+	  <INPUT TYPE="check" NAME="akcija" CAPTION="Akcija*" VALUE="" TOP="1500" LEFT="4000 " HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE"
+			 ONCLICK="if @@akcija = 1 begin select 'enable' as DatDo end#if @@akcija = 0 begin select 'disable' as DatDo end#select convert(varchar(10),@@datum2dok+1,112) as DatDo#select @@DatDo as DatDo" ONLOSTFOCUS="" />
+	  <INPUT TYPE="date" NAME="DatDo" CAPTION="Datum do kada vrijedi promjena mp cijene:*" VALUE="DATE" TOP="2000" LEFT="4000" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" ONCLICK="" ONLOSTFOCUS="select 'refresh' as stavke" />
+
+	  <INPUT TOP="5000" TYPE="number" NAME="cjenikid" CAPTION="cjenikid" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="0" />
+	  <INPUT TOP="5000" TYPE="date" NAME="datumdok" CAPTION="Datum dokumenta:" VALUE="DATE" HEIGHT="320" WIDTH="1500" TABINDEX="-1" CHECKBOX="FALSE" />
+	  <INPUT TOP="5000" TYPE="number" NAME="robaid" CAPTION="robaid" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+	  <INPUT TOP="5000" TYPE="number" NAME="TempPromMPCid" CAPTION="TempPromMPCid" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="0" />
+	  <INPUT TOP="5000" TYPE="number" NAME="vrcjenikid" ALOWEMPTY ="FALSE" CAPTION="vrcjenikid" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="0" />
+
+	  <INPUT TYPE="button" NAME="ok" CAPTION="Spremi" TOP="2500" LEFT="196" WIDTH="1106" HEIGHT="322" 
+			 ONCLICK="spMPNIvelacijaNG @action=1, @robaid=@@robaid, @TempPromMPCid=@@TempPromMPCid, @cjenikid=@@cjenikid, @datumdok=@@datum2dok, @vrcjenikid=@@vrcjenikid, @cijena=@@cijena, @marza=@@marza, @nabcijena=@@nabcijena, @operateriid=@@operateriid, @akcija = @@akcija, @DatDo=@@DatDo #Ok"  />
+	  <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2500" LEFT="1456" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+  </IZMJENIFORM> 
+
+
+  <DODAJROBUUCJENIKFORM
+				 WIDTH="7000" 
+				 HEIGHT="4000" 
+				 ONSUBMIT="spMPNIvelacijaNG @action=0,@operateriid=@@operateriid," 
+				 ONLOAD="if @@robaid is null begin 
+					exec spRaiserror 69001, &apos;Niste odabrali robu !&apos;
+					end
+					else begin select @@datum2dok as datumdok,@@robaid as robaid, (select naziv from roba where robaid=@@robaid) as nazivrobe
+					end "		
+				 CAPTION="Dodaj robu u cjenik: @@nazivrobe" >
+
+	  <INPUT TYPE="combo" NAME="vrcjenikid" TOP="500" LEFT="2000" CAPTION="Vrsta cjenika:*" WIDTH="4500" HEIGHT="320" ALLOWEMPTY="FALSE" SQL="spmpDajMPCjenik @operateriid = @@operateriid, @samoglavnicjenici=1"/>
+	  <INPUT TYPE="number" NAME="nabcijena" TOP="1000" LEFT="2000" ONLOSTFOCUS="select [dbo].[fnMPKalk] (@@robaid , 2 , @@cijena , @@marza , @@nabcijena) as cijena, 'marza' as focus " CAPTION="Nabavna cijena:*" WIDTH="1500" HEIGHT="320" DECIMALS="2" />
+	  <INPUT TYPE="number" NAME="marza" TOP="1500" LEFT="2000" ONLOSTFOCUS="select [dbo].[fnMPKalk] (@@robaid , 3 , @@cijena , @@marza , @@nabcijena) as cijena, 'cijena' as focus " CAPTION="Marža %:*" WIDTH="1500" HEIGHT="320" DECIMALS="2" />
+	  <INPUT TYPE="number" NAME="cijena" TOP="2000" LEFT="2000" ONLOSTFOCUS="select [dbo].[fnMPKalk] (@@robaid , 1 , @@cijena , @@marza , @@nabcijena) as marza, 'ok' as focus " CAPTION="MP Cijena:*" WIDTH="1500" HEIGHT="320" DECIMALS="2" />
+
+	  <INPUT TOP="5000" TYPE="number" NAME="cjenikid" CAPTION="cjenikid" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+	  <INPUT TOP="5000" TYPE="date" NAME="datumdok" CAPTION="Datum dokumenta:" VALUE="DATE" HEIGHT="320" WIDTH="1500" TABINDEX="-1" CHECKBOX="FALSE" />
+	  <INPUT TOP="5000" TYPE="number" NAME="robaid" CAPTION="robaid" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+	  
+	  <INPUT TYPE="button" TOP="3000" LEFT="300" name="ok" CAPTION="Spremi" ONCLICK="OK" />
+	  <INPUT TYPE="button" TOP="3000" LEFT="2000" name="cancel"  CAPTION="Odustani" ONCLICK="CLOSE" />
+
+	  
+  </DODAJROBUUCJENIKFORM> 
+
+
+  <DAJCJENIK
+  
+                 WIDTH="15000" 
+                 ONSUBMIT="" 
+                 ONLOAD="select @@vrcjenikid as vrcjenikid, @@robaid as robaid, 'roba:'=(select naziv from roba where robaid=@@robaid)" 
+                 HEIGHT="7500" 
+                 CAPTION="Stavke cjenika"
+				 FILLEXPLORER="" >
+	  
+      <INPUT TYPE="combo" NAME="vrcjenikid" CAPTION="Vrsta cjenika:*" TOP="500" LEFT="2000" WIDTH="4500" HEIGHT="320" ALLOWEMPTY="TRUE" SQL="spmpDajMPCjenik @operateriid = @@operateriid"/>
+	  <INPUT TYPE="search" CAPTION="Roba:*" NAME="robaid" SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid'" ONLOSTFOCUS="if @@robaid is not null begin exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid end" ALLOWEMPTY="TRUE" TOP="1000" LEFT="2000" WIDTH="9000" HEIGHT="320" BACKCOLOR="LIGHTYELLOW" HOTKEY="F5"/>
+	  <INPUT TYPE="grid" NAME="grid1" REFRESHAFTERCHILD="" CAPTION="Cijene po cjenicima:*" TOP="1500" LEFT="2000" WIDTH="12500" HEIGHT="4000" SQL="spMPNIvelacijaNG @action=6,@robaid=@@robaid, @vrcjenikid = @@vrcjenikid" CHECKBOXVISIBLE="FALSE" GROUPBYBOXVISIBLE="FALSE" TOTALROW="FALSE"/>
+
+	  <INPUT TYPE="button" TOP="6500" LEFT="300" name="ok" CAPTION="Pokaži" ONCLICK="if @@robaid is null and @@vrcjenikid is null begin exec spRaiserror 69001, &apos;Odaberite ili cjenik ili robu za pregled podataka !&apos; end#select 'refresh' as grid1" />
+	  <INPUT TYPE="button" TOP="6500" LEFT="2000" name="cancel"  CAPTION="Odustani" ONCLICK="CLOSE" />
+	  
+  </DAJCJENIK>
+
+  <DONESI
+				 NAME="DONESI"
+				 HEIGHT="2902" WIDTH="7502"
+				 CAPTION="Donos mp cijena">
+
+	<INPUT TYPE="button" NAME="ok" CAPTION="Donos mpcijena sa drugog cjenika" TOP="500" LEFT="456" WIDTH="3500" HEIGHT="322" ONCLICK=":DONOSDRUGICJENIK#OK"  HOTKEY="F2" />
+	<INPUT TYPE="button" NAME="ok" CAPTION="Donos razlike mpcijena sa istog cjenika" TOP="1000" LEFT="456" WIDTH="3500" HEIGHT="322" ONCLICK=":DONOSISTICJENIK#OK"  HOTKEY="F2" />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="1500" LEFT="3756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	  
+  </DONESI >
+
+
+  <DONOSDRUGICJENIK
+				 WIDTH="7000" 
+                 ONSUBMIT="spMPNIvelacijaNG @action = 10, @operateriid=@@operateriid, " 
+                 ONLOAD="select convert(varchar(10),getdate()+1,104) as datumdok" 
+                 HEIGHT="3500" 
+                 CAPTION="Donos mpcijena sa drugog cjenika"  
+                 CMD1CAPTION="Donesi" 
+                 CMD2CAPTION="Odustani" 
+				 FILLEXPLORER="">
+	  
+	  <INPUT TYPE="date" NAME="datumdok" CAPTION="Datum dokumenta:*" VALUE="DATE" TOP="500" LEFT="2000" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" />
+	  <INPUT TYPE="combo" NAME="vrcjeniksaid" CAPTION="Cjenik sa:*" TOP="1000" LEFT="2000" WIDTH="4000" HEIGHT="320" ALLOWEMPTY="FALSE" SQL="select vrcjenikid as vrcjeniksaid,opis as naziv from vrcjenik where vrcjenikid not in (select vrcjenik2id from mpvezanicjenik) and datumaktiviranja is not null and indmp=1 order by coalesce(Datumaktiviranja,'20090101') desc "/>
+	  <INPUT TYPE="combo" NAME="vrcjenikid" CAPTION="Cjenik na:*" TOP="1500" LEFT="2000" WIDTH="4000" HEIGHT="320" ALLOWEMPTY="FALSE" SQL="spmpDajMPCjenik @operateriid = @@operateriid, @samoglavnicjenici=1" />
+	  
+  </DONOSDRUGICJENIK>
+
+  <DONOSISTICJENIK
+				 WIDTH="15000"
+			     ONSUBMIT=""
+			     ONLOAD="select convert(varchar(10),getdate()+1,112) as datumdok"
+				 ONLOADED="select convert(varchar(10),@@datumdok+1,112) as DatDo, 0 as akcija#select 'disable' as DatDo"
+			     HEIGHT="10000"
+			     CAPTION="Donos razlike mpcijena sa istog cjenika"
+			     FILLEXPLORER="">
+
+		<INPUT TYPE="combo" NAME="vrcjenikid" CAPTION="Vrsta cjenika:*" TOP="500" LEFT="2000" WIDTH="4500" HEIGHT="320" ALLOWEMPTY="FALSE"
+			   SQL="spmpDajMPCjenik @operateriid = @@operateriid, @samoglavnicjenici=1"/>
+		<INPUT TYPE="date" NAME="datumdok" CAPTION="Datum nivelacije:*" VALUE="DATE" TOP="900" LEFT="2000" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" />
+		<INPUT TYPE="check" NAME="akcija" CAPTION="Akcija*" VALUE="" TOP="900" LEFT="5500 " HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE"
+			   ONCLICK="if @@akcija = 1 begin select 'enable' as DatDo end#if @@akcija = 0 begin select 'disable' as DatDo end#select convert(varchar(10),@@datumdok+1,112) as DatDo#select @@DatDo as DatDo" ONLOSTFOCUS="" />
+		<INPUT TYPE="date" NAME="DatDo" CAPTION="Datum do kada vrijedi promjena mp cijene:*" VALUE="DATE" TOP="900" LEFT="9500" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" ONCLICK="" ONLOSTFOCUS="select 'refresh' as stavke" />
+		<INPUT TYPE="text" CAPTION="Traženje pojma:*" NAME="search" TOP="1300" LEFT="2000" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="TRUE" />
+		<INPUT TYPE="combo" CAPTION="Klasa:*" NAME="klasaid" TOP="1700" LEFT="2000" WIDTH="7500" HEIGHT="320"
+			   SQL="select KlMasterRobaId, rtrim(oznaka)+' '+naziv as naziv from KlMasterRoba order by sortkey" ALLOWEMPTY="TRUE" />
+		<INPUT TYPE="checkbox" NAME="podklase" TOP="2100" LEFT="2500" WIDTH="3500" HEIGHT="320" CAPTION="pokaži i sve podklase"/>
+
+	  <INPUT TYPE="combo" NAME="DobavljacId"  CAPTION="Dobavljači*"  TOP="2500" LEFT="2000"  WIDTH="4000" SQL="select partneriid, naziv from partneri where 
+			   partneriid in (select distinct dobavljacid from roba)"
+		 ONLOSTFOCUS="" ALLOWEMPTY="TRUE" BACKCOLOR="LIGHTYELLOW" />
+
+	  <INPUT TYPE="combo"    NAME="robnamarkaid"   ALLOWEMPTY="TRUE" CAPTION="Robna marka*" TOP="2500" LEFT="7000"  WIDTH="4000" HEIGHT="320"
+				SQL="select max(robnamarkaid) as robnamarkaid, opis from robnamarka
+					group by opis"
+/>
+
+		<INPUT TYPE="button"   NAME="ok"    CAPTION="POKAŽI ROBU" TOP="2100" LEFT="11500"  SQL="" 
+			   ONCLICK="if @@datumdok &lt; convert(datetime,convert(varchar(12),getdate())) begin exec spRaiserror 69001, &apos;Nije dozvoljeno unositi promjenu cijena na datum manji od današnjeg ! !&apos; end
+						else begin select 'refresh' as donosr end#select 'visible' as donosr" />	  
+	  
+	    <INPUT TYPE="grid"
+		  NAME="donosr"
+		  TOP="2900"
+		  LEFT="200"
+		  WIDTH="18000"
+		  HEIGHT="5800"
+		  CHECKBOXVISIBLE="TRUE"
+		  TOTALROWVISIBLE="FALSE"
+		  GROUPBYBOXVISIBLE="FALSE"
+		  CAPTION="_Stavke za donos - razlike mpcijena sa istog cjenika"
+		  REFRESHAFTERCHILD="TRUE"
+		  VISIBLE="FALSE"
+		  SQL="spMPNIvelacijaNG @action=100, @operateriid=@@operateriid, @vrcjenikid=@@vrcjenikid, @datumdok=@@datumdok, @klasaid=@@klasaid, @podklase=@@podklase, @search='@@search',  @dobavljacId=@@dobavljacId, @robnamarkaid=@@robnamarkaid " />
+
+	    <INPUT TYPE="button" NAME="ok"     CAPTION="Prebaci"  TOP="9000" LEFT="456" WIDTH="1106" HEIGHT="322"
+			 ONCLICK="FOREACHSELECTED(donosr)#exec spMPNIvelacijaNG @action=102, @robaid=@@griddonosrrobaid, @staracijena=@@griddonosrstara_mp_cijena_s_PN, @cijena=@@griddonosrnova_mp_cijena_s_PN, 
+					@nabcijena=@@griddonosrnab_cijena, @operateriid=@@operateriid, @vrcjenikid=@@vrcjenikid, @datumdok=@@datumdok, @akcija=@@akcija, @DatDo=@@DatDo#Ok"  HOTKEY="F2" />
+	    <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="9000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	  
+  </DONOSISTICJENIK>
+
+  <MULTISELECTUPDATEDATUM
+				 WIDTH="11000"
+				 ONSUBMIT=""
+				 ONLOAD="select convert(varchar(10),getdate()+1,104) as datumdok"
+				 HEIGHT="6000"
+				 CAPTION="Izmjena datuma nivelacije"
+				 FILLEXPLORER="">
+
+	  <INPUT TYPE="date" NAME="datumdok" CAPTION="Datum nivelacije:*" VALUE="DATE" TOP="500" LEFT="2000" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE"/>
+	  <INPUT TYPE="label" NAME="stat" TOP="1000" LEFT="200" WIDTH="3500" CAPTION="Želite promijeniti datume odabranih stavki (koje NE PRIPADAJU vezanom cjeniku i NISU akcijske) na definirani datum ?" />
+	  <INPUT TYPE="grid" NAME="stavke2" CAPTION="Izmjena datuma" TOP="1500" LEFT="1400" WIDTH="9000" HEIGHT="3000" 
+			 SQL="spMPNIvelacijaNG @action = 13,@operateriid=@@operateriid, @akcija=1" CHECKBOXVISIBLE="FALSE" TOTALROW="FALSE"/>
+
+	  <INPUT TYPE="button" NAME="" CAPTION="Ukloni izmjenu" TOP="2000" LEFT="140" WIDTH="1050" HEIGHT="600" ONCLICK="delete from totalgenmultiselecttemp where id=@@stavke2 and operateriid=@@operateriid#select 'refresh' as stavke2"  />
+
+	  <INPUT TYPE="button" NAME="ok" CAPTION="Izmijeni" TOP="5000" LEFT="300" WIDTH="1106" HEIGHT="322" ONCLICK="FOREACHROW(stavke2)#spMPNIvelacijaNG @action=14,@TempPromMPCid=@@stavke2, @operateriid=@@operateriid, @datumdok=@@datumdok #ok"  />
+	  <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="5000" LEFT="2000" WIDTH="1106" HEIGHT="322" ONCLICK="CLOSE#delete from totalgenmultiselecttemp where operateriid =  @@operateriid"  />
+
+  </MULTISELECTUPDATEDATUM>
+	
+
+</PROJECT>
+ 

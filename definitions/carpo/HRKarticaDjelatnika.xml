@@ -1,0 +1,463 @@
+<root version="1.4">
+
+  <!--1.1. - 03.07.2020. MZ - u podatke o djelatniku dodana nadređena osoba HD 57289 -->
+  <!--1.2. - 20.07.2020. MZ - dodan Limit HD 58610 
+                            - ISPIS na vrhu forme -->
+  <!--1.3. - 07.10.2020. MZ - izmijenjen prikaz nadređene osobe i mjesta troška djelatnika - iz HRKarticaradnika
+                            - dodani gumbi za izmjenu nadređene osobe i mjesta troška-->
+  <!--1.4. - 08.10.2020. MZ - dodan prikaz nadređenog člana uprave u kadrovske podatke
+                            - podaci o imovini, kontaktima i limitu prabačeni u tabove-->
+
+  <form name="frmHRKarticaRadnika"  caption="Kartica djelatnika" saveformlayout="true" height="700" width="700">
+
+    <layout textposition="left">
+      <group cols="1" rows="2" spacing="2,2,2,2" groupbordervisible="false">
+
+        <!--***************************************************KADROVSKI PODACI****************************************************************-->
+        <group col="1" row="1" cols="2" rows="7" caption="Kadrovski podaci" spacing="2,2,2,1">
+          <columnsdefinition>
+            <column  position="1" size="90%" />
+            <column  position="2" size="10%" />
+          </columnsdefinition>
+          <item caption="Ime i prezime djelatnika:" col="1" row="1"  fontbold="true">
+            <searchedit name="srcDjelatnik" fieldvalue="HRKadroviId" fieldtext="Djelatnik" dataname="~dtHRKadrovi" required="true" >
+              <event type="valuechanged">
+                <action type="datarun reader" value="~dtGet"  />
+                <action type="datarun reader" value="~dtImovina"  />
+                <action type="datarun reader" value="~dtKontakt"  />
+                <action type="datarun reader" value="~dtLimit"  />
+                <action type="control value" value="#lblTvrtka"  >
+                  <parameter value="~dtGet.@Tvrtka" />
+                </action>
+                <action type="control value" value="#lblMjestoTroska"  >
+                  <parameter value="~dtGet.@MjestoTroska" />
+                </action>
+                <action type="control value" value="#lblRadnoMjesto"  >
+                  <parameter value="~dtGet.@RadnoMjesto" />
+                </action>
+                <action type="control value" value="#lblStatusUgovora"  >
+                  <parameter value="~dtGet.@StatusUgovora" />
+                </action>
+                <action type="control value" value="#lblNadredenaOsoba"  >
+                  <parameter value="~dtGet.@NadredenaOsoba" />
+                </action>
+                <action type="control value" value="#lblLimit"  >
+                  <parameter value="~dtLimit.@Limit" />
+                </action>
+                <action type="control value" value="#lblNadredeniUprava"  >
+                  <parameter value="~dtGet.@NadredeniUprava" />
+                </action>
+                <action type="control populate" value="#grdImovina" />
+                <action type="control populate" value="#grdKontakt" />
+              </event>
+            </searchedit>
+          </item>
+          <item col="2" row="1">
+            <button name="btnReport"  caption="ISPIS" >
+              <event type="click">
+                <action type="print" value="repx:rptKarticaDjelatnikaIM">
+                  <parameter name="Action" value="Kartica_repx" />
+                  <parameter name="HRKadroviId" value="#srcDjelatnik.@HRKadroviId" />
+                </action>
+              </event>
+            </button>
+          </item>
+          <item caption="Tvrtka:" col="1" row="2" fontbold="true">
+            <textedit name="lblTvrtka" enabled="false" fontbold="true"/>
+          </item>
+          <item caption="Mjesto troška:" col="1" row="3" fontbold="true">
+            <textedit name="lblMjestoTroska" enabled="false" fontbold="true"/>
+          </item>
+          <item col="2" row="3">
+            <button name="btnIzmijeniMT"  caption="Izmijeni" function="izmjenaMT">
+              <event type="click">
+                <action type="form open" value="frmIzmjena">
+                  <parameter name="Tip" value="MT"/>
+                  <parameter name="caption" value="Izmjena mjesta troška"/>
+                  <parameter name="HRKadroviId" value="#srcDjelatnik"/>
+                </action>
+                <action type="control populate" value="#lblMjestoTroska"/>
+              </event>
+            </button>
+          </item>
+          <item caption="Radno mjesto:" col="1" row="4" fontbold="true">
+            <textedit name="lblRadnoMjesto" enabled="false" fontbold="true"/>
+          </item>
+          <item caption="Status ugovora o radu:" col="1" row="5" fontbold="true">
+            <textedit name="lblStatusUgovora" enabled="false" fontbold="true"/>
+          </item>
+          <item caption="Nadređena osoba:" col="1" row="6" fontbold="true">
+            <textedit name="lblNadredenaOsoba" enabled="false" fontbold="true"/>
+          </item>
+          <item col="2" row="6" >
+            <button name="btnIzmijeniNO"  caption="Izmijeni" function="izmjenaNO" >
+              <event type="click">
+                <action type="form open" value="frmIzmjena">
+                  <parameter name="Tip" value="NO"/>
+                  <parameter name="caption" value="Izmjena nadređene osobe"/>
+                  <parameter name="HRKadroviId" value="#srcDjelatnik"/>
+                </action>
+                <action type="control populate" value="#lblNadredenaOsoba"/>
+              </event>
+            </button>
+          </item>
+          <item caption="Nadređeni član uprave" col="1" row="7" fontbold="true">
+            <textedit name="lblNadredeniUprava" enabled="false" fontbold="true"/>
+          </item>
+        </group>
+        <!--*************************************************TABOVI ZA PREGLED OSTALIH PODATAKA*************************************************-->
+        <group col="1" row="2" cols="1" rows="1" groupbordervisible="true" spacing="2,2,1,2">
+          <tabs row="1" col="1" >
+            <!--***************************************************IMOVINA****************************************************************-->
+            <group col="1" row="1" cols="1" rows="2" caption="Imovina" fontbold="true" spacing="2,2,1,2">
+              <item col="1" row="1">
+                <grid name="grdImovina" type="master" dataname="~dtImovina" key="HRKarticaRadnikaId" showautofilterrow="false" showgrouppanel="false">
+                  <fields inherited="true">
+                    <field name="InvBroj" caption="Inventurni broj"/>
+                    <field name="Grupa" caption="Grupa imovine"/>
+                  </fields>
+                  <menu>
+                    <menuitem caption="Obriši" sort="1">
+                      <event type="click">
+                        <action type="datarun reader" value="~dtObrisiOstalo" if="#grdImovina.@OSImovinaId==null"  />
+                        <action type="message" value="Nije moguće obrisati zaduženu imovinu!" else="" />
+                        <action type="control refreshvalue" value="#grdImovina"/>
+                      </event>
+                    </menuitem>
+                    <menuitem caption="Izmijeni" sort="2">
+                      <event type="click">
+                        <action type="variable value" value="$Izmjena" >
+                          <parameter value="true"/>
+                        </action>
+                        <action if="#grdImovina.@OSImovinaId==null">
+                          <action type="datarun reader" value="~dtGetOstalo" />
+                          <action type="control disable" value="#grdImovina,#srcDjelatnik,#grdKontakt,#cmbNazivKontakt,#txtKontakt,#btnKontaktSpremi" />
+                          <action type="control value" value="#txtNaziv"  >
+                            <parameter value="~dtGetOstalo.@Naziv" />
+                          </action>
+                          <action type="control value" value="#txtInvBroj"  >
+                            <parameter value="~dtGetOstalo.@InvBroj" />
+                          </action>
+                          <action type="control value" value="#txtOpis"  >
+                            <parameter value="~dtGetOstalo.@Opis" />
+                          </action>
+                          <action type="control value" value="#datDatum"  >
+                            <parameter value="~dtGetOstalo.@Datum" />
+                          </action>
+                        </action>
+                        <action else="">
+                          <action type="message" value="Nije moguće izmijeniti zaduženu imovinu!" />
+                        </action>
+                      </event>
+                    </menuitem>
+                  </menu>
+                </grid>
+              </item>
+              <group col="1" row="2" cols="3" rows="2" groupbordervisible="false">
+                <columnsdefinition>
+                  <column  position="1" size="60%" />
+                  <column  position="2" size="30%" />
+                  <column  position="3" size="10%" />
+                </columnsdefinition>
+                <item col="1" row="1" caption="Naziv:">
+                  <textedit name="txtNaziv" textposition="left"  />
+                </item>
+                <item col="2" row="1" caption="Inventurni broj:">
+                  <textedit name="txtInvBroj" textposition="left" />
+                </item>
+                <item col="1" row="2" caption="Opis:" >
+                  <textedit name="txtOpis" textposition="left" />
+                </item>
+                <item col="2" row="2" caption="Datum:" >
+                  <dateedit name="datDatum" textposition="left" value="now" allownull="true"/>
+                </item>
+                <item col="3" row="2" >
+                  <button name="btnOstaloSpremi"  caption="Spremi" >
+                    <event type="click">
+                      <action type="datarun reader" value="dtOstaloIzmijeni" if ="$Izmjena==true" >
+                        <action type="variable value">
+                          <parameter name="$MasterFocus" value="~dtOstaloIzmijeni.@MasterId" type="int"/>
+                        </action>
+                      </action>
+                      <action type="datarun reader" value="dtOstaloSpremi" else="" >
+                        <action type="variable value">
+                          <parameter name="$MasterFocus" value="~dtOstaloSpremi.@MasterId" type="int"/>
+                        </action>
+                      </action>
+                      <action type="control refreshvalue" value="#grdImovina,#txtNaziv,#txtInvBroj,#txtOpis"/>
+                      <action type="control enable" value="#grdImovina,#srcDjelatnik,#grdKontakt,#cmbNazivKontakt,#txtKontakt,#btnKontaktSpremi" />
+                      <action type="control focus" value="#txtNaziv"/>
+                      <action type="variable value" value="$Izmjena" >
+                        <parameter value="false"/>
+                      </action>
+                      <action if="dialogresult!=cancel">
+                        <action type="control focus" value="#grdImovina">
+                          <parameter value="$MasterFocus"/>
+                        </action>
+                      </action>
+                    </event>
+                  </button>
+                </item>
+              </group>
+            </group>
+            <!--***************************************************KONTAKTI****************************************************************-->
+            <group col="1" row="1" cols="1" rows="2" caption="Kontakt podaci" spacing="2,2,1,1">
+              <item col="1" row="1" >
+                <grid name="grdKontakt" type="master" dataname="~dtKontakt" key="HRKadroviKontaktiId" showautofilterrow="false" showgrouppanel="false">
+                  <fields inherited="true" >
+                    <field name="OpisKontakt" caption="Vrsta kontakta"/>
+                  </fields>
+                  <menu>
+                    <menuitem caption="Obriši" sort="1">
+                      <event type="click">
+                        <action type="datarun reader" value="~dtObrisiKontakt"  />
+                        <action type="control refreshvalue" value="#grdKontakt"/>
+                      </event>
+                    </menuitem>
+                    <menuitem caption="Izmijeni" sort="2">
+                      <event type="click">
+                        <action type="variable value" value="$KontaktIzmjena" >
+                          <parameter value="true"/>
+                        </action>
+                        <action type="datarun reader" value="~dtGetKontakt" />
+                        <action type="control disable" value="#grdImovina,#srcDjelatnik,#grdKontakt,#txtNaziv,#txtInvBroj,#txtOpis,#btnOstaloSpremi" />
+                        <action type="control value" value="#cmbNazivKontakt"  >
+                          <parameter value="~dtGetKontakt.@HRKontaktiId" />
+                        </action>
+                        <action type="control value" value="#txtKontakt"  >
+                          <parameter value="~dtGetKontakt.@Kontakt" />
+                        </action>
+                      </event>
+                    </menuitem>
+                  </menu>
+                </grid>
+              </item>
+              <group col="1" row="2" cols="4" rows="2" groupbordervisible="false">
+                <columnsdefinition>
+                  <column  position="1" size="50%" />
+                  <column  position="2" size="10%" />
+                  <column  position="3" size="30%" />
+                  <column  position="4" size="10%" />
+                </columnsdefinition>
+                <item col="1" row="1" caption="Vrsta kontakta:">
+                  <comboedit name="cmbNazivKontakt"  valuefield="HRKontaktiId" displayfield="Naziv" dataname="~dtcmbNazivKontakt" datavalue="~dtGetNazivKontakt.@HRKontaktiId"/>
+                </item>
+                <item col="1" row="2" caption="Kontakt:">
+                  <textedit name="txtKontakt" textposition="left"/>
+                </item>
+                <item col="2" row="2" >
+                  <button name="btnKontaktSpremi"  caption="Spremi" >
+                    <event type="click">
+                      <action type="datarun reader" value="dtKontaktIzmijeni" if ="$KontaktIzmjena==true" >
+                        <action type="variable value">
+                          <parameter name="$MasterFocus" value="~dtKontaktIzmijeni.@MasterId" type="int"/>
+                        </action>
+                      </action>
+                      <action type="datarun reader" value="dtKontaktSpremi" else="" >
+                        <action type="variable value">
+                          <parameter name="$MasterFocus" value="~dtKontaktSpremi.@MasterId" type="int"/>
+                        </action>
+                      </action>
+                      <action type="control refreshvalue" value="#grdKontakt,#cmbNazivKontakt,#txtKontakt"/>
+                      <action type="control enable" value="#grdImovina,#srcDjelatnik,#grdKontakt,#txtNaziv,#txtInvBroj,#txtOpis,#btnOstaloSpremi" />
+                      <action type="control focus" value="#cmbNazivKontakt"/>
+                      <action type="variable value" value="$KontaktIzmjena" >
+                        <parameter value="false"/>
+                      </action>
+                      <action if="dialogresult!=cancel">
+                        <action type="control focus" value="#grdKontakt">
+                          <parameter value="$MasterFocus"/>
+                        </action>
+                      </action>
+                    </event>
+                  </button>
+                </item>
+                <item col="3" row="2">
+                </item>
+                <item col="4" row="2">
+                </item>
+              </group>
+            </group>
+            <!--***************************************************LIMIT****************************************************************-->
+            <group col="1" row="1" cols="3" rows="3" caption="Limit" spacing="2,2,1,2">
+              <columnsdefinition>
+                <column  position="1" size="40%" />
+                <column  position="2" size="50%" />
+                <column  position="3" size="10%" />
+              </columnsdefinition>
+              <item caption="Limit u kunama:" col="1" row="1" fontbold="true">
+                <labeledit name="lblLimit" enabled="false" fontbold="true"/>
+              </item>
+              <item col="1" row="2" caption="Limit:">
+                <textedit name="txtIznosLimita" textposition="left"  type="decimal" format ="n2"/>
+              </item>
+              <item col="3" row="2" >
+                <button name="btnLimitSpremi"  caption="Spremi" >
+                  <event type="click">
+                    <action type="datarun reader" value="dtLimitSpremi" />
+                    <action type="datarun reader" value="~dtLimit"  />
+                    <action type="control value" value="#lblLimit"  >
+                      <parameter value="~dtLimit.@Limit" />
+                    </action>
+                    <action type="control refreshvalue" value="#txtIznosLimita"/>
+                    <action type="control focus" value="#txtIznosLimita"/>
+                  </event>
+                </button>
+              </item>
+              <item col="3" row="3"></item>
+            </group>
+          </tabs>
+        </group>
+      </group>
+    </layout>
+
+    <datalist>
+      <data command="spHRKarticaDjelatnika" name="dtHrKadrovi">
+        <parameter name="@Action" value="Djelatnik_src"/>
+        <parameter name="@Tekst" value="#srcDjelatnik.text"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtGet">
+        <parameter name="@Action" value="DohvatiPodatke"/>
+        <parameter name="@HRKadroviId" value="#srcDjelatnik.@HRKadroviId"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtImovina">
+        <parameter name="@Action" value="DohvatiImovinu"/>
+        <parameter name="@HRKadroviId" value="#srcDjelatnik.@HRKadroviId"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtLimit">
+        <parameter name="@Action" value="DohvatiLimit"/>
+        <parameter name="@HRKadroviId" value="#srcDjelatnik.@HRKadroviId"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtGetOstalo">
+        <parameter name="@Action" value="DohvatiOstalo"/>
+        <parameter name="@HRKarticaRadnikaId" value="#grdImovina.@HRKarticaRadnikaId"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtOstaloSpremi">
+        <parameter name="@Action" value="Ostalo_unos"/>
+        <parameter name="@HRKadroviId" value="#srcDjelatnik.@HRKadroviId"/>
+        <parameter name="@Naziv" value="#txtNaziv"/>
+        <parameter name="@InvBroj" value="#txtInvBroj"/>
+        <parameter name="@Opis" value="#txtOpis"/>
+        <parameter name="@Datum" value="#datDatum"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtOstaloIzmijeni">
+        <parameter name="@Action" value="Ostalo_izmjena"/>
+        <parameter name="@HRKarticaRadnikaId" value="#grdImovina.@HRKarticaRadnikaId"/>
+        <parameter name="@Naziv" value="#txtNaziv"/>
+        <parameter name="@InvBroj" value="#txtInvBroj"/>
+        <parameter name="@Opis" value="#txtOpis"/>
+        <parameter name="@Datum" value="#datDatum"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtObrisiOstalo">
+        <parameter name="@Action" value="Ostalo_brisanje"/>
+        <parameter name="@HRKarticaRadnikaId" value="#grdImovina.@HRKarticaRadnikaId"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtKontakt">
+        <parameter name="@Action" value="DohvatiKontakt"/>
+        <parameter name="@HRKadroviId" value="#srcDjelatnik.@HRKadroviId"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtcmbNazivKontakt">
+        <parameter name="@Action" value="cmb_NazivKontakt"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtObrisiKontakt">
+        <parameter name="@Action" value="Kontakt_brisanje"/>
+        <parameter name="@HRKadroviKontaktiId" value="#grdKontakt.@HRKadroviKontaktiId"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtGetKontakt">
+        <parameter name="@Action" value="KontroleKontakt"/>
+        <parameter name="@HRKadroviKontaktiId" value="#grdKontakt.@HRKadroviKontaktiId"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtKontaktIzmijeni">
+        <parameter name="@Action" value="Kontakt_izmjena"/>
+        <parameter name="@HRKadroviKontaktiId" value="#grdKontakt.@HRKadroviKontaktiId"/>
+        <parameter name="@HRKontaktiId" value="#cmbNazivKontakt"/>
+        <parameter name="@Kontakt" value="#txtKontakt"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtKontaktSpremi">
+        <parameter name="@Action" value="Kontakt_unos"/>
+        <parameter name="@HRKadroviId" value="#srcDjelatnik.@HRKadroviId"/>
+        <parameter name="@HRKontaktiId" value="#cmbNazivKontakt"/>
+        <parameter name="@Kontakt" value="#txtKontakt"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtLimitSpremi">
+        <parameter name="@Action" value="Limit_spremi"/>
+        <parameter name="@HRKadroviId" value="#srcDjelatnik.@HRKadroviId"/>
+        <parameter name="@Limit" value="#txtIznosLimita"/>
+      </data>
+    </datalist>
+  </form>
+
+  <!--******************************IZMJENA MT I NO****************************************************-->
+  <form height="100" width="600" caption="$caption" name="frmIzmjena" saveformlayout="true">
+    <event type="init">
+      <action type="datarun reader" value="~dtGetMT" if="$Tip==MT"/>
+      <action type="datarun reader" value="~dtGetNO" else=""/>
+    </event>
+    <layout textposition="left">
+      <group col="1" row="1" cols="1" rows="1" spacing="2,2,2,2" groupbordervisible="false" if="$Tip==MT">
+        <item col="1" row="1" caption="Mjesto troška:" highlight="false" >
+          <searchedit name="srcMjestoTroska" fieldvalue="OrgShemaId" fieldtext="Naziv" dataname="~dtMjestoTroska" datatext="~dtGetMT.@Naziv" datavalue="~dtGetMT.@OrgShemaId"/>
+        </item>
+      </group>
+      <group col="1" row="1" cols="1" rows="1" spacing="2,2,2,2" groupbordervisible="false" else="">
+        <item col="1" row="1" caption="Nadređena osoba:" highlight="false">
+          <searchedit  name="srcNadredeni" fieldvalue="HRNadOsobeId" fieldtext="Naziv" dataname="~dtNadredeni" datatext="~dtGetNO.@Naziv" datavalue="~dtGetNO.@HRNadOsobeId"/>
+        </item>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button caption="Spremi" type="add" name="btnSpremi">
+          <event type="click">
+            <action type="validate"/>
+            <action type="datarun nonquery" value="~dtSpremiMT" if="$Tip==MT" />
+            <action type="datarun nonquery" value="~dtSpremiNO" else="" />
+            <action type="form close"/>
+            <action if="$Tip==MT">
+              <action type="control value" value="parent.#lblMjestoTroska"  >
+                <parameter value="#srcMjestoTroska.@Naziv" />
+              </action>
+              <!--<action type="control value" value="parent.#lblNadredeniUprava"  >
+                <parameter value="#srcMjestoTroska.@Nadredeni" />
+              </action>-->
+            </action>
+            <action if="$Tip==NO">
+              <action type="control value" value="parent.#lblNadredenaOsoba"  >
+                <parameter value="#srcNadredeni.@Naziv" />
+              </action>
+            </action>
+          </event>
+        </button>
+        <button caption="Odustani" type="cancel" name="btnOdustani" dock="right"/>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spHRKarticaDjelatnika" name="dtMjestoTroska" >
+        <parameter name="@Action" value="MjestoTroska_src"/>
+        <parameter name="@Tekst" value="#srcMjestoTroska.text"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtNadredeni">
+        <parameter name="@Action" value="Nadredeni_src"/>
+        <parameter name="@Tekst" value="#srcNadredeni.text"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtGetMT" >
+        <parameter name="@Action" value="DohvatiMT"/>
+        <parameter name="@HRKadroviId" value="$HRKadroviId"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtGetNO" >
+        <parameter name="@Action" value="DohvatiNO"/>
+        <parameter name="@HRKadroviId" value="$HRKadroviId"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtSpremiMT" >
+        <parameter name="@Action" value="Spremi_MT"/>
+        <parameter name="@HRKadroviId" value="$HRKadroviId"/>
+        <parameter name="@OrgShemaId" value="#srcMjestoTroska"/>
+      </data>
+      <data command="spHRKarticaDjelatnika" name="dtSpremiNO" >
+        <parameter name="@Action" value="Spremi_NO"/>
+        <parameter name="@HRKadroviId" value="$HRKadroviId"/>
+        <parameter name="@HRNadOsobeId" value="#srcNadredeni"/>
+      </data>
+    </datalist>
+  </form>
+</root>

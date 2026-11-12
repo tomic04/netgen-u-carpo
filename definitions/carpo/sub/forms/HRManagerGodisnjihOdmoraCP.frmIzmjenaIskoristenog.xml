@@ -1,0 +1,130 @@
+<root version="1.0">
+<!--
+  *******************************************************************************************
+  FORMA ZA IZMJENU ISKORIŠTENOG ODMORA
+  *******************************************************************************************
+ -->
+	<form name="frmIzmjenaIskoristenog" caption="$caption" width="350" height="500" >
+		
+		<event type="init">
+			<action type="datarun reader" value="~dtGet"/>
+		</event>
+		
+		<!--<event type="load">
+			<action type="datarun reader" value="~dtGetZavPov"/>
+		</event>-->
+		<event type="shown">
+			<action type="control value" value="#cmbVrsta">
+				<parameter value="~dtGet.@HRGodisnjiVrsteId" />
+			</action>
+			<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida	
+				  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+			<action type="variable value" value="global.$RefreshajMaster">
+				<parameter value="0" type="int"/>
+			</action>
+		</event>
+		
+		<layout>
+			<group cols="1" rows="8" groupbordervisible="false" >
+				<item col="1" row="1" caption="Datum početka" textposition="top" highlight="false">
+					<dateedit name="dateDatumOd" datavalue="~dtGet.@DatumOd" />
+				</item>
+				<item caption="Broj dana" col="1" row="2" textposition="top" highlight="false" >
+					<textedit name="txtDani" tooltip="Broj dana" maxlength="2" datavalue="~dtGet.@BrojDana" required="true">
+						<event type="leave">
+							<action type="datarun reader" value="~dtGetZavPov" />
+							<action type="control value" value="#dateDatumDo">
+								<parameter value="~dtGetZavPov.@datzad"></parameter>
+							</action>
+							<action type="control value" value="#dateDatumPov">
+								<parameter value="~dtGetZavPov.@datpov"></parameter>
+							</action>
+							<!--<action type="control value" value="#dateDatumPov" />-->
+						</event>
+					</textedit>
+				</item>
+				<item col="1" row="3" caption="Datum završetka" textposition="top" highlight="false">
+					<dateedit name="dateDatumDo" datavalue="~dtGet.@datzad" required="true"/>
+				</item>
+				<item col="1" row="4" caption="Datum povratka na rad" textposition="top" highlight="false">
+					<dateedit name="dateDatumPov" datavalue="~dtGet.@datpov" required="true"/>
+				</item>
+				<item col="1" row="5" caption="Vrsta godišnjeg"  highlight="false">
+					<comboedit name="cmbVrsta" valuefield="HRGodisnjiVrsteId" allownull="false" displayfield="Naziv" dataname="~dtVrsta" >
+					</comboedit>
+				</item>
+				<item caption="Broj dokumenta" col="1" row="6" textposition="top" highlight="false" >
+					<textedit name="txtBrojDok" datavalue="~dtGet.@brdok"></textedit>
+				</item>
+				<item col="1" row="7" caption="Datum dokumenta" textposition="top" highlight="false">
+					<dateedit name="dateDatumDok" datavalue="~dtGet.@datumdok" />
+				</item>
+				<item col="1" row="8" caption="Napomena" highlight="false" >
+					<memoedit name="memNapomena" datavalue="~dtGet.@Napomena" />
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun reader" value="~dtIzmjena">
+						</action>
+						<action if="$indGreske==0">
+							<action type="message" value="Uspješna izmjena!" />
+							<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida	
+								ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+							<action type="variable value" value="global.$RefreshajMaster">
+								<parameter value="1" type="int"/>
+							</action>
+							<action type="form close" />
+						</action>
+						<action type="control populate" value="parent.#grdIskoristenoZaGodinu" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" dock="right" >
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spHRGodisnjiAllCP" name="dtGetZavPov">
+				<parameter name="@action" value="DatumZav_DatumPov"></parameter>
+				<parameter name="@datumod" value="#dateDatumOd"></parameter>
+				<parameter name="@brd" value="#txtDani"></parameter>
+			</data>
+
+			<data command="spHRGodisnjiAllCP" name="dtVrsta">
+				<parameter name="@action" value="cmb_hrgodisnjiVrstaid" />
+			</data>
+
+			<data command="spHRGodisnjiAllCP" name="dtGet">
+				<parameter name="@action" value="dtGetIskoristeno"></parameter>
+				<parameter name="@HRGodisnjiIskoristenoId" value="$HRGodisnjiIskoristenoId"></parameter>
+				<parameter name="@indGreske.output.int"></parameter>
+				<parameter name="@poruka.output.string"></parameter>
+			</data>
+
+			<data command="spHRGodisnjiAllCP" name="dtIzmjena">
+				<parameter name="@action" value="Izmjena_Iskoristenog"></parameter>
+				<parameter name="@HRGodisnjiIskoristenoId" value="$HRGodisnjiIskoristenoId"></parameter>
+				<parameter name="@HRGodisnjiId" value="parent.#grdMaster.@HRGodisnjiId"></parameter>
+				<parameter name="@DatumOd" value="#dateDatumOd"></parameter>
+				<parameter name="@datezad" value="#dateDatumDo"></parameter>
+				<parameter name="@brojdana" value="#txtDani"></parameter>
+				<parameter name="@Napomena" value="#memNapomena"></parameter>
+				<parameter name="@DokumentBroj" value="#txtBrojDok"></parameter>
+				<parameter name="@DokumentDatum" value="#dateDatumDok"></parameter>
+				<parameter name="@HRGodisnjiVrsteId" value="#cmbVrsta"></parameter>
+				<parameter name="@datepov" value="#dateDatumPov"></parameter>
+				<parameter name="@indGreske.output.int"></parameter>
+				<parameter name="@poruka.output.string"></parameter>
+			</data>
+		</datalist>
+	</form>
+</root>

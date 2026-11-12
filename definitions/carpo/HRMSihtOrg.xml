@@ -1,0 +1,191 @@
+<root version="1.0">
+  <!--
+  Komentari:
+  27.09.2022. Ivan Šperanda - kreirao granulu ver 1.0. - nadređene i podređene osobe
+  -->
+  <form name="frmPocetna" caption="Evidencija hijerarhije zaposlenika" width="500" height="500" fixedsize="false" saveformsize="false" showversion="true" version="1.0" >
+    <event type="init">
+	  <action type="datarun reader" value="~dtGridNad" />
+      <action type="datarun reader" value="~dtGrid" />
+    </event>
+
+    <event type="load">
+      <action type="control populate" value="#grdNadredeni" />
+	  <action type="control populate" value="#grdGrid" />
+	  <action type="control enable" value="#btnBrisanje" if="#grdNadredeni.rowcount!=0"/>
+	  <action type="control disable" value="#btnBrisanje" else=""/>
+    </event>
+    <layout>
+      <group cols="2" rows="1" groupbordervisible="false">
+		  <columnsdefinition>
+			  <column position="1" size="50%"></column>
+			  <column position="2" size="50%"></column>
+		  </columnsdefinition>
+        <item caption="" col="1" row="1" textposition="left">
+          <grid name="grdNadredeni" caption="Nadređeni" key="HRKadroviId" dataname="~dtGridNad" preventfocusgroup="false" fieldsmartspaces="false"  bestfitonrefresh="true" showgrouppanel="false" multiselect="true" savelayout="true">
+			  <event type="focusedrowchanged">
+				  <action type="control populate" value="#grdGrid" />
+			  </event>
+          </grid>
+        </item>
+		<item caption="" col="2" row="1" textposition="left">
+			<grid name="grdGrid" caption="Podređeni" key="HRKadroviId" dataname="~dtGrid" preventfocusgroup="false" fieldsmartspaces="false"  bestfitonrefresh="true" showgrouppanel="false" multiselect="true" savelayout="true"/>
+		</item>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnos" caption="Unesi" begingroup="true">
+          <event type="click">
+            <action type="form open" value="frmUnos">
+              <parameter name="caption" value="Unos"/>
+              <parameter name="Id" value="#grdNadredeni.@HrKadroviId"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdNadredeni"/>
+          </event>
+        </button>
+        <button name="btnBrisanje" caption="Obriši">
+          <event type="click">
+            <action type="form open" value="frmBrisanje">
+              <parameter name="caption" value="Brisanje odabranih zapisa"/>
+              <parameter name="selectedids" value="#grdNadredeni.selectedids"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdNadredeni"/>
+			<action type="control disable" value="#btnBrisanje" if="#grdGrid==null"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Izlaz" dock="right" >
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+        <data command="spWHRMSihtOrgQuery" name="dtGrid">
+	    <parameter name="@action" value="podredeni"></parameter>
+        <parameter name="@HrKadroviId" value="#grdNadredeni.@HrKadroviId"></parameter>
+        </data>
+	    <data command="spWHRMSihtOrgQuery" name="dtGridNad">
+		<parameter name="@action" value="nadredeni"></parameter>
+	    </data>
+    </datalist>
+  </form>
+  
+  <!--
+  *******************************************************************************************
+  FORMA ZA UNOS/IZMJENU
+  *******************************************************************************************
+  -->
+  <form name="frmUnos" caption="$caption" width="320" height="120" >
+	  <layout>
+      <group cols="2" rows="2" groupbordervisible="false" >
+		  <item row="1" col="1" caption="Djelatnik nadređeni:" highlight="false" colspan="2" textposition="left">
+			 <searchedit name="srcDjelatnikNad" dataname="~dtDjelatnikNad" fieldtext="Djelatnik" fieldvalue="HRKadroviId"/>
+		  </item>
+		<item row="2" col="1" caption="Djelatnik podređeni:" highlight="false" colspan="2" textposition="left">
+			<searchedit name="srcDjelatnik" dataname="~dtDjelatnik" fieldtext="Djelatnik" fieldvalue="HRKadroviId"/>
+		</item>
+      </group>
+      <!--kraj omotača-->
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnos" caption="Spremi">
+          <event type="click">
+            <action type="validate"/>
+                <action type="datarun reader" value="~dtUnos">
+			    <action type="control populate" value="parent.#grdNadredeni"/>
+			    <action type="control populate" value="parent.#grdGrid">
+		        <action type="form close" />
+			  </action>
+			    <action type="control enable" value="parent.#btnBrisanje"/>
+			  </action>
+			  <action if="$indGreske==0">
+			    <action type="message" value="Uspješno spremljeno!" />
+                <action type="form close" />
+			  </action>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Odustani" dock="right" >
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+	  <data command="spWHRMSihtOrgQuery" name="dtDjelatnik">
+		<parameter name="@action" value="srcDjelatnik"/>
+		<parameter name="@tekst" value="#srcDjelatnik.text"/>
+	  </data>
+	<data command="spWHRMSihtOrgQuery" name="dtDjelatnikNad">
+		<parameter name="@action" value="srcDjelatnik"/>
+		<parameter name="@tekst" value="#srcDjelatnikNad.text"/>
+	</data>
+      <data command="spWHRMSihtOrgAzur" name="dtUnos">
+        <parameter name="@action" value="0" type="int"></parameter>
+		<parameter name="@HRKadroviIdNad" value="#srcDjelatnikNad"></parameter>
+		<parameter name="@HrKadroviIdPod" value="#srcDjelatnik"></parameter>
+      </data>
+    </datalist>
+  </form>
+
+  <!--
+  *******************************************************************************************
+  FORMA ZA BRISANJE
+  *******************************************************************************************
+  -->
+  <form name="frmBrisanje" caption ="Brisanje" width="400" height="150" fixedsize="true" saveformsize="false" >
+    <event type="shown">
+      <action type ="control value" value="#lblPitanje">
+        <parameter value="Jeste li sigurni da želite obrisati odabranog kadra?"/>
+      </action>
+    </event>
+    <layout>
+
+      <!--omotač-->
+      <group cols="1" rows="1" groupbordervisible="true" >
+        <item col="1" row="1"  highlight="false">
+          <labeledit name="lblPitanje" fontsizedelta="2"  value=""  />
+        </item>
+
+      </group>
+      <!--kraj omotača-->
+
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnBrisi" caption="OBRIŠI" type="del">
+          <event type="click">
+            <!-- Okini storu -->
+
+            <action type="datarun reader" value="~dtBrisanje"/>
+				<action type="control populate keepfocus" value="parent.#grdGrid"/>
+				<action type="form close"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right" >
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+
+      <data command="spWHRMSihtOrgAzur" name="dtBrisanje">
+        <parameter name="@Action" value="1" type="string"/>
+		<parameter name="@HRKadroviIdNad" value="parent.#grdGrid.@HrKadroviNadId"></parameter>
+		<parameter name="@HrKadroviIdPod" value="parent.#grdGrid.@HrKadroviPodId"></parameter>
+      </data>
+    </datalist>
+  </form>
+
+
+
+</root>

@@ -1,0 +1,111 @@
+<parts>
+	<part name="pocdrvo">
+		<lookup name="filter">
+			<comboitem value="Vremenska podjela" searchfield="DatumKeyId"/>
+			<comboitem value="Skladište"  searchfield="SkladisteKeyId"/>
+			<comboitem value="Statusi"  searchfield="StatusiKeyId"/>
+			<event type="valuechanged">
+				<action type="variable value" value="global.filter">
+					<parameter value="#filter" />
+				</action>
+			</event>
+			<action type="control populate" value="#tree" > 
+    
+			</action>
+			
+		</lookup>		
+		<tree name="tree"  key="Id" dataname="global.dtTree"  >
+
+			<fields>
+				<field name="Name" />
+			</fields>
+			<event type="focusedrowchanged"  >
+				<action type="control populate" value="#grdGlava" />
+			</event>		
+		</tree>			
+	</part>
+
+	<part name="pocmastergrid">
+		<grid name="grdGlava" type="master"  key="SktPrometGlaId" keyfield="SktPrometGlaId" dataname="global.dtGlava" searchfield="SktPrometGlaId" multiselect="true" >
+			<event type="focusedrowchanged">
+				<action type="control populate" value="#grdDetalj" />
+				
+					<action type="control enable" value="#btnPromijeniStatus" if="#grdGlava.rowcount&gt;0"/>
+					<action type="control disable" value="#btnPromijeniStatus" else=""/>
+					
+					<action type="control enable" value="#btnPromijeniStatus" if="#grdGlava.rowcount&gt;0&amp;&amp;#grdGlava.@Zaključeno!=Zaključen"/>
+					<action type="control disable" value="#btnPromijeniStatus" else=""/>
+					
+					<action type="variable value" >
+						<parameter name="PromijeniVrati" value="0" />
+					</action>					
+					<action type="datarun scalar" value="Global.~dtStatusiProvjeraMenu" if="#grdGlava.@SktPrometGlaId&gt;0">
+						<parameter name="PromijeniVrati"/>
+					</action>				
+					<action type="menu disable" value="#menVratiStatus" if="$PromijeniVrati==-1"/>
+					<action type="menu enable" value="#menVratiStatus" else=""/>
+					<action type="datarun scalar" value="Global.~dtStatusiProvjeraButton" if="#grdGlava.@SktPrometGlaId&gt;0">
+						<parameter name="PromijeniVrati"/>
+					</action>					
+					<action type="control disable" value="#btnPromijeniStatus" if="$PromijeniVrati==-1||#grdGlava.rowcount==0"/>
+					<action type="control enable" value="#btnPromijeniStatus" else=""/>		
+				
+				
+			</event>
+			<event type="doubleclick">
+				<action type="form open" value="frmIzmijeniSkladiste">
+					<parameter name="SktPrometGlaId" value="#grdGlava.@SktPrometGlaId" />
+					<parameter name="Status" value="#grdGlava.@StatusId" />
+				</action>
+				<action type="control populate " value="#grdGlava" />
+			</event>
+			<!-- <menu> -->
+				<!-- <menuitem name="menOtkljucaj" caption="PONIŠTI ZAKLJUČIVANJE" sort="1" function="PonistiZakljucak"> -->
+					<!-- <event type="click"> -->
+						<!-- <action type="confirm" value="Jeste li sigurni da želite poništiti zaključak dokumenta br. : {#grdGlava.@Broj} ?" if="#grdGlava.@StatusId==2"> -->
+							<!-- <action type="datarun nonquery" value="global.dtZakljucakPonisti"> -->
+								<!-- <action type="control populate keepfocus" value="#grdGlava" /> -->
+							<!-- </action> -->
+						<!-- </action> -->
+					<!-- </event>					 -->
+				<!-- </menuitem>			 -->
+			<!-- </menu> -->
+			<menu>
+				<menuitem name="menVratiStatus" caption="Vrati status" sort="1" >
+					<event type="click">
+						<action type="variable value" value="Global.$ZakljucakInd">
+							<parameter value="0" />
+						</action> 
+						<action type="form open" value="frmPromjenaStatusa">
+							<parameter name="SktPrometGlaId" value="#grdGlava.@SktPrometGlaId"/>
+							<parameter name="NaslovTekst" value="VRAĆANJE STATUSA"/>
+							<parameter name="Var" value="Vrati"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava"/>
+					</event>		
+				</menuitem>	
+				<menuitem name="menPovijestStatusa" caption="Povijest statusa" sort="2" >
+					<event type="click">
+						<action type="form open" value="frmPovijestStatusa">
+							<parameter name="SktPrometGlaId" value="#grdGlava.@SktPrometGlaId"/>
+						</action>
+					</event>					
+				</menuitem>	
+			</menu>
+			<styles>
+				<style name="fontcolor" value="green" if="#grdGlava.@Status==Zaključen" />
+				<style name="fontcolor" value="gray" if="#grdGlava.@Status==Storniran" />
+				<style name="fontcolor" value="black" if="#grdGlava.@Status==Otvoren||#grdGlava.@Status==Obrisan" />
+			</styles>			
+		</grid>	
+	</part>
+	<part name="pocdetailgrid">
+		<grid name="grdDetalj"    dataname="global.dtDetalj"  >
+			<fields  inherited="true">
+				<field name="Šifra" caption="Šifra" visible="true" showgroupsum="false" />
+				<field name="Nabavnacijena" caption="Nabavna cijena" visible="true" showgroupsum="false" />
+			</fields>
+		</grid>	
+	</part>
+
+</parts>

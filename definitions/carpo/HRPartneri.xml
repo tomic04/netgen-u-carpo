@@ -1,0 +1,121 @@
+<root version="1.0">
+	<!--
+  Komentari:
+  02.04.2021. Marin Glavaš - dodao import forme za unos ulica
+  15.03.2021. Jadranka Vučenović Vojvodić dodano otvaranje forme za izmjenu na dupli klik u master gridu - ver 1.1.
+  08.03.2021. Jadranka Vučenović Vojvodić - kreirala granulu ver 1.0.
+  -->
+
+	<!--
+  *******************************************************************************************
+  POČETNA FORMA
+  *******************************************************************************************
+  -->
+	<form type="master" name="frmPocetna" caption="Osobe - partneri" saveformsize="false" showversion="true" version="1.0.">
+		<event type="load">
+			<action type="control enable" value="#btnIzmjeni,#btnObrisi" if="#grdGrid.rowcount!=0"/>
+			<action type="control disable" value="#btnIzmjeni,#btnObrisi" else=""/>
+		</event>
+		<managerlayout>
+			<!-- FILTER-->
+			<lookup name="filter">
+				<comboitem value="Aktivni" />
+				<comboitem value="Neaktivni" />
+				<event type="valuechanged">
+					<action type="variable value">
+						<parameter name="global.filter" value="#filter" />
+					</action>
+				</event>
+			</lookup>
+			<!-- DRVO-->
+			<tree name="tree" keyfield="HRPartneriId" key="id" expandedlevel="1" dataname="dtTree">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGrid" >
+						<action type="control enable" value="#btnIzmjeni,#btnObrisi" if="#grdGrid.rowcount!=0"/>
+						<action type="control disable" value="#btnIzmjeni,#btnObrisi" else=""/>
+					</action>
+				</event>
+				<fields>
+					<field name="caption" />
+				</fields>
+			</tree>
+			<!-- MASTER GRID-->
+			<grid type="master" name="grdGrid" dataname="~dtGrid" key="HRPartneriId" fieldsmartspaces="false" bestfitonrefresh="true" autowidth="true">
+			<event type="doubleclick">
+			<action type="form open" value="frmUnosIzmjenaPartnera">
+							<parameter name="Tip" value="Izmjena"/>
+							<parameter name="HRPartneriId" value="#grdGrid.@HRPartneriId" />
+							<parameter name="caption" value="Izmjena partnera"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGrid"/>
+						<action type="control populate keepfocus" value="#tree"/>
+			</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<!-- GUMB UNOS-->
+				<button caption="Unesi" name="btnUnesi" type="add">
+					<event type="click">
+						<action type="form open" value="frmUnosIzmjenaPartnera">
+							<parameter name="Tip" value="unos" />
+							<parameter name="HRPartneriId" value="0" type="int"/>
+							<parameter name="caption" value="Unos novog partnera"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGrid"/>
+						<action type="control refreshvalue" value="#tree"/>
+					</event>
+				</button>
+				<!-- GUMB IZMJENA-->
+				<button caption="Izmijeni" name="btnIzmjeni" type="edit">
+					<event type="click">
+						<action type="form open" value="frmUnosIzmjenaPartnera">
+							<parameter name="Tip" value="Izmjena"/>
+							<parameter name="HRPartneriId" value="#grdGrid.@HRPartneriId" />
+							<parameter name="caption" value="Izmjena partnera"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGrid"/>
+						<action type="control populate keepfocus" value="#tree"/>
+					</event>
+				</button>
+				<!-- GUMB BRISANJE-->
+				<button caption="Obriši" name="btnObrisi" type="delete">
+					<event type="click">
+						<action type="form open" value="frmBrisanje">
+							<parameter name="caption" value="Brisanje odabranih zapisa}"/>
+							<parameter name="selectedids" value="#grdGrid.@HRPartneriId"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGrid"/>
+						<action type="control refreshvalue" value="#tree"/>
+						<action type="control disable" value="#btnIzmjeni" if="#grdGrid==null"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<!-- POVEZIVANJE SA STOROM ZA DRVO-->
+			<data command="spHRPartneri_CP_Tree" name="dtTree">
+				<parameter name="@action" value="aktivni" if="global.$filter==Aktivni" />
+				<parameter name="@action" value="neaktivni" elseif="global.$filter==Neaktivni" />
+				<parameter name="@indGreske.output.int"></parameter>
+			</data>
+			<!-- POVEZIVANJE SA STOROM ZA MASTER GRID-->
+			<data command="spHRPartneri_Query_CP" name="dtGrid">
+				<parameter name="@action" value="aktivni" if="global.$filter==Aktivni" />
+				<parameter name="@action" value="neaktivni" else="global.$filter==Neaktivni" />           
+				<parameter name="@filter" value="#tree.@id" if="#tree.@id!=0" />
+				<parameter name="@filter" value="" if="#tree.@id==0" />
+			</data>
+			<!-- POVEZIVANJE STORE ZA BRISANJE-->
+			<data command="spHRPartneri_Azur_CP" name="dtBrisanje">
+				<parameter name="@action" value="brisanje"/>
+				<parameter name="@HRPartneriId" value="#grdGrid.@HRPartneriId"/>
+				<parameter name="@indGreske.output.int"></parameter>
+			</data>
+		</datalist>		
+	</form>
+	<!-- POVEZIVANJE SUBOVA-->
+	<form name="frmUnosIzmjenaPartnera" path="frmUnosIzmjenaPartnera.xml"/>
+	<form name="frmBrisanje" path="frmUnosIzmjenaPartnera.xml"/>
+	<form name="frmUnosUlice" path="frmUnosIzmjenaPartnera.xml"/>
+</root>

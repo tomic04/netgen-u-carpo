@@ -1,0 +1,251 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+	21.10.2019. v.1.0.0.9 AA broj ugovora, narudžbe, ponude, otpremnice, napomena
+	26.9.2019.  v.1.0.0.8 AA savelayout na gridu 
+	09.07.2019. v.1.0.0.7 OV - doradio poziv CarpoInvoicePdf
+							- zakomentirao wait formu jer ovo ide sad dosta brže kroz bazu
+	14.05.2019. v.1.0.0.6 OV - dodao waitformu na doubleclick grida
+	14.01.2018. v.1.0.0.5 OV - dodao poziv OpenInvoicePdf metode i promijenio pozivnu klasu na Response metodi
+                          - dodao poziv OpenInvoicePdf metode na doubleclick mastergrida
+	29.06.2018. v.1.0.0.4 OV - dodao kolone DocumentReferenceDate i DocumentReferenceNumber u fieldse
+	02.05.2018. v.1.0.0.3 Pj omogućio multiselect brisanje 
+	21.02.2018. v.1.0.0.2 PJ dodao polja Porez13 i Osnovica13 na grid
+	13.03.2018. v.1.0.0.1 AČ stavila u grid multiselect=true i u attachment umjesto selectedids stavila @UraXMLId
+-->
+<root version="1.0.0.9">
+	<form type="master" name="ERacunImport" caption="E-račun import">
+		<method name="ERacImportDll" dll="MojERacunImportXml" class="MojERacunImportXml.Start" method="CarpoStart" />
+		<method name="Response" dll="MojERacun" class="MojERacun.Start" method="CarpoResponse" />
+		<method name="OpenInvoicePdf" dll="MojERacun" class="MojERacun.Start" method="CarpoInvoicePdf" />
+		<event type="init">
+			<action type="datarun scalar" value="~dtKupExist">
+				<parameter name="KupExist"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control disable" value="#btnKup" if="$KupExist==0"/>
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Svi ulazni dokumenti"/>
+				<comboitem value="Operateri" searchfield="OperateriKeyId"/>
+				<comboitem value="Statusi" searchfield="StatusiKeyId"/>
+				<comboitem value="Partneri" searchfield="PartneriKeyId"/>
+				<event type="valuechanged">
+					<action type="control populate" value="#tree"/>
+				</event>
+			</lookup>
+			<tree name="tree" dataname="dtTree" autopopulate="false">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdMaster"/>
+				</event>
+				<fields>
+					<field name="Name" />
+				</fields>
+			</tree>
+			<grid name="grdMaster" key="UraXMLId" type="master" dataname="dtGridMaster" bestfitonrefresh="true" multiselect="true" savelayout="true">
+				<event type="doubleclick">
+					<!-- <action waittype="progress" waitcaption="Učitavanje" waittext="Dohvat privitka..." sleep="5000"/> -->
+					<action type="method run" value="OpenInvoicePdf">
+						<parameter name="cs" value="@@connection" />
+						<parameter name="operateriId" value="@@operateriid"/>
+						<parameter name="uraXmlId" value="#grdMaster.@uraXmlId"/>
+					</action>
+				</event>
+				<event type="focusedrowchanged">
+					<action type="control disable" value="#btnResponse,#btnPregled,#btnUra,#btnOtkljucaj,#btnObrisi,#btnAttachment,#btnResponse" if="#grdMaster.@UraXMLId==null"/>
+					<action type="control enable" value="#btnResponse,#btnPregled,#btnUra,#btnOtkljucaj,#btnObrisi,#btnAttachment,#btnResponse" else=""/>
+					<action type="control disable" value="#btnKup" if="#grdMaster.@UraXMLId==null||$KupExist==0"/>
+					<action type="control enable" value="#btnKup" else=""/>
+				</event>
+				<fields>
+					<field name="DocumentType" caption="Tip e-Dokumenta"/>
+					<field name="FiskBr" caption="Fiskalni broj" fontbold="true"/>
+					<field name="Naziv" caption="Naziv partnera"/>
+					<field name="DatSpremanja" caption="Dat. spremanja"/>
+					<field name="DatumDok" caption="Dat. dokumenta"/>
+					<field name="DatumVal" caption="Dat. dospjeća"/>
+					<field name="UkupnoSaPDV" caption="Iznos računa"/>
+					<field name="Osnovica25" caption="Osnovica 25%"/>
+					<field name="Porez25" caption="Porez 25%"/>
+					<field name="Osnovica13" caption="Osnovica 13%"/>
+					<field name="Porez13" caption="Porez 13%"/>
+					<field name="Osnovica5" caption="Osnovica 5%"/>
+					<field name="Porez5" caption="Porez 5%"/>
+					<field name="Neoporezivo"/>
+					<field name="PovNaknada" caption="Povratna naknada"/>
+					<field name="BrutoBezPDV" caption="Bruto bez PDV"/>
+					<field name="NetoBezPDV" caption="Neto bez PDV"/>
+					<field name="Popust"/>
+					<field name="ZaPlatiti" caption="Za platiti"/>
+					<field name="Model"/>
+					<field name="IBAN" caption="IBAN"/>
+					<field name="Valuta"/>
+					<field name="Knjizeno" caption="Preneseno"/>
+					<field name="UraKup" caption="KUP/URA"/>
+					<field name="BrojDok" caption="Broj dok."/>
+					<field name="Operater"/>
+					<field name="DatKreiranja" caption="Dat. kreiranja"/>
+					<field name="brojPDVstavki" caption="PDV stavke"/>
+					<field name="PrenesenoServisom" caption="Preneseno servisom"/>
+					<field name="DocumentReferenceNumber" caption="Otpremnica" />
+					<field name="DocumentReferenceDate" caption="Datum otpremnice"/>
+					<field name="ContractReferenceNumber" caption="Ugovor" />
+					<field name="ContractReferenceDate" caption="Datum ugovora"/>
+					<field name="OriginatorReferenceNumber" caption="Ponuda" />
+					<field name="OriginatorReferenceDate" caption="Datum ponude"/>	
+					<field name="OrderReferenceNumber" caption="Narudžba" />
+					<field name="OrderReferenceDate" caption="Datum narudžbe"/>	
+					<field name="Napomena" caption="Napomena" />					
+				</fields>
+				<styles>
+					<style name="fontcolor" value="gray" if="#grdMaster.@TipRN==7"/>
+					<!-- odgovori -->
+					<style name="fontcolor" value="orange" if="#grdMaster.@status==2"/> 
+					<style name="fontcolor" value="green" elseif="#grdMaster.@status==1"/>
+					<style name="fontcolor" value="red" if="#grdMaster.@partneriid==null||"/>
+				</styles>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnImport" caption="&amp;UVEZI">
+					<dropdownitem caption="Sa &amp;web servisa">
+						<event type="click">
+							<action type="method run" value="ERacImportDll">
+								<parameter name="cs" value="@@connection" />
+								<parameter name="operateriId" value="@@operateriid"/>
+								<parameter name="parameter" value="web"/>
+							</action>
+							<action type="control populate" value="#grdMaster"/>
+						</event>  
+					</dropdownitem>
+					<dropdownitem caption="Pretraži &amp;sistem">
+						<event type="click">
+							<action type="method run" value="ERacImportDll">
+								<parameter name="cs" value="@@connection" />
+								<parameter name="operateriId" value="@@operateriid"/>
+								<parameter name="parameter" value="sys"/>
+							</action>
+							<action type="control populate" value="#grdMaster"/>
+						</event>
+					</dropdownitem>
+				</button>
+				<button name="btnPregled" caption="&amp;PREGLED" begingroup="true">
+					<event type="click">
+						<action type="form open" value="frmPregled">
+							<parameter name="UraXMLId" value="#grdMaster.@UraXMLId" />
+							<parameter name="EditDisabled" value="#grdMaster.@Knjizeno"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnAttachment" caption="PRI&amp;VITCI" >
+					<event type="click">
+						<action type="method run" value="ERacImportDll">
+							<parameter name="cs" value="@@connection" />
+							<parameter name="operateriId" value="@@operateriid"/>
+							<parameter name="parameter" value="prew"/>
+							<parameter name="id" value="#grdMaster.selectedids" type="string"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnUra" caption="U&amp;RA" begingroup="true">
+					<menuitem control="#grdMaster"/>
+					<event type="click">
+						<action type="confirm" value="Želite li prenijeti označene račune u knjigu URA?">
+							<action type="datarun nonquery" value="~dtKnjigaUra"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnKup" caption="&amp;KUP">
+					<menuitem control="#grdMaster"/>
+					<event type="click">
+						<!-- <action type="confirm" value="Želite li prenijeti označene račune u KUP?"> -->
+						<action type="method run" value="ERacImportDll">
+							<parameter name="cs" value="@@connection" />
+							<parameter name="operateriId" value="@@operateriid"/>
+							<parameter name="parameter" value="xkup"/>
+							<parameter name="id" value="#grdMaster.selectedids"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster"/>
+						<!-- </action> -->
+					</event>
+				</button>
+				<button name="btnOtkljucaj" caption="O&amp;TKLJUČAJ">
+					<menuitem control="#grdMaster"/>
+					<event type="click">
+						<action type="confirm" value="Želite promjeniti status odabrane stavke? (Napomena: Status se može promijeniti ukoliko je dokument obrisan u knjizi URA)">
+							<action type="datarun nonquery" value="~dtPromjenaStatusa"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="O&amp;BRIŠI">
+					<menuitem control="#grdMaster"/>
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati označene stavke?">
+							<action type="datarun nonquery" value="~dtObrisi" />
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnResponse" caption="&amp;ODGOVORI" begingroup="true">
+					<event type="click">
+						<action type="message" value="Zbog dorada na servisu Moj-eRačun trenutno nije moguće odgovoriti na eDokument!"/>
+						<!-- <action type="method run" value="Response">
+              <parameter name="cs" value="@@connection" />
+              <parameter name="operateriId" value="@@operateriid"/>
+              <parameter name="id" value="#grdMaster.selectedids"/>
+            </action> -->
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKntMojERacunCombo" name="dtKupExist">
+				<parameter name="@action" value="122" type="int"/>
+			</data>
+			<data command="VremenskaPodjela" type="integrated" name="dtTree" if="#filter==Svi ulazni dokumenti"/>
+			<data command="spEracuniDrvoFilter" name="dtTree" else="">
+				<parameter name="@action" value="Statusi" if="#filter==Statusi"/> 
+				<parameter name="@Action" value="Partneri" elseif="#filter==Partneri"/> 
+				<parameter name="@action" value="Operateri" else="#filter==Operateri"/> 
+			</data>
+			<data command="spKntMojERacunCombo" name="dtGridMaster" if="#filter==Svi ulazni dokumenti">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@node" value="{#tree.@DatumOd::yyyyMMdd}#{#tree.@DatumDo::yyyyMMdd}"/>
+			</data>
+			<data command="spGridPopulateFilter_Statusi" name="dtGridMaster" elseif="#filter==Statusi">
+				<parameter name="@Status" value="#tree.@ValueId" />
+				<parameter name="@DatumOd" value="#tree.@DatumOd" />
+				<parameter name="@DatumDo" value="#tree.@DatumDo" />
+			</data>
+			<data command="spGridPopulateFilter_Partneri" name="dtGridMaster" elseif="#filter==Partneri">
+				<parameter name="@Partner" value="#tree.@ValueId"/>
+				<parameter name="@DatumOd" value="#tree.@DatumOd" />
+				<parameter name="@DatumDo" value="#tree.@DatumDo" />
+			</data>
+			<data command="spGridPopulateFilter_Operateri" name="dtGridMaster" else="">
+				<parameter name="@operateriid" value="#tree.@ValueId"/>
+				<parameter name="@DatumOd" value="#tree.@DatumOd" />
+				<parameter name="@DatumDo" value="#tree.@DatumDo" />
+			</data>
+			<data command="spKntMojERacunCombo" name="dtObrisi">
+				<parameter name="@action" value="5"/>
+				<parameter name="@selectedids" value="#grdMaster.selectedids" />
+			</data>
+			<data command="spKntMojERacunCombo" name="dtKnjigaUra">
+				<parameter name="@action" value="4"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@selectedids" value="#grdMaster.selectedids"/>
+			</data>
+			<data command="spKntMojERacunCombo" name="dtPromjenaStatusa">
+				<parameter name="@action" value="6"/>
+				<parameter name="@id" value="#grdMaster.@UraXMLId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmPregled" path="frmPregled.xml"/>
+</root>

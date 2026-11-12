@@ -1,0 +1,177 @@
+﻿<root>
+	<form name="frmBilanca" caption="Bilanca" width="830" height="450">
+		<event type="load">
+			<action type="control disable" value="#btnDown,#btnUp,#btnMin,#btnMax"/>
+		</event>
+		<layout textposition="left">
+			<group cols="2" rows="2">
+				<group cols="3" rows="1" col="1" row="1" groupbordervisible="false">
+					<item caption="Cjenik" col="1" row="1" width="250">
+						<comboedit name="cmbCjenik" valuefield="VrCjenikId" displayfield="Opis" dataname="dtVrCjenik" required="true" />
+					</item>
+					<item col="2" row="1" width="100">
+						<button caption="Izvrši" >
+							<event type="click">
+								<action type="validate"/>
+								<action type="control value" value="#lblNivo">
+									<parameter value="1" />
+								</action>
+								<action type="datarun nonquery" value="~dtPrnPlanBilanca" />
+								<action type="control populate" value="#grdBilanca" />
+								<action type="datarun scalar" value="~dtNivoMax">
+									<parameter name="NivoMax" value="$NivoMax" />
+								</action>
+								<action type="control disable" value="#btnUp, #btnMax" if="#lblNivo==$NivoMax" />
+								<action type="control enable" value="#btnUp, #btnMax" else=""/>
+							</event>
+						</button>
+					</item>
+					<!--<item col="3" row="1" caption="Nivo" >
+						<labeledit name="lblNivo" value="0" />
+					</item>-->
+				</group>
+				<item col="1" row="2" colspan="2">
+					<grid name="grdBilanca" dataname="dtBilanca" showgrouppanel="true" savelayout="true">
+						<fields>
+							<field name="klasifikacija" caption="Klasifikacija" />
+							<field name="userid" caption="Šifra" />
+							<field name="naziv" caption="Naziv" fontbold="true"/>
+							<field name="jm" caption="JM" />
+							<field name="kolicina" caption="Količina" />
+							<field name="cijena" caption="Cijena" />
+							<field name="vrijednost" caption="Vrijednost" />
+							<field name="kolicinaskl" caption="Na skladištima" />
+							<field name="razlika" caption="Razlika"/>
+							<field name="klasasirovine" caption="Klasa sirovine" />
+						</fields>
+						<styles>
+							<!--<style name="fontcolor" value="red" if="#grdBilanca.@Kolicina==1"/> -->
+							<style name="fontcolor" value="green" if="#grdBilanca.@proizvodiid&gt;0"/>
+							<style name="backgroundcolor" value="#FF9393" if="#grdBilanca.fieldname==razlika&amp;&amp;#grdBilanca.@razlika&lt;0"/>
+						</styles>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<actionpanel>
+			<items>
+				<item>
+					<button caption="Gotovo" type="Cancel" >
+					</button>
+				</item>
+				<item>
+					<button caption="Listaj" type="" >
+						<event type="click">
+						<action type="control printcontrol" value="#grdBilanca">
+						</action>
+					</event>
+					</button>
+				</item>
+			<!--
+				<item>
+					<button caption="Naruči!" type="" >
+					</button>
+				</item>
+			-->
+				<item>
+					<button name="btnMin" caption="" type="" image="leftbegin">
+						<event type="click">
+							<action type="variable value" >
+								<parameter name="NivoDown" value="1" />
+							</action>
+							<action type="control value" value="#lblNivo">
+								<parameter value="1"/>
+							</action>
+							<action type="control populate" value="#grdBilanca" />
+							<action type="control disable" value="#btnDown"/>
+							<action type="control disable" value="#btnStart"/>
+						</event>
+					</button>
+				</item>
+				<item>
+					<button name="btnDown" caption="" type="" image="left">
+						<event type="click">
+							<action type="datarun scalar" value="~dtNivoDown">
+								<parameter name="NivoDown" value="$NivoDown" />
+							</action>
+							<action type="control value" value="#lblNivo">
+								<parameter value="$NivoDown"/>
+							</action>
+							<action type="control populate" value="#grdBilanca" />
+							<action type="control disable" value="btnDown" if="#lblNivo==1||#lblNivo==0" />
+							<action type="control enable" value="btnUp" if="#lblNivo&lt;$NivoMax" />
+							<action type="control enable" value="btnMax" if="#lblNivo&lt;$NivoMax" />							
+						</event>
+					</button>
+				</item>
+				<item>
+					<labeledit name="lblNivo" value="0" width="50" fontbold="true"/>
+				</item>				
+				<item>
+					<button name="btnUp" caption="" type="" image="right">
+						<event type="click">
+							<action type="datarun scalar" value="~dtNivoUp">
+								<parameter name="NivoUp" value="$NivoUp" />
+							</action>
+							<action type="datarun scalar" value="~dtNivoMax">
+								<parameter name="NivoMax" value="$NivoMax" />
+							</action>
+							<action type="control value" value="#lblNivo">
+								<parameter value="$NivoUp"/>
+							</action>
+							<action type="control populate" value="#grdBilanca" />
+							<action type="control disable" value="btnUp" if="#lblNivo==$NivoMax" />
+							<action type="control disable" value="btnMax" if="#lblNivo==$NivoMax" />
+							<action type="control enable" value="#btnDown"/>
+						</event>
+					</button>
+				</item>
+				<item>
+					<button name="btnMax" caption="" type="" image="rightend">
+						<event type="click">
+							<action type="datarun scalar" value="~dtNivoMax">
+								<parameter name="NivoDown" value="$NivoDown" />
+							</action>
+							<action type="control value" value="#lblNivo">
+								<parameter value="$NivoDown"/>
+							</action>
+							<action type="control populate" value="#grdBilanca" />
+							<action type="control disable" value="btnUp"/>
+							<action type="control disable" value="btnMax"/>
+						</event>
+					</button>
+				</item>
+				<item>
+					<button caption="Proizvodi" type="" >
+						<event type="click">
+							<action type="form open" value="frmProizvod" if="#grdBilanca.selectedrowscount==1" >
+								<parameter name="robaid" value="#grdBilanca.@robaid" />
+							</action>
+							<action type="message" value="Ovaj pregled je moguć samo za pojedinačne bilance!" else="" />
+						</event>
+					</button>
+				</item>
+			</items>
+		</actionpanel>
+		<datalist>
+			<data command="spVrCjenikQuery" name="dtVrCjenik">
+				<parameter name="@Action" value="0" />
+			</data>
+			<data command="spPrnPlanBilanca" name="dtPrnPlanBilanca">
+				<parameter name="@VrCjenikId" value="#cmbCjenik" />
+			</data>
+			<data command="spviprnplanbilancatempcarpo" name="dtBilanca">
+				<parameter name="@vrcjenikid" value="#cmbCjenik" />
+				<parameter name="@nivo" value="#lblNivo"/>
+			</data>
+			<data command="select max(nivo) as NivoMax from viPrnPlanBilancaTemp" type="text" name="dtNivoMax">
+			</data>
+			<data command="select @NivoUp + 1 as NivoUp" type="text" name="dtNivoUp">
+				<parameter name="@NivoUp" value="#lblNivo" type="int"/>
+			</data>
+			<data command="select @NivoDown - 1 as NivoDown" type="text" name="dtNivoDown">
+				<parameter name="@NivoDown" value="#lblNivo" type="int"/>
+			</data>
+		</datalist>
+	</form>
+</root>

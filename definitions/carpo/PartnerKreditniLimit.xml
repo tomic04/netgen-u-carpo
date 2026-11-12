@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root version="1.0.0.1">
+  <form name="frmGlavna" type="master">
+    <event type="init">
+      <action type="variable value">
+        <parameter name="Katalog" value="" type="string"/>
+      </action>
+      <action type="variable value">
+        <parameter name="Id" value="0" type="int"/>
+      </action>
+    </event>
+    <managerlayout>
+      <tree caption="Partneri" name="tree" dataname="dtTreeDataGet" expandallonload="true">
+        <event type="focusedrowchanged">
+          <!-- <action type="variable value" value="$Katalog"> -->
+            <!-- <parameter value="#tree.@Katalog"/> -->
+          <!-- </action> -->
+          <action type="control populate" value="#grdGlava"/>
+        </event>
+        <fields>
+          <field name="Naziv"/>
+        </fields>
+      </tree>
+      <grid name="grdGlava" type="master" dataname="dtGridDataGet" key="partneriid" bestfitonrefresh="true">
+        <!-- <event type="focusedrowchanged"> -->
+          <!-- <action type="control enable" value="#btnObrisi" if="#grdGlava.rowcount&gt;0"/> -->
+          <!-- <action type="control disable" value="#btnObrisi" else=""/> -->
+        <!-- </event> -->
+				<menu>
+					<menuitem name="menDok" caption="Dokumenti"  >
+						<event type="click">
+							<action type="form open" value="frmDokumenti">
+								<parameter name="ID1" value="#grdGlava.@partneriid"/>
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava"/>
+						</event>		
+					</menuitem>	
+				</menu>		
+
+      </grid>
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnesi"   caption="PROMIJENI KREDITNI LIMIT">
+          <event type="click">
+            <action type="form open" value="frmLimit">
+				<parameter name="ID2" value="#grdGlava.@partneriid"/>
+				<parameter name="Naz" value="#grdGlava.@Partner"/>
+				<parameter name="Izn" value="#grdGlava.@Kreditni limit" type="decimal"/>
+				<parameter name="Memo" value="#grdGlava.@NapomenaId" type="string"/>
+            </action>
+			<action type="control populate keepfocus" value="#grdGlava"/>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spPartner_TreeQuery" name="dtTreeDataGet">        
+
+      </data>
+      <data command="spPartner_MasterQuery" name="dtGridDataGet">
+        <parameter name="@ID" value="#tree.@Id"/>
+        
+      </data>
+    </datalist>
+  </form>
+  
+  <form name="frmDokumenti" caption="Dokumenti" fixedsize="true" width="700" height="400" >
+	<method name="KupDokument" dll="KUPPreglednikDMS" class="KUPPreglednikDMS.ScanPreview" method="TotalGen" />
+    <event type="load">
+      <action type="control populate" value="#grdGrid" />
+    </event>
+    <layout>
+      <group cols="1" rows="1" bordervisible="false" >
+ 				<item row="1" col="1" >		
+					<grid name="grdGrid" multiselect="true"  bestfitonrefresh="true"  showgrouppanel="FALSE" showfooter="false" savelayout="true" dataname="dtGrid">								
+	
+					</grid>
+				</item>		
+
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button caption="PRIKAŽI" dock="right">
+          <event type="click">
+						<action type="message" value="#grdGrid.@KupPrometId"  />
+                      <action type="method run" value="KupDokument" >
+                               <parameter name="id" value="#grdGlava.@KupPrometId" />
+                               <parameter name="operateriId" value="@@operateriid" />
+                               <parameter name="cs" value="Driver={SQL Server};Server={@@server};Database={@@database};" />
+                               <parameter name="param" value="" />
+                               <parameter name="param2" value="" />
+                  </action>
+
+          </event>
+        </button>
+        <button caption="ODUSTANI" type="cancel" dock="right"/>
+      </buttons>
+    </panelbuttons>
+      <datalist>
+		   <data command="spPartner_DokumentiQuery" name="dtGrid">
+			<parameter name="@ID" value="$ID1"/>
+			
+		  </data>
+ 
+      </datalist>
+  </form>
+  
+  <form name="frmLimit" caption="Promijeni kreditni limit" fixedsize="true" width="200" height="100" >
+			<event type="load">
+  				<action type="control value" value="#Par">
+					<parameter value="$Naz" />
+				</action>
+				<action type="control value" value="#txtLimit" if="$Izn!=null">
+					<parameter value="$Izn" />
+				</action>
+				<action type="control value" value="#txtLimit" else="">
+					<parameter value="0" />
+				</action>
+				<action type="control value" value="#txtNapomena">
+					<parameter value="$Memo" />
+				</action>
+			</event>
+  
+    <!-- <event type="load"> -->
+      <!-- <action type="control populate" value="#grdGrid" /> -->
+    <!-- </event> -->
+    <layout>
+      <group cols="1" rows="4" bordervisible="false" >
+		<item row="1" col="1">
+			<labeledit value="Partner:" />
+		</item>
+		<item row="2" col="1">
+			<labeledit name="Par" value="" />
+		</item>			
+		<item caption="Iznos:" row="3" col="1" >		
+			<textedit name="txtLimit"  required="True" value="0" format="n2" datavalue=""/>
+		</item>	
+		<item col="1" row="4" highlight="false" caption="Napomena:">
+			<memoedit name="txtNapomena"/>
+		</item>		
+
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button caption="PROMIJENI" dock="right">
+          <event type="click">
+			<action type="datarun reader" value="~dtLimitUpdate">
+				
+			</action>
+			<action type="form close"/>
+          </event>
+        </button>
+        <button caption="ODUSTANI" type="cancel" dock="right"/>
+      </buttons>
+    </panelbuttons>
+      <datalist>
+		   <data command="spPartner_LimitUpdate" name="dtLimitUpdate">
+			<parameter name="@ID" value="$ID2"/>
+			<parameter name="@Limit" value="#txtLimit"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+			<parameter name="@Memo" value="#txtNapomena"/>
+		  </data>
+ 
+      </datalist>
+  </form>
+  
+
+</root>

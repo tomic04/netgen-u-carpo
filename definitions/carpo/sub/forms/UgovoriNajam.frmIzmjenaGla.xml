@@ -1,0 +1,247 @@
+<root>
+  <form name="frmIzmjenaGla" caption="Izmjena ugovora" height="600" width="300">
+    <event type="init">
+      <action type="datarun reader" value="~dtGetDetails"/>
+      <action type="datarun reader" value="~dtGetDisableControlsInd"/>
+    </event>
+    
+	  <event type="load">
+      <action type="control value" value="#cusUgovor" >
+        <parameter name="Operateriid" value="@@operateriid" />
+        <parameter name="Id" value="$GlaId" />
+      </action>
+      <action type="control populate" value="#grdDetStavke"/>
+    </event>
+
+    <event type="shown">
+      <action if="~dtGetDisableControlsInd.@Smije==false">
+        <action type="control disable" value="#btnUnosDetalja, #btnIzmjenaDetalja, #btnObrisiDetalj, #btnRaspored"/>
+        <action type="menu disable" value="#mitemDeaktiviraj, #mitemUnesi, #mitemIzmijeni, #mitemObrisi"/>
+      </action>
+    </event>
+    
+    <layout>
+      <group rows="1" cols="2">
+        <columnsdefinition>
+            <column size="500" position="1">
+            </column>
+          </columnsdefinition>
+		<item row="1" col="1">
+			<customcontrol name="cusUgovor" dll="Carpo.Specific" class="Carpo.Specific.UgovoriONajmu.Ugovori" />
+		</item>
+        <item row="1" col="2">
+          <grid name="grdDetStavke" dataname="~dtPuniDet" key="UgovoriNajamDetId">
+            <fields inherited="true">
+              <field name="VrstaTroska" caption="Vrsta troška" />
+              <field name="UtvrdjenaImovina" caption="Utvrđena imovina" />
+              <field name="IFRS16" caption="IFRS16"/>
+              <field name="IdStavke" caption="Id stavke" />
+              <field name="Šifra Site-a" caption="Šifra site-a"/>
+              <field name="Naziv Site-a" caption="Naziv site-a"/>
+              <field name="Product/CarRegistration" caption="Product/car registration" />
+              <field name="DatumPrimopredaje" caption="Datum primopredaje" />
+              <field name="NazivOpcije" caption="Naziv opcije" />
+              <field name="Šifra opcije" caption="Šifra opcije" />
+              <field name="UgovoreniIznos" caption="Ugovoreni iznos"  captionalign="left"/>
+              <field name="ValutaPlaćanja" caption="Vrsta plaćanja" />
+              <field name="VrstaTečaja" caption="Vrsta tečaja" />
+              <field name="DatumPocetkaPlacanja" caption="Datum početka plaćanja" />
+              <field name="NacinPlacanja" caption="Način plaćanja" />
+              <field name="PeriodPlacanja" caption="Period plaćanja" />
+              <field name="DatumSlijedeceIndeksacije" caption="Datum sljedeće indeksacije" />
+              <field name="VrijednostIndeksa" caption="Vrijednost indeksa"  captionalign="left"/>
+              <field name="DatumZadnjeIndeksacije" caption="Datum zadnje indeksacije" />
+              <field name="PlacanjeNalogom" caption="Plaćanje nalogom" />
+              <field name="DatumDospijecaSlijedecegRacuna" caption="Datum dospijeća sljedećeg računa" />
+              <field name="BrojMjernogMjesta" caption="Broj mjernog mjesta" />
+              <field name="BrojBrojila" caption="Broj brojila" />
+              <field name="Tip plaćanja" caption="Tip plaćanja" />
+              <field name="NacinObracuna" caption="Način obračuna" />
+              <field name="ProstorUNajmu" caption="Prostor u najmu"  captionalign="left"/>
+              <field name="BrojŠasije" caption="Broj šasije" />
+              <field name="SerijskiBrojUredaja" caption="Serijski broj uređaja" />
+              <field name="IznosPenala" caption="Iznos penala"  captionalign="left"/>
+              <field name="PlaceniNajamPrijePocetkaVazenjaUgovora" caption="Plaćeni najam prije početka važenja ugovora"  captionalign="left"/>
+              <field name="InicijalniDirektniTroskovi" caption="Inicijalni direktni troškovi"  captionalign="left"/>
+              <field name="OrganizacijskaJedinica" caption="Organizacijska jedinica" />
+              <field name="ProcijenjeniDatumPrestankaVazenjaUgovora" caption="Procijenjeni datum prestanka važenja ugovora" />
+            </fields>
+            
+            <event type="focusedrowchanged">
+              <action if="~dtGetDisableControlsInd.@Smije!=false">
+                <action type="control disable" value="#btnRaspored" if="#grdDetStavke.@PeriodPlacanja!='nepravilno'"/>
+                <action type="control enable" value="#btnRaspored" else=""/>
+                <action type="menu disable" value="#mitemRaspored" if="#grdDetStavke.@PeriodPlacanja!='nepravilno'"/>
+                <action type="menu enable" value="#mitemRaspored" else=""/>
+                <action if="#grdDetStavke.@UgovoriNajamDetId==null">
+                  <action type="control disable" value="#btnIzmjenaDetalja" />
+                  <action type="menu disable" value="#mitemIzmijeni" />
+                </action>
+                <action else="">
+                  <action type="control enable" value="#btnIzmjenaDetalja"/>
+                  <action type="menu enable" value="#mitemIzmijeni" />
+                </action>
+                <!--nije aneks-->
+                <action type="control enable" value="#btnObrisiDetalj" if="parent.#grdGla.@AneksPrethodniUgovor==null&amp;&amp;#grdDetStavke.@UgovoriNajamDetId!=null"/>
+                <action type="control disable" value="#btnObrisiDetalj" else=""/>
+                <action type="menu enable" value="#mitemObrisi" if="parent.#grdGla.@AneksPrethodniUgovor==null&amp;&amp;#grdDetStavke.@UgovoriNajamDetId!=null"/>
+                <action type="menu disable" value="#mitemObrisi" else=""/>
+                <!--aneks je i ima status aktivan-->
+                <action type="menu enable" value="#mitemDeaktiviraj" if="parent.#grdGla.@AneksPrethodniUgovor!=null&amp;&amp;#grdDetStavke.@Status=='Aktivan'"/>
+                <action type="menu disable" value="#mitemDeaktiviraj" else=""/>
+                <action type="menu disable" value="#mitemObrisi" if="parent.#grdGla.@AneksPrethodniUgovor!=null&amp;&amp;#grdDetStavke.@Status=='Aktivan'"/>
+                <action type="menu enable" value="#mitemObrisi" else=""/>
+              </action>
+            </event>
+            <event type="doubleclick">
+              <action type="form open" value="frmUnosIzmjenaDet" if="~dtGetDisableControlsInd.@Smije!=false">
+                <parameter name="DetId" value="#grdDetStavke.@UgovoriNajamDetId"/>
+                <parameter name="GlaId" value="$GlaId"/>
+              </action>
+            </event>
+            <menu name="menUnesi">
+              <menuitem name="mitemUnesi" caption="Novi unos" group="1">
+                <event type="click">
+                  <action type="form open" value="frmUnosIzmjenaDet">
+                    <parameter name="DetId" value="null"/>
+                    <parameter name="GlaId" value="$GlaId"/>
+                  </action>
+                </event>
+              </menuitem>
+              <menuitem name="mitemIzmijeni" caption="Izmijeni" group="1">
+                <event type="click">
+                  <action type="form open" value="frmUnosIzmjenaDet">
+                    <parameter name="DetId" value="#grdDetStavke.@UgovoriNajamDetId"/>
+                    <parameter name="GlaId" value="$GlaId"/>
+                  </action>
+                </event>
+              </menuitem>
+              <menuitem name="mitemObrisi" caption="Obriši" group="1">
+                <event type="click">
+                  <action type="confirm" value="Jeste li sigurni da želite obrisati ovu stavku?">
+                    <parameter name="captionYes" value="Obriši" />
+                    <parameter name="captionNo" value="Odustani" />
+                  </action>
+                  <action type="datarun nonquery" value="~dtBrisiDet"/>
+                  <action type="control populate keepfocus" value="#grdDetStavke"/>
+                  <action type="control populate keepfocus" value="parent.#grdDet"/>
+                </event>
+              </menuitem>
+               <menuitem name="mitemDeaktiviraj" caption="Deaktiviraj" group="1">
+                <event type="click">
+                  <action type="confirm" value="Jeste li sigurni da želite deaktivirati ovu stavku?">
+                    <parameter name="captionYes" value="Deaktiviraj" />
+                    <parameter name="captionNo" value="Odustani" />
+                  </action>
+                  <action type="datarun nonquery" value="~dtDeaktivirajStavku"/>
+                  <action type="control populate keepfocus" value="#grdDetStavke"/>
+                  <action type="control populate keepfocus" value="parent.#grdDet"/>
+                </event>
+              </menuitem>
+              <menuitem name="mitemRaspored" caption="Prikaži raspored plaćanja" group="2">
+                <event type="click">
+                  <action type="form open" value="frmRasporedPlacanjaPregled">
+                    <parameter name="UgovoriNajamDetId" value="#grdDetStavke.@UgovoriNajamDetId"/>
+                    <parameter name="ValuteId" value="#grdDetStavke.@ValuteId"/>
+                  </action>
+                </event>
+              </menuitem>
+            </menu>
+          </grid>
+        </item>
+      </group>  
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="Spremi">
+          <event type="click">
+            <action if="#cusUgovor.@IsValid==True">
+              <action type="datarun nonquery" value="~dtEdit"/>
+              <action type="datarun nonquery" value="~dtInsertPartneriLn"/>
+              <action type="control populate" value="parent.#grdGla"/>
+              <action type="control focus" value="parent.#grdGla">
+                <parameter value="$newGlaId" type="int"/>
+              </action>
+              <action type="form close"/>
+            </action>
+          </event>
+        </button>
+        <button name="btnUnosDetalja" caption="Unesi detalj" dock="right">
+          <event type="click">
+            <action type="form open" value="frmUnosIzmjenaDet">
+              <parameter name="DetId" value="null"/>
+              <parameter name="GlaId" value="$GlaId"/>
+            </action>
+          </event>
+        </button>
+        <button name="btnIzmjenaDetalja" caption="Izmijeni detalj" dock="right">
+          <event type="click">
+            <action type="form open" value="frmUnosIzmjenaDet">
+              <parameter name="DetId" value="#grdDetStavke.@UgovoriNajamDetId"/>
+              <parameter name="GlaId" value="$GlaId"/>
+            </action>
+          </event>
+        </button>
+        <button name="btnObrisiDetalj" caption="Obriši detalj" dock="right">
+          <event type="click">
+            <action type="confirm" value="Jeste li sigurni da želite obrisati ovu stavku?">
+              <parameter name="captionYes" value="Obriši ugovor" />
+              <parameter name="captionNo" value="Odustani" />
+            </action>
+            <action type="datarun nonquery" value="~dtBrisiDet"/>
+            <action type="control populate keepfocus" value="#grdDetStavke"/>
+          </event>
+        </button>
+        <button name="btnRaspored" caption="Raspored plaćanja" dock="right" begingroup="true">
+          <event type="click">
+            <action type="form open" value="frmRasporedPlacanja">
+              <parameter name="UgovoriNajamDetId" value="#grdDetStavke.@UgovoriNajamDetId"/>
+              <parameter name="ValuteId" value="#grdDetStavke.@ValuteId"/>
+            </action>
+          </event>
+        </button>
+      <button name="btnOdustani" caption="Odustani" dock="right" type="cancel" begingroup="true"/>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spUgovoriNajamDet_Select"  name="dtPuniDet">
+        <parameter name="@UgovoriNajamGlaId" value="$GlaId"/>
+      </data>
+      <data command="spUgovoriNajamDet_Delete"  name="dtBrisiDet">
+        <parameter name="@UgovoriNajamDetId" value="#grdDetStavke.@UgovoriNajamDetId"/>
+      </data>
+      <data command="spUgovoriNajamDet_DeaktivirajStavku"  name="dtDeaktivirajStavku">
+        <parameter name="@UgovoriNajamDetId" value="#grdDetStavke.@UgovoriNajamDetId"/>
+      </data>
+      <data command="spUgovoriNajamGla_Edit" name="dtEdit">
+        <parameter name="@UgovoriNajamGlaId" value="$GlaId"/>
+        <parameter name="@UgovoriNajamTipTrajanja" value="#cusUgovor.@DT.ugovoritiptrajanjaid"/>
+        <parameter name="@BrojProduljenja" value="#cusUgovor.@DT.brojproduljenja"/>
+        <parameter name="@TrajanjeProduljenja" value="#cusUgovor.@DT.trajanjeproduljenja"/>
+        <parameter name="@DatumPotpisivanjaUgovora" value="#cusUgovor.@DT.datumpotpisivanjaugovora"/>
+        <parameter name="@DatumPocetkaVazenjaUgovora" value="#cusUgovor.@DT.datumpocetkavazenjaugovora"/>
+        <parameter name="@DatumPrestankaVazenjaUgovora" value="#cusUgovor.@DT.datumprestankavazenjaugovora"/>
+        <parameter name="@UgovorProduljenDo" value="#cusUgovor.@DT.ugovorproduljendo"/>
+        <parameter name="@ProcijenjeniDatumPrestanka" value="#cusUgovor.@DT.procijenjenidatumprestanka"/>
+        <parameter name="@OtkazniRokTele2" value="#cusUgovor.@DT.otkazniroktele2"/>
+        <parameter name="@OtkazniRokPartner" value="#cusUgovor.@DT.otkaznirokpartner"/>
+        <parameter name="@ObavijesniPeriod" value="#cusUgovor.@DT.obavijesniperiod"/>
+        <parameter name="@OsobeId" value="#cusUgovor.@DT.osobeid"/>
+        <parameter name="@OrgshemaId" value="#cusUgovor.@DT.orgshemaid"/>
+        <parameter name="@StrujaUgovorInd" value="#cusUgovor.@DT.strujaugovorind"/>
+        <parameter name="@StrujaUgovorId" value="#cusUgovor.@DT.strujaugovorinajamglaid"/>
+        <parameter name="@OperateriId" value="@@operateriid"/>
+      </data>
+      <data command="spUgovoriNajamGla_GetDetalji" name="dtGetDetails">
+        <parameter name="UgovoriNajamGlaId" value="$GlaID"/>
+      </data>
+      <data command="spUgovoriNajamGla_InsertPartneri" name="dtInsertPartneriLn">
+        <parameter name="@UgovoriNajamGlaId" value="$GlaID"/>
+        <parameter name="@LnPartneriIdArrayString" value="#cusUgovor.@LnPartneriIdArrayString"/>
+      </data>
+      <data command="spUgovoriNajamGla_GetDisableControlsInd" name="dtGetDisableControlsInd">
+        <parameter name="@UgovoriNajamGlaId" value="$GlaID"/>
+      </data>
+    </datalist>
+  </form>
+</root>

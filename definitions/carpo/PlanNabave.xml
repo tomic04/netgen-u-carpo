@@ -1,0 +1,259 @@
+<root>
+	<form name="frmMaster" type="master" caption="Plan nabave">
+		<method name="funDmsAdd" dll="DmsManagerV1" class="DmsManagerV1.Start" method="AddDocuments" />
+		<method name="funDmsOpen" dll="DmsManagerV1" class="DmsManagerV1.Start" method="OpenDocument" />
+		<method name="funDmsSave" dll="DmsManagerV1" class="DmsManagerV1.Start" method="SaveDocuments" />
+		<event type="shown">
+			<action type="control disable" value="#btnObrisi, #btnZakljuci, #btnIzmijeni, #btnPrint, #btnPovezi" if="#grdMaster.rowcount==0&amp;&amp;$Status=='Nezaključen'"/>
+			<action type="control enable" value="#btnObrisi, #btnZakljuci, #btnIzmijeni, #btnPrint, #btnPovezi" else="" />
+			<action type="control populate" value="#grdDetalj" />
+			<!-- <action type="control populate" value="#grdDms" /> -->
+		</event>
+		<event type="load">
+			<action type="control disable" value="#btnObrisi, #btnZakljuci, #btnIzmijeni, #btnPrint, #btnPovezi" if="#grdMaster.rowcount==0&amp;&amp;$Status=='Nezaključen'"/>
+			<action type="control enable" value="#btnObrisi, #btnZakljuci, #btnIzmijeni, #btnPrint, #btnPovezi" else="" />
+		</event>
+		<managerlayout>
+			<grid name="grdMaster" type="master" dataname="global.~dtMaster" showfooter="true" key="NabPlanNabaveGlaId" savelayout="true">
+				<event type="focusedrowchanged">
+					<action type="variable value">
+						<parameter name="NabPlanNabaveGlaId" value="#grdMaster.@NabPlanNabaveGlaId" />
+						<parameter name="Status" value="#grdMaster.@Status" />
+					</action>
+					<action type="control enable" value="#btnObrisi, #btnZakljuci, #btnIzmijeni, #btnPrint, #btnPovezi" if="#grdMaster.rowcount!=0&amp;&amp;$Status=='Nezaključen'" />
+					<action type="control disable" value="#btnObrisi, #btnZakljuci, #btnIzmijeni, #btnPrint, #btnPovezi" else="" />
+					<action type="menu enable" value="#menVratiStatus" if="$Status=='Zaključen'" />
+					<action type="menu disable" value="#menVratiStatus" else="" />
+					<action type="control populate" value="#grdDetalj" />
+					<!-- <action type="control populate" value="#grdDms"/> -->
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmPlanNabEdit" if="#grdMaster.rowcount&gt;0&amp;&amp;$Status=='Nezaključen'">
+						<parameter name="NabPlanNabaveGlaId" value="#grdMaster.@NabPlanNabaveGlaId"/>
+						<parameter name="Action" value="1" type="int"/>
+						<parameter name="Status" value="#grdMaster.@Status" />
+					</action>
+					<action type="message" value="'Dokument je zaključen, izmjene nisu moguće.'" else="#grdMaster.@SmijeId==0" />
+					<action type="control populate keepfocus" value="#grdMaster" />
+				</event>
+				<fields>
+					<field name="brojdok" caption="Dokument" fontbold="true" fixed="left" />
+					<field name="datumdok" caption="Datum dokumenta" />
+					<field name="status" caption="Status" />
+					<field name="napomena" caption="Napomena" />
+				</fields>
+				<styles>
+					<style name="fontcolor" value="green" if="#grdMaster.@Status=='Zaključen'" />
+				</styles>
+				<menu>
+					<menuitem name="menVratiStatus" caption="Poništi zaključak">
+						<event type="click">
+							<action type="confirm" value="Želite li poništiti zaključak?">
+								<action type="control foreachrow selected" value="#grdMaster">
+									<action type="datarun nonquery" value="Global.~dtPonistiZakljucak">
+									</action>
+								</action>
+								<action type="control populate" value="#grdMaster" />
+							</action>
+						</event>
+					</menuitem>
+				</menu>
+			</grid>
+			<tabs>
+				<tab caption="Stavke">
+					<grid name="grdDetalj" showgrouppanel="false" showautofilterrow="true" savelayout="true" bestfitonrefresh="true" multiselect="true">
+						<data command="spNab_PlanNabave_DetQuery">
+							<parameter name="@Id" value="$NabPlanNabaveGlaId" />
+						</data>
+						<fields inherited="true">
+							<!-- <field name="Naziv" caption="Naziv" fontbold="true"/> -->
+						</fields>
+						<groupsummary>
+							<summary type="count" visible="false"/>
+						</groupsummary>
+					</grid>
+				</tab>
+				<tab caption="DMS">
+					<grid name="grdDms" keyfield="DokID" multiselect="true" dataname="dtDms" showmenuprintitem="false" showmenutools="false" savelayout="true">
+						<menu>
+							<menuitem caption="Pogledaj">
+								<event type="click">
+									<action type="method run" value="funDmsOpen">
+										<parameter name="server" value="@@server" />
+										<parameter name="database" value="@@database" />
+										<parameter name="username" value="" />
+										<parameter name="password" value="" />
+										<parameter name="operateriid" value="@@operateriid" />
+										<parameter name="dokID" value="#grdDms.@DokID" />
+										<parameter name="name" value="#grdDms.@naziv" />
+									</action>
+								</event>
+							</menuitem>
+							<!-- Parametri potrebni za poziv Dms metode za spremanje dokumenata -->
+							<menuitem caption="Spremi na disk">
+								<event type="click">
+									<action type="method run" value="funDmsSave">
+										<parameter name="server" value="@@server" />
+										<parameter name="database" value="@@database" />
+										<parameter name="username" value="" />
+										<parameter name="password" value="" />
+										<parameter name="operaterid" value="@@operateriid" />
+										<parameter name="dokIDs" value="#grdDms.selectedids" />
+									</action>
+								</event>
+							</menuitem>
+							<menuitem caption="Obriši" function="DokObrisi">
+								<event type="click">
+									<action type="confirm" value="Želite li sigurno obrisati označeni(e) dokument(e)?">
+										<action type="datarun nonquery" value="~dtDeleteDoc" />
+										<action type="control populate" value="#grdDms" />
+									</action>
+								</event>
+							</menuitem>
+						</menu>
+						<!-- Parametri potrebni za poziv Dms metode za otvaranje dokumenata -->
+						<event type="doubleclick">
+							<action type="method run" value="funDmsOpen">
+								<parameter name="server" value="@@server" />
+								<parameter name="database" value="@@database" />
+								<parameter name="username" value="" />
+								<parameter name="password" value="" />
+								<parameter name="operateriid" value="@@operateriid" />
+								<parameter name="dokID" value="#grdDms.@DokID" />
+								<parameter name="name" value="#grdDms.@naziv" />
+							</action>
+						</event>
+						<fields inherited="true">
+							<field name="Naziv" fontbold="true" />
+							<field name="Size" caption="Size [KB]" />
+						</fields>
+					</grid>
+				</tab>
+			</tabs>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="&amp;UNESI" type="add">
+					<event type="click">
+						<action type="form open" value="frmPlanNabUnos">
+							<parameter name="NabPlanNabaveGlaId" value="null" />
+						</action>
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="&amp;IZMIJENI" type="edit">
+					<event type="click">
+						<action type="variable value" value="Global.$OperaterLockId">
+							<parameter value="#grdMaster.@NabPlanNabaveGlaId" />
+						</action>
+						<action type="variable value">
+							<parameter name="NabPlanNabaveGlaId" value="#grdMaster.@NabPlanNabaveGlaId" />
+						</action>
+						<action type="form open" value="frmPlanNabEdit" if="#grdMaster.rowcount&gt;0">
+							<parameter name="NabPlanNabaveGlaId" value="#grdMaster.@NabPlanNabaveGlaId" />
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnObrisi" caption="O&amp;BRIŠI" type="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati označeni dokument?">
+							<action type="control foreachrow selected" value="#grdMaster">
+								<action type="datarun nonquery" value="Global.~dtDelete">
+								</action>
+							</action>
+							<action type="control populate" value="#grdMaster" />
+							<action type="control disable" value="#btnObrisi, #btnZakljuci, #btnIzmijeni, #btnPrint, #btnPovezi" if="#grdMaster.rowcount==0"/>
+							<action type="control enable" value="#btnObrisi, #btnZakljuci, #btnIzmijeni, #btnPrint, #btnPovezi" else="" />
+						</action>
+					</event>
+				</button>
+				<button name="btnZakljuci" caption="Z&amp;AKLJUČI" type="">
+					<event type="click">
+						<action type="confirm" value="Želite li zaključiti dokument?">
+							<action type="control foreachrow selected" value="#grdMaster">
+								<action type="datarun nonquery" value="Global.~dtZakljuci">
+								</action>
+							</action>
+							<action type="control populate" value="#grdMaster" />
+						</action>
+					</event>
+				</button>
+				<button name="btnPrint" caption="IS&amp;PIŠI">
+					<event type="click">
+						<action type="control print" value="#grdMaster">
+							<action type="print template" value="repx:rptPlanNabave">
+								<parameter name="NabPlanNabaveGlaId" value="#grdMaster.@NabPlanNabaveGlaId" />
+							</action>
+						</action>
+					</event>
+				</button>		
+				<button name="btnPovezi" caption="Dodaj dokument" function="DokDodaj">
+					<event type="click">
+						<action type="method run" value="funDmsAdd">
+							<parameter name="server" value="@@server" />
+							<parameter name="database" value="@@database"/>
+							<parameter name="username" value="" />
+							<parameter name="password" value="" />
+							<parameter name="operaterid" value="@@operateriid" />
+							<parameter name="EntityName" value="NabPlanNabaveGla" />
+							<parameter name="entityID" value="#grdMaster.@NabPlanNabaveGlaId" />
+							<parameter name="tipInserta" value="windows" />
+						</action>
+						<action type="control populate" value="#grdDms" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCarpoDMSQuery" name="dtDms">
+				<parameter name="@EntityName" value="NabPlanNabaveGla"/>
+				<parameter name="@Id" value="#grdMaster.@NabPlanNabaveGlaId"/>
+			</data>
+			<data command="spCarpoDMSAzur" name="dtDeleteDoc">
+				<parameter name="@Action" value="Delete"/>
+				<parameter name="@EntityName" value="NabPlanNabaveGla"/>
+				<parameter name="@selectedids" value="#grdDms.selectedids"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmPlanNabUnos" path="frmPlanNabUnos.xml" />
+	<form name="frmPlanNabStavka" path="frmPlanNabStavka.xml" />
+	<form name="frmPlanNabStavkaEdit" path="frmPlanNabStavkaEdit.xml" />
+	<form name="frmPlanNabEdit" path="frmPlanNabEdit.xml"/>
+	<form name="frmDoneseniDok" path="frmDoneseniDok.xml"/>
+	<datalist>
+		<data command="spNab_PlanNabave_GlaQueryGet" name="dtGet">
+			<parameter name="@Id" value="$NabPlanNabaveGlaId" />
+		</data>
+		<data command="spNab_PlanNabave_GlaQuery" name="dtMaster" />
+		<data command="spNab_PlanNabave_DetQuery" name="dtDetalj">
+			<parameter name="@Id" value="$NabPlanNabaveGlaId" />
+		</data>
+		<data command="spNab_PlanNabave_GlaZakljuci" name="dtZakljuci">
+			<parameter name="@action" value="Zaljuci" />
+			<parameter name="@NabPlanNabaveGlaId" value="$NabPlanNabaveGlaId" />
+		</data>
+		<data command="spNab_PlanNabave_GlaZakljuci" name="dtPonistiZakljucak">
+			<parameter name="@action" value="PonistiZakljucak" />
+			<parameter name="@NabPlanNabaveGlaId" value="$NabPlanNabaveGlaId" />
+		</data>
+		<data command="spNab_PlanNabave_GlaDelete" name="dtDelete">
+			<parameter name="@Id" value="$NabPlanNabaveGlaId" />
+		</data>
+		<data command="spNab_PlanNabave_GetCpvKod" name="dtGetCpv" type="text" />
+		<data command="spNab_PlanNabave_GetUgovoriVrste" name="dtGetUgovoriVrste" type="text" />
+		<data command="spNab_PlanNabave_GetVrstaPostupka" name="dtGetVrstaPostupka" type="text" />
+		<data command="spNab_PlanNabave_GetCombo" name="dtGetTip">
+			<parameter name="@action" value="TipPlana" />
+		</data>
+		<data command="spNab_PlanNabave_GetCombo" name="dtPlaniraniPocetak">
+			<parameter name="@action" value="PlaniraniPocetak" />
+		</data>
+		<data command="spNab_PlanNabave_GetDonosParametri" name="dtDonosParametri" timeout="360">
+			<!-- <data command="select 'moduleid='+(select VarSet as moduleid from PubVars where VarIme = 'NabPlanNabaveDet_ImportExcel')+',hostname='+ HOST_NAME()+',susersname='+SUSER_SNAME() as param" type="text" name="dtDonosParametri" timeout="360"> -->
+			<parameter name="@NabPlanNabaveGlaId" value="$NabPlanNabaveGlaId"/>
+		</data>
+	</datalist>
+</root>
+

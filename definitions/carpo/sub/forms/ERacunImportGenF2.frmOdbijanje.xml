@@ -1,0 +1,91 @@
+<root>
+	<form name="frmOdbijanje" caption="Odbijanje računa" width="1200">	
+		<method name="eIzvjestavanjeDLL" dll="eIzvjestavanje" class="eIzvjestavanje.EntryPoint" method="Reject" />	
+		<event type="init">	
+			<action type="datarun reader" value="~dtGet" />	
+		</event>	
+		<event type="shown">	
+			<action type="control populate" value="#grdOdbijanje"/>
+		</event>	
+		<layout>	
+			<group rows="1" cols="1" caption="Tip odbijanja može biti N (neusklađenost podataka koji ne utječu na obračun poreza), U (neusklađenost podataka koji utječu na obračun poreza ) ili O (ostalo)">	
+				<item col="1" row="1">	
+					<grid name="grdOdbijanje" dataname="~dtOdbijanje" key="UraXMLId" bestfitonrefresh="true" savelayout="true">	
+						<event type="cellvaluechanged">	
+							<action type="datarun nonquery" value="~dtIzmjenaRazloga" if="#grdOdbijanje.focusedfield==TipOdbijanja||#grdOdbijanje.focusedfield==RazlogOdbijanja"/>	
+							<!-- <action type="control refreshrow" value="#grdOdbijanje"> -->
+								<!-- <parameter value="~dtAzurirajJedan"/> -->
+							<!-- </action> -->
+							<!-- <action type="control populate keepfocus" value="#grdOdbijanje"/>	 -->
+						</event>		
+						<fields>	
+							<field name="FiskBr" caption="Fiskalni broj" fontbold="true"/>	
+							<field name="Naziv" caption="Naziv partnera"/>	
+							<field name="OIBPosiljatelja" caption="OIB pošiljatelja"/>                   	
+							<field name="OIBPrimatelja" caption="OIB primatelja"/>          	
+							<field name="TipOdbijanja" caption="Tip odbijanja" editable="true"/>          	
+							<field name="RazlogOdbijanja" caption="Razlog odbijanja" editable="true"/>	
+							<field name="DatumOdbijanja" caption="Datum odbijanja"/>          	
+							<field name="Status" caption="Status"/>          	
+							<field name="OdgovorDecodedXml" caption="Odgovor"/>          	
+							<field name="Operater"/>	
+						</fields>	
+					</grid>	
+				</item>	
+			</group>	
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOdbij" caption="Odbij">
+					<event type="click">
+						<action type="datarun scalar" value="~dtProvjeraRazloga">
+							<parameter name="IndPopunjenosti" value="~dtProvjeraRazloga.@IndPopunjenosti"/>
+						</action>
+						<action type="transaction">
+							<action type="method run" value="eIzvjestavanjeDLL" if="$IndPopunjenosti==1">
+								<parameter name="cs" value="@@connection" />
+								<parameter name="operateriId" value="@@operateriId"/>
+								<parameter name="id" value="#grdOdbijanje.@KntOdbijenoF2Id" /> 
+								<parameter name="param" value="" />
+								<parameter name="param2" value="" />
+							</action>	
+						</action>
+						<action type="control refreshrow" value="#grdOdbijanje" if="transaction!=success">
+							<parameter value="~dtAzurirajJedan"/>
+						</action>
+						<action type="control refreshrow" value="#grdOdbijanje" if="transaction==success">
+							<parameter value="~dtAzurirajJedan"/>
+						</action>
+					</event>
+					<!-- </event> -->
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKntMojERacunOdbijanje" name="dtGet">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@selectedids" value="$selectedids"/>
+				<parameter name="@OperateriId" value="@@OperateriId"/>
+			</data>
+			<data command="spKntMojERacunOdbijanje" name="dtOdbijanje">	
+				<parameter name="@Action" value="1"/>	
+				<parameter name="@selectedids" value="$selectedids"/>	
+			</data>
+			<data command="spKntMojERacunOdbijanje" name="dtIzmjenaRazloga">	
+				<parameter name="@Action" value="2"/>	
+				<parameter name="@Id" value="#grdOdbijanje.@KntOdbijenoF2Id"/>	
+				<parameter name="@TipOdbijanja" value="#grdOdbijanje.@TipOdbijanja"/>	
+				<parameter name="@RazlogOdbijanja" value="#grdOdbijanje.@RazlogOdbijanja"/>	
+			</data>
+			<data command="spKntMojERacunOdbijanje" name="dtProvjeraRazloga">	
+				<parameter name="@Action" value="3"/>	
+				<parameter name="@Id" value="#grdOdbijanje.@KntOdbijenoF2Id"/>		
+			</data>
+			<data command="spKntMojERacunOdbijanje" name="dtAzurirajJedan">	
+				<parameter name="@Action" value="4"/>	
+				<parameter name="@Id" value="#grdOdbijanje.@KntOdbijenoF2Id"/>		
+			</data>
+		</datalist>
+	</form>
+</root>

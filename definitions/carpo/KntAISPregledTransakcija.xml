@@ -1,0 +1,240 @@
+<!--1.0.8. 29.4.2024. AA dodan izbornik firmi PT 89018-->
+<!--1.0.7. 11.4.2024. AA checkboxes za filtriranje-->
+<!--1.0.6. 12.3.2024. AA wait info, managerlayout-->
+<!--1.0.5. 8.12.2023. AA HD 85810 u cmbIban i banka,-->
+<!--1.0.4. 25.9.2023. AA dodan grid za stanja-->
+<!--1.0.3. 20.9.2023.AA format vrijemepromjene ispravljen-->
+<!--1.0.2. 5.9.2023. AA dodala multiselect-->
+<root loglevel="3" version="1.0.8.">
+	<form name="frmGlavni" type="master" caption="AIS - Pregled transakcija" maximized="true">
+		<event type="init">
+
+		</event>	
+		<event type="shown">
+			<action type="form caption" value="AIS - Pregled transakcija"/>
+			<action type="form open" value="frmFilter"/>
+			<action type="variable value" value="global.$Close" if="dialogresult==cancel">
+				<parameter value="true" type="bool"/>
+			</action>
+			<!-- <action type="control focus" value="#grdStanja"/> -->
+		</event>
+		<managerlayout>
+			<grid name="grdStanja" type="master" dataname="dtKntAISBalances" key="KntAISBalancesId" showcheckboxes="true" savelayout="true" autopopulate="false" fieldsmartspaces="false" multiselect="true" caption="Stanja po računima">
+				<event type="focusedrowchanged">
+				<!-- <action type="message" value="ind {$PrviUlaz}, sel {$SelectedIDs}"/> -->
+				<!-- <action  if="$PrviUlaz==1"> -->
+							<!-- <action type="datarun scalar" value="~dtGetBalancesIds"> -->
+								<!-- <parameter name="SelectedIDs"/>						 -->
+							<!-- </action>		 -->
+							<!-- <action type="control selectedrows" value="#grdStanja"> -->
+								<!-- <parameter value="{$SelectedIDs}"/> -->
+							<!-- </action> -->
+							<!-- <action type="control populate" value="parent.#grdStanja"/>	 -->
+	
+							<!-- <action type="control selectedrows" value="parent.#grdStanja"> -->
+								<!-- <parameter value="~dtGetBalancesIds.@List"/> -->
+							<!-- </action> -->
+							<!-- <action type="control populate" value="#grdTransakcije"/> -->
+							<!-- </action> -->
+							<!-- <action type="variable value"> -->
+								<!-- <parameter name="PrviUlaz" value="0"/> -->
+							<!-- </action> -->
+				</event>
+				<event type="selectionchanged">
+			
+					<action type="variable value">
+						<parameter name="SelectedIDs" value="#grdStanja.selectedids"/>						
+					</action>
+					<action type="control populate" value="#grdTransakcije"/>
+				</event>				
+				<fields inherited="true">
+					<field name="TipStanja" caption="Tip stanja"/>
+				</fields>
+				<styles>
+					<style name="fontcolor" value="blue" if="#grdStanja.@TipStanja==RASPOLOŽIVO STANJE"/>
+					<style name="fontcolor" value="green" if="#grdStanja.@TipStanja==TRENUTNO STANJE"/>
+				</styles>
+			</grid>		
+			<grid name="grdTransakcije" type="detail" dataname="dtKntAISTransactions" savelayout="true" autopopulate="false" fieldsmartspaces="false" multiselect="true" caption="Transakcije po računima">
+				<fields inherited="true">
+					<field name="AccountIBAN" caption="Račun"/>
+					<field name="VrijemePromjene" format="dd.MM.yyyy HH:mm:ss"/>
+					<field name="JsonResponse" visible="false"/>
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnFilter" caption="FILTER" dock="left">
+					<event type="click">
+						<action type="form open" value="frmFilter"/>
+					</event>
+				</button>			
+				<button name="btnPostavke" caption="POSTAVKE" dock="right" visible="false">
+					<event type="click">
+						<action type="form open" value="frmPostavke"/>		
+					
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtKntAISTransactions" command="spKntAISTransactions">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@SelectedIDs" value="$SelectedIDs"/>
+			</data>
+			<data name="dtKntAISBalances" command="spKntAISBalances">
+				<parameter name="@Action" value="2"/>
+			</data>	
+			<data name="dtGetBalancesIds" command="spKntAISBalances">
+				<parameter name="@Action" value="3"/>
+			</data>	
+		</datalist>
+	</form>
+	<form name="frmFilter" caption="Odabir parametara">
+		<method name="AISGetTransactions" dll="AIS" class="AIS.Start" method="CarpoStart"/>		
+		<layout>
+		    <group rows="9" cols="2">
+				<item col="1" row="1" caption="Povezano poduzeće:"  colspan="2" fontsizedelta="2">
+					<combomultiedit name="cmbFirme" valuefield="Dbo" displayfield="Naziv" dataname="~dtGetConnectedDbos">
+					<event type="valuechanged">	
+						<action if="#cmbFirme!=null&amp;&amp;#cmbFirme!=">
+							<action type="control value" value="#cmbPartnerIBAN,#cmbIBAN">
+								<parameter value="null"/>
+							</action>
+							<action type="control disable" value="#srcPartner,#cmbPartnerIBAN,#cmbIBAN"/>
+						</action>
+						<action type="control enable" value="#srcPartner,#cmbPartnerIBAN,#cmbIBAN" else=""/>
+					</event>
+					</combomultiedit>
+				</item>
+				<item col="1" row="2" colspan="2" caption="IBAN:" textvisible="false" fontsizedelta="2">
+				   <comboedit name="cmbIBAN" autopopulate="true" dataname="~dtGetPopisIBANa" valuefield="ParZiroId" displayfield="BankaIBAN">
+				   
+				   </comboedit>
+				</item>			
+				<item col="1" row="3" caption="Datum od:" fontsizedelta="2">
+				   <dateedit name="datDatumOd" value="now" required="true">
+
+				   </dateedit>
+				</item>
+				<item col="1" row="4" caption="Datum do:" fontsizedelta="2">
+				   <dateedit name="datDatumDo" value="now" required="true">
+
+				   </dateedit>
+				</item>
+				<item col="1" row="5" colspan="2" caption="Status transakcije:" fontsizedelta="2">
+				   <comboedit name="cmbStatusTransakcije" required="true" allownull="false" autopopulate="true" dataname="~dtGetStatuseTransakcija" valuefield="bookingStatus" displayfield="Naziv">
+				   
+				   </comboedit>
+				</item>		
+				<item col="1" row="6" colspan="2" caption="Vrsta prometa:" fontsizedelta="2">
+				   <comboedit name="cmbVrstaPometa" required="true" allownull="false" autopopulate="true" dataname="~dtGetVrstePrometa" valuefield="merDebCre" displayfield="Naziv">
+				   
+				   </comboedit>
+				</item>	
+				<item col="1" row="7" colspan="2" caption="Partner:" fontsizedelta="2">
+					<searchedit name="srcPartner" fieldtext="NazivId" fieldvalue="PartneriId" dataname="dtGetPartneri" savelayout="true">
+						<event type="valuechanged">		
+							<action type="control populate" value="#cmbPartnerIBAN"/>
+						</event>
+					</searchedit>
+				</item>
+				<item col="1" row="8" colspan="2" caption="Partner IBAN:" textvisible="false" fontsizedelta="2">
+				   <comboedit name="cmbPartnerIBAN" autopopulate="false" dataname="~dtGetPopisIBANaPartnera" valuefield="ParZiroId" displayfield="IBAN">
+				   
+				   </comboedit>
+				</item>					
+				<item col="1" row="9" colspan="2" caption="Privola:" fontsizedelta="2">
+				   <comboedit name="cmbPrivola" required="true" allownull="false" autopopulate="true" dataname="~dtGetOpcijePrivola" valuefield="consentStatus" displayfield="Naziv">
+				   
+				   </comboedit>
+				</item>				
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDohvati" caption="DOHVATI">
+					<event type="click">
+						<action type="validate"/>
+						<action if="#srcPartner!=null&amp;&amp;#cmbPartnerIBAN==null">
+							<action type="message" value="Obavezan odabir IBAN-a partnera!"/>
+						</action>		
+						<action else="">
+							<action type="method run" value="AISGetTransactions" waittype="progress" waitcaption="Dohvat podataka" sleep="2000">
+								<parameter name="cs" value="@@connection" type="string"/>
+								<parameter name="OperateriId" value="@@operateriid" type="int"/>		
+								<parameter name="method" value="gettransactions" type="string"/>	
+								<parameter name="datumOd" value="#datDatumOd"/>	
+								<parameter name="datumDo" value="#datDatumDo"/>	
+								<parameter name="bookingStatus" value="#cmbStatusTransakcije" type="string"/>	
+								<parameter name="merDebCre" value="#cmbVrstaPometa" type="int"/>									
+								<parameter name="consentStatus" value="#cmbPrivola" type="int"/>		
+								<parameter name="ownerAccount" value="#cmbIBAN.@IBAN" type="string"/>
+								<parameter name="counterAccount" value="#cmbPartnerIBAN.@IBAN" type="string"/>	
+								<parameter name="dbos" value="#cmbFirme" type="string"/>						
+							</action>
+
+							<!-- <action type="datarun scalar" value="~dtGetBalancesIds"> -->
+								<!-- <parameter name="parent.$SelectedIDs"/>						 -->
+							<!-- </action>			 -->
+							<!-- <action type="control selectedrows" value="parent.#grdStanja"> -->
+								<!-- <parameter value="~dtGetBalancesIds.@List"/> -->
+							<!-- </action> -->
+							<!-- <action type="control populate" value="parent.#grdTransakcije"/>					 -->
+							
+							<!-- <action type="variable value"> -->
+								<!-- <parameter name="parent.$PrviUlaz" value="1"/> -->
+							<!-- </action> -->
+							<action type="variable value">
+								<parameter name="parent.$SelectedIDs" value="null"/>						
+							</action>							
+							<action type="control populate" value="parent.#grdStanja"/>		
+							<action type="control populate" value="parent.#grdTransakcije"/>		
+							<action type="form close"/>							
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>		
+		</panelbuttons>
+		<datalist>
+			<data name="dtGetStatuseTransakcija" command="spKntAISKontrole">
+				<parameter name="@Action" value="3"/>
+			</data>		
+			<data name="dtGetPopisIBANa" command="spKntAISKontrole">
+				<parameter name="@Action" value="2"/>
+			</data>		
+			<data name="dtGetVrstePrometa" command="spKntAISKontrole">
+				<parameter name="@Action" value="4"/>
+			</data>		
+			<data name="dtGetOpcijePrivola" command="spKntAISKontrole">
+				<parameter name="@Action" value="5"/>
+			</data>
+			<data command="spCKntTemTraziPartneri" name="dtGetPartneri">
+				<parameter name="@Action" value="Partneri"/>
+				<parameter name="@Uvjet" value="#srcPartner.text"/>
+				<parameter name="@broj_lokacija" value="1"/>
+			</data>		
+			<data name="dtGetPopisIBANaPartnera" command="spKntAISKontrole">
+				<parameter name="@Action" value="22"/>
+				<parameter name="@PartneriId" value="#srcPartner"/>
+			</data>	
+			<data name="dtGetBalancesIds" command="spKntAISBalances">
+				<parameter name="@Action" value="3"/>
+			</data>	
+			<data name="dtGetConnectedDbos" command="spKntAISConnectedDbos">
+				<parameter name="@Action" value="0"/>
+			</data>				
+		</datalist>
+	</form>
+	<form name="frmPostavke" caption="Postavke" width="1400" height="350">
+		<layout>
+
+		</layout>
+	</form>	
+</root>

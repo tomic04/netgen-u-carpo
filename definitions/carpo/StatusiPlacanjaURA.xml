@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+03.09.2018 PJ v1.0.0.5 cleargridfilter="true" na grdPovijest, dorađen izvještaj po specki HD 41597
+29.01.2018 PJ v1.0.0.4 dodao Valuta i Napomena na grid
+04.01.2018 PJ v1.0.0.3 dorade po HD 36890
+15.12.2017 PJ v1.0.0.2 dodao checkboxe na grid, dodana kolona DatumPrijema
+04.12.2017 PJ v1.0.0.1 omogućio prikaz i ažuriranje statusa za račune u KUP-u
+ PJ v1.0.0.1 init
+-->
+<root version="1.0.0.4">
+	<form name="frmMaster" type="master" caption="Statusi plaćanja ulaznih računa">
+		<event type="init">
+			<action type="datarun reader" value="~dtBlokada" />
+			<!-- BLOKADA -->
+			<action type="variable value" >
+				<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date" />
+				<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date" />
+			</action>
+		</event>
+		<managerlayout>
+			<tree name="tree" parentfield="parentid" expandlast="true" caption="Statusi plaćanja" key="id" allowdrop="true" >
+				<data command="spCKntStatusiPlacanjaUraTree">
+					<parameter name="@action" value="Statusi"/>	
+					<parameter name="@OperateriId" value="@@OperateriId"/>	
+				</data>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava" /> 
+				</event>
+				<fields>
+					<field name="name" />
+				</fields>
+			</tree>
+
+			<grid name="grdGlava" type="master" async="true"  multiselect="true" savelayout="true"  wordwrap="true" showcheckboxes="true"  > <!-- key="RowID" keyfield="FaktureDobId" searchfield="FaktureDobId" -->
+				<menu>
+					<menuitem name="menPovijest" caption="Povijest" sort="1">
+						<event type="click">
+							<action type="form open" value="frmLog">
+							</action>	
+						</event>							
+					</menuitem>	
+				</menu>							
+				<event type="focusedrowchanged">
+					<!--TODO: enable/disable kontrola i opcija-->
+					<!--<action type="control enable" value="#" if=""/>
+					<action type="control disable" value="#" else=""/>-->
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmStatus">
+					<!--	<parameter name="SelectedIDs"  value="#grdGlava.selectedids" />-->
+					</action>
+					<action type="control populate keepfocus" value="#grdGlava"/>	
+				</event>
+				<data command="spCKntStatusPlacanjaUraQuery" >
+					<parameter name="@action" value="0" />
+<!--					<parameter name="@action" value="111" elseif="#tree.@value==godina"/>
+					<parameter name="@action" value="7" elseif="#tree.@value==nezakljucen"/>
+					<parameter name="@action" value="71" elseif="#tree.@value==danas"/>
+					<parameter name="@action" value="72" elseif="#tree.@value==datumzak"/>
+					<parameter name="@action" value="0" else=""/>-->
+					<parameter name="@node" value="#tree.@id"/>	
+					<parameter name="@OperateriId" value="@@OperateriId"/>	
+				</data>
+				<fields>
+					<field name="StatusPlacanja" caption="Status Plaćanja"/>
+					<field name="DatumPrijema" />
+					<field name="Broj" caption="Broj Dokumenta"/>
+					<field name="BrojDok" caption="UFA"/>
+					<field name="Partner" />
+					<field name="Konto" />					
+					<field name="DatumValute" />
+					<field name="Nadnevak" caption="Datum Dokumenta"/>
+					<field name="Duguje" />
+					<field name="Potrazuje" caption="Potražuje" />
+					<field name="Saldo" />
+					<field name="Valuta" />
+					<field name="OrgShema" />
+					<field name="Operater" caption="Operater Dokumenta"/>
+					<field name="OperaterOdobrenja" />
+					<field name="Knjiga" />
+					<field name="Napomena" />
+				</fields>
+				<styles>
+					<style name="fontcolor" value="blue" if="#grdGlava.@knjiga==kup" />
+					<style name="fontcolor" value="black" if="#grdGlava.@knjiga==ura" />
+					<!--TODO: obojati redove sukladno zahtijevima-->
+<!--					<style name="backgroundcolor" value="#CFCFD7" if="#grdGlava.@Broj=='ZA OBRAČUN UKUPNO:'||#grdGlava.@Broj=='KUMULATIV SA:'" />
+					<style name="italic" value="true" if="#grdGlava.@indglk==0" />
+					
+					<style name="italic" value="true" if="#grdGlava.@indglk==2" />
+					<style name="fontcolor" value="red" if="#grdGlava.@indglk==2" /> -->
+				</styles>
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+			<!--TODO provjeri zasto keepfocus ne radi za KUP slogovore-->
+				<button name="btnStatus" caption="STATUS" type="" dataname="" displayfield="" >
+					<event type="click">						
+						<action type="form open" value="frmStatus">
+							<!--<parameter name="SelectedIDs"  value="#grdGlava.selectedids" />-->
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava"/>	
+					</event>
+				</button>																			
+<!--				<button name="btnSearch" caption="&amp;PRONAĐI">
+				<!{1}**TODO: provjeri je li ostaje ovaj ili treba po fakturedob, dodati spCarpoSearchStoru, key na drvo**{1}>
+					<event type="click">
+						<action type="search" value="~dtSearch">
+						</action>
+					</event> 				
+				</button>-->
+				<button name="btnLog" caption="POVIJEST"  >
+					<event type="click">
+						<action type="form open" value="frmLog">
+						</action>	
+					</event>
+				</button>	
+				<button name="btnIzvjestaj" caption="IZVJEŠTAJ"  >
+					<event type="click">
+						<action type="form open" value="frmPovijest">
+						</action>	
+					</event>
+				</button>			
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="select top 1 * from KntBlokada order by KntBlokadaId DESC" type="text" name="dtBlokada"/> <!--TODO: prebaci ovo u storu-->
+			<data command="spCarpoSearch" name="dtSearch">
+				<parameter name="@table" value="FaktureDob" />
+				<parameter name="@Pojam" value="#btnSearch.searchtext"/>
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmStatus" caption="Izmijena statusa plaćanja" fixedsize="true">
+		<event type="init"> 			
+		</event>
+		<event type="load">	
+			<action type="datarun reader" value="~dtTrenutniStatus" />
+			<action type="variable value">
+                <parameter name="Var" value="false"/>
+            </action>
+		</event>
+		<event type="shown"> 
+			<action type="control value" value="#cmbStatus">
+				<parameter value="~dtTrenutniStatus.@StatusPlacanjaURAId" />
+			</action>
+		</event>
+		<layout itemspadding="2">
+			<group cols="1" rows="2" groupbordervisible="true">
+				<item col="1" row="1" caption="Status računa:">					
+					<comboedit name="cmbStatus" dataname="dtStatusQuery" displayfield="Naziv" valuefield="StatusPlacanjaURAId" Fontbold="true" fontsizedelta="6"> 
+						<event type="valuechanged">
+							<action type="variable value" if="#cmbStatus==3">
+								<parameter name="Var" value="true"/>
+							</action>
+							<action type="variable value" if="#cmbStatus!=3">
+								<parameter name="Var" value="false"/>
+							</action>
+							<action type="control attribute" value="#txtNapomena">
+								<parameter name="required" value="$Var"/>
+							</action>
+						</event>
+					</comboedit>
+				</item>
+				<item col="1" row="2" caption="Napomena:">					
+					<textedit name="txtNapomena"   Fontbold="true" fontsizedelta="6"/> 
+				</item>
+			</group>	
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+					<action type="validate"></action>
+						<action type="control foreachrow selected" value="parent.#grdGlava">
+							<action type="datarun nonquery" value="~dtSpremi">
+							</action>
+						</action>
+						 <action type="form  close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCkntStatusPlacanjaURA" name="dtSpremi">
+				<parameter name="@Action" value="5" />
+				<parameter name="@StatusPlacanjaURAId" value="#cmbStatus" />
+				<parameter name="@OperateriId" value="@@OperateriId" />
+				<parameter name="@FaktureDobId" value="parent.#grdGlava.@FaktureDobId" />
+				<parameter name="@KupPrometId" value="parent.#grdGlava.@KupPrometId" />
+				<parameter name="@Napomena" value="#txtNapomena" />
+			</data>	
+			<data command="spCkntStatusPlacanjaURA"  name="dtTrenutniStatus">
+				<parameter name="@Action" value="11" />
+				<parameter name="@StatusPlacanjaURAId" value="parent.#grdGlava.@StatusPlacanjaURAId" />
+				<parameter name="@OperateriId" value="@@OperateriId" />
+			</data>	
+			<data command="spCkntStatusPlacanjaURA"  name="dtStatusQuery">
+				<parameter name="@Action" value="10" />			
+				<parameter name="@OperateriId" value="@@OperateriId" />
+			</data>				
+		</datalist>
+	</form>
+	
+	<form name="frmLog" caption="Povijest izmjena" >
+		<event type="init"> 			
+		</event>
+		<event type="load">	
+			<action type="control populate" value="#grdLog" /> 
+		</event>
+		<event type="shown"> <!--TODO: zadaj vrijednost-->
+		</event>
+		<layout itemspadding="2">
+			<group cols="1" rows="1" groupbordervisible="true">
+				<item col="1" row="1" caption="Povijest:">					
+					<grid name="grdLog"  async="true" savelayout="true" > 
+						<data command="spCkntStatusPlacanjaURA" >
+							<parameter name="@Action" value="12" />
+							<parameter name="@FaktureDobId" value="parent.#grdGlava.@FaktureDobId" />
+							<parameter name="@KupPrometId" value="parent.#grdGlava.@KupPrometId" />
+							<parameter name="@OperateriId" value="@@OperateriId" />
+						</data>
+						<fields>
+							<field name="StariStatus" />
+							<field name="NoviStatus" />
+							<field name="Operater" />
+							<field name="DatumIzmjene"  formatstring="dd.MM.yyyy HH:mm"/>
+							<field name="Napomena" />							
+						</fields>
+					</grid>
+				</item>
+			</group>	
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+	</form>
+	
+	<form name="frmPovijest" caption="Izvještaj povijesti izmjena" >
+		<event type="init"> 			
+		</event>
+		<event type="load">	
+			<action type="control populate" value="#grdPovijest" /> 
+		</event>
+		<event type="shown"> <!--TODO: zadaj vrijednost-->
+		</event>
+		<layout itemspadding="2">
+			<group cols="1" rows="1" groupbordervisible="true">
+				<item col="1" row="1" caption="Povijest:">					
+					<grid name="grdPovijest"  async="true" savelayout="true"  cleargridfilter="true" multiselect="true" > 
+						<data command="spCkntStatusPlacanjaURA" >
+							<parameter name="@Action" value="13" />
+							<parameter name="@StatusPlacanjaURAId" value="parent.#tree.@value" />
+							<parameter name="@OperateriId" value="@@OperateriId" />
+						</data>
+						<fields>
+							<field name="StariStatus" />
+							<field name="NoviStatus" />
+							<field name="Operater" />
+							<field name="DatumIzmjene"  formatstring="dd.MM.yyyy HH:mm"/>
+							<field name="BrojDokumenta" />
+							<field name="UFA" caption="UFA" />
+							<field name="Partner"  />
+							<field name="DatumDokumenta" />
+							<field name="Napomena" caption="Komentar"/>							
+						</fields>
+					</grid>
+				</item>
+			</group>	
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+	</form>
+	
+</root>

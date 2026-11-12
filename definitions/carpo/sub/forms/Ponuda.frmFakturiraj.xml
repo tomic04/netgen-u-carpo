@@ -1,0 +1,103 @@
+<!-- 
+01.09.2022 MB dodala opis i broj dokumenta u naslovu i refreshrow 
+-->
+
+<root>
+    <form name="frmFakturiraj" caption="Fakturiraj" width="350" height="300" fixedsize="true">
+		<event type="oninit">
+            <action type="datarun reader" value="~dtGet" />
+			<action type="variable value">
+				<parameter name="PartneriId" value="~dtGet.@PartneriId" />
+			</action>
+			<action type="variable value">
+				<parameter name="IndMi" value="~dtGet.@IndMi" />
+			</action>			
+        </event>
+		<event type="onclose">
+			<action type="control refreshrow" value="parent.#grdGlava">
+				<parameter value="global.~dtGet"/>
+			</action>
+		</event>
+		<event type="onload">
+			<action type="control disable" value="#srcParstru, #srcPartner, #cmbKontakt" if="$IndMi==1"/>
+			<action type="control enable" value="#srcParstru, #srcPartner, #cmbKontakt" else="" />
+      <action type="control value" value="#cmbOrgShema">
+        <parameter value="parent.#grdGlava.@orgshemaid"/>
+      </action>
+        </event>			
+        <layout textposition="left" itemspadding="3">
+            <group cols="1" rows="1">
+                <group rows="3" cols="1" row="1" col="1" entermovenextcontrol="true">
+                    <item caption="Vrsta dokumenta:" col="1" row="1">
+                        <comboedit name="cmbVrstaDok" valuefield="VrstaDokId" displayfield="Opis" datavalue="#dtGet.@VrstaDokId" dataname="Global.dtVrstaDokFaktura" required="true"/>
+                    </item>
+                    <item caption="Datum:" col="1" row="2">
+                        <dateedit name="datDatumdok" datavalue="#dtGet.@DatumDok" required="true">
+                        </dateedit>
+                    </item>
+				<item caption="Org. shema:" col="1" row="3">
+					<combotreeedit name="cmbOrgShema"  required="True" valuefield="ID" displayfield="Naziv"  dataname="global.dtOrgShema" allownull="false">
+					</combotreeedit>
+				</item>			
+                </group>
+            </group>
+        </layout>
+        <panelbuttons>
+            <buttons>
+                <button caption="FAKTURIRAJ" type="add" dock="left">
+                    <event type="click">
+                        <action type="validate" />
+                        <action type="confirm" value="Želite li kreirati fakturu?">
+							<action type="datarun reader" value="~dtFakturiranje" />
+							<action type="variable value">
+								<parameter name="FaktureId" value="~dtFakturiranje.@FaktureId"/>
+							</action>
+							<!--<action type="control populate keepfocus" value="parent.#grdGlava" /> -->
+                            <action type="form close" />
+							<action type="variable value">
+								<parameter name="Global.DokId" value="$FaktureId" type="int"/> <!-- zbog otvaranja otpreme privremeno u Global.DokId stavljam pronotpglaid  -->
+							</action>								
+							<action type="variable value">
+								<parameter name="Global.tablicaGla" value="Fakture" type="string"/>
+							</action>	
+							<action type="variable value">
+								<parameter name="Global.tablicaDet" value="FakDetalj" type="string"/>
+							</action>
+							<action type="variable value">
+								<parameter name="VrstaDok" value="Faktura"/>
+							</action>
+							<action type="variable value">
+								<parameter name="BrojOpis" value="~dtFakturiranje.@Broj"/>
+							</action>
+							<action type="form open" value="frmFakturaIzmjena" if="$FaktureId!=null">
+								<parameter name="FaktureId" value="$FaktureId" />
+								<parameter name="StatusFak" value="1" /><!-- ovo utvrdo -->
+								<parameter name="VrstaDok" value="$VrstaDok"/>
+								<parameter name="Broj" value="$BrojOpis"/>
+								
+								<!-- <parameter name="Status" value="1"/>	 -->
+								<!-- <parameter name="PartneriId" value="#srcPartner"/> -->
+								<!-- <parameter name="IndPonuda" value="1" type="int"/> -->
+							</action>							
+                        </action>
+						<action type="variable value">
+							<parameter name="Global.DokId" value="$ProPonGlaId" type="int"/> <!-- vraćam na proponglaid, privremeno je na otpremi bio pronotpglaid  -->
+						</action>
+                    </event>
+                </button>
+                <button caption="ODUSTANI" type="cancel" dock="right" />
+            </buttons>
+        </panelbuttons>
+        <datalist>
+            <data command="spProd_PonGla_Fakturiraj" name="dtGet">
+                <parameter name="@ProPonGlaId" value="$ProPonGlaId" />
+            </data>
+            <data command="spProd_Faktura_IzPonude" name="dtFakturiranje">
+                <parameter name="@ProPonGlaId" value="$ProPonGlaId" />
+                <parameter name="@vrstadokid" value="#cmbVrstaDok" />
+                <parameter name="@DatumDok" value="#datDatumdok" />
+                <parameter name="@OrgShemaId" value="#cmbOrgShema" />
+            </data>
+        </datalist>
+    </form>
+</root>

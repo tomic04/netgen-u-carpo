@@ -1,0 +1,1156 @@
+<root version="1.0.0.1">
+	<form name="frmTemStavka" caption="Stavka temeljnice" width="400" height="470" >
+		<method name="fnDimenzije" dll="Dimenzije" class="DimenzijeNet.Dimenzije" method="run" />
+		<event type="init"> 
+			<action type="datarun reader" value="~dtGetVrstaDok" />
+			<action type="variable value">
+				<parameter name="RacunId" value="0" type="int"/>
+				<parameter name="BrojRacuna" value=""/>
+				<parameter name="IznosFakture" value="0" format="n2" type="decimal"/>
+				<parameter name="DevDug" value="0" format="n2" type="decimal"/>
+				<parameter name="DevPot" value="0" format="n2" type="decimal"/>
+				<parameter name="DevValuteId" value="0" type="int"/>
+				<parameter name="OrgShemaId" value="0" type="int"/>
+				<parameter name="DatumDok" value="now" type="datetime"/>
+				<parameter name="KntMasterShemaKnjId" value="0"/>
+				<parameter name="ProPonGlaId" value="0"/>
+				<parameter name="Error" value="0"/>
+			</action>
+			<!-- <action type="datarun reader" value="~dtZadnjiKntPromet"  if="$BrojRedova!=0"/>
+			<action type="variable value" if="$BrojRedova!=0">
+				<parameter name="ZadnjiKntPrometId" value="~dtZadnjiKntPromet.@KntPrometId"  type="int"/>
+			</action>
+			<action type="datarun reader" value="~dtZadnjaStavka"  if="$BrojRedova!=0"/>
+			<action type="datarun reader" value="~dtGetKontoEdit" if="$BrojRedova!=0"/> -->
+		</event>
+		<event type="load">
+			<action type="datarun reader" value="~dtZadnjiKntPromet"  if="$BrojRedova!=0"/>
+			<action type="variable value" if="$BrojRedova!=0">
+				<parameter name="ZadnjiKntPrometId" value="~dtZadnjiKntPromet.@KntPrometId"  type="int"/>
+			</action>	
+			<action type="datarun reader" value="~dtZadnjaStavka"  if="$BrojRedova!=0"/>
+			<!-- <action type="datarun reader" value="~dtGetKontoEdit" if="$BrojRedova!=0"/> -->
+			<action type="variable value">
+				<parameter name="multiselect" value="0" type="int"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="variable value">
+				<parameter name="IndPonuda" value="1" type="int" />
+			</action>
+			<action type="control value" value="#srcPartner">		
+				<!-- <parameter value="~dtZadnjaStavka.@PartneriId" text="~dtZadnjaStavka.@Konto" if="$BrojRedova!=0&amp;&amp;~dtZadnjaStavka.@PartneriId==null"/> -->
+				<parameter value="~dtZadnjaStavka.@PartneriId" text="~dtZadnjaStavka.@PartnerNaziv" if="$BrojRedova!=0;&amp;&amp;~dtZadnjaStavka.@PartneriId!=null"/>
+				<parameter value="null" else=""/>
+			</action>	
+			<action type="control value" value="#txtNazivKonta" if="$BrojRedova!=0">		
+				<parameter value="~dtZadnjaStavka.@Naziv" />
+			</action>
+			<action type="control value" value="#txtOpis" if="$BrojRedova!=0">		
+				<parameter value="~dtZadnjaStavka.@Opis" />
+			</action>
+			<!--ako se radi o ulaznom računu, povuci datum s računa jer možda knjiži protukonto-->
+            <action type="control value" value="#datDatDok" if="$BrojRedova!=0&amp;&amp;global.$Sifra==53">
+                <parameter value="~dtZadnjaStavka.@DatumDokumenta"/>
+            </action>			
+            <action type="control value" value="#datDatDok" else="">
+                <parameter value="global.$DatumKnjizenja"/>
+            </action>
+            <action type="control value" value="#datDatVal">
+                <parameter value="global.$DatumKnjizenja"/>
+            </action>			
+			<action type="control enable" value="#srcKonto,#txtOpis,#datDatDok,#txtOpis,#cmbOrgShema"/>
+			<action type="control disable" value="#srcPartner,#srcRacun,#curDevDug,#curDevPot,#cmbDevValuta,#datDatVal"/>
+			<action type="control enable" value="#cmbNacinPlac" if="global.$Sifra==50||global.$Sifra==51||global.$Sifra==52||||global.$Sifra==55||global.$Sifra==56"/>
+			<action type="control disable" value="#cmbNacinPlac" else=""/>
+			<!--<action type="control disable" value="#datDatDok" if="global.$Sifra==50"/>
+			<action type="control enable" value="#datDatDok" else=""/>-->
+			<action type="control value" value="#cmbOrgShema" if="$BrojRedova!=0">
+				<parameter value="~dtZadnjaStavka.@OrgShemaId"/>
+			</action>
+		</event>
+		<layout itemspadding="2" textposition="top">
+			<group cols="6" rows="8" groupbordervisible="true">
+				<item col="1" row="1" colspan="2" caption="Konto:" fontsizedelta="1">
+					<searchedit name="srcKonto" fieldtext="Konto" fontsizedelta="1" fieldvalue="KntPlanAId" dataname="dtGetKonto" datavalue="~dtZadnjaStavka.@KntPlanaId" datatext="~dtZadnjaStavka.@Konto" tabindex="1">
+						<event type="valuechanged">
+							<action type="variable value" value="$IndPonuda">
+								<parameter value="#srcKonto.@IndPonuda"/>
+							</action>						
+							<action type="datarun reader" value="~dtGetKontoEdit"/>
+							<action type="control value" value="#txtNazivKonta">		
+								<parameter value="~dtGetKontoEdit.@Naziv" />
+							</action>
+							<action type="control enable" value="#srcPartner,#srcRacun" if="~dtGetKontoEdit.@Tablica==Fakture||~dtGetKontoEdit.@Tablica==FaktureDob||~dtGetKontoEdit.@Tablica==KntOstalo"/>
+							<action type="control disable" value="#srcPartner,#srcRacun" else=""/>
+							<action type="control enable" value="#curDevPot,#curDevDug,#cmbDevValuta,#datDatVal" if="~dtGetKontoEdit.@DevInd==1"/>
+							<action type="control disable" value="#curDevPot,#curDevDug,#cmbDevValuta,#datDatVal" else=""/>
+							<action type="control visible" value="#datDatVal" if="~dtGetKontoEdit.@Tablica==KntOstalo">
+								<parameter value="true"/>
+							</action>
+							<action type="control visible" value="#datDatVal" else="">
+								<parameter value="false"/>
+							</action>
+							<action type="control focus" value="#srcPartner" if="~dtGetKontoEdit.@Tablica==Fakture||~dtGetKontoEdit.@Tablica==FaktureDob||~dtGetKontoEdit.@Tablica==KntOstalo||~dtGetKontoEdit.@Tablica==Partneri"/>	
+							<action type="control focus" value="#txtOpis" elseif="#srcKonto!=null"/>  
+							<action type="control focus" value="#datDatDok" else=""/>  
+							<action type="variable value">
+								<parameter name="KntPlanAId" value="#srcKonto" />
+								<parameter name="KompOznaka" value="~dtGetKontoEdit.@KompOznaka"/>
+							</action>
+							<action type="control value" value="#srcPartner">		
+								<parameter value="null" if="~dtGetKontoEdit.Tablica==null"/>
+								<parameter value="~dtZadnjaStavka.@PartneriId" text="~dtZadnjaStavka.@PartnerNaziv" else=""/>
+								<!-- <parameter value="" text="" else=""/> -->
+							</action>
+							<action type="control value" value="#srcRacun">		
+								<parameter value="" />
+							</action>
+							<action type="control value" value="#curDuguje">		
+								<parameter value="0" />
+							</action>
+							<action type="control value" value="#curPotrazuje">		
+								<parameter value="0" />
+							</action>
+							<action type="control value" value="#curDevDug">
+								<parameter value="0"/>
+							</action>
+							<action type="control value" value="#curDevPot">
+								<parameter value="0"/>
+							</action>
+							<action type="control value" value="#cmbDevValuta">
+								<parameter value="null"/>
+							</action>							
+							<action type="control focus" value="#datDatDok" if="~dtGetKontoEdit.@Tablica==null"/>
+						</event>
+						<event type="leave">
+							<action type="datarun reader" value="~dtGetKontoEdit"/>
+							<action type="control value" value="#txtNazivKonta">		
+								<parameter value="~dtGetKontoEdit.@Naziv" />
+							</action>
+							<action type="control enable" value="#srcPartner" if="~dtGetKontoEdit.@Tablica==Fakture||~dtGetKontoEdit.@Tablica==FaktureDob||~dtGetKontoEdit.@Tablica==KntOstalo||~dtGetKontoEdit.@Tablica==Partneri"/>
+							<action type="control disable" value="#srcPartner" else=""/>
+							<action type="control enable" value="#srcRacun" if="~dtGetKontoEdit.@Tablica==Fakture||~dtGetKontoEdit.@Tablica==FaktureDob||~dtGetKontoEdit.@Tablica==KntOstalo"/>
+							<action type="control disable" value="#srcRacun" else=""/>								
+							<action type="control enable" value="#curDevPot,#curDevDug,#cmbDevValuta,#datDatVal" if="~dtGetKontoEdit.@DevInd==1"/>
+							<action type="control disable" value="#curDevPot,#curDevDug,#cmbDevValuta,#datDatVal" else=""/>
+							<action type="control enable" value="#datDatVal" if="~dtGetKontoEdit.@Tablica==KntOstalo"/>
+							<action type="control disable" value="#datDatVal" else=""/>
+                                   <action type="control enable" value="#curDuguje,#curPotrazuje" if="~dtGetKontoEdit.@Tablica==null"/>
+							<action type="variable value">
+								<parameter name="KntPlanAId" value="#srcKonto" />
+								<parameter name="KompOznaka" value="~dtGetKontoEdit.@KompOznaka"/>
+							</action>
+							<action type="control focus" value="#datDatDok" if="~dtGetKontoEdit.@Tablica==null"/>
+							<action type="control focus" value="#srcPartner" else=""/>						
+						</event>
+					</searchedit>
+				</item>
+				<item col="3" row="1" colspan="4" fontsizedelta="1" caption="Naziv konta:">
+					<textedit name="txtNazivKonta" fontsizedelta="1" value="" datavalue="~dtGetKontoEdit.@Naziv" tabstop="false" readonly="true"/>
+				</item>
+				<item col="1" row="2" colspan="6" caption="Partner:" fontsizedelta="1">
+					<searchedit  name="srcPartner" entermovenextcontrol="false" fontsizedelta="1" fieldtext="Partner" fieldvalue="PartneriId" dataname="dtGetPartneri" tabindex="2">
+						<event type="valuechanged">
+							<action type="variable value">
+								<parameter name="PartneriId" value="#srcPartner"/>
+							</action>
+						</event>
+						<event type="keydown">    
+							<!--ENTER-->
+							<action if="key==13">
+							<!-- <action type="message" value="#srcPartner"/> -->
+								<action type="control focus" value="#srcPartner" if="#srcPartner==null"/>							
+								<action type="control focus" value="#srcRacun" elseif="#srcPartner!=null&amp;&amp;~dtGetKontoEdit.@Tablica!=Partneri"/>
+								<action type="control focus" value="#datDatDok" else=""/>
+							</action>
+							<!--TAB NE RADI!!-->
+							<!-- <action if="key==9"> -->
+								<!-- <action type="control focus" value="#srcPartner" if="#srcPartner==null"/>							 -->
+								<!-- <action type="control focus" value="#srcRacun" elseif="#srcPartner!=null&amp;&amp;~dtGetKontoEdit.@Tablica!=Partneri"/> -->
+								<!-- <action type="control focus" value="#datDatDok" else=""/> -->
+							<!-- </action> -->						
+						</event>
+						<event type="leave">
+							<action type="control value" value="#srcRacun">		
+								<parameter value="" />
+							</action>
+							<action type="variable value" value="$BrojRacuna">
+								<parameter value=""/>
+							</action>
+							<action type="variable value" value="$RacunId">
+								<parameter value="0"/>
+							</action>							
+							<action type="control value" value="#curDuguje">		
+								<parameter value="0" />
+							</action>
+							<action type="control value" value="#curPotrazuje">		
+								<parameter value="0" />
+							</action>
+							<action type="control value" value="#curDevDug">
+								<parameter value="0"/>
+							</action>
+							<action type="control value" value="#curDevPot">
+								<parameter value="0"/>
+							</action>	
+							<action type="variable value" value="$Saldo">
+								<parameter value="0"/>
+							</action>
+							<action type="control value" value="#cmbDevValuta">
+								<parameter value="null"/>
+							</action>							
+						</event>
+					</searchedit>
+				</item>
+				<item col="1" row="3" colspan="4" fontsizedelta="1" caption="Račun:" >
+					<textedit  name="srcRacun" fontsizedelta="1" value="" tabindex="3">
+						<event type="keydown" value="13">
+							<action type="variable value">
+								<parameter name="IndFormaRacun" value="0"/>
+								<parameter name="NoviUnos" value="0"/>
+							</action>
+							<!--ako je nešto upisano, prvo provjeri postoji li takav račun ili ponuda-->
+							<action if="#srcRacun!=">
+								<!--samo ako sam na izvodu i upisan cijeli konto, provjeri postoji li takva ponuda-->
+								<action if="~dtGetKontoEdit.@Tablica2==ProPonGla&amp;&amp;$IndPonuda==1&amp;&amp;global.$Sifra==50">
+									<action type="datarun reader" value="~dtPostojiLiPonuda"/>
+									<!--ako postoji ponuda, postavi vrijednosti varijablama i prijeđi-->
+									<action if="~dtPostojiLiPonuda.@Broj!=null">
+										<action type="variable value">
+											<parameter name="Saldo" value="~dtPostojiLiPonuda.@Saldo"/>
+											<parameter name="Duguje" value="~dtPostojiLiPonuda.@Duguje"/>
+											<parameter name="Potrazuje" value="~dtPostojiLiPonuda.@Potrazuje"/>
+											<parameter name="OrgShemaId" value="~dtPostojiLiPonuda.@OrgShemaId"/>
+											<parameter name="DevValuteId" value="~dtPostojiLiPonuda.@DevValuteId"/>
+											<parameter name="DatDok" value="global.$DatumKnjizenja"/>
+											<parameter name="DatVal" value="global.$DatumKnjizenja"/>
+											<parameter name="BrojRacuna" value="~dtPostojiLiPonuda.@BrojRacuna"/>
+											<parameter name="ProPonGlaId" value="~dtPostojiLiPonuda.@ProPonGlaId"/>
+											<parameter name="NoviUnos" value="1"/>
+											<parameter name="IndFormaRacun" value="0"/>
+											<parameter name="BrojRacuna" value="#srcRacun"/>
+										</action>
+										<action type="control focus" value="#txtOpis"/>
+									</action>
+									<!--ako nema ponude, ništa, provjeri ima li takav račun-->
+								</action>							
+								<!--provjeri postoji li takav račun-->
+								<action if="$NoviUnos==0">
+									<action type="datarun reader" value="~dtPostojiLiRacun"/>
+									<!--ako postoji račun, setaj vrijednosti varijablama, ne otvara se forma-->
+									<action type="variable value" if="~dtPostojiLiRacun.@Broj!=null">
+										<parameter name="Saldo" value="~dtPostojiLiRacun.@Saldo"/>
+										<parameter name="DevSaldo" value="~dtPostojiLiRacun.@DevSaldo"/>
+										<parameter name="OrgShemaId" value="~dtPostojiLiRacun.@OrgShemaId"/>
+										<parameter name="DevValuteId" value="~dtPostojiLiRacun.@DevValuteId"/>
+										<parameter name="DatVal" value="global.$DatumKnjizenja"/>
+										<parameter name="DatDok" value="global.$DatumKnjizenja"/>
+										<parameter name="RacunId" value="~dtPostojiLiRacun.@RacunId"/>
+										<parameter name="BrojRacuna" value="~dtPostojiLiRacun.@Broj"/>
+										<parameter name="Duguje" value="~dtPostojiLiRacun.@Duguje"/>
+										<parameter name="Potrazuje" value="~dtPostojiLiRacun.@Potrazuje"/>
+										<parameter name="IndFormaRacun" value="0"/>
+									</action>
+									<!--ako ne postoji račun i nije KntOstalo, otvara se forma-->
+									<action type="variable value" elseif="~dtPostojiLiRacun.@Broj==null&amp;&amp;~dtGetKontoEdit.@Tablica!=KntOstalo">
+										<parameter name="IndFormaRacun" value="1"/>
+									</action>
+									<!--ako ne postoji račun i je KntOstalo, unesi novi, ne otvara se forma-->
+									<action elseif="~dtPostojiLiRacun.@Broj==null&amp;&amp;~dtGetKontoEdit.@Tablica==KntOstalo">
+										<action type="variable value">
+											<parameter name="BrojRacuna" value="#srcRacun"/>
+											<parameter name="NoviUnos" value="1"/>
+											<parameter name="IndFormaRacun" value="0"/>	
+											<parameter name="DatVal" value="global.$DatumKnjizenja"/>
+											<parameter name="DatDok" value="global.$DatumKnjizenja"/>											
+										</action>
+										<action type="control focus" value="#txtOpis"/>
+									</action>
+								</action>
+							</action>
+							<!--ako nije ništa upisano ili nema računa/ponude, otvori formu za pretragu-->
+							<action if="$IndFormaRacun==1||#srcRacun==">
+								<action type="variable value">
+									<parameter name="NoviUnos" value="0"/>
+								</action>	
+								<action type="form open" value="frmTemIra" if="~dtGetKontoEdit.@Tablica==Fakture">
+									<parameter name="KntTemId" value="Global.$KntTemId" />	
+									<!-- <parameter name="Sifra" value="$Sifra"/> -->
+									<parameter name="PartneriId" value="#srcPartner"/>
+									<parameter name="KntPlanAId" value="#srcKonto" />
+									<parameter name="DevInd" value="~dtGetKontoEdit.@DevInd" />
+									<parameter name="Broj" value="#srcRacun" />	
+								</action>
+								<action type="form open" value="frmTemUra" elseif="~dtGetKontoEdit.@Tablica==FaktureDob">
+									<parameter name="KntTemId" value="Global.$KntTemId" />	
+									<!-- <parameter name="Sifra" value="$Sifra" /> -->
+									<parameter name="PartneriId" value="#srcPartner" />
+									<parameter name="KntPlanAId" value="#srcKonto" />
+									<parameter name="DevInd" value="~dtGetKontoEdit.@DevInd" />
+									<parameter name="Broj" value="#srcRacun" />
+								</action>
+								<action elseif="~dtGetKontoEdit.@Tablica==KntOstalo">
+									<!--IndPonuda iz srcKonto-koliko ih je tražilica pronašla, ako 1 znači da je odmah pogođen konto, ako više konto djelomično upisan-->
+									<action type="form open" value="frmTemProPonGla" if="~dtGetKontoEdit.@Tablica2==ProPonGla&amp;&amp;$IndPonuda==1&amp;&amp;global.$Sifra==50">
+										<parameter name="PartneriId" value="#srcPartner"/>
+										<parameter name="KntTemId" value="Global.$KntTemId" />
+										<!--ako se odabere ponuda, u formi se seta $NoviUnos=1-->
+									</action>
+									<action type="form open" value="frmTemKntOstalo" else="">
+										<parameter name="KntTemId" value="Global.$KntTemId" />	
+										<!-- <parameter name="Sifra" value="$Sifra" /> -->
+										<parameter name="PartneriId" value="#srcPartner" />
+										<parameter name="KntPlanAId" value="#srcKonto" />
+										<parameter name="DevInd" value="~dtGetKontoEdit.@DevInd" />
+										<parameter name="Broj" value="#srcRacun" />
+										<parameter name="KompOznaka" value="~dtGetKontoEdit.@KompOznaka" />
+									</action>
+									<action type="variable value" value="$Duguje" if="dialogresult==cancel">
+										<parameter value="0" />
+									</action>
+									<action type="variable value" value="$Potrazuje" if="dialogresult==cancel">
+										<parameter value="0" />
+									</action>
+									<action type="variable value" value="$DatDok" if="dialogresult==cancel">
+										<parameter value="global.$DatumKnjizenja" type="date"/>
+									</action>	
+									<action type="variable value" value="$DatVal" if="dialogresult==cancel">
+										<parameter value="global.$DatumKnjizenja" type="date"/>
+									</action>									
+								</action>
+								<action type="variable value" value="$RacunId" if="dialogresult==cancel">
+									<parameter value="null"/>
+								</action>
+								<action type="variable value" value="$BrojRacuna" if="dialogresult==cancel">
+									<parameter value="" />
+								</action>
+								<action type="variable value" value="$IznosFakture" if="dialogresult==cancel">
+									<parameter value="0" />
+								</action>
+								<action type="variable value" value="$DevDug" if="dialogresult==cancel">
+									<parameter value="0" />
+								</action>
+								<action type="variable value" value="$DevPot" if="dialogresult==cancel">
+									<parameter value="0" />
+								</action>								
+								<action type="variable value" value="$DevValuteId" if="dialogresult==cancel">
+									<parameter value="null" />
+								</action>
+								<action type="variable value" value="$OrgShemaId" if="dialogresult==cancel">
+									<parameter value="null"/>
+								</action>
+								<action type="variable value" value="$DatDok" if="dialogresult==cancel">
+									<parameter value="global.$DatumKnjizenja" type="date"/>
+								</action>
+								<action type="variable value" value="$DatVal" if="dialogresult==cancel">
+									<parameter value="global.$DatumKnjizenja" type="date"/>
+								</action>								
+								<action type="control populate" value="parent.#grdStavke" if="$BrojRacuna==">
+									<!-- po zatvaranju forme osvježavam parent grid -->
+									<action type="datarun reader" value="~dtZadnjiKntPromet"/>
+									<action type="variable value">
+										<parameter name="ZadnjiKntPrometId" value="~dtZadnjiKntPromet.@KntPrometId"  type="int"/>
+									</action>						
+								</action>
+							</action>							
+						</event>
+						<event type="leave">	
+							<!-- <parameter value="$RacunId" type="int"/>
+							<parameter value="$BrojRacuna" /> -->
+							<action type="control value" value="#srcRacun">		
+								<parameter value="$BrojRacuna" />
+							</action>
+							<action type="control value" value="#cmbOrgShema">		
+								<parameter value="$OrgShemaId" />
+							</action>
+							<!-- <parameter value="$Saldo" type="decimal" /> -->
+							<action if="$multiselect==1">
+								<!-- po zatvaranju forme osvježavam parent grid -->
+								<action type="control populate" value="parent.#grdStavke"/>							
+								<!--osvježi ukupnu sumu prije ponovnog dizanja-->		
+								<action type="datarun reader" value="~dtCalc"/>
+								<action type="control value" value="parent.#curDuguje">
+									<parameter value="~dtCalc.@SumDuguje"/>
+								</action>
+								<action type="control value" value="parent.#curPotrazuje">
+									<parameter value="~dtCalc.@SumPotrazuje"/>
+								</action>
+								<action type="control value" value="parent.#curSaldo">
+									<parameter value="~dtCalc.@SumSaldo"/>
+								</action>								
+								<action type="form close" value="frmTemStavka"/>
+								<action type="form open" value="frmTemStavka"/>							 		
+							</action>
+							<action else="">
+								<!-- callira/ura/kntostalo -->
+								<!--ako je odabran jedan račun -->
+								<!-- <action type="message" value="tu sam"/> -->
+								<action if="~dtGetKontoEdit.@Tablica==Fakture">
+									<!--ako je ifa,vrstadok je izlazni račun,ne smije mijenjati iznos -->
+									<action type="variable value" value="BrojRacuna">		
+										<parameter value="$BrojRacuna" />
+									</action>
+									<action type="variable value" value="RacunId">		
+										<parameter value="$RacunId" />
+									</action> 
+									<action type="variable value" value="KntMasterShemaKnjId">		
+										<parameter value="0" />
+									</action>
+									<action if="global.$Sifra==54">
+										<action type="control value" value="#curDuguje">		
+											<parameter value="$saldo" />
+										</action>
+										<action type="control value" value="#datDatDok">		
+											<parameter value="$DatDok" />
+										</action>
+										<action type="control value" value="#datDatVal">
+											<parameter value="$DatVal"/>
+										</action>
+										<action type="control value" value="#cmbOrgShema">		
+											<parameter value="$OrgShemaId" />
+										</action>
+										<action type="control value" value="#curDevDug">		
+											<parameter value="$DevSaldo" />
+										</action>
+										<action type="control value" value="#cmbDevValuta">		
+											<parameter value="$DevValuteId" />
+										</action>
+										<action type="control disable" value="#cmbOrgShema,#datDatDok,#curPotrazuje,#curDuguje,#cmbDevValuta,#curDevDug,#curDevPot"/>
+										<action type="control enable" value="#cmbNacinPlac"/>
+									</action>
+									<action else="">
+									    <!-- <action type="message" value="tu sam"/> -->									
+										<!--ako je temeljnica ili neka druga vrsta-->
+										<action if="#srcRacun==UPLATA">
+											<!--ako je avans-->
+											<!-- <action type="control value" value="#curPotrazuje">		 -->
+												<!-- <parameter value="$saldo" /> -->
+											<!-- </action> -->
+											<!-- <action type="control disable" value="#curPotrazuje"/>	 -->
+											<action type="control value" value="#curPotrazuje">
+												<parameter value="0"/>
+											</action>	
+											<action type="control disable" value="#curDuguje"/>											
+										</action>
+										<action else="">
+											<!-- <action type="message" value="tu sam"/>	 -->									
+											<action type="control value" value="#curPotrazuje">		
+												<parameter value="$Saldo" />
+											</action>
+											<action type="control enable" value="#curPotrazuje"/>
+											<action if="$DevIznos!=0">
+												<!-- <action type="message" value="tu sam"/> -->
+												<!--devizno-->
+												<action type="control value" value="#curDevPot">		
+													<parameter value="$DevPot" />
+												</action>
+												<action type="control value" value="#curPotrazuje">
+													<parameter value="$Saldo"/>
+												</action>
+												<action type="control disable" value="#curDevDug"/>	
+											</action>
+											<action else=""> 
+												<action type="control value" value="#curDevPot">		
+													<parameter value="0" />
+												</action>
+											</action>	 
+										</action>
+										<action type="control value" value="#cmbOrgShema">		
+											<parameter value="$OrgShemaId" />
+										</action>
+										<action type="control disable" value="#cmbOrgShema"/>	   
+										<action type="control enable" value="#datDatDok"/>	   
+										<action type="control value" value="#cmbDevValuta">		
+											<parameter value="$DevValuteId" />
+										</action>
+										<action type="control disable" value="#cmbDevValuta"/>	 
+										<!--Nove osobine na vrsti prometa tecajne razlike vrstaprom.ŠIFRA=57
+										                              otcepimo i duguje i potražuje i devizne dug i pot
+                                                                      PT case 7280-->
+										<action if="global.$Sifra==57">
+											<action type="control value" value="#curPotrazuje">		
+												<parameter value="0" />
+											</action>												
+											<action type="control disable" value="#cmbOrgShema"/>	   
+											<action type="control enable" value="#curDuguje,#curPotrazuje"/>						  
+											<action if="~dtGetKontoEdit.@DevInd==1">
+												<action type="control value" value="#curDevPot">		
+													<parameter value="0" />
+												</action>												   
+												<action type="control enable" value="#curDevDug,#curDevPot"/>	
+											</action>																					
+										</action>										 
+										<action else=""> 
+											<action type="control disable" value="#curDuguje"/>	   
+											<action type="control enable" value="#curPotrazuje"/>
+											<action if="~dtGetKontoEdit.@DevInd==1">												   
+												<action type="control enable" value="#curDevPot"/>	
+												<action type="control disable" value="#curDevDug"/>
+												<action if="#srcRacun==UPLATA">
+													<action type="control enable" value="#cmbDevValuta"/>	
+												</action>
+												<action else="">
+													<action type="control disable" value="#cmbDevValuta"/>	
+												</action>													
+											</action>														
+										</action>										 
+									</action>		
+								</action>
+								<action elseif="~dtGetKontoEdit.@Tablica==FaktureDob">
+									<action type="variable value" value="BrojRacuna">		
+										<parameter value="$BrojRacuna" />
+									</action>
+									<action type="variable value" value="RacunId">		
+										<parameter value="$RacunId" />
+									</action>
+									<action type="variable value" value="KntMasterShemaKnjId">		
+										<parameter value="$KntMasterShemaKnjId" />
+									</action>
+									<action if="global.$Sifra==53">
+										<!-- <action type="message" value="tu sam"/> -->
+										<!--ufa-->
+										<!--AA sa DevIznos na DevDug i dodan DevPot-->
+										<action type="control value" value="#curDevDug">
+											<parameter value="$DevDug" />
+										</action>
+										<action type="control value" value="#curDevPot">
+											<parameter value="$DevPot" />
+										</action>										
+										<action type="control value" value="#datDatDok">		
+											<parameter value="$DatDok" />
+										</action>
+										<action type="control value" value="#datDatVal">
+											<parameter value="$DatVal"/>
+										</action>
+										<action type="control value" value="#cmbDevValuta">		
+											<parameter value="$DevValuteId" />
+										</action>
+										<action type="control value" value="#cmbOrgShema">		
+											<parameter value="$OrgShemaId" />
+										</action>
+										<action type="datarun reader" value="~dtMinusS" />
+										<action type="control value" value="#curPotrazuje">		
+											<parameter value="~dtMinusS.@Iznos" />
+										</action> 
+										<action type="control disable" value="#cmbDevValuta,#cmbOrgShema,#datDatDok,#curPotrazuje,#curDuguje,#curDevPot,#curDevDug"/>										
+										<action type="control enable" value="#cmbNacinPlac"/>
+									</action>
+									<action else="">
+										<!--ako je temeljnica ili neka druga vrsta-->
+										<action if="#srcRacun==UPLATA">
+											<!--ako je avans-->
+											<!-- <action type="control value" value="#curDuguje">	-->
+												<!-- <parameter value="$saldo" /> -->
+											<!-- </action> -->
+											<!-- <action type="control disable" value="#curDuguje,#cmbOrgShema"/>	-->
+											<action type="control value" value="#curDuguje">
+												<parameter value="0"/>
+											</action>
+											<action type="control disable" value="#curPotrazuje"/>											
+										</action>
+										<action else=""> 
+											<!-- <action type="message" value="tu sam"/> -->
+											<action type="datarun reader" value="~dtMinusS" />
+											<action type="control value" value="#curDuguje">		
+												<parameter value="~dtMinusS.@Iznos" />
+											</action> 
+											<action type="control enable" value="#curDuguje"/>                                         											
+											<action if="$DevSaldo!=0">
+												<!--devizno-->
+												<action type="datarun reader" value="~dtMinusDevS"/>
+												<action type="control value" value="#curDevDug">		
+													<parameter value="~dtMinusDevS.@Iznos" />
+												</action>
+												<action type="control disable" value="#curDevPot,#cmbDevValuta"/>
+											</action>
+											<action else=""> 
+												<action type="control value" value="#curDevDug">		
+													<parameter value="0" />
+												</action>
+											</action>	 
+										</action>
+										<action if="~dtGetKontoEdit.@DevInd==1">
+											<action type="control value" value="#cmbDevValuta">		
+												<parameter value="$DevValuteId" />
+											</action>
+											<action type="control enable" value="#cmbDevValuta"/>
+										</action>	
+										<action type="control value" value="#cmbOrgShema">		
+											<parameter value="$OrgShemaId" />
+										</action>
+										<action type="control enable" value="#datDatDok"/>	
+										<action type="control disable" value="#cmbOrgShema"/>
+										<action if="global.$Sifra==57">
+											<!--Nove osobine na vrsti prometa tecajne razlike vrstaprom.ŠIFRA=57
+										                              otcepimo i duguje i potražuje i devizne dug i pot
+                                                                      PT case 7280-->												
+											<action type="control value" value="#curDuguje">		
+												<parameter value="0" />
+											</action>												
+											<action type="control disable" value="#cmbOrgShema"/>	   
+											<action type="control enable" value="#curDuguje,#curPotrazuje"/>						  
+											<action if="~dtGetKontoEdit.@DevInd==1">
+												<action type="control value" value="#curDevDug">		
+													<parameter value="0" />
+												</action>												   
+												<action type="control enable" value="#curDevDug,#curDevPot"/>	
+											</action>																					
+										</action>										 
+										<action else=""> 												
+											<action type="control disable" value="#curPotrazuje"/>	   
+											<action type="control enable" value="#curDuguje"/>
+											<action if="~dtGetKontoEdit.@DevInd==1">											   
+												<action type="control enable" value="#curDevDug"/>	
+												<action type="control disable" value="#curDevPot"/>
+												<action if="#srcRacun==UPLATA">
+													<action type="control enable" value="#cmbDevValuta"/>	
+												</action>
+												<action else="">
+													<action type="control disable" value="#cmbDevValuta"/>	
+												</action>													
+											</action>														
+										</action>																	
+									</action>	
+								</action> 
+								<action elseif="~dtGetKontoEdit.@Tablica==KntOstalo">
+									<!--sad tu setaj kontrole na temelju vrijednosti varijabli-->
+									<action type="control enable" value="#datDatDok,#datDatVal,#curDuguje,#curPotrazuje"/>
+									<action type="datarun reader" value="~dtKntOstaloPonasanje"/>
+									<action type="control value" value="#curDuguje">
+										<parameter value="~dtKntOstaloPonasanje.@OutDug"/>
+									</action>
+									<action type="control value" value="#curPotrazuje">
+										<parameter value="~dtKntOstaloPonasanje.@OutPot"/>
+									</action>
+									<action type="control value" value="#curDevDug">
+										<parameter value="~dtKntOstaloPonasanje.@OutDevDug"/>
+									</action>
+									<action type="control value" value="#curDevPot">
+										<parameter value="~dtKntOstaloPonasanje.@OutDevPot"/>
+									</action>										
+									<action type="control value" value="#cmbDevValuta">		
+										<parameter value="$DevValuteId" />
+									</action>
+									<action type="control value" value="#cmbOrgShema">
+										<parameter value="$OrgShemaId"/>
+									</action>
+									<action type="control value" value="#datDatDok">
+										<parameter value="$DatDok"/>
+									</action>	
+									<action type="control value" value="#datDatVal">
+										<parameter value="$DatVal"/>
+									</action>									
+									<!-- <action type="datarun reader" value="~dtRacunKntOstalo"/>	 -->
+									<!-- <action if="$Tablica2==ProPonGla&amp;&amp;($Sifra==50||$Sifra==56)"> -->
+									<!-- </action> -->
+									<!-- <action if="$RacunId&gt;0"> -->
+										<!-- <action if="~dtRacunKntOstalo.Nezatvoreno&lt;0"> -->
+										<!-- </action>	 -->
+									<!-- </action> -->
+								</action>
+							</action>
+							<action if="$RacunId&gt;0">
+								<!--ako je multiselect računa s forme -->
+								<action type="control focus" value="#datDatDok"/>
+							</action>
+							<action else="">	
+								<!--ako nije odabran račun -->
+								<action type="control focus" value="#srcRacun" if="#srcRacun=="/>
+								<!--ako se unosi novi kntostalo utvrdo ili uplata-->							
+								<action type="control focus" value="#datDatDok" else=""/>
+							</action>
+						</event>
+					</textedit>
+				</item>
+				<item col="5" row="3" colspan="2" fontsizedelta="1" caption="Datum dokumenta:">
+					<dateedit  name="datDatDok" fontsizedelta="1" tabindex="4"/>	
+				</item>
+				<item col="1" row="4" colspan="4" caption="Opis:" fontsizedelta="1">
+					<textedit name="txtOpis" fontsizedelta="1" value="" datavalue="~dtZadnjaStavka.@Opis" tabindex="5"/>
+				</item>
+				<item col="5" row="4" colspan="2" caption="Valuta:" fontsizedelta="1">
+					<dateedit  name="datDatVal" fontsizedelta="1" tabindex="6">
+					</dateedit>
+				</item>
+				<item col="1" row="5" colspan="6" caption="Organizacijska jedinica:" fontsizedelta="1">
+					<combotreeedit name="cmbOrgShema" fontsizedelta="1" autopopulate="true" parentfieldname="ParentId" valuefield="Id" displayfield="Naziv" datavalue="~dtGetOrgShema.@OrgShemaId" dataname="~dtGetOrgShema" tabindex="7">
+						<event type="valuechanged" raiseonload="false" > 
+						</event>
+					</combotreeedit>
+				</item>
+				<item col="1" row="6" colspan="6" caption="Način plaćanja:" fontsizedelta="1">
+					<comboedit name="cmbNacinPlac" fontsizedelta="1" autopopulate="true" valuefield="KntNacinPlacId" displayfield="Naziv" datavalue="~dtNacinPlac.@KntNacinPlacId" dataname="~dtNacinPlac" tabindex="8">
+						<event type="valuechanged" raiseonload="false" > 
+						</event>
+					</comboedit>
+				</item>
+				<group caption="Devizni račun" fontsizedelta="1" name="dev" colspan="6" cols="2" rows="2" col="1" row="7">
+					<item caption="Devizno duguje:" fontsizedelta="1" row="1" col="1">
+						<textedit name="curDevDug" fontsizedelta="1" value="0" format="n2" type="decimal" tabindex="9">
+							<event type="leave" >
+								<!-- <action type="datarun reader" value="~dtGetTecaj" if="~dtGetKontoEdit.@Tablica==FaktureDob&amp;&amp;$DevValuteId!=0"/> -->
+								<!-- <action type="datarun reader" value="~dtCalcIznos" if="~dtGetKontoEdit.@Tablica==FaktureDob&amp;&amp;$DevValuteId!=0"/> -->
+								<!-- <action type="control value" value="#CurDuguje" if="~dtGetKontoEdit.@Tablica==FaktureDob&amp;&amp;$DevValuteId!=0">		 -->
+									<!-- <parameter value="~dtCalcIznos.@IznosKn" format="n2"/> -->
+								<!-- </action> -->
+								<action type="datarun reader" value="~dtGetTecaj" if="$DevValuteId!=null||$DevValuteId!=0"/>
+								<action type="datarun reader" value="~dtCalcIznosDug" if="$DevValuteId!=null||$DevValuteId!=0"/>
+								<action type="control value" value="#CurDuguje" if="$DevValuteId!=null||$DevValuteId!=0">		
+									<parameter value="~dtCalcIznosDug.@IznosKn" format="n2"/>
+								</action>						
+							</event>
+						</textedit>
+					</item>	
+					<item caption="Devizno potražuje:" fontsizedelta="1" row="1" col="2">
+						<textedit name="curDevPot" fontsizedelta="1" value="0" format="n2" type="decimal" tabindex="10">
+							<event type="leave" >
+								<!-- <action type="datarun reader" value="~dtGetTecaj" if="~dtGetKontoEdit.@Tablica==Fakture&amp;&amp;$DevValuteId!=0"/> -->
+								<!-- <action type="datarun reader" value="~dtCalcIznos" if="~dtGetKontoEdit.@Tablica==Fakture&amp;&amp;$DevValuteId!=0"/> -->
+								<!-- <action type="control value" value="#curPotrazuje" if="~dtGetKontoEdit.@Tablica==Fakture&amp;&amp;$DevValuteId!=0">		 -->
+									<!-- <parameter value="~dtCalcIznos.@IznosKn" format="n2"/> -->
+								<!-- </action> -->
+								<action type="datarun reader" value="~dtGetTecaj" if="$DevValuteId!=null||$DevValuteId!=0"/>
+								<action type="datarun reader" value="~dtCalcIznosPot" if="$DevValuteId!=null||$DevValuteId!=0"/>
+								<action type="control value" value="#curPotrazuje" if="$DevValuteId!=null||$DevValuteId!=0">		
+									<parameter value="~dtCalcIznosPot.@IznosKn" format="n2"/>
+								</action>						
+							</event>
+						</textedit>
+					</item>	
+					<item col="1" row="2" colspan="1" caption="Valuta:" fontsizedelta="1">
+						<comboedit name="cmbDevValuta" fontsizedelta="1" autopopulate="true" valuefield="ValuteId" displayfield="Oznaka" datavalue="~dtGetDevValute.@ValuteId" dataname="dtGetDevValute" tabindex="11">
+							<event type="leave" raiseonload="false" > 
+								<action if="~dtGetKontoEdit.@Tablica==null">
+									<action type="datarun reader" value="~dtGetTecaj" if="#cmbDevValuta!=null"/>
+									<action type="datarun reader" value="~dtCalcIznosObicni"/>
+									<action type="control value" value="#curDuguje">
+										<parameter value="~dtCalcIznosObicni.@IznosKNDug"/>
+									</action>
+									<action type="control value" value="#curPotrazuje">
+										<parameter value="~dtCalcIznosObicni.@IznosKNPot"/>
+									</action>									
+								</action>
+							</event>
+						</comboedit>
+					</item>
+				</group>
+				<item caption="Duguje:" fontsizedelta="1" colspan="3" row="8" col="1">
+					<textedit name="curDuguje" fontsizedelta="1" value="0" format="n2" tabindex="12"/>
+				</item>	
+				<item caption="Potražuje:" fontsizedelta="1" colspan="3" row="8" col="4">
+					<textedit name="curPotrazuje" fontsizedelta="1" value="0" format="n2" tabindex="13"/>
+				</item>	
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnAdd" caption="&amp;SPREMI" dock="left" tabindex="14">
+					<event type="click">
+						<!--kontrola da iznosi ne ostanu null-->
+						<action type="control value" value="#curDuguje" if="#curDuguje==null">
+							<parameter value="0"/>
+						</action>
+						<action type="control value" value="#curPotrazuje" if="#curPotrazuje==null">
+							<parameter value="0"/>
+						</action>
+						<action type="control value" value="#curDevDug" if="#curDevDug==null">
+							<parameter value="0"/>
+						</action>
+						<action type="control value" value="#curDevPot" if="#curDevPot==null">
+							<parameter value="0"/>
+						</action>
+						<!---->	
+						<!--provjera podataka-->						
+						<action if="~dtGetKontoEdit.@Tablica==Fakture||~dtGetKontoEdit.@Tablica==FaktureDob||~dtGetKontoEdit.@Tablica==KntOstalo">
+							<action type="variable value" value="$Error" if="#srcRacun==">
+								<parameter value="1"/>
+							</action>
+							<action type="variable value" value="$Error" elseif="#srcRacun==null">
+								<parameter value="1"/>
+							</action>	
+							<action type="variable value" value="$Error" elseif="#srcPartner==">
+								<parameter value="1"/>
+							</action>
+							<action type="variable value" value="$Error" elseif="#srcPartner==null">
+								<parameter value="1"/>
+							</action>
+							<action type="variable value" value="$Error" else="">
+								<parameter value="0"/>
+							</action>							
+						</action>
+						<action elseif="~dtGetKontoEdit.@Tablica==Partneri">
+							<action type="variable value" value="$Error" if="#srcPartner==null">
+								<parameter value="1"/>
+							</action>
+							<action type="variable value" value="$Error" elseif="#srcPartner==">
+								<parameter value="1"/>
+							</action>							
+							<action type="variable value" value="$Error" else="">
+								<parameter value="0"/>
+							</action>						
+						</action>
+						<action elseif="~dtGetKontoEdit.@Tablica==null">
+							<action type="variable value" value="$Error">
+								<parameter value="0"/>
+							</action>						
+						</action>
+						<!---->
+						<action type="message" value="Obavezan unos partnera i računa!" if="$Error==1"/>
+						<action else="">
+							<action type="variable value" if="global.$Sifra!=54&amp;&amp;global.$Sifra!=53">
+								<parameter name="Proces" value="INS"/>
+							</action>
+							<action if="$NoviUnos==1">
+								<action type="transaction">
+									<action type="datarun scalar" value="~dtKntOstaloDodaj">
+										<parameter name="RacunId"/>
+									</action>		
+									<action type="datarun scalar" value="~dtSpremi">
+										<parameter name="$PrometId"/>
+									</action>
+								</action>
+								<!--<action type="datarun nonquery" value="~dtAzurirajRacune"/>--> <!--duplira iznose-->
+							</action>
+							<action else="">							
+								<action type="datarun reader" value="~dtBrojDok"/>
+								<action type="transaction">
+									<action type="datarun scalar" value="~dtUplataFakture" if="~dtGetKontoEdit.@Tablica==Fakture&amp;&amp;$RacunId==-1">
+										<parameter name="$DokId"/>
+									</action>   
+									<action type="datarun scalar" value="~dtUplataFaktureDob" elseif="~dtGetKontoEdit.@Tablica==FaktureDob&amp;&amp;$RacunId==-1">
+										<parameter name="$DokDobId"/>
+									</action>  
+									<action type="datarun nonquery" value="~dtKntOstalo" elseif="~dtGetKontoEdit.@Tablica==KntOstalo"/>
+									<action type="datarun scalar" value="~dtSpremi">
+										<parameter name="$PrometId"/>
+									</action>
+									<!-- <action type="datarun nonquery" value="~dtAzurirajRacune"/> -->
+									<!-- update IznosPlaceni nakon zatvaranja -->
+									<!-- <action type="datarun reader" value="~dtPrevariCarpo" if="global.$Sifra!=53&amp;&amp;global.$Sifra!=54">  -->
+										<!-- <action type="datarun nonquery" value="~dtUpdateTecajne" if="global.$Sifra==57&amp;&amp;$RacunId!=-1"/> -->
+										<!-- <action type="datarun nonquery" value="~dtUpdatePlaceno" else=""/> -->
+									<!-- </action> -->
+									<action type="datarun scalar" value="~dtKnjizenje" if="global.$Sifra==53&amp;&amp;$KntMasterShemaKnjId&gt;0"/>
+									<!--AA-->
+									<!-- <action type="datarun scalar" value="~dtFaktureDobIndGlk" if="global.$Sifra==53&amp;&amp;$KntMasterShemaKnjId==0"/> -->
+									<!-- <action type="datarun scalar" value="~dtFaktureIndGlk" if="global.$Sifra==54&amp;&amp;$KntMasterShemaKnjId==0"/> -->
+									<action type="datarun scalar" value="~dtFaktureDobIndGlk" if="global.$Sifra==53&amp;&amp;~dtGetKontoEdit.@Tablica==FaktureDob"/>
+									<action type="datarun scalar" value="~dtFaktureIndGlk" if="global.$Sifra==54&amp;&amp;~dtGetKontoEdit.@Tablica==Fakture"/>							
+									<!---->
+								</action>
+							</action>
+							<!--AA zakomentirano zbog neke greške ConnectionString has not been initialized, valjda neće smetati, pri ulasku u formu to ionako odvrti-->
+							<!-- <action type="datarun reader" value="~dtZadnjiKntPromet"/> -->
+							<!-- <action type="variable value"> -->
+								<!-- <parameter name="ZadnjiKntPrometId" value="~dtZadnjiKntPromet.@KntPrometId"  type="int"/> -->
+							<!-- </action> -->
+							<!-- po zatvaranju forme osvježavam parent grid -->
+							<action type="control populate" value="parent.#grdStavke"/>
+							<action type="control focus" value="parent.#grdStavke">
+								<parameter value="$PrometId"/>
+							</action>									
+							<!--osvježi ukupnu sumu prije ponovnog dizanja-->
+							<!--otkomentiraj kada riješe bug iz transakcija-->							
+							<!-- <action type="datarun reader" value="~dtCalc"/>  -->
+							<!-- <action type="control value" value="parent.#curDuguje"> -->
+								<!-- <parameter value="~dtCalc.@SumDuguje"/> -->
+							<!-- </action> -->
+							<!-- <action type="control value" value="parent.#curPotrazuje"> -->
+								<!-- <parameter value="~dtCalc.@SumPotrazuje"/> -->
+							<!-- </action> -->
+							<!-- <action type="control value" value="parent.#curSaldo"> -->
+								<!-- <parameter value="~dtCalc.@SumSaldo"/> -->
+							<!-- </action>							 -->
+							<action type="form close" value="frmTemStavka"/>
+							<action type="form open" value="frmTemStavka"/>
+						</action>
+					</event>
+				</button>
+				<button caption="ODUSTANI" type="cancel" dock="left" tabindex="15">
+					<action type="control populate" value="#grdStavke">
+						<action type="control focus" value="#grdStavke">
+							<parameter value="$NoviId" />
+						</action>
+					</action>
+				</button>
+				<button name="btnDimenzije" caption="DIMENZIJE" dock="right" tabindex="16">
+					<event type="click">
+						<action type="method run" value="fnDimenzije">
+							<parameter name="server" value="@@server" />
+							<parameter name="database" value="@@database" />
+							<parameter name="username" value="@@username" />
+							<parameter name="password" value="" />
+							<parameter name="OperateriId" value="@@operateriid" />
+							<parameter name="Parent" value="0" />
+							<parameter name="pTop" value="0" />
+							<parameter name="pLeft" value="0" />
+							<parameter name="path" value="" />
+							<parameter name="tip" value="KntPrometDetId" />
+							<parameter name="id" value="0" />
+							<parameter name="glaid" value="Global.$KntTemId" />
+						</action>
+					</event>	
+				</button> 
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCKntTemOrgShemaQuery" name="dtGetOrgShema">
+				<parameter name="@Action" value="0" />
+			</data>	
+			<data command="spCKntTemValuteQuery" name="dtGetDevValute">
+				<parameter name="@Action" value="0" />
+			</data>	
+			<data command="spCKntTemNacinPlacQuery" name="dtNacinPlac">
+				<parameter name="@Action" value="0" />
+			</data>	
+			<data command="spCKntTemTraziPartneri" name="dtGetPartneri">
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>
+			<data command="spCKntPrometAzur" name="dtSpremi" >
+				<!-- unutra exec spCKntTemAzurirajRacune -->
+				<parameter name="@action" value="0" />
+				<parameter name="@Id" value=""/>
+				<parameter name="@KntTemId" value="Global.$KntTemId" />
+				<parameter name="@KntPlanAId" value="#srcKonto" />
+				<parameter name="@PartneriId" value="#srcPartner" />
+				<parameter name="@OrgShemaId" value="#cmbOrgShema" />
+				<parameter name="@IdDok" value="$DokId" type="int" if ="~dtGetKontoEdit.@Tablica==Fakture&amp;&amp;$RacunId==-1"/>
+				<parameter name="@IdDok" value="$DokDobId" type="int" elseif ="~dtGetKontoEdit.@Tablica==FaktureDob&amp;&amp;$RacunId==-1"/>
+				<parameter name="@IdDok" value="$RacunId" else=""/>
+				<parameter name="@Duguje" value="#curDuguje" type="decimal"/>
+				<parameter name="@Potrazuje" value="#curPotrazuje" type="decimal"/>
+				<parameter name="@DatumDokumenta" value="#datDatDok"/>
+				<parameter name="@Opis" value="#txtOpis" type="string"/>
+				<parameter name="@KnjigaId" value="$KnjigaId" />
+				<parameter name="@KntNacinPlacId" value="#cmbNacinPlac" />
+				<parameter name="@DevDuguje" value="#curDevDug" type="decimal"/>
+				<parameter name="@DevPotrazuje" value="#curDevPot" type="decimal"/>
+				<parameter name="@DevValuteId" value="#cmbDevValuta" />
+				<parameter name="@ssOperateriId" value="@@operateriid" />
+			</data>	
+			<data command="spCKntOstaloAzur" name="dtKntOstalo">
+				<parameter name="@action" value="1" />
+				<parameter name="@Id" value="" />
+				<parameter name="@Broj" value="$BrojRacuna"/>
+				<parameter name="@KntPlanAId" value="#srcKonto" />
+				<parameter name="@PartneriId" value="#srcPartner" />
+				<parameter name="@OrgShemaId" value="#cmbOrgShema" />
+				<parameter name="@Duguje" value="#curDuguje" type="decimal"/>
+				<parameter name="@Potrazuje" value="#curPotrazuje" type="decimal"/>
+				<parameter name="@Nadnevak" value="#datDatDok" />
+				<parameter name="@DevDug" value="#curDevDug" type="decimal"/>
+				<parameter name="@DevPot" value="#curDevPot" type="decimal"/>
+				<parameter name="@DevValuteId" value="#cmbDevValuta" />
+				<parameter name="@DatumValuteKnt" value="#datDatVal"/>
+				<parameter name="@ProPonGlaId" value="$ProPonGlaId"/>				
+			</data>	
+			<data command="spCKntFaktureAzur" name="dtUplataFakture">
+				<parameter name="@action" value="0" />
+				<parameter name="@PartneriId" value="#srcPartner" type="int"/>
+				<parameter name="@OperateriId" value="@@operateriid" />
+				<parameter name="@VrstaDokId" value="~dtGetVrstaDok.@VrstaDokId" />
+				<parameter name="@DatumDok" value="#datDatDok" />
+				<parameter name="@DatumKnjizenja" value="global.$DatumKnjizenja" />
+				<parameter name="@DatumValute" value="#datDatVal" />
+				<parameter name="@IznosFakture" value="0" type="decimal"/>
+				<parameter name="@IznosPlaceni" value="0" type="decimal"/>
+				<parameter name="@IznosPoreza" value="0" type="decimal"/>
+				<parameter name="@BrojKnjige" value="0"/>
+				<parameter name="@BrojNarudzbe" value="" />
+				<parameter name="@Storno" value="" />
+				<parameter name="@Broj" value="$BrojRacuna" />
+				<parameter name="@BrojDok" value="~dtBrojDok.@BrojDok" />
+				<parameter name="@Prefix" value="NOGEN" />
+				<parameter name="@Sufix" value="" />
+				<parameter name="@IndGlk" value="1" if ="global.$Sifra==54"/>
+				<parameter name="@IndGlk" value="0" else =""/>
+			</data>	
+			<data command="spCKntFaktureDobAzur2" name="dtUplataFaktureDob">
+				<parameter name="@action" value="0" />
+				<parameter name="@PartneriId" value="#srcPartner" />
+				<parameter name="@DatumDok" value="#datDatDok" />
+				<parameter name="@DatumValute" value="#datDatVal" />
+				<parameter name="@IznosFakture" value="0" type="decimal"/>
+				<parameter name="@IznosPlaceni" value="0" type="decimal"/>
+				<parameter name="@IznosPoreza" value="0" type="decimal"/>
+				<parameter name="@Broj" value="$BrojRacuna" />
+				<parameter name="@BrojDok" value="~dtBrojDok.@BrojDok" />
+				<parameter name="@Model" value="" />
+				<parameter name="@R1" value="1" />
+				<parameter name="@IndGlk" value="1" if ="global.$Sifra==53"/>
+				<parameter name="@IndGlk" value="0" else =""/>
+				<parameter name="@OperaterId" value="@@operateriid" />           
+			</data>	
+			<data command="spCKntTemCalc" name="dtMinus" >
+				<parameter name="@action" value="5" />
+				<parameter name="@Iznos" value="$IznosFakture" type="decimal"/>
+			</data>	
+			<data command="spCKntTemCalc" name="dtMinusS" >
+				<parameter name="@action" value="5" />
+				<parameter name="@Iznos" value="$Saldo" type="decimal"/>
+			</data>	
+			<data command="select vd.VrstaDokId,vd.Opis,vd.Prefix,vp.Sifra from VrstaDok vd,VrstaProm vp where vd.VrstaPromId in (select VrstaPromId from VrstaProm where Projekt = 'K') And vd.VrstaPromId = vp.VrstaPromId order by vd.opis" type="text" name="dtVrstaDok"/>
+			<data command="select p.KntPlanAId,p.PartneriId,p.Opis,k.Konto as Konto,k.Konto as BrojKonta,k.Naziv as Naziv, OrgShemaId
+			                     ,(select Naziv from partneri where partneriid=(select partneriid from KntPromet where KntPrometId={$ZadnjiKntPrometId})) as PartnerNaziv,
+                           p.DatumDokumenta
+						   from KntPromet p inner join KntPlanA k on p.KntPlanAId=k.kntplanaid		   
+						   where KntPrometId={$ZadnjiKntPrometId}" type="text" name="dtZadnjaStavka">			
+			</data>
+			<data command="select top 1 KntPrometId from KntPromet where KntTemId={global.$KntTemId} order by KntPrometId desc" type="text" name="dtZadnjiKntPromet"/>
+			<data command="spCKntTemPlanAQuery" name="dtGetKontoEdit">
+				<parameter name="@Action" value="3" />
+				<parameter name="@Konto" value="#srcKonto.text"/>
+				<!-- <parameter name="@Konto" value="#srcKonto.text" if="#srcKonto.@KntPlanAId!=null"/> -->
+				<!-- <parameter name="@Konto" value="~dtZadnjaStavka.@BrojKonta" else=""/> -->
+			</data>
+			<data command="spCKntTemPlanAQuery" name="dtGetKonto">
+				<parameter name="@Action" value="22" />
+				<parameter name="@Konto" value="#srcKonto.text" />
+			</data>
+			<data command="spCKntTemVrstaDokQuery" name="dtGetVrstaDok">
+				<parameter name="@Action" value="3" type="int" />
+				<parameter name="@Opis" value="Faktura kontor" />
+			</data>	
+			<data command="select Left(rtrim(@BrojRacuna), 6) as BrojDok" type="text" name="dtBrojDok">
+				<parameter name="@BrojRacuna" value="$BrojRacuna"/>
+			</data>
+			<data command="select dbo.fnTecaj (@DatumKnjizenja,@ValuteId) as Tecaj" type="text" name="dtGetTecaj">
+				<parameter name="@DatumKnjizenja" value="Global.$DatumKnjizenja" type="date"/>
+				<parameter name="@ValuteId" value="#cmbDevValuta" type="int"/>
+			</data>
+			<data command="select round(@Iznos*@tecaj,2) as IznosKN" type="text" name="dtCalcIznosPot">
+				<parameter name="@Iznos" value="#curDevPot" type="decimal"/>
+				<parameter name="@tecaj" value="~dtGetTecaj.@Tecaj" type="decimal" format="n6"/>
+			</data>
+			<data command="select round(@Iznos*@tecaj,2) as IznosKN" type="text" name="dtCalcIznosDug">
+				<parameter name="@Iznos" value="#curDevDug" type="decimal"/>
+				<parameter name="@tecaj" value="~dtGetTecaj.@Tecaj" type="decimal" format="n6"/>
+			</data>			
+		<!-- 	<data command="spCKntCheckRacun_Query" name="dtRacunFakture">
+				<parameter name="@Action" value="Fakture" />
+				<parameter name="@Broj" value="$BrojRacuna" />
+				<parameter name="@PartneriId" value="$PartneriId" />
+				<parameter name="@Sifra" value="$Sifra" />
+			</data> -->
+		<!-- 	<data command="spCKntCheckRacun_Query" name="dtRacunFaktureDob">
+				<parameter name="@Action" value="FaktureDob" />
+				<parameter name="@Broj" value="$BrojRacuna" />
+				<parameter name="@PartneriId" value="$PartneriId" />
+			</data>	 -->
+			<!-- <data command="spCKntCheckRacun_Query" name="dtRacunKntOstalo">
+				<parameter name="@Action" value="KntOstalo" />
+				<parameter name="@Broj" value="$BrojRacuna" />
+				<parameter name="@PartneriId" value="$PartneriId" />
+				<parameter name="@KntPlanAId" value="$KntPlanAId" />
+			</data> -->
+			<data command="spCKntFaktureDobKnjizenje" name="dtKnjizenje">
+				<parameter name="@Id" value="$RacunId" />
+				<parameter name="@KntPrometId" value="$PrometId" />
+			</data>
+			<data command="spCKntFaktureDobAzur2" name="dtFaktureDobIndGlk">
+				<parameter name="@action" value="4" />
+				<parameter name="@IndGlk" value="1" />
+				<parameter name="@Id" value="$RacunId" />
+			</data>
+			<data command="spCKntFaktureAzur" name="dtFaktureIndGlk">
+				<parameter name="@action" value="4" />
+				<parameter name="@IndGlk" value="1"/>
+				<parameter name="@Id" value="$RacunId"/>
+                    <parameter name="@KntTemId" value="global.$KntTemId"/>
+			</data>
+			<data name="dtKntOstaloDodaj" command="spCKntOstaloAzur">
+				<!--šaljem iznose na 0 jer će prometazur ažurirati unesene vrijednosti-->
+				<parameter name="@Action" value="0"/>
+				<!-- <parameter name="@Id" value="parent.#grdStavke.@IdDok"/> -->
+				<parameter name="@Duguje" value="0" type="decimal"/>
+				<parameter name="@Potrazuje" value="0" type="decimal"/>
+				<parameter name="@DevDug" value="0" type="decimal"/>
+				<parameter name="@DevPot" value="0" type="decimal"/>
+				<parameter name="@DatumValuteKnt" value="#datDatVal"/>		
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@Broj" value="$BrojRacuna"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShema"/>
+				<parameter name="@Nadnevak" value="#datDatDok"/>
+				<parameter name="@KntPlanAId" value="#srcKonto"/>
+				<parameter name="@ProPonGlaId" value="$ProPonGlaId"/>				
+				<parameter name="@DevValuteId" value="#cmbDevValuta"/>
+			</data>	
+			<data name="dtMinusDevS" command="spCKntTemCalc">
+				<parameter name="@Action" value="5" />
+				<parameter name="@Iznos" value="$DevSaldo" type="decimal"/>
+			</data>	
+			<!-- <data name="dtUpdateTecajne" command="spCKntFaktureDobAzur" if="~dtGetKontoEdit.@Tablica==FaktureDob"> -->
+				<!-- <parameter name="@Action" value="33"/> -->
+				<!-- <parameter name="@ID" value="$RacunId"/>				 -->
+				<!-- <parameter name="@IznosFakture" value="#curPotrazuje"/> -->
+			<!-- </data> -->
+			<!-- <data name="dtUpdateTecajne" command="spCKntFaktureAzur" elseif="~dtGetKontoEdit.@Tablica==Fakture"> -->
+				<!-- <parameter name="@Action" value="33"/> -->
+				<!-- <parameter name="@ID" value="$RacunId"/> -->
+				<!-- <parameter name="@IznosFakture" value="#curDuguje"/> -->
+			<!-- </data>			 -->
+			<!-- <data name="dtUpdatePlaceno" command="spCKntOstaloAzur" if="~dtGetKontoEdit.@Tablica==KntOstalo"> -->
+				<!-- <parameter name="@Action" value="3"/>			 -->
+				<!-- <parameter name="@ID" value="$RacunId"/>	 -->
+				<!-- <parameter name="@Duguje" value="#curDuguje" type="decimal"/> -->
+				<!-- <parameter name="@Potrazuje" value="#curPotrazuje" type="decimal"/> -->
+				<!-- <parameter name="@DevDug" value="#curDevDug" type="decimal"/> -->
+				<!-- <parameter name="@DevPot" value="#curDevPot" type="decimal"/> -->
+			<!-- </data> -->
+			<!-- <data name="dtUpdatePlaceno" command="spCKntFaktureDobAzur" elseif="~dtGetKontoEdit.@Tablica==FaktureDob"> -->
+				<!-- <parameter name="@Action" value="3"/>			 -->
+				<!-- <parameter name="@ID" value="$DokDobId" type="int" if="$RacunId==-1"/> -->
+				<!-- <parameter name="@ID" value="$RacunId" else=""/>	 -->
+				<!-- <parameter name="@IznosPlaceni" value="#curDuguje" type="decimal"/> -->
+				<!-- <parameter name="@DevUplata" value="#curDevDug" type="decimal"/> -->
+			<!-- </data>	 -->
+			<!-- <data name="dtUpdatePlaceno" command="spCKntFaktureAzur" elseif="~dtGetKontoEdit.@Tablica==Fakture"> -->
+				<!-- <parameter name="@Action" value="3"/>			 -->
+				<!-- <parameter name="@ID" value="$DokId" type="int" if="$RacunId==-1"/> -->
+				<!-- <parameter name="@ID" value="$RacunId" else=""/> -->
+				<!-- <parameter name="@IznosPlaceni" value="#curPotrazuje" type="decimal"/> -->
+				<!-- <parameter name="@DevUplata" value="#curDevPot" type="decimal"/> -->
+			<!-- </data>		 -->
+			<!-- <data name="dtPrevariCarpo" type="text" command="select 1 as Prevara"/> -->
+			<data name="dtAzurirajRacune" command="spCKntTemAzurirajRacune">
+				<parameter name="@Action" value="1" if="$Proces==DEL"/>
+				<parameter name="@Action" value="2" elseif="$Proces==INS"/>
+				<parameter name="@KntPrometId" value="$PrometId"/>
+			</data>
+		    <data name="dtPostojiLiRacun" command="spCKntTemFindRacun">
+				<parameter name="@Action" value="1" if="~dtGetKontoEdit.@Tablica==Fakture"/>
+				<parameter name="@Action" value="2" elseif="~dtGetKontoEdit.@Tablica==FaktureDob"/>
+				<parameter name="@Action" value="3" elseif="~dtGetKontoEdit.@Tablica==KntOstalo"/>
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+				<parameter name="@Broj" value="#srcRacun"/>
+			</data>
+			<data name="dtPostojiLiPonuda" command="spCKntTemFindRacun">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@Broj" value="#srcRacun"/>
+			</data>
+			<data name="dtKntOstaloPonasanje" command="spCKntTemKntOstaloPonasanje">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Duguje" value="$Duguje"/>
+				<parameter name="@Potrazuje" value="$Potrazuje"/>
+				<parameter name="@DevDug" value="$DevDug"/>
+				<parameter name="@DevPot" value="$DevPot"/>
+				<parameter name="@KntPlanAId" value="#srcKonto"/>	
+                <parameter name="@IndPonuda" value="$IndPonuda" if="~dtGetKontoEdit.@Tablica2==ProPonGla&amp;&amp;$IndPonuda==1&amp;&amp;global.$Sifra==50"/>
+			</data>
+			<data command="spCKntTemCalc" name="dtCalc">
+				<parameter name="@action" value="1" />
+				<parameter name="@id" value="Global.$KntTemId" />
+			</data>
+			<data name="dtCalcIznosObicni" command="select round(@IznosDug*@tecaj,2) as IznosKNDug, round(@IznosPot*@tecaj,2) as IznosKNPot" type="text">
+				<parameter name="@IznosDug" value="#curDevDug" type="decimal"/>
+				<parameter name="@IznosPot" value="#curDevPot" type="decimal"/>
+				<parameter name="@tecaj" value="~dtGetTecaj.@Tecaj" type="decimal" format="n6" if="#cmbDevValuta!=null"/>
+				<parameter name="@tecaj" value="0" else=""/>
+			</data>			
+		</datalist>
+	</form>
+</root>

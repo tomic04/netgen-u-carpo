@@ -1,0 +1,216 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <form name="master" type="master" caption="Predmeti">
+
+    <managerlayout>
+      <event type="load">
+        <action type="variable value" >
+          <parameter name="NoviId" value="0" type="int"/>
+        </action>
+      </event>
+
+      <grid name="grdGrid" dataname="dtGrid" key="kuppredmetklasaid" type="master" bestfitonrefresh="True">
+        <fields>
+          <field name="Oznaka" caption="Oznaka" fixwidth="100"/>
+          <field name="Predmet" caption="Predmet" fixwidth="200" />
+          <field name="KlasifikacijskaKlasa" caption="Klasifikacijska klasa" fixwidth="400"/>
+          <field name="OrganizacijskaJedinica" caption="Organizacijska jedinica" fixwidth="400"/>
+          
+        </fields>
+
+
+        <event type="focusedrowchanged">
+          <action type="control enable" value="#btnObrisi,#btnIzmijeni" if="#grdGrid.rowcount!=0"/>
+          <action type="control disable" value="#btnObrisi,#btnIzmijeni" else=""/>
+        </event>
+
+        <event type="doubleclick">
+          <action type="form open" value="frmPredmeti"  if="#grdGrid.rowcount&gt;0">
+            <parameter name="tekst" value="izmijena"/>
+            <parameter name="kuppredmetklasaid" value="#grdGrid.@kuppredmetklasaid"/>
+            <parameter name="Action" value="1"/>
+          </action>
+
+          <action type="control populate" value="#grdGrid">
+            <action type="control focus" value="#grdGrid">
+              <parameter value="#grdGrid.@kuppredmetklasaid"/>
+            </action>
+          </action>
+        </event>
+      </grid>
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnesi" caption="UNESI" type="add">
+          <menuitem control="#grdGrid"/>
+          <event type="click">
+            <action type="form open" value="frmPredmeti">
+              <parameter name="tekst" value="unos"/>
+              <parameter name="Action" value="0"/>
+            </action>
+          </event>
+        </button>
+
+        <button name="btnIzmijeni" caption="IZMIJENI" type="edit">
+          <menuitem control="#grdGrid"/>
+          <event type="click">
+            <action type="form open" value="frmPredmeti"  if="#grdGrid.rowcount&gt;0">
+              <parameter name="tekst" value="izmijena"/>
+              <parameter name="kuppredmetklasaid" value="#grdGrid.@kuppredmetklasaid"/>
+              <parameter name="Action" value="1"/>
+            </action>
+          </event>
+        </button>
+
+        <button name="btnObrisi" caption="OBRIŠI" type="delete">
+          <menuitem control="#grdGrid"/>
+          <event type="click">
+            <action type="confirm" value="Želite li obrisati predmet: {#grdGrid.@Predmet}?">
+              <action type="datarun nonquery" value="~dtDelete" >
+                <action type="control populate" value="#grdGrid" />
+              </action>
+            </action>
+          </event>
+        </button>
+
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spCKUPPredmetKlasaQuery" name="dtGrid">
+        <parameter name="@Action" value="mastergrid" />
+      </data>
+
+
+      <data command="spCKUPPredmetKlasaAzur"  name="dtDelete">
+        <parameter name="@Action" value="2" />
+        <parameter name="@Id" value="#grdGrid.@kuppredmetklasaid" />
+      </data>
+    </datalist>
+  </form>
+
+  <form name="frmPredmeti" caption="Predmeti :: {$tekst}" width="400" fixedsize="false">
+    <event type="init">
+      <action type="datarun reader" value="~dtGetIndikator" />
+     
+    </event>
+    <event type="load">
+       <action type="datarun reader" value="~dtGetDataEdit" if="$kuppredmetklasaid!=null"/>
+      
+      <action type="control value" value="#txtOznaka" if="$kuppredmetklasaid!=null">
+        <parameter value="~dtGetDataEdit.@Oznaka"/>
+      </action>
+      <action type="control value" value="#txtPredmet"  if="$kuppredmetklasaid!=null">
+        <parameter value="~dtGetDataEdit.@Predmet"/>
+      </action>
+      <action type="control value" value="#cmbKlasa"  if="$kuppredmetklasaid!=null">
+        <parameter value="~dtGetDataEdit.@KUPKlasifikacijskeOznakeId"/>
+      </action>
+      <action type="control value" value="#cmbOrgShema"  if="$kuppredmetklasaid!=null">
+        <parameter value="~dtGetDataEdit.@OrgShemaId"/>
+      </action>
+      
+      <action type="control disable" value="#cmbKlasa,#cmbOrgShema" if="$kuppredmetklasaid!=null"/>
+      <action type="control enable" value="#cmbKlasa,#cmbOrgShema"  else="" />
+
+    </event>
+    <layout textposition="left">
+      <group cols="1" rows="4" >
+        <item caption="Oznaka:" col="1" row="1">
+          <textedit name="txtOznaka" readonly="true" />
+        </item>
+        <item caption="Predmet:" col="1" row="2">
+          <textedit name="txtPredmet"/>
+        </item>
+        <item caption="Klasifikacija:" col="1" row="3" >
+          <combotreeedit name="cmbKlasa" valuefield="KUPKlasifikacijskeOznakeId" parentfieldname="parentid" displayfield="KlasifikacijskaKlasa" datavalue="~dtGetDataEdit.@KUPKlasifikacijskeOznakeId" dataname="dtGetKlasa" >           
+             <event type="rowclick">            
+              <action type="disallow" if="#cmbKlasa.@Prava==0" />
+            </event>  
+              <event type="valuechanged">
+              <action if="#cmbKlasa==null">
+                  <action type="control disable" value="#btnSpremi"/>
+              </action>
+              <action elseif="#cmbKlasa!=null">
+                  <action type="control enable" value="#btnSpremi"/>    
+              </action>       
+             </event>                   
+          </combotreeedit>                   
+        </item>
+                   
+        <item caption="Organizacijska jedinica:" col="1" row="4" >
+          <combotreeedit name="cmbOrgShema" valuefield="ID" parentfieldname="parentid" displayfield="OrganizacijskaJedinica" datavalue="~dtOrgShema.@OrgShemaId" dataname="dtOrgShema" >
+            <event type="rowclick">            
+              <action type="disallow" if="#cmbOrgShema.@Prava==0" />
+            </event>           
+            <event type="valuechanged">
+              <action if="#cmbOrgShema==null">
+                  <action type="control disable" value="#btnSpremi"/>
+              </action>
+              <action elseif="#cmbOrgShema!=null">
+                  <action type="control enable" value="#btnSpremi"/>    
+              </action>       
+             </event>                   
+          </combotreeedit>
+        </item>      
+      </group>
+    </layout>
+    <datalist>
+      <data command="spCKUPPredmetKlasaAzur" name="dtAdd">
+        <parameter name="@Action" value="$Action"/>
+        <parameter name="@Naziv" value="#txtPredmet"/>
+        <parameter name="@OrgShemaId" value="#cmbOrgShema" type="int"/>
+        <parameter name="@KUPKlasifikacijskeOznakeId" value="#cmbKlasa" type="int"/>
+        <parameter name="@Id" value="$kuppredmetklasaid" type="int"/>
+      </data>
+      <data command="spCKUPPredmetKlasaQuery"  name="dtGetDataEdit">
+        <parameter name="@action" value="edit" />
+        <parameter name="@Id" value="$kuppredmetklasaid" />
+      </data>
+      
+     <data command="spCKUPPredmetKlasaQuery" name="dtOrgShema">
+        <parameter name="@action" value="cborgshema" />
+        <parameter name="@OperateriId" value="@@OperateriId"/>
+     </data>
+      
+    <data command="spCKUPPredmetKlasifikacija" name="dtGetKlasa">
+     </data>
+
+    </datalist>
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="SPREMI">
+          <event type="click">
+
+            <!-- <action type="validate" /> -->
+            <action type="datarun scalar" value="~dtAdd">
+              <parameter name="parent.$Noviid" />
+            </action>
+			
+            <action type="form close"/>
+
+            <action type="control populate" value="parent.#grdGrid">
+
+              <action type="control focus" value="parent.#grdGrid" if="$Action==0">
+                <parameter value="parent.$Noviid" />
+              </action>
+
+              <action type="control focus" value="parent.#grdGrid" if="$Action==1">
+                <parameter value="$kuppredmetklasaid" />
+              </action>
+            </action>
+
+
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" type="cancel">
+          <event type="click">
+            <action type="control focus" value="parent.#grdGrid" if="$Action==1">
+              <parameter value="$KupVrstaPosteId" />
+            </action>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+  </form>
+
+</root>

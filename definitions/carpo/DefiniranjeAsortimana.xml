@@ -1,0 +1,441 @@
+<!-- RADIO na Jupiter2012 - Spin20160126 -->
+<root>
+	<form name="frmMaster" type="master" caption="Definiranje asortimana">
+		<event type="shown">
+			<!-- 			<action type="control focus" value="#tree">
+				<parameter value="4467" type="int"/>
+			</action> -->
+			<action type="variable value" >
+				<parameter name="NewPartneriId" value="0" type="int"/>
+			</action>				
+		</event>
+		<managerlayout>
+			<tree name="tree" caption="Kupci" searchfield="" expandallonload="true" >
+				<data command="dbo.spProd_Asortiman_Stablo" />
+				<fields>
+					<field name="caption" />
+				</fields>
+				<event type="focusedrowchanged"  >
+					<action type="control populate" value="#grdGlava" />
+					<action type="variable value" value="$pomocna">
+						<parameter value="1"/>
+					</action>
+				</event>		
+			</tree>		
+			<grid name="grdGlava" type="master" searchfield="" dataname="global.dtGlava" multiselect="true"> 
+				<event type="cellvaluechanged">
+					<action type="datarun nonquery" value="global.~dtRole">
+						<!-- <action type="control populate keepfocus" value="#grdOperateri"/> -->
+					</action>
+				</event>
+
+				<fields >
+					<field name="naziv" caption="Naziv robe" fontbold="true" />
+					<field name="Sifra" caption="Šifra robe" type="string" />
+					<field name="sifrakodkupca" caption="Šifra kod kupca" />
+					<field name="aktivno" caption="Aktivno"  editable="true" edittype="bit"/>
+					<field name="kontrola" caption="Kontrola" />
+					<field name="kupacdobavljac" caption="Kupac/Dobavljač" />
+				</fields>
+				<styles>
+				</styles>				
+			</grid>		
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="cmdInsert" caption="Unesi" type="add" function="insert">
+					<menuitem control="#grdGlava"/>
+					<event type="click">
+						<action type="form open" value="frmArtiklAdd" >
+							<parameter name="TreeValue" value="#tree.@value" />
+							<parameter name="TreeString" value="#tree.@caption" />
+							<parameter name="GlaId" value="0" />
+						</action>
+						<!-- 						<action type="control populate" value="#tree" if="$NewPartneriId!=0"/>
+						<action type="control focus" value="#tree" if="$NewPartneriId!=0">
+							<parameter value="$NewPartneriId" type="int"/>
+						</action>						
+						<action type="control populate" value="#grdGlava" /> -->
+					</event>
+				</button>
+				<button name="cmdEdit" caption="Izmijeni" type="edit" function="edit">
+					<menuitem control="#grdGlava"/>
+					<event type="click">
+						<action type="form open" value="frmArtiklEdit">
+							<parameter name="GlaId" value="#grdGlava.@Id" />
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="cmdDelete" caption="Obriši" type="delete" function="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati artikl?">
+							<action type="control foreachrow selected" value="#grdGlava">
+								<action type="datarun nonquery" value="global.~dtDelete" />
+							</action>
+							<action type="control populate" value="#grdGlava" />
+							<action type="control populate" value="#tree" if="#grdGlava.rowcount==0" />
+						</action>
+					</event>
+				</button>
+				<button caption="Ispis">
+					<event type="click" >
+						<action type="control printcontrol" value="#grdGlava"/>
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>		
+	</form>
+
+	<form name="frmArtiklAdd" caption="Artikl" width="350">
+		<event type="load">
+			<action type="control disable" value="#cmbMKlasa, #cmbKKlasa, #cmbKlasa" />
+			<action type="variable value" >
+				<parameter name="MultiNewPartneriId" value="0"/>
+			</action>	
+		</event>
+		<event type="shown">
+			<action type="control value" value="#srcPartner" if="$GlaId==0&amp;&amp;parent.#tree.@Id!=0">
+				<parameter value="$TreeValue"  text="$TreeString"/>
+			</action>					
+			<action type="control value" value="#cmbKontrola">
+				<parameter value="2" type="int"/>
+			</action>
+			<action type="control focus" value="#srcRoba" if="$GlaId==0&amp;&amp;parent.#tree.@Id!=0"/>
+		</event>
+		<layout textposition="top" itemspadding="4">
+			<group cols="1" rows="5">
+				<item caption="Dobavljač:" col="1" row="1" fontbold="true">
+					<searchedit name="srcPartner" fieldtext="Partner3000" fieldvalue="PartneriId" required="true" fontbold="true" dataname="Global.dtSearchPartner" function="srcPartner">
+						<event type="valuechanged">
+						</event>
+						<action type="control focus" value="#srcRoba"/>
+					</searchedit>
+				</item>	
+				<group cols="2" rows="4" col="1" row="2">
+					<columnsdefinition>
+						<column size="30" position="1" />
+						<column size="100%" position="2" />
+					</columnsdefinition>
+					<item caption=" " col="1" row="1">
+						<radioedit name="rdoRoba" value="true"  groupindex="1" function="srcRoba" >
+							<event type="checkedchanged">
+								<action type="control enable" value="#srcRoba" if="#rdoRoba==true">
+									<action type="control focus" value="#srcRoba" />
+								</action>
+								<action type="control disable" value="#cmbMKlasa, #cmbKKlasa, #cmbKlasa" />
+								<action type="control enable" value="txtSifra" />
+								<action type="control refreshvalue" value="#cmbMKlasa, #cmbKKlasa, #cmbKlasa" />
+							</event>
+						</radioedit>
+					</item>						
+					<item caption="Roba" col="2" row="1" type="visible" value="false" >
+						<searchedit name="srcRoba" fontsizedelta="1" fontbold="True" fieldtext="Roba3000" fieldvalue="RobaId" required="true" entermovenextcontrol="false" dataname="Global.dtSearchRoba" function="srcRoba">
+							<action type="variable value" >
+								<parameter name="RobaId" value="#srcRoba" type="int"/>
+								<parameter name="NazivRobe" value="#srcRoba.@Naziv"/>
+								<!--#srcRoba.@Naziv <parameter name="NazivRobe" value="#txtNaziv"/> -->
+							</action>						
+						</searchedit>
+					</item>
+
+					<item caption=" " col="1" row="2" >
+						<radioedit name="rdoMKlasa" caption="" value="false"  groupindex="1" function="cmbMKlasa">
+							<event type="checkedchanged">
+								<action type="control enable" value="#cmbMKlasa" if="#rdoMKlasa==true">
+									<action type="control focus" value="#cmbMKlasa" />
+								</action>						
+								<action type="control disable" value="#srcRoba, #cmbKKlasa, #cmbKlasa, #txtSifra" />
+								<action type="control refreshvalue" value="#srcRoba, #cmbKKlasa, #cmbKlasa, #txtSifra" />
+							</event>
+						</radioedit>						
+					</item>
+					<item caption="Osnovna klasifikacija:" col="2" row="2">
+						<combotreeedit name="cmbMKlasa" valuefield="Id" displayfield="Naziv" datavalue="" dataname="Global.dtMKlasa" required="true" function="cmbMKlasa"/>
+					</item>	
+
+					<item caption=" " col="1" row="3" >
+						<radioedit name="rdoKKlasa" caption="" value="false"  groupindex="1" function="cmbKKlasa">
+							<event type="checkedchanged">
+								<action type="control enable" value="#cmbKKlasa" if="#rdoKKlasa==true">
+									<action type="control focus" value="#cmbKKlasa" />
+								</action>						
+								<action type="control disable" value="#srcRoba, #cmbMKlasa, #txtSifra" />
+								<action type="control refreshvalue" value="#srcRoba, #cmbMKlasa, #txtSifra" />
+							</event>
+						</radioedit>						
+					</item>
+					<item caption="Dodatna klasifikacija:" col="2" row="3">
+						<combotreeedit name="cmbKKlasa" valuefield="KlKlRobaId" displayfield="Naziv" datavalue="" dataname="Global.dtKKlasa" required="true" function="cbmKKlasa" allownull="false">
+							<event type="valuechanged">
+								<action type="control enable" value="#cmbKlasa" if="#cmbKKlasa!=null">
+									<action type="control populate" value="#cmbKlasa" />
+								</action>
+							</event>						
+						</combotreeedit>
+					</item>	
+
+					<item caption="Klasa u dodatnoj klasifikaciji:" col="2" row="4">
+						<combotreeedit name="cmbKlasa" valuefield="KlRobaId" displayfield="Naziv" datavalue="" dataname="Global.dtKlasa" required="true" function="cmbKKlasa"/>
+					</item>					
+				</group>
+				<group col="1" row="3" cols="1" rows="1" groupbordervisible="False" >
+					<item caption="Šifra robe kod kupca:" col="1" row="1" >
+						<textedit name="txtSifra" function="txtSifra" />
+					</item>
+					<!--<item col="2" row="1" textvisible="true" spacing="0,0,16,0" >
+						<checkedit name="chkAktivno" caption=" Aktivno " value="1" />
+					</item>	 -->				
+				</group>
+				<group col="1" row="4" cols="5" rows="1" groupbordervisible="False">
+					<columnsdefinition>
+						<column size="40" position="1" />
+						<column size="65" position="2" />
+						<column size="80" position="3" />
+						<column size="100%" position="4" />
+						<column size="80" position="5" />
+					</columnsdefinition>				
+					<item row="1" col="1">
+						<labeledit value="Vrsta:" />
+					</item>				
+					<item caption="" col="2" row="1" >
+						<radioedit name="rdoKupac" caption="Kupac" value="true" groupindex="2"/>
+					</item>
+					<item col="3" row="1" textvisible="true" >
+						<radioedit name="rdoDobavljac" caption="Dobavljač" value="false" groupindex="2" />
+					</item>	
+					<item col="5" row="1" textvisible="true"  >
+						<checkedit name="chkAktivno" caption=" Aktivno " value="1" />
+					</item>						
+				</group>
+				<item caption="Kontrola:" col="1" row="5">
+					<comboedit name="cmbKontrola" valuefield="kontrolaid" displayfield="Naziv" dataname="Global.dtKontrola" required="true" allownull="false" function="cmbKontrola"/>
+				</item>					
+			</group>			
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate" />
+						<action type="form open" value="frmMulti" if="#rdoMKlasa==true||#rdoKKlasa==true">
+							<!-- <parameter name="Mklase" value="true" if="#rdoMKlasa==true"/>  -->
+							<parameter name="param1Id" value="#cmbMKlasa" if="#rdoMKlasa==true"/>
+							<parameter name="param2Id" value="#cmbKlasa" elseif="#rdoKKlasa==true"/>
+
+							<action type="control populate" value="parent.#tree" if="$MultiNewPartneriId!=0"/>
+							<action type="control focus" value="parent.#tree" if="$MultiNewPartneriId!=0">
+								<parameter value="$MultiNewPartneriId" type="int"/>
+							</action>								
+						</action>						
+						<action type="datarun scalar" value="Global.~dtAdd" if="#rdoRoba==true">
+							<parameter name="NewPartneriId" value="$PartneriId" />
+							<action type="control value" value="#srcRoba,#txtSifra" if="$NewPartneriId!=null&amp;&amp;$NewPartneriId!=0">
+								<parameter value=""/>
+							</action>
+							<!-- <action type="control focus" value="#srcRoba" else="" /> -->
+							<action type="control populate" value="parent.#tree" if="$NewPartneriId!=null&amp;&amp;$NewPartneriId!=0"/>
+							<action type="control focus" value="parent.#tree" if="$NewPartneriId!=null&amp;&amp;$NewPartneriId!=0">
+								<parameter value="$NewPartneriId" type="int"/>
+							</action>	
+							<action type="control focus" value="#srcRoba"/>
+						</action>
+						<action type="control populate" value="parent.#grdGlava" />						
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>		
+	</form>
+
+	<form name="frmArtiklEdit" caption="Artikl" width="350">
+		<event type="init">
+			<action type="datarun reader" value="Global.~dtGet" if="$GlaId!=null" />
+		</event>
+		<!-- 		<event type="load">
+			<action type="control disable" value="#cmbMKlasa, #cmbKKlasa, #cmbKlasa" />
+		</event> -->
+		<event type="shown">
+			<action type="control value" value="#srcPartner" if="$GlaId==0">
+				<parameter value="$TreeValue"  text="$TreeString"/>
+			</action>					
+		</event>
+		<layout textposition="top" itemspadding="4">
+			<group cols="1" rows="5">
+				<item caption="Dobavljač:" col="1" row="1" fontbold="true">
+					<searchedit type="partner" name="srcPartner" fieldtext="Naziv" fieldvalue="PartneriId" required="true" fontbold="true" datavalue="~dtGet.@fpartneriid" datatext="~dtGet.@Partner" enabled ="false" function="srcPartner">
+						<event type="valuechanged">
+						</event>
+					</searchedit>
+				</item>	
+				<item caption="Roba" col="1" row="2" type="visible" value="false" >
+					<searchedit type="roba" name="srcRoba" fontsizedelta="1" fontbold="True" fieldtext="Naziv" fieldvalue="RobaId" entermovenextcontrol="false" datavalue="~dtGet.@fRobaId" datatext="~dtGet.@Roba" enabled ="false" function="srcRoba" >
+						<action type="variable value" >
+							<parameter name="RobaId" value="#srcRoba" type="int"/>
+							<parameter name="NazivRobe" value="#srcRoba.@Naziv"/>
+							<!--#srcRoba.@Naziv <parameter name="NazivRobe" value="#txtNaziv"/> -->
+						</action>						
+					</searchedit>
+				</item>
+				<!-- <group col="1" row="3" cols="2" rows="1" groupbordervisible="False"> -->
+				<item caption="Šifra robe kod kupca:" col="1" row="3" >
+					<textedit name="txtSifra" datavalue="#dtGet.@sifra1" function="txtSifra" />
+				</item>
+				<!-- 					<item col="2" row="1" textvisible="true" spacing="0,0,16,0">
+						<checkedit name="chkAktivno" caption=" Aktivno " value ="0" datavalue="#dtGet.@aktivno" />
+					</item>	 -->				
+				<!-- </group> -->
+				<group col="1" row="4" cols="5" rows="1" groupbordervisible="False" spaccing="0,0,0,10">
+					<columnsdefinition>
+						<column size="40" position="1" />
+						<column size="65" position="2" />
+						<column size="80" position="3" />
+						<column size="100%" position="4" />
+						<column size="80" position="5" />
+					</columnsdefinition>				
+					<item row="1" col="1">
+						<labeledit value="Vrsta:" />
+					</item>				
+					<item caption="" col="2" row="1">
+						<radioedit name="rdoKupac" caption="Kupac" value="true" datavalue="#dtGet.@vrsta0" groupindex="2"/>
+					</item>
+					<item col="3" row="1" textvisible="true" >
+						<radioedit name="rdoDobavljac" caption="Dobavljač" value="false" datavalue="#dtGet.@vrsta1" groupindex="2" />
+					</item>
+					<item col="5" row="1" textvisible="true" >
+						<checkedit name="chkAktivno" caption=" Aktivno " value ="0" datavalue="#dtGet.@aktivno" dock="right" />
+					</item>	
+				</group>
+				<item caption="Kontrola:" col="1" row="5">
+					<comboedit name="cmbKontrola" valuefield="kontrolaid" displayfield="Naziv" dataname="Global.dtKontrola" datavalue="#dtGet.@kontrolaid" autopopulate="false" required="true" function="cmbKontrola"/>
+				</item>					
+			</group>			
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="Global.~dtEdit" if="$GlaId!=null"/>
+						<!-- <action type="control populate" value="parent.#grdMaster" /> -->
+						<action type="form close" />					
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>		
+	</form>	
+
+	<form name="frmMulti" caption="Višestruki izbor robe" height="500" width="600">
+		<layout textposition="top" itemspadding="4">
+			<group cols="1" rows="1">
+				<item col="1" row="1" highlight="False" >
+					<grid name="grdRoba"  key="RobaId" showgrouppanel="False" showfooter="false" autopopulate="true" dataname="global.dtRoba" multiselect="true">
+						<fields inherited="true">
+							<field name="naziv" caption="Naziv robe" fontbold="true" />
+						</fields>
+						<styles>
+							<style name="fontcolor" value="red" if="#grdRoba.@UAsorimanuId==1"/>
+						</styles>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Spremi" type="add">
+					<event type="click">
+						<action type="control foreachrow selected" value="#grdRoba">
+							<!-- <action type="message" value="ođe" /> -->
+							<action type="datarun scalar" value="Global.~dtRobaInsert">
+								<parameter name="parent.$MultiNewPartneriId" value="$PartneriId" />
+							</action>
+						</action>
+						<action type="form close" />					
+					</event>
+				</button>
+				<button caption="Odustani"  type="cancel">
+					<action type="form close" />
+				</button>
+			</buttons>
+		</panelbuttons>	
+	</form>
+
+	<datalist>
+		<data command="spProd_Asortiman_Grid" name="dtGlava">
+			<parameter name="@PartneriId" value="#tree.@value" type="int"/>
+		</data>
+		<data command="spProd_Asortiman_Izmjena" name="dtRole">
+			<parameter name="@Action" value="1" />
+			<parameter name="@parasortimanid" value="#grdGlava.@id" />
+			<parameter name="@aktivnoug" value="#grdGlava.@Aktivno" />
+		</data>
+		<data type="text" command=" select 1 as kontrolaid,'Šifra kod kupca' as Naziv union all select 2,'Donos' as Naziv union all select 3,'Zabranjeno' as Naziv" name="dtKontrola">
+		</data>
+		<data command="spProd_Asortiman_Query" name="dtGet">
+			<parameter name="@parasortimanid" value="$GlaId" type="int"/>		
+		</data>
+		<data command="spProd_Asortiman_Unos" name="dtAdd">
+			<parameter name="@PartneriId" value="#srcPartner" />		
+			<parameter name="@RobaId" value="#srcRoba" />		
+			<parameter name="@Sifra1" value="#txtSifra" />		
+			<parameter name="@aktivno" value="#chkAktivno" />		
+			<parameter name="@vrsta" value="0" if="#rdoKupac==true"/>		
+			<parameter name="@vrsta" value="1" else=""/>
+			<parameter name="@kontrola" value="#cmbKontrola" />		
+		</data>
+		<data command="spProd_Asortiman_Izmjena" name="dtEdit">
+			<parameter name="@Action" value="0" />
+			<parameter name="@parasortimanid" value="$GlaId" type="int"/>	
+			<parameter name="@PartneriId" value="#srcPartner" />		
+			<parameter name="@RobaId" value="#srcRoba" />		
+			<parameter name="@Sifra1" value="#txtSifra" />		
+			<parameter name="@aktivno" value="#chkAktivno" />		
+			<parameter name="@vrsta" value="0" if="#rdoKupac==true"/>		
+			<parameter name="@vrsta" value="1" else=""/>
+			<parameter name="@kontrola" value="#cmbKontrola" />				
+		</data>
+		<data command="spProd_Asortiman_Brisanje" name="dtDelete">
+			<parameter name="@parasortimanid" value="#grdGlava.@id" type="int"/>
+		</data>		
+		<data command="spCarpo_Combo" name="dtMKlasa">
+			<parameter name="@action" value="KlMasterRoba"/>					
+		</data>		
+		<data command="spNG_Combo" name="dtKKlasa">
+			<parameter name="@action" value="KlKlRoba"/>					
+		</data>	
+		<data command="spNG_Combo" name="dtKlasa" if="#cmbKKlasa!=null">
+			<parameter name="@action" value="KlRoba"/>
+			<parameter name="@Id" value="#cmbKKlasa" />
+		</data>	
+		<data command="spProd_Asortiman_RobaMulti" name="dtRoba" if="$param1Id!=null">
+			<parameter name="@Action" value="0" />
+			<parameter name="@id" value="$param1Id" type="int"/>
+			<parameter name="@PartneriId" value="parent.#srcPartner" />			
+		</data>
+		<data command="spProd_Asortiman_RobaMulti" name="dtRoba"  if="$param2Id!=null">
+			<parameter name="@Action" value="1" />
+			<parameter name="@id" value="$param2Id" type="int"/>
+			<parameter name="@PartneriId" value="parent.#srcPartner" />
+		</data>	
+		<data command="spProd_Asortiman_UnosMulti" name="dtRobaInsert">
+			<parameter name="@PartneriId" value="parent.#srcPartner" />		
+			<parameter name="@robaid" value="#grdRoba.@RobaId"/>		
+			<parameter name="@Sifra1" value="parent.#txtSifra" />		
+			<parameter name="@aktivno" value="parent.#chkAktivno" />		
+			<parameter name="@vrsta" value="0" if="parent.#rdoKupac==true"/>		
+			<parameter name="@vrsta" value="1" else=""/>
+			<parameter name="@kontrola" value="parent.#cmbKontrola" />		
+		</data>		
+		<data command="spTraziPartneri" name="dtSearchPartner" >
+			<parameter name="@Action" value="Partneri" />
+			<parameter name="@uvjet" value="#srcPartner.text" />		
+		</data>	
+		<data command="spTraziRoba" name="dtSearchRoba" >
+			<parameter name="@Action" value="Roba" />
+			<parameter name="@uvjet" value="#srcRoba.text" />		
+		</data>			
+	</datalist>
+</root>

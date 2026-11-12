@@ -1,0 +1,254 @@
+﻿<root>
+  <form name="frmMaster" type="master" caption="Administracija nadređenih osoba">
+    <event type="init">
+      <action type="variable value">
+        <parameter name="Fokus" value="" type="string"/>
+      </action>
+      <action type="control disable" value="#btnDodaj" if="#grdMaster.rowcount==0#grdMaster.@HRKarticaRadnikaId==null" />
+      <action type="control enable" value="#btnDodaj" else="" />
+    </event>
+    <event type="load">
+      <action type="control disable" value="#btnDodaj" if="#grdMaster.rowcount==0||#grdMaster.@HRKarticaRadnikaId==null" />
+      <action type="control enable" value="#btnDodaj" else="" />
+    </event>
+    <managerlayout>
+      <!--filter drveta-->
+      <lookup name="filter" >
+        <comboitem value="Nadredeni" caption="Nadređeni"/>
+        <event type="valuechanged">
+          <action type="variable value">
+            <parameter name="global.filter" value="#filter" />
+          </action>
+        </event>
+      </lookup>
+
+      <!--Drvo-->
+      <tree name="tree"  keyfield="HRNadOsobeId" key="Id" filtermode="smart" expandedlevel="2" dataname="dtTree" >
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdMaster" />
+          <action type="control disable" value="#btnDodaj" if="#grdMaster.rowcount==0||#grdMaster.@HRKarticaRadnikaId==null" />
+          <action type="control enable" value="#btnDodaj" else="" />
+        </event>
+        <data if="#filter==Nadredeni" command="spHRKarticaDjelatnika_Nadredeni">
+          <parameter name="@Action" value="Nadredeni_tree" />
+        </data>
+        <fields>
+          <field name="Naziv" />
+        </fields>
+        <menu>
+          <menuitem caption="Unesi nadređenu osobu" name="menUnosNad">
+            <event type="click">
+              <action type="form open" value="frmUnosNad" >
+                <parameter name="Tip" value="Unos nadređene osobe" />
+                <parameter name="caption" value="Unos nadređene osobe" />
+                <parameter name="HRNadOsobeId" value="0" />
+              </action>
+              <action type="message" value="~dtSpremi.@id" />
+              <action type="control populate" value="#tree">
+                <action type="control focus" value="#tree">
+                  <parameter value="global.$DrvoId" type="int"/>
+                </action>
+              </action>
+              <!--<action type="control populate keepfocus" value="#tree" />-->
+            </event>
+          </menuitem>
+          <menuitem caption="Izmijeni nadređenu osobu" name="menIzmjenaNad">
+            <event type="click">
+              <action type="form open" value="frmUnosNad" >
+                <parameter name="Tip" value="Izmjena nadređene osobe" />
+                <parameter name="caption" value="Izmjena nadređene osobe" />
+                <parameter name="HRNadOsobeId" value="#tree.@Id" />
+              </action>
+              <action type="message" value="~dtSpremi.@id" />
+              <action type="control populate" value="#tree">
+                <action type="control focus" value="#tree">
+                  <parameter value="global.$DrvoId" type="int"/>
+                </action>
+              </action>
+              <!--<action type="control populate keepfocus" value="#tree" />-->
+            </event>
+          </menuitem>
+          <menuitem caption="Obriši nadređenu osobu" name="menBrisanjeNad">
+            <event type="click">
+              <action type="confirm" value="Da li ste sigurni da želite obrisati {#tree.@Naziv} iz popisa nadređenih osoba?">
+                <action type="datarun reader" value="~dtBrisanjeNad"/>
+              </action>
+              <action type="control populate keepfocus" value="#tree" />
+            </event>
+          </menuitem>
+        </menu>
+      </tree>
+      <!--Master grid-->
+      <grid name="grdMaster" key="HRKarticaRadnikaId" type="master" async="true" preventfocusgroup="false" fieldsmartspaces="false" dataname="dtMaster" multiselect="true">
+        <event type="focusedrowchanged">
+          <action type="control disable" value="#btnDodaj" if="#grdMaster.@HRKarticaRadnikaId!=null" />
+          <action type="control enable" value="#btnDodaj" else="" />
+          <!--<action type="menu disable" value="#menBrisanjeDjel" if="#grdMaster.@DatumOdlaska==null"/>
+          <action type="menu enable" value="#menBrisanjeDjel" else="" />-->
+          <action type="menu disable" value="#menIzmjNad" if="#grdMaster.@HRKarticaradnikaId==null"/>
+          <action type="menu enable" value="#menIzmjNad" else="" />
+        </event>
+        <fields inherited="true">
+          <field name="MaticniBroj" caption="Matični broj" />
+          <field name="DatumDolaska" caption="Datum dolaska" />
+          <field name="DatumOdlaska" caption="Datum odlaska" />
+          <field name="MT" caption="Mjesto troška" />
+          <field name="Uprava" caption="Nadređeni član uprave" />
+        </fields>
+        <menu>
+          <menuitem caption="Izmijeni nadređenu osobu" name="menIzmjNad" >
+            <event type="click">
+              <action type="form open" value="frmIzmjNad" >
+                <parameter name="SelectedIds" value="#grdMaster.selectedids" />
+                <parameter name="Tip" value="Izmjena nadređene" />
+                <parameter name="caption" value="Izmjena nadređene osobe" />
+              </action>
+              <action type="control populate keepfocus" value="#tree" />
+            </event>
+          </menuitem>
+          <menuitem caption="Ukloni nadređenu osobu" name="menUkloniNad" >
+            <event type="click">
+              <action type="confirm" value="Da li ste sigurni da odabranim djelatnicima želite obrisati nadređenu osobu?">
+                <action type="datarun reader" value="~dtUkloniNad"/>
+              </action>
+              <action type="control populate keepfocus" value="#tree" />
+            </event>
+          </menuitem>
+          <!--<menuitem caption="Obriši djelatnika s kartice" name="menBrisanjeDjel">
+            <event type="click">
+              <action type="datarun nonquery" value="~dtObrisi"  />
+              <action type="control populate" value="#grdMaster" />
+            </event>
+          </menuitem>-->
+        </menu>
+      </grid>
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <button caption="Dodaj u karticu" name="btnDodaj">
+          <event type="click">
+            <action type="datarun nonquery" value="~dtDodaj"  />
+            <action type="control populate" value="#grdMaster" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spHRKarticaDjelatnika_Nadredeni" name="dtMaster">
+        <parameter name="@Action" value="Master_djelatnici"  />
+        <parameter name="@HRNadOsobeId" value="#tree.@Id" />
+      </data>
+      <!--<data command="spHRKarticaDjelatnika_Nadredeni" name="dtObrisi">
+        <parameter name="@Action" value="Brisanje_djelatnici"  />
+        <parameter name="@HRKarticaRadnikaId" value="#grdMaster.@HRKarticaRadnikaId" />
+      </data>-->
+      <data command="spHRKarticaDjelatnika_Nadredeni" name="dtDodaj">
+        <parameter name="@Action" value="Dodaj_kartica"  />
+        <parameter name="@HRKadroviId" value="#grdMaster.@HRKadroviId" />
+      </data>
+      <data command="spHRKarticaDjelatnika_Nadredeni" name="dtBrisanjeNad">
+        <parameter name="@Action" value="Obriši_nadređeni"  />
+        <parameter name="@HRNadOsobeId" value="#tree.@Id" />
+      </data>
+      <data command="spHRKarticaDjelatnika_Nadredeni" name="dtUkloniNad">
+        <parameter name="@Action" value="NadređeniDjeUkloni_spremi"  />
+        <parameter name="@SelectedIds" value="#grdMaster.SelectedIds" />
+      </data>
+    </datalist>
+  </form>
+
+  <!--             UNOS NADREĐENE OSOBE U KATALOG              -->
+  <form name="frmUnosNad" caption="$caption" height="200"  width="400" saveformlayout="true" >
+    <event type="init">
+      <action type="datarun reader" value="~dtGet" if="$HRNadOsobeId!=0" />
+    </event>
+    <layout>
+      <group  backgroundcolor="white"  bordervisible="false" rows="2" cols="1">
+        <item  caption="Ime" col="1" row="1">
+          <textedit name="txtIme" datavalue="~dtGet.@Ime" required="true" />
+        </item>
+        <item  caption="Prezime" col="1" row="2">
+          <textedit name="txtPrezime" datavalue="~dtGet.@Prezime" required="true" />
+        </item>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="Spremi" type="add">
+          <event type="click">
+            <action type="validate" />
+            <action type="datarun reader" value="~dtSpremi" />
+            <action type="variable value">
+              <parameter name="global.$DrvoID" value="~dtSpremi.@id"/>
+            </action>
+            <action type="form close" />
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Odustani" type="cancel" />
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spHRKarticaDjelatnika_Nadredeni" name="dtSpremi">
+        <parameter name="@Action" value="Dodaj_nadređeni"/>
+        <parameter name="@Ime" value="#txtIme"/>
+        <parameter name="@Prezime" value="#txtPrezime"/>
+        <parameter name="@HRNadOsobeId" value="$HRNadOsobeId"/>
+      </data>
+      <data command="spHRKarticaDjelatnika_Nadredeni" name="dtGet">
+        <parameter name="@Action" value="Dohvati_nadredeni"/>
+        <parameter name="@HRNadOsobeId" value="$HRNadOsobeId"/>
+      </data>
+    </datalist>
+  </form>
+
+  <!--                IZMJENA NADREĐENIH OSOBA DJELATNICIMA               -->
+  <form name="frmIzmjNad" caption="$caption" height="400"  width="700" saveformlayout="true" >
+    <layout>
+      <group  backgroundcolor="white"  bordervisible="false" rows="2" cols="1">
+        <item caption="Nadređena osoba:" col="2" row="1" >
+          <searchedit name="srcNadOsoba"  fieldvalue="HRNadOsobeId" fieldtext="Naziv" dataname="dtNadOsoba" allownull="false"/>
+        </item>
+        <item  caption="" col="1" row="2">
+          <grid caption="" name="grdIzmjNad" dataname="dtIzmjNad" fieldsmartspaces="false" autopopulate="true" key="HRKarticaRadnikaId" multiselect="true" bestfitonrefresh="true" >
+            <fields inherited="true">
+              <field name="NadredeniSad" caption="Trenutno nadređena osoba" />
+            </fields>
+          </grid>
+        </item>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremiNad" caption="Spremi" type="add">
+          <event type="click">
+            <action type="validate" />
+            <action type="datarun reader" value="~dtSpremiNad" />
+            <action type="control refreshvalue" value="##" />
+            <!--<action type="control populate" value="parent.#tree"/>-->
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Odustani" dock="right" type="cancel"/>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spHRKarticaDjelatnika_Nadredeni" name="dtNadOsoba">
+        <parameter name="@Action" value="Nadređeni_src"/>
+        <parameter name="@Tekst" value="#srcNadOsoba.text"/>
+      </data>
+      <data command="spHRKarticaDjelatnika_Nadredeni" name="dtIzmjNad">
+        <parameter name="@Action" value="NadređeniDjeIzmjena_grd"/>
+        <parameter name="@SelectedIds" value="$SelectedIds"/>
+      </data>
+      <data command="spHRKarticaDjelatnika_Nadredeni" name="dtSpremiNad">
+        <parameter name="@Action" value="NadređeniDjeIzmjena_spremi"/>
+        <parameter name="@SelectedIds" value="#grdIzmjNad.SelectedIds"/>
+        <parameter name="@HRNadOsobeId" value="#srcNadOsoba"/>
+      </data>
+    </datalist>
+
+  </form>
+
+</root>
+
+

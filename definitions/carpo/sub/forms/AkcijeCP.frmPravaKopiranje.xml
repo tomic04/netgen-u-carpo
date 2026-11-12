@@ -1,0 +1,153 @@
+<root>
+    
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::     FORM ZA KOPIRANJE PRAVA     :::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+    <form name="frmPravaKopiranje" caption="KOPIRANJE PRAVA" fixedsize="true" width="900" height="800">
+
+        <!-- na otvaranju forme-->
+        <event type="shown">
+            <!-- ako je prosljeđen operateriid iz detalj grida na master formi-->
+            <action if="$operateriid!=null">
+                <!-- stavi ga u search za izvornog operatera-->
+                <action type="control value" value="#srcIzvorni">
+                    <parameter text="parent.#grdDetalj.@Naziv" value="$operateriid" />
+                </action>
+                <!-- ispuni grid prava s akcijama na koje operater ima prava-->
+                <action type="control populate" value="#grdPrava" />
+            </action>
+        </event>
+
+        <layout textposition="left">
+            <group spacing="0,0,3,3" rows="3" cols="1" groupbordervisible="false">
+
+                <group spacing="0,0,3,3" rows="1" cols="2" caption="Operateri">
+
+                    <item col="1" row="1" caption="Sa operatera" highlight="false">
+                        <searchedit name="srcIzvorni" dataname="dtSrcOperaterIzvorni" allownull="false" required="true">
+                            <!-- promjenom odabranog operatera u search izvorni operater, generiraj grid s akcijama na koje ima prava-->
+                            <event type="valuechanged">
+                                <action type="control populate" value="#grdPrava" />
+                            </event>
+                        </searchedit>
+                    </item>
+
+                    <item col="2" row="1" caption="Na operatera" highlight="false">
+                        <searchedit name="srcCiljani" dataname="dtSrcOperaterCiljani" allownull="false" required="true" />
+                    </item>
+
+                </group>
+
+                <group spacing="0,0,3,3" col="1" row="2" rows="1" cols="1" caption="Prava na akcije">
+
+                    <item col="1" row="1">
+                        <grid name="grdPrava" dataname="dtGrdPrava" key="AkcijeId" fieldsmartspaces="false" multiselect="true">
+
+                            <fields inherited="true">
+                                <field name="AkcOznaka" caption="Oznaka akcije" />
+                                <field name="Naziv" caption="Akcija" />
+                                <field name="Iispod" caption="I ispod" />
+                                <field name="Prava" caption="Pravo na..." />
+                            </fields>
+                        </grid>
+                    </item>
+
+                </group>
+
+                <!-- prije kopiranja, s ciljanog operatera se brišu prava-->
+                <group spacing="0,0,3,3" col="1" row="3" rows="2" cols="1" caption="Operateru na kojega se kopiraju prava obriši:">
+
+                    <!-- brišu se ili samo prava koje ima na akcOznaka za koje će se kopirati prava-->
+                    <item row="1" col="1" highlight="false" caption="Prethodna prava s odabranim oznakama" itemspadding="3">
+                        <radioedit name="rdoOdabrane" value="1" />
+                    </item>
+
+                    <!-- ili sva prava koja je dosad imao-->
+                    <item row="2" col="1" highlight="false" caption="Sva prethodna prava" itemspadding="3">
+                        <radioedit name="rdoSve" />
+                    </item>
+
+                </group>
+
+            </group>
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+                <button name="btnSpremi" caption="SPREMI">
+                    <event type="click">
+                        <action type="validate" />
+
+                        <action type="datarun reader" value="~dtKopiranjePrava">
+
+                            <!-- ako je kopiranje uspješno, populate detalj grid (čisto u slučaju da detalj grid trenutno prikazuje jednu od akcije na koje ciljani operater sad ima prava)-->
+                            <action if="$indGreske==0" type="control populate keepfocus" value="parent.#grdDetalj">
+                                <action if="parent.#grdDetalj.rowcount==0">
+                                    <action type="control disable" value="parent.#btnKopiranje,parent.#btnObrisi" />
+
+                                </action>
+                                <action else="">
+                                    <action type="control enable" value="parent.#btnKopiranje,parent.#btnObrisi" />
+                                </action>
+                                <action type="message" value="$poruka" />
+                            </action>
+
+                        </action>
+
+                    </event>
+                </button>
+                <button dock="right" name="btnOdustani" caption="ODUSTANI">
+                    <event type="click">
+                        <action type="form close" />
+                    </event>
+                </button>
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+
+            <!-- SRC IZVORNI OPERATER-->
+            <data command="spDneEv_Akcije_Help_CP" name="dtSrcOperaterIzvorni">
+                <parameter name="@action" value="srcOperater" />
+
+                <parameter name="@Naziv" value="#srcIzvorni.text" />
+            </data>
+
+            <!-- SRC CILJANI OPERATER-->
+            <data command="spDneEv_Akcije_Help_CP" name="dtSrcOperaterCiljani">
+                <parameter name="@action" value="srcOperater" />
+
+                <parameter name="@Naziv" value="#srcCiljani.text" />
+            </data>
+
+            <!-- GRID AKCIJA NA KOJE IZVORNI OPERATER IMA BAR JEDNO PRAVO-->
+            <data command="spDneEv_Akcije_Query_CP" name="dtGrdPrava">
+                <parameter name="@action" value="grid_akcije_operater" />
+
+                <parameter name="@operateriid" value="#srcIzvorni" />
+            </data>
+
+            <!-- KOPIRANJE PRAVA-->
+            <data command="spDneEv_Akcije_Azur_Prava_CP" name="dtKopiranjePrava">
+                <parameter name="@action" value="kopiranje_prava" />
+
+                <parameter name="@izvorniOperater" value="#srcIzvorni" />
+                <parameter name="@ciljaniOperater" value="#srcCiljani" />
+
+                <parameter name="@Akcije" value="#grdPrava.selectedids" />
+                <parameter name="@operateriid" value="@@operateriid" />
+
+                <parameter name="@rdoSve" value="#rdoSve" />
+                <parameter name="@rdoOdabrane" value="#rdoOdabrane" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+        </datalist>
+
+    </form>
+
+</root>

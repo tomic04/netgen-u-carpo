@@ -1,0 +1,222 @@
+﻿<root version="1.0">
+  
+  <!--1.0 - subforma SitPromet.frmSitPrometUnos.xml-->
+
+  <!--****************MANAGERLAYOUT DRVO, MASTER I DETALJ GRID****************-->
+  <form name="frmMaster" type="master" caption="Promet sitnog inventara">
+    <managerlayout>
+      <!--lookup - filteri drveta-->
+      <lookup name="filter">
+        <comboitem value="Vremenska podjela" />
+        <comboitem value="Vrste dokumenata" />
+      </lookup>
+      <!--*****DRVO*****-->
+      <tree name="tree"  allowdrop="false" expandallonload="false" showautofilterrow="false" expandfirst="true">
+        <!--Punjenje grida klikom na drvo-->
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdMaster" />
+        </event>
+        <!--punjenje drveta ovisno o odabranom filteru-->
+        <data if="#filter==Vremenska podjela" command="spSitPrometTree_CP" key="sortkey">
+          <parameter name="@Action" value="Vremenska_podjela" />
+        </data>
+        <data if="#filter==Vrste dokumenata" command="spSitPrometTree_CP" key="valueid">
+          <parameter name="@Action" value="Vrste_dokumenata" />
+        </data>
+        <fields>
+          <field name="Name" />
+        </fields>
+      </tree>
+      <!--****KRAJ DRVO****-->
+      
+      <!--*****MASTER GRID*****-->
+      <grid name="grdMaster"  type="master" async="true" bestfitonrefresh="true" key="SitPrometGlaId"  multiselect="true" showfooter="true" showautofilterrow="false">
+		<print caption="Promet sitnog inventara" />
+		<!--promjena fokusa enable/disable gumba-->
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdDetalj" />
+          <!--ukoliko je zaključen - onemogući-->
+          <action type="control disable" value="#btnIzmjena,#btnBrisanje,#btnZakljuciDok" if="#grdMaster.@statusid==2"/>
+          <action type="control enable" value="#btnIzmjena,#btnBrisanje,#btnZakljuciDok" else=""/>
+          <!--ukoliko je nezaključen -onemogući-->
+          <action type="control disable" value="#btnPonistiZakljucak" if="#grdMaster.@statusid!=2"/>
+          <action type="control enable" value="#btnPonistiZakljucak" else=""/>
+        </event>
+        
+        <!--filteri drveta-punjenje s obzirom na odabrano-->
+        <event type="doubleclick"/>
+        <data command="spSitPrometQuery_CP" if="#filter==Vremenska podjela" >
+          <parameter name="@Action" value="Master"  />
+          <parameter name="@godina" value="#tree.@godina" />
+          <parameter name="@mjesec" value="#tree.@mjesec" />
+        </data>
+        <data command="spSitPrometQuery_CP" if="#filter==Vrste dokumenata" >
+          <parameter name="@Action" value="Master"  />
+          <parameter name="@godina" value="#tree.@godina" />
+          <parameter name="@mjesec" value="#tree.@mjesec" />
+          <parameter name="@vrstadokid" value="#tree.@vrstadokid" />
+        </data>
+
+        <!--prikaz master grida - select u stori(fields inherited)-->
+        <fields inherited="true"  >
+          <field name="DatumDok" caption="Datum dokumenta"  />
+          <field name="NazivVrsteDok" caption="Vrsta dokumenta"  />
+          <field name="BrojDok" caption="Broj dokumenta"  />
+          <field name="BrojStav" caption="Broj stavaka"/>
+          <field name="Vrijednost" caption="Vrijednost"  />
+          <field name="Operater" caption="Operater"  />
+          <field name="OdgovornaOsoba" caption="Odgovorna osoba"  />
+          <field name="StatusDok" caption="Status"  />
+          <field name="Opis" caption="Opis"  />
+        </fields>
+      </grid>
+      <!--****KRAJ MASTER GRID****-->
+    
+      <!--****DETALJ GRID****-->
+      <grid name="grdDetalj"   async="True" bestfitonrefresh="true" key="SitPrometDetId" multiselect="true" showfooter="true" showautofilterrow="false" fieldsmartspaces="false" >
+        <event type="focusedrowchanged">
+        </event>
+        <event type="doubleclick">
+        </event>
+        <!--podaci za detalj grid s obzirom na odabranu glavu-->
+        <data command="spSitPrometQuery_CP">
+          <parameter name="@Action" value="Stavke"/>
+          <parameter name="@SitPrometGlaId" value="#grdMaster.@SitPrometGlaId"/>
+        </data>
+        <!--detalj grid - select iz store (fields inherited)-->
+        <fields inherited="true"  >
+          <field name="Sifra" caption="Šifra"  />
+          <field name="Naziv" caption="Naziv"  />
+          <field name="NazivDod" caption="Dodatak nazivu"  />
+          <field name="JM" caption="JM"  />
+          <field name="Kol" caption="Količina"  />
+          <field name="Cijena" caption="Cijena"  />
+          <field name="Vrijednost" caption="Vrijednost"  />
+          <field name="Osoba" caption="Osoba"  />
+          <field name="Smjestaj" caption="Smještaj"  />
+          <field name="OrgShema" caption="Organizacijska jedinica"  />
+        </fields>
+      </grid>
+      <!--***KRAJ DETALJ GRID***-->
+    </managerlayout>
+    <!--****************KRAJ MANAGERLAYOUT  DRVO, MASTER I DETALJ GRID****************-->
+    
+    
+    <!--******GUMBI ZA UNOS, IZMJENU, BRISANJE, ZAKLJUČAK I PONIŠTAVANJE, ISPIS******-->
+    <panelbuttons>
+      <buttons>
+        <!-- Gumb UNOS -->
+        <button name="btnUnos" caption="Unos dokumenta" type="add" displayfield="Opis" dataname="" function="Unesi">
+            <!--na klik otvara se forma za unos novog dokumenta-->
+            <event type="click">
+            <action type="variable value" value="SitPrometGlaId" >
+              <parameter value="#grdMaster.@SitPrometGlaId" type="int" />
+              <parameter value="0" type="int" />
+            </action>
+            <action type="form open" value="frmSitPrometUnos" >
+              <parameter name="SitPrometGlaId" value="0" type="int" />
+            </action>
+              
+            <action type="control populate" value="#grdMaster" >
+              <action type="control focus" value="#grdMaster" >
+                <parameter value="$SitPrometGlaId" />
+              </action>
+            </action>
+          </event>
+        </button>
+        
+        <!--Gumb IZMJENA-->
+        <button name="btnIzmjena" caption="Izmjena dokumenta" type="add" displayfield="Opis" dataname=""  function="Izmijeni">
+          <event type="click">
+            <!--na klik kupi GlaId i otvara novu formu za unos/izmjenu stavki na dokument-->
+            <action type="form open" value="frmSitPrometUnos" >
+              <parameter name="SitPrometGlaId" value="#grdMaster.@SitPrometGlaId" type="int" />
+              <parameter name="SitPrometDetId" value="0" type="int" />
+            </action>
+            <action type="control populate keepfocus" value="#grdMaster" />
+            <action type="control populate" value="#grdDetalj"  />
+          </event>
+        </button>
+        
+        <!--Gumb ZAKLJUČAK-->
+        <button name="btnZakljuciDok" caption="Zaključi dokument" type="add" function="Zakljuci" >
+          <event type="click">
+            <action type="validate"/>
+            <action type="datarun nonquery" value="~dtZakljuciDok">
+            </action>
+            <action type="control populate keepfocus" value="#grdMaster" >
+            </action>
+          </event>
+        </button>
+        
+        <!--Gumb PONIŠTENJE-->
+        <button name="btnPonistiZakljucak" caption="Poništi zaključak" type="add" function="PonistiZakljucak" >
+          <event type="click">
+            <action type="confirm" value="Želite li otključati dokument?">
+              <action type="datarun nonquery" value="~dtOtkljucaj">
+                <action type="control populate keepfocus" value="#grdMaster" >
+                </action>
+              </action>
+            </action>
+          </event>
+        </button>
+        
+        <!--Gumb BRIŠI-->
+        <button name="btnBrisanje" caption="Brisanje dokumenta" type="del" displayfield="Opis" dataname="" function="Obrisi">
+          <event type="click">
+            <action type="confirm" value="Želite li obrisati dokument?">
+              <action type="datarun nonquery" value="~dtDelete">
+                <action type="control populate" value="#grdMaster" >
+                  <action type="control focus" value="#grdMaster" >
+                    <parameter value="0" />
+                  </action>
+                </action>
+              </action>
+            </action>
+          </event>
+        </button>
+        
+        <!--Gumb ISPIS-->
+        <button name="btnPisi" caption="ISPIS">
+          <event type="click">
+            <action type="control print" value="#grdMaster">
+              <action type="print template" value="repx:rptSitni">
+                <parameter name="ID" value="#grdMaster.@SitprometGlaId" />
+              </action>
+            </action>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <!--***KRAJ GUMBI ZA UNOS, IZMJENU, BRISANJE, ZAKLJUČAK I PONIŠTAVANJE, ISPIS****-->
+    
+      
+        
+        
+    <datalist>
+      <!--brisanje dokumenta(gumb BRIŠI)-->
+      <data command="spSitPrometGlaAzur_CP" name="dtDelete">
+        <parameter name="@Action" value="Brisanje" />
+        <parameter name="@SitPrometGlaId" value="#grdMaster.@SitPrometGlaId" />
+        <parameter name="@SelectedIds" value="#grdMaster.SelectedIds" />
+      </data>
+      <!--otključavanje dokumenta (gumb PONIŠTENJE)-->
+      <data command="spSitPrometGlaAzur_CP" name="dtOtkljucaj">
+        <parameter name="@Action" value="Otključaj" />
+        <parameter name="@SitPrometGlaId" value="#grdMaster.@SitPrometGlaId" />
+      </data>
+      <!--zaključak dokumenta(gumb ZAKLJUČAK)-->
+      <data command="spSitPrometGlaAzur_CP" name="dtZakljuciDok">
+        <parameter name="@Action" value="Zaključi" />
+        <parameter name="@SitPrometGlaId" value="#grdMaster.@SitPrometGlaId" />
+      </data>
+    </datalist>
+  </form>
+  <!--*************KRAJ DRVO, MASTER I DETALJ GRID**************-->
+  
+  <!--*****POZIV IZDVOJENE FORME*****-->
+  <form name="frmSitPrometUnos" path="frmSitPrometUnos.xml"/>
+  <form name="frmSitPrometUnosDet" path="frmSitPrometUnos.xml"/>
+  <!--*****KRAJ IZDVOJENE FORME*****-->
+    
+</root>

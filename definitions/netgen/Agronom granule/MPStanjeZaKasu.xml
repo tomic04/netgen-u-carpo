@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT  
+	DETAILGRID =""
+	CMD1CAPTION="Parametri:FILTERFORM" 
+	CMD2CAPTION="Dodaj:DODAJ"
+	CMD3CAPTION="Pošalji:POSALJI" 
+	CMD4CAPTION="" 
+	CMD5CAPTION="" 
+	CMD6CAPTION=""
+	CMD7CAPTION="" 
+	CMD8CAPTION="" 
+	BUTTONS="Parametri:FILTERFORM"
+	POPUPMASTER="" 
+	MASTERDBLCLICK=""
+	GROUPBYBOXVISIBLE="TRUE" 
+	ONLOAD=":FILTERFORM" 
+	COMMANDTIMEOUT="300"
+	CHECKBOXVISIBLE="FALSE"
+	AUTOFITCOLUMNS="FALSE"
+	REPORT="">
+	
+	
+<NAME>Stanje za kasu</NAME>
+<CAPTION>Stanje za kasu</CAPTION>
+
+
+<FILTERFORM
+	NAME="FILTERFORM"
+	HEIGHT="3500"
+	WIDTH="7603"
+	TEXT=""
+	REFRESHAFTERCHILD="TRUE"
+	CAPTION="Upišite uvjete prikaza "
+	BORDERSTYLE="3"
+	ONSUBMIT="spMPStanjeZaKasu @action = 1, @operateriid=@@operateriid, "
+	ONLOAD="" 
+	CANCELONSUBMIT=""
+	FILLEXPLORER="TRUE"
+	NEXTFORM=""
+	CMD1CAPTION="Pokaži"
+	CMD2CAPTION="Odustani"
+	CMD3CAPTION=""
+	CMD4CAPTION=""
+	CMD5CAPTION=""
+	CMD6CAPTION=""
+	REPORT="">
+
+	<INPUT TYPE="CbEx3.ComboBoxEx3" NAME="trgovinaid"
+		HEIGHT="302" WIDTH="4032" VISIBLE="TRUE" SQL="spmpdajtrgovinang @operateriid = @@operateriid"
+		TEXT="" VALUE="" ALLOWEMPTY="FALSE" REFRESHAFTERCHILD=""
+		CAPTION="Trgovina" TABINDEX="" ENABLED="TRUE"/>
+
+
+	<INPUT TYPE="TRAZILICA"
+		CAPTION="Roba"
+		NAME="robaid"
+		SQL="roba#robaid#%Naziv%#robakod%#userid%#barcode%"
+		TABINDEX=""
+		TEXT=""
+		WIDTH="5500"
+		HEIGHT="320"/>		
+
+</FILTERFORM>
+
+
+
+
+<DODAJ
+		NAME="DODAJ"
+		HEIGHT="5000" WIDTH="8902"
+		CAPTION="Dodaj u MP stanje"
+		ONLOAD="SELECT @@trgovinaid as trgovinaid, null  as robaid, convert(varchar(10), getdate(), 112) as danas  " 
+		ONLOAD2="select 'enable' as fakcijena, 'enable' as nabcijena, 'enable' as netocijena, 'enable' as mpcijena"
+	    ONLOADED="select opis from trgovina where trgovinaid = @@trgovinaid#select naziv from roba where robaid = @@robaid" 
+	    FOCUS="robaid" >
+	
+	
+	    <INPUT TYPE="text" NAME="opis" CAPTION="Trgovina*" TOP="500" WIDTH="5106" HEIGHT="322" ONCLICK="" ENABLED="FALSE" STYLE ="" />
+	    <INPUT TYPE="search" NAME="robaid" CAPTION="Roba*" TOP="900" WIDTH="5106" HEIGHT="322" ONCLICK="" ENABLED="TRUE"
+             ONLOSTFOCUS="exec spMPDajArtikalNG  @robaid = @@robaid, @trgovinaid = @@trgovinaid, @datum = '@@danas'
+             #if @@mpcijena = 0 begin exec spRaiserror 69001, 'Roba nema mp cijenu. Ne možete je odabrati ! Prvo unesite mp cijenu u mp cjenik'end
+             #if @@robaid is not null and @@mpcijena = 0 begin select 'focus' as robaid end 
+             #if @@robaid is not null and @@mpcijena &lt;> 0 begin select 'focus' as Spremi end"    SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid'" STYLE ="" />
+
+  <INPUT TYPE="date" NAME="danas" CAPTION="Dafum*" TOP="2000"  WIDTH="1540" HEIGHT="280" ENABLED ="FALSE" SQL=""  />
+  <INPUT TYPE="number" NAME="mpcijena" CAPTION="MP cijena*" TOP="2500"  WIDTH="1540" HEIGHT="280" ENABLED ="FALSE" SQL=""  />
+	
+	    <INPUT TYPE="button" NAME="odustani" CAPTION="Odustani" TOP="3600" LEFT="1000" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	    <INPUT TYPE="button" NAME="Spremi" CAPTION="Spremi" TOP="3600" LEFT="3000" WIDTH="1106" HEIGHT="322"           
+             ONCLICK="exec spMPStanjeZaKasu @action = 2, @trgovinaid = @@trgovinaid, @robaid = @@robaid, @datum = '@@danas', @mpcijena = @@mpcijena#OK"  />	
+</DODAJ>	
+	
+	
+
+	
+<POSALJI
+		CAPTION="Priprema za slanje podataka na kase "
+		HEIGHT="2700"
+		WIDTH= "5000"
+		COMMANDTIMEOUT="600"
+		ONESCKEY="select 1"
+		FILLEXPLORER=""
+		FOCUS=""
+		ONLOAD2=""
+		ONLOADED="select 'Želite li pripremiti podatke za slanje na kase ? ' as poruka, 'odustani' as focus#select 'Trgovina: '+opis as trgopis from trgovina where trgovinaid = @@trgovinaid "
+		ONLOAD="SELECT @@trgovinaid as trgovinaid">
+
+		<INPUT TYPE="text" NAME="poruka" CAPTION="" TOP="500" LEFT="500 " WIDTH="5106" HEIGHT="322" ONCLICK="" ENABLED="FALSE" STYLE ="1" />
+	    <INPUT TYPE="text" NAME="trgopis" CAPTION="" TOP="900" LEFT="500 " WIDTH="5106" HEIGHT="322" ONCLICK="" ENABLED="FALSE" STYLE ="1" />	
+	
+	    <INPUT TYPE="button" NAME="odustani" CAPTION="Odustani" TOP="1600" LEFT="1000" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	    <INPUT TYPE="button" NAME="ok" CAPTION="Pripremi" TOP="1600" LEFT="3000" WIDTH="1106" HEIGHT="322" ONCLICK="exec spMPPripremiStanjeZaKasuNEW @trgovinaid = @@trgovinaid#OK"  />
+</POSALJI>
+
+	
+</PROJECT>

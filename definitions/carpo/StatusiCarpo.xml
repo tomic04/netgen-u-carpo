@@ -1,0 +1,783 @@
+﻿<root>
+	<form name="frmStatus" type="master" caption="Statusi" maximized="true">
+
+		<event type="load">
+			<action type="control populate" value="#trDrvo">
+			</action>
+		</event>
+
+		<event type="shown">
+			<action type="variable value" >
+				<parameter name="NoviId" value="0" type="int"/>
+			</action>
+			<action type="variable value" >
+				<parameter name="IndGumb" value="0" type="int"/>
+			</action>
+			<action type="variable value" >
+				<parameter name="IndKvacice" value="0" type="int"/>
+			</action>     			
+		</event>
+		
+		<layout>
+			<group rows="2" cols="2" >
+				<columnsdefinition>
+					<column position="1" size="20%"/>
+					<column position="2" size="80%"/>
+				</columnsdefinition>
+				<!-- <rowsdefinition> -->
+					<!-- <row position="1" size="50%"/> -->
+					<!-- <row position="2" size="50%"/> -->
+				<!-- </rowsdefinition>  -->
+				<item row="1" col="1"  rowspan="2"   >
+				   <tree name="trDrvo" dataname="dtTreeData"  >			
+					<event type="focusedrowchanged">
+						<action type="control populate" value="#grdMaster" /> 
+					</event>
+					<fields>
+						<field name="Name" />
+					</fields>
+				   </tree>
+				</item>	
+				<item row="1" col="2"    >
+					<grid name="grdMaster" key="statusiid" dataname="dtMasterData" >								
+					<event type="focusedrowchanged">
+
+						<action type="control populate" value="#grdOperaterIma" /> 
+						<action type="control populate" value="#grdOperaterNema" />
+					</event>
+					
+					<fields >	
+						<field name="Redoslijed" caption="Redoslijed" />
+						<field name="Status" caption="Status" />
+						<field name="Obavezan" caption="Obavezan" />
+						<field name="Dokument se može mijenjati" caption="Dokument se može mijenjati" />
+						<field name="Dokument je zaključen" caption="Dokument je zaključen" />
+						<field name="Slijedeći statusi" caption="Slijedeći statusi" />
+						<field name="Aktivan" caption="Aktivan" />
+					</fields>
+					
+				<styles>
+					<style name="fontcolor" value="#939393" if="#grdMaster.@Aktivan==NE" />
+
+				</styles>
+					
+					</grid>		
+				</item>
+				<group caption="" name=""  cols="2" rows="3" col="2" row="2" groupbordervisible="false" >
+					<columnsdefinition>
+						<column position="1" size="50%"/>
+						<column position="2" size="50%"/>
+					</columnsdefinition>
+						<rowsdefinition>
+							<!-- <row position="1" size="2%"/> -->
+							<!-- <row position="2" size="90%"/> -->
+							<row position="3" size="50"/>
+						</rowsdefinition> 
+					<item row="1" col="1"    >
+						<labeledit   name="Caption1" value="Operateri koji imaju pravo" />
+					</item>
+					<item row="2" col="1"    >
+						<grid name="grdOperaterIma"  keyfield="opid" dataname="dtImaData" multiselect="true" showgrouppanel="false">
+							<event type="cellvaluechanged">
+								<action type="datarun nonquery" value="~dtUpdateEmail" if="#grdOperaterIma.focusedfield==Email" />
+								<action type="datarun nonquery" value="~dtStatusOperater" if="#grdOperaterIma.focusedfield==vracanjestatusa" />
+								<action type="control populate keepfocus" value="#grdOperaterIma" />
+							</event>
+						
+							<fields inherited="true">
+								<field name="Operater" caption="Operater"  />
+								<field name="Email" caption="Email" editable="true" />
+								<field name="vracanjestatusa" caption="Vraćanje statusa"  editable="true" edittype="bit"/>
+							</fields>
+						</grid>		
+					</item>
+						<group caption="" name=""  cols="4" rows="1" col="1" row="3" groupbordervisible="false" >
+							<columnsdefinition>
+								<column position="1" size="25%"/>
+								<column position="2" size="20%"/>
+								<column position="3" size="45%"/>
+								<column position="4" size="10%"/>
+							</columnsdefinition>
+							<item  row="1" col="2" >
+								<button name="btnSve" caption="Postavi sve kvačice">
+									<event type="click">
+										<action type="control caption" value="#btnSve" if="$IndKvacice==0">
+										  <parameter value="Makni sve kvačice"/>
+										</action>
+										<action type="control caption" value="#btnSve" else="">
+										  <parameter value="Postavi sve kvačice"/>
+										</action>
+										<action type="datarun nonquery" value="~dtStatusOperater1" />
+										<action type="control populate" value="#grdOperaterIma" />
+										<action type="variable value" value="$IndKvacice">
+											<parameter  value="1" type="int" if="$IndKvacice==0"/>
+											<parameter  value="0" type="int" else=""/>
+										</action>
+										
+									</event>
+								</button>
+							</item>
+							<item  row="1" col="4" >
+								<button name="btnDesno" image="right" imagelocation="middlecenter">
+									<event type="click">
+										<action type="control foreachrow selected" value="grdOperaterIma">
+											<!-- <action type="message" value="Kasa kod operatera {#grdOperaterIma.@opid}" /> -->
+											<action type="datarun nonquery" value="dtPrebaciIma" />
+										</action>
+										<action type="control populate" value="#grdOperaterIma">
+										</action>
+										<action type="control populate" value="#grdOperaterNema">
+									</action>
+									</event>
+								</button>
+							</item>
+						</group>
+					<item row="1" col="2"    >
+						<labeledit   name="Caption1" value="Operateri koji nemaju pravo" />
+					</item>
+					<item row="2" col="2"   >
+						<grid name="grdOperaterNema" dataname="dtNemaData" multiselect="true" showgrouppanel="false">								
+							<fields inherited="true">
+								<field name="opid" visible="false"  />
+							</fields>
+						</grid>						
+					</item>
+					
+					<group caption="" name=""  cols="2" rows="1" col="2" row="3" groupbordervisible="false" >
+						<columnsdefinition>
+							<column position="1" size="10%"/>
+							<column position="2" size="90%"/>
+						</columnsdefinition>
+						<item  row="1" col="1" >
+							<button name="btnLijevo"  heigh="50" image="left" imagelocation="middlecenter">
+								<event type="click">
+									<action type="control foreachrow selected" value="grdOperaterNema">
+										<!-- <action type="message" value="Kasa kod operatera {#grdOperaterIma.@opid}" /> -->
+										<action type="datarun nonquery" value="dtPrebaciNema" />
+									</action>
+									<action type="control populate" value="#grdOperaterIma">
+									</action>
+									<action type="control populate" value="#grdOperaterNema">
+								</action>
+								</event>
+							</button>
+						</item>
+					</group>
+					
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="UNESI" >
+					<event type="click">
+						<action type="form open" value="frmStatusUnos" if="#trDrvo.@ValueId!=0&amp;&amp;#trDrvo.@ValueId&lt;10000" >
+							<parameter name="VrDokId" value="#trDrvo.@ValueId" />
+						</action>
+						<!-- <action type="control populate" value="#grdMaster"> -->
+							<!-- <action type="control focus" value="#grdMaster"> -->
+								<!-- <parameter value="$NoviId" /> -->
+							<!-- </action> -->
+						<!-- </action> -->
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMJENI" type="edit">
+					<event type="click">
+						<action type="form open" value="frmStatusIzmjena" if="#grdMaster.rowcount&gt;0">
+							<parameter name="StId" value="#grdMaster.@statusiid" />
+							<parameter name="VrDokId" value="#trDrvo.@ValueId" />
+						</action>
+						<!-- <action type="control populate" value="#grdMaster"> -->
+							<!-- <action type="control focus" value="#grdMaster"> -->
+								<!-- <parameter value="$NoviId" /> -->
+							<!-- </action> -->
+						<!-- </action> -->
+					</event>
+				</button>
+
+				<button name="btnObrisi" caption="OBRIŠI" >
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati status?">
+							<action type="datarun nonquery" value="~dtDelete" >
+								<action type="control populate" value="#grdMaster" />
+							</action>
+						</action>
+					</event>
+				</button>
+				
+				<button name="btnKopiraj" caption="KOPIRAJ" >
+					<event type="click">
+						<action type="form open" value="frmKopiraj">
+							<parameter name="Value2Id" value="#trDrvo.@value2id" />
+							<parameter name="ValId" value="#trDrvo.@ValueId" />
+						</action>
+						<!-- <action type="control populate" value="#grdMaster"> -->
+							<!-- <action type="control focus" value="#grdMaster"> -->
+								<!-- <parameter value="$NoviId" /> -->
+							<!-- </action> -->
+						<!-- </action> -->
+					</event>
+				</button>
+				
+				<button name="btnOperaterDodaj" caption="POSTAVKE ZA OPERATERA" >
+					<event type="click">
+						<action type="form open" value="frmOperater">
+							
+						</action>
+					</event>
+				</button>
+				
+				<button name="btnHelp" caption="UPUTI ME" >
+
+				</button>
+			</buttons>
+		</panelbuttons>
+    <datalist>
+		<data command="spUTP_StatusiDokumenata_Tree"   name="dtTreeData">
+		</data>
+		<data command="spUTP_StatusiDokumenata_MasterGrid"   name="dtMasterData">
+			<parameter name="@node" value="#trDrvo.@ValueId"/>
+		</data>
+		<data command="spUTP_StatusiDokumenata_DetaljGridLijevi"   name="dtImaData">
+			<parameter name="@id" value="#grdMaster.@statusiid"/>
+		</data>	
+		<data command="spUTP_StatusiDokumenata_DetaljGridDesni"   name="dtNemaData">
+			<parameter name="@id" value="#grdMaster.@statusiid"/>
+		</data>
+		<data command="spUTP_StatusiDokumenata_Operater_Dodaj"   name="dtPrebaciNema">
+			<parameter name="@OperateriId" value="#grdOperaterNema.@opid"/>
+			<parameter name="@StatusiId" value="#grdMaster.@statusiid"/>
+		</data>	
+		<data command="spUTP_StatusiDokumenata_Operater_Obrisi"   name="dtPrebaciIma">
+			<parameter name="@OperateriId" value="#grdOperaterIma.@opid"/>
+			<parameter name="@StatusiId" value="#grdMaster.@statusiid"/>
+		</data>
+		<data command="spUTP_StatusiDokumenata_Detalj_Email"   name="dtUpdateEmail">
+			<parameter name="@ID" value="#grdOperaterIma.@opid"/>
+			<parameter name="@Email" value="#grdOperaterIma.focusedvalue" type="string"/>
+		</data>
+		<data command="spUTP_StatusiDokumenata_Dokument_Brisanje"   name="dtDelete">
+			<parameter name="@ID" value="#grdMaster.@statusiid"/>
+		</data>
+		<data command="spUTP_StatusiDokumenata_Operater_VratiStatus"   name="dtStatusOperater">
+			<parameter name="@StatusiOperateriid" value="#grdOperaterIma.@statusioperateriid"/>
+			<parameter name="@vracanjestatusa" value="#grdOperaterIma.@vracanjestatusa"/>
+		</data>
+		<data command="spUTP_StatusiDokumenata_Operater_VratiStatusMulti"   name="dtStatusOperater1">
+			<parameter name="@statusiid" value="#grdMaster.@statusiid"/>
+			<parameter name="@vracanjestatusa" value="1" if="$IndKvacice==0" />
+			<parameter name="@vracanjestatusa" value="0" else="" />
+		</data>			
+    </datalist>
+	</form>
+	<form name="frmStatusUnos" caption="Unos statusa" width="200" fixedsize="true">
+		<event type="init">		
+			<action type="datarun reader" value="~dtBrojac" />
+		</event>
+		<event type="load">
+			<action type="control value" value="#txtRedoslijed" >
+				<parameter value="~dtBrojac.@redoslijed"/>
+			</action>
+			<action type="control value" value="#chkAktivan" >
+				<parameter value="1"/>
+			</action>
+		</event>
+		
+		<layout >
+			<group rows="4" cols="5" >
+				<columnsdefinition>
+					<column position="1" size="120"/>
+				</columnsdefinition>
+				<item caption="Redoslijed:" col="1" row="1" textposition="top" >
+					<textedit name="txtRedoslijed" format="n0" required="true"   />
+				</item>
+				<item caption="Status:" col="1" row="2" textposition="top" colspan="5">
+					<textedit name="txtStatus" required="true"   />
+				</item>
+				<group caption=" " groupbordervisible="false" cols="3" rows="2" col="1" row="3" colspan="4" >
+					<!-- <columnsdefinition> -->
+						<!-- <column position="1" size="40%"/> -->
+						<!-- <column position="2" size="60%"/> -->
+					<!-- </columnsdefinition> -->
+						<item caption="Obavezan" col="1" row="1" textposition="right">
+							<checkedit name="chkObavezan"   />
+						</item>
+						<item caption="Aktivan" col="3" row="1" textposition="right">
+							<checkedit name="chkAktivan"   />
+						</item>
+						<item caption="Dokument se može mijenjati" col="1" row="2" textposition="right">
+							<checkedit name="chkMijenjati"   />
+						</item>
+						<item caption="Dokument je zaključen" col="3" row="2" textposition="right">
+							<checkedit name="chkZakljucen"   />
+						</item>
+				</group>
+				<group caption=" " groupbordervisible="false" cols="1" rows="5" col="1" row="4" colspan="5" rowspan="5" >
+				    <item caption="Slijedeći status:" col="1" row="1" textposition="top" rowspan="5">
+					   <grid name="grdKorak"  showgrouppanel="false" showautofilterrow="false" >
+					
+					    </grid>
+				
+				     </item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="UNESI">
+				<!-- validate="true"> -->
+					<event type="click">
+					<action type="validate"/>
+						<action type="datarun scalar" value="~dtAdd">
+							<parameter name="parent.$Noviid" />
+						</action>
+						<action type="form close"/>
+						<action type="control populate" value="parent.#grdMaster">
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="parent.$NoviId" />
+							</action>
+						</action>
+					</event>
+				</button>
+
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spUTP_StatusiDokumenata_Redoslijed"   name="dtBrojac">
+				<parameter name="@node" value="$VrDokId"/>
+			</data>	
+			<!-- <data command="spUTP_StatusiDokumenata_Master"   name="dtStatusi"> -->
+				<!-- <parameter name="@Action" value="2"/> -->
+				<!-- <parameter name="@id" value="0"/> -->
+			<!-- </data> -->
+			<data command="spUTP_StatusiDokumenata_Dokument_Unos" name="dtAdd">
+				<parameter name="@vrstadokid" value="$VrDokId"/>	
+				<parameter name="@korak" value="#txtStatus"/>
+				<parameter name="@redoslijed" value="#txtRedoslijed"/>
+				<parameter name="@smije" value="#chkMijenjati"/>
+				<parameter name="@zakljuceno" value="#chkZakljucen"/>
+				<parameter name="@str" value=""/>
+				<parameter name="@aktivan" value="#chkAktivan"/>
+				<parameter name="@obavezan" value="#chkObavezan"/>
+			</data>			
+		</datalist>
+	</form>
+	<form name="frmStatusIzmjena" caption="Izmjena statusa" width="200" fixedsize="true">
+		<event type="init">		
+			<action type="datarun reader" value="~dtGet" />
+			<action type="datarun reader" value="~dtStatusiSelected" />
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdKorak"/>
+			<action type="control value" value="#txtRedoslijed" >
+				<parameter value="~dtGet.@redoslijed"/>
+			</action>
+			<action type="control value" value="#txtStatus" >
+				<parameter value="~dtGet.@Korak"/>
+			</action>
+			<action type="control value" value="#chkObavezan" >
+				<parameter value="~dtGet.@obavezan"/>
+			</action>
+			<action type="control value" value="#chkMijenjati" >
+				<parameter value="~dtGet.@smije"/>
+			</action>
+			<action type="control value" value="#chkAktivan" >
+				<parameter value="~dtGet.@aktivan"/>
+			</action>
+			<action type="control value" value="#chkZakljucen" >
+				<parameter value="~dtGet.@zakljuceno"/>
+			</action>
+			<!-- <action type="control selectedrows" value="#grdKorak"> -->
+				<!-- <parameter value="~dtStatusiSelected.@izabrani"/> -->
+			<!-- </action> -->
+			<action type="control selectedrows" value="#grdKorak">
+				<parameter value="~dtStatusiSelected.@izabrani"/>
+			</action>
+		</event>
+		
+		<layout >
+			<group rows="4" cols="5" >
+				<columnsdefinition>
+					<column position="1" size="120"/>
+				</columnsdefinition>
+				<item caption="Redoslijed:" col="1" row="1" textposition="top" >
+					<textedit name="txtRedoslijed" format="n0" required="True"   />
+				</item>
+				<item caption="Status:" col="1" row="2" textposition="top" colspan="5">
+					<textedit name="txtStatus" required="True"   />
+				</item>
+				<group caption=" " groupbordervisible="false" cols="3" rows="2" col="1" row="3" colspan="4" >
+					<!-- <columnsdefinition> -->
+						<!-- <column position="1" size="40%"/> -->
+						<!-- <column position="2" size="60%"/> -->
+					<!-- </columnsdefinition> -->
+						<item caption="Obavezan" col="1" row="1" textposition="right">
+							<checkedit name="chkObavezan"   />
+						</item>
+						<item caption="Aktivan" col="3" row="1" textposition="right">
+							<checkedit name="chkAktivan"   />
+						</item>
+						<item caption="Dokument se može mijenjati" col="1" row="2" textposition="right">
+							<checkedit name="chkMijenjati"   />
+						</item>
+						<item caption="Dokument je zaključen" col="3" row="2" textposition="right">
+							<checkedit name="chkZakljucen"   />
+						</item>
+				</group>
+				<group caption=" " groupbordervisible="false" cols="1" rows="5" col="1" row="4" colspan="5" rowspan="5" >
+				    <item caption="Slijedeći status:" col="1" row="1" textposition="top" rowspan="5">
+					   <grid name="grdKorak" dataname="dtStatusi" key="statusiid" showgrouppanel="false" showautofilterrow="false" showcheckboxes="true" >
+
+					    </grid>
+				
+				     </item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="UNESI">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun scalar" value="~dtAdd">
+							<parameter name="parent.$Noviid" />
+						</action>
+						<action type="form close"/>
+						<action type="control populate" value="parent.#grdMaster">
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="parent.$NoviId" />
+							</action>
+						</action>
+					</event>
+				</button>
+
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spUTP_StatusiDokumenata_Query"   name="dtGet">
+				<parameter name="@id" value="$StId"/>
+			</data>	
+			<data command="spUTP_StatusiDokumenata_SljedeciStatus_Query"   name="dtStatusi">
+				<parameter name="@id" value="$StId"/>
+				<parameter name="@Vrstadokid" value="$VrDokId"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_Dokument_Izmjena" name="dtAdd">
+				<parameter name="@Id" value="$StId"/>
+				<parameter name="@vrstadokid" value="$VrDokId"/>	
+				<parameter name="@korak" value="#txtStatus"/>
+				<parameter name="@redoslijed" value="#txtRedoslijed"/>
+				<parameter name="@smije" value="#chkMijenjati"/>
+				<parameter name="@zakljuceno" value="#chkZakljucen"/>
+				<parameter name="@str" value="#grdKorak.selectedids"/>
+				<parameter name="@aktivan" value="#chkAktivan"/>
+				<parameter name="@obavezan" value="#chkObavezan"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_SljedeciStatus_Azur"   name="dtStatusiSelected">
+				<parameter name="@id" value="$StId"/>
+				<parameter name="@Vrstadokid" value="$VrDokId"/>
+			</data>			
+		</datalist>
+	</form>
+	
+	<form name="frmKopiraj" caption="Kopiranje" fixedsize="true" width="400">
+    <layout  >
+      <group cols="1" rows="1" >
+        <tabs row="1" col="1" >
+          <group caption="Vrsta dokumenta" cols="1" rows="6" col="1" row="1">
+            <!-- <rowsdefinition> -->
+				<!-- <row position="1" size="30"/> -->
+				<!-- <row position="2" size="30"/> -->
+				<!-- <row position="3" size="30"/> -->
+            <!-- </rowsdefinition> -->
+
+            <rowsdefinition>
+				<row position="3" size="20"/>
+				<row position="5" size="20"/>
+				<row position="6" size="50"/>
+            </rowsdefinition>
+            <!-- <item caption="" row="1" col="1"> -->
+
+            <!-- </item> -->
+            <item caption="Kopiraj s:" row="2" col="1">
+              <comboedit name="cmbVrstaDokumentaSa" required="True" valuefield="id" displayfield="Opis"  dataname="dtDokumentSa">
+
+              </comboedit>
+            </item>
+            <item caption="" row="3" col="1">
+
+            </item>
+            <item caption="Kopiraj na:" row="4" col="1">
+              <comboedit name="cmbVrstaDokumentaNa" required="True" valuefield="id" displayfield="Opis"  dataname="dtDokumentNa">
+
+              </comboedit>
+            </item>
+            <item caption="" row="5" col="1">
+
+            </item>
+            <item  row="6" col="1" >
+              <button name="btnIzvrsi1" caption="IZVRŠI" validate="true">
+                <event type="click">
+					<action type="message" value="'Kopiranje nije moguće. Niste odabrali obje vrste dokumenta!'" if="#cmbVrstaDokumentaSa==null||#cmbVrstaDokumentaNa==null" />
+					<action type="confirm" value="Želite li kopirati podatke sa dokumenta?" else="">
+						<action type="datarun nonquery" value="~dtKopirajStatus">
+							 <action type="control focus" value="Parent.#trDrvo">
+								<parameter value="#cmbVrstaDokumentaNa" type="int"  />
+							 </action>
+							 <action type="control populate" value="#grdMaster"/>
+							<action type="form close"/>
+							
+						</action>
+					</action>
+                </event>
+              </button>
+            </item>
+
+          </group>
+         <group caption="Prava operatera" cols="1" rows="6" col="1" row="1">
+            <rowsdefinition>
+				<row position="3" size="20"/>
+				<row position="5" size="20"/>
+				<row position="6" size="50"/>
+            </rowsdefinition>
+			<!-- <item caption="" row="1" col="1"> -->
+
+            <!-- </item> -->
+            <item caption="Kopiraj s:" row="2" col="1">
+				<searchedit name="srcOperaterSa" required="True" fontsizedelta="1" fontbold="True" fieldtext="Naziv" fieldvalue="OperateriId"  dataname="dtOperateri1" >
+						
+				</searchedit>
+            </item>
+			<item caption="" row="3" col="1">
+
+            </item>
+            <item caption="Kopiraj na:" row="4" col="1">
+				<searchedit name="srcOperaterNa" required="True" fontsizedelta="1" fontbold="True" fieldtext="Naziv" fieldvalue="OperateriId"  dataname="dtOperateri2">
+						
+				</searchedit>
+            </item>
+			<item caption="" row="5" col="1">
+
+            </item>
+            <item  row="6" col="1" >
+              <button name="btnIzvrsi2" caption="IZVRŠI"  >
+                <event type="click">
+					<action type="message" value="'Kopiranje nije moguće. Niste odabrali oba operatera!'" if="#srcOperaterSa==null||#srcOperaterNa==null" />
+						<action type="datarun reader" value="~dtOperaterPostoji" elseif=""/>
+							<action type="confirm" value="Za ovog operatera već postoje definirana prava na neke statuse. Jeste li sigurni da ih želite zamijeniti?" if="~dtOperaterPostoji.@operateriid!=null" >
+								<action type="datarun nonquery" value="~dtKopirajOperatere">
+									<action type="form close"/>
+								</action>						
+							</action>
+						<action type="confirm" value="Želite li kopirati prava operatera?"  elseif="#srcOperaterSa!=null&amp;&amp;#srcOperaterNa!=null">
+								<action type="datarun nonquery" value="~dtKopirajOperatere" >
+									<action type="form close"/>
+								</action>
+						</action>
+                </event>
+              </button>
+            </item>
+          </group>
+          <group caption="Prava na status" cols="1" rows="6" col="1" row="1">
+            <!-- <rowsdefinition> -->
+				<!-- <row position="1" size="30"/> -->
+				<!-- <row position="2" size="30"/> -->
+				<!-- <row position="3" size="30"/> -->
+            <!-- </rowsdefinition> -->
+
+            <rowsdefinition>
+				<row position="3" size="20"/>
+				<row position="5" size="20"/>
+				<row position="6" size="50"/>
+            </rowsdefinition>
+            <!-- <item caption="" row="1" col="1"> -->
+
+            <!-- </item> -->
+            <item caption="Kopiraj s:" row="2" col="1">
+              <comboedit name="cmbStatusi1" required="True" valuefield="id" displayfield="Opis"  dataname="dtStatusiAktivni">
+
+              </comboedit>
+            </item>
+            <item caption="" row="3" col="1">
+
+            </item>
+            <item caption="Kopiraj na:" row="4" col="1">
+              <comboedit name="cmbStatusi2" required="True" valuefield="id" displayfield="Opis"  dataname="dtStatusiAktivni">
+
+              </comboedit>
+            </item>
+            <item caption="" row="5" col="1">
+
+            </item>
+            <item  row="6" col="1" >
+              <button name="btnIzvrsi3" caption="IZVRŠI" validate="true">
+               <event type="click">
+					<action type="message" value="'Kopiranje nije moguće. Niste odabrali oba statusa!'" if="#cmbStatusi1==null||#cmbStatusi2==null"/>
+					<action type="message" value="Izabrali ste iste statuse!" elseif="#cmbStatusi1==#cmbStatusi2"/>
+					<action type="datarun reader" value="~dtOperaterPostoji1" elseif=""/>
+						<action type="confirm" value="Za ovog operatera već postoje definirana prava na status. Jeste li sigurni da ih želite zamijeniti?" if="~dtOperaterPostoji1.@operateriid!=null" >
+							<action type="datarun nonquery" value="~dtKopirajOperatere1">
+								<action type="form close"/>
+								<action type="control focus" value="parent.#grdMaster">
+									<parameter value="#cmbStatusi2" />
+								</action>
+							</action>
+						</action>
+						<action type="confirm" value="Želite li kopirati prava operatera?" elseif="#cmbStatusi1!=null&amp;&amp;#cmbStatusi2!=null">
+							<action type="datarun nonquery" value="~dtKopirajOperatere1" >
+								<action type="form close"/>
+							</action>
+						</action>
+                </event>
+              </button>
+            </item>
+
+          </group>
+		  
+        </tabs>
+      </group>
+    </layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnKraj1" caption="ZATVORI" dock="fill">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spUTP_StatusiDokumenata_VrstaDok_Query"   name="dtDokumentSa">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$Value2Id"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_VrstaDok_Query"   name="dtDokumentNa">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@ID" value="$Value2Id"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_KopirajVrstaDok"   name="dtKopirajStatus">
+				<parameter name="@ID" value="#cmbVrstaDokumentaSa"/>
+				<parameter name="@VrstaDokId" value="#cmbVrstaDokumentaNa"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_KopirajOperater"   name="dtKopirajOperatere">
+				<parameter name="@ID" value="#srcOperaterSa"/>
+				<parameter name="@node" value="#srcOperaterNa"/>
+			</data>
+			<data command="spNG_Combo" name="dtOperateri1">
+				<parameter name="@Action" value="Operateri"/>
+				<parameter name="@Ind" value="1"/>
+				<parameter name="@oznaka" value="#srcOperaterSa.text"/>
+			</data>
+			<data command="spNG_Combo" name="dtOperateri2">
+				<parameter name="@Action" value="Operateri"/>
+				<parameter name="@Ind" value="1"/>
+				<parameter name="@oznaka" value="#srcOperaterNa.text"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_OperaterProvjera"   name="dtOperaterPostoji">
+				<parameter name="@ID" value="#srcOperaterNa"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_StatusQuery"   name="dtStatusiAktivni">
+				<parameter name="@node" value="$ValId"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_StatusProvjera"   name="dtOperaterPostoji1">
+				<parameter name="@ID" value="#cmbStatusi2"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_KopirajStatus"   name="dtKopirajOperatere1">
+				<parameter name="@ID" value="#cmbStatusi2"/>
+				<parameter name="@node" value="#cmbStatusi1"/>
+			</data>			
+		</datalist>
+  </form>
+  
+	<form name="frmOperater" caption="Operater"  width="600" height="700">
+		<layout >
+			<group cols="2" rows="2" >
+				<columnsdefinition>
+					<column position="1" size="80%"/>
+					<column position="2" size="20%"/>
+				</columnsdefinition>
+				<item caption="Operater:" row="1" col="1">
+					<searchedit name="srcOperater" required="True" fontsizedelta="1" fontbold="True" fieldtext="Naziv" fieldvalue="OperateriId"  dataname="dtOperateri3" >
+						<event type="valuechanged">
+							<action type="control populate" value="#grdStatusi" if="#srcOperater!=null"/>
+						</event>
+					</searchedit>
+				</item>
+				<item  row="1" col="2" >
+				  <button name="btnIzvrsi5" caption="IZVRŠI" validate="true" >
+					<event type="click">
+						<action type="control populate" value="#grdStatusi" if="#srcOperater!=null"/>
+					</event>
+				  </button>
+				</item>
+				<item row="2" col="1"  colspan="2" >
+					<grid name="grdStatusi" key="statusiid" dataname="dtStatusi" showgroupedcolumns="true">
+							<event type="cellvaluechanged">
+								 <!-- <action type="message" value="#grdStatusi.focusedfield" /> -->
+								<action type="datarun nonquery" value="~dtStatusOperaterDodaj" if="#grdStatusi.focusedfield==Pravo_na_status&amp;&amp;#grdStatusi.focusedvalue==True" />
+								<action type="datarun nonquery" value="~dtStatusOperaterObrisi" if="#grdStatusi.focusedfield==Pravo_na_status&amp;&amp;#grdStatusi.focusedvalue==False" />
+								<action type="datarun nonquery" value="~dtStatusOperaterVracanjeNovi" if="#grdStatusi.focusedfield==Vraćanje_statusa&amp;&amp;#grdStatusi.@Pravo_na_status==False&amp;&amp;#grdStatusi.@Vraćanje_statusa==True" />
+								<action type="datarun nonquery" value="~dtStatusOperaterVracanje" if="#grdStatusi.focusedfield==Vraćanje_statusa&amp;&amp;#grdStatusi.@Pravo_na_status==True" />
+								<action type="control populate keepfocus" value="#grdStatusi" />
+							</event>
+
+					
+							<fields inherited="true">
+								<field name="Vrsta prometa" caption="Vrsta prometa"  groupindex="0" />
+								<!-- <field name="Vrsta dokumenta" caption="Vrsta dokumenta"  groupindex="1" /> -->
+								<field name="Pravo_na_status" caption="Pravo na status"  editable="true" edittype="bit"/>
+								<field name="Vraćanje_statusa" caption="Vraćanje statusa"  editable="true" edittype="bit"/>
+							</fields>
+					
+					</grid>		
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnKraj2" caption="ZATVORI" dock="fill">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spNG_Combo" name="dtOperateri3">
+				<parameter name="@Action" value="Operateri"/>
+				<parameter name="@Ind" value="1"/>
+				<parameter name="@oznaka" value="#srcOperater.text"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_PostavkeOperateraQuery"   name="dtStatusi">
+				<parameter name="@ID" value="#srcOperater"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_Operater_Azur"   name="dtStatusOperaterDodaj">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@OperateriId" value="#srcOperater"/>
+				<parameter name="@StatusiId" value="#grdStatusi.@statusiid"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_Operater_Azur"   name="dtStatusOperaterObrisi">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@OperateriId" value="#srcOperater"/>
+				<parameter name="@StatusiId" value="#grdStatusi.@statusiid"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_Operater_Azur"   name="dtStatusOperaterVracanjeNovi">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@OperateriId" value="#srcOperater"/>
+				<parameter name="@StatusiId" value="#grdStatusi.@statusiid"/>
+				<parameter name="@vracanjestatusa" value="#grdStatusi.@Vraćanje_statusa"/>
+			</data>
+			<data command="spUTP_StatusiDokumenata_Operater_Azur"   name="dtStatusOperaterVracanje">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@OperateriId" value="#srcOperater"/>
+				<parameter name="@StatusiId" value="#grdStatusi.@statusiid"/>
+				<parameter name="@vracanjestatusa" value="#grdStatusi.@Vraćanje_statusa"/>
+			</data>		
+		</datalist>
+	</form>
+
+
+	
+	
+</root>

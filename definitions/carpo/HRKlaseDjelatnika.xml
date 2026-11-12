@@ -1,0 +1,130 @@
+<root>
+	<form name="frmMain" caption="Klase djelatnika" type="master">
+		<managerlayout>
+			<tree name="trDrvo" expandallonload="true" dataname="dtTree" keyfield="hrklaseid" allowselfdrag="true" showcolumns="true" expandedlevel="2" autofiltercondition="contains">
+				<fields>
+					<field name="Naziv" />
+				</fields>
+			</tree>
+		</managerlayout>
+
+		<panelbuttons displaycontrolsprint="false">
+            <buttons type="tree">
+
+
+				<button name="btnDrag" caption="SPREMI PROMJENE" type="selfdrag">
+				<event type="click">
+					<action type="datarun nonquery" value="~dtOrgAzur" />
+					<action type="control defaultmode" value="#trDrvo" />
+				</event>
+				</button>
+				
+				<button name="btnDrag" caption="ODUSTANI" type="selfdragcancel">
+				<event type="click">
+					<action type="confirm" value="Želite odustati od reorganizacije?">
+					<action type="control populate" value="#trDrvo" />
+					<action type="control dragmode" value="#trDrvo" />
+					</action>
+				</event>
+				</button>
+
+
+
+				<button name="btnUnos" caption="Dodaj" type="add" image="add">
+                    <event type="click">
+                        <action type="formopen" value="frmDodaj">
+							<parameter name="FormType" value="Unesi"/>
+						</action>
+						<action type="control populate" value="#trDrvo" />
+                    </event>
+                </button>
+				<button name="btnIzmjeni" caption="Izmjeni" type="edit" image="edit">
+					<event type="click">
+						<action type="form open" value="frmDodaj">							
+							<parameter name="HRKlaseId" value="#trDrvo.@HRKlaseId" />
+							<parameter name="FormType" value="Izmjeni" />
+						</action>
+						<action type="control populate keepfocus" value="#trDrvo"/>
+					</event>
+				</button>
+				<button caption="Obriši" type="delete" image="delete">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati klasu '{#trDrvo.@Naziv}'?">
+							<action type="datarun nonquery" value="~dtDelete">
+								<action type="control populate" value="#trDrvo" />
+							</action>
+						</action>
+					</event>
+				</button>
+
+            </buttons>
+        </panelbuttons>
+
+		<datalist>
+			<data name="dtTree" command="spHRMKlasDjel">
+				<parameter name="@Action" value="tree"/>
+			</data>
+
+			<data command="spHRMKlasDjel" name="dtDelete">
+				<parameter name="@Action" value="delete" />
+				<parameter name="@HRKlaseId" value="#trDrvo.@HRKlaseId"/>
+			</data>
+
+			<data command="spHRMKlasDjel" name="dtOrgAzur">
+				<parameter name="@Action" value="setTree" />
+				<parameter name="@TableVar" value="#trDrvo.datasource" />
+			</data>
+
+		</datalist>
+	</form>
+
+	<form name="frmDodaj" caption="{$formType} klasu">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$HRKlaseId!=null" />
+		</event>
+		<layout textposition="left">			
+			<group cols="2" rows="1" groupbordervisible="false">
+				<item caption="Naziv:" col="1" row="1" colspan="2" >
+					<textedit name="txtNaziv" required="true" datavalue="#dtGet.@Naziv"/>
+				</item>
+			</group>			
+		</layout>
+
+		<datalist>
+			<data command="spHRMKlasDjel" name="dtAdd">
+				<parameter name="@Action" value="insert"/>
+				<parameter name="@naziv" value="#txtNaziv"/> 
+				<parameter name="@Sortkey" value="parent.#trDrvo.@Sortkey"/>
+			</data>
+
+			<data command="spHRMKlasDjel" name="dtGet" key="HRKlaseId">
+				<parameter name="@Action" value="napuni" />
+				<parameter name="@HRKlaseId" value="$HRKlaseId" />
+			</data>
+
+			<data command="spHRMKlasDjel" name="dtUpdate">
+				<parameter name="@action" value="update" />
+				<parameter name="@HRKlaseId" value="$HRKlaseId" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@Sortkey" value="parent.#trDrvo.@Sortkey"/>
+			</data>
+
+		</datalist>
+
+		<panelbuttons>
+            <buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="~dtUpdate" if="$HRKlaseId!=null"/>
+						<action type="datarun nonquery" value="~dtAdd" else=""/>
+						<action type="control populate" value="parent.#trDrvo"/>
+						<action type="form close"/>	
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+            </buttons>
+        </panelbuttons>
+    </form>
+
+</root>

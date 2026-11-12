@@ -1,0 +1,73 @@
+<root>
+	<form name="frmSerijskiUnosGrid" caption="Top 500 - {global.$Godina}." width="800" height="600">
+		<event type="init">
+			<action type="variable value" value="Errors">
+				<parameter value="0"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control populate" value="#grdTop500"/>
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<grid name="grdTop500" dataname="~dtTop500" bestfitonrefresh="true">
+						<fields inherited="true">
+							<field name="Pozicija" editable="true"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="control foreachrow" value="#grdTop500">
+							<action type="datarun nonquery" value="~dtSave" if="#grdTop500.@Pozicija!=null"/>
+						</action>
+						<action type="datarun reader" value="~dtCountErrors"/>
+						<action type="variable value" value="$Errors">
+							<parameter value="~dtCountErrors.@Value"/>
+						</action>
+						<action type="datarun nonquery" value="~dtResetCountErrors"/>
+						<action type="control populate" value="#grdTop500" if="$Errors&gt;0"/>
+						<action type="control populate" value="parent.#grdMaster" else=""/>
+						<action type="form close" else=""/>
+					</event>
+				</button>
+				<button name="btnZatvori" caption="Zatvori">
+					<event type="click">
+						<action type="control populate" value="parent.#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnClear" caption="Očisti pozicije" dock="right">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati sve zapise za {global.$Godina}. godinu? Ova akcija je trenutna i rezultira trajnim brisanjem podataka."/>
+						<action type="datarun nonquery" value="~dtClear"/>
+						<action type="control populate" value="#grdTop500"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtResetCountErrors" command="UPDATE CountErrors SET Value = 0 WHERE Id = 1" type="text"/>
+			<data name="dtCountErrors" command="SELECT Value FROM CountErrors WHERE Id = 1" type="text"/>
+			<data name="dtClear" command="spTop500">
+				<parameter name="@Action" value="CLEAR GRID"/>
+				<parameter name="@Godina" value="global.$Godina"/>
+			</data>
+			<data name="dtSave" command="spTop500">
+				<parameter name="@Action" value="SAVE GRID"/>
+				<parameter name="@SuppKorId" value="#grdTop500.@suppKorisnikId"/>
+				<parameter name="@Top500Id" value="#grdTop500.@Top500Id"/>
+				<parameter name="@Pozicija" value="#grdTop500.@Pozicija"/>
+				<parameter name="@Godina" value="global.$Godina"/>
+			</data>
+			<data name="dtTop500" command="spTop500">
+				<parameter name="@Action" value="GRID"/>
+				<parameter name="@Godina" value="global.$Godina"/>
+			</data>
+		</datalist>
+	</form>
+</root>

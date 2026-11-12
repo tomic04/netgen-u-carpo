@@ -1,0 +1,557 @@
+<root>
+
+	<form name="frmNovaTrg" caption="Unos Nove trgovine">
+		<layout>
+			<group rows="5" cols="3">
+				<item row="1" col="1" colspan="2" caption="Trgovina" textposition="left">
+					<textedit name="txtTrgovina">
+					</textedit>
+				</item>
+				<item row="2" col="1" caption="Prefix" textposition="left">
+					<textedit name="txtPrefix">
+					</textedit>
+				</item>
+				<item row="2" col="2" caption="Oznaka" textposition="left">
+					<textedit name="txtOznaka">
+					</textedit>
+				</item>
+				<item row="3" col="1" colspan="2" caption="Vrsta trgovine" textposition="left">
+					<comboedit name="cmbVrsta" displayfield="Naziv" valuefield="VrstaTrg" dataname="~dtVrstaTrg">
+					</comboedit>
+				</item>
+				<item row="4" col="1" colspan="2" caption="Mjesto" textposition="left">
+					<comboedit name="cmbMjesto" displayfield="naziv" valuefield="mjestaid" dataname="~dtMjesta">
+					</comboedit>
+				</item>
+				<rowsdefinition>
+					<row position="5" size="100%"></row>
+				</rowsdefinition>
+				<columnsdefinition>
+					<column position="1" size="150"></column>
+					<column position="2" size="150"></column>
+					<column position="3" size="100%"></column>
+				</columnsdefinition>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSave" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtDodajTrg">
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnClose" caption="Odustani" dock="right" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMPTrgovineNG" name="dtDodajTrg">
+				<parameter name="@action" value="3"/>
+				<parameter name="@trgovinaid" value="global.$Id"/>
+				<parameter name="@vrstatrg" value="#cmbVrsta"/>
+				<parameter name="@opis" value="#txtTrgovina"/>
+				<parameter name="@oznaka" value="#txtOznaka"/>
+				<parameter name="@mjestaid" value="#cmbMjesto"/>
+			</data>
+			<data command="select 'M' as VrstaTrg, 'Maloprodaja iz vlastite trgovačke mreža' as Naziv, 1 as sort union
+						select 'V' as VrstaTrg, 'Maloprodaja iz veleprodaje' as Naziv, 2 as sort union
+						select 'S' as VrstaTrg, 'Maloprodaja usluga (maloprodaja servisa)' as Naziv, 3 as sort union
+						select 'F' as VrstaTrg, 'Franšiza' as Naziv, 4 as sort order by sort" type="text" name="dtVrstaTrg">
+			</data>
+			<data command="select mjestaid, rtrim(naziv)+ '   ' + hptbroj as naziv from mjesta where drzaveid=5 order by naziv" type="text" name="dtMjesta">
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmIzmTrg" caption="Izmjeni podatke o trgovini: {$trgovina}">
+		<event type="init">
+			<action type="datarun reader" value="~dtdohvati"/>
+			<action type="variable value" if ="$partneriid=='null'">
+				<parameter name="$partneriid" value="~dtdohvati.@partneriid"/>
+			</action>
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdSkla" >
+			</action>
+			<action type="control disable" value="#cmbCjenik">
+			</action>
+			<action type="control disable" value="#cheAkt">
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control enable" value="#cmbCjenik" if="#cmbVrstaTrg=='V'">
+			</action>
+		</event>
+		<layout>
+			<group rows ="2" cols="2">
+				<group row="1" col="1" rows="3" cols="1">
+					<group row="1" col="1" rows="4" cols="1" caption="Podaci o trgovini">
+						<group row="1" col="1" rows="4" cols="1">
+							<item row="1" col="1" colspan="3" caption="Trgovina" textposition="left">
+								<textedit name="txtOpis" datavalue="~dtdohvati.@Opis">
+								</textedit>
+							</item>
+							<item row="2" col="1" caption="Org. shema" textposition="left">
+								<comboedit name="cmbOrg" datavalue="~dtdohvati.@OrgShemaId" displayfield="naziv" valuefield="orgshemaid" dataname="~dtOrg">
+								</comboedit>
+							</item>
+							<item row="3" col="1" caption="Općina" textposition="left">
+								<comboedit name="cmbMjesto" datavalue="~dtdohvati.@mjestaid" displayfield="naziv" valuefield="mjestaid" dataname="~dtMjesta">
+									<event type="leave">
+										<action type="control value" value="cmbNaselje">
+											<parameter value="#cmbMjesto" />
+										</action>
+									</event>
+								</comboedit>
+							</item>
+							<item row="4" col="1" caption="Naselje" textposition="left">
+								<comboedit name="cmbNaselje" datavalue="~dtdohvati.@naseljeid" displayfield="naziv" valuefield="mjestaid" dataname="~dtMjesta">
+								</comboedit>
+							</item>
+						</group>
+						<group row="2" col="1" rows="1" cols="5">
+							<item row="1" col="1" colspan="3" caption="Ulica" textposition="left">
+								<textedit name="txtUlica" datavalue="~dtdohvati.@adresa">
+								</textedit>
+							</item>
+							<item row="1" col="4" caption="Kućni broj" textposition="left">
+								<textedit name="txtBroj" datavalue="~dtdohvati.@kucnibroj">
+								</textedit>
+							</item>
+							<item row="1" col="5" caption="" textposition="left">
+								<textedit name="txtDodatak" datavalue="~dtdohvati.@dodatakkucnibroj">
+								</textedit>
+							</item>
+							<item row="1" col="2" caption="" textposition="left">
+							</item>
+						</group>
+						<group row="3" col="1" rows="4" cols="1">
+							<item row="1" col="1"  caption="Folder" textposition="left">
+								<textedit name="txtPath" datavalue="~dtdohvati.@Path">
+								</textedit>
+							</item>
+							<item row="2" col="1"  caption="Vrsta cjenika" textposition="left">
+								<comboedit name="cmbCjenik" datavalue="~dtdohvati.@VrCjenikId" displayfield="naziv" valuefield="vrcjenikid" dataname="~dtCjenik">
+								</comboedit>
+							</item>
+							<item row="3" col="1"  caption="Vrsta trgovine" textposition="left">
+								<comboedit name="cmbVrstaTrg" datavalue="~dtdohvati.@VrstaTrgId" displayfield="naziv" valuefield="VrstaTrgId" dataname="~dtVrsta">
+								</comboedit>
+							</item>
+							<item row="4" col="1" caption="Tip" textposition="left">
+								<comboedit name="cmbTip" datavalue="~dtdohvati.@ParAsortimanTipSifra" displayfield="naziv" valuefield="ParAsortimanTipSifra" dataname="~dtTip">
+								</comboedit>
+							</item>
+						</group>
+						<group row="4" col="1" rows="2" cols="2">
+							<item row="1" col="1" caption="Ugostiteljstvo" textposition="left">
+								<comboedit name="cmbUgo" datavalue="~dtdohvati.@ugoind" displayfield="naziv" valuefield="ugoind" dataname="~dtUgost">
+								</comboedit>
+							</item>
+							<item row="1" col="2" caption="Financijsko vođenje" textposition="left">
+								<comboedit name="cmbFina" datavalue="~dtdohvati.@indfin" displayfield="naziv" valuefield="indfin" dataname="~dtFina">
+								</comboedit>
+							</item>
+							<item row="2" col="1" caption="Proizvodnja" textposition="left">
+								<comboedit name="cmbProiz" datavalue="~dtdohvati.@indproi" displayfield="naziv" valuefield="indproi" dataname="~dtProiz">
+								</comboedit>
+							</item>
+							<item row="2" col="2" caption="Max kol prodaje" textposition="left">
+								<textedit name="txtProd" datavalue="~dtdohvati.@maxkolicinaprodaje">
+								</textedit>
+							</item>
+						</group>
+					</group>
+					<group row="2" col="1" rows="2" cols="2" >
+						<item row="1" col="1" caption="" textposition="right">
+							<checkedit caption="Aktivno" name="cheAkt" datavalue="~dtdohvati.@Aktivno">
+							</checkedit>
+						</item>
+						<item row="1" col="2" caption="" textposition="right">
+							<checkedit caption="Ind Minus" name="cheMin" datavalue="~dtdohvati.@indMinus">
+							</checkedit>
+						</item>
+						<item row="2" col="1"  colspan="2" caption="Broj radnih sati trgovca" textposition="left">
+							<textedit name="txtSat" datavalue="~dtdohvati.@radnisati">
+							</textedit>
+						</item>
+					</group>
+					<group row="3" col="1" rows="3" cols="1" caption="Franšize">
+						<item row="1" col="1" caption="Partner" textposition="left">
+							<searchedit name="srcPartner" datavalue="~dtdohvati.@PartneriId" datatext="~dtdohvati.Partner" fieldtext="NazivId" fieldvalue="partneriid" dataname="~dtOdaberiPartneri">
+								<event type="leave">
+									<action type="variable value">
+										<parameter name="partneriid" value="#srcPartner" type="int" />
+									</action>
+									<action type="datarun scalar" value="~dtLokacija">
+										<action type="control populate" value="#cmbLoc"/>
+									</action>
+								</event>
+							</searchedit>
+						</item>
+						<item row="2" col="1" caption="Lokacija partnera" textposition="left">
+							<comboedit name="cmbLoc" datavalue="~dtdohvati.@Parstruid" displayfield="naziv" valuefield="parstruid" dataname="~dtLokacija">	
+							</comboedit>
+						</item>
+						<item row="3" col="1" caption="Lokacija naša" textposition="left">
+							<comboedit name="cmbNasLoc" datavalue="~dtdohvati.@LokacijeId" displayfield="naziv" valuefield="parstruid" dataname="~dtMi">
+							</comboedit>
+						</item>
+					</group>
+				</group>
+				<group row="1" col="2" rows="4" cols="1">
+					<group row="1" col="1" rows="2" cols="1" caption="Samo za MP iz VP">
+						<group row="1" col="1" rows="3" cols="1">
+							<item row="1" col="1" caption="Način razduživanja" textposition="left">
+								<comboedit name="cmbRazd" datavalue="~dtdohvati.@NacinRazduzenja" displayfield="naziv" valuefield="NacinRazduzenja" dataname="~dtRazduzenje">
+								</comboedit>
+							</item>
+							<item row="2" col="1" caption="Trgovina vezana za" textposition="left">
+								<comboedit name="cmbVeza" datavalue="~dtdohvati.@TrgIzdavanje" displayfield="naziv" valuefield="TrgIzdavanje" dataname="~dtIzdavanje">
+								</comboedit>
+							</item>
+							<item row="3" col="1" caption="Skladište" textposition="left">
+								<comboedit name="cmbSkladisteid" datavalue="~dtdohvati.@SkladisteId" displayfield="naziv" valuefield="skladisteid" dataname="~dtSkladiste">
+								</comboedit>
+							</item>
+						</group>
+						<group row="2" col="1" rows="2" cols="3">
+							<item row="1" col="1" caption="" textposition="">
+								<button caption="Dodaj">
+									<event type="click">
+										<action type="datarun nonquery" value="~dtDodajSkla"/>
+										<action type="control populate" value="#grdSkla" />
+									</event>
+								</button>
+							</item>
+							<item row="1" col="3" rowspan="2" caption="" textposition="">
+								<grid name="grdSkla" dataname="~dtVezaSkla" netgenfields="true">
+									<event type="doubleclick">
+										<action type="datarun nonquery" value="~dtObrisiSkla"/>
+										<action type="control populate" value="#grdSkla" />
+									</event>
+								</grid>
+							</item>
+							<rowsdefinition>
+								<row position="1" size="50"></row>
+							</rowsdefinition>
+							<columnsdefinition>
+								<column position="1" size="100"></column>
+								<column position="2" size="50"></column>
+								<column position="3" size="100%"></column>
+							</columnsdefinition>
+						</group>
+					</group>
+					<group row="2" col="1" rows="3" cols="1" >
+						<item row="1" col="1" caption="Samo za pravu maloprodaju" textposition="left">
+							<comboedit name="cmbMalo" datavalue="~dtdohvati.@ind_cij" displayfield="naziv" valuefield="ind_cij" dataname="~dtCijena">
+							</comboedit>
+						</item>
+						<item row="2" col="1" caption="DLL za zaključak" textposition="left">
+							<textedit name="txtZaklj" datavalue="~dtdohvati.@ZakljucakTemplate" >
+							</textedit>
+						</item>
+						<item row="3" col="1" caption="DLL za račun" textposition="left">
+							<textedit name="txtRac" datavalue="~dtdohvati.@Template">
+							</textedit>
+						</item>
+					</group>
+					<group row="3" col="1" rows="2" cols="3" caption="Konta">
+						<item row="1" col="1" caption="Prihoda" textposition="left">
+							<textedit name="txtPrih" datavalue="~dtdohvati.@KontoPrihod">
+							</textedit>
+						</item>
+						<item row="1" col="2" caption="Rashoda" textposition="left">
+							<textedit name="txtRash" datavalue="~dtdohvati.@KontoRashod">
+							</textedit>
+						</item>
+						<item row="1" col="3" caption="Zalihe" textposition="left">
+							<textedit name="txtZal" datavalue="~dtdohvati.@KontoZaliha">
+							</textedit>
+						</item>
+						<item row="2" col="1" caption="PDV" textposition="left">
+							<textedit name="txtPdv" datavalue="~dtdohvati.@KontoUPDV">
+							</textedit>
+						</item>
+						<item row="2" col="2" caption="RUC" textposition="left">
+							<textedit name="txtRuc" datavalue="~dtdohvati.@KontoRUC">
+							</textedit>
+						</item>
+					</group>
+					<group row="4" col="1" rows="2" cols="1" >
+						<item row="1" col="1" caption="Odgovorna osoba" textposition="left">
+							<comboedit name="cmbOsoba" datavalue="~dtdohvati.@OsobeID" displayfield="naziv" valuefield="osobeid" dataname="~dtOsobe">
+							</comboedit>
+						</item>
+						<item row="2" col="1" caption="Putanja" textposition="left">
+							<textedit name="txtPuta" datavalue="~dtdohvati.@Putanja">
+							</textedit>
+						</item>
+					</group>
+				</group>
+				<rowsdefinition>
+					<row position="2" size="100%"></row>
+				</rowsdefinition>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSave" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtIzmjeni">
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnClose" caption="Odustani" dock="right" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMPTrgovineNG" name="dtdohvati">
+				<parameter name="@action" value="2"/>
+				<parameter name="@TrgovinaID" value="global.$Id"/>
+			</data>
+			<data command="spTraziPartneri" name="dtOdaberiPartneri">
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+			</data>
+			<data command="select OrgShemaId, Naziv from orgshema" type="text" name="dtOrg">
+			</data>
+			<data command="select mjestaid, rtrim(naziv) + '   ' + hptbroj as naziv from mjesta order by naziv" type="text" name="dtMjesta">
+			</data>
+			<data command="select vrcjenikid, opis as naziv from vrcjenik" type="text" name="dtCjenik">
+			</data>
+			<data command="select 'M' as VrstaTrgId, 'Maloprodaja iz vlastite trgovačke mreža' as Naziv, 1 as sort union
+							select 'V' as VrstaTrgId, 'Maloprodaja iz veleprodaje' as Naziv, 2 as sort union
+							select 'S' as VrstaTrgId, 'Maloprodaja usluga (maloprodaja servisa)' as Naziv, 3 as sort union
+							select 'F' as VrstaTrgId, 'Franšiza' as Naziv, 4 as sort order by sort" type="text" name="dtVrsta">
+			</data>
+			<data command="select ParAsortimanTipSifra, naziv from parasortimantip" type="text" name="dtTip">
+			</data>
+			<data command="select 0 as ugoind, 'NE' as naziv union select 1 as ugoind, 'DA' as naziv" type="text" name="dtUgost">
+			</data>
+			<data command="select 0 as indfin, 'NE' as naziv union select 1 as indfin, 'DA' as naziv" type="text" name="dtFina">
+			</data>
+			<data command="select 0 as indproi, 'NE' as naziv union select 1 as indproi, 'DA' as naziv" type="text" name="dtProiz">
+			</data>
+			<data command="select parstruid, naziv from parstru where partneriid=@partneriid" type="text" name="dtLokacija">
+				<parameter name="@partneriid" value="$partneriid"/>
+			</data>
+			<data command="select parstruid, naziv from parstru where partneriid=(select varset from pubvars where varime='NasID')" type="text" name="dtMi">
+			</data>
+			<data command="select 1 as NacinRazduzenja, 'Razdužuje se zaključkom blagajne' as naziv union select 2 as NacinRazduzenja, 'Račun automatski razdužuje skladište' as naziv" type="text" name="dtRazduzenje">
+			</data>
+			<data command="select 1 as TrgIzdavanje, 'Jedno skladište' as naziv union select 2 as TrgIzdavanje, 'Više skladišta' as naziv" type="text" name="dtIzdavanje">
+			</data>
+			<data command="select skladisteid, oznaka +' ' +opis as naziv from skladiste" type="text" name="dtSkladiste">
+			</data>
+			<data command="select 1 as ind_cij, '1-Uzima cijenu iz cjenika' as naziv union select 2 as ind_cij, '2-Uzima zadnju cijenu u MP' as naziv" type="text" name="dtCijena">
+			</data>
+			<data command="select o.osobeid, rtrim(o.prezime)+' '+rtrim(o.ime) as naziv from lnosopar l
+				inner join parstru p on l.parstruid=p.parstruid 
+				inner join osobe o on l.osobeid=o.osobeid
+				where p.partneriid=(select varset from pubvars where varime='NasId')" type="text" name="dtOsobe">
+			</data>
+			<data command="spMPTrgovineNG" name="dtDodajSkla">
+				<parameter name="@action" value="6"/>
+				<parameter name="@TrgovinaID" value="global.$Id"/>
+				<parameter name="@skladisteid" value="#cmbSkladisteid"/>
+			</data>
+			<data command="spMPTrgovineNG" name="dtObrisiSkla">
+				<parameter name="@action" value="7"/>
+				<parameter name="@TrgovinaID" value="global.$Id"/>
+				<parameter name="@skladisteid" value="#grdSkla.@skladisteid"/>
+			</data>
+			<data command="select l.skladisteid, s.opis as [Skladište2700] from lnTrgovinaSkladiste l inner join skladiste s on l.skladisteid=s.skladisteid where l.trgovinaid=@trgovinaid" type="text" name="dtVezaSkla">
+				<parameter name="@TrgovinaID" value="global.$Id"/>
+			</data>
+			<data command="spMPTrgovineNG" name="dtIzmjeni">
+				<parameter name="@action" value="5"/>
+				<parameter name="@TrgovinaID" value="global.$Id"/>
+				<parameter name="@opis" value="#txtOpis"/>
+				<parameter name="@OrgShemaId" value="#cmbOrg"/>
+				<parameter name="@MjestaId" value="#cmbMjesto"/>
+				<parameter name="@naseljeid" value="#cmbNaselje"/>
+				<parameter name="@Adresa" value="#txtUlica"/>
+				<parameter name="@kucnibroj" value="#txtBroj"/>
+				<parameter name="@kucnibrojdodatak" value="#txtDodatak"/>
+				<parameter name="@Path" value="#txtPath"/>
+				<parameter name="@vrcjenikid" value="#cmbCjenik"/>
+				<parameter name="@VrstaTrg" value="#cmbVrstaTrg"/>
+				<parameter name="@ParAsortimanTipSifra" value="#cmbTip"/>
+				<parameter name="@ugoind" value="#cmbUgo"/>
+				<parameter name="@indfin" value="#cmbFina"/>
+				<parameter name="@indproi" value="#cmbProiz"/>
+				<parameter name="@maxkolicinaprodaje" value="#txtProd"/>
+				<parameter name="@Aktivno" value="#cheAkt"/>
+				<parameter name="@indMinus" value="#cheMin"/>
+				<parameter name="@radnisati" value="#txtSat"/>
+				<parameter name="@partneriid" value="#srcPartner"/>
+				<parameter name="@Parstruid" value="#cmbLoc"/>
+				<parameter name="@LokacijeId" value="#cmbNasLoc"/>
+				<parameter name="@NacinRazduzenja" value="#cmbRazd"/>
+				<parameter name="@TrgIzdavanje" value="#cmbVeza"/>
+				<parameter name="@ind_cij" value="#cmbMalo"/>
+				<parameter name="@ZakljucakTemplate" value="#txtZaklj"/>
+				<parameter name="@Template" value="#txtRac"/>
+				<parameter name="@KontoPrihod" value="#txtPrih"/>
+				<parameter name="@KontoRashod" value="#txtRash"/>
+				<parameter name="@KontoZaliha" value="#txtZal"/>
+				<parameter name="@KontoUPDV" value="#txtPdv"/>
+				<parameter name="@KontoRUC" value="#txtRuc"/>
+				<parameter name="@OsobeID" value="#cmbOsoba"/>
+				<parameter name="@Putanja" value="#txtPuta"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+			</data>			
+		</datalist>
+	</form>
+
+	<form name="frmPrijava" caption="Prijava trgovine">
+		<event type="init">
+			<action type="datarun reader" value="~dtPocetak"/>
+		</event>
+		<event type="load">
+		<action type="message" value="'Trgovina je odjavljena. Ne možete ju ponovno prijaviti !'" if="~dtPocetak.@aktivno==0">
+		</action>
+		</event>
+		<event type="shown">
+		<action type="form close" if="~dtPocetak.@aktivno==0">
+			</action>
+		</event>
+		
+		<layout>
+			<group rows="5" cols="3">
+				<item row="2" col="2" caption="Trgovina" textposition="left">
+					<textedit name="txtTrg" datavalue="~dtPocetak.@trgovina" enabled="false">
+					</textedit>
+				</item>
+				<item row="3" col="2" caption="Datum početka rada" textposition="left">
+					<dateedit name="datDatum" required="true" value="now" datavalue="~dtPocetak.@datumpocetka">
+					</dateedit>
+				</item>
+				<item row="4" col="2" caption="" >
+					<labeledit value="PAŽNJA !!! \nOvime prijavljujete početak rada trgovine u Poreznoj upravi." textposition="center">
+					</labeledit>
+				</item>
+				<rowsdefinition>
+					<row position="1" size="50%"></row>
+					<row position="2" size="30"></row>
+					<row position="3" size="30"></row>
+					<row position="4" size="100"></row>
+					<row position="5" size="50%"></row>
+				</rowsdefinition>
+				<columnsdefinition>
+					<column position="1" size="50%"></column>
+					<column position="2" size="400"></column>
+					<column position="2" size="50%"></column>
+				</columnsdefinition>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPrijavi" caption="Prijavi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtPrijavi1">
+						</action>
+						<action type="datarun nonquery" value="~dtPrijavi2">
+						</action>
+						<action type="datarun nonquery" value="~dtPrijavi3">
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnClose" caption="Odustani" dock="right" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="select opis as trgovina,datumpocetka, aktivno from trgovina where trgovinaid = @id"  type="text" name="dtPocetak">
+				<parameter name="@id" value="global.$Id"/>
+			</data>
+			<data command="update trgovina set datumpocetka = @datumpocetka, aktivno = 1 where trgovinaid = @id"  type="text" name="dtPrijavi1">
+				<parameter name="@id" value="global.$Id"/>
+				<parameter name="@datumpocetka" value="#datDatum"/>
+			</data>	
+			<data command="spMPTrgovineNG"   name="dtPrijavi2">
+				<parameter name="@action" value="17"/>
+				<parameter name="@gridmasterTrgovinaId" value="global.$Id"/>
+			</data>	
+			<data command="spMPTrgovineNG"   name="dtPrijavi3">
+				<parameter name="@action" value="20"/>
+				<parameter name="@trgovinaid" value="global.$Id"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+			</data>	
+		</datalist>
+	</form>
+
+	<form name="frmOdjava" caption="Odjava trgovine">
+		<event type="init">
+			<action type="datarun reader" value="~dtKraj"/>
+		</event>
+		<event type="load">
+		</event>
+		<event type="shown">
+		</event>
+		
+		<layout>
+			<group rows="5" cols="3">
+				<item row="2" col="2" caption="Trgovina" textposition="left">
+					<textedit name="txtTrg" datavalue="~dtKraj.@trgovina" enabled="false">
+					</textedit>
+				</item>
+				<item row="3" col="2" caption="Datum početka rada" textposition="left">
+					<dateedit name="datDatum" required="true" value="now">
+					</dateedit>
+				</item>
+				<item row="4" col="2" caption="" >
+					<labeledit value="PAŽNJA !!! \nOvime prijavljujete KRAJ rada trgovine u Poreznoj upravi. \nNakon ovoga ne možete više raditi račune u odabranoj trgovini." textposition="center">
+					</labeledit>
+				</item>
+				<rowsdefinition>
+					<row position="1" size="50%"></row>
+					<row position="2" size="30"></row>
+					<row position="3" size="30"></row>
+					<row position="4" size="100"></row>
+					<row position="5" size="50%"></row>
+				</rowsdefinition>
+				<columnsdefinition>
+					<column position="1" size="50%"></column>
+					<column position="2" size="400"></column>
+					<column position="2" size="50%"></column>
+				</columnsdefinition>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOdjavi" caption="Odjavi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtOdjavi1">
+						</action>
+						<action type="datarun nonquery" value="~dtOdjavi2">
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnClose" caption="Odustani" dock="right" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="select opis as trgovina, datumkraja, aktivno from trgovina where trgovinaid = @id"  type="text" name="dtKraj">
+				<parameter name="@id" value="global.$Id"/>
+			</data>
+			<data command="update trgovina set datumkraja = @datumkraja, aktivno = 0 where trgovinaid = @id"  type="text" name="dtOdjavi1">
+				<parameter name="@id" value="global.$Id"/>
+				<parameter name="@datumkraja" value="#datDatum"/>
+			</data>	
+			<data command="spMPTrgovineNG"   name="dtOdjavi2">
+				<parameter name="@action" value="17"/>
+				<parameter name="@gridmasterTrgovinaId" value="global.$Id"/>
+			</data>	
+		</datalist>
+	</form>
+
+</root>

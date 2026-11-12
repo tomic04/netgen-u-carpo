@@ -1,0 +1,75 @@
+<root>
+	<form name="frmKteStavke" caption="Kamatne stope" fixedsize="true" >
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" />
+			<action type="datarun reader" value="~dtGetUnos" />
+		</event>
+		<event type="load">
+			<action type="control disable" value="#txtVStopa"/>
+			<action type="control value" value="#cmbOsnovica">
+				<parameter value="~dtGet.@OsnOpis"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="form caption" value="Unos kamatne stope" if="$KteId==null"/>
+			<action type="form caption" value="Izmjena kamatne stope" else=""/>
+		</event>
+		<layout>
+			<group cols="1" rows="4" bordervisible="false" >
+				<item caption="Vrsta stopa:" col="1" row="1">
+					<textedit name="txtVStopa" datavalue="~dtGetUnos.@Opis"/>					
+				</item>
+				<item caption="Datum:" col="1" row="2" >
+					<dateedit name="datDatum" datavalue="~dtGet.@Datum"/>
+				</item>
+				<item caption="Stopa:" col="1" row="3" highlight="false" >
+					<textedit name="txtStopa" value="0" format="n2" datavalue="~dtGet.@Stopa"/>
+				</item> 
+				<item caption="Osnovica:" col="1" row="4" highlight="false" >
+					<comboedit name="cmbOsnovica" displayfield="OsnOpis" valuefield="OsnOpis" dataname="~dtGetOsn" datavalue="~dtGet.@OsnOpis"/>
+				</item> 		
+		   </group>       
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="&amp;SPREMI" dock="right">
+					<event type="click">
+						<!-- izmjena postojećeg -->
+						<action type="datarun nonquery" value="~dtStavkaAzur" if="$Action==1">
+							<action type="form close"/>
+						</action>
+						<!-- unos novog -->
+						<action type="datarun scalar" value="~dtStavkaAzur" else="">
+							<parameter name="NewId"/>
+						</action>
+						<action type="variable value" value="parent.$Id">
+							<parameter value="$NewId"/>
+						</action>
+						
+						<action type="form close"/>
+					</event>
+				</button>
+				<button caption="&amp;ODUSTANI" type="cancel" dock="right"/>
+		  </buttons>
+		</panelbuttons>
+			<datalist>
+				<data command="spCKteStopaQuery" name="dtGet">
+					<parameter name="@Action" value="1"/>
+					<parameter name="@Id" value="$KteId"/>
+				</data>
+				<data command="spCKteVrsteStopaQuery" name="dtGetUnos">
+					<parameter name="@Action" value="1"/>
+					<parameter name="@Id" value="$VrstaKteId"/>
+				</data>
+					<data command="spCKteStopaAzur" name="dtStavkaAzur">
+					<parameter name="@Action" value="$Action"/>
+					<parameter name="@ID" value="$KteId" if="$Action==1"/>
+					<parameter name="@KteVrsteStopaID" value="$VrstaKteId"/>
+					<parameter name="@Datum" value="#datDatum"/>
+					<parameter name="@Stopa" value="#txtStopa"/>
+					<parameter name="@OsnOpis" value="#cmbOsnovica"/>
+				</data>
+				<data command="select 'godišnja' as OsnOpis union all select 'mjesečna'" name="dtGetOsn" type="text"/>
+			</datalist>
+	</form>
+</root>

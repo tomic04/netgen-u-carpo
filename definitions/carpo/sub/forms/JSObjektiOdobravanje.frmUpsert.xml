@@ -1,0 +1,255 @@
+<root>
+	<form name="frmUpsert" caption="$Caption">
+		<method name="pozivIkona" dll="JupiterResources" class="JupiterResources.JupiterIcons" method="Start" />
+		<event type="oninit">
+			<action type="variable value" value="global.Tip">
+				<parameter value="$Tip" />
+			</action>
+			<action type="variable value" value="global.NovaRobaId">
+				<parameter value="null" />
+			</action>
+			<action type="datarun reader" value="~datGet" if="$JupiterObjectId!=null" />
+			<action type="variable value" if="$JupiterObjectId!=null">
+				<parameter name="RobaId" value="#datGet.@RobaId" />
+			</action>
+			<action type="variable value" if="$JupiterObjectId!=null">
+				<parameter name="Cijena" value="#datGet.@Cijena" />
+			</action>
+			<action type="variable value">
+				<parameter name="Ikona" value="#datGet.@Ikona" />
+			</action>
+			<action type="datarun reader" value="~dtIkona" />
+		</event>
+		<event type="shown">
+			<action type="control attribute" value="#picIkona">
+				<parameter name="dbimg" value="~dtIkona.@Img" />
+			</action>
+			<action type="control disable" value="#txtKomOpis, #txtCijena" if="#srcRoba==null" />
+			<action type="control enable" value="#txtKomOpis, #txtCijena" else="" />
+			<action type="control disable" value="#cmbOperater" if="$JupiterObjectId==null" />
+		</event>
+		<layout>
+			<group rows="10" cols="3">
+				<columnsdefinition>
+					<column size="60%" position="1" />
+					<column size="20%" position="2" />
+					<column size="20%" position="3" />
+				</columnsdefinition>
+				<item col="1" row="1" caption="Naziv:" colspan="3">
+					<textedit name="txtNaziv" required="true" datavalue="#datGet.@Naziv" />
+				</item>
+				<item col="1" row="2" caption="Parametar:" colspan="3">
+					<textedit name="txtParametar" required="true" datavalue="#datGet.@Parametar" />
+				</item>
+				<item col="1" row="3" caption="Ikona:">
+					<textedit name="txtIkona" datavalue="#datGet.@Ikona" />
+				</item>
+				<item col="2" row="3" caption="">
+					<pictureedit name="picIkona" dbimg="~dtIkona.@Img" />
+				</item>
+				<item col="3" row="3" caption="Odabir ikona">
+					<button name="ikone" caption="ODABIR IKONA">
+						<event type="click">
+							<action type="method run" value="pozivIkona">
+								<parameter name="server" value="@@server" />
+								<parameter name="username" value="@@uid" />
+								<parameter name="password" value="@@pwd" />
+							</action>
+							<action type="variable value" if="##pozivIkona.@IconName!=''">
+								<parameter name="Ikona" value="##pozivIkona.@IconName" />
+							</action>
+							<action type="control value" value="#txtIkona">
+								<parameter value="$Ikona" />
+							</action>
+							<action type="datarun reader" value="~dtIkona" />
+							<action type="control attribute" value="#picIkona">
+								<parameter name="dbimg" value="~dtIkona.@Img" />
+							</action>
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="$JupiterObjectId" type="int" />
+							</action>
+						</event>
+					</button>
+				</item>
+				<group col="1" row="4" cols="2" rows="1" colspan="3" groupbordervisible="false">
+					<columnsdefinition>
+						<column size="100" position="1" />
+					</columnsdefinition>
+					<item col="1" row="1" caption="Nivo složenosti:">
+						<textedit name="txtNivoSlozenosti" datavalue="#datGet.@NivoSlozenosti" maxlength="2" tooltip="tekst tooltip..." />
+					</item>
+				</group>
+				<item col="1" row="5" colspan="3" caption="Roba:" highlight="false">
+					<searchedit name="srcRoba" datavalue="~datGet.@RobaId" datatext="~datGet.@Roba" dataname="">
+						<event type="keydown">
+							<action if="key==13">
+								<action type="form open" value="frmRobaTrazilica">
+									<parameter name="Naziv" value="#srcRoba.text" />
+									<parameter name="Kontrola" value="1" />
+									<parameter name="Objekt" value="#txtNaziv" />
+								</action>
+								<action type="datarun reader" value="~dtGetRoba" />
+								<action type="control value" value="#txtKomOpis">
+									<parameter value="~dtGetRoba.@memo" />
+								</action>
+								<action type="control value" value="#txtCijena">
+									<parameter value="~dtGetRoba.@cijena" />
+								</action>
+								<action type="variable value" value="$Cijena">
+									<parameter value="~dtGetRoba.@cijena" />
+								</action>
+								<action type="control disable" value="#txtKomOpis, #txtCijena" if="#srcRoba==null" />
+								<action type="control enable" value="#txtKomOpis, #txtCijena" else="" />
+							</action>
+						</event>
+					</searchedit>
+				</item>
+				<item col="1" row="6" caption="Opis:" colspan="3">
+					<memoedit name="txtOpis" datavalue="#datGet.@Opis" />
+				</item>
+				<item col="1" row="7" caption="Komercijani opis:" colspan="3">
+					<memoedit name="txtKomOpis" datavalue="#datGet.@OpisKom" />
+				</item>
+				<item col="1" row="8" colspan="3" caption="Cijena:" highlight="false">
+					<textedit name="txtCijena" maxlength="20" datavalue="~datGet.@Cijena" format="n2">
+					</textedit>
+				</item>
+				<item col="1" row="9" caption="Operater unosa:" highlight="false">
+					<comboedit name="cmbOperater" dataname="dtOperater" valuefield="OperateriId" displayfield="Operater" datavalue="~datGet.@OperateriId" datatext="~datGet.@Operater" />
+				</item>
+				<item col="2" row="9" colspan="2" caption="Datum unosa:" highlight="false">
+					<textedit name="txtDatum" datavalue="~datGet.@DatumUnosa" readonly="true" formatstring="dd.MM.yyyy. HH:mm">
+					</textedit>
+				</item>
+				<item col="1" row="10" caption="Operater odobravanja:" highlight="false">
+					<textedit name="txtOperaterOdobravanja" datavalue="~datGet.@OperaterOdobravanja" readonly="true">
+					</textedit>
+				</item>
+				<item col="2" row="10" colspan="2" caption="Datum odobravanja:" highlight="false">
+					<textedit name="txtDatumOdobravanja" datavalue="~datGet.@Datumodobravanja" readonly="true" formattype="datetime" format="dd.MM.yyyy">
+					</textedit>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI" dock="left">
+					<event type="click">
+						<action type="validate" />
+						<action if="$JupiterObjectId!=null">
+							<action type="datarun nonquery" value="~dtEdit" />
+							<action type="datarun nonquery" value="~dtRobaOpis" if="#txtKomOpis!=null" />
+							<action type="datarun nonquery" value="~dtCijena" if="#txtCijena!=null" />
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="$JupiterObjectId" type="int" />
+							</action>
+							<action type="control populate" value="parent.#grdMaster" />
+						</action>
+						<action else="">
+							<action type="datarun scalar" value="~dtAdd" />
+							<action type="datarun nonquery" value="~dtRobaOpis" />
+							<action type="datarun nonquery" value="~dtCijena" />
+							<action type="control populate" value="parent.#grdMaster" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right">
+					<event type="click">
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spJSObjektiQuery" name="datGet">
+				<parameter name="@action" value="5" />
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+			</data>
+			<data command="spJSObjektiQuery" name="dtGetRoba">
+				<parameter name="@action" value="7" />
+				<parameter name="@RobaId" value="global.$NovaRobaId" />
+			</data>
+			<data command="spJSObjektiAzur" name="dtAdd" if="#srcRoba==null">
+				<parameter name="@action" value="1" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@Parametar" value="#txtParametar" />
+				<parameter name="@Ikona" value="#txtIkona" />
+				<parameter name="@Memo" value="#txtOpis" />
+				<parameter name="@OperateriId" value="@@OperateriId" />
+				<parameter name="@NivoSlozenosti" value="#txtNivoSlozenosti" />
+			</data>
+			<data command="spJSObjektiAzur" name="dtAdd" if="#srcRoba!=null">
+				<parameter name="@action" value="2" />
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@Parametar" value="#txtParametar" />
+				<parameter name="@Ikona" value="#txtIkona" />
+				<parameter name="@Memo" value="#txtOpis" />
+				<parameter name="@RobaId" value="#srcRoba" />
+				<parameter name="@OperateriId" value="@@OperateriId" />
+				<parameter name="@NivoSlozenosti" value="#txtNivoSlozenosti" />
+			</data>
+			<data command="spJSObjektiAzur" name="dtEdit" if="$RobaId==null&amp;&amp;#srcRoba==null">
+				<parameter name="@action" value="3" />
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@Parametar" value="#txtParametar" />
+				<parameter name="@Ikona" value="#txtIkona" />
+				<parameter name="@Memo" value="#txtOpis" />
+				<parameter name="@NivoSlozenosti" value="#txtNivoSlozenosti" />
+				<parameter name="@OperaterId" value="#cmbOperater" />
+			</data>
+			<data command="spJSObjektiAzur" name="dtEdit" if="$RobaId!=null">
+				<parameter name="@action" value="4" />
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@Parametar" value="#txtParametar" />
+				<parameter name="@Ikona" value="#txtIkona" />
+				<parameter name="@Memo" value="#txtOpis" />
+				<parameter name="@RobaId" value="#srcRoba" />
+				<parameter name="@NivoSlozenosti" value="#txtNivoSlozenosti" />
+				<parameter name="@OperaterId" value="#cmbOperater" />
+			</data>
+			<data command="spJSObjektiAzur" name="dtEdit" if="$RobaId==null&amp;&amp;#srcRoba!=null">
+				<parameter name="@action" value="5" />
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@Parametar" value="#txtParametar" />
+				<parameter name="@Ikona" value="#txtIkona" />
+				<parameter name="@Memo" value="#txtOpis" />
+				<parameter name="@RobaId" value="#srcRoba" />
+				<parameter name="@OperateriId" value="@@OperateriId" />
+				<parameter name="@NivoSlozenosti" value="#txtNivoSlozenosti" />
+				<parameter name="@OperaterId" value="#cmbOperater" />
+			</data>
+			<data name="dtSearchRoba" command="spTraziRoba">
+				<parameter name="@Action" value="Roba" />
+				<parameter name="@uvjet" value="#srcRoba.text" />
+			</data>
+			<data command="spJSObjektiAzur" name="dtRobaOpis">
+				<parameter name="@Action" value="6" />
+				<parameter name="@RobaId" value="#srcRoba" />
+				<parameter name="@Opis" value="#txtKomOpis" />
+			</data>
+			<data command="spJSObjektiQuery" name="dtIkona">
+				<parameter name="@action" value="8" />
+				<parameter name="@Ikona" value="$Ikona" />
+			</data>
+			<data command="spJSObjektiAzur" name="dtCijena" if="$Cijena==null">
+				<parameter name="@Action" value="7" />
+				<parameter name="@Cijena" value="#txtCijena" />
+				<parameter name="@RobaId" value="#srcRoba" />
+				<parameter name="@OperateriId" value="@@OperateriId" />
+			</data>
+			<data command="spJSObjektiAzur" name="dtCijena" if="$Cijena!=null&amp;&amp;$Cijena!=#txtCijena">
+				<parameter name="@Action" value="8" />
+				<parameter name="@Cijena" value="#txtCijena" />
+				<parameter name="@RobaId" value="#srcRoba" />
+				<parameter name="@OperateriId" value="@@OperateriId" />
+			</data>
+			<data command="spJSObjektiQuery" name="dtOperater">
+				<parameter name="@Action" value="12" />
+			</data>
+		</datalist>
+	</form>
+</root>

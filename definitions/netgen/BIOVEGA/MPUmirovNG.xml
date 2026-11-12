@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+
+<PROJECT  
+	BUTTONS="Parametri:FILTERFORM#Sve trgovine:SVETRGOVINE#Umirovi:UMIROVLJENJE#Aktiraj:AKTIVIRAJ#Kartica:KARTICA"
+	POPUPMASTER="Umirovi:UMIROVLJENJE" 
+	MASTERDBLCLICK="KARTICA"
+	GROUPBYBOXVISIBLE="TRUE" 
+	ONLOAD=":FILTERFORM" 
+	CHECKBOXVISIBLE="FALSE"
+	TOTALROWVISIBLE="TRUE"
+	COMMANDTIMEOUT="300"
+	REPORT=""
+  PAGEHEADERLEFT=""
+   PAGEHEADERRIGHT="@@tkosmomi"
+   SETDEFAULTS="select dbo.fnTkoSmoMi() as tkosmomi">
+
+	
+<NAME>Umirovljenje robe u trgovini</NAME>
+<CAPTION>Umirovljenje robe u trgovini</CAPTION>
+
+
+<FILTERFORM 
+	NAME="FILTERFORM" 
+	HEIGHT="3600" WIDTH="7000" 
+	REFRESHAFTERCHILD="TRUE" 
+	CAPTION="Upišite uvjete prikaza" 
+	ONLOAD="select @@trgovinaid as trgovinaid, @@umirovljen as umirovljen, @@dana as dana" 
+	ONSUBMIT="spMPUmiroviRobuNG @action = 100, "
+	FILLEXPLORER="TRUE" 
+	CMD1CAPTION="Pokaži" 
+	CMD2CAPTION="Odustani">
+	
+	<INPUT TYPE="combo" NAME="trgovinaid" CAPTION="Trgovina:*" TOP="300" LEFT="1500" HEIGHT="320" WIDTH="3500" ALLOWEMPTY="FALSE"
+		   SQL="spMPDajTrgovinaNG @operateriid = @@operateriid"/>
+	<INPUT TYPE="search" NAME="robaid" CAPTION="Roba:*" TOP="700" LEFT="1500" WIDTH="5000" HEIGHT="320"
+		   SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid'"/>
+	<INPUT TYPE="combo" NAME="umirovljen" CAPTION="Status robe:*" TOP="1100" LEFT="1500" HEIGHT="320" WIDTH="3500" ALLOWEMPTY="TRUE"
+		   SQL="select 1 as umirovljen,&apos;Umirovljena&apos; as naziv union all select 2 as umirovljen,&apos;Aktivna&apos; as naziv union all select 3 as umirovljen,&apos;Umirovljena u svim trgovinama&apos; as naziv"/>
+	<INPUT TYPE="label" NAME="labelpromet" CAPTION="Roba bez prometa u " TOP="2000" LEFT="1500" HEIGHT="320"  WIDTH="1500"/>
+	<INPUT TYPE="number" NAME="dana" CAPTION="" TOP="1950" LEFT="3100" HEIGHT="320" WIDTH="500" DECIMALS="0"  />
+	<INPUT TYPE="label" NAME="labeldana" CAPTION="dana" TOP="2000" LEFT="3600" HEIGHT="320"  WIDTH="500" />
+	<INPUT TYPE="check" NAME="stanje" CAPTION="Samo roba sa stanjem 0" TOP="2400" LEFT="3100" HEIGHT="320" WIDTH="500" DECIMALS="0"  />
+</FILTERFORM>
+
+	
+<UMIROVLJENJE 
+	NAME="UMIROVLJENJE" 
+	HEIGHT="3300" WIDTH="7500"
+	REFRESHAFTERCHILD="TRUE" 
+	CAPTION="Umirovljenje robe" 
+	ONSUBMIT="spMPUmiroviRobuNG @action = 1, @robaid=@@id, @trgovinaid =  @@trgovinaid,"
+	ONLOAD="select r.robaid, r.userid, r.naziv as naziv, @@trgovinaid as trgovinaid from roba r where robaid =@@id" 
+	CMD1CAPTION="Spremi" 
+	CMD2CAPTION="Odustani">
+
+	<INPUT TYPE="label" NAME="Label24" TOP="200" LEFT="500" HEIGHT="320" WIDTH="2000" CAPTION="Želite li umiroviti artikal ?"/>
+	<INPUT TYPE="text" NAME="userid" TOP="600" LEFT="500" HEIGHT="320" WIDTH="500" CAPTION="Šifra*" ENABLED="FALSE"/>
+	<INPUT TYPE="text" NAME="naziv" TOP="1000" LEFT="500"	HEIGHT="320" WIDTH="5000" CAPTION="Naziv robe*" ENABLED="FALSE"/>
+</UMIROVLJENJE>
+
+
+<AKTIVIRAJ 
+	NAME="UMIROVLJENJE" 
+	HEIGHT="3300" WIDTH="7500"
+	REFRESHAFTERCHILD="TRUE" 
+	CAPTION="Umirovljenje robe" 
+	ONSUBMIT="spMPUmiroviRobuNG @action = 2,@robaid=@@id, @trgovinaid = @@trgovinaid,"
+	ONLOAD="select r.robaid, r.userid, r.naziv as naziv, @@trgovinaid as trgovinaid  from roba r where robaid =@@id" 
+	CMD1CAPTION="Spremi" 
+	CMD2CAPTION="Odustani">
+
+	<INPUT TYPE="label" NAME="Label24" TOP="130" LEFT="500"	HEIGHT="320" WIDTH="2000" CAPTION="Želite li aktivirati artikal ?"/>
+	<INPUT TYPE="text" NAME="userid" TOP="893" LEFT="500" HEIGHT="320" WIDTH="500"	CAPTION="Šifra*" ENABLED="FALSE"/>
+	<INPUT TYPE="text" NAME="naziv" TOP="1253" LEFT="500" HEIGHT="320" WIDTH="5000" CAPTION="Naziv robe*" ENABLED="FALSE"/>
+</AKTIVIRAJ>
+
+
+<KARTICA 	
+	FILLEXPLORER="TRUE" 
+	WIDTH="15000" 
+	HEIGHT="9500" 
+	CAPTION="Kartica robe" 
+	CMD1CAPTION="" 
+	CMD2CAPTION="Kraj">
+
+	<INPUT TYPE="grid" 
+		   NAME="grid1" 
+		   REFRESHAFTERCHILD="TRUE" 
+		   TOP="200" LEFT = "200" WIDTH="14500" HEIGHT="8000"
+		   SQL="spMPStanjeKarticaNG @action = 1, @robaid= @@robaid, @trgovinaid=@@trgovinaid, @operateriid = @@operateriid ,@totalgen=1, @godina = @@godina" />
+</KARTICA>
+
+
+<SVETRGOVINE 
+	FILLEXPLORER="TRUE" 
+	WIDTH="15000" 
+	HEIGHT="9500" 
+	CAPTION="Stanje u svim trgovinama">
+
+	<INPUT TYPE="grid" 
+		   NAME="svetrg" 
+		   REFRESHAFTERCHILD="TRUE" 
+		   TOP="200" LEFT = "200" WIDTH="14500" HEIGHT="8000" 
+		   SQL="spMPUmiroviRobuNG @action = 101, @robaid = @@id" />
+	
+	<INPUT TYPE="button" NAME="ok" CAPTION="Umirovi" TOP="8500" LEFT="500" WIDTH="1100" HEIGHT="320" 
+		   ONCLICK="FOREACHSELECTED(svetrg)#spMPUmiroviRobuNG @action = 1,@robaid=@@id, @trgovinaid =  @(svetrg..trgovinaid)#Ok"/>
+	<INPUT TYPE="button" NAME="ok1" CAPTION="Aktiviraj" TOP="8500" LEFT="2000" WIDTH="1106" HEIGHT="320" 
+		   ONCLICK="FOREACHSELECTED(svetrg)#spMPUmiroviRobuNG @action = 2,@robaid=@@id, @trgovinaid =  @(svetrg..trgovinaid)#Ok"/>
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="8500" LEFT="4000" WIDTH="1106" HEIGHT="320" ONCLICK="close"  />
+</SVETRGOVINE>
+
+</PROJECT>
+
+

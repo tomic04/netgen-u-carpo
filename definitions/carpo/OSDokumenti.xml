@@ -1,0 +1,228 @@
+﻿
+
+<root version="1.0">
+  <form name="frmDokumenti" type="master" caption="Dokumenti" width="1000" height="800">
+
+    <managerlayout textposition="left">
+      <grid name="grdDokumenti" type="master" dataname="dtDokumenti" showautofilterrow="false" bestfitonrefresh="true">
+        <fields inherited="true">
+          <field name="Naziv" caption="Vrsta dokumenta" />
+          <!--<field name="VrstaP" caption="Vrsta prometa" />-->
+          <field name="KolicinaI" caption="Količina izlaz" />
+          <field name="KolicinaU" caption="Količina ulaz" />
+          <field name="NabavaD" caption="Nabava duguje" />
+          <field name="NabavaP" caption="Nabava potražuje" />
+          <field name="OtpisD" caption="Otpis duguje" />
+          <field name="OtpisP" caption="Otpis potražuje" />
+          <field name="Osoba" caption="Osoba" />
+          <field name="Smjestaj" caption="Smještaj" />
+          <field name="UlazniRacun" caption="Ulazni račun" />
+          <field name="IndikatorSmjestaja" caption="Smještaj" />
+        </fields>
+      </grid>
+    </managerlayout>
+    
+    <panelbuttons>
+      <buttons>
+        <!--GUMB UNESI-->
+        <button name="btnUnesi" caption="Unos novog dokumenta" type="add" function="UnesiDokumenti">
+          
+          <event type="click">
+            <action type="form open" value="frmPromjena">
+              <parameter name="caption" value="Unos novog dokumenta"  />              
+            </action>
+          </event>
+        </button>
+        <!--GUMB IZMIJENI-->
+        <button name="btnIzmijeni" caption="Izmjena dokumenta" type="edit" function="IzmijeniDokumenti">
+          
+          <event type="click">
+            <action type="form open" value="frmPromjena">
+              <!--ovdje salje id doprinosa sa grida ukoliko je kliknut gumb izmijeni-->
+              <!--salje i indikator koji govori koji će paneli biti prikazani-->
+              <parameter name="OsDokumentiId" value="#grdDokumenti.@OsDokumentiId" />
+              <parameter name="Sakrij" value="#grdDokumenti.@IndSakrijId"></parameter>
+              <parameter name="caption" value="Izmjena dokumenta"  />
+            </action>
+            <action type="control populate keepfocus" value="#grdDokumenti" />
+          </event>
+        </button>
+        <!--GUMB OBRIŠI-->
+        <button name="btnBrisi" caption="Brisanje dokumenta" type="delete" function="ObrisiDokumenti">
+          
+          <event type="click">
+            <action type="confirm" value="Da li ste sigurni da želite obrisati označeni dokument?">
+              <action type="datarun nonquery" value="~dtDelete"></action>
+            </action>
+            <action type="control populate" value="#grdDokumenti"></action>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    
+    <datalist>
+      <data command="spOSDokumentiQueryCP" name="dtDokumenti">
+        <parameter name="@Action" value="grid" type="string"/>
+      </data>
+      <data command="spOSDokumentiAzurCP" name="dtDelete">
+        <parameter name="@action" value="brisanje" />
+        <parameter name="@OsDokumentiId" value="#grdDokumenti.@OsDokumentiId" type="int" />
+      </data>
+    </datalist>
+  </form>
+
+
+  <!--LAYOUT FORMA ZA UNOS/BRISANJE/IZMJENU DOPRINOSA-->
+  <form name="frmPromjena" caption="$caption" height="435"  width="400" template="splitter vertical" splitterfixed="true">
+    <event type="init">
+      <!--ovaj init služi da pokupi podatke s grida ukoliko je nešto odabrano i kliknut će se na gumb izmijeni-->
+      <!--dtget.naziv kupi popunjene podatke sa master grida-->
+      <action type="datarun reader" value="~dtGet" if="$OsDokumentiId!=null"/>
+    </event>
+    
+    <event type="load">
+          <action type="control disable" value="#cmbNaziv" if="$OsDokumentiId!=null" />
+          <action type="control enable" value="#cmbNaziv"  else="" />
+        </event>
+    <!--splitteri koji crtaju formu ovisno o indikatoru nakon izbora dokumenta-->
+    <event type="shown">
+      <!--action koji se poziva ukoliko je unos u pitanju--> 
+      <action type="datarun scalar" value="~dtNazivPrvi">
+        <parameter name="VrstaPrvi"/>
+      </action>
+      <!--ukoliko se radi o unosu i ID je null, onda se inicijalno postavlja na prvi dokument iz tablice osdokumenti-->
+      <action type="control value" value="#cmbNaziv" if="$OsDokumentiId==null" >
+        <parameter value="$VrstaPrvi"/>
+      </action>
+      <!--forma od dvije grupe je rastavljena u dva layouta panel 1 i panel 2-->
+      <!--ukoliko je indikator 1 prikazat će se samo panel 1, ukoliko je 0 onda svi-->
+      <action type="panel visible" value="panel1" if="$Sakrij==1"></action>
+      <action type="panel visible" value="all" elseif="$Sakrij==0"></action>
+      <!--<action type="panel visible" value="panel1" if="$Sakrij==1"></action>-->
+    </event>
+    <!--panel 1 je zapravo prva grupa koja se pokazuje u svakom slučaju-->
+    <layout name="panel1">
+      <group  backgroundcolor="white"  bordervisible="false" caption="Grupa" rows="8" cols="1">
+        <item caption="Naziv:" col="1" row="1"  >
+          <!--valuefield je potreban da se iz comba pozicionira na red koji se mijenja-->
+          <comboedit name="cmbNaziv" datavalue="~dtGet.@VrstaDokId" valuefield="VrstaDokId" displayfield="Naziv" dataname="dtNaziv" required="true">
+            <event type="valuechanged">
+              <!--event koji određuje što će se prikazati u combu-->
+              <action type="panel visible" value="panel1" if="#cmbNaziv.@IndSakrijId==1"></action>
+              <action type="panel visible" value="all" else=""></action>
+            </event>
+          </comboedit>
+        </item>
+        <item  col="1" row="2">
+          <checkedit caption="Količina izlaz" name="chkKolicinaI" datavalue="~dtGet.@KolicinaI" />
+        </item>
+        <item  col="1" row="3">
+          <checkedit caption="Količina ulaz" name="chkKolicinaU" datavalue="~dtGet.@KolicinaU" />
+        </item>
+        <item  col="1" row="4">
+          <checkedit caption="Nabava duguje" name="chkNabavaD" datavalue="~dtGet.@NabavaD" />
+        </item>
+        <item  col="1" row="5">
+          <checkedit caption="Nabava potražuje" name="chkNabavaP" datavalue="~dtGet.@NabavaP" />
+        </item>
+        <item  col="1" row="6">
+          <checkedit caption="Otpis duguje" name="chkOtpisD" datavalue="~dtGet.@OtpisD" />
+        </item>
+        <item  col="1" row="7">
+          <checkedit caption="Otpis potražuje" name="chkOtpisP" datavalue="~dtGet.@OtpisP" />
+        </item>
+        <item  col="1" row="8">
+          <checkedit caption="Ulazni račun" name="chkUlazniRacun" datavalue="~dtGet.@UlazniRacun" />
+        </item>
+      </group>
+    </layout>
+    <layout name="panel2">
+      <group  caption="Vrsta smještajnog dokumenta:" backgroundcolor="white"  bordervisible="true" rows="3" cols="1">
+        <item  col="1" row="1" >
+          <radioedit  caption="Ulazni" name="rdoUlaz" groupindex="1" datavalue="#dtGet.@IndUlaz">
+          </radioedit>
+        </item>
+        <item  col="1" row="2" >
+          <radioedit  caption="Prezaduženje" name="rdoPrezad" groupindex="1" datavalue="#dtGet.@IndPrezad">
+          </radioedit>
+        </item>
+        <item  col="1" row="3" >
+          <radioedit caption="Izlazni" name="rdoIzlaz" groupindex="1" datavalue="#dtGet.@IndIzlaz">
+          </radioedit>
+        </item>
+      </group>
+    </layout>
+    
+
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="Spremi" type="add">
+          <event type="click">
+            <!-- Provjeri required fields -->
+            <action type="validate" />
+            <!-- Okini storu -->
+            <!--ukoliko je id null onda ide action add, ukoliko nije onda edit-->
+            <action type="datarun nonquery" value="~dtEdit" if="$OsDokumentiId!=null"/>
+            <action type="datarun nonquery" value="~dtAdd" else="" />
+            <!-- Osvježi grid na parent formi -->
+            <action type="form close"></action>
+            <action type="control populate" value="parent.#grdDokumenti"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Odustani" type="cancel" dock="right"/>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <!--punjenje comba vrsta-->
+      <data command="spOSDokumentiQueryCP" name="dtNaziv">
+        <parameter name="@Action" value="combo_vrsta" />
+
+        <parameter name="@OsDokumentiId" value="$OsDokumentiId"/>
+      </data>
+      <!--action koji se poziva ukoliko je unos u pitanju- onda se combo postavlja na prvi id iz tablice-->
+      <data command="spOSDokumentiQueryCP" name="dtNazivPrvi">
+        <parameter name="@Action" value="combo_vrsta_prviId" />
+      </data>
+      <!--okidanje store i unos novih podataka u bazu-->
+      <data command="spOSDokumentiAzurCP" name="dtAdd">
+        <parameter name="@Action" value="unos"/>
+        <parameter name="@VrstaDokId" value="#cmbNaziv"/>
+        <parameter name="@KolUlaz" value="#chkKolicinaI"/>
+        <parameter name="@KolIzlaz" value="#chkKolicinaI"/>
+        <parameter name="@NabavaDug" value="#chkNabavaD"/>
+        <parameter name="@NabavaPot" value="#chkNabavaP"/>
+        <parameter name="@OtpisDug" value="#chkOtpisD"/>
+        <parameter name="@OtpisPot" value="#chkOtpisP"/>
+        <parameter name="@UlazniRacun" value="#chkUlazniRacun"/>
+        <parameter name="@Ind" value="Z" if="#rdoUlaz==true"/>
+        <parameter name="@Ind" value="P" if="#rdoPrezad==true"/>
+        <parameter name="@Ind" value="R" if="#rdoIzlaz==true"/>
+      </data>
+      <!--update podataka s obzirom da proslijeđeni id-->
+      <data command="spOSDokumentiAzurCP" name="dtEdit">
+        <parameter name="@Action" value="izmjena"/>
+        <parameter name="@OsDokumentiId" value="$OsDokumentiId"/>
+        <parameter name="@KolUlaz" value="#chkKolicinaI"/>
+        <parameter name="@KolIzlaz" value="#chkKolicinaI"/>
+        <parameter name="@NabavaDug" value="#chkNabavaD"/>
+        <parameter name="@NabavaPot" value="#chkNabavaP"/>
+        <parameter name="@OtpisDug" value="#chkOtpisD"/>
+        <parameter name="@OtpisPot" value="#chkOtpisP"/>
+        <parameter name="@UlazniRacun" value="#chkUlazniRacun"/>
+        <parameter name="@Ind" value="Z" if="#rdoUlaz==true"/>
+        <parameter name="@Ind" value="P" if="#rdoPrezad==true"/>
+        <parameter name="@Ind" value="R" if="#rdoIzlaz==true"/>
+      </data>
+      <!--ovaj data kupi id izabranog reda-->
+          
+      <data command="spOSDokumentiQueryCP" name="dtGet">
+        <parameter name="@Action" value="dok_query" />
+        <parameter name="@OsDokumentiId" value="$OsDokumentiId" />
+      </data>
+    </datalist>
+
+  </form>
+
+</root>

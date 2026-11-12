@@ -1,0 +1,1737 @@
+<!--ISKLJUČITI TEMP BUGFIX SUME NA GRUPAMA nakon postavljanja novije verzije Carpa -->
+
+<!--12.12.2023. AA ugrađen .NET PartneriInfo-->
+<!--5.4.2023. SV spCKntTrenutnoStanjePartneraKntOstalo timeout="1000"  HD81301-->
+<!--1.6.2022. AA KupPreglednik umjesto DMS formice-->
+<!--28.4.2022. AA uvela permission za gumb Račun po Ireks zahtjevu-->
+<!--17.12.2021. SV TEMP BUGFIX SUME NA GRUPAMA-->
+<!--8.9.2020. AA frmKonto Opis HD 59454-->
+<!--31.7.2020. AA ispravljen uvjet za SubAction-->
+<!--13.07.2020. IF frmSvaKonta dodano saveformsize="true"-->
+<!--13.07.2020. IF expandallonload="true" -->
+<!--14.4.2020. AA frmSvaKonta uklonjeno default grupiranje i uvjeti kako bi mogao funkcionirati savelayout HD 53814, po potrebi dodati partsql -->
+<!--31.1.2020. AA customsort samo na field HD 52629-->
+<!--23.12.2019. AA ispis s forme Fakturaracun-->
+<!--4.3.2019. AA dodan frmDMS - za Spin preko KupSkenerId-->
+<!--10.9.2018. AA uklonila kolone kontodug i kontopot u frmKonto (slaven bug)-->
+<!--za pravo puštanje, otkomentirati direktnu putanju do Kartice konta-->
+<!--22.5.2018. AA dodala control focus na grid nakon klika na sve buttone-->
+<!--3.4.2018. AA dodan savelayout-->
+<!--v 1.0.0. početna verzija-->
+<root loglevel="3" version="1.0.1.">
+	<form name="frmPonudaEdit" path="Ponuda.frmPonudaEdit.xml"/>
+	<form name="frmPromijeniStatus" path="Ponuda.frmPromijeniStatus.xml"/>
+	<form name="frmDMS" path="KnjigaUra.frmDMS.xml"/>	
+	<form name="frmGlavni" type="master" caption="Stanje partnera">
+		<method name="CarpoKarticaKonta" dll="Carpo" class="Carpo.Gen.Start" method="Run"/>
+		<method name="CarpoPartneriInfo" dll="Carpo" class="Carpo.Gen.Start" method="Run"/>
+		<method name="abcAnal" dll="AbcAnaliza" class="AbcAnaliza.CarpoStart" method="Start"/>
+		<method name="parInfo" dll="PartnerInfo" class="PartnerInfo.frmPartnerInfoMain" method="Open"/>
+		<event type="init">
+			<action type="datarun reader" value="~dtDan"/>
+		</event>
+		<event type="load">
+			<action type="variable value" >
+				<parameter name="Ind" value="0" type="int"/>
+			</action>
+			<action type="variable value">
+				<parameter name="global.DatumOd" value="~dtDan.@prvidan"/>
+			</action>
+			<action type="variable value">
+				<parameter name="global.DatumDo" value="~dtDan.@zadnjidan"/>
+			</action>
+		</event>	
+		<event type="shown">
+			<!-- <action type="control disable" value="#btnPartner"/>	 -->
+			<action type="control focus" value="#grdGlavni"/>
+		</event>
+		<managerlayout>
+			<lookup name="filter" savevalue="app">
+				<comboitem value="Klasifikacija partnera"/>
+				<comboitem value="Zemljovid"/>
+				<event type="valuechanged">
+					<action type="control focus" value="#trDrvo">
+						<parameter value="$Ind" type="int"/>
+					</action>
+				</event>	
+			</lookup>
+			<tree name="trDrvo" dataname="~dtDrvo" key="id" valuefield="KlPartneriID" expandedlevel="1">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlavni"/>
+				</event>
+				<fields>
+					<field name="Naziv"/>
+				</fields>
+			</tree>
+			<grid name="grdGlavni" customsort="nullaszero" dataname="~dtGlavni" type="master" bestfitonrefresh="true" showfooter="true"  multiselect="true" key="PartneriId" savelayout="true">
+				<event type="doubleclick">
+					<action if="#grdGlavni.focusedfield!=Naziv&amp;&amp;#grdGlavni.focusedfield!=Sifra&amp;&amp;#grdGlavni.focusedfield!=kUKP&amp;&amp;#grdGlavni.focusedfield!=99999999&amp;&amp;#grdGlavni.focusedfield!=k_limit">
+						<action type="variable value">
+							<parameter name="Konto" value="#grdGlavni.focusedfield"/>
+						</action>
+						<action type="datarun reader" value="~dtKonto"/>
+						<action type="method run" value="CarpoKarticaKonta">
+							<!-- za testiranje -->
+							<!-- <parameter name="moduleid" value="D:\puštanje paketa\KarticaKonta Carpo\KarticaKonta.xml"/> -->
+							<parameter name="moduleid" value="KarticaKonta.xml"/>
+							<parameter name="global.IndikatorGranulaPrevara" type="var" valuetype="int" value="1"/>
+							<parameter name="global.DatumOd" type="var" valuetype="date" value="global.$DatumOd"/>
+							<parameter name="global.DatumDo" type="var" valuetype="date" value="global.$DatumDo"/>		
+							<parameter name="global.KntPlanAId" type="var" valuetype="int" value="~dtKonto.@KntPlanAId"/>
+							<parameter name="global.Konto" type="var" valuetype="int" value="~dtKonto.@Konto"/> 
+							<parameter name="global.KontoNaziv" type="var" value="~dtKonto.@Naziv"/>
+							<parameter name="global.PartneriId" type="var" valuetype="int" value="#grdGlavni.@partneriId"/>
+							<parameter name="global.PartneriNaziv" type="var" value="#grdGlavni.@Naziv"/>							
+							<parameter name="global.AnalitikaPS" type="var" value="0" />
+						</action>
+					</action>
+				</event>
+				<fields inherited="true">
+					<field name="Naziv" caption="Partner"/>
+                    <field name="Sifra" caption="Sifra" customsort="stringasint"/>
+					<field name="kukp" caption="Ukupno"/>					
+					<field name="k_limit" caption="Limit"/>
+					<field name="Sortind" visible="false"/>
+					<field name="99999999" visible="false"/>
+				</fields>
+				<print caption="Trenutno stanje partnera"
+					   captionalign="center"
+					   header="Klasa partnera: {#trDrvo.@Naziv}\n"
+					   headeralign="left"/>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSvaKonta" caption="SVA KONTA">
+					<event type="click">
+						<action type="form open" value="frmSvaKonta">
+							<parameter name="PartnerNaziv" value="#grdGlavni.@Naziv"/>
+							<parameter name="PartneriId" value="#grdGlavni.@PartneriId"/>
+						</action>
+						<action type="control focus" value="#grdGlavni"/>
+					</event>
+				</button>
+				<!-- <button name="btnIzborKonta" caption="1./IZBOR KONTA/" dataname="~dtButton" displayfield="Displayfield" treestructure="true"> -->
+					<!-- <event type="click"> -->
+						<!-- <action type="form open" value="frmKonto" if="#btnIzborKonta.@Displayfield!=Sva konta"> -->
+							<!-- <parameter name="PartneriId" value="#grdGlavni.@partneriid"/> -->
+							<!-- <parameter name="KntPlanaId" value="#btnIzborKonta.@KntPlanAId"/> -->
+							<!-- <parameter name="Tablica" value="#btnIzborKonta.@Tablica"/> -->
+							<!-- <parameter name="Konto" value="#btnIzborKonta.@Displayfield"/> -->
+							<!-- <parameter name="PartnerNaziv" value="#grdGlavni.@Naziv"/> -->
+							<!-- <parameter name="ParentId" value="#btnIzborKonta.@ParentId"/> -->
+						<!-- </action> -->
+						<!-- <action type="form open" value="frmSvaKonta" else=""> -->
+							<!-- <parameter name="PartneriId" value="#grdGlavni.@partneriid"/> -->
+							<!-- <parameter name="PartnerNaziv" value="#grdGlavni.@Naziv"/> -->
+							<!-- <parameter name="Tablica" value="#btnIzborKonta.@Tablica"/> -->
+							<!-- <parameter name="IndSvi" value="1"/> -->
+						<!-- </action> -->
+					<!-- </event> -->
+				<!-- </button> -->
+				<button name="btnIzborKontaLista" caption="IZBOR KONTA" dataname="~dtButtonLista" displayfield="Displayfield">
+					<event type="click">
+						<action type="form open" value="frmKonto" if="#btnIzborKontaLista.@Sort!=0">
+							<parameter name="PartneriId" value="#grdGlavni.@partneriid"/>
+							<parameter name="KntPlanaId" value="#btnIzborKontaLista.@KntPlanAId"/>
+							<parameter name="Tablica" value="#btnIzborKontaLista.@Tablica"/>
+							<parameter name="Konto" value="#btnIzborKontaLista.@Displayfield"/>
+							<parameter name="PartnerNaziv" value="#grdGlavni.@Naziv"/>
+							<parameter name="ParentId" value="#btnIzborKontaLista.@ParentId"/>
+						</action>
+						<action type="form open" value="frmSvaKonta" else="">
+							<parameter name="PartneriId" value="#grdGlavni.@partneriid"/>
+							<parameter name="PartnerNaziv" value="#grdGlavni.@Naziv"/>
+							<parameter name="Tablica" value="#btnIzborKontaLista.@Tablica"/>
+							<parameter name="IndSvi" value="1"/>
+						</action>
+						<action type="control focus" value="#grdGlavni"/>
+					</event>
+				</button>				
+				<button name="btnPredracun" caption="PREDRAČUN">
+					<event type="click">
+						<action type="form open" value="frmPredracun">
+							<parameter name="PartnerNaziv" value="#grdGlavni.@Naziv"/>
+							<parameter name="PartneriId" value="#grdGlavni.@PartneriId"/>						
+						</action>
+						<action type="control focus" value="#grdGlavni"/>
+					</event>				
+				</button>
+				<button name="btnUplata" caption="UPLATA">
+					<event type="click">
+						<action type="form open" value="frmUplata">
+							<parameter name="PartneriId" value="#grdGlavni.@PartneriId"/>
+							<parameter name="PartnerNaziv" value="#grdGlavni.@Naziv"/>							
+						</action>
+						<action type="control focus" value="#grdGlavni"/>
+					</event>				
+				</button>
+				<button name="btnIspis" caption="ISPIS">
+					<event type="click">
+						<action type="control printcontrol" value="#grdGlavni"/>
+						<action type="control focus" value="#grdGlavni"/>
+					</event>				
+				</button>
+				<button name="btnPartner" caption="PARTNERI INFO">
+					<event type="click">
+						<action type="method run" value="parInfo">
+							<parameter name="server" value="@@server" />
+							<parameter name="baza" value="@@database" />
+							<parameter name="username" value="@@username" />
+							<parameter name="password" value="" />
+							<parameter name="operateriid" value="@@operateriid" />
+							<parameter name="Parent" value="0" />
+							<parameter name="pTop" value="0" />
+							<parameter name="pLeft" value="0" />
+							<parameter name="path" value="" />
+							<parameter name="partneriid" value="#grdGlavni.@partneriid"/>
+						</action>					
+						<!--<action type="method run" value="CarpoPartneriInfo">-->
+							<!-- za testiranje -->
+							<!-- <parameter name="moduleid" value="D:\JupiterSrv\Carpo\PartneriInfo.xml"/> -->
+							<!--<parameter name="moduleid" value="PartneriInfo.xml"/>-->
+							<!--<parameter name="PartneriId" type="var" valuetype="int" value="#grdGlavni.@partneriid"/>-->
+							<!--<parameter name="PartneriNaziv" type="var" value="#grdGlavni.@Naziv"/>-->
+						<!--</action>-->
+						<!--<action type="control focus" value="#grdGlavni"/>-->						
+					</event>				
+				</button>
+				<button name="btnAnaliza" caption="ABC ANALIZA">
+					<event type="click">
+						<action type="datarun reader" value="~dtGlavni"/>
+						<action type="method run" value="abcAnal">
+							<parameter name="Naslov" value="Partner"/>
+							<parameter name="InputDataTable" value="~dtGlavni.datatable" type="datatable"/>
+						</action>
+						<action type="control focus" value="#grdGlavni"/>
+					</event>				
+				</button>
+				<button name="btnDatum" caption="DATUM ZA KARTICU">
+					<event type="click">
+						<action type="form open" value="frmDatum"/>
+						<action type="control focus" value="#grdGlavni"/>
+					</event>				
+				</button>				
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDrvo" command="spCKntTrenutnoStanjePartneraDrvo">
+				<parameter name="@Action" value="1" if="#filter==Klasifikacija partnera" /> 
+				<parameter name="@Action" value="2" if="#filter==Zemljovid" />
+			</data>
+			<data name="dtGlavni" command="spCKntTrenutnoStanjePartneraGrid">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@SortKey" value=" " if="#trDrvo.@tip==0"/>
+				<parameter name="@SubAction" value="3" if="#trDrvo.@tip==0"/>
+				<parameter name="@SortKey" value="#trDrvo.@id" if="#trDrvo.@tip==klasa" />
+				<parameter name="@SubAction" value="3" if="#trDrvo.@tip==klasa"/>
+				<parameter name="@SubAction" value="4" if="#filter==Zemljovid&amp;&amp;#trDrvo.@tip==zupanija"/>
+				<parameter name="@ZupanijeId" value="#trDrvo.@id" if="#filter==Zemljovid&amp;&amp;#trDrvo.@tip==zupanija"/>
+				<parameter name="@SubAction" value="5" if="#filter==Zemljovid&amp;&amp;#trDrvo.@tip==mjesto"/>
+				<parameter name="@MjestaId" value="#trDrvo.@id" if="#filter==Zemljovid&amp;&amp;#trDrvo.@tip==mjesto"/>
+				<parameter name="@SubAction" value="6" if="#filter==Zemljovid&amp;&amp;#trDrvo.@tip==drzava" />
+				<parameter name="@DrzaveId" value="#trDrvo.@id" if="#filter==Zemljovid&amp;&amp;#trDrvo.@tip==drzava" />
+			</data>
+			<data name="dtKonto" command="spCKntTrenutnoStanjePartneraPom">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Konto" value="$Konto"/>
+			</data>
+			<data name="dtDan" type="text"  command="select dateadd(yy,datediff(yy,0,getdate()),0) as prvidan, dateadd(dd,-1,dateadd(yy,datediff(yy,0,getdate())+1,0)) as zadnjidan"/>			
+			<data name="dtButton" command="spCKntTrenutnoStanjePartneraPom">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@Id" value="#grdGlavni.@partneriid"/>
+			</data>
+			<data name="dtButtonLista" command="spCKntTrenutnoStanjePartneraPom">
+				<parameter name="@Action" value="6"/>
+				<parameter name="@Id" value="#grdGlavni.@partneriid"/>
+			</data>			
+		</datalist>
+	</form>
+	<form name="frmDatum" caption="Datum za karticu" width="150">
+		<event type="load">
+			<action type="control value" value="#datDatum">
+				<parameter value="global.$DatumOd" type="date"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="2" rows="1" groupbordervisible="false">
+				<columnsdefinition>
+					<column size="130" position="1"/>
+					<column size="50" position="2"/>					
+				</columnsdefinition>
+				<item col="1" row="1" caption="Od:" textposition="left">
+					<dateedit name="datDatum"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUredu" caption="U redu">
+					<event type="click">
+						<action type="variable value">
+							<parameter name="global.DatumOd" value="#datDatum"/>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmSvaKonta" statusbar="true" saveformsize="true"> <!--forma za sva konta-->
+		<event type="init">
+			<action type="datarun reader" value="~dtPrint"/>
+			<action type="variable value" >
+			<!--TEMP BUGFIX SUME NA GRUPAMA-->
+					<!-- <parameter name="IndSume" value="0" type="int"/> -->
+				<!--TEMP BUGFIX SUME NA GRUPAMA-->
+			</action>	
+		</event>
+		<event type="load">
+			<action type="variable value">
+				<parameter name="Valuta" value="null" type="date"/>
+			</action>
+			<action type="variable value">
+				<parameter name="Caption" value="Računi partnera"/>
+			</action>
+			<!--TEMP BUGFIX SUME NA GRUPAMA-->
+					<!-- <action type="variable value">	 -->
+						<!-- <parameter name="IndSume" value="1" type="int"/>				 -->
+					<!-- </action>					 -->
+					<!-- <action type="control populate" value="#grdRacuni"/> -->
+					<!-- <action type="variable value">	 -->
+						<!-- <parameter name="IndSume" value="0" type="int"/>				 -->
+					<!-- </action>			 -->
+			<!--TEMP BUGFIX SUME NA GRUPAMA-->	
+		</event>
+		<event type="shown">
+			<action type="form caption" value="Prikaz računa za konta Kupaca i partnera {$PartnerNaziv}" if="$Tablica==Fakture"/>			
+			<action type="form caption" value="Prikaz računa za konta Dobavljača i partnera {$PartnerNaziv}" elseif="$Tablica==FaktureDob"/>			
+			<action type="form caption" value="Prikaz računa za ostala konta i partnera {$PartnerNaziv}" elseif="$Tablica==KntOstalo"/>			
+			<action type="form caption" value="Prikaz računa za partnera {$PartnerNaziv}" else=""/>
+			<action type="control populate" value="#grdRacuni"/>
+			<action type="footer text" value="Broj slogova: {#grdRacuni.rowcount}"/>
+		</event>
+		<layout>
+			<group cols="1" rows="1">
+				<item col="1" row="1">
+					<grid name="grdRacuni" type="master" dataname="~dtSvaKonta" showfooter="true" multiselect="true" savelayout="true" expandallonload="true">
+						<fields>
+							<field name="S"/>
+							<field name="Konto"/>
+							<field name="Broj" caption="Broj računa"/>
+							<!-- <field name="BrojDok" caption="Broj" visible="true" if="$Tablica==Fakture" showtotalsum="false" showgroupsum="false"/> -->
+							<field name="BrojDok" caption="BrojDok" visible="true" showtotalsum="false" showgroupsum="false"/>								
+							<field name="Nadnevak"/>
+							<field name="datumvalute" caption="Datum valute"/>
+							<field name="Duguje"/>
+							<field name="Potrazuje" caption="Potražuje"/>
+							<field name="Saldo"/>
+							<field name="SaldoKum" showtotalsum="false" showgroupsum="false"/>
+							<field name="Indglk" caption="G" showtotalsum="false" showgroupsum="false"/>	
+							<field name="Dana" visible="true" showtotalsum="false" showgroupsum="false"/>							
+							<field name="Orgshema" caption="Organizacijska shema"/>
+							<field name="Komp"/>
+						</fields>
+						<print caption="$Caption"
+							   captionalign="center"
+							   header="{$PartnerNaziv}, {~dtPrint.@Adresa}\n OIB: {~dtPrint.@OIB}, IBAN: {~dtPrint.@IBAN}\n"
+							   headeralign="center"/>
+						<styles>	   
+							<style name="fontcolor" value="blue" if="#grdRacuni.@indglk==0"/>
+							<style name="italic" value="true" if="#grdRacuni.@indglk==0"/>
+							<style name="fontcolor" value="red" if="$Tablica!=KntOstalo&amp;&amp;#grdRacuni.@Komp!=0"/>
+						</styles>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUvaluti" caption="U valuti">
+					<event type="click">
+						<action type="form open" value="frmValuta"/>
+						<action type="control populate" value="#grdRacuni"/>
+						<action type="variable value" if="$Valuta!=null">
+							<parameter name="Caption" value="Računi partnera do {$Valuta::dd.MM.yyyy}"/>
+						</action>						
+					</event>
+				</button>
+				<button name="btnIspis" caption="Ispis">
+					<!--caption bez datuma dok se ne odabere datum jer je pocetni 30001231-->
+					<event type="click">
+						<action type="control printcontrol" value="#grdRacuni"/>
+					</event>
+				</button>
+				<button name="btnIzlaz" caption="Izlaz">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtSvaKonta" command="spCKntTrenutnoStanjePartneraSva">
+			<!--TEMP BUGFIX SUME NA GRUPAMA-->
+				<!-- <parameter name="@IndSume" value="$IndSume"/> -->
+			<!--TEMP BUGFIX SUME NA GRUPAMA-->	
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@datzak" value="$Valuta" if="$Valuta!=null"/>
+				<parameter name="@Tablica" value="$Tablica" if="$IndSvi==1"/>
+			</data>
+			<data name="dtPrint" command="spCKntTrenutnoStanjePartneraPom">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@id" value="$PartneriId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmValuta" caption="Razdoblje" width="150">
+		<event type="load">
+			<action type="control value" value="#datDatum" if="parent.$Valuta==null">
+				<parameter value="now" type="date" />
+			</action>
+			<action type="control value" value="#datDatum" elseif="parent.$Valuta!=null">
+				<parameter value="parent.$Valuta" />	
+			</action>				
+		</event>
+		<layout>
+			<group cols="2" rows="1" groupbordervisible="false">
+				<columnsdefinition>
+					<column size="130" position="1"/>
+					<column size="50" position="2"/>					
+				</columnsdefinition>
+				<item col="1" row="1" caption="Do:" textposition="left">
+					<dateedit name="datDatum"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPrihvati" caption="Prihvati">
+					<event type="click">
+						<action type="variable value">
+							<parameter name="parent.$Valuta" value="#datDatum"/>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>	
+	<form name="frmPredracun" maximized="true" statusbar="true">
+		<event type="load">
+			<action type="variable value">
+				<parameter name="Global.tablicaGla" value="ProPonGla" type="string"/>								
+			</action>
+			<action type="variable value">
+				<parameter name="Global.tablicaDet" value="ProPonDet" type="string"/>	
+			</action>				
+		</event>
+		<event type="shown">
+			<action type="form caption" value="Prikaz predračuna za partnera {$PartnerNaziv}"/>
+			<action type="control populate" value="#grdGlava"/>
+			<action type="footer text" value="Broj slogova: {#grdGlava.rowcount}"/>			
+		</event>
+		<layout>
+			<group cols="1" rows="1">
+				<item col="1" row="1">
+					<grid name="grdGlava" dataname="~dtPredracun" savelayout="true">
+					<fields>
+						<field name="BrojPonude" caption="Broj ponude"/>
+						<field name="Broj" caption=""/>
+						<field name="nadnevak"/>
+						<field name="datumvalute" caption="Datum valute"/>
+						<field name="IznosPonude" caption="Iznos ponude"/>
+						<field name="Placeno" caption="Plaćeno"/>
+						<field name="ukupno"/>
+						<field name="Ip" caption=""/>
+						<field name="Fakturirano"/>						
+					</fields>
+					<print caption="Predračun"
+						   captionalign="center"
+						   header="\n"/>
+					</grid>					
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPredracun" caption="Predračun">
+					<event type="click">	
+						<action type="variable value">
+							<parameter name="Global.DokId" value="#grdGlava.@proPonGlaId"/>
+						</action>
+						<action type="datarun reader" value="~dtDohvatiProPon"/>
+						<action type="form open" value="frmPonudaEdit">
+							<parameter name="ProPonGlaId" value="#grdGlava.@proponglaid" />
+							<parameter name="StatusPon" value="~dtDohvatiProPon.@status" />
+							<parameter name="Potvrda" value="~dtDohvatiProPon.@potvrda" />
+							<parameter name="DokIznosSPDV" value="~dtDohvatiProPon.@vrijednostspdv" />
+							<parameter name="DokIznosBezPDV" value="~dtDohvatiProPon.@vrijednostbezpdv" />	
+							<parameter name="IndTSP" value="1"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIspis" caption="Ispis">
+					<event type="click">
+						<action type="control printcontrol" value="#grdGlava"/>
+					</event>
+				</button>
+				<button name="btnIzlaz" caption="Izlaz">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtPredracun" command="spCKntTrenutnoStanjePartneraPonude">
+				<parameter name="@PartneriId" value="$PartneriId"/>
+			</data>
+			<data name="dtDohvatiProPon" command="spCKntTrenutnoStanjePartneraPom">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@Id" value="#grdGlava.@proponglaid"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmKonto" maximized="true" statusbar="true"> <!--forma za pojedinacni konto-->
+		<method name="KupDokument" dll="KUPPreglednikDMS" class="KUPPreglednikDMS.ScanPreview" method="TotalGen"/>
+		<event type="init">
+			<action type="datarun reader" value="~dtPrint"/>
+			<action type="datarun reader" value="~dtKonto"/>
+		</event>
+		<event type="load">
+			<action type="variable value">
+				<parameter name="Valuta" value="null" type="date"/>
+			</action>
+			<action type="variable value">
+				<parameter name="Caption" value="Računi partnera"/>
+			</action>		
+			<action type="control populate" value="#grdRacuniKonto"/>
+			<action type="control visible" value="#btnRacun" if="$Tablica==KntOstalo">
+				<parameter value="false"/>
+			</action>
+			<action type="control visible" value="#btnRacun" else="">
+				<parameter value="true"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="form caption" value="Prikaz računa za konto {$Konto} i partnera {$PartnerNaziv}"/>
+			<action type="variable value">
+				<parameter name="Caption" value="Računi partnera"/>
+			</action>	
+			<action type="footer text" value="Broj slogova: {#grdRacuniKonto.rowcount}"/>
+		</event>
+		<layout>
+			<group cols="1" rows="1">
+				<item col="1" row="1">
+					<grid name="grdRacuniKonto" dataname="~dtRacunKonto" showfooter="true" multiselect="true" savelayout="true">
+						<event type="focusedrowchanged">
+							<action type="variable value">
+								<parameter name="global.$KntTemId" value="#grdRacuniKonto.@KntTemId"/>
+								<parameter name="global.$DokId" value="#grdRacuniKonto.@faktureid"/>							
+							</action>
+						</event>
+						<fields>
+							<field name="Konto" if="$KntPlanAId==0"/>
+							<field name="Broj" caption="Broj računa"/>
+							<field name="BrojDok" caption="Broj" visible="true" if="$Tablica==Fakture" showtotalsum="false" showgroupsum="false"/>
+							<field name="BrojDok" caption="Ufa" visible="true" if="$Tablica==FaktureDob" showtotalsum="false" showgroupsum="false"/>							
+							<field name="DatumDok" caption="Nadnevak" visible="true" if="$Tablica!=KntOstalo"/>
+							<field name="Nadnevak" visible="true" if="$Tablica==KntOstalo"/>
+							<field name="DatumValute" caption="Datum valute"/>
+							<!-- <field name="kontodug" caption="Duguje" visible="true" if="$Tablica==Fakture"/> -->
+							<!-- <field name="kontopot" caption="Potražuje" visible="true" if="$Tablica==Fakture"/> -->
+							<!-- <field name="Duguje" visible="true" if="$Tablica!=Fakture"/> -->
+							<!-- <field name="Potrazuje" caption="Potražuje" visible="true" if="$Tablica!=Fakture"/> -->
+							<field name="Duguje" visible="true"/>
+							<field name="Potrazuje" caption="Potražuje" visible="true"/>							
+							<field name="Saldo"/>
+							<field name="SaldoKum" showtotalsum="false" showgroupsum="false"/>
+							<field name="Indglk" caption="G" visible="true" if="$Tablica!=KntOstalo"/>
+							<field name="Dana" visible="true" if="$Tablica!=KntOstalo" showtotalsum="false" showgroupsum="false"/>
+							<field name="NacinPlac" caption="Ip" visible="true" if="$Tablica==Fakture"/>
+							<field name="OrgShema" caption="Organizacijska shema" visible="true" if="$Tablica!=KntOstalo"/>							
+							<field name="orgshema_naziv" caption="Organizacijska shema" visible="true" if="$Tablica==KntOstalo"/>
+							<field name="Komp" if="$Tablica!=KntOstalo"/>
+							<field name="Opis"/>
+						</fields>
+						<print caption="$Caption"
+							   captionalign="center"
+							   header="Konto: {$Konto} {~dtKonto.@Naziv}\n {$PartnerNaziv}, {~dtPrint.@Adresa}\n OIB: {~dtPrint.@OIB}, IBAN: {~dtPrint.@IBAN}\n"
+							   headeralign="center"/>
+						<styles>
+							<style name="fontcolor" value="blue" if="#grdRacuniKonto.@indglk==0"/>
+							<style name="italic" value="true" if="#grdRacuniKonto.@indglk==0"/>
+							<style name="fontcolor" value="red" if="$Tablica!=KntOstalo&amp;&amp;#grdRacuniKonto.@Komp!=0"/>
+						</styles>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUvaluti" caption="U valuti">
+					<event type="click">
+						<action type="form open" value="frmValuta"/>
+						<action type="control populate" value="#grdRacuniKonto"/>
+						<action type="variable value" if="$Valuta!=null">
+							<parameter name="Caption" value="Računi partnera do {$Valuta::dd.MM.yyyy}"/>
+						</action>							
+					</event>
+				</button>
+				<button name="btnPromet" caption="Promet">
+					<event type="click">
+						<action type="form open" value="frmPromet" if="$Tablica==Fakture">
+							<parameter name="IdDok" value="#grdRacuniKonto.@FaktureId"/>
+							<parameter name="BrojRacuna" value="#grdRacuniKonto.@Broj"/>
+							<parameter name="KntPlanAId" value="$KntPlanAId"/>
+						</action>
+						<action type="form open" value="frmPromet" if="$Tablica==FaktureDob">
+							<parameter name="IdDok" value="#grdRacuniKonto.@FaktureDobId"/>
+							<parameter name="BrojRacuna" value="#grdRacuniKonto.@Broj"/>
+							<parameter name="KntPlanAId" value="$KntPlanAId"/>
+						</action>		
+						<action type="form open" value="frmPromet" if="$Tablica==KntOstalo">
+							<parameter name="IdDok" value="#grdRacuniKonto.@KntOstaloId"/>
+							<parameter name="BrojRacuna" value="#grdRacuniKonto.@Broj"/>
+							<parameter name="KntPlanAId" value="$KntPlanAId"/>
+						</action>						
+					</event>
+				</button>
+				<button name="btnRacun" caption="Račun" function="Racun">
+					<event type="click">				
+						<action type="form open" value="frmFakturaRacun" if="#grdRacuniKonto.@FaktureId!=null">
+							<parameter name="FaktureId" value="#grdRacuniKonto.@FaktureId"/>
+							<parameter name="PartneriId" value="$PartneriId"/>
+							<parameter name="StatusFak" value="0"/>
+							<!-- <parameter name="global.$DokId" value="#grdRacuniKonto.@FaktureId"/> -->
+						</action>
+						<!--za FaktureDob otvori DMS-->
+						<action  if="#grdRacuniKonto.@FaktureDobId!=null">
+							<action type="datarun reader" value="~dtPoveziKupFaktureDobSkener"/>
+							<action type="method run" value="KupDokument">
+								<parameter name="id" value="~dtPoveziKupFaktureDobSkener.@KupPrometId" />
+								<parameter name="operateriId" value="@@operateriid" />
+								<parameter name="cs" value="Driver={SQL Server};Server={@@server};Database={@@database};" />
+								<parameter name="param" value="" />
+								<parameter name="param2" value="" />
+							</action>							
+						</action>
+
+						<!-- <action type="form open" value="frmDMS" if="~dtPoveziKupFaktureDobSkener.@KupPrometId!=null"> -->
+							<!-- <parameter name="KupPrometId" value="~dtPoveziKupFaktureDobSkener.@KupPrometId"/> -->
+						<!-- </action>-->
+						<!--<action type="form open" value="frmDMS" if="~dtPoveziKupFaktureDobSkener.@KupSkenerId!=null">
+							<parameter name="KupSkenerId" value="~dtPoveziKupFaktureDobSkener.@KupSkenerId"/>
+						</action>	-->					
+					</event>
+				</button>
+				<button name="btnIspis" caption="Ispis">
+					<event type="click">
+						<action type="control printcontrol" value="grdRacuniKonto"/>
+					</event>
+				</button>
+				<button name="btnIzlaz" caption="Izlaz">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtRacunKonto" command="spCKntTrenutnoStanjePartneraFak" if="$Tablica==Fakture">
+				<parameter name="@Action" value="1031"/>
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@DatZak" value="$Valuta" if="$Valuta!=null"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+			</data>
+			<data name="dtRacunKonto" command="spCKntTrenutnoStanjePartneraFak" if="$Tablica==FaktureDob">
+				<parameter name="@Action" value="1032"/>
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@DatZak" value="$Valuta" if="$Valuta!=null"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>				
+			</data>
+			<data name="dtRacunKonto" command="spCKntTrenutnoStanjePartneraKntOstalo" if="$Tablica==KntOstalo" timeout="1000">
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@DatZak" value="$Valuta" if="$Valuta!=null"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+			</data>
+			<data name="dtPrint" command="spCKntTrenutnoStanjePartneraPom">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@id" value="$PartneriId"/>
+			</data>
+			<data name="dtKonto" command="spCKntTrenutnoStanjePartneraPom">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Konto" value="$Konto"/>
+			</data>
+			<data name="dtPoveziKupFaktureDobSkener" command="spCKntDMS">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Id" value="#grdRacuniKonto.@FaktureDobId"/>
+			</data>			
+		</datalist>
+	</form>
+	<form name="frmUplata" maximized="true" statusbar="true" >
+		<event type="load">
+			<action type="control populate" value="#grdGlava"/>
+			<action type="variable value">
+				<parameter name="Global.tablicaGla" value="ProPonGla" type="string"/>								
+			</action>
+			<action type="variable value">
+				<parameter name="Global.tablicaDet" value="ProPonDet" type="string"/>	
+			</action>				
+		</event>
+		<event type="shown">
+			<action type="form caption" value="Prikaz uplata za partnera {$PartnerNaziv}"/>
+			<action type="footer text" value="Broj slogova: {#grdGlava.rowcount}"/>			
+		</event>
+		<layout>
+			<group cols="1" rows="1">
+				<item row="1" col="1">
+					<grid name="grdGlava" dataname="~dtUplata" multiselect="true" savelayout="true">
+						<event type="focusedrowchanged">
+							<action type="variable value">
+								<parameter name="global.$KntTemId" value="#grdGlava.@KntTemId"/>
+								<parameter name="global.$DokId" value="#grdGlava.@faktureid"/>							
+							</action>
+						</event>
+						<fields>
+							<field name="datumuplate" caption="Datum uplate"/>
+							<field name="izvodbr" caption="Izvod"/>
+							<field name="uplata" caption="Potražuje"/>
+							<field name="Opis"/>
+							<field name="OrgShema" caption="Organizacijska shema"/>
+						</fields>
+						<print caption="Uplate" captionalign="center" header="\n"/>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPonuda" caption="Ponuda">
+					<event type="click">
+						<action type="variable value" if="#grdGlava.@ProPonGlaId!=null">
+							<parameter name="Global.DokId" value="#grdGlava.@proPonGlaId"/>
+						</action>
+						<action type="datarun reader" value="~dtDohvatiProPon" if="#grdGlava.@ProPonGlaId!=null"/>
+						<action type="form open" value="frmPonudaEdit" if="#grdGlava.@ProPonGlaId!=null">
+							<parameter name="ProPonGlaId" value="#grdGlava.@proponglaid"/>
+							<parameter name="StatusPon" value="~dtDohvatiProPon.@status"/>
+							<parameter name="Potvrda" value="~dtDohvatiProPon.@potvrda"/>
+							<parameter name="DokIznosSPDV" value="~dtDohvatiProPon.@vrijednostspdv"/>
+							<parameter name="DokIznosBezPDV" value="~dtDohvatiProPon.@vrijednostbezpdv"/>	
+							<parameter name="IndTSP" value="1"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnFaktura" caption="Faktura"> <!--otvara se samo kada je riječ o fakturi-->
+					<event type="click">
+						<action type="form open" value="frmFakturaRacun" if="#grdGlava.@FaktureId!=null">
+							<parameter name="FaktureId" value="#grdGlava.@FaktureId"/>
+							<parameter name="PartneriId" value="$PartneriId"/>
+							<parameter name="StatusFak" value="0"/>
+							<!-- <parameter name="global.$DokId" value="#grdGlava.@FaktureId"/> -->
+						</action>
+					</event>
+				</button>
+				<button name="btnIspis" caption="Ispis">
+					<event type="click">
+						<action type="control printcontrol" value="#grdGlava"/>
+					</event>
+				</button>
+				<button name="btnIzlaz" caption="Izlaz">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtUplata" command="spCKntTrenutnoStanjePartneraUplate">
+				<parameter name="@PartneriId" value="$PartneriId"/>
+			</data>
+			<data name="dtDohvatiProPon" command="spCKntTrenutnoStanjePartneraPom">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@Id" value="#grdGlava.@proponglaid"/>
+			</data>			
+		</datalist>
+	</form>
+	<form name="frmPromet" statusbar="true" saveformsize="true">
+		<event type="load">			
+			<action type="control populate" value="#grdPromet"/>
+		</event>
+		<event type="shown">
+			<action type="form caption" value="Promet po računu broj {$BrojRacuna}"/>
+			<action type="footer text" value="Broj slogova: {#grdPromet.rowcount}"/>			
+		</event>
+		<layout>
+			<group cols="1" rows="1">
+				<item col="1" row="1">
+					<grid name="grdPromet" dataname="~dtPromet" multiselect="true" savelayout="true">
+						<fields>
+							<field name="DatumKnjizenja" caption="Datum knjiženja"/>
+							<field name="DatumDokumenta" caption="Datum dokumenta"/>
+							<field name="Opis" caption="Vrsta dokumenta"/>
+							<field name="Brojdok" caption="Temeljnica"/>
+							<field name="opisknj" caption="Opis knjiženja"/>
+							<field name="Duguje"/>
+							<field name="Potrazuje" caption="Potražuje"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<datalist>
+			<data name="dtPromet" command="spCKntTrenutnoStanjePartneraPromet">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+				<parameter name="@IdDok" value="$IdDok"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmFakturaRacun" caption="Faktura" width="1000" height="600"   template="splitter">
+		<!-- <method name="fnDimenzijeGla" dll="Dimenzije" class="DimenzijeNet.Dimenzije" method="run" /> -->
+		<event type="init">
+			<action type="datarun reader" value="global.~dtGet" />
+			<action type="datarun reader" value="Global.~dtPubVars"/>
+			<action type="datarun reader" value="Global.~dtNasbod"/>
+
+			<action type="variable value">
+				<parameter name="Global.tablicaGla" value="Fakture" />
+			</action>	
+			<action type="variable value">
+				<parameter name="Global.tablicaDet" value="FakDetalj" />
+			</action>
+		</event>
+		<event type="load">
+			<!-- TODO: enable/disable kontrola -->
+			<action type="control populate" value="#grdRoba" />
+			<action type="control enable" value="#btnZakljuci, #btnOtpisi, #btnSpremi" if="$StatusFak==1"/>
+			<action type="control disable" value="#btnZakljuci, #btnOtpisi, #btnSpremi" else="" />
+			<action type="datarun scalar" value="~dtStatusiProvjeraButton" >
+				<parameter name="PromijeniVrati"/>
+			</action>
+
+		</event>		
+		<event type="shown">
+			<!-- <action type="control disable" value="#txtBroj,#txtFisklani" /> -->
+			<action type="control itemcaption" value="#bteVrBoda">
+				<parameter value="Tečaj:" if="#cmbValuta!=null"/>
+				<parameter value="Bod:" else=""/>
+			</action>	
+			<action type="control value" value="#bteVrBoda" if="~dtGet.@DevValuteId!=null">
+				<parameter value="~dtGet.@VrBodaDev"/>
+			</action>
+			<action type="control value" value="#bteVrBoda" elseif="~dtGet.@VrBoda==null">
+				<parameter value="~dtNasbod.@NasBod"/>
+			</action>
+
+			<action type="variable value" if="~dtGet.@DevValuteId!=null" >
+				<parameter name="global.VrBodaProd" value="~dtGet.@VrBodaDev" />
+			</action>	
+			<action type="variable value" else="" >
+				<parameter name="global.VrBodaProd" value="Global.~dtNasbod.@NasBod" />
+			</action>			
+			<action type="control disable" value="#btnZakljuci" if="$PromijeniVrati==-1"/>
+			<action type="control enable" value="#btnZakljuci" else=""/>
+			<action type="control populate" value="#cmbKontakt"/>
+			<!--za deviznu karticu konta sve disableano-->
+			<action type="control disable" value="#txtFisklani,#txtBroj,#datDatumDok,#cmbOrgShema,#cmbOsobe,#srcPartner,#srcParStru,#cmbKontakt,#cmbValuta,#bteVrBoda,#cmbNacinOtpreme,#cmbNacinPlacanja,#cmbInstrumentPlacanja,#datDatumIsp,#datDatumIzd,#txtBrNar,#txtOpis1,#btnSpremi,#btnZakljuci,#btnOtpisi,#btnPokojnik,#btnDimenzije,#btnUrednik,#btnDonesiDetalj,#btnDelDetalj,#btnEditDetalj,#btnAddDetalj,#cmbIBAN,#grdUvjeti,#txtDani,#btnIzmijeniDane,#btnKredit,#cmbNapomena,#btnDodaj,#btnZamjeni,#btnMoveDown,#btnMoveUp"/>						
+		</event>
+		<!-- <event type="close"> -->
+		<!-- <action type="datarun scalar" value="Global.~dtStatusiProvjeraMenu"> -->
+		<!-- <parameter name="PromijeniVrati"/> -->
+		<!-- </action>				 -->
+		<!-- <action type="menu disable" value="#menVratiStatus" if="$PromijeniVrati==-1||#grdGlava.rowcount==0"/> -->
+		<!-- <action type="menu enable" value="#menVratiStatus" else=""/>			 -->
+		<!-- TODO: problem kod fokusa nakon izmijeni/spremi -->
+		<!-- <action type="control populate" value="parent.#grdGlava" > -->
+		<!-- <action type="control focus" value="parent.#grdGlava"> -->
+		<!-- <parameter value="$FaktureId" /> -->
+		<!-- </action> -->
+		<!-- </action> -->
+		<!-- </event>		 -->
+		<layout name="panel1" type="collapsable" textposition="left">
+			<group padding="0" groupbordervisible="False" cols="1" rows="1">
+				<!-- <group padding="0" groupbordervisible="False" cols="2" rows="2"> -->
+				<columnsdefinition>
+					<column size="390" position="1" />
+					<!-- <column size="8" position="2" /> -->
+				</columnsdefinition>
+				<tabs row="1" col="1" padding="4">
+					<!-- tab lijevo -->
+					<group caption="Osnovno" name="tabOsnovno" cols="1" rows="15" col="1" row="1">
+
+						<group col="1" row="1" cols="3" rows="1" groupbordervisible="false">
+							<columnsdefinition>
+								<column size="90" position="1" />
+								<column size="100%" position="2" />
+								<column size="100%" position="3" />
+							</columnsdefinition>		
+							<item  col="1" row="1" >
+								<labeledit value="Broj:" />
+							</item>
+							<item caption="" col="2" row="1" fontbold="true" >
+								<textedit name="txtFisklani" datavalue="#dtGet.@fiskalnibroj" fontbold="true" nulltext="&lt;fiskalni broj&gt;" readonly="true"/>
+							</item>
+							<item caption="" col="3" row="1" fontbold="true" >
+								<action type="message" value="#dtGet.@Broj" />
+								<textedit name="txtBroj" datavalue="#dtGet.@Broj"  fontbold="true" nulltext="&lt;interni broj&gt;" readonly="true"/>
+							</item>	
+						</group>
+						<item caption="Datum:" col="1" row="2" >
+							<action type="variable value">
+								<parameter name="DatumPromijenjen" value="0" type="int" />
+							</action>		
+							<dateedit name="datDatumdok" value="now" datavalue="#dtGet.@DatumDok" required="true">
+								<event type="leave">
+									<action type="confirm" value="Želite li promijeniti vrijednost boda? (Vrijednost svih stavaka bit će preračunata u skladu s novom vrijednošću boda)" if="#cmbValuta!=null&amp;&amp;$DatumPromijenjen==1">
+										<action type="datarun reader" value="Global.~dtDatumValidate" />
+										<action type="control value" value="#bteVrBoda">
+											<parameter value="~dtDatumValidate.@tecaj"/>
+										</action>						
+										<action type="datarun nonquery" value="global.~dtUpdateFaktureDevValute" />
+										<action type="datarun nonquery" value="Global.~dtPromijeniTecaj">
+											<action type="control populate" value="#grdRoba" />
+										</action>										
+									</action>
+									<action type="datarun nonquery" value="Global.~dtProvjeraDatuma">
+										<!-- <action type="control focus" value="#datDatumdok"/> -->
+									</action>
+									<action type="variable value">
+										<parameter name="DatumPromijenjen" value="0" type="int" />
+									</action>					
+								</event>
+								<event type="valuechanged">
+									<action type="variable value">
+										<parameter name="DatumPromijenjen" value="1" type="int" />
+									</action>
+									<action type="control value" value="#datDatumIzd">
+										<parameter value="#datDatumdok"/>
+									</action>					
+								</event>
+							</dateedit>
+						</item>	
+						<item caption="Org shema:" col="1" row="3" >
+							<combotreeedit name="cmbOrgShema" valuefield="ID" displayfield="Naziv" datavalue="#dtGet.@OrgShemaId" dataname="Global.dtOrgShema" required="true"/>
+						</item>
+						<item caption="Odg osoba:" col="1" row="4">
+							<comboedit name="cmbOsobe" valuefield="OsobeId" displayfield="Osoba" datavalue="#dtGet.@OsobeId" dataname="Global.dtOdgovornaOsoba" required="true"/>
+							<!-- <comboedit name="cmbValuta" valuefield="ValuteId" displayfield="Naziv" datavalue="#dtGet.@DevValuteId" dataname="Global.dtValuta" > -->
+						</item>	
+						<item caption="Partner:" col="1" row="5" fontbold="true"> 
+							<searchedit name="srcPartner" netgenfields="true" required="true" fontbold="true" savelayout="true" dataname="Global.dtPartneri" fieldtext="NazivId" fieldvalue="partneriid" datavalue="#dtGet.@PartneriId" datatext="#dtGet.@Kupac" >
+								<event type="valuechanged">
+									<!-- <action type="control enable" value="#cmbKontakt" if="#srcPartner!=null"> -->
+									<!-- <action type="control populate" value="#cmbKontakt" /> -->
+									<!-- </action> -->
+									<!-- <action type="control disable" value="#cmbKontakt" else=""> -->
+									<!-- <action type="control datasource empty" value="#cmbKontakt" /> -->
+									<!-- </action> -->
+									<action type="variable value">
+										<parameter name="PartneriId" value="#srcPartner" />
+									</action>	
+									<action type="variable value">
+										<parameter name="IndPromijenjeno" value="1" />
+									</action>
+
+									<action type="datarun reader" value="Global.~dtPartnerZabrana" />
+
+									<action if="~dtPartnerZabrana.@Zabrana!=1">
+										<action type="datarun reader" value="Global.dtDajPartnera" if="#srcPartner!=null"/>	
+										<!-- <action type="control value" value="#srcParstru" if="#srcPartner!=null&amp;&amp;#srcPartner.@BrojLokacija_Id==1"> -->
+										<action type="control value" value="#srcParstru" if="#srcPartner!=null">
+											<parameter value="~dtDajPartnera.@parstruid" text="~dtDajPartnera.@Naziv"/>
+										</action>
+										<action type="form open" value="frmLokacije" if="#srcPartner.@BrojLokacija_Id!=null&amp;&amp;#srcPartner.@BrojLokacija_Id&gt;1&amp;&amp;$IndPromijenjeno==1&amp;&amp;~dtDajPartnera.@parstruid==null">
+											<parameter name="PartneriId" value="#srcPartner" />
+											<parameter name="IndLokacija" value="1" />
+											<parameter name="ParStruId" value="#srcParstru" />
+										</action>
+										<action type="control refreshvalue" value="#srcParstru" if="#srcPartner==null"/>
+										<action type="variable value">
+											<parameter name="IndLokacija" value="0" />
+										</action>
+										<action type="variable value">
+											<parameter name="IndPromijenjeno" value="0" />
+										</action>
+										<action type="control focus" value="#srcParstru"/>
+										<!-- <action type="message" value="#srcPartner.@formatid" />					 -->					
+									</action>
+									<action elseif="~dtPartnerZabrana.@Zabrana==1">
+										<action type="message" value="Partner ima postavljenu zabranu!"  >
+											<action type="control value" value="#srcPartner, #srcParstru">
+												<parameter value=""/>
+											</action>
+											<action type="control focus" value="#srcPartner"/>
+										</action>
+									</action>
+								</event>
+							</searchedit>
+						</item>
+						<item caption="Lokacija:" col="1" row="6" >
+							<searchedit netgenfields="true" name="srcParstru" required="true" dataname="Global.dtParstru" fieldtext="NazivId" fieldvalue="ParStruId" datavalue="#dtGet.@ParStruId" datatext="#dtGet.@ParStruNaziv" >                  
+								<event type="leave">
+									<action type="datarun reader" value="Global.dtDajPartnera" if="#srcParstru!=null"/>
+									<action type="control value" value="#srcPartner" if="#srcPartner==null&amp;&amp;#srcParstru!=null">
+										<parameter value="~dtDajPartnera.@partneriid" text="~dtDajPartnera.@Naziv"/>
+									</action>
+								</event>			
+							</searchedit>
+						</item>
+						<item caption="Kontakt:" col="1" row="7">
+							<!-- TODO: ne radi na edit -->
+							<comboedit name="cmbKontakt" valuefield="OsobeId" displayfield="Osoba" datavalue="#dtGet.@OsobeParId" dataname="Global.dtKontakt" autopopulate="false" /> 
+						</item>
+
+						<group col="1" row="8" cols="2" rows="1" groupbordervisible="false">
+							<columnsdefinition>
+								<column size="250" position="1" />
+								<column size="100" position="2" />
+								<!-- <column size="100%" position="1" /> -->
+								<!-- <column size="100" position="2" /> -->
+							</columnsdefinition>		
+							<item caption="Valuta:" col="1" row="1" >
+								<comboedit name="cmbValuta" valuefield="ValuteId" displayfield="Naziv" datavalue="#dtGet.@DevValuteId" dataname="Global.dtValuta" >
+									<!-- <event type="leave">-->
+									<event type="valuechanged">
+										<action type="confirm" value="Jeste li sigurni da želite promijeniti valutu na dokumentu?" if="$FaktureId!=null">
+											<action type="control enable" value="#bteVrBoda" if="#cmbValuta!=null" />
+											<action type="control disable" value="#bteVrBoda" else="" />
+											<action type="datarun reader" value="Global.dtTecaj" if="#cmbValuta!=null"/>
+											<action type="control value" value="#bteVrBoda" if="#cmbValuta!=null">
+												<parameter value="~dtTecaj.@Tecaj"/>
+											</action>
+											<action type="control value" value="#bteVrBoda" else="">
+												<parameter value="~dtPubVars.@NasBod"/>
+											</action>
+											<action type="datarun nonquery" value="global.~dtUpdateFaktureDevValute" />
+											<action type="control foreachrow" value="#grdRoba">
+												<action type="datarun nonquery" value="Global.~dtPromijeniTecaj" />
+											</action>
+											<action type="control populate" value="#grdRoba" />
+										</action>
+										<action if="$FaktureId==null">
+											<action type="control enable" value="#bteVrBoda" if="#cmbValuta!=null" />
+											<action type="control disable" value="#bteVrBoda" else="" />
+											<action type="datarun reader" value="Global.dtTecaj" if="#cmbValuta!=null"/>
+											<action type="control value" value="#bteVrBoda" if="#cmbValuta!=null">
+												<parameter value="~dtTecaj.@Tecaj"/>
+											</action>
+											<action type="control value" value="#bteVrBoda" else="">
+												<parameter value="~dtPubVars.@NasBod"/>
+											</action>
+										</action>	
+										<action type="control itemcaption" value="#bteVrBoda">
+											<parameter value="Tečaj:" if="#cmbValuta!=null"/>
+											<parameter value="Bod:" else=""/>
+										</action>						
+									</event>
+								</comboedit>
+							</item>	
+							<item caption="Bod:" col="2" row="1" textalignmode="auto">				
+								<textedit name="bteVrBoda" format="n6" datavalue="#dtGet.@VrBoda" >
+									<event type="leave" >
+										<action type="confirm" value="Jeste li sigurni da želite promijeniti vrijednost boda na dokumentu?" if="$FaktureId!=null">
+											<action type="datarun nonquery" value="global.~dtUpdateFaktureDevValute" />
+											<action type="datarun nonquery" value="Global.dtPromijeniTecaj">
+												<action type="control populate" value="#grdRoba" />
+											</action>
+										</action>
+									</event>
+								</textedit>	
+							</item>
+						</group>		
+
+
+						<item caption="Način otpreme:" col="1" row="9" >
+							<comboedit name="cmbNacinOtpreme" valuefield="NacinIsporukeId" displayfield="Naziv" datavalue="#dtGet.@ProNacinIsporukeId" dataname="Global.dtNacinIsporuke" required="true"/>
+						</item>	
+						<item caption="Način plaćanja:" col="1" row="10" >
+							<comboedit name="cmbNacinPlacanja" valuefield="ProNacinNaplateId" displayfield="Opis" datavalue="#dtGet.@ProNacinNaplateId" dataname="Global.dtNacinPlacanja" required="true" allownull="false">
+								<event type="leave">
+									<action type="variable value" >
+										<parameter name="IndKredit" value="#cmbNacinPlacanja.@Indikator"/>
+									</action>
+									<action if="$FaktureId!=null">
+										<action type="control populate" value="#grdUvjeti" if="$"/>
+										<action type="control enable" value="#btnKredit, #grdUvjeti" if="#cmbNacinPlacanja.@Indikator==2&amp;&amp;$StatusFak==1" />
+										<action type="control disable" value="#btnKredit, #grdUvjeti" else="" />
+										<action type="control disable" value="#btnIzmijeniDane, #txtDani" if="#cmbNacinPlacanja.@Indikator==2||$StatusFak!=1" />
+										<action type="control enable" value="#btnIzmijeniDane, #txtDani" else="" />
+									</action>						
+								</event>
+							</comboedit>
+						</item>
+						<item caption="Instr plaćanja:" row="11" col="1">
+							<comboedit name="cmbInstrumentPlacanja" valuefield="KntNacinPlacId" displayfield="Naziv" datavalue="#dtGet.@KntNacinPlacId" dataname="Global.dtInstrumentPlacanja" required="true" allownull="false"/>
+						</item>			
+						<item caption="Datum isporuke:" col="1" row="12" >
+							<dateedit name="datDatumIsp" value="now" datavalue="#dtGet.@DatumIsporuke" />
+						</item>	
+						<item caption="Datum izdavanja:" col="2" row="13" >
+							<dateedit name="datDatumIzd" value="now" datavalue="#dtGet.@DatumIzdavanja" />
+						</item>			
+						<item caption="Broj narudžbe:" col="1" row="14">
+							<textedit name="txtBrNar" entermovenextcontrol="true" datavalue="#dtGet.@BrojNarudzbe" />
+						</item>
+						<item caption="Opis:" col="1" row="15">
+							<textedit name="txtOpis1" entermovenextcontrol="true" datavalue="#dtGet.@Opis1" />
+						</item>		
+					</group>
+					<group caption="Uvjeti" name="tabUvjeti" cols="2" rows="13" col="1" row="1" alignmode="local">
+						<rowsdefinition>
+							<row size="40" position="13" />
+						</rowsdefinition>
+
+						<item caption="IBAN:" row="1" col="1" colspan="2" textposition="top">
+							<comboedit name="cmbIBAN" enabled="true" valuefield="ParZiroId" displayfield="IBAN" datavalue="#dtGet.@ParZiroId" dataname="Global.dtIBAN" >
+							</comboedit>
+						</item>		
+						<item row="2" col="1" colspan="2" rowspan="10">
+							<grid name="grdUvjeti" key="ProNaplataRateId" autopopulate="true" multiselect="true" showfooter="True" showgrouppanel="false" showautofilterrow="false">
+								<fields>
+									<field name="Dana" caption="Dana"  formatstring="n1" showtotalsum="false" showgroupsum="false"/>
+									<field name="Datum" caption="Datum"  />
+									<field name="Iznos" caption="Iznos"  formatstring="n2"/>
+								</fields>
+								<event type="cellvaluechanged">
+									<action type="datarun nonquery" value="~dtUvjetiIzmjena"/> 
+									<action type="control populate keepfocus" value="#grdUvjeti"/> 
+								</event>						
+								<data command="spProd_UvjetiKK">
+									<parameter name="@ID" value="$ProPonGlaId" type='int' if="Global.$tablicaGla=='ProPonGla'"/>
+									<parameter name="@ID" value="$FaktureId" type='int' if="Global.$tablicaGla=='Fakture'"/>
+									<parameter name="@ID" value="$ProNotpGlaId" type='int' if="Global.$tablicaGla=='ProNOtpGla'"/>
+									<parameter name="@Action" value="1" />
+									<parameter name="@IndKredit" value="1" if="$IndKredit==2"/>
+									<parameter name="@IndKredit" value="0" else=""/>
+									<parameter name="@tablicaGla" value="global.$tablicaGla"/>
+									<parameter name="@tablicaDet" value="global.$tablicaDet"/>							
+								</data>						
+							</grid>
+						</item>
+						<group padding="0" caption="Izmijeni broj dana na svim stavkama na:" groupbordervisible="true" cols="2" rows="1" col="1" row="12" colspan="2" spacing="5,5,5,5">
+							<rowsdefinition>
+								<row size="40" position="1" />
+							</rowsdefinition>				
+							<item caption="Broj dana:" row="1" col="1" textposition="left">
+								<textedit name="txtDani" value="0" format="n0" type="integer" required="true"/>
+							</item>	
+							<item row="1" col="2"> 
+								<button name="btnIzmijeniDane" caption="Izmijeni" >
+									<event type="click">
+										<action type="validate"/>
+										<action type="datarun nonquery" value="Global.dtRokPlacanja"/>
+										<action type="control populate" value="#grdUvjeti" />
+										<action type="control populate" value="#grdRoba" />
+									</event>
+								</button> 
+							</item>				
+						</group>
+						<item row="13" col="1">
+							<button name="btnKredit" caption="Kredit" >
+								<event type="click">
+									<action type="form open" value="frmKredit">
+										<parameter name="ProPonGlaId" value="$ProPonGlaId" type='int' if="Global.$tablicaGla=='ProPonGla'"/>
+										<parameter name="FaktureId" value="$FaktureId" type='int' if="Global.$tablicaGla=='Fakture'"/>
+										<parameter name="ProNotpGlaId" value="$ProNotpGlaId" type='int' if="Global.$tablicaGla=='ProNOtpGla'"/>
+										<parameter name="KntNacinPlacId" value="#cmbNacinPlacanja" />
+										<parameter name="IndKredit" value="$IndKredit" />
+									</action>
+								</event>
+							</button>
+						</item>				
+					</group>						
+					<group caption="Napomena" cols="3" rows="3" col="1" row="1" alignmode="local">
+						<columnsdefinition>
+							<column position="1" size="100%"/>
+							<column size="70" position="2"/>
+							<column size="70" position="3"/>
+						</columnsdefinition>
+						<rowsdefinition>
+							<row size="30" position="2" />
+						</rowsdefinition>
+						<item caption="Standardne napomene:" row="1" col="1" colspan="3" textposition="top">
+							<comboedit name="cmbNapomena" enabled="true" valuefield="Poruka" displayfield="Poruka" datavalue="#dtGet.@Poruka" dataname="Global.dtPoruke" >
+							</comboedit>
+						</item>
+						<item row="2" col="2">
+							<button name="btnDodaj" caption="Dodaj" dock="right">
+								<event type="click">
+									<action type="datarun reader" value="~dtNapomena"/>
+									<action type="control value" value="#MemoGlava">
+										<parameter value="~dtNapomena.@tekst"/>
+									</action>
+								</event>
+							</button>
+						</item>
+						<item row="2" col="3" >
+							<button name ="btnZamjeni" caption="Zamjeni" type="edit" dock="right" >
+								<event type="click">
+									<action type="control value" value="#MemoGlava">
+										<parameter value="#cmbNapomena"/>
+									</action>
+								</event>
+							</button>
+						</item>
+						<item name="Memo" textvisible="False" row="3" col="1" colspan="3" >
+							<memoedit name="MemoGlava" datavalue="~dtGet.@Memo"  />
+							<event type="valuechanged">
+								<action type="control disable" value="#btnZamjeni" if="#Memo!=null"/>
+							</event>
+						</item>
+					</group>
+				</tabs>	
+			</group>
+		</layout>				
+		<!-- <item row="1" col="2" /> -->
+		<layout name="panel2">
+			<group padding="0" groupbordervisible="False" cols="1" rows="1">		
+				<tabs col="1" row="1">
+					<!-- tab desno-->
+					<group caption="Stavke" padding="0" groupbordervisible="False" cols="1" rows="2" col="1" row="1">
+						<rowsdefinition>
+							<row size="54" position="2" />
+						</rowsdefinition>				
+						<item col="2" row="1" highlight="False" >
+							<grid name="grdRoba" multiselect="true" key="FakDetaljId" showgrouppanel="False" showfooter="True" savelayout="true" dataname="global.dtGridRoba">								
+								<event type="focusedrowchanged">
+									<action type="control populate" value="#grdVezani" />
+								</event>
+								<!-- <event type="doubleclick"> -->
+								<!-- <action type="message" value="#bteVrBoda"/> --> 
+								<!-- <action type="form open" value="frmRoba" if="#grdRoba.rowcount&gt;0"> -->
+								<!-- parametri za detalj formu --> 
+								<!-- </action> -->
+								<!-- <action type="control populate keepfocus" value="#grdRoba" /> -->
+								<!-- </event> -->
+								<!-- <event type="keydown" value="46"> -->
+								<!-- <action type="confirm" value="Želite li obrisati označene stavke s fakture?"> -->
+								<!-- <action type="control foreachrow selected" value="#grdRoba"> -->
+								<!-- <action type="datarun nonquery" value="~dtDetDelete"/> -->
+								<!-- </action> -->
+								<!-- <action type="control populate" value="#grdRoba" /> -->
+								<!-- <action type="control disable" value="#btnEditDetalj, #btnDelDetalj, #btnRobaInfo, #btnCijeneDetalj, #btnUrednik, #btnMoveDown, #btnMoveUp" if="$StatusFak!=1||#grdRoba.rowcount==0||$Potvrda==Potvrđeno"/> -->
+								<!-- <action type="control enable" value="#btnEditDetalj, #btnDelDetalj, #btnRobaInfo, #btnCijeneDetalj, #btnUrednik, #btnMoveDown, #btnMoveUp" else="" />												 -->
+								<!-- </action>								 -->
+								<!-- </event>								 -->
+								<fields>
+									<field name="userid" caption="Šifra" fontbold="true" fixed="left" showtotalsum="false" showgroupsum="false"/>
+									<field name="RobaNaziv" caption="Naziv robe" fontbold="true" fixed="left"/>
+									<field name="Kolicina" caption="Količina" />
+									<field name="JMNaziv" caption="JM" />
+									<field name="NettoCijenaKn" caption="Cijena" />
+									<!-- GetLocaleCurrencyString -->
+									<field name="ciznosneto" caption="Iznos" />
+									<!-- GetLocaleCurrencyString -->
+									<field name="Rabat" caption="Rabat (%)" />
+									<field name="ciznosRabat" caption="Rabat" />
+									<field name="Cassa" caption="Cassa (%)" />
+									<field name="ciznosCassa" caption="Cassa" />
+									<field name="cijenabezpdv" caption="Cijena bez PDV-a" />
+									<field name="cIznosOsnovica" caption="Iznos bez PDV-a" />
+									<field name="Porez" caption="Porez (%)" />
+									<field name="ciznosPorez" caption="Porez" />
+									<field name="Bruttocijenakn" caption="Cijena s PDV-om" />
+									<field name="vbruttokn" caption="Iznos s PDV-om" />
+									<field name="BruttoCijenaDev" caption="Cijena bez PDV-a (valuta)" />
+									<field name="bruttovrijednostdev" caption="Iznos bez PDV-a (valuta)" />	
+									<field name="NettoCijenaDev" caption="Cijena (valuta)" />
+									<field name="NettoVrijednostDev" caption="Iznos (valuta)" />
+									<field name="nabcijena" caption="Nab. cijena" />
+									<field name="NabVrijednost" caption="Nabavna vrijednost" />
+									<field name="KlMasterRobaNaziv" caption="Klasa robe" />
+									<field name="NalogOtpBroj" caption="Nalog za otp." />
+									<field name="RokPlacanja" caption="Rok plaćanja" />
+									<field name="Rabat1" caption="Rabat 1" />
+									<field name="Rabat2" caption="Rabat 2" />
+									<field name="Rabat3" caption="Rabat 3" />
+									<field name="Rabat4" caption="Rabat 4" />
+									<field name="Rabat5" caption="Rabat 5" />
+									<field name="IndfixVrijednost" caption="Fiksno" />
+									<field name="OrgShemaNaziv" caption="Org. jedinica" />
+									<field name="memo" caption="Napomena" />
+									<!-- <field name="Dimenzije" caption="Dimenzije" /> -->
+									<field name="BrojPonude" value="Broj ponude" />
+									<!-- <field name="JM2Naziv" caption="JM2" /> -->
+									<!-- <field name="JM2Kolicina" caption="JM2 količina" formatstring="n3" showtotalsum="false"/>					 -->
+								</fields>						
+							</grid>
+						</item>
+						<group padding="0" groupbordervisible="false" cols="2" rows="1" col="2" row="2">
+							<group padding="0" groupbordervisible="true" cols="6" rows="1" col="1" row="1">
+								<item row="1" col="1" textvisible="False">
+									<button name="btnAddDetalj" caption="Dodaj" image="add" type="add">
+										<event type="click">
+											<action type="validate"/>
+											<action type="datarun nonquery" value="~dtSpremi"/>
+											<action type="form open" value="frmRoba">
+												<parameter name="FaktureId" value="$FaktureId" />
+												<parameter name="ParStruId" value="#srcParstru" />
+												<parameter name="PartneriId" value="#srcPartner" />
+												<parameter name="Action" value="0" type ="int" />
+												<parameter name="SkladisteId" value="#cmbSkladiste" />
+												<parameter name="DatumDok" value="#datDatumdok" />
+												<parameter name="OrgShemaId" value="#cmbOrgShema" />
+												<parameter name="ValuteId" value="#cmbValuta"/>		
+												<parameter name="Tecaj" value="#bteVrBoda"/>
+												<parameter name="StatusFak" value="$StatusFak"/>	
+												<parameter name="Potvrda" value="$Potvrda"/>											
+											</action>
+											<action type="control disable" value="#btnEditDetalj, #btnDelDetalj, #btnRobaInfo, #btnCijeneDetalj, #btnUrednik, #btnMoveDown, #btnMoveUp" if="$StatusFak!=1||#grdRoba.rowcount==0||$Potvrda==Potvrđeno"/>
+											<action type="control enable" value="#btnEditDetalj, #btnDelDetalj, #btnRobaInfo, #btnCijeneDetalj, #btnUrednik, #btnMoveDown, #btnMoveUp" else="" />
+											<action type="control populate" value="#grdUvjeti" />
+										</event>
+									</button>
+								</item>
+								<item row="1" col="2" textvisible="False">
+									<button name="btnEditDetalj" caption="Izmijeni" type ="edit" image="edit">
+										<event type="click">
+											<action type="validate"/>
+											<action type="datarun nonquery" value="~dtSpremi"/>
+											<action type="form open" value="frmRoba">
+												<parameter name="FakDetaljId" value="#grdRoba.@FakDetaljId"/>
+												<parameter name="FaktureId" value="$FaktureId" />
+												<parameter name="ParStruId" value="#srcParstru" />
+												<parameter name="PartneriId" value="#srcPartner" />
+												<parameter name="Action" value="1" type="int"/>
+												<parameter name="SkladisteId" value="#cmbSkladiste" />
+												<parameter name="DatumDok" value="#datDatumdok" />
+												<parameter name="OrgShemaId" value="#cmbOrgShema" />
+												<parameter name="ValuteId" value="#cmbValuta"/>
+												<parameter name="Tecaj" value="#bteVrBoda"/>
+												<parameter name="StatusFak" value="$StatusFak"/>	
+												<parameter name="Potvrda" value="$Potvrda"/>											
+											</action>
+										</event>
+									</button>
+								</item>
+								<item row="1" col="3" textvisible="False">
+									<button caption="Obriši" name="btnDelDetalj" image="delete">
+										<event type="click">
+											<action type="confirm" value="Želite li obrisati označene stavke s dokumenta?">
+												<action type="control foreachrow selected" value="#grdRoba">
+													<action type="datarun nonquery" value="Global.~dtDetDelete"/>
+												</action>
+												<action type="control populate" value="#grdRoba" />
+												<action type="control disable" value="#btnEditDetalj, #btnDelDetalj, #btnRobaInfo, #btnCijeneDetalj, #btnUrednik, #btnMoveDown, #btnMoveUp" if="$StatusFak!=1||#grdRoba.rowcount==0||$Potvrda==Potvrđeno"/>
+												<action type="control enable" value="#btnEditDetalj, #btnDelDetalj, #btnRobaInfo, #btnCijeneDetalj, #btnUrednik, #btnMoveDown, #btnMoveUp" else="" />												
+												<action type="control populate" value="#grdUvjeti" />
+											</action>
+										</event>
+									</button>
+								</item>
+								<item row="1" col="4" textvisible="False">
+									<button name="btnDonesiDetalj" caption="Donesi">
+										<event type="click">
+											<action type="form open" value="frmDonos">
+												<parameter name="PartneriId" value="#srcPartner" />
+												<parameter name="PartnerNaziv" value="#srcPartner.text" />
+												<parameter name="Action" value="0" />
+												<parameter name="FaktureId" value="$FaktureId" />
+											</action>
+										</event>
+									</button>
+								</item>
+								<!-- <item row="1" col="5" textvisible="False"> -->
+								<!-- <button name="btnInfoStavke" caption="Info stavke"> -->
+								<!-- <event type="click"> -->
+
+								<!-- </event> -->
+								<!-- </button> -->
+								<!-- </item>							 -->
+								<item row="1" col="5" textvisible="False">
+									<button  caption="Urednik" name="btnUrednik">
+										<dropdownitem caption="Rabata">
+											<event type="click">
+												<action type="validate"/>
+												<action type="datarun nonquery" value="~dtSpremi"/>
+												<action type="form open" value="frmUrednikRabata">
+													<parameter name="FaktureId" value="$FaktureId"/>
+													<parameter name="DevValuteId" value="~dtGet.@DevValuteId"/>
+												</action>
+											</event>
+										</dropdownitem>
+										<dropdownitem caption="Obnovi cijene iz ugovora">
+											<event type="click">
+												<action type="validate"/>
+												<action type="confirm" value="Jeste li sigurni da želite obnoviti uvjete na dokumentu?">
+													<action type="control foreachrow selected" value="#grdRoba">
+														<action type="datarun nonquery" value="global.~dtObnoviCijene"/>
+													</action>
+												</action>
+											</event>
+										</dropdownitem>
+										<!-- <dropdownitem caption="Prijenos na ugovore s kupcima"> -->
+										<!-- <event type="click"> -->
+										<!-- <action type="validate"/> -->
+										<!-- <action type="datarun nonquery" value="~dtSpremi"/> -->
+										<!-- <action type="form open" value="frmUrednikKupUgovori"> -->
+										<!-- <parameter name="ProPonGlaId" value="$ProPonGlaId"/> -->
+										<!-- </action> -->
+										<!-- </event> -->
+										<!-- </dropdownitem> -->
+									</button>
+								</item>							
+								<item row="1" col="6" textvisible="False">
+									<button name="btnDimenzije" caption="Dimenzije">
+										<event type="click">
+											<action type="method run" value="fnDimenzijeGla">
+												<parameter name="server" value="@@server" />
+												<parameter name="database" value="@@database" />
+												<parameter name="username" value="@@username" />
+												<parameter name="password" value="" />
+												<parameter name="OperateriId" value="@@operateriid" />
+												<parameter name="Parent" value="0" />
+												<parameter name="pTop" value="0" />
+												<parameter name="pLeft" value="0" />
+												<parameter name="path" value="" />
+												<parameter name="tip" value="FaktureId" />
+												<parameter name="id" value="$FaktureId" />
+												<parameter name="glaid" value="0" />
+											</action>
+										</event>
+									</button>
+								</item>
+							</group>
+							<group padding="0" groupbordervisible="false" cols="1" rows="2" col="2" row="1" >							
+								<columnsdefinition>
+									<column size="42" position="1" />
+								</columnsdefinition>
+								<item row="1" col="1" textvisible="False" spacing="3,0,0,0">
+									<button name="btnMoveUp" caption="↑">
+										<event type="click">
+											<action type="datarun nonquery" value="~dtBtnUp"/>
+											<action type="control populate" value="#grdRoba" />
+										</event>
+									</button>
+								</item>
+								<item row="2" col="1" textvisible="False" spacing="3,0,0,0">
+									<button name="btnMoveDown" caption="↓">
+										<event type="click">
+											<action type="datarun nonquery" value="~dtBtnDown"/>
+											<action type="control populate" value="#grdRoba" />
+										</event>
+									</button>
+								</item>									
+							</group>	
+						</group>
+					</group>
+					<group caption="Vezani dokumenti" padding="0" groupbordervisible="False" cols="1" rows="1" col="1" row="1">
+						<item col="2" row="1" highlight="False" >
+							<grid name="grdVezani" showgrouppanel="False" showfooter="True" savelayout="true" dataname="global.dtGridVezani">								
+								<fields>
+									<!--totalno krivi nazivi s obzirom na dataset dtGridVezani-->
+									<!-- <field name="Dokument" caption="Dokument" fontbold="true" fixed="left"/> -->
+									<!-- <field name="broj" caption="Broj" /> -->
+									<!-- <field name="datumdok" caption="Datum dokumenta" /> -->
+								</fields>						
+							</grid>
+						</item>					
+					</group>
+				</tabs>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI" type="add" >
+					<event type="click">
+						<action type="tab focus" value="tabOsnovno"/>
+						<action type="validate"/>
+						<action type="datarun nonquery" value="global.~dtGlavaEdit"/>
+						<!-- 					 	<action type="control populate" value="parent.#grdGlava" >
+							<action type="control focus" value="parent.#grdGlava">
+								<parameter value="$ProPonGlaId" />
+							</action>
+						</action> -->
+						<action type="form close"/>
+					</event>
+				</button>			
+				<button name="btnZakljuci" caption="STATUS" >
+					<event type="click">
+						<!-- <action type="confirm" value="Želite li zaključiti dokument?"> -->
+						<!-- <action type="validate"/> TODO: provjeriti treba li ostati ovo spremanje kod zakljucka-->
+						<!-- <action type="datarun nonquery" value="global.~dtGlavaEdit"/> -->
+						<action type="variable value" value="Global.$ZakljucakInd">
+							<parameter value="1" />
+						</action>							
+						<action type="form open" value="frmPromijeniStatus">
+							<parameter name="FaktureId" value="$FaktureId"/>
+							<parameter name="NaslovTekst" value="PROMJENA STATUSA"/>
+							<!-- <parameter name="Var" value="Promijeni"/> -->
+						</action>
+						<action type="datarun scalar" value="~dtStatusiProvjeraButton" >
+							<parameter name="PromijeniVrati"/>
+						</action>							
+
+						<action type="form close" if="dialogresult!=cancel"/>
+					</event>
+				</button>
+				<button name="btnOtpisi" caption="OTPIŠI" >
+					<event type="click">
+						<action type="confirm" value="Želite li otpisati dokument?">
+							<action type="validate"/>
+							<action type="datarun nonquery" value="global.~dtGlavaEdit"/>
+							<action type="datarun nonquery" value="global.~dtOtpisi" />
+							<!-- 							<action type="control populate" value="parent.#grdGlava" /> -->
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnPrint" caption="ISPIŠI" dataname="global.~dtPrintFaktura" displayfield="Opis" >
+					<event type="click">
+						<!-- <action type="control print" value="parent.#grdGlavni"> -->
+							<!-- <action type="print template" value="#btnPrint.@Template"> -->
+								<!-- <parameter name="id" value="$FaktureId" /> -->
+							<!-- </action> -->
+						<!-- </action> -->
+						<action type="control print" value="parent.#grdRacuniKonto">
+							<action type="print template" value="#btnPrint.@Template">
+								<parameter name="id" value="$FaktureId" />
+							</action>
+						</action>						
+					</event>
+				</button>				
+				<button name="btnOdustani" caption="ZATVORI" type="cancel">
+					<!-- 					<event type="click">
+						<action type="control populate" value="parent.#grdGlava" >
+							<action type="control focus" value="parent.#grdGlava">
+								<parameter value="$ProPonGlaId" />
+							</action>
+						</action>
+					</event> -->
+				</button>
+				<button name="btnPokojnik" caption="UGOVOR" dock="right">
+					<event type="click">
+
+					</event>
+				</button>			
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spStatusi_CARPOKK" name="dtStatusiProvjeraButton">
+				<parameter name="@action" value="3" />
+				<parameter name="@tablica" value="Fakture"/>				
+				<parameter name="@operateriid" value="@@OperateriId" />
+				<parameter name="@id" value="$FaktureId" type ="int" />
+				<parameter name="@ShowErrorInfo" value="0" type ="int" />
+			</data>	
+		</datalist>		
+	</form>
+	<datalist>
+	<!--datalist za formu  ponuda-->
+		<data command="spNG_Combo" name="dtSkladiste">
+			<parameter name="@Action" value="skladiste" />
+			<parameter name="@Ind" value="1" />
+		</data>
+		<data command="spNG_Combo" name="dtVjerojatnost">
+			<parameter name="@Action" value="Prod_PonGla_Vjerojatnost" />
+		</data>	
+		<data command="spNG_Combo" name="dtMjesta">
+			<parameter name="@Action" value="Mjesta" />
+		</data>
+		<data command="spNG_Combo" name="dtDrzave">
+			<parameter name="@Action" value="Drzave" />
+		</data>	
+		<data command="spNG_Combo" name="dtVrstaProjekta">
+			<parameter name="@Action" value="PtProVrsta" />
+		</data>
+		<data command="spNG_Combo" name="dtInstrumentPlacanja">
+			<parameter name="@Action" value="KntNacinPlac" />
+		</data>	
+		<data command="spNG_Combo" name="dtOrgShema">
+			<parameter name="@Action" value="orgshema" />
+			<parameter name="@Ind" value="1" />
+			<parameter name="@ime_kontrole" value="ID" />
+		</data>
+		<data command="spNG_Combo" name="dtNacinPlacanja">
+			<parameter name="@Action" value="ProNacinNaplate" />
+			<parameter name="@ime_kontrole" value="ProNacinNaplateId" />
+			<parameter name="@ind" value="1" />
+		</data>	
+		<data command="spNG_Combo" name="dtNacinIsporuke">
+			<parameter name="@Action" value="ProNacinIsporuke" />
+			<parameter name="@ime_kontrole" value="NacinIsporukeId" />
+		</data>
+		<data command="spProd_PonDet_RobaCombo" name="dtRobaCombo">
+			<parameter name="@DatumDok" value="#datDatumdok" />
+		</data>		
+		<data command="spStatusi_NG" name="dtStatusi">
+			<parameter name="@action" value="1" if="$VratiStatus==0"/>
+			<parameter name="@action" value="2" if="$VratiStatus==1"/>
+			<parameter name="@tablica" value="ProPonGla"/>				
+			<parameter name="@operateriid" value="@@OperateriId" />
+			<parameter name="@id" value="$ProPonGlaId" type ="int" />
+		</data>	
+		<data command="spProd_PonGla_Revizija" name="dtRevizija">
+			<parameter name="@StatusiId" value="$StatusiId" />
+			<parameter name="@Prethodni_StatusiId" value="#cmbStatusi" />
+			<parameter name="@ProPonGlaId" value="$ProPonGlaId" />
+		</data>	
+		<data command="spNG_Query" name="dtOperaterLock">
+			<parameter name="@Action" value="OperaterLock" />
+			<parameter name="@id" value="#grdGlava.@ProPonGlaId" />
+			<parameter name="@tablica" value="ProPonGla" />
+			<parameter name="@operateriid" value="@@OperateriId" />
+		</data>		
+	<!--datalist za formu faktura-->
+		<data command="spProd_FaktureGla_GridKK" name="dtGet">
+			<parameter name="@Id" value="$FaktureId" />	
+		</data>	
+		<data command="spDajPubVarseKK" name="dtPubVars" />
+		<data command="spStatusi_CARPOKK" name="dtStatusiProvjeraMenu">
+			<parameter name="@action" value="4" />
+			<parameter name="@tablica" value="Fakture"/>				
+			<parameter name="@operateriid" value="@@OperateriId" />
+			<parameter name="@id" value="#grdGlava.@FaktureId" type ="int" />
+			<parameter name="@ShowErrorInfo" value="0" type ="int" />
+		</data>
+		<data command="spPorukeQueryKK" name="dtPoruke">
+			<parameter name="@Action" value="3" />
+			<parameter name="@Sifra" value="30" />
+		</data>	
+		<data command="spProd_FaktureInfoStavkeKK" name="dtGridVezani">
+			<parameter name="@FakDetaljId" value="#grdRoba.@FakDetaljId" />
+		</data>	
+		<data command="spProd_FaktureGla_IzmjenaKK" name="dtGlavaEdit" >
+			<parameter name="@Id" type ="int" value="$FaktureId" />
+			<parameter name="@VrstaDokId" value="$VrstaDokId" />
+			<parameter name="@Prefix" value="" />
+			<parameter name="@Sufix" value="" />
+			<parameter name="@PartneriId" value="#srcPartner" />
+			<parameter name="@ParStruId" value="#srcParstru" />
+			<parameter name="@DatumIsporuke" value="#datDatumIsp" />
+			<parameter name="@DatumDok" value="#datDatumdok" />
+			<parameter name="@DatumValute" value="#datDatumIzd" />
+			<!-- u VB6 u DatumValute se sprema DatumIzdavanja -->
+			<parameter name="@OperateriId" value="@@OperateriId" />
+			<parameter name="@OrgShemaId" value="#cmbOrgShema" />
+			<parameter name="@OsobeId" value="#cmbOsobe" />
+			<parameter name="@BrojNarudzbe" value="" />
+			<parameter name="@ProNacinIsporukeId" value="#cmbNacinOtpreme" />
+			<parameter name="@ProNacinNaplateId" value="#cmbNacinPlacanja" />
+			<parameter name="@VrBoda" value="#bteVrBoda" type="decimal"/>
+			<!-- <parameter name="@BodoviId" value="" /> -->
+			<parameter name="@OsobeParId" value="#cmbKontakt" />
+			<!-- <parameter name="@VrVezano" value="" /> -->
+			<!-- <parameter name="@Cassa" value="" /> -->
+			<!-- <parameter name="@Memo" value="" /> -->
+			<!-- <parameter name="@Status" value="" /> -->
+			<!-- <parameter name="@IndGlk" value="" /> -->
+			<parameter name="@DevValuteId" value="#cmbValuta" />
+			<!-- <parameter name="@ProPlaUvjetiId" value="" /> -->
+			<parameter name="@Opis1" value="#txtOpis1" />
+			<parameter name="@KntNacinPlacId" value="#cmbInstrumentPlacanja" />			
+		</data>
+		<data command="spProd_FakDetalj_GridKK" name="dtGridRoba">
+			<parameter name="@Id" value="global.$DokId" />
+		</data>
+		<data  command="spProd_FakDetalj_ObrisiKK" name="dtDetDelete">
+			<parameter name="@Id" value="#grdRoba.@FakDetaljId" />
+		</data>
+		<data command="spFaktureObnoviKK" name="dtObnoviCijene">
+			<parameter name="@FaktureId" value="$FaktureId" />
+			<parameter name="@FakDetaljId" value="#grdRoba.@FakDetaljId" />
+		</data>	
+		<data command="spProd_FaktureInfoStavkeKK" name="dtGridVezani">
+			<parameter name="@FakDetaljId" value="#grdRoba.@FakDetaljId" />
+		</data>		
+		<data command="select dbo.fnTecaj(@DatumDok, @DevValuteId) as Tecaj" type="text" name="dtDatumValidate" >
+			<parameter name="@DatumDok" value="#datDatumDok" />
+			<parameter name="@DevValuteId" value="#cmbValuta" />
+		</data>
+		<data command="update Fakture set DevValuteId=@DevValuteId, VrBodaDev=@VrBodaDev where FaktureId=@FaktureId" type="text" name="dtUpdateFaktureDevValute" >
+			<parameter name="@DevValuteId" value="#cmbValuta" />
+			<parameter name="@VrBodaDev" value="#bteVrBoda" type="decimal"/>
+			<parameter name="@FaktureId" value="$FaktureId" />
+		</data>	
+		<data command="spProd_FakDetalj_PromjenaTecajaKK" name="dtPromijeniTecaj">
+			<parameter name="@VrBoda" value="0" type="decimal" if="#bteVrBoda==null" />
+			<parameter name="@VrBoda" value="#bteVrBoda" type="decimal" else="" />
+			<parameter name="@FaktureId" value="$FaktureId" type="int"/>
+			<parameter name="@ValuteId" value="#cmbValuta" type="int"/>
+		</data>	
+		<data command="spProd_FaktureGla_ProvjeraKK" name="dtProvjeraDatuma" >
+			<parameter name="@VrstaDokId" value="$VrstaDokId" />
+			<parameter name="@BrojNarudzbe" value="" />
+			<parameter name="@DatumDok" value="#datDatumdok" />
+			<!-- <parameter name="@Status" value="" /> -->
+			<parameter name="@PartneriId" value="#srcPartner" />
+			<parameter name="@Prefix" value="" />
+			<!-- broj -->
+			<parameter name="@OrgShemaId" value="#cmbOrgShema" />
+		</data> 
+		<data command="spCarpo_ComboKK" name="dtOrgShema">
+			<parameter name="@Action" value="orgshema" />
+			<parameter name="@Ind" value="1" />
+			<parameter name="@ime_kontrole" value="ID" />
+		</data>	
+		<data command="spTraziOsobeKK" name="dtOdgovornaOsoba">
+			<parameter name="@Action" value="NaseOsobe" />
+		</data>	
+		<data command="spCarpo_ComboKK" name="dtValuta">
+			<parameter name="@Action" value="valute" />
+			<parameter name="@Ind" value="1" />
+			<parameter name="@Oznaka" value="OznakaNaziv" />
+		</data>		
+		<data command="spTraziPartneriKK" name="dtPartneri">
+			<parameter name="@Action" value="Partneri" />
+			<parameter name="@Uvjet" value="#srcPartner.text" />
+			<parameter name="@broj_lokacija" value="1" />
+		</data>	
+		<data command="select Zabrana from Partneri where PartneriId=@PartneriId" type="text" name="dtPartnerZabrana" >
+			<parameter name="@PartneriId" value="#srcPartner" />
+		</data>		
+		<data command="spDajPartneraKK" name="dtDajPartnera">	
+			<parameter name="@id" value="#srcParstru" />	
+			<parameter name="@partneriid" value="#srcPartner" />
+		</data>	
+		<data command="spTraziParstruKK" name="dtParstru">
+			<parameter name="@action" value="Parstru"/>
+			<parameter name="@Ind_Postotak" value="1"/>				
+			<parameter name="@Uvjet" value="" if="$IndLokacija==1"/>
+			<parameter name="@Uvjet" value="#srcParstru.text" else=""/>
+			<parameter name="@PartneriId" value="$PartneriId"/>
+		</data>	
+		<data command="spTraziOsobeKK" name="dtKontakt">
+			<parameter name="@Action" value="Osobe" />
+			<parameter name="@PartneriId" value="#srcPartner" />
+		</data>	
+		<data command="spDajTecajKK" name="dtTecaj">
+			<parameter name="@ValuteId" value="#cmbValuta" />
+			<parameter name="@Datum" value="#datDatumdok" />
+		</data>	
+		<data command="spCarpo_ComboKK" name="dtIBAN">
+			<parameter name="@Action" value="ParZiro" />
+		</data>	
+		<data command="spCarpo_ComboKK" name="dtInstrumentPlacanja">
+			<parameter name="@Action" value="KntNacinPlac" />
+		</data>		
+		<data command="spCarpo_ComboKK" name="dtNacinPlacanja">
+			<parameter name="@Action" value="ProNacinNaplate" />
+			<parameter name="@ime_kontrole" value="ProNacinNaplateId" />
+			<parameter name="@ind" value="1" />
+		</data>
+		<data command="spCarpo_ComboKK" name="dtNacinIsporuke">
+			<parameter name="@Action" value="ProNacinIsporuke" />
+			<parameter name="@ime_kontrole" value="NacinIsporukeId" />
+		</data>		
+		<data command="spCarpoPrint" name="dtPrintFaktura">
+			<parameter name="@Action" value="GetTemplates" />
+			<parameter name="@Id" value="$FaktureId" type="int" />
+			<parameter name="@Tablica" value="Fakture" />
+		</data>		
+	</datalist>
+	<!---->
+</root>

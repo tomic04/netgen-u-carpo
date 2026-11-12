@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+
+<PROJECT  
+  ONLOAD=":FORM1"  		
+  REPORT="" 	
+  BUTTONS="Parametri:FORM1#Etikete:MULTISELECTETIKETE" 
+  MASTERDBLCLICK=""
+  MULTIGRIDLAYOUT="TRUE"
+  POPUPMASTER=""
+  CHECKBOXVISIBLE="TRUE"
+  PAGEHEADERRIGHT="@@tkosmomi"
+  PAGEHEADERCENTER="Lista dokumenata za etikete"
+  PAGEHEADERLEFT=""
+  PAGEFOOTERCENTER=""
+  PAGEFOOTERLEFT=""
+  PAGEFOOTERRIGHT=""
+  PAGEORIENTATION="LANDSCAPE"
+  DETAILGRID=""
+  DETCHECKBOXVISIBLE="FALSE"
+  DETTOTALROWVISIBLE="FALSE"
+  SETDEFAULTS="select dbo.fnTkoSmoMi() as tkosmomi"
+  COMMANDTIMEOUT="300">
+
+
+	<NAME>Pregled stavaka cjenika za štampanje etiketa </NAME>
+	<CAPTION>Pregled stavaka cjenika za štampanje etiketa </CAPTION>
+
+
+<FORM1 	
+	  FILLEXPLORER="TRUE" 
+	  WIDTH="8500" 
+	  ONSUBMIT="spMPEtiketeCjenikNG @action=1, @operateriid = @@operateriid," 
+	  ONLOAD="select 1 as aktivno, @@vrcjenikid as vrcjenikid" 
+	  HEIGHT="4500" 
+	  CAPTION="Parametri" 
+	  BORDERSTYLE="3" 
+	  CMD1CAPTION="Pokaži" 
+	  CMD2CAPTION="Odustani" 
+	  CMD3CAPTION="" 
+	  CHILDFORM="">
+
+
+	<INPUT TYPE="combo" NAME="vrcjenikid" CAPTION="Cjenik*" TOP="400" LEFT="1200" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="FALSE" SQL="spmpDajMPCjenik @operateriid = @@operateriid"/>
+	<INPUT TYPE="combo" NAME="klasaid" CAPTION="Klasa robe*" TOP="750" LEFT="1200" WIDTH="5500" HEIGHT="320" SQL="select KlMasterRobaid, oznaka+&apos;&apos;+naziv as naziv from KlMasterRoba order by SortKey" ALLOWEMPTY="TRUE" />
+	<INPUT TYPE="checkbox" NAME="podklase" CAPTION="i ispod nje" TOP="1100" LEFT="1500"/>
+	<INPUT TYPE="search" NAME="robaid" CAPTION="Roba*" TOP="1450" LEFT="1200" WIDTH="5500" HEIGHT="320" SQL="spMPRobaZaMPNG @trgovinaid = @@trgovinaid , @trazi = '@@searchboxrobaid'" ALLOWEMPTY="TRUE"/>
+	<INPUT TYPE="text" NAME="search" CAPTION="Traženje pojma*" TOP="1800" LEFT="1200" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="TRUE" />
+	<INPUT TYPE="combo" NAME="jmid" CAPTION="JM*" TOP="2250" LEFT="1200" WIDTH="2500" HEIGHT="320" SQL="select jmid, naziv as naziv from jm order by naziv" ALLOWEMPTY="TRUE" />
+	<INPUT TYPE="combo" NAME="tarifaid" CAPTION="PDV*" TOP="2250" LEFT="4200" WIDTH="2500" HEIGHT="320" SQL="select tarifaid, naziv as naziv from tarifa order by naziv" ALLOWEMPTY="TRUE" />
+  <INPUT TYPE="checkbox" NAME="aktivno" CAPTION="Samo aktivne robe" TOP="2650" LEFT="1500"/>
+  <INPUT TYPE="checkbox" NAME="mpc" CAPTION="Samo robe koje imaju mp cijenu" TOP="2650" LEFT="3500"/>
+
+</FORM1>
+
+
+<MULTISELECTETIKETE	
+	   FILLEXPLORER="TRUE" 
+	   WIDTH="7000" 
+	   ONSUBMIT="" 
+	   ONLOAD="" 
+	   HEIGHT="5000" 
+	   CAPTION="Štampanje etiketa " 
+	   BORDERSTYLE="3" 
+	   REFRESHAFTERCHILD="TRUE">
+		
+			
+	<INPUT TYPE="grid" NAME="stavke" CAPTION="Štampanje iz Jupitera" TOP="546" LEFT="1400" WIDTH="5250" HEIGHT="2968" 
+		   SQL="select c.cjenikid,vrc.opis as [Cjenik2500],r.barcode as [Barcode2500],r.robakod as [Kod2500],r.userid as [Šifra2500],r.naziv  as [Roba3500],
+				c.netocijenakn as [VP neto cijena2000], c.mpcijenakn as [MP cijena2000],
+				c.mpcijenakn+coalesce((select dbo.fnMPDajPOvNaknadaNG(c.robaid,1,null)),0) as [MP cijena s PN2000]
+				from totalgenmultiselecttemp t 
+				inner join cjenik c with(nolock) on t.id=c.cjenikid
+				inner join roba r with(nolock) on c.robaid=r.robaid
+				inner join VrCjenik vrc with(nolock) on c.VrCjenikid=vrc.VrCjenikid 
+				where t.operateriid=@@operateriid"  
+		PAGEHEADERRIGHT=""  
+    PAGEHEADERCENTER="Lista roba za etikete"
+    PAGEHEADERLEFT=""
+    PAGEFOOTERCENTER=""
+    PAGEFOOTERLEFT=""
+    PAGEFOOTERRIGHT=""
+    PAGEORIENTATION="LANDSCAPE"
+		CHECKBOXVISIBLE="FALSE"/>
+	
+	<INPUT TYPE="button" NAME="" CAPTION="Ukloni robu iz liste" TOP="980" LEFT="140" WIDTH="1050" HEIGHT="322" ONCLICK="delete from totalgenmultiselecttemp where id=@@stavke and operateriid=@@operateriid#select 'refresh' as stavke"  />
+	<INPUT TYPE="button" NAME="" CAPTION="Ispis iz jupitera" TOP="3640" LEFT="224" WIDTH="1386" HEIGHT="406" ONCLICK=":repx/rptAgronomMPNaljepniceCjenik(@operateriid=@@operateriid)"  />
+	<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="3696" LEFT="5236" WIDTH="1050" HEIGHT="322" ONCLICK="CLOSE#delete from totalgenmultiselecttemp where operateriid =  @@operateriid"  />
+
+			
+			
+</MULTISELECTETIKETE>
+
+
+
+</PROJECT>

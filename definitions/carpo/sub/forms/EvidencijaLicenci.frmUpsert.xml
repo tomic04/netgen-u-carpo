@@ -1,0 +1,133 @@
+<root>
+	<form name="frmUpsert" caption="Licenca" width="500" saveformsize="false">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" if="$suppKorLicId!=null"/>
+		</event>
+		<event type="shown">
+			<action type="control disable" value="#cmbKorisnik" if="$suppKorLicId!=null"/>
+			<action type="control disable" value="#chkPrimijeni" if="$suppKorLicId==null||$ChangedVrKlijenta==false"/>
+		</event>
+		<layout>
+			<group rows="4" cols="4">
+				<columnsdefinition>
+					<column position="1" size="25%"/>
+					<column position="2" size="25%"/>
+					<column position="3" size="25%"/>
+					<column position="4" size="25%"/>
+				</columnsdefinition>
+				<item row="1" col="1" colspan="2" caption="Korisnik:">
+					<comboedit name="cmbKorisnik" dataname="~dtKorisnik" valuefield="SuppKorisnikId" displayfield="Naziv" datavalue="~dtLoad.@SuppKorisnikId"/>
+				</item>
+				<item row="1" col="3" caption="Vrsta licence:">
+					<comboedit name="cmbLicVrsta" dataname="~dtLicVrsta" valuefield="SuppLicVrstaId" displayfield="Naziv" datavalue="~dtLoad.@SuppLicVrstaId">
+						<event type="valuechanged">
+							<action if="#cmbLicVrsta==9">
+								<action type="control value" value="#chkPrimijeni">
+									<parameter value="true"/>
+								</action>
+								<action type="control enable" value="#chkPrimijeni"/>
+							</action>
+							<action else="">
+								<action type="control value" value="#chkPrimijeni">
+									<parameter value="false"/>
+								</action>
+								<action type="control disable" value="#chkPrimijeni"/>
+							</action>
+						</event>
+					</comboedit>
+				</item>
+				<item row="1" col="4" caption="Datum licence:">
+					<dateedit name="datDatum" value="now" datavalue="~dtLoad.@Datum"/>
+				</item>
+				<item row="2" col="1" caption="Količina (kom):">
+					<textedit name="txtKolicina" format="n0" datavalue="~dtLoad.@Kolicina">
+						<event type="leave">
+							<action type="datarun reader" value="~dtRacunaj"/>
+							<action type="control value" value="#txtCijena">
+								<parameter value="~dtRacunaj.@Cijena"/>
+							</action>
+						</event>
+					</textedit>
+				</item>
+				<item row="2" col="2" caption="Vrijednost (kn):">
+					<textedit name="txtVrijednost" format="n2" datavalue="~dtLoad.@VrijednostLic">
+						<event type="leave">
+							<action type="datarun reader" value="~dtRacunaj"/>
+							<action type="control value" value="#txtCijena">
+								<parameter value="~dtRacunaj.@Cijena"/>
+							</action>
+						</event>
+					</textedit>
+				</item>
+				<item row="2" col="3" caption="Cijena (kn):">
+					<textedit name="txtCijena" format="n2" datavalue="~dtLoad.@Cijena" enabled="false"/>
+				</item>
+				<item row="2" col="4" caption="Rabat (%):">
+					<textedit name="txtRabat" format="n2" datavalue="~dtLoad.@Popust"/>
+				</item>
+				<item row="3" col="1" colspan="4" caption="Opis:">
+					<memoedit name="memOpis" datavalue="~dtLoad.@Opis"/>
+				</item>
+				<item row="4" col="1" colspan="4">
+					<checkedit name="chkPrimijeni" caption="Povećaj vrijednost klijenta?" datavalue="~dtLoad.@ChangedValue"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action if="$suppKorLicId==null">
+							<action type="datarun scalar" value="~dtUpsert">
+								<parameter name="NewId"/>
+							</action>
+							<action type="control populate" value="parent.#grdMaster"/>
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="$NewId"/>
+							</action>
+							<action type="form close"/>
+						</action>
+						<action if="$suppKorLicId!=null">
+							<action type="datarun nonquery" value="~dtUpsert"/>
+							<action type="control populate keepfocus" value="parent.#grdMaster"/>
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtRacunaj" command="spSuppEvidencijaLicenci">
+				<parameter name="@Action" value="RACUNAJ"/>
+				<parameter name="@Kolicina" value="#txtKolicina"/>
+				<parameter name="@Vrijednost" value="#txtVrijednost"/>
+			</data>
+			<data name="dtUpsert" command="spSuppEvidencijaLicenciDML">
+				<parameter name="@Action" value="INSERT" if="$suppKorLicId==null"/>
+				<parameter name="@Action" value="UPDATE" if="$suppKorLicId!=null"/>
+				<parameter name="@suppKorisnikId" value="#cmbKorisnik" if="$suppKorisnikId==null"/>
+				<parameter name="@suppKorLicId" value="$suppKorLicId" if="$suppKorLicId!=null"/>
+				<parameter name="@suppLicVrstaId" value="#cmbLicVrsta"/>
+				<parameter name="@Kolicina" value="#txtKolicina"/>
+				<parameter name="@VrijednostLic" value="#txtVrijednost"/>
+				<parameter name="@Popust" value="#txtRabat"/>
+				<parameter name="@Datum" value="#datDatum"/>
+				<parameter name="@OperaterId" value="@@operateriid"/>
+				<parameter name="@Opis" value="#memOpis"/>
+				<parameter name="@ChangedVrKlijenta" value="#chkPrimijeni"/>
+				<parameter name="@Cijena" value="#txtCijena"/>
+			</data>
+			<data name="dtLoad" command="spSuppEvidencijaLicenci">
+				<parameter name="@Action" value="LOAD"/>
+				<parameter name="@suppKorLicId" value="$suppKorLicId"/>
+			</data>
+			<data name="dtKorisnik" command="spBugsSuppQueryCarpo">
+				<parameter name="@Action" value="KORISNICI"/>
+			</data>
+			<data name="dtLicVrsta" command="spSuppEvidencijaLicenci">
+				<parameter name="@Action" value="VRSTA"/>
+			</data>
+		</datalist>
+	</form>
+</root>

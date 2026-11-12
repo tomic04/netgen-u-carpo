@@ -1,0 +1,531 @@
+<root>
+	<form name="frmInfo" caption="Info granule" template="splitter" splitterposition="150">
+		<event type="init">
+			<action type="datarun reader" value="Global.~dtGet">
+				<parameter value="@jupiterobjectId" />
+			</action>
+			<action type="datarun reader" value="~dtKomponente" />
+			<action type="datarun reader" value="global.~dtExport" />
+			<action type="datarun reader" value="global.~dtExportNazivDok" />
+			<action type="variable value">
+				<parameter name="NazivDok" value="global.~dtExportNazivDok.@Naziv" />
+			</action>
+			<action type="datarun reader" value="global.~dtExportPutanjaDok" />
+			<action type="variable value">
+				<parameter name="PutanjaDok" value="global.~dtExportPutanjaDok.@Putanja" />
+			</action>
+		</event>
+		<event type="load">
+			<action type="control disable" value="#btnPrirucnik" />
+			<action type="control populate" value="#grdKomponente,#grdKomponenteDijeljene,#grdPubVars,#grdVerzije" />
+			<action type="variable value" value="Aktivan">
+				<parameter value="1" if="#grdPubVars.@aktivan==true"/>
+				<parameter value="0" else="" />
+			</action>
+			<action type="control value" value="#datDatumUgovora">
+				<parameter value="now" />
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control disable" value="#btnObrisi" if="#grdKomponente.rowcount==0"/>
+			<action type="control enable" value="#btnObrisi" else="" />
+			<action type="control disable" value="#btnPubVarsDel" if="#grdPubVars.rowcount==0"/>
+			<action type="control enable" value="#btnPubVarsDel" else="" />
+			<action type="control disable" value="#btnPubVarsAdd" if="#cmbPubVars==null"/>
+			<action type="control enable" value="#btnPubVarsAdd" else="" />
+			<action type="control disable" value="#btnVerAdd" if="#srcPartner==null"/>
+			<action type="control enable" value="#btnVerAdd" else="" />
+			<action type="control disable" value="#btnVerDelete" if="#grdVerzije.rowcount==0"/>
+			<action type="control enable" value="#btnVerDelete" else="" />
+			<action type="control disable" value="#btnKomponenteAdd" if="#txtNazivSP==null"/>
+			<action type="control enable" value="#btnKomponenteAdd" else="" />
+			<action type="control disable" value="#btnPrenesi" if="#txtSpMultiInsert==null"/>
+			<action type="control enable" value="#btnPrenesi" else="" />
+			<action type="control disable" value="#btnMultiEdit" if="#grdKomponente.rowcount==0"/>
+			<action type="control enable" value="#btnMultiEdit" else="" />
+		</event>
+		<event type="close">
+			<action type="datarun nonquery" value="~dtPubVarsVratiOznaceno"/>
+			<action type="control refreshvalue" value="#grdPubVars"/>
+		</event>
+		<layout name="panel1">
+			<event type="focusedrowchanged" />
+			<group cols="1" rows="2">
+				<tabs row="1" col="1" padding="4">
+					<group caption="Osnovno" padding="0" groupbordervisible="false" cols="1" rows="9" col="1" row="9">
+						<columnsdefinition>
+							<column size="390" position="1" />
+							<column size="8" position="2" />
+						</columnsdefinition>
+						<item caption="Klasa:" row="1" col="1" fontbold="">
+							<textedit name="txtKlasa" datavalue="~dtGet.@KlasaNaziv" readonly="true"/>
+						</item>
+						<item caption="Komercijalni naziv:" row="2" col="1" fontbold="">
+							<textedit name="txtNazivKomercijalni" datavalue="~dtGet.@RobaNaziv" readonly="true"/>
+						</item>
+						<item caption="Naziv granule:" row="3" col="1" fontbold="">
+							<textedit name="txtNazivGranule" datavalue="~dtGet.@Granula" readonly="true"/>
+						</item>
+						<item caption="Kod:" row="4" col="1" fontbold="">
+							<textedit name="txtKod" datavalue="~dtGet.@Kod" readonly="true"/>
+						</item>
+						<item caption="Parametar:" row="5" col="1" fontbold="">
+							<textedit name="txtParametar" datavalue="~dtGet.@Parametar" readonly="true"/>
+						</item>
+						<item caption="PLM:" row="6" col="1" fontbold="">
+							<textedit name="txtPLM" datavalue="~dtGet.@OsobePLMNaziv" readonly="true"/>
+						</item>
+						<item caption="VPC (bod):" row="7" col="1" fontbold="">
+							<textedit name="txtVPC" datavalue="~dtGet.@NetoCijenaBod" readonly="true"/>
+						</item>
+						<item caption="Memo:" row="8" col="1" fontbold="">
+							<memoedit name="txtMemo" datavalue="~dtGet.@Memo" readonly="true"/>
+						</item>
+						<item row="9" col="1" caption="Ikona" colspan="2">
+							<pictureedit name="picImg" dbimg="~dtGet.@Img" />
+						</item>
+					</group>
+					<group caption="Napomena" padding="0" groupbordervisible="false" cols="2" rows="1" col="1" row="2" height="90">
+						<item caption="Specifičnosti granule:" row="1" col="1" fontbold="" bordervisible="true" height="200">
+							<memoedit name="txtNapomene" datavalue="~dtGet.@Napomene" fontbold="" nulltext="">
+								<event type="valuechanged">
+									<action type="datarun scalar" value="~dtNapomenaInsert" />
+								</event>
+							</memoedit>
+						</item>
+					</group>
+				</tabs>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOdustani" caption="ZATVORI" type="cancel">
+					<event type="click">
+						<action type="datarun scalar" value="~dtNapomenaInsert" />
+					</event>
+				</button>
+				<button name="btnPrirucnik" caption="Priručnik" type="cancel" />
+				<button name="btnExport" caption="Kreiraj paket" type="add">
+					<event type="click">
+						<action type="datarun reader" value="global.~dtExport" />
+						<action type="text export">
+							<parameter name="filePath" value="$PutanjaDok"/>
+							<parameter name="fileName" value="$NazivDok" />
+							<parameter name="extension" value="txt" />
+							<parameter name="showOpenFileDialog" value="true" />
+							<parameter name="textContent" value="global.~dtExport.@Naziv"/>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<layout name="panel2" textposition="top" itemspadding="3">
+			<group cols="1" rows="1" backgroundcolor="">
+				<group cols="1" rows="1" col="1" row="1" backgroundcolor="" groupbordervisible="false">
+					<tabs row="1" col="1" padding="4">
+						<group caption="Komponente" cols="4" rows="6" col="1" row="1" alignmode="local" keyfield="GranulaInfoId">
+							<columnsdefinition>
+								<column size="100%" position="1" />
+								<column size="78" position="4" />
+							</columnsdefinition>
+							<rowsdefinition>
+								<row size="48" position="3" />
+								<row size="38" position="5" />
+								<row size="150" position="6" />
+							</rowsdefinition>
+							<item caption="Objekt (naziv):" row="1" col="1" fontbold="" textposition="" colspan="3">
+								<textedit name="txtNazivSP" datavalue="" nulltext="&lt;unos objekta (naziv procedure, viewa, funkcije,tablice, xml-a)&gt;" required="true">
+									<event type="valuechanged">
+										<action type="control disable" value="#btnKomponenteAdd" if="#txtNazivSP==null||#txtNazivSP==''"/>
+										<action type="control enable" value="#btnKomponenteAdd" else="" />
+									</event>
+								</textedit>
+							</item>
+							<item row="1" col="4" rowspan="">
+								<button name="btnKomponenteAdd" caption="Dodaj" image="add" type="add" imagelocation="middleleft">
+									<event type="click">
+										<action type="datarun scalar" value="~dtKomponenteFormaInsert">
+											<parameter name="GranulaInfoId" />
+										</action>
+										<action type="control populate" value="#grdKomponente" />
+										<action type="control focus" value="#grdKomponente">
+											<parameter value="$GranulaInfoId" type="int" />
+										</action>
+										<action type="control disable" value="#btnKomponenteAdd" if="#grdKomponente.rowcount==0"/>
+										<action type="control enable" value="#btnKomponenteAdd" else="" />
+										<action type="control disable" value="#btnObrisi" if="#grdKomponente.rowcount==0"/>
+										<action type="control enable" value="#btnObrisi" else="" />
+										<action type="control disable" value="#btnMultiEdit" if="#grdKomponente.rowcount==0"/>
+										<action type="control enable" value="#btnMultiEdit" else="" />
+										<action type="control disable" value="#btnKomponenteAdd" if="#txtNazivSP==null"/>
+										<action type="control enable" value="#btnKomponenteAdd" else="" />
+										<action type="control refreshvalue" value="#txtNazivSP"/>
+										<action type="control focus" value="#txtNazivSP"/>
+									</event>
+								</button>
+							</item>
+							<item row="2" col="4" rowspan="">
+								<rowsdefinition>
+									<!-- <row size="48" position="4" /> -->
+								</rowsdefinition>
+								<button name="btnMultiEdit" caption="Izmijeni više" image="edit" imagelocation="middleleft">
+									<event type="click">
+										<action type="confirm" value="Jeste li sigurni da želite izmijeniti prefix = ZVONE :), sufix i putanju na označenim dokumentima?">
+											<action type="control foreachrow selected" value="#grdKomponente">
+												<action type="datarun nonquery" value="~dtKomponenteMultiEdit"/>
+											</action>
+										</action>
+										<action type="control populate" value="#grdKomponente" />
+										<action type="control disable" value="#btnMultiEdit" if="#grdKomponente.rowcount==0"/>
+										<action type="control enable" value="#btnMultiEdit" else="" />
+									</event>
+								</button>
+							</item>
+							<item row="3" col="4" rowspan="">
+								<rowsdefinition>
+									<row size="48" position="2" />
+								</rowsdefinition>
+								<button name="btnObrisi" caption="Obriši" image="delete" type="delete" imagelocation="middleleft">
+									<event type="click">
+										<action type="control foreachrow selected" value="#grdKomponente">
+											<action type="datarun nonquery" value="~dtKomponenteDelete"/>
+										</action>
+										<action type="control populate" value="#grdKomponente" />
+										<action type="control disable" value="#btnObrisi" if="#grdKomponente.rowcount==0"/>
+										<action type="control enable" value="#btnObrisi" else="" />
+										<action type="control disable" value="#btnMultiEdit" if="#grdKomponente.rowcount==0"/>
+										<action type="control enable" value="#btnMultiEdit" else="" />
+									</event>
+								</button>
+							</item>
+							<item caption="Prefix" row="2" col="1" fontbold="" textposition="">
+								<comboedit name="cmbPrefix" valuefield="PubVarsId" displayfield="Prefiks" datavalue="" dataname="~dtPrefiksGet" allownull="true" required="false">
+									<event type="valuechanged">
+										<action type="control disable" value="#btnPubVarsAdd" if="#cmbPubVars==null"/>
+										<action type="control enable" value="#btnPubVarsAdd" else="" />
+									</event>
+								</comboedit>
+							</item>
+							<item caption="Sufix" row="2" col="2" fontbold="" textposition="">
+								<comboedit name="cmbSufix" valuefield="PubVarsId" displayfield="Sufiks" datavalue="" dataname="~dtSufiksGet" allownull="true" required="false">
+									<event type="valuechanged">
+										<action type="control disable" value="#btnPubVarsAdd" if="#cmbPubVars==null"/>
+										<action type="control enable" value="#btnPubVarsAdd" else="" />
+									</event>
+								</comboedit>
+							</item>
+							<item caption="Putanja u TFS-u" row="2" col="3" fontbold="" textposition="">
+								<textedit name="txtPutanja" datavalue="" nulltext="Primjer unosa: DB/Sklad/Stores (nije potrebno navoditi $/ na početku)" required="false" />
+							</item>
+							<item row="3" col="1" colspan="3" rowspan="2">
+								<grid name="grdKomponente" dataname="~dtKomponente" multiselect="true" keyfield="GranulaInfoId" showautofilterrow="true" showgrouppanel="False" showfilter="False" showfooter="false">
+									<event type="focusedrowchanged">
+										<action type="control populate " value="#grdKomponenteDijeljene" />
+									</event>
+									<event type="cellvaluechanged">
+										<action type="datarun nonquery" value="~dtKomponenteUpdate" />
+										<action type="datarun nonquery" value="~dtKomponenteUpdateTip" />
+										<action type="control populate keepfocus" value="#grdKomponente" />
+									</event>
+									<menu>
+										<menuitem caption="Kreiraj paket" sort="1">
+											<event type="click">
+												<action type="datarun reader" value="global.~dtExport" />
+												<action type="text export">
+													<parameter name="filePath" value="C:\JUPITERDEV\"/>
+													<parameter name="fileName" value="$NazivDok" />
+													<parameter name="extension" value="txt" />
+													<parameter name="showOpenFileDialog" value="true" />
+													<parameter name="textContent" value="global.~dtExport.@Naziv"/>
+												</action>
+											</event>
+										</menuitem>
+									</menu>
+									<fields inherited="true">
+										<field name="TfsLink" caption="putanja u TFS-u" editable="true" tooltip="Primjer unosa: DB/Sklad/Stores (nije potrebno navoditi $/ na početku)" />
+										<field name="Prefix" caption="prefix" editable="true" tooltip="dbo" fixed="true" />
+										<field name="Naziv" caption="naziv objekta" fontbold="true" fixed="true"/>
+										<field name="Sufix" caption="sufix" editable="true" tooltip="prc, sql, xml" fixed="true"/>
+										<field name="Tip" caption="tip"/>
+									</fields>
+								</grid>
+							</item>
+							<item row="5" col="1">
+								<button name="btnPrenesi" caption="Prenesi" image="top" type="delete" imagelocation="middlecenter">
+									<event type="click">
+										<action type="datarun scalar" value="~dtMultiInsert" />
+										<action type="control populate" value="#grdKomponente" />
+										<action type="control refreshvalue" value="#txtSpMultiInsert" />
+										<action type="control disable" value="#btnPrenesi" if="#txtSpMultiInsert==null"/>
+										<action type="control enable" value="#btnPrenesi" else="" />
+										<action type="control disable" value="#btnObrisi" if="#grdKomponente.rowcount==0"/>
+										<action type="control enable" value="#btnObrisi" else="" />
+									</event>
+								</button>
+							</item>
+							<item col="2" row="5" textvisible="False" colspan="2">
+								<separator dark="true" backcolor="" />
+							</item>
+							<item row="6" col="1" rowspan="" caption="Popis objekata za multi insert:">
+								<memoedit name="txtSpMultiInsert" datavalue="" fontbold="" nulltext="">
+									<event type="valuechanged">
+										<action type="control disable" value="#btnPrenesi" if="#txtSpMultiInsert==null"/>
+										<action type="control enable" value="#btnPrenesi" else="" />
+									</event>
+								</memoedit>
+							</item>
+							<item row="6" col="2" colspan="2" rowspan="4">
+								<grid caption="Označeni objekt koristi se i u ovim granulama:" name="grdKomponenteDijeljene" dataname="~dtKomponenteDijeljene" keyfield="" showautofilterrow="true" showgrouppanel="False" showfilter="False" showfooter="false">
+									<fields inherited="true">
+										<field name="opis" caption="opis" fixed="true" width="1000" />
+										<field name="parametar" caption="parametar" width="800" />
+									</fields>
+								</grid>
+							</item>
+						</group>
+						<group caption="PubVars" cols="2" rows="6" col="1" row="1" alignmode="local">
+							<columnsdefinition>
+								<column size="100%" position="1" />
+								<column size="70" position="2" />
+							</columnsdefinition>
+							<rowsdefinition>
+								<row size="48" position="1" />
+								<row size="48" position="2" />
+								<row size="148" position="4" />
+								<row size="48" position="5" />
+							</rowsdefinition>
+							<!-- <item row="1" col="1" caption="PubVars:" textposition="left">
+								<comboedit name="cmbPubVars" valuefield="PubVarsId" displayfield="Naziv" datavalue="" dataname="~dtPubvarsGet" allownull="true" required="true">
+									<event type="valuechanged">
+										<action type="control disable" value="#btnPubVarsAdd" if="#cmbPubVars==null"/>
+										<action type="control enable" value="#btnPubVarsAdd" else="" />
+									</event>
+								</comboedit>
+							</item> -->
+							<item row="1" col="1" caption="PubVars:" textposition="left">
+								<combomultiedit name="cmbPubVars" valuefield="PubVarsId" displayfield="Naziv" datavalue="" dataname="~dtPubvarsGet" allownull="true" required="true" showmultiselecttext="true">
+									<event type="valuechanged">
+										<action type="control disable" value="#btnPubVarsAdd" if="#cmbPubVars==null"/>
+										<action type="control enable" value="#btnPubVarsAdd" else="" />
+									</event>
+								</combomultiedit>
+							</item>
+							<item row="1" col="2">
+								<button name="btnPubVarsAdd" caption="Dodaj" image="add" type="add">
+									<event type="click">
+										<action type="datarun scalar" value="~dtPubVarsInsert">
+											<parameter name="NewPubId" />
+										</action>
+										<action type="control populate" value="#grdPubVars" />
+										<action type="control focus" value="#grdPubVars">
+											<parameter value="$NewPubId" type="int" />
+										</action>
+										<action type="control refreshvalue" value="#cmbPubVars" />
+										<action type="control disable" value="#btnPubVarsDel" if="#grdPubVars.rowcount==0"/>
+										<action type="control enable" value="#btnPubVarsDel" else="" />
+									</event>
+								</button>
+							</item>
+							<item row="2" col="2">
+								<button name="btnPubVarsDel" caption="Obriši" image="delete" type="delete" imagelocation="">
+									<event type="click">
+										<action type="control foreachrow selected" value="#grdPubVars">
+											<action type="datarun nonquery" value="~dtPubVarsDelete"/>
+										</action>
+										<action type="control populate" value="#grdPubVars" />
+										<action type="control disable" value="#btnPubVarsDel" if="#grdPubVars.rowcount==0"/>
+										<action type="control enable" value="#btnPubVarsDel" else="" />
+									</event>
+								</button>
+							</item>
+							<item row="2" col="1" rowspan="3">
+								<grid name="grdPubVars" dataname="~dtPubVars" keyfield="GranulaLnPubVarsId" multiselect="true" showautofilterrow="true" showgrouppanel="False" showfilter="False" showfooter="false">
+									<fields inherited="true">
+										<field name="Aktivan" caption=" " fixed="true" editable="true" edittype="bit" tooltip="Odabir pubvarsa za koje se želi kreirati skripta" />
+										<field name="VarIme" caption="Var ime" fixed="true" fontbold="true" />
+										<field name="VarOpis" caption="Var opis" visible="true"/>
+									</fields>
+									<event type="cellvaluechanged">
+										<action type="datarun nonquery" value="~dtPubVarsAktivan"/>
+									</event>
+								</grid>
+							</item>
+							<item row="5" col="1">
+								<button name="btnPubVarsSkripta" caption="Generiraj skriptu za INSERT odabranih PubVarsa" image="" type="add" imagelocation="">
+									<event type="click">
+										<action type="datarun nonquery" value="~dtPubVarsSkripta"/>
+										<action type="datarun reader" value="~dtSkriptaGet" />
+										<action type="control refreshvalue" value="#txtSkriptaPV"/>
+									</event>
+								</button>
+							</item>
+							<item caption="Skripta:" row="6" col="1" fontbold="">
+								<memoedit name="txtSkriptaPV" datavalue="~dtSkriptaGet.@TekstSkripte" readonly="true"/>
+							</item>
+						</group>
+						<group caption="Verzije" cols="4" rows="4" col="1" row="1" alignmode="local">
+							<columnsdefinition>
+								<column size="100%" position="1" />
+								<column size="90" position="2" />
+								<column size="150" position="3" />
+								<column size="70" position="4" />
+							</columnsdefinition>
+							<rowsdefinition>
+								<row size="48" position="2" />
+							</rowsdefinition>
+							<item caption="Odabir firme:" row="1" col="1" colspan="">
+								<searchedit netgenfields="true" name="srcPartner" dataname="dtPartneri" fieldtext="NazivId" fieldvalue="PartneriId" required="true">
+									<event type="valuechanged">
+										<action type="control disable" value="#btnVerAdd" if="#srcPartner==null"/>
+										<action type="control enable" value="#btnVerAdd" else="" />
+									</event>
+								</searchedit>
+							</item>
+							<item caption="Verzija:" col="2" row="1">
+								<textedit name="txtVerzija" format="[0-9][0-9]\.[0-9][0-9][0-9]" formattype="regex" required="true" />
+							</item>
+							<item caption="Datum postavljanja:" col="3" row="1">
+								<dateedit name="datDatumUgovora" value="now" datavalue="~dtGet.@DatumUgovora" required="true"/>
+							</item>
+							<item row="1" col="4">
+								<button name="btnVerAdd" caption="Dodaj" image="add" type="add">
+									<event type="click">
+										<action type="datarun scalar" value="~dtVerzijeInsert">
+											<parameter name="NewVerId" />
+										</action>
+										<action type="control populate" value="#grdVerzije" />
+										<action type="control focus" value="#grdVerzije">
+											<parameter value="$NewVerId" type="int" />
+										</action>
+										<action type="control refreshvalue" value="##" />
+										<action type="control disable" value="#btnVerDelete" if="#grdVerzije.rowcount==0"/>
+										<action type="control enable" value="#btnVerDelete" else="" />
+										<action type="control focus" value="#grdVerzije"/>
+									</event>
+								</button>
+							</item>
+							<item row="2" col="4">
+								<button name="btnVerDelete" caption="Obriši" image="delete" type="delete">
+									<event type="click">
+										<action type="control foreachrow selected" value="#grdVerzije">
+											<action type="datarun nonquery" value="~dtVerzijeDelete"/>
+										</action>
+										<action type="control populate" value="#grdVerzije" />
+										<action type="control disable" value="#btnVerDelete" if="#grdVerzije.rowcount==0"/>
+										<action type="control enable" value="#btnVerDelete" else="" />
+									</event>
+								</button>
+							</item>
+							<item row="2" col="1" colspan="3" rowspan="3">
+								<grid name="grdVerzije" dataname="~dtVerzije" keyfield="GranulaInfo_VerzijeId" multiselect="true" showautofilterrow="true" showgrouppanel="False" showfilter="False" showfooter="false">
+									<fields inherited="true">
+										<field name="Firma" fixed="true" fontbold="true" />
+										<field name="datum" caption="Datum postavljanja" />
+									</fields>
+								</grid>
+							</item>
+						</group>
+					</tabs>
+				</group>
+			</group>
+		</layout>
+		<datalist>
+			<data command="spGranulaInfo_Komponente" name="dtKomponente">
+				<parameter name="@id" value="$jupiterobjectId" />
+			</data>
+			<data command="spGranulaInfo_KomponenteDijeljene" name="dtKomponenteDijeljene">
+				<parameter name="@id" value="#grdKomponente.@GranulaInfoId" />
+			</data>
+			<data command="spGranulaInfo_PubVars" name="dtPubVars">
+				<parameter name="@Id" value="$jupiterobjectId" />
+			</data>
+			<data command="spGranulaInfo_KomponenteUpdate" name="dtKomponenteUpdate">
+				<parameter name="@GranulaInfoId" value="#grdKomponente.@GranulaInfoId" />
+				<parameter name="@Value" value="#grdKomponente.focusedfield" />
+				<parameter name="@Kolona" value="#grdKomponente.focusedvalue"/>
+			</data>
+			<data command="spGranulaInfo_KomponenteInsert" name="dtKomponenteInsert">
+				<parameter name="@Naziv" value="#txtNazivSP" />
+				<parameter name="@jupiterobjectId" value="$jupiterobjectId" />
+			</data>
+			<data command="spGranulaInfo_KomponenteDelete" name="dtKomponenteDelete">
+				<parameter name="@GranulaInfoId" value="#grdKomponente.@GranulaInfoId" />
+			</data>
+			<data command="spGranulaInfo_KomponenteUpdateTip" name="dtKomponenteUpdateTip">
+				<parameter name="@GranulaInfoId" value="#grdKomponente.@GranulaInfoId" />
+				<parameter name="@Value" value="#grdKomponente.focusedfield" />
+				<parameter name="@Kolona" value="#grdKomponente.focusedvalue"/>
+			</data>
+			<data command="spGranulaInfo_PubVarsGet" name="dtPubVarsGet" />
+			<data command="spGranulaInfo_PubVarsInsert" name="dtPubVarsInsert">
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+				<parameter name="@PubVarsId" value="#cmbPubVars" type="string"/>
+			</data>
+			<data command="spGranulaInfo_PubVarsDelete" name="dtPubVarsDelete">
+				<parameter name="@GranulaLnPubVarsId" value="#grdPubVars.@GranulaLnPubVarsId" />
+			</data>
+			<data command="spGranulaInfo_NapomenaInsert" name="dtNapomenaInsert">
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+				<parameter name="@Memo" value="#txtNapomene" />
+			</data>
+			<data command="spGranulaInfo_Verzije" name="dtVerzije">
+				<parameter name="@JupiterObjectId" value="$jupiterobjectId" />
+			</data>
+			<data command="spGranulaInfo_VerzijeInsert" name="dtVerzijeInsert">
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+				<parameter name="@PartneriId" value="#srcPartner" />
+				<parameter name="@Datum" value="#datDatumUgovora" />
+				<parameter name="@Verzija" value="#txtVerzija" />
+			</data>
+			<data command="spGranulaInfo_VerzijeDelete" name="dtVerzijeDelete">
+				<parameter name="@GranulaInfo_VerzijeId" value="#grdVerzije.@GranulaInfo_VerzijeId" />
+			</data>
+			<data command="spTraziPartneri" name="dtPartneri">
+				<parameter name="@action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>
+			<data command="spGranulaInfo_KomponenteFormaInsert" name="dtKomponenteFormaInsert">
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+				<parameter name="@Naziv" value="#txtNazivSP" />
+				<parameter name="@Tip" value="null" />
+				<parameter name="@TfsLink" value="#txtPutanja" />
+				<parameter name="@Prefix" value="#cmbPrefix.text" />
+				<parameter name="@Sufix" value="#cmbSufix.text" />
+			</data>
+			<data command="spGranulaInfo_PreSuFiksGet" name="dtPrefiksGet">
+				<parameter name="@action" value="1" />
+			</data>
+			<data command="spGranulaInfo_PreSuFiksGet" name="dtSufiksGet">
+				<parameter name="@action" value="2" />
+			</data>
+			<data command="spGranulaInfo_MultiInsert" name="dtMultiInsert">
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+				<parameter name="@SpMultiInsert" value="#txtSpMultiInsert" />
+			</data>
+			<data command="spGranulaInfo_PubVarsSkripta" name="dtPubVarsSkripta">
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+			</data>
+			<data command="spGranulaInfo_PubVarsSkriptaGet" name="dtSkriptaGet" />
+
+			<data command="spGranulaInfo_PubVarsUpdate" name="dtPubVarsAktivan">
+				<parameter name="@GranulaLnPubVarsId" value="#grdPubVars.@GranulaLnPubVarsId" />
+				<parameter name="@aktivan" value="1" if="#grdPubVars.@aktivan==true" />
+				<parameter name="@aktivan" value="0" else="" />
+			</data>
+			<data command="spGranulaInfo_PubVarsIdDohvat" name="dtPubVarsDohvatId">
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+			</data>
+			<data command="spGranulaInfo_PubVarsVrati" name="dtPubVarsVratiOznaceno">
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+			</data>
+			<data command="spGranulaInfo_MultiEdit" name="dtKomponenteMultiEdit">
+				<parameter name="@JupiterObjectId" value="$JupiterObjectId" />
+				<parameter name="@GranulaInfoId" value="#grdKomponente.@GranulaInfoId" type="string" />
+				<parameter name="@TfsLink" value="#txtPutanja" />
+				<parameter name="@Prefix" value="#cmbPrefix.text" />
+				<parameter name="@Sufix" value="#cmbSufix.text" />
+			</data>
+		</datalist>
+	</form>
+</root>

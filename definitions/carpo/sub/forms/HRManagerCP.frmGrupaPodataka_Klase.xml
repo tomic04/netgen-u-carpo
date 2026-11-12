@@ -1,0 +1,187 @@
+<root>
+	<!--
+  Komentari:
+  4.11.2025. MP - PERMISSION -> FUNCTION NAME
+  09.11.2021. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmKlase" caption="Klase za {parent.#txtPrezime} {parent.#txtIme}" width="850" height="350" >
+		<event type="load">
+			<action type="control populate" value="#grdKlase"/>		
+			<action type="control disable" value="#btnIzmjena,btnBrisanje" if="#grdKlase.rowcount==0"/>
+
+		</event>
+		<layout>
+			<group cols="1" rows="2" groupbordervisible="false">
+				<group cols="1" rows="1" groupbordervisible="true" col="1" row="1" spacing="2,2,2,1">
+					<item row="1" col="1" highlight="false">
+						<grid name="grdKlase" key="HRKadroviKlaseId" dataname="~dtKlase" multiselect="true" savelayout="true" fieldsmartspaces="false" showgrouppanel="false" bestfitonrefresh="true">
+							<fields inherited="true">
+							</fields>
+							<event type="doubleclick">
+								<action type="form open" value="frmUnosIzmjenaKlase" function="IZMJENA_KLASE">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviKlaseId" value="#grdKlase.@HRKadroviKlaseId" />	
+									<parameter name="Caption" value="Izmjena klase za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdKlase"/>
+								<action type="control populate" value="parent.#grdPodaci"/>		
+							</event>
+						</grid>
+					</item>
+				</group>
+				<group cols="8" rows="1" groupbordervisible="true" col="1" row="2" spacing="2,2,1,2">
+					<item row="1" col="1" highlight="false" height="40">
+						<button name="btnUnos" caption="Unos" function="UNOS_KLASE"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaKlase"> 
+									<parameter name="Caption" value="Unos klase za {parent.#txtPrezime} {parent.#txtIme}"/>		
+									<parameter name="HRKadroviKlaseId" value="0"/>   
+									<parameter name="HRKadroviId" value="$HRKadroviId" />	
+
+								</action>  
+								<action type="control populate keepfocus" value="#grdKlase"/>
+								<action type="control populate" value="parent.#grdPodaci"/>		
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="2" highlight="false" height="40" >
+						<button name="btnIzmjena" caption="Izmjena" function="IZMJENA_KLASE"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaKlase">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviKlaseId" value="#grdKlase.@HRKadroviKlaseId" />	
+									<parameter name="Caption" value="Izmjena klase za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdKlase"/>
+								<action type="control populate" value="parent.#grdPodaci"/>		
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="3" highlight="false" height="40">
+						<button name="btnBrisanje" caption="Brisanje" function="BRISANJE_KLASE"> 
+							<event type="click">   
+								<action type="confirm" value="Jeste li sigurni da želite obrisati izabrani zapis?">
+									<action type="datarun nonquery" value="~dtBrisanjeKlase">
+
+									</action>
+								</action>
+								<action type="control populate" value="#grdKlase,parent.#grdPodaci"></action>    
+								<action type="control disable" value="#btnIzmjena,btnBrisanje" if="#grdKlase.rowcount==0"/>
+							</event>  
+						</button>
+					</item>
+
+					<item row="1" col="4" colspan="4" highlight="false" height="40"/>
+					<item row="1" col="8" highlight="false" height="40">
+						<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+							<event type="click">
+								<action type="form close" />
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+
+		</layout>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_Klase_CP" name="dtKlase">
+				<parameter name="@action" value="grid_Klase" />
+				<parameter name="@hrkadroviid" value="$HRKadroviId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Klase_CP" name="dtBrisanjeKlase">
+				<parameter name="@action" value="brisanje"/>
+				<parameter name="@HRKadroviKlaseId" value="#grdKlase.@HRKadroviKlaseId"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!-- FORMA ZA UNOS,IZMJENU-->
+	<form name="frmUnosIzmjenaKlase" caption="$Caption" width="380" height="100" fixedsize="true">
+				<event type="init">
+<action type="datarun reader" value="~dtKlase" if="$HRKadroviKlaseId!=0" />
+		</event>
+		<event type="shown">
+		</event>
+		<layout>
+		<group cols="2" rows="1" groupbordervisible="true">
+             <item row="1" col="1" caption="Naziv klase:" highlight="false" colspan="2">
+				<comboedit name="cmbNazivKlase" required="true" valuefield="HRKlaseId" displayfield="Naziv" dataname="~dtGetKlase" datavalue="~dtKlase.@HRKlaseId"/>
+			</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+						<action type="validate"/>
+						<action if="$HRKadroviKlaseId==0">
+							<action type="datarun reader" value="~dtUnos">
+								<action type="control populate" value="parent.#grdKlase">
+									<action type="control focus" value="parent.#grdKlase">
+										<parameter value="$noviID"/>
+									</action>
+								</action>
+							</action>
+							<action type="control enable" value="parent.#btnIzmjena,parent.#btnBrisanje"/>
+						</action>
+						<action if="$indGreske==0">
+							<action type="message" value="Uspješno spremljeno!"/>
+							<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+							<action type="variable value" value="global.$RefreshajMaster">
+								<parameter value="1" type="int"/>
+							</action>
+							<action type="form close" />
+						</action>
+						<action if="$HRKadroviKlaseId!=0">
+							<action type="datarun reader" value="~dtIzmjena"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+								<action type="variable value" value="global.$RefreshajMaster">
+									<parameter value="1" type="int"/>
+								</action>
+								<action type="form close"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+		<data command="spHRManagerMaster_Podaci_Klase_CP" name="dtKlase">
+				<parameter name="@action" value="getKlase" />
+				<parameter name="@HRKadroviKlaseId" value="$HRKadroviKlaseId" type="int"/>
+			</data>
+		<data command="spHRManagerMaster_Podaci_Klase_CP" name="dtGetKlase">
+				<parameter name="@action" value="hrklase" />
+				<parameter name="@hrkadroviid" value="$hrkadroviid" type="int"/>
+				<parameter name="@HRKadroviKlaseId" value="$HRKadroviKlaseId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Klase_CP" name="dtUnos">
+				<parameter name="@action" value="unos"/>
+				<parameter name="@HRKadroviKlaseId.output.int" variablename="noviID"></parameter>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@HRKlaseId"  value="#cmbNazivKlase" />
+				<parameter name="@indGreske.output.int"/>			
+			</data>
+			<data  command="spHRManagerMaster_Podaci_Klase_CP" name="dtIzmjena">
+				<parameter name="@action" value="izmjena"/>
+				<parameter name="@HRKadroviKlaseId" value="$HRKadroviKlaseId"/>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@HRKlaseId"  value="#cmbNazivKlase" />
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+</root>

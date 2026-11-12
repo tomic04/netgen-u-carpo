@@ -1,0 +1,135 @@
+<root>
+	<form type="master" statusbar="true" name="frmMaster" caption="MobLimiti">
+		<method name="ExcelDonos" dll="ExcelImport" class="ExcelImport.Start" method="TotalGen" />
+		<event type="init">
+			<action type="datarun reader" value="Global.~dtGet" />
+		</event>
+		<event type="shown">
+			<action type="control populate keepfocus" value="#grdGlava" />
+		</event>
+		<managerlayout>
+			<!--filter drveta-->
+			<!-- <lookup name="cmbFilter">
+				<comboitem value="VremenskaPodjela" />
+				<comboitem value="Operateri" />
+			</lookup> -->
+			<tree name="tree" filtermode="smart">
+				<data command="spMobLimiti_Tree" key="BrojRacuna" else=""/>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava" />
+				</event>
+				<fields>
+					<field name="Naziv" />
+				</fields>
+			</tree>
+			<grid name="grdGlava" type="master" key="MobLimitiId" autopopulate="false" showgroupsum="false" dataname="Global.~dtGet" savelayout="true" bestfitonrefresh="true" multiselect="true">
+				<fields inherited="true" />
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDonos" caption="Donos EXCEL" image="list" function="Excel">
+					<event type="click">
+						<action type="datarun reader" value="global.~dtDonosParametri" />
+						<action type="variable value">
+							<parameter name="param" value="global.~dtDonosParametri.@param" />
+						</action>
+						<action message="1" />
+						<action type="method run" value="ExcelDonos">
+							<!-- PROBATI BEZ GLAID-A -->
+							<parameter name="id" value="#tree.@Id" />
+							<parameter name="operateriId" value="@@OperateriId" />
+							<parameter name="cs" value="server={@@server};database={@@database};uid={@@uid};pwd={@@pwd}" />
+							<parameter name="param" value="" />
+							<parameter name="param2" value="$param" />
+						</action>
+						<action type="form open" value="frmImportPregled">
+							<!-- <parameter name="NabPlanNabaveGlaId" value="$NabPlanNabaveGlaId" /> -->
+						</action>
+						<action type="control populate" value="#grdMaster"/>
+						<!-- <action type="control disable" value="#btnEditDetalj, #btnDelDetalj" if="#grdRoba.rowcount==0"/>
+						<action type="control enable" value="#btnEditDetalj, #btnDelDetalj" else="" /> -->
+					</event>
+				</button>
+				<!-- tgest 2 
+				<button name="btnImportExcel" caption="Import Excel" function="Excel">
+					<event type="click">
+						<action type="datarun nonquery" value="Global.dtExcelOcisti"/>
+						<action type="method run" value="ExcelDonos">
+							<parameter name="id" value="#tree.@FaktureObracunId" />
+							<parameter name="operateriId" value="@@OperateriId" />
+							<parameter name="cs" value="server={@@server};database={@@database};uid={@@uid};pwd={@@pwd}" />
+							<parameter name="param" value="" />
+							<parameter name="param2" value="Global.$param" />
+						</action>
+						<action type="form open" value="frmExcelDonos">
+							<parameter name="FaktureObracunId" value="#tree.@FaktureObracunId" />
+						</action>
+						<action type="control populate" value="parent.#grdGlava" />
+					</event>
+				</button>  -->
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<!-- <data command="spDatumi" name="dtDajDatum">
+				<parameter name="@action" value="$varDatAction" />
+			</data> -->
+		</datalist>
+	</form>
+	<form name="frmImportPregled">
+		<event type="load">
+			<action type="control populate" value="#grdDonos"/>
+		</event>
+		<event type="close">
+			<action type="form close" value="~dtDataDelete" />
+		</event>
+		<layout textposition="top">
+			<group cols="1" rows="1">
+				<item col="1" row="3" highlight="false" caption="Pronađene stavke:" fontbold="true">
+					<grid name="grdDonos" dataname="~dtDonosGet" multiselect="true">
+						<fields inherited="true">
+							<field name="evidencijskiBroj" caption="Evidencijski broj" fontbold="true" fixed="left" />
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Donesi">
+					<event type="click" waittype="progress" waitcaption="Obrada" waittext="donos stavaka..." sleep="2000">
+						<action type="datarun scalar" value="~dtDataInsert" />
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtDataDelete" />
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMobLimiti_DetImportExcel_Query" name="dtDonosGet" timeout="360">
+				<!-- <parameter name="@Id" value="$NabPlanNabaveGlaId" />
+				<parameter name="@OperateriId" value="@@OperateriId" /> -->
+			</data>
+			<data command="spMobLimiti_DetImportExcel_Azur" name="dtDataInsert" timeout="360">
+				<!-- <parameter name="@Id" value="$NabPlanNabaveGlaId" />
+				<parameter name="@OperateriId" value="@@OperateriId" /> -->
+			</data>
+			<data command="spNab_PlanNabave_DetImportExcel_Delete" name="dtDataDelete">
+				<!-- <parameter name="@Id" value="$NabPlanNabaveGlaId" />
+				<parameter name="@OperateriId" value="@@OperateriId" /> -->
+			</data>
+		</datalist>
+	</form>
+	<!-- global -->
+	<datalist>
+		<data command="spMobLimiti_StavkeGet" name="dtGet" />
+		
+	<data command="spMobLimiti_GetDonosParametri" name="dtDonosParametri" timeout="360" />
+	</datalist>
+	
+</root>

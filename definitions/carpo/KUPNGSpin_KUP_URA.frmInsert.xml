@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+KUPNGSpin_KUP_URA - subforma: INSERTFORM (NetGen) → frmInsert (Carpo)
+Napomena: NetGen koristi "++#" mapiranje (implicitno slanje vrijednosti kontrola). Ovdje je eksplicitno mapirano na parametre SP-a.
+-->
+<root version="1.2">
+  <form name="frmInsert" caption="Unos dokumenta" type="dialog" width="760" height="520" fixedsize="false">
+    <event type="shown">
+      <action type="control populate" value="#cmbVrstaPoste,#cmbValuta,#cmbOrgShema"/>
+      <action type="control focus" value="#cmbVrstaPoste"/>
+    </event>
+
+    <layout>
+      <group cols="2" rows="12" groupbordervisible="false">
+        <item col="1" row="1" caption="Vrsta pošte:" textposition="left">
+          <comboedit name="cmbVrstaPoste" dataname="~dtVrstaPoste" valuefield="kupvrstaposteid" displayfield="naziv" allownull="true"/>
+        </item>
+        <item col="2" row="1" caption="Urudžbeni broj:" textposition="left">
+          <textedit name="txtUrudzbeni" enabled="false"/>
+        </item>
+
+        <item col="1" row="2" caption="Veza na ur. broj:" textposition="left">
+          <textedit name="txtVezaUrudzbeni"/>
+        </item>
+        <item col="2" row="2" caption="Partner:" textposition="left">
+          <searchedit name="srcPartner"
+                      dataname="~dtPartneri"
+                      fieldvalue="PartneriId"
+                      fieldtext="NazivId"
+                      savelayout="true"/>
+        </item>
+
+        <item col="1" row="3" caption="Pošiljatelj:" textposition="left">
+          <textedit name="txtPosiljatelj"/>
+        </item>
+        <item col="2" row="3" caption="Broj dokumenta:" textposition="left">
+          <textedit name="txtBrojDok"/>
+        </item>
+
+        <item col="1" row="4" caption="Broj UFE:" textposition="left">
+          <textedit name="txtBrojUfe"/>
+        </item>
+        <item col="2" row="4" caption="Broj narudžbe:" textposition="left">
+          <searchedit name="srcNarudzba"
+                      dataname="~dtNarudzbe"
+                      fieldvalue="NabNarGlaId"
+                      fieldtext="Broj"
+                      savelayout="true"/>
+        </item>
+
+        <item col="1" row="5" caption="Rješenje:" textposition="left">
+          <textedit name="txtRjesenje"/>
+        </item>
+        <item col="2" row="5" caption="Opis:" textposition="left">
+          <textedit name="txtOpis"/>
+        </item>
+
+        <item col="1" row="6" caption="Iznos:" textposition="left">
+          <textedit name="curIznos" format="n4" value="0"/>
+        </item>
+        <item col="2" row="6" caption="Valuta:" textposition="left">
+          <comboedit name="cmbValuta" dataname="~dtValute" valuefield="ValuteId" displayfield="Naziv" allownull="true"/>
+        </item>
+
+        <item col="1" row="7" caption="Org. shema:" textposition="left">
+          <comboedit name="cmbOrgShema" dataname="~dtOrgShema" valuefield="OrgShemaId" displayfield="Naziv" allownull="true"/>
+        </item>
+        <item col="2" row="7" caption="Datum prijema:" textposition="left">
+          <dateedit name="datDatumPrijema"/>
+        </item>
+
+        <item col="1" row="8" caption="Datum valute:" textposition="left">
+          <dateedit name="datDatumValute"/>
+        </item>
+        <item col="2" row="8" caption="Datum dokumenta:" textposition="left">
+          <dateedit name="datDatumDokumenta"/>
+        </item>
+
+        <item col="1" row="9" colspan="2" caption="Napomena:" textposition="left">
+          <memoedit name="memNapomena"/>
+        </item>
+      </group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="SPREMI">
+          <event type="click" waittype="progress" waitcaption="Spremanje" waittext="Spremam...">
+            <action type="datarun nonquery" value="~dtInsert"/>
+            <action type="form close"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" dock="right">
+          <event type="click">
+            <action type="form close"/>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data name="dtVrstaPoste" type="text" timeout="300"
+            command="select kupvrstaposteid, naziv from kupvrstaposte order by naziv"/>
+
+      <data name="dtValute" type="text" timeout="300"
+            command="select ValuteId, Naziv=(ltrim(oznaka)+space(2)+rtrim(naziv)), oznaka as oznakaid from Valute order by oznaka"/>
+
+      <data name="dtOrgShema" type="text" timeout="300"
+            command="select OrgShemaId, naziv=rtrim(naziv), sortkey as sortkeyid from orgshema order by naziv"/>
+
+      <data name="dtPartneri" command="spTraziPartneri" timeout="300">
+        <parameter name="@action" value="'Partneri'"/>
+        <parameter name="@uvjet" value="#srcPartner.text"/>
+      </data>
+
+      <data name="dtNarudzbe" command="spKUPNabNarQuery" timeout="300">
+        <parameter name="@partneriid" value="#srcPartner"/>
+        <parameter name="@filter" value="#srcNarudzba.text"/>
+      </data>
+
+      <data name="dtInsert" command="spKUPPrometAzurN" timeout="300">
+        <parameter name="@Action" value="0"/>
+        <parameter name="@operateriid" value="@@operateriid"/>
+        <parameter name="@KupVrstaPosteId" value="#cmbVrstaPoste"/>
+        <parameter name="@UrudzbeniBroj" value="#txtUrudzbeni"/>
+        <parameter name="@UrudzbeniBrojVeza" value="#txtVezaUrudzbeni"/>
+        <parameter name="@PartneriId" value="#srcPartner"/>
+        <parameter name="@Posiljatelj" value="#txtPosiljatelj"/>
+        <parameter name="@Broj" value="#txtBrojDok"/>
+        <parameter name="@BrojUfe" value="#txtBrojUfe"/>
+        <parameter name="@NabNarGlaId" value="#srcNarudzba"/>
+        <parameter name="@Rjesenje" value="#txtRjesenje"/>
+        <parameter name="@Opis" value="#txtOpis"/>
+        <parameter name="@Iznos" value="#curIznos"/>
+        <parameter name="@ValuteId" value="#cmbValuta"/>
+        <parameter name="@OrgShemaId" value="#cmbOrgShema"/>
+        <parameter name="@DatumPrijema" value="#datDatumPrijema"/>
+        <parameter name="@DatumValute" value="#datDatumValute"/>
+        <parameter name="@DatumDokumenta" value="#datDatumDokumenta"/>
+        <!-- TODO: NetGen nema sve parametre koje SP može očekivati (Dana, Osnovica, baza...). -->
+        <parameter name="@baza" value="'CARPO'"/>
+        <parameter name="RaiseInfoMsg" value="true"/>
+      </data>
+    </datalist>
+  </form>
+</root>
+

@@ -1,0 +1,139 @@
+﻿<root>
+<!--26.07.2021. JVV ukoliko nema sliku (ne povlači dobro iz HRPubVars) postaviti na No image data i neće prikazivati grešku-->
+  <!--******************************************GLAVNA FORMA****************************************-->
+  <form name="HRKadroviSlike" type="master" caption="Slike djelatnika" fixedsize="true" width="300" height="500" saveformsize="false" >
+    
+    <event type="shown">
+      <action type="datarun reader" value="~dtNoIMageSlika"></action>
+      <action type="control populate" value="#picTest"/>
+    <action type="datarun reader" value="~dtSlika" waittype="progress" waitcaption="Učitavanje..." waittext="....slike..."></action>
+              <action type="control attribute" value="#picTest" if="~dtSlika.@ImaSliku==1">
+                <parameter name="dbimg" value="~dtSlika.@Slika"/>
+              </action>
+                <action type="control attribute" value="#picTest" if="~dtSlika.@ImaSliku==0">
+                <parameter name="dbimg" value="No image data"/>
+              </action>
+    </event>
+
+    <layout textposition="left" >
+    <!--glavna grupa-->
+      <group cols="1" rows="2" groupbordervisible="false">
+        <rowsdefinition>
+          <row position="1" size="10%"/>
+          <row position="2" size="90%"/>
+        </rowsdefinition>
+        <item col="1" row="1" caption="Djelatnik:" colspan="2">
+          <comboedit name="cmbDjelatnik"  valuefield="HRKadroviId" displayfield="Naziv" dataname="~dtDjelatnik" allownull="false" autopopulate="false">
+            <event type="valuechanged">
+              <!--<action type="message" value="test"/>-->
+              <action type="datarun reader" value="~dtSlika" waittype="progress" waitcaption="Učitavanje..." waittext="....slike..."></action>
+              <action type="control attribute" value="#picTest" if="~dtSlika.@ImaSliku==1">
+                <parameter name="dbimg" value="~dtSlika.@Slika"/>
+              </action>
+                <action type="control attribute" value="#picTest" if="~dtSlika.@ImaSliku==0">
+                <parameter name="dbimg" value="No image data"/>
+              </action>
+            </event>
+          </comboedit>
+          </item>
+        <item row="2" col="1">
+          <pictureedit name="picTest" />
+         <!--sizemode="stretch"-->
+        </item>
+      
+    
+    
+        </group>
+    </layout>
+    
+    <panelbuttons>
+      <buttons>
+        <button caption="Promijeni sliku" type="add" dock="left">
+          <event type="click">
+            <action type="form open" value="frmPromjena">
+              <parameter name="hrkadrovislikeid" value="~dtSlika.@hrkadrovislikeid"/>
+            </action>
+          <action type="datarun reader" value="~dtSlika" waittype="progress" waitcaption="Učitavanje..." waittext="....slike..."></action>
+              <action type="control attribute" value="#picTest" if="~dtSlika.@ImaSliku==1">
+                <parameter name="dbimg" value="~dtSlika.@Slika"/>
+              </action>
+                <!-- <action type="control attribute" value="#picTest" if="~dtSlika.@ImaSliku==0">
+                <parameter name="dbimg" value="No image data"/>
+              </action> -->
+          </event>
+        </button>
+        <button caption="Izlaz" type="cancel" dock="right">
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>      
+
+    <datalist>
+      <data command="spHRKadroviSlikeCP" name="dtDjelatnik">
+        <parameter name="@Action" value="2"/>
+      </data>
+      <data command="spHRKadroviSlikeCP" name="dtSlika">
+        <parameter name="@Action" value="3"/>
+        <parameter name="@hrkadroviid" value="#cmbDjelatnik"/>
+      </data>
+      <data command="spHRKadroviSlikeCP" name="dtNoIMageSlika">
+        <parameter name="@Action" value="4"/>
+      </data>
+    
+    </datalist>
+  </form>
+ 
+  <!--*******************************************KRAJ GLAVNA FORMA**************************************************-->
+
+  
+
+<form name="frmPromjena" type="master" caption="Promjena slike za {parent.#cmbDjelatnik.@Naziv}" fixedsize="false" width="500" height="100" >
+    
+    <layout textposition="left" >
+    <!--glavna grupa-->
+      <group cols="1" rows="1" groupbordervisible="false">
+        
+        <item caption="" col="1" row="1" textposition="left" rowspan="7">
+          <browseedit name="brwDatoteka" type="file" required="true" />
+        </item>
+        </group>
+    </layout>
+    
+    <panelbuttons>
+      <buttons>
+        <button caption="Spremi" type="add" dock="left">
+          <event type="click">
+            <action type="validate"/>
+            <action type="datarun reader" value="~dtSpremiSliku"/>
+            <action if="~dtSpremiSliku.@indgreske==1">
+              <action type="message" value="~dtSpremiSliku.@poruka"/>
+            </action>
+            <action if="~dtSpremiSliku.@indgreske==0">
+              <action type="message" value="~dtSpremiSliku.@poruka"/>
+              <action type="form close"/>
+            </action>
+          </event>
+        </button>
+        <button caption="Izlaz" type="cancel" dock="right">
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>      
+
+    <datalist>
+      <data command="spHRKadroviSlikeCP" name="dtSpremiSliku">
+        <parameter name="@Action" value="1"/>
+        <parameter name="@hrkadroviid" value="parent.#cmbDjelatnik"/>
+        <parameter name="@hrkadrovislikeid" value="$hrkadrovislikeid"/>
+        <parameter name="@slikaVarbinary" value="#brwDatoteka" type="varbinary"/>    
+      </data>
+    </datalist>
+  </form>
+  
+</root>
+
+

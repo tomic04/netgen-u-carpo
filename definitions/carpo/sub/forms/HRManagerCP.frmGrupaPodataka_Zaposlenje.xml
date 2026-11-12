@@ -1,0 +1,123 @@
+<root>
+	<!--
+  Komentari:
+  4.11.2025. MP - PERMISSION -> FUNCTION NAME
+  09.11.2021. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmZaposlenje" caption="Zaposlenje za {parent.#txtPrezime} {parent.#txtIme}" width="400" height="250" fixedsize="true">
+				<event type="init">
+<action type="datarun reader" value="~dtZaposlenje" if="$HRKadroviId!=0" />
+		</event>
+		<event type="shown">
+		<!-- AKO JE IZMIJENA, POPUNI KONTROLE-->
+			<action if="$Tip=='Izmjena'">
+			<action type="control disable" value="#dtDatumOdlaska" if="~dtZaposlenje.@DatumOdlaska==null"></action>
+			
+			<action if="~dtZaposlenje.@DatumOdlaska==null">
+					<action type="control value" value="#dtDatumOdlaska" >
+						<parameter value="now" />
+					</action>
+				</action>
+			</action>
+		</event>
+		<layout>
+		<group cols="1" rows="2" groupbordervisible="false">
+
+			<group cols="2" rows="4" caption="Početak radnog odnosa" groupbordervisible="true" col="1" row="1" spacing="2,2,2,1">
+
+				<item row="1" col="1" highlight="false" caption="Razlog dolaska:" colspan="2">
+					<comboedit name="cmbRazlogDolaska" valuefield="HRRazlogDolaskaId" displayfield="naziv" dataname="~dtRazlogDolaska" datavalue="~dtZaposlenje.@HRRazlogDolaskaId"/>
+				</item>
+				<item row="2" col="1" caption="Datum dolaska:" highlight="false" >
+					<dateedit name="dtDatumDolaska" value="now" allownull="false" datavalue="~dtZaposlenje.@datumdolaska">
+					</dateedit>
+				</item>
+				<item row="2" col="2" highlight="false" padding="18">
+					<checkedit name="chckPrvoZaposlenje" caption="Prvo zaposlenje" datavalue="~dtZaposlenje.@prvozaposlenje"/>
+				</item>
+				<item row="3" col="1" caption="Dokument:" highlight="false" colspan="2">
+					<textedit name="txtDokument"  datavalue="~dtZaposlenje.@DokumentDolaska">
+					</textedit>
+				</item>
+				<item row="4" col="1" caption="Napomena:" highlight="false" colspan="2">
+					<textedit name="txtNapomena"  datavalue="~dtZaposlenje.@NapomenaDolaska">
+					</textedit>
+				</item>
+			</group>
+			<group cols="2" rows="4" caption="Završetak radnog odnosa" groupbordervisible="true" col="1" row="2" spacing="2,2,1,2">
+				<item row="1" col="1" highlight="false" caption="Razlog odlaska:" colspan="2">
+					<comboedit name="cmbRazlogOdlaska" valuefield="HRRazlogOdlaskaId" displayfield="naziv" dataname="~dtRazlogOdlaska" datavalue="~dtZaposlenje.@HRRazlogOdlaskaId"/>
+				</item>
+				<item row="2" col="1" caption="Datum odlaska:" highlight="false" >
+					<dateedit name="dtDatumOdlaska" value="now" allownull="true" datavalue="~dtZaposlenje.@DatumOdlaska">
+					</dateedit>
+				</item>
+				<item row="3" col="1" caption="Dokument:" highlight="false" colspan="2">
+					<textedit name="txtDokument2"  datavalue="~dtZaposlenje.@DokumentOdlaska">
+					</textedit>
+				</item>
+				<item row="4" col="1" caption="Napomena:" highlight="false" colspan="2">
+					<textedit name="txtNapomena2"  datavalue="~dtZaposlenje.@NapomenaOdlaska">
+					</textedit>
+				</item>
+			</group>
+		</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left" function="SPREMI_ZAPOSLENJE">
+					<event type="click">
+						<action type="validate"/>
+						
+						<action if="$HRKadroviId!=0">
+							<action type="datarun reader" value="~dtIzmjena"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<action type="control populate" value="parent.#grdPodaci"/>
+								<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+								<action type="variable value" value="global.$RefreshajMaster">
+									<parameter value="1" type="int"/>
+								</action>
+								<action type="form close"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+		<data command="spHRHelp" name="dtRazlogDolaska">
+				<parameter name="@action" value="hrrazlogdolaska"/>
+			</data>
+			<data command="spHRHelp" name="dtRazlogOdlaska">
+				<parameter name="@action" value="hrrazlogodlaska"/>
+			</data>
+		<data command="spHRManagerMaster_Podaci_Zaposlenje_CP" name="dtZaposlenje">
+				<parameter name="@action" value="getZaposlenje" />
+				<parameter name="@HRKadroviId" value="$HRKadroviId" type="int"/>
+			</data>
+			<data  command="spHRManagerMaster_Podaci_Zaposlenje_CP" name="dtIzmjena">
+				<parameter name="@action" value="izmjena"/>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@HRRazlogDolaskaId"  value="#cmbRazlogDolaska" />
+				<parameter name="@DatumDolaska"  value="#dtDatumDolaska" />
+				<parameter name="@DokumentDolaska"  value="#txtDokument" />
+				<parameter name="@NapomenaDolaska"  value="#txtNapomena" />
+				<parameter name="@PrvoZaposlenje"  value="#chckPrvoZaposlenje" />
+                <parameter name="@HRRazlogOdlaskaId"  value="#cmbRazlogOdlaska" />
+				<parameter name="@DatumOdlaska"  value="#dtDatumOdlaska" />
+				<parameter name="@DokumentOdlaska"  value="#txtDokument2" />
+				<parameter name="@NapomenaOdlaska"  value="#txtNapomena2" />
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+</root>

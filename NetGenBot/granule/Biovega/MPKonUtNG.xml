@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+
+<PROJECT  
+		ONLOAD=":FORM1"  		
+		REPORT="" 	
+		CMD1CAPTION="Parametri:FORM1" 
+		CMD2CAPTION="Računi:RACUNI" 
+		CMD3CAPTION="Ponovi:PONOVI"
+ 		CMD4CAPTION="Popravi:POPRAVI" 
+		CMD5CAPTION="Otključaj:OTKLJUCAJ"  
+		CMD6CAPTION="Kontrola dat.:KONTROLADAT" 
+		COMMANDTIMEOUT="600"
+		MASTERDBLCLICK=""
+	    POPUPMASTER="">
+
+  <NAME>Analiza prenesenih utržaka </NAME>
+  <CAPTION>Analiza prenesenih utržaka </CAPTION>
+  
+
+  <FORM1 	
+		FILLEXPLORER="TRUE" 
+		WIDTH="9000" 
+		ONSUBMIT="spMPKontrolaPrijenosaNG @action=1, @operateriid = @@operateriid," 
+		ONLOAD="select @@datumod as datumod, @@datumdo as datumdo" 
+		HEIGHT="3500" 
+		CAPTION="Parametri" 
+		BORDERSTYLE="3" 
+		CMD1CAPTION="Pokaži" 
+		CMD2CAPTION="Odustani" 
+		CMD3CAPTION="" 
+		CHILDFORM=""> 
+		
+		<INPUT TYPE="combo" 
+			    NAME="trgovinaid" 
+			    CAPTION="Trgovina" 
+			    WIDTH="5500" 
+			    HEIGHT="320" 
+			    TABINDEX="0" 
+			    ALLOWEMPTY="true" 
+			    SQL="spmpdajtrgovinang @operateriid = @@operateriid"/>
+
+		<INPUT TYPE="date" 
+				NAME="datumod" 
+				CAPTION="Datum od" 
+				VALUE="DATE2" 
+				HEIGHT="320" 
+				WIDTH="1500" 
+				TABINDEX="4" 
+				CHECKBOX="FALSE"/>
+
+		<INPUT TYPE="date" 
+				NAME="datumdo" 
+				CAPTION="Datum do" 
+				VALUE="DATE" 
+				HEIGHT="320" 
+				WIDTH="1500" 
+				TABINDEX="5" 
+				CHECKBOX="FALSE"/>
+										
+		<INPUT TYPE="VB.checkbox" 
+				NAME="Razlike" 
+				WIDTH="3500" 
+				HEIGHT="320" 
+				CAPTION="Samo razlike"/>
+
+		<INPUT TYPE="VB.checkbox" 
+				NAME="nezakrac" 
+				WIDTH="3500" 
+				HEIGHT="320" 
+				CAPTION="Samo računi bez utrška"/>
+  </FORM1>
+
+
+  <PONOVI 
+		NAME="PONOVI" HEIGHT="6197" WIDTH="8501" TEXT=""
+		REFRESHAFTERCHILD="" CAPTION="Ponoviti prijenos utrška ?" BORDERSTYLE="3" ONSUBMIT=""
+		ONLOAD="select 0 as indradi " CANCELONSUBMIT="" FILLEXPLORER="" NEXTFORM=""
+		BOLD="FALSE" CHILDFORM="">
+
+		<INPUT TYPE="number" 
+				NAME="indradi" 
+				DECIMALS="0" 
+			   CAPTION="" 
+			    TOP ="-1100" 
+				VALUE="DATE2" 
+				HEIGHT="320" 
+				WIDTH="1500" 
+				TABINDEX="4" 
+				CHECKBOX="FALSE"/>
+	  
+	  <INPUT TYPE="date"
+			  NAME="datumod"
+			  CAPTION="Datum od*"
+			  VALUE="DATE2"
+			  TOP="300" 
+			  LEFT="1500" 
+			  HEIGHT="320"
+			  WIDTH="1500"
+			  TABINDEX="4"
+			  CHECKBOX="FALSE"/>
+
+	  <INPUT TYPE="date" 
+				NAME="datumdo" 
+				CAPTION="do * " 
+				VALUE="DATE" 
+			  TOP="300" 
+			  LEFT="3500" 
+				HEIGHT="320" 
+				WIDTH="1500" 
+				TABINDEX="5" 
+				CHECKBOX="FALSE"/>
+
+		<INPUT TYPE="combo" 
+				NAME="kasa" 
+				CAPTION="Kasa*" 
+				WIDTH="3000" 
+			  TOP="700" 
+			  LEFT="1500" 
+				HEIGHT="320" 
+				TABINDEX="0" 
+				ALLOWEMPTY="false" 
+				SQL="select kasa, rtrim(t.opis)+' Kasa: '+ kasa from mpkase k inner join trgovina t on k.trgovinaid = t.trgovinaid where t.aktivno = 1 order by t.opis "/>
+	  <INPUT TYPE="button" NAME="pokazi"     CAPTION="Pokaži"  TOP="1100" LEFT="456" TABINDEX="2" WIDTH="1106" HEIGHT="322" ONCLICK="select 1 as indradi#select 'refresh' as stavkeutrska#select 'ok' = 'enable'"  HOTKEY="" />
+
+	  <INPUT TYPE="grid"
+		  NAME="stavkeutrska"
+		  REFRESHAFTERCHILD="TRUE"
+		  CAPTION="_ay"
+		  TOP="1500"
+		  LEFT="200"
+		  WIDTH="8000"
+		  HEIGHT="3000"
+		  TABINDEX="5"
+		  SQL="spMPKontrolaPrijenosaNG @action=10,@kasa = '@@kasa', @indradi = @@indradi "/>
+
+
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Ponovi"  TOP="5000" LEFT="456" TABINDEX="2" WIDTH="1106" HEIGHT="322" ENABLED="FALSE" ONCLICK="#close#FOREACHSELECTED(stavkeutrska)#spMPInsertRacunaJob @datumod = @@datumod, @datumdo =  @@datumdo , @kasa = '@@kasa'#exec spRaiserror 69001, 'Ponovljeni prijenos utrška - OK !'"  HOTKEY="" />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="5000" LEFT="1756" TABINDEX="1" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+				
+  </PONOVI>
+
+
+  <RACUNI 	
+		FILLEXPLORER="TRUE" 
+		WIDTH="14000" 
+		ONSUBMIT="" 
+		ONLOAD="" 
+		HEIGHT="7500" 
+		CAPTION="Računi u zaključku " 
+		BORDERSTYLE="3" 
+		CMD1CAPTION="" 
+		CMD2CAPTION="Odustani" 
+		CMD3CAPTION="" 
+		NEXTFORM=""> 
+		
+		<INPUT TYPE="grid" 
+				NAME="stavke" 
+				REFRESHAFTERCHILD="TRUE" 
+				CAPTION="_ay" 
+				TOP="200" 
+				LEFT="200"  
+				WIDTH="12000" 
+				HEIGHT="6000" 
+				TABINDEX="5" 
+				SQL="spMPKontrolaPrijenosaNG @action=2,@id = '@@id'"/>
+  </RACUNI>
+
+	<KONTROLADAT
+		  FILLEXPLORER="TRUE"
+		  WIDTH="14000"
+		  ONSUBMIT=""
+		  ONLOAD=""
+		  HEIGHT="7500"
+		  CAPTION="Datumi računa na kasi i u jupiteru  "
+		  BORDERSTYLE="3"
+		  CMD1CAPTION=""
+		  CMD2CAPTION="Odustani"
+		  CMD3CAPTION=""
+		  NEXTFORM="">
+
+		<INPUT TYPE="grid"
+				NAME="stavke"
+				REFRESHAFTERCHILD="TRUE"
+				CAPTION="_ay"
+				TOP="200"
+				LEFT="200"
+				WIDTH="12000"
+				HEIGHT="6000"
+				TABINDEX="5"
+				SQL="spMPKontrolaPrijenosaNG @action=11, @datumod = @@datumod , @datumdo = @@datumdo , @trgovinaid = @@trgovinaid"/>
+	</KONTROLADAT>
+
+	<FORM2 
+        FILLEXPLORER="" 
+        REPORT=""  
+        WIDTH="12000" 
+        ONSUBMIT="" 
+        ONLOAD="" 
+        HEIGHT="8800" 
+        CAPTION="Stavke prometa"  
+		MASTERDBLCLICK=""
+        BORDERSTYLE="3" 
+        CMD1CAPTION="" 
+        CMD2CAPTION="KRAJ"
+        NEXTFORM="" >
+
+		<INPUT TYPE="grid" 
+				NAME="stavke" 
+				REFRESHAFTERCHILD="TRUE" 
+				CAPTION="_ay" 
+				TOP="2800" 
+				LEFT="200"  
+				WIDTH="13500" 
+				HEIGHT="5000" 
+				TABINDEX="5" 
+                SQL="spGRNalogMP @action = 902,@id=@@id"/> 
+  </FORM2>
+  
+  
+  <KARTICA 	
+		FILLEXPLORER="TRUE" 
+		WIDTH="15000" 
+		ONSUBMIT="" 
+		ONLOAD="" 
+		HEIGHT="9500" 
+		CAPTION="Kartica robe" 
+		BORDERSTYLE="3" 
+		CMD1CAPTION="" 
+		CMD2CAPTION="Kraj" 
+		CMD3CAPTION="" 
+		CHILDFORM=""> 
+
+		<INPUT TYPE="grid" NAME="grid1" 
+				REFRESHAFTERCHILD="TRUE" 
+				TOP="200" 
+				LEFT = "200" 
+				WIDTH="14500" 
+				HEIGHT="8000" 
+				TABINDEX="2" 
+                SQL="spMaloprodajaStanjeKartica @action = 1, @idreda= @@id, @operateriid = @@operateriid" /> 
+  </KARTICA>
+
+	<POPRAVI
+		  WIDTH="10000"
+		  ONSUBMIT="spmppopraviUtrzak @id = @@id,"
+		  ONLOAD="spMPKontrolaPrijenosaNG @action=4,@ID=@@ID"
+		  HEIGHT="3500"
+		  CAPTION="Ažurirati utržak ?"
+		  BORDERSTYLE="3"
+		  VERSION="1"
+		  CMD1CAPTION="Ispravi"
+		  CMD2CAPTION="Odustani"
+		  CMD3CAPTION=""
+		  CMD4CAPTION=""
+		  REFRESHAFTERCHILD=""
+		  CHILDFORM="">
+
+		<INPUT TYPE="text"
+				NAME="Trgovina"
+				CAPTION="Trgovina"
+				TEXT=""
+				WIDTH="3500"
+				HEIGHT="320"
+				TABINDEX="1"
+			   STYLE="1"
+				ENABLED="FALSE" />
+
+		<INPUT TYPE="text"
+		NAME="kasa"
+		CAPTION="Kasa"
+			   STYLE="1"
+		TEXT=""
+		WIDTH="800"
+		HEIGHT="320"
+		TABINDEX="1"
+		ENABLED="FALSE" />
+
+		<INPUT TYPE="text"
+				NAME="brojdok"
+				CAPTION="Broj utrška"
+				TEXT=""
+				WIDTH="1500"
+				HEIGHT="320"
+				TABINDEX="1"
+				ENABLED="FALSE" />
+
+		<INPUT TYPE="date"
+				NAME="datumdok"
+				CAPTION="Datum utrška"
+				VALUE=""
+				HEIGHT="320"
+				WIDTH="1500"
+				TABINDEX="3"
+				ENABLED="FALSE"
+				CHECKBOX="FALSE"/>
+	</POPRAVI>
+
+	<ISPRAVI
+		WIDTH="10000" 
+		ONSUBMIT="select 1" 
+		ONLOAD="spMPKontrolaPrijenosaNG @action=4,@ID=@@ID"
+		HEIGHT="8200" 
+		CAPTION="Ažurirati dokument ?" 
+		BORDERSTYLE="3" 
+		CMD1CAPTION="Gotovo"         
+		CMD2CAPTION="Odustani" 
+		CMD3CAPTION="Ispravi:ISPRAVINAPLATA" 
+		CMD4CAPTION="Ažuriraj:AZURIRAJ" 
+		REFRESHAFTERCHILD=""
+		CHILDFORM="">
+		
+		<INPUT TYPE="text" 
+				NAME="brojdok" 
+				CAPTION="Broj utrška" 
+				TEXT="" 
+				WIDTH="1500" 
+				HEIGHT="320" 
+				TABINDEX="1" 
+				ENABLED="FALSE" />
+
+		<INPUT TYPE="date" 
+				NAME="datumdok" 
+				CAPTION="Datum utrška" 
+				VALUE="" 
+				HEIGHT="320" 
+				WIDTH="1500" 
+				TABINDEX="3" 
+				ENABLED="FALSE"
+				CHECKBOX="FALSE"/>
+		<INPUT TYPE="number" NAME="mpiznos" CAPTION="Iznos utrška: " TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" ENABLED="FALSE"/>
+		<INPUT TYPE="number" NAME="naplata" CAPTION="Iznos naplate: " TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" ENABLED="FALSE"/>
+		<INPUT TYPE="number" NAME="razlika" CAPTION="Iznos razlike: " TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" ENABLED="FALSE"/>
+
+		<INPUT TYPE="grid" 
+				NAME="Naplatastavke" 
+				REFRESHAFTERCHILD="TRUE" 
+				CAPTION=""
+				LEFT="300" 
+				WIDTH="8500" 
+				HEIGHT="4000" 
+				TABINDEX="5" 
+				SQL="spMPKontrolaPrijenosaNG @action = 5, @id=@@id" />
+  </ISPRAVI>
+
+
+  <ISPRAVINAPLATA
+		WIDTH="6000" 
+		ONSUBMIT="spMPKontrolaPrijenosaNG @action = 6, @id=@@Naplatastavke, @maloprodajaglaid = @@id," 
+		ONLOAD="spmpkontrolaPrijenosaNG @action = 9, @id= @@Naplatastavke"
+		HEIGHT="3200" 
+		CAPTION="Ispraviti iznos ?" 
+		BORDERSTYLE="3" 
+		CMD1CAPTION="Spremi"         
+		CMD2CAPTION="Odustani" 
+		CMD3CAPTION="" 
+		CHILDFORM="">
+		
+		<INPUT TYPE="combo" 
+				NAME="kntnacplacid" 
+				CAPTION="Način plaćanja: " 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+			     SQL ="select n.kntnacinplacid as kntnacplacid, k.naziv from  mpnacnaplate n inner join kntnacinplac k on n.kntnacinplacid = k.kntnacinplacid where n.trgovinaid = (select trgovinaid from maloprodajagla where maloprodajaglaid = @@id)"
+				TABINDEX="-1" 
+				ENABLED="TRUE" />
+
+		<INPUT TYPE="number" NAME="mpiznos" CAPTION="Iznos naplate : " TEXT="" WIDTH="1500" HEIGHT="320" TABINDEX="-2" DECIMALS="2" ENABLED="FALSE"/>
+		<INPUT TYPE="number" NAME="korekcija" CAPTION="Korekcija: " TEXT="" WIDTH="1500" HEIGHT="320" TABINDEX="1" DECIMALS="2" ENABLED="Enable"/>
+  </ISPRAVINAPLATA>
+
+
+  <AZURIRAJ
+		WIDTH="6000" 
+		ONSUBMIT="spMPKontrolaPrijenosaNG @action = 3, @id=@@id, " 
+		ONLOAD="spMPKontrolaPrijenosaNG @action=4,@ID=@@ID"
+		HEIGHT="5200" 
+		CAPTION="Ažurirati dokument ?" 
+		BORDERSTYLE="3" 
+		CMD1CAPTION="Ažuriraj"         
+		CMD2CAPTION="Odustani" 
+		CMD3CAPTION="" 
+		CHILDFORM="">
+		
+		<INPUT TYPE="text" 
+				NAME="brojdok" 
+				CAPTION="Broj utrška" 
+				TEXT="" 
+				WIDTH="1500" 
+				HEIGHT="320" 
+				TABINDEX="1" 
+				ENABLED="FALSE" />
+
+		<INPUT TYPE="date" 
+				NAME="datumdok" 
+				CAPTION="Datum utrška" 
+				VALUE="" 
+				HEIGHT="320" 
+				WIDTH="1500" 
+				TABINDEX="3" 
+				ENABLED="FALSE"
+				CHECKBOX="FALSE"/>
+		<INPUT TYPE="number" NAME="mpiznos" CAPTION="Iznos utrška: " TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" ENABLED="FALSE"/>
+		<INPUT TYPE="number" NAME="naplata" CAPTION="Iznos naplate: " TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" ENABLED="FALSE"/>
+		<INPUT TYPE="number" NAME="razlika" CAPTION="Iznos razlike: " TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" ENABLED="FALSE"/>
+		<INPUT TYPE="number" NAME="novanaplata" CAPTION="Iznos nove naplate: " TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" ENABLED="FALSE"/>
+		<INPUT TYPE="number" NAME="novarazlika" CAPTION="Iznos nove razlike: " TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" ENABLED="FALSE"/>
+  </AZURIRAJ>
+
+
+  <OTKLJUCAJ 
+		NAME="OTKLJUCAJ" HEIGHT="3197" WIDTH="5501" TEXT=""
+		REFRESHAFTERCHILD="TRUE" CAPTION="Otključavanje dokumenta ?" BORDERSTYLE="3" ONSUBMIT="spMPKontrolaPrijenosaNG @action = 7,@id=@@id,"
+		ONLOAD="exec spMPKontrolaPrijenosaNG @action=8,@ID=@@ID" CANCELONSUBMIT="" FILLEXPLORER="" NEXTFORM=""
+		CMD1CAPTION="Otključaj" CMD2CAPTION="Odustani" CMD3CAPTION="" CMD4CAPTION=""
+		CMD5CAPTION="" CMD6CAPTION="" BOLD="FALSE" CHILDFORM="">
+		
+		<INPUT TYPE="text" NAME="broj" TOP="360" LEFT="2304"
+				HEIGHT="317" WIDTH="1498" VISIBLE="TRUE" TEXT=""
+				CAPTION="" TABINDEX="1" ENABLED="FALSE"/>
+
+		<INPUT TYPE="label" NAME="Label57" TOP="360" LEFT="288"
+				HEIGHT="288" WIDTH="1728" VISIBLE="TRUE" BOLD="FALSE"
+				CAPTION="Broj utrška:" ENABLED="TRUE"/>
+
+		<INPUT TYPE="label" NAME="stat" TOP="1267" LEFT="374"
+				HEIGHT="418" WIDTH="4003" VISIBLE="TRUE" BOLD="FALSE"
+				CAPTION="Jeste li sigurni da želite otključati dokument ? " ENABLED="TRUE"/>
+  </OTKLJUCAJ>
+
+
+</PROJECT> 

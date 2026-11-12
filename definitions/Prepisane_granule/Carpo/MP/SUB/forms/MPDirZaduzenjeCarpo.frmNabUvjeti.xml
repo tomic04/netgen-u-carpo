@@ -1,0 +1,223 @@
+<root>
+
+	<form name="frmNabUvjeti" caption="Korekcija nabavnih uvjeta dokumenta" width="900" height="600">
+		<event type="init">
+			<action type="datarun reader" value="global.dtVrstaDok"/>
+			<action type="datarun reader" value="global.dtPremmision"/>
+			<action type="datarun reader" value="~dtQureyGla" />
+			<action type="datarun reader" value="~dtIznos"/>
+			<action type="datarun reader" value="~dtNapuniVrsDok"/>
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdStavke"/>
+			<action type="control disable" value="#txtBroj" />
+			<action type="control disable" value="#datDok" />
+			<action type="control disable" value="#cmbTrgovina" />
+			<action type="control disable" value="#txtVrsta" />
+			<action type="control disable" value="#cmbOdgOsoba" />
+			<action type="control disable" value="#srcPartner" />
+			<action type="control disable" value="#txtUra" />
+			<action type="control disable" value="#btnUFA" />
+			<action type="control disable" value="#txtUfaIzn" />
+			<action type="control disable" value="#txtRabat" />
+		</event>
+		<event type="shown">
+		</event>
+
+		<layout>
+			<group rows="3" cols="1">
+				<group row="1" col="1" rows="1" cols="1" >
+					<part name="prtZaglavlje" path="prtMPDirZaduzenjeCarpo.xml" />
+				</group>
+				<group row="2" col="1" rows="1" cols="5" >
+					<group row="1" col="1" rows="1" cols="1" colspan="4" >
+						<part name="prtGridStavkeKorekcija" path="prtMPDirZaduzenjeCarpo.xml" />
+					</group>
+					<group row="1" col="5" rows="2" cols="1" >
+						<item row ="1" col="1" rowsize="40">
+							<button name="btnCorrect" caption="Ispravi">
+								<event type="click">
+									<action type="control foreachrow selected" value="#grdStavke">
+										<action type="form open" value="frmIzmjeniStavkuTerm">
+											<parameter name="id" value="$id"/>
+											<parameter name="detid" value="#grdStavke.@maloprodajadetid"/>
+											<parameter name="datdok" value="#datDok"/>
+										</action>
+									</action>
+									<action type="control populate" value="#grdStavke"/>
+									<action type="datarun reader" value="~dtIznos">
+										<action type="control refreshvalue" value="#txtNabU"/>
+										<action type="control refreshvalue" value="#txtMPU"/>
+									</action>
+								</event>
+							</button>
+						</item>
+						<rowsdefinition>
+							<row position="1" size="40" /> 
+						</rowsdefinition>
+						<columnsdefinition>
+							<column position="1" size="200"/>
+						</columnsdefinition>
+					</group>
+				</group>
+				<group row="3" col="1" rows="1" cols="3" >
+					<item row="1" col="1" caption="Ukupna nabavna vrijednost:" textposition="left" >
+						<textedit name="txtNabU" datavalue="~dtIznos.@nabiznos" fontbold="True" format="n2" readonly="true">
+						</textedit>
+					</item>
+					<item row="1" col="2" caption="Ukupna MP vrijednost:" textposition="left" >
+						<textedit name="txtMPU" datavalue="~dtIznos.@cmpiznos" fontbold="True" format="n2" readonly="true">
+						</textedit>
+					</item>
+					<columnsdefinition>
+						<column position="1" size="300"/>
+						<column position="2" size="300"/>
+						<column position="3" size="100%"/>
+					</columnsdefinition>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSave" caption="Spremi">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMPQueryGlaIDetNG" name="dtQureyGla">
+				<parameter name="@action" value="3" />
+				<parameter name="@id" value="$id" />
+				<parameter name="@operateriid" value="@@operateriid" />
+			</data>
+			<data command="spMPQueryGlaIDetNG" name="dtQureyStavke" >
+				<parameter name="@action" value="2" />
+				<parameter name="@id" value="$id" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@nenc" value="global.dtPremmision.@nenc" />
+			</data>		
+			<data command="select cmpiznos , nabiznos from maloprodajagla where maloprodajaglaid = @id" type="text" name="dtIznos">
+				<parameter name="@id" value="$id" />
+			</data>
+			<data command="spmpDajVrstaDok" name="dtNapuniVrsDok">
+				<parameter name="@aktivni" value="1" />
+				<parameter name="@sifra" value="global.dtVrstaDok.@Sifra" />
+				<parameter name="@trgovinaid" value="~dtQureyGla.@trgovinaid" />
+			</data>	
+			<data command="spMPDajTrgovinaNG" name="dtNapuniTrgovinu">
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@vrstatrg" value="M" />
+			</data>
+			<data command="select orgshemaid from trgovina where trgovinaid = @trgovinaid" type="text" name="dtOrgShema">
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+			</data>
+			<data command="spMPDajOsobe" name="dtNapuniOsobu">
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+			</data>
+			<data command="spTraziPartneri" name="dtOdaberiPartneri">
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+			</data> 			
+		</datalist>
+		
+		
+	</form>
+	
+	
+	<form name="frmIzmjeniStavkuTerm" caption="Ispravak nabavnih uvjeta stavke" width="300">
+
+		<event type="init">
+			<action type="datarun reader" value="global.dtPremmision"/>	
+			<action type="datarun reader" value="~dtStavka" />
+			<action type="datarun scalar" value="~dtDatumDanas">
+				<parameter name="datum" value="~dtDatumDanas.@datum"/>
+			</action>
+		</event>
+
+		<event type="load">
+			<action type="control disable" value="#srcRoba" />
+			<action type="control disable" value="#txtJm" />
+			<action type="control disable" value="#txtKol" />
+			<action type="control disable" value="#txtMarFC" />
+			<action type="control disable" value="#txtRabI" />
+			<action type="control disable" value="#txtMar" />
+			<action type="control disable" value="#txtMarI" />
+			<action type="control disable" value="#txtPDV" />
+			<action type="control disable" value="#txtPDVI" />
+			<action type="control disable" value="#txtMPC" />
+			<action type="control disable" value="#txtMPpov" />
+			<action type="control disable" value="#txtMPI" />
+		</event>
+
+		<event type="shown">
+		</event>
+
+		<layout>
+			<group rows="1" cols="1" caption="Stavka :">
+				<part name="prtStavke" path="prtMPDirZaduzenjeCarpo.xml" />
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSave" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtIzmjeni"/>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="" name="">
+				<parameter name="@operateriid" value="@@operateriid" />
+			</data>
+			<data command="spMPQueryGlaIDetNG" name="dtStavka" >
+				<parameter name="@action" value="5" />
+				<parameter name="@id" value="$detid" />
+			</data>
+			<data command="spmpKalkNG" name="dpKalkuliraj">
+				<parameter name="@action" value="$action"/>
+				<parameter name="@robaid" value="#srcRoba"/>
+				<parameter name="@kolicinaulaz" value="#txtKol" />
+				<parameter name="@fakcijena" value="#txtFC" />
+				<parameter name="@fakvrijednost" value="#txtFI" />
+				<parameter name="@rabatdp" value="#txtRab" />
+				<parameter name="@nabcijena" value="#txtNC" />
+				<parameter name="@nabvrijednost" value="#txtNI" />
+				<parameter name="@marza" value="#txtMar" />
+				<parameter name="@mpcijena" value="#txtMPC" />
+				<parameter name="@mpcpov" value="#txtMPpov" />
+				<parameter name="@fakmarza" value="#txtMarFC" if="$action==8"/>
+			</data>	
+			<data command="select mpcijenaprometid from mpcijenapromet where maloprodajadetid = @stavke" type="text" name="dtProvjera">
+				<parameter name="@stavke" value="$detid"/>
+			</data>
+			<data command="select DATEADD(d,0,DATEDIFF(d,0,GETDATE())) as datum" type="text" name="dtDatumDanas">
+			</data>		
+			<data command="spMPInsertGlaIdetNG" name="dtIzmjeni">
+				<parameter name="@action" value="4"/>
+				<parameter name="@maloprodajadetid" value="$detid"/>
+				<parameter name="@id" value="$id" />
+				<parameter name="@NabCijena" value="#txtNC" />
+				<parameter name="@fakcijena" value="#txtFC" />
+				<parameter name="@rabatdp" value="#txtRab" />
+				<parameter name="@nabvrijednost" value="#txtNI" />
+				<parameter name="@fakvrijednost" value="#txtFI" />
+				<parameter name="@kolicinaulaz" value="#txtKol" />
+				<parameter name="@mpcijena" value="#txtMPC" />
+				<parameter name="@mpcijenaorg" value="#txtMPC" />
+				<parameter name="@porukagreska" value="1" />
+			</data>
+		</datalist>
+
+	</form>
+
+</root>

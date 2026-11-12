@@ -1,0 +1,346 @@
+<!-- MH Radila na Jupiter2017, Spin -->
+
+<root>
+	<form name="frmMaster" type="master" caption="Operacijski list">
+		<event type="init">
+	<!--	<action type="datarun scalar" value="Global.~dtCheckPermissionEdit">
+				<parameter name="Global.SmijeEdit"/>
+			</action>
+			<action type="datarun scalar" value="Global.~dtCheckPermissionDel">
+				<parameter name="Global.SmijeDel"/>
+			</action>
+			<action type="datarun scalar" value="Global.~dtCheckPermissionIns">
+				<parameter name="Global.SmijeIns"/>
+			</action>
+			<action type="datarun scalar" value="Global.~dtCheckPermissionZak">
+				<parameter name="Global.SmijeZak"/>
+			</action>
+			<action type="datarun scalar" value="Global.~dtCheckPermissionDef">
+				<parameter name="Global.SmijeDef"/>
+			</action>-->
+		</event>
+		 <event type="load">
+		 	<action type="form open" value="frmPar"/>
+			<!-- <action type="footer text" value="Operacijski listovi za {$klrobapar} "/> -->
+			<!-- <action type="footer text" value="Nalozi za razdoblje {$DatumOd} - {$DatumDo} />  po svim skladištima" if="$skladiste==null"/> --> 
+		</event>
+		<managerlayout>
+			<grid name="grdMaster" type="master" showautofilterrow="true" dataname="global.dtMaster" key="PrnOprListGlaId" multiselect="true" savelayout="true" statusbar="true">
+				<event type="focusedrowchanged">
+					<action type="variable value">
+						<parameter name="PrnOprListGlaId" value="#grdMaster.@PrnOprListGlaId" />
+					</action>
+					<action type="variable value">
+						<parameter name="Zak4" value="#grdMaster.@Status" />
+					</action>
+					<action type="control populate" value="#grdDetail"/>
+					<action type="control disable" value="#btnIzmijeni, #btnObrisi" if="#grdMaster.@StatusId!=0"/>
+					<action type="control enable" value="#btnIzmijeni, #btnObrisi" else=""/>
+				</event>
+				
+				<event type="doubleclick">
+					<!-- <action type="variable value"> -->
+						<!-- <parameter name="Funkcija" value="edit" type="string" /> -->
+					<!-- </action> -->
+					<!-- <action type="datarun scalar" value="Global.~dtCheckPermission"> -->
+						<!-- <parameter name="Global.Smije"/> -->
+					<!-- </action> -->
+					<!-- <action if="global.$Smije==1"> -->
+						<action if="$Zak4==Otvoren">
+							<action type="form open" value="frmPPDokumentEdit"  if="#grdMaster.rowcount&gt;0">
+								<parameter name="PrnOprListGlaId" value="#grdMaster.@PrnOprListGlaId" />
+								<parameter name="Zak5" value="$Zak4" />
+							</action>
+							<action type="control populate keepfocus" value="#grdMaster" />
+						</action>
+					<!-- </action> -->					
+					<action else="">
+						<action type="message" value="Dokument je zaključen i ne može se mijenjati"/>
+					</action>
+				</event> 
+				<menu>
+					<menuitem type="separator" sort="4"/>
+					<menuitem caption="PONIŠTI ZAKLJUČAK" sort="5" function="ponistizakljucak">
+						<event type="click">
+							<!-- <action type="confirm" value="Želite li poništiti zaključak?"> -->
+								<action type="control foreachrow selected" value="#grdMaster">
+									<action type="datarun nonquery" value="global.~dtPonistiZakljucak">
+									</action>
+									<action type="variable value">
+										<parameter name="Zak4" value="#grdMaster.@Status" />
+									</action>
+								</action>
+								<action type="control populate" value="#grdMaster" />
+							<!-- </action> -->
+						</event>
+					</menuitem>
+					<menuitem caption="PONIŠTI DEFAULT" sort="6" function="ponistidefault">
+						<event type="click">
+							<!-- <action type="confirm" value="Želite li poništiti dafault?"> -->
+								<action type="control foreachrow selected" value="#grdMaster">
+									<action type="datarun nonquery" value="global.~dtPonistiDefault">
+									</action>
+								</action>
+								<action type="control populate" value="#grdMaster" />
+							<!-- </action> -->
+						</event>
+					</menuitem>
+					<menuitem caption="Napravi kopiju operacijskog lista">
+						<event type="click">
+							<action type="control foreachrow selected" value="#grdMaster">
+								<!-- <action type="confirm" value="Želite li  kopirati Operacijski list {#grdMaster.@Broj}?"/> -->
+									<action type="datarun nonquery" value="global.~dtOpCP">
+									</action>
+									<action type="control populate" value="#grdMaster"/>
+									<action type="control populate" value="#grdDetail"/>
+					<!-- 			
+								<action type="form open" value="frmPPDokumentEdit"  if="#grdMaster.rowcount&gt;0">
+									<parameter name="PrnOprListGlaId" value="#grdMaster.@PrnOprListGlaId" /> kako preuzeti output..
+									<parameter name="Proizvodiid" value="#grdMaster.@proizvodiid" />
+								</action> 
+					-->
+							</action>	
+						</event>
+					</menuitem>
+				</menu>
+				<fields >
+					<field name="broj" caption="Dokument" fixed="left" fontbold="true" />
+					<field name="datumdok" caption="Datum" />
+					<field name="Oznaka" />
+					<field name="Opis" />
+					<field name="Sifra" />
+					<field name="Roba" caption="Proizvod" />
+					<field name="KlasaRobe" caption="Klasifikacija" />
+					<field name="Kolicina"  />
+					<field name="JM"  caption="JM"/>
+					<field name="Status" />
+					<field name="Osoba"  caption="Odgovorna osoba"/>
+					<field name="Defaultni" />
+					
+					<field name="OrgShema" />
+					<field name="Memo" caption="Napomena" />
+				</fields>
+				<styles>
+					<style name="fontcolor" value="#000000" if="#grdMaster.@StatusId==0" /> <!-- crno-->
+					<style name="fontcolor" value="#008000" elseif="#grdMaster.@StatusId==2" /> <!-- zeleno-->	
+					<style name="fontcolor" value="#000000" else="" />
+					
+					<style name="bold" value="true" if="#grdMaster.@DefaultInd==1"/> <!-- zeleno-->
+				</styles>
+			</grid>
+			<grid name="grdDetail" dataname="global.~dtDetail" multiselect="true" key="PrnOprListDetId" savelayout="true">
+				<event type="doubleclick">
+					<!-- <action if="global.$Smije==1"> -->
+						<action if="#grdMaster.@StatusId==0">
+							<action type="form open" value="frmOperacije"  if="#grdDetail.rowcount&gt;0">
+								<parameter name="PrnOprListDetId" value="#grdDetail.@PrnOprListDetId"/>
+								<parameter name="OrgShemaId" value="#cteOrgShema" /> 
+								<parameter name="Zak5" value="$Zak4" />
+								<parameter name="PrnOprListGlaId" value="#grdMaster.@PrnOprListGlaId" />
+								<!-- <parameter name="Action" value="1" type="int"/> -->
+							</action>
+							<action type="control populate keepfocus" value="#grdDetail" />
+						</action>
+					<!-- </action> -->
+					<action else="">
+						<action type="message" value="Dokument je zaključen i ne može se mijenjati"/>
+					</action>
+				</event> 
+				<fields inherited="true">
+					
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons > <!-- displaycontrolsprint="true" -->
+			<buttons>
+				<button name="btnPronadji" caption="Filter" dock="left" > <!-- image="calendar" imagelocation="middleleft" -->
+						<event type="click"> 
+							<action type="form open" value="frmPar"/>
+							<action type="control populate" value="#grdMaster"/>
+						</event>
+				</button>
+				<button name="btnUnesi" caption="UNESI" type="add" function="insert">
+					<event type="click">
+						<action type="form open" value="frmPPDokumentUnos" >
+							<parameter name="VrstaDokId" value="#btnUnesi.@VrstaDokId" />
+							<action type="variable value" >
+								<parameter name="global.RobaId" value="null" type="int"/>
+							</action>
+						</action>
+						<action type="control populate" value="#grdMaster">
+							<action type="control focus" value="#grdMaster">
+								<!-- <action type="message" value="$tmpId" /> -->
+								<parameter value="$tmpId" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit" function="edit" >
+					<event type="click">
+						<action type="form open" value="frmPPDokumentEdit"  if="#grdMaster.rowcount&gt;0">
+							<parameter name="PrnOprListGlaId" value="#grdMaster.@PrnOprListGlaId" />
+							<parameter name="Proizvodiid" value="#grdMaster.@proizvodiid" />
+							<parameter name="Zak5" value="$Zak4" />
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete" function="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati Operacijski list '{#grdMaster.@Broj}'?">
+							<action type="datarun nonquery" value="global.~dtDelete">
+								<action type="control populate" value="#grdMaster" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnZakljuci" caption="ZAKLJUČI" function="zakljuci">
+					<event type="click">
+							<action type="control foreachrow selected" value="#grdMaster">
+								<action type="datarun nonquery" value="global.~dtZakljuci">
+								</action>
+							<action type="variable value">
+								<parameter name="Zak3" value="#grdMaster.@Status" />
+							</action>
+							</action>
+							<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnPostaviDef" caption="POSTAVI DEFAULT" function="default">
+					<event type="click">
+						<action type="control foreachrow selected" value="#grdMaster">
+							<action type="datarun nonquery" value="global.~dtPostaviDefault">
+							</action>
+						</action>
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+	
+				<!--<button name="btnPrint" caption="ISPIŠI" dataname="dtPrint" displayfield="Opis" >
+					<event type="click">
+						<action type="control print" value="#grdMaster">
+							<action type="print template" value="#btnPrint1.@Template">
+								<parameter name="id" value="#grdMaster.@ProPonGlaId" />
+							</action>
+						</action>
+					</event>
+				</button>--> 
+			</buttons>
+		</panelbuttons>
+	</form>
+
+	<form name="frmPPDokumentUnos" path="frmPPDokumentUnos.xml" />
+	<form name="frmPPDokumentEdit" path="frmPPDokumentEdit.xml" />
+	<form name="frmOperacije" path="frmOperacije.xml"/>
+	<form name="frmPar" path="frmPar.xml"/>
+
+	<datalist>
+		<data command="spPrnOprListGla_Query" name="dtMaster">
+			<parameter name="@Action" value="master" />
+			<parameter name="@KlRobaPar" value="global.$KlRobaPar" />
+			<parameter name="@RobaPar" value="global.$RobaPar" />
+		</data>
+		<data command="spPrnOprListDet_Query" name="dtDetail">
+			<parameter name="@action" value="detail" />
+			<parameter name="@ID" value="#grdMaster.@PrnOprListGlaId" />
+		</data>
+<!--		
+		<data command="spProd_CheckPermission" name="dtCheckPermissionEdit">
+			<parameter name="@OperateriId" value="@@OperateriId" />
+			<parameter name="@Objekt" value="OperacijskiList" />
+			<parameter name="@Funkcija" value="edit" />
+		</data>
+		<data command="spProd_CheckPermission" name="dtCheckPermissionDel">
+			<parameter name="@OperateriId" value="@@OperateriId" />
+			<parameter name="@Objekt" value="OperacijskiList" />
+			<parameter name="@Funkcija" value="delete" />
+		</data>
+		<data command="spProd_CheckPermission" name="dtCheckPermissionIns">
+			<parameter name="@OperateriId" value="@@OperateriId" />
+			<parameter name="@Objekt" value="OperacijskiList" />
+			<parameter name="@Funkcija" value="insert" />
+		</data>
+		<data command="spProd_CheckPermission" name="dtCheckPermissionZak">
+			<parameter name="@OperateriId" value="@@OperateriId" />
+			<parameter name="@Objekt" value="OperacijskiList" />
+			<parameter name="@Funkcija" value="zakljuci" />
+		</data>
+		<data command="spProd_CheckPermission" name="dtCheckPermissionDef">
+			<parameter name="@OperateriId" value="@@OperateriId" />
+			<parameter name="@Objekt" value="OperacijskiList" />
+			<parameter name="@Funkcija" value="default" />
+		</data>
+-->
+		<data command="spOsobeQuery" name="dtOdgovornaOsoba">
+			<parameter name="@Action" value="16" />
+		</data>
+		<data command="spKlMasterRobaQuery" name="dtKlasa">
+			<parameter name="@Action" value="0" />
+			<parameter name="@ID" value="0" />
+			<parameter name="@klasifikacija" value="" />
+			<parameter name="@sortkey" value="" />
+			<parameter name="@robaid" value="0" />
+		</data>
+		<data command="spVrstaDokGet" name="dtVrstaDokGet">
+			<parameter name="@Sifra" value="120" /> <!-- operacijski list -->
+		</data>
+		<data command="spPrnOprListGla_Azur" name="dtDelete">
+			<parameter name="@Action" value="2" />
+			<parameter name="@ID" value="#grdMaster.@PrnOprListGlaId" />
+		</data>
+		<data command="spPrnOprListGla_Azur" name="dtZakljuci">
+			<parameter name="@Action" value="3" />
+			<parameter name="@ID" value="$PrnOprListGlaId" />
+		</data>
+		<data command="spPrnOprListGla_Azur" name="dtPostaviDefault">
+			<parameter name="@Action" value="4" />
+			<parameter name="@ID" value="#grdMaster.@PrnOprListGlaId" />
+			<parameter name="@RobaId" value="#grdMaster.@Robaid" />
+		</data>
+		<data command="spPrnOprListGla_Azur" name="dtPonistiZakljucak">
+			<parameter name="@Action" value="5" />
+			<parameter name="@ID" value="#grdMaster.@PrnOprListGlaId" />
+		</data>	
+		<data command="spPrnOprListGla_Azur" name="dtPonistiDefault">
+			<parameter name="@Action" value="6" />
+			<parameter name="@ID" value="#grdMaster.@PrnOprListGlaId" />
+		</data>
+		<data command="spPrnOprListGla_Azur" name="dtOpCP">
+			<parameter name="@Action" value="7" />
+			<parameter name="@ID" value="#grdMaster.@PrnOprListGlaId" />
+			<parameter name="@OperateriId" value="@@operateriid"/>	
+		</data>
+		<data command="spPrnOprListGla_Query" name="dtRoba">
+			<parameter name="@Action" value="Roba" />
+			<parameter name="@KlRobaPar" value="global.$KlRobaPar" />
+			<parameter name="@Uvjet" value="#txtRoba.text" />
+		</data>
+		<data command="spJKatalogTree" name="dtOrgShema">
+			<parameter name="@Action" value="orgshema" />
+		</data>	
+		<data command="spPrnOprListGla_Query" name="dtJM">
+			<parameter name="@Action" value="JM" />
+			<parameter name="@robaid" value="global.$RobaId" />
+		</data>
+		<data command="spPrnOprListGla_Query" name="dtKlRoba">
+			<parameter name="@Action" value="KlMasterRoba" />
+		</data>		
+		<data command="spPrnOprListDet_Query" name="dtOsImovina">
+			<parameter name="@Action" value="OsImovina" />
+			<parameter name="@Uvjet" value="#srcOsImovina.text" />
+		</data>
+		<data command="spPrnOprListDet_Query" name="dtOOPOperacije">
+			<parameter name="@Action" value="OOPOperacije" />
+			<parameter name="@uvjet" value="#srcOperacija.text" />
+		</data>
+		<data command="spPrnOprListDet_Query" name="dtHRRadnaMjesta">
+			<parameter name="@Action" value="HRRadnaMjesta" />
+			<parameter name="@uvjet" value="#srcHRRadnaMjesta.text" />
+		</data>
+		<data command="spPorukeQuery" name="dtPoruka"> <!-- ako ćemo unositi gotove poruke da ih se ponudi u combo -->
+			<parameter name="@Action" value="3" />
+			<parameter name="@Id" value="0" />
+			<parameter name="@VrstaPromid" value="120" />
+		</data>
+	</datalist>
+</root>

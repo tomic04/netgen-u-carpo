@@ -1,0 +1,204 @@
+<root>
+	<form name="frmMaster" type="master" caption="Načini naplate">
+		<managerlayout>
+			<grid type="Master" name="grdMaster" dataname="~dtPuniMaster" key="ProNacinNaplateId">
+			    <styles>
+                  <style name="bold" value="true" if="#grdMaster.@DefaultStr==Da" />
+                </styles>
+
+				<fields>
+					<field name="ProNacinNaplateId" visible="false" />
+					<field name="Opis" caption="Naziv" />
+					<field name="CassaSconto" caption="Cassa sconto" />
+					<field name="DefaultStr" caption="Default" />
+					<field name="IndikatorStr" caption="Indikator" />
+					<field name="ZaWebStr" caption="Za Web" />
+					
+				</fields>
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnos" caption="UNESI">
+					<event type="click">
+						<action type="form open" value="frmUnos" />
+					</event>
+				</button>
+
+
+				<button name="btnIzmjeni" caption="IZMJENI">
+					<event type="click">
+						<action type="form open" value="frmIzmjeni">
+							<parameter name="ProNacinNaplateId" value="#grdMaster.@ProNacinNaplateId" />
+						</action>
+					</event>
+				</button>
+
+				<button name="btnDelete" caption="OBRIŠI">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati?">
+							<action type="datarun nonquery" value="~dtDelete" />
+						</action>
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+
+				<button name="btnIspisi" caption="ISPIŠI">
+					<event type="click">
+						<action type="control printcontrol" value="#grdMaster"/>
+					</event>
+				</button>
+			</buttons>
+
+		</panelbuttons>
+
+		<datalist>
+			<data command="spProd_NacinNaplate_Grid" name="dtPuniMaster" />
+
+			<data command="spProd_NacinNaplate_Obrisi" name="dtDelete">
+				<parameter name="ID" value="#grdMaster.@ProNacinNaplateId" />
+			</data>
+		</datalist>
+
+
+	</form>
+
+	<form name="frmUnos" caption="Unos">
+
+		<layout textposition="left">
+			<group cols="1" rows="2">
+				<item col="1" row="1" caption="Opis:" >
+					<textedit name="txtOpis" required="true" allownull="false"/>
+				</item>
+				<group col="1" row="2" cols="2" rows="2">
+					<item col="1" row="1" caption="Cassa(%):">
+						<textedit name="txtCassa" value="0.00" />
+					</item>
+					<item col="2" row="1" caption="Default">
+						<checkedit name="chkDefault" />
+					</item>
+
+					<item col="1" row="2" caption="Ind.plaćanja:">
+						 <comboedit name="cmbKontrola"  dataname="dtCombo" allownull="false" required="true" valuefield="Indikator" displayfield="indikatorstr" />
+					</item>
+					<item col="2" row="2" caption="Za Web">
+						<checkedit name="chkZwb" />
+					</item>
+				</group>
+			</group>
+		</layout>
+
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtSpremi">
+							<parameter name="id" />
+						</action>
+						<action type="control populate" value="parent.#grdMaster">
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="$id" name="id" type="int"/>
+							</action>
+						</action>
+						<action type="control value" value="##">
+							<parameter value=""/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+
+				</button>
+			</buttons>
+		</panelbuttons>
+
+
+		<datalist>
+		<data command="spProd_NacinNaplate_GetIndikatorPlacanja" name="dtCombo">
+				
+			</data>
+			<data command="spProd_NacinNaplate_Unesi" name="dtSpremi">
+				<parameter name="@ID" value="$ProNacinNaplateId" />
+				<parameter name="@Opis" value="#txtOpis" />
+				<parameter name="@Indikator" value="#cmbKontrola" />
+				<parameter name="@DefaultNacinNaplate" value="#chkDefault" />
+				<parameter name="@CassaSconto" value="#txtCassa" />
+				<parameter name="@ZaWeb" value="#chkZwb" />
+			</data>
+
+		</datalist>
+
+	</form>
+
+	<form name="frmIzmjeni" caption="Izmijeni">
+
+		<event type="init">
+			<action type="datarun reader" value="dtGet" />
+		</event>
+
+		<layout textposition="left">
+			<group cols="1" rows="2">
+				<item col="1" row="1" caption="Opis:">
+					<textedit name="txtOpis" datavalue="~dtGet.@Opis" required="true"/>
+				</item>
+				<group col="1" row="2" cols="2" rows="2">
+					<item col="1" row="1" caption="Cassa(%):">
+						<textedit name="txtCassa" datavalue="~dtGet.@CassaSconto"/>
+					</item>
+					<item col="2" row="1" caption="Default">
+						<checkedit name="chkDefault" datavalue="~dtGet.@DefaultNacinNaplate" allownull="false"/>
+					</item>
+
+					<item col="1" row="2" caption="Ind.plaćanja:">
+						 <comboedit name="cmbKontrola"  dataname="dtCombo" required="true" valuefield="Indikator" displayfield="indikatorstr" datavalue="~dtGet.@Indikator"/>
+					</item>
+					<item col="2" row="2" caption="Za Web">
+						<checkedit name="chkZwb" datavalue="~dtGet.@ZaWeb"/>
+					</item>
+				</group>
+			</group>
+		</layout>
+
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="~dtIzmjeni" />
+						<action type="control populate" value="parent.#grdMaster" />
+						<action type="form close" value="frmUnos"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right"/>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+
+			<data command="spProd_NacinNaplate_Query" name="dtGet">
+				<parameter name="@ID" value="$ProNacinNaplateId" />
+			</data>
+
+			<data command="spProd_NacinNaplate_GetIndikatorPlacanja" name="dtCombo">
+				
+			</data>
+
+			<data command="spProd_NacinNaplate_Izmjeni" name="dtIzmjeni">
+				<parameter name="@ID" value="$ProNacinNaplateId" />
+				<parameter name="@Opis" value="#txtOpis" />
+				<parameter name="@Indikator" value="#cmbKontrola" />
+				<parameter name="@DefaultNacinNaplate" value="#chkDefault" />
+				<parameter name="@CassaSconto" value="#txtCassa" />
+				<parameter name="@ZaWeb" value="#chkZwb" />
+				
+			</data>
+
+		</datalist>
+
+	</form>
+
+
+</root>

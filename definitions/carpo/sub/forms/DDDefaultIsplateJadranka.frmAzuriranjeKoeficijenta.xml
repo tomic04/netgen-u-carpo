@@ -1,0 +1,145 @@
+<root>
+	<form name="frmAzuriranjeKoeficijenta" caption="Vrsta isplate :: {~dtGet.@Naziv} " saveformlayout="true">
+		<event type='init'>
+			<action type="datarun reader" value="~dtGet" if="$oopisstavkeid!=null"/>
+		</event>
+		<event type="onload">
+			<action type="control disable" value="#txtNaziv"/>
+			<action type="control populate" value="#grdKoeficijentTaba"/>
+			<action type="control disable" value="#btnIzmjeni" if="#grdKoeficijentTaba==null"/>
+			<action type="control enable" value="#btnIzmjeni" else=""/>
+		</event>
+		<layout saveformlayout="true">
+			<group cols="1" rows="2" bordervisible="false" >
+				<group rows="1" cols="1" spacing="2,2,2,2" highlight="false">
+					<item row="1" col="1" caption="Vrsta isplate:">
+						<textedit name="txtNaziv"  datavalue="~dtGet.@Naziv"/>
+					</item>
+				</group>
+				<item row="2" col="1" >
+					<grid name="grdKoeficijentTaba" key="OOPIsStavkeKoefId" dataname="dtKoeficijent" >
+						<fields inherited="true">
+							<field name="Koeficijent" format="n7"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="Unesi" type="add" >
+					<event type="click">	
+						<action type="form open" value="frmUnosKoeficijenta" >
+							<parameter name="OOPIsStavkeId" value="parent.#grdDrugiDohodak.@oopisstavkeid" type="int"/> 
+							<parameter  name="Tip" value="unos"/>
+						</action>
+						<action type="control enable" value="#btnObrisi,#btnIzmjeni" />
+					</event>
+				</button>
+				<button name="btnIzmjeni" caption="Izmjeni" type="add">
+					<event type="click">	
+						<action type="form open" value="frmUnosKoeficijenta" >
+							<parameter name="OOPIsStavkeKoefId" value="#grdKoeficijentTaba.@OOPIsStavkeKoefId"/>
+							<parameter name="OOPIsStavkeId" value="parent.#grdDrugiDohodak.@oopisstavkeid" type="int"/>
+							<parameter  name="Tip" value="izmjena"/>
+						</action>
+						<action type="control populate" value="#grdKoeficijentTaba" />
+						<action type="control focus" value="#grdKoeficijentTaba"/>
+					</event>
+				</button>							
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+					<action type="form close"/>	
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="dtGet">
+				<parameter name="@action" value="dtGrid" />
+				<parameter name="@oopisstavkeid" value="$oopisstavkeid"/>
+			</data>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="dtKoeficijent">
+				<parameter name="@action" value="tabKoeficijent"/>
+				<parameter name="@OOPIsStavkeId" value="$oopisstavkeid"/>
+			</data>
+		</datalist>
+	</form>
+
+
+
+	<!--forma za unos-->
+
+	<form name="frmUnosKoeficijenta" caption="Koeficijenti" saveformlayout="true">
+		<event type='init'>
+			<action type="datarun reader" value="~dtKoeficijent" if="$OOPIsStavkeKoefId!=null"/>
+		</event>
+		<event type="shown">
+			<action if="$Tip=='izmjena'">
+				<action type="control value" value="#txtPostotak" >
+					<parameter value="~dtKoeficijent.@Prirez"  />
+				</action>
+				<action type="control value" value="#txtKoeficijent" >
+					<parameter value="~dtKoeficijent.@Koeficijent"  />
+				</action>
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="1" bordervisible="false" >
+				<group rows="2" cols="1" spacing="2,2,2,2" >
+					<item row="1" col="1" caption="Prirez:" textposition="left">
+						<textedit name="txtPostotak" highlight="false" format="n2" value="0" allownull="false" />
+					</item>
+					<item row="2" col="1" caption="Koeficijent:" textposition="left" >
+						<textedit name="txtKoeficijent" highlight="false" format="n7" value="0" allownull="false" />
+					</item>
+				</group>
+			</group>		
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">	
+						<action type="datarun reader" value="~dtAddKoef" if="$Tip=='unos'">
+							<action type="control populate" value="parent.#grdKoeficijentTaba" >
+								<action type="control focus" value="parent.#grdKoeficijentTaba">
+									<parameter value="~dtAddKoef.@noviKoef" type="int"/>
+								</action>
+							</action>							
+							<action if="~dtAddKoef.@msg==1">
+								<action type="control refreshvalue" value="#txtKoeficijent,#txtPostotak"/>
+							</action> 
+						</action>
+						<action type="datarun reader" value="~dtEditKoef" else="">
+							<action if="~dtEditKoef.@msg==1">							
+								<action type="control refreshvalue" value="#txtKoeficijent,#txtPostotak"/>
+								<action type="form close"/>
+							</action> 
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+					<action type="form close"/>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spDDDefaultIsplateQuery_Jadranka" name="dtKoeficijent">
+				<parameter name="@action" value="dtGetKoef"/>
+				<parameter name="@OOPIsStavkeKoefId" value="$OOPIsStavkeKoefId"/>
+			</data>
+			<data command="spDDDefaultIsplateAzur_Jadranka" name="dtAddKoef">
+				<parameter name="@action" value="unos_Koe" />
+				<parameter name="@OOPIsStavkeKoefId" value="$noviKoef"/>
+				<parameter name="@OOPIsStavkeId" value="$OOPIsStavkeId"/>
+				<parameter name="@prirez" value="#txtPostotak"/>
+				<parameter name="@Koeficijent" value="#txtKoeficijent"/>
+			</data>
+			<data command="spDDDefaultIsplateAzur_Jadranka" name="dtEditKoef">
+				<parameter name="@action" value="izmjena_Koef" />
+				<parameter name="@OOPIsStavkeKoefId" value="$OOPIsStavkeKoefId"/>
+				<parameter name="@oopisstavkeid" value="$oopisstavkeid"/>
+				<parameter name="@prirez" value="#txtPostotak"/>
+				<parameter name="@Koeficijent" value="#txtKoeficijent"/>
+			</data>
+		</datalist>
+	</form>
+</root>

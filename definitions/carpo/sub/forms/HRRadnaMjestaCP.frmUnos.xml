@@ -1,0 +1,135 @@
+<root>
+	<!--
+  Komentari:
+  05.10.2021. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmUnos" caption="Unos novog radnog mjesta" width="570" height="290" fixedsize="true">
+		<layout autotaborder="false">
+			<group rows="4" cols="3" >
+					<columnsdefinition>
+					<column  position="1" size="15%" /> 
+					<column  position="2" size="35%" />  
+				</columnsdefinition>
+					<item row="1" col="1" caption="Naziv:" highlight="false" colspan="3">
+						<textedit name="txtNaziv" allownull="false" required="true" datavalue="" tabindex="1" maxlength="80"/>
+					</item>
+					<item row="2" col="1" caption="Oznaka:" highlight="false" >
+						<textedit name="txtOznaka" datavalue="" tabindex="2" required="true" maxlength="10"/>
+					</item>
+					<item row="3" col="1" caption="Organizacijska jedinica:" colspan="3" highlight="false">
+						<searchedit name="srcOrgJedinica" dataname="~dtOrgJedinica" fieldvalue="orgshemaid" fieldtext="naziv" tabindex="3" >
+						</searchedit>
+					</item>
+					<item row="4" col="1" caption="Nadređeno radno mjesto:" colspan="3" highlight="false">
+						<searchedit name="srcNadredjenoRM" dataname="~dtNadredjenoRM" fieldvalue="hrradnamjestaid" fieldtext="naziv" tabindex="4" >
+						</searchedit>
+					</item>
+				</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+						<action type="validate"/>
+						<action if="$HRRadnaMjestaId==0">
+							<action type="datarun reader" value="~dtUnosRM">
+								<action type="control populate" value="parent.#grdMaster">
+									<action type="control focus" value="parent.#grdMaster">
+										<parameter value="$noviID"/>
+									</action>
+								</action>
+							</action>
+							<!-- <action type="control enable" value="parent.#btnUnos,parent.#btnIzmjena"/> -->
+						</action>
+						<action if="$indGreske==0">
+						<action type="control refreshvalue" value="##" />
+							<action type="form open" value="frmIzmjena"> 
+							<parameter name="Tip" value="Izmjena"/>
+							<parameter name="Caption" value="Radno mjesto: {parent.#grdMaster.@Naziv}"/>  
+							<parameter name="HRRadnaMjestaId" value="$noviID" />		
+							<parameter name="OperateriId" value="@@OperateriId"/>    
+						</action>      
+						</action>
+
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+		<data command="spHRHelp" name="dtOrgJedinica">
+				<parameter name="@action" value="orgshema_trazilica" />
+				<parameter name="@tekst" value="#srcOrgJedinica.text" />
+			</data>
+<data command="spHRHelp" name="dtNadredjenoRM">
+				<parameter name="@action" value="nadredenorm" />
+				<parameter name="@tekst" value="#srcNadredjenoRM.text" />
+			</data>
+			<data  command="spHRRadnaMjestaAzurCP" name="dtUnosRM">
+				<parameter name="@action" value="UnosRM"/>
+				<parameter name="@HRRadnaMjestaId.output.int" variablename="noviID"></parameter>
+				<parameter name="@Naziv"  value="#txtNaziv" />
+				<parameter name="@oznaka"  value="#txtOznaka" />
+				<parameter name="@orgshemaid"  value="#srcOrgJedinica" />
+				<parameter name="@nadredenormid"  value="#srcNadredjenoRM" />
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+	
+		<!--
+  *******************************************************************************************
+  FORMA ZA BRISANJE
+  *******************************************************************************************
+  -->
+	<form name="frmBrisanje" caption ="$Caption" width="400" height="150" fixedsize="true" saveformsize="false" >
+		<event type="shown">
+			<action type ="control value" value="#lblPitanje">
+				<parameter value="Jeste li sigurni da želite obrisati '{parent.#grdMaster.@Naziv}'?"/>
+			</action>
+		</event>
+		<layout>
+			<!--omotač-->
+			<group cols="1" rows="1" groupbordervisible="true" >
+				<item col="1" row="1"  highlight="false">
+					<labeledit name="lblPitanje" fontsizedelta="2"  value=""  />
+				</item>
+			</group>
+			<!--kraj omotača-->
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnBrisi" caption="OBRIŠI" type="del">
+					<event type="click">
+						<!-- Okini storu -->
+						<action type="datarun reader" value="~dtBrisanje"/>
+						<action if="$indGreske==0">
+							<action type="control refreshvalue" value="parent.#tree"/>
+							<action type="control populate keepfocus" value="parent.#grdMaster"/>
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right" >
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spHRRadnaMjestaAzurCP" name="dtBrisanje">
+				<parameter name="@Action" value="BrisanjeRM" type="string"/>
+				<parameter name="@HRRadnaMjestaId" value="$selectedids"/> 
+				<parameter name="@indGreske.output.int"></parameter>
+			</data>
+		</datalist>
+	</form>
+</root>

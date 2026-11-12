@@ -1,0 +1,176 @@
+<!--
+v 1.0.5. 2.5.2023. AA uklonjen maximized jer su širine fiksne u layoutu (JS10 greška)
+v 1.0.4. 18.08.2021. IF Novi Carpo - prikaz podataka u granuli 
+<row size="40%" position="2"/>
+v 1.0.3. 4.12.2019. AA kolona Klasa i grupiranje na gridu HD 51242
+v 1.0.2. 28.11.2019. AA Klasa i OIB HD 51242
+v 1.0.1. 10.10.2017. AA maximized="true"
+v 1.0.0. početno-->
+<root loglevel="3" version="1.0.5.">
+	<form name="frmPromet" path="CKntPrijebojiKn.frmPromet.xml"/>
+	<form name="frmPrijeboj" path="CKntPrijebojiKn.frmPrijeboj.xml"/>
+	<form type="master" name="frmGlavni" caption="Kupci/Dobavljači" saveformsize="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtPrviDan"/>
+			<action type="variable value">
+				<parameter name="Indikator" value="-1"/>
+			</action>
+		</event>	
+		<event type="load">
+			<action type="control value" value="#datOd">
+				<parameter value="~dtPrviDan.@StartOfYear"/>
+			</action>
+			<action type="control value" value="#datDo">
+				<parameter value="now"/>
+			</action>
+			<action type="control value" value="#txtVrijednost">
+				<parameter value="0"/>
+			</action>
+		</event>
+		<event type="shown">
+			<!--ako je potrebno sakriti-->
+			<!-- <action type="datarun scalar" value="~dtPrijebojMulti"> -->
+				<!-- <parameter name="PrijebojMulti"/> -->
+			<!-- </action> -->
+			<!-- <action type="control visible" value="#cmbKlasa" if="$PrijebojMulti==1"> -->
+				<!-- <parameter value="true"/> -->
+			<!-- </action> -->
+			<!-- <action type="control visible" value="#cmbKlasa" else=""> -->
+				<!-- <parameter value="false"/> -->
+			<!-- </action>			 -->
+		</event>
+		<layout autotaborder="false">
+			<group cols="6" rows="2">
+				<rowsdefinition>
+					<row size="10%" position="1"/>
+					<row size="40%" position="2"/>
+				</rowsdefinition>
+				<columnsdefinition>
+					<column size="250" position="1"/>
+					<column size="250" position="2"/>
+					<column size="300" position="3"/>
+				</columnsdefinition>
+				<group col="1" row="1" rows="2" cols="2" alignmode="local" groupbordervisible="false">
+					<item col="1" row="1" caption="Od:" textposition="left" highlight="false">
+						<dateedit name="datOd" tabindex="1"/>
+					</item>
+					<item col="2" row="1" caption="Do:" textposition="left" highlight="false">
+						<dateedit name="datDo" tabindex="2"/>
+					</item>
+					<item col="1" row="2" colspan="2" caption="Klasa:" textposition="left" highlight="false">
+						<comboedit name="cmbKlasa" valuefield="KlPartneriId" displayfield="Naziv"  dataname="~dtKlasaPartnera" allownull="true" tabindex="4">
+					
+						</comboedit>
+					</item>
+				</group>
+				<group col="2" row="1" cols="1" rows="1" alignmode="local" groupbordervisible="false">
+					<item col="1" row="1" caption="Vrijednost:" textposition="left" highlight="false">
+						<textedit name="txtVrijednost" format="n2" formattype="numeric"  tabindex="3">
+							<event type="valuechanged">
+								<action type="variable value" if="$Indikator==1">
+									<parameter name="Indikator" value="-1"/>
+								</action>
+								<action type="control populate" value="#grdGlavni"/> 
+							</event>
+						</textedit>
+					</item>
+				</group>
+				<item row="2" col="1" colspan="6">
+					<grid name="grdGlavni" dataname="~dtGlavni" autopopulate="true" autowidth="true" savelayout="true">
+						<fields>
+							<field name="Sifra" caption="Šifra"/>
+							<field name="OIB" caption="OIB"/>
+							<field name="Naziv" caption="Naziv partnera"/>
+							<field name="Kupac"/>
+							<field name="Dobavljac" caption="Dobavljač"/>
+							<field name="Saldo"/>
+							<field name="ZaPrijeboj" caption="Za prijeboj"/>
+							<field name="Klasa" caption="Klasa"/>
+						</fields>
+						<styles>
+							<style name="fontcolor" value="blue" if="#grdGlavni.fieldname==Dobavljac&amp;&amp;#grdGlavni.@Dobavljac==0"/>
+							<style name="fontcolor" value="blue" if="#grdGlavni.fieldname==Kupac&amp;&amp;#grdGlavni.@Kupac==0"/>
+							<style name="fontcolor" value="blue" if="#grdGlavni.fieldname==Saldo&amp;&amp;#grdGlavni.@Saldo==0"/>
+							<style name="fontcolor" value="red" if="#grdGlavni.fieldname==Dobavljac&amp;&amp;#grdGlavni.@Dobavljac&lt;0"/>
+							<style name="fontcolor" value="red" if="#grdGlavni.fieldname==Kupac&amp;&amp;#grdGlavni.@Kupac&lt;0"/>
+							<style name="fontcolor" value="red" if="#grdGlavni.fieldname==Saldo&amp;&amp;#grdGlavni.@Saldo&lt;0"/>
+							<style name="fontcolor" value="green" if="#grdGlavni.fieldname==ZaPrijeboj&amp;&amp;#grdGlavni.@ZaPrijeboj>0"/>
+							</styles>
+							<print caption ="Kupci/Dobavljači" 
+									header="Razdoblje od: {#datOd::dd.MM.yyyy} do {#datDo::dd.MM.yyyy} \nVrijednost: {#txtVrijednost} kn"
+									captionalign="center"/>
+					</grid>
+				</item>
+				</group>
+			</layout>	
+			<panelbuttons displaycontrolsprint="true">
+				<buttons>
+					<button name="btnIzvrši" caption="IZVRŠI" tabindex="5">
+						<event type="click">
+							<action type="variable value" if="$Indikator==1">
+								<parameter name="Indikator" value="-1"/>
+							</action>
+							<action type="control populate" value="#grdGlavni"/>
+						</event>
+					</button>
+					<button name="btnIzlaz" caption="IZLAZ"  tabindex="6">
+						<event type="click">
+							<action type="form close"/>
+						</event>
+					</button>
+					<button name="btnFilter" caption="FILTER"  tabindex="7">
+						<event type="click">
+							<action type="message" value="Podaci su već filtrirani po vrijednosti!" if="#txtVrijednost!=0"/>
+							<action type="datarun scalar" value="~dtSelect" if="#txtVrijednost==0">
+								<parameter name="Indikator" />
+							</action>
+							<action type="control populate" value="#grdGlavni" if="#txtVrijednost==0"/>
+						</event>
+					</button>
+					<button name="btnPrijeboji" caption="GENERIRAJ PRIJEBOJ"  tabindex="8">
+						<event type="click">
+							<action type="form open" value="frmPrijeboj">
+								<parameter name="IndUnosa" value="2" type="int" />
+								<parameter name="ParId" value="#grdGlavni.@partneriid"/>
+								<parameter name="ParNaziv" value="#grdGlavni.@Naziv1"/>
+								<parameter name="DatumOd" value="#datOd"/>
+								<parameter name="DatumDo" value="#datDo"/>
+							</action>
+						</event>
+					</button>
+					<button name="btnIspis" caption="ISPIS    SUČELJA"  tabindex="9">
+						<event type="click">
+							<action type="control printcontrol" value="#grdGlavni"/>
+						</event>
+					</button>
+				</buttons>
+			</panelbuttons>
+			<datalist>
+				<data name="dtGlavni" command="spCKntKupDob" timeout="200">
+					<parameter name="@Action" value="1"/>
+					<parameter name="@DatumOd" value="#datOd"/>
+					<parameter name="@DatumDo" value="#datDo"/>
+					<parameter name="@Indikator" value="1" if="$Indikator==-1"/>
+					<parameter name="@Indikator" value="-1" if="$Indikator==1"/>
+					<parameter name="@IZNOS" value="#txtVrijednost"/>
+					<parameter name="@KlPartneriId" value="#cmbKlasa"/>
+				</data>
+				<data name="dtSelect" command="spCKntKupDob">
+					<parameter name="@Action" value="2"/>
+					<parameter name="@Indikator" value="$Indikator"/>
+				</data>
+				<data name="dtFilter" command="spCKntKupDob">
+					<parameter name="@Action" value="1"/>
+					<parameter name="@Indikator" value="1" if="$Indikator==-1"/>
+					<parameter name="@Indikator" value="-1" if="$Indikator==1"/>
+				</data>
+				<data name="dtPrviDan" type="text" command="SELECT cast(CONVERT(VARCHAR(8), DATEADD(yy, DATEDIFF(yy,0,getdate()), 0), 112) as date) AS StartOfYear"/>
+				<data command="spCKntKompMultiQuery" name="dtKlasaPartnera">
+					<parameter name="@Action"  value="20" />
+				</data>
+				<data name="dtPrijebojMulti" command="spCKntKupDobMulti">
+					<parameter name="@Action" value="1"/>
+				</data>
+			</datalist>
+		</form>
+	</root>

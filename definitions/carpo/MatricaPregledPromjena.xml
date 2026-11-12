@@ -1,0 +1,246 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root version="1.0.0.1">
+	<form name="frmMaster" type="master" caption="Pregled promjena na matrici odobravanja">
+		<event type="init">
+			<action type="form open" value="frmFilterForm" />			 	
+		</event>
+		<event type="load">			
+			<action type="control populate" value="#grdGlava"/>			
+		</event>
+		<event type="shown">           
+
+		</event>
+		<managerlayout>
+			<grid name="grdGlava" type="master" async="true" key="KUPOdobriPredlozakId" multiselect="true" savelayout="true" cleargridfilter="true" keyfield="KUPOdobriPredlozakId" wordwrap="true"> 										
+				<data command="spC_Matrica_PregledPromjena" timeout="180">
+					<parameter name="@action" value="grid_Izvjestaj"/>
+					<parameter name="@operateriid" value="@@operateriid" />
+					<parameter name="@IndMatriceIzmjene" value="Global.$IndSvi" />
+					<parameter name="@DatumOd" value="Global.$DatumOd" />
+					<parameter name="@DatumDo" value="Global.$DatumDo" />
+				</data>
+				<fields>
+					<field name="VrstaDokumenta" caption="Dokument" />
+					<field name="Matrica" caption="Matrica" />
+					<field name="PoljeIzmjene" caption="Polje izmjene" />
+					<field name="StaraVrijednost" caption="Stara vrijednost" fixwidth="200"/>
+					<field name="NovaVrijednost" caption="Nova vrijednost"  fixwidth="200"/>
+					<field name="VrstaIzmjene" caption="Vrsta izmjene" />
+					<field name="DatumZadnjePromjene" caption="Datum izmjene"  />
+					<field name="VrijemeZadnjePromjene" caption="Vrijeme izmjene"  />
+					<field name="KorisnikIzmjene" caption="Korisnik izmjene"  />
+				</fields>			
+				<styles>
+					<!-- BOJANJE-->
+					<style name="fontcolor" value="red" if="#grdGlava.@VrstaIzmjene==delete" />			
+					<style name="fontcolor" value="black" if="#grdGlava.@VrstaIzmjene==insert||#grdGlava.@VrstaIzmjene==update" />							
+				</styles>	
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnFilter" caption="&amp;FILTER">
+					<event type="click">
+						<action type="form open" value="frmFilterForm"/>
+						<action type="control populate" value="#grdGlava"/>
+					</event>
+				</button>
+			</buttons>	
+		</panelbuttons>
+
+		<datalist>
+			<data command="spC_Matrica_PregledPromjena" name="dtParametri">
+				<parameter name="@Action"  value="parametri" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmFilterForm" caption="Parametri upita" width="700" height="550">
+		<event type="init">
+			<action type="datarun reader" value="~dtDeleteSelMatrice" />	
+			<action type="datarun reader" value="~dtParametri" />
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdMatrice"/>
+		</event>
+		<event type="shown">  
+
+		</event>
+		<layout>
+			<group caption="Odabir matrice" cols="1" rows="4" >
+				<group cols="2" rows="1" col="1" row="1" groupbordervisible="false">
+					<item col="1" row="1">
+						<columnsdefinition>
+							<column size="50%" position="1" />
+							<column size="50%" position="2" />	
+						</columnsdefinition>
+						<checkedit name="chkMatriceIzmjene" caption="Samo matrice s izmjenama" value="1" savevalue="session">
+							<event type="valuechanged">
+								<action if="#chkMatriceIzmjene==False">
+									<action type="control value" value="chkMatriceSvi">
+										<parameter value="1" />
+									</action>
+									<action type="variable value" if="#chkMatriceIzmjene==False">
+										<parameter name="Global.$IndSvi" value="0" type="int"/>
+									</action>
+								</action> 									
+								<action elseif="#chkMatriceIzmjene==True">
+									<action type="control value" value="chkMatriceSvi">
+										<parameter value="0" />
+									</action>
+									<action type="variable value" if="#chkMatriceIzmjene==True">
+										<parameter name="Global.$IndSvi" value="1" type="int"/>
+									</action>
+								</action>
+								<action type="control populate" value="#grdMatrice"/>
+							</event>
+						</checkedit>
+					</item>
+					<item col="2" row="1">
+						<checkedit name="chkMatriceSvi" caption="Sve matrice" value="0" savevalue="session">
+							<event type="valuechanged">
+								<action if="#chkMatriceSvi==False">
+									<action type="control value" value="chkMatriceIzmjene">
+										<parameter value="1" />
+									</action>
+								</action> 									
+								<action elseif="#chkMatriceSvi==True">
+									<action type="control value" value="chkMatriceIzmjene">
+										<parameter value="0" />
+									</action>
+								</action>
+								<action type="control populate" value="#grdMatrice"/>
+							</event>			
+						</checkedit>
+					</item>
+				</group>				
+				<group padding="0" groupbordervisible="false" cols="2" rows="1" row="2" col="1">
+					<columnsdefinition>
+						<column size="40%" position="1" />
+						<column size="60%" position="2" />											
+					</columnsdefinition>
+					<item caption="Vrsta dokumenta:" row="1" col="1">
+						<comboedit name="cmbVrstaDokumenta" autopopulate="true" savevalue="session" valuefield="matricaid" displayfield="naziv" datavalue="~dtVrstaDokumenta.@matricaid" dataname="dtVrstaDokumenta">
+							<event type="valuechanged">
+								<action type="control populate" value="#grdMatrice"/>
+							</event>	
+						</comboedit>			
+					</item>
+				</group>				
+				<group cols="3" rows="1" col="1" row="3" groupbordervisible="false">
+					<columnsdefinition>
+						<column size="20%" position="1" />
+						<column size="20%" position="2" />
+						<column size="60%" position="3" />	
+					</columnsdefinition>
+					<item caption="Datum od:" col="1" row="1" >
+						<dateedit name="datDatumOd" datavalue="~dtParametri.datumod" savevalue="session">
+							<event type="valuechanged">
+								<action type="variable value">
+									<parameter name="Global.$DatumOd" value="#datDatumOd"/>
+								</action>
+								<action type="control populate" value="#grdMatrice"/>
+							</event>			
+						</dateedit>
+					</item>	
+					<item caption="Datum do:" col="2" row="1" >
+						<dateedit name="datDatumDo" datavalue="~dtParametri.datumdo" savevalue="session">
+							<event type="valuechanged">
+								<action type="variable value">
+									<parameter name="Global.$DatumDo" value="#datDatumDo"/>
+								</action>
+								<action type="control populate" value="#grdMatrice"/>
+							</event>			
+						</dateedit>
+					</item>	
+				</group>
+
+				<group caption="Matrice odobravanja:" padding="0" groupbordervisible="true" cols="1" rows="1" col="1" row="4">
+					<item row="1" col="1" highlight="False" >
+						<grid name="grdMatrice" multiselect="true" key="KUPOdobriPredlozakId" showgrouppanel="false" showfooter="false" savelayout="false"  cleargridfilter="true" showcheckboxes="true">															
+							<data command="spC_Matrica_PregledPromjena">
+								<parameter name="@Action" value="grid_matrice" />
+								<parameter name="@datumod" value="#datDatumOd" type="date"/>
+								<parameter name="@datumdo" value="#datDatumDo" type="date"/>
+								<parameter name="@IndMatriceIzmjene" value="#chkMatriceIzmjene" type="boolean"/>
+								<parameter name="@operateriId" value="@@operateriId" type="int"/>	
+                                <parameter name="@matricaid" value="#cmbVrstaDokumenta" type="int"/>								
+							</data>
+							<fields>					
+								<field name="KUPOdobriPredlozakId" caption="KUPOdobriPredlozakId" fixwidth="50" hidden="true"/>
+								<field name="Dokument" caption="Vrsta dokumenta" fixwidth="60"/>
+								<field name="OrgJedinica" caption="Organizacijska jedinica" fixwidth="200"/>
+								<field name="Predlozak" caption="Predložak" fixwidth="300"/>
+								<!-- <field name="VrstaIzmjene" caption="Vrsta izmjene" fixwidth="200"/> -->
+								<!-- <field name="Opis" caption="Opis" fixwidth="100" /> -->
+								<!-- <field name="Umirovljen" caption="Umirovljen" fixwidth="80"/> -->
+							</fields>
+
+                            <styles>
+								<!-- BOJANJE-->
+								<style name="fontcolor" value="red" if="#grdMatrice.@VrstaIzmjene==delete" />						
+								<style name="fontcolor" value="black" if="#grdMatrice.@VrstaIzmjene==insert||#grdMatrice.@VrstaIzmjene==update" />							
+							</styles>							
+						</grid>
+					</item>
+				</group>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnPrihvati" caption="&amp;PRIHVATI" type="add">
+					<event type="click">
+						<action type="variable value">
+							<parameter name="Global.$DatumOd" value="#datDatumOd"/>
+						</action>
+						<action type="variable value">
+							<parameter name="Global.$DatumDo" value="#datDatumDo"/>
+						</action>
+						<action if="#chkMatriceIzmjene==False">
+							<action type="variable value">
+								<parameter name="Global.$IndSvi" value="0" type="int"/>
+							</action>
+						</action> 									
+						<action elseif="#chkMatriceIzmjene==True">
+							<action type="variable value">
+								<parameter name="Global.$IndSvi" value="1" type="int"/>
+							</action>
+						</action>
+						<action type="datarun nonquery" value="~dtMatriceSelected" />
+						<action type="form close"/>	
+					</event>
+				</button>
+				<button name="btnOdustani" caption="&amp;ODUSTANI" type="cancel" dock="right">
+					<event type="click">
+						<action type="form close"/>	
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spC_Matrica_PregledPromjena" name="dtParametri">
+				<parameter name="@Action"  value="parametri" />
+			</data>
+			<data command="spC_Matrica_PregledPromjena" name="dtMatriceSelected">
+				<parameter name="@Action"  value="MatriceSelected" />
+				<parameter name="@Parametar" value="#grdMatrice.selectedids" />
+				<parameter name="@operateriid" value="@@operateriid" />
+			</data>
+			<data command="delete from dbo.C_Promjene_Matrice where operateriid=@operateriid" name="dtDeleteSelMatrice" type="text">
+				<parameter name="@operateriid"  value="@@operateriid" />
+			</data>
+			<data command="select 1 as matricaid,'Knjiga ulazne pošte' as naziv
+							union all
+							select 2 as matricaid,'Narudžbenice' as naziv
+							union all
+							select 3 as matricaid,'Zahtjev za izdavanjem' as naziv" name="dtVrstaDokumenta" type="text">
+			</data>
+			
+
+		</datalist>
+
+	</form>
+</root>

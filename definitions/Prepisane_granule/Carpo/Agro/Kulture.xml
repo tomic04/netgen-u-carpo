@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+19.02.2021 - is - 1.0.0.3. nove optimizirane store s Error handlerom    
+14.08.2020 - is - verzija 1.0.0.2. - uklanjam DAL
+02.01.2020 - is - verzija 1.0.0.1. - korištenje DAL-a
+30.12.2019. (v 1.0) - inicijalno kreiranje granule.Ivan Skorup
+Granula za ažuriranje kultura i parametara kvalitete
+-->
+<root version="1.0.0.3.">
+<form name="frmKulture" type="master" caption="Ažuriranje ratarskih kultura">
+    <managerlayout>
+        <grid name="grdMaster" type="master" dataname="~dtKulture" multiselect="true" key="KultureId" bestfitonrefresh="true">
+            <event type="doubleclick">
+                <action type="form open" value="frmIzmjena" if="#grdMaster.@KultureId!=null">
+					<parameter name="KultureId" value="#grdMaster.@KultureId" />
+				</action>
+            </event>
+            <menu>
+                <menuitem name="menIzmjena" caption="Izmijeni" sort="1">
+                    <event type="click">
+                        <action type="form open" value="frmIzmjena" if="#grdMaster.@KultureId!=null">
+					        <parameter name="KultureId" value="#grdMaster.@KultureId" />
+				        </action>
+                    </event>
+                </menuitem>
+            </menu>
+        </grid>
+    </managerlayout>
+    <panelbuttons>
+        <buttons>
+            <button name="btnUnos" caption="UNESI">
+                <event type="click">
+                    <action type="form open" value="frmUnos" />
+                </event>
+            </button>
+            <button name="btnIzmjena" caption="IZMIJENI">
+                <event type="click">
+                    <action type="form open" value="frmIzmjena">
+                        <parameter name="KultureId" value="#grdMaster.@KultureId" />
+                    </action>
+                </event>
+            </button>
+            <button name="btnObrisi" caption="OBRIŠI">
+                <event type="click">
+                    <action type="confirm" value="Želite li obrisati kulturu {#grdMaster.@Naziv}?">
+                        <action type="datarun nonquery" value="~dtObrisi" />
+                        <action type="control populate" value="#grdMaster" />
+                    </action>
+                </event>
+            </button>
+            <button name="btnParametri" caption="PARAMETRI">
+                <event type="click">
+                    <action type="form open" value="frmParametri" />
+                </event>
+            </button>
+            <button name="btnIzlaz" caption="IZLAZ" dock="right">
+                <event type="click">
+                    <action type="form close" />
+                </event>
+            </button>
+        </buttons>
+    </panelbuttons>
+    <datalist>
+        <data command="spKulture" name="dtKulture">
+            <parameter name="@Action" value="1" />
+        </data>
+        <data command="spKulture" name="dtObrisi">
+            <parameter name="@Action" value="4" />
+            <parameter name="@KultureId" value="#grdMaster.@KultureId" />
+        </data>
+    </datalist>
+</form>
+<form name="frmUnos" caption="Novi unos" width="450">
+    <layout>
+        <group rows="5" cols="1">
+            <item row="1" col="1" caption="Naziv">
+                <textedit name="txtNaziv" required="true" maxlength="30"/>
+            </item>
+            <item row="2" col="1" caption="Šifra">
+                <textedit name="txtSifra" maxlength="3"/>
+            </item>
+            <item row="3" col="1" colspan="4" caption="Roba:">
+	            <searchedit name="srcRoba" dataname="~dtRoba" fieldvalue="robaid" fieldtext="NazivId" netgenfields="true"/> 
+            </item>            
+            <item row="4" col="1" caption="Org Shema">
+                <searchedit name="srcOrgShema" dataname="~dtOrgShema" fieldtext="Naziv" fieldvalue="OrgShemaId" maxlength="60"/>
+            </item>
+            <item row="5" col="1" caption="Tip">
+                <comboedit name="cmbTip" dataname="~dtGetTip" valuefield="Tip" displayfield="Naziv" />
+            </item>
+        </group>
+    </layout>
+    <panelbuttons>
+        <buttons>
+            <button name="btnSpremi" caption="Spremi">
+                <event type="click">
+                    <action type="validate" />
+                    <action type="datarun reader" value="~dtInsert"/>
+                    <action type="control populate" value="parent.#grdMaster">
+                        <action type="control focus" value="parent.#grdMaster">
+                            <parameter value="$KeyOUT" type="int"/>
+                        </action>
+                    </action>
+                    <action type="form close" />
+                </event>
+            </button>
+            <button name="btnOdustani" caption="Odustani" type="cancel"/>
+        </buttons>
+    </panelbuttons>
+    <datalist>
+        <data command="spTraziRoba" name="dtRoba">
+		    <parameter name="@Action" value="Roba" />
+		    <parameter name="@Uvjet" value="#srcRoba.text" />
+	    </data>
+        <data command="spOrgShemaQuery" name="dtOrgshema">
+            <parameter name="@Action" value="20"/>
+            <parameter name="@Naziv" value="#srcOrgShema.text"/>
+			      <parameter name="@ID" value=""/>
+        </data>
+        <data command="spKulture_Tip" name="dtGetTip" />
+        <data command="spKulture" name="dtInsert">
+            <parameter name="@Action" value="2" />
+            <parameter name="@Naziv" value="#txtNaziv" />
+            <parameter name="@Sifra" value="#txtSifra" />
+            <parameter name="@RobaId" value="#srcRoba" />
+            <parameter name="@OrgshemaId" value="#srcOrgShema" />
+            <parameter name="@Tip" value="#cmbTip"  />
+            <parameter name="@KeyOUT.output.int" />
+        </data>
+    </datalist>
+</form>
+<form name="frmIzmjena" caption="Izmjena" width="450">
+    <event type="oninit">
+        <action type="datarun reader" value="~dtGet" />
+    </event>
+    <layout>
+        <group rows="5" cols="1">
+            <item row="1" col="1" caption="Naziv">
+                <textedit name="txtNaziv" required="true" datavalue="~dtGet.@Naziv"/>
+            </item>
+            <item row="2" col="1" caption="Šifra">
+                <textedit name="txtSifra" datavalue="~dtGet.@Šifra"/>
+            </item>
+            <item row="3" col="1" colspan="4" caption="Roba:">
+	            <searchedit name="srcRoba" dataname="~dtRoba" fieldvalue="robaid" fieldtext="NazivId" datavalue="~dtGet.@RobaId" datatext="~dtGet.@Roba" netgenfields="true"/> 
+            </item>
+            <item row="4" col="1" caption="Org Shema">
+                <searchedit name="srcOrgShema" dataname="~dtOrgShema" fieldvalue="OrgShemaId" fieldtext="Naziv" datavalue="~dtGet.@OrgShemaId" datatext="~dtGet.@OrganizacijskaShema"/>
+            </item>
+            <item row="5" col="1" caption="Tip">
+                <comboedit name="cmbTip" dataname="~dtGetTip" valuefield="Tip" displayfield="Naziv" datavalue="~dtGet.@Tip" />
+            </item>
+        </group>
+    </layout>
+    <panelbuttons>
+        <buttons>
+            <button name="btnSpremi" caption="Spremi">
+                <event type="click">
+                    <action type="validate" />
+                    <action type="datarun nonquery" value="~dtUpdate"/>
+                    <action type="control populate" value="parent.#grdMaster" />
+                    <action type="form close" />
+                </event>
+            </button>
+            <button name="btnOdustani" caption="Odustani" type="cancel"/>
+        </buttons>
+    </panelbuttons>
+    <datalist>
+        <data command="spTraziRoba" name="dtRoba">
+		    <parameter name="@Action" value="Roba" />
+		    <parameter name="@Uvjet" value="#srcRoba.text" />
+	    </data>
+        <data command="spOrgShemaQuery" name="dtOrgshema">
+            <parameter name="@Action" value="20"/>
+            <parameter name="@Naziv" value="#srcOrgShema.text"/>
+			<parameter name="@ID" value=""/>
+        </data>
+        <data command="spKulture_Tip" name="dtGetTip" />
+        <data command="spKulture" name="dtGet">
+            <parameter name="@Action" value="1" />
+            <parameter name="@KultureId" value="$KultureId" />
+        </data>
+        <data command="spKulture" name="dtUpdate" >
+            <parameter name="@Action" value="3" />
+            <parameter name="@KultureId" value="$KultureId" />
+            <parameter name="@Naziv" value="#txtNaziv" />
+            <parameter name="@Sifra" value="#txtSifra" />¸
+            <parameter name="@RobaId" value="#srcRoba" />
+            <parameter name="@OrgshemaId" value="#srcOrgShema" />
+            <parameter name="@Tip" value="#cmbTip" />
+        </data>
+    </datalist>
+</form>
+<form name="frmParametri" caption="Parametri za kulturu '{parent.#grdMaster.@Naziv}'" width="500">
+  <event type="load">
+    <action type="control disable" value="#btnDodaj" if="#cmbParametar==null" />
+    <action type="control enable" value="#btnDodaj" else="" />
+  </event>
+    <layout>
+        <group cols="1" rows="2" bordervisible="true">
+            <group col="1" row="1" cols="2" rows="1" bordervisible="false">
+                <columnsdefinition>
+                    <column position="1" size="*"/>
+                    <column position="2" size="70"/>
+                </columnsdefinition>
+                <rowsdefinition>
+                    <row position="1" size="48" />
+                </rowsdefinition>
+                <item col="1" row="1" caption="Parametar:">
+                  <comboedit name="cmbParametar" dataname="~dtNaziv" valuefield="PoljeOtkup" displayfield="Naziv">
+                    <event type="valuechanged">
+                      <action type="control disable" value="#btnDodaj" if="#cmbParametar==null" />
+                      <action type="control enable" value="#btnDodaj" else="" />
+                    </event>
+                  </comboedit>
+                </item>
+                <item col="2" row="1">
+                    <button name="btnDodaj" caption="Dodaj">
+                        <event type="click">
+                            <action type="validate" />
+                            <action type="datarun reader" value="~dtDodajParametar" />
+                            <action type="control populate" value="#cmbParametar" />
+                            <action type="control populate" value="#grdParametri">
+                                <action type="control focus" value="#grdParametri">
+                                    <parameter value="$KeyOUT" type="int"/>
+                                </action>
+                            </action>
+                        </event>
+                    </button>
+                </item>			
+            </group>
+            <group col="1" row="2" cols="2" rows="3" bordervisible="false">
+                <columnsdefinition>
+                    <column position="1" size="*"/>
+                    <column position="2" size="70"/>
+                </columnsdefinition>
+                <rowsdefinition>
+                    <row position="1" size="48" />
+                    <row position="2" size="48" />
+                    <row position="3" size="*" />
+                </rowsdefinition>
+                <item col="1" row="1" rowspan="3">					
+                    <grid name="grdParametri" dataname="~dtParametri" key="KultureFormaId" showgrouppanel="false" showautofilterrow="false" autopopulate="true">
+                        <fields>
+                            <field name="Naziv" minwidth="200"/>
+                        </fields>
+                    </grid>
+                </item>
+                <item col="2" row="1">
+                    <button name="Obrisi" caption="Obriši">
+                        <event type="click">
+                            <action type="confirm" value="Želite li obrisati parametar '{#grdParametri.@Naziv}'?">	
+                                <action type="datarun nonquery" value="~dtBrisiParametar" />		
+                                <action type="control populate" value="#grdParametri" />
+                                <action type="control populate" value="#cmbParametar" />
+                            </action>
+                        </event>
+                    </button>						
+                </item>
+            </group>
+        </group>
+    </layout>
+    <panelbuttons>
+        <buttons>
+            <button name="btnZatvori" caption="Zatvori" dock="right">
+                <event type="click">
+                    <action type="form close" />
+                </event>
+            </button>
+        </buttons>
+    </panelbuttons>
+    <datalist>
+        <data command="spKultureForma" name="dtNaziv">
+            <parameter name="@Action" value="2" />
+            <parameter name="@Kultureid" value="parent.#grdMaster.@KultureId" />
+        </data>
+        <data command="spKultureForma" name="dtDodajParametar">
+            <parameter name="@Action" value="3"/>
+            <parameter name="@Kultureid" value="parent.#grdMaster.@KultureId"/>
+            <parameter name="@Naziv" value="#cmbParametar.@Naziv"/>
+            <parameter name="@Poljeotkup" value="#cmbParametar.@PoljeOtkup"/>
+            <parameter name="@KeyOUT.output.int" />
+        </data>
+        <data command="spKultureForma" name="dtParametri">
+            <parameter name="@Action" value="1" />
+            <parameter name="@KultureId" value="parent.#grdMaster.@KultureId" />
+        </data>
+        <data command="spKultureForma" name="dtBrisiParametar">
+            <parameter name="@Action" value="4" />
+            <parameter name="@KultureFormaId" value="#grdParametri.@KultureFormaId" />
+        </data>
+    </datalist>
+</form>
+</root>

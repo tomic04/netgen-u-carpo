@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+
+<PROJECT  
+ONLOAD="" 
+TREE="spMPTreePartneri @action = 1:FILTEROPARTNERIFORM" 
+DETAILGRID="exec spMPParAsortimanPregledNG @action = 101, @id = @@id"
+FILLEXPLORER="TRUE" 
+BUTTONS="Uvjeti:FILTERFORM#Dodaj:DODAJFORM#Izmjeni:IZMJENIFORM#Donesi:DONOSIZROBE#Obriši:MULTISELECTDELETEFORM#Aktiviraj:MULTISELECTAKTIVIRAJ#Deaktiviraj:MULTISELECTDEAKT#Dodaj svima u asort:DODAJSVIMA#Ukloni svima iz asort:BRISISVIMA#Dodjeli robe asortimanu:MULTISELECTDODJELI"
+CMD1CAPTION=""    
+CMD2CAPTION="" 
+CMD6CAPTION=""
+CMD4CAPTION=""
+CMD3CAPTION=""
+CMD5CAPTION=""
+EDITCOLUMNSDET="[U asortimanu2000]"
+ONCELLEDITEDDET="exec spMPParAsortimanPregledNG @action = 102, @id = @@id, @asortiman='@@U_asortimanu', @parasortimantipsifra='@@Šifra'"
+CHECKBOXVISIBLE="TRUE"
+TOTALROWVISIBLE="FALSE"
+POPUPMASTER=""
+TOTALROW="FALSE"
+DETCHECKBOXVISIBLE="FALSE"
+DETTOTALROWVISIBLE="FALSE"
+MASTERDBLCLICK=""
+SETDEFAULTS="select dbo.fnTkoSmoMi() as tkosmomi"
+PAGEHEADERRIGHT="@@tkosmomi">
+
+	
+<NAME>Ažuriranje asortimana dobavljača </NAME>
+<CAPTION>Ažuriranje asortimana dobavljača </CAPTION>
+ 
+<KOMENTAR> </KOMENTAR>
+<AUTOR> MT 23.04.2009.  </AUTOR>
+
+
+	<DETAILCOLUMNS CLEARCOLUMS="" HEADERALIGNMENT="2">
+	</DETAILCOLUMNS>
+
+
+	<FILTEROPARTNERIFORM    FILLEXPLORER="TRUE" ONSUBMIT="spMPParAsortimanPregledNG @action = 111, @partneriid = '@@node'" />
+
+	
+<FILTERFORM
+	WIDTH="7000" 
+	ONSUBMIT="spMPParAsortimanPregledNG @action = 111, " 
+	FILLEXPLORER="TRUE" 
+	ONLOAD="" 
+	HEIGHT="2500" 
+	CAPTION="Odaberite partnera"  
+	CMD1CAPTION="Pokaži" 
+	CMD2CAPTION="Odustani">
+		
+	<INPUT TYPE="search" NAME="partneriid" CAPTION="Partner*" TOP="700" LEFT="1200" SQL="viPartneri#partneriid#naziv%#sifra#poreznibroj#!adresa#!mjestanaziv" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+
+</FILTERFORM>
+
+
+<DODAJFORM 
+	WIDTH="8000" 
+	ONSUBMIT="" 
+	ONLOAD="select coalesce('@@node',0) as partneriid, null as robaid, '' as sifra1, (select naziv from partneri where partneriid = coalesce('@@node',0)) as Partner, 1 as doduMP" 
+	HEIGHT="6000" 
+	CAPTION="Unos novog artikla u asortiman"  
+	CMD1CAPTION="" 
+	CMD2CAPTION="" 
+	FILLEXPLORER="">
+	
+	<INPUT TYPE="search" NAME="partneriid" CAPTION="Partner*" TOP="100" LEFT="1790" WIDTH="5000" HEIGHT="320" 
+		   SQL="viPartneri#partneriid#naziv%#sifra#poreznibroj#!adresa#!mjestanaziv" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+	<INPUT TYPE="search" NAME="robaid" CAPTION="Roba (F5)*" TOP="450" LEFT="1790" WIDTH="5000" HEIGHT="320" ALLOWEMPTY="FALSE" 
+		   SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid'" ONLOSTFOCUS="exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid" BACKCOLOR="LIGHTYELLOW" HOTKEY="F5"/>
+	<INPUT TYPE="text" CAPTION="Šifra kod dobavljača:*" NAME="sifra1" TOP="800" LEFT="1790" WIDTH="1000" HEIGHT="320" ENABLED="TRUE" ALOWEMPTY ="FALSE"/>
+	<INPUT TYPE="checkbox" NAME="doduMP" CAPTION="Dodaj u asortiman MP" TOP="1150" LEFT="3500"    />
+    
+	<INPUT TYPE="frame" NAME="fr1" CAPTION="Tipovi objekata:" TOP="2100" LEFT="1200" WIDTH="5400" HEIGHT="2700"   />
+
+	<INPUT TYPE="grid" 
+		NAME="tipovi" 
+		REFRESHAFTERCHILD="TRUE" 
+		CAPTION="Stavke" 
+		TOP="2300" LEFT="1800" WIDTH="4400" HEIGHT="2400"
+		AFTERREFRESH=""
+		POPUP=""
+		ONDBLCLICK=":" 
+		EDITCOLUMNS="[Asortiman(DA/NE)1200]"
+		ONCELLEDITED=""
+		CHECKBOXVISIBLE="FALSE"	
+		PAGEHEADERCENTER=""
+		PAGEHEADERRIGHT=""
+		PAGEHEADERLEFT="Datum: @@datum"
+		PAGEFOOTERCENTER=""
+		PAGEFOOTERLEFT=""
+		PAGEFOOTERRIGHT="@@tkosmomi"
+		PAGEORIENTATION="LANDSCAPE"
+		GROUPBYBOXVISIBLE="FALSE"
+		TOTALROW="FALSE"
+		SQL="select parasortimantipid, Naziv as [Naziv1900], cast(1 as bit) as Asortiman1200 from parasortimantip" />
+	
+	<INPUT TYPE="button" NAME="ok" CAPTION="Spremi (F2)" TOP="5000" LEFT="396" WIDTH="1106" HEIGHT="322" 
+		   ONCLICK="if @@robaid is null begin exec spRaiserror 69001, 'Niste odabrali robu!!' end
+					#if @@partneriid is null begin exec spRaiserror 69001, 'Niste odabrali partnera!!' end
+					#FOREACHROW(tipovi)#if @@robaid is not null and @@partneriid is not null and '@(tipovi..Asortiman1200)' =  'true'  begin 
+					exec spMPParAsortimanPregledNG @action = 2, @partneriid = @@partneriid, @robaid = @@robaid, @sifra1 = '@@sifra1', @tipid = @@tipovi, @doduMP = @@doduMP, @kolicina = 0 end 
+					#Ok"  />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="5000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</DODAJFORM>
+
+
+<IZMJENIFORM
+	WIDTH="8000"
+	ONSUBMIT=""
+	ONLOAD="select p.naziv as Partner, p.partneriid, sifra1 as sifra1 , r.robaid as robaid, r.naziv as Roba from parasortiman pa inner join partneri p on pa.partneriid = p.partneriid inner join roba r on pa.robaid = r.robaid where parasortimanid = @@id"
+	HEIGHT="6000"
+	CAPTION="Izmjena artikla u asortimanu"
+	CMD1CAPTION=""
+	CMD2CAPTION=""
+	FILLEXPLORER="">
+	
+	<INPUT TYPE="search" NAME="partneriid" CAPTION="Partner*" TOP="100" LEFT="1790" 
+		   SQL="viPartneri#partneriid#naziv%#sifra#poreznibroj#!adresa#!mjestanaziv" ENABLED="FALSE" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+	<INPUT TYPE="search" NAME="robaid" CAPTION="Roba*" TOP="532" LEFT="1790" WIDTH="4998" ENABLED="FALSE" ALLOWEMPTY="FALSE" HEIGHT="280" 
+		   SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid'" ONLOSTFOCUS="exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid" BACKCOLOR="LIGHTYELLOW" HOTKEY="F5"/>
+	<INPUT TYPE="text" CAPTION="Šifra kod dobavljača:*" NAME="sifra1" TOP="1032" LEFT="1790" WIDTH="800" HEIGHT="320" ENABLED="TRUE" ALOWEMPTY ="FALSE"/>
+	<INPUT TYPE="checkbox" NAME="doduMP" CAPTION="Dodaj u asortiman MP" TOP="1032" LEFT="3500" />
+    
+	<INPUT TYPE="frame"  NAME="fr1"         CAPTION="Tipovi objekata:" TOP="2100"   LEFT="1200"   WIDTH="5400" HEIGHT="2700"   />
+
+	<INPUT TYPE="grid"
+		NAME="tipoviIzmjeni"
+		REFRESHAFTERCHILD="TRUE"
+		CAPTION="Stavke"
+		TOP="2300" LEFT="1800" WIDTH="4600" HEIGHT="2400"
+		AFTERREFRESH=""
+		POPUP=""
+		ONDBLCLICK=":"
+		EDITCOLUMNS="[Asortiman(DA/NE)1200]"
+		ONCELLEDITED=""
+		CHECKBOXVISIBLE="FALSE"
+		PAGEHEADERCENTER=""
+		PAGEHEADERRIGHT=""
+		PAGEHEADERLEFT="Datum: @@datum"
+		PAGEFOOTERCENTER=""
+		PAGEFOOTERLEFT=""
+		PAGEFOOTERRIGHT="@@tkosmomi"
+		PAGEORIENTATION="LANDSCAPE"
+		GROUPBYBOXVISIBLE="FALSE"
+		TOTALROW="FALSE"
+		SQL="exec spMPParAsortimanPregledNG @action = 11, @id = @@id, @operateriid = @@operateriid" />
+	
+	<INPUT TYPE="button" NAME="ok" CAPTION="Spremi (F2)" TOP="5000" LEFT="396" WIDTH="1106" HEIGHT="322"
+		   ONCLICK="if @@robaid is null begin exec spRaiserror 69001, 'Niste odabrali robu!!' end
+					#if @@partneriid is null begin exec spRaiserror 69001, 'Niste odabrali partnera!!' end
+					#FOREACHROW(tipoviIzmjeni)#if @@robaid is not null and @@partneriid is not null and '@(tipoviIzmjeni..Asortiman1200)' =  'true'  begin 
+					exec spMPParAsortimanPregledNG @action = 22, @partneriid = @@partneriid, @robaid = @@robaid, @sifra1 = '@@sifra1', @tipid = @@tipovi, @doduMP = @@doduMP, @kolicina = 0 end 
+					#Ok"  />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="5000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</IZMJENIFORM>
+
+
+<UPDATEFORM 
+	WIDTH="7000" 
+	ONSUBMIT="spMPAsortimanTipNG @action = 3, @id = @@id," 
+	ONLOAD="select * from parasortimantip where parasortimantipid = @@id" 
+	HEIGHT="2500" 
+	CAPTION="Izmjeni Tip MP objekta"  
+	CMD1CAPTION="Spremi" 
+	CMD2CAPTION="Izlaz" 
+	FILLEXPLORER="">
+	
+	<INPUT TYPE="text" CAPTION="Šifra:" NAME="parasortimantipsifra" WIDTH="800" HEIGHT="320" ENABLED="FALSE" ALOWEMPTY ="FALSE"/>
+	<INPUT TYPE="text" CAPTION="Naziv:" NAME="naziv" WIDTH="3800" HEIGHT="320" ENABLED="TRUE" ALOWEMPTY ="FALSE"/>
+	<INPUT TYPE="text" CAPTION="Oznaka" NAME="oznaka" WIDTH="800" HEIGHT="320" ENABLED="TRUE" ALOWEMPTY ="FALSE"/>
+</UPDATEFORM>
+
+
+<MULTISELECTAKTIVIRAJ
+	WIDTH="6000"
+	ONSUBMIT=""
+	ONLOAD="select naziv as asort, 1 as dodump, @@node as partneriid from partneri where partneriid = @@node"
+	HEIGHT="5200"
+	CAPTION="Želite li aktivirati odabrane artikle? "
+	CMD1CAPTION=""
+	CMD2CAPTION=""
+	FILLEXPLORER="">
+	
+	<INPUT TYPE="checkbox" NAME="aktuMP"  CAPTION="Aktiviraj u asortimanu MP" TOP="200" LEFT="500"    />
+	<INPUT TYPE="grid"
+	NAME="aktiviraj"
+	REFRESHAFTERCHILD="TRUE"
+	CAPTION="Želite li aktivirati označene artikle iz asortimana ? "
+	TOP="500" LEFT="300" WIDTH="6000" HEIGHT="3000"
+	AFTERREFRESH=""
+	POPUP=""
+	ONDBLCLICK=":"
+	EDITCOLUMNS=""
+	ONCELLEDITED=""
+	CHECKBOXVISIBLE="FALSE"
+	PAGEHEADERCENTER=""
+	PAGEHEADERRIGHT=""
+	PAGEHEADERLEFT="Datum: @@datum"
+	PAGEFOOTERCENTER=""
+	PAGEFOOTERLEFT=""
+	PAGEFOOTERRIGHT="@@tkosmomi"
+	PAGEORIENTATION="LANDSCAPE"
+	GROUPBYBOXVISIBLE="FALSE"
+	TOTALROW="FALSE"
+	SQL="spMPParAsortimanPregledNG @action = 6, @operateriid = @@operateriid" />
+
+	<INPUT TYPE="button" NAME="ok" CAPTION="Aktiviraj" TOP="4000" LEFT="396" WIDTH="1106" HEIGHT="322" 
+		   ONCLICK="spMPParAsortimanPregledNG @action = 7, @operateriid = @@operateriid, @dodump = @@aktuMP#Ok" />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="4000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close" />
+</MULTISELECTAKTIVIRAJ>
+
+	
+<MULTISELECTDEAKT
+	WIDTH="6000"
+	ONSUBMIT=""
+	ONLOAD="select naziv as asort, 1 as dodump, @@node as partneriid from partneri where partneriid = @@node"
+	HEIGHT="5200"
+	CAPTION="Želite li deaktivirati odabrane artikle? "
+	CMD1CAPTION=""
+	CMD2CAPTION=""
+	FILLEXPLORER="">
+	
+	<INPUT TYPE="checkbox" NAME="aktuMP" CAPTION="Deaktiviraj u asortimanu MP" TOP="200" LEFT="500" />
+	
+	<INPUT TYPE="grid"
+		NAME="deaktiviraj"
+		REFRESHAFTERCHILD="TRUE"
+		CAPTION="Želite li deaktivirati označene artikle iz asortimana ? "
+		TOP="500" LEFT="300" WIDTH="6000" HEIGHT="3000"
+		AFTERREFRESH=""
+		POPUP=""
+		ONDBLCLICK=":"
+		EDITCOLUMNS=""
+		ONCELLEDITED=""
+		CHECKBOXVISIBLE="FALSE"
+		PAGEHEADERCENTER=""
+		PAGEHEADERRIGHT=""
+		PAGEHEADERLEFT="Datum: @@datum"
+		PAGEFOOTERCENTER=""
+		PAGEFOOTERLEFT=""
+		PAGEFOOTERRIGHT="@@tkosmomi"
+		PAGEORIENTATION="LANDSCAPE"
+		GROUPBYBOXVISIBLE="FALSE"
+		TOTALROW="FALSE"
+		SQL="spMPParAsortimanPregledNG @action = 6, @operateriid = @@operateriid" />
+
+	<INPUT TYPE="button" NAME="ok" CAPTION="Deaktiviraj" TOP="4000" LEFT="396" WIDTH="1106" HEIGHT="322"
+		   ONCLICK="spMPParAsortimanPregledNG @action = 8, @operateriid = @@operateriid, @partneriid = @@node, @dodump = @@aktuMP#Ok"  />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="4000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</MULTISELECTDEAKT>
+
+
+<MULTISELECTDELETEFORM
+	WIDTH="6000" 
+	ONSUBMIT="" 
+	ONLOAD="select naziv as asort, 1 as dodump, @@node as partneriid from partneri where partneriid = @@node" 
+	HEIGHT="5200" 
+	CAPTION="Želite li obrisati odabrane artikle? "  
+	CMD1CAPTION="" 
+	CMD2CAPTION="" 
+	FILLEXPLORER="">
+	
+	<INPUT TYPE="checkbox" NAME="doduMP"  CAPTION="Obriši iz asortimana MP" TOP="200" LEFT="500" />
+
+	<INPUT TYPE="grid" 
+		NAME="brisi" 
+		REFRESHAFTERCHILD="TRUE" 
+		CAPTION="Želite li obrisati označene artikle iz asortimana ? " 
+		TOP="500" LEFT="300" WIDTH="6000" HEIGHT="3000"
+		AFTERREFRESH=""
+		POPUP=""
+		ONDBLCLICK=":" 
+		EDITCOLUMNS=""
+		ONCELLEDITED=""
+		CHECKBOXVISIBLE="FALSE"	
+		PAGEHEADERCENTER=""
+		PAGEHEADERRIGHT=""
+		PAGEHEADERLEFT="Datum: @@datum"
+		PAGEFOOTERCENTER=""
+		PAGEFOOTERLEFT=""
+		PAGEFOOTERRIGHT="@@tkosmomi"
+		PAGEORIENTATION="LANDSCAPE"
+		GROUPBYBOXVISIBLE="FALSE"
+		TOTALROW="FALSE"
+		SQL="spMPParAsortimanPregledNG @action = 6, @operateriid = @@operateriid" />
+
+	<INPUT TYPE="button" NAME="ok" CAPTION="Obriši" TOP="4000" LEFT="396" WIDTH="1106" HEIGHT="322" 
+		   ONCLICK="FOREACHROW(brisi)#spMPParAsortimanPregledNG @action = 4, @id = @@BRISI#Ok"  />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="4000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</MULTISELECTDELETEFORM>
+	
+	
+<DONOSIZROBE 		 
+	WIDTH="11500" 
+	ONSUBMIT=""
+	ONLOAD="select '' as trazilica, null as klasaid, 0 as podklase, (select naziv from partneri where partneriid = @@node) as Partner, @@node as partneriid, null as dobavljacid, 1 as doduMP" 		
+	HEIGHT="10000" 
+	CAPTION="Donos iz tražilice robe za partnera @@partner " 
+	FILLEXPLORER="">
+
+	<INPUT TYPE="combo" NAME="klasaid" CAPTION="Klasa Robe*" ALLOWEMPTY="TRUE" TOP="200" LEFT="1700" SQL="select KlMasterRobaId, naziv from KlMasterRoba order by sortkey" />
+	<INPUT TYPE="checkbox" NAME="podklase" CAPTION="Pokaži i podklase" TOP="200" LEFT="6200" />
+	<INPUT TYPE="text" NAME="trazilica" CAPTION="Tražilica*" TOP="600" LEFT="1700" />
+	<INPUT TYPE="search" NAME="dobavljacid" CAPTION="Dobavljač (RobaInfo)*" TOP="1000" LEFT="1700" SQL="viPartneri#partneriid#naziv%#sifra#poreznibroj#!adresa#!mjestanaziv" BACKCOLOR="LIGHTYELLOW" />
+
+
+	<INPUT TYPE="button" NAME="pokazi" CAPTION="Pokaži" TOP="1000" LEFT="6200" SQL="" ONCLICK="select 'refresh' as donosr#select 'visible' as donosr" />
+
+	<INPUT TYPE="grid" 
+		NAME="donosr" 
+		TOP="1700" 
+		LEFT="200" 
+		WIDTH="11000"
+		HEIGHT="7000" 
+		SKIPDEFAULTLOAD="TRUE"
+		CHECKBOXVISIBLE="TRUE" 
+		TOTALROWVISIBLE="FALSE"
+		EDITCOLUMNS="[Nar.količina1000]"
+		GROUPBYBOXVISIBLE="FALSE"		
+		CAPTION="_Robe za donos u asortiman"
+		REFRESHAFTERCHILD="FALSE"
+		VISIBLE="FALSE"
+		SQL="spMPDonosNaIzdatnicuNG @action = 102, @klasaid = @@klasaid, @trazilica = '@@trazilica', @podklase = @@podklase, @dobavljacid = @@dobavljacid, @partneriid = @@partneriid" />
+
+	<INPUT TYPE="checkbox" NAME="doduMP" CAPTION="Dodaj u asortiman MP" TOP="1000" LEFT="8200" />
+	
+	<INPUT TYPE="button" NAME="ok" CAPTION="Prebaci"  TOP="9000" LEFT="456" WIDTH="1106" HEIGHT="322" 
+		   ONCLICK="if @@partneriid is null begin exec spRaiserror 69001, 'Niste odabrali partnera  !!' end
+					#FOREACHSELECTED(donosr)#spMPParAsortimanPregledNG @action = 3, @partneriid = @@partneriid, @robaid = @@donosr, @doduMP = @@doduMP#Ok"  HOTKEY="F2" />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="9000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</DONOSIZROBE>
+
+	
+<KOPIRAJ 	 
+	WIDTH="11500" 
+	ONSUBMIT=""
+	ONLOAD="select '' as trazilica, null as klasaid, 0 as podklase, (select naziv from partneri where partneriid = @@node) as Partner, @@node as partneriid, 1 as doduMP" 		
+	HEIGHT="10000" 
+	CAPTION="Donos iz tražilice robe za partnera @@partner " 
+	FILLEXPLORER="">
+
+	<INPUT TYPE="search" NAME="partneriid"  CAPTION="Na partnera*"  TOP="200" LEFT="1500" SQL="viPartneri#partneriid#naziv%#sifra#poreznibroj#!adresa#!mjestanaziv" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+	<INPUT TYPE="search" NAME="sapartneriid"  CAPTION="Sa partnera*"  TOP="600" LEFT="1500" SQL="viPartneri#partneriid#naziv%#sifra#poreznibroj#!adresa#!mjestanaziv" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+	
+	<INPUT TYPE="button"   NAME="pokazi"    CAPTION="Pokaži" TOP="1000" LEFT="1500"  SQL="" ONCLICK="select 'refresh' as donosr#select 'visible' as donosr" />
+
+	<INPUT TYPE="grid" 
+	NAME="donosr" 
+	TOP="1700" 
+	LEFT="200" 
+	WIDTH="11000"
+	HEIGHT="7000" 
+	CHECKBOXVISIBLE="TRUE" 
+	TOTALROWVISIBLE="FALSE"
+	EDITCOLUMNS="[Nar.količina1000]"
+	GROUPBYBOXVISIBLE="FALSE"		
+	CAPTION="_Stavke za donos sa ručnog terminala"
+	REFRESHAFTERCHILD="TRUE"
+	VISIBLE="FALSE"
+	SQL="spMPDonosNaIzdatnicuNG @action = 103, @sapartneriid = @@sapartneriid" />
+
+	<INPUT TYPE="checkbox" NAME="doduMP" CAPTION="Dodaj u asortiman MP" TOP="1000" LEFT="8000" />
+	
+	<INPUT TYPE="button" NAME="ok" CAPTION="Prebaci" TOP="9000" LEFT="456" WIDTH="1106" HEIGHT="322" 
+		   ONCLICK="if @@partneriid is null begin exec spRaiserror 69001, 'Niste odabrali partnera  !!' end
+					#FOREACHSELECTED(donosr)#spMPParAsortimanPregledNG @action = 33, @partneriid = @@partneriid, @robaid = @@donosr, @doduMP = @@doduMP, @sapartneriid = @@sapartneriid#Ok"  HOTKEY="F2" />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="9000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close" />
+</KOPIRAJ>
+
+	
+<AKTIVIRAJ 
+	NAME="AKTIVIRAJ" 
+	HEIGHT="3197" WIDTH="5501" 
+	CAPTION="Aktivirati asortiman ?" 
+	ONSUBMIT=""
+	ONLOAD="if (select count(*) from parasortiman where partneriid = @@node) = 0 begin 
+				exec spRaiserror 69001, 'Nema stavaka asortimana! Ne možete aktivirati' end 
+			else begin 
+				select naziv as asort, 0 as doduMP, @@node as partneriid from partneri where partneriid = @@node
+			end" 
+	FILLEXPLORER="">
+	
+	<INPUT TYPE="text"  NAME="asort" TOP="360" LEFT="2304" HEIGHT="317" WIDTH="2794" CAPTION="_broj" ENABLED="FALSE"/>
+	<INPUT TYPE="label" NAME="Label55" TOP="360" LEFT="288" HEIGHT="288" WIDTH="1728" CAPTION="Asortiman dobavljača :" />
+	<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite aktivirati asortiman? " />
+	
+	<INPUT TYPE="button" NAME="ok" CAPTION="Aktiviraj" TOP="1900" LEFT="456" WIDTH="1106" HEIGHT="322" 
+		   ONCLICK="FOREACHSELECTED(mastergrid)#spMPParAsortimanPregledNG @action = 7, @partneriid = @@partneriid, @id = @@id, @doduMP = @@doduMP" HOTKEY="F2" />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="1900" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</AKTIVIRAJ>
+
+
+<DEAKTIVIRAJ 
+	NAME="AKTIVIRAJ" 
+	HEIGHT="3197" WIDTH="5501" 
+	CAPTION="Deaktivirati asortiman ?" 
+	ONSUBMIT="spMPParAsortimanPregledNG @action = 8, @partneriid = @@node, "
+	ONLOAD="if (select count(*) from parasortiman where partneriid = @@node) = 0 begin 
+				exec spRaiserror 69001, 'Nema stavaka asortimana! Ne možete aktivirati' end 
+			else begin 
+				select naziv as asort from partneri where partneriid = @@node
+			end" 
+	FILLEXPLORER="" 	
+	CMD1CAPTION="Dektiviraj" 
+	CMD2CAPTION="Odustani">
+	
+	<INPUT TYPE="text"  NAME="asort" TOP="360" LEFT="2304" HEIGHT="317" WIDTH="2794" CAPTION="_broj" ENABLED="FALSE"/>
+	<INPUT TYPE="label" NAME="Label55" TOP="360" LEFT="288"	 HEIGHT="288" WIDTH="1728" CAPTION="Asortiman dobavljača :" />
+	<INPUT TYPE="checkbox" NAME="doduMP" TOP="900" LEFT="2300" CAPTION="Deaktiviraj u asortimanu MP" />
+	<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite deaktivirati asortiman? " />
+</DEAKTIVIRAJ>
+	
+	
+<DODAJSVIMA 
+	NAME="DODAJSVIMA" 
+	HEIGHT="4000" WIDTH="8000" 
+	CAPTION="Dodaj robu dobavljača svima u asortiman" 
+	ONSUBMIT="exec spMPParAsortimanPregledNG @action = 103, @id = @@id,"
+	ONLOAD="select p.naziv as Partner, p.partneriid, r.robaid as robaid, r.naziv as Roba 
+	from parasortiman pa 
+	inner join partneri p on pa.partneriid = p.partneriid 
+	inner join roba r on pa.robaid = r.robaid where parasortimanid = @@id" 
+	FILLEXPLORER="" 	
+	CMD1CAPTION="Dodaj" 
+	CMD2CAPTION="Odustani">
+	
+	<INPUT TYPE="search" NAME="partneriid" CAPTION="Partner*" TOP="200" LEFT="1500" WIDTH="5000" HEIGHT="320"  ENABLED="FALSE"
+		   SQL="viPartneri#partneriid#naziv%#sifra#poreznibroj#!adresa#!mjestanaziv" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+	<INPUT TYPE="search" NAME="robaid" CAPTION="Roba*" TOP="500" LEFT="1500" WIDTH="5000" HEIGHT="320" ALLOWEMPTY="FALSE" ENABLED="FALSE"
+		   SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid'" ONLOSTFOCUS="exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid" BACKCOLOR="LIGHTYELLOW" HOTKEY="F5"/>
+	
+
+</DODAJSVIMA>
+	
+<BRISISVIMA 
+	NAME="BRISISVIMA" 
+	HEIGHT="4000" WIDTH="8000" 
+	CAPTION="Ukloni robu dobavljača svima iz asortimana" 
+	ONSUBMIT="exec spMPParAsortimanPregledNG @action = 104, @id = @@id,"
+	ONLOAD="select p.naziv as Partner, p.partneriid, r.robaid as robaid, r.naziv as Roba 
+	from parasortiman pa 
+	inner join partneri p on pa.partneriid = p.partneriid 
+	inner join roba r on pa.robaid = r.robaid where parasortimanid = @@id" 
+	FILLEXPLORER="" 	
+	CMD1CAPTION="Ukloni" 
+	CMD2CAPTION="Odustani">
+	
+	<INPUT TYPE="search" NAME="partneriid" CAPTION="Partner*" TOP="200" LEFT="1500" WIDTH="5000" HEIGHT="320"  ENABLED="FALSE"
+		   SQL="viPartneri#partneriid#naziv%#sifra#poreznibroj#!adresa#!mjestanaziv" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+	<INPUT TYPE="search" NAME="robaid" CAPTION="Roba*" TOP="500" LEFT="1500" WIDTH="5000" HEIGHT="320" ALLOWEMPTY="FALSE" ENABLED="FALSE"
+		   SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid'" ONLOSTFOCUS="exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid" BACKCOLOR="LIGHTYELLOW" HOTKEY="F5"/>
+	
+
+</BRISISVIMA>
+
+
+	<MULTISELECTDODJELI
+		WIDTH="14000"
+		ONSUBMIT=""
+		ONLOAD=""
+		HEIGHT="7000"
+		CAPTION="Dodjeli  odabrane artikle u asortiman? "
+		CMD1CAPTION=""
+		CMD2CAPTION=""
+		FILLEXPLORER="">
+
+	
+		<INPUT TYPE="grid"
+		NAME="artikli"
+		REFRESHAFTERCHILD="TRUE"
+		CAPTION="Robe:"
+		TOP="500" LEFT="300" WIDTH="6000" HEIGHT="5000"
+		AFTERREFRESH=""
+		POPUP=""
+		ONDBLCLICK=":"
+		EDITCOLUMNS=""
+		ONCELLEDITED=""
+		CHECKBOXVISIBLE="FALSE"
+		PAGEHEADERCENTER=""
+		PAGEHEADERRIGHT=""
+		PAGEHEADERLEFT=""
+		PAGEFOOTERCENTER=""
+		PAGEFOOTERLEFT=""
+		PAGEFOOTERRIGHT="@@tkosmomi"
+		PAGEORIENTATION="LANDSCAPE"
+		GROUPBYBOXVISIBLE="FALSE"
+		TOTALROW="FALSE"
+		SQL="spMPParAsortimanPregledNG @action = 6, @operateriid = @@operateriid" />
+
+	<INPUT TYPE="grid"
+	NAME="objekti"
+	REFRESHAFTERCHILD="TRUE"
+	CAPTION="Objekti"
+	TOP="500" LEFT="7000" WIDTH="6000" HEIGHT="5000"
+	AFTERREFRESH=""
+	POPUP=""
+	ONDBLCLICK=":"
+	EDITCOLUMNS=""
+	ONCELLEDITED=""
+	CHECKBOXVISIBLE="TRUE"
+	PAGEHEADERCENTER=""
+	PAGEHEADERRIGHT=""
+	PAGEHEADERLEFT=""
+	PAGEFOOTERCENTER=""
+	PAGEFOOTERLEFT=""
+	PAGEFOOTERRIGHT="@@tkosmomi"
+	PAGEORIENTATION="LANDSCAPE"
+	GROUPBYBOXVISIBLE="FALSE"
+	TOTALROW="FALSE"
+	SQL="spMPAsortimanTipNG @action = 1" />
+
+		<INPUT TYPE="button" NAME="ok" CAPTION="Dodjeli" TOP="6000" LEFT="396" WIDTH="1106" HEIGHT="322"
+			   ONCLICK="exec spMPParAsortimanPregledNG @action = 16, @partneriid = @@node, @operateriid=@@operateriid
+			   #FOREACHSELECTED(objekti)#exec spMPParAsortimanPregledNG @action = 17, @partneriid = @@node, @parasortimantipsifra=@(objekti..Sifra1000), @operateriid=@@operateriid
+			   #Ok" />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="6000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close" />
+	</MULTISELECTDODJELI>
+	
+
+
+</PROJECT>
+ 

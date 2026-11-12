@@ -1,0 +1,262 @@
+<root>
+	<form type="master" name="frmMaster" caption="Top500">
+		<event type="init">
+			<action type="datarun reader" value="global.~dtYear"/>
+			<action type="variable value">
+				<parameter name="global.Godina" value="global.~dtYear.@Year"/>
+			</action>
+		</event>
+		<managerlayout>
+			<grid type="master" name="grdMaster" dataname="~dtMaster" bestfitonrefresh="true" key="Top500Id" multiselect="true" showcheckboxes="true">
+				<event type="doubleclick">
+					<action type="form open" value="frmUpsert">
+						<parameter name="Top500Id" value="#grdMaster.@Top500Id"/>
+					</action>
+				</event>
+				<event type="focusedrowchanged">
+					<action type="control enable" value="#btnUredi, #btnUkloni" if="#grdMaster.rowcount!=0"/>
+					<action type="control disable" value="#btnUredi, #btnUkloni" else=""/>
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="Dodaj" function="add">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="Top500Id" value="null"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnUredi" caption="Uredi" function="edit">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="Top500Id" value="#grdMaster.@Top500Id"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnUkloni" caption="Ukloni" function="remove">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite ukloniti označene zapise?"/>
+						<action type="datarun nonquery" value="~dtUkloni"/>
+						<action type="control populate" value="#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnSerijskiUnos" caption="Serijski unos" dock="right">
+					<event type="click">
+						<action type="form open" value="frmSerijskiUnos"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtMaster" command="spTop500">
+				<parameter name="@Action" value="MASTER"/>
+			</data>
+			<data name="dtUkloni" command="spTop500">
+				<parameter name="@Action" value="DELETE"/>
+				<parameter name="@SelectedIds" value="#grdMaster.SelectedIds"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmSerijskiUnos" caption="Izbor godine">
+		<event type="init">
+			<action type="datarun reader" value="global.~dtYear"/>
+		</event>
+		<event type="load">
+			<action type="control value" value="#txtGodina">
+				<parameter value="global.~dtYear.@Year"/>
+			</action>
+		</event>
+		<layout>
+			<group rows="2" cols="3">
+				<item row="1" col="1" rowspan="2" colspan="2" caption="Godina:">
+					<textedit name="txtGodina" format="d4" required="true">
+						<event type="leave">
+							<action type="variable value" value="global.$Godina">
+								<parameter value="#txtGodina"/>
+							</action>
+						</event>
+					</textedit>
+				</item>
+				<item row="1" col="3" height="30" width="30" spacing="0,0,0,0">
+					<button name="btnUp" image="top" imagelocation="middlecenter">
+						<event type="click">
+							<action type="datarun scalar" value="global.~dtGodinaUp">
+								<parameter name="GodinaUp" value="$GodinaUp"/>
+							</action>	
+							<action type="control value" value="#txtGodina">
+								<parameter value="$GodinaUp"/>
+							</action>
+							<action type="variable value" value="global.$Godina">
+								<parameter value="#txtGodina"/>
+							</action>
+						</event>
+					</button>
+				</item>
+				<item row="2" col="3" height="30" width="30" spacing="0,0,0,0">
+					<button name="btnDown" image="bottom" imagelocation="middlecenter">
+						<event type="click">
+							<action type="datarun scalar" value="global.~dtGodinaDown">
+								<parameter name="GodinaDown" value="$GodinaDown"/>
+							</action>
+							<action type="control value" value="#txtGodina">
+								<parameter value="$GodinaDown"/>
+							</action>
+							<action type="variable value" value="global.$Godina">
+								<parameter value="#txtGodina"/>
+							</action>
+						</event>
+					</button>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPotvrdi" caption="Potvrdi">
+					<event type="click">	
+						<action type="form close"/>
+						<action type="form open" value="frmSerijskiUnosGrid"/>
+					</event>
+				</button>
+				<button name="btnZavrši" caption="Završi">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmUpsert" caption="Support korisnik">
+		<event type="init">
+			<action type="datarun reader" value="global.~dtYear" if="$Top500Id==null"/>
+			<action type="datarun reader" value="~dtLoad" if="$Top500Id!=null"/>
+		</event>
+		<event type="load">
+			<action type="control value" value="#txtGodina" if="$Top500Id==null">
+				<parameter value="global.~dtYear.@Year"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control disable" value="#txtGodina, #cmbSuppKor, #btnUp, #btnDown" if="$Top500Id!=null"/>
+		</event>
+		<layout>
+			<group rows="4" cols="3">
+				<group row="1" col="1" rows="2" cols="3" rowspan="2" colspan="3" groupbordervisible="false" if="$Top500Id==null">
+					<item row="1" col="1" rowspan="2" colspan="2" caption="Godina:">
+						<textedit name="txtGodina" format="d4" datavalue="~dtLoad.@Godina" required="true">
+							<event type="leave">
+								<action type="control populate" value="#cmbSuppKor"/>
+							</event>
+						</textedit>
+					</item>
+					<item row="1" col="3" height="30" width="30" spacing="0,0,0,0">
+						<button name="btnUp" image="top" imagelocation="middlecenter">
+							<event type="click">
+								<action type="datarun scalar" value="global.~dtGodinaUp">
+									<parameter name="GodinaUp" value="$GodinaUp"/>
+								</action>	
+								<action type="control value" value="#txtGodina">
+									<parameter value="$GodinaUp"/>
+								</action>
+								<action type="control populate" value="#cmbSuppKor"/>
+							</event>
+						</button>
+					</item>
+					<item row="2" col="3" height="30" width="30" spacing="0,0,0,0">
+						<button name="btnDown" image="bottom" imagelocation="middlecenter">
+							<event type="click">
+								<action type="datarun scalar" value="global.~dtGodinaDown">
+									<parameter name="GodinaDown" value="$GodinaDown"/>
+								</action>
+								<action type="control value" value="#txtGodina">
+									<parameter value="$GodinaDown"/>
+								</action>
+								<action type="control populate" value="#cmbSuppKor"/>
+							</event>
+						</button>
+					</item>
+				</group>
+				<group row="1" col="1" rows="2" cols="3" rowspan="2" colspan="3" groupbordervisible="false" if="$Top500Id!=null">
+					<item row="1" col="1" rowspan="2" colspan="3" caption="Godina:">
+						<labeledit name="txtGodina" datavalue="~dtLoad.@Godina"/>
+					</item>
+				</group>
+				<group row="3" col="1" rows="1" cols="1" colspan="3" groupbordervisible="false" if="$Top500Id==null">
+					<item row="1" col="1" colspan="3" caption="Support korisnik:">
+						<comboedit name="cmbSuppKor" dataname="~dtSuppKor" valuefield="suppKorisnikId" displayfield="Korisnik" required="true"/>
+					</item>
+				</group>
+				<group row="3" col="1" rows="1" cols="1" colspan="3" groupbordervisible="false" if="$Top500Id!=null">
+					<item row="1" col="1" colspan="3" caption="Support korisnik:">
+						<labeledit name="cmbSuppKor" datavalue="~dtLoad.@Korisnik"/>
+					</item>
+				</group>
+				<group row="4" col="1" rows="1" cols="1" colspan="3" groupbordervisible="false">
+					<item row="4" col="1" colspan="3" caption="Pozicija (1-1000):">
+						<textedit name="txtPozicija" format="([1-9][0-9]{0,2}|1000)" formattype="regex" datavalue="~dtLoad.@Pozicija" required="true"/>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action if="$Top500Id==null">
+							<action type="validate"/>
+							<action type="datarun scalar" value="~dtUpsert">
+								<parameter name="NewId"/>
+							</action>
+							<action type="control populate" value="parent.#grdMaster"/>
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="$NewId"/>
+							</action>
+							<action type="control value" value="#cmbSuppKor,#txtPozicija">
+								<parameter value=""/>
+							</action>
+							<action type="control populate" value="#cmbSuppKor"/>
+						</action>
+						<action else="">
+							<action type="validate"/>
+							<action type="datarun nonquery" value="~dtUpsert"/>
+							<action type="control populate keepfocus" value="parent.#grdMaster"/>
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtUpsert" command="spTop500">
+				<parameter name="@Action" value="INSERT" if="$Top500Id==null"/>
+				<parameter name="@Action" value="UPDATE" if="$Top500Id!=null"/>
+				<parameter name="@ID" value="$Top500Id" if="$Top500Id!=null"/>
+				<parameter name="@SuppKorId" value="#cmbSuppKor" if="$Top500Id==null"/>
+				<parameter name="@Pozicija" value="#txtPozicija"/>
+				<parameter name="@Godina" value="#txtGodina"/>
+			</data>
+			<data name="dtLoad" command="spTop500">
+				<parameter name="@Action" value="MASTER"/>
+				<parameter name="@ID" value="$Top500Id"/>
+			</data>
+			<data name="dtSuppKor" command="spTop500">
+				<parameter name="@Action" value="KORISNICI"/>
+				<parameter name="@Godina" value="#txtGodina"/>
+				<parameter name="@Indy" value="INS" if="$Top500Id==null"/>
+				<parameter name="@Indy" value="UPD" if="$Top500Id!=null"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmSerijskiUnosGrid" path="frmSerijskiUnosGrid.xml"/>
+	<datalist>
+		<data name="dtYear" command="SELECT CONVERT(INT, YEAR(GETDATE())) - 1 AS Year" type="text"/>
+		<data command="select @GodinaUp + 1 as GodinaUp" type="text" name="dtGodinaUp">
+			<parameter name="@GodinaUp" value="#txtGodina" type="int"/>
+		</data>
+		<data command="select @GodinaDown - 1 as GodinaDown" type="text" name="dtGodinaDown">
+			<parameter name="@GodinaDown" value="#txtGodina" type="int"/>
+		</data>
+	</datalist>
+</root>

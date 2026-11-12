@@ -1,0 +1,163 @@
+﻿<!-- 27.8.2020. IF U dtSpremi ispravio #srcKonto.text i #srcKontoDev.text zbog prikaza vodeče nule (konta razreda 0) -->
+<!--17.04.2018 Ana&Josip KontioDevEU-->
+<root version="1.0.0." loglevel="3">
+	<form type="master" name="frmGlavni" caption="Shema knjiženja IRA">
+		<event type="onload">
+			<action if="#grdGlavni.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObriši"  />	
+			<action type="control enable" value="#btnIzmijeni, #btnObriši" else="" />
+		</event>
+		<event type="cellvaluechanged">
+			<action type="control populate keepfocus" value="#grdGlava" />
+		</event>
+		<managerlayout>
+			<event type="init">
+				<action type="variable value">
+					<parameter name="NoviKntKontaZaShemuId" value="0" type="int"/>
+					<parameter name="TrenutniKntKontaZaShemuId" value="0" type="int"/>
+				</action>
+			</event>
+			<grid name="grdGlavni" type="master" dataname="~dtGlavni" key="KntKontaZaShemuId" fieldsmartspaces="false">
+				<event type="doubleclick">
+					<action type="form open" value="frmUnos">
+						<parameter name="KntKontaZaShemuId" value="#grdGlavni.@KntKontaZaShemuId"/>
+						<parameter name="IndUnosa" value="0"/>
+					</action>
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnDodaj" caption="DODAJ">
+					<event type="click">	
+						<!-- <action type="datarun reader" value="~dtScope" /> -->
+						<action type="datarun scalar" value="~dtScope">
+							<parameter name="TrenutniKntKontaZaShemuId"/>
+						</action>
+						<action type="form open" value="frmUnos">
+							<parameter name="IndUnosa" value="1"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlavni"/>
+						<action if="#grdGlavni.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObriši"  />	
+						<action type="control enable" value="#btnIzmijeni, #btnObriši" else="" />
+						<action type="datarun scalar" value="~dtScope">
+							<parameter name="NoviKntKontaZaShemuId"/>
+						</action>
+						<action type="control focus" value="#grdGlavni" if="$TrenutniKntKontaZaShemuId!=$NoviKntKontaZaShemuId">
+							<parameter value="$NoviKntKontaZaShemuId" type="int"/>
+						</action>					
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI">
+					<event type="click">	
+						<action type="datarun scalar" value="~dtScope">
+							<parameter name="TrenutniKntKontaZaShemuId"/>
+						</action>
+						<action type="form open" value="frmUnos">
+							<parameter name="KntKontaZaShemuId" value="#grdGlavni.@KntKontaZaShemuId"/>
+							<parameter name="IndUnosa" value="0"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlavni"/>
+						<action if="#grdGlavni.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObriši"  />	
+						<action type="control enable" value="#btnIzmijeni, #btnObriši" else="" />
+						<action type="datarun scalar" value="~dtScope">
+							<parameter name="NoviKntKontaZaShemuId"/>
+						</action>
+						<action type="control focus" value="#grdGlavni" if="$TrenutniKntKontaZaShemuId!=$NoviKntKontaZaShemuId">
+							<parameter value="$NoviKntKontaZaShemuId" type="int"/>
+						</action>	
+					</event>
+				</button>
+				<button name="btnObriši" caption="OBRIŠI">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati {#grdGlavni.@Opis}?">
+							<action type="datarun nonquery" value="~dtObriši"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlavni"/>
+						<action if="#grdGlavni.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObriši"  />	
+						<action type="control enable" value="#btnIzmijeni, #btnObriši" else="" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons >
+		<datalist>
+			<data name="dtGlavni" command="spCKntKontaZaShemuQuery">
+				<parameter name="@Action" value="0"/>
+			</data>
+			<data name="dtObriši" command="spCKntKontaZaShemuAzur">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@ID" value="#grdGlavni.@KntKontaZaShemuId"/>
+			</data>
+			<data name="dtScope" command="spCKntKontaZaShemuAzur">
+				<parameter name="@Action" value="3"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUnos" caption="Konto za shemu" textposition="left" itemspadding="2">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$IndUnosa==0"/>
+		</event>
+		<layout itemspadding="2">
+			<group cols="5" rows="5" minwidth="700" bordervisible="true">
+				<item col="1" row="1" colspan="5" caption="Opis:" textposition="left" >
+					<textedit name="txtOpis" required="true" datavalue="~dtGet.@Opis"/>
+				</item>
+				<item col="1" row="2" colspan="2" caption="Konto:" textposition="left">
+					<searchedit name="srcKonto" required="true"  datavalue="~dtGet.@Konto" fieldtext="Konto" fieldvalue="Konto" dataname="~dtKonto" datatext="~dtGet.@Konto"/>
+				</item>
+				<item col="1" row="3"  caption="Flag:"  textposition="left">
+					<textedit name="txtFlag" maxlength="1" type="int" datavalue="~dtGet.@Flag"/>
+				</item>
+				<item col="1" row="4" colspan="2" caption="KontoDev:" textposition="left">
+					<searchedit name="srcKontoDev"  datavalue="~dtGet.@KontoDev" dataname="~dtKontoDev" datatext="~dtGet.@KontoDev" fieldtext="Konto" fieldvalue="Konto"/>
+				</item>
+
+				<item col="1" row="5" colspan="2" caption="KontoDevEU:" textposition="left">
+					<searchedit name="srcKontoDevEU"  datavalue="~dtGet.@KontoDevEU" dataname="~dtKontoDevEU" datatext="~dtGet.@KontoDevEU" fieldtext="Konto" fieldvalue="Konto"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="~dtSpremi" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtSpremi" command="spCKntKontaZaShemuAzur">
+				<parameter name="@Action" value="0" if="$IndUnosa==1"/>
+				<parameter name="@Action" value="1" if="$IndUnosa==0"/>
+				<parameter name="@Opis" value="#txtOpis"/>
+				<parameter name="@Konto" value="#srcKonto.text"/>
+				<parameter name="@Flag" value="#txtFlag"/>
+				<parameter name="@KontoDev" value="#srcKontoDev.text"/>
+				<parameter name="@KontoDevEU" value="#srcKontoDevEU.text"/>
+				<parameter name="@ID" value="$KntKontaZaShemuId" if="$IndUnosa==0"/>
+			</data>
+			<data name="dtScope" command="spCKntKontaZaShemuAzur">
+				<parameter name="@Action" value="3"/>
+			</data>
+			<data name="dtGet" command="spCKntKontaZaShemuQuery">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@KntKontaZaShemuId" value="$KntKontaZaShemuId"/>
+			</data>
+			<data name="dtKonto" command="spCKntKontaZaShemuQuery">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Konto" value="#srcKonto.text"/>
+			</data>
+			<data name="dtKontoDev" command="spCKntKontaZaShemuQuery">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@Konto" value="#srcKontoDev.text"/>
+			</data>
+			<data name="dtKontoDevEU" command="spCKntKontaZaShemuQuery">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@Konto" value="#srcKontoDevEU.text"/>
+			</data>			
+		</datalist>
+	</form>
+</root>

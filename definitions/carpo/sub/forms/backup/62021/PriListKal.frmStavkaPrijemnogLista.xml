@@ -1,0 +1,1447 @@
+ <!--
+ 30.10.2020. AA dtKoličina na pakiranju samo ako dođe do promjene
+ 12.8.2020. AA trosak iz NabNarCijena
+ 13.7.2020. AA kod izmjene postavi labele maržu i vrijednosti baz rabata u shownu
+ 19.5.2020. AA spRobnoPrimkaCijena $SkladisteId umjesto 1
+ 17.2.2020. AA HD 51805 kontrola roka trajanja
+ 17.04.2019 PJ dodao @OrgShemaId u dtNabNarCijena
+ 08.04.2019 PJ ako je pubvar uključen, daj zemlju podrijetla sa zadnjeg dokumenta 
+ -->
+ <root>
+	<form name="frmStavkaPrijemnogLista" caption="Stavka prijemnog lista :: {$tekst}"  width="500">
+		<method name="fnDimenzije" dll="Dimenzije" class="DimenzijeNet.DimenzijeCarpo" method="run"/>
+		<!-- <method name="funPriListKalk" dll="Carpo.Specific" class="Carpo.Specific.Matpos.PriListKalk" method="Calculation" /> -->
+		<method name="CjenikGrid" dll="Carpo.Specific" class="Carpo.Specific.Matpos.Cjenik.Start" method="Run" />
+        <event type="init">
+			<action type="variable value" value="global.$OtvorenaEditForma">
+				<parameter value="1"/>
+			</action>
+			<action type="variable value" value="global.$Close"> 
+				<parameter value="false" type="bool"/> 
+			</action> 				
+			<!-- PUBVARS -->
+			<action type="datarun reader" value="~dtPubvarCjenik"/> 
+			<action type="datarun reader" value="~dtPubvarRasporedi"/> 		
+			<action type="datarun reader" value="~dtGet" if="$action==1"/> <!-- if="$action==1" -->
+			<action type="datarun reader" value="~dtRobnoPrimkaCijena" if="$action==1"/>		
+			<action type="datarun reader" value="~dtAmbalaza" if="$action==1"/>		
+			<action type="variable value" if="$action==1" >
+                <parameter name="JMNaziv" value="~dtGet.@RobaJM"/>
+            </action>	
+            <action type="variable value" if="$action==1" >
+                <parameter name="DodatnaJM" value="~dtGet.@Dodatna JM" />
+            </action>
+			<action type="variable value" value="JmjId" if="$action==1&amp;&amp;~dtGet.rowcount&gt;0">
+				<parameter  value="~dtGet.@JmId"></parameter>
+			</action>
+			<action type="variable value" if="$action==1" >
+                <parameter name="Faktor" value="~dtGet.@Faktor" />
+            </action>
+			<action type="variable value" if="$action==1">
+				<parameter name="BrDecimalaJM" value="~dtGet.@BrDecimala_Jm" />
+			</action>
+			<action type="variable value" if="$action==1">
+				<parameter name="BrDecimalaDodJM" value="~dtGet.@BrDecimala_DodJm" />
+			</action>			
+			<action type="variable value" if="$action==1">
+				<parameter name="DodatnaJMId" value="~dtGet.@Dod_Jm" />
+			</action>
+			<action type="variable value" if="$action==1">
+				<parameter name="FaktorFix" value="~dtGet.@FaktorFix" />
+			</action>				
+			<action type="variable value" if="$action==1">
+				<parameter name="DefaultInd" value="~dtGet.@DefaultInd" />
+			</action>	
+			<action if="$action==0">
+				<!--ako se radi o unosi, očisti temp dimenzija-->
+				<action type="datarun nonquery" value="~dtDimenzijeReset"/>
+			</action>
+			<action type="variable value">
+                <parameter name="Rasporedi" value="0" />
+            </action>
+			<action type="datarun reader" value="~dtPubVarsKalkRez"/>
+			<action type="datarun reader" value="~dtSkladiste"/>
+        </event>
+        <event type="load">
+			<action type = "variable value" value="SkladisteRegOznaka">
+				<parameter value="~dtSkladiste.@RegOznaka"/>
+			</action>		
+      		<action type="control disable" value="#btnDimenzije,#txtRoba, #txtKolicina, #chkRasporedi" if="$Status==Zaključen"/>
+			<!-- <action type="control disable" value="#btnCjenik"></action>			 -->
+			<action type="control enable" value="#chkRasporedi" if="~dtPubvarRasporedi!=null&amp;&amp;~dtPubvarRasporedi.@varset==1"></action>			
+			<action type="control enable" value="#txtKolicinaPak" if ="$action==1&amp;&amp;~dtGet.@DefaultInd==1"/>
+			
+			<action type="control itemcaption" value="txtKolicinaPak">
+				<parameter value="Količina pak. ({$DodatnaJM}):" if="$DodatnaJM!=null"/>
+				<parameter value="Količina pak.:" else=""/>
+			</action>	
+			<action type="control itemcaption" value="txtKolicina">
+				<parameter value="Količina ({$JMNaziv}):" if="$JMNaziv!=null"/>
+				<parameter value="Količina:" else=""/>
+			</action>							
+			<action type="control attribute" value="#txtKolicina">
+				<parameter name="format" value="n{$BrDecimalaJM}"></parameter>
+			</action>	
+			<action type="control attribute" value="#txtKolicinaPak">
+				<parameter name="format" value="n{$BrDecimalaDodJM}"></parameter>
+			</action>
+			
+			<action type = "control value" value="txtTrosakP" if="$action==0">
+				<parameter value="$trosakPosto"></parameter>
+			</action>
+			
+			<!-- roundaj trosak posto na 2 decimale zbog preračuna -->
+			<action type="datarun reader" value="global.~dtRoundTrosakPosto" if="$action==0"> <!-- if="$tecaj&gt;1" -->
+				<action type="control value" value="#txtTrosakP">
+					<parameter value="~dtRoundTrosakPosto.@trosakPosto"/>
+				</action>
+			</action>	
+
+			<action type="control value" value="#txtVpc" if="$action==1&amp;&amp;~dtRobnoPrimkaCijena.rowcount&gt;0">
+				<parameter  value="~dtRobnoPrimkaCijena.@Vpc"></parameter>
+			</action>
+			<action type="control value" value="#txtMpc" if="$action==1&amp;&amp;~dtRobnoPrimkaCijena.rowcount&gt;0">
+				<parameter  value="~dtRobnoPrimkaCijena.@mpc"></parameter>
+			</action>
+			<action type = "variable value" value="txtVpc" if="$action==1&amp;&amp;~dtRobnoPrimkaCijena.rowcount&gt;0">
+				<parameter value="~dtRobnoPrimkaCijena.@Vpc"></parameter>
+			</action>
+			<action type = "variable value" value="txtMpc" if="$action==1&amp;&amp;~dtRobnoPrimkaCijena.rowcount&gt;0">
+				<parameter value="~dtRobnoPrimkaCijena.@mpc"></parameter>
+			</action>			
+			<action type="variable value" if="$action==1&amp;&amp;~dtAmbalaza.rowcount&gt;0">
+				<parameter name="ambalaza_faktor" value="~dtAmbalaza.@Faktor"></parameter>
+				<parameter name="ambalaza_cijena" value="~dtAmbalaza.@cijena"></parameter>
+				<action type="control enable" value="#txtPovrat"></action>
+			</action>
+			<action type="variable value" else="">
+				<parameter name="ambalaza_faktor" value="1"></parameter>
+				<parameter name="ambalaza_cijena" value="0"></parameter>
+				<action type="control disable" value="#txtPovrat"></action>
+				<action type="control value" value="#txtPovrat">
+					<parameter value="0"/>
+				</action>
+			</action>
+
+			<action type="control enable" value="#txtDevCijena,#txtDevVrijednost" if="$valutaID!=null"/>
+			<action type="control refreshvalue" value="#lblTecaj"/>
+			
+			<!-- postavi custom varijablu $tecaj-->
+
+			<action type = "control value" value="#lblTecaj">
+				<parameter value="$tecaj"></parameter>
+			</action>
+			<action type="control disable" value="#txtRokTrajanja" if="~dtGet.@RokTrajanja==null">
+			</action>
+			<action type="control value" value="#txtRokTrajanja" if="~dtGet.@RokTrajanja==null">
+				<parameter value="now"></parameter>
+			</action>
+			
+			<!-- roundaj trosak i carinu na 2 decimale -->
+			<action type="datarun reader" value="global.~dtIzracunCarinaTrosakRound" if="$action==1"> <!-- if="$tecaj&gt;1" -->
+				<action type="control value" value="#txtCarinaI">
+					<parameter value="~dtIzracunCarinaTrosakRound.@carinai"/>
+				</action>
+				<action type="control value" value="#txtTrosakI">
+					<parameter value="~dtIzracunCarinaTrosakRound.@trosaki"/>
+				</action>
+			</action>	
+        </event>	
+		<event type="shown">
+			<!-- rucno izazovi leave s neke od kontrola kako bi se preracunale vrijednosti za labele -->		
+			<action type="control focus" value="#txtPoticaj" if="#txtKolicina&gt;0&amp;&amp;$action==1"></action>
+			<action type="control focus" value="#txtRoba" if="#txtKolicina&gt;0&amp;&amp;$action==1&amp;&amp;$Status!=Zaključen" ></action>	
+			<action type="control focus" value="#txtFCijena" elseif="$Status==Zaključen" ></action>	
+			<action type="control visible" value="#btnCjenik">
+				<parameter value="false" if="~dtPubVarsKalkRez.@NKUCjenik==0"/>
+			</action>
+			<action type="control visible" value="#chkRasporedi">
+				<parameter value="false" if="~dtPubVarsKalkRez.@NKURasporedi==0"/>
+			</action>
+			<!-- ako se radi o izmjeni, izračunaj maržu i dodatne vrijednosti bez rabata-->
+			<action if="$action==1">				
+				<action type="datarun reader" value="~dtPostaviDevRabate"/>
+				<action type="control value" value="#txtRabat1IDev">
+					<parameter value="~dtPostaviDevRabate.@Rabat1Dev"/>
+				</action>				
+				<action type="control value" value="#txtRabat2IDev">
+					<parameter value="~dtPostaviDevRabate.@Rabat2Dev"/>
+				</action>				
+				<action type="control value" value="#txtRabat3IDev">
+					<parameter value="~dtPostaviDevRabate.@Rabat3Dev"/>
+				</action>								
+				<action type="datarun reader" value="~dtPostaviMarzuIVrij"/>
+				<action type="control value" value="#txtMarza">
+					<parameter value="~dtPostaviMarzuIVrij.@Marza"/>
+				</action>
+				<action type="control value" value="#txtMarzaP">
+					<parameter value="~dtPostaviMarzuIVrij.@MarzaP"/>
+				</action>	
+				<action type="control value" value="#txtFVKn">
+					<parameter value="~dtPostaviMarzuIVrij.@FVKn"/>
+				</action>				
+				<action type="control value" value="#txtFVe">
+					<parameter value="~dtPostaviMarzuIVrij.@FVDev"/>
+				</action>
+				<action type="variable value" value="$txtNCijena">
+					<parameter value="~dtGet.@Ncijena"/>
+				</action>	
+				<action type="variable value" value="$txtNVrijednost">
+					<parameter value="~dtGet.@NVrijednost"/>
+				</action>				
+			</action>
+		</event>
+		
+        <layout textposition="left" itemspadding="3" autotaborder="false">
+            <group groupbordervisible="False" cols="1" rows="4" row="1" col="1">
+                <rowsdefinition>
+                    <row size="100%" position="3"/>
+					<row size="4" position="2"/>
+                </rowsdefinition>
+                <group caption="Roba - tražilica" padding="0" cols="1" rows="1" col="1" row="1">
+                    <columnsdefinition>
+                        <column size="100%" position="1" />
+                    </columnsdefinition>
+                    <item textvisible="false" row="1" col="1" fontsizedelta="1">
+                        <!-- <searchedit type="roba" name="txtRoba" fontsizedelta="1" fontbold="True" fieldtext="Naziv" required="true" fieldvalue="RobaId" entermovenextcontrol="false" datavalue="~dtGet.@RobaId" datatext="~dtGet.@RobaNaziv"> -->
+                        <searchedit  name="txtRoba" fontsizedelta="1" dataname="Global.dtRoba" fontbold="True" fieldtext="NazivId" required="true" fieldvalue="robaid" entermovenextcontrol="false" datavalue="~dtGet.@RobaId" datatext="~dtGet.@RobaNaziv" tabindex="1">							
+							<event type="valuechanged" raiseonload="false">
+								<!--ovdje dohvaća fak cijenu i/ili dev cijenu ako se zadnji dodani artikl poklapa sa ovim koji se unosi za istog partnera-->
+                                        <!--<action type="datarun reader" value="~dtGetCijeneSPrethodnog" if="$action==0"/>-->
+								<action type="datarun reader" value="~dtAmbalaza"/>
+							     <!--<action type="datarun reader" value="~dtDobavljac"/> kaže ZK da dtDobavljač i dtDobavljivost ide preko fnNabNarCijena-->
+				                    <!--<action type="datarun reader" value="~dtDobavljivost"/> -->
+								<action type="datarun reader" value="~dtRobnoPrimkaCijena"/>
+								<action type="datarun reader" value="~dtNabNarCijena"/>
+								<action type="datarun reader" value="~dtPonudiJedinicniTrosak"/>
+								<!-- postavljanje varijabli -->
+								<action type="variable value" if="~dtAmbalaza.rowcount&gt;0">
+									<parameter name="ambalaza_faktor" value="~dtAmbalaza.@Faktor"></parameter>
+									<parameter name="ambalaza_cijena" value="~dtAmbalaza.@cijena"></parameter>
+									<action type="control enable" value="#txtPovrat"></action>
+								</action>
+								<action type="variable value" else="">
+									<parameter name="ambalaza_faktor" value="1"></parameter>
+									<parameter name="ambalaza_cijena" value="0"></parameter>
+									<action type="control disable" value="#txtPovrat"></action>
+									<action type="control value" value="#txtPovrat">
+										<parameter value="0"/>
+									</action>
+								</action>
+							<!-- 	<action type="variable value" if="~dtDobavljac.rowcount&gt;0&amp;&amp;~dtDobavljac.@DobUgovoriGlaId!=null">
+									<parameter name="DobUgovoriGlaId" value="~dtDobavljac.@DobUgovoriGlaId"></parameter>
+								</action>
+								<action type="variable value" else="">
+									<parameter name="DobUgovoriGlaId" value="null"></parameter>
+								</action> -->
+										
+								<!-- postavljanje vrijednosti kontrola -->
+						<!-- 		<action type="control value" value="#txtFCijena" if="$action==0&amp;&amp;~dtGetCijeneSPrethodnog.rowcount&gt;0&amp;&amp;$valutaID==null">
+									<parameter value="~dtGetCijeneSPrethodnog.@FakCijenaKn"/>
+								</action>
+								<action type="control value" value="#txtDevCijena" if="$action==0&amp;&amp;~dtGetCijeneSPrethodnog.rowcount&gt;0&amp;&amp;$valutaID!=null">
+									<parameter value="~dtGetCijeneSPrethodnog.@DevCijena"/>
+								</action>
+								 -->								 													
+								<action type="control value" value="#txtFCijena" if="~dtNabNarCijena.rowcount&gt;0">
+									<parameter value="~dtNabNarCijena.@ListPriceKn"/>
+								</action>
+								<action type="control value" value="#txtRabat1P" if="~dtNabNarCijena.rowcount&gt;0">
+									<parameter value="~dtNabNarCijena.@rabat1p"/>
+								</action>
+								<action type="control value" value="#txtRabat2P" if="~dtNabNarCijena.rowcount&gt;0">
+									<parameter value="~dtNabNarCijena.@rabat2p"/>
+								</action>
+								<action type="control value" value="#txtRabat3P" if="~dtNabNarCijena.rowcount&gt;0">
+									<parameter value="~dtNabNarCijena.@rabat3p"/>
+								</action>
+								<action type="control value" value="#txtDevCijena" if="~dtNabNarCijena.rowcount&gt;0">
+									<parameter value="~dtNabNarCijena.@devcijena"/>
+								</action>
+								<action type="control value" value="#txtTrosarina" if="~dtNabNarCijena.rowcount&gt;0">
+									<parameter value="~dtNabNarCijena.@Trosarina"/>
+								</action>
+								<action type="control value" value="#txtTrosakP" if="~dtNabNarCijena.rowcount&gt;0">
+									<parameter value="~dtNabNarCijena.@Trosak"/>
+								</action>								
+								<!-- izračunaj devcijenu ako je 0 -->
+								<action type="datarun reader" value="global.~dtIzracunDevCijene" if="~dtNabNarCijena.rowcount&gt;0&amp;&amp;$tecaj&gt;1&amp;&amp;~dtNabNarCijena.@devcijena==0">
+									<action type="control value" value="#txtDevCijena">
+										<parameter value="~dtIzracunDevCijene.@devcijena"/>
+									</action>
+								</action>
+								<!-- <action type="control value" value="#txtFCijena" if="~dtNabNarCijena.rowcount&gt;0">
+									<parameter value="~dtDobavljivost.@ListPriceKn"/>
+								</action>
+								<action type="control value" value="#txtRabat1P" if="~dtDobavljivost.rowcount&gt;0">
+									<parameter value="~dtDobavljivost.@rabat1p"/>
+								</action>
+								<action type="control value" value="#txtRabat2P" if="~dtDobavljivost.rowcount&gt;0">
+									<parameter value="~dtDobavljivost.@rabat2p"/>
+								</action>
+								<action type="control value" value="#txtRabat3P" if="~dtDobavljivost.rowcount&gt;0">
+									<parameter value="~dtDobavljivost.@rabat3p"/>
+								</action>
+								<action type="control value" value="#txtDevCijena" if="~dtDobavljivost.rowcount&gt;0">
+									<parameter value="~dtDobavljivost.@devcijena"/>
+								</action>
+								<action type="control value" value="#txtTrosarina" if="~dtDobavljivost.rowcount&gt;0">
+									<parameter value="~dtDobavljivost.@Trosarina"/>
+								</action> -->
+								
+								
+								<action type="control value" value="#txtVpc" if="~dtRobnoPrimkaCijena.rowcount&gt;0">
+									<parameter  value="~dtRobnoPrimkaCijena.@Vpc"></parameter>
+								</action>
+								<action type="control value" value="#txtMpc" if="~dtRobnoPrimkaCijena.rowcount&gt;0">
+									<parameter  value="~dtRobnoPrimkaCijena.@mpc"></parameter>
+								</action>
+								<action type = "variable value" value="txtVpc" if="~dtRobnoPrimkaCijena.rowcount&gt;0">
+									<parameter value="~dtRobnoPrimkaCijena.@Vpc"></parameter>
+								</action>
+								<action type = "variable value" value="txtMpc" if="~dtRobnoPrimkaCijena.rowcount&gt;0">
+									<parameter value="~dtRobnoPrimkaCijena.@mpc"></parameter>
+								</action>
+								<action type="variable value">
+									<parameter name="JmjId" value="#txtRoba.@JMId"/>
+								</action>
+								<action type="variable value" >
+									<parameter name="DodatnaJM" value="#txtRoba.@Dodatna JM" />
+								</action>
+								<action type="variable value" >
+									<parameter name="DodatnaJMId" value="#txtRoba.@Dod_JmId" />
+								</action>											
+
+								<action type="variable value" >
+									<parameter name="BrDecimalaDodJM" value="#txtRoba.@BrDecimala_DodJmId" />
+								</action>
+								<action type="variable value" >
+									<parameter name="BrDecimalaJM" value="#txtRoba.@BrDecimala_JmId" />
+								</action>			
+
+								<action type="control attribute" value="#txtKolicina">
+									<parameter name="format" value="n{$BrDecimalaJM}"></parameter>
+								</action>	
+								<action type="control attribute" value="#txtKolicinaPak">
+									<parameter name="format" value="n{$BrDecimalaDodJM}"></parameter>
+								</action>								
+								<action type="variable value" if="#txtRoba!=null">
+									<parameter name="JMNaziv" value="#txtRoba.@JM" />
+								</action> 							
+								<action type="variable value" >
+									<parameter name="Faktor" value="#txtRoba.@Faktor_Id" />
+								</action>								
+								<action type="variable value" >
+									<parameter name="FaktorFix" value="#txtRoba.@FaktorFix_Id" />
+								</action>
+								<action type="variable value" >
+									<parameter name="DefaultInd" value="#txtRoba.@DefaultInd_Id" />
+								</action>		
+								<action type="control value" value="#txtKolicinaPak" if="#txtRoba.@DefaultInd_Id==0">
+                                  <parameter value="0"/>
+                                </action>									
+								<action type="control enable" value="#txtKolicinaPak" if="#txtRoba.@DefaultInd_Id==1"/>
+								<action type="control disable" value="#txtKolicinaPak" else=""/>		
+								<action type="control focus" value="#txtRoba" if="#txtRoba==null"/>
+								<action type="control focus" value="#txtKolicinaPak" elseif="#txtRoba.@DefaultInd_Id==1"/>																							
+								<action type="control focus" value="#txtKolicina" else=""/>	
+								
+								<action type="control itemcaption" value="txtKolicinaPak">
+									<parameter value="Količina pak. ({$DodatnaJM}):" if="$DodatnaJM!=null"/>
+									<parameter value="Količina pak.:" else=""/>									
+								</action>	
+								<action type="control itemcaption" value="txtKolicina">
+									<parameter value="Količina ({$JMNaziv}):" if="$JMNaziv!=null"/>
+									<parameter value="Količina:" else=""/>
+								</action>
+
+								<!-- ulazni parametri KALKULACIJE -->
+								<action type="variable value" value="$tip">
+									<parameter value=""/>
+								</action>
+								<!-- <part name="prtKalk" path="prtKalkulacija.xml" /> -->
+								<!-- izlazni parametri - izračun -->
+								<part name="prtKalkResult" path="prtPriListKalCalc.xml"/>	
+								<action type="control refreshvalue" value="##,!#lblTecaj" if="#txtRoba==null&amp;&amp;$action==0"></action>									
+								<!--ponudi jedinične cijene troška i trošarine, poslije reseta za calc-->
+								<action  if="~dtPonudiJedinicniTrosak.rowcount&gt;0">
+									<action type="control value" value="#txtTrosakP">
+										<parameter value="0"/>
+									</action>	
+									<action type="control value" value="#txtTrosarina">
+										<parameter value="0"/>
+									</action>										
+									<action type="control value" value="#txtTrosarinaC">
+										<parameter value="~dtPonudiJedinicniTrosak.@TrosarinaC"/>
+									</action>
+									<action type="control value" value="#txtTrosakC">
+										<parameter value="~dtPonudiJedinicniTrosak.@TrosakC"/>
+									</action>	
+									<action type="control value" value="#txtTrosakP">
+										<parameter value="~dtPonudiJedinicniTrosak.@TrosakP"/>
+									</action>									
+								</action>	
+								<!--defaultno postavim 0 da se ne odvrti calc-->
+								<action type="variable value" value="$indProm">
+									<parameter value="0"/>
+								</action>									
+							</event>
+							<!--08.04.2019 PJ ako je pubvar uključen, daj zemlju podrijetla sa zadnjeg dokumenta -->
+							<event type="leave">
+								<action type="datarun reader" value="~dtZemljaPorijekla" if="$Action==0"/>	
+								<action type="control value" value="#cmbDrzave" if="~dtZemljaPorijekla.@PubVar==1&amp;&amp;$Action==0">
+                                  <parameter value="~dtZemljaPorijekla.@DrzaveId"></parameter>
+                                </action>
+								<!--defaultno postavim 0 da se ne odvrti calc-->
+								<action type="variable value" value="$indProm">
+									<parameter value="0"/>
+								</action>								
+							</event>
+                        </searchedit>
+                    </item>
+                </group>				
+				<group padding="4" groupbordervisible="True" caption="Izračun..." cols="1" rows="3" col="1" row="3">
+					<rowsdefinition>
+						<row size="13" position="2" />
+					</rowsdefinition>
+					<group groupbordervisible="false" cols="4" rows="1" col="1" row="1">
+						<columnsdefinition>
+							<column size="200" position="1"/>
+							<column size="200" position="2"/>
+							<column size="300" position="3"/>
+							<column size="300" position="4"/>
+						</columnsdefinition>						
+						<item caption="Količina pak.:" textposition="top" row="1" col="1">
+							<textedit name="txtKolicinaPak" fontsizedelta="1" fontbold="True" value="0" format="n2" datavalue="~dtGet.@KolicinaPak" enabled="false" tabindex="2">
+								<event type="valuechanged">						
+									<action type="variable value" value="$indProm">
+										<parameter value="1"/>
+									</action>										
+								</event>								
+								<event type="leave" raiseonload="false">
+									<action type="variable value">
+										<parameter name="Ind_Kol" value="0"/>
+									</action>
+									<action if="$indProm==1">									
+										<action type="datarun reader" value="Global.~dtKolicina"/>
+										<action type="control value" value="#txtKolicina">
+											<parameter value="~dtKolicina.@Kolicina"/>
+										</action>
+										<action type="variable value" value="$tip">
+											<parameter value="kolicina"/>
+										</action>
+										<part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+									</action>
+									<action type="variable value" value="$indProm">
+										<parameter value="0"/>
+									</action>										
+								</event>
+							</textedit>
+                        </item>	
+						<item caption="Količina" textposition="top" row="1" col="2">
+							<textedit name="txtKolicina" fontsizedelta="1" fontbold="True" value="0" format="n3" required="true" datavalue="~dtGet.@Kolicina" tabindex="3">
+								<event type="valuechanged">
+									<action type="variable value" value="$indProm">
+										<parameter value="1"/>
+									</action>										
+								</event>								
+								<event type="leave">
+									<action type="variable value">
+										<parameter name="Ind_Kol" value="1"/>
+									</action>
+									<action if="$indProm==1">
+										<action type="datarun reader" value="Global.~dtKolicina" if="$FaktorFix==1"/>
+										<action type="control value" value="#txtKolicinaPak" if="$FaktorFix==1">
+											<parameter value="~dtKolicina.@Kolicina"/>
+										</action>
+										<action type="variable value" value="$tip">
+											<parameter value="kolicina"/>
+										</action>
+										<part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+									</action>
+									<action type="variable value" value="$indProm">
+										<parameter value="0"/>
+									</action>	
+								</event>
+							</textedit>
+						</item>
+						<group col="4" row="1" cols="2" rows="1" groupbordervisible="false">
+							<columnsdefinition>
+								<!-- <column size="150" position="1"/> -->
+							</columnsdefinition>
+							<item col="1" row="1">
+								<button caption="Serijski brojevi" name="btnSerijski" entermovenextcontrol="true" tabindex="31">
+									<event type="click">
+										<!-- ako postoji roba spremi stavku /insert/update i otvori formu za serijske brojeve -->
+										<action type="datarun scalar" value="~dtRobaAzur" if="#txtRoba!=null">
+											<parameter name="NabPriDetId" value="$NabPriDetId"/>
+											
+											<!-- postavi akciju na izmjenu jer je dodan artikl -->
+											<action type="variable value" value="$action">
+												<parameter value="1"></parameter>
+											</action>
+											<!-- osvježi parent grid -->
+											<action type="control populate" value="parent.#grdRoba">
+											<action type="control focus" value="parent.#grdRoba">
+												<parameter value="$NabPriDetId" />
+											</action>
+											<!-- otvori formu za ser broj -->
+											<action type="form open" value="frmSerijskiBroj" if="#txtRoba!=null">
+												<parameter name="robaID" value="#txtRoba"/>
+												<parameter name="kolicina" value="#txtKolicina" />
+												<parameter name="skladisteId" value="$skladisteid" />
+												<parameter name="vrstadokId" value="$VrstaDokId"/>
+												<parameter name="NabPriDetId" value="$NabPriDetId"/>
+												<parameter name="roba" value="#txtRoba.text" />
+											</action>
+											
+										</action>
+										</action>
+										<action type="message" value="Unesite robu!" else="">
+											<action type="control focus" value="#txtRoba"></action>
+										</action>                    
+									</event>
+								</button>
+							</item>
+							<item col="2" row="1">
+								<button caption="Cjenik" name="btnCjenik" tabindex="32">
+									<event type="click">
+										<action type="method run" value="CjenikGrid">
+											<parameter name="connectionstring" value="@@connection" type="string"/>
+											<parameter name="ssoperateriid" value="@@operateriid" type="int"/>
+											<parameter name="robaId" value="#txtRoba" type="int"/>
+											<parameter name="skladisteId" value="$skladisteId" type="int"/>
+											<parameter name="nabCijena" value="$txtNabCijena" type="decimal"/>
+										</action>
+											<!-- <action type="form open" value="frmCjenik">
+												<parameter name="NabCijena" value="$txtNabCijena"/>
+												<parameter name="RobaId" value="#txtRoba"/>
+												<parameter name="skladisteid" value="$skladisteId"/>
+											</action> -->
+									</event>							
+								</button>
+							</item>												
+						</group>
+					</group>
+					<item row="2" col="1" textvisible="False">
+						<separator dark="true" backcolor="gray"/>
+					</item>
+					<group groupbordervisible="false"  col="1" row="3" cols="2" rows="1">
+						<itemdefault highlight="False"/>
+						<columnsdefinition>
+							<column size="70%" position="1"/>
+							<column size="30%" position="2"/>
+						</columnsdefinition>
+						<group groupbordervisible="false" col="1" row="1" cols="6" rows="10">
+							<itemdefault highlight="False" />
+							<columnsdefinition>
+								<column size="200" position="1"/>
+								<column size="35" position="2"/>
+								<column size="200" position="3"/>
+								<column size="35" position="4"/>
+								<column size="200" position="5"/>
+								<column size="35" position="6"/>
+							</columnsdefinition>
+							<rowsdefinition>
+								<row size="15" position="9"/>
+							</rowsdefinition>
+							<item caption="Dev.cijena:" col="1" row="1" padding="3,3,8,3">
+								<textedit name="txtDevCijena" value="0" datavalue="~dtGet.@DevCijena" format="n8" enabled="false" tabindex="4" sufix="{$valutaOznaka}">
+									<event type="valuechanged">
+										<action type="variable value" value="$indProm">
+											<parameter value="1"/>
+										</action>										
+									</event>									
+                                             <event type="leave">
+                                                  <action if="$indProm==1">
+										     <action type="variable value" value="$tip">
+											     <parameter value="devcijena"/>
+										     </action>	
+										<part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+                                                  </action>
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="0"/>
+                                                  </action>
+                                             </event>
+								</textedit>
+							</item>
+							<item col="2" row="1" padding="3,3,13,3">
+								<labeledit value=" " prefix="{$valutaOznaka}"/>
+							</item>														
+							<item caption="Dev.vrijednost:" col="3" row="1" padding="3,3,8,3">
+								<textedit name="txtDevVrijednost" value="0" datavalue="~dtGet.@DevVrijednost" format="n2" enabled="false" tabindex="5">
+                                             <event type="valuechanged">
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="1"/>
+                                                  </action>
+                                             </event>
+                                             <event type="leave" >
+                                                  <action if="$indProm==1">                                                  
+										     <action type="variable value" value="$tip">
+											     <parameter value="devvrijednost"/>
+										     </action>
+										     <part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+                                                  </action>
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="0"/>
+                                                  </action>
+                                             </event>
+								</textedit>
+							</item>
+							<item col="4" row="1" padding="3,3,13,3">
+								<labeledit value=" " prefix="{$valutaOznaka}"/>
+							</item>								
+							<item caption="Tečaj:" col="5" row="1" padding="3,3,8,3">
+								<textedit name="lblTecaj" value="0" format="n8" fontbold="true" datavalue="" readonly="true"/>
+							</item>
+							<item col="6" row="1" padding="3,3,13,3">
+								<labeledit value=" " prefix="{$valutaOznaka}"/>
+							</item>								
+							<item caption="Fak.cijena:" col="1" row="2">
+								<textedit name="txtFCijena" value="0" datavalue="~dtGet.@FakCijenaKn" format="n8" tabindex="6">
+                                             <event type="valuechanged">
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="1"/>
+                                                  </action>
+                                             </event>
+                                             <event type="leave">
+                                                  <action if="$indProm==1">
+                                                       <action type="variable value" value="$tip">
+											     <parameter value="fakcijena"/>
+										     </action>	
+										     <part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+                                                  </action>
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="0"/>
+                                                  </action>
+									</event>
+								</textedit>
+							</item>
+							<item col="2" row="2" padding="3,3,8,3">
+								<labeledit value="kn"/>
+							</item>							
+							<item caption="Fak.vrijednost:" col="3" row="2">
+								<textedit name="txtFVrijednost" value="0" datavalue="~dtGet.@Fvrijednost" format="n2" tabindex="7">
+                                             <event type="valuechanged">
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="1"/>
+                                                  </action>
+                                             </event>
+                                             <event type="leave">
+                                                  <action if="$indProm==1">                                                  
+										     <action type="variable value" value="$tip">
+											     <parameter value="fakvrijednost"/>
+										     </action>
+										     <part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+                                                  </action>
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="0"/>
+                                                  </action>
+									</event>
+								</textedit>
+							</item>		
+							<item col="4" row="2" padding="3,3,8,3">
+								<labeledit value="kn"/>
+							</item>								
+							<item caption="Rabat 1:" col="1" row="3">
+								<textedit name="txtRabat1P" value="0" datavalue="~dtGet.@Rabat1P" format="n2" tabindex="8">
+                                             <event type="valuechanged">
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="1"/>
+                                                  </action>
+                                             </event>
+                                             <event type="leave">
+                                                  <action if="$indProm==1">                                                  
+										     <action type="variable value" value="$tip">
+											     <parameter value="rabat1p"/>
+										     </action>	
+										     <part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+                                                  </action>
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="0"/>
+                                                  </action>                                                  
+									</event>
+								</textedit>
+							</item>
+							<item col="2" row="3" padding="3,3,8,3">
+								<labeledit value="%"/>
+							</item>								
+							<item caption="Izn. Rabat 1:" col="3" row="3">
+								<textedit name="txtRabat1I" value="0" datavalue="~dtGet.@Rabat1I" format="n2" tabindex="9">
+                                             <event type="valuechanged">
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="1"/>
+                                                  </action>
+                                             </event>
+                                             <event type="leave">
+                                                  <action if="$indProm==1">                                                  
+										     <action type="variable value" value="$tip">
+											     <parameter value="rabat1i"/>
+										     </action>	
+										     <part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+                                                  </action>
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="0"/>
+                                                  </action>
+									</event>
+								</textedit>
+							</item>
+							<item col="4" row="3" padding="3,3,8,3">
+								<labeledit value="kn"/>
+							</item>								
+							<item caption="Rabat 1 dev:" col="5" row="3">
+								<textedit name="txtRabat1IDev" value="0" format="n2" readonly="true"/>
+							</item>		
+							<item col="6" row="3" padding="3,3,8,3">
+								<labeledit value=" " prefix="{$valutaOznaka}"/>
+							</item>	
+							<item caption="Rabat 2:" col="1" row="4">
+								<textedit name="txtRabat2P" value="0" datavalue="~dtGet.@Rabat2P" format="n2" tabindex="10">
+                                             <event type="valuechanged">
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="1"/>
+                                                  </action>
+                                             </event>
+                                             <event type="leave">
+                                                  <action if="$indProm==1">                                                  
+										     <action type="variable value" value="$tip">
+											     <parameter value="rabat2p"/>
+										     </action>
+										     <part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+                                                  </action>
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="0"/>
+                                                  </action>                                                  
+									</event>
+								</textedit>
+							</item>
+							<item col="2" row="4" padding="3,3,8,3">
+								<labeledit value="%"/>
+							</item>							
+							<item caption="Izn. Rabat 2:" col="3" row="4">
+								<textedit name="txtRabat2I" value="0" datavalue="~dtGet.@Rabat2I" format="n2" tabindex="11">
+                                             <event type="valuechanged">
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="1"/>
+                                                  </action>
+                                             </event>
+                                             <event type="leave">
+                                                  <action if="$indProm==1">                                                  
+										     <action type="variable value" value="$tip">
+											     <parameter value="rabat2i"/>
+										     </action>	
+										     <part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+                                                  </action>
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="0"/>
+                                                  </action>                                                  
+									</event>
+								</textedit>
+							</item>
+							<item col="4" row="4" padding="3,3,8,3">
+								<labeledit value="kn"/>
+							</item>								
+							<item caption="Rabat 2 dev:" col="5" row="4">
+								<textedit name="txtRabat2IDev" value="0" format="n2" readonly="true"></textedit>
+							</item>		
+							<item col="6" row="4" padding="3,3,8,3">
+								<labeledit value=" " prefix="{$valutaOznaka}"/>
+							</item>	
+							<item caption="Rabat 3:" col="1" row="5">
+								<textedit name="txtRabat3P" value="0" datavalue="~dtGet.@Rabat3P" format="n2" tabindex="12">
+                                             <event type="valuechanged">
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="1"/>
+                                                  </action>
+                                             </event>
+                                             <event type="leave">
+                                                  <action if="$indProm==1">                                                  
+										     <action type="variable value" value="$tip">
+											     <parameter value="rabat3p"/>
+										     </action>
+										     <part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+                                                  </action>
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="0"/>
+                                                  </action>                                                  
+									</event>
+								</textedit>
+							</item>
+							<item col="2" row="5" padding="3,3,8,3">
+								<labeledit value="%"/>
+							</item>								
+							<item caption="Izn. Rabat 3:" col="3" row="5">
+								<textedit name="txtRabat3I" value="0" datavalue="~dtGet.@Rabat3I" format="n2" tabindex="13">
+                                             <event type="valuechanged">
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="1"/>
+                                                  </action>
+                                             </event>
+                                             <event type="leave">
+                                                  <action if="$indProm==1">                                                  
+										     <action type="variable value" value="$tip">
+											     <parameter value="rabat3i"/>
+										     </action>	
+										     <part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+                                                  </action>
+                                                  <action type="variable value" value="$indProm">
+                                                       <parameter value="0"/>
+                                                  </action>
+									</event>
+								</textedit>
+							</item>
+							<item col="4" row="5" padding="3,3,8,3">
+								<labeledit value="%"/>
+							</item>								
+							<item caption="Rabat 3 dev:" col="5" row="5">
+								<textedit name="txtRabat3IDev" value="0" format="n2" readonly="true"></textedit>
+							</item>		
+							<item col="6" row="5" padding="3,3,8,3">
+								<labeledit value=" " prefix="{$valutaOznaka}"/>
+							</item>								
+							<item caption="Carina pos.:" col="1" row="6">
+								<textedit name="txtCarinaP" value="0" datavalue="~dtGet.@carinap" format="n2" tabindex="14">
+									<event type="valuechanged">
+										<action type="variable value" value="$indProm">
+											<parameter value="1"/>
+										</action>
+									</event>
+									<event type="leave">
+										<action if="$indProm==1">                                                  
+											<action type="variable value" value="$tip">
+											<parameter value="carinap"/>
+											</action>										
+											<part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+										</action>
+										<action type="variable value" value="$indProm">
+											<parameter value="0"/>
+										</action>                                                  
+									</event>
+								</textedit>
+							</item>
+							<item col="2" row="6" padding="3,3,8,3">
+								<labeledit value="%"/>
+							</item>								
+							<item caption="Carina vrij.:" col="3" row="6">
+								<textedit name="txtCarinaI" value="0" format="n2" tabindex="15" datavalue="~dtGet.@carinai">
+									<event type="valuechanged">
+										<action type="variable value" value="$indProm">
+											<parameter value="1"/>
+										</action>
+									</event>
+									<event type="leave">
+										<action if="$indProm==1">                                                  
+											<action type="variable value" value="$tip">
+												<parameter value="carinai"/>
+											</action>		
+											<part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+											</action>
+										<action type="variable value" value="$indProm">
+											<parameter value="0"/>
+										</action>
+									</event>
+								</textedit>
+							</item>		
+							<item col="4" row="6" padding="3,3,8,3">
+								<labeledit value="kn"/>
+							</item>								
+							<item caption="Trošarina cij.:" col="1" row="7">
+								<textedit name="txtTrosarinaC" value="0" datavalue="~dtGet.@TrosarinaC" format="n2" tabindex="16">
+									<event type="valuechanged">
+									  <action type="variable value" value="$indProm">
+										   <parameter value="1"/>
+									  </action>
+									</event>	
+									<event type="leave">
+										<action if="$indProm==1">                                                  
+											<action type="variable value" value="$tip">
+												<parameter value="trosarinac"/>
+											</action>		
+											<part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+										</action>
+										<action type="variable value" value="$indProm">
+										   <parameter value="0"/>
+										</action> 
+									</event>									
+								</textedit>
+							</item>
+							<item col="2" row="7" padding="3,3,8,3">
+								<labeledit value="kn"/>
+							</item>								
+							<item caption="Trošarina vrij.:" col="3" row="7">
+								<textedit name="txtTrosarina" value="0" datavalue="~dtGet.@Trosarina" format="n2" tabindex="17">
+									<event type="valuechanged">
+										<action type="variable value" value="$indProm">
+											<parameter value="1"/>
+										</action>
+									</event>
+									<event type="leave">
+										<action if="$indProm==1">                                                  
+											<action type="variable value" value="$tip">
+												<parameter value="trosarina"/>
+											</action>		
+											<part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+										</action>
+										<action type="variable value" value="$indProm">
+											<parameter value="0"/>
+										</action>                                                  
+									</event>
+								</textedit>
+							</item>
+							<item col="4" row="7" padding="3,3,8,3">
+								<labeledit value="kn"/>
+							</item>								
+							<item caption="Trošak pos.:" col="1" row="8">
+								<textedit name="txtTrosakP" value="0" datavalue="~dtGet.@TrosakP" format="n2" tabindex="18">
+                                    <event type="valuechanged">
+										<action type="variable value" value="$indProm">
+										   <parameter value="1"/>
+										</action>
+									</event>
+									<event type="leave">
+										<action if="$indProm==1">                                                  
+											<action type="variable value" value="$tip">
+												<parameter value="trosakp"/>
+											</action>	
+											<part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+										</action>
+										<action type="variable value" value="$indProm">
+										   <parameter value="0"/>
+										</action>                                                  
+									</event>
+								</textedit>
+							</item>
+							<item col="2" row="8" padding="3,3,8,3">
+								<labeledit value="%"/>
+							</item>								
+							<item caption="Trošak cij.:" col="3" row="8">
+								<textedit name="txtTrosakC" value="0" datavalue="~dtGet.@TrosakC" format="n2" tabindex="18">
+                                    <event type="valuechanged">
+										<action type="variable value" value="$indProm">
+										   <parameter value="1"/>
+										</action>
+									</event>
+									<event type="leave">
+										<action if="$indProm==1">                                                  
+											<action type="variable value" value="$tip">
+												<parameter value="trosakc"/>
+											</action>	
+											<part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+										</action>
+										<action type="variable value" value="$indProm">
+										   <parameter value="0"/>
+										</action>                                                  
+									</event>
+								</textedit>
+							</item>							
+							<item col="4" row="8" padding="3,3,8,3">
+								<labeledit value="kn"/>
+							</item>								
+							<item caption="Trošak vrij.:" col="5" row="8">
+								<textedit name="txtTrosakI" value="0" datavalue="~dtGet.@TrosakI" format="n2" tabindex="19">
+									<event type="valuechanged">
+										<action type="variable value" value="$indProm">
+											<parameter value="1"/>
+										</action>
+									</event>
+									<event type="leave">
+										<action if="$indProm==1">
+											<action type="variable value" value="$tip">
+												<parameter value="trosaki"/>
+											</action>		
+											<part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+										</action>
+										<action type="variable value" value="$indProm">
+											<parameter value="0"/>
+										</action>                                                  
+									</event>
+								</textedit>
+							</item>
+							<item col="6" row="8" padding="3,3,8,3">
+								<labeledit value="kn"/>
+							</item>								
+							<item col="1" row="9" colspan="5">
+								<separator dark="true" backcolor="gray"/>
+							</item>
+							<group groupbordervisible="false" col="1" row="10" cols="6" rows="6" colspan="6">
+								<itemdefault highlight="False" />
+								<columnsdefinition>
+									<column size="200" position="1"/>
+									<column size="35" position="2"/>
+									<column size="200" position="3"/>
+									<column size="35" position="4"/>
+									<column size="200" position="5"/>
+									<column size="35" position="6"/>
+								</columnsdefinition>
+								<item caption="Pot. nak. cij.: " col="1" row="1">
+									<textedit name="txtPoticajC" value="0" datavalue="~dtGet.@PoticajnaNaknadaC" format="n2" tabindex="20">
+										<event type="valuechanged">
+										   <action type="variable value" value="$indProm">
+												<parameter value="1"/>
+										   </action>
+										</event>
+										<event type="leave">
+										    <action if="$indProm==1">                                                       
+												<action type="variable value" value="$tip">
+												 <parameter value="poticajc"/>
+												</action>
+												<part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+										    </action>
+										   <action type="variable value" value="$indProm">
+												<parameter value="0"/>
+										   </action>
+										</event>
+									</textedit>
+								</item>		
+								<item col="2" row="1" padding="3,3,8,3">
+									<labeledit value="kn"/>
+								</item>								
+								<item caption="Pot. nak. vrij.: " col="3" row="1">
+									<textedit name="txtPoticaj" value="0" datavalue="~dtGet.@PoticajnaNaknada" format="n2" tabindex="21">
+                                                  <event type="valuechanged">
+                                                       <action type="variable value" value="$indProm">
+                                                            <parameter value="1"/>
+                                                       </action>
+                                                  </event>
+                                                  <event type="leave">
+                                                       <action if="$indProm==1">                                                       
+											     <action type="variable value" value="$tip">
+												     <parameter value="poticaj"/>
+											     </action>
+											     <part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+                                                       </action>
+                                                       <action type="variable value" value="$indProm">
+                                                            <parameter value="0"/>
+                                                       </action>
+                                                  </event>
+									</textedit>
+								</item>	
+								<item col="4" row="1" padding="3,3,8,3">
+									<labeledit value="kn"/>
+								</item>								
+								<item caption="Pov.naknada: " col="1" row="2">
+									<textedit name="txtPovrat" value="0" datavalue="~dtGet.@PovratnaNaknada" format="n2" enabled="false" tabindex="22">
+                                                  <event type="valuechanged">
+                                                       <action type="variable value" value="$indProm">
+                                                            <parameter value="1"/>
+                                                       </action>
+                                                  </event>
+                                                  <event type="leave">
+                                                       <action if="$indProm==1">
+                                                            <action type="variable value" value="$tip">
+												     <parameter value="povrat"/>
+											     </action>	
+											     <part name="prtKalkResult" path="prtPriListKalCalc.xml"/>
+                                                       </action>
+                                                       <action type="variable value" value="$indProm">
+	                                                       <parameter value="0"/>
+                                                       </action>                                                            
+										</event>
+									</textedit>
+								</item>	
+								<item col="2" row="2" padding="3,3,8,3">
+									<labeledit value="kn"/>
+								</item>									
+								<item caption="Proizvođač: " col="1" row="3" colspan="3">
+									<searchedit type="partner" name="srcPartner" fieldtext="Naziv" fieldvalue="PartneriId" datavalue="#dtGet.@ProizvodjacId" datatext="#dtGet.@proizvodjac" tabindex="23"/>
+								</item>
+		
+								<item caption="Rok trajanja:" col="1" row="4" colspan="2">
+									<dateedit  name="txtRokTrajanja" value="now" datavalue="~dtGet.@RokTrajanja" allownull="true" tabindex="24"/>
+								</item>
+
+								<item caption="Zemlja porijekla:" col="1" row="5" colspan="3">
+									 <comboedit name="cmbDrzave" valuefield="DrzaveId" displayfield="Naziv" datavalue="#dtGet.@drzaveId" dataname="Global.dtDrzave" tabindex="25"/>
+								</item>
+								<item caption="Napomena:" row="6" col="1"  colspan="3" >
+									<memoedit name="txtMemo" datavalue="~dtGet.@napomena" entermovenextcontrol="true" tabindex="26">
+										<event type="leave">
+											<action type="control focus" value="#btnSpremi"/>
+										</event>
+									</memoedit>
+								</item>
+							</group>
+						</group>					
+						<!-- Desna grupa - labels sa izračunima -->
+						<group alignmode="local" col="2" row="1" cols="3" rows="13" backgroundcolor="white">
+							<itemdefault highlight="False"/>
+							<columnsdefinition>
+								<column size="130" position="1"/>
+                                <column size="30" position="3"/>
+							</columnsdefinition>
+							<rowsdefinition>
+								<row size="13" position="9"/>
+								<!--<row size="13" position="10"></row>-->
+							</rowsdefinition>
+							<!--umjetna nabavna cijena, isključena povratna naknada-->
+							<item caption="Nabavna cijena: " col="1" row="1" fontbold="true"/>
+							<item  col="2" row="1">
+                                <textedit name="txtNabCijena" value="0" datavalue="~dtGet.@NabCijena" fontbold="true" format="n2" readonly="true" textposition="right"/>
+							</item>
+                            <item caption="kn" col="3" row="1" padding="0,0,0,0" fontbold="true"/>
+							<item caption="Nabavna vrijednost: " col="1" row="2"/>
+							<item  col="2" row="2">
+                                 <textedit name="txtNabVrij" value="0" format="n2" datavalue="~dtGet.@NabVrij" readonly="true" textposition="right"/>
+							</item>
+                            <item caption="kn" col="3" row="2" padding="0,0,0,0"/>
+							<item caption="VPC: " col="1" row="3" fontbold="true"/>
+							<item  col="2" row="3">
+                                <textedit name="txtVpc" value="0" format="n2" datavalue="~dtRobnoPrimkaCijena.@Vpc" fontbold="true" readonly="true" textposition="right"/>
+							</item>
+                            <item caption="kn" col="3" row="3" padding="0,0,0,0" fontbold="true"/>
+							<item caption="MPC: " col="1" row="4"/>
+							<item  col="2" row="4">
+                                <textedit name="txtMpc" value="0" format="n2" datavalue="~dtRobnoPrimkaCijena.@mpc" readonly="true" textposition="right"/>
+							</item>
+                            <item caption="kn" col="3" row="4" padding="0,0,0,0"/>
+							<item caption="Marža: " col="1" row="5" fontbold="true"/>
+							<item  col="2" row="5">
+                                <textedit name="txtMarzaP" value="0" format="n2" readonly="true" textposition="right" fontbold="true"/>
+							</item>
+                            <item caption="%" col="3" row="5" padding="0,0,0,0" fontbold="true"/>
+							<item caption="Marža vrijednost: " col="1" row="6"/>
+							<item  col="2" row="6">
+                                <textedit name="txtMarza" value="0" format="n2" readonly="true" textposition="right"/>
+							</item>
+                            <item caption="kn" col="3" row="6" padding="0,0,0,0"/>
+							<!--<item row="7" col="1" textvisible="False" colspan="2">
+								<separator dark="true" backcolor="gray" />
+							</item>-->
+							<item caption="Fak.vrijednost - rabati: " col="1" row="7"/>
+							<item  col="2" row="7">
+                                <textedit name="txtFVKn" value="0" format="n2" readonly="true" textposition="right"/>
+							</item>
+                            <item caption="kn" col="3" row="7" padding="0,0,0,0"/>
+							<item caption="Dev. vrijednost - rabati: " col="1" row="8"/>								   
+							<item col="2" row="8">
+                                <textedit name="txtFVe" value="0" format="n2" readonly="true" textposition="right"/>
+							</item>
+                            <item caption="{$valutaOznaka}" col="3" row="8" padding="0,0,0,0"/>
+							<item row="9" col="1" textvisible="False" colspan="2">
+							<separator dark="true" backcolor="gray"/>
+							</item>
+							<!--Ncijena iz PriListKal, uklučena povratna naknada-->
+							<item caption="Nabavna cijena: " col="1" row="10"/>
+							<item col="2" row="10">
+                                <textedit name="txtNCijena" datavalue="~dtGet.@Ncijena" value="0" format="n2" readonly="true" textposition="right"/>
+							</item>
+                            <item caption="kn" col="3" row="10" padding="0,0,0,0"/>
+							<item caption="Nabavna vrij. (povrat): " col="1" row="11"/>
+							<item col="2" row="11">
+                                <textedit name="txtNVrijednost" datavalue="~dtGet.@NVrijednost" value="0" format="n2" readonly="true" textposition="right" />
+							</item>
+                                <item caption="kn" col="3" row="11" padding="0,0,0,0"/>
+							<item col="1" row="12"/>
+						</group>				
+					</group>			
+				</group>
+            </group>
+        </layout>
+		<actionpanel>
+			<items>
+				<item>
+					<button name="btnSpremi" caption="&amp;SPREMI" dock="left" tabindex="27">
+						<!-- <event type="click" waittype="progress" waitcaption="Obrada" waittext="spremanje stavke..." sleep="2000"> -->
+						<event type="click" >
+							<!-- validiraj količinu, robu i ostalo-->
+							<partsql name="partStavkaSpremiValidation" dataname="~dtPartStavkaSpremiValidation"/>
+							<action type="control focus" value="#txtRoba" if="#txtRoba==null">
+								<action type="message" value="Obavezan odabir robe!"/>
+							</action>
+							<action type="control focus" value="#txtKolicina" elseif="#txtKolicina==0||#txtKolicina==null">
+								<action type="message" value="Obavezan unos količine!"/>
+							</action>	
+							<!--provjera minimalnog roka trajanja HD 51805-->
+							<action if ="global.$pbvMinRokTrajanja==1&amp;&amp;global.$pbvKkvalObavezan==1">
+								<action type="datarun reader" value="~dtRokTrajanja"/>
+								<action if="~dtRokTrajanja.@RokTrajanjaManji==1">
+									<action type="message" value="Rok trajanja manji je od ugovorenog!"/>
+								</action>
+							</action>
+							<action type="datarun scalar" value="~dtRobaAzur" if="$isvalid==1">
+								<parameter name="NabPriDetId" value="$NabPriDetId"/>
+							</action>						
+							<!-- <action type="control populate" value="parent.#grdDetail" /> -->
+							<action if="global.$RafalniUnos!=1">
+								<action type="control refreshvalue" value="##,!#lblTecaj" if="$action==0&amp;&amp;$trosakPosto==0"/>
+								<action type="control refreshvalue" value="##,!#lblTecaj,!#txtTrosakP" else="$action==0"/>
+								<action type="control focus" value="#txtRoba"/>
+							</action>
+							<action type="form close" if="$action==1&amp;&amp;$isvalid==1"/>					
+							<action type="control populate" value="parent.#grdRoba" if="$isvalid==1&amp;&amp;global.$RafalniUnos!=1">				
+								<action type="control focus" value="parent.#grdRoba">
+									<parameter value="$NabPriDetId"/>
+								</action>
+							</action>
+							<action if="global.$RafalniUnos==1">
+								<action type="control focus" value="parent.#grdRoba">
+									<parameter value="$NabPriDetId"/>
+								</action>							
+								<action type="control refreshrow" value="parent.#grdRoba">
+									<parameter value="~dtRobaOne"/>
+								</action>							
+							</action>
+							<action type="variable value" value="global.$Close"> 
+								<parameter value="false" type="bool"/> 
+							</action> 								
+						</event>
+					</button>
+				</item>
+				<item>
+					<button caption="ODUSTANI" name="btnOdustani" dock="left" tabindex="28">
+						<event type="click">
+							<action type="variable value" value="global.$Close"> 
+								<parameter value="true" type="bool"/> 
+							</action>
+							<action type="form close"/>
+						</event>
+					</button>
+				</item>
+				<item>
+					<button name="btnDimenzije" caption="DIMENZIJE" dock="right" tabindex="29">
+						<event type="click">
+							 <!-- unos - na glavu -->
+							<action if="$action==0">
+								<action type="method run" value="fnDimenzije">
+									<parameter name="server" value="@@server"/>
+									<parameter name="database" value="@@database"/>
+									<parameter name="username" value="@@username"/>
+									<parameter name="password" value=""/>
+									<parameter name="OperateriId" value="@@operateriid"/>
+									<parameter name="Parent" value="0"/>
+									<parameter name="pTop" value="0"/>
+									<parameter name="pLeft" value="0"/>
+									<parameter name="path" value="" />
+									<parameter name="tip" value="NabPriDetId"/>
+									<parameter name="id" value=""/>
+									<parameter name="glaid" value="$NabPriGlaId"/>
+								</action>	
+							</action>	
+							<!-- izmjena - na detalj -->
+							<action elseif="$action==1">
+								<action type="method run" value="fnDimenzije">
+									<parameter name="server" value="@@server"/>
+									<parameter name="database" value="@@database"/>
+									<parameter name="username" value="@@username"/>
+									<parameter name="password" value=""/>
+									<parameter name="OperateriId" value="@@operateriid"/>
+									<parameter name="Parent" value="0"/>
+									<parameter name="pTop" value="0"/>
+									<parameter name="pLeft" value="0"/>
+									<parameter name="path" value=""/>
+									<parameter name="tip" value="NabPriDetId"/>
+									<parameter name="id" value="$NabPriDetId"/>
+									<parameter name="glaid" value="0"/>
+								</action>					
+							</action>
+						</event>
+					</button>
+				</item>
+				<item padding="10,0,6,0">
+					<checkedit name="chkRasporedi" caption="Rasporedi" value="0" enabled="false" tabindex="30" dock="right">			
+						<event type="checkedchanged">
+							<action type="variable value" value="$Rasporedi">
+								<parameter value="1" if="#chkRasporedi==True"/>
+								<parameter value="0" else=""/>
+							</action>
+						</event>
+					</checkedit>
+				</item>
+            </items>
+        </actionpanel>
+          <datalist>
+            <data command="spNabKalkDet_Ambalaza" name="dtAmbalaza">
+                <parameter name="@robaID" value="#txtRoba.@RobaId" if="#txtRoba!=null"/>
+                <parameter name="@robaID" value="$RobaId" else=""/>
+            </data>
+			<!-- <data command="spDobUgovoriPartner" name="dtDobavljac">
+                <parameter name="@robaid" value="#txtRoba.@RobaId" />
+                <parameter name="@PartneriId" value="$PartneriId" />
+                <parameter name="@NabpriGlaId" value="$NabPriGlaId" />
+            </data>	 -->	
+			<data command="spNabPlkCarpoNabNarCijena" name="dtNabNarCijena">
+                <parameter name="@Action" value="NabNarCijena" />
+                <parameter name="@robaid" value="#txtRoba.@RobaId" />
+                <parameter name="@PartneriId" value="$PartneriId" />
+                <parameter name="@DatumDok" value="$datumDok" />
+				<parameter name="@OrgShemaId" value="parent.#cteOrgShema" />				
+            </data>	
+			<!-- <data command="spDobavljivostQuery" name="dtDobavljivost">
+                <parameter name="@Action" value="7" />
+                <parameter name="@robaid" value="#txtRoba.@RobaId" />
+                <parameter name="@DobUgovoriGlaId" value="$DobUgovoriGlaId" />
+                <parameter name="@PartneriId" value="$PartneriId" />
+                <parameter name="@NabpriGlaId" value="$NabPriGlaId" />
+				<parameter name="@KlMasterRobaId" value="null" />	
+                <parameter name="@ID" value="0" />
+                <parameter name="@Retired" value="0" />
+                <parameter name="@DobUgovoriId" value="0" />
+            </data> -->
+			<data command="spRobnoPrimkaCijena" name="dtRobnoPrimkaCijena">
+                <parameter name="@action" value="2" />
+                <parameter name="@ID" value="#txtRoba.@RobaId" if="#txtRoba!=null"/>
+				<parameter name="@ID" value="$RobaId" else=""/>
+                <parameter name="@skladisteId" value="$SkladisteId" if="$SkladisteId!=null"/>
+				<parameter name="@skladisteId" value="1" else=""/>
+                <parameter name="@RobnoKalkDetId" value="0" />
+				<parameter name="@Datum" value="$datumDok"/>
+            </data>							
+<!-- 			<data command="select * from viNabPriDet where NabPriDetId = @id order by NabPriDetId" type="text" name="dtGet">
+				<parameter name="id" value="$NabPriDetId"></parameter>
+            </data>		 -->
+			<data command="spNabPlkCarpoDetQuery"  name="dtGet">
+				<parameter name="@action" value="stavkeDetalji"/>
+				<parameter name="@ID" value="$NabPriDetId"/>
+            </data>				
+		<!-- 	<data command="select top 1 * from viNabPriDet where Partneriid = @partnerid and robaid = @robid order by nabpridetid desc" type="text" name="dtGetCijeneSPrethodnog">
+				<parameter name="partnerid" value="$PartneriId"></parameter>
+				<parameter name="robid" value="$RobaId" if="$action==1"></parameter>
+				<parameter name="robid" value="#txtRoba" else=""></parameter>
+            </data>	 -->
+
+	<!-- 	<data command="spNabPriGlaCarpoQuery" name="dtGet">
+				<parameter name="@Action" value="jedanDokument" />
+				<parameter name="@Id" value="$NabPriGlaId" />
+			</data> -->
+	<!-- 		<data command="spNabPriDetCarpoQuery" name="dtDet">
+				<parameter name="@Action" value="stavkeDokumenta" />
+				<parameter name="@Id" value="$NabPriGlaId" />
+			</data> -->
+			<data command="select varset from pubvars where varime='NKU_Cjenik'" type="text" name="dtPubvarCjenik" />
+			<data command="select varset from pubvars where varime='NKU_Rasporedi'" type="text" name="dtPubvarRasporedi" />		
+			<data command="spNabPlkCarpoDetAzur" name="dtRobaAzur">
+                <parameter name="@Action" type ="int" value="$action" />
+                <parameter name="@ID" value="$NabPriDetId" />
+                <parameter name="@NabPriGlaId" value="$NabPriGlaId" />
+                <parameter name="@RobaId" value="#txtRoba" />
+                <!-- <parameter name="@JmId" value="#txtRoba.@JMId" if="$action!=1"/> -->
+                <parameter name="@JmId" value="$JmjId"/>
+                <parameter name="@Kolicina" value="#txtKolicina" type="decimal"/>
+                <parameter name="@CijenaKn" value="$txtNCijena" type="decimal"/>
+                <parameter name="@FakCijenaKn" value="#txtFcijena" type="decimal"/>
+                <parameter name="@Rabat1P" value="#txtRabat1P" type="decimal"/>
+                <parameter name="@Rabat1I" value="#txtRabat1I" type="decimal"/>
+                <parameter name="@Rabat2P" value="#txtRabat2P" type="decimal"/>
+                <parameter name="@Rabat2I" value="#txtRabat2I" type="decimal"/>
+                <parameter name="@Fvrijednost" value="#txtFVrijednost" type="decimal"/>
+                <parameter name="@TrosakP" value="#txtTrosakP" type="decimal"/>
+                <parameter name="@TrosakI" value="#txtTrosakI" type="decimal"/>
+                <parameter name="@Ncijena" value="$txtNCijena" type="decimal"/>
+                <parameter name="@NVrijednost" value="$txtNVrijednost" type="decimal"/>
+                <parameter name="@DevCijena" value="#txtDevCijena" type="decimal"/>
+                <parameter name="@DevVrijednost" value="#txtDevVrijednost" type="decimal"/>
+                <parameter name="@Napomena" value="#txtMemo" />
+                <parameter name="@Trosarina" value="#txtTrosarina" type="decimal"/>
+                <parameter name="@PovratnaNaknada" value="#txtPovrat" type="decimal"/>
+                <parameter name="@Rabat3P" value="#txtRabat3P" type="decimal"/>
+                <parameter name="@Rabat3I" value="#txtRabat3I" type="decimal"/>
+                <parameter name="@CarinaP" value="#txtCarinaP" type="decimal"/>
+                <parameter name="@CarinaI" value="#txtCarinaI" type="decimal"/>
+                <parameter name="@PoticajnaNaknada" value="#txtPoticaj" type="decimal"/>
+                <parameter name="@RokTrajanja" value="#txtRokTrajanja" />
+                <parameter name="@ProizvodjacId" value="#srcPartner" />
+                <parameter name="@DrzaveId" value="#cmbDrzave" />
+				<parameter name="@PakKolicina" value="#txtKolicinaPak" type="decimal"/>
+				<parameter name="@PakJMId" value="$DodatnaJMId" type="int"/>
+				<parameter name="@PakFaktor" value="$Faktor" type="decimal"/>
+				<parameter name="@PakFaktorFix" value="$FaktorFix" type="int"/>
+				<parameter name="@Rasporedi" value="$Rasporedi" type="int"/>
+				<parameter name="@OperateriId" value="@@OperateriId"/>
+            </data>
+			<data command="spPriListKalPubVars" name="dtPubVarsKalkRez" />
+			<data command="spZadnjiUnosQuery" name="dtZemljaPorijekla">
+				<parameter name="@Action" value="ZemljaPorijekla" />
+				<parameter name="@PartneriId" value="$PartneriId" />
+				<parameter name="@RobaId" value="#txtRoba" />
+			</data> 
+			<data name="dtRokTrajanja" command="spNab_PriDet_RokTrajanja">
+                <parameter name="@RobaId" value="#txtRoba.@RobaId"/>
+                <parameter name="@PartneriId" value="$PartneriId"/>
+                <parameter name="@DatumDok" value="$datumDok"/>
+				<parameter name="@RokTrajanja" value="#txtRokTrajanja"/>
+				<parameter name="@ValuteId" value="$valutaID"/>
+			</data>
+			<data name="dtDimenzijeReset" command="spNabPLKCarpoDetAzur">
+				<parameter name="@Action" value="6"/>
+				<parameter name="@NabpriGlaId" value="$NabPriGlaId"/>
+				<parameter name="@OperateriId" value="@@OperateriId"/>
+			</data>
+			<data name="dtCalc" command="spNabPlkCarpoCalc">
+				<parameter name="@Action" value="$tip" type="string"/>
+				<parameter name="@kolicina" value="#txtKolicina" type="decimal"/>
+				<parameter name="@fakCijena" value="#txtFCijena" type="decimal"/>
+				<parameter name="@fakVrijednost" value="#txtFVrijednost" type="decimal"/>
+				<parameter name="@tecaj" value="$Tecaj" type="decimal"/>
+				<parameter name="@devCijena" value="#txtDevCijena" type="decimal"/> 
+				<parameter name="@devVrijednost" value="#txtDevVrijednost" type="decimal"/> 
+				<parameter name="@ambalaza_faktor" value="$ambalaza_faktor" type="decimal"/>
+				<parameter name="@ambalaza_cijena" value="$ambalaza_cijena" type="decimal"/>	
+				<!-- <parameter name="@devCijeEnabled" value="1" type="bool"/>  -->
+				<parameter name="@rabat1I" value="#txtRabat1I" type="decimal"/> 
+				<parameter name="@rabat2I" value="#txtRabat2I" type="decimal"/> 
+				<parameter name="@rabat3I" value="#txtRabat3I" type="decimal"/> 
+				<parameter name="@rabat1P" value="#txtRabat1P" type="decimal"/> 
+				<parameter name="@rabat2P" value="#txtRabat2P" type="decimal"/> 
+				<parameter name="@rabat3P" value="#txtRabat3P" type="decimal"/> 
+				<parameter name="@carinaI" value="#txtCarinaI" type="decimal"/> 
+				<parameter name="@carinaP" value="#txtCarinaP" type="decimal"/> 
+				<parameter name="@trosakI" value="#txtTrosakI" type="decimal"/> 
+				<parameter name="@trosakP" value="#txtTrosakP" type="decimal"/> 
+				<parameter name="@trosakC" value="#txtTrosakC" type="decimal"/>				
+				<parameter name="@trosarina" value="#txtTrosarina" type="decimal"/> 
+				<parameter name="@trosarinac" value="#txtTrosarinaC" type="decimal"/> 
+				<!-- <parameter name="nCijena" value="#txtNCijena" type="decimal" />  -->
+				<parameter name="@poticaj" value="#txtPoticaj" type="decimal"/> 
+				<parameter name="@poticajc" value="#txtPoticajC" type="decimal"/> 
+				<parameter name="@povrat" value="#txtPovrat" type="decimal"/> 
+				<parameter name="@FVKn" value="#txtFVKn" type="decimal" /> 
+				<parameter name="@FVDev" value="#txtFVe" type="decimal" /> 		
+				<!-- za label kontrole napravi hidden field za prosljeđivanje vrijednosti-->
+				<parameter name="@marza" value="#txtMarza" type="decimal"/> 
+				<parameter name="@marzaP" value="#txtMarzaP" type="decimal"/> 
+				<parameter name="@nabCijena" value="#txtNabCijena" type="decimal"/>
+				<parameter name="@nabVrij" value="#txtNabVrij" type="decimal"/>		
+				<parameter name="@vpc" value="#txtVpc" type="decimal"/> 
+				<parameter name="@mpc" value="#txtMpc" type="decimal"/> 
+				<parameter name="@nVrijednost" value="#txtNVrijednost" type="decimal"/> 
+				<!-- kraj kontrola koje trebaju hiddend fields -->					
+				<parameter name="@rabat1IDev" value="#txtRabat1IDev" type="decimal"/> 
+				<parameter name="@rabat2IDev" value="#txtRabat2IDev" type="decimal"/> 
+				<parameter name="@rabat3IDev" value="#txtRabat3IDev" type="decimal"/> 	
+			</data>
+			<data name="dtPostaviDevRabate" command="spNabPLKCarpoPostaviVrijednosti">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Tecaj" value="$tecaj" type="decimal"/>
+				<parameter name="@rabat1I" value="#txtRabat1I" type="decimal"/> 
+				<parameter name="@rabat2I" value="#txtRabat2I" type="decimal"/> 
+				<parameter name="@rabat3I" value="#txtRabat3I" type="decimal"/> 			
+			</data>				
+			<data name="dtPostaviMarzuIVrij" command="spNabPLKCarpoPostaviVrijednosti">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@Vpc" value="#txtVpc" type="decimal"/>
+				<parameter name="@NabCijena" value="#txtNabCijena" type="decimal"/>
+				<parameter name="@fakVrijednost" value="#txtFVrijednost" type="decimal"/>
+				<parameter name="@devVrijednost" value="#txtDevVrijednost" type="decimal"/>
+				<parameter name="@rabat1I" value="#txtRabat1I" type="decimal"/> 
+				<parameter name="@rabat2I" value="#txtRabat2I" type="decimal"/> 
+				<parameter name="@rabat3I" value="#txtRabat3I" type="decimal"/> 
+				<parameter name="@rabat1IDev" value="#txtRabat1IDev" type="decimal"/> 
+				<parameter name="@rabat2IDev" value="#txtRabat2IDev" type="decimal"/> 
+				<parameter name="@rabat3IDev" value="#txtRabat3IDev" type="decimal"/> 				
+			</data>	
+			<data name="dtPonudiJedinicniTrosak" command="spNabPlkCarpoNabNarCijena">
+                <parameter name="@Action" value="PonudiCijenuTroska"/>
+                <parameter name="@Robaid" value="#txtRoba.@RobaId"/>				
+            </data>	
+			<data name="dtSkladiste" command="dbo.spNabPlkCarpoKontrole">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@SkladisteId" value="$SkladisteId"/>
+			</data>
+			<data name="dtRobaOne" command="spNabPlkCarpoDetQuery">
+				<parameter name="@Action" value="stavkeDokumenta1" />
+				<parameter name="@Id" value="$NabPriGlaId"/>
+				<parameter name="@NabPriDetId" value="$NabPriDetId"/>
+			</data>				
+        </datalist>		
+    </form>
+</root>

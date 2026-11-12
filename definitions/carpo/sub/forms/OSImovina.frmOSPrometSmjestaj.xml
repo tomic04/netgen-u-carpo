@@ -1,0 +1,237 @@
+<root>
+
+  <!--******************************************UNOS DOKUMENTA SMJEŠTAJA****************************************-->
+  <form name="frmOSPrometSmjestaj" caption="Promet smještaja imovine" fixedsize="false" width="700" height="500" >
+    <event type="oninit">
+      <action type="datarun reader" value="~dtImovina" />
+      <action type="datarun reader" value="~dtSmjestajUnos" />
+      <action type="variable value">
+        <parameter name="Greska" value="0" type="int"/>
+      </action>
+    </event>
+    <event type="onload">
+      <action type="control populate" value="#grdSmjestajUnos" />
+    </event>    
+      <layout textposition="left" >
+        
+        <group cols="1" rows="2" groupbordervisible="false">
+          <group col="1" row="1" cols="1" rows ="3" spacing="2,2,2,1">
+            <item caption="Naziv:" row="1" col="1" highlight="false">
+              <textedit name="txtNaziv" datavalue="~dtImovina.@NazivKratki" readonly="true"/>
+            </item>
+            <item caption="Datum:" row="2" col="1" highlight="false">
+              <dateedit name="datDatumDok"  value="now" required="true" />
+              <!--datavalue="~dtDatum.@Datum"-->
+            </item>
+            <item caption="" row="3" col="1">
+              <grid name="grdSmjestajUnos" dataname="dtSmjestajUnos" bestfitonrefresh="True" fieldsmartspaces="false" >
+                <fields inherited="true">
+                  <field name="Kolicina" caption="Količina" />
+                </fields>
+                <event type="focusedrowchanged">
+                  <action type="control caption" value="#btnIns" if="#grdSmjestajUnos.@GumbID==R">
+                    <parameter value="Razduži"/>
+                  </action>
+                  <action type="control caption" value="#btnIns" else="">
+                    <!--<action type="control caption" value="#btnIns" elseif="#grdSmjestajUnos.@GumbID==Z">-->
+                    <parameter value="Zaduži"/>
+                  </action>
+                  <action type="control value" value="#txtKolicina"  >
+                    <parameter value="#grdSmjestajUnos.@KolId"/>
+                  </action>
+                </event>
+              </grid>
+            </item>
+          </group>       
+        <group cols="7" rows="1" col="1" row="2" spacing="2,2,1,2" height="50">
+          <item caption="" row="1" col="1" >
+            <button caption="Izlaz" type="cancel" >
+              <event type="click" >
+                <!--<action type="control refreshvalue" value="parent.#grdFinancijski"/>-->
+              </event>
+            </button>
+          </item>
+          <item caption="" row="1" col="2">
+          </item>
+          <item caption="" row="1" col="3" >
+          </item>
+          <item caption="" row="1" col="4" >
+          </item>
+          <item caption="" row="1" col="5" colspan="2">
+            <button name="btnIns"  caption="Unos" type="add"  >
+              <event type="click">
+                <action type="datarun reader" value="~dtKontrolaDatuma"/>
+                <action type="datarun reader" value="~dtKontrolaKolicine"/>
+                <action type="datarun reader" value="~dtKontrolaBlokade"/>
+                <action type="message" value="~dtKontrolaDatuma.@Poruka" if="~dtKontrolaDatuma.@Id==1" />
+                <action type="message" value="~dtKontrolaKolicine.@Poruka" elseif="~dtKontrolaKolicine.@Id==1" />
+                <action type="message" value="~dtKontrolaBlokade.@Poruka" if="~dtKontrolaBlokade.@IndGreska==1"/>
+                <!--<action type="datarun reader" value="~dtKontrola"/>-->
+                <action type="datarun reader" value="~dtRazduzi" elseif="#grdSmjestajUnos.@GumbID==R&amp;&amp;~dtKontrolaDatuma.@Id==0&amp;&amp;~dtKontrolaKolicine.@Id==0
+                  &amp;&amp;~dtKontrolaBlokade.@IndGreska==0"> <!-- ovdje opcionalno možeš još dodatnih provjera ubaciti pomoću &amp; -->
+                  <!-- razdužuješ i pri razduživanju osvježavaš grid. Kako osvježiš grid, 
+                  automatski ti se okida focusedrowchanged event koji će sam promijeniti caption na buttonu -->
+                </action>
+                <!--<action type="message" value="~dtRazduzi.@Poruka" if="~dtRazduzi.@IndGreska==1"/>                
+                <action type="message" value="~dtKontrolaBlokade.@Poruka" if="~dtKontrolaBlokade.@IndGreska==1"/>-->
+                <action type="form open" value="frmZaduzi" elseif="#grdSmjestajUnos.@GumbID==Z&amp;&amp;~dtKontrolaDatuma.@Id==0&amp;&amp;~dtKontrolaKolicine.@Id==0&amp;&amp;~dtKontrolaBlokade.@IndGreska==0">
+                  <parameter name="Caption" value="Unos zaduženja imovine {$Naziv}"/>
+                  <parameter name="Tip" value="Unos"/>
+                  <!-- ovdje opcionalno možeš još dodatnih provjera ubaciti pomoću &amp; -->
+                  <!-- razdužuješ i pri razduživanju osvježavaš grid. Kako osvježiš grid, 
+                  automatski ti se okida focusedrowchanged event koji će sam promijeniti caption na buttonu -->
+                </action>
+                
+                <action type="control refreshvalue" value="#grdSmjestajUnos"/>
+              </event>
+            </button>
+          </item>
+          
+          <item caption="" row="1" col="7" >
+              <textedit name="txtKolicina" datavalue="~dtSmjestajUnos.@KolID" format="n2"/>
+          </item>
+        </group>
+      </group>
+    </layout>
+
+    <datalist>
+      <data command="spOSImovinaSmjestaj_HelpCP" name="dtKontrolaBlokade">
+        <parameter name="@Action" value="Kontrola_blokade"/>
+        <parameter name="@DatumDok" value="#datDatumDok"/>
+      </data>
+      <data command="spOSImovinaSmjestaj_HelpCP" name="dtImovina">
+        <parameter name="@Action" value="Naziv_imovine"/>
+        <parameter name="@OSImovinaId" value="$OSImovinaId"/>
+      </data>
+      <data command="spOSImovinaSmjestaj_HelpCP" name="dtSmjestajUnos">
+        <parameter name="@Action" value="Grid_SmjestajUnos"/>
+        <parameter name="@OSImovinaId" value="$OSImovinaId"/>
+      </data>
+      <data command="spOSImovinaSmjestaj_HelpCP" name="dtKontrolaDatuma">
+        <parameter name="@Action" value="Kontrola_datuma"/>
+        <parameter name="@OSImovinaId" value="$OSImovinaId"/>
+        <parameter name="@datumdok" value="#datDatumDok"/>
+      </data>
+      <data command="spOSImovinaSmjestaj_HelpCP" name="dtKontrolaKolicine">
+        <parameter name="@Action" value="Kontrola_kolicine"/>
+        <parameter name="@OSImovinaId" value="$OSImovinaId"/>
+        <parameter name="@kolicina" value="#txtKolicina" type="decimal"/>
+        <parameter name="@GumbId" value="#grdSmjestajUnos.@GumbID" type="string"/>
+        <parameter name="@Maxkolicina" value="#grdSmjestajUnos.@Kolicina" type="decimal"/>
+      </data>
+      <data command="spOSImovinaSmjestaj_AzurCP" name="dtRazduzi">
+        <parameter name="@Action" value="Razduzenje" />
+        <parameter name="@OSImovinaId" value="$OSImovinaId" />
+        <parameter name="@DatumDok" value="#datDatumDok" />
+        <parameter name="@OperateriId" value="@@OperateriId" />
+        <parameter name="@Kolicina" value="#txtKolicina" type="decimal"/>
+        <parameter name="@HrkadroviId" value="#grdSmjestajUnos.@HrkadroviId" />
+        <parameter name="@Smjestajid" value="#grdSmjestajUnos.@Smjestajid" />
+        <parameter name="@OrgShemaId" value="#grdSmjestajUnos.@OrgShemaId" />
+        <parameter name="@IdUlaza" value="#grdSmjestajUnos.@OSImovinaSmjestajDetId" />
+      </data>
+    </datalist>
+  </form>
+  <!--*******************************************KRAJ UNOS DOKUMENTA SMJEŠTAJA**************************************************-->
+  
+  <!--****************************************FORMA ZA ZADUŽENJE IMOVINE********************************************************-->
+  <form name="frmZaduzi" caption="$Caption" fixedsize="false" width="500" >
+    <event type="oninit">
+      <action type="datarun reader" value="~dtKolicina" />
+      <action type="datarun reader" value="~dtGet" if="$OSImovinaSmjestajGlaId!=null"/>
+      <!--<action type="variable value">
+        <parameter name="InvBroj" value="" ></parameter>
+      </action>-->
+    </event>
+    <event type="onload">
+      <action type="control value" value="#txtKolicina" if="$Tip==Unos">
+        <parameter value="parent.#txtKolicina"/>
+      </action>
+      <action type="control value" value="#txtKolicina" elseif="$Tip==Izmjena">
+        <parameter value="~dtget.@Kolicina"/>
+      </action>
+      <action type="control value" value="#txtDatum" if="$Tip==Unos">
+        <parameter value="{parent.#datDatumDok::dd.MM.yyyy}" />
+      </action>
+      <action type="control value" value="#txtDatum" if="$Tip==Izmjena">
+        <parameter value="{~dtGet.@Datum::dd.MM.yyyy}" />
+      </action>
+    </event>
+    
+    <layout textposition="left" >       
+       <group cols="1" rows="5" spacing="2,2,2,2">         
+         <item caption="Djelatnik:" col="1" row="1" >
+           <searchedit name="srcDjelatnik" fieldvalue="HRKadroviId" fieldtext="Djelatnik" dataname="dtDjelatnik" datavalue="~dtGet.@HRKadroviId" datatext="~dtGet.@Djelatnik"/>
+         </item>
+         <item caption="Lokacija:" col="1" row="2" >
+           <searchedit name="srcLokacija"  fieldvalue="SmjestajId" fieldtext="Naziv" dataname="dtLokacija" datavalue="~dtGet.@SmjestajId" datatext="~dtGet.@NazivLok"/>
+         </item>
+         <item caption="Org.jedinica:" col="1" row="3" >
+           <searchedit name="srcOrgShema" fieldvalue="OrgShemaId" fieldtext="Naziv" dataname="dtOrgShema" datavalue="~dtGet.@OrgShemaId" datatext="~dtGet.@NazivOrg"/>
+         </item>
+         <item caption="Količina:" col="1" row="4" >
+           <textedit name="txtKolicina" readonly="true" format="n2" textposition="left"/>
+         </item>
+         <item caption="Datum zaduženja:" col="1" row="5" >
+           <textedit name="txtDatum" readonly="true" />
+         </item>
+       </group>    
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnIns"  caption="Spremi" type="add"  >
+          <event type="click">
+            <action type="message" value="'Djelatnik, lokacija ili org.jedinica moraju biti popunjeni!'" if="#srcDjelatnik==null&amp;&amp;#srcLokacija==null&amp;&amp;#srcOrgShema==null"/>
+            <!--action za unos i izmjenu se zove isto - uvjet je dolje u datalist-->
+            <action type="datarun reader" value="~dtNoviUnos" else=""/>
+            <action type="form close" />
+          </event>
+        </button>
+        <button caption="Odustani" type="cancel" dock="right">
+          <event type="click"/>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spOSImovinaSmjestaj_HelpCP" name="dtOrgShema">
+        <parameter name="@Action" value="OrgShema_src"/>
+        <parameter name="@tekst" value="#srcOrgShema.text"/>
+      </data>
+      <data command="spOSImovinaSmjestaj_HelpCP" name="dtLokacija">
+        <parameter name="@Action" value="Lokacija_src"/>
+        <parameter name="@tekst" value="#srcLokacija.text"/>
+      </data>
+      <data command="spOSImovinaSmjestaj_HelpCP" name="dtDjelatnik">
+        <parameter name="@Action" value="Djelatnik_src"/>
+        <parameter name="@tekst" value="#srcDjelatnik.text"/>
+      </data>
+      <data command="spOSImovinaSmjestaj_HelpCP" name="dtGet">
+        <parameter name="@Action" value="Trazilice_izmjena"/>
+        <!--<parameter name="@OSImovinaSmjestajGlaId" value="$OSImovinaSmjestajGlaId"/>-->    
+        <parameter name="@OSImovinaSmjestajDetId" value="$OSImovinaSmjestajDetId"/>
+      </data>
+      <data command="spOSImovinaSmjestaj_AzurCP" name="dtNoviUnos" if="$OSImovinaSmjestajGlaId!=null">
+        <parameter name="@Action" value="Izmjena"/>
+        <!--<parameter name="@OSImovinaSmjestajGlaId" value="$OSImovinaSmjestajGlaId"/>-->
+        <parameter name="@OSImovinaSmjestajDetId" value="$OSImovinaSmjestajDetId"/>
+        <parameter name="@HrkadroviId" value="#srcDjelatnik" />
+        <parameter name="@Smjestajid" value="#srcLokacija" />
+        <parameter name="@OrgShemaId" value="#srcOrgShema" />
+      </data>
+      <data command="spOSImovinaSmjestaj_AzurCP" name="dtNoviUnos" else="">
+        <parameter name="@Action" value="Zaduzenje" />
+        <parameter name="@OSImovinaId" value="parent.$OSImovinaId" />
+        <parameter name="@DatumDok" value="parent.#datDatumDok" />
+        <parameter name="@OperateriId" value="@@OperateriId" />
+        <parameter name="@Kolicina" value="parent.#txtKolicina"  type="decimal"/>
+        <parameter name="@HrkadroviId" value="#srcDjelatnik" />
+        <parameter name="@Smjestajid" value="#srcLokacija" />
+        <parameter name="@OrgShemaId" value="#srcOrgShema" />
+      </data>
+    </datalist>
+  </form>
+  <!--*************************************KRAJ FORMA ZA ZADUŽENJE IMOVINE********************************************************-->
+
+</root>
+

@@ -1,0 +1,99 @@
+<!--1 - cmb
+1 - naprijed
+2 - nazad
+3 - javlja ako nemam pravo na promjenu statusa ili mogucnost promjene statusa (ako ne postoji status naprijed/nazad))-->
+
+<root>
+  <form name="frmPromjenaStatusa" caption="Promjena statusa" height="300" width="400">
+    <event type="shown">
+      <action type="control disable" value="#srcBrojNovogUgovora,#srcBrojPrethodnogUgovora"/>
+      <action type="datarun reader" value="~dtStatus"/>
+      <action if="$VratiStatusInd==null">
+        <action type="control enable" value="##srcBrojPrethodnogUgovora" if="#cmbStatus.text=='Aktiviran'"/>
+        <action type="control enable" value="##srcBrojNovogUgovora" if="#cmbStatus.text=='Zamijenjen'"/>
+      </action>
+    </event>
+    <layout>
+      
+			<group cols="2" rows="3">
+				<item row="1" col="1" colspan="2" highlight="false" caption="Jeste li sigurni da želite promijeniti status?">
+          <comboedit name="cmbStatus" displayfield="Korak" valuefield="StatusiId" dataname="dtStatus" allownull="false">
+            <event type="valuechanged">
+              <action if="#cmbStatus.text=='Zamijenjen'&amp;&amp;$VratiStatusInd==null">
+                <action type="control enable" value="#srcBrojNovogUgovora"/>
+                <action type="control attribute" value="#srcBrojNovogUgovora">
+                  <parameter name="required" value="true"/>
+                </action>
+              </action>
+              <action if="#cmbStatus.text!='Zamijenjen'">
+                <action type="control disable" value="#srcBrojNovogUgovora"/>
+                <action type="control attribute" value="#srcBrojNovogUgovora">
+                  <parameter name="required" value="false"/>
+                </action>
+                <action type="control value" value="#srcBrojNovogUgovora">
+                  <parameter value="null"/>
+                </action>
+              </action>
+              <action if="#cmbStatus.text=='Aktiviran'">
+                <action type="control enable" value="#srcBrojPrethodnogUgovora"/>
+              </action>
+              <action if="#cmbStatus.text!='Aktiviran'">
+                <action type="control disable" value="#srcBrojPrethodnogUgovora"/>
+                <action type="control value" value="#srcBrojPrethodnogUgovora">
+                  <parameter value="null"/>
+                </action>
+              </action>
+            </event>
+          </comboedit>
+				</item>
+         <item row="2" col="1" caption="Broj novog ugovora">
+          <searchedit name="srcBrojNovogUgovora" dataname="~dtSearchUgovoriPoStatusu" fieldtext="Broj" fieldvalue="UgovoriNajamGlaId"/>
+        </item>
+        <item row="2" col="2" caption="Broj prethodnog ugovora">
+          <searchedit name="srcBrojPrethodnogUgovora" dataname="~dtSearchUgovoriPoStatusu" fieldtext="Broj" fieldvalue="UgovoriNajamGlaId"/>
+        </item>
+				<item row="3" col="1" colspan="2" highlight="false" caption="Napomena:">
+					<memoedit name="memNapomena"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPromijeni" caption="&amp;PROMIJENI">
+					<event type="click">
+            <action type="validate"/>
+						<action type="datarun nonquery" value="global.~dtZakljuci" if="$VratiStatusInd==null"/>
+            <action type="datarun nonquery" value="global.~dtVrati" else=""/>
+            <action type="control populate keepfocus" value="parent.#GrdGla"/>
+            <action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="&amp;ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+      <data command="spUgovoriNajamGla_PromijeniStatus" name="dtVrati">
+        <parameter name="@id" value="$GlaId"/>
+        <parameter name="@operateriid" value="@@operateriid"/>
+        <parameter name="@statusiid" value="#cmbStatus"/>
+        <parameter name="@napomena" value="#txtNapomena"/>
+      </data>
+      
+			<data command="spStatusi_CARPO" name="dtStatus">
+				<parameter name="@action" value="1" if="$VratiStatusInd==null"/>
+        <parameter name="@action" value="2" else=""/>
+				<parameter name="@tablica" value="UgovoriNajamGla"/>				
+				<parameter name="@operateriid" value="@@OperateriId" />
+				<parameter name="@id" value="$GlaId" type ="int" />
+			</data>	
+      
+      <data command="spUgovoriNajamGla_TrazilicaUgovoraPoStatusu" name="dtSearchUgovoriPoStatusu">
+        <parameter name="@UgovoriNajamGlaId" value="$GlaId"/>
+        <parameter name="@status" value="#cmbStatus.text"/>
+        <parameter name="@UgovoriNajamVrsteId" value="parent.#grdGla.@UgovoriNajamVrsteId"/>
+        <parameter name="@searchstring" value="#srcBrojPrethodnogUgovora.text" if="#cmbStatus.text=='Aktivan'"/>
+        <parameter name="@searchstring" value="#srcBrojNovogUgovora.text" elseif ="#cmbStatus.text=='Zamijenjen'"/>
+      </data>
+		</datalist>
+  </form>
+</root>

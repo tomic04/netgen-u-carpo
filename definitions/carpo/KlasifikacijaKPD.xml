@@ -1,0 +1,211 @@
+<!-- 07.08.2025. v.1.0.0.1 FÖ - komentar: u novijim verzijama carpa javlja u logu upozorenje pri pokretanju zbog filtera jer se u novim verzijama čita kroz storu a ne utvrdo, ali zbog klijenata sa starom verzijom carpa je napisano ovako utvrdo -->
+<!-- 28.07.2025. v.1.0.0.1 FÖ - incijalna verzija -->
+<root version="1.0.0.1">
+	<form name="frmMaster" type="master" caption="Klasifikacija proizvoda po djelatnostima" maximized="true">
+		<managerlayout>
+			<lookup name="filter" savevalue="app">
+				<comboitem value="Zadnja Razina" />
+				<comboitem value="KPD" />
+				<comboitem value="Moje klase" />
+				<event type="valuechanged">
+					<action type="variable value">
+						<parameter name="global.filter" value="#filter" />
+					</action>
+				</event>
+			</lookup>
+			<tree name="tree" keyfield="KPDId" allowselfdrag="false" dataname="dtOrgTree" showcolumns="false" autofiltercondition="contains" showautofilterrow="true" expandallonload="true" expandedlevel="6" showcheckboxes="true">
+				<fields>
+					<field name="Sifra" fixed="left" fontbold="true" />
+					<field name="Naziv" fontbold="true" />
+					<field name="MojaKlasa" />
+				</fields>
+				<styles>
+					<style name="fontcolor" value="#0000cc" if="#tree.@Id==-1" />
+					<style name="bold" value="true" if="#tree.@MojaKlasa==True||#tree.@MojaKlasa==Da" />
+				</styles>
+				<event type="dragoverself">
+					<action type="drop" value="false" if="#tree.@Id!=-1" />
+				</event>
+				<event type="shown">
+					<action type="control disable" value="#btnUnesi" if="#tree.@BrojRazine==6||global.$filter!=KPD" />
+					<action type="control enable" value="#btnUnesi" if="#tree.@BrojRazine!=6&amp;&amp;global.$filter==KPD" />
+					<action type="control disable" value="#btnUnesi" if="#tree.@Id==-1&amp;&amp;global.$filter==Zadnja Razina" />
+					<action type="control disable" value="#btnUnesi" if="#tree.@Id==-1&amp;&amp;global.$filter==Moje Klase" />
+				</event>
+				<event type="focusedrowchanged">
+					<action type="control disable" value="#btnUnesi" if="#tree.@BrojRazine==6||global.$filter!=KPD" />
+					<action type="control enable" value="#btnUnesi" if="#tree.@BrojRazine!=6&amp;&amp;global.$filter==KPD" />
+					<action type="control disable" value="#btnUnesi" if="#tree.@Id==-1&amp;&amp;global.$filter==Zadnja Razina" />
+					<action type="control disable" value="#btnUnesi" if="#tree.@Id==-1&amp;&amp;global.$filter==Moje Klase" />
+				</event>
+				<event type="keydown">
+					<action type="datarun nonquery" value="~dtMojaKlasa" if="key==77&amp;&amp;#tree.@BrojRazine==6&amp;&amp;#tree.@Id!=-1">
+						<action type="control populate keepfocus" value="#tree" />
+					</action>
+				</event>
+			</tree>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="false">
+			<buttons type="tree">
+				<button name="btnUnesi" caption="Unesi" type="add" begingroup="true" width="120" color="light" image="add" imagelocation="middleleft">
+					<event type="click">
+						<action if="#tree.@Id!=null">
+							<action type="form open" value="frmAzur">
+								<parameter name="KPDId" value="#tree" />
+								<parameter name="FormType" value="Unos" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnEdit" caption="&amp;Izmijeni" type="edit" width="120" image="edit" imagelocation="middleleft">
+					<event type="click">
+						<action if="#tree.@Id!=null">
+							<action type="form open" value="frmAzur" if="#tree.@Id!=-1">
+								<parameter name="KPDId" value="#tree" />
+								<parameter name="Id" value="1" />
+								<parameter name="BrojRazine" value="#tree.@BrojRazine" />
+								<parameter name="FormType" value="izmjena" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnDelete" caption="Obriši" type="delete" width="120" image="delete" imagelocation="middleleft">
+					<event type="click">
+						<action if="#tree.@Id!=null">
+							<action type="confirm" value="Jeste li sigurni da želite obrisati klasu '{#tree.@Naziv}'?" if="#tree.@Id!=-1">
+								<action type="datarun nonquery" value="~dtOrgDelete" />
+								<action type="control populate keepfocus" value="#tree" />
+								<action type="datarun nonquery" value="~dtOrgAzur" if="global.$filter==KPD" />
+								<action type="control defaultmode" value="#tree" />
+							</action>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKlasifikacijaKPD_Query" name="dtOrgTree">
+				<parameter name="@action" value="tree" if="global.$filter==KPD" />
+				<parameter name="@action" value="treePopis" if="global.$filter==Zadnja Razina" />
+				<parameter name="@action" value="treeMojeKlase" if="global.$filter==Moje klase" />
+			</data>
+			<data command="spKlasifikacijaKPD_TreeAzur" name="dtOrgAzur">
+				<parameter name="@Action" value="setTree" />
+				<parameter name="@TableVar" value="#tree.datasource" />
+			</data>
+			<data command="spKlasifikacijaKPD_Azur" name="dtOrgDelete">
+				<parameter name="@Action" value="Delete" />
+				<parameter name="@Id" value="#tree" />
+			</data>
+			<data command="spKlasifikacijaKPD_Azur" name="dtMojaKlasa">
+				<parameter name="@Action" value="MojaKlasa" />
+				<parameter name="@Id" value="#tree.@Id" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmAzur" caption="Klasifikacija robe po djelatnostima - {$formType}" fixedsize="false" width="500">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$Id!=null" />
+		</event>
+		<event type="shown">
+			<action type="control disable" value="#txtSifra" if="$Id!=null">
+			</action>
+			<action type="control enable" value="#txtSifra" if="~dtGet.@KPDIzmijeni==1">
+			</action>
+			<action type="control disable" value="#chkMojaKlasa" if="$BrojRazine!=6" />
+			<action type="control enable" value="#chkMojaKlasa" if="$BrojRazine==6" />
+		</event>
+		<layout textposition="top">
+			<group cols="3" rows="5">
+				<item caption="Šifra:" row="1" col="1">
+					<textedit name="txtSifra" datavalue="~dtGet.@Sifra" maxlength="8" required="true" />
+				</item>
+				<item caption="Potpuna šifra:" row="1" col="2">
+					<textedit name="txtPotpunaSifra" datavalue="~dtGet.@PotpunaSifra" maxlength="9" readonly="true" />
+				</item>
+				<item caption="Broj razine:" row="1" col="3">
+					<textedit name="txtBrojrazine" datavalue="~dtGet.@BrojRazine" type="decimal" format="n0" readonly="true" />
+				</item>
+				<item caption="Naziv:" row="2" col="1" colspan="3">
+					<textedit name="txtNaziv" required="true" datavalue="~dtGet.@Naziv" fontbold="true" />
+				</item>
+				<item caption="Naziv Engleski:" row="3" col="1" colspan="3">
+					<textedit name="txtNazivEN" datavalue="~dtGet.@NazivEn" required="true" />
+				</item>
+				<group row="4" col="1" cols="2" rows="1" colspan="3" groupbordervisible="false">
+					<item caption="Kratki naziv:" row="1" col="1">
+						<textedit name="txtKratkiNaziv" datavalue="~dtGet.@KratkiNaziv" />
+					</item>
+					<item caption="Kratki naziv Engleski:" row="1" col="2">
+						<textedit name="txtKratkiNazivEN" datavalue="~dtGet.@KratkiNazivEN" />
+					</item>
+				</group>
+				<group col="1" row="5" cols="3" rows="1" colspan="3" groupbordervisible="false">
+					<columnsdefinition>
+						<column position="1" size="33%" />
+						<column position="2" size="33%" />
+						<column position="3" size="33%" />
+					</columnsdefinition>
+					<item row="1" col="1" caption="Datum početka:" textposition="left">
+						<dateedit name="datDatumOd" datavalue="~dtGet.@DatumPocetka" />
+					</item>
+					<item row="1" col="2" caption="Datum završetka:" textposition="left">
+						<dateedit name="datDatumDo" datavalue="~dtGet.@DatumZavrsetka" />
+					</item>
+					<item row="1" col="3" textposition="right" spacing="15,0,3,0">
+						<checkedit name="chkMojaKlasa" caption="Moja klasa" datavalue="~dtGet.@MojaKlasa" />
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI" type="add" dock="left">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtAzur">
+							<parameter name="shemaid" />
+						</action>
+						<action type="control populate keepfocus" value="parent.#tree" />
+						<action type="control expand" value="parent.#tree">
+							<parameter name="key" value="$shemaid">
+							</parameter>
+						</action>
+						<action type="control value" value="#txtSifra,#txtPotpunaSifra,#txtBrojrazine,#txtNaziv,#txtNazivEN,#txtKratkiNaziv,#txtKratkiNazivEN,#datDatumOd,#datDatumDo">
+							<parameter value="null" />
+						</action>
+						<action type="form close" if="$Id!=null||#chkFormClose==true" />
+						<action type="datarun nonquery" value="~dtOrgAzur" if="global.$filter==KPD" />
+						<!-- <action type="control populate keepfocus" value="parent.#tree" /> -->
+						<action type="control defaultmode" value="parent.#tree" />
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKlasifikacijaKPD_Azur" name="dtAzur">
+				<parameter name="@Action" value="Add" if="$Id==null" />
+				<parameter name="@Action" value="Edit" else="" />
+				<parameter name="@KPDId" value="$KPDId" text="" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@Sifra" value="#txtSifra" />
+				<parameter name="@NazivEN" value="#txtNazivEN" />
+				<parameter name="@KratkiNaziv" value="#txtKratkiNaziv" />
+				<parameter name="@KratkiNazivEN" value="#txtKratkiNaziv" />
+				<parameter name="@DatumPocetka" value="#datDatumOd" />
+				<parameter name="@DatumZavrsetka" value="#datDatumDo" />
+				<parameter name="@MojaKlasa" value="#chkMojaKlasa" />
+				<parameter name="@InsertTip" value="in" />
+			</data>
+			<data command="spKlasifikacijaKPD_Query" name="dtGet">
+				<parameter name="@Action" value="GetSingleKPD" />
+				<parameter name="@Id" value="$KPDId" />
+			</data>
+			<data command="spKlasifikacijaKPD_TreeAzur" name="dtOrgAzur">
+				<parameter name="@Action" value="setTree" />
+				<parameter name="@TableVar" value="parent.#tree.datasource" />
+			</data>
+		</datalist>
+	</form>
+</root>

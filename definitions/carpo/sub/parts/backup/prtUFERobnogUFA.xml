@@ -1,0 +1,328 @@
+    <parts>
+	<part name="uferobnogufa">
+
+		<group  groupbordervisible="false" cols="6" rows="5" col="1" row="1" colspan="3">
+			<columnsdefinition>
+				<column size="40" position="4"/>
+				<column size="40" position="5"/>
+			</columnsdefinition>
+
+			<item  row="1" col="1">
+				<labeledit name="lblURA" datavalue="" value="URA:"/>
+			</item>
+			<item  row="1" col="2" >
+				<textedit name="txtUra" datavalue="~dtKalkGlaQuery.@BrojDok" tooltip="Izmjena partnera nije moguća dok je povezana URA!">
+					<event type="leave">
+						<!-- provjeri pripada li faktura dobavljaču -->
+						<action type="datarun reader" value="~dtNepovezaneFakture" if="#txtUra!=null&amp;&amp;#txtUra!=">	
+							<action type="variable value" value="$UFA">
+								<parameter value="~dtNepovezaneFakture.@FaktureDobId"/>
+							</action>				
+							<action type="variable value" value="$UFA" else="">
+								<parameter value="null"/>
+							</action>
+							<action type="control value" value="#txtFVrijednost" if="#txtUra!=null&amp;&amp;#txtUra!=''">
+								<parameter value="~dtNepovezaneFakture.@IznosFakture"/>
+							</action>
+							<!-- ako je zaglavlje spremljeno update na odabir fakture -->
+							<action type="message" value="Faktura ne pripada dobavljaču ili je likvidirana!" if="~dtNepovezaneFakture.rowcount==0">
+								<action type="control value" value="#txtUra">
+									<parameter value=""/>
+								</action>
+								<action type="variable value" value="$UFA">
+									<parameter value="null"/>
+								</action>
+								<action type="form open" value="frmUFERobnogNepovezaneFakture" if="#srcPartner!=null">
+									<parameter name="PartneriId" value="#srcPartner"/>
+									<parameter name="Dobavljac" value="#srcPartner.text"/>	
+									<parameter name="RobnoKalkGlaId" value="$RobnoKalkGlaId"/>									
+								</action>
+							</action>
+						</action>
+						<action else="">
+							<action type="variable value" value="$UFA">
+								<parameter value="null"/>
+							</action>						
+						</action>
+						<action type="control disable" value="#srcPartner,#cmbLokacija" if="$UFA!=null"/>
+						<action type="control enable" value="#srcPartner,#cmbLokacija" else=""/>
+					</event>
+				</textedit>
+			</item>					
+			<item  row="1" col="3" >
+				<button name="btnNepovezaneFaktureAdd" caption="Nepovezane fakture" image="add" imagelocation="middlecenter" tabstop="false" >      
+					<event type="click">
+						<action type="form open" value="frmUFERobnogNepovezaneFakture" if="#srcPartner!=null">
+							<parameter name="PartneriId" value="#srcPartner"/>
+							<parameter name="dobavljac" value="#srcPartner.Text"/>	
+							<parameter name="BrojDok" value="#txtUra"/>		
+							<parameter name="RobnoKalkGlaId" value="$RobnoKalkGlaId"/>								
+						</action>
+						<action type="message" value="Obavezan unos dobavljača!" else="">
+							<action type="control focus" value="#srcPartner"/>
+						</action>
+						<!-- ako je zaglavlje spremljeno update na odabir fakture --> 
+						<!-- <action type="datarun nonquery" value="~dtSpremi" if="$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0"/> -->
+						<action type="control focus" value="#txtFVrijednost" if="#srcPartner!=null"/>
+						<action type="control disable" value="#srcPartner,#cmbLokacija" if="$UFA!=null"/>
+						<action type="control enable" value="#srcPartner,#cmbLokacija" else=""/>
+					</event>
+				</button>
+			</item>
+			<item  row="1" col="4" colspan="2">
+				<button name="btnNovaUraAdd" caption="Nova URA" type="edit" tabstop="false">
+					<event type="click">					
+						<action type="variable value" value="$NoviFaktureDobId">
+							<parameter value="0"/>
+						</action>						
+						<action type="form open" value="frmKnjigaUraInsert"  if="#srcPartner!=null">
+							<parameter name="PartneriId" value="#srcPartner"/>
+							<parameter name="PLKDatumDok" value="#datDatumDok"/>
+							<parameter name="PLKDatumVal" value="#datDatumDok"/>
+							<parameter name="PLKOrgShemaId" value="#cteOrgShema"/>
+							<parameter name="PLKOsobeId" value="#cmbOsobe"/>							
+							<!-- <parameter name="KntVrsteKnjigaUraId" value="23"/> -->
+							<parameter name="PLKInd" value="1"/>						
+						</action>
+						<action type="message" value="Obavezan unos dobavljača!" else="">
+							<action type="control focus" value="#srcPartner"/>
+						</action>
+						<action type="control focus" value="#txtFVrijednost" if="#srcPartner!=null"/>	
+						<action type="control disable" value="#srcPartner,#cmbLokacija" if="$UFA!=null"/>
+						<action type="control enable" value="#srcPartner,#cmbLokacija" else=""/>
+					</event>
+				</button>
+			</item>
+			<item  row="2" col="1">
+				<labeledit value="F. vrijednost:"/>
+			</item>
+			<item  row="2" col="2" >
+				<textedit name="txtFVrijednost" value="0" format="n2" datavalue="~dtKalkGlaQuery.@FakturniIznos">
+					<event type="valuechanged">
+						<action type="variable value" value="$indProm">
+							<parameter value="1"/>
+						</action>										
+					</event>					
+					<event type="leave">	
+						<action type="control value" value="#txtFVrijednost" if="#txtFVrijednost==null">
+							<parameter value="0"/>
+						</action>
+						<action type="variable value">
+							<parameter name="tip" value="fakvrijednost"/>
+						</action>
+						<action type="datarun reader" value="~dtCalcTroskovi" if="#txtFVrijednost!=0">	
+							<action type="control value" value="#txtTrosakPosto">
+								<parameter value="~dtCalcTroskovi.@TroskoviP"/>
+							</action>
+						</action>
+						<action type="control value" value="#txtTrosakPosto" if="#txtFVrijednost==0&amp;&amp;#txtTrosakIznos&gt;0">
+							<parameter value="0"/>
+						</action>
+						<!-- spremi dokument sa novim vrijednostima -->
+						<action type="datarun nonquery" value="~dtKalkGlaAzur" if="$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0&amp;&amp;$indProm==1&amp;&amp;#txtTrosakIznos!=0&amp;&amp;#txtTrosakPosto!=0"/>
+						<action type="confirm" stoponconfirm="false" value="Želite li rasporediti troškove po stavkama?" if="$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0&amp;&amp;$indProm==1&amp;&amp;#txtTrosakIznos!=0&amp;&amp;#txtTrosakPosto!=0&amp;&amp;$IndUfaAdd!=1">
+							<action type="datarun nonquery" value="~dtRasporediTroskove"/>
+							<action type="datarun nonquery" value="~dtRasporediTroskove"/>
+							<!-- dva puta pozivam zobog store i jer je tako u source safe vb kodu --> 
+							<action type="control populate" value="parent.#grdDetail" />
+							<action type="control populate" value="#grdStavke" />
+							<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>		
+						</action>							
+						<action type="variable value" value="$indProm">
+							<parameter value="0"/>
+						</action>
+						<action type="variable value" value="$IndUfaAdd">
+							<parameter value="0"/>
+						</action>							
+					</event>			
+				</textedit>
+			</item>					
+			<item  row="2" col="3" >
+				<labeledit value="kn"/>
+			</item>
+			<item  row="2" col="4" colspan="2">
+				<button name="btnTrosakAdd" caption="Spec.troška"  dock="right"  tabstop="false">
+					<event type="click">
+						<action type="variable value" value="global.$sumaTroska" if="~dtTroskovi!=null&amp;&amp;~dtTroskovi.rowcount&gt;0&amp;&amp;~dtTroskovi.@Iznos.sum&gt;0">
+							<parameter value ="#txtTrosakIznos"/>
+						</action>
+						<action type="variable value" value="global.$sumaTroska" else="">
+							<parameter value ="#txtTrosakIznos"/>
+						</action>
+						<action if="$RobnoKalkGlaId==null">
+							<part name="prtRobnoKalkGlaSave" path="prtUFERobnog.xml"/>
+						</action>
+						<action if="$RobnoKalkGlaId!=null">
+							<action type="form open" value="frmUFERobnogTrosak">  
+								<!--if="$RobnoKalkGlaId!=null" -->
+								<parameter name="RobnoKalkGlaId" value="$RobnoKalkGlaId"/>
+							</action>		
+							<action type="control value" value="#txtTrosakIznos">
+								<parameter value="global.$sumaTroska"/>
+							</action>
+							<action if="#txtFVrijednost!=0">
+								<action type="variable value">
+									<parameter name="tip" value="spectr"/>
+								</action>
+								<action type="datarun reader" value="~dtCalcTroskovi"/>	
+								<action type="control value" value="#txtTrosakPosto">
+									<parameter value="~dtCalcTroskovi.@TroskoviP"/>
+								</action>
+							</action>
+							<!-- spremi dokument sa novim vrijednostima -->
+							<action type="datarun nonquery" value="~dtKalkGlaAzur" if="#txtFVrijednost!=0&amp;&amp;$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0&amp;&amp;$indProm==1"/>	
+							<action type="confirm" stoponconfirm="false" value="Želite li rasporediti troškove po stavkama?" if="#txtFVrijednost!=0&amp;&amp;$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0&amp;&amp;$indProm==1">
+								<action type="datarun nonquery" value="~dtRasporediTroskove"/>
+								<action type="datarun nonquery" value="~dtRasporediTroskove"/>
+								<!-- dva puta pozivam zobog store i jer je tako u source safe vb kodu --> 
+								<action type="control populate" value="parent.#grdDetail" />
+								<action type="control populate" value="#grdStavke" />
+								<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>	
+							</action>	
+						</action>
+					</event>
+				</button>
+			</item>
+			<item  row="3" col="1">
+				<labeledit value="Troškovi:"/>
+			</item>
+			<item  row="3" col="2" >
+				<textedit name="txtTrosakIznos" value="0" format="n2" datavalue="~dtKalkGlaQuery.@TroskoviIznos">
+					<event type="valuechanged">
+						<action type="variable value" value="$indProm">
+							<parameter value="1"/>
+						</action>										
+					</event>					
+					<event type="leave">
+						<action type="control value" value="#txtTrosakIznos" if="#txtTrosakIznos==null">
+							<parameter value="0"/>
+						</action>
+						<action type="variable value">
+							<parameter name="tip" value="troskovii"/>
+						</action>
+						<action type="datarun reader" value="~dtCalcTroskovi" if="#txtFVrijednost&gt;0"/>	
+						<action type="control value" value="#txtTrosakPosto">
+							<parameter value="~dtCalcTroskovi.@TroskoviP"/>
+						</action>
+						<!-- spremi dokument sa novim vrijednostima -->
+						<action type="datarun nonquery" value="~dtKalkGlaAzur" if="#txtFVrijednost!=0&amp;&amp;$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0&amp;&amp;$indProm==1"/>	
+						<action type="confirm" stoponconfirm="false" value="Želite li rasporediti troškove po stavkama?" if="#txtFVrijednost!=0&amp;&amp;$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0&amp;&amp;$indProm==1">
+							<action type="datarun nonquery" value="~dtRasporediTroskove"/>
+							<action type="datarun nonquery" value="~dtRasporediTroskove"/>
+							<!-- dva puta pozivam zobog store i jer je tako u source safe vb kodu --> 
+							<action type="control populate" value="parent.#grdDetail" />
+							<action type="control populate" value="#grdStavke" />
+							<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>	
+						</action>
+						<action type="variable value" value="$indProm">
+							<parameter value="0"/>
+						</action>							
+					</event>
+				</textedit>
+			</item>					
+			<item  row="3" col="3" >
+				<labeledit value="kn"/>
+			</item>
+			<item  row="3" col="4" colspan="2">
+				<textedit name="txtTrosakPosto" value="0" format="n4" datavalue="~dtKalkGlaQuery.@TroskoviPosto">
+					<event type="valuechanged">
+						<action type="variable value" value="$indProm">
+							<parameter value="1"/>
+						</action>	
+						<action type="control value" if="#txtTrosakPosto==null">
+							<parameter value="0"/>
+						</action>
+					</event>					
+					<event type="leave">
+						<action type="control value" value="#txtTrosakPosto" if="#txtTrosakPosto==null">
+							<parameter value="0"/>
+						</action>
+						<action type="variable value">
+							<parameter name="tip" value="troskovip"/>
+						</action>						
+						<action type="datarun reader" value="~dtCalcTroskovi"/>	
+						<action type="control value" value="#txtTrosakIznos">
+							<parameter value="~dtCalcTroskovi.@TroskoviI"/>
+						</action>
+						<!-- spremi dokument sa novim vrijednostima -->
+						<action type="datarun nonquery" value="~dtKalkGlaAzur" if="$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0&amp;&amp;$indProm==1"/>		
+						<action type="confirm" stoponconfirm="false" value="Želite li rasporediti troškove po stavkama?" if="$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0&amp;&amp;$indProm==1">
+							<action type="datarun nonquery" value="~dtRasporediTroskove"/>
+							<action type="datarun nonquery" value="~dtRasporediTroskove"/>
+							<!-- dva puta pozivam zbog store i jer je tako u source safe vb kodu -->
+							<action type="control populate" value="parent.#grdDetail" />
+							<action type="control populate" value="#grdStavke" />
+							<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>	
+						</action>
+					</event>
+				</textedit>
+			</item>
+			<item  row="3" col="6" >
+				<labeledit value="%"/>
+			</item>
+			<item  row="4" col="1">
+				<labeledit value="Valuta:"/>
+			</item>
+			<item  row="4" col="2" colspan="5">
+				<comboedit name="cmbValuta" valuefield="ValuteId" displayfield="Naziv" dataname="Global.dtValuta" datavalue="~dtKalkGlaQuery.@ValuteId">
+					<event type="valuechanged">
+						<action type="datarun reader" value="Global.~dtValutaTecaj">		
+							<action type="control value" value="#txtTecaj">
+								<parameter value="~dtValutaTecaj.@Iznos"/>
+							</action>
+						</action>
+						<action type="control enable" value="#txtTecaj" if="#cmbValuta!=null"/>
+						<action type="control disable" value="#txtTecaj" else=""/>							
+						<action type="variable value" value="$indProm">
+							<parameter value="1"/>
+						</action>																
+					</event>
+					<event type="leave">		
+						<!-- spremi dokument sa novim vrijednostima -->
+						<action type="datarun nonquery" value="~dtKalkGlaAzur" if="$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0"/>
+						<action type="confirm" stoponconfirm="false" value="Želite li rasporediti preračun po stavkama?" if="$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0&amp;&amp;$indProm==1">					
+							<action type="datarun nonquery" value="~dtRasporediTroskove"/>
+							<action type="datarun nonquery" value="~dtRasporediTroskove"/>
+							<!-- dva puta pozivam zobog store i jer je tako u source safe vb kodu -->
+							<action type="control populate" value="parent.#grdGlava" />
+							<action type="control populate" value="parent.#grdDetail" />
+							<action type="control populate" value="#grdStavke" />
+							<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>	
+							<action type="variable value" value="$indProm">
+								<parameter value="0"/>
+							</action>
+						</action>				
+					</event>
+				</comboedit>
+			</item>
+			<item row="5" col="1">
+				<labeledit value="Tečaj:"/>
+			</item>
+			<item  row="5" col="2" colspan="5">
+				<textedit name="txtTecaj" value="1" format="n6" enabled="false" datavalue="~dtKalkGlaQuery.@Tecaj">
+					<event type="valuechanged">
+						<action type="variable value" value="$indProm">
+							<parameter value="1"/>
+						</action>										
+					</event>		
+					<event type="leave">
+						<!-- spremi dokument sa novim vrijednostima -->
+						<action type="datarun nonquery" value="~dtKalkGlaAzur" if="#txtTecaj&gt;0&amp;&amp;#cmbValuta!=null&amp;&amp;$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0&amp;&amp;$indProm==1"/>						
+						<action type="confirm" stoponconfirm="false" value="Želite li rasporediti preračun po stavkama?" if="#txtTecaj&gt;0&amp;&amp;#cmbValuta!=null&amp;&amp;$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&gt;0&amp;&amp;$indProm==1">
+							<action type="datarun nonquery" value="~dtRasporediTroskove"/>
+							<action type="datarun nonquery" value="~dtRasporediTroskove"/>
+							<!-- dva puta pozivam zobog store i jer je tako u source safe vb kodu -->
+							<action type="control populate" value="parent.#grdGlava" />
+							<action type="control populate" value="parent.#grdDetail" />
+							<action type="control populate" value="#grdStavke" />
+							<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>	
+							<action type="variable value" value="$indProm">
+								<parameter value="0"/>
+							</action>							
+						</action>		
+					</event>
+				</textedit>
+			</item>
+		</group>
+	</part>
+</parts>

@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Konverzija iz NetGen granule:
+- Izvor: definitions/netgen/KUPNGSpin_KUP_URA.xml
+- Napomena: ova konverzija se radi iterativno (skeleton → popuna). Neke akcije (npr. NetGen "++" mapiranje) mogu zahtijevati uvid u SP skripte.
+-->
+<root version="1.2">
+  <!-- Subforme (path pattern: fizički fajl je KUPNGSpin_KUP_URA.<path>) -->
+  <form name="frmFilter" path="KUPNGSpin_KUP_URA.frmFilter.xml"/>
+  <form name="frmInsert" path="KUPNGSpin_KUP_URA.frmInsert.xml"/>
+  <form name="frmUpdate" path="KUPNGSpin_KUP_URA.frmUpdate.xml"/>
+  <form name="frmDelete" path="KUPNGSpin_KUP_URA.frmDelete.xml"/>
+  <form name="frmPovijest" path="KUPNGSpin_KUP_URA.frmPovijest.xml"/>
+  <form name="frmZaprimi" path="KUPNGSpin_KUP_URA.frmZaprimi.xml"/>
+  <form name="frmZaprimiArhiviraj" path="KUPNGSpin_KUP_URA.frmZaprimiArhiviraj.xml"/>
+  <form name="frmPonistiArhiviranje" path="KUPNGSpin_KUP_URA.frmPonistiArhiviranje.xml"/>
+  <form name="frmProslijedi" path="KUPNGSpin_KUP_URA.frmProslijedi.xml"/>
+  <form name="frmProslijedi2" path="KUPNGSpin_KUP_URA.frmProslijedi2.xml"/>
+  <form name="frmOdobri" path="KUPNGSpin_KUP_URA.frmOdobri.xml"/>
+  <form name="frmOdobriMulti" path="KUPNGSpin_KUP_URA.frmOdobriMulti.xml"/>
+  <form name="frmOdobriOsoba" path="KUPNGSpin_KUP_URA.frmOdobriOsoba.xml"/>
+  <form name="frmOrgShema" path="KUPNGSpin_KUP_URA.frmOrgShema.xml"/>
+  <form name="frmPovrat" path="KUPNGSpin_KUP_URA.frmPovrat.xml"/>
+  <form name="frmDMSSave" path="KUPNGSpin_KUP_URA.frmDMSSave.xml"/>
+  <form name="frmObrDms" path="KUPNGSpin_KUP_URA.frmObrDms.xml"/>
+  <form name="frmRegistrator" path="KUPNGSpin_KUP_URA.frmRegistrator.xml"/>
+  <form name="frmRegistrator2" path="KUPNGSpin_KUP_URA.frmRegistrator2.xml"/>
+  <form name="frmNarudzbe" path="KUPNGSpin_KUP_URA.frmNarudzbe.xml"/>
+
+  <form name="KUPNGSpin_KUP_URA" type="master" caption="Knjiga ulazne pošte" template="splitter vertical" maximized="true" statusbar="true" displaycontrolsprint="true">
+    <!-- Vanjski DLL-ovi kao u NetGen: KUPPreglednikDMS (ScanDialog, ScanPreview) -->
+    <method name="fnScanDialog" dll="KUPPreglednikDMS" class="KUPPreglednikDMS.ScanDialog" method="TotalGen" />
+    <method name="fnScanPreview" dll="KUPPreglednikDMS" class="KUPPreglednikDMS.ScanPreview" method="TotalGen" />
+    <event type="init">
+      <action type="variable value">
+        <parameter name="global.$Close" value="false" type="bool"/>
+        <parameter name="global.$TreeAction" value="0" type="int"/>
+        <parameter name="global.$Mode" value="'init'"/>
+        <parameter name="global.$Node" value="null"/>
+
+        <parameter name="global.$DatumOd" value="null"/>
+        <parameter name="global.$DatumDo" value="null"/>
+        <parameter name="global.$PartneriId" value="null"/>
+        <parameter name="global.$KupStatusId" value="null"/>
+        <parameter name="global.$DAid" value="null"/>
+      </action>
+    </event>
+
+    <event type="shown">
+      <!-- NetGen: ONLOAD se direktno puni grid; ovdje ipak nudimo param formu (kao i kod drugih Carpo mastera) -->
+      <action type="form open" value="frmFilter"/>
+      <action type="form close" if="global.$Close==true"/>
+      <action type="variable value" if="global.$Close!=true&amp;&amp;#filter!=null">
+        <parameter name="global.$TreeAction" value="0" if="#filter==Koraci" type="int"/>
+        <parameter name="global.$TreeAction" value="1" elseif="#filter==Operateri" type="int"/>
+        <parameter name="global.$TreeAction" value="2" elseif="#filter==Računi" type="int"/>
+        <parameter name="global.$TreeAction" value="3" elseif="#filter==Vremenska podjela" type="int"/>
+        <parameter name="global.$TreeAction" value="7" elseif="#filter==Pregled dokumenata" type="int"/>
+      </action>
+      <action type="control populate" value="#tree" if="global.$Close!=true"/>
+      <action type="control populate" value="#grdMaster" if="global.$Close!=true"/>
+      <action type="control populate" value="#grdDetail" if="global.$Close!=true"/>
+      <action type="footer text" value="Broj stavki: {#grdMaster.rowcount}" if="global.$Close!=true"/>
+    </event>
+
+    <managerlayout>
+      <!-- Kao Faktura.xml: comboitem sa string vrednostima - value i prikaz su isti -->
+      <lookup name="filter" savevalue="app">
+        <comboitem value="Koraci"/>
+        <comboitem value="Operateri"/>
+        <comboitem value="Računi"/>
+        <comboitem value="Vremenska podjela"/>
+        <comboitem value="Pregled dokumenata"/>
+        <event type="valuechanged">
+          <action type="variable value">
+            <parameter name="global.$Mode" value="'tree'"/>
+            <parameter name="global.$TreeAction" value="0" if="#filter==Koraci" type="int"/>
+            <parameter name="global.$TreeAction" value="1" elseif="#filter==Operateri" type="int"/>
+            <parameter name="global.$TreeAction" value="2" elseif="#filter==Računi" type="int"/>
+            <parameter name="global.$TreeAction" value="3" elseif="#filter==Vremenska podjela" type="int"/>
+            <parameter name="global.$TreeAction" value="7" elseif="#filter==Pregled dokumenata" type="int"/>
+          </action>
+          <action type="control populate" value="#tree"/>
+          <action type="control populate" value="#grdMaster"/>
+        </event>
+      </lookup>
+
+      <tree name="tree" key="Id" parentfield="ParentId" autopopulate="false">
+        <!-- Kao Faktura: data unutar tree-a sa if="#filter==..." da drvo koristi ispravan @action -->
+        <data command="spKUPTreeQueryNG" timeout="300">
+          <parameter name="@action" value="0" if="#filter==Koraci"/>
+          <parameter name="@action" value="1" if="#filter==Operateri"/>
+          <parameter name="@action" value="2" if="#filter==Računi"/>
+          <parameter name="@action" value="3" if="#filter==Vremenska podjela"/>
+          <parameter name="@action" value="7" if="#filter==Pregled dokumenata"/>
+        </data>
+        <fields>
+          <field name="Name" caption=""/>
+        </fields>
+        <event type="focusedrowchanged">
+          <action type="variable value">
+            <parameter name="global.$Node" value="#tree.@Id"/>
+          </action>
+          <action type="control populate" value="#grdMaster" waittype="progress"/>
+        </event>
+      </tree>
+
+      <grid name="grdMaster" type="master" dataname="~dtMaster" async="true" savelayout="true" bestfitonrefresh="true" showautofilterrow="true">
+        <!-- inherited=true za KUP shemu; Obrada DMS (Node=1) ima druge kolone - osiguravamo da se vide -->
+        <fields inherited="true">
+          <field name="dokumentid" caption="ID dokumenta"/>
+          <field name="DMSDok" caption="DMS Dok"/>
+          <field name="Naziv dokumenta 3500" caption="Naziv dokumenta"/>
+          <field name="Datum kreiranja1500" caption="Datum kreiranja" format="dd.MM.yyyy HH:mm"/>
+          <field name="Datum Dokumenta1500" caption="Datum dokumenta" format="dd.MM.yyyy"/>
+          <field name="ext1000" caption="Ext"/>
+          <field name="Veličina dokumenta1000" caption="Veličina"/>
+          <field name="Vlasnik dokumenta1500" caption="Vlasnik"/>
+          <field name="Kreator dokumenta1500" caption="Kreator"/>
+        </fields>
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdDetail"/>
+          <action type="footer text" value="Broj stavki: {#grdMaster.rowcount}"/>
+        </event>
+        <event type="doubleclick">
+          <action type="form open" value="frmUpdate" if="#grdMaster.rowcount!=0">
+            <parameter name="Id" value="#grdMaster.@Id"/>
+          </action>
+        </event>
+        <menu>
+          <menuitem name="mnuPovijest" caption="Povijest" sort="1">
+            <event type="click">
+              <action type="form open" value="frmPovijest">
+                <parameter name="Id" value="#grdMaster.@KUPPrometId"/>
+              </action>
+            </event>
+          </menuitem>
+          <menuitem name="mnuZaprimi" caption="Zaprimi" sort="2">
+            <event type="click">
+              <action type="form open" value="frmZaprimi">
+                <parameter name="Id" value="#grdMaster.@KUPPrometId"/>
+              </action>
+              <action type="control populate" value="#grdMaster"/>
+              <action type="control populate" value="#grdDetail"/>
+            </event>
+          </menuitem>
+          <menuitem name="mnuZaprimiArhiviraj" caption="Zaprimi i arhiviraj" sort="3">
+            <event type="click">
+              <action type="datarun nonquery" value="~dtPrepMultiSelect"/>
+              <action type="form open" value="frmZaprimiArhiviraj">
+                <parameter name="Id" value="#grdMaster.@KUPPrometId"/>
+              </action>
+              <action type="control populate" value="#grdMaster"/>
+              <action type="control populate" value="#grdDetail"/>
+            </event>
+          </menuitem>
+          <menuitem name="mnuPonistiArh" caption="Poništi arhiviranje" sort="4">
+            <event type="click">
+              <action type="datarun nonquery" value="~dtPrepMultiSelect"/>
+              <action type="form open" value="frmPonistiArhiviranje">
+                <parameter name="Id" value="#grdMaster.@KUPPrometId"/>
+              </action>
+              <action type="control populate" value="#grdMaster"/>
+              <action type="control populate" value="#grdDetail"/>
+            </event>
+          </menuitem>
+          <menuitem name="mnuOdobriOsoba" caption="Pregled statusa odobravanja" sort="5">
+            <event type="click">
+              <action type="form open" value="frmOdobriOsoba">
+                <parameter name="Id" value="#grdMaster.@Id"/>
+              </action>
+            </event>
+          </menuitem>
+          <menuitem name="mnuProknjiziUruCarpo" caption="Proknjiži u URU (Carpo)" sort="5">
+            <event type="click">
+              <action type="message" value="'Subforma napravljena, odjel neka uveže subforme sa novokonvertovanom granulom KnjigaUra.frmKnjigaUraKupInsert.xml, KnjigaUra.frmKnjigaUraKupEdit.xml, KnjigaUra.frmKnjigaUraInsert.xml (Proknjiži u URU)'"/>
+            </event>
+          </menuitem>
+          <menuitem name="mnuKupUraEdit" caption="Izmjena KUP_URA" sort="6">
+            <event type="click">
+              <action type="message" value="'Subforma napravljena, odjel neka uveže subforme sa novokonvertovanom granulom KnjigaUra.frmKnjigaUraKupInsert.xml, KnjigaUra.frmKnjigaUraKupEdit.xml'"/>
+            </event>
+          </menuitem>
+          <menuitem name="mnuPovrat" caption="Povrat s odobravanja" sort="6">
+            <event type="click">
+              <action type="form open" value="frmPovrat">
+                <parameter name="Id" value="#grdMaster.@Id"/>
+              </action>
+              <action type="control populate" value="#grdMaster"/>
+              <action type="control populate" value="#grdDetail"/>
+            </event>
+          </menuitem>
+        </menu>
+      </grid>
+
+      <grid name="grdDetail" dataname="~dtDetail" async="true" savelayout="true" bestfitonrefresh="true" showautofilterrow="true">
+        <fields inherited="true"/>
+      </grid>
+    </managerlayout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnParametri" caption="PREGLED">
+          <event type="click">
+            <action type="form open" value="frmFilter"/>
+            <action type="form close" if="global.$Close==true"/>
+            <action type="control populate" value="#tree" if="global.$Close!=true"/>
+            <action type="control populate" value="#grdMaster" if="global.$Close!=true"/>
+          </event>
+        </button>
+        <button name="btnUnesi" caption="UNESI">
+          <event type="click">
+            <action type="message" value="'Subforma napravljena, odjel neka uveže subforme sa novokonvertovanom granulom KnjigaUra.frmKnjigaUraKupInsert.xml, KnjigaUra.frmKnjigaUraKupEdit.xml'"/>
+          </event>
+        </button>
+        <button name="btnIzmijeni" caption="IZMIJENI">
+          <event type="click">
+            <action type="message" value="'Subforma napravljena, odjel neka uveže subforme sa novokonvertovanom granulom KnjigaUra.frmKnjigaUraKupInsert.xml, KnjigaUra.frmKnjigaUraKupEdit.xml'"/>
+          </event>
+        </button>
+        <button name="btnObrisi" caption="OBRIŠI">
+          <event type="click">
+            <action type="message" value="Potrebno je označiti jednu stavku." if="#grdMaster.selectedrowscount!=1"/>
+            <action type="form open" value="frmDelete" if="#grdMaster.selectedrowscount==1">
+              <parameter name="Id" value="#grdMaster.@Id"/>
+            </action>
+            <action type="control populate" value="#grdMaster" if="#grdMaster.selectedrowscount==1"/>
+            <action type="control populate" value="#grdDetail" if="#grdMaster.selectedrowscount==1"/>
+            <action type="footer text" value="Broj stavki: {#grdMaster.rowcount}" if="#grdMaster.selectedrowscount==1"/>
+          </event>
+        </button>
+        <button name="btnProslijedi" caption="PROSLIJEDI" begingroup="true">
+          <event type="click">
+            <action type="form open" value="frmProslijedi">
+              <parameter name="Id" value="#grdMaster.@Id"/>
+            </action>
+            <action type="control populate" value="#grdMaster"/>
+            <action type="control populate" value="#grdDetail"/>
+          </event>
+        </button>
+        <button name="btnOdobri" caption="PROSLIJEDI NA ODOBRAVANJE">
+          <event type="click">
+            <action type="form open" value="frmOdobriMulti">
+              <parameter name="Id" value="#grdMaster.@Id"/>
+            </action>
+            <action type="control populate" value="#grdMaster"/>
+            <action type="control populate" value="#grdDetail"/>
+          </event>
+        </button>
+        <button name="btnSkeniraj" caption="SKENIRAJ">
+          <event type="click">
+            <action type="method run" value="fnScanDialog">
+              <parameter name="id" value="0"/>
+              <parameter name="operateriId" value="@@operateriid"/>
+              <parameter name="cs" value="Driver={SQL Server};Server={@@server};Database={@@database};Trusted_Connection=true;"/>
+              <parameter name="param" value=""/>
+              <parameter name="param2" value=""/>
+            </action>
+            <action type="control populate" value="#grdMaster"/>
+            <action type="control populate" value="#grdDetail"/>
+            <action type="footer text" value="Broj stavki: {#grdMaster.rowcount}"/>
+          </event>
+        </button>
+        <button name="btnPregledSkena" caption="PREGLED SKENIRANIH">
+          <event type="click">
+            <action type="message" value="Odaberite jednu stavku u listi." if="#grdMaster.selectedrowscount!=1"/>
+            <action type="method run" value="fnScanPreview" if="#grdMaster.selectedrowscount==1">
+              <parameter name="id" value="#grdMaster.@Id"/>
+              <parameter name="operateriId" value="@@operateriid"/>
+              <parameter name="cs" value="Driver={SQL Server};Server={@@server};Database={@@database};Trusted_Connection=true;"/>
+              <parameter name="param" value=""/>
+              <parameter name="param2" value=""/>
+            </action>
+          </event>
+        </button>
+        <button name="btnUveziFS" caption="UVEZI S FILE SYSTEMA">
+          <event type="click">
+            <action type="form open" value="frmDMSSave">
+              <parameter name="Id" value="#grdMaster.@Id"/>
+            </action>
+            <action type="control populate" value="#grdMaster"/>
+            <action type="control populate" value="#grdDetail"/>
+          </event>
+        </button>
+        <button name="btnKupUra" caption="UNOS KUP_URA">
+          <event type="click">
+            <action type="message" value="'Subforma napravljena, odjel neka uveže subforme sa novokonvertovanom granulom KnjigaUra.frmKnjigaUraKupInsert.xml, KnjigaUra.frmKnjigaUraKupEdit.xml'"/>
+          </event>
+        </button>
+        <button name="btnIzlaz" caption="IZLAZ" dock="right">
+          <event type="click">
+            <action type="form close"/>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <!-- TotalGenMultiSelectTemp: NetGen action 10/11 čita ID-jeve iz ove tabele, ne iz @ID parametra -->
+      <data name="dtPrepMultiSelect" command="spKUPPrepareMultiSelectTemp" timeout="30">
+        <parameter name="@ID" value="#grdMaster.@KUPPrometId"/>
+        <parameter name="@OperateriId" value="@@operateriid"/>
+      </data>
+
+      <!-- Master grid -->
+      <data name="dtMaster" command="spKUPPrometQueryN" timeout="300" if="global.$Mode=='filter'||global.$Mode=='init'">
+        <!-- init koristi action=4; filter koristi action=0 -->
+        <parameter name="@action" value="4" if="global.$Mode=='init'"/>
+        <parameter name="@action" value="0" else=""/>
+        <parameter name="@operateriid" value="@@operateriid"/>
+        <parameter name="@dostavnaknjigaid" value="0"/>
+        <parameter name="@aktivni" value="1"/>
+        <parameter name="@datumprijemaod" value="global.$DatumOd"/>
+        <parameter name="@datumprijemado" value="global.$DatumDo"/>
+        <parameter name="@partneriid" value="global.$PartneriId"/>
+        <parameter name="@kupstatusid" value="global.$KupStatusId"/>
+        <parameter name="@DAid" value="global.$DAid"/>
+      </data>
+
+      <data name="dtMaster" command="spKUPTreeQueryCarpo" timeout="300" if="global.$Mode=='tree'&amp;&amp;#filter==Koraci">
+        <parameter name="@action" value="0"/>
+        <parameter name="@node" value="global.$Node"/>
+      </data>
+      <data name="dtMaster" command="spKUPTreeQueryCarpo" timeout="300" elseif="global.$Mode=='tree'&amp;&amp;#filter==Operateri">
+        <parameter name="@action" value="1"/>
+        <parameter name="@node" value="global.$Node"/>
+      </data>
+      <data name="dtMaster" command="spKUPTreeQueryCarpo" timeout="300" elseif="global.$Mode=='tree'&amp;&amp;#filter==Vremenska podjela">
+        <parameter name="@action" value="2"/>
+        <parameter name="@node" value="global.$Node"/>
+      </data>
+      <data name="dtMaster" command="spKUPTreeQueryCarpo" timeout="300" elseif="global.$Mode=='tree'&amp;&amp;#filter==Računi">
+        <parameter name="@action" value="22"/>
+        <parameter name="@node" value="global.$Node"/>
+      </data>
+      <data name="dtMaster" command="spKUPPrometQueryDrvoCarpo" timeout="300" elseif="global.$Mode=='tree'&amp;&amp;#filter==Pregled dokumenata">
+        <parameter name="@action" value="5"/>
+        <parameter name="@node" value="global.$Node"/>
+      </data>
+
+      <!-- Detail grid: Id za detalj je KUPPrometId (svi master izvori ga vraćaju) -->
+      <data name="dtDetail" command="spKUPPrometQueryN" timeout="300">
+        <parameter name="@action" value="66"/>
+        <parameter name="@id" value="#grdMaster.@KUPPrometId"/>
+        <parameter name="@ind" value="1"/>
+        <parameter name="@node" value="global.$Node"/>
+      </data>
+    </datalist>
+  </form>
+</root>
+

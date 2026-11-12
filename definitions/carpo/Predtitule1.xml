@@ -1,0 +1,112 @@
+<root>
+	<form name="frmMaster" type="master" caption="Pred-Titule">
+		<managerlayout>
+			<grid name="grdMaster" type="master" showautofilterrow="true" dataname="global.dtMaster" key="PreTitleId" savelayout="true" statusbar="true" bestfitonrefresh="true" multiselect="true">
+				<event type="doubleclick">
+					<action type="form open" value="frmTituleInsertEdit" if="#grdMaster.rowcount&gt;0">
+						<parameter name="PreTitleId" value="#grdMaster.@PreTitleId" />
+					</action>
+					<action type="control populate keepfocus" value="#grdMaster" />
+				</event>
+				<fields inherited="true" />
+			</grid>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnUnesi" caption="UNESI" type="add" function="insert">
+					<menuitem control="#grdMaster" sort="1" />
+					<event type="click">
+						<action type="form open" value="frmTituleInsertEdit">
+							<parameter name="PreTitleId" value="null" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit" function="edit">
+					<menuitem control="#grdMaster" sort="2" />
+					<event type="click">
+						<action type="form open" value="frmTituleInsertEdit" if="#grdMaster.rowcount&gt;0">
+							<parameter name="PreTitleId" value="#grdMaster.@PreTitleId" />
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete" function="delete">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati označenu titulu?">
+							<action type="datarun nonquery" value="global.~dtDelete" />
+							<action type="control populate" value="#grdMaster" />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+
+	<form name="frmTituleInsertEdit" caption="Titule">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" />
+		</event>
+		<event type="shown">
+			<action if="$PreTitleId!=null">
+				<action type="form caption" value="Izmjena odabrane titule" />
+			</action>
+			<action else="">
+				<action type="form caption" value="Unos nove titule" />
+			</action>
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1" caption="Naziv:" highlight="false">
+					<textedit name="txtNazivTitula" datavalue="~dtGet.@Naziv" required="true" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtDataEdit" if="$PreTitleId!=null">
+							<parameter name="parent.$PreTitleId" />
+							<action type="control populate keepfocus" value="parent.#grdMaster" />
+						</action>
+						<action type="datarun scalar" value="~dtDataInsert" else="">
+							<parameter name="parent.$PreTitleId" />
+							<action type="control populate" value="parent.#grdMaster" />
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="parent.$PreTitleId" type="int" />
+							</action>
+						</action>
+						<action type="control refreshvalue" value="##" />
+						<action type="form close" if="$PreTitleId!=null" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCPreTitleQuery" name="dtGet">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$PreTitleId" />
+			</data>
+			<data command="spCPreTitleAzur" name="dtDataInsert">
+				<parameter name="@Action" value="0" />
+				<parameter name="@Naziv" value="#txtNazivTitula" />
+			</data>
+			<data command="spCPreTitleAzur" name="dtDataEdit">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$PreTitleId" />
+				<parameter name="@Naziv" value="#txtNazivTitula" />
+			</data>
+		</datalist>
+	</form>
+
+	<datalist>
+		<data command="spCPreTitleQuery" name="dtMaster">
+			<parameter name="@action" value="0" />
+		</data>
+		<data command="spCPreTitleAzur" name="dtDelete">
+			<parameter name="@Action" value="2" />
+			<parameter name="@ID" value="#grdMaster.@PreTitleId" />
+		</data>
+	</datalist>
+</root>

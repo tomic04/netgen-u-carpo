@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+v 1.0.1. 17.8.2021. IF dodao minsize="200" u panel1 
+-->
+<root version="1.0.1.">
+	<form name="frmNaplacenaRealizacija" type="master" caption="Naplaćena realizacija" statusbar="true" splitterposition="100" template="splitter" maximized="true">
+		<event type="shown">
+			<action type="datarun reader" value="~dtPrviDan"/>
+			<action type="control value" value="#datDatumOd">
+				<parameter value="~dtPrviDan.@Datum1"/>
+			</action>
+			<action type="control value" value="#datDatumDo">
+				<parameter value="now"/>
+			</action>
+		</event>
+		<layout name="panel1" type="collapsable" minsize="200">
+			<group rows="6" cols="2">
+				<item row="1" col="1" caption="Partner" colspan="2">
+					<searchedit type="partner" name="srcPartner" fieldtext="Naziv" fieldvalue="PartneriId" datavalue="~dtGet.@PartneriId" datatext="~dtGet.@PartneriTra"/>
+				</item>
+				<item row="2" col="1" caption="OrgShema" colspan="2">
+					<comboedit name="cmbOrgShema" dataname="~dtOrgShema" valuefield="OrgShemaId" displayfield="Naziv" savevalue="OrgShemaId"/>
+				</item>
+				<item row="3" col="1" caption="Osoba" colspan="2">
+					<comboedit name="cmbOsoba" dataname="~dtOsoba" valuefield="OsobeId" displayfield="Naziv" savevalue="OsobeId"/>
+				</item>
+				<item row="4" col="1" caption="Period od">
+					<dateedit name="datDatumOd" datavalue="~dtPrviDan"/>
+				</item>
+				<item row="4" col="2" caption="do">
+					<dateedit name="datDatumDo"/>
+				</item>
+				<item row="5" col="1" caption="Vrijednost" colspan="2">
+					<textedit name="txtVrijednost" value="0,00" format="n2"/>
+				</item>			
+				<item row="6" col="1" colspan="2">
+					<checkedit name="chkNenapl" caption="Naplaćene i nenaplaćene fakture"/>
+				</item>
+			</group>
+		</layout>
+		<layout name="panel2">
+			<group cols="1" rows="1">
+				<item col="1" row="1">
+					<grid name="grdGlavni" dataname="~dtGrid" type="master" expandallonload="true" showfooter="true" bestfitonrefresh="true" showgrupedcolumns="true">
+						<fields>
+							<field name="OIB"/>
+							<field name="Naziv" caption="Partner" groupindex="0"/>
+							<field name="DatumDok" caption="Datum \ndokumenta"/>
+							<field name="Dospjeće"/>
+							<field name="IznosFakture" caption="Iznos fakture"/>
+							<field name="Placeno" caption="Plaćeno u \nodabranom razdoblju"/>
+							<field name="Saldo" caption="Ostalo za naplatiti"/>
+							<field name="Broj" caption="Račun"/>
+							<field name="DatumPlaćanja" caption="Datum \nplaćanja"/>
+							<field name="Komercijalist"/>
+							<field name="OrgShema" />
+						</fields>
+						<groupsummary>
+							<summary type="count" visible="false"/>
+							<summary type="sum" fieldname="IznosFakture"/>
+							<summary type="sum" fieldname="Placeno"/>
+							<summary type="sum" fieldname="Saldo"/>
+						</groupsummary>
+						<styles>
+							<style name="bold" value="true" if="#grdGlavni.@Broj==UKUPNO||#grdGlavni.@Broj==SVEUKUPNO"/>
+							<style name="fontcolor" value="blue" if="#grdGlavni.@Broj==UKUPNO||#grdGlavni.@Broj==SVEUKUPNO"/>
+							<style name="fontcolor" value="green" if="#grdGlavni.@formatid==green"/>
+							<style name="fontcolor" value="red" if="#grdGlavni.@formatid==red"/>
+						</styles>
+						<print caption="Naplaćena realizacija" captionalign="center" header=" Period od {#datDatumOd::dd.MM.yyyy.} do {#datDatumDo::dd.MM.yyyy.} \n Partner: {#srcPartner.@Naziv} \n Osoba: {#cmbOsoba.@Naziv}"/>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnIzvrsi" caption="Izvrši">
+					<event type="click" waittype="progress" waitcaption="Obrada" waittext="Učitavam podatke..." sleep="2000">
+						<action type="datarun reader" value="~dtGrid"/>
+						<action type="control populate" value="#grdGlavni"/>
+						<action type="footer text" value="Broj stavki: {#grdGlavni.rowcount}"/>
+					</event>
+				</button>
+				<!-- <button name="btnPartneri" caption="Po partnerima"> -->
+					<!-- <event type="click"> -->
+						<!-- <action type="control datasource filter" value="#grdGlavni"> -->
+							<!-- <parameter name="Broj" type="contains" value="UKUPNO"/> -->
+						<!-- </action> -->
+					<!-- </event> -->
+				<!-- </button> -->
+				<button name="btnPrint" caption="Ispis              sučelja">
+					<event type="click">
+						<action type="control printcontrol" value="#grdGlavni"/>
+					</event>
+				</button>
+				<button name="btnExit" caption="Izlaz" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnUputiMe" caption="Uputi me" dock="right">
+					<event type="click">
+						<action type="message" value="Ova funkcionalnost trenutno nije dostupna, molimo kontaktirajte Spin!"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtPrviDan" command="select DATEADD(year, DATEDIFF(year, 0, GETDATE()), 0) as Datum1" type="text"/>
+			<data name="dtOsoba" command="spCKntPopuniKontrole">
+				<parameter name="@Action" value="odgOsobe"/>
+				<parameter name="@ID" value="null"/>
+			</data>
+			<data name="dtOrgShema" command="spCKntPopuniKontrole">
+				<parameter name="@Action" value="orgshema"/>
+				<parameter name="@ID" value="null"/>
+			</data>
+			<data name="dtGrid" command="spCKntNaplReal">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@DatumOd" value="#datDatumOd"/> 
+				<parameter name="@DatumDo" value="#datDatumDo"/>
+				<parameter name="@PartneriID" value="#srcPartner"/>
+				<parameter name="@IZNOS" value="#txtVrijednost"/>
+				<parameter name="@OsobeId" value="#cmbOsoba"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShema"/>
+				<parameter name="@naplaceni" value="#chkNenapl"/>				
+			</data>
+		</datalist>
+	</form>
+</root>

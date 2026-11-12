@@ -1,0 +1,702 @@
+<!--PREDLOŽENE PROMJENE (test): documentviewer ostaje (podrška za Word, Repix, PDF). Za test bez okruženja odkomentiraj TEST blok za $DokumentId u shown eventu.-->
+<!--16.11.2022. AA dtPostimajKontrole dodani PartneriId, ParStruId zbog konverzije EUR, ne podliježe preko lokacije-->
+<!--30.9.2022. AA dodala AutoClose zbog uvjetovanja zatvaranja forme u različitim trenucima-->
+<!--21.3.2022. AA prekini proces likvidature svih sljedećih dokumenata preko NetGenAdapter.clsCarpoKupUra i totalgenmultiselecttemp-->
+<!--24.12.2021. AA dtKupUpdateIzUre uvjetovanje iznosa po devizama-->
+<!--23.6.2021. AA dodala def za frmIra/Ura/Ostalo zbog pretrage računa kod podizanja iz kupa-->
+<!--31.5.2021. AA nakon slanja na odobravanje zatvori formu-->
+<!--22.4.2021. AA KUP/URA redizajn od verzije s komentarom niže-->
+<!--7.1.2021. AA refresh brojača s obzirom na datum knjiženja po izmjeni godine-->
+<root> 
+	<form name="frmKnjigaUraKupInsert" caption="Unos dokumenta" fixedsize="false" template="splitter" saveformsize="true"> 
+		<event type="init">
+			<action type="datarun reader" value="~dtUraDatDVO"/>
+			<action type="datarun reader" value="~dtIbanPubVar"/>
+			<action type="datarun reader" value="~dtIndUgovor"/>
+			<!-- PozivIzUre slati kada se bude zvalo iz KnjigeUra -->
+			<!-- <action type="variable value"> -->
+				<!-- <parameter name="PozivIzUre" value="0"/> -->
+			<!-- </action>	 -->	
+			<action type="datarun reader" value="~dtCheckPermission"/>
+			<action type="variable value">
+				<parameter name="SmijeKUP" value="~dtCheckPermission.@SmijeKUP"/>
+				<parameter name="SmijeURA" value="~dtCheckPermission.@SmijeURA"/>
+			</action>		
+			<action type="datarun reader" value="~dtCheckAutoClose"/>
+			<action type="variable value">
+				<parameter name="AutoClose" value="~dtCheckAutoClose.@AutoClose"/>
+			</action>				
+		</event>
+		<event type="load">	
+			<!--TEST unos-->
+			<!-- <action type="variable value" value="$Id"> -->
+			<!-- <parameter value="BC27633D-4127-4A1E-B49F-FAC2ABED0714"/> -->
+			<!-- </action> -->
+			<action type="variable value">
+				<parameter name="IndDatDvoDatVal" value="~dtUraDatDVO.@IndDatDVO" type="int"/>
+			</action>
+			<action type="variable value">
+				<parameter name="IbanPubVar" value="~dtIbanPubVar.@DodajIban"/>
+			</action>
+			<action type="variable value">
+				<parameter name="IznosFakture" value="0" type="decimal"/>
+			</action>		
+			<action type="variable value">
+				<parameter name="IndUgovor" value="~dtIndUgovor.@IndUgovor" type="int"/>
+			</action>
+			<part name="prtTabUraDisableAll" path="prtKnjigaUraTabUra.xml"/>			
+		</event>
+		<event type="shown">
+			<!-- <action type="datarun reader" value="~dtCheckIfEdit"/> -->
+			<!-- <action type="variable value" value="$EditForm"> -->
+			<!-- <parameter value="~dtCheckIfEdit.@IndIzmjena"/> -->
+			<!-- </action>		 -->
+			<!-- <action type="variable value" value="$DokId" if="$EditForm==0"> -->
+			<!-- <parameter value="$Id" type="string"/> -->
+			<!-- </action> -->
+			<action type="variable value" value="$DokumentId">
+				<parameter value="$Id"/>
+			</action>	
+			<!-- TEST: Ako pozivate formu bez vanjskog okruženja, odkomentirajte i postavite poznati DokumentId iz baze (npr. GUID dokumenta iz dms.RacunAI ili slične tablice). -->
+			<!-- <action type="variable value" value="$DokumentId">
+				<parameter value="UPISATI-GUID-ILI-ID-DOKUMENTA" type="string"/>
+			</action> -->
+			<action type="variable value" value="$KupPrometId">
+				<parameter value="null"/>
+			</action>				
+			<action type="control populate" value="#grdPrivitci"/>
+			<!-- <action type="datarun reader" value="~dtPrivitci"/> -->
+			<!--spremanje ure onemogućeno dok se ne spremi u kup-->
+			<action type="control disable" value="#btnSpremi,#btnProknjizi,#cheTem"/>
+			<action type="control focus" value="#cmbVrstaPoste"/>
+			<!--TEST-->
+			<!-- <action type="variable value" value="$KupPrometId"> -->
+			<!-- <parameter value="7083"/> -->
+			<!-- </action> -->
+			<!--Popuni iznos i valutu iz dms.RacunAI ako je proslijeđen DokumentId-->
+			<action if="$DokumentId!=null">
+				<action type="datarun reader" value="~dtRacunAI"/>
+				<!-- Popunjavamo iznos na KUP i URA tabu -->
+				<action type="control value" value="#txtIznosKup" if="~dtRacunAI.@UkupniIznos!=null">
+					<parameter value="~dtRacunAI.@UkupniIznos"/>
+				</action>
+				<action type="control value" value="#curIznossPdv" if="~dtRacunAI.@UkupniIznos!=null">
+					<parameter value="~dtRacunAI.@UkupniIznos"/>
+				</action>
+				<!-- Prvo popunimo combo boxeve za valutu, zatim postavimo vrijednost -->
+				<action type="control populate" value="#cmbValutaKup"/>
+				<action type="control populate" value="#cmbDevValuta"/>
+				<!-- Popunjavamo valutu na KUP i URA tabu -->
+				<action type="control value" value="#cmbValutaKup" if="~dtRacunAI.@ValutaId!=null">
+					<parameter value="~dtRacunAI.@ValutaId"/>
+				</action>
+				<action type="control value" value="#cmbDevValuta" if="~dtRacunAI.@ValutaId!=null">
+					<parameter value="~dtRacunAI.@ValutaId"/>
+				</action>
+				<!-- Popunjavamo partnera na KUP i URA tabu -->
+				<action type="control populate" value="#srcPartnerKup"/>
+				<action type="control populate" value="#srcPartner"/>
+				<!-- Postavimo vrijednost partnera na KUP tabu -->
+				<action type="control value" value="#srcPartnerKup" if="~dtRacunAI.@PartneriId!=null">
+					<parameter value="~dtRacunAI.@PartneriId" text="~dtRacunAI.@NazivPartnera"/>
+				</action>
+				<!-- Postavimo vrijednost partnera na URA tabu -->
+				<action type="control value" value="#srcPartner" if="~dtRacunAI.@PartneriId!=null">
+					<parameter value="~dtRacunAI.@PartneriId" text="~dtRacunAI.@NazivPartnera"/>
+				</action>
+			</action>
+		</event>	
+		<event type="close">
+			<action type="datarun nonquery" value="~dtSelecteIdRemove"/>
+		</event>
+		<layout name="panel1" type="collapsable" textposition="top" minsize="900">
+			<group padding="0" groupbordervisible="false" cols="1" rows="2">
+				<columnsdefinition>
+					<!-- <column size="880" position="1"/> -->
+				</columnsdefinition>			
+				<tabs row="1" col="1" padding="4">	
+					<!-- KUP -->
+					<part name="prtTabKup" path="prtKnjigaUraTabKup.xml"/>
+					<!--URA-->
+					<part name="prtTabUra" path="prtKnjigaUraTabUra.xml"/>				
+				</tabs>
+				<part name="prtTabPrivitci" path="prtKnjigaUraTabPrivitci.xml"/>
+			</group>
+		</layout> 
+		<layout name="panel2">
+			<group  groupbordervisible="false" cols="1" rows="1">
+				<columnsdefinition>
+					<column position="1" size="420"/>					
+				</columnsdefinition>
+				<item col="1" row="1">
+					<!-- documentviewer za Word, Repix, PDF. rwPrivitak (spKUPPregledDMSQuery_Carpo) vraća Naziv, Podaci, RepixID, RepixName. -->
+					<documentviewer name="picPrivitak" dataname="~rwPrivitak" columnname="Naziv" columndata="Podaci" columnrepixid="RepixID" columnrepixname="RepixName" />
+				</item>				
+			</group>	
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnProslijedi" caption="ODOBRAVANJE PROSLIJEDI">
+					<event type="click">
+						<action if="$KupPrometId!=null">
+							<action type="datarun reader" value="~dtOdobravanjeOtvori"/>
+							<action type="message" value="{~dtOdobravanjeOtvori.@Poruka}" if="~dtOdobravanjeOtvori.@Otvori==0"/>
+							<action type="form open" value="frmOdobravanje" else="~dtOdobravanjeOtvori.@Otvori==1">
+								<parameter name="KupPrometId" value="$KupPrometId"/>
+							</action>
+							<action type="datarun reader" value="~dtStatus"/>
+							<action type="datarun reader" value="~dtGetKup"/>
+							<action type="form caption" value="Izmjena dokumenta || {~dtGetKup.@Broj} || {~dtGetKup.@UrudzbeniBroj} || {~dtGetKup.@BrojUFE} || **** STATUS: {~dtStatus.@Status} ****"/>									
+							<action type="form close"/>
+						</action>
+						<action type="message" value="Prije odobravanja potrebno je urudžbirati dokument!" else=""/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ZATVORI" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnPrekiniProces" caption="ZATVORI SVE" dock="right">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtPrekiniProces"/>
+						<action type="form close"/>
+					</event>
+				</button>					
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCKntVrsteKnjigaUraQuery" name="dtVrstaKnjige">
+				<parameter name="@action" value="0" type="int"/>
+			</data>
+			<data command="spCKntKnjigaUraEdit" name="dtPopuniCombo">
+				<parameter name="@action" value="osobe"/>
+			</data>
+			<data command="spCKntTemOrgShemaQuery" name="dtGetOrgShema">
+				<parameter name="@Action" value="0" />
+			</data>	
+			<data command="spCKntTemTraziPartneri" name="dtGetPartneri">
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>
+			<data command="spCKntKnjigaUraEdit" name="dtGetUgovori">
+				<parameter name="@Action" value="ugovori" />
+				<parameter name="@PartneriId" value="#srcPartner" />
+			</data>
+			<data command="spCKntKnjigaUraEdit" name="dtGetPDVID">
+				<parameter name="@Action" value="PDVID" />
+				<parameter name="@PartneriId" value="#srcPartner" />
+			</data>
+			<data command="spCKntKnjigaUraEdit" name="dtGetValute">
+				<parameter name="@Action" value="valute" />
+			</data>
+			<data command="spCKntKnjigaUraEdit" name="dtGetPDV37">
+				<parameter name="@Action" value="pdv37" />
+			</data>
+			<data command="spCKntKnjigaUraEdit" name="dtGetShemaKnj">
+				<parameter name="@Action" value="shemaknj" />
+			</data>
+			<!--ako pozivamo iz Knjige Ura, onda okidaj sljedeći broj ure, ako iz Temeljnica, prepiši broj temeljnice-->
+			<data name="dtGetMaxUra" command="spCKntKnjigaUraSljedeciBrojDok" if="$TemInd!=1">
+				<parameter name="@KntVrsteKnjigauraId" value="$KntVrsteKnjigaUraId"/>
+				<parameter name="@DatumDok" value="#datKnjizenja" type="date"/>
+			</data>
+			<data name="dtGetMaxUra" type="text" command="select @BrojDok as brojdok" elseif="$TemInd==1">
+				<parameter name="@BrojDok" value="global.$BrojDok" type="string"/>
+			</data>
+			<!---->
+			<data command="spCKntKnjigaUraPopuniKontrole" name="dtGetPodaci">
+				<parameter name="@action" value="init" />
+				<parameter name="@KntVrsteKnjigaUraId" value="#cmbVrstaKnjige" />
+			</data>
+			<data command="select year(@nadnevak) as god" type="text" name="dtNadnevakGodina">
+				<parameter name="@nadnevak" value="#datNadnevak" type="date"/>
+			</data>			
+			<data command="select case when exists (select * from pubvars where varime = 'URADatDvoDatVal' and varset = '1') then 1 else 0 end as IndDatDVO " type="text" name="dtUraDatDVO">
+			</data>	
+			<data command="select DATEADD(D,@dana,@datum) as datvalute" type="text" name="dtDatValute">
+				<parameter name="@datum" value="#datNadnevak" type="date" if="$IndDatDvoDatVal==0"/>
+				<parameter name="@datum" value="#datDVO" type="date" if="$IndDatDvoDatVal==1"/>
+				<parameter name="@dana" value="#txtDana" type="int"/>
+			</data>
+			<data command="select (DATEDIFF(D,@valuta,@datum))*-1 as dana" type="text" name="dtDana">
+				<parameter name="@datum" value="#datNadnevak" type="date" if="$IndDatDvoDatVal==0"/>
+				<parameter name="@datum" value="#datDVO" type="date" if="$IndDatDvoDatVal==1"/>
+				<parameter name="@valuta" value="#DatValuta" type="date"/>
+			</data>
+			<data command="select (DATEDIFF(D,@valuta,@datum))*-1 as dana" type="text" name="dtDanaUgovor">
+				<parameter name="@datum" value="#datNadnevak" type="date" if="$IndDatDvoDatVal==0"/>
+				<parameter name="@datum" value="#datDVO" type="date" if="$IndDatDvoDatVal==1"/>
+				<parameter name="@valuta" value="#DatValuta" type="date"/>
+			</data>
+			<!--AA postavila spCKntKnjigaUraZiroDataGet jer se spCKntVirmaniZiroDataGet koristi u virmanima i zamijenjena je-->
+			<data command="spCKntKnjigaUraZiroDataGet" name="dtGetParZiro">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@PartneriId" value="#srcPartner" />
+			</data>
+			<data command="spCKntKnjigaUraPopuniKontrole" name="dtGetPodaciZaPartnera">
+				<parameter name="@action" value="podacizapartnera" />
+				<parameter name="@PartneriID" value="#srcPartner" />
+			</data>
+			<data command="spCkntVirmaniDodajIBAN" name="dtDodajIBAN">
+				<parameter name="@action" value="0" type="int"/> 
+				<parameter name="@Ziro" value="#cmbIBAN.text"/>
+				<parameter name="@PartneriID" value="#srcPartner" type="int"/>
+				<parameter name="@BankeId" value="0" type="int"/>
+			</data>
+			<data command="spCKntPartnerIzEU" name="dtEuPartner">
+				<parameter name="@action" value="1" type="int"/>
+				<parameter name="@PartneriID" value="#srcPartner" type="int"/>
+			</data>
+			<data command="spCKntPartnerIzEU" name="dtEuPartnerParStru">
+				<parameter name="@action" value="2" type="int"/>
+				<parameter name="@ParStruId" value="#cmbPDVID" type="int"/>
+			</data>
+			<data command="select case when exists (select * from pubvars where varime = 'KnjigaUraDatValUgo' and varset = '1') then 1 else 0 end as IndUgovor" type="text" name="dtIndUgovor">
+			</data>	
+			<data command="spCKntKnjigaUraDatValUgo" name="dtDatValUgo">
+				<parameter name="@DatumDok" value="#datDVO" type="date" if="$IndDatDvoDatVal==1"/>
+				<parameter name="@DatumDok" value="#datNadnevak" type="date" else=""/>
+				<parameter name="@PartneriID" value="#srcPartner" type="int"/>
+			</data>
+			<data command="select dbo.fnTecaj(@datum,@valute) as tecaj" type="text" name="dtTecaj">
+				<parameter name="@datum" value="#datDVO" type="date"/>
+				<parameter name="@valute" value="#cmbDevValuta" type="int"/>
+			</data>	
+			<data command="spCKntKnjigaUraPostimajKontrole" name="dtIznosFakture">
+				<parameter name="@action" value="$action"/>
+				<parameter name="@EuSlucaj" value="$EuSlucaj" type="int"/>
+				<parameter name="@iznosspdv" value="#curIznossPdv" type="decimal"/>
+				<parameter name="@osnovica25" value="#curOsnovica25" type="decimal"/>
+				<parameter name="@osnovica13" value="#curOsnovica13" type="decimal"/>
+				<parameter name="@osnovica10" value="#curOsnovica10" type="decimal"/>
+				<parameter name="@osnovica5" value="#curOsnovica5" type="decimal"/>
+			</data>
+			<data command="spCKntKnjigaUraPostimajKontrole" name="dtPostimajKontrole">
+				<parameter name="@action" value="$action"/>
+				<parameter name="@datdvo" value="#datDVO" type="date"/>
+				<parameter name="@deviznos" value="#curDevIznos" type="decimal"/>
+				<parameter name="@valutaid" value="#cmbDevValuta" type="int"/>
+				<parameter name="@iznosspdv" value="#curIznossPdv" type="decimal"/>
+				<parameter name="@pdv37id" value="#cmbPDV37" type="int"/>
+				<parameter name="@neoporezivo" value="#curNeoporezivo" type="decimal"/>
+				<parameter name="@nepod" value="#curNePod" type="decimal"/>
+				<parameter name="@osnovica25" value="#curOsnovica25" type="decimal"/>
+				<parameter name="@odbiv25" value="#cur25odbiv" type="decimal"/>
+				<parameter name="@neodbiv25" value="#cur25neodbiv" type="decimal"/>
+				<parameter name="@osnovica13" value="#curOsnovica13" type="decimal"/>
+				<parameter name="@odbiv13" value="#cur13odbiv" type="decimal"/>
+				<parameter name="@neodbiv13" value="#cur13neodbiv" type="decimal"/>
+				<parameter name="@osnovica5" value="#curOsnovica5" type="decimal"/>
+				<parameter name="@odbiv5" value="#cur5odbiv" type="decimal"/>
+				<parameter name="@neodbiv5" value="#cur5neodbiv" type="decimal"/>
+				<parameter name="@osnovica23" value="#curOsnovica23" type="decimal"/>
+				<parameter name="@odbiv23" value="#cur23odbiv" type="decimal"/>
+				<parameter name="@neodbiv23" value="#cur23neodbiv" type="decimal"/>
+				<parameter name="@osnovica22" value="#curOsnovica22" type="decimal"/>
+				<parameter name="@odbiv22" value="#cur22odbiv" type="decimal"/>
+				<parameter name="@neodbiv22" value="#cur22neodbiv" type="decimal"/>
+				<parameter name="@osnovica10" value="#curOsnovica10" type="decimal"/>
+				<parameter name="@odbiv10" value="#cur10odbiv" type="decimal"/>
+				<parameter name="@neodbiv10" value="#cur10neodbiv" type="decimal"/>
+				<parameter name="@iznosbezpdv" value="#curIznosBezPdv" type="decimal"/>
+				<parameter name="@pdvukupno" value="#curPdvUkupno" type="decimal"/>
+				<parameter name="@EuSlucaj" value="$EuSlucaj" type="int"/>
+				<parameter name="@tecaj" value="#curTecaj" type="decimal"/>
+				<parameter name="@KntVrsteKnjigaUraId" value="#cmbVrstaKnjige" type="int"/>
+				<parameter name="@prolaznestavke" value="#curProlazneStavke" type="decimal"/>
+				<parameter name="@PartneriId" value="#srcPartner" type="int"/>
+				<parameter name="@ParStruId" value="#cmbPDVID" type="int"/>				
+			</data>
+			<data command="spCKntFaktureDobAzur2" name="dtSpremiFaktureDob" if="$FaktureDobId==null">
+				<parameter name="@action" value="0" type="int"/>
+				<parameter name="@ID" value="null" type="int"/>
+				<parameter name="@Status" value="" type="string"/>
+				<parameter name="@PartneriId" value="#srcPartner" type="int"/>
+				<parameter name="@DatumDok" value="#datNadnevak" type="date"/>
+				<parameter name="@DatumValute" value="#datValuta" type="date"/>
+				<parameter name="@ValuteId" value="null" type="int"/>
+				<parameter name="@Tecaj" value="null" type="decimal"/>
+				<parameter name="@IznosFakture" value="$IznosFakture" type="decimal"/>
+				<!-- <parameter name="@IznosPlaceni" value="#IznosPlaceni" type="decimal"/> -->
+				<parameter name="@IznosPlaceni" value="0" type="decimal"/>
+				<parameter name="@IznosPoreza" value="#curPdvUkupno" type="decimal"/>
+				<!-- <parameter name="@r1" value="1" if="#rbR1==true"/> -->
+				<parameter name="@r1" value="2" if="#rbR2==true"/>
+				<parameter name="@KntMasterShemaKnjId" value="null" type="int" if="#cmbShemaKnj==null"/>
+				<parameter name="@KntMasterShemaKnjId" value="#cmbShemaKnj" type="int" else=""/>
+				<parameter name="@DobUgovoriId" value="null" type="int" if="#cmbUgovori==null"/>
+				<parameter name="@DobUgovoriId" value="#cmbUgovori" type="int" else=""/>
+				<parameter name="@OrgShemaId" value="null" type="int" if="#cmbOrgShema==null"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShema" type="int" else=""/>
+				<parameter name="@OsobeId" value="null" type="int" if="#cmbOsobe==null"/>
+				<parameter name="@OsobeId" value="#cmbOsobe" type="int" else=""/>
+				<parameter name="@Broj" value="#txtRacun" type="string"/>
+				<parameter name="@BrojDok" value="#txtURA" type="string"/>
+				<parameter name="@Model" value="" type="string" if="#txtModel==null"/>
+				<parameter name="@Model" value="#txtModel" type="string" else=""/>	
+				<parameter name="@IndGlk" value="0" type="string"/>
+				<parameter name="@OperaterId" value="@@OperateriId" type="int"/>
+				<parameter name="@DevValuteId" value="null" type="int" if="#cmbDevValuta==null"/>
+				<parameter name="@DevValuteId" value="#cmbDevValuta" type="int" else=""/>
+				<parameter name="@DevIznos" value="#curDevIznos" type="decimal" />
+				<parameter name="@DevUplata" value="0" type="decimal" />
+				<parameter name="@datDVO" value="#datDVO" type="date" />
+				<parameter name="@PozivNaBroj" value="#txtPozivNaBroj" type="string" />
+				<parameter name="@parziroid" value="null" type="int" if="#cmbIBAN==null"/>
+				<parameter name="@parziroid" value="#cmbIBAN" type="int" else=""/>
+				<parameter name="@BrojUCD" value="" type="string" if="#txtBrojUCD==null"/>
+				<parameter name="@BrojUCD" value="#txtBrojUCD" type="string" else=""/>
+				<parameter name="@DatumUCD" value="null" type="date" if="#datUCD==null"/>
+				<parameter name="@DatumUCD" value="#datUCD" type="date" else=""/>				
+				<parameter name="@BrojZakljucka" value="" type="string" if="#txtBrojZak==null"/>
+				<parameter name="@BrojZakljucka" value="#txtBrojZak" type="string" else=""/>
+				<parameter name="@KUPPrometId" value="null" type="int" if="$Id==null"/>
+				<parameter name="@KUPPrometId" value="$KupPrometId" type="int" else=""/>
+				<parameter name="@DatumKnjizenja" value="#datKnjizenja" type="date" />
+				<parameter name="RaiseInfoMsg" value="true"/>
+			</data>
+			<data command="spCKntFaktureDobAzur2" name="dtSpremiFaktureDob" elseif="$FaktureDobId!=null">
+				<parameter name="@action" value="1" type="int"/>
+				<parameter name="@ID" value="$FaktureDobId" type="int"/>
+				<parameter name="@Status" value="" type="string"/>
+				<parameter name="@PartneriId" value="#srcPartner" type="int"/>
+				<parameter name="@DatumDok" value="#datNadnevak" type="date"/>
+				<parameter name="@DatumValute" value="#datValuta" type="date"/>
+				<parameter name="@ValuteId" value="null" type="int"/>
+				<parameter name="@Tecaj" value="null" type="decimal"/>
+				<parameter name="@IznosFakture" value="$IznosFakture" type="decimal"/>
+				<parameter name="@IznosPlaceni" value="0" type="decimal"/>
+				<parameter name="@IznosPoreza" value="#curPdvUkupno" type="decimal"/>
+				<parameter name="@r1" value="2" if="#rbR2==true"/>
+				<parameter name="@KntMasterShemaKnjId" value="null" type="int" if="#cmbShemaKnj==null"/>
+				<parameter name="@KntMasterShemaKnjId" value="#cmbShemaKnj" type="int" else=""/>
+				<parameter name="@DobUgovoriId" value="null" type="int" if="#cmbUgovori==null"/>
+				<parameter name="@DobUgovoriId" value="#cmbUgovori" type="int" else=""/>
+				<parameter name="@OrgShemaId" value="null" type="int" if="#cmbOrgShema==null"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShema" type="int" else=""/>
+				<parameter name="@OsobeId" value="null" type="int" if="#cmbOsobe==null"/>
+				<parameter name="@OsobeId" value="#cmbOsobe" type="int" else=""/>
+				<parameter name="@Broj" value="#txtRacun" type="string"/>
+				<parameter name="@BrojDok" value="#txtURA" type="string"/>
+				<parameter name="@Model" value="" type="string" if="#txtModel==null"/>
+				<parameter name="@Model" value="#txtModel" type="string" else=""/>	
+				<parameter name="@IndGlk" value="~dtGetPodaciEdit.@IndGlk" type="string"/>
+				<parameter name="@OperaterId" value="@@OperateriId" type="int"/>
+				<parameter name="@DevValuteId" value="null" type="int" if="#cmbDevValuta==null"/>
+				<parameter name="@DevValuteId" value="#cmbDevValuta" type="int" else=""/>
+				<parameter name="@DevIznos" value="#curDevIznos" type="decimal" />
+				<parameter name="@DevUplata" value="0" type="decimal" />
+				<parameter name="@datDVO" value="#datDVO" type="date" />
+				<parameter name="@PozivNaBroj" value="#txtPozivNaBroj" type="string" />
+				<parameter name="@parziroid" value="null" type="int" if="#cmbIBAN==null"/>
+				<parameter name="@parziroid" value="#cmbIBAN" type="int" else=""/>
+				<parameter name="@BrojUCD" value="" type="string" if="#txtBrojUCD==null"/>
+				<parameter name="@BrojUCD" value="#txtBrojUCD" type="string" else=""/>
+				<parameter name="@DatumUCD" value="null" type="date" if="#datUCD==null"/>
+				<parameter name="@DatumUCD" value="#datUCD" type="date" else=""/>				
+				<parameter name="@BrojZakljucka" value="" type="string" if="#txtBrojZak==null"/>
+				<parameter name="@BrojZakljucka" value="#txtBrojZak" type="string" else=""/>
+				<parameter name="@KUPPrometId" value="null" type="int" if="$KUPPrometId==null"/>
+				<parameter name="@KUPPrometId" value="$KUPPrometId" type="int" else=""/>
+				<parameter name="@DatumKnjizenja" value="#datKnjizenja" type="date" />
+				<parameter name="RaiseInfoMsg" value="true"/>
+			</data>			
+			<data command="spCKntKnjigaUraAzur2" name="dtSpremiUru" if="$KntKnjigaUraId==null">
+				<parameter name="@action" value="0" type="int"/>
+				<parameter name="@ID" value="null" type="int"/>
+				<parameter name="@KntVrsteKnjigaUraId" value="#cmbVrstaKnjige" type="int"/>
+				<parameter name="@FaktureDobId" value="$FaktureDobId" type="int"/>
+				<parameter name="@RedniBroj" value="RBROJ" type="string"/>
+				<parameter name="@IznosBezPoreza" value="#curIznosBezPdv" type="decimal"/>
+				<parameter name="@IznosUkupno" value="#curIznossPdv" type="decimal"/>
+				<parameter name="@IznosOdbitak" value="#cur22odbiv" type="decimal"/>
+				<parameter name="@IznosNeodbitak" value="#cur22neodbiv" type="decimal"/>
+				<parameter name="@Napomena" value="" type="string" if="#txtNapomena==null"/>
+				<parameter name="@Napomena" value="#txtNapomena" type="string" else=""/>
+				<parameter name="@OperaterId" value="@@OperateriId" type="int"/>
+				<parameter name="@Godina" value="#txtGodina" type="int"/>
+				<parameter name="@StatusKnj" value="0" type="int"/>
+				<parameter name="@PartneriId" value="#srcPartner" type="int"/>
+				<parameter name="@DatumDok" value="#datNadnevak" type="date"/>
+				<parameter name="@Broj" value="#txtRacun" type="string"/>
+				<parameter name="@BrojDok" value="#txtURA" type="string"/>
+				<parameter name="@IznosNeoporeziv" value="#curNeoporezivo" type="decimal"/>
+				<parameter name="@osnovica10" value="#curOsnovica10" type="decimal"/>
+				<parameter name="@PorezOdbiv10" value="#cur10odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv10" value="#cur10neodbiv" type="decimal"/>
+				<parameter name="@osnovica22" value="#curOsnovica22" type="decimal"/>
+				<parameter name="@osnovica23" value="#curOsnovica23" type="decimal"/>
+				<parameter name="@PorezOdbiv23" value="#cur23odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv23" value="#cur23neodbiv" type="decimal"/>
+				<parameter name="@nepod" value="#curNePod" type="decimal"/>
+				<parameter name="@osnovica25" value="#curOsnovica25" type="decimal"/>
+				<parameter name="@PorezOdbiv25" value="#cur25odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv25" value="#cur25neodbiv" type="decimal"/>
+				<parameter name="@osnovica5" value="#curOsnovica5" type="decimal"/>
+				<parameter name="@PorezOdbiv5" value="#cur5odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv5" value="#cur5neodbiv" type="decimal"/>
+				<parameter name="@ParStruId" value="#cmbPDVID" type="int"/>
+				<parameter name="@ProlazneStavke" value="#curProlazneStavke" type="decimal"/>
+				<parameter name="@osnovica13" value="#curOsnovica13" type="decimal"/>
+				<parameter name="@PorezOdbiv13" value="#cur13odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv13" value="#cur13neodbiv" type="decimal"/>
+			</data>
+			<data command="spCKntKnjigaUraAzur2" name="dtSpremiUru" elseif="$KntKnjigaUraId!=null">
+				<parameter name="@action" value="1" type="int"/>
+				<parameter name="@ID" value="$KntKnjigaUraId" type="int"/>
+				<parameter name="@KntVrsteKnjigaUraId" value="#cmbVrstaKnjige" type="int"/>
+				<parameter name="@FaktureDobId" value="$FaktureDobId" type="int"/>
+				<parameter name="@RedniBroj" value="RBROJ" type="string"/>
+				<parameter name="@IznosBezPoreza" value="#curIznosBezPdv" type="decimal"/>
+				<parameter name="@IznosUkupno" value="#curIznossPdv" type="decimal"/>
+				<parameter name="@IznosOdbitak" value="#cur22odbiv" type="decimal"/>
+				<parameter name="@IznosNeodbitak" value="#cur22neodbiv" type="decimal"/>
+				<parameter name="@Napomena" value="" type="string" if="#txtNapomena==null"/>
+				<parameter name="@Napomena" value="#txtNapomena" type="string" else=""/>
+				<parameter name="@OperaterId" value="@@OperateriId" type="int"/>
+				<parameter name="@Godina" value="#txtGodina" type="int"/>
+				<parameter name="@StatusKnj" value="0" type="int"/>
+				<parameter name="@PartneriId" value="#srcPartner" type="int"/>
+				<parameter name="@DatumDok" value="#datNadnevak" type="date"/>
+				<parameter name="@Broj" value="#txtRacun" type="string"/>
+				<parameter name="@BrojDok" value="#txtURA" type="string"/>
+				<parameter name="@IznosNeoporeziv" value="#curNeoporezivo" type="decimal"/>
+				<parameter name="@osnovica10" value="#curOsnovica10" type="decimal"/>
+				<parameter name="@PorezOdbiv10" value="#cur10odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv10" value="#cur10neodbiv" type="decimal"/>
+				<parameter name="@osnovica22" value="#curOsnovica22" type="decimal"/>
+				<parameter name="@osnovica23" value="#curOsnovica23" type="decimal"/>
+				<parameter name="@PorezOdbiv23" value="#cur23odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv23" value="#cur23neodbiv" type="decimal"/>
+				<parameter name="@nepod" value="#curNePod" type="decimal"/>
+				<parameter name="@osnovica25" value="#curOsnovica25" type="decimal"/>
+				<parameter name="@PorezOdbiv25" value="#cur25odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv25" value="#cur25neodbiv" type="decimal"/>
+				<parameter name="@osnovica5" value="#curOsnovica5" type="decimal"/>
+				<parameter name="@PorezOdbiv5" value="#cur5odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv5" value="#cur5neodbiv" type="decimal"/>
+				<parameter name="@ParStruId" value="#cmbPDVID" type="int"/>
+				<parameter name="@ProlazneStavke" value="#curProlazneStavke" type="decimal"/>
+				<parameter name="@osnovica13" value="#curOsnovica13" type="decimal"/>
+				<parameter name="@PorezOdbiv13" value="#cur13odbiv" type="decimal"/>
+				<parameter name="@PorezNeodbiv13" value="#cur13neodbiv" type="decimal"/>
+			</data>
+			<data command="spCKntKnjigaUraPopuniKontrole" name="dtGetPodaciEdit">
+				<parameter name="@action" value="edit" />
+				<parameter name="@KntVrsteKnjigaUraId" value="#cmbVrstaKnjige"/>
+				<parameter name="@FaktureDobId" value="$FaktureDobId"/>
+				<parameter name="@KntKnjigaUraId" value="$KntKnjigaUraId"/>
+			</data>
+			<!--AA-->
+			<data command="spPartneriQuery_Carpo" name="dtPartneri">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$PartneriId"/>
+				<parameter name="@IDPartneri" value="0"/>
+				<parameter name="@DownUnder" value="0"/>
+				<parameter name="@SortKey" value=""/>
+				<parameter name="@Naziv" value=""/>
+				<parameter name="@Sifra" value=""/>				
+			</data>
+			<!----> 
+			<data name="dtProknjizi" command="spCKntFaktureDobKnjizenje">
+				<parameter name="@ID" value="$NoviFaktureDobId"/>
+			</data>	
+			<data name="dtKUP" command="spCKntKnjigaUraKup">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@KupPrometId" value="$KupPrometId"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+			</data>	
+			<data name="dtBlokada" command="spCKntKnjigaUraTreePozicije">
+				<parameter name="@Action" value="Blokada" type="string"/>
+			</data>			
+			<data name="dtPonudiKnjigu" type="text" command="select top 1 KntVrsteKnjigauraId from KntVrsteKnjigaUra where BrojKnjige=1 order by KntVrsteKnjigaUraId"/>
+			<data command="select year(@nadnevak) as god" type="text" name="dtKnjizGodina">
+				<parameter name="@nadnevak" value="#datKnjizenja" type="date"/>
+			</data>
+			<data name="dtPraviBrojDok" command="spCKntKnjigaUraSljedeciBrojDok">
+				<parameter name="@KntVrsteKnjigauraId" value="$KntVrsteKnjigauraId"/>
+				<parameter name="@DatumDok" value="#datNadnevak"/>
+			</data>
+			<data name="dtIbanPubVar" command="spCKntKnjigaUraHelp">
+				<parameter name="@Action" value="1"/>
+			</data>
+			<data name="dtVrstaPoste" command="spCKntKnjigaUraKupKontrole">
+				<parameter name="@Action" value="1"/>
+			</data>				
+			<data name="dtNabNar" command="spCKntKnjigaUraKupKontrole">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@PartneriId" value="#srcPartnerKup"/>		
+				<parameter name="@filter" value="#srcNarudzba.text"/>
+			</data>	
+			<data name="dtPartneriKup" command="spCKntTemTraziPartneri" >
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartnerKup.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>	
+			<data name="dtDatumValuteIzBrojDana" command="spCKntKnjigaUraKupKontrole">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@DatumDokumenta" value="#datDatumDokKup"/>		
+				<parameter name="@Dana" value="#txtBrojDanaKup"/>
+			</data>			
+			<data name="dtKupInsert" command="spKUPPrometAzurN">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@KupVrstaPosteId" value="#cmbVrstaPoste"/>
+				<parameter name="@UrudzbeniBroj" value="" type="string" />
+				<parameter name="@DatumPrijema" value="#datDatumPrijema"/>
+				<parameter name="@PartneriId" value="#srcPartnerKup"/>
+				<parameter name="@Broj" value="#txtBrojDokumenta"/>
+				<parameter name="@BrojUfe" value="" type="string" />
+				<parameter name="@DatumValute" value="#datDatumValuteKup"/>
+				<parameter name="@Opis" value="#txtOpisKup" if="#txtOpisKup!=null"/>
+				<parameter name="@Opis" value="" type="string" if="#txtOpisKup==null"/>
+				<parameter name="@Iznos" value="#txtIznosKup"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShemaKup"/>	
+				<parameter name="@ValuteId" value="#cmbValutaKup"/>	
+				<parameter name="@Posiljatelj" value="#txtPosiljatelj"/>	
+				<parameter name="@Rjesenje" value="#txtRjesenje"/>	
+				<parameter name="@UrudzbeniBrojVeza" value="#txtVezaNaUrudzbeni"/>	
+				<parameter name="@NabNarGlaId" value="#srcNarudzba"/>	
+				<parameter name="@DatumDokumenta" value="#datDatumDokKup"/>	
+				<!--<parameter name="@Narudzbe" value=""/>	nemam u xml-u-->
+				<parameter name="@Dana" value="#txtBrojDanaKup"/>	
+				<parameter name="@Osnovica" value="#txtOsnovicaKup"/>
+				<parameter name="@baza" value="CARPO"/>
+				<parameter name="@Urudzbirao" value="@@operateriid"/>
+				<!--pomoć za prikaz poruke-->
+				<parameter name="RaiseInfoMsg" value="true"/>
+			</data>		
+			<data name="dtKupUpdate" command="spKUPPrometAzurN">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$KupPrometId"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@KupVrstaPosteId" value="#cmbVrstaPoste"/>
+				<parameter name="@UrudzbeniBroj" value="#txtUrudzbeni" type="string" />
+				<parameter name="@DatumPrijema" value="#datDatumPrijema"/>
+				<parameter name="@PartneriId" value="#srcPartnerKup"/>
+				<parameter name="@Broj" value="#txtBrojDokumenta"/>
+				<!-- <parameter name="@BrojUfe" value="" type="string" /> -->
+				<parameter name="@DatumValute" value="#datDatumValuteKup"/>
+				<parameter name="@Opis" value="#txtOpisKup" if="#txtOpisKup!=null"/>
+				<parameter name="@Opis" value="" type="string" if="#txtOpisKup==null"/>
+				<parameter name="@Iznos" value="#txtIznosKup"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShemaKup"/>	
+				<parameter name="@ValuteId" value="#cmbValutaKup"/>	
+				<parameter name="@Posiljatelj" value="#txtPosiljatelj"/>	
+				<parameter name="@Rjesenje" value="#txtRjesenje"/>	
+				<parameter name="@UrudzbeniBrojVeza" value="#txtVezaNaUrudzbeni"/>	
+				<parameter name="@NabNarGlaId" value="#srcNarudzba"/>	
+				<parameter name="@DatumDokumenta" value="#datDatumDokKup"/>	
+				<!--<parameter name="@Narudzbe" value=""/>	nemam u xml-u-->
+				<parameter name="@Dana" value="#txtBrojDanaKup"/>	
+				<parameter name="@Osnovica" value="#txtOsnovicaKup"/>
+				<parameter name="@baza" value="CARPO"/>
+				<!--pomoć za prikaz poruke-->
+				<parameter name="RaiseInfoMsg" value="true"/>
+			</data>	
+			<data name="dtKupUpdateIzUre" command="spKUPPrometAzurN">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$KupPrometId"/>
+				<parameter name="@KupVrstaPosteId" value="#cmbVrstaPoste"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@PartneriId" value="#srcPartnerKup"/>
+				<parameter name="@Broj" value="#txtRacun"/>
+				<parameter name="@DatumValute" value="#datValuta"/>
+				<!-- <parameter name="@Opis" value="#txtNapomena" if="#txtNapomena!=null"/> -->
+				<!-- <parameter name="@Opis" value="" type="string" if="#txtNapomena==null"/> -->
+				<parameter name="@Iznos" value="#curIznossPdv" if="#cmbDevValuta==null"/>
+				<parameter name="@Iznos" value="#curDevIznos" if="#cmbDevValuta!=null"/>
+				<parameter name="@OrgShemaId" value="#cmbOrgShema"/>	
+				<parameter name="@ValuteId" value="#cmbDevValuta"/>	
+				<parameter name="@DatumDokumenta" value="#datNadnevak"/>	
+				<parameter name="@Dana" value="#txtDana"/>	
+				<parameter name="@Osnovica" value="#curIznosBezPdv"/>
+				<parameter name="@baza" value="CARPO"/>
+				<!--pomoć za prikaz poruke-->
+				<!-- <parameter name="RaiseInfoMsg" value="true"/> -->
+			</data>				
+			<data name="dtPrivitci" command="spCKntKnjigaUraKupPrivitci">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@DokumentId" value="$DokumentId"/>
+			</data>
+			<data name="rwPrivitak" command="spKUPPregledDMSQuery_Carpo">
+				<parameter name="@Action" value="1" />
+				<parameter name="@DokumentId" value="$DokumentId"/>
+			</data>
+			<data name="dtCheckIfEdit" command="spCKntKnjigaUraKupKontrole">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@Id" type="string" value="$Id"/>
+			</data>	
+			<data name="dtPoveziKupSkenerDMS" command="spCKntKnjigaUraKupPrivitci">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@DokumentId" value="$DokumentId"/>
+				<parameter name="@KupPrometId" value="$KupPrometId"/>
+				<parameter name="@Opis" value="#grdPrivitci.@Naziv"/>
+			</data>		
+			<data name="dtOdobravanjeOtvori" command="spCKntKnjigaUraKupKontrole">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@KupPrometId" value="$KupPrometId"/>
+			</data>	
+			<data name="dtCheckPermission" command="spCKntKnjigaUraKupPermission">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@KupPrometId" value="$KupPrometId"/>
+				<parameter name="@PozivIzUre" value="$PozivIzUre"/>
+				<parameter name="@Unos" value="1"/>
+			</data>	
+			<data name="dtStatus" command="spCKntKnjigaUraKupPovijest">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@KupPrometId" value="$KupPrometId"/>
+			</data>		
+			<data name="dtGetKup" command="spCKntKnjigaUraKupEdit">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@KupPrometId" value="$KupPrometId"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+			</data>		
+			<data name="dtPrekiniProces" command="spCKntKnjigaUraKupSelectedIds">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+			</data>		
+			<data name="dtSelecteIdRemove" command="spCKntKnjigaUraKupSelectedIds">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@Id" value="$DokumentId"/>				
+			</data>		
+			<data name="dtCheckAutoClose" command="spCKntKnjigaUraKupPermission">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@KupPrometId" value="$KupPrometId"/>
+				<parameter name="@PozivIzUre" value="$PozivIzUre"/>
+				<parameter name="@Unos" value="1"/>
+			</data>
+			<!-- dms.RacunAI - podaci iz AI ekstrakcije računa -->
+			<data name="dtRacunAI" command="dms.spGetRacunAIByDokumentId">
+				<parameter name="@DokumentId" value="$DokumentId" type="int"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmOdobravanje" path="KnjigaUra.frmOdobravanje.xml"/>	
+	<form name="frmTemEdit" path="Temeljnice.frmTemEdit.xml"/>	
+	<form name="frmTemStavka" path="Temeljnice.frmTemStavka.xml"/>
+	<form name="frmTemStavkaEdit" path="Temeljnice.frmTemStavkaEdit.xml"/>
+	<form name="frmTemIra" path="Temeljnice.frmTemIra.xml"/>
+	<form name="frmTemUra" path="Temeljnice.frmTemUra.xml"/>
+	<form name="frmTemKntOstalo" path="Temeljnice.frmTemKntOstalo.xml"/>	
+	<datalist>
+		<data name="dtPartUraKupSpremiProknjizi" command="spCKntKnjigaUraPartSql">
+			<parameter name="@Action" value="KupSpremiProknjizi"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+		</data>	
+		<data name="dtPartcmbShemaKnj" command="spCKntKnjigaUraPartSql">
+			<parameter name="@Action" value="CmbShemaKnj"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+		</data>		
+		<data name="dtPartSpremiValidation" command="spCKntKnjigaUraPartSql">
+			<parameter name="@Action" value="SpremiValidation"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+		</data>					
+	</datalist>	
+</root>

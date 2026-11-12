@@ -1,0 +1,155 @@
+<root>
+<!--devex 20 radioedit mora imati caption, a ne roditelj item-->
+	<form name="frmOdobravanje" caption="Proslijeđivanje na odobravanje" width="400" height="600" fixedsize="true">
+		<layout>
+			<group cols="2" rows="4" groupbordervisible="false">
+				<columnsdefinition>
+					<column position="1" size="50%"/>
+					<column position="2" size="50%"/>
+				</columnsdefinition>
+				<rowsdefinition>
+				<!-- <row position="1" size="40"/> -->
+				<!-- <row position="2" size="40"/> -->
+					<row position="3" size="400"/>
+					<!-- <row position="4" size="40"/> -->
+				</rowsdefinition>
+				<group col="1" row="1" cols="4" rows="1" colspan="2" alignmode="local">
+					<columnsdefinition>
+						<column position="1" size="25%"/>
+						<column position="2" size="25%"/>
+						<column position="3" size="25%"/>
+						<column position="4" size="25%"/>					
+					</columnsdefinition>					
+					<item col="1" row="1" caption="Predložak" textposition="left">
+						<radioedit name="rdoPredlozak" caption="Predložak" value="true" groupindex="1">
+							<event type="valuechanged">
+								<action if="#rdoPredlozak==true">
+									<action type="control visible" value="#grdOdabir">
+										<parameter value="false"/>
+									</action>
+									<action type="control visible" value="#grdPredlozak">
+										<parameter value="true"/>
+									</action>		
+									<action type="control enable" value="#cmbPredlozak">
+										<parameter value="true"/>
+									</action>									
+								</action>
+							</event>
+						</radioedit>
+					</item>
+					<item col="2" row="1"/>
+					<item col="3" row="1" caption="Odabir likvidatora" textposition="right">
+						<radioedit name="rdoOdabir" caption="Odabir likvidatora" groupindex="1">
+							<event type="valuechanged">
+								<action if="#rdoOdabir==true">
+									<action type="control visible" value="#grdPredlozak">
+										<parameter value="false"/>
+									</action>
+									<action type="control visible" value="#grdOdabir">
+										<parameter value="true"/>
+									</action>
+									<action type="control value" value="#cmbPredlozak">
+										<parameter value="null"/>
+									</action>
+									<action type="control enable" value="#cmbPredlozak">
+										<parameter value="false"/>
+									</action>								
+								</action>
+								<action type="control populate" value="#grdOdabir"/>
+							</event>					
+						</radioedit>				
+					</item>
+					<item col="2" row="1"/>
+				</group>
+				<item col="1" row="2" colspan="2" caption="Predložak za likvidaciju:" textposition="top">
+					<comboedit name="cmbPredlozak" valuefield="KupOdobriPredlozakId" autopopulate="false" displayfield="Naziv" dataname="~dtPredlozak"  allownull="false">
+						<event type="valuechanged">
+							<action type="control populate" value="#grdPredlozak"/>
+						</event>
+					</comboedit>
+				</item>					
+				<item col="1" row="3" colspan="2">
+					<grid name="grdPredlozak" autopopulate="true" dataname="~dtLikvPredlozak" bestfitonrefresh="true" savelayout="true" showgrouppanel="false" showautofilterrow="false" netgenfields="true" caption="Likvidatori:">
+						<fields inherited="true">
+
+						</fields>
+					</grid>
+				</item>
+				<item col="1" row="3" colspan="2">
+					<grid name="grdOdabir" dataname="~dtLikvOdabir" showcheckboxes="true" bestfitonrefresh="true" savelayout="true" showgrouppanel="false" showautofilterrow="false" caption="Likvidatori:">
+						<fields inherited="true">
+							<field name="RedOdobravanja" editable="true"/>
+						</fields>
+					</grid>
+				</item>
+				<item col="1" row="4" colspan="2" caption="Napomena:" textposition="top">
+					<textedit name="txtNapomena"/>
+				</item>				
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnProslijedi" caption="PROSLIJEDI">
+					<event type="click">
+						<action if="#rdoPredlozak==true">
+							<action type="datarun nonquery" value="~dtProslijedi"/>
+						</action>
+						<action if="#rdoOdabir==true">
+							<action type="control foreachrow selected" value="#grdOdabir">
+								<action type="datarun nonquery" value="~dtProslijedi"/>
+							</action>
+						</action>
+						<action type="datarun reader" value="~dtCheckIfPoslanNaOdobravanje"/>
+						<action if="~dtCheckIfPoslanNaOdobravanje.@Poslano==1">
+							<action type="control disable" value="parent.#cmbVrstaPoste,parent.#txtUrudzbeni,parent.#txtVezaNaUrudzbeni,parent.#txtPosiljatelj,parent.#srcPartnerKup,parent.#txtBrojDokumenta,
+																	parent.#srcNarudzba,parent.#txtRjesenje,parent.#txtOpisKup,parent.#cmbOrgShemaKup,parent.#cmbValutaKup,parent.#txtIznosKup,
+																	parent.#txtOsnovicaKup,parent.#datDatumDokKup,parent.#datDatumPrijema,parent.#datDatumValuteKup,parent.#txtBrojDanaKup,parent.#btnSpremiKup" 
+									/>
+							<action type="form close"/>
+						</action>
+						<action type="message" value="Došlo je do pogreške prilikom prosljeđivanja!" else=""/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtPredlozak" command="spKUPOdobriOperateri">
+				<parameter name="@Action" value="5"/>
+			</data>
+			<data name="dtLikvPredlozak" command="spKUPOdobriOperateri">
+				<parameter name="@Action" value="6"/>
+				<parameter name="@Id" value="#cmbPredlozak"/>
+			</data>	
+			<data name="dtLikvOdabir" command="spKUPOdobriOperateri">
+				<parameter name="@Action" value="66"/>
+			</data>	
+			<data name="dtProslijedi" command="spCKntKnjigaUraKupProslijedi" if="#rdoOdabir==false">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Odabir" value="#rdoOdabir"/>
+				<parameter name="@KupOdobriPredlozakId" value="#cmbPredlozak"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@KupPrometId" value="$KupPrometId"/>
+				<parameter name="@Napomena" value="#txtNapomena"/>
+			</data>	
+			<data name="dtProslijedi" command="spCKntKnjigaUraKupProslijedi" elseif="#rdoOdabir==true">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Odabir" value="#rdoOdabir"/>
+				<parameter name="@KupOdobriPredlozakId" value="null"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@OperateriIdTo" value="#grdOdabir.@OperateriId"/>
+				<parameter name="@Prioritet" value="#grdOdabir.@RedOdobravanja"/>
+				<parameter name="@KupPrometId" value="$KupPrometId"/>
+				<parameter name="@Napomena" value="#txtNapomena"/>
+			</data>				
+			<data name="dtCheckIfPoslanNaOdobravanje" command="spCKntKnjigaUraKupKontrole">
+				<parameter name="@Action" value="6"/>
+				<parameter name="@KupPrometId" value="$KupPrometId"/>
+			</data>					
+		</datalist>
+	</form>
+</root>

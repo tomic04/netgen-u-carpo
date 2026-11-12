@@ -1,0 +1,82 @@
+<root>
+	<form path="Kamate.frmObracun.xml" name="frmObracun"/>		
+	<form name="frmPodaci" caption="Podaci za obračun kamata" statusbar="true" width="500" height="200">
+		<event type="shown">
+			<action type="datarun reader" value="~dtGet"/>
+			<action type="control value" value="#cmbKamata">
+				<parameter value="~dtGet.@kteVrsteStopaID"/>
+			</action>
+			<action type="control value" value="#datOd">
+				<parameter value="~dtGet.@datumOd"/>
+			</action>
+			<action type="control value" value="#datDo">
+				<parameter value="~dtGet.@datumDo"/>
+			</action>
+			<action type="control value" value="#txtMinIznos">
+				<parameter value="~dtGet.@MinIznos"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="2" rows="2">
+				<item col="1" row="1" caption="Razdoblje od:">
+					<dateedit name="datOd"/>
+				</item>
+				<item col="2" row="1" caption="do:">
+					<dateedit name="datDo"/>
+				</item>
+				<item col="1" row="2" caption="Vrsta kamate:">
+					<comboedit name="cmbKamata" dataname="~dtKamate" valuefield="kteVrsteStopaID" displayfield="Opis" required="true"/>
+				</item>
+				<item col="2" row="2" caption="Minimalni iznos:">
+					<textedit name="txtMinIznos" format="n2" value="0"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOk" caption="OBRAČUNAJ">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun reader" value="~dtDatumProvjera"/>
+						<action type="message" value="Stopa nije definirana za cijelo razdoblje obračuna!" if="~dtDatumProvjera.@Ind==-1"/>
+						<action elseif="~dtDatumProvjera.@Ind==1">						
+							<action type="datarun nonquery" value="~dtDonosAzur"/>
+							<action type="datarun nonquery" value="~dtObracun"/>
+							<action type="form close"/>
+							<action type="form open" value="frmObracun">
+								<parameter name="ID" value="$ID"/>
+								<parameter name="Datum" value="$Datum"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnCancel" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDonosAzur" command="spCKteGlavaAzur">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@kteVrsteStopaId" value="#cmbKamata"/>
+				<parameter name="@DatOd" value="#datOd"/>
+				<parameter name="@DatDo" value="#datDo"/>
+				<parameter name="@MinIznos" value="#txtMinIznos"/>
+				<parameter name="@ID" value="$ID"/>
+			</data>
+			<data name="dtObracun" command="spCkntKteObracunMulti">
+				<parameter name="@Id" value="$ID"/>
+			</data>			
+			<data name="dtGet" command="spCKteGlavaQuery">
+				<parameter name="@Action" value="7"/>
+				<parameter name="@Id" value="$ID"/>
+			</data>
+			<data name="dtKamate" command="spCKntKtePopuniKontrole">
+				<parameter name="@Action" value="vrste"/>
+			</data>
+			<data name="dtDatumProvjera" command="spCKntKteProvjere">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Datum" value="#datOd"/>
+				<parameter name="@KteVrsteStopaId" value="#cmbKamata"/>
+			</data>			
+		</datalist>
+	</form>
+</root>

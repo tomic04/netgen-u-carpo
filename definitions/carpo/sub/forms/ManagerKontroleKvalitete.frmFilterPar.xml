@@ -1,0 +1,120 @@
+<root>
+<form name="frmFilterPar" caption="Filtrirano po parametrima kontrole" width="500" statusbar="true">
+		<event type="load">
+			<action type="datarun nonquery" value="~dtParKontrole" >
+				<action type="variable value" >
+					<parameter name="KKvalParametriId" value="#cmbParRobe"/>
+				</action>
+			</action>
+			<action type="datarun reader" value="~dtRobePoPar"/>
+			<action type="control populate" value="#grdRobePoPar"/>
+			
+			<action type="footer text" value="Broj naloga: {#grdRobePoPar.rowcount}. Za razdoblje {$DatumOd} - {$DatumDo} po skladištu {$skladiste}" else=""/>
+			<action type="footer text" value="Broj naloga: {#grdRobePoPar.rowcount}. Za razdoblje {$DatumOd} - {$DatumDo} po svim skladištima" if="$skladiste==null"/>
+		</event>
+		<layout>
+			<group rows="2" cols="1">
+				<item row="1" col="1" caption="Parametar kontrole:">
+					<comboedit name="cmbParRobe" dataname="~dtParKontrole" valuefield="KKvalParametriId" displayfield="Naziv" savevalue="session" allownull="false"> <!-- savevalue="session"> - pamti koji je parametar bio odabran u prošlom otvaranju forme -->
+							<event type="valuechanged" > <!-- raiseonload="false" kako bi se pri pokretanju eventa akcije mogle izvesti -->
+							<!-- promjena vrijednosti parametra KKvalParametriId -->
+								<action type="variable value" value="$KKvalParametriId">
+									<parameter value="#cmbParRobe.@KKvalParametriId"/>
+								</action>
+                                <action type="control populate" value="#grdRobePoPar"/>
+ 								<action type="footer text" value="Broj naloga: {#grdRobePoPar.rowcount}. Za razdoblje {$DatumOd} - {$DatumDo} po skladištu {$skladiste}" else=""/>
+								<action type="footer text" value="Broj naloga: {#grdRobePoPar.rowcount}. Za razdoblje {$DatumOd} - {$DatumDo} po svim skladištima" if="$skladiste==null"/>
+                            </event>
+					</comboedit>		
+				</item>
+				<item row="2" col="1">
+					<grid name="grdRobePoPar" dataname="~dtRobePoPar" key="KKvaldetId" multiselect="true" master="true">
+						<event type="focusedrowchanged" >
+							
+							<action type="variable value">
+								<parameter name="Tip" value="#grdRobePoPar.@Tip"/>
+								<parameter name="DetId" value="#grdRobePoPar.@kkvaldetid"/>
+							</action>
+						</event>
+						<event type="cellvaluechanged">
+							<action type="datarun nonquery" value="~dtUpdateRobePoPar" />
+							<action type="control populate" value="#grdRobePoPar" />
+							<!-- <action type="control populate" value="parent.#grdKKvalDet" />
+							<action type="control populate" value="parent.#grdKKvalGla" /> -->
+						</event>
+						<fields inherited="true">
+							<field name="ParametarNaziv" visible="false" />
+							<field name="Obavezan" visible="false" />
+							<field name="TipPodatka" visible="false" />
+							<field name="Tip" visible="false" />
+							<field name="DecVal" visible="false" />
+							<field name="BoolVal" visible="false" />
+							<field name="StringVal" visible="false" />
+							<field name="jmNaziv" visible="false" />
+							<field name="BrojPriloga" caption="Broj \n priloga" fixed="right"/>
+							
+							<field name="Rezultat" editable="true" />
+		 
+							<field name="Napomena" editable="true"/>
+							<field name="Min" format="n4" />
+							<field name="Max" format="n4" />
+							<field name="Skladiste" caption="Skladište" />
+						</fields>
+						<styles>
+							<!-- <style name="fontcolor" value="gray" if="parent.#grdKKvalGla.@statusid==0"/>
+							<style name="fontcolor" value="black" elseif="parent.#grdKKvalGla.@statusid==1"/>
+							<style name="fontcolor" value="green" elseif="parent.#grdKKvalGla.@statusid==2"/>
+							<style name="fontcolor" value="orange" elseif="parent.#grdKKvalGla.@statusid==3"/> -->
+							<style name="fontcolor" value="red" elseif="#grdKKvalGla.@statusid==4"/>
+							<style name="fontcolor" value="red" if="#grdRobePoPar.@Rezultat&gt;#grdRobePoPar.@Max"/>
+							<style name="fontcolor" value="red" if="#grdRobePoPar.@Rezultat&lt;#grdRobePoPar.@Min"/>
+							<style name="fontcolor" value="#cc0000" if="#grdRobePoPar.@Rezultat==''"/>
+							<style name="fontcolor" value="#cc0000" if="#grdRobePoPar.@Rezultat==null"/>
+						</styles>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Filter" dock="left" name="btnPronadji" image="calendar" imagelocation="middleleft">
+					<event type="click">
+							<action type="form open" value="frmDatPar"/>
+							<action type="control populate" value="#grdRobePoPar"/>
+					</event>
+				</button>
+				<button name="btnPotvrdi" caption="Potvrdi">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtParKontrole" command="spCarpoKKvalParAzur">
+				<parameter name="@action" value="listPar"/>
+			</data>
+			<data name="dtRobePoPar" command="spCarpoKKvalQuery">
+				<parameter name="@action" value="DetPoPar"/> <!-- getFiltriraneKontrole -->
+				<parameter name="@KKvalParametriId" value="$KKvalParametriId"/>
+				<parameter name="@DatumOd" value="$DatumOd"/>
+				<parameter name="@DatumDo" value="$DatumDo"/>
+				<parameter name="@skladisteid" value="$Skladiste"/>
+			</data>
+			<data name="dtUpdateRobePoPar" command="spCarpoKKvalQuery">
+			   <parameter name="@Action" value="update"/>
+			   <parameter name="@KKValDetId" value="$DetId"/>
+			   <parameter name="@KKValglaId" value="#grdRobePoPar.@KKValglaId"/>
+			   <parameter name="@DecVal" value="#grdRobePoPar.@Rezultat" if="$tip==1" />
+					<parameter name="@DecVal" value="null" else=""/>
+			   <parameter name="@BoolVal" value="#grdRobePoPar.@Rezultat" if="$tip==2"/>
+					<parameter name="@BoolVal" value="null" else=""/>
+			   <parameter name="@StringVal" value="#grdRobePoPar.@Rezultat" if="$tip==0"/>
+					<parameter name="@StringVal" value="null" else=""/>
+			   <parameter name="@Opis" value="#grdRobePoPar.@Napomena"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDatPar" path="frmDatPar.xml"/>
+</root>

@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+08.05.2018 PJ init
+-->
+<root version="1.0.0.0" loglevel="3">
+	<!--<form name="frmPromet" path="frmPromet.xml"/>-->
+	<form name="frmMaster" type="master" caption="Obračun nabave">
+<!--	<event type="shown">
+		</event>-->
+			<managerlayout>
+				<!--TODO definirati key, polja, dataset-->
+				<grid name="grdGlava"  type="master" async="true" autopopulate="false" multiselect="true"  savelayout="true" bestfitonrefresh="true" key="CKntTmpObracunNabaveId" showcheckboxes="true" >
+					<data command="spCkntPreknjizenjeKontaNaKonto" >
+						<parameter name="@Action"  value="1" />	
+						<parameter name="@DatumOd" value="Global.$DatumOd"/>
+						<parameter name="@DatumDo" value="Global.$DatumDo"/>
+						<parameter name="@Konto" value="Global.$Konto"/>
+						<parameter name="@OrgShema" value="Global.$OrgShema"/>
+					</data>
+				<!--	<fields>
+						<field name="" caption="" />
+					</fields>-->
+					<styles>
+						<!--<style name="fontcolor" value="#0000ff" if="#grdGlava.@Zakljucena==1&amp;&amp;#grdGlava.@Proknjizena==Da" />-->			
+					</styles>
+				</grid>
+			</managerlayout>
+			<panelbuttons> 
+				<buttons>
+					<button name="btnFilter" caption="Filter"  >
+						<event type="click">
+							<action type="form open" value="frmFilter"/>
+							<action type="control populate" value="#grdGlava"/>
+							<!--TODO uvaliti dataset
+							<action type="datarun scalar" value="Global.~dtGetId">-->
+						</event>
+					</button>
+					<button name="btnProknjizi" caption="Proknjiži"  >
+						<event type="click">
+							
+							<action type="form open" value="frmProknjizi">
+								<parameter name="SelectedTable"  value="#grdGlava.SelectedIDs" />
+							</action>
+							<action type="control populate" value="#grdGlava"/>
+							<!--TODO uvaliti dataset
+							<action type="datarun scalar" value="Global.~dtGetId">-->
+						</event>
+					</button>
+					<button name="btnUrednik" caption="Urednik"  >
+						<event type="click">
+							<action type="form open" value="frmPoveznaKonta"/>
+							<!--<action type="control populate keepfocus" value="#grdGlava"/>-->
+						</event>
+					</button>
+				</buttons>
+			</panelbuttons> 
+	</form>
+	
+	<form caption="Izaberite parametre prikaza" name="frmFilter" fixedsize="true"> 
+		<event type="shown">
+			<action type="control value" value="#cmbKonto">
+				<parameter value="Global.$Konto"/>
+			</action>	
+			<action type="control value" value="#cmbOrgShema">
+				<parameter value="Global.$OrgShema"/>
+			</action>	
+			<action type="datarun scalar" value="~dtFirstDayOfYear">
+				<parameter name="StartOfYear" />	
+			</action>
+			<action type="control value" value="#datDatumOd"> 
+				<parameter value="$StartOfYear"	if="Global.$DatumOd==null" />
+				<parameter value="Global.$DatumOd"	elseif="Global.$DatumOd!=null"/>
+			</action>
+			<action type="control value" value="#datDatumDo"> 
+				<parameter value="now" if="Global.$DatumDo==null" />
+				<parameter value="Global.$DatumDo" elseif="Global.$DatumDo!=null"/>
+			</action> 	
+		</event> 
+		<layout textposition="top">
+			<group rows="3" cols="2">
+				<item col="1" row="1" caption="Datum od:"> 
+					<dateedit name="datDatumOd" required="true"/>
+				</item>
+				<item col="2" row="1" caption="Datum do:">
+					<dateedit name="datDatumDo" value="now" required="true"/>
+				</item>
+				<item col="1" row="2" colspan="2" caption="Konto:" fontsizedelta="1" textvisible="false">
+					<combomultiedit name="cmbKonto" valuefield="KntPlanAId" displayfield="Naziv" dataname="Global.~dtKontoCombo" fontsizedelta="2" allownull="true"/>
+				</item>
+				<item col="1" row="3" colspan="2" caption="OrgShema:" fontsizedelta="1" textvisible="false">
+					<combomultiedit name="cmbOrgShema" dataname="Global.~dtOrgShemaCombo" displayfield="naziv" valuefield="orgshemaid" autopopulate="true" allownull="true"/>
+				</item>
+			</group> 
+		</layout> 
+		<datalist>
+			<data type="text" name="dtFirstDayOfYear" command="SELECT cast(CONVERT(VARCHAR(8), DATEADD(yy, DATEDIFF(yy,0,getdate()), 0), 112) as datetime) AS StartOfYear"/>
+		</datalist>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Pokaži">
+					<event type="click">
+						<action type="validate"/>
+						<action type="variable value">
+							<parameter name="Global.$DatumOd" value="#datDatumOd"/>
+							<parameter name="Global.$DatumDo" value="#datDatumDo"/>
+							<parameter name="Global.$Konto" value="#cmbKonto"/>
+							<parameter name="Global.$OrgShema" value="#cmbOrgShema"/>
+						</action>
+						<action type="form close"/>
+						<action type="control populate" value="parent.#grdGrid" />
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" name="btnOdustani">
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	
+	<!--forma za proknjižavanje, izdvojiti? -->
+	<form caption="Proknjiži" name="frmProknjizi" fixedsize="true"> 
+		<event type="shown">
+		<!--TODO setaj varijable po potrebi-->
+			<action type="control value" value="#datDatumKnjizenja"> 
+				<parameter value="now" if="Global.$DatumDo==null" />
+				<parameter value="Global.$DatumDo" elseif="Global.$DatumDo!=null"/>
+			</action> 	
+		</event> 
+		<layout textposition="top">
+			<group rows="4" cols="2">
+				<item col="1" row="1" colspan="2" caption="Datum knjiženja:">
+					<dateedit name="datDatumKnjizenja" value="now" required="true"/>
+				</item>
+				<item col="1" row="2" colspan="2" caption="Vrsta temeljnice:" fontsizedelta="1" textvisible="false">
+					<comboedit name="cmbVrTem" valuefield="VrstaDokId" displayfield="Opis" dataname="Global.~dtVrTemCombo" fontsizedelta="2" allownull="false" required="true"/>
+				</item>
+				<group rows="1" cols="3" row="3" col="1"  colspan="2" caption="Temeljnica 1:">
+					<item row="1" col="1" >
+							<radioedit name="rdoStranaIzlDug" value="true" caption="Dugovna" groupindex="1">
+								<event type="checkedchanged">
+								</event>
+							</radioedit>
+					</item>
+					<item row="1" col="2" >
+							<radioedit name="rdoStranaIzlPot" value="true" caption="Potražna" groupindex="1">
+								<event type="checkedchanged">
+								</event>
+							</radioedit>
+					</item>
+					<item row="1" col="3" >
+							<radioedit name="rdoStranaIzlSum" value="true" caption="Promet" groupindex="1">
+								<event type="checkedchanged">
+								</event>
+							</radioedit>
+					</item>
+				</group> 
+				<group rows="1" cols="2" row="4" col="1"  colspan="2" caption="Temeljnica 2:">
+					<item row="1" col="1" >
+							<radioedit name="rdoStranaUlDug" value="true" caption="Dugovna" groupindex="2">
+								<event type="checkedchanged">
+								</event>
+							</radioedit>
+					</item>
+					<item row="1" col="2" >
+							<radioedit name="rdoStranaUlPot" value="true" caption="Potražna" groupindex="2">
+								<event type="checkedchanged">
+								</event>
+							</radioedit>
+					</item>
+				</group> 
+			</group> 
+		</layout> 
+		<panelbuttons>
+			<buttons>
+				<button name="btnProknjizi" caption="Proknjiži">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="~dtProknjizi"/>
+						<action type="form close"/>
+						<action type="control populate" value="parent.#grdGrid" />
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" name="btnOdustani">
+					<!-- <event type="click"> -->
+						<!-- <action type="form close"/> -->
+					<!-- </event> -->
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCkntPreknjizenjeKontaNaKonto" name="dtProknjizi"> 
+				<parameter name="@Action" value="2"/> 
+				<parameter name="@DatumKnjizenja" value="#datDatumKnjizenja"/> 	
+				<parameter name="@VrstaDokId" value="#cmbVrTem"/> 	
+				<parameter name="@OperateriId" value="@@OperateriId"/> 	
+				<parameter name="@SelectedTable" value="$SelectedTable"/> 
+				<parameter name="@IzlDug" value="#rdoStranaIzlDug"/> 	
+				<parameter name="@IzlPot" value="#rdoStranaIzlPot"/> 
+				<parameter name="@IzlSum" value="#rdoStranaIzlSum"/> 
+				<parameter name="@UlDug" value="#rdoStranaUlDug"/> 	
+				<parameter name="@UlPot" value="#rdoStranaUlPot"/> 			
+			</data>	
+		</datalist>
+	</form>
+	
+	<!--forma za pregled vezanih konta, izdvojiti? -->
+	<form caption="Povezana Konta" name="frmPoveznaKonta" > 
+		<event type="shown">
+			<action type="control populate" value="#grdUrednik"  />
+		</event> 
+		<layout textposition="top">
+			<group rows="1" cols="1">
+				<item col="1" row="1" caption="Datum knjiženja:">
+					<grid name="grdUrednik"  async="true"  multiselect="true"  savelayout="true" bestfitonrefresh="true" key="PovezanaKontaId" >
+						<data command="spCkntPovezanaKonta" >
+							<parameter name="@Action" value="0"/>
+						</data>
+						<fields>
+							<field name="KontoIzvor" caption="Izvorišni konto" />
+							<field name="nazivIzvor" caption="Naziv" />
+							<field name="KontoOdrediste" caption="Odredišni konto" />
+							<field name="NazivOdrediste" caption="Naziv" />
+							<field name="Operater" caption="Operater unosa" />
+							<field name="DatumUnosa"  />
+						</fields>
+						<styles>
+							<!--<style name="fontcolor" value="#0000ff" if="#grdGlava.@Zakljucena==1&amp;&amp;#grdGlava.@Proknjizena==Da" />-->			
+						</styles>
+					</grid>
+				</item>
+			</group> 
+		</layout> 
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="Dodaj"  dock="left">
+					<event type="click">
+						<action type="form open" value="frmUrednik"/>						
+						<action type="control populate" value="#grdUrednik" />
+						<action type="datarun scalar" value="~dtSpremi">
+							<parameter name="$PovezanaKontaId"  />
+						</action>
+						<action type="control focus" value="#grdUrednik"  >
+							<parameter value="$PovezanaKontaId" type="int"/> 
+						</action>
+					</event>
+				</button>
+				<button caption="Izmijeni"  name="btnIzmijeni" dock="left">
+					<event type="click"> 
+						<action type="form open" value="frmUrednik">
+							<parameter name="PovezanaKontaId"  value="#grdUrednik.@PovezanaKontaId"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdUrednik" />
+					</event> 
+				</button>
+				<button caption="Obriši"  name="btnObrisi" dock="left">
+					<event type="click">
+						<action type="variable value">
+								<parameter name="PovezanaKontaId" value="#grdUrednik.@PovezanaKontaId"  />
+						</action>
+						<action type="confirm" value="Želite li doista obrisati označeni redak?">							
+							<action type="datarun nonquery" value="~dtObrisi">	
+								<action type="control populate" value="#grdUrednik" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel" name="btnOdustani" dock="right">
+					<!-- <event type="click"> -->
+						<!-- <action type="form close"/> -->
+					<!-- </event> -->
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCkntPovezanaKonta" name="dtObrisi"> 
+				<parameter name="@Action" value="3"/> 
+				<parameter name="@Id" value="$PovezanaKontaId"/> 			
+			</data>	
+		</datalist>
+	</form>
+	
+	<!--forma za povezivanje konta, izdvojiti? -->
+	<form caption="Urednik" name="frmUrednik" > 
+		<event type="onload">
+				<action  type="datarun reader" value="~dtPopuni" if="$PovezanaKontaId!=null">
+				</action>
+		</event>
+		<layout textposition="top">
+		<group rows="1" cols="1">
+			<group rows="1" cols="2">
+				<item col="1" row="1" caption="Izvorišni konto:">
+					<searchedit  name="txtKonto"  required="true" fieldtext="Konto" dataname="~dtTraziKonto" fieldvalue="KntPlanAId" datavalue="~dtPopuni.@KntPlanAId" datatext="~dtPopuni.@Konto1" tabindex="0" >
+<!--                        <event type="valuechanged">
+							<action type="variable value">
+								<parameter name="KntPlanAId" value="#srcKonto1" />
+							</action>
+                        </event>-->
+					</searchedit>
+				</item>
+				<item col="2" row="1" caption="Odredišni konto:">
+					<searchedit  name="txtKonto1"  required="true" fieldtext="Konto" dataname="~dtTraziKonto1" fieldvalue="KntPlanAId" datavalue="~dtPopuni.@KntPlanAId2" datatext="~dtPopuni.@Konto2" tabindex="0" >
+<!--                        <event type="valuechanged">
+							<action type="variable value">
+								<parameter name="KntPlanAId" value="#srcKonto1" />
+							</action>
+                        </event>-->
+					</searchedit>
+				</item>
+			</group> 
+			</group>
+		</layout> 
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpemi" caption="Spremi"  dock="left">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun scalar" value="~dtSpremi">
+							<parameter name="parent.$PovezanaKontaId"  />
+						</action>
+						<action type="form close"/>
+						<action type="control populate" value="parent.#grdUrednik"  />
+					</event>
+				</button>
+				
+				<button caption="Odustani" type="cancel" name="btnOdustani" dock="right">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCkntPovezanaKonta" name="dtSpremi"> 
+				<parameter name="@Action" value="1" if="$PovezanaKontaId==null"/> 
+				<parameter name="@Action" value="2" if="$PovezanaKontaId!=null"/> 
+				<parameter name="@KntPlanAId" value="#txtKonto" /> 
+				<parameter name="@KntPlanAId2" value="#txtKonto1" /> 
+				<parameter name="@OperateriId" value="@@OperateriId" /> 
+				<parameter name="@ID" value="$PovezanaKontaId" if="$PovezanaKontaId!=null"/> 				
+			</data>
+			<data command="spCkntPovezanaKonta" name="dtTraziKonto"> 
+				<parameter name="@Action" value="5"/> 
+				<parameter name="@Konto" value="#txtKonto.text" type="string"/> 			
+			</data>	
+			<data command="spCkntPovezanaKonta" name="dtTraziKonto1"> 
+				<parameter name="@Action" value="5"/> 
+				<parameter name="@Konto" value="#txtKonto1.text" type="string"/> 			
+			</data>
+			<data command="spCkntPovezanaKonta" name="dtPopuni"> 
+				<parameter name="@Action" value="4"/> 
+				<parameter name="@Id" value="$PovezanaKontaId"/> 			
+			</data>	
+		</datalist>
+	</form>
+	
+	<!--Globalni datasetovi -->
+	<datalist>
+		<data command="spCkntPreknzenjeKontaQuery" name="dtKontoCombo"> 
+			<parameter name="@Action" value="1"/>  
+		</data>	
+		<data command="spCkntPreknzenjeKontaQuery" name="dtOrgShemaCombo"> 
+			<parameter name="@Action" value="2"/>  
+		</data>	
+		<data command="spCkntPreknzenjeKontaQuery" name="dtVrTemCombo"> 
+			<parameter name="@Action" value="3"/>  
+		</data>	
+	</datalist>
+</root>

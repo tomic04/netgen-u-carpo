@@ -1,0 +1,633 @@
+﻿<root loglevel="4">
+    <form name="frmMaster" type="master" caption="NDA ugovori">
+        <method name="funDmsAdd" dll="DmsManagerV1" class="DmsManagerV1.Start" method="AddDocuments" />
+        <method name="funDmsOpen" dll="DmsManagerV1" class="DmsManagerV1.Start" method="OpenDocument" />
+        <method name="funDmsSave" dll="DmsManagerV1" class="DmsManagerV1.Start" method="SaveDocuments" />
+        <event type="init">
+            <action type="datarun reader" value="Global.dtPubVars" />
+            <action type="variable value">
+                <parameter name="Global.PosUgovoriBrojUgovora" value="~dtPubVars.@PosUgovoriBrojUgovora" type="int" />
+            </action>
+            <action type="control populate" value="#grdMaster" />
+            <action type="variable value">
+                <parameter name="Boja" value="#ff00000" />
+            </action>
+            <action type="variable value">
+                <parameter name="Global.OperaterLockId" value="0" type="int" />
+            </action>
+            <action type="variable value">
+                <parameter name="Global.DokId" value="0" type="int" />
+            </action>
+        </event>
+        <!-- <event type="load">
+      <action type="control populate" value="#grdDms"/>
+    </event> -->
+        <event type="shown">
+            <action type="control enable" value="#btnIzmijeni, #btnObrisi, #btnPrint" if="#grdMaster.rowcount!=0" />
+            <action type="control disable" value="#btnIzmijeni, #btnObrisi, #btnPrint" else="" />
+            <action type="control disable" value="#btnIzmijeni, #btnObrisi, #btnPrint" elseif="#grdMaster.@SmijeId!=1" />
+            <action type="control enable" value="#btnIzmijeni, #btnObrisi, #btnPrint" else=""/>
+            <action type="control disable" value="#btnStatus" if="#grdMaster.rowcount==0||#grdMaster.@ZakljucenoId==1" />
+            <action type="control enable" value="#btnStatus" else=""/>
+            <action type="menu disable" value="#menVratiStatus" if="#grdMaster.@SmijeId==1" />
+            <action type="menu enable" value="#menVratiStatus" else=""/>
+            <action type="control populate" value="#grdPotpisnici,#grdPartneri,#grdOvlasteniDavatelj" />
+            <action type="control disable" value="#btnAneks"/>
+            <action type="control populate" value="#grdDms"/>
+        </event>
+        <managerlayout>
+            <grid name="grdMaster" type="master" async="true" savelayout="true" dataname="Global.dtMaster" key="PosUgovoriGlaId" autopopulate="false" multiselect="true" printcaptionalign="left" printcaption="NDA ugovori">
+                <event type="focusedrowchanged">
+                    <action type="control enable" value="#btnIzmijeni, #btnObrisi, #btnPrint" if="#grdMaster.rowcount!=0" />
+                    <action type="control disable" value="#btnIzmijeni, #btnObrisi, #btnPrint" else="" />
+                    <action type="control disable" value="#btnIzmijeni, #btnObrisi, #btnPrint" elseif="#grdMaster.@SmijeId!=1" />
+                    <action type="control enable" value="#btnIzmijeni, #btnObrisi, #btnPrint" else=""/>
+                    <action type="control disable" value="#btnStatus" if="#grdMaster.rowcount==0||#grdMaster.@ZakljucenoId==1" />
+                    <action type="control enable" value="#btnStatus" else=""/>
+                    <action type="menu disable" value="#menVratiStatus" if="#grdMaster.@SmijeId==1" />
+                    <action type="menu enable" value="#menVratiStatus" else=""/>
+                    <action type="variable value">
+                        <parameter name="PosUgovoriglaId" value="#grdMaster.@PosUgovoriglaId" />
+                    </action>
+                    <action type="control populate" value="#grdPotpisnici,#grdPartneri,#grdOvlasteniDavatelj" />
+                    <action type="control populate" value="#grdDms"/>
+                </event>
+                <event type="doubleclick">
+                    <action type="variable value" value="Global.$OperaterLockId">
+                        <parameter value="#grdMaster.@PosUgovoriGlaId" />
+                    </action>
+                    <action type="form open" value="frmUgovoriNDAEdit" if="#grdMaster.rowcount&gt;0&amp;&amp;#grdMaster.@SmijeId==1">
+                        <parameter name="PosUgovoriglaId" value="#grdMaster.@PosUgovoriglaId" />
+                        <parameter name="Status" value="#grdMaster.@Status" />
+                    </action>
+                    <action type="message" value="'Dokument je zaključen, izmjene nisu moguće.'" else="#grdMaster.@SmijeId==0" />
+                    <action type="control populate keepfocus" value="#grdMaster" />
+                </event>
+                <fields inherited="true">
+                    <field name="VrstaUgovora" caption="Vrsta ugovora" />
+                    <field name="DatumUgovora" caption="Datum ugovora" />
+                    <field name="UgovorVrijediDo" caption="Ugovor vrijedi do" />
+                    <field name="MjestoPotpisa" caption="Mjesto potpisa" />
+                    <field name="datumPotpisa" caption="Datum potpisa" />
+                    <field name="BrojKopija" caption="Broj kopija" />
+                    <field name="UgovorVrijediGodina" caption="Ugovor vrijedi (godina)" format="n0" />
+                    <field name="UgovorenaKaznaIznos" caption="Iznos ugovorne kazne" />
+                </fields>
+                <menu>
+                    <menuitem name="menVratiStatus" caption="Vrati status" function="dmsspremi">
+                        <event type="click">
+                            <action type="form open" value="frmPromjenaStatusa">
+                                <parameter name="PosUgovoriGlaID" value="#grdMaster.@PosUgovoriGlaID"/>
+                                <parameter name="NaslovTekst" value="VRAĆANJE STATUSA"/>
+                                <parameter name="Var" value="Vrati"/>
+                                <parameter name="ZakljucakInd" value="0" />
+                            </action>
+                            <action type="control populate keepfocus" value="#grdMaster"/>
+                        </event>
+                    </menuitem>
+                    <menuitem name="menPovijestStatusa" caption="Povijest statusa">
+                        <event type="click">
+                            <action type="form open" value="frmPovijestStatusa">
+                                <parameter name="PosUgovoriGlaID" value="#grdMaster.@PosUgovoriGlaID"/>
+                            </action>
+                        </event>
+                    </menuitem>
+                </menu>
+            </grid>
+            <tabs>
+                <tab caption="Partneri">
+                    <grid name="grdPartneri" showgrouppanel="false" showautofilterrow="true" savelayout="true" bestfitonrefresh="true" multiselect="true">
+                        <data command="spProd_PosUgovori_PartneriTab">
+                            <parameter name="@PosUgovoriGlaId" value="$PosUgovoriglaId" />
+                        </data>
+                        <fields inherited="true">
+                            <field name="Naziv" caption="Naziv" fontbold="true"/>
+                        </fields>
+                        <groupsummary>
+                            <summary type="count" visible="false"/>
+                        </groupsummary>
+                    </grid>
+                </tab>
+                <tab caption="Potpisici">
+                    <grid name="grdPotpisnici" showgrouppanel="false" showautofilterrow="true" savelayout="true" bestfitonrefresh="true" multiselect="true">
+                        <data command="spProd_PosUgovori_PotpisniciGrid">
+                            <parameter name="@PosUgovoriGlaId" value="$PosUgovoriglaId" />
+                        </data>
+                        <fields inherited="true">
+                            <field name="Pozicija" visible="false" />
+                        </fields>
+                        <groupsummary>
+                            <summary type="count" visible="false"/>
+                        </groupsummary>
+                    </grid>
+                </tab>
+                <tab caption="Ovlašteni davatelj(i) informacija">
+                    <grid name="grdOvlasteniDavatelj" showgrouppanel="false" showautofilterrow="true" savelayout="true" bestfitonrefresh="true" multiselect="true">
+                        <data command="spProd_PosUgovori_OvlasteniDavGrid">
+                            <parameter name="@PosUgovoriGlaId" value="$PosUgovoriglaId" />
+                        </data>
+                        <fields inherited="true">
+                        </fields>
+                        <groupsummary>
+                            <summary type="count" visible="false"/>
+                        </groupsummary>
+                    </grid>
+                </tab>
+                <tab caption="DMS">
+                    <grid name="grdDms" keyfield="DokID" multiselect="true" showmenuprintitem="false" showmenutools="false" savelayout="true">
+                        <data command="spCarpoDMSQuery">
+                            <parameter name="@EntityName" value="PosUgovoriGla"/>
+                            <parameter name="@Id" value="#grdMaster.@PosUgovoriGlaId"/>
+                        </data>
+                        <menu>
+                            <menuitem caption="Pogledaj">
+                                <event type="click">
+                                    <action type="method run" value="funDmsOpen">
+                                        <parameter name="server" value="@@server" />
+                                        <parameter name="database" value="@@database" />
+                                        <parameter name="username" value="" />
+                                        <parameter name="password" value="" />
+                                        <parameter name="operateriid" value="@@operateriid" />
+                                        <parameter name="dokID" value="#grdDms.@DokID" />
+                                        <parameter name="name" value="#grdDms.@naziv" />
+                                    </action>
+                                </event>
+                            </menuitem>
+                            <!-- Parametri potrebni za poziv Dms metode za spremanje dokumenata -->
+                            <menuitem caption="Spremi na disk">
+                                <event type="click">
+                                    <action type="method run" value="funDmsSave">
+                                        <parameter name="server" value="@@server" />
+                                        <parameter name="database" value="@@database" />
+                                        <parameter name="username" value="" />
+                                        <parameter name="password" value="" />
+                                        <parameter name="operaterid" value="@@operateriid" />
+                                        <parameter name="dokIDs" value="#grdDms.selectedids" />
+                                    </action>
+                                </event>
+                            </menuitem>
+                            <menuitem caption="Obriši" function="DokObrisi">
+                                <event type="click">
+                                    <action type="confirm" value="Želite li sigurno obrisati označeni(e) dokument(e)?">
+                                        <action type="datarun nonquery" value="~dtDeleteDoc" />
+                                        <action type="control populate" value="#grdDms" />
+                                    </action>
+                                </event>
+                            </menuitem>
+                        </menu>
+                        <!-- Parametri potrebni za poziv Dms metode za otvaranje dokumenata -->
+                        <event type="doubleclick">
+                            <action type="method run" value="funDmsOpen">
+                                <parameter name="server" value="@@server" />
+                                <parameter name="database" value="@@database" />
+                                <parameter name="username" value="" />
+                                <parameter name="password" value="" />
+                                <parameter name="operateriid" value="@@operateriid" />
+                                <parameter name="dokID" value="#grdDms.@DokID" />
+                                <parameter name="name" value="#grdDms.@naziv" />
+                            </action>
+                        </event>
+                        <fields inherited="true">
+                            <field name="Naziv" fontbold="true" />
+                            <field name="Size" caption="Size [KB]" />
+                        </fields>
+                    </grid>
+                </tab>
+            </tabs>
+        </managerlayout>
+        <panelbuttons>
+            <buttons>
+                <button name="btnUnesi" caption="&amp;UNESI" type="add">
+                    <!-- <menuitem control="#grdMaster"/> -->
+                    <event type="click">
+                        <action type="form open" value="frmUgovoriNDA">
+                            <parameter name="PosUgovoriglaId" value="null" />
+                        </action>
+                        <!-- <action type="control populate" value="#grdMaster" /> -->
+                    </event>
+                </button>
+                <button name="btnIzmijeni" caption="IZMIJENI" type="edit">
+                    <event type="click">
+                        <action type="variable value" value="Global.$OperaterLockId">
+                            <parameter value="#grdMaster.@PosUgovoriglaId" />
+                        </action>
+                        <action type="variable value">
+                            <parameter name="PosUgovoriglaId" value="#grdMaster.@PosUgovoriglaId" />
+                        </action>
+                        <action type="form open" value="frmUgovoriNDAEdit" if="#grdMaster.rowcount&gt;0&amp;&amp;#grdMaster.@SmijeId==1">
+                            <parameter name="PosUgovoriglaId" value="#grdMaster.@PosUgovoriglaId" />
+                        </action>
+                        <action type="control populate keepfocus" value="#grdMaster" />
+                    </event>
+                </button>
+                <button name="btnObrisi" caption="OBRIŠI" type="delete">
+                    <event type="click">
+                        <action type="confirm" value="Želite li obrisati označene dokumente?">
+                            <action type="control foreachrow selected" value="#grdMaster">
+                                <action type="datarun nonquery" value="Global.~dtDelete">
+                                </action>
+                            </action>
+                            <action type="control populate" value="#grdMaster" />
+                        </action>
+                    </event>
+                </button>
+                <!-- <button name="btnLokacije" caption="LOKACIJE">
+          <event type="click">
+            <action type="form open" value="frmLokacije">
+              <parameter name="PartneriId" value="#grdMaster.@PartneriId" />
+              <parameter name="PosUgovoriglaId" value="#grdMaster.@PosUgovoriglaId" />
+            </action>
+          </event>
+        </button> -->
+                <button name="btnStatus" caption="PROMIJENI STATUS" type="">
+                    <event type="click">
+                        <action type="variable value" value="Global.$OperaterLockId">
+                            <parameter value="#grdMaster.@PosUgovoriglaId" />
+                        </action>
+                        <action type="datarun scalar" value="global.~dtProvjeraViseDok">
+                            <parameter name="Error"/>
+                        </action>
+                        <action type="message" value="Nije moguće promijeniti status jer su dokumenti u različitim statusima!" if="$Error==1" />
+                        <action type="variable value" value="Global.$ZakljucakInd" if="$error!=1">
+                            <parameter value="1" />
+                        </action>
+                        <action type="form open" value="frmPromjenaStatusa">
+                            <parameter name="PosUgovoriGlaID" value="#grdMaster.@PosUgovoriGlaID"/>
+                            <parameter name="NaslovTekst" value="PROMJENA STATUSA"/>
+                            <parameter name="IzPodloge" value="1"/>
+                            <parameter name="ZakljucakInd" value="1" />
+                            <action type="control populate keepfocus" value="#grdMaster"/>
+                        </action>
+                        <action type="control populate" value="#grdMaster" />
+                    </event>
+                </button>
+                <!-- <button name="btnKopiraj" caption="KOPIRAJ" type=""> -->
+                <!-- <event type="click"> -->
+                <!-- <action type="confirm" value="Želite li kopirati dokument?"> -->
+                <!-- <action type="datarun nonquery" value="Global.~dtKopiraj"> -->
+                <!-- <action type="control populate" value="#grdMaster" /> -->
+                <!-- </action> -->
+                <!-- </action> -->
+                <!-- </event> -->
+                <!-- </button>	 -->
+                <button name="btnPrint" caption="IS&amp;PIŠI" dataname="global.~dtPrint" displayfield="Opis">
+                    <event type="click">
+                        <action type="control print" value="#grdMaster">
+                            <action type="print template" value="#btnPrint.@Template">
+                                <parameter name="id" value="#grdMaster.@PosUgovoriGlaID" />
+                            </action>
+                        </action>
+                    </event>
+                </button>
+                <button name="btnAneks" caption="ANEKS" type="">
+                    <event type="click">
+                        <action type="confirm" value="Želite li dodati aneks na dokument?">
+                            <action type="datarun scalar" value="Global.~dtAneks">
+                                <parameter name="PosUgovoriGlaID" value="$PosUgovoriglaId" />
+                            </action>
+                            <action type="control populate" value="#grdMaster" />
+                            <action type="control focus" value="#grdMaster" if="PosUgovoriGlaID!=0">
+                                <parameter value="$PosUgovoriGlaID" type="int"/>
+                            </action>
+                        </action>
+                    </event>
+                </button>
+                <button name="btnPovezi" caption="Dodaj dokument" function="DokDodaj">
+                    <event type="click">
+                        <action type="method run" value="funDmsAdd">
+                            <parameter name="server" value="@@server" />
+                            <parameter name="database" value="@@database"/>
+                            <parameter name="username" value="" />
+                            <parameter name="password" value="" />
+                            <parameter name="operaterid" value="@@operateriid" />
+                            <parameter name="EntityName" value="PosUgovoriGla" />
+                            <parameter name="entityID" value="#grdMaster.@PosUgovoriGlaId" />
+                            <parameter name="tipInserta" value="windows" />
+                        </action>
+                        <action type="control populate" value="#grdDms" />
+                    </event>
+                </button>
+                <!-- <button name="btnFilter" caption="Filter" type=""> -->
+                <!-- <event type="click"> -->
+                <!-- <action type="form open" value="frmFilter"> -->
+                <!-- </action> -->
+                <!-- <action type="control populate" value="#grdMaster" /> -->
+                <!-- </event> -->
+                <!-- </button> -->
+            </buttons>
+        </panelbuttons>
+        <datalist>
+            <data command="spCarpoDMSQuery" name="dtDms">
+                <parameter name="@EntityName" value="PosUgovoriGla"/>
+                <parameter name="@Id" value="#grdMaster.@PosUgovoriGlaId"/>
+            </data>
+            <data command="spCarpoDMSAzur" name="dtDeleteDoc">
+                <parameter name="@Action" value="Delete"/>
+                <parameter name="@EntityName" value="PosUgovoriGla"/>
+                <parameter name="@selectedids" value="#grdDms.selectedids"/>
+            </data>
+        </datalist>
+    </form>
+    <form name="frmUgovoriNDA" caption="NDA ugovor" width="300">
+        <event type="init">
+            <action type="datarun reader" value="Global.~dtGet" if="$PosUgovoriglaId!=null" />
+            <action type="datarun reader" value="Global.~dtGet">
+                <parameter value="@PosUgovoriglaId" />
+            </action>
+            <action type="datarun reader" value="Global.~dtGetDet" if="$PosUgovoriDetId!=null" />
+            <action type="datarun reader" value="Global.~dtGetDet">
+                <parameter value="@PosUgovoriGlaId" />
+            </action>
+        </event>
+        <event type="load">
+            <action type="variable value">
+                <parameter name="OsobaTrazilica" value="~dtGet.@OsobaTrazilica" />
+            </action>
+            <action type="control disable" value="#datDatumVrijediDo" if="#datDatumVrijediDo==null">
+            </action>
+            <action type="control value" value="#datDatumVrijediDo">
+                <parameter value="global.~dtGet.@ugovorvrijedido" if="global.~dtGet.@provdatum==1"/>
+                <parameter value="now" else=""/>
+            </action>
+            <action type="control value" value="#datDatumUgovora">
+                <parameter value="now" />
+            </action>
+        </event>
+        <event type="shown">
+            <action type="control disable" value="#txtBrojKopija" />
+            <action type="control disable" value="txtBroj" />
+        </event>
+        <event type="close">
+            <action type="control populate" value="parent.#grdMaster" if="parent.$PosUgovoriglaId!=0">
+                <action type="control focus" value="parent.#grdMaster" if="parent.$PosUgovoriglaId!=0">
+                    <parameter value="parent.$PosUgovoriglaId" type="int"/>
+                </action>
+            </action>
+        </event>
+        <layout textposition="top" itemspadding="0">
+            <group caption="Unos" cols="3" rows="7">
+                <part name="UgovoriNDAform" path="prtUgovoriNDA.xml" />
+            </group>
+        </layout>
+        <panelbuttons>
+            <buttons>
+                <button caption="SPREMI" type="add" dock="right">
+                    <event type="click">
+                        <action type="validate" />
+                        <action type="datarun nonquery" value="Global.~dtEdit" if="$PosUgovoriglaId!=null"/>
+                        <action type="datarun scalar" value="Global.~dtAdd" else="">
+                            <parameter name="PosUgovoriglaId" />
+                        </action>
+                        <action type="variable value" value="Global.$DokId">
+                            <parameter value="$PosUgovoriglaId" />
+                        </action>
+                        <action type="control populate keepfocus" value="parent.#grdMaster" />
+                        <action type="control focus" value="parent.#grdMaster">
+                            <parameter value="$PosUgovoriglaId" type="int" />
+                        </action>
+                        <action type="form close" />
+                        <!-- <action type="form open" value="frmUgovoriNDAEdit" if="#grdMaster.@SmijeId==1"> -->
+                        <action type="form open" value="frmUgovoriNDAEdit">
+                            <parameter name="PosUgovoriglaId" value="$PosUgovoriglaId" />
+                        </action>
+                    </event>
+                </button>
+                <button caption="ODUSTANI" type="cancel" dock="right" />
+            </buttons>
+        </panelbuttons>
+    </form>
+    <form name="frmLokacije" caption="Lokacije">
+        <layout textposition="top">
+            <group cols="1" rows="1">
+                <item col="1" row="1" highlight="False">
+                    <grid name="grdParStru" key="ParStruId" showgrouppanel="False" showfooter="false" autopopulate="true" dataname="global.dtParStru">
+                        <fields >
+                            <field name="Checked" caption="." editable="true" edittype="bool"/>
+                            <!--<field name="Označeno" caption="Označeno" />-->
+                            <field name="Naziv" caption="Naziv" />
+                            <field name="Sifra" caption="Šifra" />
+                            <field name="HPTBroj" caption="Poštanski broj" />
+                            <field name="Mjesto" caption="Mjesto" />
+                            <field name="Adresa" caption="Adresa" />
+                        </fields>
+                        <event type="cellvaluechanged">
+                            <action type="datarun nonquery" value="global.~dtEditGrid"/>
+                            <!-- <action type="control populate keepfocus" value="#grdMaster"/> -->
+                        </event>
+                    </grid>
+                </item>
+            </group>
+        </layout>
+        <panelbuttons>
+            <buttons>
+                <button name="btnSpremi" caption="Prihvati">
+                    <event type="click">
+                        <action type="validate"/>
+                        <action type="form close"/>
+                    </event>
+                </button>
+                <!-- <button name="btnOdustani" caption="Odustani" type="cancel">
+          <event type="click">
+            <action type="form close"/>
+          </event>
+        </button>  -->
+            </buttons>
+        </panelbuttons>
+    </form>
+    <!-- <form name="frmAneks" caption="Aneks" fixedsize="true"> -->
+    <!-- <layout textposition="top"> -->
+    <!-- <group cols="1" rows="1"> -->
+    <!-- <item caption="Aneks: " col="1" row="1"> -->
+    <!-- <textedit name="txtAneks" /> -->
+    <!-- </item>				 -->
+    <!-- </group> -->
+    <!-- </layout>	 -->
+    <!-- <panelbuttons> -->
+    <!-- <buttons> -->
+    <!-- <button name="btnSpremi" caption="Prihvati"> -->
+    <!-- <event type="click"> -->
+    <!-- <action type="datarun nonquery" value="global.~dtAneks"/> -->
+    <!-- <action type="form close"/> -->
+    <!-- </event> -->
+    <!-- </button>	 -->
+    <!-- <button name="btnOdustani" caption="Odustani" type="cancel"> -->
+    <!-- <event type="click"> -->
+    <!-- <action type="form close"/> -->
+    <!-- </event> -->
+    <!-- </button>	 -->
+    <!-- </buttons> -->
+    <!-- </panelbuttons>				 -->
+    <!-- </form>	 -->
+    <form name="frmFilter" caption="Filter" fixedsize="true">
+        <layout textposition="top">
+            <group cols="2" rows="1">
+                <item caption="Datum od:" col="1" row="1">
+                    <dateedit name="datDatumOd" required="true" value="now" />
+                </item>
+                <item caption="Datum od:" col="2" row="1">
+                    <dateedit name="datDatumDo" required="true" value="now" />
+                </item>
+            </group>
+        </layout>
+        <panelbuttons>
+            <buttons>
+                <button name="btnSpremi" caption="Prihvati">
+                    <event type="click">
+                        <action type="validate"/>
+                        <action type="variable value">
+                            <parameter name="parent.tmpId" value="1"/>
+                            <parameter name="parent.DatumOd" value="#datDatumOd"/>
+                            <parameter name="parent.DatumDo" value="#datDatumDo"/>
+                        </action>
+                        <action type="form close"/>
+                    </event>
+                </button>
+                <button name="btnOdustani" caption="Odustani" type="cancel">
+                    <event type="click">
+                        <action type="form close"/>
+                    </event>
+                </button>
+            </buttons>
+        </panelbuttons>
+    </form>
+    <form name="frmPromjenaStatusa" path="frmPromjenaStatusa.xml"/>
+    <form name="frmPovijestStatusa" path="frmPovijestStatusa.xml"/>
+    <form name="frmUgovoriNDAEdit" path="frmUgovoriNDAEdit.xml"/>
+    <datalist>
+        <data command="spTraziPartneri" name="dtPartneri">
+            <parameter name="@Action" value="Partneri" />
+            <parameter name="@Uvjet" value="#srcPartner.text" />
+            <parameter name="@broj_lokacija" value="1" />
+        </data>
+        <data command="spProd_PosUgovoriGla_UgovoriVrste" type="text" name="dtVrstaUgovora">
+        </data>
+        <data command="spProd_PosUgovoriGla_NDAmgQuery" name="dtMaster">
+        </data>
+        <data command="spProd_PosUgovoriGla_NDAQuery" name="dtGet">
+            <parameter name="@Id" value="$PosUgovoriGlaId" />
+        </data>
+        <data command="spProd_PosUgovoriDet_Query" name="dtGetDet">
+            <parameter name="@Id" value="$PosUgovoriGlaId" />
+        </data>
+        <data command="spProd_PosUgovoriDet_QueryGet" name="dtDetaljStavke">
+            <parameter name="@Id" value="$PosUgovoriDetId" />
+        </data>
+        <data command="spProd_PosUgovoriGla_Insert" name="dtAdd">
+            <parameter name="@VrstadokId" value=""/>
+            <parameter name="@PosUgovoriVrsteId" value="#cmbVrstaUgovora"/>
+            <parameter name="@Broj" value="#txtBroj" type="string" if="global.$PosUgovoriBrojUgovora==1"/>
+            <parameter name="@Broj" value="" type="string" else=""/>
+            <parameter name="@Aneks" value="null"/>
+            <parameter name="@DatumUgovora" value="#datDatumUgovora"/>
+            <parameter name="@UgovorVrijediDo" value="#datDatumVrijediDo"/>
+            <!-- <parameter name="@Obrt" value=""/> -->
+            <!-- <parameter name="@Vlasnik" value=""/> -->
+            <parameter name="@PartneriId" value=""/>
+            <parameter name="@OvlastenaOsoba" value="null"/>
+            <!-- <parameter name="@ClanUprave" value=""/> -->
+            <parameter name="@KreditniLimit" value="null"/>
+            <parameter name="@Odgoda" value="null"/>
+            <parameter name="@Rabat" value="null"/>
+            <!-- <parameter name="@VrijemeKreiranja" value=""/> -->
+            <!-- <parameter name="@Status" value=""/> -->
+            <!-- <parameter name="@PosUgovorigla2Id" value=""/> -->
+            <parameter name="@OperateriId" value="@@operateriid"/>
+            <parameter name="@Zaduznica" value="null"/>
+            <parameter name="@OvlastenaOsobaId" value="null"/>
+            <parameter name="@AutorskoPravo" value="null"/>
+            <parameter name="@ValuteId" value="#cmbValuta"/>
+            <parameter name="@AvansUplaceni" value="null"/>
+            <!-- <parameter name="@AvansUplaceniGodisnji" value="#txtZaduznica"/> -->
+            <parameter name="@Naslov" value="null"/>
+            <!-- <parameter name="@RobaId" value="#txtNaslov"/> -->
+            <parameter name="@JeziciId" value="#cmbJezik"/>
+            <parameter name="@UgovorenaKaznaIznos" value="#txtUgovorenaKaznaIznos"/>
+            <parameter name="@UgovorVrijediGodina" value="#txtUgovorVrijediGodina"/>
+            <parameter name="@BrojKopija" value="#txtBrojKopija"/>
+            <parameter name="@MjestoPotpisa" value="#txtMjestoPotpisa"/>
+            <parameter name="@DatumPotpisa" value="#datDatumPotpisa"/>
+        </data>
+        <data command="spProd_PosUgovoriGla_Edit" name="dtEdit">
+            <parameter name="@ID" value="$PosUgovoriglaId" />
+            <parameter name="@PosUgovoriVrsteId" value="#cmbVrstaUgovora"/>
+            <parameter name="@Aneks" value="#txtAneks"/>
+            <parameter name="@DatumUgovora" value="#datDatumUgovora"/>
+            <parameter name="@UgovorVrijediDo" value="#datDatumVrijediDo"/>
+            <parameter name="@OvlastenaOsoba" value="null"/>
+            <parameter name="@KreditniLimit" value="#txtKreditniLimit"/>
+            <parameter name="@Odgoda" value="#txtOdgoda"/>
+            <parameter name="@Rabat" value="#txtRabat"/>
+            <parameter name="@OperateriId" value="@@operateriid"/>
+            <parameter name="@Zaduznica" value="#txtZaduznica"/>
+            <parameter name="@OvlastenaOsobaId" value="null"/>
+            <parameter name="@AutorskoPravo" value="#txtAutorsko"/>
+            <parameter name="@ValuteId" value="#cmbValuta"/>
+            <parameter name="@AvansUplaceni" value="#txtAvansUplaceni"/>
+            <!-- <parameter name="@AvansUplaceniGodisnji" value="#txtZaduznica"/> -->
+            <parameter name="@Naslov" value="#txtNaslov"/>
+            <!-- <parameter name="@RobaId" value="#txtNaslov"/> -->
+            <parameter name="@JeziciId" value="#cmbJezik"/>
+            <parameter name="@UgovorenaKaznaIznos" value="#txtUgovorenaKaznaIznos"/>
+            <parameter name="@UgovorVrijediGodina" value="#txtUgovorVrijediGodina"/>
+            <parameter name="@BrojKopija" value="#txtBrojKopija"/>
+            <parameter name="@MjestoPotpisa" value="#txtMjestoPotpisa"/>
+            <parameter name="@DatumPotpisa" value="#datDatumPotpisa"/>
+            <!-- <parameter name="@OvlastenaOsobaOIB" value="#txtOib"/> -->
+        </data>
+        <data command="spProd_PosUgovoriGla_Partner_Query" name="dtGetPartner">
+            <parameter name="@PartneriId" value="#srcPartner"/>
+        </data>
+        <data command="spProd_PosUgovoriGla_ParStru_Query" name="dtParStru">
+            <parameter name="@Id" value="$PartneriId"/>
+            <parameter name="@PosUgovoriglaId" value="$PosUgovoriglaId" />
+        </data>
+        <data command="spProd_PosUgovoriGla_Delete" name="dtDelete">
+            <parameter name="@ID" value="#grdMaster.@PosUgovoriglaId"/>
+        </data>
+        <data command="spProd_PosUgovoriGla_Kopiraj" name="dtKopiraj">
+            <parameter name="@ID" value="#grdMaster.@PosUgovoriglaId"/>
+            <parameter name="@OperateriId" value="@@operateriid"/>
+        </data>
+        <data command="dbo.spProd_PosUgovoriGla_Aneks" name="dtAneks">
+            <parameter name="@ID" value="#grdMaster.@PosUgovoriglaId"/>
+            <parameter name="@OperateriId" value="@@operateriid"/>
+            <parameter name="@PosUgovoriGla2ID" value="#grdMaster.@PosUgovoriglaId"/>
+        </data>
+        <data command="spProd_PosUgovoriGla_ParStru_Azur" name="dtEditGrid">
+            <parameter name="@ParStruId" value="#grdParStru.@ParStruId" />
+            <parameter name="@PosUgovoriGlaID" value="$PosUgovoriglaId" />
+        </data>
+        <data command="spCarpoPrint" name="dtPrint">
+            <parameter name="@Action" value="GetTemplates" />
+            <parameter name="@Id" value="#grdMaster.@PosUgovoriglaId" type="int" />
+            <parameter name="@Tablica" value="PosUgovoriGla" />
+        </data>
+        <data command="spStatusiViseDok_CARPO" name="dtProvjeraViseDok">
+            <parameter name="@table" value="#grdMaster.selectedids.table"/>
+            <parameter name="@tablica" value="PosUgovoriGla"/>
+        </data>
+        <data command="spDajPubVarse" name="dtPubVars">
+            <!-- <parameter name="@Action" value="2" /> -->
+            <!-- <parameter name="@VarIme" value="PosUgovoriBrojUgovora" /> -->
+            <parameter name="@Id" value="null" />
+        </data>
+        <data command="spNG_Combo" name="dtValuta">
+            <parameter name="@Action" value="valute" />
+            <parameter name="@Ind" value="1" />
+            <!-- <parameter name="@Oznaka" value="OznakaNaziv" /> -->
+        </data>
+        <data command="spProd_PosUgovori_RobaQuery" name="dtRoba">
+            <parameter name="@ID" value="$PosUgovoriGlaId" />
+        </data>
+        <data command="spProd_PosUgovoriDet_Query" name="dtDodatnoGrid">
+            <parameter name="@Id" value="parent.$PosUgovoriglaId"/>
+        </data>
+        <data command="spProd_PosUgovori_Jezici" type="text" name="dtUgovoriNDAJezici">
+        </data>
+        <data command="spProd_PosUgovoriGla_dtGetOIB" name="dtGetOIB">
+            <parameter name="@Id" value="$PosUgovoriglaId"/>
+        </data>
+        <data command="spProd_PosUgovori_Titule" type="text" name="dtUgovoriNDTitule">
+        </data>
+    </datalist>
+</root>

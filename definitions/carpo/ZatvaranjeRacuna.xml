@@ -1,0 +1,1103 @@
+
+
+
+<!--v 1.2.3. 06.10.2025. IF prikaz na sučelju, umjesto FakBrojDok prikaži FakBroj -->
+<!--v 1.2.2. 7.1.2021. AA uklonila uvjete na fieldovima kako bi radio savelayout-->
+<!--v 1.2.1. 3.12.2021. AA savelayout umjesto bestfitonrefresh-->
+<!--v 1.2.0. 15.11.2021. AA ispravak KntTemId zbog blokade-->
+<!--v 1.1.9. 17.08.2021. IF (bug fixing kod novog Carpa)
+Caption i textposition atribute prebacio iz itema u radioedit za sve buttone. 
+Dodao nove attribute u layout1 i layout2 + -splitterposition="300"-->
+<!--v 1.1.8. 3.3.2021. AA za predujmove dodatak &amp;&amp;$KompOznaka==null kako se ne bi duplao exec ako imaju KompOznaka-->
+<!--v 1.1.7. 18.2.2021. AA zatvaranje POMSK -->
+<!--v 1.1.6. 17.2.2021. AA tražilica partnera iz temeljnica -->
+<!--v 1.1.5. 9.1.2021. AA opcija više uplata 1 račun-->
+<!--v 1.1.4. 9.12.2020. AA multiselect="true" -->
+<!--v 1.1.3. 9.12.2020. AA čišćenje temp tablice po izlasku iz granule-->
+<!--v 1.1.2. 13.12.2019. AA savevalue="app" na rdo, vrstu temeljnice, org. shemu-->
+<!--v 1.1.1. 4.11.2019. AA omogućeni devizni dokumenti šifra 55-->
+<!--v 1.1.0. 20.4.2018 AA omogućene negativne uplate i djelomični računi-->
+<!--v 1.0.5. 11.4.2018. AA print preko spCarpoPrint-->
+<!--         5.4.2018. AA crveno i kad sifra=52-->
+<!--v 1.0.4. 1.12.2017. AA ispis specifikacije-->
+<!--v 1.0.3. 17.11.2017. AA crveno za minus uplate i sve dokumente osim izvoda i blagajne, grid empty na promjenu kontrola,
+              omogućeno zatvaranje računa računom (fakture desno saldo +, lijevo saldo - | fakturedob obrnuto)-->
+<!--v 1.0.2. 31.10.2017. AA slučaj nove temeljnice-->
+<!--v 1.0.1. 30.10.2017. AA bold suma, popravak smije/checked, manja uplata-->
+<!--v 1.1.0. početna verzija-->
+
+<root version="1.2.3." loglevel="3">
+	<form name="frmGlavni" caption="Zatvaranje računa" type="master" template="splitter" maximized="true" splitterposition="300">
+		<event type="load">
+			<action type="datarun nonquery" value="~dtBrisiUpl"/>
+			<action type="datarun nonquery" value="~dtBrisiCalc"/>
+		</event>
+		<event type="shown">
+			<action type="control value" value="#txtUplateUkupno,#txtRacuniUkupno,#txtRazlika">
+				<parameter value="0"/>
+			</action>
+			<action type="variable value">
+				<parameter name="BrojRacuna" value="0"/>
+			</action>
+			<action type="control disable" value="#btnProknjizi"/>
+			<action type="control value" value="#datDatum">
+				<parameter value="now" type="date"/>
+			</action>
+			<action type="control visible" value="#cmbVrstaDok,#datDatum,#txtOpis" if="#cmbNacinKnjizenja==0">
+				<parameter value="false"/>
+			</action>
+			<action type="control visible" value="#cmbVrstaDok,#datDatum,#txtOpis" if="#cmbNacinKnjizenja==1">
+				<parameter value="true"/>
+			</action>
+			<action type="control focus" value="#rdoUplata"/>
+		</event>
+		<event type="close">
+			<action type="datarun nonquery" value="~dtBrisiUpl"/>
+			<action type="datarun nonquery" value="~dtBrisiCalc"/>			
+		</event>
+		<layout name="panel1" autotaborder="false" type="collapsable" itemspadding="1" savevalue="app" minsize="300"> <!--parametri-->
+			<group cols="1" rows="9" groupbordervisible="false">
+				<columnsdefinition>
+					<!-- <column size="250" position="1"/> -->
+				</columnsdefinition>
+				<group col="1" row="1" cols="3" rows="1" alignmode="local" groupbordervisible="false">
+					<!-- <item col="1" row="1" caption="Zatvaranje:" fontsizedelta="1"/> -->
+					<group col="3" row="2" cols="1" rows="1" alignmode="local" groupbordervisible="false">
+						<item col="1" row="1"  fontsizedelta="1">
+							<radioedit name="rdoMultiUplata" groupindex="1" caption="više uplata" textposition="left" value="true" tabindex="1" tooltip="n uplata na 1 račun">
+								<event type="valuechanged">
+									<action if="#rdoMultiUplata==true">
+										<!-- <action type="control value" value="#cmbNacinKnjizenja" > -->
+											<!-- <parameter value="0"/> -->
+										<!-- </action> -->
+										<!-- <action type="control disable" value="#cmbNacinKnjizenja"/>										 -->
+										<!-- <action type="control visible" value="#cmbVrstaDok,#datDatum,#txtOpis"> -->
+											<!-- <parameter value="false"/> -->
+										<!-- </action>							 -->
+									</action>									
+									<action type="control datasourceempty" value="#grdUplate, #grdRacuni">
+										<parameter name="clearcolumns" value="false"/>
+									</action>
+									<action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno">
+										<parameter value="0"/>
+									</action>
+									<action type="control disable" value="#btnProknjizi"/>
+									<action type="control focus" value="#cmbKonto"/>
+								</event>
+							</radioedit>
+						</item>
+					</group>					
+					<group col="1" row="2" cols="1" rows="1" alignmode="local" groupbordervisible="false">
+						<item col="1" row="1" fontsizedelta="1">
+							<radioedit name="rdoUplata" groupindex="1" caption="1 uplata" textposition="left" value="true" tabindex="1" tooltip="1 uplata na n računa">
+								<event type="valuechanged">
+									<action type="control datasourceempty" value="#grdUplate, #grdRacuni">
+										<parameter name="clearcolumns" value="false"/>
+									</action>
+									<action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno">
+										<parameter value="0"/>
+									</action>
+									<action type="control disable" value="#btnProknjizi"/>
+									<action type="control enable" value="#cmbNacinKnjizenja" if="#rdoUplata==true"/>
+								</event>
+							</radioedit>
+						</item>
+					</group>
+					<group col="2" row="2" cols="1" rows="1" alignmode="local" groupbordervisible="false">
+						<item col="1" row="1"  fontsizedelta="1">
+							<radioedit name="rdoRacun" groupindex="1" caption="više računa" textposition="left" tabindex="2" savevalue="app" tooltip="n računa na n računa">
+								<event type="valuechanged">
+									<action type="control value" value="#cmbNacinKnjizenja" if="#rdoRacun==true">
+										<parameter value="1"/>
+									</action>
+									<!-- <action type="control value" value="#cmbNacinKnjizenja" elseif="#rdoRacun==false"> -->
+										<!-- <parameter value="0"/> -->
+									<!-- </action>									 -->
+									<action type="control disable" value="#cmbNacinKnjizenja" if="#rdoRacun==true||#rdoMultiUplata==true"/>
+									<action type="control enable" value="#cmbNacinKnjizenja" else="#rdoRacun==false"/>
+									<action type="control datasourceempty" value="#grdUplate, #grdRacuni">
+										<parameter name="clearcolumns" value="false"/>
+									</action>
+									<action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno">
+										<parameter value="0"/>
+									</action>
+									<action type="control disable" value="#btnProknjizi"/>									
+									<action type="control focus" value="#cmbKonto"/>
+								</event>
+							</radioedit>
+						</item>
+					</group>
+				</group>
+				<item col="1" row="2" caption="Konto:" fontsizedelta="1">
+					<comboedit name="cmbKonto" required="true" dataname="~dtKonto" savevalue="app" entermovenextcontrol="true" valuefield="KntPlanAId" displayfield="KNaziv" tabindex="3">
+						<event type="valuechanged">
+							<!-- <action type="control focus" value="#srcPartner"/>-->
+							<action type="control datasourceempty" value="#grdUplate, #grdRacuni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>
+							<action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno">
+								<parameter value="0"/>
+							</action>
+							<action type="control disable" value="#btnProknjizi"/>							
+						</event>
+					</comboedit>
+				</item>
+				<item col="1" row="3" caption="Partner:" fontsizedelta="1">
+					<searchedit name="srcPartner" required="true" fieldtext="Partner" fieldvalue="PartneriId" dataname="dtGetPartneri" savevalue="app" entermovenextcontrol="false" tabindex="4" savelayout="true">
+						<event type="valuechanged">
+							<action type="control focus" value="#cmbOrgShema"/>
+							<action type="control datasourceempty" value="#grdUplate, #grdRacuni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>
+							<action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno">
+								<parameter value="0"/>
+							</action>
+							<action type="control disable" value="#btnProknjizi"/>							
+						</event>
+						<!-- <event type="leave"> -->
+							<!-- <action type="control focus" value="#cmbOrgShema"/> -->
+						<!-- </event> -->
+					</searchedit>
+				</item>
+				<item col="1" row="4" caption="Organizacijska shema:" fontsizedelta="1">
+					<comboedit name="cmbOrgshema" dataname="~dtOrgShema" entermovenextcontrol="false" valuefield="OrgShemaId" displayfield="Naziv" tabindex="5" savevalue="app">
+						<event type="valuechanged">
+							<action type="control focus" value="#cmbNacinKnjizenja"/>
+							<action type="control datasourceempty" value="#grdUplate, #grdRacuni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>
+							<action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno">
+								<parameter value="0"/>
+							</action>
+							<action type="control disable" value="#btnProknjizi"/>						
+						</event>
+					</comboedit>
+				</item>
+				<item col="1" row="5" caption="Zatvaranje izvršiti na:" fontsizedelta="1">
+					<comboedit name="cmbNacinKnjizenja" allownull="false" dataname="~dtNacinKnjizenja" valuefield="id" displayfield="naziv" tabindex="6">
+						<event type="valuechanged">
+							<action type="control visible" value="#cmbVrstaDok,#datDatum,#txtOpis" if="#cmbNacinKnjizenja==0">
+								<parameter value="false"/>
+							</action>
+							<action type="control visible" value="#cmbVrstaDok,#datDatum,#txtOpis" elseif="#cmbNacinKnjizenja==1">
+								<parameter value="true"/>
+							</action>
+							<action type="control datasourceempty" value="#grdUplate, #grdRacuni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>	
+							<action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno">
+								<parameter value="0"/>
+							</action>
+							<action type="control disable" value="#btnProknjizi"/>							
+							<action type="control focus" value="#btnOsvjezi" if="#cmbNacinKnjizenja==0"/>
+							<action type="control focus" value="#cmbVrstaDok" elseif="#cmbNacinKnjizenja==1"/>
+						</event>
+							<event type="leave">
+								<action type="control focus" value="#btnOsvjezi" if="#cmbNacinKnjizenja==0"/>
+								<action type="control focus" value="#cmbVrstaDok" elseif="#cmbNacinKnjizenja==1"/>
+							</event>
+					</comboedit>
+				</item>
+				<item col="1" row="6" caption="Vrsta temeljnice:" fontsizedelta="1">
+					<comboedit name="cmbVrstaDok" dataname="~dtVrstaDok" allownull="false" valuefield="vrstadokid" displayfield="opis" tabindex="7" savevalue="app">
+						<event type="valuechanged">
+							<action type="control datasourceempty" value="#grdUplate, #grdRacuni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>
+							<action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno">
+								<parameter value="0"/>
+							</action>
+							<action type="control disable" value="#btnProknjizi"/>
+						</event>
+						<event type="leave">						
+							<action type="control focus" value="#datDatum"/>
+						</event>
+					</comboedit>
+				</item>
+				<item col="1" row="7" caption="Datum temeljnice:" fontsizedelta="1">
+					<dateedit name="datDatum" tabindex="8" entermovenextcontrol="true">
+						<event type="valuechanged">
+							<action type="control datasourceempty" value="#grdUplate, #grdRacuni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>
+							<action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno">
+								<parameter value="0"/>
+							</action>
+							<action type="control disable" value="#btnProknjizi"/>							
+							<!-- <action type="control focus" value="#txtOpis"/> -->
+						</event>
+						<event type="leave">	
+							<action type="control focus" value="#txtOpis"/>
+						</event>
+					</dateedit>
+				</item>
+				<item col="1" row="8" caption="Opis:" fontsizedelta="1">
+					<textedit name="txtOpis" tabindex="9" entermovenextcontrol="true" maxlength="100">
+						<event type="valuechanged">
+							<action type="control datasourceempty" value="#grdUplate, #grdRacuni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>
+							<action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno">
+								<parameter value="0"/>
+							</action>
+							<action type="control disable" value="#btnProknjizi"/>							
+							<!-- <action type="control focus" value="#btnOsvjezi"/> -->
+						</event>
+						<event type="leave">
+							<action type="control focus" value="#btnOsvjezi"/>							
+						</event>
+					</textedit>
+				</item>
+				<item col="1" row="9"/>
+			</group>
+		</layout>
+		<layout name="panel2">  
+			<group cols="2" rows="2" groupbordervisible="false">
+				<group col="1" row="1" cols="1" rows="2"> <!--prozor uplate--> <!--koji caption u slučaju račun računom??-->
+					<item col="1" row="1">
+						<grid name="grdUplate" dataname="~dtUplate" bestfitonrefresh="false" key="KntPrometId" showfooter="true" savelayout="true" multiselect="true">
+							<event type="cellvaluechanged">
+								<action type="variable value">
+									<parameter name="FokusId" value="#grdUplate.@KntPrometId"/>
+								</action>							
+								<action if="$Zatvaranje==MU">
+									<action type="datarun nonquery" value="~dtCalcMultiUpl"/>
+									<action type="datarun scalar" value="~dtDohvatiCheckedUplate">
+										<parameter name="UplateId"/>
+									</action>								
+									
+								</action>
+								<action else="">							
+									<action type="datarun nonquery" value="~dtCalcUpl"/>
+									<action type="datarun nonquery" value="~dtReset"/>
+									<action type="control populate" value="#grdUplate"/>
+									<action type="control populate" value="#grdRacuni"/>
+									<action type="control focus" value="#grdUplate">
+										<parameter value="$FokusId"/>
+									</action>									
+									<action type="control selectedrows" value="#grdRacuni">
+										<parameter value=""/>
+									</action>
+									<action type="variable value">
+										<parameter name="RacuniId" value="null"/>
+									</action>
+									<action type="variable value">
+										<parameter name="BrojRacuna" value="0"/>
+									</action>
+									<!--uvijek disable na promjenu lijeve strane jer se tada sve resetira-->
+									<action type="control disable" value="#btnProknjizi" />								
+									<action type="control value" value="#txtRacuniUkupno">
+										<parameter value="0"/>
+									</action>
+									<action type="variable value" if="#grdUplate.@Checked==true">
+										<parameter name="UplateId" value="#grdUplate.@KntPrometId"/>
+									</action>
+									<action type="variable value" elseif="#grdUplate.@Checked==false">
+										<parameter name="UplateId" value="null"/>
+									</action>										
+								</action>
+									<action type="datarun reader" value="~dtUplateSuma"/>
+									<action type="datarun reader" value="~dtRazlika"/>
+									<action type="control value" value="#txtUplateUkupno">
+										<parameter value="~dtUplateSuma.@Suma"/>
+									</action>
+									<action type="control value" value="#txtRazlika">
+										<parameter value="~dtRazlika.@Razlika"/>
+									</action>
+								<action if="$Zatvaranje==MU">
+									<action type="datarun scalar" value="~dtProknjiziDozvola">
+										<parameter name="ProknjiziEnable"/>
+									</action>
+									<action type="control disable" value="#btnProknjizi" if="$ProknjiziEnable==0"/>
+									<action type="control enable" value="#btnProknjizi" elseif="$ProknjiziEnable==1"/>									
+								</action>
+								<action type="variable value">
+									<parameter name="KntTemId" value="#grdUplate.@KntTemId"/>
+								</action>
+							</event>
+							<event type="showingeditor">
+								<action type="editor allow" value="true" if="#grdUplate.@Smije==1"/>
+							</event>
+							<fields>
+								<!--polja u slučaju zatvaranja uplatom-->
+								<field name="Checked" edittype="bit" editable="true" caption=" "/>
+								<field name="DatumKnjizenja" caption="Datum knjiženja"/>
+								<field name="DatumDokumenta" caption="Datum dokumenta"/>
+								<field name="VrstaDokOpis" caption="Vrsta dokumenta"/>
+								<field name="TemBrojDok" caption="Temeljnica"/>
+								<field name="Duguje"/>
+								<field name="Potrazuje" caption="Potražuje"/>
+								<field name="Saldo"/>
+								<!-- <field name="FakBrojDok" caption="Faktura"/> -->
+								<field name="FakBroj" caption="Faktura"/>
+								<field name="OrgShemaNaziv" caption="Organizacijska shema"/>
+								<!--polja u slučaju zatvaranja računom-->
+								<field name="DatumValute" caption="Datum valute"/>
+								<field name="DatumDok" caption="Datum računa"/>
+								<field name="BrojDok" caption="Broj dokumenta"/>
+								<field name="Broj"/> 
+								<field name="OrgShema" caption="Organizacijska shema"/>		
+								<field name="DevDug" caption="DevDug"/>
+								<field name="DevPot" caption="DevPot"/>
+								<field name="Valuta"/>
+								<field name="OpisKnjizenja" caption="Opis knjiženja"/>
+							</fields>
+							<styles>
+								<!--dozvoljeno vrstaprom izvod (50) i blagajne (51) i temeljnica (52) te devizni (55)-->
+								<style name="fontcolor" value="red" if="#grdUplate.@sifra!=55&amp;&amp;#grdUplate.@sifra!=50&amp;&amp;#grdUplate.@sifra!=51&amp;&amp;#grdUplate.@sifra!=52&amp;&amp;$Zatvaranje==U"/>
+								<!-- <style name="fontcolor" value="red" elseif="#grdUplate.@saldo>0&amp;&amp;$Tablica==Fakture&amp;&amp;$Zatvaranje==U"/> -->
+								<!-- <style name="fontcolor" value="red" elseif="#grdUplate.@saldo&lt;0&amp;&amp;$Tablica==FaktureDob&amp;&amp;$Zatvaranje==U"/> -->
+							</styles>
+						</grid>
+					</item>
+					<group col="1" row="2" cols="2" rows="1" groupbordervisible="false">
+						<columnsdefinition>
+							<column size="50%" position="2"/>
+							<column size="50%" position="1"/>
+						</columnsdefinition>
+						<item col="2" row="1" caption="Iznos:" textposition="left"  fontbold="true" fontsizedelta="4">
+							<textedit name="txtUplateUkupno" format="n2" type="numeric" enabled="false" fontsizedelta="4" fontbold="true">
+								<event type="valuechanged">
+									<action type="datarun reader" value="~dtRazlika"/>
+									<action type="control value" value="#txtRazlika">
+										<parameter value="~dtRazlika.@Razlika"/>
+									</action>
+								</event>
+							</textedit>
+						</item>
+					</group>
+				</group>
+				<group col="2" row="1" cols="1" rows="2"> <!--prozor racuni-->
+					<item col="1" row="1">
+						<grid name="grdRacuni" dataname="~dtRacuni"  bestfitonrefresh="false" key="KntPrometId" showfooter="true" savelayout="true" multiselect="true">
+							<event type="cellvaluechanged">
+								<action if="$Zatvaranje==MU">
+									<action type="datarun nonquery" value="~dtCalcMultiRac"/>
+									<action type="datarun scalar" value="~dtDohvatiCheckedRacun">
+										<parameter name="RacuniId"/>
+									</action>
+									
+									
+								</action>	
+								<action else="">
+									<action type="datarun scalar" value="~dtCalc" if="$Zatvaranje==U">
+										<parameter name="Razlika"/>
+									</action>
+									<action type="datarun nonquery" value="~dtCalc" if="$Zatvaranje==R"/>
+									<action type="datarun scalar" value="~dtDohvatiRacune">
+										<parameter name="RacuniId"/>
+									</action>								
+								</action>
+
+								<action type="datarun scalar" value="~dtBrojRacuna">
+									<parameter name="BrojRacuna"/>
+								</action>
+								<action type="datarun reader" value="~dtRacuniSuma"/>
+								<action type="datarun reader" value="~dtRazlika"/>
+								<action type="control value" value="#txtRacuniUkupno">
+									<parameter value="~dtRacuniSuma.@Suma"/>
+								</action>
+								<action type="control value" value="#txtRazlika">
+									<parameter value="~dtRazlika.@Razlika"/>
+								</action>
+								<action type="control populate" value="#grdRacuni"/>
+								<action type="datarun scalar" value="~dtProknjiziDozvola">
+									<parameter name="ProknjiziEnable"/>
+								</action>
+								<action type="control disable" value="#btnProknjizi" if="$ProknjiziEnable==0"/>
+								<action type="control enable" value="#btnProknjizi" elseif="$ProknjiziEnable==1"/>
+							</event>
+							<event type="showingeditor">
+								<action type="editor allow" value="true" if="#grdRacuni.@Smije==1" />
+							</event>
+							<fields>
+								<field name="Checked" editable="true" edittype="bit" caption=" "/>
+								<field name="DatumValute" caption="Datum valute"/>
+								<field name="DatumDok" caption="Datum dokumenta"/>
+								<field name="BrojDok" caption="Broj dokumenta"/>
+								<field name="Broj"/> 
+								<field name="Duguje"/>
+								<field name="Potrazuje" caption="Potražuje"/>
+								<field name="Saldo"/>
+								<field name="OrgShema" caption="Organizacijska shema"/>
+								<field name="DevDug" caption="DevDug"/>
+								<field name="DevPot" caption="DevPot"/>
+								<field name="Valuta"/>
+								<field name="OpisKnjizenja" caption="Opis knjiženja"/>
+							</fields>
+						</grid>
+					</item>
+					<group col="1" row="2" cols="2" rows="1" groupbordervisible="false">
+						<columnsdefinition>
+							<column size="50%" position="2"/>
+							<column size="50%" position="1"/>
+						</columnsdefinition>					
+						<item col="1" row="1" textposition="left" caption="Iznos:" fontbold="true" fontsizedelta="4">
+							<textedit name="txtRacuniUkupno" format="n2" type="numeric" enabled="false" fontsizedelta="4" fontbold="true">
+								<event type="valuechanged">
+									<action type="datarun reader" value="~dtRazlika"/>
+									<action type="control value" value="#txtRazlika">
+										<parameter value="~dtRazlika.@Razlika"/>
+									</action>
+								</event>
+							</textedit>
+						</item>
+					</group>
+				</group>
+				<group col="1" row="2" colspan="2" cols="3" rows="1" alignmode="local" >
+					<columnsdefinition>
+						<column size="37%" position="1"/>
+						<column size="25%" position="2"/>						
+						<column size="38%" position="3"/>						
+					</columnsdefinition>
+					<item col="2" row="1" textposition="left" caption="Razlika:" fontbold="true" fontsizedelta="4">
+						<textedit name="txtRazlika" format="n2" type="numeric" enabled="false" fontsizedelta="4" fontbold="true">
+							<event type="valuechanged">
+								<action type="datarun reader" value="~dtApsolutna"/>
+								<action type="variable value" if="~dtApsolutna.@Uplata>~dtApsolutna.@Racuni">
+									<parameter name="ManjaUplata" value="1"/>
+								</action>								
+								<action type="variable value" else="">
+									<parameter name="ManjaUplata" value="null"/>
+								</action>							
+							</event>
+						</textedit>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOsvjezi" caption="OSVJEŽI"  entermovenextcontrol="true" tabindex="10">
+					<event type="click">
+						<action type="validate">
+							<action type="message" value="Oprez! Odabrali ste rad na postojećem izvodu!" if="#cmbNacinKnjizenja==0"/>
+							<!--briše sve račune-->
+							<action type="datarun nonquery" value="~dtBrisiCalc"/>
+							<!--briše uplate-->
+							<action type="datarun nonquery" value="~dtBrisiUpl" if="$Zatvaranje==U||$Zatvaranje==MU"/>
+							<action type="variable value">
+								<parameter name="KntPlanAId" value="#cmbKonto"/>
+							</action>
+							<action type="variable value">
+								<parameter name="Tablica" value="#cmbKonto.@Tablica"/>
+							</action>
+							<action type="variable value">
+								<parameter name="KompOznaka" value="#cmbKonto.@KompOznaka"/>
+							</action>	
+							<action type="variable value">
+								<parameter name="VrstaKonta" value="#cmbKonto.@VrstaKonta"/>
+							</action>	
+							<action type="variable value" if="$Tablica==KntOstalo">
+								<parameter name="KntOstaloInd" value="1"/>
+							</action>								
+							<action type="variable value">
+								<parameter name="PartneriId" value="#srcPartner"/>
+							</action>
+							<action type="variable value">
+								<parameter name="OrgShemaId" value="#cmbOrgShema"/>
+							</action>
+							<action type="variable value">
+								<parameter name="IndTemeljnica" value="#cmbNacinKnjizenja" type="int"/>
+							</action>
+							<action type="variable value">
+								<parameter name="VrstaDok" value="#cmbVrstaDok"/>
+							</action>
+							<action type="variable value">
+								<parameter name="Datum" value="#datDatum"/>
+							</action>
+							<action type="variable value">
+								<parameter name="Opis" value="#txtOpis"/>
+							</action>
+							<action type="variable value" if="#rdoUplata==true">
+								<parameter name="Zatvaranje" value="U"/>
+							</action>
+							<action type="variable value" if="#rdoRacun==true">
+								<parameter name="Zatvaranje" value="R"/>
+							</action>
+							<action type="variable value" if="#rdoMultiUplata==true">
+								<parameter name="Zatvaranje" value="MU"/>
+							</action>							
+							<!--insert uplata u tablicu-->
+							<action type="datarun nonquery" value="~dtPopuniUpl" if="$Zatvaranje==U||$Zatvaranje==MU"/>	
+							<!--punjene grida uplate i računi-->
+							<action type="control populate" value="#grdUplate"/>
+							<action type="control populate" value="#grdRacuni"/>
+							<action type="control selectedrows" value="#grdRacuni">
+								<parameter value=""/>
+							</action>
+							<action type="variable value">
+								<parameter name="RacuniId" value="null"/>
+							</action>
+							<action type="variable value">
+								<parameter name="UplateId" value="null"/>
+							</action>
+							<action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno">
+								<parameter value="0"/>
+							</action>
+							<action if="#grdUplate.rowcount==0">
+								<action type="message" value="Ne postoji nijedna otvorena uplata! \n Odaberite druge parametre!" if="$Zatvaranje==U"/>
+								<action type="message" value="Ne postoji račun s drugim predznakom! \n Odaberite druge parametre!" elseif="$Zatvaranje==R"/>
+								<action type="control disable" value="#grdRacuni"/>
+								<action type="control disable" value="#grdUplate"/>
+							</action>
+							<action elseif="#grdUplate.rowcount!=0">
+								<action type="panel collapse" value="panel1"/>
+								<action type="control enable" value="#grdRacuni"/>
+								<action type="control enable" value="#grdUplate"/>
+							</action>
+							<action type="control disable" value="#btnProknjizi"/>
+							<action type="datarun reader" value="~dtPartnerNaziv"/>							
+							<action type="form caption" value="Zatvaranje računa - {#cmbKonto.@KNaziv}, {~dtPartnerNaziv.@Naziv}, {#cmbOrgShema.@Naziv}" if="#cmbOrgShema!=null"/>
+							<action type="form caption" value="Zatvaranje računa - {#cmbKonto.@KNaziv}, {~dtPartnerNaziv.@Naziv}" elseif="#cmbOrgShema==null"/>					
+						</action>
+					</event>
+				</button>
+				<button name="btnProknjizi" caption="PROKNJIŽI">
+					<event type="click">
+
+							<!-- <action if="$Zatvaranje==U"> -->
+								<!-- <action type="confirm" value="Razlika: {#txtRazlika::n2} kn. Jeste li sigurni da želite proknjižiti uplatu?" if="#txtRazlika>0"> -->
+									<!-- <action type="datarun scalar" value="~dtProknjizi"> -->
+										<!-- <parameter name="NoviKntTemId"/> -->
+									<!-- </action> -->
+									<!-- briše uplate, puni ih ponovno i prikaz na grid -->
+									<!-- <action type="datarun nonquery" value="~dtBrisiUpl"/> -->
+									<!-- <action type="datarun nonquery" value="~dtPopuniUpl"/>									 -->
+									<!-- <action type="control populate" value="#grdUplate"/> -->
+									<!-- obriši sve račune -->
+									<!-- <action type="datarun nonquery" value="~dtBrisiCalc"/>					 -->
+									<!-- <action type="control populate" value="#grdRacuni"/> -->
+									<!-- <action type="control selectedrows" value="#grdRacuni"> -->
+										<!-- <parameter value=""/> -->
+									<!-- </action> -->
+									<!-- <action type="variable value"> -->
+										<!-- <parameter name="RacuniId" value="null"/> -->
+									<!-- </action>	 -->
+									<!-- <action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno"> -->
+										<!-- <parameter value="0"/> -->
+									<!-- </action>							 -->
+									<!-- <action type="control disable" value="#btnProknjizi"/>	 -->
+									<!-- <action type="confirm" value="Želite li ispisati specifikaciju?"> -->
+										<!-- <action type="datarun reader" value="~dtPrintSpec"/> -->
+										<!-- <action type="print" value="~dtPrintSpec.@Template"> -->
+											<!-- <parameter name="ID" value="$NoviKntTemId" if="$IndTemeljnica==1"/> -->
+											<!-- <parameter name="ID" value="$KntTemId" if="$IndTemeljnica==0"/> -->
+											<!-- <parameter name="PartneriId" value="$PartneriId"/> -->
+											<!-- <parameter name="KntPlanAId" value="$KntPlanAId"/> -->
+										<!-- </action> -->
+									<!-- </action>									 -->
+								<!-- </action> -->
+								<!-- <action type="confirm" value="Jeste li sigurni da želite proknjižiti odabrane račune?"> -->
+                  <!--elseif="#txtRazlika==0||#txtRazlika&lt;0"-->
+									<!-- <action type="datarun scalar" value="~dtProknjizi"> -->
+										<!-- <parameter name="NoviKntTemId"/> -->
+									<!-- </action> -->
+									<!-- <action type="datarun nonquery" value="~dtBrisiUpl"/> -->
+									<!-- <action type="datarun nonquery" value="~dtPopuniUpl"/>									 -->
+									<!-- <action type="control populate" value="#grdUplate"/> -->
+									<!-- <action type="datarun nonquery" value="~dtBrisiCalc"/> -->
+									<!-- <action type="control populate" value="#grdRacuni"/> -->
+									<!-- <action type="control selectedrows" value="#grdRacuni"> -->
+										<!-- <parameter value=""/> -->
+									<!-- </action> -->
+									<!-- <action type="variable value"> -->
+										<!-- <parameter name="RacuniId" value="null"/> -->
+									<!-- </action>	 -->
+									<!-- <action type="control value" value="#txtRacuniUkupno,#txtUplateUkupno"> -->
+										<!-- <parameter value="0"/> -->
+									<!-- </action>							 -->
+									<!-- <action type="control disable" value="#btnProknjizi"/>									 -->
+									<!-- <action type="confirm" value="Želite li ispisati specifikaciju?"> -->
+										<!-- <action type="datarun reader" value="~dtPrintSpec"/> -->
+										<!-- <action type="print" value="~dtPrintSpec.@Template" if="$IndTemeljnica==1"> -->
+											<!-- <parameter name="ID" value="$NoviKntTemId"/> -->
+											<!-- <parameter name="PartneriId" value="$PartneriId"/> -->
+											<!-- <parameter name="KntPlanAId" value="$KntPlanAId"/> -->
+										<!-- </action> -->
+										<!-- <action type="print" value="~dtPrintSpec.@Template" if="$IndTemeljnica==0"> -->
+											<!-- <parameter name="ID" value="$KntTemId"/> -->
+											<!-- <parameter name="PartneriId" value="$PartneriId"/> -->
+											<!-- <parameter name="KntPlanAId" value="$KntPlanAId"/> -->
+										<!-- </action>										 -->
+									<!-- </action> -->
+								<!-- </action> -->
+							<!-- </action> -->
+						<!-- </action> -->
+						<!-- <action elseif="$Zatvaranje==R"> -->
+							<!-- <action type="message" value="Razlika odabranih računa mora biti 0!" if="#txtRazlika!=0"/> -->
+							<action type="variable value" value="ConfirmPoruka">
+								<parameter value="Radite na novoj temeljnici! Želite li proknjižiti?" type="string" if="$IndTemeljnica==1"/>
+								<parameter value="Radite na postojećem izvodu! Želite li proknjižiti?" type="string" elseif="$IndTemeljnica==0"/>
+							</action>
+							<action type="confirm" value="$ConfirmPoruka">
+								<action type="datarun scalar" value="~dtProknjiziRac" if="$IndTemeljnica==1">
+									<parameter name="NoviKntTemId"/>
+								</action>
+								<action type="datarun nonquery" value="~dtProknjizi" elseif="$IndTemeljnica==0"/>
+								<!--obriši sve račune i popuni gridove-->
+								<action type="datarun nonquery" value="~dtBrisiCalc"/>
+								<action type="datarun nonquery" value="~dtPopuniUpl"/>	
+								<action type="control populate" value="#grdUplate"/>
+								<action type="control populate" value="#grdRacuni"/>
+								<action type="variable value">
+									<parameter name="RacuniId" value="null"/>
+								</action>		
+								<action type="variable value">
+									<parameter name="UplateId" value="null"/>
+								</action>
+								<action type="control value" value="#txtRacuniUkupno">
+									<parameter value="0"/>
+								</action>	
+								<action type="control value" value="#txtUplateUkupno">
+									<parameter value="0"/>
+								</action>		
+								<action type="control disable" value="#btnProknjizi"/>
+								<action type="confirm" value="Želite li ispisati specifikaciju?">
+									<action type="datarun reader" value="~dtPrintSpec"/>
+									<action type="print" value="~dtPrintSpec.@Template">
+										<parameter name="ID" value="$NoviKntTemId" if="$IndTemeljnica==1"/>
+										<parameter name="ID" value="$KntTemId" if="$IndTemeljnica==0"/>
+										<parameter name="PartneriId" value="$PartneriId"/>
+										<parameter name="KntPlanAId" value="$KntPlanAId"/>
+									</action>
+								</action>								
+							</action>
+					</event>
+				</button>
+				<button name="btnZatvori" caption="IZLAZ">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtKonto" command="spCKntZatvaranjeRacunaCmb">
+				<parameter name="@Action" value="1"/>
+			</data>
+			<data name="dtOrgShema" command="spCKntZatvaranjeRacunaCmb">
+				<parameter name="@Action" value="0"/>
+			</data>
+			<data name="dtUplate" command="spCKntZatvaranjeRacuna" if="$Zatvaranje==U||$Zatvaranje==MU" timeout="200">
+				<parameter name="@Action" value="1" if="$Tablica==Fakture"/>
+				<parameter name="@Action" value="1" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Action" value="1" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>
+				<parameter name="@Action" value="2" if="$Tablica==FaktureDob"/>
+				<parameter name="@Action" value="2" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Action" value="2" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+				<parameter name="@OrgShemaId" value="$OrgShemaId"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>				
+			</data>
+			<data name="dtUplate" command="spCKntZatvaranjeRacunaRac" elseif="$Zatvaranje==R"> <!---->
+				<parameter name="@Action" value="2" if="$Tablica==Fakture"/>
+				<parameter name="@Action" value="2" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Action" value="2" if="$VrstaKonta=='Dani predujmovi'&amp;&amp;$KompOznaka==null"/>				
+				<parameter name="@Action" value="4" if="$Tablica==FaktureDob"/>
+				<parameter name="@Action" value="4" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Action" value="4" if="$VrstaKonta=='Primljeni predujmovi'&amp;&amp;$KompOznaka==null"/>				
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+				<parameter name="@OrgShemaId" value="$OrgShemaId"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>			
+			</data>
+			<data name="dtRacuni" command="spCKntZatvaranjeRacuna" if="$Zatvaranje==U||$Zatvaranje==MU">
+				<parameter name="@Action" value="3" if="$Tablica==Fakture"/>
+				<parameter name="@Action" value="3" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Action" value="3" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>				
+				<parameter name="@Action" value="4" if="$Tablica==FaktureDob"/>
+				<parameter name="@Action" value="4" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Action" value="4" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>				
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+				<parameter name="@OrgShemaId" value="$OrgShemaId"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+			</data>
+			<data name="dtRacuni" command="spCKntZatvaranjeRacunaRac" elseif="$Zatvaranje==R"> <!---->
+				<parameter name="@Action" value="1" if="$Tablica==Fakture"/>
+				<parameter name="@Action" value="1" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Action" value="1" if="$VrstaKonta=='Dani predujmovi'&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Action" value="3" if="$Tablica==FaktureDob"/>
+				<parameter name="@Action" value="3" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Action" value="3" if="$VrstaKonta=='Primljeni predujmovi'&amp;&amp;$KompOznaka==null"/>				
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+				<parameter name="@OrgShemaId" value="$OrgShemaId"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>			
+			</data>
+			<data name="dtRazlika" command="spCKntZatvaranjeRacunaSume">
+				<parameter name="@Action" value="1" if="$Zatvaranje==U||$Zatvaranje==MU"/>
+				<parameter name="@Action" value="3" elseif="$Zatvaranje==R"/>
+				<parameter name="@UplateSuma" value="#txtUplateUkupno"/>
+				<parameter name="@RacuniSuma" value="#txtRacuniUkupno"/>
+			</data>
+			<data name="dtUplateSuma" command="spCKntZatvaranjeRacunaSume">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@Id" value="$UplateId"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Vrsta" value="Uplata" if="$Zatvaranje==U||$Zatvaranje==MU"/>
+				<parameter name="@Vrsta" value="Racun" if="$Zatvaranje==R"/>
+			</data>
+			<data name="dtRacuniSuma" command="spCKntZatvaranjeRacunaSume">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@Id" value="$RacuniId"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Vrsta" value="Racun"/>
+			</data>
+			<data name="dtProknjizi" command="spCKntZatvaranjeRacuna" if="$Zatvaranje==U">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@IdRacuna" value="$RacuniId"/>
+				<parameter name="@IdUplate" value="$UplateId"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>				
+				<parameter name="@BrojRacuna" value="$BrojRacuna"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@KntTemId" value="$KntTemId"/>
+				<parameter name="@ManjaUplata" value="$ManjaUplata"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@KntOstaloInd" value="$KntOstaloInd"/>
+			</data>
+			<data name="dtProknjizi" command="spCKntZatvaranjeRacunaMulti" if="$Zatvaranje==MU">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@RacuniId" value="$RacuniId"/>
+				<parameter name="@UplateId" value="$UplateId"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Iznos" value="#txtUplateUkupno"/>
+				<!-- <parameter name="@KntTemId" value="$KntTemId"/> -->
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@KntOstaloInd" value="$KntOstaloInd"/>
+			</data>			
+			<!-- <data name="dtProknjizi" command="spCKntZatvaranjeRacunaNewTem" elseif="$IndTemeljnica==1"> -->
+				<!-- <parameter name="@Action" value="1"/> -->
+				<!-- <parameter name="@IdRacuna" value="$RacuniId"/> -->
+				<!-- <parameter name="@IdUplate" value="$UplateId"/> -->
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<!-- <parameter name="@BrojRacuna" value="$BrojRacuna"/> -->
+				<!-- <parameter name="@KntPlanAId" value="$KntPlanAId"/> -->
+				<!-- <parameter name="@PartneriId" value="$PartneriId"/> -->
+				<!-- <parameter name="@ManjaUplata" value="$ManjaUplata"/> -->
+				<!-- <parameter name="@IndTemeljnica" value="$IndTemeljnica"/> -->
+				<!-- <parameter name="@VrstaDokId" value="$VrstaDok"/> -->
+				<!-- <parameter name="@Datum" value="$Datum"/> -->
+				<!-- <parameter name="@Opis" value="$Opis"/> -->
+			<!-- </data>			 -->
+			<data name="dtCalc" command="spCKntZatvaranjeRacuna" if="$Zatvaranje==U"> <!--za desnu stranu uplate -->
+				<parameter name="@Action" value="6"/>
+				<parameter name="@Operand" value="plus" if="#grdRacuni.@Checked==true"/>
+				<parameter name="@Operand" value="minus" else=""/>		
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@KntPrometId" value="#grdRacuni.@KntPrometId"/>
+				<parameter name="@Var" value="#txtUplateUkupno"/>
+			</data>
+			<data name="dtCalc" command="spCKntZatvaranjeRacunaRac" elseif="$Zatvaranje==R"> <!--za desnu stranu racuni -->
+				<parameter name="@Action" value="55"/>
+				<parameter name="@Operand" value="plus" if="#grdRacuni.@Checked==true"/>
+				<parameter name="@Operand" value="minus" else=""/>		
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@KntPrometId" value="#grdRacuni.@KntPrometId"/>
+				<parameter name="@Strana" value="D"/>
+				<parameter name="@Var" value="#txtUplateUkupno"/>
+			</data>			
+			<data name="dtBrisiCalc" command="spCKntZatvaranjeRacuna">
+				<parameter name="@Action" value="7"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+			</data>
+			<data name="dtDohvatiRacune" command="spCKntZatvaranjeRacuna" if="$Zatvaranje==U">
+				<parameter name="@Action" value="9"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+			</data>
+			<data name="dtDohvatiRacune" command="spCKntZatvaranjeRacunaRac" elseif="$Zatvaranje==R"> <!---->
+				<parameter name="@Action" value="6"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Strana" value="D"/>
+			</data>
+			<data name="dtBrojRacuna" command="spCKntZatvaranjeRacuna">
+				<parameter name="@Action" value="10"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@operand" value="$Zatvaranje"/>
+			</data>
+			<!-- <data name="dtBlokada" command="spCKntZatvaranjeRacuna"> -->
+				<!-- <parameter name="@Action" value="0"/> -->
+				<!-- <parameter name="@KntTemId" value="#grdUplate.@KntTemId"/> -->
+			<!-- </data> -->
+			<data name="dtNacinKnjizenja" command="spCKntZatvaranjeRacunaCmb">
+				<parameter name="@Action" value="2"/>
+			</data>
+			<data name="dtVrstaDok" command="spCKntZatvaranjeRacunaCmb">
+				<parameter name="@Action" value="3"/>
+			</data>
+			<data name="dtPopuniUpl" command="spCKntZatvaranjeRacunaUpl">
+				<parameter name="@Action" value="1" if="$Tablica==Fakture"/>
+				<parameter name="@Action" value="1" if="$Tablica=='KntOstalo'&amp;&amp;$KompOznaka=='D'"/>
+				<parameter name="@Action" value="1" if="$VrstaKonta=='Dani predujmovi'&amp;&amp;$KompOznaka==null"/>	
+				<parameter name="@Action" value="2" if="$Tablica==FaktureDob"/>
+				<parameter name="@Action" value="2" if="$Tablica=='KntOstalo'&amp;&amp;$KompOznaka=='V'"/> 
+				<parameter name="@Action" value="2" if="$VrstaKonta=='Primljeni predujmovi'&amp;&amp;$KompOznaka==null"/>
+				<parameter name="@PartneriId" value="$PartneriId"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+				<parameter name="@OrgShemaId" value="$OrgShemaId"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>	
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+			</data>
+			<data name="dtBrisiUpl" command="spCKntZatvaranjeRacunaUpl">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+			</data>
+			<data name="dtCalcUpl" command="spCKntZatvaranjeRacunaUpl" if="$Zatvaranje==U"> <!--lijeva strana uplate--> 
+				<parameter name="@Action" value="3"/>
+				<parameter name="@Operand" value="plus" if="#grdUplate.@Checked==true"/>
+				<parameter name="@Operand" value="minus" else=""/>				
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@KntPrometId" value="#grdUplate.@KntPrometId"/>
+			</data>
+			<data name="dtCalcUpl" command="spCKntZatvaranjeRacunaRac" elseif="$Zatvaranje==R"> <!--lijeva strana racuni-->  <!---->
+				<parameter name="@Action" value="5"/>
+				<parameter name="@Operand" value="plus" if="#grdUplate.@Checked==true"/>
+				<parameter name="@Operand" value="minus" else=""/>				
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@KntPrometId" value="#grdUplate.@KntPrometId"/>
+				<parameter name="@Strana" value="L"/>
+			</data>
+			<!-- <data name="dtDohvatiUplate" command="spCKntZatvaranjeRacunaRac"> -->
+				<!-- <parameter name="@Action" value="6"/> -->
+				<!-- <parameter name="@OperateriId" value="@@operateriid"/> -->
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<!-- <parameter name="@Strana" value="L"/> -->
+			<!-- </data> -->
+			<data name="dtProknjiziRac" command="spCKntZatvaranjeRacunaMultiNewTem" if="$Zatvaranje==MU">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@RacuniId" value="$RacuniId"/>
+				<parameter name="@UplateId" value="$UplateId"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Iznos" value="#txtUplateUkupno"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@KntOstaloInd" value="$KntOstaloInd"/>
+				<parameter name="@VrstaDokId" value="$VrstaDok"/>
+				<parameter name="@Datum" value="$Datum"/>	
+				<parameter name="@Opis" value="$Opis"/>
+			</data>				
+			<data name="dtProknjiziRac" command="spCKntZatvaranjeRacunaNewTem" else="">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@VrstaDokId" value="$VrstaDok"/>
+				<parameter name="@Datum" value="$Datum"/>
+				<parameter name="@IdUplata" value="$UplateId"/>
+				<parameter name="@IdRacuna" value="$RacuniId"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@Opis" value="$Opis"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+				<parameter name="@PartneriId" value="$PartneriId"/> 
+				<parameter name="@UplataRacun" value="#rdoRacun"/> 
+				<parameter name="@KntOstaloInd" value="$KntOstaloInd"/>
+			</data>
+			<data name="dtDozvoli" command="spCKntZatvaranjeRacunaRac">
+				<parameter name="@Action" value="7"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@OperateriId" value="@@operateriid"/>
+			</data>	
+			<data name="dtReset" command="spCKntZatvaranjeRacuna">
+				<parameter name="@Action" value="8"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@OperateriId" value="@@operateriid"/>
+			</data>
+			<data name="dtResetUplate" command="spCKntZatvaranjeRacunaUpl">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>	
+			</data>
+			<data name="dtPartnerNaziv" command="spCKntZatvaranjeRacunaSume">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@PartneriId" value="$PartneriId"/>
+			</data>
+			<data command="spCarpoPrint" name="dtPrintSpec">
+				<parameter name="@Action" value="Temeljnica" />
+			</data>			
+			<data name="dtProknjiziDozvola" command="spCKntZatvaranjeRacunaSume">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@Id" value="0" if="$Zatvaranje==U"/>
+				<parameter name="@Id" value="1" elseif="$Zatvaranje==R"/>
+				<parameter name="@Id" value="2" elseif="$Zatvaranje==MU"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@UplateSuma" value="#txtUplateUkupno"/>
+				<parameter name="@RacuniSuma" value="#txtRacuniUkupno"/>
+			</data>
+			<data name="dtApsolutna" type="text" command="select abs(@Uplata) as Uplata, abs(@Racuni) as Racuni">
+				<parameter name="@Uplata" value="#txtUplateUkupno"/>
+				<parameter name="@Racuni" value="#txtRacuniUkupno"/>
+			</data>
+			<data name="dtCalcMultiUpl" command="spCKntZatvaranjeRacunaMulti">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Operand" value="plus" if="#grdUplate.@Checked==true"/>
+				<parameter name="@Operand" value="minus" else=""/>				
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@KntPrometId" value="#grdUplate.@KntPrometId"/>
+			</data>	
+			<data name="dtDohvatiCheckedUplate" command="spCKntZatvaranjeRacunaRac">
+				<parameter name="@Action" value="6"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Strana" value="L"/>
+			</data>		
+			<data name="dtCalcMultiRac" command="spCKntZatvaranjeRacunaMulti">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@Operand" value="plus" if="#grdRacuni.@Checked==true"/>
+				<parameter name="@Operand" value="minus" else=""/>				
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@KntPrometId" value="#grdRacuni.@KntPrometId"/>
+			</data>		
+			<data name="dtDohvatiCheckedRacun" command="spCKntZatvaranjeRacunaRac">
+				<parameter name="@Action" value="6"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<!-- <parameter name="@Tablica" value="$Tablica"/> -->
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==Fakture"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==FaktureDob"/>
+				<parameter name="@Tablica" value="Fakture" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==D"/>				
+				<parameter name="@Tablica" value="Fakture" if="$VrstaKonta==Dani predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Tablica" value="FaktureDob" if="$Tablica==KntOstalo&amp;&amp;$KompOznaka==V"/>
+				<parameter name="@Tablica" value="FaktureDob" if="$VrstaKonta==Primljeni predujmovi&amp;&amp;$KompOznaka==null"/>					
+				<parameter name="@Strana" value="D"/>
+			</data>				
+			<data command="spCKntTemTraziPartneri" name="dtGetPartneri">
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>	
+	</datalist>
+	</form>
+</root>

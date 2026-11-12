@@ -1,0 +1,140 @@
+﻿<!--13.9.2024. AA multiselect-->
+<!-- 24.9.2020. AA Opis na 100 -->
+<!--27.2.2018. AA spCKntVrstaDokQueryVD zbog lokalizacije procedura-->
+<!--v 1.0.1. 6.12.2017. AA dodala CKnt na procedure-->
+<root version="1.0.1." loglevel="3">
+	<form type="master" name="frmGlavni" caption="Vrste dokumenata" maximized="true" saveformsize="false">
+		<event type="load">
+			<action type="control populate" value="#grdGlavni"/>
+		</event>
+		<layout>
+			<group cols="1" rows="1" groupbordervisible="false">
+			<item col="1" row="1">
+			<grid name="grdGlavni" type="master" dataname="~dtGlavni" key="VrstaDokId" multiselect="true" savelayout="true">
+				<event type="doubleclick">
+					<action type="form open" value="frmUnos">
+						<parameter name="VrstaDokId" value="#grdGlavni.@VrstaDokId"/>
+						<parameter name="IndUnosa" value="0"/>
+					</action>
+					<action type="control populate keepfocus" value="#grdGlavni"/>
+				</event>
+				<fields>
+					<field name="Opis"/>
+					<field name="OpisVp" caption="Vrsta prometa"/>
+					<field name="Prefix"/>
+					<field name="Sufix"/>
+					<field name="Template"/>
+				</fields>
+			</grid>
+			</item>
+			</group>
+		</layout>
+		<panelbuttons >
+			<buttons>
+				<button name="btnDodaj" caption="DODAJ">
+					<event type="click">	
+						<action  type="form open" value="frmUnos">
+							<parameter name="IndUnosa" value="1"/>
+						</action>	
+						<action type="control populate" value="#grdGlavni"/>
+						<action type="datarun scalar" value="~dtScope">
+							<parameter name="VrstaDokId"/>
+						</action>
+						<action type="control focus" value="#grdGlavni">
+							<parameter value="$VrstaDokId" type="int"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI">
+					<event type="click">	
+						<action  type="form open" value="frmUnos">
+							<parameter name="VrstaDokId" value="#grdGlavni.@VrstaDokId"/>
+							<parameter name="IndUnosa" value="0"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlavni"/>
+					</event>
+				</button>
+				<button name="btnObriši" caption="OBRIŠI">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati {#grdGlavni.@Opis}?">
+							<action type="datarun nonquery" value="~dtObriši"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlavni"/>
+					</event>
+				</button>
+				<button name="btnIspis" caption="ISPIS     SUČELJA">
+					<event type="click">
+						<action type="control printcontrol" value="#grdGlavni"/>
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGlavni" command="spCKntVrstaDokQueryVD">
+				<parameter name="@Action" value="6"/>
+			</data>
+			<data name="dtObriši" command="spCKntVrstaDokAzur">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@ID" value="#grdGlavni.@VrstaDokId"/>
+			</data>
+			<data name="dtScope" command="spCKntVrstaDokAzur">
+				<parameter name="@Action" value="3"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUnos" caption="Vrste dokumenata" width="500" >
+		<event type="init">
+			<action type="datarun reader" value="~dtGet"/>
+		</event>
+		<layout>
+			<group cols="1" rows="5">
+				<item col="1" row="1" caption="Vrsta prometa:" textposition="left">
+					<comboedit name="cmbVrsta" required="true" dataname="~dtVrstaProm" valuefield="VrstaPromId" displayfield="Opis" datavalue="~dtGet.@vrstapromid"/>
+				</item>
+				<item col="1" row="2" caption="Opis:" textposition="left" >
+					<textedit name="txtOpis" maxlength="100" required="true" datavalue="~dtGet.@opis"/>
+				</item>
+				<item col="1" row="3" caption="Prefix:" textposition="left" >
+					<textedit name="txtPrefix" datavalue="~dtGet.@prefix"/>
+				</item>
+				<item col="1" row="4" caption="Sufix:" textposition="left" >
+					<textedit name="txtSufix" datavalue="~dtGet.@sufix"/>
+				</item>
+				<item col="1" row="5" caption="Template:" textposition="left" >
+					<textedit name="txtTemplate" datavalue="~dtGet.@template"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="~dtAzur"/>
+						<action type="form close"/>
+					</event>		
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtVrstaProm" command="spCKntVrstaDokQueryVD">
+				<parameter name="@Action" value="8"/>
+			</data>
+			<data name="dtAzur" command="spCKntVrstaDokAzur">
+				<parameter name="@Action" value="0" if="$IndUnosa==1"/>
+				<parameter name="@Action" value="1" if="$IndUnosa==0"/>
+				<parameter name="@VrstaPromId" value="#cmbVrsta"/>
+				<parameter name="@Opis" value="#txtOpis"/>
+				<parameter name="@Prefix" value="#txtPrefix"/>
+				<parameter name="@Sufix" value="#txtSufix"/>
+				<parameter name="@Template" value="#txtTemplate"/>
+				<parameter name="@ID" value="$VrstaDokId" if="$IndUnosa==0"/>
+			</data>
+			<data name="dtGet" command="spCKntVrstaDokQueryVD">
+				<parameter name="@Action" value="9"/>
+				<parameter name="@ID" value="$VrstaDokId"/>
+			</data>
+		</datalist>
+	</form>
+</root>

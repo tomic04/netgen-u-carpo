@@ -1,0 +1,189 @@
+﻿<root>
+
+  <form name="frmOSKartica" caption="Kartica imovine"  maxsize="true" width="1300" height="700"  fixedsize="false"  >
+    <!--pokupi datume za popuniti kontrole-->
+    <event type="oninit">
+      <action type="datarun reader" value="~dtDatumi" />
+    </event>
+
+    <!--popuni kontrolu tražilice-->
+    <event type="onshown">
+      <action type="control value" value="#srcOSImovina" >
+        <parameter value="$OSImovinaId" text="$NazivImovina" />
+      </action>
+      <action type="control focus" value="grdKarticaOS" />
+      <action type="control disable" value="#btnPisi" if="#grdKarticaOS.rowcount==0" />
+      <action type="control enable" value="#btnPisi" if="#grdKarticaOS.rowcount!=0" />
+    </event>
+
+    <layout textposition="left" itemspadding="3">
+
+      <!--layout: grupa od 2 reda-->
+      <group cols="1" rows="2"  backgroundcolor="#f5f5f5" groupbordervisible="false">
+
+        <!--prva grupa-->
+        <group cols="3" rows="3" col="1" row="1" backgroundcolor="#f5f5f5" spacing="2,2,2,1">
+
+          <columnsdefinition>
+            <column  position="1" size="40%" />
+            <column  position="2" size="10%" />
+            <column  position="3" size="50%" />
+          </columnsdefinition>
+
+          <!--prvi red: tražilica-->
+
+          <item caption="Imovina:" row="1" col="1" colspan="3" >
+            <searchedit name="srcOSImovina" dataname="dtImovinaHelp" fieldtext="NazivId" fieldvalue="OSImovinaId"  required="true" readonly="true">
+              <event type="valuechanged">
+                <action type="variable value" value="OSImovinaId" >
+                  <parameter value="#srcOSImovina"  />
+                </action>
+                <action type="control populate" value="cmbNabavaRoot" >
+                  <action type="control value" value="#cmbNabavaRoot" if="#cmbNabavaRoot!=null">
+                    <parameter value="null" />
+                  </action >
+                </action>
+                <!--<action type="control populate" value="#grdKarticaOS" />-->
+                <action type="control enable" value="#btnIzvrsi" />
+              </event>
+            </searchedit>
+          </item>
+          <!--drugi red: razdoblje-->
+          <item caption="Izvor nabave:" row="2" col="1"  colspan="2">
+            <comboedit name="cmbNabavaRoot"  required="false" enabled="true" valuefield="NabavaRootId" displayfield="Naziv" dataname="~dtNabavaRoot" >
+              <event type="valuechanged">
+                <action type="control enable" value="#btnIzvrsi" />
+              </event>
+            </comboedit>
+          </item>
+
+
+          <!--treći red: izvor nabave(combo)-->
+
+          <group col="1" row="3" cols="2" rows="1" caption=" " spacing="3,3,6,6" groupbordervisible="false">
+            <columnsdefinition>
+              <column  position="1" size="50%" />
+              <column  position="2" size="50%" />
+            </columnsdefinition>
+            <item caption="Datum od:" col="1" row="1" textposition="left" highlight="false">
+              <dateedit name="datDatumOd" datavalue="~dtDatumi.@DatumOd" allownull="true" >
+                <event type="valuechanged" raiseonload="false">
+                  <!--<action type="message" value="23 slova"/>-->
+                  <action type="control enable" value="#btnIzvrsi" />
+                </event>
+              </dateedit>
+            </item>
+            <item caption="Datum do:" col="2" row="1" textposition="left" highlight="false">
+              <dateedit name="datDatumDo" datavalue="~dtDatumi.@DatumDo" allownull="true">
+                <event type="valuechanged" raiseonload="false">
+                  <action type="control enable" value="#btnIzvrsi" />
+                </event>
+              </dateedit>
+            </item>
+          </group>
+
+
+
+          <item caption="" row="3" col="2">
+            <button name="btnIzvrsi"  caption="Izvrši" type=""  >
+              <event type="click">
+
+                <action type="validate"/>
+                <action type="control populate keepfocus" value="#grdKarticaOS" />
+                <action type="control disable" value="#btnIzvrsi" />
+
+              </event>
+            </button>
+          </item>
+
+        </group>
+        <!--kraj prva grupa s 3 reda-->
+
+        <!--druga grupa s gridom - 1 red-->
+        <group cols="1" rows="1" col="1" row="2" backgroundcolor="#f5f5f5" spacing="2,2,1,2">
+
+
+          <item caption="" row="1" col="1" >
+            <grid name="grdKarticaOS" dataname="~dtKarticaOS"  type="" async="true" bestfitonrefresh="true" key="OsImovinaId"  multiselect="true" showfooter="false" fieldsmartspaces="false">
+
+              <data command="spOSPrometFin_Kartica" name="dtKarticaOS" >
+                <parameter name="@action" value="kartica" />
+                <parameter name="@OSImovinaId" value="$OSImovinaId" type="int"/>
+                <parameter name="@NabavaRootId" value="#cmbNabavaRoot" type="int" />
+                <parameter name="@DatumOd" value="#datDatumOd" type="date" />
+                <parameter name="@DatumDo" value="#datDatumDo" type="date" />
+              </data>
+
+              <event type="focusedrowchanged">
+                <action type="control disable" value="#btnPisi" if="#grdKarticaOS.rowcount==0" />
+                <action type="control enable" value="#btnPisi" if="#grdKarticaOS.rowcount!=0" />
+              </event>
+
+              <!-- KONTROLA: MENU -->
+              <menu>
+              </menu>
+            </grid>
+          </item>
+        </group>
+
+
+
+
+      </group >
+    </layout>
+
+
+    <panelbuttons>
+      <buttons>
+
+        <!--<button name="btnPisi"  caption="ISPIŠI KARTICU" type="add">
+          <event type="click">
+            <action type="print" value="repx:rptOSKartica">
+                <parameter name="@action" value="kartica" type="string" />
+                <parameter name="@OSImovinaId" value="$OSImovinaId" type="int"/>
+                <parameter name="@NabavaRootId" value="#cmbNabavaRoot" type="int" />
+                <parameter name="@DatumOd" value="#datDatumOd" type="date" />
+                <parameter name="@DatumDo" value="#datDatumDo" type="date" />
+            </action>
+          </event>
+        </button>-->
+
+        <button name="btnPisi" caption="Ispiši karticu">
+          <event type="click">
+            <!-- <action type="message" value="#grdMaster.@HRKadroviLijecnickiId"/> -->
+            <action type="control print" value="#grdKarticaOS">
+              <action type="print template" value="repx:rptOSKartica">
+                <parameter name="action" value="kartica"  />
+                <parameter name="OSImovinaId" value="$OSImovinaId" />
+                <parameter name="NabavaRootId" value="#cmbNabavaRoot"  />
+                <parameter name="DatumOd" value="#datDatumOd" />
+                <parameter name="DatumDo" value="#datDatumDo" />
+                <!-- <parameter name="id" value="1" /> -->
+              </action>
+            </action>
+          </event>
+        </button>
+
+
+
+
+        <button caption="Odustani" type="cancel" dock="right"/>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spOSPrometFin_Help" name="dtImovinaHelp">
+        <parameter name="@action" value="imovina" />
+        <parameter name="@tekst" value="#srcOSImovina.text" />
+      </data>
+      <data command="spOSPrometFin_Kartica" name="dtDatumi">
+        <parameter name="@action" value="datumi" />
+      </data>
+      <data command="spOSPrometFin_Query" name="dtNabavaRoot">
+        <parameter name="@action" value="imovina_grupa" />
+        <parameter name="@osimovinaid" value="#srcOSImovina" />
+      </data>
+    </datalist>
+
+  </form>
+
+</root>

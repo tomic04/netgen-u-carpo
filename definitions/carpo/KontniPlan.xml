@@ -1,0 +1,717 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+23.08.2024 v1.0.1.8. SV dodane kolone AOP_GFI_24 i AOP_GFI_24_dod
+10.06.2024 v1.0.1.7. SV AIG master kontni plan za PPO(MSAN grupa)
+13.3.2024. v1.0.1.6. AA uvela dimenzije na izmjeni analitike
+21.09.2023 v1.0.1.5. SV dodavanje masterKonta
+24.11.2021 v1.0.1.4. SV dorada oko checkedita zbog nove verzije carpa -caption u checkedit umjesto u itemu
+22.10.2021 v1.0.1.3. SV dodane kolone AOP_GFI_21 i AOP_GFI_21_dod
+21.12.2020.v1.0.1.2. SV PDV netiranje
+15.1.2020. v1.0.1.1. AA obavezne vrste dimenzije
+30.05.2017 v1.0.1.0. PJ dodao permissione
+11.12.2017 v1.0.0.9. AČ dodala PDobrazac uz konto
+7.12.2017. v1.0.0.8. AA izmjenila valuetype za konto pri pozivanju kartice konta
+19.10.2017 v1.0.0.8 PJ omogućeno pozivanje Carpo kartice konta
+21.06.2017 v1.0.0.7 PJ dodao mogućnost umirovljavanja konta
+30.05.2017 v1.0.0.6 PJ doubleclick na gridu otvara formu za izmjenu
+17.03.2017 v1.0.0.5 PJ izmjene uvjeta enable/disable kontrola na formi za ažuriranje analitike 
+07.02.2017 v1.0.0.4 PJ dodao DevInd, Pd, Sd, Oznaku na grdGlava
+23.01.2017 v1.0.0.3 PJ audit na KntPlanS i KntPlanA, control enable/disable na refresh grdGlava
+18.01.2017 v1.0.0.2 PJ dodane kolone AOP_GFI_16 i AOP_GFI_16_dod, dodane kontrole prometa kod brisanja i izmijene konta, dodana kontrola sintetike pri unosu i izmjeni KntPlanA
+10.01.2017 v1.0.0.1 PJ dodan editabilni grid, brisanje konta analitike, bugfix onload KontaPd i KontaSd
+09.01.2017 v1.0.0.0 PJ prva alfa sa svim prepisanim featurima
+03.01.2017 PJ init verzija Jupiter2012\Spin20160126
+-->
+<root version="1.0.1.8">
+	<form name="frmMaster" type="master" caption="Kontni Plan">
+	<method name="CarpoNew" dll="Carpo" class="Carpo.Gen.Start" method="Run"/>	
+		<event type="init">
+			<action type="variable value">
+				<parameter name="Global.OperaterLockId" value="0" type="int" />
+			</action>
+			<action type="datarun reader" value="global.~dtPrviDan"/>	
+			<action type="datarun reader" value="global.~dtAIGEdit"/>				
+		</event>
+		<event type="load">			
+			<action type="variable value">
+				<parameter name="global.$DatumOd" value="~dtPrviDan.@prvidan" type="date"/>
+			</action>
+			<action type="variable value">
+				<parameter name="global.$DatumDo" value="now" type="date"/>
+			</action>
+			<action type="variable value">
+				<parameter name="global.$AigAzur" value="~dtAIGEdit.@AigAzur" type="int"/>
+			</action>
+		</event>
+		<managerlayout>
+			<event type="shown">
+				<action type="variable value" >
+					<parameter name="NewKntPlanSid" value="0" type="int"/>
+					<parameter name="CurrentKntPlanSid" value="0" type="int"/>
+					<parameter name="NewKntPlanAid" value="0" type="int"/>
+					<parameter name="CurrentKntPlanAid" value="0" type="int"/>
+				</action>				
+			</event>
+			<tree name="tree"  expandedlevel="1" key="id" valuefield="KntPlanSId" >
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava" />
+					<!--Ovaj dio kopirati svuda gdje je ctrl populate grdGlava -->
+					<action if="#grdGlava.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObrisi"  />	
+					<action type="control enable" value="#btnIzmijeni, #btnObrisi" elseif="#grdGlava.rowcount!=0" />
+				</event>
+				<data command="spCkntTreeKontniPlan"  >										
+				</data>
+				<fields>
+                    <field name="Name" />
+                </fields>
+				<menu>
+					<menuitem caption="Unesi" function="UnosSintetike">
+						<event type="click" >
+							<action type="datarun scalar" value="Global.~dtGetNewIdSintetika">
+								<parameter name="CurrentKntPlanSid" />
+							</action>
+							<action type="form open" value="frmAnalitika" if="#tree.@Nivo==3">
+								<parameter name="IndUnosa" value="1" />	
+								<parameter name="KntPlanSId" value="#tree.@KntPlanSId" />
+							</action>
+							<action type="form open" value="frmSintetika" elseif="#tree.@Nivo!=3">
+								<parameter name="IndUnosa" value="1" />	
+							</action>
+							<action type="control populate keepfocus" value="#tree"/>
+							<action type="datarun scalar" value="Global.~dtGetNewIdSintetika">
+								<parameter name="NewKntPlanSid" />
+							</action>
+							<action type="control focus" value="#tree" if="$CurrentKntPlanSid!=$NewKntPlanSid" >
+								<parameter value="$NewKntPlanSid" type="int"/> 
+							</action>
+						</event>
+					</menuitem>
+					<menuitem caption="Izmjeni" function="IzmjenaSintetike">
+						<event type="click" > 							
+							<action type="form open" value="frmSintetika">
+								<parameter name="IndUnosa" value="0" />	
+								<parameter name="KntPlanSId" value="#tree.@KntPlanSId" />	
+							</action>	
+							<action type="control populate keepfocus" value="#tree"/>							
+						</event>
+					</menuitem>
+					<menuitem caption="Obriši" function="BrisanjeSintetike">
+						<event type="click">
+							<action type="variable value">
+								<parameter name="Konto" value="#tree.@Naziv" />
+								<parameter name="KntPlanSId" value="#tree.@KntPlanSId" />
+							</action>
+							<action type="confirm" value="Želite li doista obrisati odabrani Sintetički konto '{$Konto}'?">							
+								<action type="datarun nonquery" value="Global.~dtSintetikaDelete">
+									<action type="control populate keepfocus" value="#tree" />
+								</action>
+							</action>
+						</event>
+					</menuitem>
+				</menu>
+			</tree>
+			<grid name="grdGlava" type="master" async="true"  multiselect="true" savelayout="true"  autowidth="true" key="KntPlanAId">
+				<event type="cellvaluechanged">
+					<action type="datarun nonquery" value="~dtGrdEdit" if="#grdGlava.rowcount!=0" />
+					<action type="control populate keepfocus" value="#grdGlava" />
+					<action if="#grdGlava.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObrisi"  />	
+					<action type="control enable" value="#btnIzmijeni, #btnObrisi" elseif="#grdGlava.rowcount!=0" />
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmAnalitika" >
+						<parameter name="IndUnosa" value="0" />	
+						<parameter name="KntPlanSId" value="#tree.@KntPlanSId" />
+						<parameter name="KntPlanAId" value="#grdGlava.@KntPlanAId" />
+					</action>	
+					<action type="control populate keepfocus" value="#grdGlava"/>	
+					<action if="#grdGlava.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObrisi"  />	
+					<action type="control enable" value="#btnIzmijeni, #btnObrisi" elseif="#grdGlava.rowcount!=0" />		
+				</event>
+<!--				<event type="showingeditor">
+					<action type="editor allow" value="true" if="#grdGlava.@OperateriId==@@OperateriId" />
+				</event>-->
+				<data command="spCKntPlanAQuery" >
+					<parameter name="@Action"  value="2" />
+					<parameter name="@Konto" value="#tree.@Konto" />
+				</data>
+				<fields>
+                    <field name="Konto" caption="Analitički plan"/>
+					<field name="Naziv" />
+					<field name="VrstaKonta" caption="Vrsta računa"/>
+					<field name="DevizniKonto" caption="Devizni"/>
+					<field name="KontoPD" caption="PD"/>
+					<field name="KontoSD" caption="SD"/>
+					<field name="BA" editable="true"/>
+					<field name="BP" editable="true"/>
+					<field name="RDG" editable="true"/>
+					<field name="AOP_GFI_16" caption="AOP_GFI_2016" editable="true"/>
+					<field name="AOP_GFI_16dod" caption="AOP_GFI_2016_dod" editable="true"/>
+					<field name="AOP_GFI_21" caption="AOP_GFI_2021" editable="true"/>
+					<field name="AOP_GFI_21dod" caption="AOP_GFI_2021_dod" editable="true"/>
+					<field name="AOP_GFI_24" caption="AOP_GFI_24" editable="true"/>
+					<field name="AOP_GFI_24dod" caption="AOP_GFI_24_dod" editable="true"/>
+					<field name="AOP" caption="AOP_GFI" editable="true"/>
+					<field name="AOPdod" caption="AOP_GFI_dod" editable="true"/>
+					<field name="AOP_tsi" caption="AOP_TSI" editable="true"/>
+					<field name="Rbrb" caption="Redni broj bilješke" editable="true"/>
+					<field name="PDobrazac" caption="PD obrazac" editable="true"/>
+					<field name="KompOznaka" caption="Oznaka"/>
+					<field name="Umirovljen"/>
+					<field name="ObavVrstaDim" caption="Obavezna vrsta dimenzije"/>
+					<field name="Pdvnetiranje" caption="PDV netiranje"/>
+					<field name="Dimenzije"/>
+					<field name="MasterKonto" caption="Master Konto"/>
+					<field name="StatusMasterKonta" caption="StatusMasterKonta"/>
+					<!-- <field name="KonsKonto" caption="AigKonto"/> -->
+					<!--specifične kolone po firmama dodati u part-->
+					<part name="prtKontniPlanGrid" path="prtKontniPlan.xml"/>
+                </fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="true" >
+			<buttons>
+				<button name="btnUnesi" caption="UNESI" function="UnosAnalitike">
+					<event type="click"> 
+						<action type="datarun scalar" value="Global.~dtGetNewIdAnalitika">
+							<parameter name="CurrentKntPlanAid" />
+						</action>
+						<action type="form open" value="frmAnalitika" >
+							<parameter name="IndUnosa" value="1" />	
+							<parameter name="KntPlanSId" value="#tree.@KntPlanSId" />
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava"/>
+						<action if="#grdGlava.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObrisi"  />	
+						<action type="control enable" value="#btnIzmijeni, #btnObrisi" elseif="#grdGlava.rowcount!=0" />
+						<action type="datarun scalar" value="Global.~dtGetNewIdAnalitika">
+							<parameter name="NewKntPlanAid" />
+						</action>
+						<action type="control focus" value="#grdGlava" if="$CurrentKntPlanAid!=$NewKntPlanAid" >
+							<parameter value="$NewKntPlanAid" type="int"/> 
+						</action>
+						<action if="#grdGlava.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObrisi"  />	
+						<action type="control enable" value="#btnIzmijeni, #btnObrisi" elseif="#grdGlava.rowcount!=0" />
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" function="IzmjenaAnalitike">
+					<event type="click">
+						<action type="form open" value="frmAnalitika" >
+							<parameter name="IndUnosa" value="0" />	
+							<parameter name="KntPlanSId" value="#tree.@KntPlanSId" />
+							<parameter name="KntPlanAId" value="#grdGlava.@KntPlanAId" />
+						</action>	
+						<action type="control populate keepfocus" value="#grdGlava"/>	
+						<action if="#grdGlava.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObrisi"  />	
+						<action type="control enable" value="#btnIzmijeni, #btnObrisi" elseif="#grdGlava.rowcount!=0" />							
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" function="BrisanjeAnalitike">
+					<event type="click"> 
+						<action type="variable value">
+							<parameter name="KntPlanAId" value="#grdGlava.@KntPlanAId" />								
+						</action>
+						<action type="confirm" value="Želite li doista obrisati odabrani konto?">							
+							<action type="datarun nonquery" value="Global.~dtAnalitikaDelete">
+								<action type="control populate keepfocus" value="#grdGlava" />
+								<action if="#grdGlava.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObrisi"  />	
+								<action type="control enable" value="#btnIzmijeni, #btnObrisi" elseif="#grdGlava.rowcount!=0" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnKarticaKonta" caption="Kartica konta" function="KarticaKonta">
+<!--						<event type="click"> 
+						<action type="form open" value="frmInfoDisabled"/>
+					</event>-->
+					<event type="click">
+						<action type="method run" value="CarpoNew">
+							<!--za testiranje-->
+							<!-- <parameter name="moduleid" value="D:\puštanje paketa\KarticaKonta Carpo\KarticaKonta.xml"/> -->
+							<parameter name="moduleid" value="KarticaKonta.xml"/>
+							<parameter name="global.IndikatorGranulaPrevara" type="var" valuetype="int" value="1"/>
+							<parameter name="global.DatumOd" type="var" valuetype="date" value="global.$DatumOd"/>
+							<parameter name="global.DatumDo" type="var" valuetype="date" value="global.$DatumDo"/>		
+							<parameter name="global.KntPlanAId" type="var" valuetype="int" value="#grdGlava.@KntPlanAId"/>
+							<parameter name="global.Konto" type="var" valuetype="int" value="#grdGlava.@Konto"/> 
+							<parameter name="global.KontoNaziv" type="var" value="#grdGlava.@Naziv"/>
+<!--							<parameter name="global.PartneriId" type="var" valuetype="int" value="#grdGlava.@partneriId"/>
+							<parameter name="global.PartneriNaziv" type="var" value="#grdGlava.@Naziv"/>	-->						
+							<parameter name="global.AnalitikaPS" type="var" value="0" />
+						</action>
+						</event>
+				</button>
+				<button name="btnHelp" caption="Uputi me">
+					<event type="click"> 
+						<action type="form open" value="frmInfoDisabled"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGrdEdit" command="spCKntPlanAAzur">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@Id" value="#grdGlava.@KntPlanAId"/>
+				<parameter name="@Value" value="#grdGlava.focusedvalue" />
+				<parameter name="@Kolona" value="#grdGlava.focusedfield"/>
+				<parameter name="@Konto" value="null"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmSintetika" caption="Sintetika">
+		<event type="oninit">  				
+		</event>
+		<event type="onload">
+			<action type="datarun reader" value="Global.~dtSintetikaQuery" if="$IndUnosa==0" >				
+			</action>		
+			<action type="control populate" value="#txtKonto"></action>	
+		</event>
+		<event type="onshown">	
+			<action type="control value" value="#txtKonto">
+				<parameter value="#dtSintetikaQuery.@Konto" if="$IndUnosa==0" />
+				<parameter value="parent.#tree.@Konto" if="$IndUnosa==1" />				
+			</action>
+			<action type="control value" value="#txtNaziv">
+				<parameter value="#dtSintetikaQuery.@Naziv"  />		
+			</action>			
+			<action if="$IndUnosa==0" type="control disable" value="#txtKonto"  />				
+		</event>
+		<layout textposition="left" itemspadding="2">
+			<group cols="1" rows="1" >
+				<group cols="1" rows="2" groupbordervisible="true">
+					<item col="1" row="1" caption="Konto:" >
+							<textedit name="txtKonto"  required="true"  >
+							</textedit>
+					</item>
+					<item col="1" row="2" caption="Naziv:" >
+							<textedit name="txtNaziv"   >
+							</textedit>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<datalist>
+			<data command="spCKntPlanSAzur" name="dtSintetikaAzur">
+				<parameter name="@Action"  value="0" if="$IndUnosa==1"/>
+				<parameter name="@Action"  value="1" if="$IndUnosa==0"/>
+				<parameter name="@Konto"  value="#txtKonto" />
+				<parameter name="@Naziv"  value="#txtNaziv" />
+				<parameter name="@id"  value="$KntPlanSId" />
+			</data>
+
+		</datalist>
+			<panelbuttons  >
+				<buttons>
+					<button name="btnSpremi" caption="Spremi">
+						<event type="click"> 
+							<action type="datarun nonquery" value="~dtSintetikaAzur" >																								
+							</action>
+							<action type="form close" />
+						</event>
+					</button>
+					<button name="btnOdustani" caption="Odustani" type="cancel">
+					</button>
+					<button name="btnHelp" caption="Uputi me">
+						<event type="click"> 
+							<action type="form open" value="frmInfoDisabled"/>
+						</event>
+					</button>
+				</buttons>
+			</panelbuttons>			
+	</form>
+	<form name="frmAnalitika" caption="Analitika" height="400">
+		<method name="fnDimenzije" dll="Dimenzije" class="DimenzijeNet.Dimenzije" method="run"/>
+		<event type="onload">
+			<action type="datarun reader" value="Global.~dtAnalitikaQuery" if="$IndUnosa==0"/>	
+			<action type="datarun reader" value="~dtDimVrstePopuni" if="$IndUnosa==0"/>	
+			<action type="datarun reader" value="Global.~dtPrometInd" if="$IndUnosa==0" >				
+			</action>
+		 
+			<action if="#dtPrometInd.@IndPromet==1" type="control disable" value="#chkDevizniKonto, #cmbKntVrstaId" />	
+			<action if="#dtAnalitikaQuery.@devind==0" type="control disable" value="#txtKntNegTecRaz, #txtKntPozTecRaz" />		
+			<action if="global.$AigAzur==0" type="control disable" value="#srcAigKonto" />	 
+				<!-- <action type="control disable" value="#srcAigKonto" />	 -->
+		</event>
+		<event type="onshown">	
+	
+			<action type="control value" value="#txtKonto">
+				<parameter value="#dtAnalitikaQuery.@Konto" if="$IndUnosa==0"  />		
+				<parameter value="parent.#tree.@Konto" if="$IndUnosa==1"  />	
+			</action>
+			<action type="control value" value="#txtNaziv">
+				<parameter value="#dtAnalitikaQuery.@Naziv"  />		
+			</action>
+			<action type="control value" value="#chkDevizniKonto">
+				<parameter value="#dtAnalitikaQuery.@devind"  />		
+			</action>
+			<action type="control value" value="#cmbKntVrstaId">
+				<parameter value="#dtAnalitikaQuery.@KntVrstaId"  />		
+			</action>	
+			<action type="control value" value="#txtKntNegTecRaz">
+				<parameter value="#dtAnalitikaQuery.@KntNegTecRaz"  />		
+			</action>
+			<action type="control value" value="#txtKntPozTecRaz">
+				<parameter value="#dtAnalitikaQuery.@KntPozTecRaz"  />		
+			</action>		
+			<action type="control value" value="#txtOznaka">
+				<parameter value="#dtAnalitikaQuery.@KompOznaka"  />		
+			</action>
+			<action type="control value" value="#txtKontoPd">
+				<parameter value="#dtAnalitikaQuery.@KontoPd"  />		
+			</action>
+			<action type="control value" value="#txtKontoSd">
+				<parameter value="#dtAnalitikaQuery.@KontoSd"  />		
+			</action>
+			<action type="control value" value="#chkOrgShema">
+				<parameter value="#dtAnalitikaQuery.@OrgShemaObavezna"  />		
+			</action>
+			<action type="control value" value="#txtBA">
+				<parameter value="#dtAnalitikaQuery.@BA"  />		
+			</action>
+			<action type="control value" value="#txtBP">
+				<parameter value="#dtAnalitikaQuery.@BP"  />		
+			</action>
+			<action type="control value" value="#txtRDG">
+				<parameter value="#dtAnalitikaQuery.@RDG"  />		
+			</action>
+			<action type="control value" value="#txtAOP_GFI">
+				<parameter value="#dtAnalitikaQuery.@AOP"  />		
+			</action>
+			<action type="control value" value="#txtAOP_GFI_dod">
+				<parameter value="#dtAnalitikaQuery.@AOPdod"  />		
+			</action>
+			<action type="control value" value="#txtAOP_TSI">
+				<parameter value="#dtAnalitikaQuery.@AOP_TSI"  />		
+			</action>	
+			<action type="control value" value="#txtRbRb">
+				<parameter value="#dtAnalitikaQuery.@RBRB"  />		
+			</action>	
+			<action type="control value" value="#txtAOP_GFI_16">
+				<parameter value="#dtAnalitikaQuery.@AOP_GFI_16"  />		
+			</action>
+			<action type="control value" value="#txtAOP_GFI_16dod">
+				<parameter value="#dtAnalitikaQuery.@AOP_GFI_16dod"  />		
+			</action>
+			<action type="control value" value="#chkAktivan" if="$IndUnosa==0">
+				<parameter value="#dtAnalitikaQuery.@active"  />		
+			</action>
+			<action type="control value" value="#cmbVrstaDim" if="$IndUnosa==0">
+				<parameter value="~dtDimVrstePopuni.@NizDim"/>		
+			</action>	
+			<action type="control value" value="#chkPdvNetiranje" >
+				<parameter value="#dtAnalitikaQuery.@PDVnetiranje"  />		
+			</action>	
+			<action type="control value" value="#txtAOP_GFI_21">
+				<parameter value="#dtAnalitikaQuery.@AOP_GFI_21"  />		
+			</action>
+			<action type="control value" value="#txtAOP_GFI_21dod">
+				<parameter value="#dtAnalitikaQuery.@AOP_GFI_21dod"  />		
+			</action>
+			<action type="control value" value="#txtAOP_GFI_24">
+				<parameter value="#dtAnalitikaQuery.@AOP_GFI_24"  />		
+			</action>
+			<action type="control value" value="#txtAOP_GFI_24dod">
+				<parameter value="#dtAnalitikaQuery.@AOP_GFI_24dod"  />		
+			</action>
+			<action type="control value" value="#srcMasterKonto">
+				<parameter text="~dtAnalitikaQuery.@MasterKonto" value="~dtAnalitikaQuery.@MasterKonto"  />		
+			</action>
+			<action type="control value" value="#txtStatusMasterKonta">
+				<parameter value="#dtAnalitikaQuery.@StatusMasterKonta"  />		
+			</action>
+			<action type="control value" value="#srcAigKonto">
+				<parameter text="~dtAnalitikaQuery.@AigKonto" value="~dtAnalitikaQuery.@AigKonto"  />		
+			</action>
+			<action type="control visible" value="#btnDimenzije" if="$IndUnosa!=0">
+				<parameter value="false"/>
+			</action>
+		</event>
+		<layout textposition="left" itemspadding="2">
+			<group cols="1" rows="1" >				
+					<tabs row="1" col="1" padding="2">
+						<group caption="Ažuriranje" cols="2" rows="4" col="1" row="1">
+							<item col="1" row="1" caption="Konto:" >
+								<textedit name="txtKonto"  >
+								</textedit>
+							</item>
+							<item col="2" row="1"  textposition="right" >
+								<checkedit name="chkDevizniKonto"  value="0" caption="Devizni konto">
+									<event type="valuechanged">									
+										<action if="#chkDevizniKonto==true" type="control enable" value="#txtKntNegTecRaz, #txtKntPozTecRaz" />	
+										<action if="#chkDevizniKonto==false" type="control disable" value="#txtKntNegTecRaz, #txtKntPozTecRaz" />											
+									</event>
+								</checkedit>
+							</item>
+							<item col="1" row="2" caption="Naziv:" colspan="2">
+								<textedit name="txtNaziv"   >
+								</textedit>
+							</item>	
+							<item col="1" row="3" caption="Vrsta konta:" colspan="2">
+								<comboedit name="cmbKntVrstaId" dataname="Global.dtVrstaKonta" displayfield="VrstaKonta" valuefield="KntVrstaId"  autopopulate="true">
+								</comboedit>
+							</item>
+							<item col="1" row="4" colspan="2"  textposition="left" >
+								<checkedit name="chkAktivan"  value="1" caption="Aktivan">
+								</checkedit>
+							</item>							
+						</group>
+						<group caption="Dodatno" cols="2" rows="10" col="1" row="1">
+							<item col="1" colspan="2" row="1" caption="Konto NegTecRaz:" >
+								<textedit name="txtKntNegTecRaz"   >
+								</textedit>
+							</item>
+							<item col="1" colspan="2" row="2" caption="Konto PozTecRaz:" >
+								<textedit name="txtKntPozTecRaz"   >
+								</textedit>
+							</item>
+							<item col="1" colspan="2" row="3" caption="Oznaka za prijeboj (D-dužnik, V-vjerovnik):" >
+								<textedit name="txtOznaka"   >
+								</textedit>
+							</item>
+							<item col="1" colspan="2" row="4" caption="Konto povezanih društva:" >
+								<textedit name="txtKontoPd"   >
+								</textedit>
+							</item>
+							<item col="1" colspan="2" row="5" caption="Konto povezanih društva:" >
+								<textedit name="txtKontoPd"   >
+								</textedit>
+							</item>
+							<item col="1" colspan="1" row="6" caption="Master Konto:" >
+								<searchedit  name="srcMasterKonto"  savevalue="app" dataname="~dtMasterKonto" fieldtext="MasterKonto" fieldvalue="MasterKonto"  datavalue="~dtAnalitikaQuery.@MasterKonto" datatext="~dtAnalitikaQuery.@MasterKonto" savelayout="true">
+								<event type="leave">
+									<action type="datarun reader" value="dtMasterKonto">
+										<action type="control populate" value="#txtStatusMasterKonta" />
+									</action>
+									<action type="control value" value="#txtStatusMasterKonta">		
+										<parameter value="~dtMasterKonto.@Status" />
+									 </action>	
+								</event>
+								</searchedit>
+							</item>
+							<item col="2" colspan="1" row="6" caption="Status Master Konta:" >
+								 <textedit name="txtStatusMasterKonta"   datavalue="~dtMasterKonto.@Status"  readonly="true"/>  
+							</item>
+							<item col="1" colspan="2" row="7" caption="Vrsta dimenzije obavezna:">
+								<combomultiedit name="cmbVrstaDim" showmultiselecttext="false" valuefield="DimVrsteId" displayfield="NazivPuni" dataname="~dtDimVrste"/>
+							</item>	
+							<item col="1" row="8" >
+								<checkedit name="chkOrgShema"  value="0" caption="Org. shema obavezna" />
+							</item>
+							<item col="1" row="9" >
+								<checkedit name="chkPdvNetiranje"  value="0" caption="PDV Netiranje" />
+							</item>
+							<!-- <item col="1" row="10"> -->
+								<part name="prtAigKonto" path="prtKontniPlan.xml"/>	
+							<!-- </item>							 -->
+						</group>
+						<group caption="Bilanca" cols="1" rows="14" col="1" row="1">
+							<item col="1" row="1" caption="BA:" >
+								<textedit name="txtBA"   >
+								</textedit>
+							</item>
+							<item col="1" row="2" caption="BP:" >
+								<textedit name="txtBP"   >
+								</textedit>
+							</item>	
+							<item col="1" row="3" caption="RDG:" >
+								<textedit name="txtRDG"   >
+								</textedit>
+							</item>	
+							<item col="1" row="4" caption="AOP GFI 2016:" >
+								<textedit name="txtAOP_GFI_16"   >
+								</textedit>
+							</item>
+							<item col="1" row="5" caption="AOP GFI 2016 dod.:" >
+								<textedit name="txtAOP_GFI_16dod"   >
+								</textedit>
+							</item>
+							<item col="1" row="6" caption="AOP GFI 2021:" >
+								<textedit name="txtAOP_GFI_21"   >
+								</textedit>
+							</item>
+							<item col="1" row="7" caption="AOP GFI 2021 dod.:" >
+								<textedit name="txtAOP_GFI_21dod"   >
+								</textedit>
+							</item>
+							<item col="1" row="8" caption="AOP GFI:" >
+								<textedit name="txtAOP_GFI"   >
+								</textedit>							
+							</item>
+							<item col="1" row="9" caption="AOP GFI dod.:" >
+								<textedit name="txtAOP_GFI_dod"   >
+								</textedit>
+							</item>
+							<item col="1" row="10" caption="AOP TSI:" >
+								<textedit name="txtAOP_TSI"   >
+								</textedit>
+							</item>	
+							<item col="1" row="11" caption="Redni br. bilješke:" >
+								<textedit name="txtRbRb"   >
+								</textedit>
+							</item>	
+							<item col="1" row="12" caption="PD obrazac:" >
+								<textedit name="txtPD"   >
+								</textedit>
+							</item>	
+							<item col="1" row="13" caption="AOP GFI 24:" >
+								<textedit name="txtAOP_GFI_24"   >
+								</textedit>
+							</item>
+							<item col="1" row="14" caption="AOP GFI 24 dod.:" >
+								<textedit name="txtAOP_GFI_24dod"   >
+								</textedit>
+							</item>							
+						</group>						
+					</tabs>				
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click"> 
+						<action type="datarun nonquery" value="~dtAnalitikaAzur" >																								
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+				<button name="btnDimenzije" caption="DIMENZIJE" dock="right" tooltip="U slučaju klika na gumb stavci se dodijeljuju dimanzije bez obzira na odabir Spremi ili Odustani.">
+					<event type="click">
+						<action type="variable value" value="$DimnezijeInd">
+							<parameter value="1"/>
+						</action>
+						<action type="method run" value="fnDimenzije">
+							<parameter name="server" value="@@server"/>
+							<parameter name="database" value="@@database"/>
+							<parameter name="username" value="@@username"/>
+							<parameter name="password" value=""/>
+							<parameter name="OperateriId" value="@@operateriid"/>
+							<parameter name="Parent" value="0"/>
+							<parameter name="pTop" value="0"/>
+							<parameter name="pLeft" value="0"/>
+							<parameter name="path" value=""/>
+							<parameter name="tip" value="KntPlanAId"/>
+							<parameter name="id" value="$KntPlanAId"/>
+							<parameter name="glaid" value="0"/>
+							<!--<parameter name="partneriid" value="#srcPartner"/>-->
+						</action>
+						<action type="control focus" value="#btnAdd"/>
+					</event>				
+				</button>				
+				<!-- <button name="btnHelp" caption="Uputi me"> -->
+					<!-- <event type="click">  -->
+						<!-- <action type="form open" value="frmInfoDisabled"/> -->
+					<!-- </event> -->
+				<!-- </button> -->
+			</buttons>
+		</panelbuttons>		
+		<datalist>
+			<data command="spCKntPlanAAzur" name="dtAnalitikaAzur">
+				<parameter name="@Action"  value="0" if="$IndUnosa==1"/>
+				<parameter name="@Action"  value="1" if="$IndUnosa==0"/>
+				<parameter name="@id"  value="$KntPlanAId" />
+				<parameter name="@Konto"  value="#txtKonto" />
+				<parameter name="@Naziv"  value="#txtNaziv" />
+				<parameter name="@KntVrstaId"  value="#cmbKntVrstaId" />
+				<!--<parameter name="@Godina"  value="" />-->
+				<parameter name="@KntPlanSId"  value="$KntPlanSId" />
+				<!--<parameter name="@DatPromjene"  value="" />-->
+				<parameter name="@DevInd"  value="#chkDevizniKonto" />
+				<parameter name="@KntNegtecraz"  value="#txtKntNegTecRaz" />
+				<parameter name="@KntPoztecraz"  value="#txtKntPozTecRaz" />
+				<parameter name="@KompOznaka"  value="#txtOznaka" />
+				<parameter name="@BA"  value="#txtBA" />
+				<parameter name="@BP"  value="#txtBP" />
+				<parameter name="@RDG"  value="#txtRDG" />
+				<parameter name="@AOP"  value="#txtAOP_GFI" />
+				<parameter name="@AOPdod"  value="#txtAOP_GFI_dod" />
+				<parameter name="@RBRB"  value="#txtRbRb" />
+				<parameter name="@AOP_TSI"  value="#txtAOP_TSI" />
+				<parameter name="@KontoPD"  value="#txtKontoPd" />
+				<parameter name="@KontoSD"  value="#txtKontoSd" />
+				<parameter name="@OrgShemaObavezna"  value="#chkOrgShema" />
+				<parameter name="@AOP_GFI_16"  value="#txtAOP_GFI_16" />
+				<parameter name="@AOP_GFI_16dod"  value="#txtAOP_GFI_16dod" />
+				<parameter name="@active"  value="#chkAktivan" />
+				<parameter name="@PD"  value="#txtPD"/>
+				<parameter name="@NizDim" value="#cmbVrstaDim"/>
+				<parameter name="@Pdvnetiranje"  value="#chkPdvNetiranje" />
+				<parameter name="@AOP_GFI_21"  value="#txtAOP_GFI_21" />
+				<parameter name="@AOP_GFI_21dod"  value="#txtAOP_GFI_21dod" />
+				<parameter name="@MasterKonto"  value="#srcMasterKonto.text" />
+				<parameter name="@AigKonto"  value="#srcAigKonto.text" />
+				<parameter name="@AOP_GFI_24"  value="#txtAOP_GFI_24" />
+				<parameter name="@AOP_GFI_24dod"  value="#txtAOP_GFI_24dod" />
+			</data>
+			<data name="dtDimVrste" command="spCKntPlanDim">
+				<parameter name="@Action" value="0"/>
+			</data>
+			<data name="dtMasterKonto" command="spCKntPlanAQuery">
+				<parameter name="@Action" value="11"/>
+				<parameter name="@Konto" value="#srcMasterKonto.text"/>	
+			</data>
+			<data name="dtDimVrstePopuni" command="spCKntPlanDim">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@KntPlanAId" value="$KntPlanAId"/>
+			</data>	
+			<data name="dtAigKonto" command="spCKntPlanAQuery">
+				<parameter name="@Action" value="12"/>
+				<parameter name="@Konto" value="#srcAigKonto.text"/>	
+			</data>			
+		</datalist>
+	</form>
+	
+	<form name="frmInfoDisabled"  caption="Info"  >
+
+		<layout textposition="top" >
+			<group cols="1" rows="1" >
+				<group cols="1" rows="1" groupbordervisible="false">
+					<item col="1" row="1" caption="Ova funkcionalnost trenutno nije dostupna, molim kontaktirajte Spin!">
+					</item>					
+				</group>
+			</group>	
+		</layout>
+		<panelbuttons>
+            <buttons>
+				<button name="btnOdustani" caption="OK" dock="right" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	
+<datalist>
+	<data  name="dtPrviDan" command="select dateadd(yy,datediff(yy,0,getdate()),0) as prvidan" type="text"/>
+	<data command="spCKntPlanSAzur" name="dtSintetikaDelete">
+		<parameter name="@Action"  value="2" />				
+		<parameter name="@id"  value="$KntPlanSId" />	
+	</data>
+	<data command="spCKntPlanSQuery" name="dtSintetikaQuery">
+		<parameter name="@Action"  value="1" />				
+		<parameter name="@id"  value="$KntPlanSId" />	
+	</data>
+	<data command="spCKntPlanAQuery" name="dtAnalitikaQuery">
+		<parameter name="@Action"  value="1" />				
+		<parameter name="@id"  value="$KntPlanAId" />	
+	</data>
+	<data command="spCKntPlanSQuery" name="dtGetNewIdSintetika">
+		<parameter name="@Action"  value="4" />				
+	</data>
+	<data command="spCKntVrstaQuery" name="dtVrstaKonta">
+		<parameter name="@Action"  value="0" />				
+	</data>
+	<data command="spCKntPlanAQuery" name="dtGetNewIdAnalitika">
+		<parameter name="@Action"  value="7" />				
+	</data>
+	<data command="spCKntPlanAQuery" name="dtPrometInd">
+		<parameter name="@Action"  value="8" />	
+		<parameter name="@id"  value="$KntPlanAId" />			
+	</data>
+	<data command="spCKntPlanAAzur" name="dtAnalitikaDelete">
+		<parameter name="@Action"  value="2" />				
+		<parameter name="@id"  value="$KntPlanAId" />
+		<parameter name="@Konto"  value="null" />		
+	</data>
+	<data command="spCKntPlanAQuery" name="dtAIGEdit">
+		<parameter name="@Action"  value="13" />				
+	</data>
+</datalist>
+
+</root>

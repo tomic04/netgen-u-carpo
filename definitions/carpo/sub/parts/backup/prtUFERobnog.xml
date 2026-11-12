@@ -1,0 +1,123 @@
+<parts>
+	<part name="prtRobnoKalkInsert">
+		<action type="form open" value="frmUFERobnogInsert">
+			<parameter name="Caption" value="Unos nove kalkulacije"/>
+		</action>
+		<action if="$DrvoId!=null">
+			<action type="control populate" value="#tree">
+				<action type="control focus" value="#tree">
+					<parameter value="$DrvoId"/>  
+				</action>	
+			</action>
+			<action type="control focus" value="#grdGlava">
+				<parameter value="$GridId"/>
+			</action>	
+		</action>
+	</part>
+	<part name="prtRobnoKalkUpdate">
+		<action type="variable value" value="global.$OperaterLockId">
+			<parameter value="#grdGlava.@RobnoKalkGlaId"/>
+		</action>
+		<action type="form open" value="frmUFERobnogInsert">
+			<parameter name="RobnoKalkGlaId" value="#grdGlava.@RobnoKalkGlaId"/>
+			<parameter name="Status" value="#grdGlava.@Status"/>
+			<parameter name="DatumZak" value="#grdGlava.@DatumZak"/>
+			<parameter name="Caption" value="Kalkulacija broj {#grdGlava.@Broj}"/>
+		</action>
+		<action if="$DrvoId!=null">		
+			<action type="control populate" value="#tree">
+				<action type="control focus" value="#tree">
+					<parameter value="$DrvoId"/>  
+				</action>	
+			</action>
+			<action type="control focus" value="#grdGlava">
+				<parameter value="$GridId"/>
+			</action>		
+		</action>
+	</part>
+	<part name="prtRobnoKalkDelete">
+		<action type="confirm" value="Želite li doista obrisati označeni slog?">
+			<action type="datarun nonquery" value="~dtObrisi">
+				<action type="control populate keepfocus" value="#grdGlava"/>
+			</action>
+		</action>	
+	</part>	
+	<part name="prtRobnoKalkDetInsert">
+		<!-- spremi zaglavlje kad korisnik doda prvu stavku kako bi pokupio sve promjene (troskovi, ufa, valuta)-->
+		<action type="datarun nonquery" value="~dtSpremi" if="$RobnoKalkGlaId!=null&amp;&amp;#grdStavke.rowcount&lt;2"/>		
+		<action type="control populate" value="parent.#grdDetail"/>								
+		<action type="form open" value="frmUFERobnogStavka">
+			<parameter name="Action" value="0"/>
+			<parameter name="PartneriId" value="#srcPartner"/>
+			<parameter name="Tecaj" value="#txtTecaj"/>
+			<parameter name="TrosakP" value="#txtTrosakPosto"/>
+			<parameter name="valutaOznaka" value="#cmbValuta.@oznaka" if="#cmbValuta!=null"/>
+			<parameter name="valutaOznaka" value="kn" if="#cmbValuta==null"/>
+			<parameter name="RobnoKalkGlaId" value="$RobnoKalkGlaId"/>
+			<parameter name="Status" value="$Status"/>
+			<parameter name="Datum" value="#datDatumDok"/>
+			<parameter name="ValuteId" value="#cmbValuta"/>
+		</action>
+		<action type="control populate" value="#grdStavke"/>	
+		<action type="control populate" value="parent.#grdDetail"/>									
+		<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>
+		<action type="control disable" value="#btnEditDetalj,#btnEditDetaljSve,#btnUrednik,#btnZakljuci,#btnDeleteDetalj" if="#grdStavke.rowcount==0"/>
+		<action type="control enable" value="#btnEditDetalj,#btnEditDetaljSve,#btnUrednik,#btnZakljuci,#btnDeleteDetalj" elseif="#grdStavke.rowcount!=0&amp;&amp;$Status!=2&amp;&amp;$Status!=S"/>	
+	</part>
+	<part name="prtRobnoKalkDetUpdate">
+		<action type="form open" value="frmUFERobnogStavka" if="#grdStavke.rowcount>0">
+			<parameter name="Action" value="1"/>
+			<parameter name="PartneriId" value="#srcPartner"/>
+			<parameter name="Tecaj" value="#txtTecaj"/>
+			<parameter name="TrosakP" value="#txtTrosakPosto"/>
+			<parameter name="valutaOznaka" value="#cmbValuta.@oznaka" if="#cmbValuta!=null"/>
+			<parameter name="valutaOznaka" value="kn" if="#cmbValuta==null"/>
+			<parameter name="RobnoKalkGlaId" value="$RobnoKalkGlaId"/>
+			<parameter name="RobnoKalkDetId" value="#grdStavke.@RobnoKalkDetId"/>
+			<parameter name="RobaId" value="#grdStavke.@RobaId"/>
+			<parameter name="Status" value="$Status"/>
+			<parameter name="ValuteId" value="#cmbValuta"/>
+		</action>					
+		<!-- <action type="control populate" value="#grdStavke"/>	 -->
+		<!-- <action type="control populate" value="parent.#grdDetail"/>	 -->
+		<action type="control focusnextrow" value="#grdStavke" if="global.$Close==false"/>									
+		<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>	
+	</part>
+	<part name="prtRobnoKalkDetDelete">
+		<action type="confirm" value="Želite li obrisati označene stavke?" if="#grdStavke.rowcount&gt;0">
+			<action type="control foreachrow selected" value="#grdStavke">
+				<action type="datarun nonquery" value="~dtDeleteDet"/>
+			</action>	
+			<action type="control populate" value="#grdStavke"/>
+			<action type="control populate" value="parent.#grdDetail"/>
+			<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>
+			<action type="control disable" value="#btnEditDetalj,#btnEditDetaljSve,#btnUrednik,#btnZakljuci,#btnDeleteDetalj" if="#grdStavke.rowcount==0"/>
+		</action>	
+	</part>		
+	<part name="prtRobnoKalkGlaSave">
+		<action type="message" value="Obavezan unos dobavljača i organizacijske jedinice!" if="#srcPartner==null||#cteOrgShema==null">
+			<action type="control focus" value="#cteOrgShema" if="#cteOrgShema==null"/>
+			<action type="control focus" value="#srcPartner" if="#srcPartner==null"/>
+		</action>
+		<action type="datarun reader" value="~dtInsertGlave" else="">
+			<action type="control enable" value="#btnDonesi,#btnDodajDetalj,#btnUrednik,#btnSpremi,#btnZakljuci,#btnPrint"/>				  
+			<action type="control enable" value="#btnEditDetalj,#btnEditDetaljSve,#btnDeleteDetalj" if="#grdStavke.rowcount!=0"/>								  
+			<action type="control disable" value="#btnEditDetalj,#btnEditDetaljSve,#btnDeleteDetalj" else=""/>								  
+			<action type="control disable" value="#btnSpremiGlavu"/> 											
+			<action type="control focus" value="#btnDodajDetalj"/>			
+		</action>   
+		<action type="variable value" value="$RobnoKalkGlaId">
+			<parameter value="~dtInsertGlave.@RobnoKalkGlaId"/>
+		</action>
+		<action type="variable value" value="$Status">
+			<parameter value="1"/>
+		</action>	
+		<action type="variable value" value="$DatumZak">
+			<parameter value="null" type="datetime"/>
+		</action>
+		<action type="variable value" value="global.$OperaterLockId">
+			<parameter value="$RobnoKalkGlaId"/>
+		</action>
+		<action type="datarun nonquery" value="~dtOperaterLockSet"/>	
+	</part>
+</parts>

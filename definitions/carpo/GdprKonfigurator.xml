@@ -1,0 +1,226 @@
+<root>
+    <form type="master" caption="Konfigurator">
+        <managerlayout>
+            <grid type="master" name="grdGlava" caption="Popis tablica" dataname="~dtNapuniGlavu" bestfitonrefresh="true" fieldsmartspaces="false" >
+                <event type="doubleclick">
+                    <action type="variable value">
+                        <parameter name="global.formId" value="1" type="int" />
+		            </action>  
+                    <action type="form open" value="frmIzmjeniDodaj">
+                        <parameter name="GdprTabliceId" value="#grdGlava.@GdprTabliceId"/>            
+                    </action>    
+                </event>
+            </grid>
+        </managerlayout>
+
+        <panelbuttons>
+        <buttons>
+            <button name="btnDodaj" caption="Dodaj">
+                <event type="click">
+                   <action type="variable value">
+                        <parameter name="global.formId" value="0" type="int" />
+		            </action>
+                    <action type="datarun scalar" value="~dtCreateTempTable"/>
+                    <action type="form open" value="frmIzmjeniDodaj" />
+                </event>
+            </button>
+            <button name="btnIzmjeni" caption="Izmjeni">
+                <event type="click">
+                    <action type="variable value">
+                        <parameter name="global.formId" value="1" type="int" />
+		            </action>  
+                    <action type="form open" value="frmIzmjeniDodaj">
+                        <parameter name="GdprTabliceId" value="#grdGlava.@GdprTabliceId"/>
+                    </action>
+                </event>
+            </button>            
+            <button name="btnObrisi" caption="Obriši">
+                <event type="click">
+                    <action type="confirm" value="Jeste li sigurni da želite obrisati ovu stavku?">
+                        <action type="datarun nonquery" value="~dtObrisi" />
+                        <action type="control populate" value="#grdGlava" />
+                    </action>
+                </event>
+            </button>                  
+        </buttons>
+        </panelbuttons>
+
+        <datalist>
+            <data command = "spGdprKonfigurator" name="dtNapuniGlavu">
+                <parameter name="@Action" value="GdprNapuniGlavu" />
+            </data>
+            <data command="spGdprKonfigurator" name="dtObrisi">
+                <parameter name="@Action" value="GdprObrisi" />
+                <parameter name="@GdprTabliceId" value="#grdGlava.@GdprTabliceId" />
+            </data>
+            <data command="spGdprKonfigurator" name="dtCreateTempTable">
+                <parameter name="@Action" value="CreateTempTable" />
+            </data>
+        </datalist>
+
+     </form>
+
+    <form name="frmIzmjeniDodaj" caption="Dodaj / Izmjeni">
+        <event type="init">
+            <action type="datarun reader" value="~dtPopuniEditFormu"/>
+            <action type="datarun reader" value="~dtNapuniComboEdit"/>
+        </event>
+        <event type="load">
+            <action type="control value" value="#cmbNaziv" if="global.$formId==0">
+                <parameter value="null" />
+            </action>
+            <action type="control value" value="#cmbNaziv" elseif="global.$formId==1">
+                <parameter value="parent.#grdGlava.@Naziv" />
+            </action>
+            <action type="control value" value="#txtRefIdName" if="global.$formId==0">
+                <parameter value="null" />
+            </action>
+            <action type="control value" value="#memDisplayFields" if="global.$formId==0">
+                <parameter value="null" />
+            </action>
+            <action type="control value" value="#memFilter" if="global.$formId==0" >
+                <parameter value="null" />
+            </action>
+            <action type="control value" value="#memMaskedFields" if="global.$formId==0">
+                <parameter value="null" />
+            </action>
+            <action type="control populate" value="#grdFilteri" if="global.$formId==1">
+            </action>
+        </event>
+        <event type="close">
+            <action type="datarun nonquery" value="~dtDeleteTempTable" if="global.$formId==0"/>
+        </event>
+
+        <layout>
+            <group cols="2" rows="5">
+                <item col="1" row="1" caption="Naziv tablice">
+                    <comboedit name="cmbNaziv"  datavalue="~dtNapuniComboEdit.@Naziv" valuefield="Naziv" displayfield="Naziv" dataname="~dtNapuniComboEdit">
+                        <event type="valuechanged">
+                            <action type="datarun reader" value="~dtNapuniRefId"/>
+                            <action type="datarun reader" value="~dtNapuniFilterGrid"/>
+                            <action type="control populate" value="#grdFilteri" />
+                            <action type="control value" value="#txtRefIdName">
+                                <parameter value="~dtNapuniRefId.@RefIdName"/>
+                            </action>
+                        </event>
+                    </comboedit>
+                </item>
+                <item col="1" row="2" caption="RefIdName" >
+                    <textedit name="txtRefIdName" datavalue="~dtPopuniEditFormu.@RefIdName">
+                    </textedit>
+                </item>             
+                <item col="1" row="3" caption="DisplayFields - polja koja želimo prikazati u gridu">
+                    <memoedit name="memDisplayFields" datavalue="~dtPopuniEditFormu.@DisplayFields">
+                    </memoedit>
+                </item>                
+                <item col="1" row="4" caption="Filter">
+                    <memoedit name="memFilter"  datavalue="~dtPopuniEditFormu.@Filter">
+                    </memoedit>
+                </item>                
+                <item col="1" row="5" caption="MaskedFields - polja sa osjetljivim podacima">
+                    <memoedit name="memMaskedFields"  datavalue="~dtPopuniEditFormu.@MaskedFields">
+                    </memoedit>
+                </item>
+                <item col="2" row="1" rowspan="5" width="400">
+                    <grid name="grdFilteri" dataname="~dtNapuniFilterGrid" key="Naziv" 
+                    fieldsmartspaces="false" showgrouppanel="false" showautofilterrow="false" bestfitonrefresh="true">
+
+                        <event type="showingeditor">
+                             <action type="editor allow" value="true"/>
+                         </event>
+                        <fields inherited="true">
+                            <field name="DisplayFields" editable="true" edittype="bit"/>
+                            <field name="MaskedFields" editable="true" edittype="bit"/>
+                        </fields>
+                        <event type="cellvaluechanged">
+                           <action type="variable value" value="$tip">
+                                <parameter value="displayfield" if="#grdFilteri.focusedfield==DisplayFields"/>
+                                <parameter value="maskedfield" else=""/>
+                           </action>
+                            <action type="datarun scalar" value="~dtAdd">
+                                <action type="datarun reader" value="~dtAdd" />
+                                <action type="control value" value="#memMaskedFields" if="$tip==maskedfield">
+                                    <parameter value="~dtAdd.@Txt"/>
+                                </action>                                  
+                                <action type="control value" value="#memDisplayFields" if="$tip==displayfield">
+                                    <parameter value="~dtAdd.@Txt"/>
+                                </action>  
+                            </action>
+                        </event>
+                    </grid>
+                </item>                
+            </group>
+        </layout>
+
+        <datalist>
+            <data command="spGdprKonfigurator" name="dtPopuniEditFormu">
+                <parameter name="@Action" value="GdprPopuniEditFormu" />
+                <parameter name="@GdprTabliceId" value="$GdprTabliceId" />
+            </data>
+            <data command="spGdprKonfigurator" name="dtNapuniComboEdit">
+                <parameter name="@Action" value="GdprNapuniComboEdit" />
+                <parameter name="@Database" value="@@database" type="string" />
+            </data>
+            <data command="spGdprKonfigurator" name="dtIzmjeniPodatke">
+                <parameter name="@Action" value="GdprIzmjeni" />
+                <parameter name="@GdprTabliceId" value="parent.#grdGlava.@GdprTabliceId" />
+                <parameter name="@GdprTxtNaziv" value="#cmbNaziv"/>
+                <parameter name="@GdprTxtRefIdName" value="#txtRefIdName" />
+                <parameter name="@GdprMemoDisplayFields" value="#memDisplayFields" />
+                <parameter name="@GdprMemoFilter" value="#memFilter"/>
+                <parameter name="@GdprMemoMaskedFields" value="#memMaskedFields"/>
+            </data>
+            <data command="spGdprKonfigurator" name="dtDodajPodatke">
+                <parameter name="@Action" value="GdprDodaj" />
+                <parameter name="@GdprTxtNaziv" value="#cmbNaziv"/>
+                <parameter name="@GdprTxtRefIdName" value="#txtRefIdName" />
+                <parameter name="@GdprMemoDisplayFields" value="#memDisplayFields" />
+                <parameter name="@GdprMemoFilter" value="#memFilter"/>
+                <parameter name="@GdprMemoMaskedFields" value="#memMaskedFields"/>
+            </data>
+            <data command="spGdprKonfigurator" name="dtNapuniRefId">
+                <parameter name="@Action" value="GdprNapuniRefId" />
+                <parameter name="@NazivTablice" value="#cmbNaziv"/>
+            </data>
+            <data command="spGdprKonfigurator" name="dtNapuniFilterGrid">
+                <parameter name="@Action" value="GdprNapuniEditGrid" />
+                <parameter name="@NazivTablice" value="#cmbNaziv"/>
+                <parameter name="@GdprTabliceId" value="parent.#grdGlava.@GdprTabliceId" />
+            </data>
+            <data command="spGdprKonfigurator" name="dtAdd">
+                <parameter name="@Action" value="AddField" />
+                <parameter name="@Tip" value="$tip" />
+                <parameter name="@NazivTablice" value="#cmbNaziv" if="global.$formId==1"/>
+                <parameter name="@NazivTablice" value="Temp" else="global.$formId==0"/>
+                <parameter name="@Field" value="#grdFilteri.@Naziv" />
+                <parameter name="@Add" value="#grdFilteri.focusedvalue"/>
+                <parameter name="@Txt" value="#memDisplayFields" if="$tip==displayfield" />
+                <parameter name="@Txt" value="#memMaskedFields" elseif="$tip==maskedfield" />
+                <parameter name="@GdprTabliceId" value="parent.#grdGlava.@GdprTabliceId" />
+            </data>
+            <data command="spGdprKonfigurator" name="dtDeleteTempTable">
+                <parameter name="@Action" value="DeleteTempTable"/>
+            </data>
+        </datalist>
+
+        <panelbuttons>
+            <buttons>
+                <button name="btnOdustani" caption="Odustani" dock="right" tabstop="false">
+                    <event type="click">
+                        <action type="formclose"/>
+                    </event>
+                </button>
+
+                <button name="btnPotvrdi" caption="Potvrdi" dock="right" color="dark">
+                        <event type="click">
+                            <action type="datarun nonquery" value="~dtIzmjeniPodatke" if="global.$formId==1"/>
+                            <action type="datarun nonquery" value="~dtDodajPodatke" if="global.$formId==0"/>
+                            <action type="control populate" value="parent.#grdGlava" />
+                            <action type="formclose"/>
+                        </event>
+                </button>
+            </buttons>
+        </panelbuttons>
+
+    </form>
+</root>

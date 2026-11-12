@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+<PROJECT  
+      ONLOAD=":FILTERFORM"  
+      CMD1CAPTION="Filter:FILTERFORM" 
+      CMD2CAPTION="Poveži sa UFA-om:MULTIBLUEPOVEZI_FORM#select 'refresh' as master" 
+      CMD3CAPTION="Poništi vezu na UFA:MULTIBLUEPONISTIUFA_FORM#select 'refresh' as master"
+      CMD5CAPTION="Proknjiži na temeljnicu:MULTIBLUEPROKNJIZI#select 'refresh' as master" 
+      CMD6CAPTION="Poništi temeljnicu:MULTIBLUEPONISTITEM_FORM#select 'refresh' as master"
+      COMMANDTIMEOUT="600"
+      REPORT=""
+      MASTERDBLCLICK="MULTIBLUEPOVEZIFORM"
+      POPUPMASTER="Proknjiži:MULTIBLUEPROKNJIZI"
+      GROUPBYBOXVISIBLE="TRUE"
+      CHECKBOXVISIBLE="FALSE"
+      TOTALROWVISIBLE="TRUE"
+      DETCHECKBOXVISIBLE="FALSE"
+      DETTOTALROWVISIBLE="FALSE">
+  
+  <NAME>Pridruživanje ulazne fakture dobavljača direktnoj primci u maloprodaji</NAME>
+  <CAPTION>Pridruživanje ulazne fakture dobavljača direktnoj primci u maloprodaji</CAPTION>
+ 
+
+  
+<FILTERFORM 
+	NAME="FILTERFORM"
+	FILLEXPLORER="TRUE"
+	CAPTION="Uvjeti prikaza"
+	WIDTH="8000"
+	HEIGHT="4500"
+	ONSUBMIT="spMPKalkKnjizenje @action = 1, @skladisteid = 0," 
+	ONLOAD="select @@datumod as datumod, @@datumdo as datumdo, @@partneriid as partneriid, 1 as nepovezano, 0 as neproknj "
+	BORDERSTYLE="3"
+	CMD1CAPTION="Pokaži"
+	CMD2CAPTION="Odustani">
+
+	<INPUT TYPE="frame"  NAME="frm"           CAPTION=""  TOP="50" LEFT="100" WIDTH="7500" HEIGHT="3000"   />
+	<INPUT TYPE="combo" NAME="partneriid" CAPTION="Partneri*" TOP="400" LEFT="1500" WIDTH="4500" HEIGHT="320" ALLOWEMPTY="TRUE"
+		   SQL="select distinct p.partneriid,ltrim(rtrim(p.naziv)) as [Naziv] 
+				from partneri p with(nolock)
+				inner join maloprodajagla g with(nolock) on p.partneriid=g.partneriid 
+				inner join vrstadok v with(nolock) on g.vrstadokid=v.vrstadokid
+				inner join vrstaprom vp with(nolock) on v.vrstapromid=vp.vrstapromid
+				where vp.sifra in ('99','305')
+				order by naziv"/>
+
+	<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od*" TOP="900" LEFT="1500" DEFAULT="firstdayofmonth"/>
+	<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do*" TOP="1400" LEFT="1500" DEFAULT="today"/>
+	<INPUT TYPE="check" NAME="nepovezano" CAPTION="Pokaži samo nepovezane" TOP="1900" LEFT="1500" WIDTH="5000" HEIGHT="320" />
+	<INPUT TYPE="check" NAME="neproknj" CAPTION="Pokaži samo neproknjižene" TOP="2400" LEFT="1500" WIDTH="3000"  HEIGHT="320" />
+</FILTERFORM>
+
+	
+<MULTIBLUEPOVEZI_FORM
+	NAME="MULTIBLUEPOVEZI_FORM"
+	FILLEXPLORER=""
+	CAPTION="Izaberi fakturu"
+	WIDTH="8000"
+	HEIGHT="4000"
+	ONLOADSTARO="select Napomena as napomena, nabiznos+iznospov as ukunabiznos, 1 as nepovezano from maloprodajagla where maloprodajaglaid=@@id"
+	ONLOAD ="select sum(g.nabiznos+g.iznospov) as ukunabiznos, 1 as nepovezano from maloprodajagla g with(nolock) 
+			inner join totalgenmultiselecttemp t on g.maloprodajaglaid = t.id where t.operateriid = @@operateriid and susersname = suser_name()">
+
+    <INPUT TYPE="label" NAME="Label32" CAPTION="UKUPNA NAB.VRIJEDNOST SVIH ODABRANIH KALKULACIJA:" TOP="500" LEFT="200" WIDTH="3000" ENABLED="FALSE" TEXT="ukunabiznos"/>
+    <INPUT TYPE="label" NAME="ukunabiznos" CAPTION="Label17" TOP="500" LEFT="5000" HEIGHT="320" WIDTH="3400" BOLD="TRUE" ENABLED="FALSE"/>
+
+	<INPUT TYPE="check" NAME="nepovezano" CAPTION="Pokaži samo nepovezane" TOP="1000" LEFT="1600" WIDTH="3000"  HEIGHT="320"
+		   ONCLICK="select 'refresh' as fakturedobid"/>
+	
+    <INPUT TYPE="combo" NAME="fakturedobid" CAPTION="Fakture dobavljača*" TOP="1400" LEFT="1600" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="FALSE"
+		   SQL="spMPDajFaktureDobNG @maloprodajaglaid = @@ID, @action=2, @nepovezano = @@nepovezano "  />
+
+    <INPUT TYPE="button" NAME="ok" CAPTION="Poveži" TOP="2200" LEFT="1500" WIDTH="1100" HEIGHT="400" 
+           ONCLICK="spMPKalkKnjizenje @action = 2, @fakturedobid = @@fakturedobid, @operateriid = @@operateriid#OK" />
+    <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2200" LEFT="3000" WIDTH="1100" HEIGHT="400" ONCLICK="close" />
+
+</MULTIBLUEPOVEZI_FORM>
+
+	
+<MULTIBLUEPONISTIUFA_FORM
+	NAME="MULTIBLUEPONISTIUFA_FORM"
+	FILLEXPLORER=""
+	CAPTION="Poništavanje veze sa UFA-om"
+	WIDTH="8000"
+	HEIGHT="2600"
+	ONSUBMIT="spMPKalkKnjizenje @action = 5, @operateriid = @@operateriid"
+	CMD1CAPTION="Poništi"
+	CMD2CAPTION="Odustani" >
+
+</MULTIBLUEPONISTIUFA_FORM>
+
+	
+<MULTIBLUEPONISTITEM_FORM
+	NAME="MULTIBLUEPONISTITEM_FORM"
+	FILLEXPLORER=""
+	CAPTION="Poništavanje temeljnice"
+	WIDTH="8000"
+	HEIGHT="2600"
+	ONSUBMIT="spMPKalkKnjizenje @action = 4, @operateriid = @@operateriid"
+	CMD1CAPTION="Poništi"
+	CMD2CAPTION="Odustani" >
+
+</MULTIBLUEPONISTITEM_FORM>
+
+
+<MULTIBLUEPROKNJIZI
+	NAME="MULTIBLUEPROKNJIZI"
+	FILLEXPLORER=""
+	CAPTION="Knjiženje MP kalkulacija na temeljnice"
+	WIDTH="8000"
+	HEIGHT="7000"
+	ONSUBMIT="spMPKALKKnjizenje @action=3, @operateriid = @@operateriid"
+	ONLOAD="Select 'Sigurno želite proknjižiti ove MP kalkulacije? ' as LBL0 "
+	CMD1CAPTION="Proknjiži"
+	CMD2CAPTION="Odustani">
+
+	<INPUT TYPE="label" NAME="lbl0" TOP="300" LEFT="200" WIDTH="5500" HEIGHT="320" STYLE="1"/>
+	
+	<INPUT TYPE="grid"
+		NAME="proknjizi"
+		TOP="700"
+		LEFT="200"
+		WIDTH="7300"
+		HEIGHT="5000"
+		CAPTION="Odabrane MP kalkulacije za knjiženje"
+		REFRESHAFTERCHILD="TRUE"
+		GROUPBYBOXVISIBLE="TRUE"
+		CHECKBOXVISIBLE="FALSE"
+		SQL="select g.maloprodajaglaid, g.datumdok as [Datum1100], g.broj as [Broj1500], g.napomena as [Napomena2700], g.nabiznos as [Nab.iznos1200] 
+			from maloprodajagla g with(nolock) 
+			inner join totalgenmultiselecttemp t on g.maloprodajaglaid = t.id where t.operateriid = @@operateriid and susersname = suser_name()"/>
+   
+</MULTIBLUEPROKNJIZI>
+
+	
+ <MULTIBLUEPROKNJIZIRAZ
+	FILLEXPLORER=""
+	REPORT=""
+	WIDTH="8000"
+	ONSUBMIT="spMPKALKKnjizenje @action=3, @indrazlika=1, @operateriid = @@operateriid"
+	ONLOAD="Select 'RAZLIKA!!! Sigurno želite proknjižiti ove MP Kalkulacije? ' as LBL0"
+	HEIGHT="2600"
+	CAPTION="Knjiženje Kalkulacije RAZLIKA"
+	BORDERSTYLE="3"
+	CMD1CAPTION="Proknjiži"
+	CMD2CAPTION="Odustani"  >
+
+    <INPUT TYPE="frame"  NAME="frm"           CAPTION=""  TOP="50" LEFT="100" WIDTH="7500" HEIGHT="1200"   />
+    <INPUT TYPE="label" NAME="lbl0" TOP="700" LEFT="200" WIDTH="5500" HEIGHT="320" CAPTION="Proknjiži Kalkulaciju"/>
+
+</MULTIBLUEPROKNJIZIRAZ>
+	
+</PROJECT>
+ 

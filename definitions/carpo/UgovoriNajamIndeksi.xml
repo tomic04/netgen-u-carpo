@@ -1,0 +1,169 @@
+<root>
+	<form name="frmGlavna" type="master" caption="Indeksi" >
+
+		<managerlayout>	
+			<grid name="grdGlava" type="master" dataname="dtNapuniGrid" multiselect="true">
+				<fields>
+					<field name="naziv" caption="Tip indeksa" />
+					<field name="DatumOD" caption="Datum od" />
+					<field name="DatumDO" caption="Datum do" />
+					<field name="BrojMjeseci" caption="Broj mjeseci" />
+					<field name="Vrijednost" caption="Vrijednost" />
+				</fields>
+				<event type="doubleclick">
+					<action type="form open" value="frmIzmjena">
+						<parameter name="UgovoriNajamIndeksiID" value="#grdGlava.@UgovoriNajamIndeksiID" />
+					</action>
+				</event>
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="UNESI">
+					<event type="click">
+						<action type="form open" value="frmUnos">
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI">
+					<event type="click">
+						<action type="form open" value="frmIzmjena">
+							<parameter name="UgovoriNajamIndeksiID" value="#grdGlava.@UgovoriNajamIndeksiID" />
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati odabranu stavku?" />
+						<action type="control foreachrow selected" value="#grdGlava">
+						<action type="datarun nonquery" value="~dtObrisi" />
+						</action>
+						<action type="control populate" value="#grdGlava" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spUgovoriNajamIndeksi_Query" name="dtNapuniGrid" />
+			<data command="spUgovoriNajamIndeksi_Delete" name="dtObrisi">
+				<parameter name="@UgovoriNajamIndeksiID" value="#grdGlava.@UgovoriNajamIndeksiID" />
+			</data>
+		</datalist>
+
+	</form>
+
+	<form name="frmUnos" caption="Unesi">
+
+		<event type="init">
+			<action type="datarun reader" value="~dtGetIndeks" />
+		</event>
+
+		<layout>
+			<group cols="1" rows="5" col="1" row="1">
+				<item col="1" row="1" caption="Tip indeksa:">
+					<comboedit name="cmbTipIndeksa" dataname="~dtGetIndeks" valuefield="UgovoriNajamTipoviIndeksaID" displayfield="Naziv"  required="true"/>
+				</item>
+				<item col="1" row="2" caption="Razdoblje od:">
+					<dateedit name="datDatumOd" value="now" />
+				</item>
+				<item col="1" row="3" caption="Razdoblje do:">
+					<dateedit name="datDatumDo" value="now" />
+				</item>
+				<item col="1" row="4" caption="Trajanje u mjesecima:">
+					<textedit name="txtTrajanje" required="true" format="n0"/>
+				</item>
+				<item col="1" row="5" caption="Vrijednost:">
+					<textedit name="txtVrijednost" required="true" type="money" format="n2"/>
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="Unesi">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="~dtInsert" />
+						<action type="control populate" value="parent.#grdGlava" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spUgovoriNajamIndeksi_GetIndeks" name="dtGetIndeks">
+				<parameter name="@action" value="0" />
+			</data>
+			<data command="spUgovoriNajamIndeksi_Insert" name="dtInsert">
+				<parameter name="@tipIndeksa" value="#cmbTipIndeksa" />
+				<parameter name="@DatumOd" value="#datDatumOd" />
+				<parameter name="@DatumDo" value="#datDatumDo" />
+				<parameter name="@Trajanje" value="#txtTrajanje" />
+				<parameter name="@Vrijednost" value="#txtVrijednost" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmIzmjena" caption="Izmijeni">
+
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" />
+			<action type="datarun reader" value="~dtGetIndeks" />
+		</event>
+
+		<layout>
+			<group cols="1" rows="5" col="1" row="5">
+				<item col="1" row="1" caption="Tip indeksa:">
+					<comboedit name="cmbTipIndeksa" required="true" datavalue="~dtGet.@UgovoriNajamTipoviIndeksaID" dataname="~dtGetIndeks" valuefield="UgovoriNajamTipoviIndeksaID" displayfield="Naziv"/>
+				</item>
+				<item col="1" row="2" caption="Razdoblje od:">
+					<dateedit name="datDatumOd" datavalue="~dtGet.@datumOd"/>
+				</item>
+				<item col="1" row="3" caption="Razdoblje do:">
+					<dateedit name="datDatumDo" datavalue="~dtGet.@datumDo" />
+				</item>
+				<item col="1" row="4" caption="Trajanje:">
+					<textedit name="txtTrajanje" required="true" format="n0" datavalue="~dtGet.@BrojMjeseci"/>
+				</item>
+				<item col="1" row="5" caption="Vrijednost:">
+					<textedit name="txtVrijednost" required="true" format="n2" datavalue="~dtGet.@Vrijednost"/>
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="~dtUpdate" />
+						<action type="control populate" value="parent.#grdGlava" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" type="cancel" caption="Odustani" dock="right" />
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spUgovoriNajamIndeksi_EditQuery" name="dtGet">
+				<parameter name="@UgovoriNajamIndeksiID" value="$UgovoriNajamIndeksiID" />
+			</data>
+			<data command="spUgovoriNajamIndeksi_GetIndeks" name="dtGetIndeks">
+				<parameter name="@action" value="1" />
+			</data>
+            <data command="spUgovoriNajamIndeksi_Update" name="dtUpdate">
+                <parameter name="@datumod" value="#datDatumOd" />
+				<parameter name="@datumdo" value="#datDatumDo" />
+				<parameter name="@trajanje" value="#txtTrajanje" />
+				<parameter name="@vrijednost" value="#txtVrijednost" />
+				<parameter name="@tipIndeksa" value="#cmbTipIndeksa" />
+				<parameter name="@UgovoriNajamIndeksiId" value="$UgovoriNajamIndeksiID" />
+            </data>			
+		</datalist>
+	</form>
+</root>

@@ -1,0 +1,115 @@
+<root>
+	<form name="frmUFERobnogTrosakDetail" caption="Specifikacija troškova :: {$tekst}" fixedsize="true">
+        <event type="oninit">
+			<action type="datarun reader" value="~dtGetTrosak" if="$RobnoTroskoviId!=null"/>
+		</event>
+        <event type="shown">
+      		<action type="control value" value="#lblKontoNaziv" if="$RobnoTroskoviId!=null">
+				<parameter value="~dtGetTrosak.@Naziv"/>
+			</action>
+        </event>
+        <layout textposition="left" itemspadding="3">
+			<group cols="3" rows="6" backgroundcolor="grey">
+				<columnsdefinition>
+					<column size="180" position="1"></column>
+				</columnsdefinition>
+				<itemdefault highlight="False" />
+				<item caption="Konto:"  row="1" col="1">
+					<searchedit name="srcKonta" fontsizedelta="1" fieldtext="Konto" fieldvalue="KntPlanAId" dataname="dtKonta" required="true" datavalue="#dtGetTrosak.@KntPlanAId" datatext="~dtGetTrosak.@Konto">					
+						<event type="valuechanged">
+							<action type="control value" value="#lblKontoNaziv">
+								<!--NA UNOSU (novo) -->
+								<parameter value="#srcKonta.@Naziv" if="$RobnoTroskoviId==null&amp;&amp;#srcKonta!=null"/>
+								<!-- NA UNOSU (poništavanje) -->
+								<parameter value="..." elseif="$RobnoTroskoviId==null&amp;&amp;#srcKonta==null"/>					
+								<!-- NA IZMJENI (izmjena) -->
+								<parameter value="#srcKonta.@Naziv" if="$RobnoTroskoviId!=null&amp;&amp;#srcKonta!=null"/>
+								<!-- NA IZMJENI (poništavanje) -->
+								<parameter value="..." elseif="$RobnoTroskoviId!=null&amp;&amp;#srcKonta==null"/>
+							</action> 
+						</event>
+					</searchedit>				
+				</item>					
+				<item caption=" " col="1" row="2" colspan="3">
+					<labeledit name="lblKontoNaziv" value="..." datavalue="~dtGetTrosak.@Naziv" ></labeledit>
+				</item>
+				<item caption="Broj UFA:"  row="3" col="1">
+					<textedit name="txtBrojUfa" datavalue="~dtGetTrosak.@BrojUfe"></textedit>
+				</item>
+				<item caption="Broj računa:"  row="4" col="1">
+					<textedit name="txtBrojRacuna" datavalue="~dtGetTrosak.@Opis" required="true"></textedit>
+				</item>			
+				<group groupbordervisible="false" alignmode="local" cols="2" rows="1" col="2" row="4" colspan="2">
+					<columnsdefinition>
+						<column size="150" position="1"></column>						
+						<column size="150" position="2"></column>
+					</columnsdefinition>
+					<itemdefault highlight="False" />
+					<item caption="Iznos:"  row="1" col="1">
+					<textedit name="txtIznos" value="0" format="n2" required="true" datavalue="~dtGetTrosak.@Iznos"></textedit>
+					</item>
+					<item  caption="Datum:" row="1" col="2">
+						<dateedit name="datTroska" value="now" datavalue="~dtGetTrosak.@datum"/>
+					</item>
+				</group>
+				 <item caption="Dobavljač:" row="5" col="1" colspan="3">
+					<searchedit dataname="dtGetPartneri" fieldtext="Partner" fieldvalue="PartneriId" name="srcPartner" datavalue="~dtGetTrosak.@PartneriId" datatext="~dtGetTrosak.@PartnerNaziv">
+					</searchedit>
+				</item>					
+				<item caption="Primka:" row="6" col="1" colspan="2">
+					<comboedit name="cmbPrimka" dataname="dtPrimka" valuefield="SktPrometGlaId" displayfield="PrijemniList">
+					</comboedit>
+				</item>						
+			</group>
+		</layout>
+        <panelbuttons>
+            <buttons>
+                <button caption="&amp;SPREMI" type="add" dock="left">
+                    <event type="click">			
+						<action type="validate"/>
+						<action type="datarun scalar" value="~dtDataInsert">
+							<parameter name="RobnoTroskoviId"/>
+						</action>									
+						<action type="form close"/>
+                    </event>
+                </button>
+                <button caption="ODUSTANI"  dock="right" type="cancel"/>
+            </buttons>
+        </panelbuttons>
+		<datalist>
+			<data name="dtKonta" command="spNabPlkCarpoKntPlanAQuery">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@Konto" value="#srcKonta.text"/>
+			</data>
+			<data name="dtGetTrosak" command="spCRobnoTroskoviQuery">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Id" value="$RobnoTroskoviId"/>
+			</data>
+			<data name="dtDataInsert" command="spCRobnoTroskoviAzur">
+				<parameter name="@Action" value="$Action"/>
+				<parameter name="@ID" value="$RobnoTroskoviId"/>
+				<parameter name="@RobnoKalkGlaId" value="$RobnoKalkGlaId"/>
+				<parameter name="@KontaId" value="#srcKonta"/>
+				<parameter name="@Iznos" value="#txtIznos" type="decimal"/>
+				<parameter name="@Opis" value="#txtBrojRacuna"/>
+				<parameter name="@PartneriId" value="#srcPartner"/>
+				<parameter name="@Datum" value="#datTroska"/>
+				<!--provjereno na Tiji da resetira na null-->
+				<!--možda uskladiti verzije troškova s PLK-->
+				<parameter name="@NabPriGlaId" value="null"/>
+				<parameter name="@BrojUfe" value="#txtBrojUfa"/>
+				<parameter name="@BrojPrimke" value="#cmbPrimka.@PrijemniList"/>
+				<parameter name="@IndRasporedi" value="0"/>		
+			</data>
+			<data name="dtGetPartneri" command="spCKntTemTraziPartneri">
+				<parameter name="@Action" value="Partneri"/>
+				<parameter name="@Uvjet" value="#srcPartner.text"/>
+				<parameter name="@broj_lokacija" value="1"/>
+			</data>	
+			<data name="dtPrimka" command="spCRobnoKalkDetQuery">
+				<parameter name="@Action" value="22"/>
+				<parameter name="@Id" value="$RobnoKalkGlaId"/>
+			</data>
+		</datalist>
+    </form>
+</root>

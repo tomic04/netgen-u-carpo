@@ -1,0 +1,695 @@
+﻿<root>
+	<form name="frmUgovoriNDAEdit" caption="Izmjena dokumenta" width="1000" height="670">
+		<!-- operaterlocktable="PosUgovorigla" operaterlockkey="PosUgovoriglaId" operaterlockkeyvalue="global.$OperaterLockId"-->
+		<method name="fnRTFNapomena" dll="ProNapomenaRTF" class="ProNapomenaRTF.CarpoStart" method="Start" />
+		<event type="init">
+			<action type="datarun reader" value="Global.~dtGet" if="$PosUgovoriglaId!=null" />
+			<action type="datarun reader" value="Global.~dtGet">
+				<parameter value="@PosUgovoriglaId" />
+			</action>
+			<action type="datarun reader" value="Global.~dtDetaljStavke" if="$PosUgovoriDetId!=null" />
+			<action type="datarun reader" value="Global.~dtDetaljStavke">
+				<parameter value="@PosUgovoriglaId" />
+			</action>
+			<action type="variable value" if="$Izmjena==1" />
+			<action type="datarun reader" value="dtBrojKopija" />
+		</event>
+		<event type="load">
+			<action type="variable value">
+				<parameter name="OsobaTrazilica" value="~dtGet.@OsobaTrazilica" />
+			</action>
+			<action type="variable value">
+				<parameter name="Izmjena" value="0" />
+			</action>
+			<action type="control populate" value="#grdRoba,#grdPartneriKonzorcij, #grdPartneriPodizvrsitelj, #grdOvlasteniDavatelj" />
+			<action type="variable value">
+				<parameter name="Aktivan" value="null" type="int"/>
+			</action>
+			<action type="variable value">
+				<parameter name="Ind" value="null" type="int"/>
+			</action>
+			<!-- <action type="variable value">
+				<parameter name="UgovorenaKazna" value="1" type="int"/>
+			</action> -->
+			<action type="control disable" value="#datDatumVrijediDo" if="#datDatumVrijediDo==null">
+				<action type="control enable" value="#datDatumVrijediDo" else="" />
+			</action>
+			<action type="control value" value="#datDatumVrijediDo">
+				<parameter value="global.~dtGet.@ugovorvrijedido" if="global.~dtGet.@provdatum==1"/>
+				<parameter value="now" else=""/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control focus" value="#srcPartner" if="$PosUgovoriglaId==null" />
+			<action type="control disable" value="#txtBroj" if="$PosUgovoriglaId!=null" />
+			<action type="control disable" value="#btnAddKonzorcij,#btnDelKonzorcij, #srcOsobaTko, #cmbTitulaTko" if="#grdPartneriKonzorcij.rowcount==0"/>
+			<action type="control disable" value="#btnAddKonzorcij,#srcOsobaTko, #cmbTitulaTko" elseif="#srcPartneriKonzorcij==null"/>
+			<action type="control enable" value="#btnAddKonzorcij,#btnDelKonzorcij" else="" />
+			<action type="control disable" value="#btnAddPodizvrsitelj,#btnDelPodizvrsitelj, #srcOsobaSto, #cmbTitulaSto" if="#grdPartneriPodizvrsitelj.rowcount==0"/>
+			<action type="control disable" value="#btnAddPodizvrsitelj,#srcOsobaSto,#cmbTitulaSto" elseif="#srcPartneriPodizvrsitelj==null"/>
+			<action type="control enable" value="#btnAddPodizvrsitelj,#btnDelPodizvrsitelj" else="" />
+			<action type="control disable" value="#cmbPotpisPartner,#srcOsobaPotpisnik,#btnAddOsobe,#cmbTitulaOsoba" if="#rdoPodizvrsitelj==false||#rdoKonzorcij==false" />
+			<action type="control enable" value="#cmbPotpisPartner,#srcOsobaPotpisnik,#btnAddOsobe,#cmbTitulaOsoba" else="" />
+			<action type="control disable" value="#btnAddOvlasteni,#btnDelOvlasteni" if="#grdOvlasteniDavatelj.rowcount==0"/>
+			<action type="control disable" value="#btnAddOvlasteni" elseif="#srcOvlasteniDavatelj==null"/>
+			<action type="control enable" value="#btnAddOvlasteni" else="" />
+			<action type="control disable" value="#btnDelOsoba" if="#grdRoba.rowcount==0"/>
+			<action type="control enable" value="#btnDelOsoba" else="" />
+			<action type="control disable" value="#btnMoveUp,#btnMoveDown" if="#grdRoba.rowcount==0"/>
+			<action type="control enable" value="#btnMoveUp,#btnMoveDown" else="" />
+		</event>
+		<layout itemspadding="3">
+			<group cols="1" rows="1">
+				<group padding="0" groupbordervisible="False" cols="3" rows="1">
+					<columnsdefinition>
+						<column size="450" position="1" />
+						<column size="9" position="2" />
+						<column size="200" position="3" />
+					</columnsdefinition>
+					<!-- <item row="1" col="" /> -->
+					<group padding="0" groupbordervisible="False" cols="1" rows="1" col="3" row="2">
+						<rowsdefinition>
+							<row size="1" position="3" />
+							<row size="54" position="4" />
+						</rowsdefinition>
+						<group padding="0" groupbordervisible="false" cols="1" rows="1" col="1" row="1">
+							<tabs col="1" row="1">
+								<!-- početak PARTNERI - tko -->
+								<group caption="Partneri" name="tabPartneri" cols="1" rows="4" col="1" row="1" alignmode="local" backgroundcolor="">
+									<group cols="2" rows="2" col="1" row="1" backgroundcolor="" groupbordervisible="false">
+										<columnsdefinition>
+											<column size="100%" position="1" />
+											<column size="70" position="2" />
+										</columnsdefinition>
+										<item row="1" col="1" caption="Tko:" fontbold="">
+											<searchedit netgenfields="true" name="srcPartneriKonzorcij" required="" fontbold="" dataname="~dtPartneriKonzorcij" fieldtext="NazivId" fieldvalue="PartneriId">
+												<event type="valuechanged">
+													<action type="control disable" value="#btnAddKonzorcij, #srcOsobaTko" if="#srcPartneriKonzorcij==null"/>
+													<action type="control enable" value="#btnAddKonzorcij, #srcOsobaTko" else="" />
+													<action type="control refreshvalue" value="#srcOsobaTko,#cmbTitulaTko" if="#srcPartneriKonzorcij==null" />
+												</event>
+											</searchedit>
+										</item>
+										<group cols="2" rows="1" col="1" row="2" backgroundcolor="" groupbordervisible="false">
+											<columnsdefinition>
+												<column size="210" position="1" />
+												<column size="100%" position="2" />
+											</columnsdefinition>
+											<item caption="Odabir osobe:" row="2" col="2" fontbold="" textposition="left">
+												<searchedit name="srcOsobaTko" valuefield="OsobaId" displayfield="Osoba" datavalue="" dataname="~dtOsobeTko" allownull="true">
+													<event type="valuechanged">
+														<action type="control disable" value="#cmbTitulaTko" if="#srcOsobaTko==null"/>
+														<action type="control enable" value="#cmbTitulaTko" else="" />
+														<action type="control refreshvalue" value="cmbTitulaTko" if="#srcOsobaTko==null" />
+													</event>
+												</searchedit>
+											</item>
+											<item caption="Titula:" row="2" col="1" fontbold="" textposition="left">
+												<comboedit name="cmbTitulaTko" valuefield="KlFunkcijeID" displayfield="Naziv" datavalue="" dataname="global.~dtUgovoriNDTitule" allownull="true">
+												</comboedit>
+											</item>
+										</group>
+										<item row="1" col="2" textvisible="False">
+											<button name="btnAddKonzorcij" caption="Dodaj" image="add" type="add">
+												<event type="click">
+													<action type="datarun nonquery" value="global.~dtEdit" />
+													<action type="datarun scalar" value="~dtPartneriKonzorcijInsert">
+														<parameter name="newId" />
+													</action>
+													<action type="control populate" value="#cmbPotpisPartner" />
+													<action type="control populate" value="#grdPartneriKonzorcij" />
+													<action type="control refreshvalue" value="#srcPartneriKonzorcij, #srcOsobaTko, #cmbTitulaTko">
+														<parameter value=""/>
+													</action>
+													<action type="control focus" value="#grdPartneriKonzorcij">
+														<parameter value="$newId" type="int" />
+													</action>
+													<action type="control focus" value="#srcPartneriKonzorcij" />
+													<action type="datarun reader" value="~dtBrojKopija" />
+													<action type="control refreshvalue" value="#txtBrojKopija"/>
+													<action type="control disable" value="#btnDelKonzorcij" if="#grdPartneriKonzorcij.rowcount==0"/>
+													<action type="control enable" value="#btnDelKonzorcij" else="" />
+												</event>
+											</button>
+										</item>
+									</group>
+									<group cols="2" rows="2" col="1" row="2" colspan="" backgroundcolor="" groupbordervisible="false">
+										<columnsdefinition>
+											<column size="100%" position="1" />
+											<column size="70" position="2" />
+										</columnsdefinition>
+										<item row="1" col="1" highlight="False" rowspan="2">
+											<grid name="grdPartneriKonzorcij" multiselect="false" key="PosUgovori_LnPartneriId" showautofilterrow="false" showgrouppanel="False" showfilter="false" showfooter="False" savelayout="false">
+												<event type="focusedrowchanged">
+													<action type="variable value">
+														<parameter name="PosUgovori_LnPartneriId" value="#grdPartneriKonzorcij.@PosUgovori_LnPartneriId" />
+													</action>
+												</event>
+												<data command="spProd_PosUgovori_KonzorcijGrid">
+													<parameter name="@PosUgovoriGlaId" value="$PosUgovoriGlaId" />
+												</data>
+												<fields inherited="true">
+													<field name="Naziv" fontbold="true" fixed="left" />
+												</fields>
+											</grid>
+										</item>
+										<group cols="1" rows="2" col="2" row="1" colspan="" backgroundcolor="" groupbordervisible="false">
+											<rowsdefinition>
+												<row size="48" position="1" />
+											</rowsdefinition>
+											<item row="1" col="1" textvisible="False" rowspan="1">
+												<button name="btnDelKonzorcij" caption="Obriši" image="delete" type="delete">
+													<event type="click">
+														<action type="datarun nonquery" value="global.~dtEdit" />
+														<action type="control foreachrow selected" value="#grdPartneriKonzorcij">
+															<action type="datarun nonquery" value="~dtPartneriDelete"/>
+														</action>
+														<action type="control populate" value="#grdPartneriKonzorcij" />
+														<action type="control populate" value="#cmbPotpisPartner" />
+														<action type="datarun reader" value="~dtBrojKopija" />
+														<action type="control refreshvalue" value="#txtBrojKopija"/>
+														<action type="control disable" value="#btnDelKonzorcij" if="#grdPartneriKonzorcij.rowcount==0"/>
+														<action type="control enable" value="#btnDelKonzorcij" else="" />
+													</event>
+												</button>
+											</item>
+										</group>
+									</group>
+									<!-- početak PODIZVŠITELJ - što -->
+									<group cols="2" rows="2" col="2" row="3" backgroundcolor="" groupbordervisible="false">
+										<columnsdefinition>
+											<column size="100%" position="1" />
+											<column size="70" position="2" />
+										</columnsdefinition>
+										<item caption="Što:" row="3" col="1" fontbold="">
+											<searchedit netgenfields="true" name="srcPartneriPodizvrsitelj" required="" fontbold="" dataname="~dtPartneriPodizvrsitelj" fieldtext="NazivId" fieldvalue="PartneriId">
+												<event type="valuechanged">
+													<action type="control disable" value="#btnAddPodizvrsitelj,#srcOsobaSto" if="#srcPartneriPodizvrsitelj==null"/>
+													<action type="control enable" value="#btnAddPodizvrsitelj,#srcOsobaSto" else="" />
+													<action type="control refreshvalue" value="#srcOsobaSto,#cmbTitulaSto" if="#srcPartneriPodizvrsitelj==null" />
+												</event>
+											</searchedit>
+										</item>
+										<group cols="2" rows="1" col="1" row="2" backgroundcolor="" groupbordervisible="false">
+											<columnsdefinition>
+												<column size="210" position="1" />
+												<column size="100%" position="2" />
+											</columnsdefinition>
+											<item caption="Odabir osobe:" row="2" col="2" fontbold="" textposition="left">
+												<searchedit name="srcOsobaSto" valuefield="OsobaId" displayfield="Osoba" datavalue="" dataname="~dtOsobeSto" allownull="true">
+													<event type="valuechanged">
+														<action type="control disable" value="#cmbTitulaSto" if="#srcOsobaSto==null"/>
+														<action type="control enable" value="#cmbTitulaSto" else="" />
+														<action type="control refreshvalue" value="cmbTitulaSto" if="#srcOsobaSto==null" />
+													</event>
+												</searchedit>
+											</item>
+											<item caption="Titula:" row="2" col="1" fontbold="" textposition="left">
+												<comboedit name="cmbTitulaSto" valuefield="KlFunkcijeID" displayfield="Naziv" datavalue="" dataname="global.~dtUgovoriNDTitule" allownull="true">
+												</comboedit>
+											</item>
+										</group>
+										<item row="3" col="2" textvisible="False">
+											<button name="btnAddPodizvrsitelj" caption="Dodaj" image="add" type="add">
+												<event type="click">
+													<action type="datarun nonquery" value="global.~dtEdit" />
+													<action type="datarun scalar" value="~dtPartneriPodizvrsiteljInsert">
+														<parameter name="newId"/>
+													</action>
+													<action type="control populate" value="#grdPartneriPodizvrsitelj" />
+													<action type="control populate" value="#cmbPotpisPartner" />
+													<action type="control refreshvalue" value="#srcPartneriPodizvrsitelj,#srcOsobaSto,#cmbTitulaSto">
+														<parameter value=""/>
+													</action>
+													<action type="control focus" value="#srcPartneriPodizvrsitelj" />
+													<action type="control focus" value="#grdPartneriPodizvrsitelj">
+														<parameter value="$newId" type="int"/>
+													</action>
+													<action type="datarun reader" value="~dtBrojKopija" />
+													<action type="control refreshvalue" value="#txtBrojKopija"/>
+													<action type="control disable" value="#btnDelPodizvrsitelj" if="#grdPartneriPodizvrsitelj.rowcount==0"/>
+													<action type="control enable" value="#btnDelPodizvrsitelj" else="" />
+												</event>
+											</button>
+										</item>
+									</group>
+									<group cols="2" rows="2" col="1" row="4" colspan="" backgroundcolor="" groupbordervisible="false">
+										<columnsdefinition>
+											<column size="100%" position="1" />
+											<column size="70" position="2" />
+										</columnsdefinition>
+										<item row="1" col="1" highlight="False" rowspan="2">
+											<grid name="grdPartneriPodizvrsitelj" multiselect="false" key="PosUgovori_LnPartneriId" showautofilterrow="false" showgrouppanel="False" showfilter="false" showfooter="False" savelayout="false">
+												<event type="focusedrowchanged">
+													<action type="variable value">
+														<parameter name="PosUgovori_LnPartneriId" value="#grdPartneriPodizvrsitelj.@PosUgovori_LnPartneriId" />
+													</action>
+												</event>
+												<data command="spProd_PosUgovori_PodizvrsiteljGrid">
+													<parameter name="@PosUgovoriGlaId" value="$PosUgovoriGlaId" />
+												</data>
+												<fields inherited="true">
+													<field name="Naziv" fontbold="true" fixed="left"/>
+												</fields>
+											</grid>
+										</item>
+										<group cols="1" rows="2" col="2" row="1" colspan="" backgroundcolor="" groupbordervisible="false">
+											<rowsdefinition>
+												<row size="48" position="1" />
+											</rowsdefinition>
+											<item row="1" col="1" textvisible="False" rowspan="1">
+												<button name="btnDelPodizvrsitelj" caption="Obriši" image="delete" type="delete">
+													<event type="click">
+														<action type="datarun nonquery" value="global.~dtEdit" />
+														<action type="control foreachrow selected" value="#grdPartneriPodizvrsitelj">
+															<action type="datarun nonquery" value="~dtPodizvrsiteljDelete"/>
+														</action>
+														<action type="control populate" value="#grdPartneriPodizvrsitelj" />
+														<action type="control populate" value="#cmbPotpisPartner" />
+														<action type="datarun reader" value="~dtBrojKopija" />
+														<action type="control refreshvalue" value="#txtBrojKopija"/>
+														<action type="control disable" value="#btnDelPodizvrsitelj" if="#grdPartneriPodizvrsitelj.rowcount==0"/>
+														<action type="control enable" value="#btnDelPodizvrsitelj" else="" />
+													</event>
+												</button>
+											</item>
+										</group>
+									</group>
+								</group>
+								<!-- početak POTPISNICI -->
+								<group caption="Potpisnici" name="tabPotpisnici" cols="3" rows="5" col="1" row="1" alignmode="local" backgroundcolor="">
+									<columnsdefinition>
+										<column size="68" position="1" />
+										<column size="68" position="2" />
+										<column size="100%" position="3" />
+									</columnsdefinition>
+									<item caption="Tko" col="1" row="1">
+										<radioedit name="rdoKonzorcij" value="">
+											<event type="checkedchanged">
+												<action type="variable value">
+													<parameter name="Ind" value="1" type="int" if="#rdoKonzorcij==true"/>
+												</action>
+												<action type="control populate" value="#cmbPotpisPartner" />
+											</event>
+											<event type="valuechanged">
+												<action type="control enable" value="#cmbPotpisPartner" if="#rdoKonzorcij==true" />
+												<action type="control enable" value="#cmbPotpisPartner" elseif="#rdoPodizvrsitelj==true" />
+												<action type="control disable" value="#cmbPotpisPartner, #srcOsobaPotpisnik" else="" />
+												<action type="variable value">
+													<parameter name="Ind" value="1" type="int" if="#rdoKonzorcij==true"/>
+												</action>
+												<action type="control populate" value="#cmbPotpisPartner" />
+											</event>
+										</radioedit>
+									</item>
+									<item caption="Što" col="2" row="1">
+										<radioedit name="rdoPodizvrsitelj" value="">
+											<event type="checkedchanged">
+												<action type="variable value">
+													<parameter name="Ind" value="2" type="int" if="#rdoPodizvrsitelj==true"/>
+												</action>
+												<action type="control populate" value="#cmbPotpisPartner" />
+											</event>
+											<event type="valuechanged">
+												<action type="control enable" value="#cmbPotpisPartner" if="#rdoPodizvrsitelj==true" />
+												<action type="control enable" value="#cmbPotpisPartner" elseif="#rdoKonzorcij==true" />
+												<action type="control disable" value="#cmbPotpisPartner,#srcOsobaPotpisnik" else="" />
+												<action type="variable value">
+													<parameter name="Ind" value="2" type="int" if="#rdoPodizvrsitelj==true"/>
+												</action>
+												<action type="control populate" value="#cmbPotpisPartner" />
+											</event>
+										</radioedit>
+									</item>
+									<item caption="Odabir partnera:" row="1" col="3" fontbold="">
+										<comboedit name="cmbPotpisPartner" valuefield="PartneriId" displayfield="Naziv" datavalue="" dataname="~dtPotpisPartner" allownull="true">
+											<event type="valuechanged">
+												<action type="control enable" value="#srcOsobaPotpisnik" if="#cmbPotpisPartner!=null" />
+												<action type="control disable" value="#srcOsobaPotpisnik" else="" />
+												<action type="control refreshvalue" value="#srcOsobaPotpisnik" />
+											</event>
+										</comboedit>
+									</item>
+									<item caption="Titula:" row="2" col="1" colspan="2" fontbold="">
+										<comboedit name="cmbTitulaOsoba" valuefield="KlFunkcijeID" displayfield="Naziv" datavalue="" dataname="global.~dtUgovoriNDTitule" allownull="true">
+										</comboedit>
+									</item>
+									<item caption="Odabir osobe za potpisnik:" row="2" col="3" colspan="3" fontbold="">
+										<searchedit netgenfields="true" name="srcOsobaPotpisnik" required="" fontbold="" dataname="~dtOsobaPotpisnik" fieldtext="Osoba" fieldvalue="osobeId" datavalue="~dtGet.@osobeId" datatext="~dtGet.@Osoba">
+											<event type="valuechanged">
+												<action type="control disable" value="#btnAddOsobe, #cmbTitulaOsoba" if="#srcOsobaPotpisnik==null"/>
+												<action type="control enable" value="#btnAddOsobe, #cmbTitulaOsoba" else="" />
+												<action type="control refreshvalue" value="cmbTitulaOsoba" if="#srcOsobaPotpisnik==null" />
+											</event>
+										</searchedit>
+									</item>
+									<item row="3" col="1" textvisible="False" height="20" colspan="3">
+										<separator dark="true" backcolor="" />
+									</item>
+									<group cols="4" rows="1" col="1" row="4" colspan="3" backgroundcolor="" groupbordervisible="False">
+										<columnsdefinition>
+											<column size="57" position="1" />
+											<column size="200" position="2" />
+											<column size="100%" position="3" />
+										</columnsdefinition>
+									</group>
+									<group cols="2" rows="4" col="1" row="4" colspan="3" backgroundcolor="" groupbordervisible="False">
+										<columnsdefinition>
+											<column size="100%" position="1" />
+											<column size="70" position="2" />
+										</columnsdefinition>
+										<rowsdefinition>
+											<row size="48" position="1" />
+											<row size="48" position="2" />
+										</rowsdefinition>
+										<item row="1" col="1" highlight="False" colspan="3" rowspan="4">
+											<grid name="grdRoba" multiselect="false" key="PosUgovori_LnPotpisniciId" showgrouppanel="False" showautofilterrow="false" showfilter="false" showfooter="False" savelayout="false">
+												<event type="focusedrowchanged">
+													<action type="variable value">
+														<parameter name="PosUgovori_LnPotpisniciId" value="#grdRoba.@PosUgovori_LnPotpisniciId" />
+													</action>
+												</event>
+												<data command="spProd_PosUgovori_PotpisniciGrid">
+													<parameter name="@PosUgovoriGlaId" value="$PosUgovoriGlaId" />
+													<!-- <parameter name="@Ind" value="$Ind" /> -->
+												</data>
+												<fields inherited="true">
+												</fields>
+												<event type="cellvaluechanged">
+													<action type="variable value">
+														<parameter name="Tablica" value="ProdGradUgovori_LnPotpisnici" type="string" />
+													</action>
+													<action type="variable value">
+														<parameter name="focusedvalue" value="#grdRoba.focusedvalue" />
+													</action>
+													<action type="variable value">
+														<parameter name="focusedfield" value="#grdRoba.focusedfield"/>
+													</action>
+													<action type="variable value">
+														<parameter name="GridId" value="#grdRoba.@ProdGradUgovori_LnPotpisniciId" type="int" />
+													</action>
+													<action type="datarun nonquery" value="~dtEditGrid"/>
+													<action type="control populate keepfocus" value="#grdRoba"/>
+												</event>
+											</grid>
+										</item>
+										<item row="2" col="2" textvisible="False">
+											<button name="btnDelOsoba" caption="Obriši" image="delete" type="delete">
+												<event type="click">
+													<action type="datarun nonquery" value="global.~dtEdit" />
+													<action type="control foreachrow selected" value="#grdRoba">
+														<action type="datarun nonquery" value="~dtPotpisniciDelete"/>
+													</action>
+													<action type="control populate" value="#grdRoba" />
+													<action type="control disable" value="#btnDelOsoba, #btnMoveUp, #btnMoveDown" if="#grdRoba.rowcount==0"/>
+													<action type="control enable" value="#btnDelOsoba, #btnMoveUp, #btnMoveDown" else="" />
+												</event>
+											</button>
+										</item>
+										<item row="1" col="2" textvisible="False">
+											<button name="btnAddOsobe" caption="Dodaj" image="add" type="add">
+												<event type="click">
+													<action type="datarun nonquery" value="global.~dtEdit" />
+													<action type="datarun scalar" value="~dtPotpisniciInsert">
+														<parameter name="newId" />
+													</action>
+													<action type="control populate" value="#grdRoba" />
+													<action type="control refreshvalue" value="##">
+														<parameter value=""/>
+													</action>
+													<action type="control focus" value="#grdRoba">
+														<parameter value="$newId" type="int" />
+													</action>
+													<action type="control disable" value="#btnDelOsoba, #btnMoveUp, #btnMoveDown" if="#grdRoba.rowcount==0"/>
+													<action type="control enable" value="#btnDelOsoba, #btnMoveUp, #btnMoveDown" else="" />
+												</event>
+											</button>
+										</item>
+										<group cols="1" rows="1" col="2" row="3" colspan="" backgroundcolor="" groupbordervisible="False">
+											<rowsdefinition>
+												<row size="48" position="1" />
+											</rowsdefinition>
+											<part name="UpDown" path="prtProdUpAndDown.xml"/>
+										</group>
+									</group>
+								</group>
+								<!-- početak OVLAŠTENI DAVATELJ INFO  -->
+								<group caption="Ovlašteni davatelj(i) informacija" name="tabDavateljInfo" cols="1" rows="4" col="1" row="1" alignmode="local" backgroundcolor="">
+									<group cols="2" rows="1" col="1" row="1" backgroundcolor="" groupbordervisible="false">
+										<columnsdefinition>
+											<column size="100%" position="1" />
+											<column size="70" position="2" />
+										</columnsdefinition>
+										<item caption="Odabir ovlaštene osobe:" row="3" col="1" fontbold="">
+											<searchedit netgenfields="true" name="srcOvlasteniDavatelj" dataname="dtOvlasteniDavatelj" fieldtext="Osoba" fieldvalue="OsobeId">
+												<event type="valuechanged">
+													<action type="control disable" value="#btnAddOvlasteni" if="#srcOvlasteniDavatelj==null"/>
+													<action type="control enable" value="#btnAddOvlasteni" else="" />
+												</event>
+											</searchedit>
+										</item>
+										<item row="1" col="2" textvisible="False">
+											<button name="btnAddOvlasteni" caption="Dodaj" image="add" type="add">
+												<event type="click">
+													<action type="datarun nonquery" value="global.~dtEdit" />
+													<action type="datarun scalar" value="~dtOvlasteniDavInsert">
+														<parameter name="newId" />
+													</action>
+													<action type="control populate" value="#grdOvlasteniDavatelj" />
+													<action type="control refreshvalue" value="#srcOvlasteniDavatelj">
+														<parameter value=""/>
+													</action>
+													<action type="control focus" value="#grdOvlasteniDavatelj">
+														<parameter value="$newId" type="int" />
+													</action>
+													<action type="control focus" value="#srcOvlasteniDavatelj" />
+													<action type="control disable" value="#btnDelOvlasteni" if="#grdOvlasteniDavatelj.rowcount==0"/>
+													<action type="control enable" value="#btnDelOvlasteni" else="" />
+												</event>
+											</button>
+										</item>
+									</group>
+									<group cols="2" rows="2" col="1" row="2" colspan="" backgroundcolor="" groupbordervisible="false">
+										<columnsdefinition>
+											<column size="100%" position="1" />
+											<column size="70" position="2" />
+										</columnsdefinition>
+										<item row="1" col="1" highlight="False" rowspan="2">
+											<grid name="grdOvlasteniDavatelj" multiselect="false" key="PosUgovori_LnOvlasteniDavateljId" showautofilterrow="false" showgrouppanel="False" showfilter="false" showfooter="False" savelayout="true">
+												<event type="focusedrowchanged">
+													<action type="variable value">
+														<parameter name="PosUgovori_LnOvlasteniDavateljId" value="#grdOvlasteniDavatelj.@PosUgovori_LnOvlasteniDavateljId" />
+													</action>
+												</event>
+												<data command="spProd_PosUgovori_OvlasteniDavGrid">
+													<parameter name="@PosUgovoriGlaId" value="$PosUgovoriGlaId" />
+												</data>
+												<fields inherited="true">
+													<field name="Naziv" fontbold="true" />
+												</fields>
+											</grid>
+										</item>
+										<group cols="1" rows="2" col="2" row="1" colspan="" backgroundcolor="" groupbordervisible="false">
+											<rowsdefinition>
+												<row size="48" position="1" />
+											</rowsdefinition>
+											<item row="1" col="1" textvisible="False" rowspan="1">
+												<button name="btnDelOvlasteni" caption="Obriši" image="delete" type="delete">
+													<event type="click">
+														<action type="datarun nonquery" value="global.~dtEdit" />
+														<action type="control foreachrow selected" value="#grdOvlasteniDavatelj">
+															<action type="datarun nonquery" value="~dtOvlasteniDavDelete"/>
+														</action>
+														<action type="control populate" value="#grdOvlasteniDavatelj" />
+														<action type="control disable" value="#btnDelOvlasteni" if="#grdOvlasteniDavatelj.rowcount==0"/>
+														<action type="control enable" value="#btnDelOvlasteni" else="" />
+													</event>
+												</button>
+											</item>
+										</group>
+									</group>
+								</group>
+							</tabs>
+						</group>
+					</group>
+					<tabs row="1" col="1" padding="0">
+						<group caption="Osnovno" name="tabOsnovno" cols="3" rows="7">
+							<part name="UgovoriNDAform" path="prtUgovoriNDA.xml" />
+						</group>
+					</tabs>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI" type="add" dock="">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="Global.~dtEdit" if="$PosUgovoriglaId!=null"/>
+						<action type="datarun scalar" value="Global.~dtAdd" else="">
+							<parameter name="parent.PosUgovoriglaId" value="$PosUgovoriglaId" />
+						</action>
+						<action type="control populate" value="parent.#grdMaster" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ZATVORI" type="cancel">
+					<action type="datarun nonquery" value="Global.~dtEdit"/>
+				</button>
+				<button name="btnRtfNapomena" caption="SADRŽAJ" function="">
+					<event type="click">
+						<action type="method run" value="fnRTFNapomena">
+							<parameter name="server" value="@@server" type="string"/>
+							<parameter name="baza" value="@@database" type="string"/>
+							<parameter name="username" value="" type="string"/>
+							<parameter name="password" value="" type="string"/>
+							<parameter name="OperateriId" value="@@operateriid" type="int"/>
+							<!-- <parameter name="Parent" value="0" type="int"/>
+							<parameter name="pTop" value="0" type="short"/>
+							<parameter name="pLeft" value="0" type="short"/>
+							<parameter name="path" value="" type="string" /> -->
+							<parameter name="tablica" value="PosUgovoriGla" type="string"/>
+							<parameter name="id" value="$PosUgovoriGlaId" type="int"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnPrint" caption="ISPIŠI" dataname="~dtPrint" displayfield="Opis">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="Global.~dtEdit"/>
+						<action type="control print" value="parent.#grdMaster">
+							<action type="print template" value="#btnPrint.@Template">
+								<parameter name="id" value="$PosUgovoriglaId" />
+							</action>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spTraziOsobe" name="dtOsobeKonzorcij">
+				<parameter name="@action" value="NaseOsobe" />
+				<parameter name="@uvjet" value="#srcOsobeKonzorcij.text" />
+			</data>
+			<data command="spTraziOsobe" name="dtOsobePodizvrsitelj">
+				<parameter name="@action" value="Osobe" />
+				<parameter name="@uvjet" value="#srcOsobePodizvrsitelj.text" />
+			</data>
+			<data command="spTraziPartneri" name="dtPartneriKonzorcij">
+				<parameter name="@action" value="Partneri" />
+				<parameter name="@uvjet" value="#srcPartneriKonzorcij.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>
+			<data command="spTraziPartneri" name="dtPartneriPodizvrsitelj">
+				<parameter name="@action" value="Partneri" />
+				<parameter name="@uvjet" value="#srcPartneriPodizvrsitelj.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>
+			<data command="spProd_PosUgovori_PartneriInsert" name="dtPartneriKonzorcijInsert">
+				<parameter name="@PosUgovoriGlaId" value="$PosUgovoriGlaId" />
+				<parameter name="@PartneriId" value="#srcPartneriKonzorcij" />
+				<parameter name="@Ind" value="1" />
+				<parameter name="@OsobeId" value="#srcOsobaTko" />
+				<parameter name="@KlFunkcijeId" value="#cmbTitulaTko" />
+			</data>
+			<data command="spProd_PosUgovori_PartneriInsert" name="dtPartneriPodizvrsiteljInsert">
+				<parameter name="@PosUgovoriGlaId" value="$PosUgovoriGlaId" />
+				<parameter name="@PartneriId" value="#srcPartneriPodizvrsitelj" />
+				<parameter name="@Ind" value="2" />
+				<parameter name="@OsobeId" value="#srcOsobaSto" />
+				<parameter name="@KlFunkcijeId" value="#cmbTitulaSto" />
+			</data>
+			<data command="spProd_PosUgovori_PartneriDelete" name="dtPartneriDelete">
+				<parameter name="@PosUgovori_LnPartneriId" value="$PosUgovori_LnPartneriId" />
+			</data>
+			<data command="spProd_PosUgovori_PartneriStoDelete" name="dtPodizvrsiteljDelete">
+				<parameter name="@PosUgovori_LnPartneriId" value="$PosUgovori_LnPartneriId" />
+			</data>
+			<data command="spProd_PosUgovori_PotpisniciPartneri" type="" name="dtPotpisPartner">
+				<parameter name="@PosUgovoriGlaId" value="$PosUgovoriglaId"/>
+				<parameter name="@Ind" value="$Ind" />
+			</data>
+			<data command="spTraziOsobe" name="dtOsobaPotpisnik">
+				<parameter name="@action" value="Osobe" />
+				<parameter name="@uvjet" value="#srcOsobaPotpisnik.text" />
+				<parameter name="@partneriid" value="#cmbPotpisPartner" />
+			</data>
+			<!-- new 
+				<data command="spProd_PosUgovori_OsobePotpisnik" name="dtOsobaPotpisnik">
+				<parameter name="@action" value="OsobeKlasa" />
+				<parameter name="@uvjet" value="#srcOsobaPotpisnik.text" />
+				<parameter name="@partneriid" value="#cmbPotpisPartner" />
+			</data> -->
+			<data command="spProd_PosUgovori_PotpisniciInsert" name="dtPotpisniciInsert">
+				<parameter name="@PosUgovoriGlaId" value="$PosUgovoriglaId"/>
+				<parameter name="@PartneriId" value="#cmbPotpisPartner" />
+				<parameter name="@Ind" value="$Ind" />
+				<parameter name="@OsobeId" value="#srcOsobaPotpisnik" />
+				<parameter name="@KlFunkcijeId" value="#cmbTitulaOsoba" />
+			</data>
+			<data command="spProd_PosUgovori_PotpisniciDelete" name="dtPotpisniciDelete">
+				<parameter name="@PosUgovori_LnPotpisniciId" value="$PosUgovori_LnPotpisniciId" />
+				<parameter name="@PosUgovoriGlaId" value="$PosUgovoriglaId"/>
+			</data>
+			<data command="spProd_PosUgovori_NDABrojKopija" name="dtBrojKopija">
+				<parameter name="@PosUgovoriGlaId" value="$PosUgovoriglaId"/>
+			</data>
+			<data command="spTraziOsobe" name="dtOvlasteniDavatelj">
+				<parameter name="@action" value="NaseOsobe" />
+				<parameter name="@uvjet" value="#srcOvlasteniDavatelj.text" />
+				<!-- <parameter name="@partneriid" value="#cmbPotpisPartner" /> -->
+			</data>
+			<data command="spProd_PosUgovori_OvlasteniDavInsert" name="dtOvlasteniDavInsert">
+				<parameter name="@PosUgovoriGlaId" value="$PosUgovoriGlaId" />
+				<parameter name="@OsobeId" value="#srcOvlasteniDavatelj" />
+				<!-- <parameter name="@Ind" value="1" /> -->
+			</data>
+			<data command="spProd_PosUgovori_OvlasteniDavDelete" name="dtOvlasteniDavDelete">
+				<parameter name="@PosUgovori_LnOvlasteniDavateljId" value="$PosUgovori_LnOvlasteniDavateljId" />
+			</data>
+			<data command="spProd_Stavka_UpDown" name="dtBtnUp">
+				<parameter name="@tablica" value="PosUgovori_LnPotpisnici" type="string"/>
+				<parameter name="@tablica_gla" value="PosUgovoriGla" type="string"/>
+				<parameter name="@ind" value="up" type="string"/>
+				<parameter name="@gla_id" value="$PosUgovoriGlaId" type="int"/>
+				<parameter name="@det_id" value="#grdRoba.@PosUgovori_LnPotpisniciId" type="int"/>
+				<parameter name="@polje" value="Pozicija" type="string"/>
+			</data>
+			<data command="spProd_Stavka_UpDown" name="dtBtnDown">
+				<parameter name="@tablica" value="PosUgovori_LnPotpisnici" type="string"/>
+				<parameter name="@tablica_gla" value="PosUgovoriGla" type="string"/>
+				<parameter name="@ind" value="down" type="string"/>
+				<parameter name="@gla_id" value="$PosUgovoriGlaId" type="int"/>
+				<parameter name="@det_id" value="#grdRoba.@PosUgovori_LnPotpisniciId" type="int"/>
+				<parameter name="@polje" value="Pozicija" type="string"/>
+			</data>
+			<data command="spCarpoPrint" name="dtPrint">
+				<parameter name="@Action" value="GetTemplates" />
+				<parameter name="@Id" value="$PosUgovoriglaId" type="int" />
+				<parameter name="@Tablica" value="PosUgovoriGla" />
+			</data>
+			<!-- <data command="spTraziOsobe" name="dtOsobeTko">
+				<parameter name="@action" value="Osobe" />
+				<parameter name="@uvjet" value="#srcOsobaTko.text" />
+				<parameter name="@partneriid" value="#srcPartneriKonzorcij" />
+			</data>
+			<data command="spTraziOsobe" name="dtOsobeSto">
+				<parameter name="@action" value="Osobe" />
+				<parameter name="@uvjet" value="#srcOsobaSto.text" />
+				<parameter name="@PartneriId" value="#srcPartneriPodizvrsitelj" />
+			</data> -->
+			<data command="spProd_PosUgovori_OsobePotpisnik" name="dtOsobeTko">
+				<parameter name="@action" value="OsobeKlasa" />
+				<parameter name="@uvjet" value="#srcOsobaTko.text" />
+				<parameter name="@partneriid" value="#srcPartneriKonzorcij" />
+			</data>
+			<data command="spProd_PosUgovori_OsobePotpisnik" name="dtOsobeSto">
+				<parameter name="@action" value="OsobeKlasa" />
+				<parameter name="@uvjet" value="#srcOsobaSto.text" />
+				<parameter name="@PartneriId" value="#srcPartneriPodizvrsitelj" />
+			</data>
+
+
+		</datalist>
+	</form>
+</root>

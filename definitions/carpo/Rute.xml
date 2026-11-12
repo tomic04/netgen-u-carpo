@@ -1,0 +1,985 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root version="8.0.0.2">
+	<form name="frmMaster" type="master" caption="Rute">
+		<event type="shown">
+			<action type="variable value" >
+				<parameter name="Aktivan" value="null" type="int"/>
+			</action>
+			<action type="variable value" >
+				<parameter name="Indikator" value="0" type="int"/>
+			</action>  			
+		</event>
+		<managerlayout>
+			<tree name="tree" caption="Rajoni/lokacije" valuefield="id" keyfield="Id" expandallonload="true" dataname="dtTreeRute" searchfield="ruteid" allowdrop="true">
+				<fields>
+                    <field name="caption" />
+                </fields>
+				<event type="focusedrowchanged"  >
+					<action type="control populate" value="#grdGlava" />
+					<!-- <action type="message" value="$Aktivan" /> -->
+					<action type="variable value" value="$pomocna">
+						<parameter value="1"/>
+					</action>
+				<action type="variable value" value="$staritreeid">
+					<parameter name="staritreeid" value="#tree.@Id"/>
+				</action>
+				</event>
+				
+				<event type="dragover">
+					<!-- ****određujemo nivo u koji se može "dropati"**** -->
+					<action type="drop allow" value="true" if="#tree.level==1" />
+				</event>
+				
+				<menu type="drop">
+					<menuitem caption="Prenesi">
+						<event type="click">
+							<action type="variable value" value="$ruteId">
+								<parameter name="ruteId" value="#tree.@Id"/>
+							</action>
+							<action type="variable value" value="$rajoniId">
+								<parameter name="Id" value="#tree.@rajonId"/>
+							</action>
+							<action type="variable value" value="$parentid">
+								<parameter name="parentid" value="#tree.@parentid"/>
+							</action>								
+							<action type="datarun scalar" value="~dtRuteLNParStruPrenesi" >
+								<parameter name="$Indikator" type="int" />
+							</action>
+							<action type="control focus" value="#tree">
+								<parameter value="$ruteId" type="int" />
+							</action>
+							<action type="control populate keepfocus"  value="#grdGlava"/>
+							<action type="message" value="'Neke lokacije su već bile u odabranoj ruti i nisu premiještene.'" if="$Indikator==1" />
+							<!-- <action type="variable value" value="$Indikator"> -->
+								<!-- <parameter  value="0" type="int" /> -->
+							<!-- </action> -->
+						</event>
+					</menuitem>
+					<menuitem caption="Kopiraj">
+						<event type="click">
+							<action type="variable value" value="$ruteId">
+								<parameter name="ruteId" value="#tree.@Id"/>
+							</action>
+							<action type="variable value" value="$parentid">
+								<parameter name="parentid" value="#tree.@parentid"/>
+							</action>
+							<action type="datarun nonquery" value="~dtRuteLNParStruKopiraj" />
+							<action type="control focus" value="#tree">
+								<parameter value="$ruteId" type="int" />
+							</action>
+							<action type="control populate keepfocus"  value="#grdGlava"/>							
+						</event>
+					</menuitem>
+					<menuitem type="separator"/>
+					<menuitem caption="Odustani"/>
+				</menu>
+				<menu>
+					<menuitem caption="Unesi rajon">
+						<event type="click" >
+						<action type="form open" value="frmRajoniDodaj">
+							<parameter name="$NoviId" value="0" type="int"  />
+						</action>
+
+						</event>
+					</menuitem>
+					<menuitem caption="Unesi rutu">
+						<event type="click" >
+							<action type="form open" value="frmRutaDodaj">
+							<parameter name="NoviId1" value="0" type="int"  />
+							<parameter name="Rajon1" value="#tree.@Opis" type="string" />
+							<parameter name="RajonId1" value="#tree.@rajonid" type="int" />
+						</action>
+						</event>
+					</menuitem>
+					<menuitem caption="Izmjeni">
+						<event type="click" >
+							<action type="form open" value="frmRajoniIzmjeni" if="#tree.@ruteid==0">
+								<parameter name="NoviId2" value="#tree.@Id" type="int" />
+								<parameter name="RajonId2" value="#tree.@rajonid" type="int" />
+							</action>
+							<action type="form open" value="frmRutuIzmijeni" else="">
+								<parameter name="NoviId4" value="#tree.@ruteid" type="int" />
+								<parameter name="Ruta1" value="#tree.@caption" type="string" />
+							</action>
+						</event>
+					</menuitem>
+					<menuitem caption="Obriši">
+						<event type="click">
+							<action type="confirm" value="'Želite li obrisati rajon?'" if="#tree.@ruteid==0">							
+								<action type="datarun scalar" value="~dtRajonObrisi">
+									<parameter name="$Noviid8" />
+								</action>
+								<action type="control populate" value="#tree" if="$Noviid8!=null">
+									<action type="control focus" value="#tree">
+										<parameter value="$NoviId8" type="int" />
+									</action>
+								</action>
+							</action>
+							<action type="confirm" value="'Želite li obrisati rutu?'" else="">							
+								<action type="datarun scalar" value="~dtRutuObrisi">
+									<parameter name="$Noviid7" />
+								</action>
+								<action type="control populate" value="#tree" if="$Noviid7!=null">
+									<action type="control focus" value="#tree">
+										<parameter value="$NoviId7" type="int" />
+									</action>
+								</action>
+							</action>
+						</event>
+					</menuitem>
+				</menu>				
+			</tree>
+			<grid name="grdGlava" type="master" keyfield="ParStruId" dataname="dtRuteLNParStruQuery" searchfield="parstruid" savelayout="true" multiselect="True" allowdrag="true" >
+			
+				<event type="cellvaluechanged">
+					<action type="datarun nonquery" value="~dtUmirovljeno" if="#grdGlava.focusedfield==Neaktivno" />
+					<action type="control populate keepfocus" value="#grdGlava" />
+				</event>
+				
+				<event type="focusedrowchanged">
+					<action type="control enable" value="#btnDinamika" if="#grdGlava.rowcount!=0" />
+					<action type="control disable" value="#btnDinamika" else="" />
+				</event>
+				
+				<fields inherited="true">
+					<field name="Neaktivno" caption="Neaktivno"  editable="true" edittype="bit"/>
+				</fields>
+			</grid>
+		</managerlayout>
+			<panelbuttons>
+				<buttons>
+					<button name="btnPrijaviLokaciju" caption="PRIJAVI LOKACIJU" function="insert">
+						<event type="click">
+							<action type="form open" value="frmLokacijaDodaj" if="#tree.@ruteid!=0">
+								<parameter name="RuteId5" value="#tree.@ruteid" type="int"/>
+								<parameter name="Ruta7" value="#tree.@caption"/>
+							</action>
+							<!-- <action type="control populate keepfocus"  value="#grdGlava"/> -->
+						</event>					
+					</button>
+					<button name="btnObrisiLokaciju" caption="UKLONI LOKACIJU" function="delete">
+						<event type="click">
+							<action type="confirm" value="'Želite li ukloniti lokacije iz rute?'" >	
+								<action type="datarun nonquery" value="~dtRuteLNParStruDelete"/>
+								<action type="control populate keepfocus"  value="#grdGlava"/>
+							</action>
+						</event>					
+					</button>
+					<button name="btnFilter" caption="FILTER" function="filter">
+						<event type="click">
+							<action type="form open" value="frmFilter" >
+							</action>
+							<action type="control populate"  value="#grdGlava"/>
+						</event>
+					</button>
+					<button name="btnSearch" caption="PRONAĐI" function="pronadji">
+						<event type="click">		
+							<action type="search" value="dtSearch" ></action>
+						</event>
+					</button>
+					<button name="btnDinamika" caption="PARAMETRI DINAMIKE" function="dinamika">
+						<event type="click">
+							<!-- <action type="message" value="#grdGlava.@RuteLnParStruId" /> -->
+							<action type="form open" value="frmDinamika" if="#grdGlava.@RuteLnParStruId!=null" >
+								<parameter name="Lokacija5" value="#grdGlava.@Lokacija"/>
+								<parameter name="LokacijaId5" value="#grdGlava.@RuteLNParStruId"/>
+								<parameter name="Dinamika" value="#grdGlava.@DinamikaId"/>
+							</action>
+							<action type="control populate keepfocus"  value="#grdGlava"/>
+						</event>
+					</button>
+					<button name="btnUp" image="top" imagelocation="middlecenter" function="sortup">
+						<event type="click">
+							<action type="variable value" value="$smjer">
+								<parameter name="smjer" value="0"/>
+							</action>	
+							<action type="datarun nonquery" value="~dtRuteLNParStruUp"/>
+							<action type="control populate keepfocus"  value="#grdGlava"/>
+						</event>					
+					</button>
+					<button name="btnDown" image="bottom" imagelocation="middlecenter" function="sortdown" >
+						<event type="click">
+							<action type="variable value" value="$smjer">
+								<parameter name="smjer" value="1"/>
+							</action>							
+							<action type="datarun nonquery" value="~dtRuteLNParStruDown"/>
+							<action type="control populate keepfocus"  value="#grdGlava"/>
+						</event>					
+					</button>		
+				</buttons>
+			</panelbuttons>		
+		<datalist>
+			<data command="spProd_Rute_Tree_Query" name="dtTreeRute">
+			</data>
+			<data command="spProd_Rute_RuteLNParStru_Query" name="dtRuteLNParStruQuery">
+				<parameter name="@ID" value="#tree.@id" />
+				<parameter name="@Umirovljeno" value="$Aktivan" type="int"/>
+			</data>
+			<data command="spProd_Rute_RuteLNParStru_Prenesi" name="dtRuteLNParStruPrenesi">
+				<parameter name="@ID" value="$ruteId" />
+				<parameter name="@IDStari" value="$staritreeid" />
+				<parameter name="@ParStruId" value="#grdGlava.selectedids" />					
+			</data>				
+			<data command="spProd_Rute_RuteLNParStru_Delete" name="dtRuteLNParStruDelete">
+				<parameter name="@ID" value="#grdGlava.selectedids" />
+				<parameter name="@RuteId" value="#tree.@ruteid" />
+			</data>
+			<data command="spProd_Rute_RuteLNParStru_Kopiraj" name="dtRuteLNParStruKopiraj">
+				<parameter name="@ID" value="$ruteId" />
+				<parameter name="@IDStari" value="$staritreeid" />
+				<parameter name="@ParStruId" value="#grdGlava.selectedids" />
+			</data>
+			<data command="spProd_Rute_Rajon_Obrisi" name="dtRajonObrisi">
+				<parameter name="@ID" value="#tree.@rajonid" />
+			</data>
+			<data command="spProd_Rute_Rutu_Obrisi" name="dtRutuObrisi">
+				<parameter name="@ID" value="#tree.@ruteid" />
+				<parameter name="@RajonId" value="#tree.@rajonid" />
+			</data>
+			<data command="spProd_Rute_RuteLNParStru_Umirovljen"   name="dtUmirovljeno">
+				<parameter name="@ID" value="#grdGlava.@RuteLnParStruId"/>
+				<parameter name="@Umirovljeno" value="#grdGlava.@Neaktivno"/>
+			</data>
+			<data command="spProd_Rute_Lokacija_Search" name="dtSearch">
+				<parameter name="@Uvjet" value="#btnSearch.searchtext" />
+			</data>
+			<data command="spProd_Rute_RuteLNParStru_Up" name="dtRuteLNParStruUp">
+				<parameter name="@ID" value="#grdGlava.@RuteLnParStruId" />					
+			</data>
+			<data command="spProd_Rute_RuteLNParStru_Down" name="dtRuteLNParStruDown">
+				<parameter name="@ID" value="#grdGlava.@RuteLnParStruId" />					
+			</data>				
+		</datalist>
+	</form>
+	<form name="frmRajoniDodaj" caption="Dodaj rajon" width="400" fixedsize="true">
+		<layout >
+			<group cols="1" rows="2" >
+				<item caption="Naziv:" col="1" row="1">
+					<textedit name="txtNaziv"  required="True"  />
+				</item>
+				<item caption="Šifra:" col="1" row="2">
+					<textedit name="txtSifra"  required="True"  />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun scalar" value="~dtDodajRajon">
+							<parameter name="parent.$Noviid" />
+						</action>
+						
+						<action type="control populate" value="parent.#tree">
+							<action type="control focus" value="parent.#tree">
+								<parameter value="parent.$NoviId" type="int" />
+							</action>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<!-- <button name="btnOdustani" caption="ODUSTANI" > -->
+					<!-- <action type="form close"/> -->
+				<!-- </button> -->
+			<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_Rute_Rajon_Dodaj" name="dtDodajRajon">
+				<parameter name="@Sifra" value="#txtSifra"/>
+				<parameter name="@Opis" value="#txtNaziv"/>
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmRutaDodaj" caption="Dodaj rutu" width="400" fixedsize="true">
+		<event type="shown">
+		
+			<action type="control value" value="#txtRajon" >
+				<parameter value="$Rajon1" type="string"/>
+			</action>
+	
+		</event>
+		<layout >
+			<group cols="1" rows="2" >
+				<item caption="Rajon:" col="1" row="1">
+					<textedit name="txtRajon"  enabled="false"   />
+				</item>
+				<item caption="Naziv:" col="1" row="2">
+					<textedit name="txtNaziv"  required="True"  />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun scalar" value="~dtDodajRutu">
+							<parameter name="parent.$Noviid1" />
+						</action>
+						<action type="control populate" value="parent.#tree">
+							<action type="control focus" value="parent.#tree">
+								<parameter value="parent.$NoviId1" type="int" />
+							</action>
+						</action>
+						<action type="form close"/>
+
+					</event>
+				</button>
+				<!-- <button name="btnOdustani" caption="ODUSTANI" > -->
+					<!-- <action type="form close"/> -->
+				<!-- </button> -->
+				<button name="btnOdustani1" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_Rute_Rutu_Dodaj" name="dtDodajRutu">
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				<parameter name="@RajonId" value="$RajonId1"/>
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmRajoniIzmjeni" caption="Izmjeni rajon" width="400" fixedsize="true">
+	
+		<event type="init">		
+			<action type="datarun reader" value="~dtRajonQuery" />
+		</event>
+	
+		<event type="load">
+			<action type="control value" value="#txtNaziv" >
+				<parameter value="~dtRajonQuery.@Opis"/>
+			</action>
+			<action type="control value" value="#txtSifra" >
+				<parameter value="~dtRajonQuery.@Sifra"/>
+			</action>
+		</event>
+	
+		<layout >
+			<group cols="1" rows="2" >
+				<item caption="Naziv:" col="1" row="1">
+					<textedit name="txtNaziv"  required="True"  />
+				</item>
+				<item caption="Šifra:" col="1" row="2">
+					<textedit name="txtSifra"  required="True"  />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun noquery" value="~dtIzmjeniRajon">
+						</action>
+						<action type="form close"/>
+						
+						<action type="control populate" value="parent.#tree">
+							<action type="control focus" value="parent.#tree">
+								<parameter value="$NoviId2" type="int" />
+							</action>
+						</action>
+						
+						<!-- <action type="control populate" value="parent.#grdGrid"> -->
+							<!-- <action type="control focus" value="parent.#grdGrid"> -->
+								<!-- <parameter value="parent.$NoviId" /> -->
+							<!-- </action> -->
+						<!-- </action> -->
+					</event>
+				</button>
+				<!-- <button name="btnOdustani1" caption="ODUSTANI" > -->
+					<!-- <action type="form close"/> -->
+				<!-- </button> -->
+				<button name="btnOdustani2" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_Rute_Rajon_Query" name="dtRajonQuery">
+				<parameter name="@ID" value="$RajonId2"/>
+			</data>
+			<data command="spProd_Rute_Rajon_Izmjeni" name="dtIzmjeniRajon">
+				<parameter name="@ID" value="$RajonId2"/>
+				<parameter name="@Sifra" value="#txtSifra"/>
+				<parameter name="@Opis" value="#txtNaziv"/>
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmRutuIzmijeni" caption="Izmjeni rutu" width="400" fixedsize="true">
+		<event type="shown">
+		
+			<action type="control value" value="#txtNaziv" >
+				<parameter value="$Ruta1" type="string"/>
+			</action>
+	
+		</event>
+		<layout >
+			<group cols="1" rows="1" >
+				<item caption="Naziv:" col="1" row="2">
+					<textedit name="txtNaziv"  required="True"  />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun noquery" value="~dtRutuIzmjeni">
+						</action>
+						<action type="control populate" value="parent.#tree">
+							<action type="control focus" value="parent.#tree">
+								<parameter value="$NoviId4" type="int" />
+							</action>
+						</action>
+						<action type="form close"/>
+
+					</event>
+				</button>
+				<!-- <button name="btnOdustani" caption="ODUSTANI" > -->
+					<!-- <action type="form close"/> -->
+				<!-- </button> -->
+				<button name="btnOdustani1" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_Rute_Rutu_Izmjeni" name="dtRutuIzmjeni">
+				<parameter name="@ID" value="$NoviId4"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmLokacijaDodaj" caption="Odabir lokacije"  width="900" height="500">
+		
+		<event type="shown">
+		
+			<action type="control value" value="#Caption2" >
+				<parameter value="$Ruta7" type="string"/>
+			</action>
+	
+		</event>
+	
+		<layout>
+			<group cols="3" rows="2" >
+				<columnsdefinition>
+					<column position="1" size="3%"/>
+					<column position="2" size="1%"/>
+					<column position="3" size="3%"/>
+				</columnsdefinition>
+
+				<item caption="Naziv:" col="1" row="1">
+					<textedit name="txtLokacija"    />
+				</item>
+				<group  cols="1" rows="2" col="2" row="1" padding="0" bordervisible="false">
+					<item  row="2" col="1" >
+					  <button name="btnIzvrsi5" caption="TRAŽI" >
+						<event type="click">
+							<action type="control populate" value="#grdLokacija" />
+						</event>
+					  </button>
+					</item>
+				</group>
+				<group  cols="2" rows="2" col="3" row="1" bordervisible="false">
+					<columnsdefinition>
+						<column position="1" size="40"/>
+						<!-- <column position="2" size="30%"/> -->
+					</columnsdefinition>
+					<item row="1" col="2"    >
+						<labeledit   name="Caption1" value="Ruta:" />
+					</item>
+					<item row="2" col="2"    >
+						<labeledit   name="Caption2"  fontsizedelta="2" />
+					</item>
+				</group>
+				<item row="2" col="1"  colspan="3" >
+					<grid name="grdLokacija" key="parstruid" dataname="dtLokacijeQuery" multiselect="true" savelayout="true" >
+					
+					</grid>		
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi1" caption="PRIJAVI" >
+					<event type="click">
+						<action type="datarun nonquery" value="~dtRuteLNParStruInsert"/>
+						<action type="form close"/>
+						<action type="control populate keepfocus"  value="parent.#grdGlava"/>
+					</event>
+				</button>
+				<button name="btnKraj2" caption="ZATVORI" >
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_Rute_Lokacija_Query" name="dtLokacijeQuery">
+				<parameter name="@ID" value="$RuteId5"/>
+				<parameter name="@Uvjet" value="#txtLokacija"/>
+			</data>
+			<data command="spProd_Rute_RuteLNParStru_Insert" name="dtRuteLNParStruInsert">
+				<parameter name="@ID" value="$RuteId5"/>				
+				<parameter name="@ParStruId" value="#grdLokacija.selectedids"/>
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmFilter" caption="Filter" width="100" fixedsize="true">
+	
+		<event type="load">
+			<action type="control value" value="#rdoAktivni" if="parent.$Aktivan==0">
+				<parameter value="true" />
+			</action>
+			<action type="control value" value="#rdoUmirovljeni" if="parent.$Aktivan==1">
+				<parameter value="true" />
+			</action>
+			<action type="control value" value="#rdoSvi" if="parent.$Aktivan==null">
+				<parameter value="true" />
+			</action>
+		</event>
+	
+		<layout textposition="left">
+			<group cols="3" rows="3" >
+				<columnsdefinition>
+					<column position="1" size="25%"/>
+					<column position="2" size="60%"/>
+					<column position="3" size="20%"/>
+				</columnsdefinition>
+				<item caption="Pokaži aktivne" col="2" row="1">
+					<radioedit name="rdoAktivni"  groupindex="1" >
+						<event type="checkedchanged">
+						
+							<action type="variable value" value="parent.$Aktivan">
+								<parameter  value="0" type="int" if="#rdoAktivni==true"/>
+								<parameter  value="null" type="int" else=""/>
+							</action>
+						</event>
+					</radioedit>
+				</item>
+				<item caption="Pokaži neaktivne       " col="2" row="2">
+					<radioedit name="rdoUmirovljeni" value="false"  groupindex="1" >
+						<event type="checkedchanged">
+							
+							<action type="variable value" value="parent.$Aktivan">
+								<parameter  value="1" type="int" if="#rdoUmirovljeni==true"/>
+								<parameter  value="null" type="int" else=""/>
+							</action>
+						</event>
+					</radioedit>
+				</item>	
+				<item caption="Pokaži sve" col="2" row="3">
+					<radioedit name="rdoSvi" value="false"  groupindex="1" >
+						<event type="checkedchanged">
+							
+							<action type="variable value" value="parent.$Aktivan">
+								<parameter  value="null" type="int" if="#rdoSvi==true"/>
+							</action>
+						</event>
+					</radioedit>
+				</item>				
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPokazi" caption="PRIKAŽI" dock="fill">
+					<event type="click">
+						<!-- <action type="message" value="aaa" /> -->
+						<!-- <action type="control populate"  value="parent.#grdGlava"/> -->
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		
+	</form>
+	
+	<form name="frmDinamika" caption="Parametri dinamike" width="400" fixedsize="true">
+	
+		<event type="shown">
+		
+			<action type="control value" value="#Lok" >
+				<parameter value="$Lokacija5" type="string"/>
+			</action>
+			<action type="variable value" >
+				<parameter name="LokacijaID7" value="$LokacijaId5" type="int"/>
+			</action> 
+	
+		</event>
+		
+
+		
+		<event type="load">		
+			<action type="control populate" value="#grdVrijeme" />
+			<action type="control populate" value="#grdVrijeme">
+				<action type="control focus" value="#grdVrijeme">
+					<parameter value="$Dinamika" />
+				</action>
+			</action>
+
+		</event>
+	
+		<layout >
+			<group cols="2" rows="5" >
+				<columnsdefinition>
+					<column position="1" size="70%"/>
+					<column position="2" size="30%"/>
+				</columnsdefinition>
+				<item caption="Lokacija" row="1" col="1" colspan="2">
+					<labeledit name="Lok" prefix="&lt;b&gt;" sufix="&lt;/b&gt;" />
+				</item>
+				<group cols="1" rows="1"  col="1" row="2" rowspan="4" bordervisible="false">
+					<item row="1" col="1"   >
+						<grid name="grdVrijeme" dataname="dtUcestalostUkupno" key="RuteLnParStruDinamikaId" showgrouppanel="false" showautofilterrow="false" >								
+
+						</grid>						
+					</item>
+				</group>
+				<group cols="1" rows="3"  col="2" row="2" bordervisible="false">
+						<rowsdefinition>
+							<row position="1" size="50"/>
+							<row position="2" size="50"/>
+							<row position="3" size="50"/>
+						</rowsdefinition> 
+				
+				
+					<item  row="1" col="1" >
+						<button name="btnDodajUcestalost" caption="DODAJ" function="insertdinamika">
+							<event type="click">
+								<action type="form open" value="frmDani" >
+									<parameter name="LokacijaID7" value="$LokacijaId5" />
+								</action>
+								<action type="control populate" value="#grdVrijeme" />
+							</event>
+						</button>
+					</item>
+					<item  row="2" col="1" >
+						<button name="btnIzmjeniUcestalost" caption="IZMJENI" function="editdinamika">
+							<event type="click">
+								<action type="form open" value="frmDaniIzmjeni">
+									<parameter name="ID" value="#grdVrijeme.@RuteLnParStruDinamikaId"/>
+								</action>
+								<action type="control populate keepfocus" value="#grdVrijeme" />
+							</event>
+						</button>
+					</item>
+					<item  row="3" col="1" >
+						<button name="btnObrisiUcestalost" caption="OBRIŠI" function="deletedinamika">
+							<event type="click">
+								<action type="confirm" value="Želite li obrisati period?">
+									<action type="datarun nonquery" value="~dtDelete" >
+										<action type="control populate" value="#grdVrijeme" />
+									</action>
+								</action>
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="ODABERI" function="dinamikaodaberi">
+					<event type="click">
+						<!-- <action type="validate" /> -->
+						<action type="datarun nonquery" value="~dtDodijeli">
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="UKLONI" function="dinamikaukloni">
+					<event type="click">
+						<!-- <action type="validate" /> -->
+						<action type="datarun nonquery" value="~dtObrisi">
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_Rute_RuteLnParStruDinamika_Query" name="dtUcestalostUkupno">
+				<parameter name="@ID" value="$LokacijaId5"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamika_FormaInsertOdustani" name="dtDelete">
+				<parameter name="@ID" value="#grdVrijeme.@RuteLnParStruDinamikaId"/>
+			</data>
+			<data command="spProd_Rute_RuteLNParStru_UpdateDinamika" name="dtDodijeli">
+				<parameter name="@ID" value="#grdVrijeme.@RuteLnParStruDinamikaId"/>
+				<parameter name="@RuteLNParStruId" value="$LokacijaId5"/>
+			</data>
+			<data command="spProd_Rute_RuteLNParStru_UpdateDinamika" name="dtObrisi">
+				<parameter name="@RuteLNParStruId" value="$LokacijaId5"/>
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmDani" caption="Učestalost" width="500" fixedsize="true">
+	
+		<event type="init">		
+			<action type="datarun reader" value="~dtInsert" />
+		</event>
+		
+		<event type="load">		
+			<action type="control populate" value="#grdVrijeme" />
+			<action type="variable value" >
+				<parameter name="IndOdustani" value="1" type="int"/>
+			</action>
+		</event>
+		
+		<event type="closed">		
+			<action type="datarun nonquery" value="~dtOdustani" if="$IndOdustani==1" />
+		</event>
+	
+		<layout >
+			<group cols="1" rows="2" >
+				<rowsdefinition>
+					<row position="2" size="250"/>
+				</rowsdefinition> 
+				<item caption="Napomena:" col="1" row="1">
+					<textedit name="txtNapomena"    />
+				</item>
+				<item row="2" col="1"   >
+					<grid name="grdVrijeme" dataname="dtDani" key="ID" showgrouppanel="false" showautofilterrow="false" >								
+							<event type="cellvaluechanged">
+								<action type="variable value" >
+									<parameter name="SelId" value="#grdVrijeme.@ID" type="int"/>
+								</action> 
+								<action type="datarun nonquery" value="~dtInsertDani" if="#grdVrijeme.focusedfield==Izbor" />
+								<action type="datarun nonquery" value="~dtInsertDaniVrijeme" if="#grdVrijeme.focusedfield==Vrijeme" />
+								<action type="datarun nonquery" value="~dtInsertDaniUcestalost" if="#grdVrijeme.focusedfield==Ucestalost&amp;&amp;#grdVrijeme.focusedvalue&gt;0&amp;&amp;#grdVrijeme.focusedvalue&lt;5" />
+								<action type="datarun nonquery" value="~dtInsertDaniPomak" if="#grdVrijeme.focusedfield==Pomak&amp;&amp;#grdVrijeme.focusedvalue&gt;=0&amp;&amp;#grdVrijeme.focusedvalue&lt;4&amp;&amp;#grdVrijeme.focusedvalue&lt;#grdVrijeme.@Ucestalost" />
+								<action type="datarun nonquery" value="~dtInsertDaniAktivno" if="#grdVrijeme.focusedfield==Aktivno" />
+								<action type="datarun nonquery" value="~dtInsertDaniDatumPocetka" if="#grdVrijeme.focusedfield==DatumPocetka" />
+								<!-- <action type="control populate keepfocus" value="#grdVrijeme" /> -->
+								<action type="control populate" value="#grdVrijeme">
+									<action type="control focus" value="#grdVrijeme">
+										<parameter value="$SelId" />
+									</action>
+								</action>	
+							</event>
+							
+							<fields inherited="true">
+								<field name="Operater" caption="Operater"  />
+								<field name="Izbor" caption="Izbor" editable="true" edittype="bit"/>
+								<field name="Vrijeme" caption="Vrijeme"  editable="true" />
+								<field name="Ucestalost" caption="Učestalost"  editable="true" formatstring="n0"  />
+								<field name="Pomak" caption="Pomak"  editable="true" formatstring="n0"  />
+								<field name="Aktivno" caption="Aktivno" editable="true" edittype="bit"/>
+								<field name="DatumPocetka" caption="Datum početka" editable="true" edittype="date"/>
+							</fields>
+					</grid>						
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="~dtUcestalostUpdate">
+							
+						</action>
+						<action type="variable value" value="$IndOdustani">
+								<parameter  value="0" type="int" />
+							</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI"  >
+					<event type="click">
+						<!-- <action type="datarun nonquery" value="~dtOdustani"> -->
+							
+						<!-- </action> -->
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_Rute_RuteLnParStruDinamika_Insert" name="dtInsert">
+				<parameter name="@Ucestalost" value="1"/>
+				<parameter name="@ID" value="$LokacijaID7"/>
+			</data>
+			<data command="spProd_Rute_Dani_Query" name="dtDani">
+				<parameter name="@ID" value="~dtInsert.@ID"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamikaDani_Insert" name="dtInsertDani">
+				<parameter name="@RuteLnParStruDinamikaId" value="~dtInsert.@ID"/>
+				<parameter name="@DanInd" value="#grdVrijeme.@ID"/>
+				<parameter name="@Ind" value="#grdVrijeme.focusedvalue"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamikaDani_UpdateVrijeme" name="dtInsertDaniVrijeme">
+				<parameter name="@RuteLnParStruDinamikaId" value="~dtInsert.@ID"/>
+				<parameter name="@DanInd" value="#grdVrijeme.@ID"/>
+				<parameter name="@Vrijeme" value="#grdVrijeme.focusedvalue"/>
+				<parameter name="@Ind" value="#grdVrijeme.@Izbor"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamikaDani_UpdateUcestalost" name="dtInsertDaniUcestalost">
+				<parameter name="@RuteLnParStruDinamikaId" value="~dtInsert.@ID"/>
+				<parameter name="@DanInd" value="#grdVrijeme.@ID"/>
+				<parameter name="@Ucestalost" value="#grdVrijeme.focusedvalue"/>
+				<parameter name="@Ind" value="#grdVrijeme.@Izbor"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamikaDani_UpdatePomak" name="dtInsertDaniPomak">
+				<parameter name="@RuteLnParStruDinamikaId" value="~dtInsert.@ID"/>
+				<parameter name="@DanInd" value="#grdVrijeme.@ID"/>
+				<parameter name="@Pomak" value="#grdVrijeme.focusedvalue"/>
+				<parameter name="@Ind" value="#grdVrijeme.@Izbor"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamikaDani_UpdateAktivno" name="dtInsertDaniAktivno">
+				<parameter name="@RuteLnParStruDinamikaId" value="~dtInsert.@ID"/>
+				<parameter name="@DanInd" value="#grdVrijeme.@ID"/>
+				<parameter name="@Aktivno" value="#grdVrijeme.focusedvalue"/>
+				<parameter name="@Ind" value="#grdVrijeme.@Izbor"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamikaDani_UpdateDatumPocetka" name="dtInsertDaniDatumPocetka">
+				<parameter name="@RuteLnParStruDinamikaId" value="~dtInsert.@ID"/>
+				<parameter name="@DanInd" value="#grdVrijeme.@ID"/>
+				<parameter name="@DatumPocetka" value="#grdVrijeme.focusedvalue"/>
+				<parameter name="@Ind" value="#grdVrijeme.@Izbor"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamika_Update" name="dtUcestalostUpdate">
+				<parameter name="@ID" value="~dtInsert.@ID"/>
+				<parameter name="@Ucestalost" value="#cmbUcestalost"/>
+				<parameter name="@Napomena" value="#txtNapomena"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamika_FormaInsertOdustani" name="dtOdustani">
+				<parameter name="@ID" value="~dtInsert.@ID"/>
+			</data>
+		</datalist>
+		
+	</form>
+	
+	<form name="frmDaniIzmjeni" caption="Učestalost" width="500" fixedsize="true">
+	
+		<event type="init">		
+			<action type="datarun reader" value="~dtGet" />
+		</event>
+		
+		<event type="load">		
+			<action type="control populate" value="#grdVrijeme" />
+			<!-- <action type="control value" value="#cmbUcestalost" > -->
+				<!-- <parameter value="~dtGet.@Ucestalost"/> -->
+			<!-- </action> -->
+			<action type="control value" value="#txtNapomena" >
+				<parameter value="~dtGet.@Napomena"/>
+			</action>
+		</event>
+	
+		<layout >
+			<group cols="1" rows="2" >
+				<rowsdefinition>
+					<row position="2" size="250"/>
+				</rowsdefinition> 
+				<item caption="Napomena:" col="1" row="1">
+					<textedit name="txtNapomena"    />
+				</item>
+				<item row="2" col="1"   >
+					<grid name="grdVrijeme" dataname="dtDani" key="ID" showgrouppanel="false" showautofilterrow="false" >								
+							<event type="cellvaluechanged">
+								<action type="variable value" >
+									<parameter name="SelId1" value="#grdVrijeme.@ID" type="int"/>
+								</action> 
+								<action type="datarun nonquery" value="~dtInsertDani" if="#grdVrijeme.focusedfield==Izbor" />
+								<action type="datarun nonquery" value="~dtInsertDaniVrijeme" if="#grdVrijeme.focusedfield==Vrijeme" />
+								<action type="datarun nonquery" value="~dtInsertDaniUcestalost" if="#grdVrijeme.focusedfield==Ucestalost&amp;&amp;#grdVrijeme.focusedvalue&gt;0&amp;&amp;#grdVrijeme.focusedvalue&lt;5" />
+								<action type="datarun nonquery" value="~dtInsertDaniPomak" if="#grdVrijeme.focusedfield==Pomak&amp;&amp;#grdVrijeme.focusedvalue&gt;=0&amp;&amp;#grdVrijeme.focusedvalue&lt;4&amp;&amp;#grdVrijeme.focusedvalue&lt;#grdVrijeme.@Ucestalost" />
+								<action type="datarun nonquery" value="~dtInsertDaniAktivno" if="#grdVrijeme.focusedfield==Aktivno" />
+								<action type="datarun nonquery" value="~dtInsertDaniDatumPocetka" if="#grdVrijeme.focusedfield==DatumPocetka" />
+								<!-- <action type="control populate keepfocus" value="#grdVrijeme" if="#grdVrijeme.focusedfield==Vrijeme"/> -->
+								<action type="control populate" value="#grdVrijeme">
+									<action type="control focus" value="#grdVrijeme">
+										<parameter value="$SelId1" />
+									</action>
+								</action>
+							</event>
+							
+							<fields inherited="true">
+								<field name="Operater" caption="Operater"  />
+								<field name="Izbor" caption="Izbor" editable="true" edittype="bit"/>
+								<field name="Vrijeme" caption="Vrijeme"  editable="true" />
+								<field name="Ucestalost" caption="Učestalost"  editable="true" formatstring="n0"  />
+								<field name="Pomak" caption="Pomak"  editable="true" formatstring="n0"  />
+								<field name="Aktivno" caption="Aktivno" editable="true" edittype="bit"/>
+								<field name="DatumPocetka" caption="Datum početka" editable="true" edittype="date"/>
+							</fields>
+					</grid>						
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="~dtUcestalostUpdate">
+							
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_Rute_Ucestalost_Query" name="dtUcestalost">
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamika_Jedan_Query" name="dtGet">
+				<parameter name="@ID" value="$ID"/>
+			</data>
+			<data command="spProd_Rute_Dani_Query" name="dtDani">
+				<parameter name="@ID" value="$ID"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamikaDani_Insert" name="dtInsertDani">
+				<parameter name="@RuteLnParStruDinamikaId" value="$ID"/>
+				<parameter name="@DanInd" value="#grdVrijeme.@ID"/>
+				<parameter name="@Ind" value="#grdVrijeme.focusedvalue"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamikaDani_UpdateVrijeme" name="dtInsertDaniVrijeme">
+				<parameter name="@RuteLnParStruDinamikaId" value="$ID"/>
+				<parameter name="@DanInd" value="#grdVrijeme.@ID"/>
+				<parameter name="@Vrijeme" value="#grdVrijeme.focusedvalue"/>
+				<parameter name="@Ind" value="#grdVrijeme.@Izbor"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamikaDani_UpdateUcestalost" name="dtInsertDaniUcestalost">
+				<parameter name="@RuteLnParStruDinamikaId" value="$ID"/>
+				<parameter name="@DanInd" value="#grdVrijeme.@ID"/>
+				<parameter name="@Ucestalost" value="#grdVrijeme.focusedvalue"/>
+				<parameter name="@Ind" value="#grdVrijeme.@Izbor"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamikaDani_UpdatePomak" name="dtInsertDaniPomak">
+				<parameter name="@RuteLnParStruDinamikaId" value="$ID"/>
+				<parameter name="@DanInd" value="#grdVrijeme.@ID"/>
+				<parameter name="@Pomak" value="#grdVrijeme.focusedvalue"/>
+				<parameter name="@Ind" value="#grdVrijeme.@Izbor"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamikaDani_UpdateAktivno" name="dtInsertDaniAktivno">
+				<parameter name="@RuteLnParStruDinamikaId" value="$ID"/>
+				<parameter name="@DanInd" value="#grdVrijeme.@ID"/>
+				<parameter name="@Aktivno" value="#grdVrijeme.focusedvalue"/>
+				<parameter name="@Ind" value="#grdVrijeme.@Izbor"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamikaDani_UpdateDatumPocetka" name="dtInsertDaniDatumPocetka">
+				<parameter name="@RuteLnParStruDinamikaId" value="$ID"/>
+				<parameter name="@DanInd" value="#grdVrijeme.@ID"/>
+				<parameter name="@DatumPocetka" value="#grdVrijeme.focusedvalue"/>
+				<parameter name="@Ind" value="#grdVrijeme.@Izbor"/>
+			</data>
+			<data command="spProd_Rute_RuteLnParStruDinamika_Update" name="dtUcestalostUpdate">
+				<parameter name="@ID" value="$ID"/>
+				<parameter name="@Ucestalost" value="#cmbUcestalost"/>
+				<parameter name="@Napomena" value="#txtNapomena"/>
+			</data>
+
+		</datalist>
+		
+	</form>
+	
+</root>

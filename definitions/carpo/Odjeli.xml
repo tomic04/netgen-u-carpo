@@ -1,0 +1,111 @@
+<root>
+	<form name="frmMaster" type="master" caption="Odjeli">
+		<managerlayout>
+			<grid name="grdMaster" type="master" showautofilterrow="true" dataname="global.dtMaster" key="OdjelId" savelayout="true" statusbar="true" bestfitonrefresh="true" multiselect="true">
+				<event type="doubleclick">
+					<action type="form open" value="frmOdjelInsertEdit" if="#grdMaster.rowcount&gt;0">
+						<parameter name="OdjelId" value="#grdMaster.@OdjelId" />
+					</action>
+					<action type="control populate keepfocus" value="#grdMaster" />
+				</event>
+				<fields inherited="true">
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnUnesi" caption="UNESI" type="add" function="insert">
+					<menuitem control="#grdMaster" sort="1" />
+					<event type="click">
+						<action type="form open" value="frmOdjelInsertEdit">
+							<parameter name="OdjelId" value="null" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit" function="edit">
+					<menuitem control="#grdMaster" sort="2" />
+					<event type="click">
+						<action type="form open" value="frmOdjelInsertEdit" if="#grdMaster.rowcount&gt;0">
+							<parameter name="OdjelId" value="#grdMaster.@OdjelId" />
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete" function="delete">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati označeni odjel?">
+							<action type="datarun nonquery" value="global.~dtDelete" />
+							<action type="control populate" value="#grdMaster" />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmOdjelInsertEdit" caption="Odjeli">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" />
+		</event>
+		<event type="shown">
+			<action if="$OdjelId!=null">
+				<action type="form caption" value="Izmjena odabranog odjela" />
+			</action>
+			<action else="">
+				<action type="form caption" value="Unos novog odjela" />
+			</action>
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1" caption="Naziv:" highlight="false">
+					<textedit name="txtNazivOdjel" datavalue="~dtGet.@Naziv" required="true" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtDataEdit" if="$OdjelId!=null">
+							<parameter name="parent.$OdjelId" />
+							<action type="control populate keepfocus" value="parent.#grdMaster" />
+						</action>
+						<action type="datarun scalar" value="~dtDataInsert" else="">
+							<parameter name="parent.$OdjelId" />
+							<action type="control populate" value="parent.#grdMaster" />
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="parent.$OdjelId" type="int" />
+							</action>
+						</action>
+						<action type="control refreshvalue" value="##" />
+						<action type="form close" if="$OdjelId!=null" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCOdjelQuery" name="dtGet">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$OdjelId" />
+			</data>
+			<data command="spCOdjelAzur" name="dtDataInsert">
+				<parameter name="@Action" value="0" />
+				<parameter name="@Naziv" value="#txtNazivOdjel" />
+			</data>
+			<data command="spCOdjelAzur" name="dtDataEdit">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$OdjelId" />
+				<parameter name="@Naziv" value="#txtNazivOdjel" />
+			</data>
+		</datalist>
+	</form>
+	<datalist>
+		<data command="spCOdjelQuery " name="dtMaster">
+			<parameter name="@action" value="0" />
+		</data>
+		<data command="spCOdjelAzur" name="dtDelete">
+			<parameter name="@Action" value="2" />
+			<parameter name="@ID" value="#grdMaster.@OdjelId" />
+		</data>
+	</datalist>
+</root>

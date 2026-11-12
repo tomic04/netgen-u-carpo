@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root version="8.0.0.1">
+	<form name="frmGlavna" type="master" caption="Dnevna lista obilazaka" maximized="true" >
+	
+		<event type="init">
+			<action type="datarun reader" value="~dtDatumOd" />
+			<action type="datarun reader" value="~dtDatumDo" />
+		</event>
+	
+		<event type="load">
+			<action type="control value" value="#datDatumOd" >
+				<parameter value="~dtDatumOd.@DatumOd"/>
+			</action>
+			<action type="control value" value="#datDatumDo" >
+				<parameter value="~dtDatumDo.@DatumDo"/>
+			</action>
+			<action type="variable value">
+				<parameter name="Global.DatOd" value="~dtDatumOd.@DatumOd1" type="string" />
+			</action>
+			<action type="variable value">
+				<parameter name="Global.DatDo" value="~dtDatumDo.@DatumDo1" type="string" />
+			</action>
+			<action type="control disable" value="#datDatumOd, #datDatumDo" />
+			<action type="control populate" value="#trDrvo">
+			</action>
+		</event>
+	
+		<event type="shown">
+			<action type="variable value" >
+				<parameter name="Aktivan" value="null" type="int"/>
+			</action>
+			<action type="variable value" >
+				<parameter name="Indikator" value="0" type="int"/>
+			</action>  			
+		</event>
+		<layout >
+			<group cols="2" rows="2" >
+				<columnsdefinition>
+					<column position="1" size="20%"/>
+					<column position="2" size="80%"/>
+				</columnsdefinition>
+				<item row="1" col="1"  rowspan="2"   >
+				   <tree name="trDrvo" dataname="dtTreeRute" expandallonload="true" >			
+					<event type="focusedrowchanged">
+						<action type="control populate" value="#grdMaster" /> 
+					</event>
+					<fields>
+						<field name="caption" />
+					</fields>
+				   </tree>
+				</item>
+				<group caption=" " groupbordervisible="false" cols="6" rows="1" col="2" row="1"  >
+					<columnsdefinition>
+						<column position="1" size="200"/>
+						<column position="2" size="200"/>
+						<column position="3" size="200"/>
+					</columnsdefinition>
+					<item caption="Datum od:"  row="1" col="1">
+						<textedit name="datDatumOd"    readonly="true"/>
+					</item>
+					<item caption="Datum do:"  row="1" col="2">
+						<textedit name="datDatumDo"   readonly="true"/>
+					</item>	
+				</group>
+				<item row="2" col="2" >
+					<grid name="grdMaster"   dataname="dtMaster"  keyfield="RuteDnevnaListaId" multiselect="True">
+
+						<fields inherited="true">	
+							<field name="DatumReschedule" caption="Datum naknadnog termina" />
+						</fields>
+					
+					</grid>		
+				</item>
+			</group>
+		</layout>
+			<panelbuttons>
+				<buttons>
+					<button name="btnVrijeme" caption="VREMENSKI PERIOD" >
+						<event type="click">
+							<!-- <action type="control collapsed" value="#trDrvo"> -->
+								<!-- <parameter name="level" value="0" type="int" />  -->
+							  <!-- </action> -->
+							<action type="form open" value="frmVrijeme" >
+								
+							</action>
+							<!-- <action type="control populate keepfocus"  value="#grdGlava"/> -->
+						</event>					
+					</button>
+					<button name="btnLista" caption="KREIRAJ LISTU" >
+						<event type="click">
+							<action type="form open" value="frmLista" >
+								<parameter name="RutaId" value="#trDrvo.@Id" type="int"/>
+							</action>
+							<!-- <action type="control populate keepfocus"  value="#grdGlava"/> -->
+						</event>					
+					</button>
+					
+					<button name="btnDatum" caption="PROMJENA TERMINA" >
+						<event type="click">
+							<action type="form open" value="frmDatum" if="#trDrvo.level==1">
+								<parameter name="RutaId1" value="#grdMaster.@RuteDnevnaListaId" type="int"/>
+							</action>
+							<!-- <action type="control populate keepfocus"  value="#grdGlava"/> -->
+						</event>					
+					</button>
+					
+					<button name="btnLokacija" caption="DODAJ LOKACIJU" >
+						<event type="click">
+							<action type="form open" value="frmLokacija" >
+								<parameter name="RutaId2" value="#grdMaster.@RuteDnevnaListaId" type="int"/>
+								<parameter name="RutaId5" value="#trDrvo.@RuteId" type="int"/>
+							</action>
+							<!-- <action type="control populate keepfocus"  value="#grdGlava"/> -->
+						</event>					
+					</button>
+					
+					<button name="btnBrisanje" caption="UKLONI LOKACIJU" >
+						<event type="click">
+						<action type="confirm" value="Želite li obrisati slogove?" if="#grdMaster.rowcount&gt;0">
+							<action type="control foreachrow selected" value="#grdMaster">
+								<action type="datarun nonquery" value="~dtDelete" />
+							</action>
+						</action>
+						<action type="control populate" value="#grdMaster" if="#grdMaster.rowcount&gt;0">
+
+						</action>
+						</event>
+					</button>
+					
+					<button name="btnHelp" caption="UPUTI ME" >
+
+					</button>
+					
+
+				</buttons>
+			</panelbuttons>		
+		<datalist>
+			<data command="spProd_DnevnaLista_Tree_Query" name="dtTreeRute">
+			</data>
+			<data command="select convert(varchar, DATEADD(day,-7, GETDATE()), 104) as DatumOd, convert(varchar, DATEADD(day,-7, GETDATE()), 112) as DatumOd1"  type="text" name="dtDatumOd"/>
+			<data command="select convert(varchar, GETDATE(), 104) as DatumDo, convert(varchar, GETDATE(), 112) as DatumDo1"  type="text" name="dtDatumDo"/>
+			<data command="spProd_DnevnaLista_MasterQuery" name="dtMaster">
+				<parameter name="@ID" value="#trDrvo.@ruteid" />
+				<parameter name="@DatumOd" value="Global.$DatOd" />
+				<parameter name="@DatumDo" value="Global.$DatDo" />
+				<parameter name="@RajonId" value="#trDrvo.@rajonid" />
+			</data>
+			<data command="spProd_DnevnaLista_Obrisi"  name="dtDelete">
+				<parameter name="@ID" value="#grdMaster.@RuteDnevnaListaId" />
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmVrijeme" caption="Vremenski period" fixedsize="true" >
+	
+		<event type="load">
+			<action type="control value" value="#datDatumOd1" >
+				<parameter value="Global.$DatOd"/>
+			</action>
+			<action type="control value" value="#datDatumDo1" >
+				<parameter value="Global.$DatDo"/>
+			</action>
+		</event>
+	
+		<layout textposition="left">
+			<group cols="1" rows="2" >
+				<item  caption="Datum od:" col="1" row="1">
+					<dateedit  name="datDatumOd1"   >                                                                                         
+					</dateedit>
+				</item>
+				<item  caption="Datum do:" col="1" row="2">
+					<dateedit  name="datDatumDo1"   >                                                                                         
+					</dateedit>
+				</item>
+			</group>
+		</layout>
+	
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="IZABERI" >
+					<event type="click"   >
+						<action type="datarun reader" value="~dtDatumOd1" />
+						<action type="datarun reader" value="~dtDatumDo1" />
+						<action type="message" value="Odabrani datumi nisu ispravni!" if="~dtDatumOd1.@DatumOd&gt;~dtDatumDo1.@DatumDo" />
+						<action type="variable value" value="Global.$DatOd">
+							<parameter  value="~dtDatumOd1.@DatumOd1" type="string" if="~dtDatumOd1.@DatumOd&lt;=~dtDatumDo1.@DatumDo"/>
+						</action>
+						<action type="control value" value="parent.#datDatumOd" if="~dtDatumOd1.@DatumOd&lt;=~dtDatumDo1.@DatumDo">
+							<parameter value="~dtDatumOd1.@DatumOd"/>
+						</action>
+						<!-- <action type="datarun reader" value="~dtDatumDo1" /> -->
+						<action type="variable value" value="Global.$DatDo" if="~dtDatumOd1.@DatumOd&lt;=~dtDatumDo1.@DatumDo">
+							<parameter  value="~dtDatumDo1.@DatumDo1" type="string" />
+						</action>
+						<action type="control value" value="parent.#datDatumDo" if="~dtDatumOd1.@DatumOd&lt;=~dtDatumDo1.@DatumDo">
+							<parameter value="~dtDatumDo1.@DatumDo"/>
+						</action>
+						<action type="control populate" value="parent.#grdMaster" if="~dtDatumOd1.@DatumOd&lt;=~dtDatumDo1.@DatumDo">
+
+						</action>
+						
+						
+						<action type="form close" if="~dtDatumOd1.@DatumOd&lt;=~dtDatumDo1.@DatumDo" />
+					</event>
+				</button>
+				
+				<button name="btnKraj1" caption="KRAJ" >
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+				
+				<button name="btnHelp" caption="UPUTI ME" >
+
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="select convert(varchar, @Datum, 104) as DatumOd, convert(varchar, @Datum, 112) as DatumOd1"  type="text" name="dtDatumOd1">
+				<parameter name="@Datum" value="#datDatumOd1" type="datetime" />
+			</data>
+			<data command="select convert(varchar, @Datum, 104) as DatumDo, convert(varchar, @Datum, 112) as DatumDo1"  type="text" name="dtDatumDo1">
+				<parameter name="@Datum" value="#datDatumDo1" type="datetime" />
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmLista" caption="Kreiraj listu" fixedsize="true" >
+	
+		<event type="init">
+			<action type="datarun reader" value="~dtDatumRute" />
+		</event>
+	
+		<event type="load">
+			<action type="control value" value="#cmbRuta" >
+				<parameter value="$RutaId"/>
+			</action>
+			<action type="control value" value="#datDatumOd1" >
+				<parameter value="~dtDatumRute.@Datum"/>
+			</action>
+		</event>
+	
+		<layout textposition="left">
+			<group cols="1" rows="2" >
+				<item  caption="Datum:" col="1" row="1">
+					<dateedit  name="datDatumOd1"   >                                                                                         
+					</dateedit>
+				</item>
+				<item caption="Ruta:" row="2" col="1" >
+					<comboedit name="cmbRuta" required="True" autopopulate="true"  valuefield="RuteId" displayfield="Naziv"  dataname="dtRute">
+
+					</comboedit>
+				</item>
+			</group>
+		</layout>
+	
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="KREIRAJ" >
+					<event type="click">
+						<action type="datarun reader" value="~dtDodajRutu">
+
+						</action>
+						<action type="control populate" value="parent.#grdMaster">
+
+						</action>
+						
+						<action type="form close"/>
+					</event>
+				</button>
+				
+				<button name="btnKraj1" caption="ODUSTANI" >
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+				
+				<button name="btnHelp" caption="UPUTI ME" >
+
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_DnevnaLista_Rute" name="dtRute">
+			</data>
+			<data command="spProd_DnevnaLista_RuteInsert" name="dtDodajRutu">
+				<parameter name="@Datum" value="#datDatumOd1"/>
+				<parameter name="@Ruteid" value="#cmbRuta"/>
+			</data>
+			<data command="select DATEADD(day,+1, GETDATE()) as Datum"  type="text" name="dtDatumRute">
+				
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmDatum" caption="Promjena termina" width="400" fixedsize="true" >
+	
+		<event type="init">
+			<action type="datarun reader" value="~dtDatumRute" />
+		</event>
+	
+		<event type="load">
+			<action type="control value" value="#datDatum" >
+				<parameter value="~dtDatumRute.@Datum"/>
+			</action>
+			<action type="control value" value="#datDatumTermin" >
+				<parameter value="~dtDatumRute.@Datum"/>
+			</action>
+			<action type="control disable" value="#datDatum" />
+			<action type="control enable" value="#datDatumTermin" >
+				<action type="control focus" value="#datDatumTermin" />
+			</action>
+			
+			
+		</event>
+
+	
+		<layout textposition="left">
+			<group cols="1" rows="1" >				
+				<group caption=" " cols="2" rows="2" col="1" row="1">
+					<columnsdefinition>
+						<column size="30" position="1" />
+						<column size="200" position="2" />
+					</columnsdefinition>
+					<item  col="1" row="1">
+						<radioedit name="rdoDatum" value="false" visible="false" groupindex="1" >
+							<event type="checkedchanged">
+								<action type="control enable" value="#datDatum" if="#rdoDatum==true">
+									<action type="control focus" value="#datDatum" />
+								</action>
+								<action type="control disable" value="#datDatumTermin,#btnObrisi" />
+							</event>
+						</radioedit>
+					</item>	
+					<item  caption="Izvorni datum:"  col="2" row="1">
+						<dateedit  name="datDatum" visible="false"  >                                                                                         
+						</dateedit>
+					</item>
+					<item  col="1" row="2" >
+						<radioedit name="rdoDatumTermin" caption="" value="true"  groupindex="1" function="cmbSkladiste">
+							<event type="checkedchanged">
+								<action type="control enable" value="#datDatumTermin,#btnObrisi" if="#rdoDatumTermin==true">
+									<action type="control focus" value="#datDatumTermin" />
+								</action>
+								<action type="control disable" value="#datDatum" />
+							</event>
+						</radioedit>						
+					</item>
+					<item  caption="Datum naknadnog termina:" col="2" row="2">
+						<dateedit  name="datDatumTermin"   >                                                                                         
+						</dateedit>
+					</item>
+				</group>
+			</group>
+		</layout>
+	
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="PROMIJENI" >
+					<event type="click">
+						<action type="datarun reader" value="~dtTermin">
+
+						</action>
+						<action type="control populate" value="parent.#grdMaster">
+
+						</action>
+						
+						<action type="form close"/>
+					</event>
+				</button>
+				
+				<button name="btnObrisi" caption="RESETIRAJ" >
+					<event type="click">
+						<action type="datarun reader" value="~dtTerminObrisi">
+
+						</action>
+						<action type="control populate" value="parent.#grdMaster">
+
+						</action>
+						
+						<action type="form close"/>
+					</event>
+				</button>
+				
+				<button name="btnKraj1" caption="ODUSTANI" >
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+				
+				<button name="btnHelp" caption="UPUTI ME" >
+
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+
+			<data command="spProd_DnevnaLista_PromjenaTermina" name="dtTermin">
+				<parameter name="@Datum" value="#datDatum" if="#rdoDatum==true"/>
+				<parameter name="@Datum" value="null" else=""/>
+				<parameter name="@DatumRescedule" value="#datDatumTermin" if="#rdoDatumTermin==true"/>
+				<parameter name="@DatumRescedule" value="null" else=""/>
+				<parameter name="@Ruteid" value="parent.#grdMaster.selectedids"/>
+			</data>
+			<data command="spProd_DnevnaLista_BrisanjeTermina" name="dtTerminObrisi">
+				<parameter name="@DatumRescedule" value="null"/>
+				<parameter name="@Ruteid" value="parent.#grdMaster.selectedids"/>
+			</data>
+			<data command="select DATEADD(day,+1, GETDATE()) as Datum"  type="text" name="dtDatumRute">
+				
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmLokacija" caption="Unesi lokaciju" fixedsize="true" >
+	
+		<event type="init">
+			<action type="datarun reader" value="~dtDatumRute" />
+		</event>
+		<event type="load">
+			<action type="control value" value="#cmbRuta" >
+				<parameter value="$RutaId5"/>
+			</action>
+		</event>
+	
+		<layout textposition="left">
+			<group cols="1" rows="3" >
+				<item  caption="Datum:" col="1" row="1">
+					<dateedit  name="datDatumOd1" value="now"  >                                                                                         
+					</dateedit>
+				</item>
+				<item caption="Ruta:" row="2" col="1" >
+					<comboedit name="cmbRuta" required="true" autopopulate="true"  valuefield="RuteId" displayfield="Naziv"  dataname="dtRute">
+
+					</comboedit>
+				</item>
+				<item caption="Lokacija:" col="1" row="3"  >
+					<searchedit  name="srcLokacija" required="true" fieldtext="Lokacija" fieldvalue="parstruid"  fontbold="true" dataname="dtRuteLNParStruQuery">
+						<event type="valuechanged">
+						</event>
+					</searchedit>
+				</item>
+			</group>
+		</layout>
+	
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="DODAJ" >
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun reader" value="~dtDodajLokaciju" if="#cmbRuta!=null&amp;&amp;#srcLokacija!=null">
+
+						</action>
+						
+						
+						<action type="control populate" value="parent.#grdMaster" if="#cmbRuta!=null&amp;&amp;#srcLokacija!=null" >
+
+						</action>
+						
+						<action type="form close" if="#cmbRuta!=null&amp;&amp;#srcLokacija!=null"/>
+					</event>
+				</button>
+				
+				<button name="btnKraj1" caption="ODUSTANI" >
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+				
+				<button name="btnHelp" caption="UPUTI ME" >
+
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spProd_DnevnaLista_Rute_Rajon" name="dtRute">
+			</data>
+			<data command="spProd_DnevnaLista_RuteLNParStru_Insert" name="dtDodajLokaciju">
+				<parameter name="@Datum" value="#datDatumOd1"/>
+				<parameter name="@Ruteid" value="#cmbRuta"/>
+				<parameter name="@ParStruId" value="#srcLokacija"/>
+			</data>
+			<data command="spProd_DnevnaLista_RuteLNParStru_Query" name="dtRuteLNParStruQuery">
+				<parameter name="@ID" value="#cmbRuta" />
+				<parameter name="@Naziv" value="#srcLokacija.text"/>
+			</data>
+		</datalist>
+	</form>
+	
+
+	
+</root>

@@ -1,0 +1,166 @@
+<root>
+	<!-- 26.5.2021. AA  bestfitonrefresh="true"-->
+	<!-- 24.9.2020. AA kolone Status i RobaDefKey-->
+    <!-- 20.7.2020. AA  savelayout="true"-->
+	<!-- 17.7.2020. SV dodao orgdok kao izvorni dokument u prikazu na gridu -->
+	<!-- 28.5.2020. AA razdoblje za karticu uvijek cijela godina -->
+	<!--18.12.2019. AA timeout, isključeno dvostruko punjenje grida na Izvrši-->
+	<form path="NezatvoreniIzlaz.frmRobnaKartica.xml" name="frmRobnaKartica"/>
+	<form name="frmNezIzlaz" caption="Neproknjiženi dokumenti" template="splitter" splitterposition="300" type="master" maximized="true" statusbar="true">
+		<event type="shown">
+			<!--<action type="control value" value="#datDatumDo">-->
+               <!--<parameter value="now"/>-->
+			<!--</action>-->
+			<action type="control disable" value="#cmbKlase,#chkIspod" if="#chkKlasa==false"/>
+			<action type="datarun reader" value="~dtDatumDefault"/>
+				<action type="control value" value="#datDatumDo">
+                    <parameter value="~dtDatumDefault.@DatDo"/>
+				</action>            
+				<action type="variable value">
+					<parameter name="global.$DatumOd" value="~dtDatumDefault.@DatumOdKartica"/>
+				</action>
+				<action type="variable value">
+					<parameter name="global.$DatumDo" value="~dtDatumDefault.@DatumDoKartica"/>
+				</action>				
+		</event>
+		<layout name="panel1" type="collapsable">
+			<group rows="4" cols="4">
+				<item caption="Skladište" col="1" row="1" colspan="4">
+					<comboedit name="cmbSkt" dataname="~dtSkladiste" valuefield="SkladisteId" displayfield="OznakaOpis"/>
+				</item>
+				<item caption="Do datuma" col="1" row="2" colspan="4">
+					<dateedit name="datDatumDo">
+						<event type="valuechanged" raisonload="false">
+							<action type="datarun reader" value="~dtDatum"/>						
+							<action type="variable value">
+								<parameter name="global.$DatumOd" value="~dtDatum.@DatumOdKartica"/>
+							</action>
+							<action type="variable value">
+								<parameter name="global.$DatumDo" value="~dtDatum.@DatumDoKartica"/>
+							</action>
+						</event>
+					</dateedit>
+				</item>
+				<item caption="Roba" col="1" row="3" colspan="4">
+					<searchedit name="srcRoba"  type="roba" fieldvalue="RobaId" fieldtext="Naziv"/>
+				</item>
+				<item col="1" row="4">
+					<checkedit name="chkKlasa" caption="Klasa">
+						<event type="valuechanged">
+							<action type="control value" value="#chkIspod" if="#chkKlasa==False">
+								<parameter value="false"/>
+							</action>
+							<action type="control value" value="#cmbKlase" if="#chkKlasa==False">
+								<parameter value="null"/>
+							</action>
+							<action type="control disable" value="#chkIspod,#cmbKlase" if="#chkKlasa==False"/>
+							<action type="control enable" value="#chkIspod,#cmbKlase" else=""/>
+						</event>
+					</checkedit>
+				</item>
+				<item col="2" row="4" colspan="2">
+					<comboedit name="cmbKlase" dataname="~dtKlase" valuefield="SortKey" displayfield="Naziv"/>
+				</item>
+				<item col="4" row="4">
+					<checkedit name="chkIspod" caption="i ispod nje"/>
+				</item>
+			</group>
+		</layout>
+		<layout name="panel2">
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<grid name="grdGlavni" dataname="~dtGrid" type="master" savelayout="true" multiselect="true" bestfitonrefresh="true">
+						<event type="doubleclick">
+							<action type="form open" value="frmRobnaKartica">
+								<parameter name="IndGranula" value="1"/>
+								<parameter name="DatumOd" value="global.$DatumOd"/>
+								<parameter name="DatumDo" value="global.$DatumDo"/>
+								<parameter name="SkladisteId" value="#grdGlavni.@SkladisteId"/>
+								<parameter name="RobaId" value="#grdGlavni.@RobaId"/>							
+							</action>
+						</event>
+						<fields>
+							<field name="VrstaDokNaziv" caption="Vrsta dok."/>
+							<field name="Broj" caption="Broj dok."/>
+							<field name="DatumDok" caption="Datum dok."/>
+							<field name="SkladisteNaziv" caption="Skladište"/>
+							<field name="RobaNaziv" caption="Roba"/>
+							<field name="RobaDefKey" showgroupsum="false"/>
+							<field name="klMasterrobaNaziv" caption="Klasa"/>
+							<field name="JMNaziv" caption="JM"/>
+							<field name="KolicinaUlaz" caption="Količina Ulaz"/>
+							<field name="KolicinaIzlaz" caption="Količina Izlaz"/>
+							<field name="PartneriNaziv" caption="Partner"/>
+							<field name="TrgovinaNaziv" caption="Trgovina"/>
+							<field name="orgDok" caption="Izvorni Dokument"/>
+							<field name="Status" caption="Status dokumenta"/>							
+							<!-- <field name="Opis"/> -->
+						</fields>
+						<print caption="Neproknjiženi dokumenti" captionalign="center"/>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnIzracun" caption="Izračunaj">
+					<event type="click" waittype="progress" waitcaption="Obrada" waittext="Učitavanje stavaka..." sleep="2000">
+						<!-- <action type="datarun reader" value="~dtGrid"/> -->
+						<action type="control populate" value="#grdGlavni"/>
+						<action type="footer text" value="Broj stavki: {#grdGlavni.rowcount}"/>
+						<action type="panel collapse" value="panel1"/>
+					</event>
+				</button>
+				<button name="btnKartica" caption="Kartica">
+					<event type="click">
+						<action type="form open" value="frmRobnaKartica">
+							<parameter name="IndGranula" value="1"/>
+							<parameter name="DatumOd" value="global.$DatumOd"/>
+							<parameter name="DatumDo" value="global.$DatumDo"/>
+							<parameter name="SkladisteId" value="#grdGlavni.@SkladisteId"/>
+							<parameter name="RobaId" value="#grdGlavni.@RobaId"/>							
+						</action>
+					</event>
+				</button>
+				<button name="btnIspis" caption="Ispis         sučelja">
+					<event type="click">
+						<action type="control printcontrol" value="#grdGlavni"/>
+					</event>
+				</button>
+				<button name="btnIzlaz" caption="Izlaz" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnUputiMe" caption="Uputi me" dock="right">
+					<event type="click">
+						<action type="message" value="Ova funkcionalnost trenutno nije dostupna, molimo kontaktirajte Spin!"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtSkladiste" command="spSkladisteQueryCarpo">
+				<parameter name="@Action" value="0"/>
+			</data>
+			<data name="dtGrid" command="spCNezatvoreniIzlaz" timeout="400">
+				<parameter name="@Action" value="0"/> 
+				<parameter name="@skladisteid" value="#cmbSkt"/>
+				<parameter name="@DatumDo" value="#datDatumDo"/>
+				<parameter name="@robaid" value="#srcRoba"/> 
+				<parameter name="@KlRoba" value="#cmbKlase"/>
+				<parameter name="@KlRobaIspod" value="#chkIspod"/>
+			</data>
+			<data name="dtDatumDefault" command="spCNezatvoreniIzlazDatum">
+				<parameter name="@Datum" value="null"/>
+			</data>
+			<data name="dtDatum" command="spCNezatvoreniIzlazDatum">
+				<parameter name="@Datum" value="#datDatumDo"/>
+			</data>			
+			<data name="dtKlase" command="spKlMasterRobaQueryCarpo">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@klasifikacija" value=""/>
+			</data>
+		</datalist>
+	</form>
+</root>

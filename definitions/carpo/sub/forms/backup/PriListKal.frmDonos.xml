@@ -1,0 +1,176 @@
+<root>
+	<!--30.12.2019. AA IndGrupno za grupni donos narudžbenica-->
+	<form name="frmDonosNarStavke" caption="Donos s narudžbenice (stavke)" width="600" height="400" >
+		<event type="shown">
+
+        </event>	
+        <layout textposition="left" itemspadding="3">
+			<group groupbordervisible="false" cols="1" rows="2">
+				<item  row="1" col="1"  highlight="False" >
+					<grid  name="grdStavke" dataname="~dtStavke" showgroupsum="false" autopopulate="true" async="true" multiselect="true" savelayout="true">
+
+						
+						<!-- <data command="spNabPLKCarpoDonosNar" elseif="$IndGrupno==1"> -->
+							<!-- <parameter name="@Action"  value="2" /> -->
+							<!-- <parameter name="@PartneriId"  value="$partnerID" />		 -->
+							<!-- <parameter name="@CjenikIzbor"  value="2" />		 -->
+						<!-- </data> -->
+						<!-- <data command="spNabPLKCarpoDonosNar" else=""> -->
+							<!-- <parameter name="@Action"  value="1" /> -->
+							<!-- <parameter name="@PartneriId"  value="$partnerID" />		 -->
+							<!-- <parameter name="@CjenikIzbor"  value="2" />		 -->
+						<!-- </data> -->
+						
+						<fields inherited="false" >
+						<!-- fieldovi za NOTP -->
+				 			<field caption="Datum" name="DatumDok" if="$nazivForme==NOTP"></field>
+							<field caption="Broj otpremnice" name="Broj" if="$nazivForme==NOTP"></field>
+							<field caption="Partner" name="PartNaziv" if="$nazivForme==NOTP"></field>					
+							<field caption="Skladište" name="Skladiste" if="$nazivForme==NOTP"></field>
+							<field caption="Iznos(kn)" name="VrijednostSPDV" if="$nazivForme==NOTP"></field>
+							<field caption="Org.jedinica" name="OrgNaziv" if="$nazivForme==NOTP"></field>
+							<field caption="Vrsta dok" name="VrstaDok" if="$nazivForme==NOTP"></field>
+							<field caption="Opis" name="Memo" if="$nazivForme==NOTP"></field> 
+							<!-- fieldovi za donosa narudžbe -->
+							<field caption="Klasifikacija" name="Klasa" if="$nazivForme!=NOTP"></field>
+							<field caption="Šifra" name="UserId" if="$nazivForme!=NOTP"></field>
+							<field caption="Naziv robe" name="RobaNaziv" if="$nazivForme!=NOTP"></field>
+							<field caption="Količina" name="Kolicina" if="$nazivForme!=NOTP"></field>
+							<field caption="JM" name="RobaJM" if="$nazivForme!=NOTP"></field>
+							<field caption="Org.shema" name="OrgJedNaziv" if="$nazivForme!=NOTP"></field>
+							<field caption="Narudžba" name="Broj" if="$nazivForme!=NOTP"></field>
+<!-- 							<field caption="Narudžba" name="Broj" groupindex="0"></field> -->
+							<field caption="Datum narudžbe" name="DatumDok" if="$nazivForme!=NOTP"></field>
+							<field caption="Datum isporuke" name="NDatumIsporuke" if="$nazivForme!=NOTP"></field>
+							<field caption="Kod" name="rKod" if="$nazivForme!=NOTP"></field>
+						</fields>	
+					</grid>
+				</item>
+				<group cols="4" rows="1" col="1" row="2" if="$nazivForme!=NOTP">
+					<itemdefault highlight="False"/>
+					<item col="1" row="1">
+						<labeledit  value="Donesi cijene:"/>
+					</item>
+					<item col="2" row="1">
+						 <radioedit name="rdo1" caption="iz Dobavljivosti" value ="true"/>
+					</item>
+					<item col="3" row="1">
+						<radioedit name="rdo2" caption="s Narudžbe"/>
+					</item>
+					<item col="4" row="1">
+						<radioedit name="rdo3" caption="s posljednjeg ulaza"/>
+					</item>	
+				</group>
+			</group>
+		</layout>
+        <panelbuttons>
+            <buttons>
+                <button caption="&amp;Prenesi" name="btnDodaj" type="add" dock="right">
+                    <event type="click">					
+						 <action type="control foreachrow selected" value="#grdStavke">
+							<!-- pozovi storu za insert stavki -->
+							<action type="datarun nonquery" value="~dtDataInsert" if="$nazivForme!=NOTP&amp;&amp;$IndGrupno!=1"/>
+							<action type="datarun nonquery" value="~dtDataInsertMulti" elseif="$nazivForme!=NOTP&amp;&amp;$IndGrupno==1"/>
+							<action type="datarun nonquery" value="~dtDonosNOTP" else="$nazivForme==NOTP"/>
+							
+							<!-- pozovi UPDATE trosak -->
+							<!--zašto dva puta??? i zašto je odvojeno po uvjetima kad su isti datasetovi??-->
+							<action type="datarun nonquery" value="parent.~dtRasporediTroskove" if="#grdStavke.@devvaluteid==null&amp;&amp;$Tecaj&gt;1"/>
+							<action type="datarun nonquery" value="parent.~dtRasporediTroskove" if="#grdStavke.@devvaluteid==null&amp;&amp;$Tecaj&gt;1"/>
+							<action type="datarun nonquery" value="parent.~dtRasporediTroskove" elseif="#grdStavke.@devvaluteid!=null&amp;&amp;$Tecaj==1"/>
+							<action type="datarun nonquery" value="parent.~dtRasporediTroskove" elseif="#grdStavke.@devvaluteid!=null&amp;&amp;$Tecaj==1"/>			
+							<action type="datarun nonquery" value="parent.~dtRasporediTroskove" elseif="#grdStavke.@devvaluteid!=null&amp;&amp;$Tecaj&gt;1"/>
+							<action type="datarun nonquery" value="parent.~dtRasporediTroskove" elseif="#grdStavke.@devvaluteid!=null&amp;&amp;$Tecaj&gt;1"/>
+							<!-- dva puta pozivam zobog store i jer je tako u source safe vb kodu -->
+
+                        </action>
+                        <action type="form close" />
+					</event>
+                </button>
+                <button caption="&amp;Odustani"  dock="right" type="cancel"/>
+            </buttons>
+        </panelbuttons>
+        <datalist>
+			<data name="dtStavke" command="spNabPLKCarpoKalkDonosNOtp" if="$nazivForme==NOTP">
+				<parameter name="@Action"  value="0" />
+				<parameter name="@PartneriId"  value="$partnerID" />		
+			</data>						
+			<data name="dtStavke" command="spNabPLKCarpoDonosNar" elseif="$nazivForme==NAR-GRUPNO">
+				<parameter name="@Action" value="2" />
+				<parameter name="@PartneriId" value="$partnerID" />		
+				<parameter name="@CjenikIzbor" value="2" />		
+			</data>
+			<data name="dtStavke" command="spNabPLKCarpoDonosNar" else="$nazivForme==NAR-STAVKE">
+				<parameter name="@Action" value="1" />
+				<parameter name="@PartneriId" value="$partnerID" />		
+				<parameter name="@CjenikIzbor" value="2" />		
+			</data>		
+			<data command="spNabPLKCarpoDetAzur" name="dtDataInsert">
+				<parameter name="@Action" value="3" />
+				<parameter name="@NabPriGlaId" value="$NabPriGlaId" />
+				<parameter name="@RobaId" value="#grdStavke.@RobaId" />
+				<parameter name="@JmId" value="#grdStavke.@JmId" />
+				<parameter name="@Kolicina" value="#grdStavke.@Kolicina" type="decimal"/>
+				<parameter name="@Namjena" value="#grdStavke.@Namjena" />
+				<parameter name="@NabNarDetId" value="#grdStavke.@NabNarDetId" />
+				<parameter name="@Rabat" value="#grdStavke.@Rabat" />
+				<parameter name="@PartneriId" value="$partnerID" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+				<parameter name="@OsobeId" value="$OsobeId" />
+				<parameter name="@OrgShemaId" value="$OrgShemaId" />
+				<parameter name="@DatumDok" value="$DatumDok" />
+				<parameter name="@VrstaDokid" value="$VrstaDokid" />
+				<parameter name="@CjenikIzbor" value="1" if="#rdo1==true"/>
+				<parameter name="@CjenikIzbor" value="2" elseif="#rdo2==true"/>
+				<parameter name="@CjenikIzbor" value="3" else=""/>		
+				<!-- ako je devvaluteid null i valuta = true (tecaj > 1) -->
+				<parameter name="@devcijena" value="0" type="decimal" if="#grdStavke.@devvaluteid==null&amp;&amp;$Tecaj&gt;1"/>
+				<!-- ako devvaluteid nije null i valuta = true (tecaj > 1) -->
+				<parameter name="@devcijena" value="#grdStavke.@FakCijenaKn" type="decimal" elseif="#grdStavke.@devvaluteid!=null&amp;&amp;$Tecaj&gt;1"/>
+				<!-- ako devvaluteid nije null i valuta = false (tecaj = 1) -->
+				<parameter name="@devcijena" value="#grdStavke.@FakCijenaKn" type="decimal" elseif="#grdStavke.@devvaluteid!=null&amp;&amp;$Tecaj==1"/>				
+				<parameter name="@devcijena" value="0" type="decimal" else=""/>		
+				<!-- ako je devvaluteid null i valuta = true (tecaj > 1) -->
+				<parameter name="@fakcijenakn" value="#grdStavke.@FakCijenaKn" type="decimal"  if="#grdStavke.@devvaluteid==null&amp;&amp;$Tecaj&gt;1"/>
+				<!-- ako devvaluteid nije null i valuta = true (tecaj > 1) -->
+				<parameter name="@fakcijenakn" value="0" type="decimal"  elseif="#grdStavke.@devvaluteid!=null&amp;&amp;$Tecaj&gt;1"/>
+				<!-- ako devvaluteid nije null i valuta = false (tecaj = 1) -->
+				<parameter name="@fakcijenakn" value="0" type="decimal" elseif="#grdStavke.@devvaluteid!=null&amp;&amp;$Tecaj==1"/>
+				<parameter name="@fakcijenakn" value="#grdStavke.@FakCijenaKn" type="decimal" else=""/>						
+				<!-- ako je devvaluteid null i valuta = true (tecaj > 1) -->
+				<parameter name="@FakCijenaBod" value="#grdStavke.@FakCijenaBod" type="decimal"  if="#grdStavke.@devvaluteid==null&amp;&amp;$Tecaj&gt;1"/>		
+				<!-- ako devvaluteid nije null i valuta = false (tecaj = 1) -->
+				<parameter name="@FakCijenaBod" value="0" type="decimal" elseif="#grdStavke.@devvaluteid!=null&amp;&amp;$Tecaj==1"/>
+				<parameter name="@FakCijenaBod" value="#grdStavke.@FakCijenaBod" type="decimal" else=""/>				
+				<!-- ako devvaluteid nije null i valuta = true (tecaj > 1) -->
+				<parameter name="@CijenaKn" value="0" type="decimal" if="#grdStavke.@devvaluteid!=null&amp;&amp;$Tecaj&gt;1"/>		
+				<!-- ako devvaluteid nije null i valuta = false (tecaj = 1) -->
+				<parameter name="@CijenaKn" value="0" type="decimal" elseif="#grdStavke.@devvaluteid!=null&amp;&amp;$Tecaj==1"/>
+				<parameter name="@CijenaKn" value="#grdStavke.@CijenaKn" type="decimal" else=""/>			
+				<!-- ako devvaluteid nije null i valuta = false (tecaj = 1) -->
+				<parameter name="@CijenaBod" value="0" type="decimal" if="#grdStavke.@devvaluteid!=null&amp;&amp;$Tecaj==1"/>
+				<parameter name="@CijenaBod" value="#grdStavke.@CijenaBod" type="decimal" else=""/>				
+			</data >		
+			<data command="spNabPLKCarpoDetAzurMulti" name="dtDataInsertMulti">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@NabNarGlaId" value="#grdStavke.@NabNarGlaId"/>
+				<parameter name="@NabPriGlaId" value="$NabPriGlaId"/>
+				<parameter name="@PartneriId" value="$partnerID"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@OsobeId" value="$OsobeId"/>
+				<parameter name="@OrgShemaId" value="$OrgShemaId"/>
+				<parameter name="@DatumDok" value="$DatumDok"/>
+				<parameter name="@VrstaDokid" value="$VrstaDokid"/>
+				<parameter name="@CjenikIzbor" value="1" if="#rdo1==true"/>
+				<parameter name="@CjenikIzbor" value="2" elseif="#rdo2==true"/>
+				<parameter name="@CjenikIzbor" value="3" else=""/>
+			</data >						
+			<data command="spNabPLKCarpoKalkDonosNOtp" name="dtDonosNOTP">
+				<parameter name="@Action" value="1" />
+				<parameter name="@NabPriGlaId" value="$NabPriGlaId" />
+				<parameter name="@ProNotpGlaId" value="#grdStavke.@ProNOtpGlaId" />
+				<parameter name="@PartneriId" value="$partnerID" />	
+			</data>
+		</datalist>
+    </form>
+</root>

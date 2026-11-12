@@ -1,0 +1,172 @@
+<root>
+    <form type="master" caption="ComponentTracker" name="frmMain">
+
+    <method name="funComponentTrackerDownload" dll="ComponentTracker" class="ComponentTracker.Start" method="Download" />
+    <method name="funComponentTrackerUpload" dll="ComponentTracker" class="ComponentTracker.Start" method="Upload" />
+
+    <managerlayout>
+        <lookup name="filter">
+            <comboitem value="Komponente" />
+            <comboitem value="Partneri" />
+            <event type="valuechanged">
+                <action type="variable value" value="global.filter">
+                    <parameter value="#filter" />
+                </action>
+                <action type="control datasourceempty" value="#grdGlava"/>
+            </event>
+        </lookup>
+        <tree name="trTree" dataname="~dtNapuniDrvo" caption="Komponente" key="Id">
+            <event type="focusedrowchanged">
+                <action type="control populate" value="#grdGlava" />
+                <action type="control disable" value="#btnUredi" if="global.$filter!=Komponente||#grdGlava.rowcount==0"/>
+                <action type="control enable" value="#btnUredi" else="" />
+                <action type="control disable" value="#btnDownload" if="#grdGlava.rowcount==0"/>
+                <action type="control enable" value="#btnDownload" else="" />
+            </event>
+            <fields>
+                <field name="Naziv" />
+            </fields>
+        </tree>
+        <grid name="grdGlava" type="master" key="id" bestfitonrefresh="true" dataname="~dtNapuniGlavu" multiselect="false" showmenutools="false" showmenuprintitem="false" >		            
+            <event type="focusedrowchanged">
+                <action type="variable value" value="global.versionId">
+                    <parameter value="#grdGlava.@id" if="global.$filter==Komponente"/>
+                    <parameter value="#grdGlava.@VersionId" if="global.$filter==Partneri"/>
+                </action>
+            </event>
+            <fields inherited="true">
+                <field name="Status" visible="false" if="global.$filter==Komponente"/>
+                <field name="Description" caption="Status" if="global.$filter==Komponente"/>
+                <field name="VersionNo" caption="Verzija" if="global.$filter==Komponente"/>
+                <field name="Publisher" caption="Objavio" if="global.$filter==Komponente"/>
+                <field name="Reviewer" caption="Recenzent" if="global.$filter==Komponente"/>
+                <field name="PublishDate" caption="Datum objave" if="global.$filter==Komponente"/>
+				<field name="Memo" minwidth="300" maxwidth="801"/>
+				<field name="DeploymentHint" caption="DeploymentHint" if="global.$filter==Komponente"/>
+				
+            </fields>
+            <styles>
+                <style name="fontcolor" value="gray" if="#grdGlava.@Status==1" />
+                <style name="fontcolor" value="red" if="#grdGlava.@Status==2" />
+                <style name="fontcolor" value="green" if="#grdGlava.@Status==4" />
+                <style name="fontcolor" value="orange" if="#grdGlava.@Status==3" />
+            </styles>
+            <event type="doubleclick">
+                <action type="method run" value="funComponentTrackerDownload">
+                    <parameter name="versionId" value="#grdGlava.@id" if="global.$filter==Komponente"/>
+                    <parameter name="versionId" value="#grdGlava.@VersionId" if="global.$filter==Partneri"/>
+                </action>                
+            </event>
+        </grid>
+    </managerlayout>
+    <panelbuttons>
+        <buttons>
+            <button name="btnDownload" caption="Preuzmi">
+                <event type="click">
+                    <action type="method run" value="funComponentTrackerDownload">
+                        <parameter name="versionId" value="#grdGlava.@id" if="global.$filter==Komponente"/>
+                        <parameter name="versionId" value="#grdGlava.@VersionId" if="global.$filter==Partneri"/>
+                    </action>
+                </event>
+            </button>
+            <button name="btnUpload" caption="Dodaj">
+                <event type="click">
+                    <action type="method run" value="funComponentTrackerUpload" if="global.$filter==Komponente">
+                        <parameter name="componentId" value="#trTree.@Id" />
+                        <action type="control populate keepfocus" value="#grdGlava"/>
+                    </action>
+                    <action type="form open" value="frmAddComponentPartner" else="" />
+                    <action type="control enable" value="#btnDownload, #btnObrisi" if="#grdGlava.rowcount!=0&amp;global.$filter==Komponente" />
+                    <action type="control disable" value="#btnUredi" if="#grdGlava.rowcount==0||global.$filter==Partneri" />
+                    <action type="control enable" value="#btnUredi" else="" />
+                </event>
+            </button>
+            <button name="btnDodajBezPriloga" caption="Dodaj bez priloga">
+                <event type="click">
+                    <action type="form open" value="frmDodajBezPriloga"/>
+                </event>
+				<action type="control enable" value="#btnDownload, #btnObrisi" if="#grdGlava.rowcount!=0&amp;global.$filter==Komponente" />
+				<action type="control disable" value="#btnUredi" if="#grdGlava.rowcount==0||global.$filter==Partneri" />
+				<action type="control enable" value="#btnUredi" else="" />
+            </button>
+            <button name="btnObrisi" caption="Obriši" function="obrisi" enabled="false">
+                <event type="click">
+                    <action type="confirm" value="Želite li sigurno obrisati ovu stavku?">
+                        <action type="datarun nonquery" value="dtObrisi" />
+                        <action type="control populate" value="#grdGlava" />
+                        <action type="control disable" value="#btnDownload, #btnObrisi, #btnUredi" if="#grdGlava.rowcount==0" />
+                    </action>
+                </event>
+            </button>
+            <button name="btnUredi" caption="Uredi">
+                <event type="click">
+                    <action type="form open" value="frmUredi" />
+                </event>
+            </button>
+            <button name="btnQualityControl" caption="Quality control" dock="right">
+                <event type="click">
+                    <action type="form open" value="frmQualityControl" />
+                </event>
+            </button>
+            <button name="btnDodajPartnera" caption="Šifrarnik partnera" dock="right">
+                <event type="click">
+                    <action type="form open" value="frmSifrarnikPartnera" />
+                </event>
+            </button>
+            <button name="btnDodajPartnera" caption="Šifrarnik komponenti" dock="right">
+                <event type="click">
+                    <action type="form open" value="frmSifrarnikKomponenti" />
+                </event>
+            </button>
+            <button name="btnNotifikacije" caption="Mailing lista" dock="right">
+                <event type="click">
+                    <action type="form open" value="frmMailingLista" />
+                </event>
+            </button>
+            <button name="btnPovijest" caption="Povijest instalacija" dock="right">
+                <event type="click">
+                    <action type="form open" value="frmWhereInstalled" />
+                </event>
+            </button>
+        </buttons>
+    </panelbuttons>
+    <datalist>
+        <data command="spComponentTracker" name="dtNapuniDrvo">
+            <parameter name="@Action" value="getTree" />
+            <parameter name="@VrstaDrveta" value="Komponente" if="global.$filter==Komponente" />
+            <parameter name="@VrstaDrveta" value="Partneri" else="" />
+        </data>
+        <data command="spComponentTracker" name="dtNapuniGlavu">
+            <parameter name="@Action" value="getGlava" />
+            <parameter name="@VrstaDrveta" value="Komponente" if="global.$filter==Komponente" />
+            <parameter name="@VrstaDrveta" value="Partneri" else="" />
+            <parameter name="@CustomerId" value="#trTree.@Id" if="global.$filter==Partneri" />
+            <parameter name="@ComponentId" value="#trTree.@Id" else="" />
+        </data>
+        <data command="spComponentTracker" name="dtObrisi">
+            <parameter name="@Action" value="delete" />
+            <parameter name="@VrstaDrveta" value="Komponente" if="global.$filter==Komponente" />
+            <parameter name="@VrstaDrveta" value="Partneri" else="" />
+            <parameter name="@VersionId" value="#grdGlava.@id" if="global.$filter==Komponente"/>
+            <parameter name="@InstallId" value="#grdGlava.@id" if="global.$filter==Partneri" />
+        </data>
+        <data command="spComponentTracker" name="dtSendMail">
+            <parameter name="@Action" value="sendMail" />
+            <parameter name="@VersionId" value="global.$versionId" />
+        </data>
+    </datalist>
+    </form>
+	
+    <form name="frmDodajBezPriloga" path="frmDodajBezPriloga.xml"/>
+    <form name="frmAddComponentPartner" path="frmAddComponentPartner.xml"/>
+    <form name="frmUredi" path="frmUredi.xml"/>
+    <form name="frmWhereInstalled" path="frmWhereInstalled.xml"/>
+    <form name="frmSifrarnikPartnera" path="frmSifrarnikPartnera.xml"/>
+    <form name="frmSifrarnikKomponenti" path="frmSifrarnikKomponenti.xml"/>
+    <form name="frmDodajPartnera" path="frmDodajPartnera.xml"/>
+    <form name="frmDodajKomponentu" path="frmDodajKomponentu.xml"/>
+    <form name="frmQualityControl" path="frmQualityControl.xml" />
+    <form name="frmDodajQcInfo" path="frmDodajQcInfo.xml" />
+    <form name="frmMailingLista" path="frmMailingLista.xml" />
+    
+</root>

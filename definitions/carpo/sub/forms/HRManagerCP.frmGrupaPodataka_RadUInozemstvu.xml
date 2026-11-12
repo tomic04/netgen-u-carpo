@@ -1,0 +1,214 @@
+<root>
+	<!--
+  Komentari:
+  4.11.2025. MP - PERMISSION -> FUNCTION NAME
+  09.11.2021. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmRadUInozemstvu" caption="Rad u inozemstvu za {parent.#txtPrezime} {parent.#txtIme}" width="850" height="350" >
+		<event type="load">
+			<action type="control populate" value="#grdInoRad"/>		
+			<action type="control disable" value="#btnIzmjena,btnBrisanje" if="#grdInoRad.rowcount==0"/>
+
+		</event>
+		<layout>
+			<group cols="1" rows="2" groupbordervisible="false">
+				<group cols="1" rows="1" groupbordervisible="true" col="1" row="1" spacing="2,2,2,1">
+					<item row="1" col="1" highlight="false">
+						<grid name="grdInoRad" key="HRKadroviInoRadId" dataname="~dtInoRad" fieldsmartspaces="false" multiselect="true" savelayout="true" showgrouppanel="false" bestfitonrefresh="true">
+							<fields inherited="true">
+							</fields>
+							<event type="doubleclick">
+								<action type="form open" value="frmUnosIzmjenaRadUInozemstvu" function="IZMJENA_INORAD">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviInoRadId" value="#grdInoRad.@HRKadroviInoRadId" />	
+									<parameter name="Caption" value="Izmjena za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdInoRad"/>
+								<action type="control populate" value="parent.#grdPodaci"/>	
+							</event>
+						</grid>
+					</item>
+				</group>
+				<group cols="8" rows="1" groupbordervisible="true" col="1" row="2" spacing="2,2,1,2">
+					<item row="1" col="1" highlight="false" height="40">
+						<button name="btnUnos" caption="Unos" function="UNOS_INORAD"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaRadUInozemstvu"> 
+									<parameter name="Caption" value="Unos za {parent.#txtPrezime} {parent.#txtIme}"/>		
+									<parameter name="HRKadroviInoRadId" value="0"/>   
+									<parameter name="HRKadroviId" value="$HRKadroviId" />	
+
+								</action>  
+								<action type="control populate keepfocus" value="#grdInoRad"/>
+								<action type="control populate" value="parent.#grdPodaci"/>	
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="2" highlight="false" height="40" >
+						<button name="btnIzmjena" caption="Izmjena" function="IZMJENA_INORAD"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaRadUInozemstvu">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviInoRadId" value="#grdInoRad.@HRKadroviInoRadId" />	
+									<parameter name="Caption" value="Izmjena za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdInoRad"/>
+								<action type="control populate" value="parent.#grdPodaci"/>	
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="3" highlight="false" height="40">
+						<button name="btnBrisanje" caption="Brisanje" function="BRISANJE_INORAD"> 
+							<event type="click">   
+								<action type="confirm" value="Jeste li sigurni da želite obrisati izabrani zapis?">
+									<action type="datarun nonquery" value="~dtBrisanjeInoRad">
+
+									</action>
+								</action>
+								<action type="control populate" value="#grdInoRad,parent.#grdPodaci"></action>    
+								<action type="control disable" value="#btnIzmjena,btnBrisanje" if="#grdInoRad.rowcount==0"/>
+							</event>  
+						</button>
+					</item>
+
+					<item row="1" col="4" colspan="4" highlight="false" height="40"/>
+					<item row="1" col="8" highlight="false" height="40">
+						<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+							<event type="click">
+								<action type="form close" />
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+
+		</layout>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_RadUInozemstvu_CP" name="dtInoRad">
+				<parameter name="@action" value="grid_InoRad" />
+				<parameter name="@hrkadroviid" value="$HRKadroviId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_RadUInozemstvu_CP" name="dtBrisanjeInoRad">
+				<parameter name="@action" value="brisanje"/>
+				<parameter name="@HRKadroviInoRadId" value="#grdInoRad.@HRKadroviInoRadId"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!-- FORMA ZA UNOS,IZMJENU-->
+	<form name="frmUnosIzmjenaRadUInozemstvu" caption="$Caption" width="380" height="390" fixedsize="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtGetInoRad" if="$HRKadroviInoRadId!=0" />
+		</event>
+		<event type="shown">
+			<!-- AKO JE IZMIJENA, POPUNI KONTROLE-->
+			<action if="$Tip=='Izmjena'">
+				<action type="control disable" value="#dtZavrsetak" if="~dtGetInoRad.@datumdo==null"></action>
+				<action if="~dtGetInoRad.@datumdo==null">
+					<action type="control value" value="#dtZavrsetak" >
+						<parameter value="now" />
+					</action>
+				</action>
+			</action>
+		</event>
+		<layout>
+			<group cols="2" rows="6" groupbordervisible="true">
+				<item row="1" col="1" caption="Početak rada:" highlight="false" >
+					<dateedit name="dtPocetak" value="now" allownull="false" datavalue="~dtGetInoRad.@datumod">
+					</dateedit>
+				</item>
+				<item row="2" col="1" caption="Završetak rada:" highlight="false" >
+					<dateedit name="dtZavrsetak" value="now" allownull="true" datavalue="~dtGetInoRad.@datumdo">
+					</dateedit>
+				</item>
+				<item row="3" col="1" caption="Država:" highlight="false" colspan="2">
+					<textedit name="txtDrzava" required="true" datavalue="~dtGetInoRad.@drzava"/> 
+				</item>
+				<item row="4" col="1" caption="Mjesto:" highlight="false" colspan="2">
+					<textedit name="txtMjesto" required="true" datavalue="~dtGetInoRad.@mjesto"/> 
+				</item>
+				<item row="5" col="1" caption="Napomena:" highlight="false" rowspan="2" colspan="2">
+					<memoedit name="memNapomena"  datavalue="~dtGetInoRad.@napomena">
+					</memoedit>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+						<action type="validate"/>
+						<action if="$HRKadroviInoRadId==0">
+							<action type="datarun reader" value="~dtUnos">
+								<action type="control populate" value="parent.#grdInoRad">
+									<action type="control focus" value="parent.#grdInoRad">
+										<parameter value="$noviID"/>
+									</action>
+								</action>
+							</action>
+							<action type="control enable" value="parent.#btnIzmjena,parent.#btnBrisanje"/>
+						</action>
+						<action if="$indGreske==0">
+							<action type="message" value="Uspješno spremljeno!"/>
+							<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+							<action type="variable value" value="global.$RefreshajMaster">
+								<parameter value="1" type="int"/>
+							</action>
+							<action type="form close" />
+						</action>
+						<action if="$HRKadroviInoRadId!=0">
+							<action type="datarun reader" value="~dtIzmjena"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+								<action type="variable value" value="global.$RefreshajMaster">
+									<parameter value="1" type="int"/>
+								</action>
+								<action type="form close"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_RadUInozemstvu_CP" name="dtGetInoRad">
+				<parameter name="@action" value="getInoRad" />
+				<parameter name="@HRKadroviInoRadId" value="$HRKadroviInoRadId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_RadUInozemstvu_CP" name="dtUnos">
+				<parameter name="@action" value="unos"/>
+				<parameter name="@HRKadroviInoRadId.output.int" variablename="noviID"></parameter>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@Mjesto"  value="#txtMjesto" />
+				<parameter name="@Drzava"  value="#txtDrzava" />
+				<parameter name="@datumod"  value="#dtPocetak" />
+				<parameter name="@datumdo"  value="#dtZavrsetak" />
+				<parameter name="@napomena"  value="#memNapomena" />
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<data  command="spHRManagerMaster_Podaci_RadUInozemstvu_CP" name="dtIzmjena">
+				<parameter name="@action" value="izmjena"/>
+				<parameter name="@HRKadroviInoRadId" value="$HRKadroviInoRadId"/>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@Mjesto"  value="#txtMjesto" />
+				<parameter name="@Drzava"  value="#txtDrzava" />
+				<parameter name="@datumod"  value="#dtPocetak" />
+				<parameter name="@datumdo"  value="#dtZavrsetak" />
+				<parameter name="@napomena"  value="#memNapomena" />
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+</root>

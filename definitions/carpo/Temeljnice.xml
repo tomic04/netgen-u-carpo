@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+21.3.2024. AA HD88298 dodala SifraPartnera
+09.05.2023. IF dodao NazivKonta u grdDetail
+11.10.2022. SV timeout="500" na dtDeleteGlava 
+17.1.2022. AA uklonjen fontsizedelta
+24.12.2021. SV dodao sakrivan ispis zbog Zita
+22.9.2021. AA temp bugfix sume na grupama novi carpo
+8.4.2021. AA vratila btnIspis za ispis sučelja detalja - Setcor
+25.01.2021. IF ispis RPXa na buttonu ISPIS
+18.12.2020. AA partsql TemObrisi MIP dodatni confirm za izvode HD61227
+16.10.2020. AA partsql datasetovi iz ure za slučaj unosa ure preko temeljnice
+21.7.2020. AA loglevel 5 da ne vrati dva puta istu grešku na prikazu
+11.3.2020. AA kolona KljucTroska
+14.1.2020. AA uklonjen fixwidth kako bi radio best fit
+25.9.2019. AA permission na obrisi (gumb i shortcut)
+3.5.2019.  AA control expand drveta prebačen u control populate kako se ne bi punjenje grida okidalo 2 puta
+21.08.2018 PJ dodao BrojTemeljnice u detalj grid i automatsko grupiranje po njemu radi ispisa
+postavljen loglevel 4, izgleda bolje od 3-->
+<root version="1.0.0.5" loglevel="5">
+	<form name="frmTemGlava" path="Temeljnice.frmTemGlava.xml"/> 
+	<form name="frmTemGlavaEdit" path="Temeljnice.frmTemGlavaEdit.xml"/>
+	<form name="frmTemStorno" path="Temeljnice.frmTemStorno.xml"/>
+	<form name="frmTemKopiraj" path="Temeljnice.frmTemKopiraj.xml"/>
+	<form name="frmTemEdit" path="Temeljnice.frmTemEdit.xml"/>
+	<form name="frmTemStavka" path="Temeljnice.frmTemStavka.xml"/>
+	<form name="frmTemStavkaEdit" path="Temeljnice.frmTemStavkaEdit.xml"/>
+	<form name="frmTemIra" path="Temeljnice.frmTemIra.xml"/>
+	<form name="frmTemUra" path="Temeljnice.frmTemUra.xml"/>
+	<form name="frmTemKntOstalo" path="Temeljnice.frmTemKntOstalo.xml"/>
+	<form name="frmTemBezKnjigePdv" path="Temeljnice.frmTemBezKnjigePdv.xml"/>
+	<form name="frmKnjigaUraInsert" path="KnjigaUra.frmKnjigaUraInsert.xml"/>
+	<form name="frmKnjigaIraInsert" path="KnjigaIra.frmKnjigaIraInsert.xml"/>
+	<form name="frmKnjigaUraRSInsert" path="KnjigaUraRS.frmKnjigaUraRSInsert.xml"/>
+	<form name="frmKnjigaIraRSInsert" path="KnjigaIraRS.frmKnjigaIraRSInsert.xml"/>	
+	<form name="frmTemProPonGla" path="Temeljnice.frmTemProPonGla.xml"/>
+	<form name="frmMaster" type="master" caption="Temeljnice">
+		<event type="init">
+			<action type="datarun reader" value="~dtDrvoPozicija" />
+			<action type="datarun reader" value="~dtDrvoPozicija1" />
+			<!--ako potreban fokus na posljednji unos, otkomentirati ovo-->
+			<!-- <action type="datarun reader" value="~dtDrvoZadnjiUnos"/> -->
+			<action type="datarun reader" value="~dtBlokada" />	
+			<action type="datarun reader" value="~dtISPISprikaz" >
+
+			</action>
+			<action type="variable value" >
+				<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date" />
+				<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date" />
+				<parameter name="Global.$Sifra" value="0" type="int"/>
+				<parameter name="VrsteDok" value="false" type="bool"/>
+				<parameter name="Izadji" value="false" type="bool"/>
+				<parameter name="PermissionObrisi" value="1" type="int"/>
+				<!--TEMP BUGFIX SUME NA GRUPAMA-->
+				<parameter name="IndSume" value="0" type="int"/>
+				<!--TEMP BUGFIX SUME NA GRUPAMA-->
+				<!-- dodan sakrivan ispis zbog Zita -->
+				<parameter name="Global.$IspisPrikaz" value="~dtISPISprikaz.@IspisPrikaz" type="int" />
+				<!-- dodan sakrivan ispis zbog Zita -->
+			</action>
+			<action type="datarun scalar" value="~dtPermissionObrisi">
+				<parameter name="PermissionObrisi"/>
+			</action>
+
+			<!-- <action type="control populate" value="#grdGlava"/> -->
+		</event>
+		<event type="load">
+			<action type="variable value" >
+				<parameter name="NoviId" value="0" type="int"/>
+			</action>        
+			<action type="variable value" >
+				<parameter name="Global.$KntTemId" value="#grdGlava.@KntTemid" type="int" if="#grdGlava.rowcount!=0"/>
+			</action> 
+			<!-- dodan sakrivan ispis zbog Zita ako stora vrati 1 ne vidi se ISPISI -->
+			<action type="control visible" value="#btnIspis" if="global.$IspisPrikaz==1" >
+				<parameter  value="false"/>
+			</action>  
+			<!-- dodan sakrivan ispis zbog Zita -->
+		</event>
+		<event type="shown"> 		
+			<action type="variable value">
+				<parameter name="DodatnoTemp" value="" type="string"/>						
+			</action>
+			<action type="control focus" value="#grdGlava"/>
+		</event>
+		<managerlayout>
+			<lookup name="filter" savevalue="app">
+				<!-- COMBO FILTER IZNAD DRVETA -->
+				<!--searchfield na svaki comboitem u filteru, a ako ne postoji filter onda samo jedan searchfield na drvetu-->
+				<comboitem value="Moje temeljnice" searchfield="MojeKeyId" />
+				<comboitem value="Neproknjižene"  searchfield="NeproknjizeneKeyId"/>
+				<comboitem value="Sa saldom" searchfield="SaSaldomKeyId"/>
+				<comboitem value="Vrste dokumenata" searchfield="VrstaDokKeyId"/>
+				<event type="valuechanged">
+					<action type="control populate" value="#tree" > 
+						<action type="control expand" value="#tree">				
+							<parameter name="key" value="~dtDrvoPozicija.@Poz" type="string" if="#filter==Moje temeljnice" />
+							<!--ako potreban fokus na posljednji unos, otkomentirati ovo-->
+							<!-- <parameter name="key" value="~dtDrvoZadnjiUnos.@Poz" type="string" if="#filter==Moje temeljnice"/>						 -->
+							<parameter name="key" value="~dtDrvoPozicija1.@Poz" type="string" elseif="#filter==Neproknjižene" />
+							<parameter name="key" value="~dtDrvoPozicija.@Poz" type="string" elseif="#filter==Sa saldom" />
+							<!--ako potreban fokus na posljednji unos, otkomentirati ovo-->
+							<!-- <parameter name="key" value="~dtDrvoZadnjiUnos.@Poz" type="string" if="#filter==Sa saldom"/>						 -->
+							<parameter name="key" value="~dtDrvoPozicija1.@Poz" type="string" elseif="#filter==Vrste dokumenata" />						
+							<parameter name="level" value="1" type="int" />
+						</action>					
+						<!-- <action type="control focus" value="#tree"> -->
+						<!-- <parameter value="~dtDrvoPozicija.@Poz" type="string" if="#filter==Moje temeljnice" /> --><!--focus trenutni mjesec-->
+						<!-- <parameter value="~dtDrvoZadnjiUnos.@Poz" type="string" if="#filter==Moje temeljnice"/> -->
+						<!-- <parameter value="~dtDrvoPozicija1.@Poz" type="string" elseif="#filter==Neproknjižene" /> -->
+						<!-- <parameter value="~dtDrvoPozicija.@Poz" type="string" elseif="#filter==Sa saldom" /> -->
+						<!-- <parameter value="~dtDrvoZadnjiUnos.@Poz" type="string" if="#filter==Sa saldom"/>							 -->
+						<!-- <parameter value="~dtDrvoPozicija1.@Poz" type="string" elseif="#filter==Vrste dokumenata" /> -->
+						<!-- </action>         -->
+					</action>
+					<action type="variable value" value="$VrsteDok" if="#filter!=Vrste dokumenata">
+						<parameter value="false" type="bool" />
+					</action>
+					<action type="variable value" value="$VrsteDok" else="">
+						<parameter value="true" type="bool"/>
+					</action>					
+				</event>
+			</lookup>
+			<tree name="tree" dataname="~dtDrvo" autopopulate="false" filtermode="smart" keyfield="Id" parentfield="ParentId">
+				<event type="focusedrowchanged">
+					<!--TEMP BUGFIX SUME NA GRUPAMA-->
+					<action type="variable value">	
+						<parameter name="IndSume" value="1" type="int"/>				
+					</action>					
+					<action type="control populate" value="#grdGlava"/>
+					<action type="variable value">	
+						<parameter name="IndSume" value="0" type="int"/>				
+					</action>			
+					<!--TEMP BUGFIX SUME NA GRUPAMA-->					
+					<action type="control populate" value="#grdGlava"/>      
+					<action type="control enable" value="#btnIzmijeni,#btnObrisi,#btnStorniraj,#btnKopiraj,btnZak,btnSpec" if="#grdGlava.rowcount!=0" />
+					<action type="control disable" value="#btnIzmijeni,#btnObrisi,#btnStorniraj,#btnKopiraj,btnZak,btnSpec" if="#grdGlava.rowcount==0" />	
+				</event>
+				<fields>
+					<field name="Name"/>
+				</fields>
+			</tree>
+			<grid name="grdGlava" allowcopycell="true"  dataname="~dtGlava" type="master" async="true" key="KntTemId" multiselect="true" savelayout="true" keyfield="KntTemId" searchfield="KntTemId" wordwrap="true" cleargridfilter="true" printorientation="portrait" bestfitonrefresh="false"> 
+				<event type="focusedrowchanged">
+					<action type="control disable" value="#btnIzmijeni,#btnObrisi,#btnStorniraj,#btnKopiraj,btnZak,btnSpec" if="#grdGlava.@KntTemId==null"/>
+					<action type="control enable" value="#btnIzmijeni,#btnObrisi,#btnStorniraj,#btnKopiraj,btnZak,btnSpec" elseif="#grdGlava.@KntTemId!=null"/>
+					<action type="datarun reader" value="~dtStorno" />
+					<action type="variable value" >
+						<parameter name="Global.$KntTemId" value="#grdGlava.@KntTemid" type="int" if="#grdGlava.rowcount!=0"/>
+						<parameter name="Global.$Sifra" value="~dtStorno.@Sifra" type="int" if="#grdGlava.rowcount!=0"/>
+						<parameter name="Global.$VrstaDokId" value="#grdGlava.@VrstaDokId" type="int" if="#grdGlava.rowcount!=0"/>
+					</action>	
+					<!--TEMP BUGFIX SUME NA GRUPAMA-->					
+					<action type="variable value">	
+						<parameter name="IndSume" value="1" type="int"/>				
+					</action>					
+					<action type="control populate" value="#grdDetail"/>
+					<action type="variable value">	
+						<parameter name="IndSume" value="0" type="int"/>				
+					</action>
+					<!--TEMP BUGFIX SUME NA GRUPAMA-->
+					<action type="control populate" value="#grdDetail"/>
+				</event>
+				<event type="doubleclick">
+					<action if="#grdGlava.rowcount!=0">
+						<part name="prtTemIzmijeni" path="prtTemeljnice.xml"/>
+					</action>				
+				</event>	
+				<event type="keydown">
+					<!--DELETE-->
+					<action if="key==46&amp;&amp;$PermissionObrisi!=0">
+						<action if="#grdGlava.rowcount!=0">
+							<part name="prtTemObrisi" path="prtTemeljnice.xml"/>
+						</action>
+					</action>
+					<!--INSERT-->
+					<action if="key==45">
+						<part name="prtTemUnesi" path="prtTemeljnice.xml"/>							
+					</action>
+					<!--ENTER-->
+					<action if="key==13">
+						<action if="#grdGlava.rowcount!=0">
+							<part name="prtTemIzmijeni" path="prtTemeljnice.xml"/>
+						</action>
+					</action>
+				</event>				
+				<menu>
+					<menuitem name="menOsvjezi" caption="Osvježi grid" sort="1">
+						<event type="click">
+							<action type="control populate" value="#grdGlava"/>
+						</event>
+					</menuitem>
+					<menuitem name="menZaglavlje" caption="Izmijeni zaglavlje" sort="2">
+						<event type="click">
+							<!--BLOKADA-->
+							<action type="datarun reader" value="~dtBlokada" />		
+							<action type="variable value" >
+								<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date" />
+								<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date" />
+							</action>
+							<action type="datarun reader" value="~dtBlokadaShow" />
+							<!-- BLOKADA KOD izmjene zaglavlja-->
+							<action type="message" value="Temeljnica je izvan dopuštenog razdoblja knjiženja!" 
+							              if="~dtBlokadaShow.@datumknjizenja&lt;Global.$BlokadaOd||~dtBlokadaShow.@datumknjizenja&gt;Global.$BlokadaDo"/>
+							<action type="message" value="Temeljnica {#grdGlava.@Opis} - {#grdGlava.@BrojDok} je zaključena." elseif="#grdGlava.@Status!=N"/>
+							<action type="form open" value="frmTemGlavaEdit"  else="">
+								<parameter name="KntTemid" value="#grdGlava.@KntTemid" />
+								<parameter name="VrstaDokId" value="#grdGlava.@VrstaDokId" />
+								<parameter name="DatumKnjizenja" value="#grdGlava.@DatumKnjizenja" type="date" />
+								<action type="control populate keepfocus" value="#grdGlava" />
+							</action>
+						</event>
+					</menuitem>	
+					<menuitem name="menZakljucak" caption="Zaključi" sort="3">
+						<event type="click">
+							<part name="prtTemZakljuci" path="prtTemeljnice.xml"/>
+						</event>
+					</menuitem>
+					<menuitem name="menPonZakljucak" caption="Poništi zaključak" sort="4" function="PonistiZakljucak">
+						<event type="click">
+							<!--BLOKADA-->
+							<action type="datarun reader" value="~dtBlokada" />		
+							<action type="variable value" >
+								<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date" />
+								<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date" />
+							</action>
+							<action type="datarun reader" value="~dtBlokadaShow" />
+							<!-- BLOKADA KOD poništi zaključak-->
+							<action type="message" value="Temeljnica je izvan dopuštenog razdoblja knjiženja!" if="~dtBlokadaShow.@datumknjizenja&lt;Global.$BlokadaOd||~dtBlokadaShow.@datumknjizenja&gt;Global.$BlokadaDo"/>
+							<action type="datarun nonquery" value="~dtPonistiZakljucak" else="">
+								<action type="control populate keepfocus" value="#grdGlava" />
+							</action>
+						</event>							
+					</menuitem>	
+				</menu>				
+				<fields>
+					<field name="status" caption="S" />
+					<field name="opis" caption="Vrsta dokumenta"/>
+					<field name="brojdok" caption="Broj\ndokumenta"/>
+					<field name="datumknjizenja" caption="Datum knjiženja"/>
+					<field name="duguje" caption="Duguje" showsum="true"/>
+					<field name="potrazuje" caption="Potražuje" showsum="true"/>
+					<field name="saldo" caption="Saldo" showsum="true"/>
+					<field name="razmak" caption=" " />
+					<field name="devdug" caption="Duguje\ndevizno"/>
+					<field name="devpot" caption="Potražuje\ndevizno"/>
+					<field name="partner" caption="Partner"/>
+				</fields>
+				<styles>
+					<style name="fontcolor" value="red" if="#grdGlava.@Saldo!=0" />
+					<style name="fontcolor" value="green" if="#grdGlava.@Status!=N" />
+					<style name="fontcolor" value="black" if="#grdGlava.@Status==N&amp;&amp;#grdGlava.@Saldo==null" /> 
+				</styles>
+				<print  caption="{#filter}"
+						captionalign="center"
+						header="\n{#tree.@ParentId}\n{#tree.@Name}\n"
+						headeralign="center"/>
+			</grid>
+			<grid name="grdDetail"  dataname="~dtDetail" showgrouppanel="false"  showautofilterrow="true" multiselect="true" expandallonload="true" savelayout="true" key="KntPrometId" wordwrap="true" cleargridfilter="true" printorientation="portrait">
+				<event type="doubleclick">
+					<!--BLOKADA-->
+					<action type="datarun reader" value="~dtBlokada" />		
+					<action type="variable value" >
+						<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date" />
+						<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date" />
+					</action>				
+					<action type="datarun reader" value="~dtBlokadaShow" />
+					<!-- BLOKADA KOD ULASKA U EDIT-->
+					<action type="message" value="Temeljnica je izvan dopuštenog razdoblja knjiženja!" 
+						    if="~dtBlokadaShow.@datumknjizenja&lt;Global.$BlokadaOd||~dtBlokadaShow.@datumknjizenja&gt;Global.$BlokadaDo"/>
+					<action type="form open" value="frmTemEdit" else="">
+						<parameter name="KntTemid" value="#grdGlava.@KntTemid" />
+						<parameter name="DatumKnjizenja" value="#grdGlava.@DatumKnjizenja" type="date" />
+						<!--za ulaz u frmstavkaEdit-->
+						<parameter name="DoubleClick" value="1"/>
+						<parameter name="KntPrometId" value="#grdDetail.@KntPrometId"/>
+					</action>						
+					<action type="control populate keepfocus" value="#grdGlava"/>				
+				</event>				
+				<fields>
+					<field name="KntPrometId" caption="KntPrometId" hidden="true" />
+					<field name="BrojTemeljnice" caption="Temeljnica"  hidden="true" groupindex="0"/>
+					<field name="Konto" caption="Konto" fixed="left"/>
+					<field name="Naziv" caption="Naziv" fixed="left"/>
+					<field name="Opis" caption="Opis"/>
+					<field name="duguje" caption="Duguje" showsum="true"/>
+					<field name="potrazuje" caption="Potražuje" showsum="true"/>
+					<field name="Broj" caption="Račun"/>
+					<field name="DatumDokumenta" caption="Datum dokumenta"/>
+					<field name="DatumValute" caption="Datum valute"/>
+					<field name="Ufa" caption="Ufa" />
+					<field name="OrgShemaNaziv" caption="Organizacijska\nshema"/>
+					<field name="NacinPlac" caption="Način plaćanja"/>
+					<field name="devdug" caption="Duguje\ndevizno"/>
+					<field name="devpot" caption="Potražuje\ndevizno"/>
+					<field name="Valuta" caption="Valuta"/>
+					<field name="Dimenzija" caption="Dimenzija"/>
+					<field name="Inicijali" caption="Operater"/>
+					<field name="DatumUnosa" caption="Datum unosa" format="dd.MM.yyyy HH:mm"/>
+					<field name="KljucTroska" caption="Ključ troška"/>				
+					<field name="NazivKonta" caption="Naziv konta"/>
+					<!--specifične kolone po firmama dodati u part-->
+					<part name="prtTemGridLokal" path="prtTemeljnice.xml"/>
+					<field name="SifraPartnera" caption="Šifra partnera"/>
+				</fields>
+				<styles>
+					<style name="fontcolor" value="black"/>
+				</styles>
+				<print  caption="{#grdGlava.@Opis} - {#grdGlava.@BrojDok}"
+						captionalign="center"
+						header="\nDatum knjiženja: {#grdGlava.@DatumKnjizenja::dd.MM.yyy}\n"
+						headeralign="center"/>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="&amp;UNESI" type="add" dataname="" displayfield="" >
+					<event type="click">
+						<part name="prtTemUnesi" path="prtTemeljnice.xml"/>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="&amp;IZMIJENI" type="edit" >
+					<event type="click">
+						<part name="prtTemIzmijeni" path="prtTemeljnice.xml"/>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="&amp;OBRIŠI" type="delete" function="Obrisi">
+					<event type="click">
+
+						<part name="prtTemObrisi" path="prtTemeljnice.xml"/>				
+					</event>
+				</button>
+				<button name="btnZak" caption="&amp;ZAKLJUČI"  if="#grdGlava.rowcount&gt;0">
+					<event type="click">
+						<part name="prtTemZakljuci" path="prtTemeljnice.xml"/>
+					</event>
+				</button>
+				<button name="btnIspisListe" caption="ISPIS LISTE">
+					<event type="click">
+						<action type="control printcontrol" value="#grdGlava"/>				
+					</event>
+				</button>
+
+				<button name="btnIspis" caption="ISPIS" >
+					<event type="click">
+						<action type="control printcontrol" value="#grdDetail"/>				
+					</event>
+				</button>	
+
+				<button name="btnIspisDok" caption="ISPIS DOKUMENTA" displayfield="Opis" width="100">
+					<event type="click">
+						<action type="print" value="repx:rptKntTem" >
+							<parameter name="KntTemId" value="#grdGlava.@KntTemId"/>
+						</action>
+					</event>
+				</button>				
+				<button name="btnSearch" caption="&amp;PRONAĐI">
+					<event type="click">
+						<action type="search" value="~dtSearch"/>
+					</event> 				
+				</button>				
+				<button name="btnSpec" caption="SPECIFIKACIJA" dataname="~dtPrint" displayfield="Opis" width="100"  if="#grdGlava.rowcount&gt;0">
+					<event type="click">
+						<action type="control print" value="#grdGlava" if="#grdDetail.@PartneriId!=null">
+							<action type="print template" value="#btnSpec.@Template">
+								<parameter name="id" value="#grdGlava.@KntTemId" />
+								<parameter name="KntPlanAId" value="#grdDetail.@KntPlanAId"/>
+								<parameter name="PartneriId" value="#grdDetail.@PartneriId"/>
+							</action>
+						</action>
+					</event>
+				</button>							
+				<button name="btnStorniraj" caption="STORNIRAJ" function="Storniraj">
+					<event type="click">
+						<!--BLOKADA-->
+						<!-- <action type="datarun reader" value="~dtBlokada" />		 -->
+						<!-- <action type="variable value" > -->
+						<!-- <parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date" /> -->
+						<!-- <parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date" /> -->
+						<!-- </action>					 -->
+						<!-- <action type="datarun reader" value="~dtBlokadaShow" /> -->						
+						<!-- BLOKADA KOD storniraj-->
+						<!-- <action type="message" value="Temeljnica je izvan dopuštenog razdoblja knjiženja!" if="~dtBlokadaShow.@datumknjizenja&lt;Global.$BlokadaOd||~dtBlokadaShow.@datumknjizenja&gt;Global.$BlokadaDo"/> -->
+						<action type="variable value" value="$Izadji" >
+							<parameter value="true" type="bool"/>
+						</action>										
+						<action type="datarun reader" value="~dtStorno" />
+						<action type="message" value="Na ovoj vrsti prometa storniranje nije dopušteno!" if="~dtStorno.@sifra!='52'"/>
+						<action type="form open" value="frmTemStorno" else="">
+							<parameter name="VrsteDok" value="$VrsteDok" type="bool"/>
+							<parameter name="Rbr" value="Global.$VrstaDokId" type="string" if="$VrsteDok==true"/>
+							<action type="control populate" value="#tree" if="$Izadji==false">
+								<action type="control focus" value="#tree">
+									<parameter value="$DodatnoTemp"/>  
+								</action>
+								<action type="control focus" value="#grdGlava">
+									<parameter value="$NoviId" />
+								</action>
+							</action>
+						</action>
+						<action type="variable value" value="$Izadji" >
+							<parameter value="false" type="bool"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnKopiraj" caption="KOPIRAJ">
+					<event type="click">
+						<!--BLOKADA-->
+						<!-- <action type="datarun reader" value="~dtBlokada" />		 -->
+						<!-- <action type="variable value" > -->
+						<!-- <parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date" /> -->
+						<!-- <parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date" /> -->
+						<!-- </action>					 -->
+						<!-- <action type="datarun reader" value="~dtBlokadaShow" /> -->
+						<!-- BLOKADA KOD kopiraj-->
+						<!-- <action type="message" value="Temeljnica je izvan dopuštenog razdoblja knjiženja!" if="~dtBlokadaShow.@datumknjizenja&lt;Global.$BlokadaOd||~dtBlokadaShow.@datumknjizenja&gt;Global.$BlokadaDo"/> -->
+						<!-- <action type="form open" value="frmTemKopiraj" else=""> -->
+						<action type="variable value" value="$Izadji" >
+							<parameter value="true" type="bool"/>
+						</action>							
+						<action type="form open" value="frmTemKopiraj">
+							<parameter name="VrsteDok" value="$VrsteDok" type="bool"/>
+							<parameter name="Rbr" value="Global.$VrstaDokId" type="string" if="$VrsteDok==true"/>
+						</action>							
+						<!-- <action type="datarun scalar" value="~dtGetParsedText" if="$Izadji==false"> -->
+						<!-- <parameter name="DodatnoTemp"/> -->
+						<!-- </action>						 -->
+						<!-- <action type="variable value" if="$Izadji==false"> -->
+						<!-- <parameter name="NoviId" value="Global.$KntTemId"/> -->
+						<!-- </action> -->
+						<action type="control populate" value="#tree" if="$Izadji==false">
+							<action type="control focus" value="#tree">
+								<parameter value="$DodatnoTemp"/>  
+							</action>
+							<action type="control focus" value="#grdGlava">
+								<parameter value="$NoviId" />
+							</action>							
+						</action>	
+						<action type="variable value" value="$Izadji">
+							<parameter value="false" type="bool"/>
+						</action>
+					</event>					
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCKntTemAzur" name="dtPonistiZakljucak">
+				<parameter name="@action" value="14" />
+				<parameter name="@Id" value="#grdGlava.@KntTemId" />
+				<parameter name="@Status" value="0" />
+			</data>
+			<data command="spCKntTemAzur" name="dtZakljuci">
+				<parameter name="@action" value="14" />
+				<parameter name="@Id" value="#grdGlava.@KntTemId" />
+				<parameter name="@Status" value="1" />
+			</data>
+			<data command="spCKntTemAzur" name="dtDeleteGlava" timeout="500">
+				<parameter name="@action" value="2" />
+				<parameter name="@Id" value="#grdGlava.@KntTemId" />
+				<parameter name="@VrstaDokId" value="#grdGlava.@VrstaDokId" />
+			</data>
+			<data name="dtBlokada" command="spCKntTemInfo">
+				<parameter name="@Action" value="1"/>
+			</data>
+			<data name="dtDrvoPozicija" command="spCKntTemInfo">
+				<parameter name="@Action" value="7"/>
+			</data>
+			<data name="dtDrvoPozicija1" command="spCKntTemInfo">
+				<parameter name="@Action" value="8"/>
+			</data>
+			<data name="dtStorno" command="spCKntTemInfo">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@KntTemId" value="#grdGlava.@KntTemId" type="int"/>
+			</data>	
+			<data name="dtBlokadaShow" command="spCKntTemInfo">
+				<parameter name="@Action" value="9"/>
+				<parameter name="@KntTemId" value="#grdGlava.@KntTemId" type="int"/>
+			</data>
+			<data command="spCarpoPrint" name="dtPrint">
+				<parameter name="@Action" value="Temeljnica" />
+				<parameter name="@Id" value="#grdGlava.@KntTemId" type="int" />
+			</data>
+			<data command="spCarpoSearch" name="dtSearch">
+				<parameter name="@Table" value="Temeljnice" />
+				<parameter name="@Action" value="moje" if="#filter==Moje temeljnice"/>
+				<parameter name="@Action" value="neproknjizene" if="#filter==Neproknjižene"/>
+				<parameter name="@Action" value="saldo" if="#filter==Sa saldom"/>
+				<parameter name="@Action" value="vrstadok" if="#filter==Vrste dokumenata"/>
+				<parameter name="@Pojam" value="#btnSearch.searchtext"/>
+			</data>
+			<data name="dtDrvoZadnjiUnos" command="spCKntTemInfo">
+				<parameter name="@Action" value="10"/>
+			</data>
+			<data name="dtDrvo" command="spCKntTemDrvoFilter">
+				<parameter name="@Action" value="moje" if="#filter==Moje temeljnice"/>
+				<parameter name="@Action" value="neproknjizene" if="#filter==Neproknjižene"/>
+				<parameter name="@Action" value="saldo" if="#filter==Sa saldom"/>
+				<parameter name="@Action" value="vrstadok" if="#filter==Vrste dokumenata"/>
+			</data>	
+			<data name="dtGlava" command="spCKntTemQuery">
+				<!--TEMP BUGFIX SUME NA GRUPAMA-->
+				<parameter name="@action" value="" if="$IndSume==1"/>
+				<parameter name="@action" elseif="#filter==Moje temeljnice" value="moje" />
+				<parameter name="@action" elseif="#filter==Neproknjižene" value="neproknjizene" />	
+				<parameter name="@action" elseif="#filter==Sa saldom" value="saldo" />
+				<parameter name="@action" elseif="#filter==Vrste dokumenata" value="vrstadok" />
+				<!--TEMP BUGFIX SUME NA GRUPAMA-->
+				<parameter name="@node" if="#filter==Moje temeljnice" value="#tree.@ValueId" />	
+				<parameter name="@TreeID" if="#filter==Moje temeljnice" value="#tree.@Id" />	
+				<parameter name="@node" if="#filter==Neproknjižene" value="#tree.@ValueId" />
+				<parameter name="@TreeID" if="#filter==Neproknjižene" value="#tree.@Id" />					
+				<parameter name="@node" if="#filter==Sa saldom" value="#tree.@ValueId" />
+				<parameter name="@TreeID" if="#filter==Sa saldom" value="#tree.@Id" />				
+				<parameter name="@node" if="#filter==Vrste dokumenata" value="#tree.@ValueId" />
+				<parameter name="@TreeID" if="#filter==Vrste dokumenata" value="#tree.@Id" />
+				<parameter name="@treemjesec" if="#filter==Vrste dokumenata" value="#tree.@mjesec" />
+				<parameter name="@vrstadokid" if="#filter==Vrste dokumenata" value="#tree.@VrstaDokId"/>
+			</data>	
+			<data name="dtDetail" command="spCKntPrometQuery" timeout="200">
+				<parameter name="@Action" value="2" />
+				<!--TEMP BUGFIX SUME NA GRUPAMA-->
+				<parameter name="@Id" value="0" if="$IndSume==1"/>
+				<parameter name="@Id" value="#grdGlava.@KntTemId" else=""/>
+				<!--TEMP BUGFIX SUME NA GRUPAMA-->
+			</data>		
+			<data name="dtPermissionObrisi" command="spCKntTemPermission">
+				<parameter name="@Action" value="getPermissions"/>
+				<parameter name="@ObjectName" value="Temeljnice"/>
+				<parameter name="@FunctionName" value="Obrisi"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+			</data>
+			<!-- dodan sakrivan ispis zbog Zita -->
+			<data name="dtISPISprikaz" command="spCKntTemInfo">
+				<parameter name="@Action" value="13"/>
+			</data>
+			<!-- dodan sakrivan ispis zbog Zita -->
+		</datalist>
+	</form>
+	<datalist>
+		<data name="dtPartUraUnos" command="spCKntTemPartSql">
+			<parameter name="@Action" value="GetPartUra"/>
+		</data>	
+		<data name="dtPartIraUnos" command="spCKntTemPartSql">
+			<parameter name="@Action" value="GetPartIra"/>
+		</data>		
+		<!--za podizanje forme iz ure-->
+		<data name="dtPartUraKupSpremiProknjizi" command="spCKntKnjigaUraPartSql">
+			<parameter name="@Action" value="KupSpremiProknjizi"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+		</data>	
+		<data name="dtPartcmbShemaKnj" command="spCKntKnjigaUraPartSql">
+			<parameter name="@Action" value="CmbShemaKnj"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+		</data>		
+		<data name="dtPartSpremiValidation" command="spCKntKnjigaUraPartSql">
+			<parameter name="@Action" value="SpremiValidation"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+		</data>	
+		<data name="dtPartObrisi" command="spCKntTemPartSql">
+			<parameter name="@Action" value="TemObrisi"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+		</data>	
+		<data name="dtPartOpisSaRacuna" command="spCKntTemPartSql">
+			<parameter name="@Action" value="OpisSaRacuna"/>
+			<parameter name="@OperateriId" value="@@operateriid"/>
+		</data>		
+	</datalist>
+</root>

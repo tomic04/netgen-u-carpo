@@ -1,0 +1,350 @@
+﻿<!--
+1.0.0.0. prva verzija
+ -->
+<root version="1.0.0.0">
+	<form name="frmMaster" type="master" caption="Putni nalozi" maximized="true">
+		
+		<method name="funDmsAdd" dll="DmsManagerV1" class="DmsManagerV1.Start" method="AddDocuments" />
+		<method name="funDmsOpen" dll="DmsManagerV1" class="DmsManagerV1.Start" method="OpenDocument" />
+		<method name="funDmsSave" dll="DmsManagerV1" class="DmsManagerV1.Start" method="SaveDocuments" />
+		<event type="init">
+			<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+			<action type="variable value" value="global.RefreshajMaster">
+				<parameter value="0" type="int"/>
+			</action>
+			<action type="datarun reader" value="~dtGetPravaOperater"/>
+			<action type="variable value" value="global.PravaOperater">
+				<parameter value="~dtGetPravaOperater.@Pravo" type="int"/>
+			</action>
+			<action type="variable value" value="global.PravaKadrovaOperater">
+				<parameter value="~dtGetPravaOperater.@Kadrova" type="int"/>
+			</action>
+			
+			<action type="variable value" value="global.PravoIzmjeneBroja">
+				<parameter value="~dtGetPravaOperater.@PravoIzmjeneBroja" type="int"/>
+			</action>
+			<action type="datarun reader" value="~dtGetImaDMS"/>
+			<action type="variable value" value="global.ImaDMS">
+				<parameter value="~dtGetImaDMS.@ImaDMS" type="int"/>
+			</action>
+			<action type="datarun reader" value="~dtDatumNaStavci"/>
+			<action type="variable value" value="global.DatumNaStavci">
+				<parameter value="~dtDatumNaStavci.@DatumNaStavci" type="int"/>
+			</action>
+		</event>
+		<event type="shown">
+		</event>
+		
+		<managerlayout>
+			<!-- LOOKUP-->
+			<lookup name="filter">
+				<partsql name="filter" dataname="~dtPartFilter"/>
+				<event type="valuechanged">
+					<action type="variable value">
+						<parameter name="global.filter" value="#filter"/>
+					</action>
+					
+					<action type="menu enable" value="#mnuPromjenaStatusa,#mnuOdbij,#mnuOdobri,#mnuCiklusNaloga,#mnuPonisti" />
+					<action type="menu disable" value="#mnuPromjenaStatusa" if="global.$filter==Odobravanje"/>
+					<action type="menu disable" value="#mnuOdbij,#mnuOdobri,#mnuCiklusNaloga,#mnuPonisti" elseif="global.$filter!=Odobravanje"/> 
+					<action type="control disable" value="#btnUnos,#btnBrisanje,#btnIzmjena,#btnObracun,#btnAkontacije,#btnDnevnice,#btnPrijevozniTros,#btnOstaliTros,#btnKatalozi,#btnIspisNaloga,#btnIspisObracuna" if="global.$filter==Odobravanje" />
+					<action type="control enable" value="#btnUnos,#btnBrisanje,#btnIzmjena,#btnObracun,#btnAkontacije,#btnDnevnice,#btnPrijevozniTros,#btnOstaliTros,#btnKatalozi,#btnIspisNaloga,#btnIspisObracuna" elseif="global.$filter!=Odobravanje" />
+					
+					
+				</event>
+			</lookup>
+			<!--*****stablo*****-->
+			<tree name="tree" key="id" filtermode="smart" dataname="dtTree" expandfirst="true">
+				<!--na promjenu noda disable/enable meni i refresh master grida-->
+				<event type="focusedrowchanged">
+					<!--<action type="setlayout" value="#grdMaster">
+                        <parameter value="~dtMaster" />
+                    </action>-->
+					<!-- <action type="menu disable" value="#mnuBrisanjeObrade,#mnuDodajKadrove, #mnuKopirajKadrove3,#mnuBrisanjePomEvid1,#mnuDonosPomEvid1" if="#tree.@status==1"></action> -->
+					<!-- <action type="menu enable" value="#mnuBrisanjeObrade,#mnuDodajKadrove, #mnuKopirajKadrove3,#mnuBrisanjePomEvid1,#mnuDonosPomEvid1" else="#tree.@status==0"></action> -->
+					<action type="control populate" value="#grdMaster"/> 
+					<action type="control populate" value="#grdDetail"/>
+					<!--<action type="variable value" value="global.Oznaka">
+						<parameter value="#tree.@Id" type="string"/>
+					</action>-->
+					<action type="variable value" value="global.$PNNaloziId">
+						<parameter value="#grdMaster.@pnnaloziid" type="int"/>
+					</action>
+					<action type="variable value" value="global.$Broj">
+						<parameter value="#grdMaster.@Broj naloga" type="string"/>
+					</action>
+				</event>
+				<fields>
+					<field name="caption"/>
+				</fields>
+				<!--desni klik za brisanje-->
+				<!--<part name="Meni_drvo" path="prtPlace.xml"/>-->
+				<partsql name="drvo_meni" dataname="~dtPartDrvoMeni"/>
+			</tree>
+			<!--Grid Glava-->
+			<grid name="grdMaster" key="PNNaloziId" type="master" async="true" dataname="dtMaster" preventfocusgroup="false" fieldsmartspaces="false" bestfitonrefresh="true" multiselect="true" savelayout="true" netgenfields="true" allowfilter="true">
+				<!-- </event> -->
+				<fields inherited="true">
+					<field name="CarpoRowNumberColumn" fixed="true" caption="Rbr"/>
+				</fields>
+				<!--desni klik za brisanje-->
+				<partsql name="master_meni" dataname="~dtPartMasterMeni"/>
+				<!--double klik na gridu-->
+				<partsql name="master_doubleclick" dataname="~dtPartMasterDoubleClick"/>
+				<event type="focusedrowchanged">
+					
+					<action type="variable value" value="global.$PNNaloziId">
+						<parameter value="#grdMaster.@pnnaloziid" type="int"/>
+					</action>
+					<action type="variable value" value="global.$Broj">
+						<parameter value="#grdMaster.@Broj naloga" type="string"/>
+					</action>
+					<action type="variable value" value="global.$Djelatnik">
+						<parameter value="#grdMaster.@Djelatnik" type="string"/>
+					</action>
+					<action type="control populate" value="#grdDetail"/>
+					<action type="control populate" value="#grdDms"/>
+				</event>
+			</grid>
+			<tabs>
+				<tab caption="Stavke naloga" name="DetaljiObrade">
+					<grid name="grdDetail" type="detalj" async="True" bestfitonrefresh="true" key="ID" multiselect="true" showfooter="true" fieldsmartspaces="false" netgenfields="true">
+						<event type="focusedrowchanged">
+						</event>
+						<event type="doubleclick" >
+							<action type="form open" value="#grdDetail.@editformaid" if="global.$filter!=Odobravanje">
+								<parameter name="pnnaloziid" value="#grdMaster.@pnnaloziid"/>
+								<parameter name="ID" value="#grdDetail.@ID"/>
+								<parameter name="caption" value="#grdDetail.@editcapid"/>
+							</action>
+							<action type="control populate" value="#grdDetail"/>
+						</event> 
+						<menu>
+							<menuitem name="mnuBrisanje" caption="Obriši" function="BrisanjeStavke">
+								<event type="click">
+									<action if="global.$PravaOperater==3">
+										<action type="datarun reader" value="~dtBrisiStavke">	
+											<action if="$indGreske==0">
+												<action type="message" value="Uspješno obrisano!"/>
+												
+												<action type="control populate" value="#grdDetail"/>
+											</action>
+										</action>
+									</action>
+									<action elseif="global.$PravaOperater!=3">
+										<action type="datarun reader" value="~dtBrisiStavkeIzv">	
+											<action if="$indGreske==0">
+												<action type="message" value="Uspješno obrisano!"/>
+												
+												<action type="control populate" value="#grdDetail"/>
+											</action>
+										</action>
+									</action>
+									
+								</event>
+							</menuitem>
+						</menu>
+						<data command="spPNDetailQuery">
+							<parameter name="@Action" value="detalji_obracun"/>
+							<parameter name="@pnnaloziid" value="#grdMaster.@pnnaloziid"/>
+							<parameter name="@operateriid" value="@@operateriid"/>
+						</data>
+						<fields inherited="true">
+						</fields>
+						<styles>
+						</styles>
+					</grid>
+				</tab>
+				<tab caption="DMS" if="global.$ImaDMS==1">
+					<grid name="grdDms" keyfield="DokID" multiselect="true" dataname="dtDms" showmenuprintitem="false" showmenutools="false" savelayout="true">
+							<menu>
+
+								<!-- Parametri potrebni za poziv Dms metode za spremanje dokumenata -->
+
+								<menuitem caption="Spremi na disk">
+									<event type="click">
+										<action type="method run" value="funDmsSave">
+											<parameter name="server" value="@@server" />
+											<parameter name="database" value="@@database" />
+											<parameter name="username" value="" />
+											<parameter name="password" value="" />
+											<parameter name="operaterid" value="@@operateriid" />
+											<parameter name="dokIDs" value="#grdDms.selectedids" />
+										</action>
+									</event>
+								</menuitem>
+								<menuitem caption="Obriši" function="DokObrisi">
+										<event type="click">
+											<action type="confirm" value="Želite li sigurno obrisati označeni(e) dokument(e)?">
+													<action type="datarun nonquery" value="~dtDeleteDoc" />
+													<action type="control populate" value="#grdDms" />
+											</action>
+										</event>
+								</menuitem>
+							</menu>
+
+							<!-- Parametri potrebni za poziv Dms metode za otvaranje dokumenata -->
+
+							<event type="doubleclick">
+								<action type="method run" value="funDmsOpen" >
+										<parameter name="server" value="@@server" />
+										<parameter name="database" value="@@database" />
+										<parameter name="username" value="" />
+										<parameter name="password" value="" />
+										<parameter name="operateriid" value="@@operateriid" />
+										<parameter name="dokID" value="#grdDms.@DokID" />
+										<parameter name="name" value="#grdDms.@naziv" />
+								</action>
+							</event>
+					</grid>
+				</tab>
+			</tabs>
+			
+		</managerlayout>
+		<!--gumbi-->
+		<panelbuttons>
+			<buttons>
+				<partsql name="button" dataname="~dtPartButton"/>
+				
+				<button name="btnPovezi" caption="Dodaj dokument" function="DokDodaj">
+					<event type="click">
+					<action type="method run" value="funDmsAdd">
+						<parameter name="server" value="@@server" />
+						<parameter name="database" value="@@database"/>
+						<parameter name="username" value="" />
+						<parameter name="password" value="" />
+						<parameter name="operaterid" value="@@operateriid" />
+						<parameter name="EntityName" value="PNNalozi" />
+						<parameter name="entityID" value="#grdMaster.@PNNaloziId" />
+						<parameter name="tipInserta" value="windows" />
+					</action> 
+					<action type="control populate" value="#grdDms" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<!--datalist-->
+		<datalist>
+			<data command="spPNTree" name="dtTree">
+				<partsql name="treeData" dataname="~dtPartTreeData"/>
+				<parameter name="@OperateriId" value="@@OperateriId"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<!--data koji puni Master grid grida-->
+			<data command="spPNMasterQuery" name="dtMaster">
+				<parameter name="@Action" value="master"/>
+				<parameter name="@OperateriId" value="@@OperateriId"/>
+				<parameter name="@filter" value="#tree.@value"/>
+			</data>
+			<data command="spPNHelp" name="dtGetPravaOperater">
+				<parameter name="@action" value="prava_unosa"/>
+				<parameter name="@operateriid" value="@@OperaterId"/>
+			</data>
+			<data command="spPNHelp" name="dtGetImaDMS">
+				<parameter name="@action" value="ImaDMS"/>
+				<parameter name="@operateriid" value="@@OperaterId"/>
+			</data>
+			<data command="spPNHelp" name="dtDatumNaStavci">
+				<parameter name="@action" value="DatumNaStavci"/>
+				<parameter name="@operateriid" value="@@OperaterId"/>
+			</data>					
+			<data command="spPNPromjenaStatusa" name="dtProvjeraStatusi">
+				<parameter name="@action" value="provjera_vise_statusa"/>
+				<parameter name="@ids" value="#grdMaster.selectedids"/>
+				<parameter name="@operateriid" value="@@OperaterId"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<data command="spPNAzur" name="dtProvjeraOdobravanje">
+				<parameter name="@action" value="provjera_vise_odobravanje"/>
+				<parameter name="@ids" value="#grdMaster.selectedids"/>
+				<parameter name="@ids2" value="#grdMaster.selectedids.OdTipId"/>
+				<parameter name="@operateriid" value="@@OperaterId"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+			
+			<data command="spPNAzur" name="dtBrisiStavke">
+				<parameter name="@action" value="Brisanje_Stavki"/>
+				<parameter name="@pnnaloziid" value="#grdDetail.@PNNaloziId"/>
+				<parameter name="@ids" value="#grdDetail.selectedids.PnnaloziDetId"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+			<data command="spPNAzur" name="dtBrisiStavkeIzv">
+				<parameter name="@action" value="Brisanje_Stavki_izv"/>
+				<parameter name="@pnnaloziid" value="#grdDetail.@PNNaloziId"/>
+				<parameter name="@ids" value="#grdDetail.selectedids.PnnaloziIzvDetId"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+			<!-- store za dohvaćanje i brisanje dokumenata iz dms-a -->
+			<data command="spCarpoDMSQuery" name="dtDms">
+				<parameter name="@EntityName" value="PNNalozi"/>
+				<parameter name="@Id" value="#grdMaster.@PNNaloziId"/>
+			</data>
+			<data command="spCarpoDMSAzur" name="dtDeleteDoc">
+				<parameter name="@Action" value="Delete"/>
+				<parameter name="@EntityName" value="PNNalozi"/>
+				<parameter name="@selectedids" value="#grdDms.selectedids"/>
+			</data>
+		</datalist>
+	</form>
+	<!--includane forme-->
+	<partsql name="forme" dataname="~dtPartForme"/>
+	<!-- <form name="frmUnosKadar" path="frmUnos.xml" /> -->
+
+	<!--datalist za partove-->
+	<datalist>
+		<data command="spPNPartQuery" name="dtPartMasterMeni">
+			<parameter name="@Action" value="master_meni"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="PNManagerCP"/>
+		</data>
+		<data command="spPNPartQuery" name="dtPartDrvoMeni">
+			<parameter name="@Action" value="drvo_meni"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="PNManagerCP"/>
+		</data>
+		<data command="spPNPartQuery" name="dtPartTabovi">
+			<parameter name="@Action" value="tabovi"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="PNManagerCP"/>
+		</data>
+		<data command="spPNPartQuery" name="dtPartTabGridovi">
+			<parameter name="@Action" value="data"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="PNManagerCP"/>
+		</data>
+		<data command="spPNPartQuery" name="dtPartButton">
+			<parameter name="@Action" value="button"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="PNManagerCP"/>
+		</data>
+		<data command="spPNPartQuery" name="dtPartMasterGrid">
+			<parameter name="@Action" value="grid"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="PNManagerCP"/>
+		</data>
+		<data command="spPNPartQuery" name="dtPartForme">
+			<parameter name="@Action" value="forme"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="PNManagerCP"/>
+		</data>
+		<data command="spPNPartQuery" name="dtPartMasterDoubleClick">
+			<parameter name="@Action" value="master_doubleclick"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="PNManagerCP"/>
+		</data>
+		<data command="spPNPartQuery" name="dtPartFilter">
+			<parameter name="@Action" value="filter"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="PNManagerCP"/>
+		</data>
+		<data command="spPNPartQuery" name="dtPartTreeData">
+			<parameter name="@Action" value="treeData"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="PNManagerCP"/>
+		</data>
+	</datalist>
+</root>

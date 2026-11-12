@@ -1,0 +1,280 @@
+<!--svi partovi iz Carpo projekta Temeljnice-->
+<!--6.9.2021. AA prtTemstavkaObrisi isključila umjetni fokus jer ne vidim zašto je dodan HD 66598 ostaje samo keepfocus-->
+<!-- 18.12.2020. AA partsql TemObrisi MIP dodatni confirm za izvode HD61227-->
+<parts>
+	<part name="prtTemIzmijeni">
+		<action type="variable value" >
+			<parameter name="KntTemid" value="#grdGlava.@KntTemid" type="int"/>
+		</action>  
+		<!--BLOKADA-->
+		<action type="datarun reader" value="~dtBlokada" />		
+		<action type="variable value" >
+			<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date" />
+			<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date" />
+		</action>		
+		<action type="datarun reader" value="~dtBlokadaShow" />
+		<action type="datarun reader" value="~dtStorno" />
+		<!-- BLOKADA KOD ULASKA U EDIT-->
+		<action type="message" value="Temeljnica je izvan dopuštenog razdoblja knjiženja!" 
+				if="~dtBlokadaShow.@datumknjizenja&lt;Global.$BlokadaOd||~dtBlokadaShow.@datumknjizenja&gt;Global.$BlokadaDo"/>
+		<action type="form open" value="frmTemEdit" else="">
+			<parameter name="KntTemid" value="#grdGlava.@KntTemid" />
+			<parameter name="DatumKnjizenja" value="#grdGlava.@DatumKnjizenja" type="date" />
+			<parameter name="Sifra" value="~dtStorno.@Sifra" />
+		</action>	
+		<action type="control populate keepfocus" value="#grdGlava"/>	
+	</part>
+	<part name="prtTemObrisi">
+		<!--BLOKADA-->
+		<action type="datarun reader" value="~dtBlokada" />		
+		<action type="variable value" >
+			<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date" />
+			<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date" />
+		</action>		
+		<action type="datarun reader" value="~dtBlokadaShow" />
+		<!-- BLOKADA KOD ULASKA U DELETE-->
+		<action type="message" value="Temeljnica je zaključena!" if="#grdGlava.@Status!=N"/>
+		<action type="message" value="Temeljnica je izvan dopuštenog razdoblja knjiženja!" elseif="~dtBlokadaShow.@datumknjizenja&lt;Global.$BlokadaOd||~dtBlokadaShow.@datumknjizenja&gt;Global.$BlokadaDo"/>
+		<action type="confirm" value="Želite li obrisati temeljnicu broj '{#grdGlava.@Opis}' - '{#grdGlava.@BrojDok}'?" else="#grdGlava.@Status==N">
+			<partsql name="DelAdditionalConfirm" dataname="~dtPartObrisi"/>
+		</action>	
+	</part>
+	<part name="prtTemUnesi">
+		<action type="form open" value="frmTemGlava"/>
+		<action type="variable value" if="dialogresult==cancel">
+			<parameter name="Izadji" value="true"/>
+		</action>
+          <!-- <action type="control focus" value="#grdGlava"> -->
+               <!-- <parameter value="global.$KntTemId"/> -->
+          <!-- </action> -->
+		<action type="form open" value="frmTemEdit" if="$Izadji==false">
+			<parameter name="KntTemid" value="global.$KntTemId"/>
+			<parameter name="Sifra" value="global.$Sifra"/>
+			<parameter name="VrsteDok" value="$VrsteDok" type="bool"/>
+			<parameter name="Rbr" value="Global.$VrstaDokId" type="string" if="$VrsteDok==true"/>
+		</action> 
+		<!-- <action type="message" value="$Izadji"/> -->
+		<!-- <action type="datarun scalar" value="~dtGetParsedText" if="$Izadji==false"> -->
+			<!-- <parameter name="DodatnoTemp"/> -->
+		<!-- </action>						 -->
+		<!-- <action type="variable value" if="$Izadji==false"> -->
+		   <!-- <parameter name="NoviId" value="Global.$KntTemId"/> -->
+		<!-- </action> -->
+		<action type="control populate" value="#tree" if="$Izadji==false">
+		<action type="control focus" value="#tree" if="$Izadji==false">
+			<parameter value="$DodatnoTemp"/>  
+		</action>
+		</action>	
+		<action type="control focus" value="#grdGlava" if="$Izadji==false">
+			<parameter value="$NoviId" />
+		</action>
+		<action type="variable value" value="$Izadji">
+			<parameter value="false" type="bool"/>
+		</action>	
+	</part>
+	<part name="prtTemZakljuci">
+		<action type="control foreachrow selected" value="grdGlava">
+			<action type="message" value="Temeljnica {#grdGlava.@Opis} - {#grdGlava.@BrojDok} je zaključena." if="#grdGlava.@Status!=N"/>
+			<action type="message" value="Temeljnica {#grdGlava.@Opis} - {#grdGlava.@BrojDok} nije u ravnoteži!" if="#grdGlava.@Saldo!=null"/>
+			<action type="datarun nonquery" value="~dtZakljuci" else=""/>							
+		</action>	
+		<action type="control populate keepfocus" value="#grdGlava"/>	
+	</part>
+	<part name="prtTemStavkaDodaj">
+		<!--BLOKADA-->
+		<action type="datarun reader" value="~dtBlokada" />		
+		<action type="variable value" >
+			<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date" />
+			<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date" />
+		</action>
+		<action type="message" value="Datum dokumenta je izvan dopuštenog razdoblja knjiženja!" 
+								if="global.$DatumKnjizenja&lt;Global.$BlokadaOd||global.$DatumKnjizenja&gt;Global.$BlokadaDo"/>
+		<action else="">		
+			<action type="datarun reader" value="~dtProvjeraStatus"/>
+			<action type="message" value="Temeljnica je zaključana!" if="~dtProvjeraStatus.@Status!=0||$ZakljInd==1"/>
+			<action else="">	
+				<!-- <action type="datarun reader" value="~dtZadnjiKntPromet" if="#grdStavke.rowcount!=0"/> -->
+				<!-- <action type="variable value" > -->
+					<!-- <parameter name="ZadnjiKntPrometId" value="~dtZadnjiKntPromet.@KntPrometId" type="int" /> -->
+				<!-- </action> -->
+				<action type="form open" value="frmTemStavka">
+					<parameter name="KntTemId" value="Global.$KntTemId"/>
+					<parameter name="KntPrometId" value="0"/>
+					<parameter name="Sifra" value="#cmbVrstaDok.@Sifra" />
+					<parameter name="DatumKnjizenja" value="$DatumKnjizenja" type="date" />
+					<parameter name="BrojRedova" value="#grdStavke.rowcount" />
+					<!-- <parameter name="ZadnjiKntPrometId" value="$ZadnjiKntPrometId" type="int"/> -->
+				</action>
+				<action type="datarun reader" value="~dtZadnjiKntPromet" if="#grdStavke.rowcount!=0"/>
+				<action type="control populate" value="#grdStavke"/>
+				<action type="control focus" value="#grdStavke">
+					<parameter value="~dtZadnjiKntPromet.@KntPrometId" type="int" />
+				</action>			
+				<action type="datarun reader" value="~dtCalc"/>
+				<action type="datarun reader" value="~dtCalcDev"/>
+				<action type="control value" value="#curDuguje">
+					<parameter value="~dtCalc.@SumDuguje"/>
+				</action>
+				<action type="control value" value="#curPotrazuje">
+					<parameter value="~dtCalc.@SumPotrazuje"/>
+				</action>
+				<action type="control value" value="#curSaldo">
+					<parameter value="~dtCalc.@SumSaldo"/>
+				</action>
+				<action type="control value" value="#curDevDug">
+					<parameter value="~dtCalcDev.@SumDuguje"/>
+				</action>
+				<action type="control value" value="#curDevPot">
+					<parameter value="~dtCalcDev.@SumPotrazuje"/>
+				</action>
+				<action type="control value" value="#curSaldoDev">
+					<parameter value="~dtCalcDev.@SumSaldo"/>
+				</action>					
+				<action type="datarun nonquery" value="dtTemAzur"/>	
+						<action type="control focus" value="#grdStavke">
+					<parameter value="~dtZadnjiKntPromet.@KntPrometId" type="int" />
+				</action>
+				<action type="control enable" value="#btnAddDetalj" if="~dtGlavaGet.@Status==N"/>
+				<action type="control disable" value="#btnAddDetalj" else=""/>
+				<action type="control enable" value="#btnEditDetalj,#btnDelDetalj,#btnZakljuci" if="~dtGlavaGet.@Status==N&amp;&amp;#grdStavke.rowcount!=0"/>
+				<action type="control disable" value="#btnEditDetalj,#btnDelDetalj,#btnZakljuci" else=""/>			
+				<action type="control enable" value="#btnSpec" if="#grdStavke.rowcount!=0"/>
+				<action type="control disable" value="#btnSpec" else=""/>		
+			</action>
+		</action>
+	</part>
+	<part name="prtTemStavkaIzmijeni">
+		<!--BLOKADA-->
+		<action type="datarun reader" value="~dtBlokada" />		
+		<action type="variable value" >
+			<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date" />
+			<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date" />
+		</action>
+		<action type="message" value="Datum dokumenta je izvan dopuštenog razdoblja knjiženja!" 
+								if="global.$DatumKnjizenja&lt;Global.$BlokadaOd||global.$DatumKnjizenja&gt;Global.$BlokadaDo"/>
+		<action else="">		
+			<action type="datarun reader" value="~dtProvjeraStatus"/>
+			<action type="message" value="Temeljnica je zaključana!" if="~dtProvjeraStatus.@Status!=0||$ZakljInd==1"/>
+			<action else="">
+				<action type="form open" value="frmTemStavkaEdit">
+					<parameter name="KntTemId" value="Global.$KntTemId"/>
+					<parameter name="KntPrometId" value="#grdStavke.@KntPrometId"/>
+					<parameter name="Sifra" value="#cmbVrstaDok.@Sifra" />
+					<parameter name="DatumKnjizenja" value="$DatumKnjizenja" type="date" />
+				</action>
+				<action type="datarun reader" value="~dtZadnjiKntPromet" if="#grdStavke.rowcount!=0"/>
+				<action type="control populate keepfocus" value="#grdStavke"/>	
+				<action type="datarun reader" value="~dtCalc"/>
+				<action type="datarun reader" value="~dtCalcDev"/>
+				<action type="control value" value="#curDuguje">
+					<parameter value="~dtCalc.@SumDuguje"/>
+				</action>
+				<action type="control value" value="#curPotrazuje">
+					<parameter value="~dtCalc.@SumPotrazuje"/>
+				</action>
+				<action type="control value" value="#curSaldo">
+					<parameter value="~dtCalc.@SumSaldo"/>
+				</action>
+				<action type="control value" value="#curDevDug">
+					<parameter value="~dtCalcDev.@SumDuguje"/>
+				</action>
+				<action type="control value" value="#curDevPot">
+					<parameter value="~dtCalcDev.@SumPotrazuje"/>
+				</action>
+				<action type="control value" value="#curSaldoDev">
+					<parameter value="~dtCalcDev.@SumSaldo"/>
+				</action>					
+				<action type="datarun nonquery" value="dtTemAzur"/>	
+			</action>
+		</action>
+	</part>
+	<part name="prtTemStavkaObrisi">
+		<!--BLOKADA-->
+		<action type="datarun reader" value="~dtBlokada" />		
+		<action type="variable value" >
+			<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date" />
+			<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date" />
+		</action>
+		<action type="message" value="Datum dokumenta je izvan dopuštenog razdoblja knjiženja!" 
+								if="global.$DatumKnjizenja&lt;Global.$BlokadaOd||global.$DatumKnjizenja&gt;Global.$BlokadaDo"/>
+		<action else="">	
+			<action type="datarun reader" value="~dtProvjeraStatus"/>
+			<action type="message" value="Temeljnica je zaključana!" if="~dtProvjeraStatus.@Status!=0||$ZakljInd==1"/>
+			<action else="">	
+				<action type="confirm" value="Želite li obrisati označene stavke?">
+					<!-- <action type="variable value" if="global.$Sifra!=54&amp;&amp;global.$Sifra!=53"> -->
+					<!-- <parameter name="Proces" value="DEL"/> -->
+					<!-- </action> -->
+					<action type="control foreachrow selected" value="grdStavke">
+						<!--vraćanje iznosa plaćenog nakon brisanja, za fakturedob trebam minus-->
+						<!-- <action type="variable value" if="global.$Sifra!=54&amp;&amp;global.$Sifra!=53"> -->
+						<!-- <parameter name="IznosZaMinus" value="#grdStavke.@Saldo"/> -->
+						<!-- <parameter name="DevIznosZaMinus" value="#grdStavke.@DevSaldo"/> -->
+						<!-- </action> -->
+						<!-- <action type="datarun reader" value="~dtMinus" if="global.$Sifra!=54&amp;&amp;global.$Sifra!=53"/> -->
+						<action type="variable value">
+							<parameter name="FokusIdPomoc" value="#grdStavke.@KntPrometId"/>
+						</action>				
+						<action type="transaction">
+							<action type="datarun nonquery" value="~dtDeleteStavka"/>
+							<action type="datarun nonquery" value="~dtFaktureIndGlk" if="global.$Sifra==54&amp;&amp;#grdStavke.@Tablica==Fakture&amp;&amp;#grdStavke.@Duguje!=0"/>
+							<action type="datarun nonquery" value="~dtFaktureDobIndGlk" elseif="global.$Sifra==53&amp;&amp;#grdStavke.@Tablica==FaktureDob&amp;&amp;#grdStavke.@Potrazuje!=0"/>
+							<!-- <action type="datarun nonquery" value="~dtUpdateObrisano" if="global.$Sifra!=54&amp;&amp;global.$Sifra!=53"/> -->
+						</action>	
+					</action>					
+					<action type="datarun reader" value="~dtCalc"/>
+					<action type="datarun reader" value="~dtCalcDev"/>
+					<action type="control value" value="#curDuguje">
+						<parameter value="~dtCalc.@SumDuguje"/>
+					</action>
+					<action type="control value" value="#curPotrazuje">
+						<parameter value="~dtCalc.@SumPotrazuje"/>
+					</action>
+					<action type="control value" value="#curSaldo">
+						<parameter value="~dtCalc.@SumSaldo"/>
+					</action>
+					<action type="control value" value="#curDevDug">
+						<parameter value="~dtCalcDev.@SumDuguje"/>
+					</action>
+					<action type="control value" value="#curDevPot">
+						<parameter value="~dtCalcDev.@SumPotrazuje"/>
+					</action>
+					<action type="control value" value="#curSaldoDev">
+						<parameter value="~dtCalcDev.@SumSaldo"/>
+					</action>						
+					<action type="datarun nonquery" value="dtTemAzur"/>	
+					<action type="control populate keepfocus" value="#grdStavke"/>
+					<!-- <action type="datarun scalar" value="~dtFokus"> -->
+						<!-- <parameter name="SetajFokus"/> -->
+					<!-- </action> -->
+					<action type="control focus" value="#grdStavke">
+						<parameter value="$SetajFokus"/>
+					</action>
+					<action type="control enable" value="#btnAddDetalj" if="~dtGlavaGet.@Status==N"/>
+					<action type="control disable" value="#btnAddDetalj" else=""/>
+					<action type="control enable" value="#btnEditDetalj,#btnDelDetalj,#btnZakljuci" if="~dtGlavaGet.@Status==N&amp;&amp;#grdStavke.rowcount!=0"/>
+					<action type="control disable" value="#btnEditDetalj,#btnDelDetalj,#btnZakljuci" else=""/>			
+					<action type="control enable" value="#btnSpec" if="#grdStavke.rowcount!=0"/>
+					<action type="control disable" value="#btnSpec" else=""/>	
+				</action>
+			</action>
+		</action>
+	</part>	
+	<part name="prtTemGridLokal">
+		<!--ovaj part se čita u Temeljnice.xml detalj gridu i frmTemEdit.xml stavke gridu-->
+		<!--služi za specifične kolone po firmama-->
+		<!--TELE2-->
+           <!-- <field name="Channel"/> -->
+		   <!-- <field name="Channel Type"/> -->
+		   <!-- <field name="Segment"/> -->
+		   <!-- <field name="Site"/> -->
+		   <!-- <field name="IP Number" caption="IP Number"/> -->
+		   <!-- <field name="Product/Car Registration"/> -->
+		   <!-- <field name="Location"/> -->
+		   <!-- <field name="Site Option"/> -->
+        <!--TELE2-->
+		<!--TIA-->
+		<!-- <field name="NazivKonta" caption="Naziv konta"/> -->
+		<!--TIA-->		
+     </part>
+</parts>

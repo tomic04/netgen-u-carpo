@@ -1,0 +1,628 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+privremeno uklonjen groupsummarystyle="inline" 
+6.9.2021. v.1.0.21. AA timeot na poništavanjima
+17.6.2021. v1.0.20. AA kolona ProknjizenRobno mora biti navedena kako bi se osvježila na refreshrow
+9.6.2021. v1.0.19. AA kolona Temeljnica
+7.5.2021.   v1.0.18.AA partgrdRobaFields
+6.5.2021.   v1.0.17.AA spporukequery vrstapromid 6 prijemni list
+4.5.2021.   v1.0.16.AA na zaključcima refresh samo reda
+22.3.2021.  v1.0.15.AA IndBezUsluga
+21.1.2021.  v1.0.14.AA VrijemeZaključka
+4.11.2020.  v1.0.13.AA zaključak kalkulacije omogućen i za storno - status 2
+23.6.2020.  v1.0.12.AA dtIzracunSume za prtGrdRobaSum u jednom koraku
+18.3.2020.  v1.0.11.AA $VrstaDokId zbog ispisa na izmjeni dokumenta; Pronađi
+24.2.2020.  v1.0.10.AA VrstaDokId u dtPrint prikaži template za original + template kalkulacije
+17.2.2020.  v1.0.9. AA pbvMinRokTrajanja, pbvKkvalObavezan HD 51805
+7.2.2020.   v1.0.8. AA groupsummarystyle="inline" HD 52770
+31.12.2019. v1.0.7. AA OperaterLock na zaključku primke
+27.12.2019. v1.0.6. AA dtValutaTecaj action 5
+6.12.2019.  v1.0.5. AA drvo vremenska podjela preko spCarpoTreeVrijeme
+25.11.2019. v1.0.4. AA dtPrint preko store
+13.11.2019. v1.0.3. AA poruka prilikom kopiranja
+30.10.2019. v1.0.2. AA MarzaPubVar za obavijest o negativnoj marži
+4.5.2019.   v1.0.1. AA ispis robne kalkulacije, igra na gumbu za ispis i dtPoveziNabPriGlaRobnoKalkGla
+17.04.2019 PJ frmStavkaPrijemnogLista, dodao @OrgShemaId u dtNabNarCijena
+				frmNepovezaneFakture maknuo fixedsize="true"
+08.04.2019 PJ ako je pubvar uključen, daj zemlju podrijetla sa zadnjeg dokumenta
+03.03.2019 PJ dodao TopNabPriDetId u frmPriListKalEdit
+-->
+<root version="1.0.20." loglevel="5"> 
+    <form name="frmMaster" type="master" caption="Direktna primka - ulazna kalkulacija">
+        <event type="init">
+			<action type="variable value">
+				<parameter name="Global.OperaterLockId" value="0" type="int" />
+			</action>
+			<action type="datarun reader" value="global.~dtPubVars"/>
+			<action type="datarun scalar" value="global.~dtIndBezUsluga">
+				<parameter name="global.$IndBezUsluga"/>
+			</action>
+			<action type="datarun scalar" value="~dtMarzaPubVar">
+				<parameter name="global.$MarzaPubVar"/>
+			</action>
+			<action type="variable value">
+				<parameter name="Global.pbvMinRokTrajanja" value="global.~dtPubVars.@MinRokTrajanja" type="int"/>
+				<parameter name="Global.pbvKkvalObavezan" value="global.~dtPubVars.@KkvalObavezan" type="int"/>				
+			</action>			
+        </event>
+		<event type="shown">
+			<action type="control visible" value="#btnPromijeniStatus">
+				<parameter value="false"/>
+			</action>
+		</event>
+        <managerlayout>
+            <lookup name="filter" savevalue="app">
+				<comboitem value="VremenskaPodjela" searchfield="VpKeyId"/>
+                <comboitem value="Partneri" searchfield="DobKeyId"/>
+				<comboitem value="Skladišta" searchfield="SklKeyId"/>
+				<!--searchfield su kolone iz CarpoSearcha koje vraćaju Id na drvetu za odabir iz pretrage-->
+            </lookup>
+            <tree name="tree" filtermode="smart" key="Id" searchfield="NabPriGlaId" parentfield="ParentId">
+				<!-- <data command="VremenskaPodjela" type="integrated" if="#filter==VremenskaPodjela"/> -->
+				<data command="dbo.spCarpoTreeVrijeme" if="#filter==VremenskaPodjela">
+					<parameter name="@tablica" value="NabPriGla"/>
+					<parameter name="@jucer" value="1"/>
+					<parameter name="@danas" value="1"/>
+					<parameter name="@minGodina" value="7"/>
+				</data>	
+                <data command="spNabPlkCarpoGlaFilterQuery" key="SkladisteId" elseif="#filter==Skladišta">
+					<parameter name="@Action"  value="Skladista" />
+					<parameter name="@OperateriId"  value="@@operateriid" />
+				</data>						
+                <data command="spNabPlkCarpoGlaFilterQuery" key="NabPriGlaId" else="">
+					<parameter name="@Action"  value="Partneri" />
+				</data>				
+				<event type="focusedrowchanged">
+					<!-- <action type="control populate async" value="#grdGlava" /> -->
+					<action type="control populate" value="#grdGlava" />
+				</event>
+                <fields>
+                    <field name="Name"/>
+                </fields>
+            </tree>
+			<grid name="grdGlava" type="master" async="true" savelayout="true" multiselect="true" key="NabPriGlaId" Printorientation="" searchfield="NabPriGlaId">
+				<event type="focusedrowchanged">
+					<!-- <action type="message" value="#grdGlava.@NabPriGlaId"></action> -->
+                    <action type="control populate" value="#grdDetail" />
+					<action type="control disable" value="#btnObrisi" if="#grdGlava.@StatusSve==U robnom||#grdGlava.@StatusSve==Zaključen"/>
+					<action type="control enable" value="#btnObrisi" else=""/>
+					<action type="variable value">
+						<parameter name="VrstaDokId" value="#grdGlava.@VrstaDokId"/>
+					</action>
+                </event>
+				<event type="doubleclick">
+					<action type="variable value" value="Global.$OperaterLockId">
+						<parameter value="#grdGlava.@NabPriGlaId" />
+					</action>
+					<action type="form open" value="frmPriListKalEdit"  if="#grdGlava.rowcount&gt;0">
+                        <parameter name="NabPriGlaId" value="#grdGlava.@NabPriGlaId" />
+						<parameter name="Status" value="#grdGlava.@StatusSve" />
+						<parameter name="VrstaDokId" value="#grdGlava.@VrstaDokId" />
+                    </action>
+                    <action type="control populate keepfocus" value="#grdGlava" />
+                </event>
+				<event type="keydown">
+					<!--EDIT-->
+					<action if="key==13">
+						<action type="variable value" value="Global.$OperaterLockId">
+							<parameter value="#grdGlava.@NabPriGlaId" />
+						</action>
+                        <action type="form open" value="frmPriListKalEdit"  if="#grdGlava.rowcount&gt;0">
+                            <parameter name="NabPriGlaId" value="#grdGlava.@NabPriGlaId" />
+							<parameter name="Status" value="#grdGlava.@StatusSve" />
+							<parameter name="VrstaDokId" value="#grdGlava.@VrstaDokId" />
+                        </action>
+                        <action type="control populate keepfocus" value="#grdGlava" />
+                    </action>
+					<!--DELETE-->							
+					<action if="key==46">
+                        <action type="confirm" value="Želite li obrisati dokument broj '{#grdGlava.@Broj}'?" if="#grdGlava.rowcount&gt;0">
+                            <action type="datarun nonquery" value="~dtDelete">
+                                <action type="control populate" value="#grdGlava" />
+                            </action>
+                        </action>
+					</action>
+					<!--INSERT-->
+					<action if="key==45">
+						<action type="form open" value="frmPriListKalNova">	  
+							<parameter name="NabPriGlaId" value="null"/>
+							<parameter name="VrstaDokId" value="#btnUnesi.@VrstaDokId"/>
+							<parameter name="vrstaDok" value="#btnUnesi.@Opis"/>
+						</action>
+						<action type="control populate" value="#grdGlava"/>					
+					</action>
+				</event>
+                <data command="spNabPlkCarpoGlaQuery" timeout="300">
+					<parameter name="@Action"  value="sviDokumenti" />
+					<parameter name="@PartneriId"  if="#filter==Partneri" value="#tree.@ValueId" />	
+					<parameter name="@SkladisteId"  if="#filter==Skladišta" value="#tree.@ValueId" />		
+                    <parameter name="@DatumOd" value="#tree.@DatumOd" />
+                    <parameter name="@DatumDo" value="#tree.@DatumDo" />
+                </data>
+				<fields inherited = "false">
+					<field name="Broj" caption="Dokument" fixed="left" fontbold="true" />
+					<field name="VrstaDokOpis" caption="Vrsta dokumenta"  />
+					<field name="DatumDok" caption="Datum"  />
+					<field name="Otpremnica" caption="Otpremnica"  />
+					<field name="FakturniIznos" caption="Fak. iznos"  />
+					<field name="ValutaOznaka" caption="Valuta"  />
+					<field name="DevVrijednost" caption="Dev.Vrijednost"  />
+					<field name="FakVrijednost" caption="Fak.Vrijednost"  />
+					<field name="NVrijednost" caption="Nab.Vrijednost"  />
+					<field name="Tecaj" caption="Tečaj" showtotalsum="false" showgroupsum="false" />
+					<field name="Inicijali" caption="Operater"  />
+					<field name="StatusSve" caption="Status"  />
+					<field name="VrijemeZakljucka" caption="Vrijeme zaključka" format="dd.MM.yyyy HH:mm"/>
+					<field name="SklOpis" caption="Skladište"  />
+					<field name="RabatP" caption="Rabat%" showtotalsum="false" showgroupsum="false" />
+					<field name="RabatUkupno" caption="Vrij.Rabata"  />
+					<field name="PovratnaNaknada" caption="Povratna naknada"/>
+					<field name="CarinaIznos" caption="Carina"  />
+					<field name="CarinaPosto" caption="Carina %" showtotalsum="false" showgroupsum="false" />
+					<field name="TrosakI" caption="Man. troškovi iznos"  />
+					<field name="TrosakP" caption="Man. troškovi %'" showtotalsum="false" showgroupsum="false" />
+					<field name="Dobavljac" caption="Dobavljač"  />
+					<field name="Lokacija" caption="Lokacija"  />
+					<field name="OsobaNaziv" caption="Odg.Osoba"  />
+					<field name="UFA" caption="UFA"  />
+					<field name="BrojRacuna" caption="Broj računa"  />
+					<field name="Opis" caption="Opis"  />
+					<field name="Memo" caption="Napomena"  />
+					<field name="Prijevoznik" caption="Prijevoznik"/>
+					<field name="Registracija" caption="Registracija"/>
+					<field name="Temeljnica" />
+					<field name="ProknjizenRobno" visible="false"/>
+                </fields>
+                <styles>
+                    <style name="fontcolor" value="#CC0000" if="#grdGlava.@StatusSve==Nezaključen" />
+                    <style name="fontcolor" value="#228B22" if="#grdGlava.@StatusSve==U robnom" />
+                </styles>
+				<menu>
+					<menuitem caption="KOPIRAJ">
+						<event type="click">
+							<action type="confirm" value="Jeste li sigurni da želite kopirati dokument?">
+								<!-- kopiraj dokument -->
+								<action type="datarun scalar" value="global.~dtCopyDokAzur">
+									<parameter name="NabPriGlaId" value="$NabPriGlaId"/>
+									<!-- refresh grid -->
+									<action type="control populate" value="#grdGlava"/>
+									<action type="control focus" value="#grdGlava">
+										<parameter value="$NabPriGlaId" />
+									</action>
+								</action>	
+							</action>
+						</event>					
+					</menuitem>
+					<menuitem name="menPovezaniDokumenti" caption="POVEZANI DOKUMENTI">
+						<event type="click">
+							<action type="form open" value="frmPovezaniDokumenti">
+								<parameter name="GlaId" value="#grdGlava.@NabPriGlaId"/>
+								<parameter name="Tablica" value="NabPriGla"/>
+							</action>
+						</event>
+					</menuitem>						
+				</menu>
+            </grid>
+			<grid name="grdDetail" showgrouppanel="false" showautofilterrow="true" savelayout="true" customsort="stringasint" multiselect="true">
+				<data command="spNabPlkCarpoDetQuery">
+                    <parameter name="@Action" value="stavkeDokumenta" />
+                    <parameter name="@Id" value="#grdGlava.@NabPriGlaId" />
+                </data>
+				<partsql name="partgrdRobaFields" dataname="~dtPartCijenaFormat"/>
+				<styles>
+					<style name="fontcolor" value="#C70039" if="#grdDetail.@MinRokTrajanja==1"/>
+				</styles>
+            </grid>
+        </managerlayout>
+        <panelbuttons>
+            <buttons>		
+				<button name="btnUnesi" caption="UNESI"  dataname="global.~dtVrsteDok"  displayfield="Opis">
+					<event type="click">
+						<action type="form open" value="frmPriListKalNova">	  
+							<parameter name="NabPriGlaId" value="null" />
+							<parameter name="VrstaDokId" value="#btnUnesi.@VrstaDokId" />
+							<parameter name="vrstaDok" value="#btnUnesi.@Opis" />
+						</action>
+						<action type="control populate" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit">
+                    <menuitem control="#grdGlava"/>
+                    <event type="click">
+						<action type="variable value" value="Global.$OperaterLockId">
+							<parameter value="#grdGlava.@NabPriGlaId" />
+						</action>
+                        <action type="form open" value="frmPriListKalEdit"  if="#grdGlava.rowcount&gt;0">
+                            <parameter name="NabPriGlaId" value="#grdGlava.@NabPriGlaId" />
+							<parameter name="Status" value="#grdGlava.@StatusSve"/>
+							<parameter name="VrstaDokId" value="#grdGlava.@VrstaDokId"/>
+							<parameter name="Izmjena" value="1"/>
+                        </action>
+                        <!-- <action type="control populate keepfocus" value="#grdGlava" /> -->
+						<action type="control refreshrow" value="#grdGlava">
+							<parameter value="~dtGlavaOne"/>
+						</action>
+						<action type="control populate" value="#grdDetail"/>						
+                    </event>
+                </button>
+				 <button name="btnObrisi" caption="OBRIŠI" type="delete">
+                    <event type="click">
+                        <action type="confirm" value="Želite li obrisati dokument broj '{#grdGlava.@Broj}'?" if="#grdGlava.rowcount&gt;0">
+                            <action type="datarun nonquery" value="~dtDelete">
+                                <action type="control populate" value="#grdGlava"/>
+                            </action>
+                        </action>
+                    </event>
+                </button>
+				<button name="btnPrint" caption="ISPIŠI DOKUMENT" dataname="global.~dtPrint" displayfield="Opis" >
+					<event type="click">
+						<action type="datarun scalar" value="~dtPoveziNabPriGlaRobnoKalkGla">
+							<parameter name="PoveziNabPriGlaRobnoKalkGla"/>
+						</action>
+						<action  if="#grdGlava.rowcount&gt;0">						
+							<action type="control print" value="#grdGlava" if="#btnPrint.@Sifra=='80'&amp;&amp;$PoveziNabPriGlaRobnoKalkGla!=null">
+								<action type="print template" value="#btnPrint.@Template">
+									<parameter name="id" value="$PoveziNabPriGlaRobnoKalkGla"/>
+								</action>							
+							</action>	
+							<action type="message" value="Ne postoje proknjiženi dokumenti, nije moguće ispisati kalkulaciju!" elseif="#btnPrint.@Sifra=='80'&amp;&amp;$PoveziNabPriGlaRobnoKalkGla==null"/>							
+							<action type="control print" value="#grdGlava" elseif="#btnPrint.@Sifra=='06'">
+								<action type="print template" value="#btnPrint.@Template">
+									<parameter name="id" value="#grdGlava.@NabPriGlaId"/>
+								</action>							
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnZakljuci" caption="ZAKLJUČI PRIMKU" type="delete" function="">
+                    <event type="click"> 
+						<action type="confirm" value="Želite zaključiti odabrane primke?" if="#grdGlava.rowcount&gt;0">
+							<action type="control foreachrow selected" value="#grdGlava">
+								<!--provjeri operaterlock-->
+								<action type="datarun scalar" value="global.~dtOperaterLock"/>
+								<!-- prvo provjeri pubvars -->				
+								<action type="datarun reader" value="global.~dtProvjeriPubVars"/>
+								<!-- pozovi storu za provjeru knjizenja -->
+								<action type="datarun reader" value="global.~dtProvjeriKnjizenje" if="~dtProvjeriPubVars.rowcount&gt;0"/>
+								<!-- ZakljuciPrimkuStavka -->
+								<action type="datarun reader" value="global.~dtNabKalkZakljuci"/>
+								<action type="datarun reader" value="global.~dtNKUCjenikAzur"/>
+								<action type="control refreshrow" value="#grdGlava">
+									<parameter value="~dtGlavaOne"/>
+								</action>
+							</action>
+							<!-- <action type="control populate" value="#grdGlava" /> -->
+                        </action>
+                    </event>
+                </button>
+				<button name="btnPromijeniStatus" caption="PROMIJENI STATUS" type="delete" function="" enabled="false">
+                    <event type="click">
+						<action type="form open" value="frmPromjenaStatusa" if="#grdGlava.@NabPriGlaId!=null">
+							<parameter name="NabPriGlaId" value="#grdGlava.@NabPriGlaId" />
+							<parameter name="Status" value="#grdGlava.@Status" />
+						</action>                    
+					</event>
+                </button>
+				<button name="btnPonisti" caption="PONIŠTI PRIMKU" type="delete" function="">
+                    <event type="click">
+						<action type="variable value" value="$vrstaakcije">
+							<parameter value="0"/>
+						</action>
+						<action type="datarun reader" value="dtStatusCheck" if="#grdGlava.rowcount&gt;0"/>
+
+						<action type="confirm" value="~dtStatusCheck.@text" if="#grdGlava.rowcount&gt;0&amp;&amp;~dtStatusCheck!=null&amp;&amp;~dtStatusCheck.rowcount&gt;0">
+							<action type="control foreachrow selected" value="#grdGlava" if="#grdGlava.@Status==1&amp;&amp;#grdGlava.@ProknjizenRobno==0">
+								<action type="datarun nonquery" value="dtPonistiPrimku"/>
+								<action type="control refreshrow" value="#grdGlava">
+									<parameter value="~dtGlavaOne"/>
+								</action>								
+							</action>
+							<!-- <action type="control populate" value="#grdGlava" /> -->
+						</action>                    
+                    </event>
+                </button>
+				<button name="btnZakljuciKalk" caption="ZAKLJUČI KALKULACIJU" type="delete" function="">
+                    <event type="click">
+						<action type="variable value" value="$vrstaakcije">
+							<parameter value="2"/>
+						</action>
+						<action type="datarun reader" value="dtStatusCheck" if="#grdGlava.rowcount&gt;0"/>
+						<action type="confirm" value="~dtStatusCheck.@text" if="#grdGlava.rowcount&gt;0">
+							<action type="control foreachrow selected" value="#grdGlava" if="#grdGlava.@ProknjizenRobno==0">								
+								<action type="datarun nonquery" value="dtZakljuciKalkulaciju" if="#grdGlava.@Status==1||#grdGlava.@Status==2"/>
+								<action type="control refreshrow" value="#grdGlava">
+									<parameter value="~dtGlavaOne"/>
+								</action>								
+							</action>
+							<!-- <action type="control populate" value="#grdGlava"/> -->
+                        </action>
+                    </event>
+                </button>
+				<button name="btnPonistiKalk" caption="PONIŠTI KALKULACIJU" type="delete" function="">
+                    <event type="click">
+						<action type="variable value" value="$vrstaakcije">
+							<parameter value="1"/>
+						</action>
+						<action type="datarun reader" value="dtStatusCheck" if="#grdGlava.rowcount&gt;0"/>
+						<action type="confirm" value="~dtStatusCheck.@text" if="#grdGlava.rowcount&gt;0">
+							<action type="control foreachrow selected" value="#grdGlava" if="#grdGlava.@ProknjizenRobno==1">
+								<action type="datarun nonquery" value="dtPonistiKlakulaciju"/>
+								<action type="control refreshrow" value="#grdGlava">
+									<parameter value="~dtGlavaOne"/>
+								</action>								
+							</action>
+							<!-- <action type="control populate" value="#grdGlava" /> -->
+                        </action>
+                    </event>
+                </button>
+				<button name="btnSearch" caption="PRONAĐI">
+					<dropdownitem caption="PO BROJU">
+						<event type="click">
+							<action type="search" value="~dtSearch"/>
+						</event> 					
+					</dropdownitem>
+					<dropdownitem caption="PO OTPREMNICI">
+						<event type="click">
+							<action type="search" value="~dtSearchOtpremnica"/>	
+						</event>
+					</dropdownitem>	
+				</button>
+            </buttons>
+        </panelbuttons>
+        <datalist>
+			<data command="spVrstaDokGetCarpo" name="dtVrstaDokGet"></data>
+			<data command="spNabPlkCarpoGlaAzur" name="dtDelete">
+                <parameter name="@Id" value="#grdGlava.@NabPriGlaId" />
+                <parameter name="@Action" value="delete" />
+            </data>
+			<data command="spNabPlkCarpoPonistiZakljucakPrimke" name="dtPonistiPrimku"  timeout="200">
+				<parameter name="@ID"  value="#grdGlava.@NabPriGlaId"/>
+				<parameter name="@OperateriId"  value="@@operateriid"/>				
+			</data>	
+			<data command="spNabPlkCarpoPonistiZakljucakKalkulacije" name="dtPonistiKlakulaciju"  timeout="200">
+				<parameter name="@NabPriGlaId"  value="#grdGlava.@NabPriGlaId" />			
+			</data>			
+			<data command="spNabPlkCarpoKalkKnjizenje" name="dtZakljuciKalkulaciju" >
+				<parameter name="@NabPriGlaId"  value="#grdGlava.@NabPriGlaId" />			
+				<parameter name="@OperaterId"  value="@@OperateriId" />			
+			</data>
+			<data command="spNabPlkCarpoDokumentStatusCheck" name="dtStatusCheck" >		
+				<parameter name="@Idijevi"  value="#grdGlava.selectedids" />
+				<parameter name="@vrstaakcije"  value="$vrstaakcije" />
+			</data>
+			<data name="dtPoveziNabPriGlaRobnoKalkGla" command="spNabPriGlaVezaRobnoKalkGla">
+				<parameter name="@NabPriGlaId" value="#grdGlava.@NabPriGlaId"/>
+			</data>
+			<data name="dtMarzaPubVar" command="spPriListKalMarza">
+				<parameter name="@Action" value="0"/>
+			</data>
+			<data name="dtSearch" command="spCarpoSearch">
+				<parameter name="@Table" value="NabPriGla"/>
+				<parameter name="@Pojam" value="#btnSearch.searchtext"/>
+			</data>		
+			<data name="dtSearchOtpremnica" command="spCarpoSearch">
+				<parameter name="@Table" value="NabPriGla"/>
+				<parameter name="@Pojam" value="#btnSearch.searchtext"/>
+				<parameter name="@Action" value="Otpremnica"/>
+			</data>				
+			<data name="dtGlavaOne" command="spNabPlkCarpoGlaQueryOne" timeout="300">
+				<parameter name="@NabPriGlaId"  value="#grdGlava.@NabPriGlaId"/>
+			</data>			
+        </datalist>	
+    </form>
+	<form name="frmPriListKalNova" path="frmPriListKalNova.xml"/>
+	<form name="frmPriListKalEdit" path="frmPriListKalEdit.xml"/>	
+	<form name="frmStavkaPrijemnogLista" path="frmStavkaPrijemnogLista.xml"/>
+	<form name="frmPromjenaStatusa" path="frmPromjenaStatusa.xml"/>
+	<form name="frmNepovezaneFakture" path="frmNepovezaneFakture.xml"/>
+	<form name="frmTrosak" path="frmTrosak.xml"/>
+	<form name="frmTrosakDetail" path="frmTrosakDetail.xml"/>
+	<form name="frmUrednikRabata" path="frmUrednikRabata.xml"/>
+	<form name="frmDonosNotp" path="frmDonosNotp.xml"/>
+	<form name="frmDonosNarGrupno" path="frmDonosNarGrupno.xml"/>
+	<form name="frmDonosNarStavke" path="frmDonosNarStavke.xml"/>
+	<form name="frmSerijskiBroj" path="frmSerijskiBroj.xml"></form>
+	<form name="frmCjenik" path="frmCjenik.xml"></form>
+	<form name="frmIzborTecaja" path="frmIzborTecaja.xml"/>
+	<form name="frmKnjigaUraInsert" path="KnjigaUra.frmKnjigaUraInsert.xml"/>
+	<form name="frmPovezaniDokumenti" path="frmPovezaniDokumenti.xml"/>
+   <datalist>
+        <data command="spJKatalogTree" name="dtOrgShema">
+            <parameter name="@Action" value="orgshema" />
+        </data>
+        <data command="spKatalogLokacije" name="dtLokacija">
+            <parameter name="@Action" value="Lokacije"/>
+            <parameter name="@PartneriId" value="$PartneriId"/>
+        </data>
+        <data command="spKatalogSkladisteValuta" name="dtValuta">
+            <parameter name="@Action" value="valuta" />
+        </data>
+        <data command="spKatalogSkladisteValuta" name="dtSkladiste">
+            <parameter name="@Action" value="skladiste" />
+        </data>
+        <data command="spProNacinIsporukeQuery" name="dtNacinIsporuke">
+            <parameter name="@Action" value="0" />
+        </data>
+        <data command="spOsobeQuery" name="dtOdgovornaOsoba">
+            <parameter name="@Action" value="16" />
+        </data>
+		<data command="spPorukeQuery" name="dtPoruke">
+            <parameter name="@Action" value="3" />
+            <parameter name="@Id" value="0" />
+            <parameter name="@VrstaPromid" value="6"/>
+        </data>	
+		<data command="spTecajCarpoQuery" name="dtValutaTecaj">
+			<parameter name="@Action" value="5" />
+			<parameter name="@ValuteId" value="#cmbValuta"/>
+			<parameter name="@datum" value="#datDatumdok" if="$UFADatumDok==null"/>
+			<parameter name="@datum" value="$UFADatumDok" if="$UFADatumDok!=null"/>
+		</data>
+		<data command="select @par1 + char(13) + char(10) + @par2 as tekst" type="text" name="dtNapomena">
+			<parameter name="@par1" value="#MemoGlava" if="#MemoGlava!=null"/>
+			<parameter name="@par1" value=" " else=""/>
+			<parameter name="@par2" value="#cmbNapomena"/>
+		</data>
+		<data command="spDrzaveQuery" name="dtDrzave">
+			<parameter name="@Action" value="0"/>
+		</data>		
+		<data command="spRobnoNabpriGlaQuery" name="dtTroskovi">
+			<parameter name="@Action"  value="3" />
+			<parameter name="@RobnoKalkGlaId"  value="$NabPriGlaId" />		
+		</data>
+		<data command="spNabPlkCarpoRobnoKalkGlaQuery" name="dtNepovezaneFakture" >
+			<parameter name="@Action"  value="12" />
+			<parameter name="@PartneriId"  value="global.$partnerID" />		
+			<parameter name="@BrojDok"  value="global.$brojDok" />		
+		</data>		
+		<data command="select cast((@par2/@par1) * 100 as decimal(20,4)) as posto, cast((@par3/100) * @par1 as decimal(20,2)) as iznos" type="text" name="dtIzracun">
+			<parameter name="@par1" value="#txtFVrijednost" type="decimal"/>
+			<parameter name="@par2" value="#txtTrosakIznos" type="decimal"/>
+			<parameter name="@par3" value="#txtTrosakPosto" type="decimal"/>
+		</data>		
+		<data name="dtIzracunSume" command="dbo.spNabPlkCarpoCalcSume">
+			<parameter name="@Action" value="1"/>
+			<parameter name="@FVrijednost" value="#grdRoba.@Fvrijednost.sum" type="decimal"/>
+			<parameter name="@RabatRacun" value="#grdRoba.@RabatRacun.sum" type="decimal"/>
+			<parameter name="@tecaj" value="$tecaj" type="decimal"/>
+			<parameter name="@DevVrijednost" value="#grdRoba.@DevVrijednost.sum" type="decimal"/>
+			<parameter name="@TrosakI" value="#grdRoba.@TrosakI.sum" type="decimal"/>
+			<parameter name="@TrosarinaI" value="#grdRoba.@Trosarina.sum" type="decimal"/>
+			<parameter name="@CarinaI" value="#grdRoba.@CarinaI.sum" type="decimal"/>
+			<parameter name="@NVrijednost" value="#grdRoba.@NVrijednost.sum" type="decimal"/>
+			<parameter name="@PovratnaNaknada" value="#grdRoba.@PovratnaNaknada.sum" type="decimal"/>
+			<parameter name="@PoticajnaNaknada" value="#grdRoba.@Poticajna Naknada.sum" type="decimal"/>
+			<parameter name="@NVrijednostDev" value="#grdRoba.@NVrijednostDev.sum" type="decimal"/>
+			<parameter name="@Devrabat" value="#grdRoba.@DevRabat.sum" type="decimal"/>
+		</data>
+		<data name="dtIzracunSumeParent" command="dbo.spNabPlkCarpoCalcSume">
+			<parameter name="@Action" value="1"/>
+			<parameter name="@FVrijednost" value="parent.#grdRoba.@Fvrijednost.sum" type="decimal"/>
+			<parameter name="@RabatRacun" value="parent.#grdRoba.@RabatRacun.sum" type="decimal"/>
+			<parameter name="@tecaj" value="$tecaj" type="decimal"/>
+			<parameter name="@DevVrijednost" value="parent.#grdRoba.@DevVrijednost.sum" type="decimal"/>
+			<parameter name="@TrosakI" value="parent.#grdRoba.@TrosakI.sum" type="decimal"/>
+			<parameter name="@TrosarinaI" value="parent.#grdRoba.@Trosarina.sum" type="decimal"/>
+			<parameter name="@CarinaI" value="parent.#grdRoba.@CarinaI.sum" type="decimal"/>
+			<parameter name="@NVrijednost" value="parent.#grdRoba.@NVrijednost.sum" type="decimal"/>
+			<parameter name="@PovratnaNaknada" value="parent.#grdRoba.@PovratnaNaknada.sum" type="decimal"/>
+			<parameter name="@PoticajnaNaknada" value="parent.#grdRoba.@Poticajna Naknada.sum" type="decimal"/>
+			<parameter name="@NVrijednostDev" value="parent.#grdRoba.@NVrijednostDev.sum" type="decimal"/>
+			<parameter name="@Devrabat" value="parent.#grdRoba.@DevRabat.sum" type="decimal"/>
+		</data>		
+		<data command="select cast((@par1 - @par2) as decimal(20,2)) as fakvrijrabat , cast((@par2 / @par3) as decimal(20,2)) as devrabat,cast((@par4 - cast((@par2 / @par3) as decimal(20,2))) as decimal(20,2)) as devvrijrabat, cast (@par4 as decimal(20,2)) as devvrij, cast (@par1 as decimal(20,2)) as fakvrij, cast (@par2 as decimal(20,2)) as rabat" type="text" name="dtIzracunSumeFakturna">
+			<parameter name="@par1" value="#grdRoba.@Fvrijednost.sum" type="decimal"/>
+			<parameter name="@par2" value="#grdRoba.@RabatRacun.sum" type="decimal"/>
+			<parameter name="@par3" value="$tecaj" type="decimal"/>
+			<parameter name="@par4" value="#grdRoba.@DevVrijednost.sum" type="decimal"/>
+		</data>		
+		<data command="select cast((@par1 + @par2 + @par3) as decimal(20,2)) as sumatroskova, cast (@par1 as decimal(20,2)) as trosak, cast (@par2 as decimal(20,2)) as trosarina, cast (@par3 as decimal(20,2)) as carina" type="text" name="dtIzracunSumeTroskovi">
+			<parameter name="@par1" value="#grdRoba.@TrosakI.sum" type="decimal"/>
+			<parameter name="@par2" value="#grdRoba.@Trosarina.sum" type="decimal"/>
+			<parameter name="@par3" value="#grdRoba.@CarinaI.sum" type="decimal"/>
+		</data>		
+		<data command="select cast(@par1 as decimal(20,2)) as carinai, cast(@par2 as decimal(20,2)) as trosaki" type="text" name="dtIzracunCarinaTrosakRound">
+			<parameter name="@par1" value="~dtGet.@carinai" type="decimal"/>
+			<parameter name="@par2" value="~dtGet.@TrosakI" type="decimal"/>
+		</data>		
+		<data command="select cast((@par5 - (@par3 / @par2)) as decimal(20,2)) as nabvrijdev, cast((@par3 / @par2) as decimal(20,2)) as povratdev, cast((@par1 - @par3) as decimal(20,2)) as nabvrij, cast(@par5 as decimal(20,2)) as nabvrijdevukupno, cast(@par1 as decimal(20,2)) as nabvrijpovrat,cast(@par3 as decimal(20,2)) as povrat" type="text" name="dtIzracunSumeNabavna">
+			<parameter name="@par1" value="#grdRoba.@NVrijednost.sum" type="decimal"/>
+			<parameter name="@par2" value="$tecaj" type="decimal"/>
+			<parameter name="@par3" value="#grdRoba.@PovratnaNaknada.sum" type="decimal"/>
+			<parameter name="@par4" value="#txtNabVrijDevUkupno" type="decimal"/>
+			<parameter name="@par5" value="#grdRoba.@NVrijednostDev.sum" type="decimal"/>
+		</data>			
+		<data command="select cast(@par1 / @par2 as decimal(20,8)) as devcijena" type="text" name="dtIzracunDevCijene">
+			<parameter name="@par1" value="#txtFCijena" type="decimal"/>
+			<parameter name="@par2" value="$tecaj" type="decimal"/>
+		</data>	
+		<data command="select cast(@par1 as decimal(20,2)) as trosakposto" type="text" name="dtRoundTrosakPosto">
+			<parameter name="@par1" value="$trosakPosto" type="decimal"/>
+		</data>
+		<data command="select * from pubvars where varime='PrijemOstaliVrstaDokId'" type="text" name="dtProvjeriPubVars"/>	
+		<data command="spNabPlkCarpoKnjizenjeProvjera" name="dtProvjeriKnjizenje">
+			<parameter name="@Action" value="1" if="#grdglava.@NabPriGlaId==null"></parameter>
+			<parameter name="@Action" value="0" else=""></parameter>
+			<parameter name="@ID" value="$NabPriGlaId" if="#grdglava.@NabPriGlaId==null"></parameter>
+			<parameter name="@Idijevi" value="#grdGlava.selectedids" else=""></parameter>
+			<parameter name="@VrstaDokid" value="$VrstaDokId" if="#grdglava.@NabPriGlaId==null"></parameter>
+			<parameter name="@VrstaDokid" value="#grdGlava.@VrstaDokId" else=""></parameter>
+		</data>	
+		<data command="spNabPlkCarpoKalkZakljuci" name="dtNabKalkZakljuci">
+			<parameter name="@ID" value="$NabPriGlaId" if="#grdglava.@NabPriGlaId==null"></parameter>
+			<parameter name="@ID" value="#grdGlava.@NabPriGlaId" else=""></parameter>
+		</data>		
+		<data command="spNabPlkCarponNKUCjenikAzur" name="dtNKUCjenikAzur">
+			<parameter name="@Action" value="2"></parameter>
+			<parameter name="@ID" value="$NabPriGlaId" if="#grdglava.@NabPriGlaId==null"></parameter>
+			<parameter name="@ID" value="#grdGlava.@NabPriGlaId" else=""></parameter>
+		</data>	
+		<!-- <data command="select d.opis, d.template, p.sifra  -->
+					<!-- from vrstadok d  -->
+					<!-- inner join vrstaprom p on d.vrstapromid=p.vrstapromid  -->
+					<!-- where d.VrstaDokid =7 and left(d.template,1) != '#'  -->
+				<!-- union All  -->
+				<!-- select d.opis, d.template, p.sifra  -->
+					<!-- from vrstadok d  -->
+					<!-- inner join vrstaprom p on d.vrstapromid=p.vrstapromid  -->
+					<!-- where d.VrstaDokid in (select vrstadokid from vrstadok where vrstapromid in  -->
+						<!-- (select vrstapromid from vrstaprom where sifra in ('80'))) and left(d.template,1) != '#'  -->
+						<!-- Union All  -->
+						<!-- select t.opis, t.template, p.sifra from templates t inner join vrstadok d on t.oznaka=d.template inner join vrstaprom p on d.vrstapromid = p.vrstapromid where d.VrstaDokid =7 and t.oznaka in  -->
+							<!-- (select template From vrstadok where vrstadokid=7) or d.VrstaDokid in  -->
+								<!-- (select vrstadokid from vrstadok where vrstapromid in  -->
+									<!-- (select vrstapromid from vrstaprom where sifra in ('80')))" name="dtPrint" type="text" /> -->
+		<data name="dtPrint" command="spNabPlkCarpoPrint">
+			<parameter name="@Action" value="1"/>
+			<parameter name="@VrstaDokId" value="$VrstaDokId"/>
+		</data>									
+		<data command="spTraziRoba" name="dtRoba">
+			<parameter name="@action" value="Roba"/>		
+			<parameter name="@Uvjet" value="#txtRoba.text"/>
+			<parameter name="@PokaziVPCijene" value="1"/>
+			<parameter name="@PokaziNabCijene" value="1"/>
+			<parameter name="@Retired" value="0"/>
+			<parameter name="@Prikazi_Dodatno" value="1"/>
+			<parameter name="@PokaziStanje" value="1"/>
+			<parameter name="@IndBezUsluga" value="global.$IndBezUsluga"/>
+		</data>
+		<data command="select VrstaDokId, Opis from VrstaDok where VrstaPromId = 6 and Aktivni = 1" type="text" name="dtVrsteDok"></data>
+		<data command="spProd_DodJM_Kalk" name="dtKolicina">
+				<parameter name="@action" type='int' value="0"/>
+				<parameter name="@Kolicina" type='decimal' value="#txtKolicinaPak" if="$Ind_Kol==0"/>
+				<parameter name="@Kolicina" type='decimal' value="#txtKolicina" if="$Ind_Kol==1"/>		
+				<parameter name="@br_decimala" type='int' value="$BrDecimalaDodJM" if="$Ind_Kol==1"/>
+				<parameter name="@br_decimala" type='int' value="$BrDecimalaJM" if="$Ind_Kol==0"/>	
+				<parameter name="@Ind" type='int' value="$Ind_Kol"/>
+				<parameter name="@Faktor" type='decimal' value="$Faktor"/>
+			</data>	
+		<data command="spNabPLKCarpoKalkKopiraj" name="dtCopyDokAzur">
+			<parameter name="@NabPriGlaIDOld" value="#grdGlava.@NabPriGlaId" type="int"></parameter>
+		</data>
+		<data command="spPriListKalPubVars" name="dtPubVars"/>
+		<data name="dtOperaterLock" command="spCKntOperaterLock">
+			<parameter name="@Action" value="1" type="int"/>
+			<parameter name="@Id" value="#grdGlava.@NabPriGlaId"/>
+			<parameter name="@tablica" value="NabPriGla"/>
+			<parameter name="@OperateriId" value="@@OperateriId"/>
+		</data> 
+		<data name="dtPartUnosOrgShemaOsoba" command="spNabPlkCarpoPartSql">
+			<parameter name="@Action" value="UnosOrgShemaOsoba"/>
+			<parameter name="@OperateriId" value="@@OperateriId"/>
+		</data>
+		<data name="dtPartStavkaSpremiValidation" command="spNabPlkCarpoPartSql">
+			<parameter name="@Action" value="StavkaSpremiValidation"/>
+			<parameter name="@OperateriId" value="@@OperateriId"/>
+		</data>		
+		<data name="dtPartUnosSkladiste" command="spNabPlkCarpoPartSql">
+			<parameter name="@Action" value="UnosSkladiste"/>
+			<parameter name="@OperateriId" value="@@OperateriId"/>
+		</data>		
+		<data name="dtIndBezUsluga" command="spNabPlkCarpoKontrole">
+			<parameter name="@Action" value="2"/>
+		</data>		
+		<data name="dtPartCijenaFormat" command="spNabPlkCarpoPartSql">
+			<parameter name="@Action" value="grdRoba"/>
+			<parameter name="@OperateriId" value="@@OperateriId"/>
+		</data>	
+    </datalist>
+</root>

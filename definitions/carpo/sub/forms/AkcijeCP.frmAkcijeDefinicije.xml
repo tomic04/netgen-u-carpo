@@ -1,0 +1,570 @@
+<root>
+
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::::::::::     FORM ZA PREGLED AKCIJA     :::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+    <form name="frmAkcije" caption="AKCIJE" fixedsize="true" height="500" width="900">
+
+        <event type="load">
+            <!-- AKO NEMA SLOGOVA, DISABLE BTN OBRIŠI-->
+            <action type="control populate" value="#grdAkcije">
+                <action if="#grdAkcije.rowcount==0" type="control disable" value="#btnObrisi" />
+                <action else="" type="control enable" value="#btnObrisi" />
+            </action>
+
+        </event>
+
+        <layout textposition="left" itemspadding="3">
+
+            <group spacing="0,0,3,3" rows="1" cols="1" groupbordervisible="false">
+
+                <item row="1" col="1">
+                    <grid name="grdAkcije" dataname="dtGrdAkcije" key="AkcijeId" bestfitonrefresh="true" keyfield="AkcijeId" fieldsmartspaces="false" multiselect="true">
+
+                        <!-- editabilne ćelije-->
+                        <event type="cellvaluechanged">
+
+                            <!-- mogu se mijenjati samo akcOznaka i naziv akcije-->
+
+                            <action type="datarun reader" value="~dtIzmjenaAkcije">
+
+                                <!-- ako je izmjena uspješna (akcOznaka je unique, nije prazna) control populate keepfocus-->
+                                <action if="$indGreske==0">
+                                    <action type="control populate keepfocus" value="#grdAkcije" />
+                                    <action type="message" value="$poruka" />
+                                </action>
+                                <!-- ako je izmjena neuspješna, refresh grid akcije; inače će u gridu pisati nova vrijednost, koja zapravo nije ušla u bazu-->
+                                <action else="">
+                                    <action type="control refreshvalue" value="#grdAkcije"/>
+                                </action>
+
+                            </action>
+
+                        </event>
+
+                        <fields inherited="true">
+                            <field name="Naziv" caption="Akcija" editable="true" />
+                            <field name="AkcOznaka" caption="Oznaka akcije" editable="true" />
+                            <field name="Labela" caption="Razina prava" />
+                        </fields>
+
+                    </grid>
+                </item>
+            </group>
+
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+                <!-- UNESI - otvara formu za unos nove akcije-->
+                <button caption="UNESI" name="btnUnesi">
+                    <event type="click">
+                        <action type="form open" value="frmAkcijeUnosIzmjena">
+                            <parameter name="izForme" value="1" />
+                        </action>
+                    </event>
+                </button>
+                <!-- OBRIŠI - provodi isto brisanje kao menuitem brisanje akcije na master gridu na parent formu-->
+                <!-- ovdje ne radi multiselect-->
+                <button caption="OBRIŠI" name="btnObrisi">
+                    <event type="click">
+                        <action type="confirm" value="Jeste li sigurni da želite odabrane akcije? Bit će obrisana i sva prava dodijeljena na te akcije!">
+                            <action type="datarun reader" value="~dtBrisanjeAkcije">
+
+                                <action if="$indGreske==0">
+                                    <action type="control populate keepfocus" value="#grdAkcije" />
+                                    <action type="message" value="$poruka" />
+                                </action>
+
+
+                            </action>
+                        </action>
+                    </event>
+                </button>
+
+                <button begingroup="true" name="btnDefinicijeTablica" caption="DEFINICIJE TABLICA">
+                    <dropdownitem caption="Pregled definicija">
+                        <event type="click">
+                            <action type="form open" value="frmDefinicije" />
+                        </event>
+                    </dropdownitem>
+                    <dropdownitem caption="Unos nove definicije">
+                        <event type="click">
+                            <action type="form open" value="frmDefinicijeUnosIzmjena">
+                                <parameter name="akcija" value="unos" />
+                            </action>
+                        </event>
+                    </dropdownitem>
+                </button>
+
+                <button dock="right" caption="IZLAZ" name="btnIzlaz">
+                    <event type="click">
+                        <action type="form close" />
+                    </event>
+                </button>
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+
+            <!-- editabilne ćelije-->
+            <data command="spDneEv_Akcije_Azur_Akcije_CP" name="dtIzmjenaAkcije">
+                <parameter name="@action" value="izmjena_akcije" />
+                <parameter name="@Id" value="#grdAkcije" />
+                <parameter name="@operateriid" value="@@operateriid" />
+
+                <!-- prosljeđuje u proceduru vrijednost koja se upisuje u polje-->
+                <parameter name="@Value" value="#grdAkcije.focusedvalue" />
+                <!-- prosljeđuje u proceduru naziv polja u koje se upisuje vrijednost-->
+                <parameter name="@Kolona" value="#grdAkcije.focusedfield" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+
+            <!-- MASTER GRID S AKCIJAMA-->
+            <data command="spDneEv_Akcije_Query_CP" name="dtGrdAkcije">
+                <parameter name="@action" value="grid_akcije" />
+            </data>
+
+            <!-- BRISANJE AKCIJA-->
+            <data command="spDneEv_Akcije_Azur_Akcije_CP" name="dtBrisanjeAkcije">
+                <parameter name="@action" value="brisanje_akcije" />
+
+                <parameter name="@Akcije" value="#grdAkcije.selectedids" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+        </datalist>
+
+    </form>
+
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::     FORM ZA UNOS/IZMJENU AKCIJA     :::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+
+    <form name="frmAkcijeUnosIzmjena" caption="UNOS AKCIJE" fixedsize="true" width="300" height="100">
+
+        <layout textposition="left" itemspadding="3">
+            <group spacing="0,0,3,3" rows="2" cols="1" groupbordervisible="false">
+
+                <group spacing="0,0,3,3" caption="Podaci o akciji" col="1" row="1" cols="1" rows="2">
+                    <item row="1" col="1" highlight="false" caption="Naziv akcije" textposition="left">
+                        <textedit name="txtNaziv" required="true" />
+                    </item>
+                    <item row="2" col="1" highlight="false" caption="Oznaka akcije" textposition="left">
+                        <textedit name="txtOznaka" required="true" />
+                    </item>
+                </group>
+
+                <group caption="Definicija tablice" col="1" row="2" cols="2" rows="2" spacing="0,0,3,3">
+
+                    <columnsdefinition>
+                        <column position="1" size="80%" />
+                        <column position="2" size="20%" />
+                    </columnsdefinition>
+
+                    <item row="1" col="1" highlight="false" caption="Definicija">
+                        <comboedit name="cmbTablica" dataname="dtCmbTablica" valuefield="DneEvAkcijeTabliceId" displayfield="Naziv" allownull="false" />
+                    </item>
+
+                    <!-- UNOS NOVE DEFINICIJE TABLICE IZ FORME ZA UNOS NOVE AKCIJE-->
+                    <item row="1" col="2" highlight="false">
+                        <button image="add" name="btnUnesiDefiniciju">
+                            <!-- NA KLIKU NA +-->
+                            <event type="click">
+                                <!-- STAVI NOVIID, NOVINAZIV NULL U SLUČAJU DA SU DOBILI VRIJEDNOST IZ NEKOG DRUGOG ULAZA U FORMU-->
+                                <action type="variable value" value="noviid">
+                                    <parameter value="null" />
+                                </action>
+                                <action type="variable value" value="noviNaziv">
+                                    <parameter value="null" />
+                                </action>
+                                <action type="form open" value="frmDefinicijeUnosIzmjena" />
+
+                                <!-- PO IZLASKU IZ FORME ZA UNOS DEFINICIJE-->
+                                <!-- AKO JE UNESENA NOVA DEFINICIJA, REFRESH COMBO S DEFINICIJAMA U FORMI ZA UNOS AKCIJE-->
+                                <!-- SET COMBO NA NOVU DEFINICIJU-->
+                                <action if="$noviid!=null">
+                                    <action type="control populate" value="#cmbTablica" />
+                                    <action type="control value" value="#cmbTablica">
+                                        <parameter text="$noviNaziv" value="$noviid" />
+                                    </action>
+                                </action>
+
+                            </event>
+                        </button>
+                    </item>
+
+                    <item height="10" />
+
+                </group>
+
+            </group>
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+                <button caption="SPREMI" name="btnSpremi">
+                    <event type="click">
+                        <action type="validate" />
+
+                        <action type="datarun reader" value="dtUnesiAkciju">
+
+                            <!-- ako je spremanje uspješno-->
+                            <action if="$indGreske==0">
+
+                                <!-- populate akcije grid, fokus na novi unos-->
+                                <!-- AKO SE U FORMU ZA UNOS UŠLO IZ FORME ZA PREGLED AKCIJA-->
+                                <!-- CONTROL POPULATE #grdAkcije (JER SE VRAĆAŠ NA TAJ GRID)-->
+                                <action if="$izForme!=null" type="control populate" value="parent.#grdAkcije">
+                                    <action type="control focus" value="parent.#grdAkcije">
+                                        <parameter value="$noviId" type="int" />
+                                    </action>
+                                </action>
+                                <!-- AKO SE NA UNOS UŠLO IZ POČETNOG ZASLONA-->
+                                <!-- CONTROL POPULATE #grdMaster (GRID AKCIJE NA POČETNOM ZASLONU)-->
+                                <action else="" type="control populate" value="parent.#grdMaster">
+                                    <action type="control focus" value="parent.#grdMaster">
+                                        <parameter value="$@noviId" type="int" />
+                                    </action>
+                                </action>
+
+                                <!-- isprazni formu, ako treba unositi još akcija-->
+                                <action type="control refreshvalue" value="##" />
+
+                                <action type="message" value="$poruka" />
+                            </action>
+
+                        </action>
+                    </event>
+                </button>
+                <button dock="right" caption="ODUSTANI" name="btnOdustani">
+                    <event type="click">
+                        <action type="form close" />
+                    </event>
+                </button>
+            </buttons>
+        </panelbuttons>
+
+        <datalist>
+
+            <!-- COMBO DEFINICIJE TABLICA-->
+            <data command="spDneEv_Akcije_Help_CP" name="dtCmbTablica">
+                <parameter name="@action" value="cmbTablice" />
+            </data>
+
+            <!-- UNOS AKCIJE-->
+            <data command="spDneEv_Akcije_Azur_Akcije_CP" name="dtUnesiAkciju">
+                <parameter name="@action" value="unos_akcije" />
+
+                <parameter name="@Naziv" value="#txtNaziv" />
+                <parameter name="@AkcOznaka" value="#txtOznaka" />
+                <parameter name="@id" value="#cmbTablica" />
+
+                <parameter name="@operateriid" value="@@operateriid" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+                <parameter name="@noviId.output.int" />
+            </data>
+        </datalist>
+
+    </form>
+
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::   FORM ZA PREGLED DEFINICIJA TABLICA   ::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+    <form name="frmDefinicije" caption="DEFINICIJE TABLICA" fixedsize="true" width="1000" height="400">
+
+        <event type="load">
+            <action type="control populate" value="#grdDefinicije">
+                <action if="#grdDefinicije.rowcount==0" type="control disable" value="#btnObrisi,#btnIzmijeni" />
+                <action else="" type="control enable" value="#btnObrisi,#btnIzmijeni" />
+            </action>
+        </event>
+
+        <layout>
+            <group cols="1" rows="1" groupbordervisible="false">
+                <item row="1" col="1">
+                    <grid name="grdDefinicije" type="master" key="DneEvAkcijeTabliceId" dataname="dtGrdDefinicije" bestfitonrefresh="true" multiselect="true" fieldsmartspaces="false">
+
+                        <fields inherited="true">
+                            <field name="Naziv" caption="Naziv definicije" />
+                            <field name="Tablica" />
+                            <field name="IdNaziv" caption="Id polje tablice" />
+                            <field name="Labela" />
+                            <field name="StupacNaziv" caption="Stupac za prikaz" />
+                            <field name="OrderBy" caption="Polje za redanje" />
+                            <field name="FilterPolje" caption="Filter polje" />
+                            <field name="FilterVrijednost" caption="Filter vrijednost" />
+                            <field name="SortKey" />
+                        </fields>
+
+                        <!-- MENU IZMIJENI - DEFINICIJA TABLICE-->
+                        <menu>
+                            <menuitem name="menIzmijeni" caption="IZMIJENI">
+                                <event type="click">
+                                    <action type="form open" value="frmDefinicijeUnosIzmjena">
+                                        <parameter name="DneEvAkcijeTabliceId" value="#grdDefinicije" />
+                                    </action>
+                                </event>
+                            </menuitem>
+
+                            <menuitem type="separator" />
+
+                            <!-- MENU OBRIŠI - DEFINICIJA TABLICE-->
+                            <!-- briše definiciju, akcije koje ju koriste, prava koja koriste akcije-->
+                            <menuitem name="menObriši" caption="OBRIŠI">
+                                <event type="click">
+                                    <action type="confirm" value="Jeste li sigurni da želite obrisati odabrane definicije tablica? Obrisat će se i akcije i sva prava koja su vezana uz njih!">
+                                        <action type="datarun reader" value="~dtBrisanjeDefinicije">
+                                            <action if="$indGreske==0">
+                                                <action type="control populate keepfocus" value="#grdDefinicije">
+                                                    <action if="#grdDefinicije.rowcount==0" type="control disable" value="#btnObrisi,#btnIzmijeni" />
+                                                </action>
+                                                <action type="message" value="$poruka" />
+                                            </action>
+                                        </action>
+                                    </action>
+                                </event>
+                            </menuitem>
+                        </menu>
+
+                    </grid>
+                </item>
+            </group>
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+
+                <!-- BTN UNESI - DEFINICIJA TABLICE-->
+                <!-- prosljeđuje se parametar izForme jer je formu za unos moguće otvoriti odavde (iz forme), iz forme za unos akcije, ili u izborniku na buttonu DEFINICIJA TABLICE-->
+                <!-- ako nije iz forme, forma za unos se zatvara odmah po uspješnom unosu, inače ostaje uključena-->
+                <button name="btnUnesi" caption="UNESI">
+                    <event type="click">
+                        <action type="form open" value="frmDefinicijeUnosIzmjena">
+                            <parameter name="izForme" value="1" />
+                        </action>
+                    </event>
+                </button>
+
+                <button name="btnIzmijeni" caption="IZMIJENI">
+                    <event type="click">
+                        <action type="form open" value="frmDefinicijeUnosIzmjena">
+                            <parameter name="DneEvAkcijeTabliceId" value="#grdDefinicije" />
+                        </action>
+                    </event>
+                </button>
+
+                <button begingroup="true" name="btnObrisi" caption="OBRIŠI">
+                    <event type="click">
+                        <action type="confirm" value="Jeste li sigurni da želite obrisati odabrane definicije tablica? Obrisat će se i akcije i sva prava koja su vezana uz njih!">
+                            <action type="datarun reader" value="~dtBrisanjeDefinicije">
+                                <action if="$indGreske==0">
+                                    <action type="control populate keepfocus" value="#grdDefinicije">
+                                        <action if="#grdDefinicije.rowcount==0" type="control disable" value="#btnObrisi,#btnIzmijeni" />
+                                    </action>
+                                    <action type="message" value="$poruka" />
+                                </action>
+                            </action>
+                        </action>
+                    </event>
+                </button>
+
+            </buttons>
+        </panelbuttons>
+
+
+        <datalist>
+            <!-- GRID DEFINICIJE TABLICA-->
+            <data command="spDneEv_Akcije_Query_CP" name="dtGrdDefinicije">
+                <parameter name="@action" value="grdDefinicije" />
+            </data>
+            <!-- BRISANJE DEFINICIJE-->
+            <data command="spDneEv_Akcije_Azur_DefinicijeTablica_CP" name="dtBrisanjeDefinicije">
+                <parameter name="@action" value="brisanje_definicije" />
+                <parameter name="@DneEvAkcijeTablicaId" value="#grdDefinicije.selectedids" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+            </data>
+        </datalist>
+
+    </form>
+
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- :::::::::::::::::::::::::    FORM ZA UNOS/IZMJENU DEFINICIJA TABLICA   :::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+    <!-- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+    <form name="frmDefinicijeUnosIzmjena" caption="PARAMETRI TABLICE ZA AKCIJU" width="500" height="200" fixedsize="true">
+
+        <event type="init">
+            <action if="$DneEvAkcijeTabliceId!=null" type="datarun reader" value="~dtGetDefiniciju" />
+        </event>
+
+        <!-- AKO RADIŠ IZMJENU DEFINICIJE, DISABLE UNOS NAZIVA TABLICE, ID POLJA TABLICE-->
+        <event type="load">
+            <action if="$DneEvAkcijeTabliceId!=null" type="control disable" value="#txtTablica,#txtIdTablice" />
+        </event>
+
+        <layout>
+            <group rows="3" cols="2" caption="Podaci o tablici">
+
+                <group row="1" col="1" rows="1" cols="1" colspan="2" groupbordervisible="false">
+                    <item row="1" col="1" caption="Naziv definicije" textposition="left" highlight="false">
+                        <textedit name="txtNaziv" required="true" datavalue="~dtGetDefiniciju.@Naziv" />
+                    </item>
+                </group>
+
+                <item row="2" col="1" highlight="false" caption="Labela tablice za prava" textposition="left">
+                    <textedit name="txtLabela" required="true" datavalue="~dtGetDefiniciju.@Labela" />
+                </item>
+                <item row="2" col="2" highlight="false" caption="Tablica za prava" textposition="left">
+                    <textedit name="txtTablica" required="true" datavalue="~dtGetDefiniciju.@Tablica" />
+                </item>
+
+                <group row="3" col="1" colspan="2" rows="3" cols="2" highlight="false" caption="Parametri tablice" spacing="0,0,5,0">
+                    <item row="1" col="1" caption="ID tablice" textposition="left" highlight="false">
+                        <textedit name="txtIdTablice" required="true" datavalue="~dtGetDefiniciju.@IdNaziv" />
+                    </item>
+
+                    <item row="1" col="2" caption="Stupac naziv" textposition="left" highlight="false">
+                        <textedit name="txtStupacNaziv" required="true" datavalue="~dtGetDefiniciju.@StupacNaziv" />
+                    </item>
+
+                    <item row="2" col="1" caption="SortKey" textposition="left" highlight="false">
+                        <textedit name="txtSortKey" datavalue="~dtGetDefiniciju.@SortKey" />
+                    </item>
+
+                    <item row="2" col="2" caption="Order by" textposition="left" highlight="false">
+                        <textedit name="txtOrder" required="true" datavalue="~dtGetDefiniciju.@OrderBy" />
+                    </item>
+
+                    <item row="3" col="1" caption="Filter polje" textposition="left" highlight="false">
+                        <textedit name="txtFilterPolje" datavalue="~dtGetDefiniciju.@FilterPolje" />
+                    </item>
+
+                    <item row="3" col="2" caption="Filter vrijednost" textposition="left" highlight="false">
+                        <textedit name="txtFilterVrijednost" datavalue="~dtGetDefiniciju.@FilterVrijednost" />
+                    </item>
+
+                </group>
+
+            </group>
+        </layout>
+
+        <panelbuttons>
+            <buttons>
+
+                <button name="btnSpremi" caption="SPREMI">
+
+                    <event type="click">
+                        <action type="validate" />
+
+                        <action type="datarun reader" value="~dtUnosIzmjenaTablice">
+
+                            <action if="$indGreske==0">
+
+                                <!-- AKO JE IZMJENA, SAMO REFRESH GRID DEFINICIJE, FORM CLOSE-->
+                                <action if="$DneEvAkcijeTabliceId!=null">
+
+                                    <action type="control refreshvalue" value="parent.#grdDefinicije" />
+                                    <action type="form close" />
+
+                                </action>
+
+                                <!-- AKO JE UNOS-->
+                                <action else="">
+                                    <!-- AKO SI UŠAO NA FORMU ZA UNOS IZ FORME ZA PREGLED DEFINICIJA-->
+                                    <!-- CONTROL POPULATE #grdDefinicije (JER SE VRAĆAŠ NA NJEGA)-->
+                                    <action if="$izForme!=null" type="control populate" value="parent.#grdDefinicije">
+                                        <action type="control focus" value="parent.#grdDefinicije">
+                                            <parameter value="$noviId" />
+                                        </action>
+                                        <action type="control enable" value="parent.#btnObrisi,parent.#btnIzmijeni" />
+                                    </action>
+
+                                    <!-- STAVI ID NULL DA SE DATARUN VRATI PRAZAN-->
+                                    <action type="variable value" value="$dneEvAkcijeTabliceId">
+                                        <parameter value="null" />
+                                    </action>
+
+                                    <!-- SPREMI NOVIID I NAZIV U VARIJABLE, DA MOGU BITI POSTAVLJENE U COMBO S DEFINICIJAMA-->
+                                    <!-- U FORMI ZA UNOS AKCIJE-->
+                                    <action type="variable value" value="parent.$noviid">
+                                        <parameter value="$NoviId" />
+                                    </action>
+                                    <action type="variable value" value="parent.$novinaziv">
+                                        <parameter value="#txtNaziv" />
+                                    </action>
+
+                                    <!-- AKO JE UNOS USPJEŠAN I FORMI ZA UNOS SE PRISTUPILO IZ FORME ZA UNOS NOVE AKCIJE, FORM CLOSE-->
+                                    <action if="parent.$noviid!=null&amp;&amp;$izForme!=1" type="form close" />
+
+                                    <!-- DATARUN DA SE ISPRAZNE KONTROLE-->
+                                    <action type="datarun reader" value="~dtGetDefiniciju" />
+
+                                    <action type="control refreshvalue" value="##" />
+                                </action>
+
+                                <action type="message" value="$poruka" />
+                            </action>
+
+                        </action>
+                    </event>
+
+                </button>
+                <button name="btnOdustani" caption="ODUSTANI" dock="right">
+                    <event type="click">
+                        <action type="form close" />
+                    </event>
+                </button>
+
+            </buttons>
+        </panelbuttons>
+
+
+        <datalist>
+            <!-- DT GET DEFINICIJU TABLICE ZA IZMJENU-->
+            <data command="spDneEv_Akcije_help_CP" name="dtGetDefiniciju">
+                <parameter name="@action" value="getDefiniciju" />
+                <parameter name="@id" value="$DneEvAkcijeTabliceId" />
+            </data>
+
+            <!-- UNOS/IZMJENA DEFINICIJE-->
+            <data command="spDneEv_Akcije_Azur_DefinicijeTablica_CP" name="dtUnosIzmjenaTablice">
+                <parameter name="@action" value="unos_izmjena_definicije" />
+                <parameter name="@id" value="$dneEvAkcijeTabliceId" />
+
+                <parameter name="@Naziv" value="#txtNaziv" />
+                <parameter name="@Labela" value="#txtLabela" />
+                <parameter name="@tablica" value="#txtTablica" />
+
+                <parameter name="@IdNaziv" value="#txtIdTablice" />
+                <parameter name="@StupacNaziv" value="#txtStupacNaziv" />
+                <parameter name="@sortKey" value="#txtSortKey" />
+                <parameter name="@filterPolje" value="#txtFilterPolje" />
+                <parameter name="@filterVrijednost" value="#txtFilterVrijednost" />
+                <parameter name="@order" value="#txtOrder" />
+
+                <parameter name="@operateriid" value="@@operateriid" />
+                <parameter name="@indGreske.output.int" />
+                <parameter name="@poruka.output.string" />
+                <parameter name="@noviId.output.int" />
+            </data>
+
+        </datalist>
+
+    </form>
+
+</root>

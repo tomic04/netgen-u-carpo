@@ -1,0 +1,163 @@
+﻿<root>
+    <form type="master" caption="Zaboravi podatke">
+        <event type="init">
+            <!-- <action type="variable value" value="global.$Pojam">
+                <parameter value="''"/>
+            </action> -->
+        </event>
+        <event type="load">
+            <action type="form open" value="frmSearch">
+            </action>
+        </event>
+        <event type="shown">
+            <action type="control disable" value="#btnZaboraviOsobu" if="#grdGlava.selectedIds==null" />
+        </event>
+        <managerlayout>
+            <tree name="trTree" dataname="~dtNapuniDrvo" caption="Tablice" key="GdprTabliceId" valueid="Naziv">
+                <event type="focusedrowchanged">
+                    <action type="control datasourceempty" value="#grdGlava"/>
+                    <action type="control populate" value="#grdGlava" />
+                    <action type="control enable" value="#btnZaboraviOsobu" if="#grdGlava.selectedIds!=null" />
+                </event>
+                <fields>
+		            <field name="Naziv" />
+	            </fields>
+            </tree>
+            <grid name="grdGlava" type="master" caption="Info" key="Id" dataname="~dtNapuniGlavu" multiselect="true" fieldsmartspaces="false" showmenutools="false" showmenuprintitem="false" >		            
+            </grid>
+        </managerlayout>
+        <panelbuttons>
+            <buttons>
+                <button name="btnPretrazi" caption="PRETRAŽI" fontbold="true" >
+                    <event type="click">
+                        <action type="form open" value="frmSearch" />
+                    </event>
+                </button>
+                <button name="btnZaboraviOsobu" caption="ZABORAVI PODATAK" width="140" >
+					<menuitem control="#grdGlava"/>
+                    <event type="click">
+                        <action type="form open" value="frmMemo"/>
+                    </event>
+                </button>
+            </buttons>
+        </panelbuttons>
+        <datalist>
+            <data command="spGdprZaboraviPodatke" name="dtNapuniDrvo">
+                <parameter name="@Action" value="Pretraga" />
+                <parameter name="@Pojam" value="#txtSearch" />
+                <parameter name="@FilterCheck" value="global.$FilterCheck"/>
+            </data>
+            <data command="spGdprZaboraviPodatke" name="dtNapuniGlavu">
+                <parameter name="@Action" value="GlavaSakrijPodatke" />
+                <parameter name="@NazivTablice" value="#trTree.@Naziv" />
+                <parameter name="@GdprTabliceId" value="#trTree.@GdprTabliceId" />
+                <parameter name="@Pojam" value="global.$Pojam" />
+                <parameter name="@FilterCheck" value="global.$FilterCheck"/>
+            </data>
+        </datalist>
+    </form>
+
+    <form name="frmSearch" caption="Pretraga" fixedsize="true">
+        <event type="init">
+            <action type="variable value">
+                <parameter name="global.FilterCheck" value="0" type="int"/>
+            </action>
+        </event>
+
+        <event type="load">
+			<action type="control value" value="#txtSearch">
+				<parameter value="global.$Pojam"/>
+			</action>        
+        </event>
+
+        <layout autotaborder="false">
+            <group cols="1" rows="2">
+            <columnsdefinition>
+                <column size="90%" position="1" />
+            </columnsdefinition>
+                <item row="1" col="1"  caption="Filter">
+                    <textedit name="txtSearch" tabindex="0">
+					</textedit>
+                </item>
+                <item row="2" col="1">
+                    <checkedit name="chkPretraga" caption="Prikaži sve stavke" tabstop="false">
+                        <event type="valuechanged">
+
+                            <action type="control enable" value="#txtSearch" if="#chkPretraga==false">
+                                <action type="variable value" value="global.$FilterCheck">
+                                    <parameter value="0" type="int"/>
+                                </action>
+                            </action>
+
+                            <action type="control disable" value="#txtSearch" else="">
+                                <action type="variable value" value="global.$FilterCheck">
+                                    <parameter value="1" type="int"/>
+                                </action>
+                            </action>
+                        </event>
+                    </checkedit>
+                </item>
+            </group>
+        </layout>
+        <panelbuttons>
+            <buttons>
+                <button name="btnOdustani" caption="Odustani" dock="right" tabstop="false">
+                    <event type="click">
+                        <action type="formclose"/>
+                    </event>
+                </button>
+
+                <button name="btnPretraga" caption="POTVRDI" tabindex="1" dock="right" color="dark">
+                        <event type="click">
+                            <action type="variable value" >
+                                <parameter name="global.Pojam" value="#txtSearch" />
+                            </action>
+                            <action type="control populate" value="parent.#trTree" />
+                            <action type="formclose"/>
+                        </event>
+                </button>
+            </buttons>
+        </panelbuttons>
+    </form>
+
+    <form name="frmMemo" caption="Napomena" fixedsize="true">
+        <layout>
+            <group cols="1" rows="1">
+                <item row="1" col="1"  caption="Napomena">
+                    <textedit name="txtMemo">
+					</textedit>
+                </item>
+            </group>
+        </layout>
+        <panelbuttons>
+            <buttons>
+                <button name="btnOdustani2" caption="Odustani" dock="right">
+                    <event type="click">
+                        <action type="formclose"/>
+                    </event>
+                </button>
+                <button name="btnOK" caption="POTVRDI" dock="right">
+                    <event type="click">
+                        <action type="datarun scalar" value="~dtZaboraviOsobu">
+                            <parameter name="Id" type="int" />
+                        </action>
+                        <action type="control populate" value="parent.#grdGlava">
+                        </action>
+                        <action type="formclose"/>
+                    </event>
+                </button>
+            </buttons>
+        </panelbuttons>
+        <datalist>
+            <data command="spGdprZaboraviPodatke" name="dtZaboraviOsobu">
+                <parameter name="@Action" value="ZaboraviOsobu"/>
+                <parameter name="@GdprTabliceId" value="parent.#trTree.@GdprTabliceId"/>
+                <parameter name="@OperaterId" value="@@operateriid" />
+                <parameter name="@RefIds" value="parent.#grdGlava.selectedids"/>
+                <parameter name="@Passphrase" value="Spin!"/>
+                <parameter name="@TxtMemo" value="#txtMemo"/>
+            </data>
+        </datalist> 
+    </form>
+
+</root>

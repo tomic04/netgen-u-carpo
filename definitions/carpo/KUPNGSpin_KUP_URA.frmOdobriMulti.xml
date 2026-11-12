@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+KUPNGSpin_KUP_URA - subforma: MULTISELECTODOBRI (NetGen) → frmOdobriMulti (Carpo)
+Konverzija je skeleton: UI + osnovni flow + SP pozivi; detaljna pravila (validacije) su označena TODO.
+-->
+<root version="1.2">
+  <form name="frmOdobriMulti" caption="Proslijeđivanje na odobrenje" type="dialog" width="820" height="640" fixedsize="false" saveformsize="true">
+    <event type="init">
+      <action type="variable value">
+        <parameter name="$Mode" value="'predlozak'"/>
+      </action>
+    </event>
+
+    <event type="shown">
+      <action type="datarun reader" value="~dtCheck"/>
+      <action type="message" value="{~dtCheck.@Poruka}" if="~dtCheck.@Ok==0"/>
+      <action type="form close" if="~dtCheck.@Ok==0"/>
+
+      <action type="control populate" value="#cmbPredlozak" if="~dtCheck.@Ok==1"/>
+      <action type="control populate" value="#grdPred,#grdLikvidatori" if="~dtCheck.@Ok==1"/>
+
+      <action type="control value" value="#rdoPredlozak" if="$Mode=='predlozak'">
+        <parameter value="true"/>
+      </action>
+      <action type="control visible" value="#cmbPredlozak,#grdPred,#btnPredlozak" if="$Mode=='predlozak'">
+        <parameter value="true"/>
+      </action>
+      <action type="control visible" value="#grdLikvidatori,#btnLikvidatori" if="$Mode=='predlozak'">
+        <parameter value="false"/>
+      </action>
+    </event>
+
+    <layout>
+      <group cols="1" rows="4" groupbordervisible="false">
+        <group col="1" row="1" cols="2" rows="1" groupbordervisible="false">
+          <item col="1" row="1">
+            <radioedit name="rdoPredlozak" caption="Predložak">
+              <event type="checkedchanged">
+                <action type="variable value" if="#rdoPredlozak==true">
+                  <parameter name="$Mode" value="'predlozak'"/>
+                </action>
+                <action type="control visible" value="#cmbPredlozak,#grdPred,#btnPredlozak" if="#rdoPredlozak==true">
+                  <parameter value="true"/>
+                </action>
+                <action type="control visible" value="#grdLikvidatori,#btnLikvidatori" if="#rdoPredlozak==true">
+                  <parameter value="false"/>
+                </action>
+              </event>
+            </radioedit>
+          </item>
+          <item col="2" row="1">
+            <radioedit name="rdoLikvidatori" caption="Odabir likvidatora">
+              <event type="checkedchanged">
+                <action type="variable value" if="#rdoLikvidatori==true">
+                  <parameter name="$Mode" value="'likvidatori'"/>
+                </action>
+                <action type="control visible" value="#cmbPredlozak,#grdPred,#btnPredlozak" if="#rdoLikvidatori==true">
+                  <parameter value="false"/>
+                </action>
+                <action type="control visible" value="#grdLikvidatori,#btnLikvidatori" if="#rdoLikvidatori==true">
+                  <parameter value="true"/>
+                </action>
+              </event>
+            </radioedit>
+          </item>
+        </group>
+
+        <item col="1" row="2" caption="Predložak za likvidaciju:" textposition="left">
+          <comboedit name="cmbPredlozak"
+                     dataname="~dtPredlozak"
+                     valuefield="KUPOdobriPredlozakId"
+                     displayfield="Naziv"
+                     allownull="true">
+            <event type="valuechanged">
+              <action type="control populate" value="#grdPred"/>
+            </event>
+          </comboedit>
+        </item>
+
+        <item col="1" row="3" caption="Likvidatori (iz predloška):" textposition="left">
+          <grid name="grdPred" dataname="~dtPredGrid" bestfitonrefresh="true" showautofilterrow="false" savelayout="true">
+            <fields inherited="true"/>
+          </grid>
+        </item>
+
+        <item col="1" row="4" caption="Likvidatori:" textposition="left">
+          <grid name="grdLikvidatori" dataname="~dtLikvidatori" bestfitonrefresh="true" showautofilterrow="true" multiselect="true" savelayout="true">
+            <fields>
+              <field name="Naziv" caption="Ime i prezime"/>
+              <field name="RedOdobravanja" caption="Prioritet" editable="true"/>
+              <field name="OperateriIdTo" visible="false"/>
+            </fields>
+          </grid>
+        </item>
+      </group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnLikvidatori" caption="PROSLIJEDI">
+          <event type="click" waittype="progress" waitcaption="Obrada" waittext="Šaljem...">
+            <action type="message" value="Odaberite barem jednog likvidatora." if="$Mode=='likvidatori'&&#grdLikvidatori.selectedrowscount==0"/>
+            <action type="datarun scalar" value="~dtGrupa" if="$Mode=='likvidatori'&&#grdLikvidatori.selectedrowscount>0">
+              <parameter name="$GrupaOdobravanja"/>
+            </action>
+            <action type="control foreachrow selected" value="#grdLikvidatori" if="$Mode=='likvidatori'&&#grdLikvidatori.selectedrowscount>0">
+              <action type="datarun nonquery" value="~dtOdobriJedan">
+                <parameter name="@operateriidto" value="#grdLikvidatori.@OperateriIdTo"/>
+                <parameter name="@Prioritet" value="#grdLikvidatori.@RedOdobravanja"/>
+                <parameter name="@KUPOdobriPredlozakId" value="null"/>
+              </action>
+            </action>
+            <action type="form close" if="$Mode=='likvidatori'&&#grdLikvidatori.selectedrowscount>0"/>
+          </event>
+        </button>
+
+        <button name="btnPredlozak" caption="PROSLIJEDI">
+          <event type="click" waittype="progress" waitcaption="Obrada" waittext="Šaljem...">
+            <action type="message" value="Odaberite predložak." if="$Mode=='predlozak'&&#cmbPredlozak==null"/>
+            <action type="datarun scalar" value="~dtGrupa" if="$Mode=='predlozak'&&#cmbPredlozak!=null">
+              <parameter name="$GrupaOdobravanja"/>
+            </action>
+            <action type="control foreachrow" value="#grdPred" if="$Mode=='predlozak'&&#cmbPredlozak!=null">
+              <action type="datarun nonquery" value="~dtOdobriJedan">
+                <!-- očekivane kolone iz spKUPOdobriOperateri @action=6 -->
+                <parameter name="@operateriidto" value="#grdPred.@OperateriIdTo"/>
+                <parameter name="@Prioritet" value="#grdPred.@Red_odobravanja"/>
+                <parameter name="@KUPOdobriPredlozakId" value="#cmbPredlozak"/>
+              </action>
+            </action>
+            <action type="form close" if="$Mode=='predlozak'&&#cmbPredlozak!=null"/>
+          </event>
+        </button>
+
+        <button name="btnOdustani" caption="ODUSTANI" dock="right">
+          <event type="click">
+            <action type="form close"/>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <!-- Validacije iz NetGen ONLOAD bloka -->
+      <data name="dtCheck" type="text" timeout="300"
+            command="select
+                     case
+                       when (select KupStatusOdobrenjeId from KUPPromet where KUPPrometId=@ID)=2 then 0
+                       when (select top 1 l.Zaprimljeno
+                               from KUPPromet p
+                               inner join (
+                                 select * from kupprometlog
+                                 where kupprometlogid in (select max(kupprometlogid) from kupprometlog group by kupprometid)
+                               ) l on p.kupprometid = l.kupprometid
+                              where p.KUPPrometid = @ID) in (0,2) then 0
+                       else 1
+                     end as Ok,
+                     case
+                       when (select KupStatusOdobrenjeId from KUPPromet where KUPPrometId=@ID)=2 then 'Dokument je već poslan na odobrenje!'
+                       when (select top 1 l.Zaprimljeno
+                               from KUPPromet p
+                               inner join (
+                                 select * from kupprometlog
+                                 where kupprometlogid in (select max(kupprometlogid) from kupprometlog group by kupprometid)
+                               ) l on p.kupprometid = l.kupprometid
+                              where p.KUPPrometid = @ID) in (0,2) then 'Dokument se ne može poslati na odobrenje!'
+                       else ''
+                     end as Poruka">
+        <parameter name="@ID" value="$Id" type="int"/>
+      </data>
+
+      <data name="dtPredlozak" command="dbo.spKUPOdobriOperateri" timeout="300">
+        <parameter name="@action" value="5"/>
+      </data>
+
+      <data name="dtPredGrid" command="dbo.spKUPOdobriOperateri" timeout="300">
+        <parameter name="@action" value="6"/>
+        <parameter name="@id" value="#cmbPredlozak"/>
+      </data>
+
+      <data name="dtLikvidatori" type="text" timeout="300"
+            command="select oop.operateriid as OperateriIdTo, oop.Naziv, 0 as RedOdobravanja
+                    from KUPOdobriOperateri op
+                    inner join ssOperateri oop on op.OperateriId=oop.OperateriId
+                    where op.KUPOdobriPredlozakId is null
+                    order by oop.naziv"/>
+
+      <data name="dtGrupa" type="text" timeout="300"
+            command="select coalesce(max(GrupaOdobravanja), 0) + 1 as GrupaOdobravanja
+                    from KUPPrometOdobrenjeLog where KUPPrometid = @id">
+        <parameter name="@id" value="$Id" type="int"/>
+      </data>
+
+      <data name="dtOdobriJedan" command="spKUPPrometAzurN" timeout="300">
+        <parameter name="@action" value="13"/>
+        <parameter name="@id" value="$Id"/>
+        <parameter name="@operateriid" value="@@operateriid"/>
+        <!-- dinamički (dolaze iz button/foreach poziva): @operateriidto, @Prioritet, @KUPOdobriPredlozakId -->
+        <parameter name="@GrupaOdobravanja" value="$GrupaOdobravanja"/>
+        <parameter name="RaiseInfoMsg" value="true"/>
+      </data>
+    </datalist>
+  </form>
+</root>
+

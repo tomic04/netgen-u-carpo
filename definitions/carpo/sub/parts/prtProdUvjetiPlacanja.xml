@@ -1,0 +1,79 @@
+<!-- 30.03.2022. DA - maknuo global na pozivima nekoliko datarun -->
+<!-- 15.02.2022. AR - Doradio okidanje različitih datasetova ovisno o granuli i statusu i zakomentirao kod Izmjeni Validate jer nije radilo -->
+<parts>
+	<part name="UvjetiPlacanja">
+		<item caption="IBAN:" row="1" col="1" colspan="2" textposition="top">
+			<comboedit name="cmbIBAN" enabled="true" valuefield="ParZiroId" displayfield="IBAN" datavalue="#dtGet.@ParZiroId" dataname="Global.dtIBAN" >
+			</comboedit>
+		</item>
+		<item row="2" col="1" colspan="2" rowspan="10">
+			<grid name="grdUvjeti" key="ProNaplataRateId" autopopulate="true" multiselect="true" showfooter="True" showgrouppanel="false" showautofilterrow="false">
+				<fields>
+					<field name="Dana" caption="Dana" editable="true" formatstring="n0" showtotalsum="false"/>
+					<field name="Datum" caption="Datum" editable="true" edittype="date"/>
+					<field name="Iznos" caption="Iznos" editable="true" formatstring="n2"/>
+				</fields>
+				<event type="cellvaluechanged">
+					<action type="datarun nonquery" value="~dtUvjetiIzmjena"/>
+					<action type="control populate keepfocus" value="#grdUvjeti"/>
+				</event>
+				<data command="spProd_Uvjeti">
+					<parameter name="@ID" value="$ProPonGlaId" type='int' if="Global.$tablicaGla=='ProPonGla'"/>
+					<parameter name="@ID" value="$FaktureId" type='int' if="Global.$tablicaGla=='Fakture'"/>
+					<parameter name="@ID" value="$ProNotpGlaId" type='int' if="Global.$tablicaGla=='ProNOtpGla'"/>
+					<parameter name="@Action" value="1" />
+					<parameter name="@IndKredit" value="1" if="$IndKredit==2"/>
+					<parameter name="@IndKredit" value="0" else=""/>
+					<parameter name="@tablicaGla" value="Global.$tablicaGla"/>
+					<parameter name="@tablicaDet" value="Global.$tablicaDet"/>
+				</data>
+			</grid>
+		</item>
+		<group padding="0" caption="Izmijeni broj dana na svim stavkama na:" groupbordervisible="true" cols="2" rows="1" col="1" row="12" colspan="2" spacing="5,5,5,5">
+			<rowsdefinition>
+				<row size="40" position="1" />
+			</rowsdefinition>
+			<item caption="Broj dana:" row="1" col="1" textposition="left">
+				<textedit name="txtDani" value="0" format="n0" type="integer" required="true"/>
+			</item>
+			<item row="1" col="2">
+				<button name="btnIzmijeniDane" caption="Izmijeni" >
+					<event type="click">
+						<!--<action type="validate"/>-->
+						<action if="Global.$tablicaGla!=ProNotpGla">
+							<action type="datarun nonquery" value="dtRokPlacanja"/>
+						</action>
+						<action elseif ="Global.$tablicaGla==ProNotpGla&amp;&amp;$Status==1">
+							<action type="datarun nonquery" value="dtRokPlacanja"/>
+						</action>
+						<action else="">
+							<action type="datarun nonquery" value="dtRokPlacanja_ZakIzmjenaUvjeta"/>
+						</action>
+						<action type="control populate" value="#grdUvjeti" />
+						<action type="control populate" value="#grdRoba" />
+						<action type="variable value">
+							<parameter name="global.varBrojDana" value="#txtDani" type="int" />
+						</action>
+					</event>
+				</button>
+			</item>
+		</group>
+		<item row="13" col="1">
+			<button name="btnKredit" caption="Kredit" >
+				<event type="click">
+					<action if="global.$tablicaGla=='ProPonGla'">
+						<action type="datarun reader" value="Global.dtKreditOpcija"/>
+						<action type="message" value="~dtKreditOpcija.@Poruka" if="~dtKreditOpcija.@Br_Opcija&gt;0"/>
+					</action>
+					<action type="form open" value="frmKredit">
+						<parameter name="ProPonGlaId" value="$ProPonGlaId" type='int' if="Global.$tablicaGla=='ProPonGla'"/>
+						<parameter name="FaktureId" value="$FaktureId" type='int' if="Global.$tablicaGla=='Fakture'"/>
+						<parameter name="ProNotpGlaId" value="$ProNotpGlaId" type='int' if="Global.$tablicaGla=='ProNOtpGla'"/>
+						<parameter name="KntNacinPlacId" value="#cmbNacinPlacanja" />
+						<parameter name="IndKredit" value="$IndKredit" />
+					</action>
+				</event>
+			</button>
+		</item>
+	</part>
+</parts>

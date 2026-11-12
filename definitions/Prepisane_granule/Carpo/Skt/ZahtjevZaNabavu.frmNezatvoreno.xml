@@ -1,0 +1,143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <form name="frmNezatvoreno" caption="Pregled neobrađenih zahtjeva za nabavu" width="999" height="600">
+  	<event type="oninit">
+		<action type="datarun reader" value="~dtNezatvoreniEditGrid_Brisanje" />			
+	</event>
+    <layout>
+      <group cols="1" rows="1" bordervisible="false">
+        <item col="1" row="1" highlight="false">
+          <grid name="grdNezatvoreno" bestfitonrefresh="true" key="NabZahDetId" dataname="dtGrid" autopopulate="true" savelayout="true" multiselect="true">
+            <fields inherited="true">
+              <field name="UserId" caption="Šifra" visible="true"/>
+			  <field name="RobaKod" caption="Kod"/>
+              <field name="RobaNaziv" caption="Naziv robe"/>
+              <field name="RobaJM" caption="JM"/>
+              <field name="Kolicina" caption="Zahtjevano"/>
+              <field name="Naruceno" caption="Naručeno"/>
+			  <field name="Razlika" editable="true" format="n3"/>			  
+              <field name="Dobavljac" caption="Dobavljač"/>
+              <field name="Inicijali" caption="Operater"/>
+              <field name="ImePrezime" caption="Odg. osoba"/>
+              <field name="OrgJedNaziv" caption="Org. jedinica"/>
+              <field name="DatumDok" caption="Datum"/>
+              <field name="Broj" caption="Zahtjev za nabavu"/>
+              <field name="ZOpis" caption="Opis"/>
+              <field name="IzvorStr" caption="Izvor"/>
+              <field name="NDatumIsporuke" caption="Datum isporuke"/>
+              <field name="OdgOsoba" caption="Komercijalist za robu"/>
+              <field name="MoguciRok" caption="Mogući rok isporuke"/>
+              <field name="Status" visible="false"/>
+              <field name="Opis" visible="false"/>
+              <field name="Izvor" visible="false"/>
+              <field name="UserKod" visible="false"/>
+              <field name="BarCode" visible="false"/>              
+              <field name="StatusStr" visible="false"/>
+            </fields>
+			<event type="cellvaluechanged">
+				<action type="variable value">
+					<parameter name="focusedvalue" value="#grdNezatvoreno.focusedvalue" />
+				</action>
+				<action type="variable value">
+					<parameter name="focusedfield" value="#grdNezatvoreno.focusedfield"/>
+				</action>										
+				<action type="datarun nonquery" value="~dtNezatvoreniEditGrid_Izmjena"/> 
+				<!-- <action type="control populate keepfocus" value="#grdNezatvoreno"/>  -->
+			</event>			
+          </grid>
+        </item>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnUkloni" caption="&amp;Ručno zatvori" function="Ukloni">
+          <event type="click">
+            <action type="confirm" value="Jeste li sigurni da želite ručno zatvoriti označeni zahtjev?">
+              <action type="datarun nonquery" value="~dtUkloni"/>
+			  <action type="control populate keepfocus" value="#grdNezatvoreno"/>
+            </action>
+          </event>
+        </button>
+        <button name="BtnMskl" caption="Kreiraj međuskladišnicu" function="SkladDokMskl" dataname="dtVrstaDokMskl" displayfield="Opis">
+          <event type="click">
+			<action type="variable value">
+				<parameter name="Global.DokId" value="0" type="int"/>
+			</action>
+			<action type="variable value">
+				<parameter name="Global.VisibleSkladisteUlaza" value="true"/>
+			</action>			
+			<action type="variable value">
+				<parameter name="IndSkt" value="Mskl" type="string"/>
+			</action>				
+			<action type="form open" value="frmSkladGlaUnos">
+				<parameter name="VrstaDokId" value="#BtnMskl.@VrstaDokId" />
+			</action>
+			<action if="Global.$DokId&gt;0">
+				<action type="datarun reader" value="~dtUnesiSktStavke"/>
+				<action type="message" value="Uspješno je kreiran dokument broj {$BrojDok}"/>
+				<action type="control populate" value="#grdNezatvoreno"/>							
+			</action>
+          </event>
+        </button>
+        <!-- <button name="BtnIntOtp" caption="Kreiraj int. otpremnicu" function="SkladDokIntOtp" dataname="dtVrstaDokIntOtp" displayfield="Opis"> -->
+          <!-- <event type="click"> -->
+			<!-- <action type="variable value"> -->
+				<!-- <parameter name="Global.DokId" value="0" type="int"/> -->
+			<!-- </action>			 -->
+			<!-- <action type="variable value"> -->
+				<!-- <parameter name="InsSkt" value="IntOtp" type="string"/> -->
+			<!-- </action>			 -->
+			<!-- <action type="form open" value="frmSkladGlaUnos"> -->
+				<!-- <parameter name="VrstaDokId" value="#BtnIntOtp.@VrstaDokId" /> -->
+			<!-- </action> -->
+			<!-- <action if="Global.$DokId&gt;0"> -->
+				<!-- <action type="datarun reader" value="~dtUnesiSktStavke"/> -->
+				<!-- <action type="message" value="Uspješno je kreiran dokument broj {$BrojDok}"/> -->
+				<!-- <action type="control populate" value="#grdNezatvoreno"/>							 -->
+			<!-- </action> -->
+          <!-- </event> -->
+        <!-- </button>		 -->
+        <button name="btnZatvori" caption="&amp;Izlaz" type="cancel"/>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spNab_ZahGla_GetNeobradjeni" name="dtGrid"/>
+      <data command="spNab_ZahGla_LnZahNarAzur" name="dtUkloni">
+        <parameter name="@nabzahdetid" value="#grdNezatvoreno.@NabZahDetId"/>
+        <parameter name="@kolicina" value="#grdNezatvoreno.@Kolicina"/>
+      </data>
+		<data command="spNG_Combo" name="dtVrstaDokMskl">
+			<parameter name="@Action" value="VrstaDok" />
+			<parameter name="@ID" value="28"/>
+			<parameter name="@IndPrava" value="1" />
+			<parameter name="@join" value="viSklad_VrstaDokPrava" />
+		</data>	
+		<data command="spNG_Combo" name="dtVrstaDokIntOtp">
+			<parameter name="@Action" value="VrstaDok" />
+			<parameter name="@ID" value="66"/>
+			<parameter name="@IndPrava" value="1" />
+			<parameter name="@join" value="viSklad_VrstaDokPrava" />
+		</data>		
+		<data command="spNab_ZahDet_SklDok" name="dtUnesiSktStavke">
+			<parameter name="@SktPrometGlaId" value="global.$DokId" />
+			<parameter name="@OperateriId" value="@@OperateriId" />
+			<parameter name="@VrstaPromSifra" value="41" if="$IndSkt==Mskl"/>
+			<parameter name="@VrstaPromSifra" value="37" else=""/>
+			<parameter name="@table" value="#grdNezatvoreno.selectedids.table" />
+			<parameter name="@BrojDok.output.string" variablename="BrojDok"/>
+		</data>	
+		<data command="spNabZahDet_Helper_Azur" name="dtNezatvoreniEditGrid_Izmjena">
+			<parameter name="@nabzahdetid" value="#grdNezatvoreno.@NabZahDetId"/>
+			<parameter name="@kolicina" value="$focusedvalue"/>
+			<parameter name="@OperateriId" value="@@OperateriId"/>
+			<parameter name="@Ind" value="Izmjena"/>
+		</data>	
+		<data command="spNabZahDet_Helper_Azur" name="dtNezatvoreniEditGrid_Brisanje">
+			<parameter name="@nabzahdetid" value="#grdNezatvoreno.@NabZahDetId"/>
+			<parameter name="@kolicina" value="$focusedvalue"/>
+			<parameter name="@OperateriId" value="@@OperateriId"/>
+			<parameter name="@Ind" value="Brisanje"/>
+		</data>			
+    </datalist>
+  </form>
+</root>

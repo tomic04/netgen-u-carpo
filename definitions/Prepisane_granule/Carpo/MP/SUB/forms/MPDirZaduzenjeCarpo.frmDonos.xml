@@ -1,0 +1,530 @@
+<root>
+	<form name="frmDonos" caption="Donos robe sa" width="300">
+		<event type="init">
+		</event>
+		<event type="load">
+		</event>
+		<event type="shown">
+		</event>
+		<layout>
+			<group rows="4" cols="1">
+				<item row="1" col="1">
+					<button name="btnTerminal" caption="Donos sa terminala">
+						<event type="click">
+							<action type="datarun nonquery" value="~dtTerminal">
+								<action type="form open" value="frmDonosTerminal" if="~dtTerminal.rowcount&gt;0">
+									<parameter name="id" value="$id"/>
+									<parameter name="trgovinaid" value="$trgovinaid"/>
+									<parameter name="datdok" value="$datdok"/>
+								</action>
+							</action>
+							<action type="form close" />
+						</event>
+					</button>
+				</item>
+				<item row="2" col="1">
+					<button name="btnRoba" caption="Donos iz robe">
+						<event type="click">
+							<action type="form open" value="frmDonosRoba">
+								<parameter name="id" value="$id"/>
+								<parameter name="trgovinaid" value="$trgovinaid"/>
+								<parameter name="datdok" value="$datdok"/>
+							</action>
+							<action type="form close" />
+						</event>
+					</button>
+				</item>
+				<item row="3" col="1">
+					<button name="btnNar" caption="Donos sa narudžbenice">
+						<event type="click">
+							<action type="form open" value="frmDonosNar">
+								<parameter name="id" value="$id"/>
+								<parameter name="trgovinaid" value="$trgovinaid"/>
+								<parameter name="datdok" value="$datdok"/>
+							</action>
+							<action type="form close" />
+						</event>
+					</button>
+				</item>
+				<item row="4" col="1">
+					<button name="btnPrm" caption="Donos sa zadnjeg zaduženja">
+						<event type="click">
+							<action type="form open" value="frmDonosZad">
+								<parameter name="id" value="$id"/>
+								<parameter name="trgovinaid" value="$trgovinaid"/>
+								<parameter name="datdok" value="$datdok"/>
+							</action>
+							<action type="form close" />
+						</event>
+					</button>
+				</item>
+				<rowsdefinition>
+					<row position="1" size="40" />
+					<row position="2" size="40" />
+					<row position="3" size="40" />
+					<row position="4" size="40" />
+				</rowsdefinition>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMPPrijenosTerminalNG" name="dtTerminal">
+				<parameter name="@action" value="11"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@trgovinaid" value="$trgovinaid"/>
+				<parameter name="@trgovinacijena" value="$trgovinaid"/>
+				<parameter name="@datumod" value="$datumdok"/>
+				<parameter name="@vrstadokid" value="~dtVrstaDok.@vrstadokid"/>
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmDonosTerminal" caption="Donos sa terminala" width="300">
+		<event type="init">
+			<action type="datarun reader" value="global.dtVrstaDok"/>
+			<action type="datarun reader" value="global.dtPremmision"/>
+			<action type="datarun reader" value="~dtUcitaj"/>
+		</event>
+
+		<event type="load">
+			<action type="control populate" value="#grdDonos"/>
+		</event>
+		<event type="shown">
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1" caption="Stavke za donos sa ručnog terminala">
+					<grid name="grdDonos"  dataname="~dtUcitajStavke" netgenfields="true" keyfield="robaid" multiselect="true" showcheckboxes="true">
+						<fields>
+							<field name="RBR0500" fixed="true"/>
+							<field name="Šifra1000" fixed="true"/>
+							<field name="Kod robe1400" fixed="true"/>
+							<field name="Naziv artikla/robe3000" fixed="true"/>
+							<field name="JM0500" />
+							<field name="Pakovanje1000" />
+							<field name="Cijena0800" />
+							<field name="Nabavna cijena 0800" />
+							<field name="Stanje MP1200" />
+							<field name="Količina0800" />
+						</fields>
+						<styles>
+							<style name="bold" value="true" if="#grdDonos.@Količina0800&gt;0" />
+						</styles>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPull" caption="Prebaci">
+					<event type="click">
+						<action type="control foreachrow " value="#grdDonos">
+							<action type="datarun nonquery" value="~dtDodaj" if="#grdDonos.@Količina0800&gt;0"/>
+						</action>
+						<action type="form close" />								
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+				<button name="btnIzmjeni" caption="Izmjeni">
+					<event type="click">
+						<action type="control foreachrow selected" value="#grdDonos">
+							<action type="form open" value="frmDonosIzmjenaTerminal">
+								<parameter name="donos" value="#grdDonos"/>
+								<parameter name="trgovinaid" value="$trgovinaid"/>
+							</action>
+						</action>
+						<action type="control populate" value="#grdDonos"/>
+					</event>
+				</button>
+				<button name="btnBrisi" caption="Briši" >
+					<event type="click">
+						<action type="control foreachrow selected" value="#grdDonos">
+							<action type="confirm" value="Želite li sigurno obrisati stavku {#grdDonos.@Naziv artikla/robe3000} ?">
+								<action type="datarun nonquery" value="~dpBrisi"/>
+							</action>
+						</action>
+						<action type="control refreshvalue" value="#grdDonos"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMPPrijenosTerminalNG" name ="dtUcitaj">
+				<parameter name="@action" value="11" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@trgovinaid" value="$trgovinaid" />
+				<parameter name="@trgovinacijena" value="$trgovinaid" />
+				<parameter name="@datumod" value="$datumdok" />
+			</data>
+			<data command="spMPPrijenosTerminalNG" name ="dtUcitajStavke">
+				<parameter name="@action" value="33" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@trgovinaid" value="$trgovinaid" />
+				<parameter name="@trgovinacijena" value="$trgovinaid" />
+				<parameter name="@datumod" value="$datumdok" />
+				<parameter name="@nenc" value="global.dtPremmision.@nenc" />
+			</data>
+			<data command="spMPInsertGlaIdetNG" name="dtDodaj">
+				<parameter name="@action" value="3"/>
+				<parameter name="@robaid" value="#grdDonos.@robaid"/>
+				<parameter name="@id" value="$id"/>
+				<parameter name="@NabCijena" value="#grdDonos.@Nabavna cijena0800" />
+				<parameter name="@kolicinaulaz" value="#grdDonos.Količina0800" />
+				<parameter name="@mpcijena" value="#grdDonos.@cijena0800" />
+				<parameter name="@sifradok" value="global.dtVrstaDok.@Sifra" />
+				<parameter name="@zbroji" value="1" />
+			</data>
+			<data command="spMPPrijenosTerminalNG" name="dpBrisi">
+				<parameter name="@action" value="55"/>
+				<parameter name="@id" value="#grdDonos.@ptprijenosid" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmDonosIzmjenaTerminal" caption="Izmjena artikla" width="300">
+		<event type="init">
+			<action type="datarun reader" value="global.dtVrstaDok"/>
+			<action type="datarun reader" value="~dtUcitaj"/>
+		</event>
+		<event type="load">
+		</event>
+		<event type="shown">
+		</event>
+		<layout>
+			<group rows="3" cols="1">
+				<item row="1" col="1" caption="Barkod postojeće robe">
+					<textedit name="txtbarcode"  datavalue="~dpUcitaj.@barcode" readonly="true">
+					</textedit>
+				</item>
+				<item row="2" col="1" caption="Postojeća roba">
+					<textedit name="txtrobanaziv"  datavalue="~dpUcitaj.@robanaziv" readonly="true">
+					</textedit>
+				</item>
+				<item row="3" col="1" caption="Nova roba">
+					<searchedit name="srcRoba"  fieldtext="NazivId" fieldvalue="robaid" dataname="~dtRoba">
+					</searchedit>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDo" caption="Prihvati">
+					<event type="click">
+						<action type="form close" />								
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMPPrijenosTerminalNG" name="dpIzmjeni">
+				<parameter name="@id" value="$donos" />
+				<parameter name="@action" value="4"/>
+				<parameter name="@robaid" value="#srcRoba"/>
+			</data><!-- nije testirano -->
+			<data command="select barcode,@donost as donos2t, robanaziv = (select naziv from roba where robaid=PTPRIJENOS.ROBAID) from ptprijenos where PTPrijenosId=@donost" type="text" name="dpUcitaj">
+				<parameter name="@donost" value="$donos" />
+			</data>
+			<data command="spMPRobaZaMPNG" name="dtRoba">
+				<parameter name="@trgovinaid" value="trgovinaid" />
+				<parameter name="@trazi" value="#srcRoba.text" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmDonosRoba" caption="Donos iz tražilice robe" width="300">
+		<event type="init">
+			<action type="datarun reader" value="global.dtVrstaDok"/>
+		</event>
+		<event type="load">
+		</event>
+		<event type="shown">
+		</event>
+		<layout>
+			<group rows="2" cols="1">
+				<group row="1" col="1" rows="2" cols="3" >
+					<item row="1" col="1" caption="Klasa Robe" textposition="left">
+						<comboedit name="cmbKlasa" displayfield="naziv" valuefield="KlMasterRobaId" dataname="~dtKlase">
+						</comboedit>
+					</item>
+					<item row="2" col="1" caption="Tražilica" textposition="left">
+						<textedit name="txtRoba">
+						</textedit>
+					</item>
+					<item row="1" col="2" caption="Pokaži i podklase" textposition="right">
+						<checkedit name="chkPodklasa">
+						</checkedit>
+					</item>
+					<item row="2" col="2">
+						<button name="btSearch" caption="Pokaži">
+							<event type="click">
+								<action type="control populate" value="#grdDonos" />
+								<action type="control visible" value="#grdDonos"  >
+									<parameter value="true" if="#grdDonos.rowcount&gt;0"/>
+								</action>
+							</event>
+						</button>
+					</item>
+					<item row="1" col="3">
+					</item>
+					<item row="2" col="3">
+					</item>
+					<columnsdefinition>
+						<column position="1" size="400" /> 
+					</columnsdefinition>
+					<rowsdefinition>
+						<row position="2" size="40" />
+					</rowsdefinition>
+				</group>
+				<group row="2" col="1" rows="1" cols="1">
+					<item row="1" col="1" caption="Stavke za donos">
+						<grid name="grdDonos"  dataname="~dtDohvati" visible="false" netgenfields="true" keyfield="robaid">
+							<fields>
+								<field name="Šifra1300" fixed="true"/>
+								<field name="Klasa2000" fixed="true"/>
+								<field name="Naziv robe2500" fixed="true"/>
+								<field name="JM0600" />
+								<field name="Pakovanje0800" />
+								<field name="Nar količina1000" editable="true" formatstring="n2"/>
+								<field name="MP stanje1100" />
+								<field name="MPC1000" />
+							</fields>
+							<styles>
+								<style name="bold" value="true" if="#grdDonos.@Nar količina1000&gt;0" />
+							</styles>
+						</grid>
+					</item>
+				</group>
+				<rowsdefinition>
+					<row position="2" size="200" />
+				</rowsdefinition>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPull" caption="Prebaci">
+					<event type="click">
+						<action type="control foreachrow " value="#grdDonos">
+							<action type="datarun nonquery" value="~dtDodaj" if="#grdDonos.@Nar količina1000&gt;0"/>
+						</action>
+						<!-- promjena u stori polja Nar.količina1000 u Nar količina1000 radi if uvjeta -->
+						<action type="form close" />								
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="select KlMasterRobaId, naziv,sortkey from KlMasterRoba order by sortkey" type="text" name="dtKlase">
+			</data>
+			<data command="spMPDonosNaIzdatnicuNG" name="dtDohvati">
+				<parameter name="@trgovinaid" value="$trgovinaid" />
+				<parameter name="@skladisteid" value="$skladiste" />
+				<parameter name="@klasaid" value="#cmbKlasa" />
+				<parameter name="@trazilica" value="#txtRoba" />
+				<parameter name="@podklase" value="#chkPodklasa" />
+			</data>
+			<data command="spMPInsertGlaIdetNG" name="dtDodaj">
+				<parameter name="@action" value="3"/>
+				<parameter name="@robaid" value="#grdDonos.@robaid"/>
+				<parameter name="@id" value="$id"/>
+				<parameter name="@NabCijena" value="#grdDonos.@nabid" />
+				<parameter name="@kolicinaulaz" value="#grdDonos.@Nar količina1000" />
+				<parameter name="@mpcijena" value="#grdDonos.@MPC1000" />
+				<parameter name="@sifradok" value="global.dtVrstaDok.@sifra" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmDonosNar" caption="Donos iz MP narudžbenica" width="300">
+		<event type="init">
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdDonos"/>
+			<action type="control disable" value="#btnPull" if="#grdDonos.rowcount==0"/>
+			<action type="control disable" value="#btnItem" if="#grdDonos.rowcount==0"/>
+		</event>
+		<event type="shown">
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1" >
+					<grid name="grdDonos"  dataname="~dtDohvati" netgenfields="true" keyfield="mpnarglaid">
+						<fields>
+							<field name="Datum"/>
+							<field name="Broj dokumenta1500"/>
+							<field name="Dat. isporuke1500"/>
+							<field name="Broj stavaka1200"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPull" caption="Prebaci">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtPrebaci"/>
+						<action type="form close" />								
+					</event>
+				</button>
+				<button name="btnItem" caption="Stavke">
+					<event type="click">
+						<action type="form open" value="frmStavkaNar">
+							<parameter name="mpnarglaid" value="#grdDonos.@mpnarglaid"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMPDonesiSaZadnjegDokNG" name="dtDohvati">
+				<parameter name="@action" value="11" />
+				<parameter name="@id" value="$id" />
+			</data>
+			<data command="spMPDonesiSaZadnjegDokNG" name="dtPrebaci">
+				<parameter name="@action" value="33" />
+				<parameter name="@id" value="$id" />
+				<parameter name="@mpnarglaid" value="#grdDonos.@mpnarglaid" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmStavkaNar" caption="Stavke MP narudžbenice" width="300">
+		<event type="init">
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdDonosStavke"/>
+		</event>
+		<event type="shown">
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1" >
+					<grid name="grdDonosStavke"  dataname="~dtDohvatiStavke" netgenfields="true" keyfield="robaid">
+						<fields>
+						</fields>
+					</grid>
+				</item>
+			</group>
+
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnCancel" caption="Zatvori" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMPDonesiSaZadnjegDokNG" name="dtDohvatiStavke">
+				<parameter name="@action" value="22" />
+				<parameter name="@id" value="$mpnarglaid" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmDonosZad" caption="Donos iz zadnjih primki" width="300">
+		<event type="init">
+			<action type="datarun reader" value="global.dtPremmision"/>
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdDonos"/>
+			<action type="control disable" value="#btnPull" if="#grdDonos.rowcount==0"/>
+			<action type="control disable" value="#btnItem" if="#grdDonos.rowcount==0"/>
+		</event>
+		<event type="shown">
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1" >
+					<grid name="grdDonos"  dataname="~dtDohvati" netgenfields="true" keyfield="maloprodajaglaid">
+						<fields>
+							<field name="Datum"/>
+							<field name="Broj dokumenta1500"/>
+							<field name=" MP Iznos1200"/>
+							<field name="Nab.iznos1200"/>
+							<field name="Broj stavaka1200"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPull" caption="Prebaci">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtPrebaci"/>
+						<action type="form close" />								
+					</event>
+				</button>
+				<button name="btnItem" caption="Stavke">
+					<event type="click">
+						<action type="form open" value="frmStavkaZad">
+							<parameter name="maloprodajaglaid" value="#grdDonos.@maloprodajaglaid"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMPDonesiSaZadnjegDokNG" name="dtDohvati">
+				<parameter name="@action" value="1" />
+				<parameter name="@id" value="$id" />
+				<parameter name="@nenc" value="global.dtPremmision.@nenc" />
+			</data>
+			<data command="spMPDonesiSaZadnjegDokNG" name="dtPrebaci">
+				<parameter name="@action" value="3" />
+				<parameter name="@id" value="$id" />
+				<parameter name="@primkaid" value="#grdDonos.@maloprodajaglaid" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmStavkaZad" caption="Stavke primke" width="300">
+		<event type="init">
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdDonosStavke"/>
+		</event>
+		<event type="shown">
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1" >
+					<grid name="grdDonosStavke"  dataname="~dtDohvatiStavke" netgenfields="true" keyfield="robaid">
+						<fields>
+						</fields>
+					</grid>
+				</item>
+			</group>
+
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnCancel" caption="Zatvori" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMPDonesiSaZadnjegDokNG" name="dtDohvatiStavke">
+				<parameter name="@action" value="2" />
+				<parameter name="@id" value="$maloprodajaglaid" />
+			</data>
+		</datalist>
+	</form>
+
+</root>

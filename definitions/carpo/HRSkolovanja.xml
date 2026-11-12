@@ -1,0 +1,503 @@
+<root>
+
+	<form type="master" name="frmHRSkolovanja" caption="Školovanja">
+
+		<event type="init">
+			<action type="control populate" value="#grdMaster" />
+			<action type="control populate" value="#grdDetalj" />
+		</event>
+
+		<event type="load">
+			<action if="#grdMaster.rowcount==0" type="control disable" value="#btnIzmijeni,#btnObrisi" />
+		</event>
+		<managerlayout>
+
+			<!-- TREE-->
+			<tree name="tree" key="Id" expandedlevel="1" dataname="dtTree">
+
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdMaster"/>
+					<action if="#grdMaster.rowcount!=0" type="control enable" value="#btnIzmijeni,#btnObrisi" />
+					<action if="#grdMaster.rowcount==0" type="control disable" value="#btnIzmijeni,#btnObrisi" />
+				</event>
+
+				<fields>
+					<field name="caption" />
+				</fields>
+
+			</tree>
+
+			<!-- GRID-->
+			<grid type="master" name="grdMaster" dataname="dtGrid" key="HRtecajeviId" fieldsmartspaces="false" multiselect="true" bestfitonrefresh="true" autowidth="true">
+
+				<fields inherited="true">
+					<field name="CarpoRowNumberColumn" caption="Redni broj" />
+					<field name="naziv" caption="Naziv" />
+					<field name="Klasa" caption="Klasa" />
+					<field name="DatumPrijave" caption="Datum prijave" />
+					<field name="Datumod" caption="Datum od" />
+					<field name="Datumdo" caption="Datum do" />					
+					<field name="Preznanje" caption="Predznanje" />
+					<field name="Predavac" caption="Predavač" />
+					<field name="status" caption="Status" />
+					<field name="opis" caption="Opis" />
+					<field name="mjesto" caption="Mjesto" />
+				</fields>
+
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetalj"/>
+				</event>
+			</grid>
+
+			<grid type="detalj" name="grdDetalj" dataname="dtDetail" key="HRKadroviId" fieldsmartspaces="false" bestfitonrefresh="true" multiselect="true" showgrouppanel="false">
+				<fields inherited="true"/>
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+
+
+				<button caption="Unesi" name="btnUnesi">
+					<event type="click">
+						<action type="form open" value="frmUnesi">
+							<parameter name="caption" value="Unos tečaja" />
+							<parameter name="Tip" value="Unos" />
+							<parameter name="HRTecajeviStatusId" value="#tree.@id"/>
+						</action>
+					</event>
+				</button>
+				<button caption="Izmijeni" name="btnIzmijeni" type="edit">
+					<event type="click">
+						<action type="form open" value="frmIzmjena">
+							<parameter name="caption" value="Izmjena tečaja" />
+							<parameter name="HRtecajeviId" value="#grdMaster.@HRtecajeviId" />
+							<parameter name="Tip" value="Izmjena" />
+						</action>
+						<action type="control refreshvalue" value="#grdMaster" />
+					</event>
+				</button>
+				<button caption="Obriši" name="btnObrisi" type="delete">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati označeni tečaj?">
+							<action type="datarun reader" value="~dtBrisanje">
+								<action if="$indGreske==0" type="control populate keepfocus" value="#grdMaster">
+								</action>
+							</action>
+						</action>
+					</event>
+				</button>
+				<button caption="Dodaj osobu" name="btnDodaj">
+					<event type="click">
+						<action type="form open" value="frmDodajO">
+							<parameter name="caption" value="Dodaj osobu" />
+							<parameter name="HRTecajeviStatusId" value="#tree.@id"/>
+							<parameter name="HRtecajeviId" value="#grdMaster.@HRtecajeviId" />
+						</action>
+					</event>
+				</button>
+
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+
+			<!-- DRVO-->
+			<data command="spHRSkolovanjeAll_CP" name="dtTree">
+				<parameter name="@action" value="GetTree"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+
+			<!--MASTER GRID-->
+			<data command="spHRSkolovanjeAll_CP" name="dtGrid">
+				<parameter name="@action" value="Master"/>
+				<parameter name="@drvo" value="#tree.@value"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+
+			<!--DETALJ GRID-->
+			<data command="spHRSkolovanjeAll_CP" name="dtDetail">
+				<parameter name="@action" value="Detalj"/>
+				<parameter name="@HRTecajeviId" value="#grdMaster.@HRtecajeviId"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+
+			<data command="spHRSkolovanjeAll_CP" name="dtBrisanje">
+				<parameter name="@action" value="Brisanje"/>
+				<parameter name="@HRTecajeviId" value="#grdMaster"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+		</datalist>
+
+	</form>
+
+<!-- :::::::::::::::::::::::::::::::::::::        FORMA ZA UNOS         ::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+	<form width="400" height="300" name="frmUnesi" caption="$caption" saveformlayout="true">
+		<event type="shown">
+			<action type="control value" value="#dateDatumPrijave">
+				<parameter value="now" />
+			</action>
+			<action type="control value" value="#dateDatumOd">
+				<parameter value="now" />
+			</action>
+			<action type="control value" value="#dateDatumDo">
+				<parameter value="now" />
+			</action>
+		</event>
+		<layout>
+			<group rows="7" cols="2" highlight="false" groupbordervisible="false">
+				<item row="1" col="1" colspan="2" highlight="false" caption="Naziv tečaja:">
+					<textedit name="txtNaziv"/>
+				</item>
+				<item row="2" col="1" highlight="false" caption="Klasa tečaja:">
+					<comboedit name="cmbKlase" valuefield="HRKlaseTecajevaId" required="true" displayfield="Naziv" dataname="~dtKlase"/>
+				</item>
+				<item row="2" col="2" highlight="false" caption="Status tečaja:">
+					<comboedit name="cmbStatus" valuefield="HRTecajeviStatusId" required="true" displayfield="Naziv" dataname="~dtStatus"/>
+				</item>
+				<item row="3" col="1" highlight="false" caption="Mjesto održavanja:">
+					<comboedit name="cmbMjesto" valuefield="mjestaid" required="true" displayfield="Naziv" dataname="~dtMjesta"/>
+				</item>
+				<item row="3" col="2" highlight="false" caption="Datum prijave:">
+					<dateedit name="dateDatumPrijave" allownull="false"/>
+				</item>
+				<item row="4" col="1" highlight="false" caption="Početak:">
+					<dateedit name="dateDatumOd" allownull="false"/>
+				</item>
+				<item row="4" col="2" highlight="false" caption="Kraj:">
+					<dateedit name="dateDatumDo" allownull="false"/>
+				</item>
+				<item row="5" col="1"  colspan="2" highlight="false" caption="Predznanje:">
+					<textedit name="txtPredznanje"/>
+				</item>
+				<item row="6" col="1" colspan="2" highlight="false" caption="Predavač:">
+					<textedit name="txtPredavač"/>
+				</item>
+				<item row="7" col="1" colspan="2" highlight="false" caption="Opis:">
+					<memoedit name="memOpis"/>
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI" name="btnSpremi">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun reader" value="dtUnos">
+							<action type="control populate" value="parent.#grdDetalj"/>
+							<action type="control populate" value="parent.#grdMaster"/>
+							<action type="form close" />
+						</action>
+					</event>
+				</button>
+
+				<button caption="ODUSTANI" name="btnOdustani" dock="right">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spHRSkolovanjeAll_CP" name="dtUnos">
+				<parameter name="@action" value="Unos" />
+				<parameter name="@HRTecajeviStatusId" value="#cmbStatus" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@HRKlaseTecajevaID" value="#cmbKlase" />
+				<parameter name="@DatumOd" value="#dateDatumOd" />
+				<parameter name="@DatumDo" value="#dateDatumDo" />
+				<parameter name="@Mjestaid" value="#cmbMjesto" />
+				<parameter name="@Opis" value="#memOpis" />
+				<parameter name="@Predznanje" value="#txtPredznanje" />
+				<parameter name="@Predavac" value="#txtPredavač" />
+				<parameter name="@DatumPrijave" value="#dateDatumPrijave" />
+				<parameter name="@OperateriID" value="@@operateriid" />
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+				<parameter name="@noviId.output.int"/>
+			</data>
+
+			<data command="spHRSkolovanjeAll_CP" name="dtKlase">
+				<parameter name="@action" value="Combo_klase" />
+			</data>
+
+			<data command="spHRSkolovanjeAll_CP" name="dtMjesta">
+				<parameter name="@action" value="Combo_mjesto" />
+			</data>
+
+			<data command="spHRSkolovanjeAll_CP" name="dtStatus">
+				<parameter name="@action" value="Combo_status" />
+			</data>
+
+		</datalist>
+
+	</form>
+
+<!-- :::::::::::::::::::::::::::::::::::::        FORMA ZA IZMJENU         ::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+	<form width="400" height="300" name="frmIzmjena" caption="$caption" saveformlayout="true">
+
+		<event type="init">
+			<action type="datarun reader" value="dtGetTecaj"/>
+		</event>
+
+		<event type="shown">
+			<action type="control value" value="#cmbKlase">
+				<parameter value="~dtGetTecaj.@HRKlaseTecajevaId" />
+			</action>
+			<action type="control value" value="#cmbMjesto">
+				<parameter value="~dtGetTecaj.@mjestaid" />
+			</action>
+			<action type="control value" value="#cmbStatus">
+				<parameter value="~dtGetTecaj.@HRTecajeviStatusId" />
+			</action>
+			<action type="control value" value="#dateDatumPrijave">
+				<parameter value="~dtGetTecaj.@DatumPrijave" />
+			</action>
+			<action type="control value" value="#dateDatumOd">
+				<parameter value="~dtGetTecaj.@DatumOd" />
+			</action>
+			<action type="control value" value="#dateDatumDo">
+				<parameter value="~dtGetTecaj.@DatumDo" />
+			</action>
+		</event>
+
+		<layout>
+			<group rows="7" cols="2" highlight="false" groupbordervisible="false">
+				<item row="1" col="1" colspan="2" highlight="false" caption="Naziv tečaja:">
+					<textedit name="txtNaziv" datavalue="~dtGetTecaj.@Naziv"/>
+				</item>
+				<item row="2" col="1" highlight="false" caption="Klasa tečaja:">
+					<comboedit name="cmbKlase" valuefield="HRKlaseTecajevaId" required="true" displayfield="Naziv" dataname="~dtKlase"/>
+				</item>
+				<item row="2" col="2" highlight="false" caption="Status tečaja:">
+					<comboedit name="cmbStatus" valuefield="HRTecajeviStatusId" required="true" displayfield="Naziv" dataname="~dtStatus"/>
+				</item>
+				<item row="3" col="1" highlight="false" caption="Mjesto održavanja:">
+					<comboedit name="cmbMjesto" valuefield="mjestaid" required="true" displayfield="Naziv" dataname="~dtMjesta"/>
+				</item>
+				<item row="3" col="2" highlight="false" caption="Datum prijave:">
+					<dateedit name="dateDatumPrijave" datavalue="~dtGetTecaj.@DatumPrijave" allownull="false"/>
+				</item>
+				<item row="4" col="1" highlight="false" caption="Početak:">
+					<dateedit name="dateDatumOd" datavalue="~dtGetTecaj.@DatumOd" allownull="false"/>
+				</item>
+				<item row="4" col="2" highlight="false" caption="Kraj:">
+					<dateedit name="dateDatumDo" datavalue="~dtGetTecaj.@DatumDo" allownull="false"/>
+				</item>
+				<item row="5" col="1" colspan="2" highlight="false" caption="Predznanje:">
+					<textedit name="txtPredznanje" datavalue="~dtGetTecaj.@Predznanje"/>
+				</item>
+				<item row="6" col="1" colspan="2" highlight="false" caption="Predavač:">
+					<textedit name="txtPredavač" datavalue="~dtGetTecaj.@Predavac"/>
+				</item>				
+				<item row="7" col="1"  colspan="2" highlight="false" caption="Opis:">
+					<memoedit name="memOpis" highlight="false" datavalue="~dtGetTecaj.@Opis"/>
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI" name="btnSpremi">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun reader" value="dtIzmjena">
+						<action type="control populate" value="parent.#grdMaster"/>
+						<action type="form close" />
+						</action>
+					</event>
+				</button>
+
+				<button caption="ODUSTANI" name="btnOdustani" dock="right">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+
+			<data command="spHRSkolovanjeAll_CP" name="dtGetTecaj">
+				<parameter name="@action" value="dtGetTecaj"/>
+				<parameter name="@HRTecajeviID" value="$HRTecajeviID" />
+			</data>
+			
+			<data command="spHRSkolovanjeAll_CP" name="dtIzmjena">
+				<parameter name="@action" value="Izmjena" />
+				<parameter name="@HRTecajeviId" value="$HRTecajeviId" />
+				<parameter name="@HRTecajeviStatusId" value="#cmbStatus" />
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@HRKlaseTecajevaID" value="#cmbKlase" />
+				<parameter name="@DatumOd" value="#dateDatumOd" />
+				<parameter name="@DatumDo" value="#dateDatumDo" />
+				<parameter name="@Mjestaid" value="#cmbMjesto" />
+				<parameter name="@Opis" value="#memOpis" />
+				<parameter name="@Predznanje" value="#txtPredznanje" />
+				<parameter name="@Predavac" value="#txtPredavač" />
+				<parameter name="@DatumPrijave" value="#dateDatumPrijave" />
+				<parameter name="@OperateriID" value="@@operateriid" />
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+
+			<data command="spHRSkolovanjeAll_CP" name="dtKlase">
+				<parameter name="@action" value="Combo_klase" />
+			</data>
+
+			<data command="spHRSkolovanjeAll_CP" name="dtMjesta">
+				<parameter name="@action" value="Combo_mjesto" />
+			</data>
+
+			<data command="spHRSkolovanjeAll_CP" name="dtStatus">
+				<parameter name="@action" value="Combo_status" />
+			</data>
+
+		</datalist>
+
+	</form>
+
+<!-- :::::::::::::::::::::::::::::::::::::        FORMA ZA DODAVANJE OSOBA         ::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+<form width="450" height="300" name="frmDodajO" caption="$caption" saveformlayout="true">
+	<event type="init">
+		<action type="datarun reader" value="~dtUneseni" />
+	</event>
+	<event type="load">
+		<action type="control populate" value="#grdGrid"/>
+	</event>
+	<layout>
+		<group rows="3" cols="2" highlight="false" groupbordervisible="false">
+			<item caption="Osoba" row="1" col="1" colspan="2" textposition="top" highlight="false" >
+				<searchedit name="srcKadrovi" dataname="~dtKadrovi" valuefield="hrkadroviid" textfield="Djelatnik" required="true" ></searchedit>
+			</item>
+			<item row="2" col="1" textposition="top" highlight="false" >
+				<checkedit name="chkSvi" caption="Uključi neaktivne djelatnike" tooltip="Puni searchbox s neaktivnim djelatnicima..."></checkedit>
+			</item>
+			<item row="3" col="1" colspan="2" highlight="false">
+				<grid name="grdGrid" key="HRKadroviId" dataname="~dtUneseni" preventfocusgroup="false" fieldsmartspaces="false"  bestfitonrefresh="true" showgrouppanel="false" multiselect="true">
+					<menu>
+						<menuitem caption="Obriši osobe iz odabranog tečaja" name="menObrisi">
+							<event type="click">
+								<action type="form open" value="frmBrisanje">
+									<parameter name="IDs" value="#grdGrid.selectedids"/>
+									<parameter name="HRTecajeviId" value="$HRtecajeviId"/>
+								</action>
+							</event>
+						</menuitem>
+					</menu>
+				</grid>
+			</item>
+		</group>
+	</layout>
+
+	<panelbuttons>
+		<buttons>
+			<button caption="SPREMI" name="btnSpremi">
+				<event type="click">
+					<action type="validate" />
+					<action type="datarun reader" value="dtDodajO">
+						<action type="control populate" value="parent.#grdDetalj"/>
+						<action type="control populate" value="#grdGrid"/>
+						<!--<action type="control populate" value="parent.#grdMaster"/>-->
+						<!--<action type="form close" />-->
+					</action>
+				</event>
+			</button>
+
+			<button caption="ODUSTANI" name="btnOdustani" dock="right">
+				<event type="click">
+					<action type="control populate" value="parent.#grdDetalj"/>
+					<action type="form close" />
+				</event>
+			</button>
+
+		</buttons>
+	</panelbuttons>
+
+	<datalist>
+		<data command="spHRSkolovanjeAll_CP" name="dtDodajO">
+			<parameter name="@action" value="Dodaj_osobu" />
+			<parameter name="@HRTecajeviId" value="$HRtecajeviId" />
+			<parameter name="@HRKadroviID" value="#srcKadrovi" />
+			<parameter name="@DatumOd" value="parent.#grdMaster.@DatumOd" />
+			<parameter name="@DatumDo" value="parent.#grdMaster.@DatumDo" />
+			<parameter name="@Mjestaid" value="parent.#grdMaster.@MjestaId" />
+			<parameter name="@Opis" value="parent.#grdMaster.@opis" />
+			<parameter name="@indGreske.output.int"/>
+			<parameter name="@poruka.output.string"/>
+			<parameter name="@noviId.output.int"/>
+		</data>
+
+		<data command="spHRSkolovanjeAll_CP" name="dtKadrovi">
+			<parameter name="@action" value="srcKadrovi" />
+			<parameter name="@tekst" value="#srcKadrovi.text" />
+			<parameter name="@HRTecajeviID" value="$HRtecajeviId" />
+			<parameter name="@chkSvi" value="#chkSvi" />
+		</data>
+
+		<data command="spHRSkolovanjeAll_CP" name="dtUneseni">
+			<parameter name="@action" value="dtUneseniKadrovi" />
+			<parameter name="@HRTecajeviID" value="$HRtecajeviId" />
+		</data>
+
+	</datalist>
+
+</form>
+
+<!-- :::::::::::::::::::::::::::::::::::::        FORMA ZA BRISANJE OSOBA         ::::::::::::::::::::::::::::::::::::::::::::::::::::-->
+
+<form name="frmBrisanje" caption ="Brisanje" width="500" height="150" fixedsize="true" saveformsize="false" >
+	<event type="shown">
+		<action type ="control value" value="#lblPitanje">
+			<parameter value="Jeste li sigurni da želite obrisati odabrane osobe na tečaju?"/>
+		</action>
+	</event>
+	<layout>
+		<group cols="1" rows="1" groupbordervisible="true" >
+			<item col="1" row="1"  highlight="false">
+				<labeledit name="lblPitanje" fontsizedelta="2"  value=""  />
+			</item>
+		</group>
+	</layout>
+	<panelbuttons>
+		<buttons>
+			<button name="btnBrisi" caption="OBRIŠI" type="del">
+				<event type="click">
+					<action type="datarun reader" value="~dtObrisi"/>
+					<action type="control populate" value="parent.#grdGrid"/>
+					<action type="form close"/>
+				</event>
+			</button>
+			<button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right" >
+				<event type="click">
+					<action type="form close" />
+				</event>
+			</button>
+		</buttons>
+	</panelbuttons>
+
+	<datalist>
+		<data command="spHRSkolovanjeAll_CP" name="dtObrisi">
+			<parameter name="@action" value="Obrisi_osobe" />
+			<parameter name="@HRTecajeviID" value="$HRtecajeviId" />
+			<!--<parameter name="@HRKadroviId" value="#grdGrid.@HRKadroviId" />-->
+			<parameter name="@ids" value="$IDs"/>
+			<parameter name="@indGreske.output.int"></parameter>
+		</data>
+	</datalist>
+</form>
+
+
+
+</root>

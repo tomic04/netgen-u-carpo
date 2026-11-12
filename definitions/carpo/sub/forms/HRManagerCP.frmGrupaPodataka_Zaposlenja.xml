@@ -1,0 +1,246 @@
+<root>
+	<!--
+  Komentari:
+  4.11.2025. MP - PERMISSION -> FUNCTION NAME
+  08.11.2021. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmZaposlenja" caption="Prethodna zaposlenja za {parent.#txtPrezime} {parent.#txtIme}" width="850" height="350" >
+		<event type="load">
+			<action type="control populate" value="#grdZaposlenja"/>		
+			<action type="control disable" value="#btnIzmjenaZ,btnBrisanjeZ" if="#grdZaposlenja.rowcount==0"/>
+
+		</event>
+		<layout>
+			<group cols="1" rows="2" groupbordervisible="false">
+				<group cols="1" rows="1" groupbordervisible="true" col="1" row="1" spacing="2,2,2,1">
+					<item row="1" col="1" highlight="false">
+						<grid name="grdZaposlenja" key="hrkadrovizaposlenjaid" dataname="~dtZaposlenje" multiselect="true" savelayout="true" fieldsmartspaces="false" showgrouppanel="false" bestfitonrefresh="true">
+							<fields inherited="true">
+							</fields>
+							<event type="doubleclick">
+								<action type="form open" value="frmUnosIzmjenaZaposlenja">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="hrkadrovizaposlenjaid" value="#grdZaposlenja.@hrkadrovizaposlenjaid" />	
+									<parameter name="Caption" value="Izmjena zaposlenja za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdZaposlenja"/>	
+							    <action type="control populate" value="parent.#grdPodaci"/>									
+							</event>
+						</grid>
+					</item>
+				</group>
+				<group cols="8" rows="1" groupbordervisible="true" col="1" row="2" spacing="2,2,1,2">
+					<item row="1" col="1" highlight="false" height="40">
+						<button name="btnUnos" caption="Unos" function="UNOS_ZAPOSLENJA"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaZaposlenja"> 
+									<parameter name="Caption" value="Unos zaposlenja za {parent.#txtPrezime} {parent.#txtIme}"/>		
+									<parameter name="hrkadrovizaposlenjaid" value="0"/>   
+									<parameter name="HRKadroviId" value="$HRKadroviId" />	
+
+								</action>  
+								<action type="control populate keepfocus" value="#grdZaposlenja"/>
+							<action type="control populate" value="parent.#grdPodaci"/>								
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="2" highlight="false" height="40" >
+						<button name="btnIzmjenaZ" caption="Izmjena" function="IZMJENA_ZAPOSLENJA"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaZaposlenja">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="hrkadrovizaposlenjaid" value="#grdZaposlenja.@hrkadrovizaposlenjaid" />	
+									<parameter name="Caption" value="Izmjena zaposlenja za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdZaposlenja"/>	
+								<action type="control populate" value="parent.#grdPodaci"/>								
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="3" highlight="false" height="40">
+						<button name="btnBrisanjeZ" caption="Brisanje" function="BRISANJE_ZAPOSLENJA"> 
+							<event type="click">   
+								<action type="confirm" value="Jeste li sigurni da želite obrisati izabrani zapis?">
+									<action type="datarun nonquery" value="~dtBrisanjeZaposlenja">
+
+									</action>
+								</action>
+								<action type="control populate" value="#grdZaposlenja,parent.#grdPodaci"></action>    
+								<action type="control disable" value="#btnIzmjenaZ,btnBrisanjeZ" if="#grdZaposlenja.rowcount==0"/>
+							</event>  
+						</button>
+					</item>
+
+					<item row="1" col="4" colspan="4" highlight="false" height="40"/>
+					<item row="1" col="8" highlight="false" height="40">
+						<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+							<event type="click">
+								<action type="form close" />
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+
+		</layout>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_Zaposlenja_CP" name="dtZaposlenje">
+				<parameter name="@action" value="grid_zaposlenja" />
+				<parameter name="@hrkadroviid" value="$HRKadroviId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Zaposlenja_CP" name="dtBrisanjeZaposlenja">
+				<parameter name="@action" value="brisanje"/>
+				<parameter name="@HRKadroviZaposlenjaId" value="#grdZaposlenja.@HRKadroviZaposlenjaId"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!-- FORMA ZA UNOS,IZMJENU ZAPOSLENJA -->
+	<form name="frmUnosIzmjenaZaposlenja" caption="$Caption" width="380" height="200" >
+		<event type="init">
+			<action type="datarun reader" value="~dtGetZaposlenja" if="$hrkadrovizaposlenjaid!=0" />
+		</event>
+		<event type="shown">
+
+		</event>
+		<layout>
+			<group cols="3" rows="7" groupbordervisible="true">
+				<item row="1" col="1" caption="Poslodavac:" highlight="false" colspan="2">
+					<comboedit name="cmbPoslodavac" valuefield="partneriid" displayfield="naziv" dataname="~dtPartneri" datavalue="~dtGetZaposlenja.@PartneriId"/>
+				</item>
+				<item row="2" col="1"   highlight="false" colspan="2">
+					<textedit name="txtPoslodavac2"   datavalue="~dtGetZaposlenja.@Poslodavac" />
+				</item>
+				<item row="3" col="1" caption="Razdoblje od:"  highlight="false" >
+					<dateedit name="dtRazdobljeOd" value="now"  datavalue="~dtGetZaposlenja.@DatumOd">
+					</dateedit>
+				</item>
+				<item row="3" col="2" caption="Razdoblje do:"  highlight="false" >
+					<dateedit name="dtRazdobljeDo" value="now" datavalue="~dtGetZaposlenja.@DatumDo">
+					</dateedit>
+				</item>
+				<item row="3" col="3" caption="Staž:" highlight="false" >
+					<textedit name="txtStaz" datavalue="~dtGetZaposlenja.@Staz" format="\d{2}(0[0-9]|1[0-1])(0[0-9]|[12][0-9]|3[00])" formattype="regex" value="000000"/>
+				</item>
+				<item row="4" col="1" caption="Zvanje:" highlight="false" colspan="2">
+					<comboedit name="cmbZvanje" valuefield="HRZvanjaId" displayfield="Naziv" dataname="~dtHRZvanja" datavalue="~dtGetZaposlenja.@HRZvanjaId"/>
+				</item>
+				<item row="4" col="3"  highlight="false" padding="18">
+					<checkedit name="chckRadUFirmi" caption="Rad u firmi" datavalue="~dtGetZaposlenja.@RadFirma" />
+				</item>
+				<item row="5" col="1" caption="Sprema:" highlight="false" colspan="2">
+					<comboedit name="cmbSprema" valuefield="hrspremeid" displayfield="Naziv" dataname="~dtHRSpreme" datavalue="~dtGetZaposlenja.@hrspremeid"/>
+				</item>
+				<item row="6" col="1" caption="Vrsta radnog odnosa:" highlight="false" colspan="2">
+					<comboedit name="cmbVrstaRO" valuefield="HRVrsteROId" displayfield="Naziv" dataname="~dtHRVrsteRO" datavalue="~dtGetZaposlenja.@HRVrsteROId"/>
+				</item>
+				<item row="7" col="1" caption="Razlog odlaska:" highlight="false" colspan="2">
+					<comboedit name="cmbRazlogaOdlaska" valuefield="HRRazlogOdlaskaId" displayfield="Naziv" dataname="~dtHRRazlogOdlaska" datavalue="~dtGetZaposlenja.@HRRazlogOdlaskaId"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+						<action if="$HRKadroviZaposlenjaId==0">
+							<action type="datarun reader" value="~dtUnosZaposlenja">
+								<action type="control populate" value="parent.#grdZaposlenja">
+									<action type="control focus" value="parent.#grdZaposlenja">
+										<parameter value="$noviID"/>
+									</action>
+								</action>
+							</action>
+							<action type="control enable" value="parent.#btnIzmjenaZ,parent.#btnBrisanjeZ"/>
+						</action>
+						<action if="$indGreske==0">
+							<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+							<action type="variable value" value="global.$RefreshajMaster">
+								<parameter value="1" type="int"/>
+							</action>
+							<action type="message" value="Uspješno spremljeno!"/>
+							<action type="form close" />
+						</action>
+						<action if="$HRKadroviZaposlenjaId!=0">
+							<action type="datarun reader" value="~dtIzmjenaZaposlenja"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+								<action type="variable value" value="global.$RefreshajMaster">
+									<parameter value="1" type="int"/>
+								</action>
+								<action type="form close"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spHRHelp" name="dtHRZvanja">
+				<parameter name="@action" value="hrzvanja"/>
+			</data>
+			<data command="spHRHelp" name="dtHRSpreme">
+				<parameter name="@action" value="hrspreme"/>
+			</data>
+			<data command="spHRHelp" name="dtHRVrsteRO">
+				<parameter name="@action" value="HRVrsteRO"/>
+			</data>
+			<data command="spHRHelp" name="dtHRRazlogOdlaska">
+				<parameter name="@action" value="HRRazlogOdlaska"/>
+			</data>
+			<data command="spHRHelp" name="dtPartneri">
+				<parameter name="@action" value="partneri_help"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Zaposlenja_CP" name="dtGetZaposlenja">
+				<parameter name="@action" value="getZaposlenja" />
+				<parameter name="@hrkadroviid" value="$hrkadroviid" type="int"/>
+				<parameter name="@HRKadroviZaposlenjaId" value="$HRKadroviZaposlenjaId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Zaposlenja_CP" name="dtUnosZaposlenja">
+				<parameter name="@action" value="unos"/>
+				<parameter name="@HRKadroviZaposlenjaId.output.int" variablename="noviID"></parameter>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@partneriid"  value="#cmbPoslodavac" />
+				<parameter name="@poslodavac"  value="#txtPoslodavac2" />
+				<parameter name="@hrspremeid"  value="#cmbSprema" />
+				<parameter name="@hrvrsteroid"  value="#cmbVrstaRO" />
+				<parameter name="@hrzvanjaid"  value="#cmbZvanje" />
+				<parameter name="@datumod"  value="#dtRazdobljeOd" />
+				<parameter name="@datumdo"  value="#dtRazdobljeDo" />
+				<parameter name="@staz"  value="#txtStaz" />
+				<parameter name="@hrrazlogodlaskaid"  value="#cmbRazlogaOdlaska" />
+				<parameter name="@radfirma"  value="#chckRadUFirmi" />
+				<parameter name="@indGreske.output.int"/>			
+			</data>
+			<data command="spHRManagerMaster_Podaci_Zaposlenja_CP" name="dtIzmjenaZaposlenja">
+				<parameter name="@action" value="izmjena"/>
+				<parameter name="@HRKadroviZaposlenjaId" value="$HRKadroviZaposlenjaId"></parameter>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@partneriid"  value="#cmbPoslodavac" />
+				<parameter name="@poslodavac"  value="#txtPoslodavac2" />
+				<parameter name="@hrspremeid"  value="#cmbSprema" />
+				<parameter name="@hrvrsteroid"  value="#cmbVrstaRO" />
+				<parameter name="@hrzvanjaid"  value="#cmbZvanje" />
+				<parameter name="@datumod"  value="#dtRazdobljeOd" />
+				<parameter name="@datumdo"  value="#dtRazdobljeDo" />
+				<parameter name="@staz"  value="#txtStaz" />
+				<parameter name="@hrrazlogodlaskaid"  value="#cmbRazlogaOdlaska" />
+				<parameter name="@radfirma"  value="#chckRadUFirmi" />
+				<parameter name="@indGreske.output.int"/>			
+			</data>
+
+		</datalist>
+	</form>
+</root>

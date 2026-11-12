@@ -1,0 +1,2789 @@
+<!-- Server: Jupiter2017 -->
+<!-- Baza: Spin -->
+<root>
+	<form name="frmMain" type="master" caption="Opportunity Management DMS">
+		<managerlayout>
+			<lookup name="filter">
+				<!-- LOOKUP za varijacije podataka u drvetu -->
+				<comboitem value="Status" />
+				<comboitem value="Odgovorne osobe" />
+				<comboitem value="Vremenska podjela" />
+				<event type="valuechanged">
+					<action type="variable value">
+						<parameter name="global.filter" value="#filter" />
+						<!-- kreiranje globalne varijable -->
+					</action>
+				</event>
+			</lookup>
+			<tree name="trFilter" dataname="~dtFilter">
+				<fields>
+					<field name="Name" />
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="grdMaster" />
+				</event>
+			</tree>
+			<grid name="grdMaster" type="master" dataname="~dtMaster" key="PrilikeId" bestfitonrefresh="true" savelayout="true">
+				<fields>
+					<field name="DatumOtvaranja" caption="Datum" />
+					<field name="Naziv" caption="Naziv prilike" />
+					<field name="Partner" caption="Tvrtka" />
+					<field name="OdgovornaOsoba" caption="Odgovorna osoba" />
+					<field name="VrijednostPrilike" caption="Vrijednost prilike" />
+					<field name="Izvor" />
+					<field name="Status" caption="Status prilike" />
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="grdDetail" />
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmIspravi">
+						<parameter name="PrilikeId" value="#grdMaster.@PrilikeId" />
+					</action>
+				</event>
+			</grid>
+			<grid name="grdDetail" dataname="~dtDetail" bestfitonrefresh="true" savelayout="true">
+				<fields>
+					<field name="Osoba" />
+					<field name="NazivRole" caption="Uloga" />
+					<field name="IndikatorOdlucivanja" caption="Indikator odlučivanja" />
+					<field name="Kriteriji" />
+					<field name="Napomene" />
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnOtvori" caption="Otvori case">
+					<event type="click">
+						<action type="form open" value="frmNovi" />
+					</event>
+				</button>
+				<button name="btnIspravi" caption="Ispravi">
+					<event type="click">
+						<action type="form open" value="frmIspravi">
+							<parameter name="PrilikeId" value="#grdMaster.@PrilikeId" />
+							<parameter name="Partner" value="#grdMaster.@Partner" />
+						</action>
+					</event>
+				</button>
+				<button name="btnPodsjetnik" caption="Podsjetnik">
+					<event type="click">
+						<action type="form open" value="frmPodsjetnik" />
+					</event>
+				</button>
+				<button name="btnObrisi" caption="Obriši">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati ovu priliku?" />
+						<action type="datarun nonquery" value="~dtObrisiPriliku" />
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnIspisi" caption="Ispiši">
+					<event type="click">
+						<action type="control printcontrol" value="#grdMaster" />
+						<!-- print -->
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtFilter" type="integrated" command="spTreeVremenskaPodjela" if="global.$filter==Vremenska podjela" />
+			<data name="dtFilter" command="spOMSProjektGlavaQueryCarpo" if="">
+				<parameter name="@Action" value="8" if="global.$filter==Odgovorne osobe" />
+				<parameter name="@Action" value="26" if="global.$filter==Status" />
+			</data>
+			<data name="dtMaster" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="0" if="global.$filter==Vremenska podjela" />
+				<parameter name="@DatumOd" value="#trFilter.@DatumOd" if="global.$filter==Vremenska podjela" />
+				<parameter name="@DatumDo" value="#trFilter.@DatumDo" if="global.$filter==Vremenska podjela" />
+				<parameter name="@Action" value="2" if="global.$filter==Odgovorne osobe" />
+				<parameter name="@ID" value="#trFilter.@Id" if="global.$filter==Odgovorne osobe" />
+				<parameter name="@Action" value="9" if="global.$filter==Status" />
+				<parameter name="@ID" value="#trFilter.@Id" if="global.$filter==Status" />
+			</data>
+			<data name="dtDetail" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="#grdMaster.@PrilikeId" />
+			</data>
+			<data name="dtObrisiPriliku" command="spOMSProjektGlavaAzurCarpo">
+				<parameter name="@Action" value="2" />
+				<parameter name="@ID" value="#grdMaster.@PrilikeId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmNovi" caption="Novi case">
+		<layout>
+			<group rows="3" cols="2">
+				<item row="1" col="1" caption="Prilika:">
+					<textedit name="txtPrilika" />
+				</item>
+				<item row="1" col="2" caption="Datum otvaranja:">
+					<dateedit name="dateDatum" value="now" />
+				</item>
+				<item row="2" col="1" caption="Tvrtka:">
+					<searchedit name="srcTvrtka" dataname="global.~dtPartnerHelp" fieldvalue="PartneriId" fieldtext="Naziv" />
+				</item>
+				<item row="2" col="2" caption="Odgovorna osoba:">
+					<comboedit name="cmbOsoba" dataname="global.~dtOsobaHelp" valuefield="OsobeId" displayfield="Naziv" />
+				</item>
+				<item row="3" col="1" caption="Izvor:">
+					<textedit name="txtIzvor" />
+				</item>
+				<item row="3" col="2" caption="Procijenjena vrijednost prilike:">
+					<textedit name="txtVrijednost" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun scalar" value="~dtSpremiPriliku">
+							<parameter name="NovaPrilika" />
+						</action>
+						<action type="datarun reader" value="~dtGetKey" />
+						<action type="variable value">
+							<parameter name="Global.ID" value="~dtGetKey.@ID" />
+						</action>
+						<action type="control focus" value="parent.#trFilter">
+							<parameter value="Global.$ID" />
+						</action>
+						<action type="control populate" value="parent.#grdMaster" />
+						<action type="control focus" value="parent.#grdMaster">
+							<parameter value="$NovaPrilika" />
+						</action>
+						<action type="control populate" value="parent.#grdDetail" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtGetKey" command="spGetKeyOM">
+				<parameter name="@Action" value="VP" if="global.$filter==Vremenska podjela" />
+				<parameter name="@Action" value="STATUS" if="global.$filter==Status" />
+				<parameter name="@Action" value="OO" if="global.$filter==Odgovorne osobe" />
+				<parameter name="@ID" value="$NovaPrilika" />
+			</data>
+			<data name="dtSpremiPriliku" command="spOMSProjektGlavaAzurCarpo">
+				<parameter name="@Action" value="0" />
+				<parameter name="@PartneriId" value="#srcTvrtka" />
+				<parameter name="@Naziv" value="#txtPrilika" />
+				<parameter name="@OdgovornaOsobaId" value="#cmbOsoba" />
+				<parameter name="@DatumOtvaranja" value="#dateDatum" />
+				<parameter name="@VrijednostPrilike" value="#txtVrijednost" />
+				<parameter name="@Izvor" value="#txtIzvor" />
+				<parameter name="@StatusPrilikeId" value="1" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmIspravi" caption="{parent.#grdMaster.@Naziv} {parent.#grdMaster.@Partner}" height="800" width="1000">
+		<method name="parInfo" dll="PartnerInfo" class="PartnerInfo.frmPartnerInfoMain" method="Open" />
+		<method name="funDeleteAppointment" dll="OutlookAppointment" class="OutlookAppointment.Start" method="DeleteAppointment" />
+		<event type="init">
+			<!-- inicijalizacija store za punjenje kontrola -->
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<event type="shown">
+			<!-- prikaz podataka u gridu -->
+			<action type="control populate" value="#grdStatusPrilike" />
+			<action type="control populate" value="#grdBoli" />
+			<action type="control populate" value="#grdZelje" />
+			<action type="control populate" value="#grdOsobeUloge" />
+			<action type="control populate" value="#grdDogadaji" />
+			<action type="control populate" value="#grdSudionici" />
+			<action type="control populate" value="#grdKonkurencija" />
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<tabs row="1" col="1">
+					<group rows="2" cols="2" caption="Osnovni podaci">
+						<group rows="4" cols="2" row="1" col="1" colspan="2" caption="Case">
+							<rowsdefinition>
+								<row position="4" size="50" />
+							</rowsdefinition>
+							<item row="1" col="1" caption="Prilika:">
+								<textedit name="txtPrilika" datavalue="~dtLoad.@Naziv" enabled="false" />
+							</item>
+							<item row="1" col="2" caption="Datum otvaranja:">
+								<dateedit name="dateDatum" datavalue="~dtLoad.@DatumOtvaranja" enabled="false" />
+							</item>
+							<item row="2" col="1" caption="Tvrtka:">
+								<searchedit name="srcTvrtka" dataname="global.~dtPartnerHelp" datavalue="~dtLoad.@PartneriId" datatext="~dtLoad.@Partner" enabled="false" fieldvalue="PartneriId" fieldtext="Naziv" />
+							</item>
+							<item row="2" col="2" caption="Odgovorna osoba:">
+								<comboedit name="cmbOsoba" dataname="global.~dtOsobaHelp" valuefield="OsobeId" displayfield="Naziv" datavalue="~dtLoad.@OdgovornaOsobaId" datatext="~dtLoad.@OdgovornaOsoba" enabled="false" />
+							</item>
+							<item row="3" col="1" caption="Izvor:">
+								<textedit name="txtIzvor" datavalue="~dtLoad.@Izvor" enabled="false" />
+							</item>
+							<item row="3" col="2" caption="Procijenjena vrijednost prilike:">
+								<textedit name="txtVrijednost" datavalue="~dtLoad.@VrijednostPrilike" enabled="false" />
+							</item>
+							<item row="4" col="1" colspan="2">
+								<button name="btnIzmijeniCase" caption="Izmijeni">
+									<event type="click">
+										<action type="form open" value="frmIzmijeniCase">
+											<parameter name="PrilikeId" value="$PrilikeId" />
+										</action>
+									</event>
+								</button>
+							</item>
+						</group>
+						<group rows="2" cols="2" row="2" col="1" caption="Opis prilike">
+							<rowsdefinition>
+								<row position="2" size="50" />
+							</rowsdefinition>
+							<item row="1" col="1" colspan="2">
+								<memoedit name="memoOpis" datavalue="~dtLoad.@Opis" enabled="false" fontsizedelta="1" />
+							</item>
+							<item row="2" col="1">
+								<button name="btnDodajOpis" caption="Dodaj">
+									<event type="click">
+										<action type="form open" value="frmDodajOpis">
+											<parameter name="PrilikeId" value="$PrilikeId" />
+										</action>
+									</event>
+								</button>
+							</item>
+							<item row="2" col="2">
+								<button name="btnIzmijeniOpis" caption="Izmijeni">
+									<event type="click">
+										<action type="form open" value="frmIzmijeniOpis">
+											<parameter name="PrilikeId" value="$PrilikeId" />
+										</action>
+									</event>
+								</button>
+							</item>
+						</group>
+						<group rows="2" cols="1" row="2" col="2" caption="Status prilike">
+							<rowsdefinition>
+								<row position="2" size="50" />
+							</rowsdefinition>
+							<item row="1" col="1">
+								<grid name="grdStatusPrilike" dataname="~dtStatusPrilike" key="DatStatusId" savelayout="true">
+									<fields>
+										<field name="DatumStatusa" />
+										<field name="Status" />
+										<field name="Inicijali" />
+									</fields>
+								</grid>
+							</item>
+							<item row="2" col="1">
+								<button name="btnPromijeniStatus" caption="Promijeni status">
+									<event type="click">
+										<action type="form open" value="frmPromijeniStatus">
+											<parameter name="PrilikeId" value="$PrilikeId" />
+										</action>
+									</event>
+								</button>
+							</item>
+						</group>
+					</group>
+					<group rows="1" cols="1" caption="Zadaci">
+						<group rows="2" cols="1" caption="Specifični zadaci koje u projektu treba riješiti">
+							<group rows="6" cols="3" row="1" col="1" caption="Boli">
+								<columnsdefinition>
+									<column position="1" size="55%" />
+									<column position="2" size="30%" />
+									<column position="3" size="15%" />
+								</columnsdefinition>
+								<item row="1" col="1" rowspan="6">
+									<grid name="grdBoli" dataname="~dtBoli" key="SubPrilikeId" savelayout="true">
+										<fields>
+											<field name="DatumSubPrilike" caption="Datum" />
+											<field name="MekiPodatak" />
+											<field name="TvrdiPodatak" />
+											<field name="Utjecaj" />
+											<field name="Ogranicenja" caption="Ograničenja" />
+										</fields>
+										<event type="focusedrowchanged">
+											<action type="control value" value="#memoOpisBoli">
+												<parameter value="#grdBoli.@OpisPrilike" />
+											</action>
+										</event>
+									</grid>
+								</item>
+								<item row="1" col="2" rowspan="6" caption="Opis">
+									<memoedit name="memoOpisBoli" enabled="false" fontsizedelta="1" />
+								</item>
+								<item row="1" col="3">
+									<button name="btnDodajBol" caption="Dodaj">
+										<event type="click">
+											<action type="form open" value="frmDodajBol">
+												<parameter name="PrilikeId" value="$PrilikeId" />
+											</action>
+										</event>
+									</button>
+								</item>
+								<item row="2" col="3">
+									<button name="btnIzmijeniBol" caption="Izmijeni">
+										<event type="click">
+											<action type="form open" value="frmIzmijeniBol">
+												<parameter name="PrilikeId" value="$PrilikeId" />
+												<parameter name="SubPrilikeId" value="#grdBoli.@SubPrilikeId" />
+											</action>
+										</event>
+									</button>
+								</item>
+								<item row="3" col="3">
+									<button name="btnUkloniBol" caption="Ukloni">
+										<event type="click">
+											<action type="confirm" value="Jeste li sigurni da želite ukloniti ovu bol?" />
+											<action type="datarun nonquery" value="~dtUkloniBol" />
+											<action type="control populate" value="#grdBoli" />
+										</event>
+									</button>
+								</item>
+							</group>
+							<group rows="6" cols="3" row="2" col="1" caption="Želje">
+								<columnsdefinition>
+									<column position="1" size="55%" />
+									<column position="2" size="30%" />
+									<column position="3" size="15%" />
+								</columnsdefinition>
+								<item row="1" col="1" rowspan="6">
+									<grid name="grdZelje" dataname="~dtZelje" key="SubPrilikeId" savelayout="true">
+										<fields>
+											<field name="DatumSubPrilike" caption="Datum" />
+											<field name="MekiPodatak" />
+											<field name="TvrdiPodatak" />
+											<field name="Utjecaj" />
+											<field name="Ogranicenja" caption="Ograničenja" />
+										</fields>
+										<event type="focusedrowchanged">
+											<action type="control value" value="#memoOpisZelje">
+												<parameter value="#grdZelje.@OpisPrilike" />
+											</action>
+										</event>
+									</grid>
+								</item>
+								<item row="1" col="2" rowspan="6" caption="Opis">
+									<memoedit name="memoOpisZelje" enabled="false" fontsizedelta="1" />
+								</item>
+								<item row="1" col="3">
+									<button name="btnDodajZelju" caption="Dodaj">
+										<event type="click">
+											<action type="form open" value="frmDodajZelju">
+												<parameter name="PrilikeId" value="$PrilikeId" />
+											</action>
+										</event>
+									</button>
+								</item>
+								<item row="2" col="3">
+									<button name="btnIzmijeniZelju" caption="Izmijeni">
+										<event type="click">
+											<action type="form open" value="frmIzmijeniZelju">
+												<parameter name="PrilikeId" value="$PrilikeId" />
+												<parameter name="SubPrilikeId" value="#grdZelje.@SubPrilikeId" />
+											</action>
+										</event>
+									</button>
+								</item>
+								<item row="3" col="3">
+									<button name="btnUkloniZelju" caption="Ukloni">
+										<event type="click">
+											<action type="confirm" value="Jeste li sigurni da želite ukloniti ovu želju?" />
+											<action type="datarun nonquery" value="~dtUkloniZelju" />
+											<action type="control populate" value="#grdZelje" />
+										</event>
+									</button>
+								</item>
+							</group>
+						</group>
+					</group>
+					<group rows="1" cols="1" caption="Osobe">
+						<group rows="1" cols="1" row="1" col="1" caption="Osobe klijenta uključene u priliku">
+							<group rows="12" cols="2" row="1" col="1" caption="Osobe i uloge">
+								<columnsdefinition>
+									<column size="80%" position="1" />
+								</columnsdefinition>
+								<item row="1" col="1" rowspan="6">
+									<grid name="grdOsobeUloge" dataname="~dtOsobeUloge" key="OMSOsobeId" savelayout="true">
+										<fields>
+											<field name="Inicijali" caption="Operater" />
+											<field name="Osoba" />
+											<field name="KlFunkcijeNaziv" caption="Funkcija" />
+											<field name="OdjelNaziv" caption="Odjel" />
+											<field name="NazivRole" caption="Uloga" />
+											<field name="IndikatorOdlucivanja" caption="Indikator odlučivanja" />
+										</fields>
+										<event type="focusedrowchanged">
+											<action type="control value" value="#memoNapomene">
+												<parameter value="#grdOsobeUloge.@Napomene" />
+											</action>
+											<action type="control value" value="#memoKriterij">
+												<parameter value="#grdOsobeUloge.@Kriteriji" />
+											</action>
+										</event>
+									</grid>
+								</item>
+								<item row="1" col="2">
+									<button name="btnDodajOsobu" caption="Dodaj">
+										<event type="click">
+											<action type="form open" value="frmDodajOsobu">
+												<parameter name="PartneriId" value="#srcTvrtka" />
+												<parameter name="PrilikeId" value="$PrilikeId" />
+											</action>
+										</event>
+									</button>
+								</item>
+								<item row="2" col="2">
+									<button name="btnIzmijeniOsobu" caption="Izmijeni">
+										<event type="click">
+											<action type="form open" value="frmIzmijeniOsobu">
+												<parameter name="PartneriId" value="#srcTvrtka" />
+												<parameter name="PrilikeId" value="$PrilikeId" />
+												<parameter name="OMSOsobeId" value="#grdOsobeUloge.@OMSOsobeId" />
+											</action>
+										</event>
+									</button>
+								</item>
+								<item row="3" col="2">
+									<button name="btnUkloniOsobu" caption="Ukloni">
+										<event type="click">
+											<action type="confirm" value="Jeste li sigurni da želite ukloniti ovu osobu?" />
+											<action type="datarun nonquery" value="~dtUkloniOsobu" />
+											<action type="control populate" value="#grdOsobeUloge" />
+										</event>
+									</button>
+								</item>
+								<group rows="2" cols="1" row="7" col="1" rowspan="6" colspan="2">
+									<item row="1" col="1" caption="Napomene:">
+										<memoedit name="memoNapomene" enabled="false" fontsizedelta="1" />
+									</item>
+									<item row="2" col="1" caption="Kriterij odlučivanja:">
+										<memoedit name="memoKriterij" enabled="false" fontsizedelta="1" />
+									</item>
+								</group>
+							</group>
+						</group>
+					</group>
+					<group rows="2" cols="5" caption="Tijek">
+						<group rows="6" cols="2" row="1" col="1" colspan="3" caption="Događaji">
+							<columnsdefinition>
+								<column size="80%" position="1" />
+								<column size="20%" position="2" />
+							</columnsdefinition>
+							<item row="1" col="1" rowspan="6">
+								<grid name="grdDogadaji" dataname="~dtDogadaji" key="TijekId" savelayout="true">
+									<fields>
+										<field name="DatumDogadjaja" caption="Datum" />
+										<field name="Aktivnost" />
+										<field name="OdgovornaOsoba" caption="Osoba" />
+										<field name="Naziv" caption="Kanal" />
+										<field name="UtrosenoVrijeme" caption="Utrošeno vrijeme" />
+									</fields>
+									<event type="focusedrowchanged">
+										<action type="control disable" value="#btnUkloniDogadaj" if="@@operateriid!=#grdDogadaji.@OOOperateriId" />
+										<action type="control enable" value="#btnUkloniDogadaj" if="@@operateriid==#grdDogadaji.@OOOperateriId" />
+										<action type="datarun reader" value="~dtDMSCount" />
+										<action type="control caption" value="#btnDMS">
+											<parameter value="~dtDMSCount.@Count" />
+										</action>
+										<action type="control populate" value="grdSudionici" />
+										<action type="control value" value="#memoOpisDogadaja">
+											<parameter value="#grdDogadaji.@Opis" />
+										</action>
+										<action type="control value" value="#memoZakljucak">
+											<parameter value="#grdDogadaji.@Zakljucak" />
+										</action>
+										<action type="control value" value="#txtKada">
+											<parameter value="#grdDogadaji.@DatumRem" />
+										</action>
+										<action type="control value" value="#txtTko">
+											<parameter value="#grdDogadaji.@TkoRem" />
+										</action>
+										<action type="control value" value="#memoSto">
+											<parameter value="#grdDogadaji.@OpisRem" />
+										</action>
+									</event>
+								</grid>
+							</item>
+							<item row="1" col="2">
+								<button name="btnDodajDogadaj" caption="Dodaj">
+									<event type="click">
+										<action type="form open" value="frmDodajDogadaj">
+											<parameter name="PartneriId" value="#srcTvrtka" />
+											<parameter name="PrilikeId" value="$PrilikeId" />
+										</action>
+										<action type="datarun nonquery" value="~dtPrazniTemp" if="dialogresult==cancel" />
+										<action type="control populate" value="#grdSudionici" />
+									</event>
+								</button>
+							</item>
+							<item row="2" col="2">
+								<button name="btnIzmijeniDogadaj" caption="Izmijeni">
+									<event type="click">
+										<action type="form open" value="frmIzmijeniDogadaj">
+											<parameter name="PartneriId" value="#srcTvrtka" />
+											<parameter name="PrilikeId" value="$PrilikeId" />
+											<parameter name="TijekId" value="#grdDogadaji.@TijekId" />
+										</action>
+										<action type="datarun nonquery" value="~dtPrazniTemp" if="dialogresult==cancel" />
+										<action type="datarun reader" value="~dtDMSCount" if="dialogresult==cancel" />
+										<action type="control caption" value="#btnDMS" if="dialogresult==cancel">
+											<parameter value="~dtDMSCount.@Count" />
+										</action>
+										<action type="control populate" value="#grdSudionici" />
+									</event>
+								</button>
+							</item>
+							<item row="3" col="2">
+								<button name="btnUkloniDogadaj" caption="Ukloni">
+									<event type="click">
+										<action type="confirm" value="Jeste li sigurni da želite ukloniti ovaj događaj?" />
+										<action type="datarun nonquery" value="~dtUkloniSudionikeDogadaja" />
+										<action type="method run" value="funDeleteAppointment">
+											<parameter name="guid" value="#grdDogadaji.@OutlookId" />
+											<!-- vrijednost već preuzetog guida -->
+											<!-- <parameter name="poruka" value="Uspješno obrisano" /> -->
+										</action>
+										<action type="datarun nonquery" value="~dtUkloniDogadaj" />
+										<action type="datarun nonquery" value="~dtDMSDeleteRelated" />
+										<action type="control populate" value="#grdDogadaji" />
+									</event>
+								</button>
+							</item>
+							<item row="4" col="2">
+								<button name="btnDMS">
+									<event type="click">
+										<action type="form open" value="frmDMS">
+											<parameter name="OMSTijekId" value="#grdDogadaji.@TijekId" />
+											<parameter name="OOOperateriId" value="#grdDogadaji.@OOOperateriId" />
+										</action>
+										<action type="datarun reader" value="~dtDMSCount" if="dialogresult==cancel" />
+										<action type="control caption" value="#btnDMS" if="dialogresult==cancel">
+											<parameter value="~dtDMSCount.@Count" />
+										</action>
+									</event>
+								</button>
+							</item>
+						</group>
+						<group rows="1" cols="1" row="1" col="4" colspan="2" caption="Sudionici">
+							<item row="1" col="1">
+								<grid name="grdSudionici" dataname="~dtSudionici" savelayout="true">
+									<fields>
+										<field name="Prezime" />
+										<field name="Ime" />
+										<field name="Odjel" caption="Odjel" />
+										<field name="Funkcija" caption="Funkcija" />
+									</fields>
+								</grid>
+							</item>
+						</group>
+						<group rows="2" cols="1" row="2" col="1" colspan="3" caption="Napomene">
+							<item row="1" col="1" caption="Opis">
+								<memoedit name="memoOpisDogadaja" enabled="false" fontsizedelta="1" />
+							</item>
+							<item row="2" col="1" caption="Zaključak">
+								<memoedit name="memoZakljucak" enabled="false" fontsizedelta="1" />
+							</item>
+						</group>
+						<group rows="2" cols="2" row="2" col="4" colspan="2" caption="Sljedeći korak">
+							<item row="1" col="1" caption="Kada:">
+								<textedit name="txtKada" enabled="false" formattype="datetime" format="dd.MM.yyyy HH:mm" />
+							</item>
+							<item row="1" col="2" caption="Tko:">
+								<textedit name="txtTko" enabled="false" />
+							</item>
+							<item row="2" col="1" colspan="2" caption="Što:">
+								<memoedit name="memoSto" enabled="false" fontsizedelta="1" />
+							</item>
+						</group>
+					</group>
+					<group rows="4" cols="1" caption="Resursi">
+						<group rows="3" cols="2" row="1" col="1" caption="Vrijeme">
+							<columnsdefinition>
+								<column position="1" size="85%" />
+								<column position="2" size="15%" />
+							</columnsdefinition>
+							<item row="1" col="1" rowspan="3">
+								<memoedit name="memoVrijeme" datavalue="~dtLoad.@ResVrijeme" enabled="false" fontsizedelta="1" />
+							</item>
+							<item row="2" col="2">
+								<button name="btnIzmijeniVrijeme" caption="Izmijeni">
+									<event type="click">
+										<action type="form open" value="frmVrijeme">
+											<parameter name="PrilikeId" value="$PrilikeId" />
+										</action>
+									</event>
+								</button>
+							</item>
+						</group>
+						<group rows="3" cols="2" row="2" col="1" caption="Ljudi">
+							<columnsdefinition>
+								<column position="1" size="85%" />
+								<column position="2" size="15%" />
+							</columnsdefinition>
+							<item row="1" col="1" rowspan="3">
+								<memoedit name="memoLjudi" datavalue="~dtLoad.@ResLjudi" enabled="false" fontsizedelta="1" />
+							</item>
+							<item row="2" col="2">
+								<button name="btnIzmijeniLjudi" caption="Izmijeni">
+									<event type="click">
+										<action type="form open" value="frmLjudi">
+											<parameter name="PrilikeId" value="$PrilikeId" />
+										</action>
+									</event>
+								</button>
+							</item>
+						</group>
+						<group rows="3" cols="2" row="3" col="1" caption="Novac Mi">
+							<columnsdefinition>
+								<column position="1" size="85%" />
+								<column position="2" size="15%" />
+							</columnsdefinition>
+							<item row="1" col="1" rowspan="3">
+								<memoedit name="memoNovac1" datavalue="~dtLoad.@ResNovac1" enabled="false" fontsizedelta="1" />
+							</item>
+							<item row="2" col="2">
+								<button name="btnIzmijeniNovac1" caption="Izmijeni">
+									<event type="click">
+										<action type="form open" value="frmNovac1">
+											<parameter name="PrilikeId" value="$PrilikeId" />
+										</action>
+									</event>
+								</button>
+							</item>
+						</group>
+						<group rows="3" cols="2" row="4" col="1" caption="Novac Oni">
+							<columnsdefinition>
+								<column position="1" size="85%" />
+								<column position="2" size="15%" />
+							</columnsdefinition>
+							<item row="1" col="1" rowspan="3">
+								<memoedit name="memoNovac2" datavalue="~dtLoad.@ResNovac2" enabled="false" fontsizedelta="1" />
+							</item>
+							<item row="2" col="2">
+								<button name="btnIzmijeniNovac2" caption="Izmijeni">
+									<event type="click">
+										<action type="form open" value="frmNovac2">
+											<parameter name="PrilikeId" value="$PrilikeId" />
+										</action>
+									</event>
+								</button>
+							</item>
+						</group>
+					</group>
+					<group rows="1" cols="1" caption="Konkurencija">
+						<group rows="12" cols="2" caption="Konkurencija">
+							<columnsdefinition>
+								<column position="1" size="85%" />
+								<column position="2" size="15%" />
+							</columnsdefinition>
+							<item row="1" col="1" rowspan="8">
+								<grid name="grdKonkurencija" dataname="~dtKonkurencija" key="KonkurencijaId" savelayout="true">
+									<fields>
+										<field name="Inicijali" caption="Operater" />
+										<field name="Partner" caption="Konkurent" />
+										<field name="VrijednostPonude" caption="Vrijednost ponude" />
+										<field name="Ishod" />
+										<field name="Tip" />
+									</fields>
+									<event type="focusedrowchanged">
+										<action type="control value" value="#memoOpisKonkurencije">
+											<parameter value="#grdKonkurencija.@Opis" />
+										</action>
+									</event>
+								</grid>
+							</item>
+							<item row="9" col="1" rowspan="4" caption="Opis">
+								<memoedit name="memoOpisKonkurencije" enabled="false" fontsizedelta="1" />
+							</item>
+							<item row="1" col="2">
+								<button name="btnDodajKonkurenciju" caption="Dodaj">
+									<event type="click">
+										<action type="form open" value="frmDodajKonkurenciju">
+											<parameter name="PrilikeId" value="$PrilikeId" />
+										</action>
+									</event>
+								</button>
+							</item>
+							<item row="2" col="2">
+								<button name="btnIzmijeniKonkurenciju" caption="Izmijeni">
+									<event type="click">
+										<action type="form open" value="frmIzmijeniKonkurenciju">
+											<parameter name="PrilikeId" value="$PrilikeId" />
+											<parameter name="KonkurencijaId" value="#grdKonkurencija.@KonkurencijaId" />
+										</action>
+									</event>
+								</button>
+							</item>
+							<item row="3" col="2">
+								<button name="btnObrisiKonkurenciju" caption="Obriši">
+									<event type="click">
+										<action type="confirm" value="Jeste li sigurni da želite ukloniti ovu konkurenciju?" />
+										<action type="datarun nonquery" value="~dtObrisiKonkurenciju" />
+										<action type="control populate" value="#grdKonkurencija" />
+									</event>
+								</button>
+							</item>
+						</group>
+					</group>
+				</tabs>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnGotovo" caption="Gotovo" dock="right">
+					<event type="click">
+						<action type="control populate keepfocus" value="parent.#grdMaster" />
+						<action type="control populate" value="parent.#grdDetail" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnPartnerInfo" caption="Partner Info">
+					<event type="click">
+						<action type="method run" value="parInfo">
+							<parameter name="server" value="@@server" />
+							<parameter name="baza" value="@@database" />
+							<parameter name="username" value="@@username" />
+							<parameter name="password" value="" />
+							<parameter name="operateriid" value="@@operateriid" />
+							<parameter name="Parent" value="0" />
+							<parameter name="pTop" value="0" />
+							<parameter name="pLeft" value="0" />
+							<parameter name="path" value="" />
+							<parameter name="partneriid" value="parent.#grdMaster.@PartneriId" />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDMSCount" command="spOMSTijekDMS">
+				<parameter name="@Action" value="COUNT" />
+				<parameter name="@Id" value="#grdDogadaji.@TijekId" />
+			</data>
+			<data name="dtDMSDeleteRelated" command="spOMSTijekDMS">
+				<parameter name="@Action" value="DELREL" />
+				<parameter name="@Id" value="#grdDogadaji.@TijekId" />
+			</data>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="100" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtStatusPrilike" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="4" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtBoli" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="5" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtZelje" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="6" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtUkloniBol" command="spOMSProjektSubPrilikeAzurCarpo">
+				<parameter name="@Action" value="2" />
+				<parameter name="@ID" value="#grdBoli.@SubPrilikeId" />
+			</data>
+			<data name="dtUkloniZelju" command="spOMSProjektSubPrilikeAzurCarpo">
+				<parameter name="@Action" value="2" />
+				<parameter name="@ID" value="#grdZelje.@SubPrilikeId" />
+			</data>
+			<data name="dtOsobeUloge" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtUkloniOsobu" command="spOMSProjektOsobeAzurCarpo">
+				<parameter name="@Action" value="2" />
+				<parameter name="@ID" value="#grdOsobeUloge.@OMSOsobeId" />
+			</data>
+			<data name="dtDogadaji" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="12" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<!--
+			<data name="dtSudionici" command="spOMSProjektGlavaQueryCarpo">
+			<parameter name="@Action" value="29" />
+			<parameter name="@TijekId" value="#grdDogadaji.@TijekId" />
+			</data>
+			-->
+			<data name="dtSudionici" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="13" />
+				<parameter name="@Id" value="#grdDogadaji.@TijekId" />
+			</data>
+			<data name="dtUkloniSudionikeDogadaja" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="3" />
+				<parameter name="@ID" value="#grdDogadaji.@TijekId" />
+			</data>
+			<data name="dtUkloniDogadaj" command="spOMSProjektTijekAzurCarpo">
+				<parameter name="@Action" value="2" />
+				<parameter name="@ID" value="#grdDogadaji.@TijekId" />
+			</data>
+			<data name="dtKonkurencija" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="7" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtObrisiKonkurenciju" command="spOMSProjektKonkurencijaAzurCarpo">
+				<parameter name="@Action" value="2" />
+				<parameter name="@ID" value="#grdKonkurencija.@KonkurencijaId" />
+			</data>
+			<data name="dtPrazniTemp" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="EMPTY" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmIzmijeniCase" caption="Izmjena osnovnih podataka">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="3" cols="2">
+				<item row="1" col="1" caption="Prilika:">
+					<textedit name="txtPrilika" datavalue="~dtLoad.@Naziv" />
+				</item>
+				<item row="1" col="2" caption="Datum otvaranja:">
+					<dateedit name="dateDatum" datavalue="~dtLoad.@DatumOtvaranja" />
+				</item>
+				<item row="2" col="1" caption="Tvrtka:">
+					<searchedit name="srcTvrtka" dataname="global.~dtPartnerHelp" datavalue="~dtLoad.@PartneriId" datatext="~dtLoad.@Partner" fieldvalue="PartneriId" fieldtext="Naziv" />
+				</item>
+				<item row="2" col="2" caption="Odgovorna osoba:">
+					<comboedit name="cmbOsoba" dataname="global.~dtOsobaHelp" valuefield="OsobeId" displayfield="Naziv" datavalue="~dtLoad.@OdgovornaOsobaId" datatext="~dtLoad.@OdgovornaOsoba" />
+				</item>
+				<item row="3" col="1" caption="Izvor:">
+					<textedit name="txtIzvor" datavalue="~dtLoad.@Izvor" />
+				</item>
+				<item row="3" col="2" caption="Procijenjena vrijednost prilike:">
+					<textedit name="txtVrijednost" datavalue="~dtLoad.@VrijednostPrilike" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<!-- načini osvježavanja podataka u nadređenoj formi nakon promjene podataka u podređenoj formi -->
+						<action type="datarun nonquery" value="~dtSpremiPriliku" />
+						<action type="datarun reader" value="~dtLoad" />
+						<action type="control value" value="parent.#txtPrilika">
+							<parameter value="~dtLoad.@Naziv" />
+						</action>
+						<action type="control value" value="parent.#dateDatum">
+							<parameter value="~dtLoad.@DatumOtvaranja" />
+						</action>
+						<action type="control value" value="parent.#srcTvrtka">
+							<parameter value="~dtLoad.@PartneriId" text="~dtLoad.@Partner" />
+						</action>
+						<action type="control value" value="parent.#cmbOsoba">
+							<parameter value="~dtLoad.@OdgovornaOsobaId" text="~dtLoad.@OdgovornaOsoba" />
+						</action>
+						<action type="control value" value="parent.#txtIzvor">
+							<parameter value="~dtLoad.@Izvor" />
+						</action>
+						<action type="control value" value="parent.#txtVrijednost">
+							<parameter value="~dtLoad.@VrijednostPrilike" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="100" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtSpremiPriliku" command="spOMSProjektGlavaAzurCarpo">
+				<parameter name="@Action" value="1" />
+				<parameter name="@PartneriId" value="#srcTvrtka" />
+				<parameter name="@Naziv" value="#txtPrilika" />
+				<parameter name="@OdgovornaOsobaId" value="#cmbOsoba" />
+				<parameter name="@DatumOtvaranja" value="#dateDatum" />
+				<parameter name="@VrijednostPrilike" value="#txtVrijednost" />
+				<parameter name="@Izvor" value="#txtIzvor" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDodajOpis" caption="Opis" height="400" width="400">
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<memoedit name="memoOpis" fontsizedelta="1" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtDodajOpis" />
+						<action type="datarun reader" value="~dtLoad" />
+						<action type="control value" value="parent.#memoOpis">
+							<parameter value="~dtLoad.@Opis" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="100" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtDodajOpis" command="spOMSProjektGlavaAzurCarpo">
+				<parameter name="@Action" value="33" />
+				<parameter name="@ID" value="$PrilikeId" />
+				<parameter name="@Opis" value="#memoOpis" />
+				<parameter name="@OperateriID" value="@@operateriid" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmIzmijeniOpis" caption="Opis" height="400" width="400">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<memoedit name="memoOpis" datavalue="~dtLoad.@Opis" fontsizedelta="1" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtIzmijeniOpis" />
+						<action type="control value" value="parent.#memoOpis">
+							<parameter value="#memoOpis" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="100" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtIzmijeniOpis" command="spOMSProjektGlavaAzurCarpo">
+				<parameter name="@Action" value="3" />
+				<parameter name="@ID" value="$PrilikeId" />
+				<parameter name="@Opis" value="#memoOpis" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmPromijeniStatus" caption="Status">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1" caption="Status:">
+					<comboedit name="cmbStatus" dataname="~dtStatus" valuefield="Id" displayfield="Name" datavalue="~dtLoad.@StatusPrilikeId" datatext="~dtLoad.@Status" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun scalar" value="~dtZapisiPromjenu">
+							<parameter name="StatusId" />
+						</action>
+						<action type="datarun nonquery" value="~dtPromijeniStatus" />
+						<action type="control populate" value="parent.#grdStatusPrilike" />
+						<action type="control focus" value="parent.#grdStatusPrilike">
+							<parameter value="$StatusId" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="44" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtStatus" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="26" />
+			</data>
+			<data name="dtPromijeniStatus" command="spOMSProjektGlavaAzurCarpo">
+				<parameter name="@Action" value="11" />
+				<parameter name="@StatusPrilikeId" value="#cmbStatus" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtZapisiPromjenu" command="spOMSProjektGlavaAzurCarpo">
+				<parameter name="@Action" value="55" />
+				<parameter name="@StatusPrilikeId" value="#cmbStatus" />
+				<parameter name="@ID" value="$PrilikeId" />
+				<parameter name="@OperateriID" value="@@operateriid" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDodajBol" caption="Dodaj bol">
+		<layout>
+			<group rows="5" cols="2">
+				<item row="1" col="1" caption="Datum:">
+					<dateedit name="dateDatum" value="now" />
+				</item>
+				<item row="2" col="1" colspan="2" caption="Opis:">
+					<memoedit name="memoOpis" fontsizedelta="1" />
+				</item>
+				<item row="3" col="1" colspan="2" caption="Utjecaj:">
+					<memoedit name="memoUtjecaj" fontsizedelta="1" />
+				</item>
+				<item row="4" col="1" colspan="2" caption="Ograničenja:">
+					<memoedit name="memoOgranicenja" fontsizedelta="1" />
+				</item>
+				<item row="5" col="1" caption="Tvrdi podatak:">
+					<textedit name="txtTvrdi" />
+				</item>
+				<item row="5" col="2" caption="Meki podatak:">
+					<textedit name="txtMeki" value="0" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun scalar" value="~dtSpremiBol">
+							<parameter name="SubPrilikeId" />
+						</action>
+						<action type="control populate" value="parent.#grdBoli">
+							<action type="control focus" value="parent.#grdBoli">
+								<parameter value="$SubPrilikeId" type="int" />
+							</action>
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtSpremiBol" command="spOMSProjektSubPrilikeAzurCarpo">
+				<parameter name="@Action" value="0" />
+				<parameter name="@PrilikeId" value="$PrilikeId" />
+				<parameter name="@DatumSubPrilike" value="#dateDatum" />
+				<parameter name="@OpisPrilike" value="#memoOpis" />
+				<parameter name="@TipPrilike1" value="Boli" />
+				<parameter name="@TvrdiPodatak" value="#txtTvrdi" />
+				<parameter name="@MekiPodatak" value="#txtMeki" />
+				<parameter name="@Utjecaj" value="#memoUtjecaj" />
+				<parameter name="@Ogranicenja" value="#memoOgranicenja" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmIzmijeniBol" caption="Izmijeni bol">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="5" cols="2">
+				<item row="1" col="1" caption="Datum:">
+					<dateedit name="dateDatum" datavalue="~dtLoad.@DatumSubPrilike" />
+				</item>
+				<item row="2" col="1" colspan="2" caption="Opis:">
+					<memoedit name="memoOpis" datavalue="~dtLoad.@OpisPrilike" fontsizedelta="1" />
+				</item>
+				<item row="3" col="1" colspan="2" caption="Utjecaj:">
+					<memoedit name="memoUtjecaj" datavalue="~dtLoad.@Utjecaj" fontsizedelta="1" />
+				</item>
+				<item row="4" col="1" colspan="2" caption="Ograničenja:">
+					<memoedit name="memoOgranicenja" datavalue="~dtLoad.@Ogranicenja" fontsizedelta="1" />
+				</item>
+				<item row="5" col="1" caption="Tvrdi podatak:">
+					<textedit name="txtTvrdi" datavalue="~dtLoad.@TvrdiPodatak" />
+				</item>
+				<item row="5" col="2" caption="Meki podatak:">
+					<textedit name="txtMeki" datavalue="~dtLoad.@MekiPodatak" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtSpremiBol" />
+						<action type="control populate keepfocus" value="parent.#grdBoli" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="55" />
+				<parameter name="@ID" value="$SubPrilikeId" />
+			</data>
+			<data name="dtSpremiBol" command="spOMSProjektSubPrilikeAzurCarpo">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$SubPrilikeId" />
+				<parameter name="@PrilikeId" value="$PrilikeId" />
+				<parameter name="@DatumSubPrilike" value="#dateDatum" />
+				<parameter name="@OpisPrilike" value="#memoOpis" />
+				<parameter name="@TipPrilike1" value="Boli" />
+				<parameter name="@TvrdiPodatak" value="#txtTvrdi" />
+				<parameter name="@MekiPodatak" value="#txtMeki" />
+				<parameter name="@Utjecaj" value="#memoUtjecaj" />
+				<parameter name="@Ogranicenja" value="#memoOgranicenja" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDodajZelju" caption="Dodaj želju">
+		<layout>
+			<group rows="5" cols="2">
+				<item row="1" col="1" caption="Datum:">
+					<dateedit name="dateDatum" value="now" />
+				</item>
+				<item row="2" col="1" colspan="2" caption="Opis:">
+					<memoedit name="memoOpis" fontsizedelta="1" />
+				</item>
+				<item row="3" col="1" colspan="2" caption="Utjecaj:">
+					<memoedit name="memoUtjecaj" fontsizedelta="1" />
+				</item>
+				<item row="4" col="1" colspan="2" caption="Ograničenja:">
+					<memoedit name="memoOgranicenja" fontsizedelta="1" />
+				</item>
+				<item row="5" col="1" caption="Tvrdi podatak:">
+					<textedit name="txtTvrdi" />
+				</item>
+				<item row="5" col="2" caption="Meki podatak:">
+					<textedit name="txtMeki" value="0" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun scalar" value="~dtSpremiZelju">
+							<parameter name="SubPrilikeId" />
+						</action>
+						<action type="control populate" value="parent.#grdZelje">
+							<action type="control focus" value="parent.#grdZelje">
+								<parameter value="$SubPrilikeId" type="int" />
+							</action>
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtSpremiZelju" command="spOMSProjektSubPrilikeAzurCarpo">
+				<parameter name="@Action" value="0" />
+				<parameter name="@PrilikeId" value="$PrilikeId" />
+				<parameter name="@DatumSubPrilike" value="#dateDatum" />
+				<parameter name="@OpisPrilike" value="#memoOpis" />
+				<parameter name="@TipPrilike2" value="Želje" />
+				<parameter name="@TvrdiPodatak" value="#txtTvrdi" />
+				<parameter name="@MekiPodatak" value="#txtMeki" />
+				<parameter name="@Utjecaj" value="#memoUtjecaj" />
+				<parameter name="@Ogranicenja" value="#memoOgranicenja" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmIzmijeniZelju" caption="Izmijeni želju">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="5" cols="2">
+				<item row="1" col="1" caption="Datum:">
+					<dateedit name="dateDatum" datavalue="~dtLoad.@DatumSubPrilike" />
+				</item>
+				<item row="2" col="1" colspan="2" caption="Opis:">
+					<memoedit name="memoOpis" datavalue="~dtLoad.@OpisPrilike" fontsizedelta="1" />
+				</item>
+				<item row="3" col="1" colspan="2" caption="Utjecaj:">
+					<memoedit name="memoUtjecaj" datavalue="~dtLoad.@Utjecaj" fontsizedelta="1" />
+				</item>
+				<item row="4" col="1" colspan="2" caption="Ograničenja:">
+					<memoedit name="memoOgranicenja" datavalue="~dtLoad.@Ogranicenja" fontsizedelta="1" />
+				</item>
+				<item row="5" col="1" caption="Tvrdi podatak:">
+					<textedit name="txtTvrdi" datavalue="~dtLoad.@TvrdiPodatak" />
+				</item>
+				<item row="5" col="2" caption="Meki podatak:">
+					<textedit name="txtMeki" datavalue="~dtLoad.@MekiPodatak" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtSpremiZelju" />
+						<action type="control populate keepfocus" value="parent.#grdZelje" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="66" />
+				<parameter name="@ID" value="$SubPrilikeId" />
+			</data>
+			<data name="dtSpremiZelju" command="spOMSProjektSubPrilikeAzurCarpo">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$SubPrilikeId" />
+				<parameter name="@PrilikeId" value="$PrilikeId" />
+				<parameter name="@DatumSubPrilike" value="#dateDatum" />
+				<parameter name="@OpisPrilike" value="#memoOpis" />
+				<parameter name="@TipPrilike2" value="Želje" />
+				<parameter name="@TvrdiPodatak" value="#txtTvrdi" />
+				<parameter name="@MekiPodatak" value="#txtMeki" />
+				<parameter name="@Utjecaj" value="#memoUtjecaj" />
+				<parameter name="@Ogranicenja" value="#memoOgranicenja" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDodajOsobu" caption="Dodaj osobu">
+		<layout>
+			<group rows="5" cols="1">
+				<item row="1" col="1" caption="Osoba:">
+					<comboedit name="cmbOsoba" dataname="~dtOsoba" valuefield="OsobeId" displayfield="Naziv" />
+				</item>
+				<item row="2" col="1" caption="Uloga:">
+					<comboedit name="cmbUloga" dataname="~dtUloga" valuefield="RoleId" displayfield="NazivRole" />
+				</item>
+				<item row="3" col="1" caption="Napomene:">
+					<memoedit name="memoNapomene" fontsizedelta="1" />
+				</item>
+				<item row="4" col="1" caption="Kriterij odlučivanja:">
+					<memoedit name="memoKriterij" fontsizedelta="1" />
+				</item>
+				<item row="5" col="1" caption="Indikator odlučivanja:">
+					<checkedit name="chkIndikator" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun scalar" value="~dtSpremiOsobu">
+							<parameter name="OMSOsobeId" />
+						</action>
+						<action type="control populate" value="parent.#grdOsobeUloge">
+							<action type="control focus" value="parent.#grdOsobeUloge">
+								<parameter value="$OMSOsobeId" type="int" />
+							</action>
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtOsoba" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="3" />
+				<parameter name="@PartneriId" value="$PartneriId" />
+			</data>
+			<data name="dtUloga" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="18" />
+			</data>
+			<data name="dtSpremiOsobu" command="spOMSProjektOsobeAzurCarpo">
+				<parameter name="@Action" value="0" />
+				<parameter name="@OsobeId" value="#cmbOsoba" />
+				<parameter name="@RoleId" value="#cmbUloga" />
+				<parameter name="@Opis" value="#memoNapomene" />
+				<parameter name="@Kriteriji" value="#memoKriterij" />
+				<parameter name="@IndikatorOdlucivanja" value="#chkIndikator" />
+				<parameter name="@PrilikeId" value="$PrilikeId" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmIzmijeniOsobu" caption="Izmijeni osobu">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="5" cols="1">
+				<item row="1" col="1" caption="Osoba:">
+					<comboedit name="cmbOsoba" dataname="~dtOsoba" valuefield="OsobeId" displayfield="Naziv" datavalue="~dtLoad.@OsobeId" datatext="~dtLoad.@Osoba" />
+				</item>
+				<item row="2" col="1" caption="Uloga:">
+					<comboedit name="cmbUloga" dataname="~dtUloga" valuefield="RoleId" displayfield="NazivRole" datavalue="~dtLoad.@RoleId" datatext="~dtLoad.@NazivRole" />
+				</item>
+				<item row="3" col="1" caption="Napomene:">
+					<memoedit name="memoNapomene" datavalue="~dtLoad.@Napomene" fontsizedelta="1" />
+				</item>
+				<item row="4" col="1" caption="Kriterij odlučivanja:">
+					<memoedit name="memoKriterij" datavalue="~dtLoad.@Kriteriji" fontsizedelta="1" />
+				</item>
+				<item row="5" col="1" caption="Indikator odlučivanja:">
+					<checkedit name="chkIndikator" datavalue="~dtLoad.IndikatorOdlucivanja" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtSpremiOsobu" />
+						<action type="control populate keepfocus" value="parent.#grdOsobeUloge" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="111" />
+				<parameter name="@ID" value="$OMSOsobeId" />
+			</data>
+			<data name="dtOsoba" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="3" />
+				<parameter name="@PartneriId" value="$PartneriId" />
+			</data>
+			<data name="dtUloga" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="18" />
+			</data>
+			<data name="dtSpremiOsobu" command="spOMSProjektOsobeAzurCarpo">
+				<parameter name="@Action" value="1" />
+				<parameter name="@OsobeId" value="#cmbOsoba" />
+				<parameter name="@RoleId" value="#cmbUloga" />
+				<parameter name="@Opis" value="#memoNapomene" />
+				<parameter name="@Kriteriji" value="#memoKriterij" />
+				<parameter name="@IndikatorOdlucivanja" value="#chkIndikator" />
+				<parameter name="@PrilikeId" value="$PrilikeId" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+				<parameter name="@ID" value="$OMSOsobeId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDodajDogadaj" caption="Dodaj aktivnost" height="600" width="800">
+		<method name="funAddAppointment" dll="OutlookAppointment" class="OutlookAppointment.Start" method="AddAppointment" />
+		<event type="init">
+			<action type="datarun reader" value="~dtSutra" />
+		</event>
+		<event type="shown">
+			<action type="control populate" value="#grdSudionici" />
+		</event>
+		<event type="load">
+			<!-- Upravljanje kontrolama pri učitavanju forme -->
+			<action type="control disable" value="#cmbTko" />
+			<action type="control disable" value="#dateKad" />
+			<action type="control disable" value="#timeKad" />
+			<action type="control disable" value="#memoSto" />
+			<action type="control value" value="#dateKad">
+				<parameter value="~dtSutra.@Sutra" />
+			</action>
+		</event>
+		<layout>
+			<group rows="2" cols="2">
+				<group rows="4" cols="3" row="1" col="1" rowspan="2" caption="Aktivnost">
+					<item row="1" col="1" caption="Naziv aktivnosti:">
+						<textedit name="txtAktivnost" required="true">
+							<event type="valuechanged">
+								<!--
+								<action type="variable value">
+								<parameter name="NaslovMail" value="{parent.$Partner} :: {#txtAktivnost}" />
+								</action>
+								-->
+							</event>
+						</textedit>
+					</item>
+					<item row="1" col="2" caption="Datum događaja:">
+						<dateedit name="dateDatum" value="now" />
+					</item>
+					<item row="1" col="3" caption="Odgovorna osoba:">
+						<comboedit name="cmbOsoba" dataname="global.~dtOsobaHelp" valuefield="OsobeId" displayfield="Naziv" required="true">
+							<event type="valuechanged">
+								<action type="control value" value="#cmbTko">
+									<parameter value="#cmbOsoba" text="#cmbOsoba.text" />
+								</action>
+							</event>
+						</comboedit>
+					</item>
+					<item row="2" col="1" caption="Kanal:">
+						<comboedit name="cmbKanal" dataname="~dtKanal" valuefield="OMSKanalId" displayfield="Naziv" />
+					</item>
+					<item row="2" col="2" caption="Utrošeno vrijeme:">
+						<textedit name="txtVrijeme" value="0" />
+					</item>
+					<item row="2" col="3">
+						<button name="btnDMS" caption="DMS">
+							<event type="click">
+								<action type="form open" value="frmDMS" />
+							</event>
+						</button>
+					</item>
+					<item row="3" col="1" colspan="3" caption="Opis:">
+						<memoedit name="memoOpis" fontsizedelta="1" />
+					</item>
+					<item row="4" col="1" colspan="3" caption="Zaključak:">
+						<memoedit name="memoZakljucak" fontsizedelta="1" />
+					</item>
+				</group>
+				<group rows="4" cols="2" row="1" col="2" caption="Sudionici">
+					<columnsdefinition>
+						<column position="1" size="85%" />
+						<column position="2" size="15%" />
+					</columnsdefinition>
+					<item row="1" col="1" rowspan="4">
+						<grid name="grdSudionici" dataname="~dtSudioniciTemp" key="OsobeId" multiselect="true" savelayout="true">
+							<fields>
+								<field name="Prezime" />
+								<field name="Ime" />
+								<field name="Odjel" />
+								<field name="Funkcija" />
+							</fields>
+						</grid>
+					</item>
+					<item row="1" col="2">
+						<button name="btnDodajSudionika" caption="UREDI">
+							<event type="click">
+								<action type="form open" value="frmDodajSudionika">
+									<parameter name="PartneriId" value="$PartneriId" />
+									<parameter name="PrilikeId" value="$PrilikeId" />
+								</action>
+							</event>
+						</button>
+					</item>
+					<!--
+					<item row="2" col="2">
+					<button name="btnUkloniSudionika" caption="Ukloni">
+					<event type="click">
+					<action type="datarun nonquery" value="~dtUkloniTemp" />
+					<action type="control populate" value="#grdSudionici" />
+					</event>
+					</button>
+					</item>
+					-->
+				</group>
+				<group rows="3" cols="2" row="2" col="2" caption="Sljedeći korak">
+					<item row="1" col="1" caption="Postoji aktivnost koja slijedi aktivnost koju unosite:">
+						<checkedit name="chkSljedeci">
+							<event type="valuechanged">
+								<action if="#chkSljedeci==True">
+									<action type="control enable" value="#cmbTko" />
+									<action type="control enable" value="#dateKad" />
+									<action type="control enable" value="#timeKad" />
+									<action type="control enable" value="#memoSto" />
+								</action>
+								<action if="#chkSljedeci==False">
+									<action type="control disable" value="#cmbTko" />
+									<action type="control disable" value="#dateKad" />
+									<action type="control disable" value="#timeKad" />
+									<action type="control disable" value="#memoSto" />
+								</action>
+							</event>
+						</checkedit>
+					</item>
+					<item row="1" col="2" caption="Tko:">
+						<comboedit name="cmbTko" dataname="global.~dtOsobaHelp" valuefield="OsobeId" displayfield="Naziv" />
+					</item>
+					<item row="2" col="1" caption="Kad (datum):">
+						<dateedit name="dateKad" controlref="timeKad" />
+						<!-- controlref za spajanje vrijednosti dvije kontrole -->
+					</item>
+					<item row="2" col="2" caption="Kad (vrijeme):">
+						<timeedit name="timeKad" value="10:00:00" />
+					</item>
+					<item row="3" col="1" colspan="2" caption="Što:">
+						<memoedit name="memoSto" fontsizedelta="1" />
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtSpremiDogadaj">
+							<parameter name="TijekId" />
+						</action>
+						<action type="datarun nonquery" value="~dtDMSUpdate" />
+						<action type="datarun nonquery" value="~dtDodajTijekTemp" />
+						<action type="datarun nonquery" value="~dtSpremiSudionike" />
+						<action type="datarun nonquery" value="~dtPrazniTemp" />
+						<action type="datarun scalar" value="~dtDateTime" if="#chkSljedeci==True">
+							<parameter name="DV" value="~dtDateTime.@dv" />
+						</action>
+						<action type="datarun scalar" value="~dtNaslov" if="#chkSljedeci==True">
+							<parameter name="NaslovMail" value="~dtNaslov.@txt" />
+						</action>
+						<action type="datarun scalar" value="~dtText" if="#chkSljedeci==True">
+							<parameter name="TXT" value="~dtText.@txt" />
+						</action>
+						<action type="method run" value="funAddAppointment" if="#chkSljedeci==True">
+							<parameter name="start" value="$DV" />
+							<parameter name="trajanje" value="1" type="int" />
+							<parameter name="lokacija" value="" />
+							<parameter name="naslov" value="$NaslovMail" />
+							<parameter name="tekst" value="$TXT" />
+							<parameter name="prikaz" value="false" type="bool" />
+							<!-- <parameter name="poruka" value="Uspješno spremljeno" /> -->
+						</action>
+						<action type="datarun nonquery" value="~dtOutlookId" if="#chkSljedeci==True" />
+						<action type="control populate" value="parent.#grdDogadaji">
+							<action type="control focus" value="parent.#grdDogadaji">
+								<parameter value="$TijekId" type="int" />
+							</action>
+						</action>
+						<action type="control populate" value="parent.#grdSudionici,parent.#memoOpisDogadaja,parent.#memoZakljucak,parent.#txtKada,parent.#txtTko,parent.#memoSto" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtPrazniTemp" />
+						<action type="datarun nonquery" value="~dtDMSDelete" />
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDMSCount" command="spOMSTijekDMS">
+				<parameter name="@Action" value="COUNT" />
+				<parameter name="@Id" value="$TijekId" />
+			</data>
+			<data name="dtDMSUpdate" command="spOMSTijekDMS">
+				<parameter name="@Action" value="UPDATE" />
+				<parameter name="@Id" value="$TijekId" />
+			</data>
+			<data name="dtDMSDelete" command="spOMSTijekDMS">
+				<parameter name="@Action" value="DELETE" />
+			</data>
+			<data name="dtSutra" command="spDefaultDate">
+				<parameter name="@Action" value="Sutra" />
+			</data>
+			<data name="dtOutlookId" command="spOMSProjektTijekAzurCarpo">
+				<parameter name="@Action" value="7" />
+				<parameter name="@OutlookId" value="parent.$funAddAppointment" />
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtDateTime" command="select replace(convert(varchar(16),DatumRem,20),'-','') as dv from OMSTijek where TijekId = @TijekId" type="text">
+				<parameter name="@TijekId" value="$TijekId" />
+			</data>
+			<data name="dtText" command="spOMSProjektOutlookBody">
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtNaslov" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="30" />
+				<parameter name="@ID" value="$PrilikeId" />
+				<parameter name="@TijekId" value="$TijekId" />
+			</data>
+			<data name="dtKanal" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="19" />
+			</data>
+			<data name="dtSudioniciTemp" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="SELECT" />
+				<parameter name="@ID" value="$PartneriId" />
+			</data>
+			<!--
+			<data name="dtSudionici" command="spOMSProjektSudioniciAzurCarpo">
+			<parameter name="@Action" value="13" />
+			<parameter name="@ID" value="$TijekId" />
+			</data>
+			-->
+			<data name="dtUkloniTemp" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="DELETE" />
+				<parameter name="@SelectedIds" value="#grdSudionici.SelectedIds" />
+			</data>
+			<data name="dtDodajTijekTemp" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="8" />
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtSpremiSudionike" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="SAVE" />
+			</data>
+			<data name="dtPrazniTemp" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="EMPTY" />
+			</data>
+			<data name="dtSpremiDogadaj" command="spOMSProjektTijekAzurCarpo">
+				<parameter name="@Action" value="0" />
+				<parameter name="@PrilikeId" value="$PrilikeId" />
+				<parameter name="@DatumDogadjaja" value="#dateDatum" />
+				<parameter name="@OdgovornaOsobaId" value="#cmbOsoba" />
+				<parameter name="@KanalId" value="#cmbKanal" />
+				<parameter name="@Opis" value="#memoOpis" />
+				<parameter name="@Zakljucak" value="#memoZakljucak" />
+				<parameter name="@DatumRem" value="#dateKad" if="#chkSljedeci==True" />
+				<parameter name="@DatumRem" value="null" if="#chkSljedeci==False" />
+				<parameter name="@TkoRem" value="#cmbTko.text" if="#chkSljedeci==True" />
+				<parameter name="@TkoRem" value="null" if="#chkSljedeci==False" />
+				<parameter name="@TkoRemId" value="#cmbTko" if="#chkSljedeci==True" />
+				<parameter name="@TkoRemId" value="null" if="#chkSljedeci==False" />
+				<parameter name="@Osobe2Id" value="#cmbTko" if="#chkSljedeci==True" />
+				<parameter name="@Osobe2Id" value="null" if="#chkSljedeci==False" />
+				<parameter name="@OpisRem" value="#memoSto" />
+				<!-- <parameter name="@ZatvoriRemId" value="0"/> -->
+				<parameter name="@UtrosenoVrijeme" value="#txtVrijeme" />
+				<parameter name="@Aktivnost" value="#txtAktivnost" />
+				<parameter name="@Indikator" value="#chkSljedeci" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDodajSudionika" caption="Potencijalni sudionici" height="500" width="400">
+		<event type="shown">
+			<action type="control populate" value="#grdPotencijalniSudionici" />
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<grid name="grdPotencijalniSudionici" dataname="~dtPotencijalniSudionici" key="OsobeId" multiselect="true" savelayout="true" cleargridfilter="true">
+						<fields>
+							<field name="Checked" caption="" edittype="bit" editable="true" />
+							<field name="Prezime" />
+							<field name="Ime" />
+							<field name="OdjelNaziv" caption="Odjel" />
+							<field name="KlFunkcijeNaziv" caption="Funkcije" />
+						</fields>
+						<!--
+						<event type="doubleclick">
+						<action type="datarun nonquery" value="~dtSpremiPotencijalneSudionike" />
+						<action type="control populate" value="parent.#grdSudionici" />
+						</event>
+						-->
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<!-- <action type="datarun nonquery" value="~dtSpremiPotencijalneSudionike" /> -->
+						<action type="datarun nonquery" value="~dtObrisiSudionike" />
+						<action type="control foreachrow" value="#grdPotencijalniSudionici">
+							<action if="#grdPotencijalniSudionici.@Checked==true">
+								<action type="datarun nonquery" value="~dtSpremiPotencijalneSudionike" />
+							</action>
+						</action>
+						<action type="control populate" value="parent.#grdSudionici" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtPotencijalniSudionici" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="11" />
+				<parameter name="@ID" value="$PartneriId" />
+			</data>
+			<!--
+			<data name="dtSpremiPotencijalneSudionike" command="spOMSProjektSudioniciAzurCarpo">
+			<parameter name="@Action" value="INSERT" />
+			<parameter name="@SelectedIds" value="#grdPotencijalniSudionici.SelectedIds" />
+			</data>
+			-->
+			<data name="dtSpremiPotencijalneSudionike" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="INSERT2" />
+				<parameter name="@OsobeId" value="#grdPotencijalniSudionici.@OsobeId" />
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtObrisiSudionike" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="EMPTY" />
+			</data>
+			<!--
+			<data name="dtSpremiPotencijalneSudionike" command="spOMSProjektSudioniciAzurCarpo">
+			<parameter name="@Action" value="12" />
+			<parameter name="@OsobeId" value="#grdPotencijalniSudionici.@OsobeId" />
+			<parameter name="@ID" value="$TijekId" />
+			</data>
+			-->
+		</datalist>
+	</form>
+	<form name="frmIzmijeniDogadaj" caption="Izmijeni aktivnost" height="600" width="800">
+		<method name="funAddAppointment" dll="OutlookAppointment" class="OutlookAppointment.Start" method="AddAppointment" />
+		<method name="funEditAppointment" dll="OutlookAppointment" class="OutlookAppointment.Start" method="EditAppointment" />
+		<method name="funDeleteAppointment" dll="OutlookAppointment" class="OutlookAppointment.Start" method="DeleteAppointment" />
+		<event type="shown">
+			<action type="control populate" value="#grdSudionici" />
+			<action type="datarun reader" value="~dtDMSCount" />
+			<action type="control caption" value="#btnDMS">
+				<parameter value="~dtDMSCount.@Count" />
+			</action>
+		</event>
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+			<action type="datarun reader" value="~dtSutra" if="~dtLoad.@Indikator==0" />
+			<action type="datarun nonquery" value="~dtPrazniTemp" />
+			<!-- <action type="datarun nonquery" value="~dtLoadTemp" /> -->
+			<action type="variable value">
+				<parameter name="OutlookId" value="~dtLoad.@OutlookId" />
+			</action>
+		</event>
+		<event type="load">
+			<!-- Upravljanje kontrolama pri učitavanju forme -->
+			<action type="control disable" value="#cmbTko" if="#chkSljedeci==False" />
+			<action type="control disable" value="#dateKad" if="#chkSljedeci==False" />
+			<action type="control disable" value="#timeKad" if="#chkSljedeci==False" />
+			<action type="control disable" value="#memoSto" if="#chkSljedeci==False" />
+			<action type="control value" value="#dateKad" if="~dtLoad.@Indikator==0">
+				<parameter value="~dtSutra.@Sutra" />
+			</action>
+			<action type="control value" value="#timeKad" if="~dtLoad.@Indikator==0">
+				<parameter value="10:00:00" />
+			</action>
+		</event>
+		<layout>
+			<group rows="2" cols="2">
+				<group rows="4" cols="3" row="1" col="1" rowspan="2" caption="Aktivnost">
+					<item row="1" col="1" caption="Naziv aktivnosti:">
+						<textedit name="txtAktivnost" datavalue="~dtLoad.@Aktivnost" required="true">
+							<event type="leave">
+								<!--
+								<action type="variable value">
+								<parameter name="NaslovMail" value="{parent.$Partner} :: {#txtAktivnost}" />
+								</action>
+								-->
+							</event>
+						</textedit>
+					</item>
+					<item row="1" col="2" caption="Datum događaja:">
+						<dateedit name="dateDatum" datavalue="~dtLoad.@DatumDogadjaja" />
+					</item>
+					<item row="1" col="3" caption="Odgovorna osoba:">
+						<comboedit name="cmbOsoba" dataname="global.~dtOsobaHelp" valuefield="OsobeId" displayfield="Naziv" datavalue="~dtLoad.@OdgovornaOsobaId" datatext="~dtLoad.@OdgovornaOsoba" required="true">
+							<event type="valuechanged">
+								<action type="control value" value="#cmbTko" if="#chkSljedeci==False">
+									<parameter value="#cmbOsoba" text="#cmbOsoba.text" />
+								</action>
+							</event>
+						</comboedit>
+					</item>
+					<item row="2" col="1" caption="Kanal:">
+						<comboedit name="cmbKanal" dataname="~dtKanal" valuefield="OMSKanalId" displayfield="Naziv" datavalue="~dtLoad.@KanalId" datatext="~dtLoad.@Naziv" />
+					</item>
+					<item row="2" col="2" caption="Utrošeno vrijeme:">
+						<textedit name="txtVrijeme" datavalue="~dtLoad.@UtrosenoVrijeme" />
+					</item>
+					<item row="2" col="3">
+						<button name="btnDMS">
+							<event type="click">
+								<action type="form open" value="frmDMS">
+									<parameter name="OMSTijekId" value="$TijekId" />
+									<parameter name="OOOperateriId" value="parent.#grdDogadaji.@OOOperateriId" />
+								</action>
+							</event>
+						</button>
+					</item>
+					<item row="3" col="1" colspan="3" caption="Opis:">
+						<memoedit name="memoOpis" datavalue="~dtLoad.@Opis" fontsizedelta="1" />
+					</item>
+					<item row="4" col="1" colspan="3" caption="Zaključak:">
+						<memoedit name="memoZakljucak" datavalue="~dtLoad.@Zakljucak" fontsizedelta="1" />
+					</item>
+				</group>
+				<group rows="4" cols="2" row="1" col="2" caption="Sudionici">
+					<columnsdefinition>
+						<column position="1" size="85%" />
+						<column position="2" size="15%" />
+					</columnsdefinition>
+					<item row="1" col="1" rowspan="4">
+						<grid name="grdSudionici" dataname="~dtSudionici" key="OsobeId" multiselect="true" savelayout="true">
+							<fields>
+								<field name="Prezime" />
+								<field name="Ime" />
+								<field name="Odjel" />
+								<field name="Funkcija" />
+							</fields>
+						</grid>
+					</item>
+					<item row="1" col="2">
+						<button name="btnDodajSudionika" caption="UREDI">
+							<event type="click">
+								<action type="form open" value="frmDodajSudionika2">
+									<parameter name="PartneriId" value="$PartneriId" />
+									<parameter name="PrilikeId" value="$PrilikeId" />
+									<parameter name="TijekId" value="$TijekId" />
+								</action>
+							</event>
+						</button>
+					</item>
+					<!--
+					<item row="2" col="2">
+					<button name="btnUkloniSudionika" caption="Ukloni">
+					<event type="click">
+					<action type="datarun nonquery" value="~dtUkloniTemp" />
+					<action type="control populate" value="#grdSudionici" />
+					</event>
+					</button>
+					</item>
+					-->
+				</group>
+				<group rows="3" cols="2" row="2" col="2" caption="Sljedeći korak">
+					<item row="1" col="1" caption="Postoji aktivnost koja slijedi aktivnost koju unosite:">
+						<checkedit name="chkSljedeci" datavalue="~dtLoad.@Indikator">
+							<event type="valuechanged">
+								<action if="#chkSljedeci==True">
+									<action type="control enable" value="#cmbTko" />
+									<action type="control enable" value="#dateKad" />
+									<action type="control enable" value="#timeKad" />
+									<action type="control enable" value="#memoSto" />
+								</action>
+								<action if="#chkSljedeci==False">
+									<action type="control disable" value="#cmbTko" />
+									<action type="control disable" value="#dateKad" />
+									<action type="control disable" value="#timeKad" />
+									<action type="control disable" value="#memoSto" />
+								</action>
+							</event>
+						</checkedit>
+					</item>
+					<item row="1" col="2" caption="Tko:">
+						<comboedit name="cmbTko" dataname="global.~dtOsobaHelp" valuefield="OsobeId" displayfield="Naziv" datavalue="~dtLoad.@Osobe2Id" datatext="~dtLoad.@TkoRem" />
+					</item>
+					<item row="2" col="1" caption="Kad (datum):">
+						<dateedit name="dateKad" controlref="timeKad" datavalue="~dtLoad.@DatumRem" />
+					</item>
+					<item row="2" col="2" caption="Kad (vrijeme):">
+						<timeedit name="timeKad" datavalue="~dtLoad.@VrijemeRem" />
+					</item>
+					<item row="3" col="1" colspan="2" caption="Što:">
+						<memoedit name="memoSto" datavalue="~dtLoad.@OpisRem" fontsizedelta="1" />
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="~dtSpremiDogadaj" />
+						<!-- <action type="datarun nonquery" value="~dtSpremiSudionike" /> -->
+						<!-- <action type="datarun nonquery" value="~dtPrazniTemp" /> -->
+						<action type="datarun scalar" value="~dtDateTime" if="#chkSljedeci==True">
+							<parameter name="DV" value="~dtDateTime.@dv" />
+						</action>
+						<action type="datarun scalar" value="~dtText" if="#chkSljedeci==True">
+							<parameter name="TXT" value="~dtText.@txt" />
+						</action>
+						<action type="datarun scalar" value="~dtNaslov" if="#chkSljedeci==True">
+							<parameter name="NaslovMail" value="~dtNaslov.@txt" />
+						</action>
+						<action type="method run" value="funAddAppointment" if="#chkSljedeci==True&amp;&amp;$OutlookId==null">
+							<parameter name="start" value="$DV" />
+							<parameter name="trajanje" value="1" type="int" />
+							<parameter name="lokacija" value="" />
+							<parameter name="naslov" value="$NaslovMail" />
+							<parameter name="tekst" value="$TXT" />
+							<parameter name="prikaz" value="false" type="bool" />
+							<!-- <parameter name="poruka" value="Uspješno spremljeno" /> -->
+						</action>
+						<action type="method run" value="funEditAppointment" if="#chkSljedeci==True&amp;&amp;$OutlookId!=null">
+							<parameter name="guid" value="~dtLoad.@OutlookId" />
+							<!-- vrijednost već preuzetog guida -->
+							<parameter name="start" value="$DV" />
+							<parameter name="trajanje" value="1" type="int" />
+							<parameter name="lokacija" value="" />
+							<parameter name="naslov" value="$NaslovMail" />
+							<parameter name="tekst" value="$TXT" />
+							<parameter name="prikaz" value="false" type="bool" />
+							<!-- <parameter name="poruka" value="Uspješno izmjenjeno" /> -->
+						</action>
+						<action type="method run" value="funDeleteAppointment" if="#chkSljedeci==False&amp;&amp;$OutlookId!=null">
+							<parameter name="guid" value="~dtLoad.@OutlookId" />
+							<!-- vrijednost već preuzetog guida -->
+							<!-- <parameter name="poruka" value="Uspješno obrisano" /> -->
+						</action>
+						<action type="datarun nonquery" value="~dtOutlookId" if="#chkSljedeci==True&amp;&amp;$OutlookId==null" />
+						<action type="datarun reader" value="~dtDMSCount" />
+						<action type="control caption" value="parent.#btnDMS">
+							<parameter value="~dtDMSCount.@Count" />
+						</action>
+						<action type="control populate keepfocus" value="parent.#grdDogadaji,parent.#grdSudionici,parent.#memoOpisDogadaja,parent.#memoZakljucak,parent.#txtKada,parent.#txtTko,parent.#memoSto" />
+						<action type="control populate" value="parent.#grdSudionici" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtPrazniTemp" />
+						<action type="datarun reader" value="~dtDMSCount" />
+						<action type="control caption" value="parent.#btnDMS">
+							<parameter value="~dtDMSCount.@Count" />
+						</action>
+						<action type="control populate" value="parent.#grdSudionici" />
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDMSCount" command="spOMSTijekDMS">
+				<parameter name="@Action" value="COUNT" />
+				<parameter name="@Id" value="parent.#grdDogadaji.@TijekId" />
+			</data>
+			<data name="dtSutra" command="spDefaultDate">
+				<parameter name="@Action" value="Sutra" />
+			</data>
+			<data name="dtPrazniTemp" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="EMPTY" />
+			</data>
+			<data name="dtSpremiSudionike" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="SAVEFROMUPDATE" />
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtSudioniciTemp" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="SELECT" />
+				<parameter name="@ID" value="$PartneriId" />
+			</data>
+			<data name="dtSudionici" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="13" />
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtLoadTemp" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="FILL" />
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtUkloniTemp" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="DELETE" />
+				<parameter name="@SelectedIds" value="#grdSudionici.SelectedIds" />
+			</data>
+			<data name="dtOutlookId" command="spOMSProjektTijekAzurCarpo">
+				<parameter name="@Action" value="7" />
+				<parameter name="@OutlookId" value="parent.$funAddAppointment" />
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtDateTime" command="select replace(convert(varchar(16),DatumRem,20),'-','') as dv from OMSTijek where TijekId = @TijekId" type="text">
+				<parameter name="@TijekId" value="$TijekId" />
+			</data>
+			<data name="dtText" command="spOMSProjektOutlookBody">
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtNaslov" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="30" />
+				<parameter name="@ID" value="$PrilikeId" />
+				<parameter name="@TijekId" value="$TijekId" />
+			</data>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="12" />
+				<parameter name="@ID" value="$PrilikeId" />
+				<parameter name="@TijekId" value="$TijekId" />
+			</data>
+			<data name="dtKanal" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="19" />
+			</data>
+			<data name="dtSudionici" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="29" />
+				<parameter name="@TijekId" value="$TijekId" />
+			</data>
+			<data name="dtSpremiDogadaj" command="spOMSProjektTijekAzurCarpo">
+				<parameter name="@Action" value="1" />
+				<parameter name="@PrilikeId" value="$PrilikeId" />
+				<parameter name="@DatumDogadjaja" value="#dateDatum" />
+				<parameter name="@OdgovornaOsobaId" value="#cmbOsoba" />
+				<parameter name="@KanalId" value="#cmbKanal" />
+				<parameter name="@Opis" value="#memoOpis" />
+				<parameter name="@Zakljucak" value="#memoZakljucak" />
+				<parameter name="@DatumRem" value="#dateKad" if="#chkSljedeci==True" />
+				<parameter name="@DatumRem" value="null" if="#chkSljedeci==False" />
+				<parameter name="@TkoRem" value="#cmbTko.text" if="#chkSljedeci==True" />
+				<parameter name="@TkoRem" value="null" if="#chkSljedeci==False" />
+				<parameter name="@TkoRemId" value="#cmbTko" if="#chkSljedeci==True" />
+				<parameter name="@TkoRemId" value="null" if="#chkSljedeci==False" />
+				<parameter name="@Osobe2Id" value="#cmbTko" if="#chkSljedeci==True" />
+				<parameter name="@Osobe2Id" value="null" if="#chkSljedeci==False" />
+				<parameter name="@OpisRem" value="#memoSto" if="#chkSljedeci==True" />
+				<parameter name="@OpisRem" value="null" if="#chkSljedeci==False" />
+				<!-- <parameter name="@ZatvoriRemId" value="0"/> -->
+				<parameter name="@UtrosenoVrijeme" value="#txtVrijeme" />
+				<parameter name="@Aktivnost" value="#txtAktivnost" />
+				<parameter name="@Indikator" value="#chkSljedeci" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDodajSudionika2" caption="Potencijalni sudionici" height="500" width="400">
+		<event type="shown">
+			<action type="control populate" value="#grdPotencijalniSudionici" />
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<grid name="grdPotencijalniSudionici" dataname="~dtPotencijalniSudionici" key="OsobeId" savelayout="true" cleargridfilter="true">
+						<fields>
+							<field name="Checked" caption="" edittype="bit" editable="true" />
+							<field name="Prezime" />
+							<field name="Ime" />
+							<field name="OdjelNaziv" caption="Odjel" />
+							<field name="KlFunkcijeNaziv" caption="Funkcije" />
+						</fields>
+						<!--
+						<event type="doubleclick">
+						<action type="datarun nonquery" value="~dtSpremiPotencijalneSudionike" />
+						<action type="control populate" value="parent.#grdSudionici" />
+						</event>
+						-->
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtObrisiSudionike" />
+						<action type="control foreachrow" value="#grdPotencijalniSudionici">
+							<action if="#grdPotencijalniSudionici.@Checked==true">
+								<action type="datarun nonquery" value="~dtSpremiPotencijalneSudionike" />
+							</action>
+						</action>
+						<!-- <action type="datarun nonquery" value="~dtSpremiPotencijalneSudionike" /> -->
+						<action type="control populate" value="parent.#grdSudionici" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtPotencijalniSudionici" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="11" />
+				<parameter name="@ID" value="$PartneriId" />
+				<parameter name="@TijekId" value="$TijekId" />
+			</data>
+			<!--
+			<data name="dtSpremiPotencijalneSudionike" command="spOMSProjektSudioniciAzurCarpo">
+			<parameter name="@Action" value="INSERT2" />
+			<parameter name="@OsobeId" value="#grdPotencijalniSudionici.@OsobeId" />
+			<parameter name="@ID" value="$TijekId" />
+			</data>
+			-->
+			<!--
+			<data name="dtPrazniTemp" command="spOMSProjektSudioniciAzurCarpo">
+			<parameter name="@Action" value="EMPTY" />
+			</data>
+			-->
+			<data name="dtObrisiSudionike" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="9" />
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtSpremiPotencijalneSudionike" command="spOMSProjektSudioniciAzurCarpo">
+				<parameter name="@Action" value="12" />
+				<parameter name="@OsobeId" value="#grdPotencijalniSudionici.@OsobeId" />
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmVrijeme" caption="Vrijeme" height="400" width="400">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<memoedit name="memoVrijeme" datavalue="~dtLoad.@ResVrijeme" fontsizedelta="1" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtResVrijeme" />
+						<action type="control value" value="parent.#memoVrijeme">
+							<parameter value="#memoVrijeme" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="200" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtResVrijeme" command="spOMSProjektGlavaAzurCarpo">
+				<parameter name="@Action" value="7" />
+				<parameter name="@ResVrijeme" value="#memoVrijeme" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmLjudi" caption="Ljudi" height="400" width="400">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<memoedit name="memoLjudi" datavalue="~dtLoad.@ResLjudi" fontsizedelta="1" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtResLjudi" />
+						<action type="control value" value="parent.#memoLjudi">
+							<parameter value="#memoLjudi" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="200" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtResLjudi" command="spOMSProjektGlavaAzurCarpo">
+				<parameter name="@Action" value="6" />
+				<parameter name="@ResLjudi" value="#memoLjudi" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmNovac1" caption="Novac Mi" height="400" width="400">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<memoedit name="memoNovac1" datavalue="~dtLoad.@ResNovac1" fontsizedelta="1" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtResNovac1" />
+						<action type="control value" value="parent.#memoNovac1">
+							<parameter value="#memoNovac1" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="200" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtResNovac1" command="spOMSProjektGlavaAzurCarpo">
+				<parameter name="@Action" value="4" />
+				<parameter name="@ResNovac1" value="#memoNovac1" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmNovac2" caption="Novac Oni" height="400" width="400">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<item row="1" col="1">
+					<memoedit name="memoNovac2" datavalue="~dtLoad.@ResNovac2" fontsizedelta="1" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtResNovac2" />
+						<action type="control value" value="parent.#memoNovac2">
+							<parameter value="#memoNovac2" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="200" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+			<data name="dtResNovac2" command="spOMSProjektGlavaAzurCarpo">
+				<parameter name="@Action" value="5" />
+				<parameter name="@ResNovac2" value="#memoNovac2" />
+				<parameter name="@ID" value="$PrilikeId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDodajKonkurenciju" caption="Dodaj konkurenciju">
+		<layout>
+			<group rows="5" cols="3">
+				<item row="1" col="1" colspan="3" caption="Konkurent:">
+					<searchedit name="srcTvrtka" dataname="global.~dtPartnerHelp" fieldvalue="PartneriId" fieldtext="Naziv" />
+				</item>
+				<item row="2" col="1" colspan="3" caption="Opis:">
+					<memoedit name="memoOpis" fontsizedelta="1" />
+				</item>
+				<item row="3" col="1" rowspan="2" caption="Vrijednost ponude:">
+					<textedit name="txtVrijednost" value="0,00" />
+				</item>
+				<item row="3" col="2" rowspan="2" caption="Tip konkurencije:">
+					<textedit name="txtTip" value="10" format="([1-9]|10)" formattype="regex" />
+				</item>
+				<item row="3" col="3" height="30" width="30" spacing="0,0,0,0">
+					<button name="btnUp" image="top" imagelocation="middlecenter">
+						<event type="click">
+							<action type="datarun scalar" value="~dtTipUp" if="#txtTip&lt;10">
+								<parameter name="TipUp" value="$TipUp" />
+							</action>
+							<action type="control value" value="#txtTip" if="#txtTip&lt;10">
+								<parameter value="$TipUp" />
+							</action>
+						</event>
+					</button>
+				</item>
+				<item row="4" col="3" height="30" width="30" spacing="0,0,0,0">
+					<button name="btnDown" image="bottom" imagelocation="middlecenter">
+						<event type="click">
+							<action type="datarun scalar" value="~dtTipDown" if="#txtTip>1">
+								<parameter name="TipDown" value="$TipDown" />
+							</action>
+							<action type="control value" value="#txtTip" if="#txtTip>1">
+								<parameter value="$TipDown" />
+							</action>
+						</event>
+					</button>
+				</item>
+				<item row="5" col="1" colspan="3" caption="Ishod:">
+					<textedit name="txtIshod" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun scalar" value="~dtDodajKonkurenciju">
+							<parameter name="KonkurencijaId" />
+						</action>
+						<action type="control populate" value="parent.#grdKonkurencija">
+							<action type="control focus" value="parent.#grdKonkurencija">
+								<parameter value="$KonkurencijaId" type="int" />
+							</action>
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="select @TipUp + 1 as TipUp" type="text" name="dtTipUp">
+				<parameter name="@TipUp" value="#txtTip" type="int" />
+			</data>
+			<data command="select @TipDown - 1 as TipDown" type="text" name="dtTipDown">
+				<parameter name="@TipDown" value="#txtTip" type="int" />
+			</data>
+			<data name="dtDodajKonkurenciju" command="spOMSProjektKonkurencijaAzurCarpo">
+				<parameter name="@Action" value="0" />
+				<parameter name="@PartneriId" value="#srcTvrtka" />
+				<parameter name="@Opis" value="#memoOpis" />
+				<parameter name="@VrijednostPonude" value="#txtVrijednost" />
+				<parameter name="@Ishod" value="#txtIshod" />
+				<parameter name="@Tip" value="#txtTip" />
+				<parameter name="@PrilikeId" value="$PrilikeId" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmIzmijeniKonkurenciju" caption="Izmijeni konkurenciju">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="5" cols="3">
+				<item row="1" col="1" colspan="3" caption="Konkurent:">
+					<searchedit name="srcTvrtka" dataname="global.~dtPartnerHelp" datavalue="~dtLoad.@PartneriId" datatext="~dtLoad.@Partner" fieldvalue="PartneriId" fieldtext="Naziv" />
+				</item>
+				<item row="2" col="1" colspan="3" caption="Opis:">
+					<memoedit name="memoOpis" datavalue="~dtLoad.@Opis" fontsizedelta="1" />
+				</item>
+				<item row="3" col="1" rowspan="2" caption="Vrijednost ponude:">
+					<textedit name="txtVrijednost" datavalue="~dtLoad.@VrijednostPonude" format="n2" />
+				</item>
+				<item row="3" col="2" rowspan="2" caption="Tip konkurencije:">
+					<textedit name="txtTip" datavalue="~dtLoad.@Tip" format="([1-9]|10)" formattype="regex" />
+				</item>
+				<item row="3" col="3" height="30" width="30" spacing="0,0,0,0">
+					<button name="btnUp" image="top" imagelocation="middlecenter">
+						<event type="click">
+							<action type="datarun scalar" value="~dtTipUp" if="#txtTip&lt;10">
+								<parameter name="TipUp" value="$TipUp" />
+							</action>
+							<action type="control value" value="#txtTip" if="#txtTip&lt;10">
+								<parameter value="$TipUp" />
+							</action>
+						</event>
+					</button>
+				</item>
+				<item row="4" col="3" height="30" width="30" spacing="0,0,0,0">
+					<button name="btnDown" image="bottom" imagelocation="middlecenter">
+						<event type="click">
+							<action type="datarun scalar" value="~dtTipDown" if="#txtTip>1">
+								<parameter name="TipDown" value="$TipDown" />
+							</action>
+							<action type="control value" value="#txtTip" if="#txtTip>1">
+								<parameter value="$TipDown" />
+							</action>
+						</event>
+					</button>
+				</item>
+				<item row="5" col="1" colspan="3" caption="Ishod:">
+					<textedit name="txtIshod" datavalue="~dtLoad.@Ishod" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtIzmijeniKonkurenciju" />
+						<action type="control populate keepfocus" value="parent.#grdKonkurencija" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="77" />
+				<parameter name="@ID" value="$KonkurencijaId" />
+			</data>
+			<data command="select @TipUp + 1 as TipUp" type="text" name="dtTipUp">
+				<parameter name="@TipUp" value="#txtTip" type="int" />
+			</data>
+			<data command="select @TipDown - 1 as TipDown" type="text" name="dtTipDown">
+				<parameter name="@TipDown" value="#txtTip" type="int" />
+			</data>
+			<data name="dtIzmijeniKonkurenciju" command="spOMSProjektKonkurencijaAzurCarpo">
+				<parameter name="@Action" value="1" />
+				<parameter name="@PartneriId" value="#srcTvrtka" />
+				<parameter name="@Opis" value="#memoOpis" />
+				<parameter name="@VrijednostPonude" value="#txtVrijednost" />
+				<parameter name="@Ishod" value="#txtIshod" />
+				<parameter name="@Tip" value="#txtTip" />
+				<parameter name="@PrilikeId" value="$PrilikeId" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+				<parameter name="@ID" value="$KonkurencijaId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmPodsjetnik" caption="Podsjetnik" width="700" height="500">
+		<method name="funEditAppointment" dll="OutlookAppointment" class="OutlookAppointment.Start" method="EditAppointment" />
+		<method name="funDeleteAppointment" dll="OutlookAppointment" class="OutlookAppointment.Start" method="DeleteAppointment" />
+		<event type="init">
+			<action type="variable value">
+				<parameter name="Osoba" value="null" />
+			</action>
+			<action type="datarun reader" value="~dtKad" />
+		</event>
+		<event type="shown">
+			<!-- prikaz podataka u gridu -->
+			<!-- <action type="control populate" value="#grdPodsjetnik" /> -->
+		</event>
+		<layout>
+			<group rows="2" cols="3">
+				<columnsdefinition>
+					<column size="45%" position="1" />
+					<column size="30%" position="2" />
+					<column size="25%" position="3" />
+				</columnsdefinition>
+				<group row="1" col="1" rows="1" cols="2">
+					<item row="1" col="1" caption="Odgovorna osoba aktivnosti:">
+						<comboedit name="cmbOsoba" dataname="~dtOsobaPodsjetnik" valuefield="OsobeId" displayfield="Naziv">
+							<event type="valuechanged">
+								<action type="variable value">
+									<parameter name="Osoba" value="#cmbOsoba" />
+								</action>
+								<!-- <action type="control populate" value="#grdPodsjetnik" /> -->
+							</event>
+						</comboedit>
+					</item>
+					<item row="1" col="2" caption="Od kada:">
+						<dateedit name="dateKad" datavalue="~dtKad.@Datum" />
+						<!-- controlref za spajanje vrijednosti dvije kontrole -->
+					</item>
+				</group>
+				<!--
+				<item row="1" col="2" caption="Kad (vrijeme):">
+				<timeedit name="timeKad" value="now" />
+				</item>
+				-->
+				<item row="1" col="3">
+					<button name="btnPrikazi" caption="Prikaži">
+						<event type="click">
+							<action type="datarun scalar" value="~dtOsobaPodsjetnik" />
+							<action type="control populate" value="#grdPodsjetnik" />
+							<!--
+							<action type="datarun nonquery" value="~dtOdgodi" />
+							<action type="datarun scalar" value="~dtDateTime">
+							<parameter name="DV" value="~dtDateTime.@dv" />
+							</action>
+							<action type="datarun scalar" value="~dtText">
+							<parameter name="TXT" value="~dtText.@txt" />
+							</action>
+							<action type="method run" value="funEditAppointment">
+							<parameter name="guid" value="#grdPodsjetnik.@OutlookId" />
+							-->
+							<!-- vrijednost već preuzetog guida -->
+							<!--
+							<parameter name="start" value="$DV" />
+							<parameter name="trajanje" value="1" type="int" />
+							<parameter name="lokacija" value="Neka lokacija" />
+							<parameter name="naslov" value="#grdPodsjetnik.@Aktivnost" />
+							<parameter name="tekst" value="$TXT" />
+							<parameter name="prikaz" value="false" type="bool" />
+							<parameter name="poruka" value="Uspješno izmjenjeno" />
+							</action>
+							<action type="control populate" value="#grdPodsjetnik" />
+							-->
+						</event>
+					</button>
+				</item>
+				<group row="2" col="1" rows="2" cols="2" colspan="3">
+					<rowsdefinition>
+						<row position="1" size="66%" />
+						<row position="2" size="34%" />
+					</rowsdefinition>
+					<item row="1" col="1" colspan="2">
+						<grid name="grdPodsjetnik" dataname="~dtPodsjetnik" bestfitonrefresh="true" savelayout="true">
+							<fields>
+								<field name="Prilika" caption="Naziv prilike" />
+								<field name="Aktivnost" />
+								<field name="Tvrtka" />
+								<field name="DatumRem" caption="Kada" format="dd.MM.yyyy HH:mm" />
+								<field name="TkoRem" caption="Tko" />
+							</fields>
+							<event type="focusedrowchanged">
+								<action type="control value" value="#memoOpis">
+									<parameter value="#grdPodsjetnik.@OpisRem" />
+								</action>
+							</event>
+						</grid>
+					</item>
+					<item row="2" col="1" colspan="2" caption="Opis">
+						<memoedit name="memoOpis" enabled="false" fontsizedelta="1" />
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUredi" caption="Uredi">
+					<event type="click">
+						<action type="form open" value="frmUrediAktivnost">
+							<parameter name="TijekId" value="#grdPodsjetnik.@TijekId" />
+							<parameter name="Osoba" value="$Osoba" />
+						</action>
+					</event>
+				</button>
+				<button name="btnOtkazi" caption="Otkaži">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite otkazati ovu aktivnost?" />
+						<action type="method run" value="funDeleteAppointment">
+							<parameter name="guid" value="#grdPodsjetnik.@OutlookId" />
+							<!-- vrijednost već preuzetog guida -->
+							<!-- <parameter name="poruka" value="Uspješno obrisano" /> -->
+						</action>
+						<action type="datarun nonquery" value="~dtOtkaziAktivnost" />
+						<action type="control populate" value="#grdPodsjetnik" />
+					</event>
+				</button>
+				<button name="btnGotovo" caption="Gotovo" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data type="text" name="dtKad" command="select getdate()-60 as Datum" />
+			<data name="dtDateTime" command="select replace(convert(varchar(16),DatumRem,20),'-','') as dv from OMSTijek where TijekId = @TijekId" type="text">
+				<parameter name="@TijekId" value="#grdPodsjetnik.@TijekId" />
+			</data>
+			<data name="dtText" command="spOMSProjektOutlookBody">
+				<parameter name="@ID" value="#grdPodsjetnik.@TijekId" />
+			</data>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="222" />
+				<parameter name="@ID" value="#grdPodsjetnik.@TijekId" />
+			</data>
+			<!--
+			<data name="dtPodsjetnik" command="spOMSProjektGlavaQueryCarpo">
+			<parameter name="@Action" value="22" />
+			<parameter name="@ID" value="$Osoba" />
+			</data>
+			-->
+			<data name="dtOdgodi" command="spOMSProjektTijekAzurCarpo">
+				<parameter name="@Action" value="4" />
+				<parameter name="@DatumRem" value="#dateKad" />
+				<parameter name="@ID" value="#grdPodsjetnik.@TijekId" />
+			</data>
+			<data name="dtOtkaziAktivnost" command="spOMSProjektTijekAzurCarpo">
+				<parameter name="@Action" value="5" />
+				<parameter name="@ZatvoriRemId" value="0" />
+				<parameter name="@Indikator" value="0" />
+				<parameter name="@OpisRem" value="" />
+				<parameter name="@ID" value="#grdPodsjetnik.@TijekId" />
+			</data>
+			<data name="dtOsobaPodsjetnik" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="31" />
+			</data>
+			<data name="dtPodsjetnik" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="32" />
+				<parameter name="@ID" value="$Osoba" />
+				<parameter name="@DatumOd" value="#dateKad" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUrediAktivnost" caption="Aktivnost">
+		<method name="funEditAppointment" dll="OutlookAppointment" class="OutlookAppointment.Start" method="EditAppointment" />
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" />
+		</event>
+		<layout>
+			<group rows="2" cols="3">
+				<item row="1" col="1" caption="Kad (datum):">
+					<dateedit name="dateKad" datavalue="~dtLoad.@Datum" controlref="timeKad" />
+					<!-- controlref za spajanje vrijednosti dvije kontrole -->
+				</item>
+				<item row="1" col="2" caption="Kad (vrijeme):">
+					<timeedit name="timeKad" datavalue="~dtLoad.@Vrijeme" />
+				</item>
+				<item row="1" col="3" caption="Tko:">
+					<comboedit name="cmbTko" dataname="global.~dtOsobaHelp" valuefield="OsobeId" displayfield="Naziv" datavalue="~dtLoad.@Osobe2Id" datatext="~dtLoad.@TkoRem" />
+				</item>
+				<item row="2" col="1" colspan="3" caption="Što:">
+					<memoedit name="memoSto" datavalue="~dtLoad.@OpisRem" fontsizedelta="1" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<!-- <action type="datarun nonquery" value="~dtSpremiAktivnost" /> -->
+						<action type="datarun scalar" value="~dtDateTime">
+							<parameter name="DV" value="~dtDateTime.@dv" />
+						</action>
+						<action type="datarun scalar" value="~dtText">
+							<parameter name="TXT" value="~dtText.@txt" />
+						</action>
+						<action type="datarun scalar" value="~dtNaslov">
+							<parameter name="NaslovMail" value="~dtNaslov.@txt" />
+						</action>
+						<action type="method run" value="funEditAppointment">
+							<parameter name="guid" value="~dtLoad.@OutlookId" />
+							<!-- vrijednost već preuzetog guida -->
+							<parameter name="start" value="$DV" />
+							<parameter name="trajanje" value="1" type="int" />
+							<parameter name="lokacija" value="" />
+							<!-- <parameter name="naslov" value="~dtLoad.@Aktivnost" /> -->
+							<parameter name="naslov" value="$NaslovMail" />
+							<parameter name="tekst" value="$TXT" />
+							<parameter name="prikaz" value="false" type="bool" />
+							<parameter name="poruka" value="Uspješno izmjenjeno" />
+						</action>
+						<action type="control populate keepfocus" value="parent.#grdPodsjetnik">
+							<parameter name="Osoba" value="$Osoba" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDateTime" command="select replace(convert(varchar(16),DatumRem,20),'-','') as dv from OMSTijek where TijekId = @TijekId" type="text">
+				<parameter name="@TijekId" value="$TijekId" />
+			</data>
+			<data name="dtText" command="spOMSProjektOutlookBody">
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtLoad" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="222" />
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtSpremiAktivnost" command="spOMSProjektTijekAzurCarpo">
+				<parameter name="@Action" value="6" />
+				<parameter name="@DatumRem" value="#dateKad" />
+				<parameter name="@TkoRem" value="#cmbTko.text" />
+				<parameter name="@TkoRemId" value="#cmbTko" />
+				<parameter name="@Osobe2Id" value="#cmbTko" />
+				<parameter name="@OpisRem" value="#memoSto" />
+				<parameter name="@ID" value="$TijekId" />
+			</data>
+			<data name="dtNaslov" command="spOMSProjektGlavaQueryCarpo">
+				<parameter name="@Action" value="30" />
+				<parameter name="@ID" value="parent.#grdPodsjetnik.@PrilikeId" />
+				<parameter name="@TijekId" value="$TijekId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDMS" caption="DMS" width="500" height="500" savesize="true">
+		<method name="funDmsAdd" dll="DmsManagerV1" class="DmsManagerV1.Start" method="AddDocuments" />
+		<method name="funDmsOpen" dll="DmsManagerV1" class="DmsManagerV1.Start" method="OpenDocument" />
+		<method name="funDmsSave" dll="DmsManagerV1" class="DmsManagerV1.Start" method="SaveDocuments" />
+		<event type="load">
+			<action type="variable value" value="$EntityName">
+				<parameter value="OMSTijek" />
+			</action>
+			<action type="variable value" value="$Id">
+				<parameter value="$OMSTijekId" if="$OMSTijekId!=null" />
+				<parameter value="0" else="" />
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control populate" value="#grdDms" />
+			<!-- <action type="control disable" value="#btnSpremi,#btnObrisi"/> -->
+			<action type="control disable" value="#btnObrisi" if="@@operateriid!=$OOOperateriId" />
+		</event>
+		<layout>
+			<group cols="1" rows="1" groupbordervisible="false">
+				<item col="1" row="1">
+					<grid name="grdDms" keyfield="DokId" bestfitonrefresh="true" multiselect="true" dataname="~dtDMS" showmenuprintitem="true" showmenutools="false" savelayout="true">
+						<!-- <menu> -->
+						<!-- <menuitem name="menDMSSpremi" caption="Spremi na disk" function="dmsSpremi"> -->
+						<!-- <event type="click"> -->
+						<!-- <action type="method run" value="funDmsSave"> -->
+						<!-- <parameter name="server" value="@@server" /> -->
+						<!-- <parameter name="database" value="@@database" /> -->
+						<!-- <parameter name="username" value="" /> -->
+						<!-- <parameter name="password" value="" /> -->
+						<!-- <parameter name="operaterid" value="@@operateriid" /> -->
+						<!-- <parameter name="dokIds" value="#grdDms.selectedids" /> -->
+						<!-- </action> -->
+						<!-- </event> -->
+						<!-- </menuitem> -->
+						<!-- <menuitem name="menDMSObrisi" caption="Obriši" function="dmsObrisi"> -->
+						<!-- <event type="click"> -->
+						<!-- <action type="confirm" value="Želite li sigurno obrisati označene dokumente?"> -->
+						<!-- <action type="datarun nonquery" value="Global.dtDMSDelete"/> -->
+						<!-- <action type="control populate" value="#grdDms"/> -->
+						<!-- </action> -->
+						<!-- </event> -->
+						<!-- </menuitem> -->
+						<!-- </menu> -->
+						<event type="doubleclick">
+							<action type="method run" value="funDmsOpen" if="#grdDms.rowcount&gt;0">
+								<parameter name="server" value="@@server" />
+								<parameter name="database" value="@@database" />
+								<parameter name="username" value="" />
+								<parameter name="password" value="" />
+								<parameter name="operaterid" value="@@operateriid" />
+								<parameter name="dokId" value="#grdDms.@DokID" />
+								<parameter name="name" value="#grdDms.@Naziv" />
+							</action>
+						</event>
+						<fields inherited="true">
+							<field name="Naziv" fontbold="true" />
+							<field name="Size" caption="Size [KB]" />
+							<field name="DatumKreiranja" caption="Datum kreiranja" />
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPovezi" caption="DODAJ" function="DokDodaj">
+					<event type="click">
+						<action type="method run" value="funDmsAdd">
+							<parameter name="server" value="@@server" />
+							<parameter name="database" value="@@database" />
+							<parameter name="username" value="" />
+							<parameter name="password" value="" />
+							<parameter name="operaterid" value="@@operateriid" />
+							<parameter name="EntityName" value="$EntityName" />
+							<parameter name="entityID" value="$Id" />
+							<parameter name="tipInserta" value="windows" />
+						</action>
+						<!-- <action waittype="progress" waitcaption="Upload" waittext="Upload dokumenta u tijeku..." sleep="10000"/> -->
+						<action type="control populate" value="#grdDms" />
+					</event>
+				</button>
+				<button name="btnOtvori" caption="OTVORI">
+					<event type="click">
+						<action type="method run" value="funDmsOpen" if="#grdDms.rowcount&gt;0">
+							<parameter name="server" value="@@server" />
+							<parameter name="database" value="@@database" />
+							<parameter name="username" value="" />
+							<parameter name="password" value="" />
+							<parameter name="operaterid" value="@@operateriid" />
+							<parameter name="dokId" value="#grdDms.@DokID" />
+							<parameter name="name" value="#grdDms.@Naziv" />
+						</action>
+					</event>
+				</button>
+				<button name="btnSpremi" caption="PREUZMI">
+					<event type="click">
+						<action type="method run" value="funDmsSave">
+							<parameter name="server" value="@@server" />
+							<parameter name="database" value="@@database" />
+							<parameter name="username" value="" />
+							<parameter name="password" value="" />
+							<parameter name="operaterid" value="@@operateriid" />
+							<parameter name="dokIds" value="#grdDms.selectedids" />
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI">
+					<event type="click">
+						<action type="confirm" value="Želite li sigurno obrisati označene dokumente?">
+							<action type="datarun nonquery" value="~dtDMSDelete" />
+							<action type="control populate" value="#grdDms" />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<!-- za DMS, obvezne procedure -->
+			<data command="spCarpoDMSQuery" name="dtDMS">
+				<parameter name="@EntityName" value="$EntityName" />
+				<parameter name="@Id" value="$Id" />
+			</data>
+			<data command="spCarpoDMSAzur" name="dtDMSDelete">
+				<parameter name="@Action" value="Delete" />
+				<parameter name="@EntityName" value="$EntityName" />
+				<parameter name="@selectedids" value="#grdDms.selectedids" />
+			</data>
+		</datalist>
+	</form>
+	<datalist>
+		<data name="dtOsobaHelp" command="spOMSOsobeKodNas" />
+		<data name="dtPartnerHelp" command="spPartneriQuery">
+			<parameter name="@Action" value="21" />
+			<parameter name="@ID" value="0" />
+			<parameter name="@IDPartneri" value="0" />
+			<parameter name="@DownUnder" value="0" />
+			<parameter name="@SortKey" value="" />
+			<parameter name="@Naziv" value="#srcTvrtka.text" />
+			<parameter name="@Sifra" value="#srcTvrtka.text" />
+			<parameter name="@MatBroj" value="#srcTvrtka.text" />
+			<parameter name="@Ziro" value="#srcTvrtka.text" />
+		</data>
+	</datalist>
+</root>

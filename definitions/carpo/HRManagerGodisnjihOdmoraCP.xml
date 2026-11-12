@@ -1,0 +1,180 @@
+﻿<!--
+1.0.0.1. prva verzija, kopirana od HRManagerPlacenihDopustaCP.xml       
+ -->
+<root version="1.0.0.1">
+	<form name="frmMaster" type="master" caption="Manager godišnjih odmora">
+		<!-- potrebno zbog ispisa word dokumenata -->
+		<method name="openWordTemplate" dll="PrintWordtemplate" class="WordTemplate.WordTemplate" method="OpenWordTemplate"/>
+		<event type="init">
+		</event>
+		<event type="shown">
+		</event>
+		<event type="keydown">
+			<!--INSERT KEY 45, zvjezdica key = 106-->
+			<action if="key==control+106">
+				<!--106 = *-->
+				<!--<action type="message" value="Skrivena forma!"/>-->
+				<action type="form open" value="frmOOPPubVars">
+					<parameter name="Caption" value="OOPPubvars"/>
+					<parameter name="OperateriId" value="@@OperateriId"/>
+					<parameter name="datoteka" value="HRManagerGodisnjihOdmoraCP"/>
+				</action>
+			</action>
+			<!--delete KEY 46, minus key = 109-->
+			<action if="key==control+109">
+				<!--109 = - -->
+				<!--<action type="message" value="Skrivena forma!"/>-->
+				<action type="form open" value="frmPlacePostavke">
+					<parameter name="Caption" value="Postavke granule"/>
+					<parameter name="OperateriId" value="@@OperateriId"/>
+				</action>
+			</action>
+		</event>
+		<managerlayout>
+			<!-- LOOKUP-->
+			<lookup name="filter">
+				<partsql name="filter" dataname="~dtPartFilter"/>
+				<event type="valuechanged">
+					<action type="variable value">
+						<parameter name="global.filter" value="#filter"/>
+					</action>
+				</event>
+			</lookup>
+			<!--*****stablo*****-->
+			<tree name="tree" key="Id" filtermode="smart" dataname="dtTree" expandfirst="true">
+				<!--na promjenu noda disable/enable meni i refresh master grida-->
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdMaster"/>
+					<action type="variable value" value="global.Oznaka">
+						<parameter value="#tree.@Id" type="string"/>
+					</action>
+					<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+					<action type="variable value" value="global.RefreshajMaster">
+						<parameter value="0" type="int"/>
+					</action>
+				</event>
+				<fields>
+					<field name="caption"/>
+				</fields>
+				<!--desni klik za brisanje-->
+				<!--<part name="Meni_drvo" path="prtPlace.xml"/>-->
+				<partsql name="drvo_meni" dataname="~dtPartDrvoMeni"/>
+			</tree>
+			<!--Grid Glava-->
+			<grid name="grdMaster" key="HRGodisnjiId" type="master" async="true" dataname="dtMaster" preventfocusgroup="false" fieldsmartspaces="false" bestfitonrefresh="true" multiselect="true" savelayout="true" netgenfields="true" allowfilter="true">
+				<fields inherited="true">
+					<field name="CarpoRowNumberColumn" fixed="true" caption="Rbr"/>
+				</fields>
+				<!--desni klik za brisanje-->
+				<partsql name="master_meni" dataname="~dtPartMasterMeni"/>
+				<!--double klik na gridu-->
+				<partsql name="master_doubleclick" dataname="~dtPartMasterDoubleClick"/>
+				<event type="focusedrowchanged">
+					<action type="variable value">
+						<parameter name="global.Djelatnik" value="#grdMaster.@Djelatnik"/>
+					</action>
+					<action type="variable value">
+						<parameter name="global.HRGodisnjiId" value="#grdMaster.@HRGodisnjiId"/>
+					</action>
+					<action type="control populate" value="#grdiskoristenoZaGodinu"/>
+					<action type="control populate" value="#grdiskoristenoUGodini"/>
+					<action type="control populate" value="#grdOdobrenoZaGodinu"/>
+				</event>
+			</grid>
+			<tabs name="tabs">
+				<event type="selectedtabchanged">
+				</event>
+				<partsql name="tabovi" dataname="~dtPartTabovi"/>
+			</tabs>
+		</managerlayout>
+		<!--gumbi-->
+		<panelbuttons>
+			<buttons>
+				<partsql name="button" dataname="~dtPartButton"/>
+			</buttons>
+		</panelbuttons>
+		<!--datalist-->
+		<datalist>
+			<data command="spHRGodisnjiTreeCP" name="dtTree">
+				<partsql name="treeData" dataname="~dtPartTreeData"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<!--data koji puni Master grid grida-->
+			<data command="spHRGodisnjiMasterCP" name="dtMaster">
+				<parameter name="@drvo" value="#tree.@value"/>
+			</data>
+			<!--<data command="spHRDopustAllCP" name="dtRefreshRow">
+        <parameter name="@Action" value="Master"/>
+        <parameter name="@OperateriId"  value="@@OperateriId" />
+        <parameter name="@godina" value="#tree.@godina" />
+        <parameter name="@mjesec" value="#tree.@mjesec" />
+		<parameter name="@hrkadroviid" value="#grdMaster.@hrdopustid" />
+      </data>-->
+			<partsql name="data" dataname="~dtPartTabGridovi"/>
+			<data command="spHRGodisnjiAllCP" name="dtNapuniTotalGen">
+				<parameter name="@Action" value="NapuniTotalGen"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@selectedids" value="#grdMaster.selectedids"/>
+				<parameter name="@indGreske.output.int"/>
+				<parameter name="@poruka.output.string"/>
+			</data>
+		</datalist>
+	</form>
+	<!--includane forme-->
+	<partsql name="forme" dataname="~dtPartForme"/>
+	<form name="frmUnos" path="frmUnosIskoristenog.xml"/>
+	<!--datalist za partove-->
+	<datalist>
+		<data command="spHRPartQuery" name="dtPartMasterMeni">
+			<parameter name="@Action" value="master_meni"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="HRManagerGodisnjihOdmoraCP"/>
+		</data>
+		<data command="spHRPartQuery" name="dtPartDrvoMeni">
+			<parameter name="@Action" value="drvo_meni"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="HRManagerGodisnjihOdmoraCP"/>
+		</data>
+		<data command="spHRPartQuery" name="dtPartTabovi">
+			<parameter name="@Action" value="tabovi"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="HRManagerGodisnjihOdmoraCP"/>
+		</data>
+		<data command="spHRPartQuery" name="dtPartTabGridovi">
+			<parameter name="@Action" value="data"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="HRManagerGodisnjihOdmoraCP"/>
+		</data>
+		<data command="spHRPartQuery" name="dtPartButton">
+			<parameter name="@Action" value="button"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="HRManagerGodisnjihOdmoraCP"/>
+		</data>
+		<data command="spHRPartQuery" name="dtPartMasterGrid">
+			<parameter name="@Action" value="grid"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="HRManagerGodisnjihOdmoraCP"/>
+		</data>
+		<data command="spHRPartQuery" name="dtPartForme">
+			<parameter name="@Action" value="forme"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="HRManagerGodisnjihOdmoraCP"/>
+		</data>
+		<data command="spHRPartQuery" name="dtPartMasterDoubleClick">
+			<parameter name="@Action" value="master_doubleclick"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="HRManagerGodisnjihOdmoraCP"/>
+		</data>
+		<data command="spHRPartQuery" name="dtPartFilter">
+			<parameter name="@Action" value="filter"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="HRManagerGodisnjihOdmoraCP"/>
+		</data>
+		<data command="spHRPartQuery" name="dtPartTreeData">
+			<parameter name="@Action" value="treeData"/>
+			<parameter name="@OperateriId" value="@@OperaterId"/>
+			<parameter name="@datoteka" value="HRManagerGodisnjihOdmoraCP"/>
+		</data>
+	</datalist>
+</root>

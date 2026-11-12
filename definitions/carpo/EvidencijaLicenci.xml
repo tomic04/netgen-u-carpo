@@ -1,0 +1,94 @@
+<root>
+	<form type="master" name="frmMaster" caption="Evidencija licenci">
+		<event type="init">
+			<action type="variable value" value="global.$Init">
+				<parameter value="0"/>
+			</action>
+			<action type="variable value" value="global.$FormOpen">
+				<parameter value="0"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control disable" value="#btnIzmijeni" if="#grdDetail.@FakDetaljId!=null"/>
+			<action type="control enable" value="#btnIzmijeni" if="#grdDetail.@FakDetaljId==null"/>
+		</event>
+		<managerlayout>
+			<grid type="master" name="grdMaster" caption="Evidencija licenci" dataname="~dtMaster" fieldsmartspaces="false" bestfitonrefresh="true" savelayout="true" key="suppKorisnikId">
+				<fields inherited="true">
+					<field name="suppKorisnikId1" visible="false"/>
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetail"/>
+					<action type="control disable" value="#btnIzmijeni, #btnObrisi" if="#grdDetail.rowcount==0"/>
+					<action type="control enable" value="#btnIzmijeni, #btnObrisi" if="#grdDetail.rowcount!=0"/>
+					<action type="control disable" value="#btnIzmijeni" if="#grdDetail.@FakDetaljId!=null"/>
+					<action type="control enable" value="#btnIzmijeni" if="#grdDetail.@FakDetaljId==null"/>
+				</event>
+			</grid>
+			<grid name="grdDetail" caption="Povijest licenci" fieldsmartspaces="false" bestfitonrefresh="true" savelayout="true" dataname="~dtDetail" key="suppKorLicId">
+				<event type="focusedrowchanged">
+					<action type="control disable" value="#btnIzmijeni" if="#grdDetail.@FakDetaljId!=null"/>
+					<action type="control enable" value="#btnIzmijeni" if="#grdDetail.@FakDetaljId==null"/>
+				</event>
+				<styles>
+					<style name="fontcolor" value="blue" if="#grdDetail.@FakDetaljId!=null"/>
+					<style name="fontcolor" value="red" if="#grdDetail.@FakDetaljId==null"/>
+				</styles>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="Unesi">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="suppKorLicId" value="null"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="Izmijeni">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="suppKorLicId" value="#grdDetail.@suppKorLicId"/>
+							<parameter name="ChangedVrKlijenta" value="#grdDetail.@Povećao vrijednost klijenta"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="Obriši">
+					<event type="click">
+						<action type="confirm" value="Sigurno želite obrisati licencu za {#grdDetail.@Korisnik} od {#grdDetail.@Datum}?">
+							<action type="datarun nonquery" value="~dtDelete"/>
+							<action type="control populate keepfocus" value="#grdMaster"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnLicAzur" caption="Ažuriranje licenci" dock="right">
+					<event type="click">
+						<action type="form open" value="frmFilter"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtMaster" command="spSuppEvidencijaLicenci">
+				<parameter name="@Action" value="MASTER"/>
+			</data>
+			<data name="dtDetail" command="spSuppEvidencijaLicenci">
+				<parameter name="@Action" value="DETAIL"/>
+				<parameter name="@suppKorisnikId" value="#grdMaster.@suppKorisnikId"/>
+			</data>
+			<data name="dtDelete" command="spSuppEvidencijaLicenciDML">
+				<parameter name="@Action" value="DELETE"/>
+				<parameter name="@suppKorisnikId" value="#grdDetail.@suppKorisnikId"/>
+				<parameter name="@suppKorLicId" value="#grdDetail.@suppKorLicId"/>
+				<parameter name="@suppLicVrstaId" value="#grdDetail.@suppLicVrstaId"/>
+				<parameter name="@FakDetaljId" value="#grdDetail.@FakDetaljId"/>
+				<parameter name="@Cijena" value="#grdDetail.@Cijena"/>
+				<parameter name="@ChangedVrKlijenta" value="#grdDetail.@Povećao vrijednost klijenta"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmLicAzur" path="frmLicAzur.xml"/>
+	<form name="frmIzmijeni" path="frmIzmijeni.xml"/>
+	<form name="frmFilter" path="frmFilter.xml"/>
+	<form name="frmUpsert" path="frmUpsert.xml"/>
+</root>

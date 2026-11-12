@@ -1,0 +1,93 @@
+<root>
+	<form type="master" name="frmMaster" caption="Kategorije vozila">
+		<managerlayout>
+			<grid type="master" name="grdMaster" dataname="~dtMaster" key="KategorijeVozilaId"/>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="Dodaj">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="KategorijeVozilaId" value="null"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="Izmijeni">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="KategorijeVozilaId" value="#grdMaster.@KategorijeVozilaId"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="Obriši">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati {#grdMaster.@Oznaka}?"/>
+						<action type="datarun nonquery" value="~dtObrisi"/>
+						<action type="control populate" value="#grdMaster"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtMaster" command="spKategorijeVozilaCarpo">
+				<parameter name="@Action" value="MASTER"/>
+			</data>
+			<data name="dtObrisi" command="spKategorijeVozilaCarpo">
+				<parameter name="@Action" value="DELETE"/>
+				<parameter name="@ID" value="#grdMaster.@KategorijeVozilaId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUpsert" caption="Kategorija vozila">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" if="$KategorijeVozilaId!=null"/>
+		</event>
+		<layout>
+			<group rows="1" cols="1" textposition="left">
+				<item row="1" col="1" caption="Oznaka:">
+					<textedit name="txtOznaka" datavalue="~dtLoad.@Oznaka" required="true"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action if="$KategorijeVozilaId==null">
+							<action type="validate"/>
+							<action type="datarun scalar" value="~dtUpsert">
+								<parameter name="NewId"/>
+							</action>
+							<action type="control populate" value="parent.#grdMaster"/>
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="$NewId"/>
+							</action>
+							<action type="control value" value="##">
+								<parameter value=""/>
+							</action>
+						</action>
+						<action if="$KategorijeVozilaId!=null">
+							<action type="validate"/>
+							<action type="datarun nonquery" value="~dtUpsert"/>
+							<action type="control populate keepfocus" value="parent.#grdMaster"/>
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spKategorijeVozilaCarpo">
+				<parameter name="@Action" value="MASTER"/>
+				<parameter name="@ID" value="$KategorijeVozilaId"/>
+			</data>
+			<data name="dtUpsert" command="spKategorijeVozilaCarpo">
+				<parameter name="@Action" value="INSERT" if="$KategorijeVozilaId==null"/>
+				<parameter name="@Action" value="UPDATE" if="$KategorijeVozilaId!=null"/>
+				<parameter name="@Oznaka" value="#txtOznaka"/>
+				<parameter name="@ID" value="$KategorijeVozilaId" if="$KategorijeVozilaId!=null"/>
+			</data>
+		</datalist>
+	</form>
+</root>

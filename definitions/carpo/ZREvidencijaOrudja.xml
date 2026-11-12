@@ -1,0 +1,262 @@
+<root xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<form name="frmMaster" type="master" caption="Evidencija održavanja oruđa za rad">
+	<event type="shown">
+		<action type="control disable" value="#btnBrisanje,#btnIzmjena"/> 
+		<action type="control enable" value="#btnIzmjena,#btnBrisanje" if="#grdMaster.@ZREvidencijaOrudjaId!=null" /> 
+	</event>
+		<managerlayout>
+      <lookup name="filter">
+        <comboitem value="Vremenska podjela" />
+        <!--<comboitem value="Aktivni djelatnici" />
+        <comboitem value="Neaktivni djelatnici" />! -->
+      </lookup>
+      <tree name="tree"  allowdrop="false" expandfirst="true">
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdMaster" />
+        </event>
+
+        <data name="master" command="spZREvidencijaOrudja_Tree" key="sortkey">
+          <parameter name="@Action" value="vremenska_podjela" />
+        </data>
+        <!--<data if="#filter==Aktivni djelatnici" command="spZREvidencijaOrudja_Tree" key="valueid">
+          <parameter name="@Action" value="abc" />
+        </data>
+        <data if="#filter==Neaktivni djelatnici" command="spZREvidencijaOrudja_Tree" key="valueid">
+          <parameter name="@Action" value="neaktivni" /> 
+        </data> --> 
+        <fields>
+          <field name="Name" />
+        </fields>
+      </tree>
+      
+			<grid name="grdMaster" autopopulate="true" type="master" async="true" bestfitonrefresh="true" key="ZREvidencijaOrudjaId"  multiselect="true" showfooter="false" fieldsmartspaces="false">
+        <event type="focusedrowchanged">
+          <action type="control disable" value="#btnBrisanje,#btnIzmjena"/>
+          <action type="control enable" value="#btnIzmjena,#btnBrisanje" if="#grdMaster.@ZREvidencijaOrudjaId!=null" />
+        </event>
+
+        <data command="spZREvidencijaOrudja_Query" name="master_vr">
+          <parameter name="@Action" value="master"  />
+          <parameter name="@godina" value="#tree.@godina" />
+          <parameter name="@mjesec" value="#tree.@mjesec" />
+        </data>
+
+        <!--<data command="spZREvidencijaOrudja_Query" name="master_ak" if="#filter==Aktivni djelatnici" >
+          <parameter name="@Action" value="master"  />
+          <parameter name="@valueid" value="#tree.@valueid" />
+        </data>
+
+        <data command="spZREvidencijaOrudja_Query" name="master_neak" if="#filter==Neaktivni djelatnici" >
+          <parameter name="@Action" value="master"  />
+          <parameter name="@valueid" value="#tree.@valueid" />
+        </data>-->
+
+      </grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<!-- KONTROLA: BUTTON -->
+				<button name="btnUnos" caption="Unos" type="add" displayfield="Opis" dataname="">
+					<event type="click">
+						<action type="variable value" value="$ZREvidencijaOrudjaId" >
+							<parameter value="#grdMaster.@ZREvidencijaOrudjaId" type="int" />
+						</action> 
+						<action type="form open" value="frmUnos" >
+							<parameter name="ZREvidencijaOrudjaId" value="null" type="int" /> 
+						</action> 
+						<action type="control populate" value="#grdMaster" >
+							<action type="control focus" value="#grdMaster" >
+								<parameter value="$ZREvidencijaOrudjaId" />
+							</action> 
+						</action>
+            <action type="control populate" value="#tree" />
+					</event>
+				</button>
+
+				<button name="btnIzmjena" caption="Izmjena" type="add" displayfield="Opis" dataname="">
+					<event type="click">
+						<action type="form open" value="frmUnos" >
+							<parameter name="ZREvidencijaOrudjaId" value="#grdMaster.@ZREvidencijaOrudjaId" type="int" />
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster" />
+            <action type="control populate" value="#tree" />
+					</event>
+				</button>
+
+
+				<button name="btnBrisanje" caption="Brisanje" type="del" displayfield="Opis" dataname="">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati evidenciju oruđa za rad: {#grdMaster.@Broj isprave}?">
+							<action type="datarun nonquery" value="~dtDelete">
+								<action type="control populate" value="#grdMaster" >
+									<action type="control focus" value="#grdMaster" >
+										<!-- <parameter value="0" /> -->
+									</action>
+								</action>
+							</action>
+						</action>
+            <action type="control populate" value="#tree" />
+					</event>
+				</button>		
+
+
+			</buttons>
+		</panelbuttons>
+
+		<datalist>	  
+			<data command="spZREvidencijaOrudja_Azur" name="dtDelete">
+				<parameter name="@Action" value="brisanje" type="string"/>
+				<parameter name="@ZREvidencijaOrudjaId" value="#grdMaster.@ZREvidencijaOrudjaId" type="int"/>
+			</data>
+
+		</datalist>
+
+	</form>
+  
+  <form name="frmUnos" caption="Evidencija održavanja oruđa za rad" maxsize="true" width="800" fixedsize="false">
+		<!-- na inicijalizaciji forme okidaju se podaci potrebni da kontrole poprime vrijednosti za izmijenu (u slučaju da smo na formi za izmijenu - IF)-->
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="ZREvidencijaOrudjaId!=null"/>
+      <action type="datarun reader" value="~dtInit" else=""/>
+		</event>
+    
+    <event type="load">
+			<action type="control value" value="#DatIspitivanja" if="$ZREvidencijaOrudjaId==null">
+				<parameter value="~dtInit.@DatIspitivanja"/>
+			</action>
+    </event>
+    
+		<layout textposition="left">
+			<group cols="1" rows="8" >
+        
+        <item caption="Oruđe za rad:" col="1" row="1" >
+          <searchedit name="srcZROrudja" fieldtext="Orudje" fieldvalue="ZROrudjaId" datavalue="#dtGet.@ZROrudjaId" datatext="#dtGet.@Orudje" required="true" dataname="dtZROrudja">     
+          </searchedit>
+        </item>
+        
+        <item caption="Vrsta ispitivanja:" col="1" row="2" >
+					<comboedit name="cmbZRVrsteIspitivanja" autopopulate="false" readonly="false" required="false" valuefield="ZRVrsteIspitivanjaId" displayfield="Naziv" datavalue="~dtGet.@ZRVrsteIspitivanjaId" dataname="dtZRVrsteIspitivanja">
+					</comboedit>
+				</item>
+        
+        <item caption="Datum ispitivanja:" col="1" row="3" >
+          <dateedit name="DatIspitivanja" required="true" readonly="false" type="date" nulltext="Datum ispitivanja..." datavalue="#dtGet.@DatIspitivanja">
+            <!--<event type="valuechanged" raiseonload="false">
+							 <action type="datarun reader" value="~dtZRUputnica" if="DatumDok!=null"/>            
+            </event> !-->           
+          </dateedit>       
+        </item>
+        
+        <item caption="Ovlaštena tvrtka za ispitivanje:" col="1" row="4" >
+          <searchedit name="srcZRTvrtke" fieldtext="Tvrtka" fieldvalue="ZRTvrtkeId" datavalue="#dtGet.@ZRTvrtkeId" datatext="#dtGet.@Tvrtka" required="true" dataname="dtZRTvrtke">     
+          </searchedit>
+        </item>
+        
+        <item caption="Broj isprave:" col="1" row="5" >
+          <textedit name="txtBrojIsprave" required="true" readonly="false" nulltext="Broj izdane isprave o ispitivanju..." datavalue="#dtGet.@BrojIsprave"/>       
+        </item>
+        
+        <item caption="Oruđe ispunjava uvjete" col="1" row="6">
+            <checkedit name="chkOrudjeIspravno" datavalue="#dtGet.@OrudjeIspravno"/>
+        </item>
+        
+        <item caption="Datum ponovnog ispitivanja:" col="1" row="7" >
+          <dateedit name="DatSljedIspitivanja" required="true" readonly="false" type="date" nulltext="Datum ponovnog ispitivanja..." datavalue="#dtGet.@DatSljedIspitivanja">
+            <!--<event type="valuechanged" raiseonload="false">
+							 <action type="datarun reader" value="~dtZRUputnica" if="DatumDok!=null"/>            
+            </event> !-->           
+          </dateedit>       
+        </item>
+        
+        <item caption="Djelatnik:" col="1" row="8" >
+          <searchedit name="srcHRKadrovi" fieldtext="Djelatnik" fieldvalue="HRKadroviId" datavalue="#dtGet.@HRKadroviId" datatext="#dtGet.@Djelatnik" required="true" dataname="dtHRKadrovi">    
+          </searchedit>
+        </item>
+               		    
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<!-- Provjeri required fields -->
+						<action type="validate" />
+						<!-- Okini storu -->
+						<action type="datarun nonquery" value="~dtEdit" if="$ZREvidencijaOrudjaId!=null"/>
+						<action type="datarun nonquery" value="~dtAdd" else="" />
+						<!-- Osvježi grid na parent formi -->
+						<action type="control populate" value="parent.#grdMaster"/>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+
+
+		<datalist>
+			<data command="spZREvidencijaOrudja_Query" name="dtGet">
+				<parameter name="@Action" value="izmjena"/>
+				<parameter name="@ZREvidencijaOrudjaId" value="$ZREvidencijaOrudjaId"/>
+			</data>
+      
+      <data command="spZREvidencijaOrudja_Help" name="dtInit">
+        <parameter name="@Action" value="ucitaj_zrevidencijaorudja"/>
+      </data>
+      
+      <data command="spZREvidencijaOrudja_Help" name="dtLoadUputnica">
+				<parameter name="@Action" value="popuni_zruputnicaid"/>
+				<parameter name="@ZRUputnicaId" value="$ZRUputnicaId"/>
+			</data>
+
+			<data command="spZREvidencijaOrudja_Azur" name="dtAdd">
+				<parameter name="@Action" value="unos" type="string"/>
+        <parameter name="@ZROrudjaId" value="#srcZROrudja" type="int"/>
+				<parameter name="@ZRVrsteIspitivanjaId" value="#cmbZRVrsteIspitivanja" type="int"/>
+        <parameter name="@DatIspitivanja" value="#DatIspitivanja" type="date"/>
+        <parameter name="@ZRTvrtkeId" value="#srcZRTvrtke" type="int"/>
+        <parameter name="@BrojIsprave" value="#txtBrojIsprave" type="string"/>
+        <parameter name="@OrudjeIspravno" value="#chkOrudjeIspravno"/>  
+        <parameter name="@DatSljedIspitivanja" value="#DatSljedIspitivanja" type="date"/>   
+        <parameter name="@HRKadroviId" value="#srcHRKadrovi" type="int"/>
+			</data>
+            
+			<data command="spZREvidencijaOrudja_Azur" name="dtEdit">
+				<parameter name="@Action" value="izmjena" type="string"/>
+				<parameter name="@ZREvidencijaOrudjaId" value="$ZREvidencijaOrudjaId" type="int"/>
+        <parameter name="@ZROrudjaId" value="#srcZROrudja" type="int"/>
+				<parameter name="@ZRVrsteIspitivanjaId" value="#cmbZRVrsteIspitivanja" type="int"/>
+        <parameter name="@DatIspitivanja" value="#DatIspitivanja" type="date"/>
+        <parameter name="@ZRTvrtkeId" value="#srcZRTvrtke" type="int"/>
+        <parameter name="@BrojIsprave" value="#txtBrojIsprave" type="string"/>
+        <parameter name="@OrudjeIspravno" value="#chkOrudjeIspravno"/>  
+        <parameter name="@DatSljedIspitivanja" value="#DatSljedIspitivanja" type="date"/>   
+        <parameter name="@HRKadroviId" value="#srcHRKadrovi" type="int"/>
+			</data>
+      
+      <data command="spZREvidencijaOrudja_Help" name="dtZRTvrtke">
+        <parameter name="@Action" value="zrtvrtkeid" />
+        <parameter name="@tekst" value="#srcZRTvrtke.text" />
+      </data>
+      
+      <data command="spZREvidencijaOrudja_Help" name="dtZROrudja">
+        <parameter name="@Action" value="zrorudjaid" />
+        <parameter name="@tekst" value="#srcZROrudja.text" />
+      </data>
+      
+      <data command="spZREvidencijaOrudja_Help" name="dtHRKadrovi">
+        <parameter name="@Action" value="hrkadroviid" />
+        <parameter name="@tekst" value="#srcHRKadrovi.text" />
+      </data>
+        
+      <data command="spZREvidencijaOrudja_Help" name="dtZRVrsteIspitivanja">
+        <parameter name="@Action" value="zrvrsteispitivanjaid" />
+      </data>
+    
+		</datalist>
+
+	</form>
+  
+</root>

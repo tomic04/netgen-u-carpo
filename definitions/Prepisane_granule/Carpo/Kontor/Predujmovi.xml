@@ -1,0 +1,143 @@
+<!-- 
+02.12.2024. AS dodala control focus na btnIzvrsi jer se inace javi greska SendKeys
+09.08.2022. IF dodao savevalue="app" za PrviDan i ZadnjiDan
+10.09.2021. IF dodao nove kolone DevZatvAvansa, DevUplata, Val 
+-->
+<root>
+  <form type="master" name="frmPredujmovi" caption="Predujmovi" template="splitter vertical" maximized="true" splitterposition="60" spliterfixed="true" displaycontrolsprint="true" statusbar="true">
+    <event type="init">
+      <action type="variable value" >
+        <parameter name="FilterId" value="1" type="int"/>
+      </action>
+    </event>
+    <event type="load">
+      <action type="control focus" value="#btnIzvrsi"/>
+    </event>
+    <event type="shown">
+
+      <action type="datarun reader" value="~dtPrviDan"/>
+      <action type="datarun reader" value="~dtZadnjiDan"/>
+      <!--<action type="control value" value="#datD1">
+				<parameter value="~dtPrviDan.@Datum1"/>
+			</action>
+			<action type="control value" value="#datD2">
+				<parameter value="~dtZadnjiDan.@Datum2"/>
+			</action>-->
+      <action type="control disable" value="#btnKnjizi" if="#grdGlavni.rowcount==0"/>
+    </event>
+    <layout name="panel1" type="collapsable" caption="Parametri" minsize="50">
+      <group rows="1" cols="3">
+        <columnsdefinition>
+          <column size="10%" position="1"/>
+          <column size="10%" position="2"/>
+          <column size="80%" position="3"/>
+        </columnsdefinition>
+        <item caption="Razdoblje od:" row="1" col="1">
+          <dateedit name="datD1" savevalue="app"/>
+          <!--<dateedit name="datD1" value="~dtPrviDan"/>-->
+        </item>
+        <item caption="do:" row="1" col="2">
+          <!--<dateedit name="datD2" value="~dtZadnjiDan"/>-->
+          <dateedit name="datD2" savevalue="app"/>
+        </item>
+      </group>
+    </layout>
+    <layout name="panel2">
+      <group rows="1" cols="1">
+        <item row="1" col="1">
+          <grid name="grdGlavni" dataname="~dtMasterGrid" key="PredujamId" type="master" showcheckboxes="true" bestfitonrefresh="true">
+            <fields inherited="true">
+              <field name="Partner" lenght="100" />
+              <field name="BrojPonude" />
+              <field name="ZatvaranjePredujma" />
+              <field name="Uplate" />
+              <field name="Saldo" />
+              <field name="Porez" />
+              <field name="DevZatvAvansa" />
+              <field name="DevUplata" />
+              <field name="Val"/>
+            </fields>
+            <print caption="Predujmovi" captionalign="center" header="Predujmovi u periodu: {#datD1::dd.MM.yyyy.} - {#datD2::dd.MM.yyyy.}"/>
+          </grid>
+        </item>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnIzvrsi" caption="Izvrši">
+          <event type="click" waittype="progress" waitcaption="Obrada" waittext="Učitavanje podataka..." sleep="2000">
+            <action type="variable value">
+              <parameter name="FilterId" value="1" if="$FilterId==0"/>
+            </action>
+            <action type="control populate" value="#grdGlavni"/>
+            <action type="footer text" value="Broj stavki: {#grdGlavni.rowcount}"/>
+            <action type="panel collapse" value="panel1"/>
+            <action type="control enable" value="#btnKnjizi" if="#grdGlavni.rowcount!=0"/>
+          </event>
+        </button>
+        <button name="btnKnjizi" caption="Proknjiži">
+          <event type="click" waittype="progress" waitcaption="Obrada" waittext="Kreiranje faktura..." sleep="2000">
+            <action type="transaction">
+              <action type="datarun nonquery" value="~dtKnjizi"/>
+            </action>
+            <action type="message" value="Fakture su uspješno kreirane!" if="transaction==success"/>
+            <action type="message" value="Fakture nisu kreirane!" else=""/>
+            <action type="control populate" value="#grdGlavni"/>
+          </event>
+        </button>
+        <button name="btnFilter" caption="Filter">
+          <event type="click">
+            <action if="#grdGlavni.rowcount!=0" >
+              <action type="variable value">
+                <parameter name="FilterId" value="#grdGlavni.@filterid"/>
+              </action>
+            </action>
+            <action else="" >
+              <action type="variable value">
+                <parameter name="FilterId" value="1"/>
+              </action>
+            </action>
+            <action type="control populate" value="#grdGlavni"/>
+            <action type="footer text" value="Broj stavki: {#grdGlavni.rowcount}"/>
+            <action type="control enable" value="#btnKnjizi" if="#grdGlavni.rowcount!=0"/>
+          </event>
+        </button>
+        <button name="btnIspis" caption="Ispis sučelja">
+          <event type="click">
+            <action type="control printcontrol" value="#grdGlavni" />
+          </event>
+        </button>
+        <button name="btnExit" caption="Izlaz" dock="right">
+          <event type="click">
+            <action type="form close"/>
+          </event>
+        </button>
+        <button name="btnUpute" caption="Uputi me" dock="right">
+          <event type="click">
+            <action type="message" value="Ova funkcionalnost trenutno nije dostupna, molimo kontaktirajte Spin!"/>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data name="dtMasterGrid" if="$FilterId==1" command="spCPredujmoviQuery">
+        <parameter name="@DatumOd" value="#datD1"/>
+        <parameter name="@DatumDo" value="#datD2"/>
+        <parameter name="@OperateriId" value="@@operateriid" />
+      </data>
+      <data name="dtMasterGrid" if="$FilterId==0" command="spCPredujmoviFilter">
+        <parameter name="@DatumOd" value="#datD1"/>
+        <parameter name="@DatumDo" value="#datD2"/>
+        <parameter name="@OperateriId" value="@@operateriid" />
+      </data>
+      <data name="dtKnjizi" command="spCPredujmoviKnjizenje">
+        <parameter name="@DatumOd" value="#datD1"/>
+        <parameter name="@DatumDo" value="#datD2"/>
+        <parameter name="@SelectedID" value="#grdGlavni.selectedids.table"/>
+        <parameter name="@OperateriId" value="@@operateriid" />
+      </data>
+      <data name="dtPrviDan" command="select DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE())-1, 0) as Datum1" type="text"/>
+      <data name="dtZadnjiDan" command="select DATEADD(MONTH, DATEDIFF(MONTH, -1, GETDATE())-1, -1) as Datum2" type="text"/>
+    </datalist>
+  </form>
+</root>

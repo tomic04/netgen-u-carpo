@@ -1,0 +1,476 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root version="8.0.0.0">
+	<form name="frmGlavna" type="master" caption="Manager osoba">
+		<method name="Poziv" dll="OsobeInfo" class="OsobeInfo.frmMain" method="Ulaz" />
+		<event type="shown">
+			<action type="variable value">
+				<parameter name="NoviId" value="0" type="int" />
+			</action>
+			<action type="variable value">
+				<parameter name="IndIspod" value="0" type="int" />
+			</action>
+			<action type="variable value">
+				<parameter name="IndLevel" value="0" type="int" />
+			</action>
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Klase osoba" />
+				<comboitem value="Funkcije" />
+				<comboitem value="Zemljovid" />
+				<comboitem value="Klase partnera" />
+				<event type="valuechanged">
+					<action type="variable value" value="$IndLevel">
+						<parameter value="1" type="int" />
+					</action>
+					<action type="variable value" value="global.filter">
+						<parameter value="#filter" />
+					</action>
+				</event>
+			</lookup>
+			<tree name="tree" key="Id" dataname="global.dtTree" allowdrop="true" allowdrag="true">
+				<fields>
+					<field name="Name" />
+				</fields>
+				<event type="click">
+					<action type="variable value" value="$IndIspod">
+						<parameter value="0" type="int" />
+					</action>
+				</event>
+				<menu>
+					<menuitem caption="Ispod" name="mnu1">
+						<event type="click">
+							<action type="variable value" value="$IndIspod">
+								<parameter value="1" type="int" />
+							</action>
+							<action type="control populate" value="#grdGlava" />
+						</event>
+					</menuitem>
+				</menu>
+				<!-- <event type="focusedrowchanged"  > -->
+				<!-- <action type="control populate" value="#grdGlava" /> -->
+				<!-- <action type="variable value" value="$osobeid"> -->
+				<!-- <parameter name="osobeid" value="#tree.@Id"/> -->
+				<!-- </action> -->
+				<!-- </event> -->
+				<event type="dragover">
+					<!-- ****određujemo nivo u koji se može "dropati"**** -->
+					<action type="drop allow" value="true" if="#tree.level>0" />
+				</event>
+				<menu type="drop">
+					<menuitem caption="Prenesi" name="mnu2">
+						<event type="click">
+							<!-- <action type="variable value" value="$osobeid"> -->
+							<!-- <parameter name="osobeid" value="#tree.@Id"/> -->
+							<!-- </action> -->
+							<action type="variable value" value="$focusid">
+								<parameter name="focusid" value="#tree.@Id" />
+							</action>
+							<action type="datarun noquery" value="~dtOsobePrenesi" />
+							<action type="control focus" value="#tree">
+								<parameter value="$focusid" type="int" />
+							</action>
+							<!-- <action type="control focus" value="#tree"> -->
+							<!-- <parameter value="$osobeid" type="int" /> -->
+							<!-- </action> -->
+							<action type="control populate keepfocus" value="#grdGlava" />
+							<!-- <action type="message" value="#tree.@Id" /> -->
+						</event>
+					</menuitem>
+					<menuitem caption="Kopiraj" name="mnu3">
+						<event type="click">
+							<action type="variable value" value="$focusid1">
+								<parameter name="focusid1" value="#tree.@Id" />
+							</action>
+							<action type="datarun noquery" value="~dtOsobeKopiraj" />
+							<action type="control focus" value="#tree">
+								<parameter value="$focusid1" type="int" />
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</event>
+					</menuitem>
+					<menuitem type="separator" />
+					<menuitem caption="Odustani" />
+				</menu>
+				<event type="focusedrowchanged">
+					<action if="global.$filter!=Zemljovid">
+						<action type="control expand" value="#tree" if="$IndLevel==1">
+							<parameter name="key" value="0" type="int" />
+						</action>
+						<action type="variable value" value="$IndLevel">
+							<parameter value="0" type="int" />
+						</action>
+						<action type="menu enable" value="#mnu1">
+						</action>
+					</action>
+					<action else="">
+						<action type="control expand" value="#tree" if="$IndLevel==1">
+							<parameter name="key" value="0" type="string" />
+							<parameter name="level" value="1" type="int" />
+						</action>
+						<action type="variable value" value="$IndLevel">
+							<parameter value="0" type="int" />
+						</action>
+						<action type="menu disable" value="#mnu1">
+						</action>
+					</action>
+					<action if="global.$filter==Klase osoba">
+						<action type="menu enable" value="#mnu2">
+						</action>
+						<action type="menu enable" value="#mnu3">
+						</action>
+					</action>
+					<action else="">
+						<action type="menu disable" value="#mnu2">
+						</action>
+						<action type="menu disable" value="#mnu3">
+						</action>
+					</action>
+					<action if="#tree.@Id==0&amp;&amp;global.$filter==Klase osoba">
+						<action type="menu enable" value="#mnu2" />
+						<action type="menu disable" value="#mnu3" />
+					</action>
+					<action type="variable value" value="$IndIspod">
+						<parameter value="0" type="int" />
+					</action>
+					<action type="control populate" value="#grdGlava" />
+					<action type="variable value" value="$osobeid">
+						<parameter name="osobeid" value="#tree.@Id" />
+					</action>
+				</event>
+			</tree>
+			<grid name="grdGlava" type="master" dataname="global.dtGlava" bestfitonrefresh="true" keyfield="osobeid" key="osobeid" allowdrag="true" multiselect="true" savelayout="true">
+				<event type="doubleclick">
+					<action type="form open" value="frmIzmjeniOsobu">
+						<parameter name="OsobeId" value="#grdGlava.@OsobeId" />
+					</action>
+					<action type="control populate keepfocus" value="#grdGlava" />
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="DODAJ">
+					<event type="click">
+						<action type="form open" value="frmDodajOsobu">
+						</action>
+						<action type="control populate" value="#grdGlava" if="$NoviId!=0">
+							<action type="control focus" value="#tree" if="$NoviId!=0">
+								<parameter value="0" type="int" />
+							</action>
+							<action type="control focus" value="#grdGlava" if="$NoviId!=0">
+								<parameter value="$NoviId" />
+							</action>
+						</action>
+						<!-- <action type="control populate keepfocus" value="#grdGlava"/> -->
+					</event>
+				</button>
+				<button name="btnIzmjeni" caption="IZMIJENI">
+					<event type="click">
+						<action type="form open" value="frmIzmjeniOsobu">
+							<parameter name="OsobeId" value="#grdGlava.@OsobeId" />
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati osobu?">
+							<action type="datarun nonquery" value="global.~dtDelete" />
+						</action>
+						<action type="control populate" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="btnIspis" caption="ISPIŠI"  begingroup="true">
+					<event type="click">
+						<action type="control printcontrol" value="#grdGlava" />
+					</event>
+				</button>
+				<button name="btnOso" caption="OSOBE INFO" begingroup="true">
+					<event type="click">
+						<action type="method run" value="Poziv">
+							<parameter name="server" value="@@server" />
+							<parameter name="database" value="@@database" />
+							<parameter name="username" value="@@uid" />
+							<parameter name="password" value="@@pwd" />
+							<parameter name="Operateriid" value="@@operateriid" />
+							<parameter name="OsobeId" value="#grdGlava.@OsobeId" />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spManagerOsoba_Tree_DragDrop" name="dtOsobePrenesi">
+				<parameter name="@Action" value="0" if="global.$filter==Klase osoba" />
+				<parameter name="@ID" value="#tree.@id" />
+				<parameter name="@IDStari" value="$osobeid" />
+				<parameter name="@NizId" value="#grdGlava.selectedids" />
+				<parameter name="@IndBrisanje" value="1" />
+			</data>
+			<data command="spManagerOsoba_Tree_DragDrop" name="dtOsobeKopiraj">
+				<parameter name="@Action" value="0" if="global.$filter==Klase osoba" />
+				<parameter name="@ID" value="#tree.@id" />
+				<parameter name="@IDStari" value="$osobeid" />
+				<parameter name="@NizId" value="#grdGlava.selectedids" />
+				<parameter name="@IndBrisanje" value="0" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDodajOsobu" caption="Osobni podaci" fixedsize="false" width="500" height="400">
+		<load>
+			<action type="variable value" value="parent.$NoviId">
+				<parameter value="0" type="int" />
+			</action>
+		</load>
+		<layout>
+			<group cols="2" rows="8">
+				<item caption="Ime" col="1" row="1">
+					<textedit name="txtIme" />
+				</item>
+				<item caption="Prezime" col="2" row="1">
+					<textedit name="txtPrezime" />
+				</item>
+				<item caption="OIB" col="1" row="2">
+					<textedit name="txtOIB" />
+				</item>
+				<item caption="Šifra:" col="2" row="2">
+					<textedit name="txtSifra" />
+				</item>
+				<item caption="Adresa" col="1" row="3">
+					<textedit name="txtAdresa" required="false" />
+				</item>
+				<item caption="Mjesto" col="2" row="3">
+					<comboedit name="cmbMjestaId" allownull="false" required="true" valuefield="mjestaid" displayfield="Naziv" dataname="global.dtMjesta" autopopulate="true" />
+				</item>
+				<item caption="Titula:" col="1" row="4">
+					<comboedit name="cmbTitula" allownull="true" required="false" valuefield="pretitleid" displayfield="Naziv" dataname="global.dtTitula" autopopulate="true" />
+				</item>
+				<item caption="Zvanje" col="2" row="4">
+					<comboedit name="cmbZvanje" allownull="true" required="false" valuefield="postitleid" displayfield="Naziv" dataname="global.dtZvanje" autopopulate="true" />
+				</item>
+				<item caption="Telefon" col="1" row="5">
+					<textedit name="txtPrivate" />
+				</item>
+				<item caption="Mobitel" col="1" row="6">
+					<textedit name="txtMobile" />
+				</item>
+				<item caption="E-mail" col="1" row="7">
+					<textedit name="txtEmail" />
+				</item>
+				<item caption="Kategorija" col="2" row="5">
+					<comboedit name="cmbOsobeKategorijeId" allownull="true" valuefield="osobekategorijeid" displayfield="Naziv" dataname="global.dtKategorije" autopopulate="true" />
+				</item>
+				<item caption="Zaštitna iskaznica" col="2" row="6">
+					<textedit name="txtZSIskaznica" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun reader" value="~dtOsobaInsert" />
+						<action type="variable value" value="parent.$NoviId">
+							<parameter value="~dtOsobaInsert.@ID" type="int" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button caption="ODUSTANI">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spManagerOsoba_Osobe_Azur" name="dtOsobaInsert">
+				<parameter name="@Action" value="0" />
+				<parameter name="@Prezime" value="#txtPrezime" />
+				<parameter name="@Ime" value="#txtIme" />
+				<parameter name="@Email" value="#txtEmail" />
+				<parameter name="@Mobile" value="#txtMobile" />
+				<parameter name="@Private" value="#txtPrivate" />
+				<parameter name="@Adresa" value="#txtAdresa" />
+				<parameter name="@MjestaId" value="#cmbMjestaId" />
+				<!-- <parameter name="@Jmbg" value="#txtJmbg" /> -->
+				<parameter name="@PosTitleId" value="#cmbZvanje" />
+				<parameter name="@PreTitleId" value="#cmbTitula" />
+				<parameter name="@OIB" value="#txtOIB" />
+				<parameter name="@OsobeKategorijeId" value="#cmbOsobeKategorijeId" />
+				<parameter name="@Sifra" value="#txtSifra" />
+				<parameter name="@ZSIskaznica" value="#txtZSIskaznica" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmIzmjeniOsobu" caption="Osobni podaci" fixedsize="false" width="500" height="400">
+		<event type="init">
+			<action type="datarun reader" value="~dtGetDataEdit" />
+		</event>
+		<event type="shown">
+			<action type="control value" value="#txtPrezime">
+				<parameter value="~dtGetDataEdit.@Prezime" />
+			</action>
+			<action type="control value" value="#txtIme">
+				<parameter value="~dtGetDataEdit.@Ime" />
+			</action>
+			<action type="control value" value="#txtEmail">
+				<parameter value="~dtGetDataEdit.@Email" />
+			</action>
+			<action type="control value" value="#txtMobile">
+				<parameter value="~dtGetDataEdit.@Mobile" />
+			</action>
+			<action type="control value" value="#txtPrivate">
+				<parameter value="~dtGetDataEdit.@Private" />
+			</action>
+			<action type="control value" value="#txtAdresa">
+				<parameter value="~dtGetDataEdit.@Adresa" />
+			</action>
+			<action type="control value" value="#cmbMjestaId">
+				<parameter value="~dtGetDataEdit.@MjestaId" />
+			</action>
+			<!-- <action type="control value" value="#txtJmbg">/> -->
+			<!-- <parameter value="~dtGetDataEdit.@Jmbg" />/> -->
+			<!-- </action>/> -->
+			<action type="control value" value="#cmbOsobeKategorijeId">
+				<parameter value="~dtGetDataEdit.@PosTitleId" />
+			</action>
+			<action type="control value" value="#cmbTitula">
+				<parameter value="~dtGetDataEdit.@PreTitleId" />
+			</action>
+			<action type="control value" value="#txtSifra">
+				<parameter value="~dtGetDataEdit.@Sifra" />
+			</action>
+			<action type="control value" value="#txtOIB">
+				<parameter value="~dtGetDataEdit.@OIB" />
+			</action>
+			<action type="control value" value="#cmbOsobeKategorijeId">
+				<parameter value="~dtGetDataEdit.@OsobeKategorijeId" />
+			</action>
+			<action type="control value" value="#txtZSIskaznica">
+				<parameter value="~dtGetDataEdit.@ZSIskaznica" />
+			</action>
+		</event>
+		<layout>
+			<group cols="2" rows="8">
+				<item caption="Ime" col="1" row="1">
+					<textedit name="txtIme" />
+				</item>
+				<item caption="Prezime" col="2" row="1">
+					<textedit name="txtPrezime" />
+				</item>
+				<item caption="OIB" col="1" row="2">
+					<textedit name="txtOIB" />
+				</item>
+				<item caption="Šifra:" col="2" row="2">
+					<textedit name="txtSifra" />
+				</item>
+				<item caption="Adresa" col="1" row="3">
+					<textedit name="txtAdresa" required="false" />
+				</item>
+				<item caption="Mjesto" col="2" row="3">
+					<comboedit name="cmbMjestaId" allownull="false" required="true" valuefield="mjestaid" displayfield="Naziv" dataname="global.dtMjesta" autopopulate="true" />
+				</item>
+				<item caption="Titula:" col="1" row="4">
+					<comboedit name="cmbTitula" allownull="true" required="false" valuefield="pretitleid" displayfield="Naziv" dataname="global.dtTitula" autopopulate="true" />
+				</item>
+				<item caption="Zvanje" col="2" row="4">
+					<comboedit name="cmbZvanje" allownull="true" required="false" valuefield="postitleid" displayfield="Naziv" dataname="global.dtZvanje" autopopulate="true" />
+				</item>
+				<item caption="Telefon" col="1" row="5">
+					<textedit name="txtPrivate" />
+				</item>
+				<item caption="Mobitel" col="1" row="6">
+					<textedit name="txtMobile" />
+				</item>
+				<item caption="E-mail" col="1" row="7">
+					<textedit name="txtEmail" />
+				</item>
+				<item caption="Kategorija" col="2" row="5">
+					<comboedit name="cmbOsobeKategorijeId" allownull="true" valuefield="osobekategorijeid" displayfield="Naziv" dataname="global.dtKategorije" autopopulate="true" />
+				</item>
+				<item caption="Zaštitna iskaznica" col="2" row="6">
+					<textedit name="txtZSIskaznica" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun reader" value="~dtOsobaEdit" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button caption="ODUSTANI">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spManagerOsoba_Osobe_Azur" name="dtOsobaEdit">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$OsobeId" type="int" />
+				<parameter name="@Prezime" value="#txtPrezime" />
+				<parameter name="@Ime" value="#txtIme" />
+				<parameter name="@Email" value="#txtEmail" />
+				<parameter name="@Mobile" value="#txtMobile" />
+				<parameter name="@Private" value="#txtPrivate" />
+				<parameter name="@Adresa" value="#txtAdresa" />
+				<parameter name="@MjestaId" value="#cmbMjestaId" />
+				<!-- <parameter name="@Jmbg" value="#txtJmbg" /> -->
+				<parameter name="@PosTitleId" value="#cmbZvanje" />
+				<parameter name="@PreTitleId" value="#cmbTitula" />
+				<parameter name="@OIB" value="#txtOIB" />
+				<parameter name="@OsobeKategorijeId" value="#cmbOsobeKategorijeId" />
+				<parameter name="@Sifra" value="#txtSifra" />
+				<parameter name="@ZSIskaznica" value="#txtZSIskaznica" />
+			</data>
+			<data command="spManagerOsoba_GetEdit" name="dtGetDataEdit">
+				<parameter name="@Action" value="0" />
+				<parameter name="@ID" value="$OsobeId" type="int" />
+			</data>
+		</datalist>
+	</form>
+	<datalist>
+		<data command="spManagerOsoba_Tree" name="dtTree">
+			<parameter name="@Action" value="klaseosoba" if="global.$filter==Klase osoba" />
+			<parameter name="@Action" value="klasefunkcija" if="global.$filter==Funkcije" />
+			<parameter name="@Action" value="zemljovid" if="global.$filter==Zemljovid" />
+			<parameter name="@Action" value="klasepartnera" if="global.$filter==Klase partnera" />
+		</data>
+		<data command="spManagerOsoba_Master" name="dtGlava">
+			<parameter name="@Action" value="klaseosoba" if="global.$filter==Klase osoba" />
+			<parameter name="@Action" value="klasefunkcija" if="global.$filter==Funkcije" />
+			<parameter name="@Action" value="zemljovid" if="global.$filter==Zemljovid" />
+			<parameter name="@Action" value="klasepartnera" if="global.$filter==Klase partnera" />
+			<parameter name="@ID" value="#tree.@ID" />
+			<parameter name="@IndIspod" value="$IndIspod" />
+			<parameter name="@SortKey" value="#tree.@sortkey" type="string" />
+			<parameter name="@DrzaveId" value="#tree.@drzaveid" if="global.$filter==Zemljovid" />
+			<parameter name="@ZupanijeId" value="#tree.@zupanijeid" if="global.$filter==Zemljovid" />
+			<parameter name="@MjestaId" value="#tree.@mjestaid" if="global.$filter==Zemljovid" />
+		</data>
+		<data command="spManagerOsoba_Combo" name="dtMjesta">
+			<parameter name="@Action" value="0" />
+		</data>
+		<data command="spManagerOsoba_Combo" name="dtKategorije">
+			<parameter name="@Action" value="1" />
+		</data>
+		<data command="spManagerOsoba_Combo" name="dtTitula">
+			<parameter name="@Action" value="2" />
+		</data>
+		<data command="spManagerOsoba_Combo" name="dtZvanje">
+			<parameter name="@Action" value="4" />
+		</data>
+		<data command="spManagerOsoba_Osobe_Azur" name="dtDelete">
+			<parameter name="@Action" value="2" />
+			<parameter name="@ID" value="#grdGlava.@OsobeId" type="int" />
+		</data>
+	</datalist>
+</root>

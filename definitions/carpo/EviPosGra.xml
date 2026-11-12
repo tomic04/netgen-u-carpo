@@ -1,0 +1,236 @@
+<root>
+    <form type="master" caption="Evidencija postavljanja granula" name="frmMain" maximized="true">
+    <event type="keydown">
+		<action if="key==45">
+			<action type="form open" value="frmDodaj"/>
+			<action type="control populate" value="#grdGlava"/>
+			<action type="control focus" value="#grdGlava">
+				<parameter value="$NoviId" type="int"/>
+			</action>
+			<action type="control enable" value="#btnObrisi" if="#grdGlava.rowcount!=0"/>
+			<action type="control disable" value="#btnUredi" if="#grdGlava.rowcount==0" />
+			<action type="control enable" value="#btnUredi" else="" />		
+		</action>
+		<action if="key==46">
+			<action type="confirm" value="Želite li sigurno obrisati ovaj zapis?">
+				<action type="datarun scalar" value="~dtObrisi">
+					<parameter name="NoviId" type="int"/>
+				</action>
+				<action type="control populate keepfocus" value="#grdGlava"/>
+				<!-- <action type="control focus" value="#grdGlava"> -->
+					<!-- <parameter value="$NoviId" type="int"/> -->
+				<!-- </action> -->
+				<action type="control disable" value="#btnObrisi, #btnUredi" if="#grdGlava.rowcount==0" />
+			</action>
+		</action>
+		<action if="key==13">
+			<action type="form open" value="frmDodaj">
+				<parameter name="Izmjena" value="1"/>
+				<parameter name="EviPosGraId" value="#grdGlava.@EviPosGraId"/>
+			</action>
+			<action type="control populate keepfocus" value="#grdGlava"/>
+		</action>
+	</event>
+	<managerlayout>
+        <lookup name="filter">
+            <!-- <comboitem value="Granule" /> -->
+            <comboitem value="Partneri"/>
+            <event type="valuechanged">
+                <action type="variable value" value="global.filter">
+                    <parameter value="#filter" />
+                </action>
+                <action type="control datasourceempty" value="#grdGlava"/>
+            </event>
+        </lookup>
+        <tree name="trTree" dataname="~dtDrvo" caption="Evidencija" key="Id">
+            <event type="focusedrowchanged">
+                <action type="control populate" value="#grdGlava" />
+                <action type="control disable" value="#btnUredi,#btnObrisi" if="#grdGlava.rowcount==0"/>
+                <action type="control enable" value="#btnUredi,#btnObrisi" else="" />
+            </event>
+            <fields>
+                <field name="Naziv"/>
+            </fields>
+        </tree>
+        <grid name="grdGlava" type="master" key="EviPosGraId" bestfitonrefresh="true" dataname="~dtGlava" multiselect="false" showmenutools="false" showmenuprintitem="false" savelayout="true" fieldsmartspaces="false">		            
+            <event type="doubleclick">
+				<action type="form open" value="frmDodaj">
+					<parameter name="Izmjena" value="1"/>
+					<parameter name="EviPosGraId" value="#grdGlava.@EviPosGraId"/>
+				</action>
+				<action type="control populate keepfocus" value="#grdGlava"/>				
+            </event>
+            <fields inherited="true">
+                <field name="Naziv" caption="Naziv"/>
+				<field name="Tehnologija" caption="Tehnologija"/>            
+            </fields>
+            <styles>
+            </styles>
+        </grid>
+    </managerlayout>
+    <panelbuttons>
+        <buttons>
+            <button name="btnDodaj" caption="DODAJ">
+                <event type="click">
+                    <action type="form open" value="frmDodaj"/>
+					<action type="control populate" value="#grdGlava"/>
+					<action type="control focus" value="#grdGlava">
+						<parameter value="$NoviId" type="int"/>
+					</action>
+                    <action type="control enable" value="#btnObrisi" if="#grdGlava.rowcount!=0"/>
+                    <action type="control disable" value="#btnUredi" if="#grdGlava.rowcount==0" />
+                    <action type="control enable" value="#btnUredi" else="" />
+                </event>
+            </button>
+            <button name="btnUredi" caption="IZMIJENI">
+                <event type="click">
+                    <action type="form open" value="frmDodaj">
+						<parameter name="Izmjena" value="1"/>
+						<parameter name="EviPosGraId" value="#grdGlava.@EviPosGraId"/>
+					</action>
+					<action type="control populate keepfocus" value="#grdGlava"/>
+                </event>
+            </button>			
+            <button name="btnObrisi" caption="OBRIŠI" function="obrisi" enabled="false">
+                <event type="click">
+                    <action type="confirm" value="Želite li sigurno obrisati ovaj zapis?">
+                        <action type="datarun scalar" value="~dtObrisi">
+							<parameter name="NoviId" type="int"/>
+						</action>
+                        <action type="control populate keepfocus" value="#grdGlava"/>
+						<!-- <action type="control focus" value="#grdGlava"> -->
+							<!-- <parameter value="$NoviId" type="int"/> -->
+						<!-- </action> -->
+                        <action type="control disable" value="#btnObrisi, #btnUredi" if="#grdGlava.rowcount==0" />
+                    </action>
+                </event>
+            </button>
+            <button name="btnKatalog" caption="KATALOG" dock="right">
+                <event type="click">
+                    <action type="form open" value="frmKatalog" />
+                </event>
+            </button>
+            <!-- <button name="btnNotifikacije" caption="Mailing lista" dock="right"> -->
+                <!-- <event type="click"> -->
+                    <!-- <action type="form open" value="frmMailingLista" /> -->
+                <!-- </event> -->
+            <!-- </button> -->
+            <!-- <button name="btnPovijest" caption="Povijest instalacija" dock="right"> -->
+                <!-- <event type="click"> -->
+                    <!-- <action type="form open" value="frmWhereInstalled" /> -->
+                <!-- </event> -->
+            <!-- </button> -->
+        </buttons>
+    </panelbuttons>
+    <datalist>
+        <data command="spEviPosGra" name="dtDrvo">
+            <parameter name="@Action" value="0"/>
+        </data>
+        <data command="spEviPosGra" name="dtGlava">
+            <parameter name="@Action" value="1"/>
+            <parameter name="@CustomerId" value="#trTree.@Id"/>
+        </data>
+        <data command="spEviPosGra" name="dtObrisi">
+            <parameter name="@Action" value="3" />
+            <parameter name="@EviPosGraId" value="#grdGlava.@EviPosGraId"/>
+			<parameter name="@CustomerId" value="#trTree.@Id"/>
+        </data>
+    </datalist>
+    </form>
+    <form name="frmDodaj" width="400" height="600">
+		<event type="init">
+			<!--if="$Izmjena==1"-->
+			<action type="datarun reader" value="~dtDetalj"/>
+		</event>
+		<layout>
+			<group cols="1" rows="6" groupbordervisible="false">
+				<item col="1" row="1" textposition="top" caption="Granula:">
+					<textedit name="txtGranula"  datavalue="~dtDetalj.@Granula"/>
+				</item>
+				<item col="1" row="2" textposition="top" caption="Tehnologija:">
+					<textedit name="txtTehnologija"  datavalue="~dtDetalj.@Tehnologija"/>
+				</item>
+				<item col="1" row="3" textposition="top" caption="Verzija:">
+					<textedit name="txtVerzija" datavalue="~dtDetalj.@Verzija"/>
+				</item>
+				<item col="1" row="4" textposition="top" caption="Datum postavljanja:">
+					<dateedit name="datDatum" value="now" datavalue="~dtDetalj.@DatumPostavljanja"/>
+				</item>
+				<item col="1" row="5" textposition="top" caption="Postavio:">
+					<textedit name="txtPostavio"  datavalue="~dtDetalj.@Postavio"/>
+				</item>
+				<item col="1" row="6" textposition="top" caption="Napomena:">
+					<memoedit name="memNapomena"  datavalue="~dtDetalj.@Napomena"/>
+				</item>				
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="datarun scalar" value="~dtSpremi">
+							<parameter name="parent.$NoviId" type="int"/>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spEviPosGra" name="dtDetalj">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@EviPosGraId" value="$EviPosGraId"/>
+			</data>	
+			<data command="spEviPosGra" name="dtSpremi" if="$Izmjena==1">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@EviPosGraId" value="parent.#grdGlava.@EviPosGraId"/>
+				<parameter name="@Tehnologija" value="#txtTehnologija"/>
+				<parameter name="@Granula" value="#txtGranula"/>
+				<parameter name="@Verzija" value="#txtVerzija"/>
+				<parameter name="@Postavio" value="#txtPostavio"/>
+				<parameter name="@Datum" value="#datDatum"/>
+				<parameter name="@Napomena" value="#memNapomena"/>
+			</data>	
+			<data command="spEviPosGra" name="dtSpremi" else="">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@Tehnologija" value="#txtTehnologija"/>
+				<parameter name="@Granula" value="#txtGranula"/>
+				<parameter name="@Verzija" value="#txtVerzija"/>
+				<parameter name="@Postavio" value="#txtPostavio"/>
+				<parameter name="@Datum" value="#datDatum"/>
+				<parameter name="@Napomena" value="#memNapomena"/>
+				<parameter name="@CustomerId" value="parent.#trTree.@Id"/>
+			</data>				
+		</datalist>
+	</form>
+    <form name="frmKatalog" maximized="true">
+		<layout>
+			<group cols="1" rows="1" groupbordervisible="false">
+				<item col="1" row="1">
+					<grid name="grdKatalog" dataname="~dtKatalog" autopopulate="true" savelayout="true" multiselect="true" key="EviPosGraId">
+				
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<datalist>
+			<data command="spEviPosGra" name="dtKatalog">
+				<parameter name="@Action" value="6"/>
+			</data>	
+		</datalist>
+		<panelbuttons>
+			<buttons>
+				<button name="btnIspisi" caption="ISPIŠI">
+					<event type="click">
+						<action type="control printcontrol" value="#grdKatalog"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+</root>

@@ -1,0 +1,184 @@
+<root xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<form name="frmMaster" type="master" caption="Zdravstvene ustanove">
+	<event type="shown">
+		<action type="control disable" value="#btnBrisanje,#btnIzmjena"/> 
+		<action type="control enable" value="#btnIzmjena,#btnBrisanje" if="#grdMaster.@ZRZdrUstanoveId!=null" /> 
+	</event>
+		<managerlayout>
+			<!--master je obavezan atribut ukoliko na manageru imamo 2 grida-->
+			<grid name="grdMaster" autopopulate="true" type="master" async="true" bestfitonrefresh="true" key="ZRZdrUstanoveId"  multiselect="true" fieldsmartspaces="false" showfooter="true" >
+				<event type="focusedrowchanged">
+					<action type="control disable" value="#btnBrisanje,#btnIzmjena"/> 
+					<action type="control enable" value="#btnIzmjena,#btnBrisanje" if="#grdMaster.@ZRZdrUstanoveId!=null" /> 
+				</event>
+        <fields inherited="true">
+          <field name="Sifra" caption="Šifra" />
+        </fields>
+
+				<data name="master" command="spZRZdrUstanove_Query">
+					<parameter name="@Action" value="master"  />
+				</data>
+
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<!-- KONTROLA: BUTTON -->
+				<button name="btnUnos" caption="Unos" type="add" displayfield="Opis" dataname="">
+					<event type="click">
+						<action type="variable value" value="$ZRZdrUstanoveId" >
+							<parameter value="#grdMaster.@ZRZdrUstanoveId" type="int" />
+						</action> 
+						<action type="form open" value="frmUnos" >
+							<parameter name="ZRZdrUstanoveId" value="null" type="int" /> 
+						</action> 
+						<action type="control populate" value="#grdMaster" >
+							<action type="control focus" value="#grdMaster" >
+								<parameter value="$ZRZdrUstanoveId" />
+							</action> 
+						</action>
+					</event>
+				</button>
+
+				<button name="btnIzmjena" caption="Izmjena" type="add" displayfield="Opis" dataname="">
+					<event type="click">
+						<action type="form open" value="frmUnos" >
+							<parameter name="ZRZdrUstanoveId" value="#grdMaster.@ZRZdrUstanoveId" type="int" />
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster" />
+					</event>
+				</button>
+
+
+				<button name="btnBrisanje" caption="Brisanje" type="del" displayfield="Opis" dataname="">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati zdravstvenu ustanovu: {#grdMaster.@Naziv}?">
+							<action type="datarun nonquery" value="~dtDelete">
+								<action type="control populate" value="#grdMaster" >
+									<action type="control focus" value="#grdMaster" >
+										<!-- <parameter value="0" /> -->
+									</action>
+								</action>
+							</action>
+						</action>
+					</event>
+				</button>		
+
+
+			</buttons>
+		</panelbuttons>
+
+		<datalist>	  
+			<data command="spZRZdrUstanove_Azur" name="dtDelete">
+				<parameter name="@Action" value="brisanje" type="string"/>
+				<parameter name="@ZRZdrUstanoveId" value="#grdMaster.@ZRZdrUstanoveId" type="int"/>
+			</data>
+
+		</datalist>
+
+	</form>
+  
+  <form name="frmUnos" caption="Zdravstvena ustanova" maxsize="true" width="500" fixedsize="false">
+		<!-- na inicijalizaciji forme okidaju se podaci potrebni da kontrole poprime vrijednosti za izmijenu (u slučaju da smo na formi za izmijenu - IF)-->
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$ZRZdrUstanoveId!=null"/>
+		</event>
+
+		<layout textposition="left">
+			<group cols="1" rows="8" >
+				<item caption="Naziv:" col="1" row="1" >
+					<textedit name="txtNaziv" required="true" nulltext="Naziv..." datavalue="#dtGet.@Naziv"/>
+				</item>
+        
+        <item caption="Adresa:" col="1" row="2" >
+					<textedit name="txtAdresa" required="false" nulltext="Adresa..." datavalue="#dtGet.@Adresa"/>
+				</item>
+        
+        <item caption="Mjesto:" col="1" row="3" >
+					<comboedit name="cmbMjesta" autopopulate="false" readonly="false" required="false" valuefield="MjestaId" displayfield="Naziv" datavalue="~dtGet.@MjestaId" dataname="dtMjesta">
+					</comboedit>
+				</item>
+        
+				<item caption="Mjesto:" col="1" row="4" >
+					<textedit name="txtMjesto" required="false" nulltext="Mjesto..." datavalue="#dtGet.@Mjesto"/>
+				</item>   
+        
+        <item caption="Šifra:" col="1" row="5" >
+					<textedit name="txtSifra" required="false" nulltext="Šifra..." datavalue="#dtGet.@Sifra"/>
+				</item>   
+        
+				<item caption="Telefon:" col="1" row="6" >
+					<textedit name="txtTelefon" required="false" nulltext="Telefon..." datavalue="#dtGet.@Telefon"/>
+				</item>
+
+        <item caption="Osoba:" col="1" row="7" >
+					<textedit name="txtOsoba" required="false" nulltext="Osoba..." datavalue="#dtGet.@Osoba"/>
+				</item>
+        
+        <item caption="E-mail:" col="1" row="8" >
+					<textedit name="txtMail" required="false" nulltext="E-mail..." datavalue="#dtGet.@Mail"/>
+				</item>
+      		    
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<!-- Provjeri required fields -->
+						<action type="validate" />
+						<!-- Okini storu -->
+						<action type="datarun nonquery" value="~dtEdit" if="$ZRZdrUstanoveId!=null"/>
+						<action type="datarun nonquery" value="~dtAdd" else="" />
+						<!-- Osvježi grid na parent formi -->
+						<action type="control populate" value="parent.#grdMaster"/>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+
+
+		<datalist>
+			<data command="spZRZdrUstanove_Query" name="dtGet">
+				<parameter name="@Action" value="izmjena"/>
+				<parameter name="@ZRZdrUstanoveId" value="$ZRZdrUstanoveId"/>
+			</data>
+
+			<data command="spZRZdrUstanove_Azur" name="dtAdd">
+				<parameter name="@Action" value="unos" type="string"/>
+				<parameter name="@Naziv" value="#txtNaziv" type="string"/>
+        <parameter name="@Adresa" value="#txtAdresa" type="string"/>
+        <parameter name="@MjestaId" value="#cmbMjesta" type="int"/>
+				<parameter name="@Mjesto" value="#txtMjesto" type="string"/>        
+        <parameter name="@Sifra" value="#txtSifra" type="string"/>
+        <parameter name="@Telefon" value="#txtTelefon" type="string"/>
+        <parameter name="@Osoba" value="#txtOsoba" type="string"/>
+        <parameter name="@Mail" value="#txtMail" type="string"/>
+			</data>
+
+			<data command="spZRZdrUstanove_Azur" name="dtEdit">
+				<parameter name="@Action" value="izmjena" type="string"/>
+				<parameter name="@ZRZdrUstanoveId" value="$ZRZdrUstanoveId" type="int"/>
+				<parameter name="@Naziv" value="#txtNaziv" type="string"/>
+        <parameter name="@Adresa" value="#txtAdresa" type="string"/>
+        <parameter name="@MjestaId" value="#cmbMjesta" type="int"/>
+				<parameter name="@Mjesto" value="#txtMjesto" type="string"/>        
+        <parameter name="@Sifra" value="#txtSifra" type="string"/>
+        <parameter name="@Telefon" value="#txtTelefon" type="string"/>
+        <parameter name="@Osoba" value="#txtOsoba" type="string"/>
+        <parameter name="@Mail" value="#txtMail" type="string"/>
+			</data>
+    
+      <data command="spZRZdrUstanove_Query" name="dtMjesta">
+        <parameter name="@Action" value="mjestaid" />
+      </data>
+    
+		</datalist>
+
+	</form>
+  
+</root>

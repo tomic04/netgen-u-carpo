@@ -1,0 +1,228 @@
+<root>
+	<form name="frmIzmjeni" caption="Ažuriranje normativa" width="400">
+
+		<event type="init">
+			<action type="datarun scalar" value="~dtProvjera1">
+				<parameter name="provjera1"/>
+			</action>
+			<action type="message" value="'Proizvod je aktivan ili je bio aktivan. Ne može se više ispravljati !'" if="$provjera1==1">
+			</action>
+			<action type="datarun scalar" value="~dtProvjera2" if="$provjera1!=1">
+				<parameter name="provjera2"/>			
+			</action>
+			<action type="message" value="'Proizvod je aktivan ili je bio aktivan. Ne može se više ispravljati !'" if="$provjera2!='null'">
+			</action>
+			<action type="datarun reader" value="~dtDohvati" if="$provjera2=='null'">	
+			</action>			
+		</event>
+
+		<event type="load">
+			<action type="control populate" value="#grdStavke" if="$provjera2=='null'">
+			</action>
+		</event>
+
+		<event type="shown">
+			<action type="form close" if="$provjera1==1||$provjera2!='null'">
+			</action>
+		</event>
+
+		<layout>
+			<group rows="4" cols="3" groupbordervisible="false">
+				<item row="1" col="1" caption="Proizvod" textposition="left">
+					<textedit name="txtProizvod" datavalue="~dtDohvati.@naziv" readonly="true">
+					</textedit>
+				</item>
+				<item row="2" col="1" caption="JM" textposition="left">
+					<textedit name="txtJM" datavalue="~dtDohvati.@jm" readonly="true">
+					</textedit>
+				</item>
+				<item row="3" col="1" colspan="2" caption="Sastojci" textposition="left">
+					<grid name="grdStavke" dataname="~dtStavke" netgenfields="true" keyfield="mpproizvodidetid">
+					</grid>
+				</item>
+				<rowsdefinition>
+					<row position="3" size="250"></row>
+					<row position="4" size="100%"></row>
+				</rowsdefinition>
+				<columnsdefinition>
+					<column position="1" size="300"></column>
+					<column position="2" size="350"></column>
+					<column position="3" size="100%"></column>
+				</columnsdefinition>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSave" caption="Spremi">
+					<event type="click" >
+						<action type="form close" />
+						<action type="control refreshvalue" value="parent.#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnClose" caption="Odustani" type="cancel" >
+				</button>
+				<button name="btnAdd" caption="Dodaj" dock="right">
+					<event type="click" >
+						<action type="form open" value="frmDodajStavku">
+							<parameter name="mpproizvodiglaid" value="$mpproizvodiglaid"/>
+						</action>
+						<action type="control populate" value="#grdStavke"/>
+					</event>
+				</button>
+				<button name="btnDel" caption="Obriši" dock="right">
+					<event type="click" >
+						<action type="form open" value="frmBrisiStavku">
+							<parameter name="mpproizvodidetid" value="#grdStavke.@mpproizvodidetid"/>
+						</action>
+						<action type="control populate" value="#grdStavke"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="select coalesce(ind,0) as ind from mpproizvodigla where mpproizvodiglaid = @mpproizvodiglaid" type="text" name="dtProvjera1">
+				<parameter name="@mpproizvodiglaid" value="$mpproizvodiglaid"/>
+			</data>
+			<data command="select datumdo as datumdo from mpproizvodigla where mpproizvodiglaid = @mpproizvodiglaid" type="text" name="dtProvjera2">
+				<parameter name="@mpproizvodiglaid" value="$mpproizvodiglaid"/>
+			</data>
+			<data command="spMPProizvodiGlaIdet" name="dtDohvati">
+				<parameter name="@action" value="3"/>
+				<parameter name="@mpproizvodiglaid" value="$mpproizvodiglaid"/>
+			</data>
+			<data command="spMPProizvodiGlaIdet" name="dtStavke">
+				<parameter name="@action" value="4"/>
+				<parameter name="@mpproizvodiglaid" value="$mpproizvodiglaid"/>
+			</data>
+		</datalist>
+
+	</form>
+
+	<form name="frmDodajStavku" caption="Prijava nove sirovine" width="400">
+
+		<event type="init">	
+			<action type="datarun reader" value="~dtDohvati">	
+			</action>
+		</event>
+
+		<event type="load">
+		</event>
+
+		<event type="shown">
+		</event>
+
+		<layout>
+			<group rows="5" cols="2" groupbordervisible="false">
+				<item row="1" col="1" caption="Sirovina" textposition="left">
+					<searchedit name="srcSirovina"  fieldtext="NazivId" fieldvalue="robaid" dataname="~dtRoba" netgenfields="true">
+							<event type="valuechanged">
+								<action type="datarun reader" value="~dtJm">
+								</action>
+								<action type="control refreshvalue" value="#txtJM"/>
+							</event>
+						</searchedit>
+					</item>
+					<item row="2" col="1" caption="JM" textposition="left" >
+						<textedit name="txtJM" datavalue="~dtJm.@jm0600" readonly="true">
+						</textedit>
+					</item>
+					<item row="3" col="1" caption="Kolicina" textposition="left">
+						<textedit name="txtKol" value="0" format="n2">
+						</textedit>
+					</item>
+					<item row="4" col="1" caption="" textposition="right">
+						<checkedit caption="Rezervirana sirovina" value ="0" name="cheRez" >
+						</checkedit>
+					</item>
+					<rowsdefinition>
+					<row position="5" size="100%"></row>
+				</rowsdefinition>
+				<columnsdefinition>
+					<column position="1" size="200"></column>
+					<column position="2" size="100%"></column>
+				</columnsdefinition>
+					</group>
+				</layout>
+
+				<panelbuttons>
+					<buttons>
+						<button name="btnAdd" caption="Spremi">
+							<event type="click" >
+								<action type="datarun nonquery" value="~dtDodaj">	
+								</action>
+								<action type="form close" />	
+							</event>
+						</button>
+						<button name="btnClose" caption="Odustani" type="cancel" >
+						</button>
+					</buttons>
+				</panelbuttons>
+
+				<datalist>
+					<data command="select jm.naziv as jm0600 from jm jm inner join roba r on jm.jmid = r.jmid where r.robaid = @robaid" type="text" name="dtJm">
+						<parameter name="@robaid" value="#srcSirovina"/>
+					</data>
+					<data command="spMPProizvodiGlaIdet" name="dtDodaj">
+						<parameter name="@action" value="5"/>
+						<parameter name="@mpproizvodiglaid" value="$mpproizvodiglaid"/>
+						<parameter name="@robaid" value="#srcSirovina"/>
+						<parameter name="@kolicina" value="#txtKol"/>
+						<parameter name="@rezervni" value="#cheRez"/>
+					</data>
+					<data command="spMPRobaZaMPNG" name="dtRoba">
+						<parameter name="@trazi" value="#srcSirovina.text" />
+					</data>
+				</datalist>
+			</form>
+
+			<form name="frmBrisiStavku" caption="Ažuriranje normativa" width="400">
+
+				<event type="init">	
+					<action type="datarun reader" value="~dtDohvati">	
+					</action>
+				</event>
+
+				<event type="load">
+				</event>
+
+				<event type="shown">
+				</event>
+
+				<layout>
+					<group rows="1" cols="1" groupbordervisible="false">
+						<item row="1" col="1" caption="Info:" textposition="left">
+							<labeledit name="lbPoruka" value="Jeste li sigurni da želite obrisati stavku ?">
+							</labeledit>
+						</item>
+					</group>
+				</layout>
+
+				<panelbuttons>
+					<buttons>
+						<button name="btnDel" caption="Obriši">
+							<event type="click" >
+								<action type="datarun nonquery" value="~dtObrisi">	
+								</action>
+								<action type="form close" />	
+							</event>
+						</button>
+						<button name="btnClose" caption="Odustani" type="cancel" >
+						</button>
+					</buttons>
+				</panelbuttons>
+
+				<datalist>
+					<data command="spMPProizvodiGlaIdet" name="dtPopuni">
+						<parameter name="@action" value="6"/>
+						<parameter name="@mpproizvodidetid" value="$mpproizvodidetid"/>
+					</data>
+					<data command="delete mpproizvodidet where mpproizvodidetid = @mpproizvodidetid" type="text" name="dtObrisi">
+						<parameter name="@mpproizvodidetid" value="$mpproizvodidetid"/>
+					</data>
+				</datalist>
+
+			</form>
+
+		</root>

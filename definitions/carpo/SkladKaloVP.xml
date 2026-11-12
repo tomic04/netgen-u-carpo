@@ -1,0 +1,302 @@
+<root>
+	<form name="frmGlava" type="master" caption="Odobreni kalo">	
+		<event type="init">
+			<action type="variable value">
+				<parameter name="operateriid" value="@@operateriid" /> 
+			</action>
+		</event>
+		<event type="onload">
+			<action type="form open" value="frmParametar" />
+			<action type="control disable" value="#btnKreirajDokument" if="#grdGlava.@Prov=='Da'" />
+		</event>
+		<managerlayout>
+				<grid name="grdGlava" type="master" dataname="~dtPuniGrid"> 
+					<event type="cellvaluechanged">
+						<action type="datarun nonquery" value="~dtUpdateGrid" />
+					</event>
+					<fields inherited="true">
+						<field name="tempid" visible="false" />
+						<field name="!S0400" visible="false" />
+						<field name="izbor" editable="true" edittype="bit" caption="Prijenos"/>
+						<field name="skladište1000" caption="Skladište" />
+						<field name="oznaka1000" caption="Oznaka" />
+						<field name="Sortkey" caption="Sortkey" />
+						<field name="Klasa1000" caption="Klasa" />
+						<field name="Naziv Robe1500" caption="Naziv robe" />
+						<field name="ŠifraRobe0500" caption="Šifra" />
+						<field name="Količina Prometa1500" caption="Količina promet" />
+						<field name="JMNaziv" caption="JM" />
+						<field name="NabCijena1500" caption="Nabavna cijena" />
+						<field name="Vrijednost Prometa1500" caption="Vrijednost prometa" />
+						<field name="Kalo%1000" caption="Kalo" />
+						<field name="Kalo Količina1500" caption="Mogući kalo"/>
+						<field name="stvarnikalo" caption="Kalo za otpis" editable="true" />
+						<field name="Kalo Vrijednost1500" caption="Kalo vrijednost" />
+						<field name="kolicinaizlaz" caption="Količina izlaz" />
+						<field name="selectedid" visible="false" edittype="bit"/>
+						<field name="Prov" visible="false" />
+					</fields>
+				</grid>
+		</managerlayout>
+		<datalist>
+					<data command="spSkladIzvjestaj_KALO1" name="dtPuniGrid">
+						<parameter name="@action" value="999" />
+						<parameter name="@datod" value="#datDatumOd" />
+						<parameter name="@datdo" value="#datDatumDo" />
+						<parameter name="@klasaid" value="#cmbKlasa" />
+						<parameter name="@podklase" value="1" if="#chkPodklase==true" />
+						<parameter name="@podklase" value="0" else="" />
+						<parameter name="@skladisteid" value="#cmbSkladiste" />
+						<parameter name="@operateriid" value="@@operateriid" />
+					</data>
+
+					<data command="spSkladIzvjestaj_KALO1_dtUpdateGrid" name="dtUpdateGrid">
+						<parameter name="@tempid" value="#grdGlava.@tempid" />
+						<parameter name="@izbor" value="#grdGlava.@Izbor" />
+						<parameter name="@stvarnikalo" value="#grdGlava.@stvarniKalo" />
+					</data>
+
+		</datalist>
+		<panelbuttons>
+			<buttons>
+				<button name="btnParametri" caption="PARAMETRI">
+					<event type="click">
+						<action type="form open" value="frmParametarNovi" />
+					</event>
+				</button>
+				<button name="btnKreirajDokument" caption="KREIRAJ DOKUMENT">
+					<event type="click">
+						<action type="form open" value="frmKreirajDokument">
+							<parameter name="SkladisteID" value="#grdGlava.@skladisteid" />
+							<parameter name="Kkvalglaid" value="#grdGlava.@kkvalglaid" />
+							<parameter name="RobaID" value="#grdGlava.@selectedidPolja" />
+							<parameter name="kolicinaIzlaz" value="#grdGlava.@KolicinaIzlaz" />
+						</action>
+						<action type="datarun reader" value="~UnosUTemp" />
+					</event>
+				</button>
+				<button name="btnIspisi" caption="ISPIŠI">
+
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmParametar" caption="Parametri upita">
+		<event type="init">
+			<action type="variable value">
+				<parameter name="operateriid" value="@@operateriid" />
+			</action>
+		</event>
+		<event type="close">
+			<action type="datarun nonquery" value="~dtPuniParametarTemp" />		
+		</event>
+		<layout>
+			<group cols="1" rows="5" col="1" row="1">
+				<item col="1" row="1" caption="Datum od:">
+					<dateedit name="datDatumOd" value="now" required="true"/>
+				</item>
+				<item col="1" row="2" caption="Datum do:">
+					<dateedit name="datDatumDo" value="now" required="true"/>
+				</item>
+				<item col="1" row="3" caption="Sa skladišta:">
+					<comboedit name="cmbSkladiste" dataname="~dtPuniSklad" valuefield="skladisteid" displayfield="naziv"/> 
+				</item>
+				<item col="1" row="4" caption="Klasa:">
+					<comboedit name="cmbKlasa" dataname="~dtPuniKlasu" valuefield="klmasterrobaid" displayfield="naziv"/>
+				</item>
+				<item col="1" row="5" caption="Prikaži i sve podklase:">
+					<checkedit name="chkPodklase" value="false"/>
+				</item>
+			</group>
+		</layout>
+
+			<panelbuttons>
+				<buttons>
+					<button name="btnPotvrdi" caption="Potvrdi">
+						<event type="click">
+							<action type="validate" />
+							<action type="datarun nonquery" value="~dtUnosParam" />
+							<action type="control populate" value="parent.#grdGlava" />
+							<action type="form close" />
+						</event>
+					</button>
+					<button name="btnOdustani" caption="Odustani" type="cancel" dock="right"/>
+				</buttons>
+			</panelbuttons>
+
+
+				<datalist>
+					<data command="spSkladIzvjestaj_KALO1" name="dtUnosParam">
+						<parameter name="@action" value="999" />
+						<parameter name="@datod" value="#datDatumOd" />
+						<parameter name="@datdo" value="#datDatumDo" />
+						<parameter name="@klasaid" value="#cmbKlasa" />
+						<parameter name="@podklase" value="1" if="#chkPodklase==true" />
+						<parameter name="@podklase" value="0" else="" />
+						<parameter name="@skladisteid" value="#cmbSkladiste" />
+						<parameter name="@operateriid" value="@@operateriid" />
+					</data>
+
+
+					<data command="spSkladIzvjestaj_KAL_skladisteQuery" name="dtPuniSklad">
+						<!-- <parameter name="@operateriid" value="$operateriid" /> -->
+					</data>
+					<data command="spSkladIzvjestaj_KAL_KlMasterRobaQuery" name="dtPuniKlasu" />
+					<data command="spSkladIzvjestaj_KAL_PuniParametarTemp" name="dtPuniParametarTemp">
+						<parameter name="@datod" value="#datDatumOd" />
+						<parameter name="@datdo" value="#datDatumDo" />
+						<parameter name="@klasaid" value="#cmbKlasa" />
+						<parameter name="@podklase" value="1" if="#chkPodklase==true" />
+						<parameter name="@podklase" value="0" else="" />
+						<parameter name="@skladisteid" value="#cmbSkladiste" />
+						<parameter name="@operateriid" value="@@operateriid" />
+					</data>
+
+
+				</datalist>
+	</form>
+
+	<form name="frmParametarNovi" caption="Parametri upita">
+		<event type="oninit">
+			<action type="datarun reader" value="~dtParameterQuery" />
+		</event>
+		<event type="shown">
+			<action type="control value" value="datDatumOd">
+				<parameter value="~dtParameterQuery.@datod" />
+			</action>
+			
+		</event>
+		<event type="close">
+			<action type="datarun nonquery" value="~dtPuniParametarTemp" />			
+		</event>
+		<layout>
+			<group cols="1" rows="5" col="1" row="1">
+				<item col="1" row="1" caption="Datum od:">
+					<dateedit name="datDatumOd"  datavalue="~dtParameterQuery.@datod" required="true"/>
+				</item>
+				<item col="1" row="2" caption="Datum do:">
+					<dateedit name="datDatumDo" datavalue="~dtParameterQuery.@datdo" required="true"/>
+				</item>
+				<item col="1" row="3" caption="Sa skladišta:">
+					<comboedit name="cmbSkladiste" datavalue="~dtParameterQuery.@skladisteid" dataname="~dtPuniSklad" valuefield="skladisteid" displayfield="naziv"/>
+				</item>
+				<item col="1" row="4" caption="Klasa:">
+					<comboedit name="cmbKlasa" datavalue="~dtParameterQuery.@klasaid" dataname="~dtPuniKlasu" valuefield="klmasterrobaid" displayfield="naziv"/>
+				</item>
+				<item col="1" row="5" caption="Prikaži i sve podklase:">
+					<checkedit name="chkPodklase" datavalue="~dtParameterQuery.@podklasa" value="false" if="~dtParameterQuery.@podklasa==0" />
+					<checkedit name="chkPodklase" datavalue="~dtParameterQuery.@podklasa" value="true" if="~dtParameterQuery.@podklasa==1" />
+				</item>
+			</group>
+		</layout>
+
+			<panelbuttons>
+				<buttons>
+					<button name="btnPotvrdi" caption="Potvrdi">
+						<event type="click">
+							<action type="validate" />
+							<action type="datarun nonquery" value="~dtUnosParam" />
+							<action type="control populate" value="parent.#grdGlava" />
+							<action type="form close" />
+						</event>
+					</button>
+					<button name="btnOdustani" caption="Odustani" type="cancel" dock="right"/>
+				</buttons>
+			</panelbuttons>
+
+
+				<datalist>
+
+					<data command="spSkladIzvjestaj_KAL_ParametarQuery" name="dtParameterQuery">
+						<parameter name="@ParamTempID" value="1" />
+					</data>
+
+					<data command="spSkladIzvjestaj_KALO1" name="dtUnosParam">
+						<parameter name="@action" value="999" />
+						<parameter name="@datod" value="#datDatumOd" />
+						<parameter name="@datdo" value="#datDatumDo" />
+						<parameter name="@klasaid" value="#cmbKlasa" />
+						<parameter name="@podklase" value="1" if="#chkPodklase==true" />
+						<parameter name="@podklase" value="0" else="" />
+						<parameter name="@skladisteid" value="#cmbSkladiste" />
+						<parameter name="@operateriid" value="@@operateriid" />
+					</data>
+
+					<data command="spSkladIzvjestaj_KAL_skladisteQuery" name="dtPuniSklad">
+						<!-- <parameter name="@operateriid" value="@@operateriid" /> -->
+					</data>
+					<data command="spSkladIzvjestaj_KAL_KlMasterRobaQuery" name="dtPuniKlasu" />
+
+					<data command="spSkladIzvjestaj_KAL_PuniParametarTemp" name="dtPuniParametarTemp">
+						<parameter name="@datod" value="#datDatumOd" />
+						<parameter name="@datdo" value="#datDatumDo" />
+						<parameter name="@klasaid" value="#cmbKlasa" />
+						<parameter name="@podklase" value="1" if="#chkPodklase==true" />
+						<parameter name="@podklase" value="0" else="" />
+						<parameter name="@skladisteid" value="#cmbSkladiste" />
+						<parameter name="@operateriid" value="@@operateriid" />
+					</data>
+		
+				</datalist>
+	</form>
+
+
+	<form name="frmKreirajDokument" caption="Kreiraj dokument">
+		<layout>
+			<group cols="1" rows="4" col="1" row="1">
+				<item col="1" row="1" caption="Datum:">
+					<dateedit name="DatDatum" value="now"  required="true"/>
+				</item>
+				<item col="1" row="2" caption="Vrsta dokumenta:">
+					<comboedit name="VrstaDok" dataname="~dtVrstaDok" valuefield="vrstadokid" displayfield="opis" value="42" required="true"/>
+				</item>
+				<item col="1" row="3" caption="Odgovorna osoba:">
+					<searchedit name="srcTraziOsobe" dataname="~dtTraziOsobe" fontsizedelta="1" fontbold="True" fieldtext="Osoba" fieldvalue="OsobeId" function="srcTraziOsobe" required="true"/>
+				</item>
+				<item col="1" row="4" caption="Organizacijska shema:">
+					<comboedit name="OrgShema" dataname="~dtGetOrgShema" valuefield="orgshemaid" displayfield="naziv" value="1" required="true"/>
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnPotvrdi" caption="Potvrdi">
+					<event type="click">
+							<action type="validate" />
+							<action type="datarun reader" value="~dtUnosDokumenta" />
+							<action type="form close" />
+					</event>
+ 				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right"/>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spSkladIzvjestaj_KAL_VrstaDok" name="dtVrstaDok"/>
+			<data command="spSkladIzvjestaj_KAL_osobe" name="dtgetOsobe" />
+			<data command="spSkladIzvjestaj_KAL_OrgShema" name="dtGetOrgShema" />
+
+			<data command="spSkladIzvjestaj_KAL_DodajGlavu" name="dtUnosDokumenta">
+				<parameter name="@datumdok" value="#DatDatum" />
+				<parameter name="@vrstadokid" value="#VrstaDok" />
+				<parameter name="@osobeid" value="#srcTraziOsobe" />
+				<parameter name="@orgshemaid" value="#OrgShema" />
+				<parameter name="@skladisteid" value="$skladisteid" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@KkvalGlaid" value="$Kkvalglaid" />
+				<parameter name="@Robaid" value="$RobaID" />
+				<parameter name="@Kolicina" value="$KolicinaIzlaz" />
+			</data>
+
+			<data command="spTraziOsobe" name="dtTraziOsobe">
+				<parameter name="@action" value="NaseOsobe" />
+				<parameter name="@uvjet" value='#srcTraziOsobe.text' />
+			</data>
+		</datalist>
+	</form>
+
+
+
+
+</root>

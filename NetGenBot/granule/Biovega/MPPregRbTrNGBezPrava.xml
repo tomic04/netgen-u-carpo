@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+
+<PROJECT  
+		ONLOAD=":FORM1"  		
+		REPORT="Etikete.clsEtikete" 	
+		CMD1CAPTION="Parametri:FORM1" 
+		CMD2CAPTION="" 
+		CMD3CAPTION="" 
+		CMD4CAPTION=""
+ 		CMD5CAPTION="" 
+		CMD6CAPTION=""  
+		CMD7CAPTION="Lista"  
+		CMD8CAPTION="Etikete"
+		MASTERDBLCLICK=":KARTICA"
+	    POPUPMASTER=""
+		SETDEFAULTS="spmpPermissionNG @action = 0, @operateriid = @@operateriid, @object= '@@xmlname',  @trazi ='' "> 
+
+ 
+  <NAME>Pregled robe po SVIM trgovinama</NAME>
+  <CAPTION>Pregled robe po SVIM trgovinama</CAPTION>
+  
+
+  <FORM1 	FILLEXPLORER="TRUE" 
+		WIDTH="8000" 
+		ONSUBMIT="spMPPregRobeTrgovinaNGBezPrava @action=1, @operateriid = @@operateriid, @nenc = @@nenc," 
+		ONLOAD="select year(getdate()) as godina " 
+		HEIGHT="6100" 
+		CAPTION="Parametri" 
+		BORDERSTYLE="3" 
+		CMD1CAPTION="Pokaži" 
+		CMD2CAPTION="Odustani" 
+		CMD3CAPTION="" 
+		CHILDFORM="">
+
+	  <INPUT TYPE="text" NAME="godina" CAPTION="Godina*" TOP="200" LEFT="2200"  WIDTH="800" HEIGHT="320" TABINDEX="0" ALLOWEMPTY="true"
+			  SQL=""/>
+
+	  <INPUT TYPE="combo" NAME="trgovinaid" CAPTION="Trgovina*" TOP="600" LEFT="2200"  WIDTH="5500" HEIGHT="320" TABINDEX="0" ALLOWEMPTY="true" 
+                SQL="select t.trgovinaid,ltrim(rtrim(t.oznaka)) + ' ' + ltrim(rtrim(t.opis)) as [Naziv]  from trgovina t where t.aktivno = 1"/>
+		
+		<INPUT TYPE="TRAZILICA" CAPTION="Roba*" NAME="robaid" TOP="1100" LEFT="2200" TEXT="" WIDTH="5500" HEIGHT="320"
+			    SQL="roba#robaid#Naziv%#robakod%#userid%#barcode%" /> 
+		
+		<INPUT TYPE="TRAZILICA" CAPTION="Klasa*" NAME="klasaid" TOP="1700" LEFT="2200" WIDTH="5500" HEIGHT="320"
+				SQL="klMasterRoba#klmasterrobaid#Naziv%" /> 
+		
+		<INPUT TYPE="combo" NAME="jmid" CAPTION="Dodatna jedinica mjere*" TOP="2200" LEFT="2200" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="true"
+				SQL="select distinct j.jmid, naziv from jm j inner join jmroba jm on j.jmid = jm.jmid order by naziv"/>
+	  
+		<INPUT TYPE="VB.checkbox" NAME="podklase" TOP="2800" LEFT="2200" WIDTH="3500" HEIGHT="320" CAPTION="pokaži i sve podklase"/>
+		<INPUT TYPE="VB.checkbox" NAME="stanje" TOP="3300" LEFT="2200" WIDTH="4000" HEIGHT="320" CAPTION="pokaži samo robe kojima je stanje različito od 0"/>
+		
+		<INPUT TYPE="search" NAME="partneriid" TOP="3800" LEFT="2200" WIDTH="5500" CAPTION="Dobavljač*" ALLOWEMPTY="TRUE" SQL="vipartneri#partneriid#naziv%#%mjestanaziv%#!adresa" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+
+		<INPUT TYPE="combo" NAME="klklrobaid" CAPTION="Dodatna klasa - osnovna*" TOP="4200" LEFT="2200" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="true" ONLOSTFOCUS="select 'refresh' as klrobaid "
+				SQL="select klklrobaid , naziv from klklroba order by naziv "/>
+
+		<INPUT TYPE="combo" NAME="klrobaid" CAPTION="Dodatna klasa - pomoćna*" TOP="4600" LEFT="2200" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="true"
+				SQL="select klrobaid , naziv from klroba where klklrobaid = @@klklrobaid order by naziv "/>
+
+</FORM1>
+
+	
+	
+ <KARTICA 	FILLEXPLORER="TRUE" 
+		WIDTH="15000" 
+		ONSUBMIT="" 
+		ONLOAD="" 
+		HEIGHT="9500" 
+		CAPTION="Krtica robe" 
+		BORDERSTYLE="3" 
+		CMD1CAPTION="" 
+		CMD2CAPTION="Kraj" 
+		CMD3CAPTION="" 
+		CHILDFORM=""> 
+
+			<INPUT TYPE="grid" NAME="grid1" REFRESHAFTERCHILD="TRUE" TOP="200" LEFT = "200" WIDTH="14500" HEIGHT="8000" TABINDEX="2" 
+                         SQL="exec spMPStanjeKarticaNG @action=0, @nenc = @@nenc, @robaid=@@id, @trgovinaid=@@trgovinaid, @totalgen = 2 " /> 
+</KARTICA>
+
+	<DODAJVISE 	FILLEXPLORER=""
+	   WIDTH="7000"
+	   ONSUBMIT=""
+	   ONLOAD="select convert(varchar(20), userid ) + ' ' + naziv as roba , @@trgovinaid as trgovinaid from roba where robaid = @@ROBAID"
+	   HEIGHT="8500"
+	   CAPTION="Dodavanje robe na više trgovina "
+	   BORDERSTYLE="3"
+	   CMD1CAPTION=""
+	   CMD2CAPTION=""
+	   CMD3CAPTION=""
+		FOCUS="trg"
+	   CHILDFORM="">
+
+		<INPUT TYPE="text" CAPTION="Roba*" NAME="roba" TOP="500" LEFT="500" TEXT="" STYLE="1" SIZE="10" WIDTH="5500" HEIGHT="320"/>
+		<INPUT TYPE="text" CAPTION="" NAME="trgovinaid" VISIBLE="FALSE" TOP="500" LEFT="500" TEXT="" STYLE="1" SIZE="10" WIDTH="5500" HEIGHT="320"/>
+
+		<INPUT TYPE="grid" NAME="trg" REFRESHAFTERCHILD="TRUE" TOP="1000" LEFT = "500" WIDTH="5800" HEIGHT="6000" TABINDEX=""
+					 SQL="spMPPregRobeTrgovinaNGBezPrava @action = 3, @robaid = @@robaid"
+					 ONCLICK="" />
+
+		<INPUT TYPE="button" NAME="ok"      CAPTION="Ažuriraj"  TOP="7500" LEFT="1000" WIDTH="1106" HEIGHT="322"
+			   ONCLICK="FOREACHSELECTED(trg)#spMPPregRobeTrgovinaNGBezPrava @action = 4, @robaid = @@robaid, @trgovinaid = @@trgovinaid,@trgovina2id = @(trg..trgovinaid)#OK"   />
+		<INPUT TYPE="button" NAME="cancel"  CAPTION="Odustani" TOP="7500" LEFT="2500" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+
+	</DODAJVISE>
+
+	<MULTISELECTETIKETE FILLEXPLORER="TRUE"
+		   WIDTH="15000"
+		   STORA=""
+		   STARTUPSTORA="dbo.spMPPripremaNaljepnica @trgovinaid = @@trgovinaid , @action = 1, @id = null, @operateriid = @@operateriid, @nacin = 4, @multiselect = 1"
+		   HEIGHT="9500"
+		   CAPTION=""
+		   BORDERSTYLE="3"
+		   CMD1CAPTION=""
+		   CMD2CAPTION=""
+		   CMD3CAPTION=""
+		   CHILDFORM="">
+
+	</MULTISELECTETIKETE>
+
+
+</PROJECT> 

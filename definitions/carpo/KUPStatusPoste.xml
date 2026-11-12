@@ -1,0 +1,355 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root version="1.0">
+  <form name="frmMaster" type="master" caption="Status pošte">
+    <event type="init">
+      <action type="control populate" value="#grdGlava" />
+      <!--<action type="control populate" value="#grdTabOperateri" />
+      <action type="control populate" value="#grdTabEmail" />-->
+    </event>
+    <event type="load">
+      <action type="variable value" >
+        <parameter name="NoviKUPStatusId" value="0" type="int"/>
+      </action>
+      <action type="variable value" >
+        <parameter name="NoviOperateriId" value="0" type="int"/>
+      </action>
+       <action type="variable value" >
+        <parameter name="NoviKUPOdobriPredlozakId" value="0" type="int"/>
+      </action>
+      <action type="variable value" >
+        <parameter name="NoviKUPOdobriLinijaId" value="0" type="int"/>
+      </action>
+
+      <action type="variable value" >
+        <parameter name="Poruka" value="" type="string"/>
+      </action>
+
+    </event>
+    <event type="shown">
+      <action type="control disable" value="#btnIzmijeni,#btnObrisi" if="#grdGlava.rowcount==0"/>
+      <action type="control enable" value="#btnIzmijeni,#btnObrisi"  else="" />
+    
+    </event>
+    <managerlayout>
+      <grid name="grdGlava" type="master" key="KUPStatusId" autopopulate="false" showgroupsum="false" dataname="~dtPopuniGrid" savelayout="true" bestfitonrefresh="true" multiselect="true">
+        <fields>
+          <field name="korak" caption="Korak" fixwidth="100" />
+          <field name="opis" caption="Opis" fixwidth="200"/>
+          <field name="proknjizi" caption="Proknjiži" fixwidth="100"/>
+        </fields>
+    
+        <event type="doubleclick">
+          <action type="form open" value="frmStatusPosteUnos" if="#grdGlava.rowcount&gt;0">
+            <parameter name="KUPStatusId" value="#grdGlava.@KUPStatusId" />
+            <parameter name="Ind_Unos" value="0" />
+            <parameter name="Tekst" value="izmjena" type="string" />
+          </action>
+        </event>
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdTabOperateri"/>
+          <action type="control disable" value="#btnIzmijeni,#btnObrisi" if="#grdGlava.rowcount==0"/>
+          <action type="control enable" value="#btnIzmijeni,#btnObrisi"  else="" />      
+        </event>
+      </grid>
+
+      <tabs name="detTabs">
+        <event type="selectedtabchanged">
+            <action if="#detTabs.selectedtab==tabOperateri">
+              <action type="control populate" value="#grdTabOperateri"/>
+              <action type="control caption" value="#tabOperateri">
+                <parameter value="Pregled operatera ({#grdTabOperateri.rowcount})"/>
+              </action>
+            </action>
+            <action elseif="#detTabs.selectedtab==tabEmail">
+              <action type="control populate" value="#grdTabEmail"/>
+              <action type="control caption" value="#tabEmail">
+                <parameter value="Email adrese operatera ({#grdTabEmail.rowcount})"/>
+              </action>
+            </action>
+
+            <action elseif="#detTabs.selectedtab==tabOdobravanje">           
+                <action type="control populate" value="#grdTabOdobravatelji"/>
+                <action type="control caption" value="#tabOdobravanje">
+                  <parameter value="Odobravatelji ({#grdTabOdobravatelji.rowcount})"/>
+                </action>
+            </action>
+        
+            <action elseif="#detTabs.selectedtab==tabPredlosci">           
+                <action type="control populate" value="#grdPredlosciLinije"/>
+                <!--<action type="control caption" value="#tabPredlosci">
+                  <parameter value="Predlošci i linije odobravanja ({#grdPredlosciLinije.rowcount})"/>
+                </action>-->
+            </action>
+        </event>
+        
+        <tab name="tabOperateri" caption="Pregled operatera">
+          <grid name="grdTabOperateri"  keyfield="operateriid" dataname="~dtTabOperateri" multiselect="false"  savelayout="true">      
+            <fields inherited="true">
+              <field name="Operater" caption="Operater" fixwidth="200" />
+              <field name="Admin" caption="Admin" fixwidth="100" editable="true"/>          
+            </fields>
+            <event type="cellvaluechanged"> 
+		            <action type="datarun nonquery" value="~dtUpdateAdmin" />	
+                <action type="control populate keepfocus" value="#grdTabOperateri" />
+	          </event>
+            <menu showalways="true">
+              <menuitem name="mitemUnos" caption="Unesi" group="2"  >
+                <event type="click">
+                  <action type="form open" value="frmStatusPregledOperatera">
+                    <parameter name="KUPStatusId" value="#grdGlava.@KUPStatusId"/>
+                    <parameter name="Tekst" value="unos" type="string"/>
+                  </action>
+                </event>
+              </menuitem>
+              <menuitem name="mitemBrisanje" caption="Obriši" sort="3" >
+                <event type="click">
+						      <action type="confirm" value="Želite li obrisati operatera: {#grdTabOperateri.@Operater}?">
+							      <action type="datarun nonquery" value="~dtDeleteOperater" >
+								      <action type="control populate" value="#grdTabOperateri"/>
+							      </action>
+						      </action>
+					      </event>
+              </menuitem>
+            </menu>
+            <styles>
+              <!-- BOJANJE-->
+              <style name="fontcolor" value="red" if="#grdTabOperateri.@Admin==DA" />
+            </styles>
+          </grid>
+        </tab>
+        <tab name="tabEmail" caption="Email adrese operatera">
+          <grid name="grdTabEmail" keyfield="operateriid" multiselect="true" dataname="dtTabEmail" showmenuprintitem="false" showmenutools="false" savelayout="true">
+            <fields inherited="true">
+              <field name="Operater" caption="Operater" fixwidth="200" />
+              <field name="Email" caption="Email adresa" fixwidth="400" editable="true"/>
+            </fields>
+            <event type="cellvaluechanged">
+              <action type="datarun nonquery" value="~dtUpdateEmail" />
+              <action type="control populate keepfocus" value="#grdTabEmail" />
+            </event>
+            
+            <menu showalways="true">
+              <menuitem name="mitemBrisanje" caption="Obriši" sort="3" >
+                <event type="click">
+                  <action type="confirm" value="Želite li obrisati email adresu operatera: {#grdTabEmail.@Operater}?">
+                    <action type="datarun nonquery" value="~dtDeleteEmail" >
+                      <action type="control populate" value="#grdTabEmail"/>
+                    </action>
+                  </action>
+                </event>
+              </menuitem>
+            </menu>
+            
+          </grid>
+        </tab>
+        <tab name="tabOdobravanje" caption="Operateri za odobravanje">
+          <grid name="grdTabOdobravatelji" keyfield="operateriid" multiselect="true" key="operateriid" dataname="dtTabOdobravatelji" showmenuprintitem="false" showmenutools="false" savelayout="true" showcheckboxes="false">
+            <fields inherited="true">
+              <field name="Checked" caption=" " editable="true" edittype="bit" showtotalsum="false"/>
+              <field name="Operater" caption="Operater" fixwidth="200" />
+            </fields>
+            <event type="cellvaluechanged">
+              <action type="datarun nonquery" value="~dtInsertOdobravatelj" />
+              <action type="control populate keepfocus" value="#grdTabOdobravatelji" />
+            </event>
+            <styles>
+              <!-- BOJANJE-->
+              <style name="fontcolor" value="green" if="#grdTabOdobravatelji.@Checked==True" />
+            </styles>
+          </grid>
+        </tab>
+        <tab name="tabPredlosci" caption="Predlošci i linije odobravanja">
+          <grid name="grdPredlosciLinije" keyfield="KUPOdobriPredlozakId" groupsummarystyle="ifexpanded" showautofilterrow="false" multiselect="true" showgroupsum="false" dataname="dtPredlosciLinije" showmenuprintitem="false" showmenutools="false" savelayout="true" showgroupedcolumns="false">
+            <fields inherited="true">
+              <field name="Predlozak" caption="Predložak" fixwidth="200" groupindex="0"/>
+              <field name="Linija" caption="Linija" fixwidth="200" />
+              <field name="RedOdobravanjaLinija" caption="Red odobravanja" fixwidth="100" />
+              <field name="Operateri" caption="Operateri" fixwidth="500" />
+            </fields>
+            <menu showalways="true">
+              <menuitem name="mitemUnos" caption="Unesi predložak" group="2"  >
+                <event type="click">
+                  <action type="form open" value="frmStatusPredlosciILinije">
+                    <parameter name="KUPOdobriPredlozakId" value="#grdPredlosciLinije.@KUPOdobriPredlozakId"/>
+                    <parameter name="Ind_Unos" value="1" type="int"/>
+                    <parameter name="Tekst" value="unos" type="string"/>
+                  </action>
+                </event>
+              </menuitem>
+              <menuitem name="mitemIzmjeni" caption="Izmijeni predložak" group="2" >
+                <event type="click">
+                  <action type="form open" value="frmStatusPredlosciILinije">
+                    <parameter name="KUPOdobriPredlozakId" value="#grdPredlosciLinije.@KUPOdobriPredlozakId"/>
+                     <parameter name="KUPOdobriLinijaId" value="#grdPredlosciLinije.@KUPOdobriLinijaId"/>
+                     <parameter name="Ind_Unos" value="0" type="int"/>
+                    <parameter name="Tekst" value="izmjena" type="string"/>
+                  </action>
+                </event>
+              </menuitem>
+               <menuitem name="mitemUnosLinija" caption="Unesi linije" group="2">
+                <event type="click">
+                  <action type="form open" value="frmStatusPredlosciILinije">
+                     <parameter name="KUPOdobriPredlozakId" value="#grdPredlosciLinije.@KUPOdobriPredlozakId"/>
+                     <parameter name="Ind_Unos" value="2" type="int"/>
+                    <parameter name="Tekst" value="unos linije" type="string"/>
+                  </action>
+                </event>
+              </menuitem>
+                <menuitem name="mitemIzmjeniLinija" caption="Izmijeni liniju" group="2" >
+                <event type="click">
+                  <action type="form open" value="frmStatusPredlosciILinije">
+                     <parameter name="KUPOdobriLinijaId" value="#grdPredlosciLinije.@KupOdobriLinijaId"/>
+                     <parameter name="Ind_Unos" value="3" type="int"/>
+                    <parameter name="Tekst" value="izmjena" type="string"/>
+                  </action>
+                </event>
+              </menuitem>
+              <menuitem name="mitemLinijeOperateri" caption="Operateri" group="2" >
+                <event type="click">
+                  <action type="form open" value="frmStatusOperateriLinije">
+                    <parameter name="KUPOdobriLinijaId" value="#grdPredlosciLinije.@KupOdobriLinijaId" type="int"/>
+                    <parameter name="KUPOdobriPredlozakId" value="#grdPredlosciLinije.@KUPOdobriPredlozakId" type="int"/>
+                    <parameter name="Tekst" value="Predložak::{#grdPredlosciLinije.@Predlozak}, Linija:{#grdPredlosciLinije.@Linija}" type="string"/>               
+                  </action>
+                </event>
+              </menuitem>
+            </menu>
+           </grid>
+        </tab>
+      </tabs>      
+    </managerlayout>
+    
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnesi" caption="UNESI" type="add">
+          <menuitem control="#grdGlava"/>			
+          <event type="click">
+            <action type="form open" value="frmStatusPosteUnos" >
+              <parameter name="KUPStatusId" value="null" />
+              <parameter name="Ind_Unos" value="1" />
+              <parameter name="Tekst" value="unos" type="string"/>
+            </action>
+            <action type="control disable" value="#btnIzmijeni,#btnObrisi" if="#grdGlava.rowcount==0"/>
+            <action type="control enable" value="#btnIzmijeni,#btnObrisi"  else="" />
+          </event>
+        </button>      
+        <button name="btnIzmijeni" caption="IZMIJENI" type="edit">
+          <menuitem control="#grdGlava"/>	
+          <event type="click">
+            <action type="form open" value="frmStatusPosteUnos">
+              <parameter name="KUPStatusId" value="#grdGlava.@KUPStatusId" />
+              <parameter name="Ind_Unos" value="0" />
+              <parameter name="Tekst" value="izmjena" type="string" />
+            </action>
+          </event>
+        </button>
+        <button name="btnObrisi" caption="OBRIŠI" type="delete">
+          <menuitem control="#grdGlava"/>	
+          <event type="click">
+            <action type="confirm" value="Želite li obrisati status ulazne pošte: {#grdGlava.@Opis}?">
+              <action type="datarun nonquery" value="~dtDelete" >
+                <action type="control populate" value="#grdGlava" />
+
+                <action type="control disable" value="#btnIzmijeni,#btnObrisi" if="#grdGlava.rowcount==0"/>
+                <action type="control enable" value="#btnIzmijeni,#btnObrisi"  else="" />
+                
+              </action>
+            </action>
+          </event>
+        </button>
+      
+       </buttons>
+    </panelbuttons>
+
+    <datalist>
+
+      <data command="spCKUPStatusPosteQuery" name="dtPopuniGrid">
+        <parameter name="@action" value="grid"/>
+      </data>
+
+      <data command="spCKUPStatusPosteAzur" name="dtDelete">
+        <parameter name="@action" value="brisanje"/>
+        <parameter name="@id" value="#grdGlava.@KUPStatusId" />
+      </data>
+      
+      <data command="spCKUPStatusPostePregledOperatera" name="dtTabOperateri">
+        <parameter name="@id" value="#grdGlava.@KUPStatusId" />
+      </data>
+    
+      <data command="spCKUPStatusPosteAzur" name="dtDeleteOperater">
+        <parameter name="@action" value="brisanjeoperater"/>
+        <parameter name="@KUPStatusId" value="#grdGlava.@KUPStatusId" type="int"/>
+        <parameter name="@OperateriId" value="#grdTabOperateri.@OperateriId" type="int"/>
+      </data>
+      
+      <data command="spCKUPStatusPosteAzur" name="dtUpdateAdmin">
+        <parameter name="@action" value="editadmin"/>
+        <parameter name="@KUPStatusId" value="#grdGlava.@KUPStatusId" />
+        <parameter name="@OperateriId" value="#grdTabOperateri.@OperateriId" />
+        <parameter name="@AdminStr" value="#grdTabOperateri.@Admin" />
+      </data>
+
+      <data command="spCKUPOperateriEmail" name="dtTabEmail">
+        <parameter name="@action" value="pokazi_email"/>       
+      </data>
+      
+      <data command="spCKUPOperateriEmail" name="dtDeleteEmail">
+        <parameter name="@action" value="obrisi_email"/>
+        <parameter name="@OperateriId" value="#grdTabEmail.@operateriid" type="int"/>
+      </data>
+
+      <data command="spCKUPOperateriEmail" name="dtUpdateEmail">
+        <parameter name="@action" value="izmjeni_email"/>
+        <parameter name="@OperateriId" value="#grdTabEmail.@operateriid" />
+        <parameter name="@Email" value="#grdTabEmail.@Email" />
+      </data>
+
+      <data command="spCKUPOdobravatelji" name="dtTabOdobravatelji">
+        <parameter name="@action" value="svioperateri"/>      
+      </data>
+
+      <data command="spCKUPOdobravatelji" name="dtInsertOdobravatelj">
+        <parameter name="@action" value="odobravateljiinsert"/>
+        <parameter name="@OperateriId" value="#grdTabOdobravatelji.@operateriid" type="int"/>
+      </data>
+      
+      <data command="spCKUPPredlosciILinije" name="dtPredlosciLinije">
+        <parameter name="@action" value="predlosci"/>      
+      </data>
+
+      
+
+    </datalist>
+
+  </form>
+
+  <form name="frmStatusPosteUnos" path="frmStatusPosteUnos.xml"/>
+  <form name="frmStatusPregledOperatera" path="frmStatusPregledOperatera.xml"/>
+  <form name="frmStatusPredlosciILinije" path="frmStatusPredlosciILinije.xml"/>
+  <form name="frmStatusOperateriLinije" path="frmStatusOperateriLinije.xml"/>
+  
+
+
+  <datalist>
+    
+    <data command="spCKUPStatusPosteQuery" name="dtPopuniGrid">
+      <parameter name="@action" value="grid"/>
+    </data>
+
+    <data command="spCKUPStatusPosteQuery" name="dtGet">
+      <parameter name="@action" value="edit"/>
+      <parameter name="@id" value="$KUPStatusId" type="int"/>
+    </data>
+
+    <data command="spCKUPPredlosciILinije" name="dtGetPredlosci">
+      <parameter name="@action" value="getpredlosci"/>
+      <parameter name="@id" value="$KUPOdobriPredlozakId" type="int"/>
+    </data>
+
+    <data command="spCKUPPredlosciILinije" name="dtGetLinije">
+      <parameter name="@action" value="getlinije"/>
+      <parameter name="@id" value="$KUPOdobriLinijaId" type="int"/>
+    </data>
+    
+  </datalist>
+</root>

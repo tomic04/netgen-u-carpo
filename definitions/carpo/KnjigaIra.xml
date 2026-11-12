@@ -1,0 +1,407 @@
+<root version="1.0.0.1." loglevel="5">
+<!--22.11.2022. IF dodao novi ispis OSNOVNI ISPIS EUR -->
+<!--27.1.2022. AA timeout na dtGlavni-->
+<!--22.11.2021. AA dodala datum isporuke HD 68360-->
+<!-- 10.9.2020. AA function="Zakljuci" na menZakljuci -->
+	<form name="frmKnjigaIraInsert" path="KnjigaIra.frmKnjigaIraInsert.xml"/>	
+	<form name="frmVrsteKnjigeIra" path="KnjigaIra.frmVrsteKnjigeIra.xml"/>	
+	<form name="frmZakljucak" path="KnjigaIra.frmZakljucak.xml"/>	
+	<form name="frmGlavni" type="master" caption="Knjiga izlaznih računa">
+		<event type="init">
+			<action type="datarun reader" value="~dtDrvoPozicija"/>
+			<action type="datarun reader" value="~dtBlokada"/>
+			<action type="datarun reader" value="~dtTekGodina"/>
+			<!--BLOKADA-->
+			<action type="variable value">
+				<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date"/>
+				<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date"/>
+			</action>
+		</event>
+		<event type="load">
+			<action type="variable value" >
+				<parameter name="PozDrvoZak" value="~dtDrvoPozicija.@Poz"/>
+				<parameter name="Odustani" value="false" type="bool"/>
+				<parameter name="Godina" value="~dtTekGodina.@TekGod"/>
+			</action>
+ 			<action type="control expand" value="#tree">
+				<parameter name="key" value="$Godina"/>
+			</action> 
+			<action type="control focus" value="#tree">
+				<parameter value="$PozDrvoZak"/>
+			</action>			
+		</event>
+		<event type="keydown">
+			<!--INSERT-->
+			<action if="key==45">
+				<part name="prtIraUnesi" path="prtKnjigaIra.xml"/>
+			</action>
+		</event>
+		<managerlayout>
+			<tree name="tree" dataname="~dtDrvo" allowdrop="true" parentfield="ParentId" expandlast="false" caption="Vrste knjiga" key="Id"  searchfield="DrvoId">
+				<event type="focusedrowchanged">	
+					<action type="menu enable" value="#menUnesi" if="#tree.@value==godina||#tree.@value==vrsta"/>
+					<action type="menu disable" value="#menUnesi" else=""/>
+					<action type="menu enable" value="#menIzmijeni" if="#tree.@value==vrstaknjige"/>
+					<action type="menu disable" value="#menIzmijeni" else=""/>
+					<action type="menu enable" value="#menObrisi" if="#tree.@value==vrstaknjige"/>
+					<action type="menu disable" value="#menObrisi" else=""/>
+					<action type="menu enable" value="#menZakljuci" if="#tree.@value!=godina&amp;&amp;#tree.@value!=vrsta"/>
+					<action type="menu disable" value="#menZakljuci" else="" />					
+					<action type="menu enable" value="#menPonistiZakljucak" if="#tree.@value==datumzak"/>
+					<action type="menu disable" value="#menPonistiZakljucak" else=""/>					
+					<action type="control populate" value="#grdGlava"/> 
+				</event>
+				<event type="dragover">
+					<action type="drop allow" value="true" if="#grdGlava.@RedniBroj==RBROJ"/>
+				</event>				
+				<fields>
+					<field name="name"/>
+				</fields>
+				<menu>
+					<menuitem caption="Unesi" name="menUnesi">
+						<event type="click">
+							<action type="form open" value="frmVrsteKnjigeIra">
+								<parameter name="KntVrsteKnjigaIraId" value="null" type="int"/>
+							</action>								
+							<action type="control populate" value="#tree"/>
+							<action type="control expand" value="#tree">
+								<parameter name="key" value="$Godina"/>
+							</action>  
+							<action type="control focus" value="#tree">
+								<parameter value="$DrvoPoz"/>
+							</action>
+						</event>
+					</menuitem>
+					<menuitem caption="Izmijeni" name="menIzmijeni">
+						<event type="click">
+							<action type="form open" value="frmVrsteKnjigeIra">
+								<parameter name="KntVrsteKnjigaIraId" value="#tree.@KntVrsteKnjigaIraId" type="int"/>
+							</action>
+							<action type="control populate keepfocus" value="#tree"/>
+						</event>	
+					</menuitem>
+					<menuitem caption="Obriši" name="menObrisi">
+						<event type="click">
+							<action type="confirm" value="Želite li zaista obrisati označenu knjigu?">
+								<action type="datarun scalar" value="~dtObrisiKnjigu">
+									<parameter name="$DrvoPoz"/>
+									<action type="control populate" value="#tree" >
+										<action type="control expand" value="#tree">
+											<parameter name="key" value="$Godina"/>
+										</action>  
+										<action type="control focus" value="#tree">
+											<parameter value="$DrvoPoz"/>
+										</action>
+									</action>
+								</action> 
+							</action>		
+						</event>
+					</menuitem>  
+					<menuitem name="menSeparator" type="separator"/>
+                    <menuitem name="menZakljuci" caption="Zaključi" function="Zakljuci">
+						<event type="click">
+							<part name="prtZakljuci" path="prtKnjigaIra.xml"/>
+						</event>
+					</menuitem>
+                    <menuitem name="menPonistiZakljucak" caption="Poništi zaključak" function="PonistiZakljucak">
+						<event type="click">
+							<part name="prtPonistiZakljucak" path="prtKnjigaIra.xml"/>
+						</event>
+					</menuitem>					
+				</menu>	
+				<menu type="drop">
+					<menuitem name="menPrenesi" caption="Prenesi">
+						<event type="click">
+							<action type="variable value">
+								<parameter name="GridPoz" value="#grdGlava.@KntKnjigaIraId" type="int"/>
+							</action>
+							<!-- <action type="control focus" value="#tree"> -->
+								<!-- <parameter value="$DrvoPoz"/> -->
+							<!-- </action>							 -->
+							<action type="datarun scalar" value="~dtDragDrop">
+								<parameter name="DrvoPoz"/>
+							</action>						
+							<action type="control populate" value="#tree"/>
+							<action type="control expand" value="#tree">
+								<parameter name="key" value="$Godina"/>
+							</action>
+							<action type="control focus" value="#tree">
+								<parameter value="$DrvoPoz"/>
+							</action>
+							<action type="control focus" value="#grdGlava" >
+								<parameter value="$GridPoz" type="int"/>
+							</action>
+						</event>
+					</menuitem>
+					<menuitem name="menOdustani" caption="Odustani"/>
+				</menu>				
+			</tree>
+			<grid name="grdGlava" type="master" dataname="~dtGlavni" bestfitonrefresh="true" async="true" key="KntKnjigaIraId" multiselect="true" savelayout="true" keyfield="KntKnjigaIraId" searchfield="KntKnjigaIraId" wordwrap="true" allowdrag="true" allowdragmultiple="true">
+				<event type="focusedrowchanged">
+					<!-- <action type="menu enable" value="#menDokument" if="#grdGlava.@IndGlk==1&amp;&amp;#grdGlava.@KntTemId!=null"/> -->
+					<!-- <action type="menu disable" value="#menDokument" else=""/>	-->
+					<!--nema izmjene i brisanja, ako je prazan grid ili je sumarni redak obračun/kumulativ-->
+					<action type="control disable" value="#btnIzmijeni, #btnObrisi" if="#grdGlava.rowcount==0||#grdGlava.@KntKnjigaIraId==null"/>
+					<action type="control enable" value="#btnIzmijeni, #btnObrisi" else=""/>
+                         <action type="control disable" value="#btnZak,#btnPonZak" if="#grdGlava.rowcount==0"/>
+                         <action type="control enable" value="#btnZak,#btnPonZak" elseif="#grdGlava.rowcount!=0"/>				
+				</event>	
+				<event type="doubleclick">
+					<action if="#grdGlava.rowcount!=0&amp;&amp;#grdGlava.@KntKnjigaIraId!=null">
+						<part name="prtIraIzmijeni" path="prtKnjigaIra.xml"/>
+					</action>				
+				</event>				
+				<event type="keydown">
+					<!--INSERT-->
+					<action if="key==45">
+						<part name="prtIraUnesi" path="prtKnjigaIra.xml"/>
+					</action>
+					<!--ENTER-->
+					<action if="key==13">
+						<action if="#grdGlava.rowcount!=0&amp;&amp;#grdGlava.@KntKnjigaIraId!=null">
+							<part name="prtIraIzmijeni" path="prtKnjigaIra.xml"/>
+						</action>
+						<action elseif="#grdGlava.rowcount==0">
+							<part name="prtIraUnesi" path="prtKnjigaIra.xml"/>
+						</action>
+					</action>					
+					<!--DELETE-->
+					<action if="key==46">
+						<action if="#grdGlava.rowcount!=0&amp;&amp;#grdGlava.@KntKnjigaIraId!=null">
+							<part name="prtIraObrisi" path="prtKnjigaIra.xml"/>
+						</action>
+					</action>					
+				</event>
+				<fields>
+					<field name="RedniBroj" caption="1\nRedni\nbroj"/>
+					<field name="Broj" caption="2\nBroj računa"/>
+					<field name="DatumDok" caption="3\nDatum računa"/>
+					<field name="DatumIsporuke" caption="Datum isporuke"/>
+					<field name="Naziv" caption="4\nNaziv-ime i prezime i\nsjedište/prebivalište \nili uobičajeno boravište dobavljača"/>
+					<field name="PorezniBroj" caption="5\nPDVID broj\nOIB"/>
+					<field name="IznosSaPorezom" caption="6\nIznos\n(s PDV-om)"/>
+					<field name="Tuz_Obv" caption="7\nTuzemni prijenos\nporezne obveze"/>
+					<field name="Isp_Drugim" caption="8\nIsporuke dobara\nu drugim\ndržavama članicama"/>
+					<field name="Isp_EU" caption="9\nIsporuke dobara\nunutar EU"/>			
+					<field name="Usl_EU" caption="10\nObavljene usluge\nunutar EU"/>
+					<field name="Usl_Osb" caption="11\nObavljene usluge\nosobama bez\nsjedišta u RH"/>
+					<field name="Sast_Dobr_EU" caption="12\nSastavljanje i postavljanje\ndobara u drugoj\ndržavi članici"/>
+					<field name="Isp_NPS_EU" caption="13\nIsporuke NPS\nu EU"/>
+					<field name="Tuzemstvo" caption="14\nU tuzemstvu"/>
+					<field name="IznosIzvoz" caption="15\nIzvozne\nisporuke"/>
+					<field name="IznosOstalo" caption="16\nOstala\noslobođenja"/>
+					<field name="Osnovica5" caption="17\nOsnovica\n5%"/>
+					<field name="Porez5" caption="18\nPorez\n5%"/>	
+					<field name="Osnovica13" caption="19\nOsnovica\n13%"/>
+					<field name="Porez13" caption="20\nPorez\n13%"/>
+					<field name="Osnovica25" caption="21\nOsnovica\n25%"/>
+					<field name="Porez25" caption="22\nPorez\n25%"/>
+					<field name="IznosNulStopa" caption="Vrijednost\nisporuke 0%"/>
+					<field name="IznosOsnovica" caption="Osnovica\n22%"/>
+					<field name="IznosPorez" caption="Porez\n22%"/>
+					<field name="Osnovica23" caption="Osnovica\n23%"/>
+					<field name="Porez23" caption="Porez\n23%"/>	
+					<field name="IznosOslPoreza" caption="Ne podliježe\noporezivanju"/>
+					<field name="UVSMP" caption="Isporuke dobara\niz članka\n11.b zakona"/>
+					<field name="datumValute" caption="Datum valute"/>
+					<field name="Napomena" caption="Napomena"/>
+					<field name="OrgNaziv" caption="Organizacijska\nshema"/>
+					<field name="VrstaDokumenta" caption="Vrsta\ndokumenta"/>
+					<field name="DevIznos" caption="Devizni\niznos"/>
+					<field name="Drzava" caption="Država"/>
+					<field name="Valuta" caption="Valuta"/>	
+					<field name="ProlazneStavke" caption="Prolazne\nstavke"/>
+					<field name="Osnovica10" caption="Osnovica\n10%"/>
+					<field name="Porez10" caption="Porez\n10%"/>						
+				</fields>
+				<styles>
+					<style name="fontcolor" value="black"/>
+					<style name="backgroundcolor" value="#CFCFD7" if="#grdGlava.@Broj=='ZA OBRAČUN UKUPNO:'||#grdGlava.@Broj=='KUMULATIV SA:'"/>
+                    <style name="bold" value="true" if="#grdGlava.@Broj=='ZA OBRAČUN UKUPNO:'||#grdGlava.@Broj=='KUMULATIV SA:'"/>
+                    <style name="italic" value="true" if="#grdGlava.@indglk==0"/>
+					<style name="fontcolor" value="blue" if="#grdGlava.@indglk==0"/>
+					<style name="italic" value="true" if="#grdGlava.@indglk==2"/>
+					<style name="fontcolor" value="red" if="#grdGlava.@indglk==2"/> 
+				</styles>
+			</grid>		
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="&amp;UNESI" type="add" function="Unesi">
+					<event type="click">
+						<part name="prtIraUnesi" path="prtKnjigaIra.xml"/>
+					</event>
+				</button>	
+				<button name="btnIzmijeni" caption="&amp;IZMIJENI">
+					<event type="click">
+						<part name="prtIraIzmijeni" path="prtKnjigaIra.xml"/>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="&amp;OBRIŠI">
+					<event type="click">
+						<part name="prtIraObrisi" path="prtKnjigaIra.xml"/>
+					</event>
+				</button>				
+				<button name="btnZak" caption="&amp;ZAKLJUČI" function="Zakljuci">
+					<event type="click">
+						<part name="prtZakljuci" path="prtKnjigaIra.xml"/>
+					</event>
+				</button>	
+				<button name="btnPonZak" caption="PONIŠTI Z&amp;AKLJUČAK" function="PonistiZakljucak">
+					<event type="click">
+						<part name="prtPonistiZakljucak" path="prtKnjigaIra.xml"/>
+					</event>
+				</button>	
+				<button name="btnUnesiRucno" caption="&amp;UNOS RUČNI" type="add" function="Unesi">
+					<event type="click">
+						<part name="prtIraUnesiRucni" path="prtKnjigaIra.xml"/>
+					</event>
+				</button>	
+				<button name="btnIspisi" caption="ISPIŠI">
+				<dropdownitem caption="OSNOVNI ISPIS KN">
+					<event type="click">
+						<action type="variable value" value="$Action" if="#tree.@value==vrstaknjige">
+							<parameter value="15"/>
+						</action>
+						<action type="variable value" value="$Action" elseif="#tree.@value==godina">
+							<parameter value="111"/>
+						</action>
+						<action type="variable value" value="$Action" elseif="#tree.@value==nezakljucen">
+							<parameter value="12"/>
+						</action>
+						<action type="variable value" value="$Action" elseif="#tree.@value==danas">
+							<parameter value="13"/>
+						</action>
+						<action type="variable value" value="$Action" elseif="#tree.@value==datumzak">
+							<parameter value="14"/>
+						</action>	
+						<action type="variable value" value="$Action" else="">
+							<parameter value="0"/>
+						</action>
+						<!--za godinu obavezno poslati Id kao null, ne blank-->
+						<action type="variable value" value="$PrintId" if="#tree.@KntVrsteKnjigaIraId==">
+							<parameter value="null" type="int"/>
+						</action>
+						<action type="variable value" value="$PrintId" else="">
+							<parameter value="#tree.@KntVrsteKnjigaIraId" type="int"/>
+						</action>
+						<action type="print" value="repx:rptCKntKnjigaIra">
+							<parameter name="ID" value="$PrintId"/>
+							<parameter name="DatumZakljucka" value="#tree.@datumzakljucka"/>
+							<parameter name="node" value="#tree.@id"/>
+							<parameter name="Action" value="$Action"/>					
+						</action>
+					</event>
+				</dropdownitem>
+				<dropdownitem caption="OSNOVNI ISPIS EUR">
+					<event type="click">
+						<action type="variable value" value="$Action" if="#tree.@value==vrstaknjige">
+							<parameter value="15"/>
+						</action>
+						<action type="variable value" value="$Action" elseif="#tree.@value==godina">
+							<parameter value="111"/>
+						</action>
+						<action type="variable value" value="$Action" elseif="#tree.@value==nezakljucen">
+							<parameter value="12"/>
+						</action>
+						<action type="variable value" value="$Action" elseif="#tree.@value==danas">
+							<parameter value="13"/>
+						</action>
+						<action type="variable value" value="$Action" elseif="#tree.@value==datumzak">
+							<parameter value="14"/>
+						</action>	
+						<action type="variable value" value="$Action" else="">
+							<parameter value="0"/>
+						</action>
+						<!--za godinu obavezno poslati Id kao null, ne blank-->
+						<action type="variable value" value="$PrintId" if="#tree.@KntVrsteKnjigaIraId==">
+							<parameter value="null" type="int"/>
+						</action>
+						<action type="variable value" value="$PrintId" else="">
+							<parameter value="#tree.@KntVrsteKnjigaIraId" type="int"/>
+						</action>
+						<action type="print" value="repx:rptCKntKnjigaIraEUR">
+							<parameter name="ID" value="$PrintId"/>
+							<parameter name="DatumZakljucka" value="#tree.@datumzakljucka"/>
+							<parameter name="node" value="#tree.@id"/>
+							<parameter name="Action" value="$Action"/>					
+						</action>
+					</event>
+				</dropdownitem>
+				</button>
+				<button name="btnSearch" caption="&amp;PRONAĐI">
+					<event type="click">
+						<action type="search" value="~dtSearch"/>
+					</event> 													
+				</button>					
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDrvo" command="spCKntKnjigaIraTree"/>
+			<data name="dtGlavni" command="spCKntKnjigaIraQuery" timeout="400">
+				<parameter name="@action" value="15" if="#tree.@value==vrstaknjige"/>
+				<parameter name="@action" value="111" elseif="#tree.@value==godina"/>
+				<parameter name="@action" value="12" elseif="#tree.@value==nezakljucen"/>
+				<parameter name="@action" value="13" elseif="#tree.@value==danas"/> 
+				<parameter name="@action" value="14" elseif="#tree.@value==datumzak"/>
+				<parameter name="@action" value="0" else=""/>
+				<parameter name="@node" value="#tree.@id"/>	
+			</data>	
+			<data name="dtDrvoPozicija" command="spCKntKnjigaIraTreePozicije">	
+				<parameter name="@Action" value="DrvoPozicija" type="string"/>
+			</data>
+			<data name="dtBlokada" command="spCKntKnjigaIraTreePozicije">
+				<parameter name="@Action" value="Blokada" type="string"/>
+			</data>	
+			<data name="dtTekGodina" command="spCKntKnjigaIraTreePozicije">
+				<parameter name="@Action" value="TekGodina" type="string"/>
+			</data>	
+			<data name="dtObrisiKnjigu" command="spCKntVrsteKnjigaIraAzur" >
+				<parameter name="@action" value="2"/>
+				<parameter name="@ID" value="#tree.@KntVrsteKnjigaIraId"/>
+			</data>	
+			<data name="dtPonistiZakljucak" command="spCKntKnjigaIraCalc">
+				<parameter name="@action" value="PonistiZakljucak"/>
+				<parameter name="@treevalue" value="#tree.@value"/>
+				<parameter name="@DatZakPonisti" value="~dtZadnjiDatZak.@ZadnjiDatZak"/>
+				<parameter name="@node" value="#tree.@id"/>
+			</data>	
+			<data name="dtDrvoNovaIra" command="spCKntKnjigaIraTreePozicije">
+				<parameter name="@Action" value="DrvoNovaIra" type="string"/>
+				<parameter name="@ID" value="$NoviId"/>
+				<parameter name="@node" value="#tree.@id"/>				
+			</data>	
+			<data name="dtZadnjiDatZak" command="spCKntKnjigaIraTreePozicije">
+				<parameter name="@Action" value="ZadnjiDatZak" type="string"/>
+				<parameter name="@VrsteKnjigaIraId" value="#tree.@KntVrsteKnjigaIraId"/>
+				<parameter name="@Godina" value="#tree.@godina"/>
+			</data>	
+			<data name="dtDatumZaZakljucak" command="spCKntKnjigaIraCalc" >
+				<parameter name="@action" value="DatumZaZakljucak" />
+				<parameter name="@node"  value="#tree.@Id"/>
+				<parameter name="@treevalue"  value="#tree.@value"/>
+			</data>		
+			<data name="dtSearch" command="spCarpoSearch">
+				<parameter name="@Table" value="KnjigaIra"/>
+				<parameter name="@Pojam" value="#btnSearch.searchtext"/>
+			</data>	
+			<data name="dtObrisiIru" command="spCKntKnjigaIraAzur">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@ID" value="#grdGlava.@KntKnjigaIraId"/>
+			</data>
+			<data name="dtPozicijaNezakljucen" command="spCKntKnjigaIraTreePozicije">
+				<parameter name="@Action" value="PozicijaNezakljucen"/>
+				<parameter name="@Node" value="#tree.@Id"/>
+				<parameter name="@VrsteKnjigaIraId" value="#tree.@KntVrsteKnjigaIraId"/>
+			</data>	
+			<data command="spCKntKnjigaIraAzur" name="dtDragDrop">
+				<parameter name="@Action" value="6"/>
+				<parameter name="@selectedids" value="#grdGlava.selectedids"/>
+				<!-- <parameter name="@node" value="#tree.@Id"/> -->
+				<!--ako se radi o čvoru unutar knjige, uzmi parentid zbog izvlačenja KntVrsteKnjigaUraId-->
+				<parameter name="@node" value="#tree.@Id" if="#tree.@value==vrstaknjige"/>
+				<parameter name="@node" value="#tree.@parentid" elseif="#tree.@value==nezakljucen"/>
+			</data>			
+		</datalist>
+	</form>
+</root>

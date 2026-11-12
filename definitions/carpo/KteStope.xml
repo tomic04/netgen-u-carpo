@@ -1,0 +1,150 @@
+<root>
+	<form name="frmKteStope" type="master" caption="Kamatne stope" displaycontrolsprint="true">
+		<managerlayout>
+			<event type="shown">
+				<action type="variable value">
+					<parameter name="CurrentKteVrsteStopaId" value="0" type="Int"/>
+					<parameter name="NewKteVrsteStopaId" value="0" type="Int"/>
+					<parameter name="CurrentKteStopaId" value="0" type="Int"/>
+					<parameter name="NewKteStopaId" value="0" type="Int"/>
+				</action>
+			</event>
+			<tree name="trKamate" key="ID" caption="Vrste" dataname="~dtDrvo">
+				<fields>
+					<field name="Naziv" />
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava" />
+				</event>			
+				<menu>
+					<menuitem caption="Unesi" name="mnuUnos">
+						<event type="click">
+							<action type="datarun scalar" value="~dtGetVrsteId">
+								<parameter name="CurrentKteVrsteStopaId"/>
+							</action>
+							<action type="form open" value="frmVrste">
+								<parameter name="Action" value="0"/>
+							</action>
+							<action type="control populate keepfocus" value="#trKamate"/>
+							<action type="datarun scalar" value="~dtGetVrsteId">
+								<parameter name="NewKteVrsteStopaId"/>
+							</action>
+							<action type="control focus" value="#trKamate" if="$CurrentKteVrsteStopaId!=$NewKteVrsteStopaId">
+								<parameter value="$NewKteVrsteStopaId" type="int"/>
+							</action>
+						</event>
+					</menuitem>
+					<menuitem caption="Izmjeni" name="mnuIzmjena">
+						<event type="click">
+							<action type="form open" value="frmVrste">
+								<parameter name="SaljemId" value="#trKamate.@ID"/>
+								<parameter name="Action" value="1"/>
+							</action>
+							<action type="control populate keepfocus" value="#trKamate"/>
+						</event>
+					</menuitem>
+					<menuitem caption="Obriši" name="mnuBrisanje">
+						<event type="click">
+							<action type="confirm" value="Jeste li sigurni da želite obrisati: {#trKamate.@Naziv} ?">
+								<action type="datarun scalar" value="~dtVDelete">
+									<parameter name="IndVrstaBrisanje"/>
+								</action>
+								<action type="message" value="Nije moguće brisanje vrste stope koja je standardna ili ima zadane kamatne stope!" if="$IndVrstaBrisanje!=1"/>
+								<action type="control populate" value="#trKamate" else=""/>
+							</action>
+						</event>
+					</menuitem>
+				</menu>
+			</tree>
+			<grid name="grdGlava" type="master" dataname="~dtMaster" printcaptionalign="left" printcaption="Kamatne stope">
+				<event type="focusedrowchanged">
+					<action type="control enable" value="#btnObrisi" if="#grdGlava.rowcount&gt;0"/>
+					<action type="control disable" value="#btnObrisi" else=""/>
+					<action type="control enable" value="#btnIzmjeni" if="#grdGlava.rowcount&gt;0"/>
+					<action type="control disable" value="#btnIzmjeni" else=""/>
+				</event>
+				<fields inherited="true">
+					<field name="Opis" caption="Opis" fixed="true" minwidth="300"/>
+					<field name="Datum" caption="Datum" fixed="true" minwidth="100"/>
+					<field name="Stopa" caption="Stopa" fixed="true" minwidth="100"/>
+					<field name="Osnovica" caption="Osnovica" fixed="true" minwidth="100"/>
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnDodaj" type="add" caption="Dodaj">
+					<event type="click">
+						<action type="form open" value="frmKteStavke">
+							<parameter name="Action" value="0"/>
+							<parameter name="VrstaKteId" value="#trKamate.@ID"/>
+						</action>
+						<action type="control populate" value="#grdGlava">
+							<action type="control focus" value="#grdGlava" if="$Id!=0">
+								<parameter value="$Id"/>
+							</action>	
+						</action>
+					</event>
+								
+				</button>
+				<button name="btnIzmjeni" type="edit" caption="Izmjeni">
+					<event type="click">
+						<action type="form open" value="frmKteStavke">
+							<parameter name="Action" value="1"/>
+							<parameter name="KteId" value="#grdGlava.@kteStopaID"/>
+							<parameter name="VrstaKteId" value="#grdGlava.@KteVrsteStopaID"/>
+						</action>
+						<action type="control populate" value="#grdGlava">
+							<action type="control focus" value="#grdGlava" if="$Id!=0">
+								<parameter value="$Id"/>
+							</action>	
+						</action>
+					</event>
+								
+				</button>
+				<button name="btnObrisi" caption="Obriši">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati stavku?">
+							<action type="datarun nonquery" value="~dtObrisi"/>								
+							<action type="control populate" value="#grdGlava"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnUpute" caption="Uputi me" dock="right">
+					<event type="click">
+						<action type="message" value="Ova funkcionalnost trenutno nije dostupna, molimo kontaktirajte Spin!"/>
+					</event>
+								
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCKteVrsteStopaQuery" name="dtGetVrsteId">
+				<parameter name="@Action" value="3"/>
+			</data>
+			<data command="spCKteVrsteStopaQuery" name="dtDrvo">
+				<parameter name="@Action" value="0" />
+			</data>
+			<data command="spCKteStopaAzur" name="dtObrisi">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@ID" value="#grdGlava.@kteStopaID"/>
+			</data>
+			<data command="spCKteStopaQuery" name="dtMaster">
+				<parameter name="@Action" value="0"/>
+				<!--parameter name="@Id" value="$Id"/-->
+				<parameter name="@KteVrsteStopaID" value="#trKamate.@ID"/>
+			</data>
+			<data command="spCKteVrsteStopaAzur" name="dtVDelete">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@ID" value="#trKamate.@ID"/>
+			</data>
+		</datalist>
+	</form>
+	
+	<form name="frmVrste" path="frmVrste.xml"/>  
+	<form name="frmKteStavke" path="frmKteStavke.xml"/>
+	
+	
+</root>
+
+

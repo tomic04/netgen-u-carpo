@@ -1,0 +1,260 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root version="1.0.0.1">
+  <form name="OsiguranjePlacanja" caption="OSIGURANJE PLAĆANJA" type="master">
+    <method name="funDmsAdd" dll="DmsManagerV1" class="DmsManagerV1.Start" method="AddDocuments" />
+    <method name="funDmsOpen" dll="DmsManagerV1" class="DmsManagerV1.Start" method="OpenDocument" />
+    <method name="funDmsSave" dll="DmsManagerV1" class="DmsManagerV1.Start" method="SaveDocuments" />
+    <event type="init">
+      <action type="variable value">
+        <parameter name="AuditCheck" value="0" type="int"/>
+      </action>
+      <action type="datarun scalar" value="~dtGetRola">
+        <parameter name="$Rola"/>
+      </action>
+      <action type="variable value">
+        <parameter name="TrgovinaSmije" value="false" type="bool"/>
+      </action>
+      <action type="variable value">
+        <parameter name="EditEnabled" value="false" type="bool" />
+      </action>
+    </event>
+    <event type="shown">
+      <action type="control disable" value="#btnUnesi,#btnIzmijeni,#btnPovijest,#btnBiljeske,#btnObrisi,#grdGlava,#grdDetail" if="$Rola==null"/>
+      <action type="footer text" value="|   {$Rola}"/>
+    </event>
+    <managerlayout>
+      <grid name="grdGlava" key="OsigPlacanjaId" type="master" dataname="dtGetOsig" multiselect="true">
+        <event type="focusedrowchanged">
+          <action type="control disable" value="#btnBiljeske,#btnZakljucaj" if="#grdGlava.rowcount==0"/>
+          <action type="control enable" value="#btnBiljeske,#btnZakljucaj" else=""/>
+          <action type="control populate" value="#grdDetail"></action>
+          <action type="variable value" value="$TrgovinaSmije">
+            <parameter value="true" type="bool" if="#grdGlava.@Sredstvo==Mjenica||#grdGlava.@Sredstvo==Zadužnica"/>
+            <parameter value="false" type="bool" else=""/>
+          </action>
+          <action type="datarun scalar" value="~dtCheck">
+            <parameter name="$EditEnabled" type="bool"/>
+          </action>
+          <action type="control disable" value="#btnIzmijeni,#btnObrisi,#btnPovezi" if="$EditEnabled==false||#grdGlava.rowcount==0"/>
+          <action type="control enable" value="#btnIzmijeni,#btnObrisi,#btnPovezi" else=""/>
+        </event>
+        <menu>
+          <menuitem caption="Povijest dokumenta" sort="0">
+            <event type="click">
+              <action type="form open" value="frmPovijest">
+                <parameter name="OsigPlacanjaId" value="#grdGlava.@OsigPlacanjaId"/>
+              </action>  
+            </event>
+          </menuitem>
+        </menu>
+        <fields inherited="true">
+          <field name="Napomena" index="50"/>
+          <field name="Broj" caption="Broj Dokumenta" fontbold="true" fixed="left"/>
+          <field name="ZakljucanInd" caption="Zaključan"/>
+        </fields>
+        <styles>
+          <style name="fontcolor" value="green" if="#grdGlava.@ZakljucanInd==true"/>
+        </styles>
+      </grid>
+      <grid name="grdDetail" keyfield="DokId" multiselect="true" dataname="dtDetail">
+        <menu>
+          <menuitem caption="Spremi na disk">
+            <event type="click">
+              <action type="method run" value="funDmsSave" if="$EditEnabled==true">
+                <parameter name="server" value="@@server" />
+                <parameter name="database" value="@@database" />
+                <parameter name="username" value="" />
+                <parameter name="password" value="" />
+                <parameter name="operaterid" value="@@operateriid" />
+                <parameter name="dokIds" value="#grdDetail.SelectedIds" />
+              </action>
+              <action type="message" value="Nemate prava na tu funkcionalnost!" else=""/>
+            </event>
+          </menuitem>
+          <menuitem caption="Obriši">
+            <event type="click">
+              <action type="confirm" value="Želite li sigurno obrisati označeni(e) dokument(e)?" if="$EditEnabled==true">
+                <action type="datarun nonquery"   value="~dtDeleteDoc"/>
+                <action type="control populate" value="#grdDetail"/>
+              </action>
+              <action type="message" value="Nemate prava na tu funkcionalnost!" else=""/>
+            </event>
+          </menuitem>
+        </menu>
+        <event type="doubleclick">
+          <action type="method run" value="funDmsOpen" if="$EditEnabled==true">
+            <parameter name="server" value="@@server" />
+            <parameter name="database" value="@@database" />
+            <parameter name="username" value="" />
+            <parameter name="password" value="" />
+            <parameter name="operaterid" value="@@operateriid" />
+            <parameter name="dokId" value="#grdDetail.@DokID" />
+            <parameter name="name" value="#grdDetail.@Naziv" />
+          </action>
+          <action type="message" value="Nemate prava na tu funkcionalnost!" else=""/>
+        </event>
+        <fields inherited="true">
+          <field name="Naziv" fontbold="true"/>
+          <field name="Size" caption="Size [KB]"/>
+        </fields>
+      </grid>
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnesi" caption="&amp;Unesi" type="add" image="add">
+          <!--<menuitem control="#grdGlava"/>-->
+          <event type="click">
+            <action type="form open" value="frmStavka">
+              <parameter name="Header" value="Nova stavka"/>
+              <parameter name="Rola" value="$Rola"/>
+            </action>
+            <action type="control populate" value="#grdGlava">
+              <action type="control focus" value="#grdGlava">
+                <parameter value="$NewId"/>
+              </action>
+            </action>
+          </event>
+        </button>
+        <button name="btnIzmijeni" caption="&amp;Izmijeni" type="edit" image="edit" enabled="false">
+          <!--<menuitem control="#grdGlava"/>-->
+          <event type="click">
+            <action type="form open" value="frmStavka">
+              <parameter name="OsigPlacanjaId" value="#grdGlava.@OsigPlacanjaId"/>
+              <parameter name="Header" value="Izmjena stavke"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdGlava"/>
+          </event>
+        </button>
+        <button name="btnObrisi" caption="&amp;Obriši" type="delete" image="delete" enabled="false">
+          <!--<menuitem control="#grdGlava"/>-->
+          <event type="click">
+            <action type="confirm" value="Želite li sigurno obrisati označeni(e) dokument(e)?">
+              <action type="datarun nonquery" value="~dtDelete"/>
+              <action type="control populate" value="#grdGlava"/>
+            </action>
+          </event>
+        </button>
+        <button name="btnPovezi" caption="&amp;POVEŽI" begingroup="true" enabled="false">
+          <event type="click">
+            <action type="method run" value="funDmsAdd">
+              <parameter name="server" value="@@server" />
+              <parameter name="database" value="@@database" />
+              <parameter name="username" value="" />
+              <parameter name="password" value="" />
+              <parameter name="operaterid" value="@@operateriid" />
+              <parameter name="entityName" value="OsigPlacanja" />
+              <parameter name="entityId" value="#grdGlava.@OsigPlacanjaId" />
+              <parameter name="tipInserta" value="manager" />
+            </action>
+            <action type="control populate" value="#grdDetail"/>
+          </event>
+        </button>
+        <button name="btnZakljucaj" caption="&amp;ZAKLJUČAJ / OTKLJUČAJ" function="Zakljucaj" enabled="false">
+          <!--<menuitem control="#grdGlava"/>-->
+          <event type="click">
+            <action type="confirm" value="Želite li sigurno zaključati dokument?" if="#grdGlava.@ZakljucanInd==false">
+              <action type="datarun nonquery" value="~dtZakljucaj"/>
+              <action type="control populate keepfocus" value="#grdGlava"/>
+            </action>
+            <action type="confirm" value="Želite li sigurno otključati dokument?" elseif="#grdGlava.@ZakljucanInd==true">
+              <action type="datarun nonquery" value="~dtOtkljucaj"/>
+              <action type="control populate keepfocus" value="#grdGlava"/>
+            </action>
+          </event>
+        </button>
+        <button name="btnPovijest" caption="PO&amp;VIJEST" begingroup="true">
+          <!--<dropdownitem caption="Povijest stavke">
+            <event type="click">
+              <action type="form open" value="frmPovijest">
+                <parameter name="OsigPlacanjaId" value="#grdGlava.@OsigPlacanjaId"/>
+                <parameter name="Rola" value="$Rola"/>
+              </action>
+            </event>
+          </dropdownitem>
+          <dropdownitem caption="Kompletna povijest">-->
+            <event type="click">
+              <action type="form open" value="frmPovijest">
+                <parameter name="Rola" value="$Rola"/>
+              </action>
+            </event>
+          <!--</dropdownitem>-->
+        </button>
+        <button name="btnBiljeske" caption="&amp;BILJEŠKE O PARTNERU" begingroup="true">
+          <event type="click">
+            <action type="form open" value="frmBiljeske">
+              <parameter name="PartneriId" value="#grdGlava.@PartneriId"/>
+              <parameter name="PartnerNaziv" value="#grdGlava.@Partner"/>
+            </action>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spOsigPlacQuery" name="dtGetOsig">
+        <parameter name="@Action" value="GetAll"/>
+        <parameter name="@rola" value="$Rola"/>
+      </data>
+      <data command="spOsigPlacPovijest" name="dtAuditCheck">
+        <parameter name="@Action" value="check"/>
+      </data>
+      <data command="spOsigPlacAzur" name="dtDelete">
+        <parameter name="@Action" value="delete"/>
+        <parameter name="@selectedids" value="#grdGlava.selectedids"/>
+      </data>
+      <data command="spOsigPlacDocQuery" name="dtDetail">
+        <parameter name="@Action" value="GetAll"/>
+        <parameter name="@Id" value="#grdGlava.@OsigPlacanjaId"/>
+      </data>
+      <data command="spOsigPlacDocAzur" name="dtDeleteDoc">
+        <parameter name="@Action" value="Delete"/>
+        <parameter name="@selectedids" value="#grdDetail.selectedids"/>
+      </data>
+      <data command="spOsigPlacGetRola" name="dtGetRola">
+        <parameter name="@action" value="getRola"/>
+        <parameter name="@Id" value="@@operateriid"/>
+      </data>
+      <data command="spOsigPlacAzur" name="dtZakljucaj">
+        <parameter name="@Action" value="zakljucaj"/>
+        <parameter name="@OsigPlacanjaId" value="#grdGlava.@OsigPlacanjaId"/>
+      </data>
+      <data command="spOsigPlacAzur" name="dtOtkljucaj">
+        <parameter name="@Action" value="otkljucaj"/>
+        <parameter name="@OsigPlacanjaId" value="#grdGlava.@OsigPlacanjaId"/>
+      </data>
+      <data command="spOsigPlacQueryRazno" name="dtCheck">
+        <parameter name="@action" value="editEnabled"/>
+        <parameter name="@rola" value="$Rola"/>
+        <parameter name="@trgovinasmije" value="$TrgovinaSmije"/>
+        <parameter name="@zakljucanind" value="#grdGlava.@ZakljucanInd"/>
+      </data>
+    </datalist>
+  </form>
+
+  <!-- REFERENCE NA DRUGE FORME -->
+  <form name="frmStavka" path="frmStavka.xml" />
+  <form name="frmBiljeske" path="frmBiljeske.xml" />
+  <form name="frmBiljeskeEdit" path="frmBiljeske.xml" />
+  <form name="frmPovijest" path="frmPovijest.xml"/>
+  <!-- ***** -->
+
+  <parts>
+    <part name="prtGridFieldsAndStyles">
+      <fields inherited="true">
+        <field name="VrijemeKreiranja" formatstring="dd.MM.yyyy. HH:mm"/>
+        <field name="OsigPlacanjaId" hidden="true" fontbold="true"/>
+        <field name="Broj" fontbold="true" fixed="left"/>
+        <field name="AuditDatum" caption="Vrijeme Izmjene" formatstring="dd.MM.yyyy. HH:mm" fontbold="true" fixed="right"/>
+        <field name="Operater" fontbold="true" fixed="right"/>
+        <field name="AuditUser" caption="User" fixed="right" fontbold="true"/>
+        <field name="AuditAction" caption="Akcija" fixed="right" fontbold="true"/>
+      </fields>
+      <styles>
+        <style name="fontcolor" value="green" if="#grdPovijest.fieldname==AuditAction&amp;&amp;#grdPovijest.@AuditAction==Unos"/>
+        <style name="fontcolor" value="dodgerblue" if="#grdPovijest.fieldname==AuditAction&amp;&amp;#grdPovijest.@AuditAction==Izmjena"/>
+        <style name="fontcolor" value="red" if="#grdPovijest.fieldname==AuditAction&amp;&amp;#grdPovijest.@AuditAction==Brisanje"/>
+        <style name="fontcolor" value="limegreen" if="#grdPovijest.fieldname==AuditAction&amp;&amp;#grdPovijest.@AuditAction==Obnovljeno"/>
+      </styles>
+    </part>
+  </parts>
+
+</root>

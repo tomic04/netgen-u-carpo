@@ -1,0 +1,206 @@
+﻿<!--
+1.0.0.1. prva verzija, kopirana od Place.xml    
+1.0.0.2. druga verzija - dodan action dtSelectedIdsTilda   
+ -->
+<root version="1.0.0.1">
+  <form name="frmMaster" type="master" caption="ERV - Evidencija Radnog Vremena">
+
+    <event type="init">
+
+    </event>
+
+    <event type="shown">
+    </event>
+
+    <event type="keydown">
+      <!--INSERT KEY 45, zvjezdica key = 106-->
+      <action if="key==control+106">
+        <!--106 = *-->
+        <!--<action type="message" value="Skrivena forma!"/>-->
+        <action type="form open" value="frmOOPPubVars" >
+          <parameter name="Caption" value="OOPPubvars"/>
+          <parameter name="OperateriId"  value="@@OperateriId" />
+          <parameter name="datoteka"  value="EvidencijaRadnogVremena" />
+        </action>
+      </action>
+      <!--delete KEY 46, minus key = 109-->
+      <action if="key==control+109">
+
+        <!--109 = - -->
+        <!--<action type="message" value="Skrivena forma!"/>-->
+        <action type="form open" value="frmPlacePostavke" >
+          <parameter name="Caption" value="Postavke granule"/>
+          <parameter name="OperateriId"  value="@@OperateriId" />
+        </action>
+      </action>
+    </event>
+
+
+
+    <managerlayout>
+
+      <!--*****stablo*****-->
+      <tree name="tree"  key="Id"  filtermode="smart" dataname="dtTree" expandfirst="true">
+
+        <!--na promjenu noda disable/enable meni i refresh master grida-->
+        <event type="focusedrowchanged">
+          <!-- <action type="menu disable" value="#mnuBrisanjeObrade,#mnuDodajKadrove, #mnuKopirajKadrove3,#mnuBrisanjePomEvid1,#mnuDonosPomEvid1" if="#tree.@status==1"></action> -->
+          <!-- <action type="menu enable" value="#mnuBrisanjeObrade,#mnuDodajKadrove, #mnuKopirajKadrove3,#mnuBrisanjePomEvid1,#mnuDonosPomEvid1" else="#tree.@status==0"></action> -->
+
+          <action type="control populate" value="#grdERV"/>
+
+          <action type="variable value" value="global.Oznaka">
+            <parameter value="#tree.@Id" type="string"/>
+          </action>
+          <action type="variable value" value="global.Godina">
+            <parameter value="#tree.@godina" type="string"/>
+          </action>
+          <action type="variable value" value="global.Mjesec">
+            <parameter value="#tree.@mjesec" type="string"/>
+          </action>
+		  <!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+		  <action type="variable value" value="global.RefreshajMaster">
+            <parameter value="0" type="int"/>
+          </action>
+
+        </event>
+        <fields>
+          <field name="Name" />
+        </fields>
+        <!--desni klik za brisanje-->
+        <!--<part name="Meni_drvo" path="prtPlace.xml"/>-->
+        <partsql name="drvo_meni" dataname="~dtPartDrvoMeni" ></partsql>
+      </tree>
+
+      <!--Grid Glava-->
+      <grid  name="grdERV" key="HRKadroviId" type="master" async="true" dataname="dtMaster" preventfocusgroup="false" fieldsmartspaces="false"  bestfitonrefresh="true" multiselect="true" savelayout="true" netgenfields="true" allowfilter="true"  >
+        <fields inherited="true">
+          <!--<field name="Rbr." fixed="true"/>-->
+          <field name="CarpoRowNumberColumn" fixed="true" caption="Rbr"/>
+          <!-- <field name="Oznaka-RBR" fixed="true"/>
+          <field name="Djelatnik" fixed="true"/>
+          <field name="Šifra" fixed="true"/>
+          <field name="OIB" fixed="true"/> -->
+        </fields>
+
+        <!--desni klik za brisanje-->
+        <partsql name="master_meni" dataname="~dtPartMasterMeni" ></partsql>
+
+        <!--double klik na gridu-->
+        <partsql name="master_doubleclick" dataname="~dtPartMasterDoubleClick" ></partsql>
+
+
+        <event type="focusedrowchanged">
+          
+          <action type="control populate" value="#grdDet"/>
+          <action type="control populate" value="#grdAnalitikaPlaca"/>
+          <action type="control populate" value="#grdSintetikaPlaca"/>
+		</event>
+        
+      </grid>
+
+      <!--<partsql name="grid" dataname="~dtPartMasterGrid" ></partsql>-->
+
+      <!--TABOVI u detalju-->
+      <tabs name="tabs">
+        <event type="selectedtabchanged">
+        </event>
+        <partsql name="tabovi" dataname="~dtPartTabovi"></partsql>
+
+
+      </tabs>
+    </managerlayout>
+
+    <!--gumbi-->
+
+    <panelbuttons>
+      <buttons>
+        <partsql name="button" dataname="~dtPartButton" ></partsql>
+
+      </buttons>
+
+    </panelbuttons>
+
+    <!--datalist-->
+
+    <datalist>
+	  <data command="spERVHelp" name="dtSelectedIdsTilda">
+        <parameter name="@Action" value="Vrati_selectedids_tilda" />
+        <parameter name="@selectedids"  value="#grdERV.selectedids" />
+      </data>
+      <data command="spERVTree" name="dtTree">
+        <parameter name="@Action" value="vremenska_podjela" />
+      </data>
+      <!--data koji puni Master grid grida-->
+      <data command="spERVMasterQuery" name="dtMaster">
+        <parameter name="@Action" value="Master"/>
+        <parameter name="@OperateriId"  value="@@OperateriId" />
+        <parameter name="@godina" value="#tree.@godina" />
+        <parameter name="@mjesec" value="#tree.@mjesec" />
+      </data>
+	  <data command="spERVMasterQuery" name="dtRefreshRow">
+        <parameter name="@Action" value="Master"/>
+        <parameter name="@OperateriId"  value="@@OperateriId" />
+        <parameter name="@godina" value="#tree.@godina" />
+        <parameter name="@mjesec" value="#tree.@mjesec" />
+		<parameter name="@hrkadroviid" value="#grdERV.@hrkadroviid" />
+      </data>
+      <partsql name="data" dataname="~dtPartTabGridovi" ></partsql>
+	  
+	  
+	  
+    </datalist>
+  </form>
+
+  <!--includane forme-->
+
+
+  <partsql name="forme" dataname="~dtPartForme" ></partsql>
+
+  <!--datalist za partove-->
+  <datalist>
+    <data command="spERVPartQuery" name="dtPartMasterMeni">
+      <parameter name="@Action" value="master_meni"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="EvidencijaRadnogVremena"/>
+    </data>
+    <data command="spERVPartQuery" name="dtPartDrvoMeni">
+      <parameter name="@Action" value="drvo_meni"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="EvidencijaRadnogVremena"/>
+    </data>
+    <data command="spERVPartQuery" name="dtPartTabovi">
+      <parameter name="@Action" value="tabovi"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="EvidencijaRadnogVremena"/>
+    </data>
+    <data command="spERVPartQuery" name="dtPartTabGridovi">
+      <parameter name="@Action" value="data"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="EvidencijaRadnogVremena"/>
+    </data>
+    <data command="spERVPartQuery" name="dtPartButton">
+      <parameter name="@Action" value="button"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="EvidencijaRadnogVremena"/>
+    </data>
+    <data command="spERVPartQuery" name="dtPartMasterGrid">
+      <parameter name="@Action" value="grid"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="EvidencijaRadnogVremena"/>
+    </data>
+    <data command="spERVPartQuery" name="dtPartForme">
+      <parameter name="@Action" value="forme"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="EvidencijaRadnogVremena"/>
+    </data>
+    <data command="spERVPartQuery" name="dtPartMasterDoubleClick">
+      <parameter name="@Action" value="master_doubleclick"/>
+      <parameter name="@OperateriId" value="@@OperaterId"/>
+      <parameter name="@datoteka" value="EvidencijaRadnogVremena"/>
+    </data>
+  </datalist>
+</root>
+
+

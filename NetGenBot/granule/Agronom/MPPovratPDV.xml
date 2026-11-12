@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT
+  SETDEFAULTS="spmpPermissionNG @action = 0, @operateriid = @@operateriid, @object = '@@xmlname', @sifradok = '109', @trazi = '%povrat%pdv%', @aktivni = 0"
+  ONLOAD2="select 'Dodaj' = case when @@dodaj=1 then 'enable' else 'disable' end , 'Izmjeni' = case when @@izmjeni=1 then 'enable' else 'disable' end , 
+          'Zakljuci' = case when @@Zakljuci=1 then 'enable' else 'disable' end, 'Obrisi' = case when @@Obrisi=1 then 'enable' else 'disable' end , 
+          'Storno' = case when @@storno=1 then 'enable' else 'disable' end , 'otkljucaj' = case when @@otkljucaj=1 then 'enable' else 'disable' end "
+  ONLOAD=":DANAS_FORM"
+  DETAILGRID = "spMPPovratPDV @action = 6, @operateriid = @@operateriid, @id = @@id, @nenc = 1"
+  BUTTONS="Parametri:FILTERFORM#Dodaj:INSERTFORM1#Izmjeni:UPDATE_FORM#Zaključi:ZAKLJUCI#Print dok.:vrstadokid-MPPovratPDVGla"
+  MASTERDBLCLICK="UPDATE_FORM"
+  COMMANDTIMEOUT="300"
+  POPUPMASTER="Pronađi:FILTERFORM#Izmjeni:UPDATE_FORM#Zaključi:ZAKLJUCI#Otključaj:OTKLJUCAJ" 
+  TREE="Danas:DANAS_FORM#Jučer:JUCER_FORM#spMPTreeNG @action=1:TEKUCIMJESEC_FORM#Prošli mjesec:PROSLIMJESEC_FORM#spMPTreeNG @action=2:FILTERODDO_FORM#spMPTreeNG @action=3:FILTERODDO_FORM#spMPTreeNG @action=4:FILTEROPERATERIFORM"
+  GROUPBYBOXVISIBLE="TRUE"
+  CHECKBOXVISIBLE="FALSE"
+  TOTALROWVISIBLE="FALSE"
+  DETTOTALROWVISIBLE="FALSE"
+  DETCHECKBOXVISIBLE="FALSE"
+  REPORT="">
+
+
+	<NAME>Povrat PDV-a iz MP</NAME>
+	<CAPTION>Povrat PDV-a iz MP</CAPTION>
+
+
+<DANAS_FORM         FILLEXPLORER="TRUE" ONSUBMIT="spMPPovratPDV @action = 5, @operateriid = @@operateriid, @node = 'danas', @vrstadokid = @@vrstadokid, @nenc = 1" />
+<JUCER_FORM         FILLEXPLORER="TRUE" ONSUBMIT="spMPPovratPDV @action = 5, @operateriid = @@operateriid, @node = 'jucer', @vrstadokid = @@vrstadokid, @nenc = 1" />
+<TEKUCIMJESEC_FORM  FILLEXPLORER="TRUE" ONSUBMIT="spMPPovratPDV @action = 5, @operateriid = @@operateriid, @node = 'ovajmj', @vrstadokid = @@vrstadokid, @nenc = 1" />
+<PROSLIMJESEC_FORM  FILLEXPLORER="TRUE" ONSUBMIT="spMPPovratPDV @action = 5, @operateriid = @@operateriid, @node = 'proslimj', @vrstadokid = @@vrstadokid, @nenc = 1" />
+<FILTERODDO_FORM    FILLEXPLORER="TRUE" ONSUBMIT="spMPPovratPDV @action = 5, @operateriid = @@operateriid, @node = '@@node', @vrstadokid = @@vrstadokid, @nenc = 1" />
+
+
+
+
+<INSERTFORM1 
+    NAME="INSERTFORM" 
+    HEIGHT="3000" WIDTH="11000" 
+    CAPTION="Unos dokumenta povrata PDV-a iz MP"
+    ONLOAD="select convert(varchar,getdate(),112) as datumdok, @@vrstadokid as vrstadokid, 0 as mpblagajnaglaid" 
+    FOCUS="datumdok">
+    
+
+    <INPUT TYPE="frame"  NAME="fr1" CAPTION="Zaglavlje:" TOP="28" LEFT="56" WIDTH="10600" HEIGHT="1800" STYLE="1" />
+  
+    <INPUT TYPE="date"   NAME="datumdok" CAPTION="Datum*" TOP="300"  LEFT="1400" WIDTH="1500" HEIGHT="280" />
+	<INPUT TYPE="combo"  NAME="trgovinaid" CAPTION="Trgovina*" TOP="650"  LEFT="1400" WIDTH="2500" HEIGHT="280" ALLOWEMPTY="FALSE" ENABLED="TRUE"
+           SQL="spMPDajTrgovinaNG @operateriid = @@operateriid, @vrstatrg = 'M'" ONLOSTFOCUS="select 'refresh' as mpkaseid"/>
+    <INPUT TYPE="combo"  NAME="mpkaseid" CAPTION="Kasa*" TOP="650"  LEFT="4600" WIDTH="700" HEIGHT="280" ALLOWEMPTY="FALSE" 
+		   SQL="select mpkaseid, kasa as naziv from mpkase where trgovinaid=@@trgovinaid" />
+	<INPUT TYPE="date"   NAME="databc" CAPTION="_Datum mp računa*" TOP="650"  LEFT="6800" WIDTH="1500" HEIGHT="280" ONLOSTFOCUS="select 'refresh' as mpblagajnaglaid"/>
+	<INPUT TYPE="combo"  NAME="mpblagajnaglaid" CAPTION="Broj mp računa*" TOP="1000"  LEFT="1400" WIDTH="5000" HEIGHT="280" ALLOWEMPTY="FALSE"
+		   SQL="spMPDajMPRacunZaPovratPDV @datumdok = @@databc, @trgovinaid = @@trgovinaid, @mpkaseid = @@mpkaseid" />
+	<INPUT TYPE="text"   NAME="napomena" CAPTION="Napomena*" TOP="1350" LEFT="1400" WIDTH="9100" HEIGHT="280" />
+    <INPUT TYPE="combo"  NAME="vrstadokid"  CAPTION="Vrsta dokumenta*" TOP="-300" LEFT="1400" SQL="spMPDajVrstadok @sifra = '109'" ENABLED="FALSE" VISIBLE="FALSE" />
+  
+    <INPUT TYPE="button" NAME="ok" CAPTION="Stavke >>"  TOP="2000" LEFT="1000"
+       ONCLICK="spMPPovratPDV @action = 1, @operateriid = @@operateriid, ++#Ok#:UPDATE_FORM"  />
+    <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani (Esc)"  TOP="2000" LEFT="8000" ONCLICK="close"  />
+  
+ </INSERTFORM1>
+
+
+
+<UPDATE_FORM 
+	CAPTION="Izmjena dokumenta povrata PDV-a iz MP: @@broj [ @@id ]" 
+	HEIGHT="9500" WIDTH="11000" 
+	FILLEXPLORER="" 
+	FOCUS="robaid" 
+	ONLOAD="if (select status from MPPovratPDVGla where MPPovratPDVGlaid = @@ID) = 2 begin 
+				    exec spRaiserror 69001, &apos;Dokument je zaključen. Ne može se više ispravljati !&apos;
+				end else begin
+				if @@id = 0  begin 
+					exec spRaiserror 69001, &apos;Niste odabrali dokument !&apos;
+				end else begin 
+					exec spMPPovratPDV @action = 7, @ID = @@ID, @operateriid = @@operateriid
+				end end" 
+	ONLOAD2=""
+    ONLOADED="spmpOperaterlock @action = 1, @id = @@id, @operateriid = @@operateriid, @tablica = 'MPPovratPDVGla'
+			  #if (select count(*) from MPPovratPDVDet where MPPovratPDVGlaId = @@id) &gt; 0 begin select 'disable' as mpblagajnaglaid, 'disable' as databc, 'disable' as mpkaseid end
+			  #select @@vrstadokid as vrstadokid, naziv, adresa, mjesto, oib, putovnica, napomena as napomenakup from MPKupciPovratPDV where MPPovratPDVGlaId=@@id
+			  #select 1 as nePunicombo
+			  #select 'refresh' as mpblagajnaglaid
+			  #select @@Pravimpblagajnaglaid as mpblagajnaglaid
+			  #select 0 as nePunicombo"
+    ONESCKEY="spmpOperaterlock @action = 2, @id = @@id, @operateriid = @@operateriid, @tablica = 'MPPovratPDVGla'#Ok"
+    ONCLOSED="spmpOperaterlock @action = 2, @id = @@id, @operateriid = @@operateriid, @tablica = 'MPPovratPDVGla'#Ok">
+
+	<INPUT TYPE="number"   NAME="nePunicombo" CAPTION="" TOP="-2000" LEFT="" WIDTH="" HEIGHT="" ENABLED="FALSE" VALUE="0"/>
+	<INPUT TYPE="number"   NAME="Pravimpblagajnaglaid" CAPTION="" TOP="-2000" LEFT="" WIDTH="" HEIGHT="" ENABLED="FALSE" VALUE="0"/>
+	
+	
+    <INPUT TYPE="frame"  NAME="fr4"           CAPTION=""  WIDTH="1800" STYLE="1" DOCK="4" />
+    <INPUT TYPE="frame"  NAME="fr2"           CAPTION="Podaci o kupcu:" TOP="1600" LEFT="56" WIDTH="10600" HEIGHT="2200"   STYLE="1" DOCK="1"  />
+    <INPUT TYPE="frame"  NAME="fr1"           CAPTION="Zaglavlje:" TOP="28" LEFT="56" WIDTH="10600" HEIGHT="1800"  STYLE="1" DOCK="1" />
+    <INPUT TYPE="frame"  NAME="fr3"           CAPTION=""  HEIGHT="800"  STYLE="1" DOCK="2" />
+  
+	<INPUT TYPE="date"   NAME="datumdok" CAPTION="Datum*" TOP="300"  LEFT="1400" WIDTH="1500" HEIGHT="280" />
+	<INPUT TYPE="text"   NAME="broj" CAPTION="_Broj*" TOP="300"  LEFT="4600" ENABLED="FALSE" WIDTH="3700" HEIGHT="280" />
+	<INPUT TYPE="combo"  NAME="trgovinaid" CAPTION="Trgovina*" TOP="650"  LEFT="1400" WIDTH="2500" HEIGHT="280" ALLOWEMPTY="FALSE" ENABLED="FALSE"
+           SQL="spMPDajTrgovinaNG @operateriid = @@operateriid, @vrstatrg = 'M'" />
+	<INPUT TYPE="combo"  NAME="mpkaseid" CAPTION="Kasa*" TOP="650"  LEFT="4600" WIDTH="700" HEIGHT="280" ALLOWEMPTY="FALSE"
+		   SQL="select mpkaseid, kasa as naziv from mpkase where trgovinaid = @@trgovinaid" />
+	<INPUT TYPE="date"   NAME="databc" CAPTION="Datum mp računa*" TOP="650"  LEFT="6800" WIDTH="1500" HEIGHT="280" 
+		   ONLOSTFOCUS="select 1 as nePunicombo#select 'refresh' as mpblagajnaglaid"/>
+	<INPUT TYPE="combo"  NAME="mpblagajnaglaid" CAPTION="Broj mp računa*" TOP="1000"  LEFT="1400" WIDTH="5000" HEIGHT="280" ALLOWEMPTY="FALSE"
+		   SQL="if @@nePunicombo=1 begin exec spMPDajMPRacunZaPovratPDV @id = @@id, @datumdok = @@databc, @trgovinaid = @@trgovinaid, @mpkaseid = @@mpkaseid end"/>
+	<INPUT TYPE="text"   NAME="napomena" CAPTION="Napomena*" TOP="1350" LEFT="1400" WIDTH="9100" HEIGHT="280" />
+	<INPUT TYPE="combo"  NAME="vrstadokid"  CAPTION="Vrsta dokumenta*" TOP="-300" LEFT="1400" SQL="spMPDajVrstadok @sifra = '109'" ENABLED="FALSE" VISIBLE="FALSE" />
+	
+
+	<INPUT TYPE="text"   NAME="naziv" CAPTION="Ime kupca:*" TOP="2000" LEFT="1200" WIDTH="7500" HEIGHT="280" ENABLED="TRUE" />
+	<INPUT TYPE="text"   NAME="adresa" CAPTION="Adresa:*" TOP="2350" LEFT="1200" WIDTH="7500" HEIGHT="280" ENABLED="TRUE" />
+	<INPUT TYPE="text"   NAME="mjesto" CAPTION="Mjesto:*" TOP="2700" LEFT="1200" WIDTH="7500" HEIGHT="280" ENABLED="TRUE" />
+	<INPUT TYPE="text"   NAME="oib"	CAPTION="OIB:*" TOP="3050" LEFT="1200" WIDTH="2500" HEIGHT="280" MAXLENGTH="13" ENABLED="TRUE" />
+	<INPUT TYPE="text"   NAME="putovnica" CAPTION="Putovnica:*" TOP="3050" LEFT="5000" WIDTH="3700" HEIGHT="280" ENABLED="TRUE" />
+	<INPUT TYPE="text"   NAME="napomenakup" CAPTION="Napomena*" TOP="3400" LEFT="1200" WIDTH="7500" HEIGHT="280" ENABLED="TRUE"/>
+
+
+		<INPUT TYPE="grid" DOCK="5"
+			   NAME="stavke" 
+			   REFRESHAFTERCHILD="TRUE" 
+			   CAPTION="Stavke" 
+			   TOP="4140" LEFT="56" WIDTH="8750" HEIGHT="2000"
+			   AFTERREFRESH="select pdviznos from MPPovratPDVGla where MPPovratPDVGlaId = @@id"
+			   EDITCOLUMNS=""
+			   ONCELLEDITED=""
+			   CHECKBOXVISIBLE="FALSE"	
+			   PAGEHEADERCENTER="Dokument br.@@broj"
+			   PAGEHEADERRIGHT=""
+			   PAGEHEADERLEFT="Datum: @@datum##Trgovina: @@trgovina"
+			   PAGEFOOTERCENTER=""
+			   PAGEFOOTERLEFT=""
+			   PAGEFOOTERRIGHT="@@tkosmomi"
+			   PAGEORIENTATION="LANDSCAPE"
+			   GROUPBYBOXVISIBLE="FALSE"
+			   TOTALROW="FALSE"
+			   SQL="spMPPovratPDV @action = 6, @operateriid = @@operateriid, @id = @@id, @nenc = 1" />
+
+		<INPUT TYPE="number" NAME="pdviznos" ANCHOR="6" CAPTION="Ukupan PDV*" TOP="8500" LEFT="8500" WIDTH="2100" HEIGHT="280" SQL="" BACKCOLOR="greenyellow" STYLE="1"/>
+  
+		<INPUT TYPE="button" NAME="ok" ANCHOR="6" CAPTION="Spremi (F2)" TOP="8500" LEFT="196" WIDTH="1106" HEIGHT="322" 
+			   ONCLICK="delete from MPKupciPovratPDV where MPPovratPDVGlaId=@@id
+						#insert into MPKupciPovratPDV(MPBlagajnaglaid,MPPovratPDVGlaId,Naziv,Adresa,Mjesto,OIB,Putovnica,Napomena) 
+						 values(@@MPBlagajnaglaid,@@id,'@@Naziv','@@Adresa','@@Mjesto','@@OIB','@@Putovnica','@@napomenakup')
+						#exec spMPPovratPDV @action = 2, @id = @@id, @operateriid = @@operateriid, @datumdok = @@datumdok, @napomena = '@@napomena', @MPBlagajnaglaid = @@MPBlagajnaglaid, @mpkaseid = @@mpkaseid#Ok" HOTKEY="F2" />
+		<INPUT TYPE="button" NAME="cancel" ANCHOR="6" CAPTION="Odustani" TOP="8500" LEFT="1456" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+  
+		<INPUT TYPE="button" NAME="donesi" ANCHOR="9" CAPTION="Donesi stavke mp računa" TOP="4500" LEFT="9200" WIDTH="1400" HEIGHT="644" 
+			   ONCLICK="exec spMPPovratPDV @action = 3, @id = @@id, @mpblagajnaglaid = @@mpblagajnaglaid#select 'refresh' as stavke
+						#select 'disable' as mpblagajnaglaid, 'disable' as databc, 'disable' as mpkaseid"  />
+</UPDATE_FORM>
+
+
+
+<FILTERFORM 
+	NAME="FILTERFORM" 
+	HEIGHT="4254" WIDTH="6710" 
+	CAPTION="Upišite uvjete prikaza " 
+	ONSUBMIT="spMPPovratPDV @action = 5, @operateriid = @@operateriid, @vrstadokid = @@vrstadokid, "
+	ONLOAD="select @@datumod as datumod, @@datumdo as datumdo, @@trgovinaid as trgovinaid, @@vrstadokid as vrstadokid" 
+	FILLEXPLORER="TRUE" 
+	NEXTFORM=""
+	CMD1CAPTION="Pokaži" 
+	CMD2CAPTION="Odustani" >
+  
+	<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od" />
+	<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do" />
+	<INPUT TYPE="combo" NAME="trgovinaid" ALLOWEMPTY="TRUE" CAPTION="Trgovina" SQL="spMPDajTrgovinaNG @operateriid = @@operateriid, @vrstatrg = 'M' " />
+	<INPUT TYPE="combo" NAME="status" ALLOWEMPTY="true" CAPTION="Status" SQL="select 1 as status, &apos;Otvoren&apos; as naziv union all select 2 as status,&apos;Zaključeno &apos; as naziv" />
+	<INPUT TYPE="text" NAME="trazibroj" WIDTH="2500" ALLOWEMPTY="TRUE" CAPTION="Broj dokumenta" ONLOSTFOCUS=""/>
+</FILTERFORM>
+
+
+
+<ZAKLJUCI 
+    NAME="ZAKLJUCI" 
+    HEIGHT="3197" WIDTH="5501" 
+    CAPTION="Zaključiti dokument  ?" 
+    ONSUBMIT="if (select count(*) from MPPovratPDVDet where MPPovratPDVGlaId = @@id ) = 0 begin 
+				exec spRaiserror 69001, 'Dokument nema stavaka. Ne može se zaključiti !' end 
+			  else begin
+			  update MPPovratPDVGla set status = 2, datumzak = getdate(), operateriid = @@operateriid where MPPovratPDVGlaId = @@id end"
+    ONLOAD="if (select status from MPPovratPDVGla where MPPovratPDVGlaId = @@ID) = 2 begin 
+				exec spRaiserror 69001, 'Dokument je zaključen. Ne može se više zaključivati!' 
+			end else begin
+			exec spMPPovratPDV @action = 7, @ID = @@ID end" 
+    FILLEXPLORER=""
+    ONLOADED="spmpOperaterlock @action = 1, @id = @@id, @operateriid = @@operateriid, @tablica = 'MPPovratPDVGla'"
+    ONESCKEY="spmpOperaterlock @action = 2, @id = @@id, @operateriid = @@operateriid, @tablica = 'MPPovratPDVGla'" 
+    ONCLOSED="spmpOperaterlock @action = 2, @id = @@id, @operateriid = @@operateriid, @tablica = 'MPPovratPDVGla'"
+    CMD1CAPTION="Zaključi" 
+    CMD2CAPTION="Odustani" >
+  
+    <INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="2700" HEIGHT="317" WIDTH="2000" CAPTION="_broj" ENABLED="FALSE"/>
+    <INPUT TYPE="label" NAME="Label55" TOP="360" LEFT="288"	 HEIGHT="288" WIDTH="2200" CAPTION="Broj dokumenta povrata pdv-a:" />
+    <INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite zaključiti dokument  ? " />
+</ZAKLJUCI>
+
+
+
+<OTKLJUCAJ 
+    NAME="OTKLJUCAJ" 
+    HEIGHT="3197" WIDTH="5501" 
+    CAPTION="Otključavanje dokumenta  ?" 
+    ONSUBMIT="update MPPovratPDVGla set status=1, datumotvaranja = getdate(), operateriid = @@operateriid where MPPovratPDVGlaId = @@id"
+    ONLOAD="if (select status from MPPovratPDVGla where MPPovratPDVGlaId = @@ID) &lt;&gt; 2 begin 
+              exec spRaiserror 69001, 'Dokument nije zaključen. Ne može se otključavati!' 
+			end else begin
+			if (select knttemid from MPPovratPDVGla where MPPovratPDVGlaId = @@ID) is not null begin 
+              exec spRaiserror 69001, 'Dokument je proknjižen u Kontor. Ne može se otključavati!' 
+			end else begin
+              exec spMPPovratPDV @action = 7, @ID = @@ID
+			end end"
+    FILLEXPLORER="" 
+    CMD1CAPTION="Otključaj" 
+    CMD2CAPTION="Odustani">
+  
+    <INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="2700" HEIGHT="317" WIDTH="2000"  ENABLED="FALSE"/>
+    <INPUT TYPE="label" NAME="Label57" TOP="360" LEFT="288" HEIGHT="288" WIDTH="2200" BOLD="FALSE" CAPTION="Broj dokumenta povrata pdv-a:" />
+    <INPUT TYPE="label" NAME="stat" TOP="1267" LEFT="374" HEIGHT="418" WIDTH="4003"  BOLD="TRUE" CAPTION="Jeste li sigurni da želite otključati dokument  ? " />
+</OTKLJUCAJ>
+
+
+ 
+<BRISISTAVKU 
+	NAME="BRISISTAVKU" 
+	HEIGHT="2902" WIDTH="7502"  
+	CAPTION="Brisanje stavke" 
+	ONLOAD="spMPPovratPDV @action = 8, @id = @@stavke" >
+  
+	<INPUT TYPE="text"   NAME="userid" CAPTION="Šifra" HEIGHT="317" WIDTH="4997" ENABLED="FALSE"/>
+	<INPUT TYPE="text"   NAME="roba" CAPTION="Naziv robe" HEIGHT="317" WIDTH="4997" ENABLED="FALSE"/>
+	<INPUT TYPE="number" NAME="kolicina" CAPTION="Količina"   HEIGHT="302" WIDTH="1206"  DECIMALS="4" ENABLED="FALSE" />
+  
+	<INPUT TYPE="button" NAME="ok" CAPTION="Obriši" TOP="2000" LEFT="456" WIDTH="1106" HEIGHT="322" 
+		   ONCLICK="spMPPovratPDV @action = 4, @MPPovratPDVDetId = @@stavke, @id = @@id, @MPPovratPDVGlaId = @@id#select 'refresh' as stavke#Ok"  HOTKEY="F2" />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</BRISISTAVKU>
+
+
+
+</PROJECT>

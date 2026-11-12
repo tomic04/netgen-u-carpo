@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+<!--29.10.2019. AA permissioni na unesi, izmijeni i obrisi-->
+	<form name="master" type="master" caption="Dimenzije">
+
+		<managerlayout>
+			<event type="load">
+				<action type="variable value" >
+					<parameter name="NoviId" value="0" type="int"/>
+				</action>                                           
+			</event>       
+			<grid name="grdGrid" multiselect="true" dataname="dtGrid" key="DimenzijeId" type="master" bestfitonrefresh="True" fieldsmartspaces="false">
+				<!-- Enable/disable buttona, ovisno da li u gridu ima barem jedan zapis ili ne -->
+				<event type="focusedrowchanged">
+					<action type="control enable" value="#btnObrisi" if="#grdGrid.rowcount!=0"/>
+					<action type="control disable" value="#btnObrisi" else=""/>
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmDimenzijeIzmjeni"  if="#grdGrid.rowcount&gt;0">
+						<parameter name="tekst" value="izmijena"/>
+						<parameter name="ID" value="#grdGrid.@DimenzijeId"/>
+					</action>
+
+
+					<action type="control populate" value="#grdGrid">
+						<action type="control focus" value="#grdGrid">
+							<parameter value="$NoviId" />
+						</action>					
+					</action>
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="UNESI" type="add" function="Unesi">
+					<menuitem control="#grdGrid"/>
+					<event type="click">
+						<action type="form open" value="frmDimenzijeDodaj">
+							<parameter name="tekst" value="unos"/>
+						</action>
+
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit" function="Izmijeni">
+					<menuitem control="#grdGrid"/>				
+					<event type="click">
+						<action type="form open" value="frmDimenzijeIzmjeni"  if="#grdGrid.rowcount&gt;0">
+							<parameter name="tekst" value="izmijena"/>
+							<parameter name="ID" value="#grdGrid.@DimenzijeId"/>
+						</action>	
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete" function="Obrisi">
+					<menuitem control="#grdGrid"/>
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati dimenziju: {#grdGrid.@Naziv}?">
+							<action type="datarun nonquery" value="~dtDelete" >
+								<action type="control populate" value="#grdGrid" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnIspis" caption="ISPIŠI" >
+					<event type="click">
+						<action type="control printcontrol" value="#grdGrid"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spDimenzijeCarpoQuery" name="dtGrid">
+				<parameter name="@Action" value="3"/>
+			</data>
+			<data command="spDimenzijeCarpoAzur"  name="dtDelete">
+				<parameter name="@Action" value="2" />
+				<parameter name="@Id" value="#grdGrid.@DimenzijeId" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmDimenzijeDodaj" caption="Dimenzije :: {$tekst}" width="400" fixedsize="true">
+
+		<event type="load">
+			<action type="control value" value="#chkAktivan"  >
+				<parameter value="1"/>
+			</action>
+		</event>
+	
+		<layout textposition="left">
+			<group cols="1" rows="7" >
+				<item caption="Vrsta dimenzije:" col="1" row="1" >
+					<comboedit name="cmbVrsta" autopopulate="true" required="True" valuefield="DimVrsteId" displayfield="Naziv" datavalue="Global.dtGetZupanija.@DimVrsteId" dataname="Global.dtGetVrsta">
+
+					</comboedit>
+				</item>
+				<item caption="Naziv:" col="1" row="2">
+					<textedit name="txtNaziv"  required="True"  />
+				</item>
+				<item caption="Oznaka:" col="1" row="3">
+					<textedit name="txtOznaka"/>
+				</item>	
+				<item caption="SortKey:" col="1" row="4">
+					<textedit name="txtSortKey"    />
+				</item>	
+				<item caption="Opis 1:" col="1" row="5">
+					<textedit name="txtPrviOpis"  />
+				</item>	
+				<item caption="Opis 2:" col="1" row="6">
+					<textedit name="txtDrugiOpis" />
+				</item>					
+				<item caption="Aktivni:" col="1" row="7">
+					<checkedit name="chkAktivan"    />
+				</item>				
+			</group>
+		</layout>			
+		<datalist>
+			<data command="spDimenzijeCarpoAzur" name="dtAdd">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@DimVrsteId" value="#cmbVrsta"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>	
+				<parameter name="@Oznaka" value="#txtOznaka"/>
+				<parameter name="@Sortkey" value="#txtSortKey"/>
+				<parameter name="@txtPrviOpis" value="#txtPrviOpis"/>
+				<parameter name="@txtDrugiOpis" value="#txtDrugiOpis"/>
+				<parameter name="@Aktivni" value="#chkAktivan"/>
+			</data>
+		</datalist>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="datarun scalar" value="~dtAdd">
+							<parameter name="parent.$Noviid" />
+						</action>
+						<action type="form close"/>
+						<action type="control populate" value="parent.#grdGrid">
+							<action type="control focus" value="parent.#grdGrid">
+								<parameter value="parent.$NoviId" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmDimenzijeIzmjeni" caption="Dimenzije :: {$tekst}" width="400" fixedsize="true">
+		<event type="init">		
+			<action type="datarun reader" value="~dtGetDataEdit" if="$ID!=null"/>
+		</event>
+		<event type="load">
+			<action type="control value" value="#cmbVrsta" >
+				<parameter value="~dtGetDataEdit.@DimVrsteId"/>
+			</action>
+			<action type="control value" value="#txtNaziv" >
+				<parameter value="~dtGetDataEdit.@Naziv"/>
+			</action>
+			<action type="control value" value="#txtOznaka"  >
+				<parameter value="~dtGetDataEdit.@Oznaka"/>
+			</action>
+			<action type="control value" value="#txtSortKey"  >
+				<parameter value="~dtGetDataEdit.@Sortkey"/>
+			</action>
+			<action type="control value" value="#txtPrviOpis"  >
+				<parameter value="~dtGetDataEdit.@Opis1"/>
+			</action>
+			<action type="control value" value="#txtDrugiOpis"  >
+				<parameter value="~dtGetDataEdit.@Opis2"/>
+			</action>			
+			<action type="control value" value="#chkAktivan"  >
+				<parameter value="~dtGetDataEdit.@Aktivni"/>
+			</action>
+		</event>
+		<layout textposition="left">
+			<group cols="1" rows="7" >
+				<item caption="Vrsta dimenzije:" col="1" row="1" >
+					<comboedit name="cmbVrsta" autopopulate="true" required="True" valuefield="DimVrsteId" displayfield="Naziv"  dataname="Global.dtGetVrsta">
+
+					</comboedit>
+				</item>
+				<item caption="Naziv:" col="1" row="2">
+					<textedit name="txtNaziv"  required="True"  />
+				</item>
+				<item caption="Oznaka:" col="1" row="3">
+					<textedit name="txtOznaka"  required="True"  />
+				</item>	
+				<item caption="SortKey:" col="1" row="4">
+					<textedit name="txtSortKey"    />
+				</item>	
+				<item caption="Opis 1:" col="1" row="5">
+					<textedit name="txtPrviOpis"  />
+				</item>	
+				<item caption="Opis 2:" col="1" row="6">
+					<textedit name="txtDrugiOpis" />
+				</item>					
+				<item caption="Aktivni:" col="1" row="7">
+					<checkedit name="chkAktivan"    />
+				</item>				
+			</group>
+		</layout>			
+		<datalist>
+			<data command="spDimenzijeCarpoQuery"  name="dtGetDataEdit">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$ID" />
+			</data>
+			<data command="spDimenzijeCarpoAzur" name="dtAdd">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@ID" value="$ID"/>
+				<parameter name="@DimVrsteId" value="#cmbVrsta"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>	
+				<parameter name="@Oznaka" value="#txtOznaka"/>
+				<parameter name="@txtPrviOpis" value="#txtPrviOpis"/>
+				<parameter name="@txtDrugiOpis" value="#txtDrugiOpis"/>				
+				<parameter name="@Sortkey" value="#txtSortKey"/>
+				<parameter name="@Aktivni" value="#chkAktivan"/>
+			</data>
+		</datalist>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="datarun scalar" value="~dtAdd">
+							<parameter name="parent.$Noviid" />
+						</action>
+						<action type="form close"/>
+						<action type="control populate" value="parent.#grdGrid">
+							<action type="control focus" value="parent.#grdGrid">
+								<parameter value="parent.$NoviId" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+	</form>
+	
+	<datalist>
+		<data command="spDimenzijeCarpoQuery" name="dtGetVrsta">
+			<parameter name="@Action" value="5"/>
+		</data>
+		
+	</datalist>
+
+</root>

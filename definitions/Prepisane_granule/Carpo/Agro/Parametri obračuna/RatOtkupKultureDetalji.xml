@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Autor: Ivan Skorup
+Kreirano: 22.01.2021.
+Opis: Granula za administraciju parametara obračuna potrebnih za obračun ratarskih kultura
+Izmjene:
+    22.01.2021. (v 1.0) - inicijalno kreiranje granule.Ivan Skorup (PT 60836)
+    07.04.2021. (v.1.0.0.2) dodane funkcionalnosti brisanja i kopiranja. Ivan Skorup (HD 62684)
+-->
+<root version="1.0.0.2">
+<form name="frmMaster" type="master" caption="Parametri obračuna">
+  <event type="load">
+      <action type="form open" value="frmParametri" />
+      <action type="variable value" value="global.$Close" if="dialogresult==cancel"> 
+          <parameter value="true" type="bool"/> 
+      </action> 
+      <action type="control populate" value="#grdMaster" if="global.$Close!=true"/>		
+  </event>
+  <event type="shown">
+    <action type="form close" if="global.$Close==true"/> 
+  </event>
+  <managerlayout>
+  <grid name="grdMaster" type="master" dataname="~dtMaster" key="KultureDetaljiId" bestfitonrefresh="true" autopopulate="false" multiselect="true">
+    <fields inherited="true">
+      <field name="Cjenik" minwidth="150" />
+    </fields>
+  </grid>
+  </managerlayout>
+  <panelbuttons>
+    <buttons>
+      <button name="btnParametri" caption="FILTER">
+        <event type="click">
+          <action type="form open" value="frmParametri" />
+          <action type="control populate" value="#grdMaster" />
+        </event>
+      </button>
+      <button name="btnUnos" caption="UNESI">
+        <event type="click">
+          <action type="form open" value="frmUnos">
+              <parameter name="Naslov" value="Unos novog sloga"/>
+          </action>
+        </event>
+      </button>
+      <button name="btnIzmjena" caption="IZMIJENI">
+        <event type="click">
+          <action type="form open" value="frmIzmjena">
+              <parameter name="Naslov" value="Izmjena parametara {#grdMaster.@Oznaka} {#grdMaster.@Naziv}"/>
+              <parameter name="KultureDetaljiId" value="#grdMaster.@KultureDetaljiId" />
+              <parameter name="KultureId" value="#grdMaster.@KultureId" />
+          </action>
+        </event>
+      </button>
+      <button name="btnObrisi" caption="OBRIŠI">
+        <event type="click">
+          <action type="confirm" value="Želite li obrisati {#grdMaster.@Naziv}?" />
+              <action type="datarun nonquery" value="~dtDelete" />
+          <action type="control populate" value="#grdMaster" />
+        </event>
+      </button>
+      <button name="btnKopiraj" caption="KOPIRAJ" begingroup="true">
+        <event type="click">
+          <action type="confirm" value="Kopiranje parametara {#grdMaster.@Naziv}" caption="Kopiranje parametara obračuna">
+            <action type="datarun reader" value="~dtKultureDetaljiCopy"/>
+            <action type="control populate" value="#grdMaster">
+              <action type="control focus" value="#grdMaster">
+                  <parameter value="$KeyOUT" type="int"/>
+              </action>
+            </action>
+          </action>
+        </event>
+      </button>
+      <button caption="IZLAZ" dock="right">
+        <event type="click">
+         <action type="form close" />
+        </event>
+      </button>
+    </buttons>
+  </panelbuttons>
+  <datalist>
+    <data command="spKultureDetalji" name="dtMaster">
+      <parameter name="@Action" value="1" />
+      <parameter name="@Godina" value="global.$Godina" />
+      <parameter name="@KultureId" value="global.$KultureId" />
+      <parameter name="@OtkupMjId" value="global.$OtkupMjId" />
+    </data>
+    <data command="spKultureDetalji" name="dtDelete">
+      <parameter name="@Action" value="6" />
+      <parameter name="@KultureDetaljiId" value="#grdMaster.@KultureDetaljiId" />
+    </data>
+    <data command="spKultureDetalji" name="dtKultureDetaljiCopy">
+      <parameter name="@Action" value="5" />
+      <parameter name="@KultureDetaljiId" value="#grdMaster.@KultureDetaljiId" />
+      <parameter name="@KeyOUT.output.int" />
+    </data>
+  </datalist>
+</form>
+<form name="frmParametri" caption="Uvjeti prikaza" width="350">
+    <layout>
+      <group rows="3" cols="1">
+        <item row="1" col="1" caption="Godina:">
+          <textedit name="txtGodina" format="\d{4}" formattype="regex" savevalue="app"/>
+        </item>
+        <item row="2" col="1" caption="Kultura:" >
+          <comboedit name="cmbKulture" dataname="~dtKulture" valuefield="KultureId" displayfield="Naziv" savevalue="app"/>
+        </item>
+        <item row="3" col="1" colspan="2" caption="Otkupno mjesto:">
+          <comboedit name="cmbOtkupnoMjesto" dataname="~dtOtkupnoMjesto" valuefield="OtkupMjId" displayfield="Naziv" savevalue="app"/> 
+        </item>
+      </group>
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnPotvrdi" caption="Prikaži">
+          <event type="click">
+            <action type="variable value">
+                <parameter name="global.$Godina" value="#txtGodina" type="int" />
+                <parameter name="global.$KultureId" value="#cmbKulture" type="int" />
+			          <parameter name="global.$OtkupMjId" value="#cmbOtkupnoMjesto" type="int" />
+            </action>
+            <action type="form close" />
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Odustani" type="cancel" dock="right" />
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spRatOtkup_Controls" name="dtKulture">
+        <parameter name="@Action" value="Kulture" />  
+      </data>
+      <data command="spRatOtkup_Controls" name="dtOtkupnoMjesto">
+        <parameter name="@Action" value="OtkupnoMjesto" />  
+      </data>
+    </datalist>
+</form>
+<form name="frmUnos" path="frmUnos.xml" />
+<form name="frmIzmjena" path="frmIzmjena.xml" />
+</root>

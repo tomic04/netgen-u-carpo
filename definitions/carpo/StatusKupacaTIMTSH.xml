@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root version="1.0">
+	<form name="frmMaster"  type="master" caption="Status kupaca TIM TSH">
+		<event type="init">	
+			<action type="datarun scalar" value="dtMasterQuery">
+			</action>
+			<action type="variable value">
+				<parameter name="Global.$DatDo" value="null"  />
+				<parameter name="Global.$VrstaDokId" value="null"  />
+				<parameter name="Global.$PartneriId" value="null"  />
+				<parameter name="Global.$OrgShemaId" value="null"  />
+			</action> 
+		</event> 
+		<event type="load">
+			<action type="form open" value="frmFilterForm"/>
+			<action type="variable value" value="global.$Close" if="dialogresult==cancel"> 
+				<parameter value="true" type="bool"/> 
+			</action> 
+		</event>
+		<event type="shown">
+			<action type="form close" if="global.$Close==true"/> 
+		</event>
+		<managerlayout>
+			<grid name="grdMaster" async="true" type="master" autopopulate="false" dataname="dtMaster" savelayout="true" bestfitonrefresh="true">
+				<event type="doubleclick">
+					<action type="form open" value="frmFilterForm" >
+					    <parameter name="DatDo" value="#grdMaster.@DatDo"  />
+						<parameter name="OrgShemaId" value="#grdMaster.@OrgShemaId"  />
+						<parameter name="PartneriId" value="#grdMaster.@PartneriId"  />
+						<parameter name="OsobeId" value="#grdMaster.@OsobeId"  />
+					</action>	
+				</event>
+				<fields inherited="true">
+					<field name="!S0500" caption="s"/>
+					<field name="!Komercijalista1000" caption="Komercijalista" visible="true"/>
+					<field name="Partner" caption="Partner" visible="true"/>
+					<field name="Orgshema" caption="OrgShema" visible="true"/>
+					<field name="Fakturirano;prošla_godina" caption="Fakturirano prošla godina" visible="true"/>
+					<field name="FakturiranoUKP" caption="Fakturirano ukupno" visible="true"/>
+					<field name="Fakturirano0101_" caption="Fakturirano" visible="true"/>
+					<field name="Iznos_RUC" caption="Iznos_RUC" visible="true"/>
+					<field name="Ukupno" caption="Ukupno" visible="true"/>
+					<field name="Dospjelo" caption="Dospjelo" visible="true"/>
+					<field name="Nedospjelo" caption="Nedospjelo" visible="true"/>
+					<field name="2300" caption="2300" visible="true"/>
+					<field name="d30" caption="d30" visibe="true"/>
+					<field name="d60" caption="d60" visibel="true"/>
+					<field name="d90" caption="d90" visible="true"/>
+					<field name="d120" caption="d120" visible="true"/>
+					<field name="d360" caption="d360" visible="true"/>
+					<field name="v360" caption="v360" visible="true"/>
+				</fields>		 
+				<print caption="Status kupca do {Global.$DatDo::dd.MM.yyyy.}"
+					   printheader=" \n " headeralign="left" showgrouppanel="true" fieldsmartspaces="true" showfooter="true" savelayout="true">
+				</print>
+			</grid>	
+		</managerlayout>
+		<panelbuttons> 
+			<buttons> 
+				<button name="btnParametri" caption="Pregled" >
+					<event type="click">
+						<action type="form open" value="frmFilterForm"/>
+					</event>
+				</button>
+				<button name="btnIspis" caption="Ispiši">
+				<event type="click">
+					<action type="control printcontrol" value="#grdMaster"/>
+				</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCKntStatusKupacaTIMQuery" name="dtMaster" timeout="400">
+				<parameter name="@DatDo" value="Global.$DatDo" /> 
+				<parameter name="@OrgShemaId" value="Global.$OrgShemaId"/> 
+				<parameter name="@PartneriId" value="Global.$PartneriId"/> 
+				<parameter name="@OsobeId" value="Global.$OsobeId"/> 
+			</data>
+		</datalist>
+	</form>
+	<form name="frmFilterForm"  caption="Izaberi parametre upita">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet"/>
+		</event>
+		<layout textposition="top">
+			<group rows="4" cols="2" colspan="2">
+				<item col="1" row="1" caption="Datum do:">
+					<dateedit name="datDatumDo" value="now" required="true" savevalue="app" tabindex="1">
+					</dateedit>
+				</item>
+				<item col="1" row="2"  caption="Organizacijska shema:" colspan="2" >
+					<comboedit name="cmbOrgShema" required="true" dataname="~dtOrgShema" valuefield="OrgShemaId" displayfield="Naziv" datavalue="~dtGet.@OrgShemaId" savevalue="app"  tabindex="2"/>
+				</item>
+				<item col="1" row="3"  caption="Partner:" colspan="2">
+					<comboedit name="cmbPartneri" required="true" dataname="~dtPartneri" valuefield="PartneriId" displayfield="Naziv" datavalue="~dtGet.@PartneriId" savevalue="app"  tabindex="3"/>
+				</item>
+				<item col="1" row="4"  caption="Komercijalist:" colspan="2">
+					<comboedit name="cmbKomercijalist" required="true" dataname="~dtKomercijalist" valuefield="OsobeId" displayfield="Naziv" datavalue="~dtGet.@OsobeId" savevalue="app"  tabindex="4"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPokaži" caption="Prihvati">
+					<event type="click">
+						<action type="variable value">
+							<parameter name="Global.$DatDo" value="#datDatumDo"  />
+							<parameter name="Global.$OrgShemaId" value="#cmbOrgShema" />
+							<parameter name="Global.$VrstaDokId" value="#cmbPartner"  />
+							<parameter name="Global.$Konto" value="#cmbKomercijalist" />		
+						</action>
+						<action type="form close"/>
+						<action type="control populate" value="parent.#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel">
+					<event type="click">
+						<action type="variable value" value="global.$Close" > 
+							<parameter value="true" type="bool"/> 
+						</action> 
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCKntStatusKupacaTIMAzur" name="dtOrgShema"> 
+				<parameter name="@Action" value="1"/>  
+				<parameter name="@OrgShemaId" value="#cmbOrgShema"/>
+		    </data>
+			<data command="spPartneriQuery_Carpo" name="dtPartneri"> 
+				<parameter name="@Action" value="100"/>  
+		    </data>
+			<data command="spCKntStatusKupacaTIMAzur" name="dtKomercijalist"> 
+				<parameter name="@Action" value="2"/>  
+				<parameter name="@OsobeId" value="#cmbKomercijalist"/> 
+			</data>
+		</datalist>
+	</form>
+
+</root>

@@ -1,0 +1,640 @@
+<!--jupiter2012, spin20160126
+v. 1.1.0. 17.08.2021. IF - bug fix u layoutu - dodan atribut minsize ="200"
+v 1.0.9. 15.4.2019. AA izmjena logike selektiranja
+v 1.0.8. 14.11.2017. AA upis sume cesije
+v 1.0.7. 8.11.2017. AA brisanje podataka u gridu na promjenu bilo koje kontrole
+v 1.0.6. 30.10.2017. AA parametri u varijable prije korištenja
+v 1.0.5. 26.10.2017. AA odvojeni dtDelete i dtGlavni zbog editabilnih iznosa
+v 1.0.4. 25.10.2017. AA za cesije novi konto bez običnih
+v 1.0.3. 24.10.2017. AA izbor konta s obzirom na rdoKupci/Dobavljači, cesije
+v 1.0.2. 9.10.2017. AA entermovenextcontrol="false"
+v 1.0.1. 5.10.2017. AA dodala parametar Opis
+v 1.0.0. 29.08.2017 PJ dodao null handling za IdList u dtPreknjizi
+-->
+<root loglevel="3" version="1.1.0."> 
+	<form type="master" name="frmGlavni" caption="Preknjiženje konta i partnera" template="splitter" saveformsize="true" maximized="true">
+		<event type="load">
+			<action type="control value" value="#datDatum">
+				<parameter value="now" type="date"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control visible" value="#txtSaldo,#txtDevSaldo">
+				<parameter value="false"/>
+			</action>
+			<action type="control disable" value="#srcNoviPartner,#srcStariPartner,#cmbNoviKonto,#cmbStariKonto,#btnPreknjizi,#rdoDobavljaci,#rdoKupci,#btnOznaciSve"/>
+			<action type="control focus" value="#cmbVrstaPreknj"/>
+			<action type="variable value" value="$StringId">
+				<parameter value=""/>
+			</action>
+			<action type="variable value" value="$OznaciSve">
+				<parameter value="0" type="int"/>
+			</action>	
+			<action type="control caption" value="#btnOznaciSve">
+				<parameter value="OZNAČI SVE"/>
+			</action>			
+		</event>
+		<layout name="panel1" type="collapsable" caption="Parametri" autotaborder="false" itemspadding="1" minsize="420">
+			<group cols="1" rows="12">
+				<columnsdefinition>
+					<column size="400" position="1"/>
+				</columnsdefinition>
+				<item col="1" row="1" caption="Vrsta preknjiženja:" tabindex="0">
+					<!--0 samo konto, 1 samo partner, 2 i konto i partner, 3 cesija-->
+					<comboedit name="cmbVrstaPreknj" dataname="~dtVrstaPreknj" valuefield="Id" displayfield="Naziv" required="true" tabindex="0" entermovenextcontrol="false">
+						<event type="valuechanged">
+							<action type="control disable" value="#srcNoviPartner" if="#cmbVrstaPreknj==0"/>
+							<action type="control enable" value="#srcStariPartner,#cmbNoviKonto,#cmbStariKonto,#rdoDobavljaci,#rdoKupci" if="#cmbVrstaPreknj==0"/>
+							<action type="control disable" value="#cmbNoviKonto,#cmbStariKonto,#rdoDobavljaci,#rdoKupci" if="#cmbVrstaPreknj==1"/>
+							<action type="control enable" value="#srcNoviPartner,#srcStariPartner" if="#cmbVrstaPreknj==1"/>
+							<action type="control enable" value="#srcNoviPartner,#srcStariPartner,#cmbNoviKonto,#cmbStariKonto,#rdoDobavljaci,#rdoKupci" if="#cmbVrstaPreknj==2||#cmbVrstaPreknj==3"/>
+							<action type="control value" value="#srcNoviPartner,#srcStariPartner,#cmbNoviKonto,#cmbStariKonto,#txtOpis">
+								<parameter value="null"/>
+							</action>
+							<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+							<action type="control enable" value="#btnOznaciSve" else=""/>								
+							<action type="control value" value="#rdoKupci,#rdoDobavljaci" if="#cmbVrstaPreknj==1">
+								<parameter value="false"/>
+							</action>
+							<action type="control value" value="#rdoKupci" elseif="#cmbVrstaPreknj!=1">
+								<parameter value="true"/>
+							</action>
+							<action type="control visible" value="#txtSaldo,#txtDevSaldo" if="#cmbVrstaPreknj==3">
+								<parameter value="true"/>
+							</action>
+							<action type="control visible" value="#txtSaldo,#txtDevSaldo" elseif="#cmbVrstaPreknj!=3">
+								<parameter value="false"/>
+							</action>
+							<action type="control value" value="#txtSaldo,#txtDevSaldo">
+								<parameter value="0"/>
+							</action>
+							<action type="control populate" value="#cmbStariKonto"/>
+							<action type="control populate" value="#cmbNoviKonto"/>
+							<action type="control populate" value="#cmbVrstaDok"/>
+							<!-- <action type="control focus" value="#srcStariPartner"/> --><!--ako uključeno, na listanje strijelicom se odvija valuchanged tad i focus-->
+							<action type="control datasourceempty" value="#grdGlavni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>							
+						</event>
+						<event type="leave"> 
+							<action type="control focus" value="#srcStariPartner"/>
+						</event> 
+					</comboedit>
+				</item>
+				<item col="1" row="2" caption="Stari partner:">
+					<searchedit name="srcStariPartner" type="partner" fieldvalue="PartneriId" fieldtext="Naziv"  tabindex="1" entermovenextcontrol="false" savelayout="true">
+						<!--leave ispod, primjer skakanja focusa dolje kad iz ove kontrole zelim klik na gornju kontrolu-->
+						<!-- <event type="leave"> -->
+							<!-- <action type="control focus" value="#srcNoviPartner"/> -->
+						<!-- </event>  -->
+						<event type="valuechanged">
+							<action type="control focus" value="#srcNoviPartner" if="#srcStariPartner!=null"/>
+							<action type="control datasourceempty" value="#grdGlavni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>
+							<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+							<action type="control enable" value="#btnOznaciSve" else=""/>								
+						</event>
+					</searchedit>
+				</item>
+				<item col="1" row="3" caption="Novi partner:" >
+					<searchedit name="srcNoviPartner" type="partner" fieldvalue="PartneriId" fieldtext="Naziv" tabindex="2" entermovenextcontrol="false" savelayout="true">
+						<event type="valuechanged">
+							<action type="control focus" value="#rdoKupci"/>
+							<action type="control datasourceempty" value="#grdGlavni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>
+							<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+							<action type="control enable" value="#btnOznaciSve" else=""/>								
+						</event>
+						<event type="leave">
+							<action type="control focus" value="#rdoKupci"/> 
+						</event>						
+					</searchedit>				
+				</item>
+				<group col="1" row="4" cols="2" rows="1" groupbordervisible="false" alignmode="local">
+					<group col="1" row="1" cols="1" rows="1" groupbordervisible="false" alignmode="local">
+						<item col="1" row="1" caption="Kupci" textposition="left">
+							<radioedit name="rdoKupci" tabindex="3" value="true" groupindex="1">
+								<event type="valuechanged">
+									<!-- <action type="control value" value="#rdoDobavljaci" if="#rdoKupci==true"> -->
+										<!-- <parameter value="false"/> -->
+									<!-- </action> -->
+									<!-- <action type="control value" value="#rdoDobavljaci" if="#rdoKupci==false"> -->
+										<!-- <parameter value="true"/> -->
+									<!-- </action>	 -->
+									<!-- <action type="control populate" value="#rdoDobavljaci"/> -->
+									<action type="control populate" value="#cmbStariKonto"/>
+									<action type="control datasourceempty" value="#grdGlavni">
+										<parameter name="clearcolumns" value="false"/>
+									</action>
+									<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+									<action type="control enable" value="#btnOznaciSve" else=""/>										
+								</event>
+							</radioedit>
+						</item>
+					</group>
+					<group col="2" row="1" cols="1" rows="1" groupbordervisible="false" alignmode="local">
+						<item col="1" row="1" caption="Dobavljači" textposition="left">
+							<radioedit name="rdoDobavljaci"  tabindex="4" value="false" groupindex="1">
+								<event type="valuechanged">
+									<!-- <action type="control value" value="#rdoKupci" if="#rdoDobavljaci==true"> -->
+										<!-- <parameter value="false"/> -->
+									<!-- </action> -->
+									<!-- <action type="control value" value="#rdoKupci" if="#rdoDobavljaci==false"> -->
+										<!-- <parameter value="true"/> -->
+									<!-- </action> -->
+									<!-- <action type="control populate" value="#rdoKupci"/> -->
+									<action type="control populate" value="#cmbStariKonto"/>
+									<action type="control datasourceempty" value="#grdGlavni">
+										<parameter name="clearcolumns" value="false"/>
+									</action>
+									<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+									<action type="control enable" value="#btnOznaciSve" else=""/>										
+								</event>
+							</radioedit>
+						</item>
+					</group>
+				</group>
+				<item col="1" row="5" caption="Stari konto:" >
+					<combomultiedit name="cmbStariKonto" dataname="~dtKontoStari" valuefield="kntplanaid" displayfield="Naziv" tabindex="5" showmultiselecttext="false">
+						<event type="valuechanged">
+							<action type="control datasourceempty" value="#grdGlavni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>	
+							<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+							<action type="control enable" value="#btnOznaciSve" else=""/>								
+						</event>
+					</combomultiedit>
+				</item>
+				<item col="1" row="6" caption="Novi konto:" >
+					<comboedit name="cmbNoviKonto" dataname="~dtKontoNovi" valuefield="KntPlanAId" displayfield="Naziv" tabindex="6">
+						<event type="valuechanged">
+							<action type="control datasourceempty" value="#grdGlavni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>	
+							<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+							<action type="control enable" value="#btnOznaciSve" else=""/>								
+						</event>
+					</comboedit>
+				</item>
+				<item col="1" row="7" caption="Datum valute:" required="true" allownull="false">
+					<dateedit name="datDatumValute" tabindex="7" savevalue="app" value="now">
+						<event type="valuechanged">
+							<action type="control datasourceempty" value="#grdGlavni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>	
+							<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+							<action type="control enable" value="#btnOznaciSve" else=""/>								
+						</event>
+					</dateedit>
+				</item>					
+				<item col="1" row="8" caption="Vrsta dokumenta:" >
+					<comboedit name="cmbVrstaDok" dataname="~dtVrstaDok" displayfield="Opis" valuefield="VrstaDokId" allownull="false" tabindex="8">
+						<event type="valuechanged">
+							<action type="control datasourceempty" value="#grdGlavni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>	
+							<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+							<action type="control enable" value="#btnOznaciSve" else=""/>								
+						</event>
+					</comboedit>
+				</item>
+				<item col="1" row="9" caption="Datum knjiženja:" required="true" allownull="false">
+					<dateedit name="datDatum" tabindex="9">
+						<event type="valuechanged">
+							<action type="control datasourceempty" value="#grdGlavni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>	
+							<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+							<action type="control enable" value="#btnOznaciSve" else=""/>								
+						</event>
+					</dateedit>
+				</item>	
+				<item col="1" row="10" caption="Opis:">
+					<textedit name="txtOpis" maxlength="100" tabindex="10">
+						<event type="valuechanged">
+							<action type="control datasourceempty" value="#grdGlavni">
+								<parameter name="clearcolumns" value="false"/>
+							</action>	
+							<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+							<action type="control enable" value="#btnOznaciSve" else=""/>	
+						</event>
+						<event type="leave">
+							<action type="control focus" value="#txtSaldo" if="#cmbVrstaPreknj==3"/>
+							<action type="control focus" value="#btnPokazi" elseif="#cmbVrstaPreknj!=3"/>
+						</event>
+					</textedit>
+				</item>
+				<group col="1" row="11" cols="2" rows="1" groupbordervisible="false">
+					<columnsdefinition>
+						<column size="50%" position="1"/>
+						<column size="50%" position="2"/>
+					</columnsdefinition>
+					<item col="1" row="1" caption="Saldo cesije:">
+						<textedit name="txtSaldo" format="n2" type="numeric" value="0" tabindex="11">
+							<event type="valuechanged">
+								<action type="control datasourceempty" value="#grdGlavni">
+									<parameter name="clearcolumns" value="false"/>
+								</action>
+								<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+								<action type="control enable" value="#btnOznaciSve" else=""/>									
+							</event>
+							<event type="leave">
+								<action type="control disable" value="#txtDevSaldo" if="#txtSaldo!=0">
+									<action type="control focus" value="#btnPokazi"/>
+								</action>
+								<action type="control enable" value="#txtDevSaldo" 	else="">	
+									<action type="control focus" value="#txtDevSaldo"/>
+								</action>
+							</event>
+						</textedit>
+					</item>
+					<item col="2" row="1" caption="Devizni saldo cesije:">
+						<textedit name="txtDevSaldo" format="n2" type="numeric" value="0" tabindex="12">
+							<event type="valuechanged">
+								<action type="control datasourceempty" value="#grdGlavni">
+									<parameter name="clearcolumns" value="false"/>
+								</action>
+								<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+								<action type="control enable" value="#btnOznaciSve" else=""/>									
+								<action type="control disable" value="#txtSaldo" if="#txtDevSaldo!=0"/>
+								<action type="control enable" value="#txtSaldo" else=""/>
+							</event>
+							<event type="leave">
+								<action type="control focus" value="#btnPokazi"/>
+							</event>
+						</textedit>
+					</item>			
+				</group>
+				<!-- <item col="1" row="11" caption="Slobodan unos:"> -->
+					<!-- <checkedit name="#cheSlobodan" value="false" tabindex="12"> -->
+					
+					<!-- </checkedit> -->
+				<!-- </item> -->
+				<item col="1" row="12"/>
+			</group>
+		</layout>
+		<layout name="panel2">
+			<group cols="1" rows="1" groupbordervisible="false">
+				<item col="1" row="1">
+					<grid name="grdGlavni" dataname="~dtGlavni" allowfilter="true" key="CKntTmpPreknjizenjeKPId"  savelayout="true">
+						<event type="cellvaluechanged">
+							<!--isprazni varijablu odabranih-->
+							<action type="variable value" value="$StringId">
+								<parameter value=""/>
+							</action>
+							<!--prođi sve redove i generiraj niz ideva-->
+							<action type="control foreachrow" value="#grdGlavni">
+								<action if="#grdGlavni.@Checked==true">
+									<action type="generate string" if="$StringId==">
+										<parameter name="$StringId"/>									
+										<parameter value="#grdGlavni.@CKntTmpPreknjizenjeKPId"/>					
+									</action>
+									<action type="generate string" else="$StringId!=">
+										<parameter name="$StringId"/>
+										<parameter value="$StringId"/>								
+										<parameter value="," />										
+										<parameter value="#grdGlavni.@CKntTmpPreknjizenjeKPId"/>					
+									</action>	
+								</action>
+							</action>				
+							<action if="$Editable==1">
+								<action type="variable value">
+									<parameter name="Saldo" value="#grdGlavni.@Saldo" format="n2"/>
+								</action>
+								<action type="variable value">
+									<parameter name="DevSaldo" value="#grdGlavni.@DevSaldo" format="n2"/>
+								</action>							
+								<action type="datarun nonquery" value="~dtSaldo"/>
+							</action>	
+							
+							<action type="datarun reader" value="~dtSuma"/>
+							<action if="$Editable!=1&amp;&amp;$VrstaPreknj==3">
+								<action type="datarun reader" value="~dtPreostalo"/>
+								<action type="footer text" value="suma Saldo: {~dtSuma.@suma::n2} | preostalo Saldo: {~dtPreostalo.@saldopreo::n2} | suma DevSaldo: {~dtSuma.@devsuma::n2} | preostalo DevSaldo: {~dtPreostalo.@devsaldopreo::n2}" if="$Editable!=1&amp;&amp;$VrstaPreknj==3"/>										
+								<action type="variable value">
+									<parameter name="Preostalo" value="~dtPreostalo.@saldopreo"/>
+									<parameter name="PreostaloDev" value="~dtPreostalo.@devsaldopreo"/>									
+								</action>
+							</action>
+							<action type="footer text"  value="suma Saldo: {~dtSuma.@suma::n2}  | suma DevSaldo: {~dtSuma.@devsuma::n2}" else=""/>						
+							<action type="control disable" value="#btnPreknjizi" if="$StringId=="/>
+							<action type="control enable" value="#btnPreknjizi" else="$StringId!="/>								
+							<!-- <action type="variable value"> -->
+								<!-- <parameter name="FokusId" value="#grdGlavni.@CKntTmpPreknjizenjeKPId"/> -->
+							<!-- </action> -->
+							<!-- <action type="datarun reader" value="~dtCheck" if="$Editable!=1&amp;&amp;$VrstaPreknj==3"> -->
+							<!-- </action> -->
+							<!-- <action type="datarun nonquery" value="~dtCheck" else=""/> -->
+							<!-- <action type="datarun scalar" value="~dtDohvati"> -->
+								<!-- <parameter name="Odabrani"/> -->
+							<!-- </action>	-->								
+							<!-- <action type="footer text" value="suma Saldo: {~dtSuma.@suma::n2} | preostalo Saldo: {~dtCheck.@saldopreo::n2} | suma DevSaldo: {~dtSuma.@devsuma::n2} | preostalo DevSaldo: {~dtCheck.@devsaldopreo::n2}" if="$Editable!=1&amp;&amp;$VrstaPreknj==3"/> -->
+							<!-- <action type="footer text"  value="suma Saldo: {~dtSuma.@suma::n2}  | suma DevSaldo: {~dtSuma.@devsuma::n2}" else=""/> -->
+							<!-- <action type="control populate" value="#grdGlavni"/> -->
+							<!-- <action type="control focus" value="#grdGlavni"> -->
+								<!-- <parameter value="$FokusId"/> -->
+							<!-- </action> -->
+							<!-- <action type="control disable" value="#btnPreknjizi" if="$Odabrani==null"/> -->
+							<!-- <action type="control enable" value="#btnPreknjizi" elseif="$Odabrani!=null"/> -->						
+						</event>
+						<event type="showingeditor">
+							<!-- <action type="editor allow" value="true" if="#grdGlavni.@Smije==1" /> -->
+							<action type="editor allow" value="true" if="#cmbVrstaPreknj==0"/>
+							<action type="editor allow" value="true" elseif="#cmbVrstaPreknj==1"/>	
+							<action type="editor allow" value="true" elseif="#cmbVrstaPreknj==2"/>	
+							<!--cesija i upisan saldo-->
+							<action type="editor allow" value="true" elseif="#cmbVrstaPreknj==3&amp;&amp;$Editable==null&amp;&amp;$Preostalo>0"/>	
+							<action type="editor allow" value="true" elseif="#cmbVrstaPreknj==3&amp;&amp;$Editable==null&amp;&amp;$Preostalo==0&amp;&amp;#grdGlavni.@Checked==true"/>						
+						<!--cesija i upisan devizni saldo-->							
+							<action type="editor allow" value="true" elseif="#cmbVrstaPreknj==3&amp;&amp;$Editable==null&amp;&amp;$PreostaloDev>0"/>								
+							<!--cesija i mogućnost odabira salda-->
+							<action type="editor allow" value="true" elseif="#cmbVrstaPreknj==3&amp;&amp;$Editable==1"/>							
+						</event>
+						<fields inherited="true">
+							<field name="Checked" editable="true" edittype="bit" caption=" "/>
+							<field name="Smije" visible="false"/>
+							<field name="PartneriIdStari" visible="false"/>
+							<field name="PartneriIdNovi" visible="false"/>
+							<field name="KntPlanAIdNovi" visible="false"/>
+							<field name="KntPlanAIdStari" visible="false"/>
+							<field name="Saldo" editable="true" visible="true" if="$Editable==1"/>
+							<field name="Saldo" visible="true" else=""/>
+							<field name="DevSaldo" editable="true" visible="true" if="$Editable==1"/>
+							<field name="DevSaldo" visible="true" else=""/>							
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPokazi" caption="POKAŽI" tabindex="12">
+					<event type="click">
+						<action type="validate"/>
+						<action type="variable value">
+							<parameter name="VrstaPreknj" value="#cmbVrstaPreknj"/>
+						</action>
+						<action type="variable value">
+							<parameter name="StariPartner" value="#srcStariPartner"/>
+						</action>
+						<action type="variable value">
+							<parameter name="NoviPartner" value="#srcNoviPartner"/>
+						</action>
+						<action type="variable value" value="VrstaKonta">
+							<parameter value="K" if="#rdoKupci==true||$VrstaPreknj==1"/>
+							<parameter value="D" elseif="#rdoDobavljaci==true"/>							
+						</action>	
+						<action type="variable value">
+							<parameter name="StariKonto" value="#cmbStariKonto"/>
+						</action>					
+						<action type="variable value">
+							<parameter name="NoviKonto" value="#cmbNoviKonto"/>
+						</action>						
+						<action type="variable value">
+							<parameter name="Opis" value="#txtOpis"/>
+						</action>	
+						<action type="variable value">
+							<parameter name="VrstaDokId" value="#cmbVrstaDok"/>
+						</action>
+						<action type="variable value">
+							<parameter name="Datum" value="#datDatum"/>
+						</action>
+						<action type="variable value">
+							<parameter name="DatumValute" value="#datDatumValute"/>
+						</action>						
+						<action type="variable value">
+							<parameter name="AutoSaldo" value="#txtSaldo"/>
+						</action>
+						<action type="variable value">
+							<parameter name="AutoDevSaldo" value="#txtDevSaldo"/>
+						</action>
+						<action if="#cmbVrstaPreknj==3">
+							<action type="variable value" if="#txtSaldo==0||#txtSaldo==null">
+								<parameter name="IndSaldo" value="0"/>
+							</action>
+							<action type="variable value" else="">
+								<parameter name="IndSaldo" value="1"/>
+							</action>
+							<action type="variable value" if="#txtDevSaldo==0||#txtDevSaldo==null">
+								<parameter name="IndDevSaldo" value="0"/>
+							</action>
+							<action type="variable value" else="">
+								<parameter name="IndDevSaldo" value="1"/>
+							</action>
+							<action type="variable value" if="$IndSaldo==0&amp;&amp;$IndDevSaldo==0">
+								<parameter name="Editable" value="1"/>
+							</action>	
+							<action type="variable value" else="">
+								<parameter name="Editable" value="null"/>
+							</action>
+							<!--preostao je cjelokupni iznos salda-->
+							<action type="variable value">
+								<parameter name="Preostalo" value="$AutoSaldo"/>
+							</action>
+							<action type="variable value">
+								<parameter name="PreostaloDev" value="$AutoDevSaldo"/>
+							</action>							
+						</action>
+						<action elseif="#cmbVrstaPreknj!=3">
+							<action type="variable value">
+								<parameter name="IndSaldo" value="null"/>
+							</action>
+							<action type="variable value">
+								<parameter name="IndDevSaldo" value="null"/>
+							</action>	
+							<action type="variable value">
+								<parameter name="Editable" value="null"/>
+							</action>							
+						</action>
+						<action type="datarun nonquery" value="~dtDelete"/>
+						<action type="control populate" value="#grdGlavni"/>
+						<action type="panel collapse" value="panel1" if="#grdGlavni.rowcount!=0"/>
+						<action type="control disable" value="#btnPreknjizi"/>
+						<action type="footer text"  value="suma Saldo:   | suma DevSaldo: "/>		
+						<action type="control focus" value="#grdGlavni"/>
+						<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+						<action type="control enable" value="#btnOznaciSve" else=""/>						
+					</event>
+				</button>
+				<button name="btnPreknjizi" caption="PREKNJIŽI">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite preknjižiti odabrane stavke?"/>
+						<action type="datarun nonquery" value="~dtUpdateSalda" if="$IndSaldo==1"/>
+						<action type="datarun nonquery" value="~dtUpdateDevSalda" if="$IndDevSaldo==1"/>						
+						<action type="datarun reader" value="~dtPreknjizi" />
+						<action type="datarun nonquery" value="~dtDelete"/>
+						<action type="control datasourceempty" value="#grdGlavni">
+							<parameter name="clearcolumns" value="false"/>
+						</action>							
+						<action type="control populate" value="#grdGlavni"/>
+						<action type="control enable" value="#btnPreknjizi" if="#grdGlavni.rowcount!=0"/>
+						<action type="control disable" value="#btnPreknjizi" elseif="#grdGlavni.rowcount==0"/>
+						<action type="control disable" value="#btnPreknjizi"/>	
+						<action type="variable value" value="Odabrani">
+							<parameter value="null"/>
+						</action>
+						<action type="footer text"  value="suma Saldo:   | suma DevSaldo: "/>	
+						<action type="control disable" value="#btnOznaciSve" if="#cmbVrstaPreknj==3||#grdGlavni.rowcount&lt;1"/>
+						<action type="control enable" value="#btnOznaciSve" else=""/>						
+					</event>
+				</button>
+				<button name="btnOznaciSve">
+					<event type="click">
+						<action type="variable value" value="$OznaciSve" if="$OznaciSve==0">
+							<parameter value="1" type="int"/>
+						</action>
+						<action type="variable value" value="$OznaciSve" else="$OznaciSve==1">
+							<parameter value="0" type="int"/>
+						</action>
+						<action if="$OznaciSve==1">
+							<action type="control foreachrow" value="#grdGlavni">
+									<action type="generate string" if="$StringId==">
+										<parameter name="$StringId"/>									
+										<parameter value="#grdGlavni.@CKntTmpPreknjizenjeKPId"/>					
+									</action>
+									<action type="generate string" else="$StringId!=">
+										<parameter name="$StringId"/>
+										<parameter value="$StringId"/>								
+										<parameter value="," />										
+										<parameter value="#grdGlavni.@CKntTmpPreknjizenjeKPId"/>					
+									</action>	
+							</action>	
+						</action>
+						<action else="">
+							<action type="variable value" value="$StringId">
+								<parameter value=""/>
+							</action>							
+						</action>
+						<action type="datarun nonquery" value="~dtOznaciSve"/>
+						<action type="control populate" value="#grdGlavni"/>
+						<action type="control caption" value="#btnOznaciSve" if="$OznaciSve==1">
+							<parameter value="ODZNAČI SVE"/>
+						</action>
+						<action type="control caption" value="#btnOznaciSve" if="$OznaciSve==0">
+							<parameter value="OZNAČI SVE"/>
+						</action>	
+						<action type="control disable" value="#btnPreknjizi" if="$StringId=="/>
+						<action type="control enable" value="#btnPreknjizi" else="$StringId!="/>						
+					</event>
+				</button>
+				<button name="btnIspis" caption="ISPIS   SUČELJA">
+					<event type="click">
+						<action type="control printcontrol" value="#grdGlavni"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtVrstaDok" command="spCKntPreknjizenjeKP">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Akcija" value="#cmbVrstaPreknj"/>
+			</data>
+			<data name="dtKontoStari" command="spCKntPreknjizenjeKP" >
+				<!-- <parameter name="@Action" value="3" if="#cmbVrstaPreknj==0||#cmbVrstaPreknj==null||#cmbVrstaPreknj==1"/> -->
+				<parameter name="@Action" value="33" if="#cmbVrstaPreknj==1||#cmbVrstaPreknj==null"/>				
+				<parameter name="@Action" value="333" elseif="#rdoKupci==true&amp;&amp;#cmbVrstaPreknj!=1"/>
+				<parameter name="@Action" value="334" elseif="#rdoDobavljaci==true&amp;&amp;#cmbVrstaPreknj!=1"/>				
+			</data>
+			<data name="dtKontoNovi" command="spCKntPreknjizenjeKP">
+				<parameter name="@Action" value="2" if="#cmbVrstaPreknj!=3"/>
+				<parameter name="@Action" value="22" if="#cmbVrstaPreknj==3"/>
+			</data>	
+			<data name="dtDelete" command="spCKntPreknjizenjeKP">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@Akcija" value="$VrstaPreknj"/>
+				<parameter name="@VrstaDokId" value="$VrstaDokId"/>				
+				<parameter name="@Datum" value="$Datum"/>
+				<parameter name="@DatumValute" value="$DatumValute"/>
+				<parameter name="@PartneriIdStari" value="$StariPartner"/>
+				<parameter name="@PartneriIdNovi" value="$NoviPartner"/>	
+				<parameter name="@KntPlanAIdStari" value="$StariKonto"/>
+				<parameter name="@KntPlanAIdNovi" value="$NoviKonto"/>
+				<parameter name="@VrstaKonta" value="$VrstaKonta"/>
+			</data>
+			<data name="dtGlavni" command="spCKntPreknjizenjeKP">
+				<parameter name="@Action" value="10"/>
+			</data>
+			<data name="dtVrstaPreknj" command="spCKntPreknjizenjeKP">
+				<parameter name="@Action" value="5"/>
+			</data>
+			<!-- <data name="dtPreknjizi" command="spCKntPreknjizenjeKP"> -->
+				<!-- <parameter name="@Action" value="6" /> -->
+				<!-- <parameter name="@Selected" value="$Odabrani" /> -->
+				<!-- <parameter name="@OperateriId" value="@@operateriid"/> -->
+				<!-- <parameter name="@PartneriIdNovi" value="#grdGlavni.@PartneriIdNovi" /> -->
+				<!-- <parameter name="@Akcija" value="$VrstaPreknj"/> -->
+				<!-- <parameter name="@Opis" value="$Opis"/> -->
+				<!-- <parameter name="@VrstaKonta" value="$VrstaKonta"/> -->
+				<!-- <parameter name="@Saldo" value="#grdGlavni.@Saldo"/> -->
+				<!-- <parameter name="@DevSaldo" value="#grdGlavni.@DevSaldo"/> -->
+			<!-- </data> -->
+			<data name="dtPreknjizi" command="spCKntPreknjizenjeKP">
+				<parameter name="@Action" value="6" />
+				<parameter name="@Selected" value="$StringId" />
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@PartneriIdNovi" value="#grdGlavni.@PartneriIdNovi" />
+				<parameter name="@Akcija" value="$VrstaPreknj"/>
+				<parameter name="@Opis" value="$Opis"/>
+				<parameter name="@VrstaKonta" value="$VrstaKonta"/>
+				<parameter name="@Saldo" value="#grdGlavni.@Saldo"/>
+				<parameter name="@DevSaldo" value="#grdGlavni.@DevSaldo"/>
+			</data>			
+			<data name="dtSaldo" command="spCKntPreknjizenjeKP">
+				<parameter name="@Action" value="8"/>
+				<parameter name="@Saldo" value="$Saldo" type="decimal"/>
+				<parameter name="@DevSaldo" value="$DevSaldo" type="decimal"/>
+				<parameter name="@CKntTmpPreknjizenjeKPId" value="#grdGlavni.@CKntTmpPreknjizenjeKPId"/>
+			</data>
+			<!-- <data name="dtSuma" command="spCKntPreknjizenjeKP"> -->
+				<!-- <parameter name="@Action" value="9"/> -->
+				<!-- <parameter name="@Selected" value="$Odabrani"/> -->
+			<!-- </data> -->
+			<data name="dtSuma" command="spCKntPreknjizenjeKP">
+				<parameter name="@Action" value="9"/>
+				<parameter name="@Selected" value="$StringId"/>
+			</data>			
+			<!-- <data name="dtCheck" command="spCKntPreknjizenjeSaldo" if="$VrstaPreknj==3&amp;&amp;$Editable!=1"> -->
+				<!-- <parameter name="@Action" value="1"/> -->
+				<!-- <parameter name="@Operand" value="plus" if="#grdGlavni.@Checked==true"/> -->
+				<!-- <parameter name="@Operand" value="minus" elseif="#grdGlavni.@Checked==false"/>	 -->
+				<!-- <parameter name="@CKntTmpPreknjizenjeKPId" value="#grdGlavni.@CKntTmpPreknjizenjeKPId"/> -->
+				<!-- <parameter name="@Saldo" value="$AutoSaldo"/> -->
+				<!-- <parameter name="@DevSaldo" value="$AutoDevSaldo"/> -->
+			<!-- </data> -->
+			<!-- <data name="dtCheck" command="spCKntPreknjizenjeSaldo" else=""> -->
+				<!-- <parameter name="@Action" value="2"/> -->
+				<!-- <parameter name="@Operand" value="plus" if="#grdGlavni.@Checked==true"/> -->
+				<!-- <parameter name="@Operand" value="minus" elseif="#grdGlavni.@Checked==false"/>	 -->
+				<!-- <parameter name="@CKntTmpPreknjizenjeKPId" value="#grdGlavni.@CKntTmpPreknjizenjeKPId"/> -->
+			<!-- </data>		 -->
+			<data name="dtPreostalo" command="spCKntPreknjizenjeSaldo2"> <!--if="$VrstaPreknj==3&amp;&amp;$Editable!=1"-->
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Operand" value="plus" if="#grdGlavni.@Checked==true"/>
+				<parameter name="@Operand" value="minus" elseif="#grdGlavni.@Checked==false"/>	
+				<parameter name="@CKntTmpPreknjizenjeKPId" value="#grdGlavni.@CKntTmpPreknjizenjeKPId"/>
+				<parameter name="@Saldo" value="$AutoSaldo"/>
+				<parameter name="@DevSaldo" value="$AutoDevSaldo"/>
+				<parameter name="@Selected" value="$StringId"/>				
+			</data>			
+			<data name="dtDohvati" command="spCKntPreknjizenjeSaldo">
+				<parameter name="@Action" value="3"/>
+			</data>
+			<data name="dtUpdateSalda" command="spCKntPreknjizenjeSaldo">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@Saldo" value="$AutoSaldo"/>
+			</data>
+			<data name="dtUpdateDevSalda" command="spCKntPreknjizenjeSaldo">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@DevSaldo" value="$AutoDevSaldo"/>
+			</data>	
+			<data name="dtOznaciSve" command="spCKntPreknjizenjeSaldo">
+				<parameter name="@Action" value="6"/>
+				<parameter name="@Selected" value="$StringId"/>
+				<parameter name="@Operand" value="plus" if="$OznaciSve==1"/>
+				<parameter name="@Operand" value="minus" elseif="$OznaciSve==0"/>					
+			</data>			
+		</datalist>
+	</form>
+</root>

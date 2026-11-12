@@ -1,0 +1,206 @@
+<root>
+
+	<form name="frmGlavna" type="master" caption="Ažuriranje vozača i suvozača na otpremnicama">
+
+		<event type="onload">
+			<action type="control disable" value="#btnIzmijeni" if="#grdGlava.rowcount==0" /> 
+			<action type="form open" value="frmFilter">
+			</action>
+			<action type="control enable" value="#btnIzmijeni" if="#grdGlava.rowcount!==0" /> 
+		</event>
+		
+		<managerlayout>
+			<grid name="grdGlava" type="master" dataname="Global.~dtUnesiFliter">
+				<fields>
+
+					<field name="Datumdok" caption="Datum" fixwidth="80"/>
+					<field name="BrojDokumenta" caption="Broj dokumenta" fixwidth="100"/>
+					<field name="skladiste" caption="Skladište" fixwidth="250" />
+					<field name="Partner" caption="Partner" fixwidth="200"/>
+					<field name="Vrstadokumenta" caption="Vrsta dokumenta" fixwidth="150" />
+					<field name="Vozac" caption="Vozač" fixwidth="100"/>
+					<field name="Suvozac" caption="Suvozač" fixwidth="100"/>
+					<field name="Statusi" caption="Status" fixwidth="80"/>
+
+				</fields>
+
+				<!-- doubleclick event za dizanje edit forme -->
+
+				<event type="doubleclick">
+					<action type="form open" value="frmIzmjena">
+						<parameter name="ProNotpGlaId" value="#grdGlava.@ProNotpGlaId" />
+					</action>
+				</event>
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+
+				<button name="btnOpenFilter" caption="FILTER">
+					<event type="click">
+						<action type="form open" value="frmFilter" />
+					</event>
+				</button>
+
+
+				<button name="btnIzmijeni" caption="IZMIJENI">
+					<event type="click">
+						<action type="form open" value="frmIzmjena">
+							<parameter name="ProNotpGlaId" value="#grdGlava.@ProNotpGlaId" />
+						</action>
+					</event>
+				</button>
+			
+			</buttons>
+		</panelbuttons>
+	</form>
+
+	<form name="frmFilter" caption="Filter" fixwidth="400">
+
+		<event type="shown">
+			<action type="control value" value="#datDatumOd" if="#datDatumOd!=null">
+				<parameter value="global.$DatumOd"/>
+			</action>
+			<action type="control value" value="#datDatumOd" if="#datDatumOd==null">
+				<parameter value="Now"/>
+			</action>			
+			<action type="control value" value="#datDatumDo" if="#datDatumDo!=null">
+				<parameter value="global.$DatumDo"/>
+			</action>
+			<action type="control value" value="#datDatumDo" if="#datDatumDo==null">
+				<parameter value="Now"/>
+			</action>
+			<action type="control value" value="#cmbSkladiste">
+				<parameter value="global.$skladiste"/>
+			</action>	
+			<action type="control value" value="#srcPartner"> 
+				<parameter value="global.$partner" text="global.$PartnerNaziv"/>
+			</action>
+			<action type="control value" value="#cmbVrstaDok">
+				<parameter value="global.$vrstaDok" />
+			</action>
+		</event>
+
+
+		<layout>
+			<group cols="1" rows="6" col="1" row="1">
+				<item col="1" row="1" caption="Datum od:">
+					<dateedit name="datDatumOd" value="now" required="true"/>
+				</item>
+				<item col="1" row="2" caption="Datum do:">
+					<dateedit name="datDatumDo" value="now" required="true"/>
+				</item>
+				<item col="1" row="3" caption="Skladište:">
+					<comboedit name="cmbSkladiste" dataname="~dtNapuniSkladište" valuefield="SkladisteID" displayfield="Opis"/>
+				</item>
+				<item col="1" row="4" caption="Partner:">
+					<searchedit name="srcPartner" dataname="~dtNapuniPartnere" valuefield="PartneriID" displayfield="Naziv" function="srcPartner"/>
+				</item>
+				<item col="1" row="5" caption="Vrsta dokumenta:">
+					<comboedit name="cmbVrstaDok" dataname="~dtVrstaDok" valuefield="vrstadokID" displayfield="Opis"/>
+				</item>
+				<item col="1" row="6" caption="Pokaži i zaključene:">
+					<checkedit name="chkZakljucene" value="true" />
+				</item>
+			</group>
+		</layout>
+
+			<panelbuttons>
+				<buttons>
+					<button name="btnFiltriraj" caption="Filtriraj">
+						<event type="click">
+							
+							<action type="variable value">
+								<parameter name="global.$DatumOd" value="#datDatumOd" type="date"/>
+								<parameter name="global.$DatumDo" value="#datDatumDo" type="date"/>
+								<parameter name="global.$skladiste" value="#cmbSkladiste" />
+								<parameter name="global.$partner" value="#srcPartner" />
+								<parameter name="global.$vrstaDok" value="#cmbvrstaDok" />
+								<parameter name="global.$PartnerNaziv" value="#srcPartner.text" /> 
+							</action>
+
+							<action type="datarun nonquery" value="~dtUnesiFliter" />
+							<action type="control populate" value="parent.#grdGlava" />
+							<action type="form close" />
+						</event>
+					</button>
+					<button name="btnOdustani" caption="Odustani" type="cancel" dock="right"/>
+				</buttons>
+			</panelbuttons>
+
+		<datalist>	
+			<data command="spOtpremniceVozaci_traziSKlad" name="dtNapuniSkladište"></data>
+			<data command="spTraziPartneri" name="dtNapuniPartnere">
+				<parameter name="@action" value="Partneri" />
+				<parameter name="@uvjet" value="#srcPartner.text" />
+			</data>
+			<data command="spOtpremniceVozaci_traziVrstaDok" name="dtVrstaDok"></data>
+				<data command="select Naziv from partneri where partneriid = @PartneriId" type="text" name="dtGetNaziv">
+					<parameter name="@PartneriId" value="global.$Partner"/>
+			</data>
+		</datalist>
+
+	</form>
+
+	<form name="frmIzmjena" caption="Izmijeni">
+
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" />
+		</event>
+
+		<layout>
+			<group cols="1" rows="3" col="1" row="1">
+				<item col="1" row="1" caption="Vozač:">
+					<comboedit name="cmbVozac" dataname="~dtPuniOsobe" valuefield="OsobeID" displayfield="Osoba" datavalue="~dtGet.@osobeid"/>
+				</item>
+				<item col="1" row="2" caption="Suvozač:">
+					<comboedit name="cmbSuvozac" dataname="~dtPuniOsobe" valuefield="OsobeID" displayfield="Osoba" datavalue="~dtGet.@osobeid2"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtIzmjeni">
+						</action>
+						<action type="control populate" value="parent.#grdGlava" />
+						<action type="form close" value="frmIzmjena" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spTraziOsobe" name="dtPuniOsobe">
+				<parameter name="@action" value="NaseOsobe" />
+			</data>
+
+			<data command="spOtpremniceVozaci_FilterQuery_Edit" name="dtGet">
+				<parameter name="@ProNotpGlaId" value="$ProNotpGlaId" />
+			</data>
+
+			<data command="spOtpremniceVozaci_update" name="dtIzmjeni">
+				<parameter name="@ProNotpGlaId" value="$ProNotpGlaId" />
+				<parameter name="@Vozac" value="#cmbVozac" />
+				<parameter name="@Suvozac" value="#cmbSuvozac" />
+				<parameter name="@status" value="parent.#grdGlava.@Status" />
+			</data>
+		</datalist>
+
+	</form>
+
+		<datalist>
+			<data command="spOtpremniceVozaci_FilterQuery" name="dtUnesiFliter">
+				<parameter name="@action" value="1" if="#chkZakljucene==true" />
+				<parameter name="@datumod" value="Global.$DatumOd" />
+				<parameter name="@datumdo" value="Global.$DatumDo" />
+				<parameter name="@skladiste" value="Global.$Skladiste" />
+				<parameter name="@partner" value="Global.$Partner" />
+				<parameter name="@vrstaDok" value="Global.$vrstaDok" />
+			</data>
+		</datalist>
+
+</root>

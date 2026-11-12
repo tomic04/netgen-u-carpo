@@ -1,0 +1,185 @@
+<root version="8.0.0.2">
+	<form name="frmEmail" caption="{$Caption}" savelayout="true" width="600" height="400" statusbar="true">
+		<!-- <method name="Sender" dll="Valisend" class="Valisend.ComProvider" method="SendMail" /> -->
+		<method name="Attach" dll="Valisend" class="Valisend.ComProvider" method="OpenAttachments" />
+		<method name="ClearAttach" dll="Valisend" class="Valisend.ComProvider" method="ClearAttachments" />
+		<method name="Insert" dll="Valisend" class="Valisend.ComProvider" method="Insert" />
+		<method name="Edit" dll="Valisend" class="Valisend.ComProvider" method="Edit" />
+		<event type="load">
+		</event>
+		<event type="shown">
+			<action type="datarun reader" value="~dtGetMail" />
+			<action type="control value" value="#txtNaslov">
+				<parameter value="~dtGetMail.@Naslov" />
+			</action>
+			<action type="control value" value="#txtMemo">
+				<parameter value="~dtGetMail.@Body" />
+			</action>
+			<action type="datarun reader" value="~dtGetAttach" />
+			<action type="control value" value="#txtPrilog">
+				<parameter value="~dtGetAttach.@Attachments" />
+			</action>
+			<action type="datarun reader" value="~dtGetAttachId" />
+			<action type="variable value">
+				<parameter name="AttachId" value="~dtGetAttachId.@idniz" />
+			</action>
+			<action type="control visible" value="#btnSpremi" if="$Indikator!=1">
+				<parameter value="true" />
+			</action>
+			<action type="control visible" value="#btnSpremi" else="">
+				<parameter value="false" />
+			</action>
+			<action type="control disable" value="#txtNaslov,#btnAttach,#btnClearAttach,#txtMemo" if="$Indikator==1" />
+			<action type="variable value" if="$AttachId==null">
+				<parameter name="AttachId" value="-1" />
+			</action>
+		</event>
+		<layout>
+			<group cols="2" rows="3" groupbordervisible="true" colspan="2">
+				<rowsdefinition>
+					<row size="10%" position="1" />
+					<row size="10%" position="2" />
+					<row size="80%" position="3" />
+				</rowsdefinition>
+				<columnsdefinition>
+					<column size="70%" position="1" />
+					<column size="30%" position="2" />
+				</columnsdefinition>
+				<item col="1" row="1" caption="Naslov:" highlight="false">
+					<textedit name="txtNaslov">
+					</textedit>
+				</item>
+				<item col="1" row="2" caption="Prilog:" highlight="false">
+					<textedit name="txtPrilog" readonly="true">
+					</textedit>
+				</item>
+				<group col="2" row="2" cols="2" rows="3" groupbordervisible="false">
+					<rowsdefinition>
+						<row size="15%" position="1" />
+						<row size="70%" position="2" />
+						<row size="15%" position="3" />
+					</rowsdefinition>
+					<item col="1" row="2" highlight="false">
+						<button name="btnAttach" caption="" dock="left" image="link" imagelocation="middlecenter">
+							<event type="click">
+								<action type="method run" value="Attach">
+									<parameter name="server" value="@@server" />
+								</action>
+								<action type="control value" value="#txtPrilog">
+									<parameter value="##Attach.@AttachmentNames" />
+								</action>
+								<!--
+								<action type="variable value">
+								<parameter name="global.Attach" value="##Attach.@AttachmentNames" />
+								</action>
+								<action type="datarun reader" value="dtAttach" />
+								<action type="control value" value="#txtPrilog">
+								<parameter value="~dtAttach.@tekst" />
+								</action>
+								-->
+								<action type="variable value">
+									<parameter name="AttachId" value="-1" />
+								</action>
+							</event>
+						</button>
+					</item>
+					<item col="2" row="2" highlight="false">
+						<button name="btnClearAttach" caption="" dock="left" image="delete" imagelocation="middlecenter">
+							<event type="click">
+								<action type="method run" value="ClearAttach">
+									<parameter name="server" value="@@server" />
+								</action>
+								<action type="variable value">
+									<parameter name="global.ClearAttach" value="##ClearAttach.@AttachmentNames" />
+								</action>
+								<action type="control value" value="#txtPrilog">
+									<parameter value="global.$ClearAttach" />
+								</action>
+								<action type="variable value">
+									<parameter name="AttachId" value="-1" />
+								</action>
+							</event>
+						</button>
+					</item>
+				</group>
+				<item col="1" row="3" caption="Body:" highlight="false" colspan="2">
+					<memoedit name="txtMemo" tabstop="false" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="&amp;SPREMI" dock="left">
+					<event type="click">
+						<!-- EDITIRAJ -->
+						<action type="method run" value="Edit" waittype="progress" waitcaption="" if="$Indikator==2">
+							<parameter name="server" value="@@server" />
+							<parameter name="datebase" value="@@database" />
+							<parameter name="Title" value="#txtNaslov" />
+							<parameter name="Body" value="#txtMemo" />
+							<parameter name="AttachmentID" value="$AttachId" />
+							<parameter name="TemplateMailID" value="$MarAktEmailId" />
+							<parameter name="OperatorID" value="@@operateriid" />
+						</action>
+						<!-- NOVI -->
+						<action type="method run" value="Insert" waittype="progress" waitcaption="" if="$Indikator==3||$Indikator==4">
+							<parameter name="server" value="@@server" />
+							<parameter name="datebase" value="@@database" />
+							<parameter name="Title" value="#txtNaslov" />
+							<parameter name="Body" value="#txtMemo" />
+							<parameter name="AttachmentID" value="$AttachId" />
+							<parameter name="OperatorID" value="@@operateriid" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ZATVORI" type="cancel" dock="right">
+					<event type="click">
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMarAktEmailQuery" name="dtGetMail">
+				<parameter name="@Action" value="2" />
+				<parameter name="@MarAktEmailId" value="$MarAktEmailId" />
+			</data>
+			<!--
+			<data command="spMarAktEmailAzur" name="dtUnos">
+			<parameter name="@Action" value="1" />
+			<parameter name="@Naslov" value="#txtNaslov" />
+			<parameter name="@Body" value="#txtMemo" />
+			<parameter name="@OperateriId" value="@@operateriid" />
+			</data>
+			<data command="spMarAktEmailAzur" name="dtUnosAtt">
+			<parameter name="@Action" value="11" />
+			<parameter name="@ime" value="#txtNaslov" />
+			<parameter name="@Privitak" value="#txtMemo" />
+			<parameter name="@MarAktEmailId" value="$NoviMarAktEmailId" />
+			</data>
+			<data command="spMarAktEmailAzur" name="dtIzmjena">
+			<parameter name="@Action" value="2" />
+			<parameter name="@Naslov" value="#txtNaslov" />
+			<parameter name="@Body" value="#txtMemo" />
+			<parameter name="@OperateriId" value="@@operateriid" />
+			<parameter name="@ime" value="#txtNaslov" />
+			<parameter name="@Privitak" value="#txtMemo" />
+			<parameter name="@MarAktEmailId" value="$MarAktEmailId" />
+			</data>
+			-->
+			<!--
+			<data command="select coalesce(@par1, '')  as tekst" type="text" name="dtAttach">
+			<parameter name="@par1" value="global.$Attach" />
+			</data>
+			-->
+			<data command="spMarAktEmailQuery" name="dtGetAttachId">
+				<parameter name="@Action" value="4" />
+				<parameter name="@MarAktEmailId" value="$MarAktEmailId" />
+			</data>
+			<data command="spMarAktEmailQuery" name="dtGetAttach">
+				<parameter name="@Action" value="5" />
+				<parameter name="@MarAktEmailId" value="$MarAktEmailId" />
+			</data>
+		</datalist>
+	</form>
+</root>

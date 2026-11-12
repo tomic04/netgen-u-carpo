@@ -1,0 +1,228 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<form name="frmStavka" caption="{$Naslov}" width="450" fixedsize="true">
+		<event type="init">
+			<action type="variable value">
+				<parameter name="Naslov" value="$NaslovTekst"/>
+			</action>
+			<action type="variable value">
+				<parameter name="JMId" value="0" type="int"/>
+			</action>
+			<action type="variable value">
+				<parameter name="Danas" value="now" type="datetime"/>
+			</action>
+			<action type="datarun reader" value="~dtGet" if="$NabZahDetId!=null"/>
+		</event>
+		<event type="shown">
+			<action type="control value" value="#cmbOrgShema">
+				<parameter value="Trenutno nedostupno"/>
+			</action>
+			<action type="control disable" value="#cmbOrgShema"/>
+		</event>
+		<layout>
+			<group cols="1" rows="4" bordervisible="false">
+				<group col="1" row="1" cols="3" rows="2" spacing="0,0,0,1">
+					<item col="1" row="1" colspan="3" highlight="false" caption="Roba:">
+						<searchedit name="srcRoba" netgenfields="true" fontsizedelta="1" fontbold="True" dataname="dtRoba" fieldtext="NazivId" fieldvalue="robaid" datavalue="~dtGet.@RobaId" datatext="~dtGet.@RobaNaziv" required="true" entermovenextcontrol="false">
+							<event type="valuechanged">
+								<part name="prtStavka" path="prtStavka.xml"/>
+								<action type="datarun scalar" value="~dtGetJMId">
+									<parameter name="Jm" type="int"/>
+								</action>
+								<action type="variable value" value="$JMId">
+									<parameter value="$Jm"/>
+								</action>
+								<action type="control focus" value="#txtKolicina" if="#srcRoba!=null"/>
+							</event>
+						</searchedit>
+					</item>
+					<item col="1" row="2" highlight="false" caption="Količina:">
+						<textedit name="txtKolicina" format="n2" datavalue="~dtGet.@Kolicina" required="true"/>
+					</item>
+					<item col="2" row="2"/>
+					<item col="3" row="2" highlight="false" caption="Cijena:">
+						<textedit name="txtCijena" format="n2" readonly="true"/>
+					</item>
+				</group>
+				<group col="1" row="2" cols="3" rows="1" spacing="0,0,1,1">
+					<item col="1" row="1" highlight="false" caption="Datum isporuke:" >
+						<dateedit name="datDatumIsporuke" datavalue="~dtGet.@NDatumIsporuke" required="true" value="now" showweeknumbers="true"/>
+					</item>
+					<item col="2" row="1" highlight="false" caption="Ne prije:">
+						<dateedit name="datNePrije" datavalue="~dtGet.@DatumOd" showweeknumbers="true">
+							<event type="valuechanged">
+								<action type="control value" value="">
+									<parameter value="empty"/>
+								</action>
+							</event>
+						</dateedit>
+					</item>
+					<item col="3" row="1" highlight="false" caption="Ne poslije:">
+						<dateedit name="datNePoslije" datavalue="~dtGet.@DatumDo" showweeknumbers="true"/>
+					</item>
+				</group>
+				<group col="1" row="3" cols="3" rows="1" spacing="0,0,1,1">
+					<item col="1" row="1" colspan="2" highlight="false" caption="Dobavljač:">
+						<searchedit name="srcDobavljac" fontbold="true" dataname="dtDobavljac" fieldtext="NazivId" fieldvalue="partneriid" datavalue="~dtGet.@PartneriId" datatext="~dtGet.@ParNaziv">
+							<event type="valuechanged">
+								<part name="prtStavka" path="prtStavka.xml"/>
+							</event>
+						</searchedit>
+					</item>
+					<item col="3" row="1" caption="Mogući rok isporuke:">
+						<textedit name="txtMoguciRok" readonly="true"/>
+					</item>
+				</group>
+				<group col="1" row="4" cols="3" rows="4" spacing="0,0,1,0">
+					<item col="1" row="1" colspan="2" highlight="false" caption="Skladište:">
+						<comboedit name="cmbSkladiste" dataname="dtSkladiste" displayfield="Opis" valuefield="SkladisteId" datavalue="~dtGet.@SkladisteId"/>
+					</item>
+					<item col="3" row="1" highlight="false" caption="Zahtijevao:">
+						<searchedit name="srcZahtijevao" dataname="dtZahtijevao" valuefield="HrKadroviId" displayfield="Osoba" datavalue="~dtGet.@ZahtijevaoOsobeId" datatext="~dtGet.@Zahtijevao"/>
+					</item>
+					<item col="1" row="2" colspan="2" caption="Org. shema:">
+						<textedit name="cmbOrgShema" visible="false"/>
+					</item>
+					<!-- ovdje ćemo vjerovatno dodavati org shemu (naknadno)-->
+					<item col="3" row="2" highlight="false" caption="Namjena:">
+						<comboedit name="cmbNamjena" dataname="dtNamjena" valuefield="Id" displayfield="Name" datavalue="~dtGet.@Namjena" required="true" allownull="false"/>
+					</item>
+					<item col="1" row="3" colspan="3" highlight="false" caption="Napomena:">
+						<memoedit name="txtNapomena" datavalue="~dtGet.@Opis"/>
+					</item>
+					<item col="1" row="4" highlight="false" caption="Dimenzija:" colspan="2">
+						<!-- <comboedit name="cmbDimenzija" dataname="dtDimenzija" displayfield="Dimenzija" valuefield="DimenzijeId" datavalue="~dtGet.@DimenzijeId"/> -->
+						<searchedit name="srcDimenzija" dataname="dtDimenzija" valuefield="DimenzijeId" displayfield="Dimenzija" datavalue="~dtGet.@DimenzijeId" datatext="~dtGet.@DimenzijaNaziv"/>
+					</item>
+					<item col="3" row="4" />					
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="&amp;SPREMI" dock="left">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="~dtIzmjena" if="$NabZahDetId!=null"/>
+						<action type="datarun nonquery" value="~dtUnos" else="">
+							<!-- <parameter name="NabZahDetId" type="int"/> -->
+						</action>
+						<action type="variable value" >
+							<parameter name="varDatumIsporuke" value="#datDatumIsporuke"/>
+							<parameter name="varNamjena" value="#cmbNamjena"/>
+						</action>							
+						<!-- <action type="control refreshvalue" value="#srcRoba,#txtKolicina,#txtCijena,#datNePrije,#datNePoslije,#txtMoguciRok,#cmbSkladiste,#srcZahtijevao,#cmbOrgShema,#txtNapomena,#srcDimenzija"/> -->
+						<action type="control value" value="#datDatumIsporuke">
+							<parameter value="$varDatumIsporuke"/>
+						</action>
+						<action type="control value" value="#cmbNamjena">
+							<parameter value="$varNamjena"/>
+						</action>									
+						<action type="control focus" value="#srcRoba"/>
+					<!-- 	<action type="form close" if="$Action==1"/> -->
+						<action type="form close" if="$NabZahDetId!==null" />
+						<action type="form close" if="$NabZahDetID==null">
+						<action type="form open" value="frmStavka">
+							<parameter name="NabZahGlaID" value="$NabZahGlaId" />
+						</action>
+						<action type="control populate" value="parent.#grdStavke" />
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="&amp;IZLAZ" dock="right">
+					<event type="click">
+						<action type="variable value" value="parent.$NabZahDetId">
+							<parameter value="$NabZahDetId" type="int"/>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spNab_ZahDet_Query" name="dtGet">
+				<parameter name="@NabZahDetId" value="$NabZahDetId"/>
+			</data>
+			<data command="spTraziRoba" name="dtRoba">
+				<!-- tražilica roba -->
+				<parameter name="@action" value="Roba"/>
+				<parameter name="@Uvjet" value="#srcRoba.text"/>
+				<parameter name="@PokaziVPCijene" value="1"/>
+				<parameter name="@PokaziNabCijene" value="1"/>
+				<parameter name="@Retired" value="0"/>
+				<parameter name="@Prikazi_Dodatno" value="1"/>
+				<parameter name="@PokaziStanje" value="1"/>
+				<parameter name="@SkladisteId" value="$SkladisteId"/>
+			</data>
+			<data command="spTraziPartneri" name="dtDobavljac">
+				<!-- tražilica dobavljač -->
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcDobavljac.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>
+			<data command="spNab_ZahGla_GetNamjena" name="dtNamjena"/>
+			<!-- combo namjena -->
+			<data command="spNG_Combo" name="dtSkladiste">
+				<!-- combo skladište -->
+				<parameter name="@Action" value="skladiste" />
+				<parameter name="@Ind" value="1" />
+			</data>
+			<data command="spTraziDimenzija" name="dtDimenzija">
+				<!-- combo dimenzija -->
+				<parameter name="@action" value="dimenzija"/>
+				<parameter name="@uvjet" value="#srcDimenzija.text"/>
+			</data>
+			<data command="spNab_ZahDet_GetKadrovi" name="dtZahtijevao">
+				<!-- combo zahtijevao-->
+				<parameter name="@uvjet" value="#srcZahtijevao.text"/>
+			</data>
+			<data command="spNab_ZahDet_GetCijena" name="dtGetCijena">
+				<parameter name="@partneriid" value="#srcDobavljac"/>
+				<parameter name="@robaid" value="#srcRoba"/>
+				<parameter name="@Datumdok" value="$DatumDok"/>
+			</data>
+			<data command="spNab_ZahDet_GetMoguciRokIsporuke" name="dtGetMoguciRokIsporuke">
+				<parameter name="@partneriid" value="#srcDobavljac"/>
+				<parameter name="@robaid" value="#srcRoba"/>
+				<parameter name="@Datumdok" value="$DatumDok"/>
+			</data>
+			<data command="spNab_ZahGla_GetJedinicaMjere" name="dtGetJMId">
+				<parameter name="@RobaId" value="#srcRoba"/>
+			</data>
+			<data command="spNab_ZahDet_Unos" name="dtUnos">
+				<parameter name="@NabZahGlaId" value="$NabZahGlaId"/>
+				<parameter name="@RobaId" value="#srcRoba"/>
+				<parameter name="@JmId" value="$JMId"/>
+				<parameter name="@PartneriId" value="#srcDobavljac"/>
+				<parameter name="@Kolicina" value="#txtKolicina"/>
+				<parameter name="@DatumOd" value="#datNePrije"/>
+				<parameter name="@DatumDo" value="#datNePoslije"/>
+				<parameter name="@Namjena" value="#cmbNamjena"/>
+				<parameter name="@NDatumIsporuke" value="#datDatumIsporuke"/>
+				<parameter name="@Opis" value="#txtNapomena" if="#txtNapomena!=null"/>
+				<parameter name="@ZahtijevaoOsobeId" value="#srcZahtijevao"/>
+				<!--<parameter name="@Zahtijevao" value="#srcZahtijevao.text"/>-->
+				<!-- ovdje će eventualno trebati slati i text u bazu -->
+				<parameter name="@SkladisteId" value="#cmbSkladiste"/>
+				<parameter name="@DimenzijeId" value="#srcDimenzija"/>
+			</data>
+			<data command="spNab_ZahDet_Izmjena" name="dtIzmjena">
+				<parameter name="@Id" value="$NabZahDetId"/>
+				<parameter name="@RobaId" value="#srcRoba"/>
+				<parameter name="@JmId" value="$JMId"/>
+				<parameter name="@PartneriId" value="#srcDobavljac"/>
+				<parameter name="@Kolicina" value="#txtKolicina"/>
+				<parameter name="@DatumOd" value="#datNePrije"/>
+				<parameter name="@DatumDo" value="#datNePoslije"/>
+				<parameter name="@Namjena" value="#cmbNamjena"/>
+				<parameter name="@NDatumIsporuke" value="#datDatumIsporuke"/>
+				<parameter name="@Opis" value="#txtNapomena" if="#txtNapomena!=null"/>
+				<parameter name="@ZahtijevaoOsobeId" value="#srcZahtijevao"/>
+				<!--<parameter name="@Zahtijevao" value="#srcZahtijevao.text"/>-->
+				<!-- ovdje će eventualno trebati slati i text u bazu -->
+				<parameter name="@SkladisteId" value="#cmbSkladiste"/>
+				<parameter name="@DimenzijeId" value="#srcDimenzija"/>
+			</data>
+		</datalist>
+	</form>
+</root>

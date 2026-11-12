@@ -1,0 +1,562 @@
+<root>
+	<form name="frmUFERobnogInsert" operaterlocktable="RobnoKalkGla" operaterlockkey="RobnoKalkGlaId" operaterlockkeyvalue="global.$OperaterLockId" width="1050" height="550">
+		<event type="init">
+			<!-- <action type="datarun reader" value="~dtRobaDet"/> -->
+			<action  if="$RobnoKalkGlaId!=null">
+				<action type="datarun reader" value="~dtKalkGlaQuery"/>
+				<action type="datarun reader" value="~dtTroskovi"/>
+				<action type="variable value">
+					<parameter name="UFA" value="~dtKalkGlaQuery.@FaktureDobId"/>
+				</action>				
+			</action>
+			<action type="variable value" else="">
+				<parameter name="UFA" value="null"/>
+			</action>			
+			<action type="variable value">
+				<parameter name="indProm" value="0"/>
+			</action>	
+			<action type="variable value" value="global.$OtvorenaEditForma">
+				<parameter value="0"/>
+			</action>
+			<action type="variable value" value="global.$RafalniUnos">
+				<parameter value="0"/>
+			</action>			
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdStavke"/>
+			<action type="control disable" value="#btnDonesi,#btnEditDetalj,#btnEditDetaljSve,#btnDeleteDetalj,#btnDodajDetalj,#btnUrednik,#btnSpremi,#btnZakljuci,#btnPrint" if="$RobnoKalkGlaId==null"/>
+			<action type="control disable" value="#btnSpremiGlavu" if="$RobnoKalkGlaId!=null"/>
+			<action type="control disable" value="#srcPartner,#cmbLokacija,#cmbValuta,#txtTrosakIznos,#txtTrosakPosto,#btnDonesi,#btnEditDetalj,#btnEditDetaljSve,#btnDeleteDetalj,#btnDodajDetalj,#btnZakljuci" if="$Status==2||$Status==S"/>
+			<action type="control disable" value="#btnEditDetalj,#btnEditDetaljSve,#btnUrednik,#btnZakljuci,#btnDeleteDetalj" if="#grdStavke.rowcount==0"/>
+			<action type="control disable" value="#txtTrosakIznos,#txtTrosakPosto" if="$RobnoKalkGlaId!=null&amp;&amp;~dtTroskovi.@RobnoTroskoviId!=null"/>
+			<action type="control disable" value="#srcPartner,#cmbLokacija" if="$UFA!=null"/>
+			<action type="control enable" value="#srcPartner,#cmbLokacija" else=""/>			
+			<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>
+		</event>
+		<event type="shown">
+			<action type="form caption" value="$Caption"/>
+			<!--fejk varijabla za fokus na prvi kod izmijeni sve -->
+			<action type="variable value" value="$TopRobnoKalkDetId">
+				<parameter value="#grdStavke.@RobnoKalkDetId"/>
+			</action>			
+		</event>
+		<event type="close">
+			<action type="datarun nonquery" value="~dtOperaterLockReset" if="$RobnoKalkGlaId!=null&amp;&amp;$Action==0"/>
+			<!-- <action type="control populate keepfocus" value="parent.#grdGlava"/> -->
+			<action if="$RobnoKalkGlaId!=null">
+				<action type="datarun reader" value="~dtPozicija"/>
+				<action type="variable value" value="parent.$DrvoId">
+					<parameter value="~dtPozicija.@DrvoId"/>
+				</action>
+				<action type="variable value" value="parent.$GridId">
+					<parameter value="~dtPozicija.@RobnoKalkGlaId"/>
+				</action>				
+			</action>			
+		</event>
+		<layout textposition="left" itemspadding="3">
+			<group padding="0" groupbordervisible="False" cols="3" rows="1">
+				<columnsdefinition>
+					<column size="350" position="1" />
+					<column size="8" position="2" />
+				</columnsdefinition>
+				<group padding="0" groupbordervisible="False" cols="1" rows="4" col="3" row="1">
+					<rowsdefinition>
+						<row size="5" position="3" />
+						<row size="35" position="4" />
+					</rowsdefinition>
+					<item row="1" col="1" highlight="False" >
+						<grid name="grdStavke" dataname="~dtRobaDet" showgrouppanel="False" showfooter="False" autopopulate="false" multiselect="true" key="RobnoKalkDetId" customsort="stringasint">
+							<event type="doubleclick">
+								<part name="prtRobnoKalkDetUpdate" path="prtUFERobnog.xml"/>
+							</event>
+							<event type="focusedrowchanged">
+								<!-- <action type="variable value" value="$TopRobnoKalkDetId"> -->
+									<!-- <parameter value="#grdStavke.@RobnoKalkDetId"/> -->
+								<!-- </action> -->
+								<!-- za sve stavke u gridu od odabrane podigni edit formu -->
+								<!-- <action if="global.$OtvorenaEditForma==0&amp;&amp;global.$RafalniUnos==1"> -->
+									<action type="form open" value="frmUFERobnogStavka" if="global.$OtvorenaEditForma==0&amp;&amp;global.$RafalniUnos==1">
+										<parameter name="Action" value="1"/>
+										<parameter name="PartneriId" value="#srcPartner"/>
+										<parameter name="Tecaj" value="#txtTecaj"/>
+										<parameter name="TrosakP" value="#txtTrosakPosto"/>
+										<parameter name="valutaOznaka" value="#cmbValuta.@oznaka" if="#cmbValuta!=null"/>
+										<parameter name="valutaOznaka" value="kn" if="#cmbValuta==null"/>
+										<parameter name="RobnoKalkGlaId" value="$RobnoKalkGlaId"/>
+										<parameter name="RobnoKalkDetId" value="#grdStavke.@RobnoKalkDetId"/>
+										<parameter name="RobaId" value="#grdStavke.@RobaId"/>
+										<parameter name="Status" value="$Status"/>
+									</action>	
+									<action type="variable value" value="global.$OtvorenaEditForma">
+										<parameter value="0"/>
+									</action>								
+									<action type="variable value" value="global.$RafalniUnos" if="dialogresult==cancel">
+										<parameter value="0"/>
+									</action>
+									<action type="variable value" value="global.$RafalniUnos" if="#grdStavke.rowcount==#grdStavke.rownumber">
+										<parameter value="0"/>
+									</action>
+									<action type="control populate" value="parent.#grdDetail"/>									
+									<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>								
+									<action type="control focusnextrow" value="#grdStavke" if="global.$RafalniUnos==1"/>	
+									<!-- <action type="message" value="focused {global.$OtvorenaEditForma},{global.$RafalniUnos}"/> -->
+								<!-- </action> -->
+							</event>
+							<event type="keydown">
+								<!--DELETE-->
+								<action if="key==46">
+									<part name="prtRobnoKalkDetDelete" path="prtUFERobnog.xml"/>
+								</action>
+								<!--EDIT-->
+								<action if="key==13">
+									<part name="prtRobnoKalkDetUpdate" path="prtUFERobnog.xml"/>
+								</action>
+								<!--INSERT-->
+								<action if="key==45">
+									<part name="prtRobnoKalkDetInsert" path="prtUFERobnog.xml"/>
+								</action>
+							</event>							
+							<fields>	 
+								<field name="RobnoKalkDetId" caption="RobnoKalkDetId" hidden="true"/>
+								<field name="UserId" caption="Roba"/>
+								<field name="RobaNaziv" caption="Naziv"/>
+								<field name="Kolicina" caption="Količina" showsum="true" />
+								<field name="PrijemniList" caption="Prijemni list"/>
+								<field name="JMNaziv" caption="JM" showsum="true"/>
+								<field name="FCijena" caption="Fakt. cijena"/>
+								<field name="Rabat1P" caption="Rabat 1 (%)"/>
+								<field name="Rabat1I" caption="Rabat 1"/>
+								<field name="Rabat2P" caption="Rabat 2 (%)"/>
+								<field name="Rabat2I" caption="Rabat 2"/>
+								<field name="Rabat3P" caption="Rabat 3 (%)"/>
+								<field name="Rabat3I" caption="Rabat 3"/>
+								<field name="CarinaP" caption="Carina (%)"/>
+								<field name="CarinaI" caption="Carina"/>
+								<field name="TrosakP" caption="Trošak (%)"/>
+								<field name="TrosakI" caption="Trošak"/>
+								<field name="NCijena" caption="Nab. cijena"/>
+								<field name="NVrijednost" caption="Nab. vrij. (+povrat)"/>
+								<field name="Trosarina" caption="Trošarina"/>
+								<field name="PovratnaNaknada" caption="Povrat"/>
+								<field name="PoticajnaNaknada" caption="Poticajna"/>
+								<!--moram ih navesti zbog suma-->
+								<field name="FVrijednost" caption="FVrijednost"  visible="false"/>
+								<field name="RabatUkupno" caption="RabatUkupno"  visible="false"/>
+								<field name="DevVrijednost" caption="DevVrijednost" visible="false"/>						
+								<!--specifične kolone po firmama dodati u part-->
+								<!-- <part name="prtUFERobnogGridLokal" path="prtUFERobnog.xml"/> -->
+							</fields>
+						</grid>
+					</item>
+					<group padding="0"  groupbordervisible="false" cols="5" rows="1" col="1" row="2">
+						<columnsdefinition>
+							<column size="30%" position="1" />
+							<column size="2" position="2" />
+							<column size="20%" position="3" />
+							<column size="2" position="4" />
+							<column size="30%" position="5" />
+						</columnsdefinition>
+						<group alignmode="local" groupbordervisible="true" cols="4" rows="5" col="1" row="1" backgroundcolor="grey">
+							<rowsdefinition>
+								<row size="100%" position="2" />
+							</rowsdefinition>
+							<columnsdefinition>
+								<column size="100%" position="2"/>
+							</columnsdefinition>
+							<item row="1" col="1" spacing="0,15,0,0">
+								<labeledit value="Fakturna" fontbold="true" fontcolor="#969696"/>
+							</item>	
+							<item row="1" col="3" spacing="0,15,0,0">
+								<labeledit value="Kn" textposition="right" fontbold="true" fontcolor="#969696"/>
+							</item>	
+							<item row="1" col="4" spacing="0,15,0,0">
+								<labeledit value="Valuta" textposition="right" fontbold="true" fontcolor="#969696"/>
+							</item>	
+							<item row="2" col="1" spacing="0,15,0,0">
+								<labeledit value="Vrijednost:" fontbold="true"/>
+							</item>													
+							<item row="2" col="3" spacing="0,15,0,0">
+								<labeledit  name="txtFakVrij" value="0" fontbold="true" textposition="right"/>
+							</item>	
+							<item row="2" col="4" spacing="0,15,0,0">
+								<labeledit name="txtDevVrij" value="0" format="n2" fontbold="true" textposition="right"/>
+							</item>	
+							<item row="3" col="1" spacing="0,15,0,0">
+								<labeledit value="Rabat:" fontbold="true"/>
+							</item>	
+							<item row="3" col="3" spacing="0,15,0,0">
+								<labeledit name="txtRabat" value="0" fontbold="true" textposition="right"/>
+							</item>	
+							<item row="3" col="4" spacing="0,15,0,0"> 
+								<labeledit name="txtRabatDev" value="0" format="n2" fontbold="true" textposition="right"/>
+							</item>	
+
+							<item row="5" col="1" spacing="0,15,0,0">
+								<labeledit value="Ukupno:" fontbold="true"/>
+							</item>	
+							<item row="5" col="3" spacing="0,15,0,0">
+								<labeledit name="txtFakVrijRabat" value="0" fontbold="true" textposition="right"/>
+							</item>	
+							<item row="5" col="4" spacing="0,15,0,0">
+								<labeledit name="txtDevVrijRabat" value="0" format="n2" fontbold="true" textposition="right"/>
+							</item>	
+						</group>
+						<group alignmode="local" groupbordervisible="true" cols="3" rows="5" col="3" row="1" backgroundcolor="grey">
+							<columnsdefinition>
+								<column size="100%" position="2"/>
+							</columnsdefinition>
+							<item row="1" col="1" spacing="0,15,0,0">
+								<labeledit value="Troškovi" fontbold="true" fontcolor="#969696"/>
+							</item>	
+							<item row="1" col="3" spacing="0,15,0,0">
+								<labeledit value="Kn" textposition="right" fontbold="true" fontcolor="#969696"/>
+							</item>	
+							<item row="2" col="1" spacing="0,15,0,0">
+								<labeledit value="Manipulativni trošak:" fontbold="true"/>
+							</item>	
+							<item row="2" col="3" spacing="0,15,0,0">
+								<labeledit name="txtTrosak" value="0" fontbold="true" format="n2" textposition="right"/>
+							</item>	
+							<item row="3" col="1" spacing="0,15,0,0">
+								<labeledit value="Trošarina:" fontbold="true"/>
+							</item>	
+							<item row="3" col="3" spacing="0,15,0,0">
+								<labeledit name="txtTrosarina" value="0" fontbold="true" format="n2" textposition="right"/>
+							</item>	
+							<item row="4" col="1" spacing="0,15,0,0">
+								<labeledit  value="Carina:" fontbold="true"/>
+							</item>	
+							<item row="4" col="3" spacing="0,15,0,0">
+								<labeledit name="txtCarina" value="0" format="n2" fontbold="true" textposition="right"/>
+							</item>	
+							<item row="5" col="1" spacing="0,15,0,0">
+								<labeledit value="Ukupno:" fontbold="true"/>
+							</item>	
+							<item row="5" col="3" spacing="0,15,0,0">
+								<labeledit name="txtTrosakUkupno" value="0" fontbold="true"  textposition="right"/>
+							</item>	
+						</group>
+						<group alignmode="local" groupbordervisible="true" cols="4" rows="5" col="5" row="1" backgroundcolor="grey">
+							<rowsdefinition>
+								<row size="100%" position="2" />
+							</rowsdefinition>
+							<columnsdefinition>
+								<column size="100%" position="2"/>
+							</columnsdefinition>
+							<item row="1" col="1" spacing="0,15,0,0">
+								<labeledit value="Nabavna" fontbold="true" fontcolor="#969696"/>
+							</item>	
+							<item row="1" col="3" spacing="0,15,0,0">
+								<labeledit value="Kn" textposition="right" fontbold="true" fontcolor="#969696"/>
+							</item>	
+							<item row="1" col="4" spacing="0,15,0,0">
+								<labeledit value="Valuta" textposition="right" fontbold="true" fontcolor="#969696"/>
+							</item>	
+							<item row="2" col="1" spacing="0,15,0,0">
+								<labeledit value="Vrijednost:" fontbold="true"/>
+							</item>						
+							<item row="2" col="3" spacing="0,15,0,0">
+								<labeledit name="txtNabVrij" value="0" fontbold="true" textposition="right"/>
+							</item>	
+							<item row="2" col="4" spacing="0,15,0,0">
+								<labeledit name="txtNabVrijDev" value="0" fontbold="true" format="n2" textposition="right"/>
+							</item>	
+							<item row="3" col="1" spacing="0,15,0,0">
+								<labeledit value="Povratna naknada:" fontbold="true"/>
+							</item>	
+							<item row="3" col="3" spacing="0,15,0,0">
+								<labeledit  name="txtPovrat" value="0" fontbold="true" textposition="right"/>
+							</item>	
+							<item row="3" col="4" spacing="0,15,0,0">
+								<labeledit name="txtDevPovrat" value="0" format="n2" fontbold="true" textposition="right"/>
+							</item>	
+							<item row="5" col="1" spacing="0,15,0,0">
+								<labeledit value="Ukupno:" fontbold="true"/>
+							</item>	
+							<item row="5" col="3" spacing="0,15,0,0">
+								<labeledit name="txtNabVrijPovrat" value="0" fontbold="true" textposition="right"/>
+							</item>	
+							<item row="5" col="4" spacing="0,15,0,0">
+								<labeledit name="txtNabVrijDevUkupno" value="0" format="n2" fontbold="true" textposition="right"/>
+							</item>		
+						</group>
+					</group>
+					<group padding="0" groupbordervisible="false" cols="7" rows="1" col="1" row="4" >
+						<item row="1" col="1" textvisible="False" spacing="0,0,0,0">
+							<button name="btnDodajDetalj" caption="DODAJ &amp;KOMISIJU">
+								<event type="click">
+									<part name="prtRobnoKalkDetInsert" path="prtUFERobnog.xml"/>
+								</event>
+							</button>
+						</item>	
+						<item row="1" col="2" textvisible="False" spacing="0,0,0,0">
+							<button name="btnEditDetalj" caption="&amp;IZMIJENI">
+								<event type="click">								
+									<part name="prtRobnoKalkDetUpdate" path="prtUFERobnog.xml"/>
+								</event>
+							</button>
+						</item>
+						<item row="1" col="3" textvisible="False" spacing="0,0,0,0">
+							<button name="btnEditDetaljSve" caption="IZMIJENI S&amp;VE">
+								<event type="click">
+									<!--vraćam fokus na prvi u gridu, inače petlja ne odvrti sve slogove -->
+									<action type="control focus" value="#grdStavke">
+										<parameter value="$TopRobnoKalkDetId" />
+									</action>
+									<action type="variable value" value="global.$RafalniUnos" if="#grdStavke.rowcount>0">
+										<parameter value="1"/>
+									</action>
+									<action type="form open" value="frmUFERobnogStavka">
+										<parameter name="Action" value="1"/>
+										<parameter name="PartneriId" value="#srcPartner"/>
+										<parameter name="Tecaj" value="#txtTecaj"/>
+										<parameter name="TrosakP" value="#txtTrosakPosto"/>
+										<parameter name="valutaOznaka" value="#cmbValuta.@oznaka" if="#cmbValuta!=null"/>
+										<parameter name="valutaOznaka" value="kn" if="#cmbValuta==null"/>
+										<parameter name="RobnoKalkGlaId" value="$RobnoKalkGlaId"/>
+										<parameter name="RobnoKalkDetId" value="#grdStavke.@RobnoKalkDetId"/>
+										<parameter name="RobaId" value="#grdStavke.@RobaId"/>
+										<parameter name="Status" value="$Status"/>
+										<parameter name="ValuteId" value="#cmbValuta"/>
+									</action>
+									<action type="variable value" value="global.$RafalniUnos" if="dialogresult==cancel">
+										<parameter value="0"/>
+									</action>
+									<action type="variable value" value="global.$RafalniUnos" if="#grdStavke.rowcount==#grdStavke.rownumber">
+										<parameter value="0"/>
+									</action>
+									<action type="variable value" value="global.$OtvorenaEditForma">
+										<parameter value="0"/>
+									</action>
+									<!-- <action type="message" value="izmijeni sve {global.$OtvorenaEditForma},{global.$RafalniUnos}"/>		 -->
+									<action type="control focusnextrow" value="#grdStavke" if="global.$RafalniUnos==1"/>								
+									<action type="control populate" value="#grdStavke"/>	
+									<action type="control populate" value="parent.#grdDetail"/>									
+									<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>
+								</event>
+							</button>
+						</item>
+						<item row="1" col="4" textvisible="False" spacing="0,0,0,0">
+							<button name="btnDeleteDetalj" caption="&amp;OBRIŠI">
+								<event type="click">
+									<part name="prtRobnoKalkDetDelete" path="prtUFERobnog.xml"/>				
+								</event>
+							</button>
+						</item>
+						<item row="1" col="5" textvisible="False" spacing="0,0,0,0">
+							<button name="btnUrednik" caption="&amp;UREDNIK RABATA">
+								<event type="click">
+									<action type="form open" value="frmUrednikRabata" if="#grdStavke.rowcount&gt;0">
+										<parameter name="RobaId" value="#grdStavke.@RobaId"/>
+										<parameter name="RobnoKalkDetId" value="#grdStavke.@RobnoKalkDetId"/>
+									</action>
+									<action type="control populate" value="#grdStavke"/>
+									<action type="control populate" value="parent.#grdGlava"/>
+									<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>
+								</event>
+							</button>							
+						</item>
+						<item row="1" col="7" textvisible="False" spacing="0,0,0,0">												
+						</item>
+					</group>
+				</group>
+				<group caption="" cols="1" rows="5" groupbordervisible="false">
+					<rowsdefinition>
+						<row size="5" position="2" />
+					</rowsdefinition>
+					<group caption="Opći podaci" cols="1" rows="6" col="1" row="1" >
+						<part name="uferobnogatributi" path="prtUFERobnogOpci.xml"/>
+					</group>
+					<group caption="URA" cols="3" rows="1" col="1" row="3" backgroundcolor="#d2d2e0">					
+						<part name="uferobnogufa" path="prtUFERobnogUFA.xml"/>	
+					</group>	
+					<group caption="" cols="1" rows="1" col="1" row="4" groupbordervisible="false">			
+						<rowsdefinition>
+							<row position="1" size="40"/>
+						</rowsdefinition>						
+						<item row="1" col="1">
+							<button name="btnSpremiGlavu" caption="S&amp;TAVKE" dock="right">
+								<event type="click">
+									<part name="prtRobnoKalkGlaSave" path="prtUFERobnog.xml"/>
+									<action type="control focus" value="#btnDonesi"/>
+								</event>
+							</button>
+						</item>
+						<item col="2" row="1"/>
+					</group>
+					<item col="1" row="5"/>
+				</group>		
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDonesi" caption="&amp;DONESI">
+					<event type="click">
+						<action type="form open" value="frmUFERobnogDonos">
+							<parameter name="PartneriId" value="#srcPartner"/>
+							<parameter name="RobnoKalkGlaId" value="$RobnoKalkGlaId"/>
+						</action>
+						<part name="prtRobnoKalkSum" path="prtUFERobnogKalk.xml"/>
+						<action type="control disable" value="#btnEditDetalj,#btnEditDetaljSve,#btnUrednik,#btnZakljuci,#btnDeleteDetalj" if="#grdStavke.rowcount==0"/>
+						<action type="control enable" value="#btnEditDetalj,#btnEditDetaljSve,#btnUrednik,#btnZakljuci,#btnDeleteDetalj" elseif="#grdStavke.rowcount!=0&amp;&amp;$Status!=2&amp;&amp;$Status!=S"/>						
+					</event>
+				</button>
+				<button name="btnSpremi" caption="&amp;SPREMI" type="add" >
+					<event type="click" waittype="progress" waitcaption="Obrada" waittext="spremanje dokumenta..." sleep="2000">
+						<action type="datarun nonquery" value="~dtKalkGlaAzur"/>
+						<!-- <action type="control populate keepfocus" value="parent.#grdGlava"/> -->
+						<action type="form close"/>
+					</event>			
+				</button>		
+				<button name="btnZakljuci" caption="&amp;ZAKLJUČI" >
+					<event type="click">
+						<action type="datarun nonquery" value="~dtKalkGlaAzur"/>
+						<action type="datarun nonquery" value="dtZakljuci"/>
+						<!-- <action type="control populate keepfocus" value="parent.#grdGlava"/> -->
+						<action type="form close"/>
+						<!-- </action> -->
+					</event>
+				</button>
+				<button name="btnPrint" caption="IS&amp;PIŠI" dataname="global.~dtPrint" displayfield="Opis" >
+					<event type="click">
+						<action type="control print" value="parent.#grdGlava" if="#grdStavke.rowcount&gt;0">
+							<action type="print template" value="#btnPrint.@Template">
+								<parameter name="id" value="$RobnoKalkGlaId" />
+							</action>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>	
+			<data name="dtGetPartneri" command="spCKntTemTraziPartneri">
+				<parameter name="@Action" value="Partneri"/>
+				<parameter name="@Uvjet" value="#srcPartner.text"/>
+				<parameter name="@broj_lokacija" value="1"/>
+			</data>			
+			<data name="dtLokacija" command="spKatalogLokacije">
+				<parameter name="@action" value="lokacije"/> 
+				<parameter name="@partneriid" value="#srcPartner"/>
+			</data>
+			<data name="dtOrgShema" command="spJKatalogTree">
+				<parameter name="@Action" value="orgshema"/>
+			</data>
+			<data name="dtOdgovornaOsoba" command="spOsobeQuery">
+				<parameter name="@Action" value="16"/>
+			</data>
+			<data name="dtRobaDet" command="spCRobnoKalkDetQuery">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@id" value="$RobnoKalkGlaId"/>
+			</data>
+			<data name="dtInsertGlave" command="spCRobnoKalkGlaAzur">
+				<parameter name="@action" value="0" type="int"/>					
+				<parameter name="@FaktureDobId" value="$UFA" type="int"/>		
+				<parameter name="@PartneriId" value="#srcPartner" type="int"/>
+				<parameter name="@OperateriId" value="@@OperateriId" type="int"/>
+				<parameter name="@OsobeId" value="#cmbOsobe" type="int"/>			
+				<parameter name="@ValuteId" value="#cmbValuta" type="int"/>
+				<parameter name="@OrgShemaId" value="#cteOrgShema" type="int"/>
+				<parameter name="@ParStruId" value="#cmbLokacija" type="int"/>
+				<parameter name="@TroskoviIznos" value="#txtTrosakIznos" type="decimal"/>
+				<parameter name="@Opis" value="#txtOpis" />
+				<parameter name="@TroskoviPosto" value="#txtTrosakPosto" type="decimal"/>
+				<parameter name="@Tecaj" value="#txtTecaj" type="decimal"/>
+				<parameter name="@Datum" value="#datDatumDok" type="datetime"/>
+				<parameter name="@FakturniIznos" value="#txtFVrijednost" type="decimal"/>
+				<parameter name="@Status" value="1"/>					
+			</data>
+			<data name="dtLokHqInd" command="spCRobnoKalkHelp">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@PartneriId" value="#srcPartner"/>
+			</data>
+			<data name="dtKalkGlaAzur" command="spCRobnoKalkGlaAzur">
+				<parameter name="@Action" value="1" type="int"/>
+				<parameter name="@Id" value="$RobnoKalkGlaId"/>
+				<parameter name="@FaktureDobId" value="$UFA"/>
+				<parameter name="@PartneriId" value="#srcPartner"/>
+				<parameter name="@Datum" value="#datDatumDok"/>
+				<parameter name="@TroskoviIznos" value="#txtTrosakIznos" type="decimal"/>
+				<parameter name="@TroskoviPosto" value="#txtTrosakPosto" type="decimal"/>
+				<parameter name="@Status" value="$Status"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@OsobeId" value="#cmbOsobe"/>
+				<parameter name="@DatumZak" value="$DatumZak"/>			
+				<parameter name="@FakturniIznos" value="#txtFVrijednost" type="decimal"/>
+				<parameter name="@Opis" value="#txtOpis"/>
+				<parameter name="@ValuteId" value="#cmbValuta"/>
+				<parameter name="@Tecaj" value="#txtTecaj" type="decimal"/>	
+				<parameter name="@OrgShemaId" value="#cteOrgShema"/>
+				<parameter name="@ParStruId" value="#cmbLokacija"/>				
+			</data>
+			<data name="dtCalcTroskovi" command="spCRobnoKalkCalcTroskovi">
+				<parameter name="@Action" value="$tip"/>
+				<parameter name="@FakVrijednost" value="#txtFVrijednost"/>
+				<parameter name="@TroskoviP" value="#txtTrosakPosto"/>
+				<parameter name="@TroskoviI" value="#txtTrosakIznos"/>
+			</data>				
+			<data name="dtKalkGlaQuery" command="spCRobnoKalkGlaQuery">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Id" value="$RobnoKalkGlaId"/>
+			</data>		
+			<data name="dtDeleteDet" command="spCRobnoKalkDetAzur">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@Id" value="#grdStavke.@RobnoKalkDetId"/>
+			</data>
+			<data name="dtZakljuci" command="spCRobnoKalkGlaAzur">
+				<parameter name="@action" value="3"/>
+				<parameter name="@Id" value="$RobnoKalkGlaId"/>
+			</data>	
+			<data name="dtIzracunSumeFakturna" command="spCRobnoKalkCalcSum">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@par1" value="#grdStavke.@FVrijednost.sum" type="decimal"/>
+				<parameter name="@par2" value="#grdStavke.@RabatUkupno.sum" type="decimal"/>
+				<parameter name="@tecaj" value="#txtTecaj" type="decimal"/>
+				<parameter name="@par4" value="#grdStavke.@DevVrijednost.sum" type="decimal"/>
+			</data>			
+			<data name="dtIzracunSumeTroskovi" command="spCRobnoKalkCalcSum">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@par1" value="#grdStavke.@TrosakI.sum" type="decimal"/>
+				<parameter name="@par2" value="#grdStavke.@Trosarina.sum" type="decimal"/>
+				<parameter name="@par3" value="#grdStavke.@CarinaI.sum" type="decimal"/>
+			</data>	
+			<data name="dtIzracunSumeNabavna" command="spCRobnoKalkCalcSum">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@par1" value="#grdStavke.@NVrijednost.sum" type="decimal"/>
+				<parameter name="@tecaj" value="#txtTecaj" type="decimal"/>
+				<parameter name="@par3" value="#grdStavke.@PovratnaNaknada.sum" type="decimal"/>
+				<parameter name="@par4" value="#txtNabVrijDevUkupno" type="decimal"/>
+				<parameter name="@par5" value="#grdStavke.@NVrijednostDev.sum" type="decimal"/>
+			</data>		
+			<data name="dtRasporediTroskove" command="spCRobnoPrimke">
+				<parameter name="@Action" value="33"/>
+				<parameter name="@RobnoKalkGlaId" value="$RobnoKalkGlaId"/>
+			</data>
+			<data name="dtOperaterLockSet" command="spCRobnoKalkHelp">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@OperateriId" value="@@operateriid"/>
+				<parameter name="@RobnoKalkGlaId" value="$RobnoKalkGlaId"/>
+			</data>
+			<data name="dtOperaterLockReset" command="spCarpoOperaterLock">
+				<parameter name="@Action" value="Close"/>
+				<parameter name="@OperaterLockTable" value="RobnoKalkGla"/>
+				<parameter name="@OperaterLockKey" value="RobnoKalkGlaId"/>
+				<parameter name="@OperaterLockKeyValue" value="$RobnoKalkGlaId"/>
+			</data>	
+			<data name="dtTroskovi" command="spCRobnoTroskoviQuery">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@RobnoKalkGlaId" value="$RobnoKalkGlaId"/>		
+			</data>	
+			<data name="dtNepovezaneFakture" command="spCRobnoNepovezaneFaktureQuery">
+				<parameter name="@PartneriId" value="#srcPartner"/>
+				<parameter name="@BrojDok" value="#txtUra"/>				
+				<parameter name="@Id"  value="$RobnoKalkGlaId"/>
+			</data>	
+			<data name="dtPozicija" command="spCRobnoKalkHelp">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@RobnoKalkGlaId" value="$RobnoKalkGlaId"/>	
+				<parameter name="@DrvoFilter" value="parent.#filter"/>
+				<parameter name="@DrvoId" value="parent.#tree.@Id"/>						
+			</data>				
+		</datalist>
+	</form>
+</root>

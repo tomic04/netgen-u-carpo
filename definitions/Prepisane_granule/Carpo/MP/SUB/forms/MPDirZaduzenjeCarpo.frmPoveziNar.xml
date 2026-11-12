@@ -1,0 +1,137 @@
+<root>
+	<form name="frmRaskiniNar" caption="Raskini vezu s narudžbom" width="300">
+
+		<event type="init">
+			<action type="datarun reader" value="~dtNapuni"/>
+		</event>
+
+		<event type="load">
+		</event>
+
+		<event type="shown">
+		</event>
+
+		<layout>
+			<group rows="3" cols="2">
+				<item row="1" col="1" caption="Direktno zaduženje:" textposition="left">
+					<textedit name="txtZad" datavalue="~dtNapuni.@broj" readonly="true"/>
+				</item>
+				<item row="2" col="1" caption="MP narudžbenica" textposition="left">
+					<textedit name="txtNar" datavalue="~dtNapuni.@narudzba" readonly="true"/>
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnOk" caption="Raskini vezu">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtRaskini"/>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="select g.mpnarglaid, g.broj , ng.broj as narudzba  from maloprodajagla g inner join mpnargla ng on g.mpnarglaid = ng.mpnarglaid where g.maloprodajaglaid = @id" type="text" name="dtNapuni">
+				<parameter name="@id" value="$id" />
+			</data>
+			<data command="spMPAutomatskeNarudzbe" name="dtRaskini">
+				<parameter name="@action" value="18" />
+				<parameter name="@id" value="$id" />
+				<parameter name="@mpnarglaid" value="~dtNapuni.@mpnarglaid" />
+			</data> 			
+		</datalist>
+
+	</form>
+
+	<form name="frmPoveziNar" caption="Izbor narudžbenica" width="300">
+
+		<event type="init">
+			
+		</event>
+
+		<event type="load">
+			<action type="control populate" value="#grdNarGla"/>
+		</event>
+
+		<event type="shown">
+		</event>
+
+		<layout>
+			<group rows="3" cols="3">
+				<item row="1" col="1" caption="Narudžbenice za povezivanje" textposition="top">
+					<grid name="grdNarGla" dataname="dtNarGla" id="mpnarglaid" netgenfields="true">
+						<event type="focusedrowchanged">
+							<action type="control populate" value="#grdNarDet" />
+							<action type="control disable" value="#btnOk" if="#grdNarGla.@mpnarglaid=='null'"/>
+							<action type="control enable" value="#btnOk" else=""/>
+						</event>
+					</grid>
+				</item>
+				<item row="2" col="1" colspan="2" caption="Stavke narudžbenice" textposition="top">
+					<grid name="grdNarDet" dataname="dtNarDet" id="robaid" netgenfields="true">
+					</grid>
+				</item>
+				<rowsdefinition>
+				<row position="1" size="300"/>
+				<row position="2" size="450"/>
+						<row position="3" size="100%"/>
+					</rowsdefinition>
+					<columnsdefinition>
+						<column position="1" size="550"/>
+						<column position="2" size="500"/>
+						<column position="3" size="100%"/>
+					</columnsdefinition>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnOk" caption="Poveži">
+					<event type="click">
+						<action type="datarun scalar" value="~dtProvjeri" >
+							<parameter name="greska" />
+						</action>
+						<action type="confirm" value="'Narudžbenica nije identična direktnom zaduženju. Želite li ipak povezati?'" if="$greska==2">
+							<action type="datarun nonquery" value="~dtPovezi" />
+						</action>
+						<action type="datarun nonquery" value="~dtPovezi" if="$greska!=2"/>
+						<action type="variable value">
+							<parameter name="greska" value="0"/>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spMPDonesiSaZadnjegDokNG" name="dtNarGla">
+				<parameter name="@Action" value="11" />
+				<parameter name="@id" value="$id" />
+			</data> 
+			<data command="spMPDonesiSaZadnjegDokNG" name="dtNarDet">
+				<parameter name="@Action" value="22" />
+				<parameter name="@id" value="#grdNarGla.@mpnarglaid" />
+				<parameter name="@maloprodajaglaid" value="$id" />
+			</data> 
+			<data command="spMPAutomatskeNarudzbe" name="dtProvjeri">
+				<parameter name="@Action" value="16" />
+				<parameter name="@id" value="$id" />
+				<parameter name="@mpnarglaid" value="#grdNarGla.@mpnarglaid" />
+			</data> 
+			<data command="spMPAutomatskeNarudzbe" name="dtPovezi">
+				<parameter name="@Action" value="17" />
+				<parameter name="@id" value="$id" />
+				<parameter name="@mpnarglaid" value="#grdNarGla.@mpnarglaid" />
+			</data> 
+		</datalist>
+
+	</form>
+</root>

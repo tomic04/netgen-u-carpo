@@ -1,0 +1,517 @@
+<root>
+<!-- 
+TELE2 Specifična
+20.07.2022. SV promjenio @datum u @DatumDok u spCKntKompQuery zbog kontrole datuma prijeboja.
+3.11.2020. AA za punjenje gridova šaljemo i datum prijeboja  HD 60320
+06.09.2018 PJ TELE2 HD 29852 -status plaćanja na grdVjerovnik, @OperateriId u dtGridVjerovnik
+
+25.04.2018. PJ dodao kolone OrgShema na oba grida
+16.04.2018. PJ timeout na dtGridDuznik
+8.2.2018. AA timeout na dtGridVjerovnik
+24.10.2017. PJ dodao broj stavaka oba grida u footer forme
+20.10.2017. PJ brojčanik se okida na spremi i zaključi, a ne na lostfocus datuma. Maknut autowidth sa gridova.
+29.09.2017. PJ dodao kolonu Oznaka ma gridove
+31.08.2017. PJ dodao kolonu DatumDokumenta ma gridove
+09.06.2017. PJ dodao kolonu upozorenje na gridove
+07.06.2017. PJ dodao KoopInd
+05.06.2017. PJ stora za brojčanik se ne okida na izmijeni, osim kad se ne izmijeni datum, po izmjeni iznosa u edit gridu automatski se začekira taj redak.
+17.05.2017. PJ prilagodio za pozivanje iz drugih projekata
+Forma se može pozivati iz drugih projekata:
+Varijable:
+IndUnosa=2		označava unos,Poslati iz parent forme na click eventu
+ParId=			PartneriId, za punjenje tražilice,Poslati iz parent forme na click eventu
+ParNaziv=		PartnerNaziv, za punjenje tražilice, Poslati iz parent forme na click eventu
+DatumOd=		Ako se ne pošalje, gleda se defaultno ponašanje. Poslati iz parent forme na click eventu
+DatumDo=		Poslati iz parent forme na click eventu
+Projekti:  
+KupciDobavljaci.xml
+-->
+<form name="frmPrijeboj"  caption="Prijeboj" width="1000" height="800"  statusbar="true">
+		<event type="oninit">
+			<action type="datarun reader" value="~dtPocetni" />
+		</event>
+		<event type="onload">
+			<action if="parent.$IndUnosa!=1" type="control disable"  value="#srcPartner"/>
+			<action if="parent.#grdGlava.@Zakljucena==1&amp;&amp;parent.$IndUnosa!=1" type="control disable" value="#datDatum, #txtBroj, #datDatumValute, #txtNapomena, #grdDuznik, #grdVjerovnik, #btnZakljuci, #btnZapamti, #btnObnovi" />
+			<action type="datarun nonquery"  if="parent.$IndUnosa!=1" value="~dtOcistiTablice" />
+			<action type="variable value" value="VrstaDokId" >
+				<parameter  value="~dtPocetni.@VrstaDokId" />
+			</action>
+			<action type="variable value" value="ActionDuznik" if="parent.$IndUnosa==1||$IndUnosa==2">
+				<parameter  value="23" />
+			</action>
+			<action type="variable value" value="ActionDuznik" if="parent.$IndUnosa==0">
+				<parameter  value="9" />
+			</action>
+			<action type="variable value" value="ActionVjerovnik" if="parent.$IndUnosa==1||$IndUnosa==2">
+				<parameter  value="24" />
+			</action>
+			<action type="variable value" value="ActionVjerovnik" if="parent.$IndUnosa==0">
+				<parameter  value="10" />
+			</action>
+
+			<action type="datarun nonquery"  if="parent.$IndUnosa==0" value="~dtGetDuznik" />
+			<action type="datarun nonquery"  if="parent.$IndUnosa==0" value="~dtGetVjerovnik" />
+			<action type="control populate" value="#grdDuznik" if="parent.$IndUnosa==0||$IndUnosa==2"/>
+			<action type="control populate" value="#grdVjerovnik" if="parent.$IndUnosa==0||$IndUnosa==2"/>
+			<action type="datarun reader"  if="parent.$IndUnosa==0" value="~dtGet" />
+			<action type="datarun reader"  if="parent.$IndUnosa==0" value="~dtGetDuznikIds" />
+			<action type="datarun reader"  if="parent.$IndUnosa==0" value="~dtGetVjerovnikIds" />
+			
+<!--							<action type="variable value" value="ActionDuznik">
+								<parameter  value="23" />
+							</action>
+							<action type="variable value" value="ActionVjerovnik">
+								<parameter  value="24" />
+							</action>-->
+<!--
+			<action type="datarun nonquery" value="~dtUkupnoDob"/>
+			<action type="datarun nonquery" value="~dtUkupnoKup"/>	
+			<action type="datarun reader" value="~dtUkupno"/>-->
+
+			<action type="control selectedrows" value="#grdDuznik" >
+				<parameter value="~dtGetDuznikIds.@dokid"/>
+			</action>
+			<action type="control selectedrows" value="#grdVjerovnik">
+				<parameter value="~dtGetVjerovnikIds.@dokid"/>
+			</action>
+			
+
+			
+			<action type="control value" value="#datDatumValute" if="$IndUnosa==2">
+				<parameter value="$DatumDo"></parameter>
+			</action>
+			<action type="control value" value="#datDatum" if="parent.$IndUnosa==0">
+				<parameter value="~dtGet.@Datum"></parameter>
+			</action>	
+			<action type="control value" value="#txtBroj" if="parent.$IndUnosa==0">
+				<parameter value="~dtGet.@Broj"></parameter>
+			</action>	
+			<action type="control value" value="#datDatumValute" if="parent.$IndUnosa==0">
+				<parameter value="~dtGet.@DatVal"></parameter>
+			</action>
+			<action type="control value" value="#txtNapomena" if="parent.$IndUnosa==0">
+				<parameter value="~dtGet.@Napomena"></parameter>
+			</action>
+		</event>
+		<event type="onshown">
+			<action type="control value" value="#srcPartner" if="$IndUnosa==2">
+				<parameter value="$ParId" text="$ParNaziv"/>
+			</action>
+			<action type="datarun nonquery" value="~dtPuniTempDob" if="$IndUnosa==2"/>
+			<action type="datarun nonquery" value="~dtPuniTempKup" if="$IndUnosa==2"/>
+			<action type="footer text" value="Broj stavaka: Dužnik: {#grdDuznik.rowcount} / Vjerovnik: {#grdVjerovnik.rowcount}"  ></action>
+		</event>
+		<layout textposition="top" itemspadding="2"  focusdirection="downthenacross" > <!--autotaborder="false"-->
+			<group cols="1" rows="1" groupbordervisible="false" >
+				<group cols="4" rows="3" groupbordervisible="false">
+					<item col="1" row="1" caption="Datum:" >
+						<dateedit name="datDatum"  required="true" value="now"   >
+							<event type="valuechanged">
+								<action type="variable value">
+									<parameter name="Datum" value="#datDatum" />
+								</action>
+								<!--<action type="datarun reader" value="~dtBrojac" > <!{1}**if="parent.$IndUnosa==1&amp;&amp;parent.#grdGlava.@Broj==''"**{1}>
+								</action>
+								<action type="control value" value="#txtBroj" > <!{1}**if="parent.$IndUnosa==1&amp;&amp;parent.#grdGlava.@Broj==''"**{1}>
+									<parameter value="~dtBrojac.@broj"></parameter>
+								</action>	-->
+							</event>
+							<event type="leave">
+								<action type="datarun nonquery" value="~dtPuniTempDob" />
+								<action type="datarun nonquery" value="~dtPuniTempKup"/>
+								<action type="control populate" value="#grdDuznik" />
+								<action type="control populate" value="#grdVjerovnik" />
+								<action type="datarun nonquery" value="~dtUkupnoDob" />
+								<action type="datarun nonquery" value="~dtUkupnoKup"/>	
+								<action type="datarun reader" value="~dtUkupno"/>									
+							</event>		
+							<!--<event type="leave">							
+								<action type="datarun reader" value="~dtBrojac" if="parent.$IndUnosa!=0"> <!{1}**if="parent.$IndUnosa==1&amp;&amp;parent.#grdGlava.@Broj==''"**{1}>
+								</action>
+								<action type="control value" value="#txtBroj" if="parent.$IndUnosa!=0"> <!{1}**if="parent.$IndUnosa==1&amp;&amp;parent.#grdGlava.@Broj==''"**{1}>
+									<parameter value="~dtBrojac.@broj"></parameter>
+								</action>								
+							</event>-->							
+						</dateedit>
+					</item >
+					<item col="2" row="1" caption="Broj:">
+						<textedit name="txtBroj"  >
+						</textedit>
+					</item>
+					<item col="3" row="1" caption="Datum valute:" >
+						<dateedit name="datDatumValute"  required="true" value="now" >
+							<event type="valuechanged">
+								<action type="variable value">
+									<parameter name="DatumValute" value="#datDatumValute" />
+								</action>
+							</event>
+							<event type="leave">
+								<action type="datarun nonquery" value="~dtPuniTempDob" />
+								<action type="datarun nonquery" value="~dtPuniTempKup"/>
+								<action type="control populate" value="#grdDuznik" />
+								<action type="control populate" value="#grdVjerovnik" />
+								<action type="datarun nonquery" value="~dtUkupnoDob" />
+								<action type="datarun nonquery" value="~dtUkupnoKup"/>	
+								<action type="datarun reader" value="~dtUkupno"/>									
+							</event>							
+						</dateedit>
+					</item >
+					<item col="4" row="1" caption="Napomena:">
+						<textedit name="txtNapomena"  datavalue="~dtGet.@Napomena"  >
+						</textedit>
+					</item>
+					<group cols="1" rows="3" col="1" row="2" colspan="2">
+						<item col="1" row="1" caption="Dužnik:" >
+							<searchedit type="partner" name="srcPartner" fieldtext="Naziv" fieldvalue="PartneriId" datavalue="~dtGet.@PartneriId" datatext="~dtGet.@PartneriTra" tabindex="0" >
+								<event type="valuechanged">
+<!--									<action type="variable value">
+										<parameter name="PartneriId" value="#srcPartner" />
+									</action>-->
+									<action type="datarun nonquery" value="~dtPuniTempDob" if="parent.$IndUnosa==1"/>
+									<action type="datarun nonquery" value="~dtPuniTempKup" if="parent.$IndUnosa==1"/>
+									<action type="control populate" value="#grdDuznik" />
+									<action type="control populate" value="#grdVjerovnik" />
+									<action type="datarun nonquery" value="~dtUkupnoDob" /> <!--if="$IndUnosa!=2"-->
+									<action type="datarun nonquery" value="~dtUkupnoKup"/>	<!-- if="$IndUnosa!=2"-->
+									<action type="datarun reader" value="~dtUkupno"/>
+								</event>
+<!--								<event type="leave">
+									<action type="datarun nonquery" value="~dtPuniTempDob"/>
+									<action type="datarun nonquery" value="~dtPuniTempKup"/>
+									<action type="control populate" value="#grdDuznik" />
+									<action type="control populate" value="#grdVjerovnik" />
+									<action type="datarun nonquery" value="~dtUkupnoDob"/>
+									<action type="datarun nonquery" value="~dtUkupnoKup"/>	
+									<action type="datarun reader" value="~dtUkupno"/>									
+								</event>-->
+							</searchedit>
+						</item>
+						<item col="1" row="2"  >
+							<grid name="grdDuznik" async="true" dataname="~dtGridDuznik" datavalue="~dtGridDuznik" showcheckboxes="true" showfooter="True" key="dokid"  savelayout="true" multiselect="true" >
+								<menu>
+									<menuitem caption="Promet">
+										<event type="click">
+											<action type="variable value">
+												<parameter name="BrojRacuna" value="#grdDuznik.@Broj" />
+											</action>
+											<action type="variable value">
+												<parameter name="DuznikInd" value="1" />
+											</action>
+											<action type="form open" value="frmPromet"/>
+										</event>
+									</menuitem>
+								</menu>
+								<event type="focusedrowchanged">
+									<action type="footer text" value="Broj stavaka: Dužnik: {#grdDuznik.rowcount} / Vjerovnik: {#grdVjerovnik.rowcount}"  ></action>
+								</event>
+								<event type="cellvaluechanged">					
+									<action type="control selectedrows" value="#grdDuznik">
+										<parameter value="{#grdDuznik.@dokid}" if="#grdDuznik.selectedids==null"/>
+										<parameter value="{#grdDuznik.selectedids},{#grdDuznik.@dokid}" if="#grdDuznik.selectedids!=null"/>														
+									</action>																						
+									 <action type="datarun nonquery" value="~dtUpdateDuznik" />	 
+									 <action type="datarun reader" value="~dtUkupnoKup"/> 
+									 <action type="control value" value="#txtUkupnoDuznik" >	 
+										 <parameter value="~dtUkupnoKup.@ukupnok" /> 
+									 </action> 
+									 <action type="datarun reader" value="~dtUkupno"/>	 
+									 <action type="control value" value="#txtRazlika" >	 
+										 <parameter value="~dtUkupno.@IznosUk" /> 
+									 </action>									 
+								</event>
+								<event type="selectionchanged" >
+									<action type="datarun reader" value="~dtUkupnoKup"/>
+									<action type="control value" value="#txtUkupnoDuznik" >	
+										<parameter value="~dtUkupnoKup.@ukupnok" />
+									</action>
+									<action type="datarun reader" value="~dtUkupno"/>	
+									<action type="control value" value="#txtRazlika" >	
+										<parameter value="~dtUkupno.@IznosUk" />
+									</action>
+								</event>
+								<fields>
+								<!--TODO editabilni grid iznos, refresh poslje izmijene? -->	
+									<field name="Konto" />
+									<field name="DatumDokumenta" />
+									<field name="Broj" />
+									<field name="DatumValute" caption="Valuta" />
+									<field name="Iznos" editable="true"/>
+									<field name="Valuta2" />
+									<field name="Upozorenje" />
+									<field name="KompOznaka" caption="Oznaka"/>
+									<field name="OrgShema" />
+									<field name="BrojIra" />
+									<field name="OpisKnjizenjaIRA" caption="Opis knjiženja" />
+								</fields>
+								<styles>
+									<style name="fontcolor" value="black" if="#grdDuznik.@Upozorenje==''" />
+									<style name="fontcolor" value="red" elseif="#grdDuznik.@Upozorenje!=''" />
+								</styles>
+							</grid>
+						</item>
+						<item col="1" row="3" caption="Ukupno:" textposition="left">
+							<textedit name="txtUkupnoDuznik"  value="0" format="n2" fontsizedelta="2" formattype="numeric" dataname="~dtUkupnoKup" datavalue="~dtUkupnoKup.@ukupnok" enabled="false"/>
+						</item>
+					</group>
+					<group cols="1" rows="3" col="3" row="2" colspan="2">
+						<item col="1" row="1" caption="Vjerovnik:" >
+							<searchedit type="partner" name="srcPartnerMi" fieldtext="Naziv" fieldvalue="PartneriId" datavalue="~dtPocetni.@vjerid" datatext="~dtPocetni.@vjerovnik" tabindex="0" enabled="false" >
+<!--								<event type="valuechanged">									
+									<action type="variable value">
+										<parameter name="PartneriId" value="#srcPartner" />
+									</action>
+								</event>-->
+							</searchedit>
+						</item>
+						<item col="1" row="2"  >
+							<grid name="grdVjerovnik" async="true" dataname="~dtGridVjerovnik" datavalue="~dtGridVjerovnik" showcheckboxes="true" showfooter="True" key="dokid"  savelayout="true" >
+								<menu>
+									<menuitem caption="Promet">
+										<event type="click">
+											<action type="variable value">
+												<parameter name="BrojRacuna" value="#grdVjerovnik.@Broj" />
+											</action>
+											<action type="variable value">
+												<parameter name="DuznikInd" value="0" />
+											</action>
+											<action type="form open" value="frmPromet"/>
+										</event>
+									</menuitem>
+								</menu>	
+								<event type="focusedrowchanged">
+									<action type="footer text" value="Broj stavaka: Dužnik: {#grdDuznik.rowcount} / Vjerovnik: {#grdVjerovnik.rowcount}"  ></action>
+								</event>
+								<event type="cellvaluechanged">
+									<action type="control selectedrows" value="#grdVjerovnik">
+										<parameter value="{#grdVjerovnik.@dokid}" if="#grdVjerovnik.selectedids==null"/>
+										<parameter value="{#grdVjerovnik.selectedids},{#grdVjerovnik.@dokid}" if="#grdVjerovnik.selectedids!=null"/>														
+									</action>	
+									<action type="datarun nonquery" value="~dtUpdateVjerovnik" />
+									<action type="datarun reader" value="~dtUkupnoDob"/>
+									<action type="control value" value="#txtUkupnoVjerovnik" >	
+										<parameter value="~dtUkupnoDob.@ukpd" />
+									</action>
+									<action type="datarun reader" value="~dtUkupno"/>	
+									<action type="control value" value="#txtRazlika" >	
+										<parameter value="~dtUkupno.@IznosUk" />
+									</action>									
+								</event>
+								<event type="selectionchanged" >
+									<action type="datarun reader" value="~dtUkupnoDob"/>
+									<action type="control value" value="#txtUkupnoVjerovnik" >	
+										<parameter value="~dtUkupnoDob.@ukpd" />
+									</action>
+									<action type="datarun reader" value="~dtUkupno"/>	
+									<action type="control value" value="#txtRazlika" >	
+										<parameter value="~dtUkupno.@IznosUk" />
+									</action>
+								</event>
+								<fields>
+								<!--TODO editabilni grid iznos, refrehs poslje edita? -->	
+									<field name="Konto" />
+									<field name="DatumDokumenta" />
+									<field name="Broj" />
+									<field name="DatumValute" caption="Valuta" />
+									<field name="Iznos" editable="true"/>
+									<field name="Upozorenje" />
+									<field name="KompOznaka" caption="Oznaka"/>
+									<field name="OrgShema" />
+									<field name="StatusPlacanja" />
+									<field name="BrojUra" />
+									<field name="OpisKnjizenjaURA" caption="Opis knjiženja" />
+								</fields>
+								<styles>
+									<style name="fontcolor" value="black" if="#grdVjerovnik.@Upozorenje==''" />
+									<style name="fontcolor" value="red" elseif="#grdVjerovnik.@Upozorenje!=''" />
+								</styles>
+							</grid>
+						</item>
+						<item col="1" row="3" caption="Ukupno:" textposition="left">
+							<textedit name="txtUkupnoVjerovnik"  value="0" format="n2" fontsizedelta="2"  formattype="numeric" dataname="~dtUkupnoDob" datavalue="~dtUkupnoDob.@ukpd" enabled="false"/>
+						</item>
+					</group>
+					<item col="2" row="3" caption="Razlika:" colspan="2" textposition="left">
+							<textedit name="txtRazlika"  value="0" format="n2" fontsizedelta="2"  formattype="numeric" datavalue="~dtSaldoUkupno.@IznosUk" enabled="false"/>
+					</item>
+				</group>
+			</group>
+		</layout>
+			<panelbuttons>
+				<buttons>
+					<button name="btnObnovi" caption="Obnovi"> 
+						<event type="click">
+							<action type="variable value" value="ActionDuznik">
+								<parameter  value="23" />
+							</action>
+							<action type="variable value" value="ActionVjerovnik">
+								<parameter  value="24" />
+							</action>
+							<action type="datarun nonquery" value="~dtPuniTempDob"/>
+							<action type="datarun nonquery" value="~dtPuniTempKup"/>
+							<action type="control populate" value="#grdDuznik" />
+							<action type="control populate" value="#grdVjerovnik" />
+							<action type="datarun nonquery" value="~dtUkupnoDob"/>
+							<action type="datarun nonquery" value="~dtUkupnoKup"/>	
+							<action type="datarun reader" value="~dtUkupno"/>
+						</event>
+					</button>
+					<!--<button name="btnMakni" caption="Makni">  Ne treba? sve oznake se miču na select/deselect all
+					</button>-->
+					<button name="btnZakljuci" caption="Zaključi" dock="right">
+						<event type="click">
+								<action type="datarun reader" value="~dtBrojac" if="parent.$IndUnosa!=0"> <!--if="parent.$IndUnosa==1&amp;&amp;parent.#grdGlava.@Broj==''"-->
+								</action>
+								<action type="control value" value="#txtBroj" if="parent.$IndUnosa!=0"> <!--if="parent.$IndUnosa==1&amp;&amp;parent.#grdGlava.@Broj==''"-->
+									<parameter value="~dtBrojac.@broj"></parameter>
+								</action>	
+							<action type="datarun nonquery" value="~dtZakljuci" if="parent.$IndUnosa==0"/>
+							<action type="datarun scalar" value="~dtZakljuci" if="parent.$IndUnosa==1||$IndUnosa==2">
+								<parameter name="KntKompMasterId"  />
+							</action>
+							<action type="variable value" if="parent.$IndUnosa!=1&amp;&amp;$IndUnosa!=2">
+								<parameter name="KntKompMasterId" value="parent.#grdGlava.@KntKompMasterId" />
+							</action>
+							<action type="datarun nonquery" value="~dtUpdateZakljucena"/>
+							<action type="datarun nonquery" value="~dtOcistiTablice" if="parent.$IndUnosa==1||$IndUnosa==2"/>
+							<action type="form close" />
+						</event>
+					</button>
+					<button name="btnZapamti" caption="Zapamti" dock="right">
+						<event type="click">												
+								<action type="datarun reader" value="~dtBrojac" if="parent.$IndUnosa!=0"> <!--if="parent.$IndUnosa==1&amp;&amp;parent.#grdGlava.@Broj==''"-->
+								</action>
+								<action type="control value" value="#txtBroj" if="parent.$IndUnosa!=0"> <!--if="parent.$IndUnosa==1&amp;&amp;parent.#grdGlava.@Broj==''"-->
+									<parameter value="~dtBrojac.@broj"></parameter>
+								</action>														
+							<action type="datarun nonquery" value="~dtZakljuci"/>
+							<action type="datarun nonquery" value="~dtOcistiTablice"/>							
+							<action type="form close" />
+						</event>
+					</button>
+					<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+					</button>
+				</buttons>
+			</panelbuttons>
+		<datalist>
+			<data command="spCKntKompMasterBrojac" name="dtBrojac">
+				<parameter name="@Datum"  value="#datDatum" />
+				<parameter name="@VrstaDokId"  value="~dtPocetni.@VrstaDokId" />
+			</data>
+			<data command="spCKntKompQuery" name="dtPocetni">
+				<parameter name="@Action"  value="0" />
+				<parameter name="@OperateriId"  value="@@operateriid" />
+				<parameter name="@KoopInd"  value="$KoopInd" />
+			</data>
+			<data command="spCKntKompQuery" name="dtPuniTempDob">
+				<parameter name="@Action"  value="4" />
+				<parameter name="@id"  value="#srcPartner" />
+				<parameter name="@DatumValute"  value="#datDatumValute" />
+				<parameter name="@OperateriId"  value="@@operateriid" />
+				<parameter name="@DatumDok"  value="#datDatum" />
+			</data>
+			<data command="spCKntKompQuery" name="dtPuniTempKup">
+				<parameter name="@Action"  value="3" />
+				<parameter name="@id"  value="#srcPartner" />
+				<parameter name="@DatumValute"  value="#datDatumValute" />
+				<parameter name="@OperateriId"  value="@@operateriid" />
+				<parameter name="@DatumDok"  value="#datDatum" />
+			</data>
+			<data command="spCKntKompQuery" name="dtUkupnoDob">
+				<parameter name="@Action"  value="5" />
+				<parameter name="@SelectedID"  value="#grdVjerovnik.SelectedIDs.table" />  <!--TODO: poslati selected id iz grida kao tablicu -->
+				<parameter name="@OperateriId"  value="@@operateriid" />
+			</data>
+			<data command="spCKntKompQuery" name="dtUkupnoKup">
+				<parameter name="@Action"  value="6" />
+				<parameter name="@SelectedID"  value="#grdDuznik.selectedids.table" />  <!--TODO: poslati selected id iz grida kao tablicu -->
+				<parameter name="@OperateriId"  value="@@operateriid" />
+			</data>
+			<data command="spCKntKompQuery" name="dtUkupno">
+				<parameter name="@Action"  value="13" />
+				<parameter name="@UkupnoD"  value="#txtUkupnoDuznik" />
+				<parameter name="@UkupnoV"  value="#txtUkupnoVjerovnik" />
+				<parameter name="@OperateriId"  value="@@operateriid" />
+			</data>
+			<data command="spCKntKompQuery" name="dtGridDuznik" timeout="200">
+<!--				<parameter name="@Action"  value="23" if="parent.$IndUnosa==1" />
+				<parameter name="@Action"  value="9" if="parent.$IndUnosa==0" />-->
+				<parameter name="@Action"  value="$ActionDuznik" />
+				<parameter name="@KntKompMasterId"  value="parent.#grdGlava.@KntKompMasterId" />
+				<parameter name="@id"  value="#srcPartner" />
+				<parameter name="@DatumValute"  value="#datDatumValute" />
+				<parameter name="@selected"  value="1" />		
+				<parameter name="@DatumDok"  value="#datDatum" />				
+			</data>
+			<data command="spCKntKompQuery" name="dtGridVjerovnik" timeout="200">
+<!--				<parameter name="@Action"  value="24" if="parent.$IndUnosa==1"/>
+				<parameter name="@Action"  value="10" if="parent.$IndUnosa==0" />-->
+				<parameter name="@Action"  value="$ActionVjerovnik" />
+				<parameter name="@KntKompMasterId"  value="parent.#grdGlava.@KntKompMasterId" />
+				<parameter name="@id"  value="#srcPartner" />
+				<parameter name="@DatumValute"  value="#datDatumValute" />
+				<parameter name="@selected"  value="1" />
+				<parameter name="@OperateriId"  value="@@operateriid" />
+				<parameter name="@DatumDok"  value="#datDatum" />				
+			</data>
+			<data command="spCKntKompQuery" name="dtUpdateDuznik">
+				<parameter name="@Action"  value="7" />
+				<parameter name="@id"  value="#grdDuznik.@dokid" />
+				<parameter name="@IznosKup"  value="#grdDuznik.focusedvalue" type="decimal" />
+				<parameter name="@OperateriId"  value="@@operateriid" />				
+			</data>
+			<data command="spCKntKompQuery" name="dtUpdateVjerovnik">
+				<parameter name="@Action"  value="8" />
+				<parameter name="@id"  value="#grdVjerovnik.@dokid" />
+				<parameter name="@IznosDob"  value="#grdVjerovnik.focusedvalue" type="decimal" />
+				<parameter name="@OperateriId"  value="@@operateriid" />				
+			</data>
+			<data command="spCKntKompMasterAzur" name="dtUpdateZakljucena">
+				<parameter name="@Action"  value="10" />
+				<parameter name="@id"  value="$KntKompMasterId" />
+				<parameter name="@OperateriId"  value="@@operateriid" />
+				<parameter name="@Zakljucena"  value="1" />				
+			</data>
+			<data command="spCKntKompQuery" name="dtGetDuznik">
+				<parameter name="@Action"  value="11" />
+				<parameter name="@KntKompMasterId"  value="parent.#grdGlava.@KntKompMasterId" />
+				<parameter name="@OperateriId"  value="@@operateriid" />						
+			</data>
+			<data command="spCKntKompQuery" name="dtGetVjerovnik">
+				<parameter name="@Action"  value="12" />
+				<parameter name="@KntKompMasterId"  value="parent.#grdGlava.@KntKompMasterId" />
+				<parameter name="@OperateriId"  value="@@operateriid" />						
+			</data>
+			<data command="spCKntKompMasterQuery" name="dtGet">
+				<parameter name="@Action"  value="1001" />
+				<parameter name="@id"  value="parent.#grdGlava.@KntKompMasterId" />										
+			</data>
+			<data command="spCKntKompQuery" name="dtGetDuznikIds">
+				<parameter name="@Action"  value="16" />
+				<parameter name="@KntKompMasterId"  value="parent.#grdGlava.@KntKompMasterId" />										
+			</data>
+			<data command="spCKntKompQuery" name="dtGetVjerovnikIds">
+				<parameter name="@Action"  value="17" />
+				<parameter name="@KntKompMasterId"  value="parent.#grdGlava.@KntKompMasterId" />										
+			</data>
+			<data command="spCKntKompMasterAzur" name="dtZakljuci">
+				<parameter name="@Action"  value="111" if="parent.$IndUnosa==1||$IndUnosa==2"/>
+				<parameter name="@Action"  value="122" elseif="parent.$IndUnosa==0||$IndUnosa!=2" />
+				<parameter name="@id"  value="parent.#grdGlava.@KntKompMasterId" />
+				<parameter name="@Datum"  value="#datDatum" />
+				<parameter name="@Broj"  value="#txtBroj" />
+				<parameter name="@Napomena"  value="#txtNapomena" />
+				<parameter name="@DuznikId"  value="#srcPartner" />
+				<parameter name="@DatumVal"  value="#datDatumValute" />
+				<parameter name="@OperateriId"  value="@@operateriid" />
+				<parameter name="@SelectedDuznik"  value="#grdDuznik.selectedids.table"  />
+				<parameter name="@SelectedVjerovnik"  value="#grdVjerovnik.selectedids.table" />	
+				<parameter name="@KoopInd"  value="$KoopInd"  />
+			</data>
+			<data command="spCKntKompQuery" name="dtOcistiTablice">
+				<parameter name="@Action"  value="1" />
+				<parameter name="@OperateriId"  value="@@operateriid" />
+			</data>
+		</datalist>
+	</form>
+</root>

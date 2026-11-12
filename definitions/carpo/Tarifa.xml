@@ -1,0 +1,119 @@
+<!-- 04.11.2025 - fö - (v 1.0.0.2) dodao kolone  potrebne za fiskalizaciju 2.0 -->
+<!-- MH Radila na Jupiter2017, Spin -->
+<root version="1.0.0.2">
+	<form name="frmMaster" type="master" caption="Porezne tarife">
+		<event type="init">
+			<action type="datarun scalar" value="Global.~dtCheckPermission">
+				<parameter name="Global.Smije" />
+			</action>
+			<action type="datarun reader" value="global.~dtMaster" />
+			<action type="variable value">
+				<parameter name="Global.TarifaId" value="global.~dtMaster.@TarifaId" type="int" />
+				<!-- <parameter name="TarifaId" value="global.~dtMaster.@TarifaId" type="int" /> -->
+			</action>
+		</event>
+		<managerlayout>
+			<grid name="grdMaster" type="master" showautofilterrow="true" bestfitonrefresh="true" dataname="global.dtMaster" key="TarifaId" savelayout="true" statusbar="true" netgenfields="true" >
+				<event type="doubleclick">
+					<action if="global.$Smije==1">
+						<action type="form open" value="frmTarifaInsertEdit" if="#grdMaster.rowcount&gt;0">
+							<parameter name="TarifaId" value="#grdMaster.@TarifaId" />
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster" />
+					</action>
+					<action else="">
+						<action type="message" value="Nemate dopuštenje mijenjati tarife" />
+					</action>
+				</event>
+				<event type="focusedrowchanged">
+					<action type="variable value">
+						<parameter name="global.$TarifaId" value="#grdMaster.@TarifaId" />
+						<!-- <parameter name="$TarifaId" value="#grdMaster.@TarifaId" type="int" /> -->
+					</action>
+					<action type="control populate" value="#grdDetail" />
+				</event>
+				<fields inherited="true">
+					<field name="stopa1" format="n2" />
+					<field name="stopa2" format="n2" />
+					<field name="stopa3" format="n2" />
+				</fields>
+				<styles>
+					<style name="bold" value="true" if="#grdMaster.@Aktivna==DA" />
+					<style name="fontcolor" value="#ff0000" if="#grdMaster.@boja==Crvena" />
+					<style name="fontcolor" value="#00000" if="#grdMaster.@boja==Crna" />
+					<style name="fontcolor" value="#BF5F04" if="#grdMaster.@boja==Smeđa" />
+					<style name="fontcolor" value="#1e02f7" if="#grdMaster.@boja==Plava" />
+					<style name="fontcolor" value="#256200" if="#grdMaster.@boja==Zelena" />
+					<style name="fontcolor" value="#F130F7" if="#grdMaster.@boja==Ljubičasta" />
+				</styles>
+				<print caption="Porezne tarife" captionalign="center" />
+			</grid>
+			<grid name="grdDetail" caption="Opisi HR oznake kategorije PDV-a" dataname="global.~dtDetail" bestfitonrefresh="true" savelayout="true" netgenfields="true">
+				<fields inherited="true">
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnUnesi" caption="UNESI" type="add" function="insert">
+					<menuitem control="#grdMaster" sort="1" />
+					<event type="click">
+						<action type="form open" value="frmTarifaInsertEdit">
+							<parameter name="Tarifaid" value="null" />
+						</action>
+						<action type="control populate" value="#grdMaster" />
+						<action type="control focus" value="#grdMaster">
+							<parameter value="$Tarifaid" type="int" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit" function="edit">
+					<menuitem control="#grdMaster" sort="2" />
+					<event type="click">
+						<action type="form open" value="frmTarifaInsertEdit" if="#grdMaster.rowcount&gt;0">
+							<parameter name="Tarifaid" value="#grdMaster.@Tarifaid" />
+						</action>
+						<action type="control populate" value="#grdMaster" />
+						<action type="control focus" value="#grdMaster">
+							<parameter value="$Tarifaid" type="int" />
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete" function="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati Tarifu?">
+							<action type="datarun nonquery" value="global.~dtDelete">
+								<action type="control populate" value="#grdMaster" />
+							</action>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmTarifaInsertEdit" path="frmTarifaInsertEdit.xml" />
+	<form name="frmTarifaERacOpis" path="frmTarifaInsertEdit.xml" />
+	<datalist>
+		<data command="spTarifa_Query" name="dtMaster">
+			<parameter name="@Action" value="4" />
+		</data>
+		<data command="spProd_CheckPermission" name="dtCheckPermission">
+			<parameter name="@OperateriId" value="@@OperateriId" />
+			<parameter name="@Objekt" value="Tarifa" />
+			<parameter name="@Funkcija" value="edit" />
+		</data>
+		<data command="spTarifa_Azur" name="dtDelete">
+			<parameter name="@Action" value="2" />
+			<parameter name="@Tarifaid" value="#grdMaster.@TarifaId" />
+		</data>
+		<data command="spTarifa_Query" name="dtDetail">
+			<parameter name="@Action" value="7" />
+			<parameter name="@TarifaId" value="global.$TarifaId" />
+		</data>
+		<data command="spTarifa_Azur" name="dtERacOpisDelete">
+			<parameter name="@action" value="4" />
+			<parameter name="@LnTarifaEracOpisId" value="#grdOpis.@LnTarifaEracOpisId" />
+			<parameter name="@TarifaId" value="$TarifaId" />
+		</data>
+	</datalist>
+</root>

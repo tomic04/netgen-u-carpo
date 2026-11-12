@@ -1,0 +1,250 @@
+﻿<root>
+
+<!-- 31.01.2022. JVV otkomentirala dio sa fields-ima i dodala na kolonu Tečaj format n6, jer je grid po default-u zaokruživao na 2 decimale umjesto na 6 -->
+
+  <form name="frmValute" caption="$caption" width="800" height="500" fixedsize="true" saveformsize="false" >
+    <event type="load">
+      <action type="control populate" value="#grdValute" >     </action>
+    </event>
+
+    <layout>
+      <group cols="1" rows="5" groupbordervisible="false">
+        <item caption="" col="1" row="1" rowspan="5" textposition="left">
+          <grid name="grdValute" key="OOPValuteId" dataname="~dtGridValute" preventfocusgroup="false" fieldsmartspaces="false"  bestfitonrefresh="true" showgrouppanel="false">
+            <fields>
+              <field name="CarpoRowNumberColumn" fixed="true" caption="Rbr"/>
+              <field name="Valuta" caption="Valuta"/>
+              <field name="Partner" caption="Partner"/>
+              <field name="Oznaka" caption="Oznaka"/>
+              <field name="Opis" caption="Opis"/>
+              <field name="Indveze" caption="Indveze"/>
+              <field name="Tecaj" caption="Tečaj" format="n6"/>
+              <field name="Datum" caption="Datum"/>
+              <field name="Polje" caption="Polje"/>
+            </fields>
+          </grid>
+        </item>
+      </group>
+      <!--kraj omotača-->
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnos" caption="Unesi">
+          <event type="click">
+            <action type="form open" value="frmValutaEdit">
+              <parameter name="OOPValuteId" value="0"/>
+              <parameter name="caption" value="Unos valute"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdValute"/>
+          </event>
+        </button>
+        <button name="btnIzmijeni" caption="Izmijeni">
+          <event type="click">
+            <action type="form open" value="frmValutaEdit">
+              <parameter name="OOPValuteId" value="#grdValute.@OOPValuteId"/>
+              <parameter name="caption" value="Izmjena valute"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdValute"/>
+          </event>
+        </button>
+        <button name="btnBrisi" caption="Obriši">
+          <event type="click">
+            <action type="form open" value="frmValutaBrisi">
+              <parameter name="OOPValuteId" value="#grdValute.@OOPValuteId"/>
+              <parameter name="caption" value="Brisanje valute"/>
+            </action>
+            <action type="control populate" value="#grdValute"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" dock="right" >
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spOOPValuteQueryCP" name="dtGridValute">
+        <parameter name="@action" value="grid_valute" type="string"/>
+      </data>
+    </datalist>
+  </form>
+
+  <form name="frmValutaEdit" caption="$caption" width="400" height="350" fixedsize="true" saveformsize="false">
+    <event type="init">
+      <action type="datarun reader" value="~dtGet" if="$OOPValuteId!=0" />
+    </event>
+
+
+    <layout>
+      <group cols="1" rows="7" groupbordervisible="false" alignmode="local">
+
+
+        <item col="1" row="1"  textposition="left" caption="Valuta:" highlight="false" >
+          <comboedit name="cmbValute"  valuefield="ValuteId" displayfield="NazivText" dataname="~dtValute" datavalue="~dtGet.@ValuteId" allownull="false" ></comboedit>
+        </item>
+        <item col="1" row="2"  textposition="left" caption="Oznaka:" highlight="false" >
+          <textedit datavalue="~dtget.@Oznaka" name="txtOznaka"></textedit>
+        </item>
+        <item col="1" row="3" textposition="left" caption="Opis:" highlight="false" >
+          <textedit datavalue="~dtget.@Opis" name="txtOpis">
+            <event type="leave">
+              <action type="control value" value="#txtOpis" if="#txtOpis==null">
+                <parameter value=" "/>
+              </action>
+            </event>
+          </textedit>
+        </item>
+        <item col="1" row="4"  textposition="left" caption="Tečaj:" highlight="false" >
+          <textedit datavalue="~dtget.@Tecaj" name="txtTecaj" format="n6">
+            <event type="leave">
+              <action type="control value" value="#txtTecaj" if="#txtTecaj==null">
+                <parameter value="1" type="decimal"/>
+              </action>
+            </event>
+          </textedit>
+        </item>
+        <item col="1" row="5" highlight="false" >
+          <checkedit caption="Poveži s tečajnom listom" name="chkIndVeze" value="false" datavalue="~dtGet.@indVeze" />
+        </item>
+        <item caption="Partner:" col="1" row="6" textposition="left" colspan="2">
+          <searchedit name="srcPartner" fieldvalue="PartneriId" fieldtext="Naziv" dataname="~dtPartner" datatext="~dtget.@PartnerText" datavalue="~dtget.@partneriid">
+          </searchedit>
+        </item>
+
+        <item col="1" row="7" textposition="left" caption="Polje:" highlight="false" >
+          <textedit datavalue="~dtget.@Polje" name="txtPolje"></textedit>
+        </item>
+
+
+
+      </group>
+      <!--kraj omotača-->
+
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="Spremi">
+          <event type="click">
+            <action type="validate"/>
+            <action if="$OOPValuteId==0">
+              <action type="datarun reader" value="~dtUnos"></action>
+              <action type="message" value="~dtUnos.@Poruka" if="~dtUnos.@IndGreske!=0"></action>
+              <action type="form close" elseif="~dtUnos.@IndGreske==0"></action>
+            </action>
+            <action if="$OOPValuteId!=0">
+              <action type="datarun reader" value="~dtIzmjena"></action>
+              <action type="message" value="~dtIzmjena.@Poruka" if="~dtIzmjena.@IndGreske!=0"></action>
+              <action type="form close" elseif="~dtIzmjena.@IndGreske==0"></action>
+            </action>
+          </event>
+        </button>
+
+        <button name="btnOdustani" caption="ODUSTANI" >
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spOOPValuteQueryCP" name="dtGet">
+        <parameter name="@action" value="dtGet" type="string"/>
+        <parameter name="@OOPValuteId" value="$OOPValuteId" type="int"/>
+      </data>
+
+      <data command="spOOPValuteAzurCP" name="dtUnos">
+        <parameter name="@action" value="unos" type="string"/>
+        <parameter name="@Oznaka" value="#txtOznaka"/>
+        <parameter name="@Opis" value="#txtOpis"/>
+        <parameter name="@ValuteId" value="#cmbValute"/>
+        <parameter name="@PartneriId" value="#srcPartner"/>
+        <parameter name="@IndVeze" value="#chkIndVeze"/>
+        <parameter name="@Tecaj" value="#txtTecaj"/>
+        <parameter name="@Polje" value="#txtPolje"/>
+      </data>
+
+      <data command="spOOPValuteAzurCP" name="dtIzmjena">
+        <parameter name="@action" value="izmjena" type="string"/>
+        <parameter name="@OOPValuteId" value="$OOPValuteId" type="int"/>
+        <parameter name="@Oznaka" value="#txtOznaka"/>
+        <parameter name="@Opis" value="#txtOpis"/>
+        <parameter name="@ValuteId" value="#cmbValute"/>
+        <parameter name="@PartneriId" value="#srcPartner"/>
+        <parameter name="@IndVeze" value="#chkIndVeze"/>
+        <parameter name="@Tecaj" value="#txtTecaj"/>
+        <parameter name="@Polje" value="#txtPolje"/>
+      </data>
+
+
+      <data command="spOOPObustaveHelpCP" name="dtValute">
+        <parameter name="@action" value="cmb_valute" type="string"/>
+      </data>
+      <data command="spOOPObustaveHelpCP" name="dtPartner">
+        <parameter name="@action" value="trazi_partnera" type="string"/>
+        <parameter name="@Tekst" value="#srcPartner.text"/>
+      </data>
+    </datalist>
+  </form>
+
+  <form name="frmValutaBrisi" caption ="Brisanje" saveformsize="false" width="400" height="125" fixedsize="true">
+    <event type="shown">
+      <action type ="control value" value="#lblPitanje">
+        <parameter value="Jeste li sigurni da želite obrisati odabranu valutu?"/>
+      </action>
+    </event>
+    <layout>
+
+      <!--omotač-->
+      <group cols="1" rows="1" groupbordervisible="true" >
+        <item col="1" row="1"  highlight="false">
+          <labeledit name="lblPitanje" fontsizedelta="2"  value=""  />
+        </item>
+
+      </group>
+      <!--kraj omotača-->
+
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnBrisi" caption="OBRIŠI" type="del">
+          <event type="click">
+            <!-- Okini storu -->
+
+            <!--<action type="datarun reader" value="~dtBrisanje"/>
+            <action type="message" value="~dtBrisanje.@Poruka"></action>
+            <action type="control populate keepfocus" value="parent.#grdValute"/>
+            <action type="form close" if="~dtBrisanje.@IndGreske==0" />-->
+
+
+            <action type="datarun reader" value="~dtBrisanje"></action>
+            <action type="message" value="~dtBrisanje.@Poruka" if="~dtBrisanje.@IndGreske!=0"></action>
+            <action type="form close" elseif="~dtBrisanje.@IndGreske==0"></action>
+            <action type="control populate keepfocus" value="parent.#grdValute"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" type="cancel" >
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+
+      <data command="spOOPValuteAzurCP" name="dtBrisanje">
+        <parameter name="@Action" value="brisanje" />
+        <parameter name="@OOPValuteId" value="$OOPValuteId"/>
+      </data>
+    </datalist>
+  </form>
+
+
+
+</root>

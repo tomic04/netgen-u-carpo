@@ -1,0 +1,328 @@
+<root>
+	<form name="frmAzurRadVrm" caption="Ažuriranje radnog vremena">
+
+		<event type="init">
+			<action type="datarun reader" value="~dtTrgovina"/>
+			<action type="datarun nonquery" value="~dtVrijeme"/>
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdSat" >
+			</action>
+			<action type="control populate" value="#grdTip" >
+			</action>
+			<action type="control populate" value="#grdDan" >
+			</action>			
+		</event>
+		<event type="shown">
+		</event>
+
+		<layout>
+			<group rows="2" cols="1">
+				<group row="1" col="1" rows="1" cols="1">
+					<item row="1" col="1" caption="Trgovina"  textposition="left">
+						<textedit name="txtTrg" datavalue="~dtTrgovina.@trgovina" readonly="true">
+						</textedit>
+					</item>
+					<item row="1" col="2">
+					</item>
+					<columnsdefinition>
+						<column position="1" size="100"></column>
+						<column position="2" size="100%"></column>
+					</columnsdefinition>
+				</group>
+				<group row="2" col="1" rows="3" cols="3">
+					<item row="1" col="1" caption="Tipovi radnog vremena">
+						<grid name="grdSat" dataname="~dtSati" netgenfields="true" showcheckboxes="true" keyfield="mptipradnogvremenaid">
+							<event type="focusedrowchanged">
+								<action type="control populate" value="#grdDan">
+								</action>
+							</event>
+							<fields>
+								<field name="Opis3500"  minwidth="200"/>
+								<field name="Od0800"/>
+								<field name="Do0800"/>
+							</fields>
+						</grid>
+					</item>
+					<item row="2" col="1" caption="Radno vrijeme trgovine">
+						<grid name="grdTip" dataname="~dtTipovi" netgenfields="true">
+							<fields>
+								<field name="Dan1500"  minwidth="200"/>
+								<field name="Od0800"/>
+								<field name="Do0800"/>
+							</fields>
+						</grid>
+					</item>
+					<item row="1" col="2" caption="Dani">
+						<grid name="grdDan" dataname="~dtDani" netgenfields="true" keyfield="mptipradnogvremenaid">
+							<event type="cellvaluechanged">
+								<!--problem sa registriranjem promjene checkboxa-->
+								<action type="datarun nonquery" value="~dtAzur"/>
+								<action type="control populate" value="#grdTip">
+								</action>
+							</event>
+							<fields>
+								<field name="Odabir0800" editable="true" edittype="checkbox"/>
+								<field name="DAN" minwidth="100"/>
+							</fields>
+						</grid>
+					</item>
+					<rowsdefinition>
+						<row position="1" size="300"></row>
+						<row position="2" size="250"></row>
+						<row position="3" size="100%"></row>
+					</rowsdefinition>
+					<columnsdefinition>
+						<column position="1" size="350"></column>
+						<column position="2" size="250"></column>
+						<column position="3" size="100%"></column>
+					</columnsdefinition>
+				</group>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSave" caption="Spremi">
+					<action type="form close" />
+				</button>
+				<button name="btnCopyAll" caption="Kopiraj na SVE">
+					<event type="click">
+						<action type="form open" value="frmKopiraj">
+							<parameter name="trgovina" value="#txtTrg"/>
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnClose" caption="Zatvori" dock="right" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spMPTrgovineNG" name="dtTipovi">
+				<parameter name="@action" value="8"/>
+				<parameter name="@trgovinaid" value="Global.$Id"/>
+			</data>
+			<data command="spMPTrgovineNG" name="dtSati">
+				<parameter name="@action" value="9"/>
+			</data>
+			<data command="spMPTrgovineNG" name="dtDani">
+				<parameter name="@action" value="13"/>
+				<parameter name="@trgovinaid" value="Global.$Id"/>
+				<parameter name="@mptipradnogvremenaid" value="#grdSat.@MPTipRadnogVremenaid"/>
+			</data>
+			<data command="select opis as trgovina from trgovina where trgovinaid = @trgovinaid" type="text" name="dtTrgovina">
+				<parameter name="@trgovinaid" value="Global.$Id"/>
+			</data>
+			<data command="spMPTrgovineNG" name="dtVrijeme">
+				<parameter name="@action" value="14"/>
+				<parameter name="@trgovinaid" value="Global.$Id"/>
+			</data>
+			<data command="spMPTrgovineNG" name="dtAzur">
+				<parameter name="@action" value="15"/>
+				<parameter name="@trgovinaid" value="Global.$Id"/>
+				<parameter name="@dan" value="#grdDan.@DAN"/>
+				<parameter name="@odabir" value="True" if="#grdDan.@Odabir0800==True"/>
+				<parameter name="@odabir" value="False" if="#grdDan.@Odabir0800==False"/>
+				<parameter name="@mptipradnogvremenaid" value="#grdSat.@MPTipRadnogVremenaid"/>
+			</data>
+		</datalist>
+
+	</form>
+
+	<form name="frmKopiraj" caption="Kopiraj na sve trgovine">
+
+		<event type="load">
+			<action type="control value" value="txtTrg">
+				<parameter value="$trgovina" />
+			</action>
+		</event>
+
+		<layout>
+			<group rows="2" cols="1">
+				<item row="1" col="1" caption="Trgovina"  textposition="left">
+					<textedit name="txtTrg" readonly="true">
+					</textedit>
+				</item>
+				<item row="2" col="1">
+					<labeledit name="lblPoruka" value="PAŽNJA !!! SVE trgovine će imati isto radno vrijeme kao i odabrana trgovina ! 
+					\nŽelite li kopirati radno vrijeme odabrane trgovine na SVE TRGOVINE ?">
+					</labeledit>
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnCopy" caption="Kopiraj">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtKopiraj">
+						</action>
+						<action type="form close" />	
+					</event>
+				</button>
+				<button name="btnClose" caption="Odustani" dock="right" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spMPTrgovineNG" name="dtKopiraj">
+				<parameter name="@action" value="15"/>
+				<parameter name="@trgovinaid" value="Global.$Id"/>
+			</data>
+		</datalist>
+
+	</form>
+
+	<form name="frmRadnaVremena" caption="Ažuriranje tipa radnog vremena">
+
+		<event type="load">
+			<action type="control populate" value="#grdTip" >
+			</action>		
+		</event>
+
+		<layout>
+			<group rows="2" cols="2">
+				<item row="1" col="1" caption="Tipovi radnog vremena">
+					<grid name="grdTip" dataname="~dtSati" netgenfields="true" keyfield="mptipradnogvremenaid">
+						<fields>
+							<field name="Opis3500"  minwidth="200"/>
+							<field name="Od0800"/>
+							<field name="Do0800"/>
+						</fields>
+					</grid>
+				</item>
+				<rowsdefinition>
+					<row position="1" size="600"></row>
+					<row position="2" size="100%"></row>
+				</rowsdefinition>
+				<columnsdefinition>
+					<column position="1" size="400"></column>
+					<column position="2" size="100%"></column>
+				</columnsdefinition>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnAdd" caption="Dodaj">
+					<event type="click">
+						<action type="form open" value="frmDodajVrm">
+						</action>
+					</event>
+				</button>
+				<button name="btnChange" caption="Izmjeni">
+					<event type="click">
+						<action type="form open" value="frmIzmjeniVrm">
+							<parameter name="MPTipRadnogVremenaid" value="#grdTip.@MPTipRadnogVremenaid"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnDel" caption="Obriši">
+					<event type="click">
+						<action type="form open" value="frmBrisiVrm">
+							<parameter name="MPTipRadnogVremenaid" value="#grdTip.@MPTipRadnogVremenaid"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnClose" caption="Zatvori" dock="right" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spMPTrgovineNG" name="dtSati">
+				<parameter name="@action" value="9"/>
+			</data>
+		</datalist>
+
+	</form>
+
+	<form name="frmDodajVrm" caption="Unos tipa radnog vremena">
+		<layout>
+			<part name="prtRadVrm" path="prtMPTrgovinaPortalCarpo.xml" />
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSave" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtDodajVrm">
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnClose" caption="Zatvori" dock="right" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<part name="prtRadVrmData" path="prtMPTrgovinaPortalCarpo.xml" />
+		</datalist>
+	</form>
+
+	<form name="frmIzmjeniVrm" caption="Izmjena tipa radnog vremena">
+		<event type="init">
+			<action type="datarun reader" value="~dtVrijeme"/>
+		</event>
+		<layout>
+			<part name="prtRadVrm" path="prtMPTrgovinaPortalCarpo.xml" />
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSave" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtIzmjeniVrm">
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnClose" caption="Zatvori" dock="right" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<part name="prtRadVrmData" path="prtMPTrgovinaPortalCarpo.xml" />
+		</datalist>
+	</form>
+
+	<form name="frmBrisiVrm" caption="Brisanje tipa radnog vremena">
+		<event type="init">
+			<action type="datarun reader" value="~dtVrijeme"/>
+		</event>
+		<event type="load">
+			<action type="control disable" value="#txtOpis">
+			</action>
+			<action type="control disable" value="#txtOdSat">
+			</action>
+			<action type="control disable" value="#txtOdMin">
+			</action>
+			<action type="control disable" value="#txtDoSat">
+			</action>
+			<action type="control disable" value="#txtDoMin">
+			</action>
+		</event>
+		<layout>
+			<part name="prtRadVrm" path="prtMPTrgovinaPortalCarpo.xml" />
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSave" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtBrisiVrm">
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnClose" caption="Zatvori" dock="right" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<part name="prtRadVrmData" path="prtMPTrgovinaPortalCarpo.xml" />
+		</datalist>
+	</form>
+
+
+</root>

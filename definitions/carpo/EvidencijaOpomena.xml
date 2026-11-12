@@ -1,0 +1,725 @@
+<root version="1.0.0.">
+	<!--HD 46525 VGV-->
+	<!--jupiter2017 TreningKontor-->
+	<form name="frmFakturaRacun" path="IOSObrazac.frmFakturaRacun.xml"/>
+	<form name="frmEvidencijaOpomena" caption="Evidencija opomena" type="master" maximized="true">
+		<event type="init">
+
+		</event>
+		<event type="shown">
+			<!-- <action type="datarun scalar" value="global.~dtFindNode"> -->
+				<!-- <parameter name="findnode" value="findnode"/> -->
+			<!-- </action> -->
+			<!-- <action type="control focus" value="#tree"> -->
+				<!-- <parameter value="$findnode"/>  -->
+			<!-- </action> -->
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Datum opomena"/>
+				<!-- <event type="valuechanged"> -->
+					<!-- <action type="control populate" value="#trDrvo"/> -->
+				<!-- </event>				 -->
+            </lookup>		
+			<tree name="trDrvo" filtermode="smart" dataname="~dtDrvo" expandedlevel="1" autopopulate="true">
+				<!-- <data command="VremenskaPodjela" type="integrated"/> -->
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava"/>
+				</event>
+				<fields>
+					<field name="Name" />
+				</fields>					
+			</tree>
+			<grid name="grdGlava" type="master" key="KntOpomeneGlaId" dataname="~dtGlava" savelayout="true" multiselect="true" bestfitonrefresh="true">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetalj"/>
+				</event>
+				<event type="keydown">
+					<!--DELETE-->
+					<action if="key==46">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati odabrane opomene?">
+							<action type="control foreachrow selected" value="#grdGlava">
+								<action type="datarun nonquery" value="~dtObrisiOpomenu"/>
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava"/>
+						</action>
+					</action>
+					<!--ENTER-->
+					<action if="key==13">
+						<action type="form open" value="frmDodatno">
+							<parameter name="KntOpomeneGlaId" value="#grdGlava.@KntOpomeneGlaId"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava"/>
+					</action>	
+					<!--INSERT-->
+					<action if="key==45">
+						<action type="form open" value="frmUnesi"/>
+						<action type="control populate" value="#grdGlava">
+							<action type="control focus" value="#grdGlava">
+								<parameter value="$NoviId"/>
+							</action>
+						</action>
+					</action>
+				</event>	
+
+				<event type="cellvaluechanged">
+					<action type="datarun nonquery" value="~dtAzuriraj"/>
+					<action type="control populate keepfocus" value="#grdGlava"/>
+					<!--umjesto svega u novoj verziji moguće osvježiti samo jedan red, ako bude ovo presporo-->
+					<!-- <action type="control refreshrow" value="#grdDet"> -->
+						<!-- <parameter value="~dtRefreshRow"/> -->
+					<!-- </action> -->
+				</event>
+				<event type="selectionchanged">
+					 <action type="variable value">
+						<parameter name="SelectedIds" value="#grdGlava.selectedids.table"/>
+					 </action>							 							 
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmDodatno">
+						<parameter name="KntOpomeneGlaId" value="#grdGlava.@KntOpomeneGlaId"/>
+					</action>
+					<action type="control populate keepfocus" value="#grdGlava"/>				
+				</event>
+				<fields inherited="true">
+					<field name="BrojDok" caption="Broj dokumenta" visible="true"/>
+					<field name="Partner" caption="Partner" visible="true"/>
+					<field name="DatumDokumenta" caption="Datum dokumenta" visible="true"/>
+					<field name="DatumValute" caption="Datum valute" visible="true"/>
+					<field name="Iznos" caption="Iznos" visible="true"/>
+					<field name="Operater"/>
+					<field name="Poslano" editable="true" edittype="bit"/>
+					<field name="Podmireno" editable="true" edittype="bit"/>
+					<field name="Napomena" editable="true"/>
+					<field name="UserName" visible="false"/>
+					<field name="Komp" visible="false"/>
+				</fields>
+				<styles>
+					<style name="backgroundcolor" value="green" if="#grdGlava.@Poslano==true&amp;&amp;#grdGlava.fieldname==Poslano"/>
+					<style name="backgroundcolor" value="green" if="#grdGlava.@Podmireno==true&amp;&amp;#grdGlava.fieldname==Podmireno"/>
+					<style name="fontcolor" value="green" if="#grdGlava.@Podmireno==true&amp;&amp;#grdGlava.@Poslano==true"/>
+					<style name="bold" value="true" if="#grdGlava.@Podmireno==true&amp;&amp;#grdGlava.@Poslano==true"/>
+				</styles>
+			</grid>
+			<grid name="grdDetalj" key="KntOpomeneDetId" dataname="~dtDetalj" savelayout="true" multiselect="true" bestfitonrefresh="true">
+				<event type="keydown">
+					<action if="key==46">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati odabrane stavke?" if="#grdDetalj.@Konto!=UKUPNO">
+							<action type="control foreachrow selected" value="#grdDetalj">
+								<action type="datarun nonquery" value="~dtObrisiStavku"/>
+							</action>
+							<action type="control populate keepfocus" value="#grdDetalj"/>
+						</action>
+					</action>
+				</event>
+				<menu>
+					<menuitem name="menObrisiStavku" caption="Obriši stavku s opomene">
+						<event type="click">
+							<action type="confirm" value="Jeste li sigurni da želite obrisati odabranu stavku?" if="#grdDetalj.@Konto!=UKUPNO">
+									<action type="control foreachrow selected" value="#grdDetalj">
+										<action type="datarun nonquery" value="~dtObrisiStavku"/>
+									</action>
+									<action type="control populate keepfocus" value="#grdDetalj"/>
+							</action>
+						</event>						
+					</menuitem>
+				</menu>				
+				<fields inherited="true">
+					<!-- <field name="BrojDok" showtotalsum="false" caption="Broj dokumenta" visible="true" groupindex="0"/> -->
+					<field name="Konto" caption="Konto" visible="true"/>				
+					<field name="Broj" caption="Broj" visible="true"/>
+					<field name="Duguje" caption="Duguje" visible="true"/>
+					<field name="Potrazuje" caption="Potražuje" visible="true"/>
+					<field name="Saldo" caption="Saldo" visible="true"/>
+					<field name="DatumDokumenta" caption="Datum dokumenta" visible="true"/>
+					<field name="DatumValute" caption="Datum valute"/>
+					<field name="Dana"/>
+					<field name="Tablica" visible="false"/>
+					<field name="IdDok" visible="false"/>
+				</fields>
+				<styles>
+					<style name="fontcolor" value="blue" if="#grdDetalj.@Konto==UKUPNO"/>
+				</styles>				
+			</grid>	
+		</managerlayout>	
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="UNESI">
+					<event type="click">
+						<action type="form open" value="frmUnesi"/>
+						<action type="control populate" value="#grdGlava">
+							<action type="control focus" value="#grdGlava">
+								<parameter value="$NoviId"/>
+							</action>
+						</action>
+					</event>
+				</button>	
+				<button name="btnIzmijeni" caption="IZMIJENI">
+					<event type="click">
+						<action type="form open" value="frmDodatno">
+							<parameter name="KntOpomeneGlaId" value="#grdGlava.@KntOpomeneGlaId"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava"/>
+					</event>
+				</button>	
+				<button name="btnObrisi" caption="OBRIŠI">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati odabrane opomene?">
+							<action type="control foreachrow selected" value="#grdGlava">
+								<action type="datarun nonquery" value="~dtObrisiOpomenu"/>
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava"/>
+						</action>
+					</event>
+				</button>				
+				<button name="btnIspisi" caption="ISPIŠI">
+					<event type="click">
+						<!-- <action type="datarun nonquery" value="~dtIdIzbor"/> -->
+						<!-- <action type="control print" value="#grdGlava"> -->
+							<action type="print" value="repx:rptEvidencijaOpomena">
+								<parameter name="Id" value="#grdGlava.@PartneriId"/> 
+								<parameter name="KntOpomeneGlaId" value="#grdGlava.@KntOpomeneGlaId"/> 
+								<!-- <parameter name="NizKonto" value="#cmbKonto" type="string"/> -->
+								<parameter name="DatumDo" value="#datDatumDo"/>
+								<parameter name="DatumOd" value="#datDatumOd"/>
+								<parameter name="tuzba" value="#grdGlava.@Tuzba"/>
+							</action>
+						<!-- </action> -->
+					</event>
+				</button>						
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<!-- <data name="dtFindNode" command="" > -->
+				<!-- <parameter name="@Action" value=""/> -->
+				<!-- <parameter name="@id"  value=""/> -->
+			<!-- </data>	 -->
+			<data name="dtDrvo" command="VremenskaPodjela" type="integrated">
+				<!-- <parameter name="@Action" value="0"/> -->
+			</data>
+			<data name="dtGlava" command="spCKntEvidencijaOpomenaQuery">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@DatumOd" value="#trDrvo.@DatumOd"/>
+				<parameter name="@DatumDo" value="#trDrvo.@DatumDo"/>
+			</data>	
+			<data name="dtDetalj" command="spCKntEvidencijaOpomenaQuery">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@KntOpomeneGlaId" value="#grdGlava.@KntOpomeneGlaId"/>
+			</data>	
+			<data name="dtObrisiOpomenu" command="spCKntEvidencijaOpomenaAzur">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@KntOpomeneGlaId" value="#grdGlava.@KntOpomeneGlaId"/>
+				<parameter name="@OperateriId" value="@@OperateriId"/>
+			</data>			
+			<data name="dtObrisiStavku" command="spCKntEvidencijaOpomenaAzur">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@KntOpomeneDetId" value="#grdDetalj.@KntOpomeneDetId"/>
+				<parameter name="@OperateriId" value="@@OperateriId"/>
+			</data>	
+			<data name="dtAzuriraj" command="spCKntEvidencijaOpomenaAzur">
+				<parameter name="@Action" value="5"/>
+				<parameter name="@KntOpomeneGlaId" value="#grdGlava.@KntOpomeneGlaId"/>
+				<parameter name="@OperateriId" value="@@OperateriId"/>
+				<parameter name="@Poslano" value="#grdGlava.@Poslano"/>
+				<parameter name="@Podmireno" value="#grdGlava.@Podmireno"/>
+				<parameter name="@Napomena" value="#grdGlava.@Napomena"/>
+			</data>	
+			<data command="spCKntOpomeneInsertId" name="dtIdIzbor">
+				<parameter name="@nizId" value="$SelectedIDs"/>
+			</data>			
+		</datalist>		
+	</form>
+	<form name="frmUnesi" caption="Unos opomene" width="800" height="800" template="splitter" >
+		<event type="init">
+			<action type="datarun reader" value="~dtKupciRate"/>
+			<action type="variable value">
+				<parameter name="KupciRate" value="~dtKupciRate.@VarSet" type="int"/>
+			</action>		
+		</event>
+		<event type="load">
+			<action type="variable value">
+				<parameter name="DatumDokumenta" value="now" type="date"/>
+				<parameter name="DatumValute" value="now" type="date"/>
+				<parameter name="Napomena" value="" type="string"/>
+				<parameter name="BrojDok" value="" type="string"/>
+			</action>		
+		</event>
+		<event type="shown">
+			<action if="#cmbInterval==null">
+				<action type="control disable" value="#datRefDatumOd,#datRefDatumDo"/>
+				<action type="control enable" value="#datDatumOd,#datDatumDo"/>	
+			</action>
+			<action elseif="#cmbInterval==8||#cmbInterval==10">
+				<action type="control enable" value="#datRefDatumDo"/>
+				<action type="control visible" value="#datRefDatumDo">
+					<parameter value="true"/>
+				</action>
+				<action type="control disable" value="#datDatumOd,#datDatumDo"/>				
+			</action>			
+			<action else="">
+				<action type="control enable" value="#datRefDatumOd,#datRefDatumDo"/>
+				<action type="control disable" value="#datDatumOd,#datDatumDo"/>	
+				<action type="control visible" value="#datRefDatumDo">
+					<parameter value="false"/>
+				</action>				
+			</action>	
+			<action type="control focus" value="#btnIzvrsi"/>
+		</event>
+		<layout name="panel1" type="collapsable" itemspadding="1" savevalue="app" minsize ="300">
+			<group cols="2" rows="13" groupbordervisible="false" >
+				<columnsdefinition>
+					<column size="50%" position="1" /> 
+					<column size="50%" position="2" /> 
+				</columnsdefinition>
+				<item row="1" col="1" colspan="2" caption="Konto:">
+					<combomultiedit name="cmbKonto" valuefield="KntPlanAId" displayfield="KNaziv" dataname="~dtKonto" datavalue="~dtKontoInit.@KntPlanAId" savevalue="app" tabindex="0"/>
+				</item>
+				<item row="2" col="1" colspan="2" caption="Interval:">
+					<comboedit name="cmbInterval" dataname="~dtInterval" valuefield="Id" displayfield="Interval" savevalue="app" tabindex="1" tooltip="Vremensko razdoblje kašnjenja.">
+						<event type="valuechanged">
+							<!--ako izmijenim interval podesi dospjeće po trenutno odabranim, da ne mora ići valuechanged-->
+							<action type="datarun reader" value="~dtIntervalPostavi"/>
+							<action type="control value" value="#datDatumOd">
+								<parameter value="~dtIntervalPostavi.@Od"/>
+							</action>
+							<action type="control value" value="#datDatumDo">
+								<parameter value="~dtIntervalPostavi.@Do"/>
+							</action>							
+							<action if="#cmbInterval==null">
+								<action type="control disable" value="#datRefDatumOd,#datRefDatumDo"/>
+								<action type="control enable" value="#datDatumOd,#datDatumDo"/>
+							</action>
+							<action elseif="#cmbInterval==8||#cmbInterval==10">
+								<action type="control visible" value="#datRefDatumDo">
+									<parameter value="true"/>
+								</action>
+								<action type="control enable" value="#datRefDatumDo"/>
+								<action type="control disable" value="#datDatumOd,#datDatumDo"/>
+							</action>
+							<action else="">
+								<action type="control visible" value="#datRefDatumDo">
+									<parameter value="false"/>
+								</action>							
+								<action type="control enable" value="#datRefDatumOd"/>
+								<action type="datarun reader" value="~dtIntervalPostavi"/>
+								<action type="control value" value="#datDatumOd">
+									<parameter value="~dtIntervalPostavi.@Od"/>
+								</action>
+								<action type="control value" value="#datDatumDo">
+									<parameter value="~dtIntervalPostavi.@Do"/>
+								</action>	
+								<action type="control disable" value="#datDatumOd,#datDatumDo"/>	
+							</action>
+						</event>
+					</comboedit>
+				</item>				
+				<item row="3" col="1" caption="Referentni datum od:">
+					<dateedit name="datRefDatumOd" value="now" savevalue="app" tabindex="2" tooltip="Referentni datum.">
+						<event type="valuechanged">
+							<action type="datarun reader" value="~dtIntervalPostavi"/>
+							<action type="control value" value="#datDatumOd">
+								<parameter value="~dtIntervalPostavi.@Od"/>
+							</action>
+							<action type="control value" value="#datDatumDo">
+								<parameter value="~dtIntervalPostavi.@Do"/>
+							</action>							
+						</event>
+					</dateedit>
+				</item>	
+				<item row="3" col="2" caption="do:">
+					<dateedit name="datRefDatumDo" value="now" savevalue="app" tabindex="2" tooltip="Referentni datum.">
+						<event type="valuechanged">
+							<action type="datarun reader" value="~dtIntervalPostavi"/>
+							<action type="control value" value="#datDatumOd">
+								<parameter value="~dtIntervalPostavi.@Od"/>
+							</action>
+							<action type="control value" value="#datDatumDo">
+								<parameter value="~dtIntervalPostavi.@Do"/>
+							</action>							
+						</event>
+					</dateedit>
+				</item>					
+				<item row="4" col="1" caption="Dospijeće od:">
+					<dateedit name="datDatumOd" value="~dtPrviDan" savevalue="app" tabindex="3"/> 
+				</item>
+				<item row="4" col="2" caption="do:">
+					<dateedit name="datDatumDo" tabindex="4" value="getdate" savevalue="app"/> 
+				</item>
+				<item row="6" col="1" colspan="2" caption="Partner:" >
+					<searchedit name="srcPartner" fieldtext="Partner" savevalue="app" fieldvalue="PartneriId" dataname="~dtGetPartneri" datavalue="~dtGet.@PartneriId" datatext="~dtGet.@PartneriTra" tabindex="5" savelayout="true"/>
+				</item>
+				<item row="7" col="1" colspan="2" caption="Klasa:">
+					<comboedit name="cmbKlasa" dataname="~dtKlase" valuefield="KlPartneriID" savevalue="app" displayfield="Naziv" tabindex="6"/>	
+				</item>
+				<item row="8" col="1" colspan="2" caption="Županije:">
+					<comboedit name="cmbZupanije" dataname="~dtZupanije" valuefield="ZupanijeId" savevalue="app" displayfield="Naziv" tabindex="7">
+						<event type="valuechanged">
+							<action type="datarun reader" value="~dtMjesta"/>
+							<action type="control populate" value="#cmbMjesta"/>
+						</event>
+					</comboedit>
+				</item>
+				<item row="9" col="1" colspan="2" caption="Mjesta:">
+					<comboedit name="cmbMjesta" dataname="~dtMjesta" datavalue="~dtMjesta.#cmbZupanije" savevalue="app" valuefield="MjestaId" displayfield="Naziv" tabindex="8"/>
+				</item>
+				<item row="10" col="1" colspan="2" caption="Org. shema:">
+					<comboedit name="cmbOrgShema" dataname="~dtOrgShema" valuefield="OrgShemaId" savevalue="app" displayfield="Naziv" tabindex="9"/>
+				</item>
+				<item row="11" col="1" colspan="2" caption="Ukupni saldo > od">
+					 <textedit name="txtIznos" value="0" format="n2" savevalue="app" tabindex="10"/> 
+				</item>
+				<group rows="2" cols="2" row="12" col="1" rowspan="1" colspan="2" caption="Podaci na dokumentu">
+					<!-- <item row="1" col="4" colspan="2" caption="Potpis:"> -->
+						<!-- <comboedit name="cmbOdgOsobe" dataname="~dtOdgOsobe" savevalue="app" datavalue="~dtPotpisInit.@OsobeId" valuefield="OsobeId" displayfield="Naziv" required="True" tabindex="11"/> -->
+					<!-- </item> -->
+					<item row="1" col="1">
+						<radioedit name="rdoOpomene" caption="Opomene" savevalue="app">
+							<event type="checkedchanged">
+								<action if="#rdoOpomene==true">
+									<action type="control value" value="#rdoTuzba">
+										<parameter value="false"/>
+									</action>
+									<action type="variable value">
+										<parameter name="Tuzba" value="0"/>
+									</action>
+								</action>
+							</event>
+						</radioedit>
+					</item>
+					<item row="1" col="2">
+						<radioedit name="rdoTuzba" caption="Tužba" savevalue="app">
+							<event type="checkedchanged">
+								<action if="#rdoTuzba==true">
+									<action type="control value" value="#rdoOpomene">
+										<parameter value="false"/>
+									</action>
+									<action type="variable value">
+										<parameter name="Tuzba" value="1"/>
+									</action>
+								</action>
+							</event>
+						</radioedit>
+					</item>
+				</group>
+				<item col="1" row="13"/>
+			</group>
+		</layout>
+		<layout name="panel2">
+			<group  row="3" cols="4" rows="1" col="1" colspan="4" bordervisible="false">
+				<columnsdefinition>
+					<column size="27%" position="1" /> 
+					<column size="7%" position="2" /> 
+					<column size="36%" position="3" /> 
+					<column size="30%" position="3" /> 
+				</columnsdefinition>
+				<item row="2" col="1" rowspan="2" colspan="2">
+					<grid name="grdGlava" dataname="~dtMGrid" showfooter="true" key="PartneriId" savelayout="true">
+						<event type="focusedrowchanged"> 
+							<!-- <action type="datarun reader" value="~dtDGrid"/> -->
+							<action type="control populate" value="#grdDetalj"/>
+							<action type="footer text" value="Broj stavki na lijevom prikazu: {#grdGlava.rowcount} / Broj stavki na desnom prikazu: {#grdDetalj.rowcount}"/>
+						</event>
+						<event type="selectionchanged" >
+							 <action type="variable value">
+								<parameter name="SelectedIDs" value="#grdGlava.selectedids.table" />
+							 </action>							 							 
+						</event>
+						<fields>
+							<field name="Partner" minwidth="200"/> 
+							<field name="ukupno" caption="Ukupno" minwidth="100"/> 
+						</fields>
+					</grid>
+				</item>
+				<item row="2" col="3" rowspan="2" colspan="2">
+					<grid name="grdDetalj" dataname="~dtDGrid" showfooter="true" bestfitonrefresh="true" savelayout="true" multiselect="true">
+						<event type="focusedrowchanged">
+							<action type="variable value">
+								<parameter name="global.$DokId" value="#grdDetalj.@kid"/>
+							</action>
+						</event>
+						<fields>
+							<field name="Konto" minwidth="50"/>
+							<field name="Broj" minwidth="80"/>
+							<field name="DatumDokumenta" caption="Datum \ndokumenta" minwidth="60"/>
+							<field name="DatValute" caption="Datum \nvalute" minwidth="60"/>
+							<field name="Duguje" minwidth="80"/>
+							<field name="Potrazuje" caption="Potražuje" minwidth="80"/>
+							<field name="Saldo" minwidth="100" showtotalsum="false"/>
+							<field name="Dana" showtotalsum="false"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+                <button name="btnIzvrsi" caption="IZVRŠI" tabindex="12">
+					<event type="click" waittype="progress" waitcaption="Obrada" waittext="Učitavanje stavaka..." sleep="2000">
+						<action type="validate"/>
+						<action type="datarun scalar" value="~dtMGrid">
+							<parameter name="Id"/>
+						</action>
+						<action type="control populate" value="#grdGlava"/>
+					</event>
+				</button>
+                <button name="btnRacun" caption="RAČUN">
+					<event type="click">
+						<action type="form open" value="frmFakturaRacun">
+							<parameter name="FaktureId" value="#grdDetalj.@KId" /> 
+							<parameter name="StatusFak" value="#grdDetalj.@status" /> 
+							<parameter name="PartneriId" value="#grdGlava.@gridPid" /> 
+						</action>
+					</event>
+				</button>
+                <!-- <button name="btnDodatno" caption="OPĆENITO" dock="right"> -->
+					<!-- <event type="click"> -->
+					<!--ili ovo postaviti na klik na gumb spremi-->
+						<!-- <action type="form open" value="frmDodatno"/> -->
+					<!-- </event> -->
+				<!-- </button>				 -->
+                <button name="btnSpremi" caption="SPREMI" dock="right">
+					<event type="click">
+						<action if="#grdDetalj.rowcount>0">
+							<action type="form open" value="frmDodatno"/>
+							<action if="$Close!=true">
+								<action type="transaction">
+									<action type="datarun scalar" value="~dtUnesiOpomenu">
+										<parameter name="KntOpomeneGlaId"/>
+									</action>
+								</action>	
+								<action if="transaction==success">
+									<!--napraviti tako da se ne može napraviti error pri insertu-->
+									<action type="control foreachrow" value="#grdDetalj">
+										<action type="datarun nonquery" value="~dtUnesiStavku"/>
+									</action>
+									<action type="variable value" value="parent.$NoviId">
+										<parameter value="$KntOpomeneGlaId"/>
+									</action>
+									<action type="form close"/>
+								</action>
+								<action type="message" value="Došlo je do pogreške prilikom spremanja!" else=""/>
+							</action>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+            <data name="dtZupanije" command="spCKntPopuniKontrole">
+				<parameter name="@Action" value="zupanije"/>
+				<parameter name="@ID" value="null"/>
+			</data>
+			<data name="dtMjesta" command="spCKntPopuniKontrole">
+				<parameter name="@Action" value="mjesta"/>
+				<parameter name="@ID" value="#cmbZupanije"/>
+			</data>
+			<data name="dtKlase" command="spCKntPopuniKontrole">
+				<parameter name="@Action" value="klpartneri"/>
+				<parameter name="@ID" value="null"/>
+			</data>
+			<data name="dtNapomena" command="spCKntPopuniKontrole">
+				<parameter name="@Action" value="napomene"/>
+				<parameter name="@ID" value="null"/>
+			</data>
+			<!-- <data name="dtOdgOsobe" command="spCKntPopuniKontrole"> -->
+				<!-- <parameter name="@Action" value="odgosobe"/> -->
+				<!-- <parameter name="@ID" value="null"/> -->
+			<!-- </data> -->
+			<data name="dtKonto" command="spCKntPopuniKontrole">
+				<parameter name="@Action" value="opkonto"/>
+				<parameter name="@ID" value="null"/>
+			</data>
+			<data name="dtOrgShema" command="spCKntPopuniKontrole">
+				<parameter name="@Action" value="orgshema"/>
+				<parameter name="@ID" value="null"/>
+			</data>		
+			<data name="dtInterval" command="spCKntEvidencijaOpomenaInterval">
+				<parameter name="@Action" value="1"/>
+			</data>
+			<data name="dtIntervalPostavi" command="spCKntEvidencijaOpomenaInterval">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@Id" value="#cmbInterval"/>
+				<parameter name="@DatumOd" value="#datRefDatumOd"/>
+				<parameter name="@DatumDo" value="#datRefDatumDo"/>
+			</data>	
+			<data name="dtMGrid" command="spCKntEvidencijaOpomenaPartneriRate" timeout="200" if="$KupciRate==1">
+				<parameter name="@DatumOd" value="#datDatumOd"/>
+				<parameter name="@DatumDo" value="#datDatumDo"/>
+				<parameter name="@IDPAR" value="#srcPartner"/>
+				<parameter name="@IDOrg" value="#cmbOrgShema"/>
+				<parameter name="@IDMjesto" value="#cmbMjesta"/>
+				<parameter name="@IDZup" value="#cmbZupanije"/>
+				<parameter name="@IZNOS" value="#txtIznos"/>
+				<parameter name="@potpis" value="#cmbOdgOsobe"/>
+				<parameter name="@nizKonto" value="#cmbKonto"/>
+				<parameter name="@IDKlasa" value="#cmbKlasa"/>
+			</data>			
+			<data name="dtMGrid" command="spCKntEvidencijaOpomenaPartneri" timeout="200" elseif="$KupciRate==0">
+				<parameter name="@DatumOd" value="#datDatumOd"/>
+				<parameter name="@DatumDo" value="#datDatumDo"/>
+				<parameter name="@IDPAR" value="#srcPartner"/>
+				<parameter name="@IDOrg" value="#cmbOrgShema"/>
+				<parameter name="@IDMjesto" value="#cmbMjesta"/>
+				<parameter name="@IDZup" value="#cmbZupanije"/>
+				<parameter name="@IZNOS" value="#txtIznos"/>
+				<parameter name="@potpis" value="#cmbOdgOsobe"/>
+				<parameter name="@nizKonto" value="#cmbKonto"/>
+				<parameter name="@IDKlasa" value="#cmbKlasa"/>
+			</data>
+			<data name="dtDGrid" command="spCKntEvidencijaOpomenaStavke" timeout="200" if="$KupciRate==0">
+				<parameter name="@DatumOd" value="#datDatumOd"/>
+				<parameter name="@DatumDo" value="#datDatumDo"/>
+				<parameter name="@IDPAR" value="#grdGlava.@PartneriId"/>
+				<parameter name="@nizKonto" value="#cmbKonto"/>
+			</data>	
+			<data name="dtDGrid" command="spCKntEvidencijaOpomenaStavkeRate" timeout="200" elseif="$KupciRate==1">
+				<parameter name="@DatumOd" value="#datDatumOd"/>
+				<parameter name="@DatumDo" value="#datDatumDo"/>
+				<parameter name="@IDPAR" value="#grdGlava.@PartneriId"/>
+				<parameter name="@nizKonto" value="#cmbKonto"/>
+			</data>			
+			<data name="dtKupciRate" command="spCKntEvidencijaOpomenaPomoc">
+				<parameter name="@Action" value="dtKupciRate"/>
+			</data>
+			<data name="dtUnesiOpomenu" command="spCKntEvidencijaOpomenaAzur">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@PartneriId" value="#grdGlava.@PartneriId"/>
+				<parameter name="@BrojDok" value="$BrojDok"/>	
+				<parameter name="@Tuzba" value="0" if="#rdoOpomene==true"/>	
+				<parameter name="@Tuzba" value="1" elseif="#rdoTuzba==true"/>					
+				<parameter name="@DatumDokumenta" value="$DatumDokumenta"/>	
+				<parameter name="@DatumValute" value="$DatumValute"/>	
+				<parameter name="@Napomena" value="$Napomena"/>	
+				<parameter name="@OperateriId" value="@@OperateriId"/>	
+				<parameter name="@OsobeId" value="$OsobeId"/>	
+				<parameter name="@Iznos" value="#grdGlava.@Ukupno"/>						
+			</data>			
+			<data name="dtUnesiStavku" command="spCKntEvidencijaOpomenaAzur">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@KntOpomeneGlaId" value="$KntOpomeneGlaId"/>
+				<parameter name="@IdDok" value="#grdDetalj.@IdDok"/>
+				<parameter name="@KntPlanAId" value="#grdDetalj.@KntPlanAId"/>
+				<parameter name="@PartneriId" value="#grdGlava.@PartneriId"/>
+				<parameter name="@Broj" value="#grdDetalj.@Broj"/>	
+				<parameter name="@DatumDokumenta" value="#grdDetalj.@DatumDokumenta"/>	
+				<parameter name="@DatumValute" value="#grdDetalj.@DatValute"/>	
+				<parameter name="@Duguje" value="#grdDetalj.@Duguje"/>	
+				<parameter name="@Potrazuje" value="#grdDetalj.@Potrazuje"/>	
+				<parameter name="@Saldo" value="#grdDetalj.@Saldo"/>	
+				<parameter name="@Dana" value="#grdDetalj.@Dana"/>	
+				<parameter name="@Tablica" value="#grdDetalj.@Tablica"/>	
+				<parameter name="@OperateriId" value="@@OperateriId"/>				
+			</data>
+			<data name="dtGetPartneri" command="spCKntTemTraziPartneri">
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>				
+		</datalist>
+	</form>
+	<form name="frmDodatno" caption="Podaci o opomeni" width="200" height="300">
+		<event type="init">
+			<action type="datarun reader" value="~dtDohvatiPodatke" if="$KntOpomeneGlaId!=null"/>
+		</event>
+		<event type="shown">
+			<action if="$KntOpomeneGlaId==null">
+				<action type="datarun reader" value="~dtBrojDok"/>
+				<action type="control value" value="#datDatumDokumenta">
+					<parameter value="parent.$DatumDokumenta"/>
+				</action>
+				<action type="control value" value="#datDatumValute">
+					<parameter value="parent.$DatumValute"/>
+				</action>
+				<action type="control value" value="#memNapomena">
+					<parameter value="parent.$Napomena"/>
+				</action>	
+				<action type="control value" value="#cmbOdgOsobe">
+					<parameter value="parent.$OsobeId"/>
+				</action>					
+				<action type="control value" value="#txtBrojDok" if="parent.$BrojDok==">
+					<parameter value="~dtBrojDok.@BrojDok"/>
+				</action>
+				<action type="control value" value="#txtBrojDok" else="">
+					<parameter value="parent.$BrojDok"/>
+				</action>
+			</action>			
+		</event>
+		<layout>
+			<group cols="2" rows="7" groupbordervisible="false">
+				<item col="1" row="1" textposition="top" caption="Broj dokumenta:">
+					<textedit name="txtBrojDok" datavalue="~dtDohvatiPodatke.@BrojDok"/>
+				</item>			
+				<item col="1" row="2" textposition="top" caption="Datum dokumenta:">
+					<dateedit name="datDatumDokumenta" value="now" datavalue="~dtDohvatiPodatke.@DatumDokumenta"/>
+				</item>
+				<item col="1" row="3" textposition="top" caption="Datum valute:">
+					<dateedit name="datDatumValute" value="now" datavalue="~dtDohvatiPodatke.@DatumValute"/>
+				</item>
+				<item col="1" row="4" colspan="2" caption="Potpisnik:">
+					<comboedit name="cmbOdgOsobe" dataname="~dtOdgOsobe" savevalue="app" datavalue="~dtDohvatiPodatke.@OsobeId" valuefield="OsobeId" displayfield="Naziv" required="true"/>
+				</item>				
+				<item col="1" row="5" colspan="2" rowspan="3" textposition="top" caption="Napomena:">
+					<memoedit name="memNapomena" maxlength="500" datavalue="~dtDohvatiPodatke.@Napomena"/>
+				</item>				
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="validate"/>
+						<action if="$KntOpomeneGlaId==null">
+							<action type="variable value">
+								<parameter name="parent.$DatumDokumenta" value="#datDatumDokumenta"/>
+								<parameter name="parent.$DatumValute" value="#datDatumValute"/>
+								<parameter name="parent.$Napomena" value="#memNapomena"/>
+								<parameter name="parent.$BrojDok" value="#txtBrojDok"/>
+								<parameter name="parent.$OsobeId" value="#cmbOdgOsobe"/>
+							</action>
+							<action type="variable value" value="parent.$Close"> 
+								<parameter value="false" type="bool"/> 
+							</action>							
+						</action>
+						<action else="">
+							<action type="datarun nonquery" value="~dtAzuriraj"/>
+						</action>
+						<action type="form close"/>					
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI">
+					<event type="click">
+						<action type="variable value" value="parent.$Close" if="$KntOpomeneGlaId==null"> 
+							<parameter value="true" type="bool"/> 
+						</action> 					
+						<action type="form close"/>
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtBrojDok" command="spCKntEvidencijaOpomenaBrojac">
+				<parameter name="@Datum" value="parent.$DatumDokumenta"/>
+			</data>	
+			<data name="dtDohvatiPodatke" command="spCKntEvidencijaOpomenaQuery">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@KntOpomeneGlaId" value="$KntOpomeneGlaId"/>
+			</data>
+			<data name="dtAzuriraj" command="spCKntEvidencijaOpomenaAzur">
+				<parameter name="@Action" value="6"/>
+				<parameter name="@BrojDok" value="#txtBrojDok"/>
+				<parameter name="@KntOpomeneGlaId" value="$KntOpomeneGlaId"/>
+				<parameter name="@OperateriId" value="@@OperateriId"/>
+				<parameter name="@Napomena" value="#memNapomena"/>
+				<parameter name="@OsobeId" value="#cmbOdgOsobe"/>
+				<parameter name="@DatumDokumenta" value="#datDatumDokumenta"/>
+				<parameter name="@DatumValute" value="#datDatumValute"/>
+				<!-- <parameter name="@Poslano" value="#grdGlava.@Poslano"/> -->
+				<!-- <parameter name="@Podmireno" value="#grdGlava.@Podmireno"/> -->
+			</data>	
+			<data name="dtOdgOsobe" command="spCKntPopuniKontrole">
+				<parameter name="@Action" value="odgosobe"/>
+				<parameter name="@ID" value="null"/>
+			</data>			
+		</datalist>			
+	</form>
+</root>

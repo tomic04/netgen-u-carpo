@@ -1,0 +1,160 @@
+﻿<root>
+
+	<!--******************************************IZMJENA OSNOVNIH PODATAKA****************************************-->
+	<form name="frmOSImovinaOsnovni" caption="$Caption" fixedsize="false" width="450" >
+
+		<event type="oninit">
+			<action type="datarun reader" value="~dtGet" />
+		</event>
+		<event type="onshown">
+			<action type="variable value">
+				<parameter name="VarPromjenaVrste" value="0" type="int"/>
+			</action>
+		</event>
+
+		<layout textposition="left" >
+
+			<group cols="1" rows="16" spacing="2,2,2,2" >
+				<item caption="Inventurni broj:"  row="1" col="1" >
+					<textedit name="txtInvBroj" datavalue="~dtGet.@InvBroj" textposition="left"/>
+				</item>
+				<item caption="Naziv:"  row="2" col="1" >
+					<textedit name="txtNaziv" datavalue="~dtGet.@Naziv" textposition="left"/>
+				</item>
+				<item caption="Naziv II:"  row="3" col="1" >
+					<textedit name="txtNaziv2" datavalue="~dtGet.@Naziv2" textposition="left"/>
+				</item>
+				<item caption="Dobavljač:" col="1" row="4" >
+					<searchedit name="srcPartneri" fieldvalue="PartneriId" fieldtext="Naziv" dataname="~dtPartneri" datavalue="~dtGet.@PartneriId" datatext="~dtGet.@NazivP"/>
+				</item>
+				<item caption="Vrsta:" row="5" col="1">
+					<comboedit name="cmbVrsta"  valuefield="OSVrsteId" displayfield="NazivV" dataname="~dtVrste" datavalue="~dtGet.@OSVrsteId" >
+						<event type="valuechanged" >
+							<action type="variable value">
+								<parameter name="VarPromjenaVrste" value="1" type="int"/>
+							</action>
+						</event>
+					</comboedit>
+				</item>
+				<item caption="Serijski broj:"  row="6" col="1" >
+					<textedit name="txtSerBroj" datavalue="~dtGet.@SerBroj" textposition="left"/>
+				</item>
+				<item caption="Garažni broj:"  row="7" col="1" >
+					<textedit name="txtGarBroj" datavalue="~dtGet.@GarBroj" textposition="left"/>
+				</item>
+				<item caption="JM:" row="8" col="1">
+					<comboedit name="cmbJM"  valuefield="JMId" displayfield="NazivJM" datavalue="~dtGet.@JMId" dataname="~dtJM"/>
+				</item>
+				<item caption="Barcode:"  row="9" col="1" >
+					<textedit name="txtBarcode" datavalue="~dtGet.@Barcode" textposition="left"/>
+				</item>
+				<item caption="Broj šasije:"  row="10" col="1" >
+					<textedit name="txtBrSas" datavalue="~dtGet.@BrSas" textposition="left"/>
+				</item>
+				<item caption="Vrijednost smanjenja:"  row="11" col="1" >
+					<textedit name="txtUmanjenje" datavalue="~dtGet.@Umanjenje" textposition="left" format="n2"/>
+				</item>
+				<item caption="Nabavna vrijednost:"  row="12" col="1" >
+					<textedit name="txtNabavna" datavalue="~dtGet.@Nabavna" textposition="left" format="n2"/>
+				</item>
+				<item caption="Datum nabave:"  row="13" col="1" >
+					<dateedit name="datDatumNab" datavalue="~dtGet.@DatumNab" textposition="left" />
+				</item>
+				<item caption="Datum aktivacije:"  row="14" col="1" >
+					<dateedit name="datDatumAkt" datavalue="~dtGet.@DatumAktivacije" textposition="left" >
+						<event type="valuechanged">
+							<action type="datarun reader" value="~dtDatumPoc"  />
+							<action type="control value" value="#datDatumOtp"  >
+								<parameter value="~dtDatumPoc.@DatumOtp" />
+							</action>
+						</event>
+					</dateedit>
+				</item>
+				<item caption="Datum početka otpisa:"  row="15" col="1" >
+					<dateedit name="datDatumOtp" datavalue="~dtGet.@DatumOtpisa" textposition="left" />
+				</item>
+				<item caption="Opis"  row="16" col="1" >
+					<memoedit name="memOpis" datavalue="~dtGet.@Opis" textposition="left" />
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi"  caption="Spremi" type="add" >
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="~dtEdit"/>
+						<!-- MIJENJANJE VRSTE -->
+						<action type="control populate" value="parent.#grdImovina" if="$VarPromjenaVrste==1&amp;&amp;global.$filter==Filter imovine"/>
+						<action type="control populate" value="parent.#tree" elseif="$VarPromjenaVrste==1">
+							<action type="control focus" value="parent.#tree">
+								<parameter value="#cmbVrsta" type="int"/>
+							</action>
+							<!--sam je obavio osvježavanje mastera (i svih ostalih) -->
+
+							<action type="control focus" value="parent.#grdImovina">
+								<parameter value="$OSImovinaId" type="int"/>
+							</action>
+						</action>
+						<action type="control populate" value="parent.#grdImovina"/>
+						<action type="control focus" value="parent.#grdImovina">
+							<parameter value="$OSImovinaId" type="int"/>
+						</action>
+						<!-- MIJENJANJE SAMO STAVKE -->
+						<!--<action type="control refreshvalue" value="parent.#grdObracunski" else=""/>-->
+						<action type="form close" />
+					</event>
+				</button>
+				<button caption="Izlaz" type="cancel" dock="right">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spOSImovinaOsnovni_CP" name="dtPartneri">
+				<parameter name="@Action" value="Partneri_trazi"/>
+				<parameter name="@Tekst" value="#srcPartneri.text"/>
+			</data>
+			<data command="spOSImovinaOsnovni_CP" name="dtVrste">
+				<parameter name="@Action" value="Vrste_combo"/>
+			</data>
+			<data command="spOSImovinaOsnovni_CP" name="dtJM">
+				<parameter name="@Action" value="JM_combo"/>
+			</data>
+			<data command="spOSImovinaOsnovni_CP" name="dtGet">
+				<parameter name="@Action" value="Popuni_izmjena"/>
+				<parameter name="@OSImovinaId" value="$OSImovinaId"/>
+			</data>
+			<data command="spOSImovinaOsnovni_CP" name="dtDatumPoc">
+				<parameter name="@Action" value="Datum_otpisa"/>
+				<parameter name="@DatumAktivacije" value="#datDatumAkt"/>
+			</data>
+			<data command="spOSImovinaOsnovni_CP" name="dtEdit">
+				<parameter name="@Action" value="Izmjena"/>
+				<parameter name="@OSImovinaId" value="$OSImovinaId"/>
+				<parameter name="@InvBroj" value="#txtInvBroj"/>
+				<parameter name="@Naziv" value="#txtNaziv" />
+				<parameter name="@Naziv2" value="#txtNaziv2"/>
+				<parameter name="@PartneriId" value="#srcPartneri"/>
+				<parameter name="@OSVrsteId" value="#cmbVrsta" />
+				<parameter name="@SerBroj" value="#txtSerBroj" />
+				<parameter name="@GarBroj" value="#txtGarBroj"/>
+				<parameter name="@JmId" value="#cmbJM"/>
+				<parameter name="@Barcode" value="#txtBarcode"/>
+				<parameter name="@BrSas" value="#txtBrSas"/>
+				<parameter name="@Umanjenje" value="#txtUmanjenje" />
+				<parameter name="@Nabavna" value="#txtNabavna" />
+				<parameter name="@DatumNab" value="#datDatumNab" />
+				<parameter name="@DatumAktivacije" value="#datDatumAkt" />
+				<parameter name="@DatumOtpisa" value="#datDatumOtp" />
+				<parameter name="@Opis" value="#memOpis" />
+			</data>
+		</datalist>
+	</form>
+	<!--*******************************************KRAJ IZMJENA OSNOVNIH PODATAKA**************************************************-->
+
+</root>

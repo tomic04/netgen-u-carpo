@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT
+SETDEFAULTS="spmpPermissionNG @action = 0, @operateriid = @@operateriid, @object= '@@xmlname', @sifra = '105'#select dbo.fnTkoSmoMi() as tkosmomi "
+DETAILGRID = ""
+MASTERDBLCLICK=":FAKTUREVIEW_FORM"
+BUTTONS="Parametri:FILTERFORM#Fakturiraj:FAKTURA_FORM"
+COMMANDTIMEOUT="300" 
+POPUPMASTER="Filter:FILTERFORM" 
+GROUPBYBOXVISIBLE="TRUE" 
+CHECKBOXVISIBLE="FALSE"
+TOTALROWVISIBLE="FALSE"
+DETTOTALROWVISIBLE="FALSE"  
+ONLOAD=":FILTERFORM"
+ONLOAD2="select 'Dodaj' = case when @@dodaj=1 then 'enable' else 'disable' end , 'Izmjeni' = case when @@izmjeni=1 then 'enable' else 'disable' end , 'Zakljuci' = case when @@Zakljuci=1 then 'enable' else 'disable' end, 'Obrisi' = case when @@Obrisi=1 then 'enable' else 'disable' end , 'Storno' = case when @@storno=1 then 'enable' else 'disable' end , 'otkljucaj' = case when @@otkljucaj=1 then 'enable' else 'disable' end "
+REPORT=""
+PAGEHEADERRIGHT="@@tkosmomi"
+PAGEHEADERLEFT="Od @@datumod do @@datumdo">
+
+
+
+	<NAME>Faktura inventurne razlike</NAME>
+	<CAPTION>Faktura inventurne razlike</CAPTION>
+
+
+<FILTERFORM 
+	NAME="FILTERFORM" 
+	HEIGHT="3000" WIDTH="6700"
+	VERSION="1.1"
+	CAPTION="Upišite uvjete prikaza "
+	ONSUBMIT="spMPInvFaktura @action = 1, @operateriid= @@operateriid, "
+	ONLOAD=""
+	FILLEXPLORER="TRUE"
+	NEXTFORM=""
+	CMD1CAPTION="Pokaži"
+	CMD2CAPTION="Odustani">
+	  
+	<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od" DEFAULT="firstdayofmonth" />
+	<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do" DEFALUT="today"/>
+	<INPUT TYPE="combo" NAME="trgovinaid" ALLOWEMPTY="TRUE" CAPTION="Trgovina" ONLOSTFOCUS="" 
+		   SQL="spMPDajTrgovinaNG @operateriid = @@operateriid " />
+</FILTERFORM>
+
+  
+<FAKTURA_FORM 
+	NAME="FAKTURA_FORM" 
+	HEIGHT="9500" WIDTH="14300" 
+	CAPTION="Analitika fakture inventurne razlike"
+	ONLOAD="spMPInvFaktura @action = 7, @mpinventuraglaid = @@id, @operateriid = @@operateriid, @lock = 1" 
+	VERSION="1.71"
+	FILLEXPLORER=""
+	ONLOADED="select cast(datumdok as date) as datum, broj from mpinventuragla where mpinventuraglaid = @@id
+				#spMPInvFaktura @action = 2, @metoda = '@@metoda', @mpinventuraglaid = @@id
+				#select 'refresh' as invRazlika
+				#select sum(iznos) as zatvoreno from MPPartnerInvFaktura where operateriid = @@operateriid and SuserName = suser_name() and MPInventuraGlaID = @@id
+				#select 'refresh' as zatvoreno
+				#select @@invRazlika - @@zatvoreno as otvoreno
+				#select 'refresh' as otvoreno"
+	FOCUS=""
+	ONCLOSED="spMPInvFaktura @action = 9, @operateriid = @@operateriid">
+		
+	<INPUT TYPE="group" NAME="topgroupbox" DOCK="1" HEIGHT="1600"  />
+	<INPUT TYPE="frame"  NAME="fr1" CAPTION="" TOP="28" LEFT="50" WIDTH="7500" HEIGHT="1600"   />
+
+	<INPUT TYPE="date" NAME="datum" CAPTION="Datum inventure:*" TOP="300" LEFT="1500"   ENABLED="FALSE" />
+	<INPUT TYPE="text" NAME="broj" CAPTION="Broj inventure:*" TOP="600" LEFT="1500" WIDTH="1400"  ENABLED="FALSE" />
+ 
+    <INPUT TYPE="combo"  NAME="metoda" TOP="900" LEFT="1500" WIDTH="4400" ALLOWEMPTY="FALSE" CAPTION="Metoda razrade*" ENABLED="TRUE"
+		   SQL="select 1 as metodaID, 'Manjak' as nazivMetode 
+				union all 
+				select 2 , 'Prelomljeno'"
+		   ONLOSTFOCUS="spMPInvFaktura @action = 2, @metoda = '@@metoda', @mpinventuraglaid = @@id#select 'refresh' as invRazlika"/>
+
+	<INPUT TYPE="search" NAME="partneriid" CAPTION="Partner/djelatnik:*"    BACKCOLOR="LIGHTYELLOW"  TOP="1200"  LEFT="1500" WIDTH="4400" ENABLED="FALSE"
+		   SQL="spMPInvFaktura @action=5, @datumInv = @@datum, @partnerTrazi = '@@searchboxpartneriid'"  
+		   ONLOSTFOCUS=":DODAJOP_FORM
+                        #spMPInvFaktura @action = 22, @operateriid = @@operateriid, @mpinventuraglaid = @@id, @razlika = @@invRazlika
+                        #select 'refresh' as zatvoreno, 'refresh' as otvoreno
+                        #select 'refresh' as razrada
+                        #select 'focus' as partneriid" />
+
+	<INPUT TYPE="button" NAME="potvrdi" CAPTION="Potvrdi (F6)" TOP="900" LEFT="6000" WIDTH="1400" HEIGHT="300" HOTKEY="F6"
+				ONCLICK="select 'disable' as metoda, 'enable' as partneriid, 'enable' as dodaj
+						#select 'visible' as razrada
+						#select 'visible' as promjeni, 'invisible' as potvrdi
+						#spMPInvFaktura @action = 22, @operateriid = @@operateriid, @mpinventuraglaid = @@id, @razlika = @@invRazlika
+						#if @@metoda = 2 and @@invRazlika > 0 begin select 'invisible' as partneriid  end 
+						#if @@metoda = 2 and @@invRazlika > 0 begin exec spraiserror 65001,  &apos;Ne možete fakturirati višak !  &apos;  end 
+						#select 'focus' as partneriid
+						#select 'refresh' as zatvoreno, 'refresh' as otvoreno" />
+
+	<INPUT TYPE="button" NAME="promjeni" CAPTION="Promjeni " TOP="900" LEFT="6000" WIDTH="1400" HEIGHT="300" VISIBLE="FALSE" 
+		   ONCLICK=":IZMJENAMETODE_FORMA
+					   #if @@odgovor = 1 select 'enable' as metoda, 'disable' as partneriid, 'disable' as dodaj, 'invisible' as razrada
+					   #if @@odgovor = 1 select 'refresh' as razrada
+					   #if @@odgovor = 1 exec spMPInvFaktura @action = 22, @operateriid = @@operateriid, @mpinventuraglaid = @@id, @razlika = @@invRazlika
+					   #if @@odgovor = 1 select 'refresh' as zatvoreno, 'refresh' as otvoreno
+					   #if @@odgovor = 1 select 'invisible' as promjeni, 'visible' as potvrdi
+					   #if @@odgovor = 1 select 'enable' as metoda, 'disable' as partneriid, 'disable' as dodaj" />
+    
+	<INPUT TYPE="button" NAME="dodaj" CAPTION="Dodaj (F2)" TOP="1200" LEFT="6000" WIDTH="1400" HEIGHT="300" ENABLED="FALSE" HOTKEY="F2"
+		   ONCLICK=":DODAJOP_FORM
+					#spMPInvFaktura @action = 22, @operateriid = @@operateriid, @mpinventuraglaid = @@id, @razlika = @@invRazlika
+					#select 'refresh' as zatvoreno, 'refresh' as otvoreno
+					#select 'refresh' as razrada" />
+    
+	<INPUT TYPE="grid"
+        NAME="razrada"
+        REFRESHAFTERCHILD=""
+        TOP="1700" LEFT="50"
+        WIDTH="7500" HEIGHT="3500"
+        EDITCOLUMNS="[Postotak1200]"
+        SKIPDEFAULTLOAD="FALSE"
+        ONCELLEDITED="spMPInvFaktura @action = 4, @MPPartnerInvFakturaID = @@razrada, @operateriid = @@operateriid, @mpinventuraglaid = @@id, @partneriid = @(razrada..partneriid), @postotak = @(razrada..Postotak1200), @metoda = '@@metoda'
+                    #select 'refresh' as razrada
+                    #select sum(iznos) as zatvoreno from MPPartnerInvFaktura where operateriid = @@operateriid and SuserName = suser_name() and MPInventuraGlaID = @@id
+                    #spMPInvFaktura @action = 22, @operateriid = @@operateriid, @mpinventuraglaid = @@id, @razlika = @@invRazlika
+                    #select 'refresh' as zatvoreno, 'refresh' as otvoreno"
+        ENABLED="TRUE"
+        VISIBLE="FALSE"
+        DOCK="5"
+        CHECKBOXVISIBLE="FALSE"
+        TOTALROWVISIBLE="TRUE"
+		SQL="spMPInvFaktura @action = 3, @operateriid = @@operateriid, @mpinventuraglaid = @@id"/>
+
+	<INPUT TYPE="group" NAME="bottomgroupbox" DOCK="2" HEIGHT="1100"  />
+    
+    <INPUT TYPE="label" NAME="lblinvRazlika" CAPTION="Inventurna razlika po odabranoj metodi:" TOP="350" LEFT="6300" WIDTH="1400" SIZE="7" />
+    <INPUT TYPE="number" NAME="invRazlika" CAPTION="" TOP="300" LEFT="9000" WIDTH="1400"  ENABLED="FALSE" SIZE="10" STYLE="1" DECIMALS="2" />
+
+    <INPUT TYPE="label" NAME="lblzatvoreno" CAPTION="Zatvoreno:" TOP="700" LEFT="8200" WIDTH="1400" SIZE="7" />
+    <INPUT TYPE="number" NAME="zatvoreno" CAPTION="" TOP="650" LEFT="9000" WIDTH="1400"  ENABLED="FALSE" SIZE="10" STYLE="1" DECIMALS="2" />
+
+    <INPUT TYPE="label" NAME="lblotvoreno" CAPTION="Otvoreno:" TOP="1050" LEFT="8250" WIDTH="1400" SIZE="7" />
+    <INPUT TYPE="number" NAME="otvoreno" CAPTION="" TOP="1000" LEFT="9000" WIDTH="1400"  ENABLED="FALSE" SIZE="10" STYLE="1" DECIMALS="2" />
+    
+	<INPUT TYPE="button" NAME="ok" CAPTION="Provedi (F5)" TOP="400" LEFT="200" WIDTH="1200" HEIGHT="322" HOTKEY="F5" PARENT="bottomgroupbox"
+		   ONCLICK=":PROVEDI_FORMA
+					#if @@potvrdaFakture = 1 exec spMPInvFaktura @action = 6, @MPInventuraGlaID = @@id, @operateriid = @@operateriid, @metoda = '@@metoda', @datumInv = @@datumFak
+					#if @@potvrdaFakture = 1 exec spMPInvFaktura @action = 7, @mpinventuraglaid = @@id, @operateriid = @@operateriid, @lock = 0     
+					#if @@potvrdaFakture = 1 select 'btnZatvori' as click"  />
+
+	<INPUT TYPE="button" NAME="btnZatvori" CAPTION="" TOP="-400" LEFT="200" WIDTH="1200" HEIGHT="322" VISIBLE ="FALSE" ONCLICK="OK"  />
+    
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani (Esc)" TOP="400" LEFT="1700" WIDTH="1300" HEIGHT="322"  PARENT="bottomgroupbox"
+		   ONCLICK="spMPInvFaktura @action = 7, @mpinventuraglaid = @@id, @operateriid = @@operateriid, @lock = 0#close" HOTKEY="ESC" />
+</FAKTURA_FORM>
+
+	
+<DODAJOP_FORM 
+	NAME="DODAJOP_FORM" 
+	HEIGHT="2000" WIDTH="4000"
+	CAPTION="Odredi postotak"
+	ONLOAD=""
+	NEXTFORM=""
+	VERSION="2"
+	FOCUS="postotak">
+	
+	<INPUT TYPE="frame" NAME="fr1" CAPTION="" TOP="28" LEFT="50" WIDTH="3000" HEIGHT="700"   />
+	<INPUT TYPE="number" NAME="postotak" TOP="300" LEFT="1000" WIDTH="1500" ALLOWEMPTY="FALSE" CAPTION="Postotak*" DECIMALS="2"/>
+
+	<INPUT TYPE="button" NAME="ok" CAPTION="Dodaj (F3)" TOP="800" LEFT="300" WIDTH="1200" HEIGHT="322" HOTKEY="F3"
+		   ONCLICK="spMPInvFaktura @action = 4, @operateriid = @@operateriid, @partneriid = @@partneriid, @postotak = @@postotak, @mpinventuraglaid = @@id, @metoda = '@@metoda'#OK"  />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="800" LEFT="1800" WIDTH="1200" HEIGHT="322" ONCLICK="close"  />
+</DODAJOP_FORM>
+
+	
+<IZMJENAMETODE_FORMA
+	NAME="IZMJENAMETODE_FORMA" 
+	HEIGHT="2200" WIDTH="9000"
+	CAPTION="Potvrda izmjene metode"
+	ONLOAD="select 0 as odgovor"
+	FILLEXPLORER=""
+	VERSION="1.3">
+	
+    <INPUT TYPE="label" NAME="lblUpit" TOP="400" LEFT="500" WIDTH="1200" ENABLED="TRUE" SIZE="9"
+		   CAPTION="Izmjeniti ćete metodu izračuna. Svi prethodno dodani partneri/djelatnici za ovu inventuru će se obrisati." />
+    <INPUT TYPE="number" NAME="odgovor" TOP="100" LEFT="1000" WIDTH="1500" ALLOWEMPTY="FALSE" CAPTION="Postotak" DECIMALS="0" ENABLED="FALSE" VISIBLE="FALSE"/>
+    
+    <INPUT TYPE="button" NAME="ok" CAPTION="U redu" TOP="1000" LEFT="500" WIDTH="1106" HEIGHT="422" 
+		   ONCLICK="select 1 as odgovor
+                   #delete from MPPartnerInvFaktura where  MPInventuraGlaID = @@id
+                   #close"  />
+    <INPUT TYPE="button" NAME="ok" CAPTION="Odustani" TOP="1000" LEFT="2000" WIDTH="1200" HEIGHT="422" ONCLICK="close"  />
+</IZMJENAMETODE_FORMA>
+
+
+<PROVEDI_FORMA
+	NAME="PROVEDI_FORMA" 
+	HEIGHT="2200" WIDTH="7000"
+	CAPTION="Potvrda kreiranja fakture"
+	ONLOAD="select 0 as potvrdaFakture"
+	FILLEXPLORER=""
+	VERSION="1.5"
+	FOCUS="datumFak">
+	
+	<INPUT TYPE="label" NAME="lblUpit" TOP="100" LEFT="400" WIDTH="1200" ENABLED="TRUE" SIZE="9"
+		   CAPTION="Jeste li sigurni da želite kreirati fakture za odabrane djelatnike i inventuru?" />
+	<INPUT TYPE="number" NAME="potvrdaFakture" TOP="100" LEFT="1000" WIDTH="1500" ALLOWEMPTY="FALSE" CAPTION="Postotak" DECIMALS="0" ENABLED="FALSE" VISIBLE="FALSE"/>
+
+	<INPUT TYPE="date"  NAME="datumFak" CAPTION="Datum fakture:*" TOP="500" LEFT="1500"   ENABLED="TRUE" />
+	<INPUT TYPE="button" NAME="ok" CAPTION="U redu" TOP="1100" LEFT="500" WIDTH="1106" HEIGHT="422"
+		   ONCLICK="select 1 as potvrdaFakture#OK"  />
+	<INPUT TYPE="button" NAME="ok" CAPTION="Odustani" TOP="1100" LEFT="2000" WIDTH="1200" HEIGHT="422" ONCLICK="close" />
+</PROVEDI_FORMA>
+  
+
+<FAKTUREVIEW_FORM 
+	NAME="FAKTUREVIEW_FORM" 
+	HEIGHT="5000" WIDTH="10000"
+	CAPTION="Pregled vezivnih faktura"
+	ONLOAD=""
+	VERSION="1.3">
+	
+	<INPUT TYPE="grid"
+		NAME="razrada"
+		REFRESHAFTERCHILD=""
+		TOP="50" LEFT="50"
+		WIDTH="7500" HEIGHT="3500"
+		EDITCOLUMNS=""
+		SKIPDEFAULTLOAD="FALSE"
+		ONCELLEDITED=""
+		ENABLED="TRUE"
+		DOCK="1"
+		CHECKBOXVISIBLE="FALSE"
+		TOTALROWVISIBLE="TRUE"        
+		SQL="spMPInvFaktura @action = 8, @mpinventuraglaid = @@id"/>
+	
+	<INPUT TYPE="button" NAME="ok" CAPTION="Zatvori prozor" TOP="3900" LEFT="1500" WIDTH="1200" HEIGHT="422" ONCLICK="close" />
+</FAKTUREVIEW_FORM>
+
+	
+<RAZLIKE
+	NAME="RAZLIKE" 
+	HEIGHT="9500" WIDTH="16000" 
+	CAPTION="Razlike inventure br. @@broj" 
+	ONLOAD="spMPInventuraNG @action = 3 , @id = @@id"
+	FILLEXPLORER="" >
+	
+	<INPUT TYPE="number"  NAME="knjvrijednost"  CAPTION="Knjižna vrijednost*" TOP="400" LEFT="2000" WIDTH="1200"  ALLOWEMPTY="FALSE" ENABLED="TRUE" SQL=""  ONCLICK=""/>
+	<INPUT TYPE="number"  NAME="stvvrijednost"  CAPTION="Stvarna vrijednost*" TOP="400" LEFT="5000" WIDTH="1200"  ALLOWEMPTY="FALSE" ENABLED="TRUE" SQL=""  ONCLICK=""/>
+	<INPUT TYPE="number"  NAME="razlika"  CAPTION="Razlika*" TOP="400" LEFT="8000" WIDTH="1200"  ALLOWEMPTY="FALSE" ENABLED="TRUE" SQL=""  ONCLICK=""/>
+
+	<INPUT TYPE="grid" 
+		NAME="razlike" 
+		REFRESHAFTERCHILD="TRUE" 
+		CAPTION="Razlike" 
+		TOP="1200" LEFT="50" 
+		WIDTH="15000" HEIGHT="7078"
+		CHECKBOXVISIBLE="FALSE"	
+		PAGEHEADERCENTER="razlike inventure br.@@broj"
+		PAGEHEADERRIGHT=""
+		PAGEHEADERLEFT="Datum: @@datum##Trgovina: @@trgovina"
+		PAGEFOOTERCENTER=""
+		PAGEFOOTERLEFT=""
+		PAGEFOOTERRIGHT="@@tkosmomi"
+		PAGEORIENTATION="LANDSCAPE"
+		GROUPBYBOXVISIBLE="FALSE"
+		TOTALROW="FALSE"
+		SQL="spMPInventuraNG @action=2,@operateriid=@@operateriid,@id=@@id, @razlika = 1" />
+
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="8400" LEFT="500" WIDTH="1106" HEIGHT="422" ONCLICK="close"  />
+</RAZLIKE>
+
+
+</PROJECT>

@@ -1,0 +1,188 @@
+﻿<root verison="1.0">
+  
+  <!--1.0 - SitManager.frmLayout.xml-->
+    
+	<form name="frmMaster" type="master" caption="Manager sitnog inventara">
+
+		<managerlayout>
+			<!--*****stablo*****-->
+			<tree name="tree" dataname="dtSitKlaseTree" expandedlevel="1" showautofilterrow="false">
+				<data command="spSitManagerQueryCP" name="dtSitKlaseTree">
+					<parameter name="@Action"  value="Klase_tree"/>
+				</data>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava"  />
+				</event>
+				<fields>
+					<field name="Naziv" />
+				</fields>
+			</tree>
+			<!--Grid Glava-->
+			<grid name="grdGlava" type="master" async="true" showautofilterrow="false" bestfitonrefresh="true">
+				<event type="click">
+					<action type="control populate" value="#grdGlava"></action>
+				</event>
+				<data command="spSitManagerQueryCP" >
+					<parameter name="@Action" value="Master_grid"/>
+					<parameter name="@SitKlaseId" value="#tree.@ID"/>
+				</data>
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<!--GUMB UNESI-->
+				<button name="btnUnesi" caption="Unesi" type="add">
+					<!--<menuitem control="#grdGlava"></menuitem>-->
+					<event type="click">
+						<action type="form open" value="frmPromjena">
+						</action>
+					</event>
+				</button>
+				<!--GUMB IZMIJENI-->
+				<button name="btnIzmijeni" caption="Izmijeni" type="edit">
+					<!--<menuitem control="#grdGlava"></menuitem>-->
+					<event type="click">
+						<action type="form open" value="frmPromjena">
+							<parameter name="SitKarticaId" value="#grdGlava.@SitKarticaId" />
+
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava" />
+					</event>
+				</button>
+				<!--GUMB OBRIŠI-->
+				<button name="btnBrisi" caption="Obriši" type="delete">
+					<!--<menuitem control="#grdGlava"></menuitem>-->
+					<event type="click">
+						<action type="confirm" value="Da li ste sigurni da želite obrisati označeni sitni inventar?">
+							<action type="datarun nonquery" value="~dtDelete"></action>
+						</action>
+						<action type="control populate" value="#grdGlava"></action>
+					</event>
+				</button>
+				<!--GUMB ZA PREGLED KARTICE SITNOG INVENTARA-->
+				<button name="btnKartica" caption="Kartica">
+					<event type="click">
+						<action type="form open" value="frmLayout">
+							<parameter name="SitKarticaId" value="#grdGlava.@SitKarticaId"/>
+							<parameter name="SitKlaseId" value="#grdGlava.@sitKlaseId"/>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spSitManagerAzurCP" name="dtDelete">
+				<parameter name="@Action" value="brisanje" />
+				<parameter name="@SitKarticaId" value="#grdGlava.@SitKarticaId" type="int" />
+			</data>
+		</datalist>
+	</form>
+
+	<!--LAYOUT FORMA ZA UNOS/BRISANJE/IZMJENU DOPRINOSA-->
+	<form name="frmPromjena" caption="Manager" height="200"  width="400" saveformlayout="true">
+		<event type="init">
+			<!--ovaj init služi da pokupi podatke s grida ukoliko je nešto odabrano i kliknut će se na gumb izmijeni-->
+			<!--dtget.naziv kupi popunjene podatke sa master grida-->
+			<action type="datarun reader" value="~dtGet" if="$SitKarticaId!=null"/>
+		</event>
+
+		<!--na loadu se učitavaju vrijednosti combo kontrole pri izmjeni - tablica prima samo id, ne i naziv-->
+		<event type="load">
+			<action type="control value" value="cmbKlasa" if="$SitKarticaId!=null">
+				<parameter value="~dtGet.@SitKlaseId"/>
+			</action>
+			<action type="control value" value="cmbJM" if="$SitKarticaId!=null">
+				<parameter value="~dtGet.@JMId"/>
+			</action>
+		</event>
+
+		<layout>
+			<group  backgroundcolor="white"  bordervisible="false" caption="Grupa" rows="6" cols="1">
+
+				<item caption="Klasa:" col="1" row="1"  >
+					<comboedit name="cmbKlasa" valuefield="SitKlaseId" displayfield="Naziv" datavalue="~dtGet.@Naziv" dataname="dtKlasa" required="true"/>
+				</item>
+				<item  caption="Naziv" col="1" row="2">
+					<textedit name="txtNaziv" datavalue="~dtGet.@Naziv" required="true" />
+				</item>
+				<item  caption="Opis" col="1" row="3">
+					<textedit name="txtOpis" datavalue="~dtGet.@Opis" />
+				</item>
+				<item  caption="Šifra" col="1" row="4">
+					<textedit name="txtSifra" datavalue="~dtGet.@Sifra" />
+				</item>
+				<item caption="JM:" col="1" row="5"  >
+					<comboedit name="cmbJM" valuefield="JMId" displayfield="Naziv" datavalue="~dtGet.@Naziv" dataname="dtJM" required="true"/>
+				</item>
+				<item caption="Konto:" col="1" row="6"  >
+					<searchedit name="srcKonto" fieldvalue="KontoId" fieldtext="Konto" dataname="dtKonto" datavalue="~dtGet.@Kontoid" datatext="~dtGet.@Konto" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<!-- Provjeri required fields -->
+						<action type="validate" />
+						<!-- Okini storu -->
+						<!--ukoliko je id null onda ide action add, ukoliko nije onda edit-->
+						<action type="datarun nonquery" value="~dtEdit" if="$SitKarticaId!=null"/>
+						<action type="datarun nonquery" value="~dtAdd" else="" />
+						<!-- Osvježi grid na parent formi -->
+						<action type="form close"></action>
+						<action type="control populate" value="parent.#grdGlava"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right"/>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<!--punjenje comba klasa-->
+			<data command="spSitManagerHelpCP" name="dtKlasa">
+				<parameter name="@Action" value="combo_klasa" />
+			</data>
+			<!--punjenje comba JM-->
+			<data command="spSitManagerHelpCP" name="dtJM">
+				<parameter name="@Action" value="combo_JM" />
+			</data>
+			<!--trazilica konta-->
+			<data command="spSitManagerHelpCP" name="dtKonto">
+				<parameter name="@Action" value="src_konto" />
+				<parameter name="@tekst" value="#srcKonto.text" />
+			</data>
+			<!--okidanje store i unos novih podataka u bazu-->
+			<data command="spSitManagerAzurCP" name="dtAdd">
+				<parameter name="@Action" value="unos"/>
+				<parameter name="@SitKlaseId" value="#cmbKlasa"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				<parameter name="@Opis" value="#txtOpis"/>
+				<parameter name="@Sifra" value="#txtSifra"/>
+				<parameter name="@JMId" value="#cmbJM"/>
+				<parameter name="@KonSitInv" value="#srcKonto.@Konto"/>
+			</data>
+
+			<!--update podataka s obzirom da proslijeđeni id-->
+			<data command="spSitManagerAzurCP" name="dtEdit">
+				<parameter name="@Action" value="izmjena"/>
+				<parameter name="@SitKarticaId" value="$SitKarticaId"/>
+				<parameter name="@SitKlaseId" value="#cmbKlasa"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				<parameter name="@Opis" value="#txtOpis"/>
+				<parameter name="@Sifra" value="#txtSifra"/>
+				<parameter name="@JMId" value="#cmbJM"/>
+				<parameter name="@KonSitInv" value="#srcKonto.@Konto"/>
+			</data>
+			<!--ovaj data kupi id izabranog reda-->
+			<data command="spSitManagerQueryCP" name="dtGet">
+				<parameter name="@Action" value="Manager_query" />
+				<parameter name="@SitKarticaId" value="$SitKarticaId" />
+			</data>
+		</datalist>
+
+	</form>
+
+	<form name="frmLayout" path="frmLayout.xml"/>
+</root>

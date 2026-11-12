@@ -1,0 +1,103 @@
+﻿<root version="1.0">
+   
+  <!--1.0 - subforma SitKartice.frmLayout.xml-->
+    
+  <form name="frmMaster" type="master" caption="Kartice sitnog inventara">
+    <managerlayout>
+      <!--filter drveta-->
+      <lookup name="filter" >
+        <comboitem value="Klase"/>
+        <comboitem value="Osobe" />
+        <comboitem value="Smjestaj"/>
+        <comboitem value="Organizacijske jedinice"/>
+        <event type="valuechanged">
+          <action type="variable value" value="global.filter">
+            <parameter value="#filter" />
+          </action>
+          <action type="panel visible" value="all" if="#filter==Klase"/>
+          <action type="panel visible" value="panelMaster" else=""/>
+        </event>
+      </lookup>
+      
+      <!--*****stablo*****-->
+      <tree name="tree" filtermode="smart" expandedlevel="1" showautofilterrow="false">
+        <data command="spSitKarticaQueryCP" key="SitKarticaId" else="">
+          <parameter name="@Action" value="Klase_tree" if="#filter==Klase"/>
+          <parameter name="@Action" value="Osobe_tree" if="#filter==Osobe"/>
+          <parameter name="@Action" value="Smjestaj_tree" if="#filter==Smjestaj"/>
+          <parameter name="@Action" value="OrganizacijskeJedinice_tree" if="#filter==Organizacijske Jedinice"/>
+        </data>
+        <event type="focusedrowchanged">
+          <!--u slučaju kad ista stora puni oba grida-->
+          <action type="control populate" value="#grdGlava" />
+          <action type="control populate" value="#grdDetalj" if="#filter==Klase"/>
+        </event>
+        <fields>
+          <field name="Naziv" />
+        </fields>
+      </tree>
+
+  <!--Grid Glava-->
+      <grid name="grdGlava" type="master" async="true" dataname="dtMas" showautofilterrow="false" fieldsmartspaces="false" bestfitonrefresh="true">
+        <!--mora osvježavati prikaz detalja na svaki klik u glavi-->
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdDetalj"></action>
+        </event>
+        <!--ovdje navodimo fieldove koje u klasi treba sakriti i staviti u detalj-->
+        <fields inherited="true">
+          <field name="Dodatak nazivu" visible="false" if="#filter==Klase"/>
+          <field name="Količina" visible="false" if="#filter==Klase"/>
+          <field name="Cijena" visible="false" if="#filter==Klase"/>
+          <field name="Iznos" visible="false" if="#filter==Klase"/>
+          <field name="Osoba" visible="false" if="#filter==Klase"/>
+          <field name="Organizacijska jedinica" visible="false" if="#filter==Klase"/>
+          <field name="Smještaj" visible="false" if="#filter==Klase"/>
+        </fields>
+        
+      </grid>
+      <!--u grdDetalj navodimo samo nazive polja koja se trebaju prikazati-->
+      <grid name="grdDetalj" dataname="dtDet" showautofilterrow="false" fieldsmartspaces="false" bestfitonrefresh="true">
+        <fields>
+          <field name="Dodatak nazivu"/>
+          <field name="Količina"/>
+          <field name="Cijena"/>
+          <field name="Iznos"/>
+          <field name="Osoba"/>
+          <field name="Organizacijska jedinica"/>
+          <field name="Smještaj"/>
+        </fields>
+      </grid>
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <!--GUMB ZA PREGLED KARTICE SITNOG INVENTARA-->
+        <button name="btnKartica" caption="Kartica">
+          <event type="click">
+            <action type="form open" value="frmLayout">
+              <parameter name="SitKarticaId" value="#grdGlava.@SitKarticaId"/>
+              <parameter name="SitKlaseId" value="#grdGlava.@sitKlaseId"/>
+            </action>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <!--data koji puni oba grida-->
+      <data command="spSitKarticaGridCP" name="dtMas">
+        <parameter name="@Action" value="Master"/>
+        <parameter name="@SitKlaseId" if="global.$filter==Klase" value="#tree.@ID" />
+        <parameter name="@HrKadroviId" if="global.$filter==Osobe" value="#tree.@ID" />
+        <parameter name="@SmjestajId" if="global.$filter==Smjestaj" value="#tree.@ID" />
+        <parameter name="@OrgShemaId" if="global.$filter==Organizacijske Jedinice" value="#tree.@ID" />
+      </data>
+      <data command="spSitKarticaGridCP" name="dtDet">
+        <parameter name="@Action" value="Detalj"/>
+        <parameter name="@SitKlaseId" if="global.$filter==Klase" value="#tree.@ID" />
+        <parameter name="@SitKarticaId" if="global.$filter==Klase" value="#grdGlava.@SitKarticaId" type="int"/>
+      </data>
+    </datalist>
+  </form>
+
+  <form name="frmLayout" path="frmLayout.xml"/>
+  
+</root>

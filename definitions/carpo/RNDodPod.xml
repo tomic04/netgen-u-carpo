@@ -1,0 +1,173 @@
+<!-- RADIO na Jupiter2012 - Uljara -->
+<root>
+	<form name="frmMaster" type="master" caption="Radni nalozi - dodatni podatci">
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="VremenskaPodjela" />
+			</lookup>
+			<tree name="tree">
+				<data command="spTreeVrijemePrn" if="#filter==VremenskaPodjela" />
+				<!-- 				<parameter name="@Action" value="0" />
+					<parameter name="@Godina" value="#tree.@Godina" />
+					<parameter name="@Mjesec" value="#tree.@Mjesec" />
+				</data> -->
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdMaster" />
+				</event>
+				<fields>
+					<field name="Name" />
+				</fields>
+			</tree>
+
+			<grid name="grdMaster" type="master" showautofilterrow="false" dataname="global.dtMaster" key="PrnRadniNalogId">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetail" />
+				</event>
+				<!-- 				<event type="doubleclick">
+					<action type="form open" value="frmPonudaEdit"  if="#grdMaster.rowcount&gt;0">
+						<parameter name="ProPonGlaId" value="#grdMaster.@ProPonGlaId" />
+						<parameter name="StatusPon" value="#grdMaster.@Status" />
+					</action>
+					<action type="control populate keepfocus" value="#grdMaster" />
+				</event> -->
+				<fields inherited="true">
+				</fields>
+				<styles>
+					<style name="fontcolor" value="red" if="#grdMaster.@PrnRNDodatniId==null" />
+				</styles>
+			</grid>	
+
+			<grid name="grdDetail" type="detail" dataname="Global.dtDetail">
+				<fields inherited="true">
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="Unesi podatak">
+					<event type="click">
+						<action type="form open" value="frmUnos" >
+							<parameter name="PrnRNDodatniID" value="#grdDetail.@PrnRNDodatniId" />
+							<parameter name="PrnRadniNalogID" value="#grdMaster.@PrnRadniNalogID" />
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="Obriši podatak">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati podatak za radni nalog broj '{#grdMaster.@Broj dokumenta}'?">
+							<action type="datarun nonquery" value="global.~dtDelete">
+								<action type="control populate" value="#grdMaster" />
+							</action>
+						</action>
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>
+	</form>
+
+	<form name="frmUnos" caption="Dodatni podatci" fixwdsize="true">
+		<event type="init">
+			<action type="datarun reader" value="Global.~dtGet" if="$PrnRNDodatniId!=null" />
+		</event>
+		<layout textposition="top" itemspadding="4">
+			<group cols="1" rows="8">
+				<item caption="Smjena:" col="1" row="1" >
+					<comboedit name="cmbSmjena" valuefield="SmjenaId" displayfield="Naziv" datavalue="#dtGet.@Smjena" dataname="Global.dtSmjena">
+					</comboedit>
+				</item>	
+				<item caption="Linija:" col="1" row="2" >
+					<comboedit name="cmbLinija" valuefield="Naziv" displayfield="Naziv" datavalue="#dtGet.@Linija" dataname="Global.dtLinija">
+					</comboedit>
+				</item>
+				<group cols="2" rows="1" col="1" row="3" >
+					<item caption="Početak rada:" col="1" row="1" >
+						<textedit name="txtPocetak" formattype="datetime" format="HH:mm" datavalue="#dtGet.@PocetakRada"/>
+					</item>					
+					<item caption="Kraj rada:" col="2" row="1" >
+						<textedit name="txtKraj" formattype="datetime" format="HH:mm" datavalue="#dtGet.@KrajRada" />
+					</item>	
+				</group>
+				<item caption="Sati rada:" col="1" row="4" >
+					<textedit name="txtSatiRada" format="[0-9][0-9]:[0-9][0-9]" formattype="regex"  datavalue="#dtGet.@SatiRada" />
+				</item>				
+				<item caption="Broj radnika:" col="1" row="5" >
+					<textedit name="txtBrRadnika" format="f0"  datavalue="#dtGet.@BrojRadnika" />
+				</item>	
+				<item caption="Ukupni sati:" col="1" row="6" >
+					<textedit name="txtUkupniSati" format="[0-9][0-9]:[0-9][0-9]" formattype="regex"  datavalue="#dtGet.@UkupniSati" />
+				</item>
+				<item caption="Otpis:" col="1" row="7" >
+					<textedit name="txtOtpis" format="f0"  datavalue="#dtGet.@Otpis" />
+				</item>	
+				<item caption="Reparacija:" col="1" row="8" >
+					<textedit name="txtReparacija" format="f0"  datavalue="#dtGet.@Reparacija" />
+				</item>					
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="Global.~dtEdit" if="$PrnRNDodatniId!=null"/>
+						<action type="datarun nonquery" value="Global.~dtAdd" else=""/>
+						<action type="control populate" value="parent.#grdMaster" />
+						<action type="form close" />					
+					</event>
+				</button>
+				<button caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+
+	<datalist>
+		<data command="spPrnRadniNalogQueryCarpo" name="dtMaster">
+			<parameter name="@Action" value="1" />
+			<parameter name="@Godina" value="#tree.@Godina" type="int"/>
+			<parameter name="@Mjesec" value="#tree.@Mjesec" type="int"/>
+		</data>	
+		<data command="spPrnRNDodatniQuery" name="dtDetail">
+			<parameter name="@Action" value="0" />
+			<parameter name="@ID" value="#grdMaster.@PrnRadniNalogId" />
+		</data>
+		<data command="select 1 as SmjenaId, '1.' as Naziv union select 2, '2.' union select 3, '3.'" type="text" name="dtSmjena">
+		</data>		
+		<data command="select 1 as LinijaId, 'A' as Naziv union select 2, 'B' union select 3, 'C'" type="text" name="dtLinija">
+		</data>	
+		<data command="spPrnRNDodatniAzur" name="dtAdd">
+			<parameter name="@Action" value="0"/>
+			<parameter name="@PrnRadniNalogID" value="$PrnRadniNalogID"/>
+			<parameter name="@Smjena" value="#cmbSmjena"/>
+			<parameter name="@Linija" value="#cmbLinija"/>
+			<parameter name="@PocetakRada" value="#txtPocetak"/>
+			<parameter name="@KrajRada" value="#txtKraj"/>
+			<parameter name="@SatiRada" value="#txtSatiRada" type="datetime"/>
+			<parameter name="@BrojRadnika" value="#txtBrRadnika"/>
+			<parameter name="@UkupniSati" value="#txtUkupniSati" type="datetime"/>
+			<parameter name="@Otpis" value="#txtOtpis"/>
+			<parameter name="@Reparacija" value="#txtReparacija"/>
+		</data>
+		<data command="spPrnRNDodatniAzur" name="dtEdit">
+			<parameter name="@Action" value="1"/>
+			<parameter name="@ID" value="$PrnRadniNalogID"/>
+			<parameter name="@Smjena" value="#cmbSmjena"/>
+			<parameter name="@Linija" value="#cmbLinija"/>
+			<parameter name="@PocetakRada" value="#txtPocetak"/>
+			<parameter name="@KrajRada" value="#txtKraj"/>
+			<parameter name="@SatiRada" value="#txtSatiRada" type="datetime"/>
+			<parameter name="@BrojRadnika" value="#txtBrRadnika"/>
+			<parameter name="@UkupniSati" value="#txtUkupniSati" type="datetime"/>
+			<parameter name="@Otpis" value="#txtOtpis"/>
+			<parameter name="@Reparacija" value="#txtReparacija"/>
+		</data>	
+		<data command="spPrnRNDodatniQuery" name="dtGet">
+			<parameter name="@Action" value="0"/>
+			<parameter name="@ID" value="$PrnRadniNalogID"/>
+		</data>		
+		<data command="spPrnRNDodatniAzur" name="dtDelete">
+			<parameter name="@Action" value="2"/>
+			<parameter name="@ID" value="#grdMaster.@PrnRadniNalogID"/>
+		</data>		
+	</datalist>
+</root>

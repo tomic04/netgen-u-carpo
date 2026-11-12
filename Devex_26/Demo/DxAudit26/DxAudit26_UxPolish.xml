@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Wave 12 — UX polish demo (Find allow/always, emptymessage, asynccaption, LookUp nulltext).
+
+  TestShell:
+    XML  = ...\Demo\DxAudit26\DxAudit26_UxPolish.xml
+    Form = DxAudit26_UxPolish
+
+  Nema posebnog SQL seeda.
+-->
+<root version="1.2" loglevel="3">
+
+	<form name="DxAudit26_UxPolish" type="master" caption="Wave12 UX — Find / empty / async caption">
+		<event type="init">
+			<action type="variable value">
+				<parameter name="UxEmpty" value="0" type="int"/>
+				<parameter name="UxEmptyAllow" value="0" type="int"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control populate" value="#trFilter,#grdMaster,#grdAllow"/>
+		</event>
+
+		<managerlayout>
+			<!-- Tree: Find pinned + async caption -->
+			<tree name="trFilter"
+				key="id"
+				parentfield="parentid"
+				dataname="~dtTree"
+				async="true"
+				asynccaption="Učitavam filter tree…"
+				findpanel="true"
+				filtermode="smart"
+				showcolumns="true"
+				expandallonload="true"
+				showautofilterrow="true">
+				<fields>
+					<field name="caption" caption="Filter (Find pinned)"/>
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdMaster"/>
+				</event>
+			</tree>
+
+			<!-- Master: Find always + empty message + async caption -->
+			<grid name="grdMaster"
+				type="master"
+				key="id"
+				dataname="~dtMaster"
+				async="true"
+				asynccaption="Učitavam master grid…"
+				findpanel="true"
+				emptymessage="Nema stavki — probaj gumb 3) Isprazni ili drugi filter."
+				filtereditor="true"
+				showautofilterrow="true"
+				columnchooser="true"
+				bestfitonrefresh="true"
+				savelayout="false">
+				<data type="text" command="WAITFOR DELAY '00:00:00.800'; SELECT id, naziv, status, iznos FROM (VALUES (1,N'Alpha',1,120),(2,N'Beta',1,340),(3,N'Gamma',0,55),(4,N'Delta',1,890),(5,N'Omega',0,210),(6,N'Sigma',1,45),(7,N'Nova',1,670),(8,N'Jupiter',0,150)) AS t(id,naziv,status,iznos) WHERE (@Empty=0) AND (@TreeId IS NULL OR @TreeId &lt;= 1 OR (@TreeId = 2 AND status = 1) OR (@TreeId = 3 AND status = 0))">
+					<parameter name="@TreeId" value="#trFilter.@id" type="int"/>
+					<parameter name="@Empty" value="$UxEmpty" type="int"/>
+				</data>
+				<fields>
+					<field name="id" caption="ID" minwidth="50"/>
+					<field name="naziv" caption="Naziv" minwidth="140"/>
+					<field name="status" caption="Status" minwidth="70"/>
+					<field name="iznos" caption="Iznos" minwidth="80"/>
+				</fields>
+				<styles>
+					<style name="backcolor" value="#e8f4e8" if="#grdMaster.@status==1"/>
+					<style name="backcolor" value="#fce8e8" if="#grdMaster.@status==0"/>
+				</styles>
+			</grid>
+
+			<!-- Drugi grid: Find allow (Ctrl+F) + empty message -->
+			<grid name="grdAllow"
+				key="id"
+				dataname="~dtAllow"
+				findpanel="allow"
+				emptymessage="Find allow grid — nema redova (gumb 3)."
+				showautofilterrow="true"
+				bestfitonrefresh="true"
+				savelayout="false">
+				<data type="text" command="SELECT id, naziv, napomena FROM (VALUES (1,N'Red A',N'Ctrl+F otvara Find'),(2,N'Red B',N'Highlight + Clear'),(3,N'Red C',N'Nije pinned traka')) AS t(id,naziv,napomena) WHERE (@Empty=0)">
+					<parameter name="@Empty" value="$UxEmptyAllow" type="int"/>
+				</data>
+				<fields>
+					<field name="id" caption="ID"/>
+					<field name="naziv" caption="Naziv"/>
+					<field name="napomena" caption="Napomena" minwidth="160"/>
+				</fields>
+			</grid>
+		</managerlayout>
+
+		<subforms>
+			<subform name="frmUxHint" caption="LookUp nulltext" type="dialog" width="420" height="200">
+				<item>
+					<comboedit name="cmbDemo"
+						dataname="~dtPartners"
+						valuefield="id"
+						displayfield="naziv"
+						nulltext="Tipkaj npr. al / be / ju…"/>
+				</item>
+				<datalist>
+					<data name="dtPartners" type="text" command="SELECT id, naziv FROM (VALUES (1,N'Alpha d.o.o.'),(2,N'Beta GmbH'),(3,N'Jupiter Soft')) AS t(id,naziv)"/>
+				</datalist>
+			</subform>
+		</subforms>
+
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnRefresh" caption="1) Refresh async (caption)">
+					<event type="click">
+						<action type="control populate" value="#trFilter,#grdMaster"/>
+						<action type="message" value="Async: splash s asynccaption (tree ~0.4s, master ~0.8s)."/>
+					</event>
+				</button>
+
+				<button name="btnFindAlways" caption="2) Find ALWAYS (pinned)" begingroup="true">
+					<event type="click">
+						<action type="control attribute" value="#grdMaster">
+							<parameter name="findpanel" value="true"/>
+						</action>
+						<action type="control attribute" value="#trFilter">
+							<parameter name="findpanel" value="true"/>
+						</action>
+						<action type="message" value="Find pinned na tree + master. Tipkaj npr. Alpha. Highlight + Clear."/>
+					</event>
+				</button>
+				<button name="btnFindAllow" caption="2a) Find ALLOW (Ctrl+F)">
+					<event type="click">
+						<action type="control attribute" value="#grdMaster">
+							<parameter name="findpanel" value="allow"/>
+						</action>
+						<action type="control attribute" value="#grdAllow">
+							<parameter name="findpanel" value="allow"/>
+						</action>
+						<action type="message" value="Find allow: traka nije pinned — Ctrl+F na fokusuiranom gridu. Desni grid je allow po defaultu."/>
+					</event>
+				</button>
+				<button name="btnFindOff" caption="2b) Find OFF">
+					<event type="click">
+						<action type="control attribute" value="#grdMaster">
+							<parameter name="findpanel" value="false"/>
+						</action>
+						<action type="control attribute" value="#trFilter">
+							<parameter name="findpanel" value="false"/>
+						</action>
+						<action type="control attribute" value="#grdAllow">
+							<parameter name="findpanel" value="false"/>
+						</action>
+						<action type="message" value="Find isključen."/>
+					</event>
+				</button>
+
+				<button name="btnEmpty" caption="3) Isprazni (emptymessage)" begingroup="true">
+					<event type="click">
+						<action type="variable value">
+							<parameter name="UxEmpty" value="1" type="int"/>
+							<parameter name="UxEmptyAllow" value="1" type="int"/>
+						</action>
+						<action type="control populate" value="#grdMaster,#grdAllow"/>
+						<action type="message" value="Oba grida prazna — emptymessage u sredini panela."/>
+					</event>
+				</button>
+				<button name="btnFill" caption="3b) Napuni opet">
+					<event type="click">
+						<action type="variable value">
+							<parameter name="UxEmpty" value="0" type="int"/>
+							<parameter name="UxEmptyAllow" value="0" type="int"/>
+						</action>
+						<action type="control populate" value="#grdMaster,#grdAllow"/>
+					</event>
+				</button>
+
+				<button name="btnLookup" caption="4) LookUp nulltext" begingroup="true">
+					<event type="click">
+						<action type="form open" value="frmUxHint"/>
+					</event>
+				</button>
+				<button name="btnHint" caption="5) Šta gledam?">
+					<event type="click">
+						<action type="message" value="Wave12 UX demo: 1) asynccaption  2/2a/2b) Find always vs allow vs off  3/3b) emptymessage  4) LookUp watermark. Desni grid: findpanel=allow."/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data name="dtTree" type="text" command="WAITFOR DELAY '00:00:00.400'; SELECT id, parentid, caption FROM (VALUES (1,CAST(NULL AS int),N'Sve'),(2,1,N'Aktivne'),(3,1,N'Neaktivne')) AS t(id,parentid,caption)"/>
+		</datalist>
+	</form>
+</root>

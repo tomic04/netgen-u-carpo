@@ -1,0 +1,135 @@
+<!-- 
+06.02.2023. MB, dodala "txtOpis1"
+08.09.2011. DA, zakomentirao podizanje frmFakturaIzmjena u Faktura.xml kod kopiranja i prebacio u frmKopiraj
+19.01.2022. AR, doradio ponašanje srcParStru kad se promijeni partner
+18.02.2021. DA, dorada kopiranja / ispravljena greška i dodan parstru 
+-->
+<root>
+	<form name="frmKopiraj" caption="Kopiranje" fixedsize="false">
+		<event type="shown">
+			<action type="control value" value="#cmbVrstaDok" >
+				<parameter value="parent.#grdGlava.@VrstaDokId" />
+			</action>
+			<action type="control value" value="#srcPartner" >
+				<parameter value="parent.#grdGlava.@PartneriId" text="parent.#grdGlava.@Kupac" />
+			</action>
+			<action type="control value" value="#srcParstru" >
+				<parameter value="parent.#grdGlava.@ParStruId" text="parent.#grdGlava.@ParStruNaziv" />
+			</action>			
+			<action type="variable value">
+				<parameter name="HQParStruId" value="parent.#grdGlava.@ParStruId" />
+			</action>
+			<action type="variable value">
+				<parameter name="FakCopy" value="0" />
+			</action>
+			<action type="control value" value="#txtOpis1" >
+				<parameter value="parent.#grdGlava.@Opis1"/>
+			</action>			
+		</event>
+		<event type="close">
+			<!-- <action if="$FakCopy==1"> -->
+			<!-- <action if="parent.#filter==Vremenska Podjela&amp;&amp;parent.#tree.@ParentId!=0"> -->
+			<!-- <action type="control focus" value="parent.#tree"> -->
+			<!-- <parameter value="#datDatum" type="string"/> -->
+			<!-- </action> -->
+			<!-- <action type="control populate" value="parent.#grdGlava" > -->
+			<!-- <action type="control focus" value="parent.#grdGlava"> -->
+			<!-- <parameter value="$FaktureId" /> -->
+			<!-- </action> -->
+			<!-- </action> -->
+			<!-- </action> -->
+			<!-- </action> -->
+		</event>
+		<layout textposition="top" itemspadding="1">
+			<group cols="1" rows="6" groupbordervisible="false">
+				<item col="1" row="1" caption="Vrsta dokumenta:" >
+					<comboedit name="cmbVrstaDok" valuefield="VrstaDokId" displayfield="Opis" dataname="Global.dtVrstaDokGet" />
+				</item>
+				<item col="1" row="2" caption="Partner:" >
+					<searchedit netgenfields="true" name="srcPartner" required="true" fontbold="true" dataname="Global.dtPartneri" fieldtext="NazivId" fieldvalue="partneriid" datavalue="#dtGet.@PartneriId" datatext="#dtGet.@NazivPartnera">
+						<event type="leave">
+
+							<action type="datarun reader" value="global.dtHQLokacija" if="#srcPartner!=$PocetniPartner"/>
+							<action type="variable value">
+								<parameter name="HQParStruId" value="~dtHQLokacija.@ParStruId" />
+							</action>
+							<action type="control value" value="#srcParstru" if="#srcPartner!=$PocetniPartner">
+								<parameter value="~dtHQLokacija.@parstruid" text="~dtHQLokacija.@Naziv"/>
+							</action>
+						</event>
+					</searchedit>
+				</item>
+				<item caption="Lokacija:" row="3" col="1">
+					<searchedit name="srcParstru" fieldtext="NazivId" fieldvalue="ParstruId" dataname="dtParstru">
+						<!-- <event type="valuechanged"> -->
+						<!-- <action type="datarun reader" value="~dtDajPartnera"/> -->
+						<!-- <action type="control value" value="#srcPartneri" if="#srcPartneri==null"> -->
+						<!-- <parameter value="~dtDajPartnera.@partneriid" text="~dtDajPartnera.@Naziv"/> -->
+						<!-- </action> -->
+						<!-- </event> -->
+					</searchedit>
+				</item>				
+				<item  col="1" row="4" caption="Datum:" >
+					<dateedit name="datDatum" value="now" required="true"/>
+				</item>
+				<item col="1" row="5" caption="Opis:" >
+					<memoedit name="txtOpis1"  datavalue="~dtGet.@Opis1"/>
+				</item>
+				<item col="1" row="6" highlight="false">
+					<checkedit name="chkStorno" caption="Količina u suprotan predznak"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="PRIHVATI" dock="right">
+					<event type="click">
+						<action type="datarun scalar" value="global.~dtKopiraj">
+							<parameter name="Global.$CopyFaktureId" />
+						</action>
+						<action type="variable value">
+							<parameter name="parent.FaktureId" value="Global.$CopyFaktureId" />
+						</action>		
+						<action type="variable value">
+							<parameter name="FakCopy" value="1" />
+						</action>
+						<action type="datarun reader" value="~dtGet"/>
+						<action type="form open" value="frmFakturaIzmjena">
+							<parameter name="FaktureId" value="Global.$CopyFaktureId" />
+							<parameter name="StatusFak" value="1" /> 
+							<parameter name="UvjetiDokId" value="Global.$CopyFaktureId" />
+							<parameter name="FakInsert" value="0" />
+							<parameter name="VrstaDokOpis" value="~dtGet.@VrstaDokOpis" />
+							<parameter name="BrojDok" value="~dtGet.@fiskalnibroj" />
+							<parameter name="Opis1" value="#txtOpis1" />
+						</action>						
+						<action type="form close"/>
+					</event>
+				</button>
+				<button caption="ODUSTANI" dock="right" type="cancel">
+					<event type="click">
+						<action type="variable value" value="Global.$CopyFaktureId">
+							<parameter value="null" />
+						</action>
+						<action type="variable value">
+							<parameter name="FakCopy" value="0" />
+						</action>						
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spTraziParstru" name="dtParstru">
+				<parameter name="@action" value="Parstru"/>
+				<parameter name="@Ind_Postotak" value="1"/>				
+				<parameter name="@Uvjet" value="" if="$IndLokacija==1"/>
+				<parameter name="@Uvjet" value="#srcParstru.text" else=""/>
+				<parameter name="@PartneriId" value="#srcPartner"/>
+			</data>	
+			<data command="spProd_FaktureGla_Grid" name="dtGet">
+				<parameter name="@Id" value="Global.$CopyFaktureId" />	
+			</data>				
+		</datalist>
+	</form>
+</root>

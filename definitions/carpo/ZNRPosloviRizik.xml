@@ -1,0 +1,166 @@
+﻿<root version="1.1">
+
+  <form name="frmPosloviRizik" type="master" caption="Poslovi prema procjeni rizika"  saveformlayout="true">
+    <event type="init">
+    </event>
+    <event type="onshown">
+    </event>
+
+    <managerlayout>
+      <tree name="tree"  keyfield="OrgShemaId"  filtermode="smart" expandedlevel="2" dataname="dtTree">
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdPosloviRizik" />
+        </event>
+        <fields>
+          <field name="Naziv" />
+        </fields>
+      </tree>
+      <grid name="grdPosloviRizik" key="ZNRPosloviRizikId" type="master" async="true" dataname="dtMaster" preventfocusgroup="false" fieldsmartspaces="false" multiselect="false" bestfitonrefresh="true">
+        <fields inherited="true">
+          <field name="Rbr" fixed="true" />
+          <field name="Naziv" fixed="true" fixwidth="500" rowautoheight="true"/>
+          <field name="Clanak" caption="Članak pravilnika"/>
+          <field name="Strucno" caption="Stručno osposobljavanje" fixwidth="700" rowautoheight="true"/>
+        </fields>
+      </grid>
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnos" caption="Unesi" begingroup="true">
+          <event type="click">
+            <action type="form open" value="frmPromjenaPR">
+              <parameter name="caption" value="Unos posla prema procjeni rizika" />
+            </action>
+            <action if="dialogresult!=cancel">
+              <action type="control populate " value="#grdPosloviRizik" >
+                <action type="control focus" value="#grdPosloviRizik">
+                  <parameter value="$Fokus"/>
+                </action>
+              </action>
+            </action>
+          </event>
+        </button>
+        <button name="btnIzmjena" caption="Izmijeni">
+          <event type="click">
+            <action type="form open" value="frmPromjenaPR">
+              <parameter name="caption" value="Izmjena posla prema procjeni rizika" />
+              <parameter name="ZNRPosloviRizikId" value="#grdPosloviRizik.@ZNRPosloviRizikId"/>
+            </action>
+            <action type="control populate keepfocus" value="#grdPosloviRizik" />
+          </event>
+        </button>
+        <button name="btnBrisanje" caption="Obriši">
+          <event type="click">
+            <action type="confirm" value="Da li ste sigurni da želite obrisati označeni posao prema procjeni rizika?">
+              <action type="datarun reader" value="~dtDelete"></action>
+            </action>
+            <action type="control populate" value="#grdPosloviRizik"></action>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spZNRPosloviRizik_Query" name="dtTree">
+        <parameter name="@Action" value="OrganizacijskeJedinice_tree" />
+      </data>
+      <data command="spZNRPosloviRizik_Query" name="dtMaster">
+        <parameter name="@Action" value="Master_pregled"/>
+        <parameter name="@OrgShemaId" value="#tree.@ID" />
+        <parameter name="@ZNRPosloviRizikId" value="#grdPosloviRizik.@ZNRPosloviRizikId"/>
+      </data>
+      <data command="spZNRPosloviRizik_Azur" name="dtDelete">
+        <parameter name="@Action" value="Brisanje" />
+        <parameter name="@ZNRPosloviRizikId" value="#grdPosloviRizik.@ZNRPosloviRizikId" />
+      </data>
+    </datalist>
+  </form>
+
+  <!--* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
+
+  <form name="frmPromjenaPR" caption="$caption" height="250"  width="500" fixedsize="true">
+    <event type="init">
+      <action type="datarun reader" value="~dtGet" if="$ZNRPosloviRizikId!=null"/>
+    </event>
+    <layout textposition="left" >
+      <group cols="1" rows="6"   groupbordervisible="false">
+        <item caption="Redni broj:" row="1" col="1" highlight="false">
+          <textedit name="txtRbr" datavalue="~dtGet.@Rbr" required="false" format="n0" textposition="left"/>
+        </item>
+        <item caption="Poslovna jedinica:" row="2" col="1" highlight="false">
+          <searchedit name="srcOrgShema" fieldvalue="OrgShemaId" fieldtext="Naziv" dataname="~dtOrgShema" datavalue="~dtGet.@OrgShemaId" datatext="~dtGet.@Naziv" required="false"/>
+        </item>
+        <item caption="Naziv:" row="3" col="1" highlight="false">
+          <memoedit name="txtNaziv" datavalue="~dtGet.@NazivPosla"  required="true"/>
+        </item>
+        <item caption="Posebni uvjeti rada:" row="4" col="1" highlight="false">
+          <comboedit name="txtPosebniUvjeti" valuefield="PosebniUvjetiId" displayfield="PosebniUvjeti" datavalue="~dtGet.@PosebniUvjetiId" dataname="~dtPosebniUvjeti"  required="false" />
+        </item>
+        <item caption="Članak pravilnika:" row="5" col="1" highlight="false">
+          <combomultiedit name="cmbClanak"  valuefield="ZNRPosloviPosebniId" displayfield="Clanak" datavalue="~dtGet.@ZNRPosloviPosebniId" dataname="~dtClanak" />
+        </item>
+        <item caption="Stručno osposobljavanje:" row="6" col="1" highlight="false">
+          <combomultiedit name="cmbStrucno" valuefield="ZNRStrucnaOsposobljavanjaId" displayfield="Strucno" datavalue="~dtGet.@ZNRStrucnaOsposobljavanjaId" dataname="~dtStrucno" />
+        </item>
+      </group >
+    </layout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="Spremi" type="add">
+          <event type="click">
+            <action type="validate" />
+            <action type="datarun reader" value="~dtIzmjena" if="$ZNRPosloviRizikId!=null"/>
+            <action type="datarun reader" value="~dtUnos" else="" >
+              <action type="variable value">
+                <parameter name="parent.$Fokus" value="~dtUnos.@Fokus" type="int"/>
+              </action>
+            </action>
+            <action type="form close"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Odustani" type="cancel" dock="right" />
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spZNRPosloviRizik_Query" name="dtOrgShema">
+        <parameter name="@Action" value="Src_OrgShema" />
+        <parameter name="@Tekst" value="#srcOrgShema.text"/>
+      </data>
+      <data command="spZNRPosloviRizik_Query" name="dtPosebniUvjeti">
+        <parameter name="@Action" value="Cmb_PosebniUvjeti" />
+      </data>
+      <data command="spZNRPosloviRizik_Query" name="dtClanak">
+        <parameter name="@Action" value="Cmb_Clanak" />
+      </data>
+      <data command="spZNRPosloviRizik_Query" name="dtStrucno">
+        <parameter name="@Action" value="Cmb_Strucno" />
+      </data>
+      <data command="spZNRPosloviRizik_Query" name="dtGet">
+        <parameter name="@Action" value="Dohvati_izmjena" />
+        <parameter name="@ZNRPosloviRizikId" value="$ZNRPosloviRizikId" />
+      </data>
+      <data command="spZNRPosloviRizik_Azur" name="dtUnos">
+        <parameter name="@Action" value="Unos_spremi"/>
+        <parameter name="@OrgShemaId" value="#srcOrgShema" />
+        <parameter name="@Rbr" value="#txtRbr" />
+        <parameter name="@Naziv" value="#txtNaziv" />
+        <parameter name="@PosebniUvjetiId" value="#txtPosebniUvjeti" />
+        <parameter name="@SelectedClanakIds" value="#cmbClanak"/>
+        <parameter name="@SelectedStrucnoIds" value="#cmbStrucno"/>
+      </data>
+      <data command="spZNRPosloviRizik_Azur" name="dtIzmjena">
+        <parameter name="@Action" value="Izmjena_spremi" />
+        <parameter name="@ZNRPosloviRizikId" value="$ZNRPosloviRizikId" />
+        <parameter name="@OrgShemaId" value="#srcOrgShema" />
+        <parameter name="@Rbr" value="#txtRbr" />
+        <parameter name="@Naziv" value="#txtNaziv" />
+        <parameter name="@PosebniUvjetiId" value="#txtPosebniUvjeti" />
+        <parameter name="@SelectedClanakIds" value="#cmbClanak"/>
+        <parameter name="@SelectedStrucnoIds" value="#cmbStrucno"/>
+      </data>
+    </datalist>
+  </form>
+
+
+</root>
+

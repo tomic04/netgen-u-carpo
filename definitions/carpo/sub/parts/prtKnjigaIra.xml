@@ -1,0 +1,155 @@
+<!--svi partovi iz Carpo projekta KnjigaIra-->
+<parts>
+	<part name="prtIraUnesi">
+		<action type="variable value">
+			<parameter name="NoviId" value="null"/>
+		</action>
+		<action type="form open" value="frmKnjigaIraInsert">
+			<parameter name="KntVrsteKnjigaIraIdInsert"  value="#tree.@KntVrsteKnjigaIraId"/>
+			<parameter name="KntKnjigaIraId"  value="null" type="int"/>
+			<parameter name="FaktureId"  value="null" type="int"/>			
+		</action>
+		<action type="control populate keepfocus" value="#grdGlava" if="$NoviId==null"/>
+		<action else="$NoviId!=null">
+			<action type="control populate" value="#grdGlava" />
+			<action type="datarun reader" value="~dtDrvoNovaIra"/>
+			<action type="control focus" value="#tree">
+				<parameter value="~dtDrvoNovaIra.@Poz"/>
+			</action>
+			<action type="control focus" value="#grdGlava">
+				<parameter value="$NoviId"/>
+			</action>
+		</action>	
+	</part>
+	<part name="prtIraUnesiRucni">
+		<action type="variable value">
+			<parameter name="NoviId" value="null"/>
+		</action>
+		<action type="form open" value="frmKnjigaIraInsert">
+			<parameter name="KntVrsteKnjigaIraIdInsert"  value="#tree.@KntVrsteKnjigaIraId"/>
+			<parameter name="IndRucni" value="1"/>
+		</action>
+		<action type="control populate keepfocus" value="#grdGlava" if="$NoviId==null"/>
+		<action else="$NoviId!=null">
+			<action type="control populate" value="#grdGlava" />
+			<action type="datarun reader" value="~dtDrvoNovaIra"/>
+			<action type="control focus" value="#tree">
+				<parameter value="~dtDrvoNovaIra.@Poz"/>
+			</action>
+			<action type="control focus" value="#grdGlava">
+				<parameter value="$NoviId"/>
+			</action>
+		</action>	
+	</part>
+	<part name="prtIraIzmijeni">
+		<!--BLOKADA-->	
+		<action type="datarun reader" value="~dtBlokada"/>
+		<action type="variable value">
+			<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date"/>
+			<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date"/>
+		</action>	
+		<action type="message" value="Datum dokumenta je izvan dopuštenog razdoblja knjiženja!" 
+								if="#grdGlava.@DatumDok&lt;Global.$BlokadaOd||#grdGlava.@DatumDok&gt;Global.$BlokadaDo"/>
+		<action else="">
+			<!--ako račun zaključen-->
+			<action type="confirm" value="Promjene mogu prouzročiti razlike kartica i knjiga PDV-a! Jeste li sigurni da želite nastaviti?" if="#grdGlava.@RedniBroj!=RBROJ">
+				<action type="form open" value="frmKnjigaIraInsert">
+					<parameter name="KntKnjigaIraId"  value="#grdGlava.@KntKnjigaIraId" type="int"/>
+					<parameter name="FaktureId"  value="#grdGlava.@FaktureId" type="int"/>
+					<parameter name="PartneriId"  value="#grdGlava.@PartneriId" type="int"/>
+				</action>
+				<action type="control populate" value="#grdGlava">
+					<action type="control focus" value="#tree">
+						<parameter value="$FokusDrvoIzmjena"/>
+					</action>				
+					<action type="control focus" value="#grdGlava">
+						<parameter value="$FokusIzmjena"/>
+					</action>				
+				</action>
+			</action>
+			<!--ako nezaključen-->
+			<action else="">
+				<action type="form open" value="frmKnjigaIraInsert">
+					<parameter name="KntKnjigaIraId" value="#grdGlava.@KntKnjigaIraId" type="int"/>
+					<parameter name="FaktureId" value="#grdGlava.@FaktureId" type="int"/>
+					<parameter name="PartneriId"  value="#grdGlava.@PartneriId" type="int"/>
+				</action>	
+				<action type="control populate" value="#grdGlava">
+					<action type="control focus" value="#tree">
+						<parameter value="$FokusDrvoIzmjena"/>
+					</action>				
+					<action type="control focus" value="#grdGlava">
+						<parameter value="$FokusIzmjena"/>
+					</action>				
+				</action>						
+			</action>
+		</action>	
+	</part>	
+	<part name="prtIraObrisi">
+		<!--BLOKADA-->
+		<action type="datarun reader" value="~dtBlokada"/>
+		<action type="variable value">
+			<parameter name="Global.$BlokadaOd" value="~dtBlokada.@Od" type="date"/>
+			<parameter name="Global.$BlokadaDo" value="~dtBlokada.@Do" type="date"/>
+		</action>	
+		<action type="message" value="Datum dokumenta je izvan dopuštenog razdoblja knjiženja!" 
+								if="#grdGlava.@DatumDok&lt;Global.$BlokadaOd||#grdGlava.@DatumDok&gt;Global.$BlokadaDo"/>	
+		<action else="">
+			<action type="confirm" value="Želite li zista obrisati račun broj {#grdGlava.@Broj}?">
+				<action type="datarun scalar" value="~dtObrisiIru"/>
+				<action type="control populate keepfocus" value="#grdGlava"/>
+			</action>
+		</action>
+	</part>
+	<part name="prtZakljuci">
+		<action type="message" value="Morate odabrati jednu od knjiga ili zaključak!" if="#tree.@value==godina">
+			<action type="variable value" value="$PozDrvoZak">
+				<parameter value="#tree.@id"/>
+			</action>		
+		</action>
+		<!-- <action type="message" value="Ne postoje uneseni dokumenti!" elseif="#grdGlava.rowcount==0"/> -->
+		<action type="datarun reader" value="~dtDatumZaZakljucak" else="">
+			<action type="form open" value="frmZakljucak">
+				<parameter name="datumzak" value="~dtDatumZaZakljucak.@datumzakljucka" type="date" />
+				<parameter name="lastrb" value="~dtDatumZaZakljucak.@rednibroj" type="int" />
+				<parameter name="node"  value="#tree.@Id" />
+				<parameter name="treevalue"  value="#tree.@value" />
+			</action>
+			<action type="variable value" value="$Odustani" if="dialogresult==cancel">
+				<parameter value="true"/>
+			</action>			
+		</action>
+		<action if="$Odustani==false">
+			<action type="control populate" value="#tree"/>				
+			<action type="control expand" value="#tree">
+				<parameter name="key" value="$Godina"/>
+			</action>  
+			<action type="control focus" value="#tree">
+				<parameter value="$PozDrvoZak" type="string"/>
+			</action>					
+		</action>
+		<action type="variable value" value="$Odustani" >
+			<parameter value="false" type="bool"/>
+		</action>			
+	</part>
+	<part name="prtPonistiZakljucak">
+		<action type="message" value="Morate odabrati jednu od knjiga ili zaključak!" if="#tree.@value==godina"/>
+		<action type="message" value="Odabrani datum u drvetu nema zaključak ili nije dopušteno poništiti zaključak za odabrani datum!" elseif="#tree.@value==vrstaknjige"/>
+		<action type="message" value="Odabrani datum u drvetu nema zaključak ili nije dopušteno poništiti zaključak za odabrani datum!" elseif="#tree.@godina!=#tree.@godinadatzak"/>
+		<action type="datarun reader" value="~dtZadnjiDatZak" else="">
+			<action type="message" value="Odabrani datum {#tree.@datumzakljucka::dd.MM.yyyy} se nalazi izvan dopuštenog razdoblja. Nije moguće poništiti zaključak!" if="{#tree.@datumzakljucka::yyyyMMdd}&lt;{Global.$BlokadaOd::yyyyMMdd}||{#tree.@datumzakljucka::yyyyMMdd}&gt;{Global.$BlokadaDo::yyyyMMdd}"/>
+			<action type="message" value="Odabrani datum u drvetu nema zaključak ili nije dopušteno poništiti zaključak za odabrani datum!" elseif="#tree.@datumzakljucka!=~dtZadnjiDatZak.@ZadnjiDatZak"/>
+			<action type="confirm" value="Poništavate zaključak za datum {#tree.@datumzakljucka::dd.MM.yyyy}. Jeste li sigurni?" elseif="#tree.@datumzakljucka==~dtZadnjiDatZak.@ZadnjiDatZak">
+				<action type="datarun reader" value="~dtPonistiZakljucak" />
+				<action type="datarun reader" value="~dtPozicijaNezakljucen"/>
+				<action type="control populate" value="#tree"/>
+				<action type="control expand" value="#tree">
+					<parameter name="key" value="$Godina"/>
+				</action>					
+				<action type="control focus" value="#tree">
+					<parameter value="~dtPozicijaNezakljucen.@poz" type="string"/>
+				</action>
+			</action>
+		</action>		
+	</part>
+</parts>

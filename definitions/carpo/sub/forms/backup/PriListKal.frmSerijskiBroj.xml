@@ -1,0 +1,217 @@
+<root>
+	<form name="frmSerijskiBroj" caption="Ažuriranje serijskih brojeva" width="600" fixedsize="true">
+		<event type="init">
+			<!-- dohvati skladišta -->
+			<action type="datarun reader" value="global.~dtSkladiste" />
+			
+			<!-- abs ok kolicine ako je - -->
+			<action type="datarun reader" value="~dtAbsKolicina"/>
+			
+			<action type="variable value" if="$kolicina&gt;0">
+                <parameter name="IsUlaz" value="1" />
+            </action>
+			<action type="variable value" else="">
+                <parameter name="IsUlaz" value="0" />
+            </action>
+			<action type="variable value" if="$kolicina==0">
+                <parameter name="KolicinaCaption" value="Količina:" />
+            </action>
+			<action type="variable value" elseif="$kolicina&gt;0">
+                <parameter name="KolicinaCaption" value="Zadužiti:" />
+            </action>
+			<action type="variable value" else="">
+                <parameter name="KolicinaCaption" value="Razdužiti:" />
+            </action>
+			<action type="variable value">
+                <parameter name="ActionAzur" value="0" />
+            </action>
+			<action type="variable value">
+                <parameter name="SerijskiBroj" value="" />
+            </action>
+
+		</event>
+		<event type="load">
+		
+			<action type="control populate" value="#Grid1" if="$kolicina&lt;0"/>
+			<action type="control populate" value="#Grid2" if="$vrstadokId!=null&amp;&amp;$NabPriDetId!=null&amp;&amp;$kolicina!=0"/>
+			
+			<action type="control value" value="#cmbSkladiste">
+			  <parameter value="$skladisteId"/>
+			</action>
+			<action type="control value" value="#txtRoba">
+			  <parameter value="$roba"/>
+			</action>
+			<!-- apsolutna vrijednost količine -->
+			<action type="control value" value="#txtKolicina">
+			  <parameter value="~dtAbsKolicina.@absKolicina"/>
+			</action>
+
+		</event>
+		<event type="shown">
+			<action type="control disable" value="#cmbSkladiste,#txtRoba, #txtKolicina" />
+			<action type="control disable" value="#cmbAdd, #cmbRemove,#Grid1, #txtSerijkiBroj" if="$kolicina==0"/>
+			<action type="control disable" value="#txtSerijkiBroj" elseif="$kolicina&lt;0"/>
+			<action type="control disable" value="#Grid1,#cmbAdd" else=""/>
+        </event>
+		
+        <layout textposition="left" >
+			<group groupbordervisible="false" cols="1" rows="3">
+
+				<rowsdefinition>
+					<row size="10" position="2"></row>
+				</rowsdefinition>
+				<group  groupbordervisible="false" col="1" row="1" cols="2" rows="3">
+					<itemdefault highlight="False" />
+					<item caption="Skladište:" row="1" col="1">
+						<comboedit name="cmbSkladiste" valuefield="SkladisteId" displayfield="Opis"  dataname="Global.dtSkladiste" required="true" />
+					</item>
+					<item caption="Roba:" colspan="2" row="2" col="1">
+						<textedit name="txtRoba"></textedit>
+					</item>
+					<item caption="$KolicinaCaption" row="3" col="1">
+						<textedit name="txtKolicina" format="n2"></textedit>
+					</item>
+				</group>
+				<group  caption="Serijski brojevi" col="1" row="3" cols="3" rows="2">
+					<itemdefault highlight="False" />
+					<columnsdefinition>
+						<column size="40%" position="1" />
+						<column size="20%" position="2" />
+						<column size="40%" position="3" />
+					</columnsdefinition>
+					<rowsdefinition>
+						<row size="200" position="2"></row>
+					</rowsdefinition>
+					<item caption="Raspoloživi:" row="1" col="1" textposition="top">
+						<textedit name="txtSerijkiBroj">
+							<event type="leave">
+								<action type="variable value">
+									<parameter name="$ActionAzur" value="0" />
+								</action>
+								<action type="variable value">
+									<parameter name="$SerijskiBroj" value="#txtSerijkiBroj" />
+								</action>
+								<!-- spremi u bazu ser broj i prikazi u gridu -->
+								<action type="datarun nonquery" value="~dtSerBrojAzure" if="#txtSerijkiBroj!=null">
+									<action type="control populate" value="#Grid2"></action>
+
+									<action type="control refreshvalue" value="#txtSerijkiBroj"/>
+									<action type="control focus" value="#txtSerijkiBroj"/>
+								
+								</action>
+								
+								
+							</event>
+						</textedit>
+					</item>
+					<item row="2" col="1">
+						<grid name="Grid1" showautofilterrow="false" showgrouppanel="false" dataname="~dtSerBrojGrid1" autopopulate="false">
+							<fields inherited="false">
+								<field name="SerBroj" caption="Serijski broj" />
+							</fields>
+						</grid>
+					</item>
+					
+					<group alignmode="local" bordervisible="false" col="2" row="1" cols="1" rows="4" rowspan="2">
+						<rowsdefinition>
+							<row size="40%" position="1"></row>
+							<row size="40" position="2"></row>
+							<row size="40" position="3"></row>
+							<row size="20%" position="4"></row>
+						</rowsdefinition>
+						<item row="2" col="1" >
+						 	<button image="right" caption="Prebaci" name="cmbAdd" imagelocation="middleright">
+								<event type="click">
+									<action type="variable value" if="#Grid1.rowcount&gt;0&amp;&amp;#Grid1.@SerBroj!=null">
+										<parameter name="$SerijskiBroj" value="#Grid1.@SerBroj" />
+									</action>
+									<action type="variable value">
+										<parameter name="$ActionAzur" value="0" />
+									</action>
+									<action type="datarun nonquery" value="~dtSerBrojAzure" if="#Grid1.rowcount&gt;0"/>
+									<action type="control populate" value="#Grid2"></action>
+									<action type="control populate" value="#Grid1"></action>
+								</event>
+							</button>
+						</item>
+						<item row="3" col="1">
+							<button image="left" caption="Ukloni" name="cmbRemove" imagelocation="middleleft">
+								<event type="click">
+									<action type="variable value" if="#Grid2.rowcount&gt;0&amp;&amp;#Grid2.@SerBroj!=null">
+										<parameter name="$SerijskiBroj" value="#Grid2.@SerBroj" />
+									</action>
+									<action type="variable value">
+										<parameter name="$ActionAzur" value="2" />
+									</action>
+									<action type="datarun nonquery" value="~dtSerBrojAzure" if="#Grid2.rowcount&gt;0"/>
+									<action type="control populate" value="#Grid2"></action>
+									<action type="control populate" value="#Grid1" if="$kolicina&lt;0"></action>
+								</event>
+							</button>
+						</item>
+					</group>
+					
+					<item caption="Na dokumentu:" row="1" col="3" >
+
+					</item>
+					<item row="2" col="3">
+						<grid name="Grid2" showautofilterrow="false" showgrouppanel="false" dataname="~dtSerBrojGrid2" autopopulate="false">					
+							<fields inherited="false">
+								<field name="SerBroj" caption="Serijski broj" />
+							</fields>
+						</grid>
+					</item>
+				</group >
+				
+			</group>
+		</layout>
+        <panelbuttons>
+            <buttons>
+                <button caption="&amp;Gotovo" name="btnSpremi" type="add" dock="left">
+                    <event type="click">
+						<action type="confirm" value="Količina na dokumentu je različita od unešenih serijskih brojeva!" if="#txtKolicina!=#Grid2.rowcount">
+							<parameter name="captionyes" value="Pusti me van" />
+							<parameter name="captionno" value="Vrati me natrag" />
+						<action type="form close"/>
+						</action>
+						<action type="form close" else=""></action>
+					</event>
+                </button>
+                <button caption="IZLAZ"  dock="right" type="cancel"></button>
+            </buttons>
+        </panelbuttons>
+        <datalist>
+			<data command="spNabPlkCarpoSerBrojQuery" name="dtSerBrojGrid2">
+				<parameter name="@Action" value="2" />
+				<parameter name="@IsUlaz" value="$IsUlaz" />
+				<parameter name="@DokId" value="$NabPriDetId" />
+				<parameter name="@VrstaDokId" value="$VrstaDokId" />
+				<parameter name="@RobaId" value="$RobaId" />
+				<parameter name="@SkladisteId" value="$SkladisteId" />
+				
+			</data>
+			<data command="spNabPlkCarpoSerBrojQuery" name="dtSerBrojGrid1">
+				<parameter name="@Action" value="1" />
+				<parameter name="@RobaId" value="$RobaId" />
+				<parameter name="@SkladisteId" value="$SkladisteId" />
+				
+			</data>
+			
+			<data command="spNabPlkCarpoSerBrojAzur" name="dtSerBrojAzure">
+				<parameter name="@Action" value="$ActionAzur"/>
+				<parameter name="@SerBroj" value="$SerijskiBroj"/>
+				<parameter name="@IsUlaz" value="$IsUlaz" />
+				<parameter name="@DokId" value="$NabPriDetId" />
+				<parameter name="@VrstaDokId" value="$VrstaDokId" />
+				<parameter name="@RobaId" value="$RobaId" />
+				<parameter name="@SkladisteId" value="$SkladisteId" />
+				
+			</data>
+			<data command="select varset from pubvars where rtrim(varime)='StatusZahtjevaZaOS'" name="dtNabNarPubVars" type="text"/>
+			<data command="select abs(@par1) as absKolicina" type="text" name="dtAbsKolicina">
+				<parameter name="@par1" value="$kolicina" type="decimal"/>
+			</data>
+		</datalist>
+    </form>
+
+</root>

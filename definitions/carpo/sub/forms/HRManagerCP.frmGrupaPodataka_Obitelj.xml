@@ -1,0 +1,346 @@
+<root>
+	<!--
+  Komentari:
+  4.11.2025. MP - PERMISSION -> FUNCTION NAME
+  09.11.2021. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmObitelj" caption="Članovi obitelji za {parent.#txtPrezime} {parent.#txtIme}" width="850" height="350" >
+		<event type="load">
+			<action type="control populate" value="#grdObitelj"/>		
+			<action type="control disable" value="#btnIzmjena,btnBrisanje" if="#grdObitelj.rowcount==0"/>
+
+		</event>
+		<layout>
+			<group cols="1" rows="2" groupbordervisible="false">
+				<group cols="1" rows="1" groupbordervisible="true" col="1" row="1" spacing="2,2,2,1">
+					<item row="1" col="1" highlight="false">
+						<grid name="grdObitelj" key="hrkadroviobiteljid" dataname="~dtObitelj" multiselect="true" savelayout="true" fieldsmartspaces="false" showgrouppanel="false" bestfitonrefresh="true">
+							<fields inherited="true">
+							</fields>
+							<event type="doubleclick">
+								<action type="form open" value="frmUnosIzmjenaObitelj"  function="IZMJENA_OBITELJ">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="hrkadroviobiteljid" value="#grdObitelj.@hrkadroviobiteljid" />	
+									<parameter name="Caption" value="Izmjena člana obitelji za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdObitelj"/>
+								<action type="control populate" value="parent.#grdPodaci"/>		
+							</event>
+						</grid>
+					</item>
+				</group>
+				<group cols="8" rows="1" groupbordervisible="true" col="1" row="2" spacing="2,2,1,2">
+					<item row="1" col="1" highlight="false" height="40">
+						<button name="btnUnos" caption="Unos" function="UNOS_OBITELJ"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaObitelj"> 
+									<parameter name="Caption" value="Unos člana obitelji za {parent.#txtPrezime} {parent.#txtIme}"/>		
+									<parameter name="hrkadroviobiteljid" value="0"/>   
+									<parameter name="HRKadroviId" value="$HRKadroviId" />	
+
+								</action>  
+								<action type="control populate keepfocus" value="#grdObitelj"/>
+								<action type="control populate" value="parent.#grdPodaci"/>		
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="2" highlight="false" height="40" >
+						<button name="btnIzmjena" caption="Izmjena" function="IZMJENA_OBITELJ"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaObitelj">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="hrkadroviobiteljid" value="#grdObitelj.@hrkadroviobiteljid" />	
+									<parameter name="Caption" value="Izmjena člana obitelji za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdObitelj"/>
+								<action type="control populate" value="parent.#grdPodaci"/>		
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="3" highlight="false" height="40">
+						<button name="btnBrisanje" caption="Brisanje" function="BRISANJE_OBITELJ"> 
+							<event type="click">   
+								<action type="confirm" value="Jeste li sigurni da želite obrisati izabrani zapis?">
+									<action type="datarun nonquery" value="~dtBrisanjeDopStatusi">
+
+									</action>
+								</action>
+								<action type="control populate" value="#grdObitelj,parent.#grdPodaci"></action>    
+								<action type="control disable" value="#btnIzmjena,btnBrisanje" if="#grdObitelj.rowcount==0"/>
+							</event>  
+						</button>
+					</item>
+
+					<item row="1" col="4" colspan="4" highlight="false" height="40"/>
+					<item row="1" col="8" highlight="false" height="40">
+						<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+							<event type="click">
+								<action type="form close" />
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+
+		</layout>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_Obitelj_CP" name="dtObitelj">
+				<parameter name="@action" value="grid_obitelj" />
+				<parameter name="@hrkadroviid" value="$HRKadroviId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Obitelj_CP" name="dtBrisanjeDopStatusi">
+				<parameter name="@action" value="brisanje"/>
+				<parameter name="@hrkadroviobiteljid" value="#grdObitelj.@hrkadroviobiteljid"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!-- FORMA ZA UNOS,IZMJENU-->
+	<form name="frmUnosIzmjenaObitelj" caption="$Caption" width="700" height="400" fixedsize="true">
+				<event type="init">
+<action type="datarun reader" value="~dtGetClanaObitelji" if="$hrkadroviobiteljid!=0" />
+		</event>
+		<event type="shown">
+			<action if="$Tip=='Izmjena'">
+			<action type="control disable" value="#dtDatumPotvrde" if="~dtGetClanaObitelji.@PotvrdaDatum==null"></action>
+			<action type="control disable" value="#dtDatumIzdZI" if="~dtGetClanaObitelji.@DatumIzdavanjaZK==null"></action>
+			<action type="control disable" value="#dtZIVrijediDo" if="~dtGetClanaObitelji.@DatumDoZK==null"></action>			
+				<action if="~dtGetClanaObitelji.@PotvrdaDatum==null">
+					<action type="control value" value="#dtDatumPotvrde" >
+						<parameter value="now" />
+					</action>
+				</action>
+			<action if="~dtGetClanaObitelji.@DatumIzdavanjaZK==null">
+					<action type="control value" value="#dtDatumIzdZI" >
+						<parameter value="now" />
+					</action>
+				</action>
+				<action if="~dtGetClanaObitelji.@DatumDoZK==null">
+					<action type="control value" value="#dtZIVrijediDo" >
+						<parameter value="now" />
+					</action>
+				</action>
+			</action>
+			</event>
+		<layout>
+		<group cols="1" rows="3" groupbordervisible="false">
+		<group cols="4" rows="6" col="1" row="1" caption="Opći podaci" groupbordervisible="true" spacing="2,2,2,1">
+		<columnsdefinition>
+				<column position="4" size="50"/>
+			</columnsdefinition>
+				<item row="1" col="1" caption="Srodstvo:" highlight="false" >
+					<comboedit name="cmbSrodstvo" required="true" valuefield="HRSrodstvoId" displayfield="naziv"  dataname="~dtHRSrodstvo" datavalue="~dtGetClanaObitelji.@HRSrodstvoId"/>  
+				</item>
+				<item row="1" col="2" caption="Ime roditelja:" highlight="false" colspan="3">
+					<textedit name="txtImeRoditelja" datavalue="~dtGetClanaObitelji.@ImeRoditelja"/>
+				</item>
+				<item row="2" col="1" caption="Prezime:" highlight="false" colspan="2">
+					<textedit name="txtPrezime" datavalue="~dtGetClanaObitelji.@Prezime"/>
+				</item>
+				<item row="2" col="3" caption="Ime:" highlight="false" colspan="2">
+					<textedit name="txtIme" datavalue="~dtGetClanaObitelji.@Ime"/>
+				</item>
+				<item row="3" col="1" caption="JMBG:" highlight="false" >
+					<textedit name="txtJMBG" format="[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]" formattype="regex" datavalue="~dtGetClanaObitelji.@JMBG"/>
+				</item>
+				<item row="3" col="2" caption="OIB:" highlight="false" >
+					<textedit name="txtOIB" format="[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]" formattype="regex" datavalue="~dtGetClanaObitelji.@OIB"/>
+				</item>
+				<item row="3" col="3" caption="Datum rođenja:" highlight="false" >
+					<dateedit name="dtDatumRodjenja" value="now" datavalue="~dtGetClanaObitelji.@DatumRodenja">
+					</dateedit>
+				</item>
+				<item row="3" col="4" caption="Spol:" highlight="false" >
+					<textedit name="txtSpol" format="[M]|[Ž]|[Z]" formattype="regex" tooltip="Možete upisati samo 'M' ili 'Ž' (Z)" datavalue="~dtGetClanaObitelji.@Spol"/>
+				</item>
+				<item row="4" col="1"  highlight="false">
+					<checkedit name="chckPorOlaksica" caption="Por. olakšica" datavalue="~dtGetClanaObitelji.@PoreznaOlaksica" />
+				</item>
+				<item row="4" col="2"  highlight="false">
+					<checkedit name="chckZaposlen" caption="Zaposlen/a" datavalue="~dtGetClanaObitelji.@Zaposlen" />
+				</item>
+				<item row="4" col="3"  highlight="false">
+					<checkedit name="chckOsiguran" caption="Osiguran/a" datavalue="~dtGetClanaObitelji.@Osiguran" />
+				</item>
+				<item row="5" col="1" caption="Broj potvrde:" highlight="false" colspan="2">
+					<textedit name="txtBrPotvrde" datavalue="~dtGetClanaObitelji.@PotvrdaBroj"/>
+				</item>
+				<item row="5" col="3" caption="Potvrdu izdao:" highlight="false" colspan="2">
+					<textedit name="txtPotvrduIzdao" datavalue="~dtGetClanaObitelji.@PotvrdaIzdao"/>
+				</item>
+				<item row="6" col="1" caption="Datum potvrde:" highlight="false" >
+					<dateedit name="dtDatumPotvrde" value="now" allownull="true" datavalue="~dtGetClanaObitelji.@PotvrdaDatum">
+					</dateedit>
+				</item>
+				<item row="6" col="2"  highlight="false" colspan="2" padding="18">
+					<checkedit name="chckSmetnje" caption="Smetnje u psihofizičkom razvoju" datavalue="~dtGetClanaObitelji.@SmetnjeURazvoju" />
+				</item>
+			</group>
+				<group cols="4" rows="2" col="1" row="2" caption="Zdravstvena iskaznica" groupbordervisible="true" spacing="2,2,1,1">
+					<columnsdefinition>
+				<column position="4" size="50"/>
+			</columnsdefinition>
+				<item row="1" col="1" caption="Broj osiguranja:" highlight="false" >
+					<textedit name="txtBrOsiguranja" datavalue="~dtGetClanaObitelji.@BrOsiguranja"/>
+				</item>
+				<item row="1" col="2" caption="Matični broj osiguranja osobe:" highlight="false" >
+					<textedit name="txtMaticniBROs" datavalue="~dtGetClanaObitelji.@MBOO"/>
+				</item>
+				<item row="1" col="3" caption="Datum izdavanja ZI:" highlight="false" >
+					<dateedit name="dtDatumIzdZI" value="now" allownull="true" datavalue="~dtGetClanaObitelji.@DatumIzdavanjaZK">
+					</dateedit>
+				</item>
+				<item row="2" col="1" caption="Vrijedi do:" highlight="false" >
+					<dateedit name="dtZIVrijediDo" value="now" allownull="true" datavalue="~dtGetClanaObitelji.@DatumDoZK">
+					</dateedit>
+				</item>
+				<item row="2" col="2" caption="Osnova:" highlight="false" colspan="3">
+					<textedit name="txtOsnova" datavalue="~dtGetClanaObitelji.@Napomena"/>
+				</item>
+				</group>
+				<group cols="4" rows="1" col="1" row="3" caption="Adresa prebivanja" groupbordervisible="true" spacing="2,2,1,2">
+					<columnsdefinition>
+				<column position="4" size="50"/>
+			</columnsdefinition>
+				<item row="1" col="1" caption="Mjesto:" highlight="false" >
+					<textedit name="txtMjesto" datavalue="~dtGetClanaObitelji.@Mjesto"/>
+				</item>
+				<item row="1" col="2" caption="Ulica i kućni broj:" highlight="false" >
+					<textedit name="txtUlica" datavalue="~dtGetClanaObitelji.@Ulica"/>
+				</item>
+				<item row="2" col="3" caption="Oznaka područja od posebne skrbi:" highlight="false"  colspan="2">
+					<textedit name="txtOznaka" datavalue="~dtGetClanaObitelji.@PodrucjeOdPosebneDrzavneSkrbi"/>
+				</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+						<action type="validate"/>
+						<action if="$hrkadroviobiteljid==0">
+							<action type="datarun reader" value="~dtUnos">
+								<action type="control populate" value="parent.#grdObitelj">
+									<action type="control focus" value="parent.#grdObitelj">
+										<parameter value="$noviID"/>
+									</action>
+								</action>
+							</action>
+							<action type="control enable" value="parent.#btnIzmjena,parent.#btnBrisanje"/>
+						</action>
+						<action if="$indGreske==0">
+							<action type="message" value="Uspješno spremljeno!"/>
+							<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+							<action type="variable value" value="global.$RefreshajMaster">
+								<parameter value="1" type="int"/>
+							</action>
+							<action type="form close" />
+						</action>
+						<!-- AKO OIB NIJE ISPRAVAN FOKUSIRA SE NA POLJE ZA OIB PRILIKOM IZMJENE-->
+							<action if="$indGreske==1">
+								<action type="control focus" value="#txtOIB" >
+									<parameter value="~dtUnos.@OIB" />
+								</action>
+							</action>
+						<action if="$hrkadroviobiteljid!=0">
+							<action type="datarun reader" value="~dtIzmjena"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+								<action type="variable value" value="global.$RefreshajMaster">
+									<parameter value="1" type="int"/>
+								</action>
+								<action type="form close"/>
+							</action>
+							<!-- AKO OIB NIJE ISPRAVAN FOKUSIRA SE NA POLJE ZA OIB PRILIKOM IZMJENE-->
+							<action if="$indGreske==1">
+								<action type="control focus" value="#txtOIB" >
+									<parameter value="~dtIzmjena.@OIB" />
+								</action>
+							</action>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+		<data command="spHRHelp" name="dtHRSrodstvo">
+				<parameter name="@action" value="hrsrodstvo"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Obitelj_CP" name="dtGetClanaObitelji">
+				<parameter name="@action" value="getObitelj" />
+				<parameter name="@HRKadroviObiteljId" value="$HRKadroviObiteljId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Obitelj_CP" name="dtUnos">
+					<parameter name="@action" value="unos"/>
+				<parameter name="@HRKadroviObiteljId.output.int" variablename="noviID"/>
+				<parameter name="@hrkadroviid" value="$HRKadroviId"/>
+				<parameter name="@HRSrodstvoId" value="#cmbSrodstvo"/>
+				<parameter name="@Ime" value="#txtIme"/>
+				<parameter name="@Prezime" value="#txtPrezime"/>
+				<parameter name="@ImeRoditelja" value="#txtImeRoditelja"/>
+				<parameter name="@JMBG" value="#txtJMBG"/>
+				<parameter name="@Osiguran" value="#chckOsiguran"/>
+				<parameter name="@PoreznaOlaksica" value="#chckPorOlaksica"/>
+				<parameter name="@Spol" value="#txtSpol"/>
+				<parameter name="@Zaposlen" value="#chckZaposlen"/>
+				<parameter name="@DatumRodenja" value="#dtDatumRodjenja"/>
+				<parameter name="@PotvrdaBroj" value="#txtBrPotvrde"/>
+				<parameter name="@PotvrdaIzdao" value="#txtPotvrduIzdao"/>
+				<parameter name="@PotvrdaDatum" value="#dtDatumPotvrde"/>
+				<parameter name="@BrOsiguranja" value="#txtBrOsiguranja"/>
+				<parameter name="@DatumIzdavanjaZK" value="#dtDatumIzdZI"/>
+				<parameter name="@DatumDoZK" value="#dtZIVrijediDo"/>
+				<parameter name="@SmetnjeURazvoju" value="#chckSmetnje"/>
+				<parameter name="@OIB" value="#txtOIB"/>
+				<parameter name="@MBOO" value="#txtMaticniBROs"/>
+				<parameter name="@Napomena" value="#txtOsnova"/>
+				<parameter name="@Mjesto" value="#txtMjesto"/>
+				<parameter name="@Ulica" value="#txtUlica"/>
+				<parameter name="@PodrucjeOdPosebneDrzavneSkrbi" value="#txtOznaka"/>
+				<parameter name="@indGreske.output.int"/>		
+			</data>
+			<data  command="spHRManagerMaster_Podaci_Obitelj_CP" name="dtIzmjena">
+				<parameter name="@action" value="izmjena"/>
+				<parameter name="@hrkadroviobiteljid" value="$hrkadroviobiteljid"/>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@HRSrodstvoId" value="#cmbSrodstvo"/>
+				<parameter name="@Ime" value="#txtIme"/>
+				<parameter name="@Prezime" value="#txtPrezime"/>
+				<parameter name="@ImeRoditelja" value="#txtImeRoditelja"/>
+				<parameter name="@JMBG" value="#txtJMBG"/>
+				<parameter name="@Osiguran" value="#chckOsiguran"/>
+				<parameter name="@PoreznaOlaksica" value="#chckPorOlaksica"/>
+				<parameter name="@Spol" value="#txtSpol"/>
+				<parameter name="@Zaposlen" value="#chckZaposlen"/>
+				<parameter name="@DatumRodenja" value="#dtDatumRodjenja"/>
+				<parameter name="@PotvrdaBroj" value="#txtBrPotvrde"/>
+				<parameter name="@PotvrdaIzdao" value="#txtPotvrduIzdao"/>
+				<parameter name="@PotvrdaDatum" value="#dtDatumPotvrde"/>
+				<parameter name="@BrOsiguranja" value="#txtBrOsiguranja"/>
+				<parameter name="@DatumIzdavanjaZK" value="#dtDatumIzdZI"/>
+				<parameter name="@DatumDoZK" value="#dtZIVrijediDo"/>
+				<parameter name="@SmetnjeURazvoju" value="#chckSmetnje"/>
+				<parameter name="@OIB" value="#txtOIB"/>
+				<parameter name="@MBOO" value="#txtMaticniBROs"/>
+				<parameter name="@Napomena" value="#txtOsnova"/>
+				<parameter name="@Mjesto" value="#txtMjesto"/>
+				<parameter name="@Ulica" value="#txtUlica"/>
+				<parameter name="@PodrucjeOdPosebneDrzavneSkrbi" value="#txtOznaka"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+</root>

@@ -1,0 +1,175 @@
+<root>
+	<form name="frmMaster" type="master" caption="Države">
+		<managerlayout>
+			<grid name="grdMaster" type="master" showautofilterrow="true" dataname="global.dtMaster" key="DrzaveId" savelayout="true" statusbar="true" bestfitonrefresh="true" multiselect="true">
+				<event type="doubleclick">
+					<action type="form open" value="frmDrzaveInsertEdit" if="#grdMaster.rowcount&gt;0">
+						<parameter name="DrzaveId" value="#grdMaster.@DrzaveId" />
+					</action>
+					<action type="control populate keepfocus" value="#grdMaster" />
+				</event>
+				<fields inherited="false">
+					<field caption="Naziv države" name="Naziv" />
+					<field caption="Kratica" name="Kratica" />
+					<field caption="Pozivni broj" name="HptPoziv" />
+					<field caption="Oznaka valute" name="Oznaka" />
+					<field caption="Naziv valute" name="vNaziv" />
+					<field caption="Oznaka države" name="dOznaka" />
+					<field caption="Alpha-2 oznaka" name="Alpha-2;oznaka" />
+					<field caption="Članica EU" name="Članica EU" />
+					<field caption="Članica EMU" name="Članica EMU" />
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnUnesi" caption="UNESI" type="add" function="insert">
+					<menuitem control="#grdMaster" sort="1" />
+					<event type="click">
+						<action type="form open" value="frmDrzaveInsertEdit">
+							<parameter name="DrzaveId" value="null" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit" function="edit">
+					<menuitem control="#grdMaster" sort="2" />
+					<event type="click">
+						<action type="form open" value="frmDrzaveInsertEdit" if="#grdMaster.rowcount&gt;0">
+							<parameter name="DrzaveId" value="#grdMaster.@DrzaveId" />
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete" function="delete">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati označenu državu?">
+							<action type="datarun nonquery" value="global.~dtDelete" />
+							<action type="control populate" value="#grdMaster" />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	<form name="frmDrzaveInsertEdit" caption="Odjeli">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" />
+		</event>
+		<event type="shown">
+			<action if="$DrzaveId!=null">
+				<action type="form caption" value="Izmjena odabrane države" />
+			</action>
+			<action else="">
+				<action type="form caption" value="Unos nove države" />
+			</action>
+		</event>
+		<layout>
+			<group rows="8" cols="1">
+				<item row="1" col="1" caption="Naziv:" highlight="false">
+					<textedit name="txtNazivDrzave" datavalue="~dtGet.@Naziv" required="true" />
+				</item>
+				<item row="2" col="1" caption="Pozivni broj:" highlight="false">
+					<textedit name="txtPozivniBroj" datavalue="~dtGet.@HPTPoziv" required="true" maxlength="3" />
+				</item>
+				<item row="3" col="1" caption="Kratica:" highlight="false">
+					<textedit name="txtKratica" datavalue="~dtGet.@Kratica" required="false" maxlength="3" />
+				</item>
+				<item row="4" col="1" caption="Oznaka države:" highlight="false">
+					<textedit name="txtOznakaDrzave" datavalue="~dtGet.@dOznaka" required="false" />
+				</item>
+				<item row="5" col="1" caption="Valuta:" highlight="false">
+					<comboedit name="cmbValuta" required="true" datavalue="#dtGet.@ValuteId" displayfield="Naziv" valuefield="ValuteId" dataname="global.dtValute" />
+				</item>
+				<item row="6" col="1" caption="Alpha-2 oznaka:" highlight="false">
+					<textedit name="txtAlpha-2oznaka" datavalue="~dtGet.@IsoAlpha2" required="false" maxlength="2" />
+				</item>
+				<item row="7" col="1" highlight="false">
+					<checkedit name="txtClanicaEU" caption="Članica EU" datavalue="~dtGet.@IndEU" required="false" />
+				</item>
+				<item row="8" col="1" highlight="false">
+					<checkedit name="txtClanicaEMU" caption="Članica EMU" datavalue="~dtGet.@IndEMU" required="false" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtKontrola">
+							<parameter name="Greska" />
+						</action>
+						<action type="datarun scalar" value="~dtDataEdit" if="$DrzaveId!=null">
+							<parameter name="parent.$DrzaveId" />
+							<action type="control populate keepfocus" value="parent.#grdMaster" />
+							<action type="form close" if="$Greska!=1" />
+						</action>
+						<action type="datarun scalar" value="~dtDataInsert" if="$DrzaveId==null">
+							<parameter name="parent.$DrzaveId" />
+							<action type="control populate" value="parent.#grdMaster" />
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="parent.$DrzaveId" type="int" />
+							</action>
+						</action>
+						<action type="control refreshvalue" value="txtNazivDrzave" if="$Greska!=1" />
+						<action type="control refreshvalue" value="txtPozivniBroj" if="$Greska!=1" />
+						<action type="control refreshvalue" value="txtKratica" if="$Greska!=1" />
+						<action type="control refreshvalue" value="txtOznakaDrzave" if="$Greska!=1" />
+						<action type="control refreshvalue" value="txtAlpha-2oznaka" if="$Greska!=1" />
+						<action type="control refreshvalue" value="txtClanicaEU" if="$Greska!=1" />
+						<action type="control refreshvalue" value="txtClanicaEMU" if="$Greska!=1" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCDrzaveQuery" name="dtGet">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$DrzaveId" />
+			</data>
+			<data command="spCDrzaveAzur" name="dtDataInsert">
+				<parameter name="@Action" value="0" />
+				<parameter name="@Naziv" value="#txtNazivDrzave" />
+				<parameter name="@Kratica" value="#txtKratica" />
+				<parameter name="@HptPoziv" value="#txtPozivniBroj" />
+				<parameter name="@Oznaka" value="#txtOznakaDrzave" />
+				<parameter name="@ValuteId" value="#cmbValuta" />
+				<parameter name="@IsoAlpha2" value="null" if="#txtAlpha-2oznaka==''" />
+				<parameter name="@IsoAlpha2" value="#txtAlpha-2oznaka" else="" />
+				<parameter name="@IndEU" value="#txtClanicaEU" />
+				<parameter name="@IndEMU" value="#txtClanicaEMU" />
+			</data>
+			<data command="spCDrzaveAzur" name="dtDataEdit">
+				<parameter name="@Action" value="1" />
+				<parameter name="@ID" value="$DrzaveId" />
+				<parameter name="@Naziv" value="#txtNazivDrzave" />
+				<parameter name="@Kratica" value="#txtKratica" />
+				<parameter name="@HptPoziv" value="#txtPozivniBroj" />
+				<parameter name="@Oznaka" value="#txtOznakaDrzave" />
+				<parameter name="@ValuteId" value="#cmbValuta" />
+				<parameter name="@IsoAlpha2" value="null" if="#txtAlpha-2oznaka==''" />
+				<parameter name="@IsoAlpha2" value="#txtAlpha-2oznaka" else="" />
+				<parameter name="@IndEU" value="#txtClanicaEU" />
+				<parameter name="@IndEMU" value="#txtClanicaEMU" />
+			</data>
+			<data command="spCDrzaveAzur" name="dtKontrola">
+				<parameter name="@Action" value="3" />
+				<parameter name="@HptPoziv" value="#txtPozivniBroj" />
+				<parameter name="@IsoAlpha2" value="null" if="#txtAlpha-2oznaka==''" />
+				<parameter name="@IsoAlpha2" value="#txtAlpha-2oznaka" else="" />
+			</data>
+		</datalist>
+	</form>
+	<datalist>
+		<data command="spCDrzaveQuery " name="dtMaster">
+			<parameter name="@action" value="0" />
+		</data>
+		<data command="spCDrzaveAzur" name="dtDelete">
+			<parameter name="@Action" value="2" />
+			<parameter name="@ID" value="#grdMaster.@DrzaveId" />
+		</data>
+		<data command="spCValuteQuery" name="dtValute">
+			<parameter name="@Action" value="0" />
+		</data>
+	</datalist>
+</root>

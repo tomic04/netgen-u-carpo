@@ -1,0 +1,273 @@
+<!-- Radio na Jupiter2012, Uljara -->
+<!-- TODO:
+required na poljima
+ -->
+<root>
+	<form name="frmMaster" type="master" caption="Plan proizvodnje">
+		<event type="load">
+			<action type="variable value" >
+				<parameter name="tmpId" value="0" type="int"/>
+			</action>
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Odobreni planovi" />
+				<comboitem value="Neodobreni planovi" />
+			</lookup>
+			<tree name="tree">
+				<data command="VremenskaPodjela" type="integrated" />
+
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdMaster" />
+				</event>
+				<fields>
+					<field name="Name" />
+				</fields>
+			</tree>
+			<grid name="grdMaster" type="master" async="true" showautofilterrow="true" dataname="global.dtMaster" key="ProPlanProizvodnjeGlaId" multiselect="true" savelayout="true">
+				<event type="focusedrowchanged">
+					<action type="control enable" value="#btnIzmijeni, #btnObrisi, #btnZakljuci, #btnBilanca, #btnSirovine" if="#grdMaster.rowcount!=0" >
+						<action type="control disable" value="#btnObrisi, #btnIzmijeni, #btnZakljuci, #btnBilanca, #btnSirovine" if="#grdMaster.@StatusStr==Zaključen"  />
+						<action type="control disable" value="#btnObrisi, #btnIzmijeni, #btnBilanca, #btnSirovine" elseif="#grdMaster.@StatusStr==0" />
+						<action type="control enable" value="#btnObrisi, #btnIzmijeni, #btnZakljuci, #btnBilanca, #btnSirovine"  else="" />					
+					</action>
+					<action type="control disable" value="#btnIzmijeni, #btnObrisi, #btnZakljuci, #btnBilanca, #btnSirovine" else="" />
+					<action type="control populate" value="#grdDetail" />
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmPPDokumentEdit"  if="#grdMaster.rowcount&gt;0">
+						<parameter name="ProPlanProizvodnjeGlaId" value="#grdMaster.@ProPlanProizvodnjeGlaId" />
+					</action>
+					<action type="control populate keepfocus" value="#grdMaster" />
+				</event> 
+				<!-- <menu>
+					<menuitem type="separator" sort="4"/>
+					<menuitem caption="PONIŠTI ZAKLJUČAK" sort="5">
+						<event type="click">
+							<action type="confirm" value="Želite li poništiti zaključak?">
+								<action type="control foreachrow selected" value="#grdMaster">
+									<action type="datarun nonquery" value="global.~dtPonistiZakljucak">
+									</action>
+								</action>
+								<action type="control populate" value="#grdMaster" />
+							</action>
+						</event>
+					</menuitem>
+				</menu>-->
+				<fields inherited="true">
+					<field name="broj" caption="Dokument" fixed="left" fontbold="true" />
+					<field name="datumdok" caption="Datum" />
+					<field name="datumod" caption="Od datuma" />
+					<field name="datumdo" caption="Do datuma" />
+					<field name="refdatumod" caption="Od datuma I" />
+					<field name="refdatumdo" caption="Do datuma I" />
+					<!--<field name="ref2datumod" caption="Od datuma II" />
+					<field name="ref2datumdo" caption="Od datuma II" /> -->
+					<field name="operaternaziv" caption="Operater" />
+					<field name="StatusStr" caption="Status" />
+					<field name="osoba" caption="Odg. osoba" />
+					<field name="Klasa" caption="Klasifikacija" />
+					<field name="Opis" caption="Opis" />
+					<!-- TODO orgshema -->
+					<!--<field name="Drzava" caption="Drzave" />
+					<field name="Cjenik" caption="Cjenik" /> -->
+				</fields>
+				<styles>
+					<style name="fontcolor" value="#ff0000" if="#grdMaster.@StatusId==1" /> <!-- crveno-->
+					<style name="fontcolor" value="#008000" elseif="#grdMaster.@StatusId==2" /> <!-- zeleno-->
+					<style name="fontcolor" value="#0000ff" elseif="#grdMaster.@StatusId==3" /> <!-- plavo-->
+					<style name="fontcolor" value="#0000ff" elseif="#grdMaster.@StatusId==3" /> <!-- plavo-->
+					<style name="fontcolor" value="#000000" else="" />
+				</styles>
+			</grid>
+			<grid name="grdDetail" dataname="global.dtDetail" savelayout="true">
+				<fields>
+					<field name="NadKlasa" caption="Nadklasa" />
+					<field name="Klasa" caption="Klasifikacija" />
+					<field name="Sifra" caption="Roba" />
+					<field name="RobaNaziv" caption="Naziv" fontbold="True" />
+					<field name="JMNaziv" caption="JM" />
+					<field name="KolicinaPlan1" caption="Plan prodaja" />
+					<field name="KolicinaPlan2" caption="Plan nabava" />
+					<field name="KolicinaPlan3" caption="Plan proizvodnja" />
+					<field name="KolicinaStanje" caption="Raspoloživo" />
+					<field name="KolicinaRezervirano" caption="Rezervirano" />
+					<field name="KolicinaProizvodnja" caption="U proizvodnji" />
+					<field name="KolicinaPlanProdaje" caption="Plan prodaje" />
+					<field name="KolicinaMin" caption="Min. zaliha" />
+					<field name="Cijena" caption="Cijena" />
+					<field name="JM2Naziv" caption="JM2" />
+					<field name="jm2Kolicina" caption="Plan - osn. JM" />
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons displaycontrolsprint="true">
+			<buttons>
+				<button name="btnUnesi" caption="UNESI" type="add" function="insert">
+					<menuitem control="#grdMaster" sort="1"/>
+					<event type="click">
+						<action type="form open" value="frmPPDokumentUnos" >
+							<parameter name="VrstaDokId" value="#btnUnesi.@VrstaDokId" />
+						</action>
+						<action type="control populate" value="#grdMaster">
+							<action type="control focus" value="#grdMaster">
+								<!-- <action type="message" value="$tmpId" /> -->
+								<parameter value="$tmpId" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit" >
+					<menuitem control="#grdMaster" sort="2"/>
+					<event type="click">
+						<action type="form open" value="frmPPDokumentEdit"  if="#grdMaster.rowcount&gt;0">
+							<parameter name="ProPlanProizvodnjeGlaId" value="#grdMaster.@ProPlanProizvodnjeGlaId" />
+							<!-- <parameter name="StatusPon" value="#grdMaster.@Status" /> -->
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete" function="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati Plan proizvodnje broj '{#grdMaster.@Broj}'?">
+							<action type="datarun nonquery" value="global.~dtDelete">
+								<action type="control populate" value="#grdMaster" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnZakljuci" caption="ZAKLJUČI" function="zakljuci">
+					<menuitem control="#grdMaster" sort="3"/>
+					<event type="click">
+						<action type="confirm" value="Želite li zaključiti odabrano?">
+							<action type="control foreachrow selected" value="#grdMaster">
+								<action type="datarun nonquery" value="global.~dtZakljuci">
+								</action>
+							</action>
+							<action type="control populate" value="#grdMaster" />
+						</action>
+					</event>
+				</button>
+
+				<button name="btnBilanca" caption="BILANCA" function="bilanca">
+					<event type="click">
+						<action type="datarun nonquery" value="global.~dtPrnPlanBilancaMG" />
+						<action type="form open" value="frmBilanca">
+							<parameter name="Nivo" value="0" />
+						</action>
+					</event>
+				</button>
+
+				<button name="btnSirovine" caption="SIROVINE" function="sirovine">
+					<event type="click">
+						<action type="datarun nonquery" value="global.~dtPrnPlanSirovineMG" />
+						<action type="form open" value="frmSirovine" />
+					</event>
+				</button>				
+				<!--<button name="btnPrint" caption="ISPIŠI" dataname="dtPrint" displayfield="Opis" >
+					<event type="click">
+						<action type="control print" value="#grdMaster">
+							<action type="print template" value="#btnPrint1.@Template">
+								<parameter name="id" value="#grdMaster.@ProPonGlaId" />
+							</action>
+						</action>
+					</event>
+				</button>--> 
+			</buttons>
+		</panelbuttons>
+	</form>
+
+	<form name="frmPPDokumentUnos" path="frmPPDokumentUnos.xml" />
+	<form name="frmPPDokumentEdit" path="frmPPDokumentEdit.xml" />
+	<form name="frmRoba" path="frmRoba.xml"/>
+	<form name="frmBilanca" path="frmBilanca.xml"/>
+	<form name="frmSirovine" path="frmSirovine.xml"/>
+	<form name="frmProizvod" path="frmProizvod.xml"/>
+	<!-- 	<form name="frmNarudzbaUnos" path="frmNarudzbaUnos.xml"/>
+	<form name="frmNarudzbaEdit" path="frmNarudzbaEdit.xml"/>
+	<form name="frmNarudzbaRoba" path="frmNarudzbaRoba.xml"/> -->
+
+	<datalist>
+		<data command="spProPlanProizvodnjeGlaQuery" name="dtMaster">
+			<parameter name="@Action" value="master" />
+			<parameter name="@DatumOd" value="#tree.@DatumOd" />
+			<parameter name="@DatumDo" value="#tree.@DatumDo" />
+			<parameter name="@Filter" value="0" if="#filter==Odobreni planovi"/>
+			<parameter name="@Filter" value="1" else=""/>
+		</data>
+		<data command="spProPlanProizvodnjeDetQuery" name="dtDetail">
+			<parameter name="@Action" value="detail" />
+			<parameter name="@ID" value="#grdMaster.@ProPlanProizvodnjeGlaId" />
+		</data>	
+		<data command="spDrzaveQuery" name="dtDrzava">
+			<parameter name="@Action" value="0" />
+		</data>		
+		<data command="spVrCjenikQuery" name="dtCjenik">
+			<parameter name="@Action" value="0" />
+			<parameter name="@ID" value="0" />
+			<parameter name="@Opis" value="" />
+		</data>	
+		<data command="spOsobeQuery" name="dtOdgovornaOsoba">
+			<parameter name="@Action" value="16" />
+		</data>
+		<data command="spKlMasterRobaQuery" name="dtKlasa">
+			<parameter name="@Action" value="0" />
+			<parameter name="@ID" value="0" />
+			<parameter name="@klasifikacija" value="" />
+			<parameter name="@sortkey" value="" />
+			<parameter name="@robaid" value="0" />
+		</data>
+		<data command="spVrstaDokGet" name="dtVrstaDokGet">
+			<parameter name="@Sifra" value="113" />
+		</data>
+		<data command="spProPlanProizvodnjeGlaAzur" name="dtZakljuci">
+			<parameter name="@Action" value="3" />
+			<parameter name="@ID" value="#grdMaster.@ProPlanProizvodnjeGlaId" />
+		</data>
+		<data command="spProPlanProizvodnjeGlaAzur" name="dtDelete">
+			<parameter name="@Action" value="2" />
+			<parameter name="@ID" value="#grdMaster.@ProPlanProizvodnjeGlaId" />
+		</data>
+		<data command="spProPlanProizvodnjeGlaAzur" name="dtPonistiZakljucak">
+			<parameter name="@Action" value="4" />
+			<parameter name="@ID" value="#grdMaster.@ProPlanProizvodnjeGlaId" />
+		</data>	
+		<data command="spJKatalogTree" name="dtOrgShema">
+			<parameter name="@Action" value="orgshema" />
+		</data>
+		<data command="spParStruQuery" name="dtLokacija">
+			<parameter name="@Action" value="2" />
+			<parameter name="@PartneriId" value="#srcPartner" />
+		</data>		
+		<data command="spProNacinIsporukeQuery" name="dtNacinIsporuke">
+			<parameter name="@Action" value="0" />
+		</data>		
+		<data command="spKntNacinPlacQuery" name="dtNacinPlacanja">
+			<parameter name="@Action" value="0" />
+		</data>				
+		<data command="spVrCjenikQuery" name="dtVrCjenik">
+			<parameter name="@Action" value="0" />
+		</data>	
+		<data command="spValuteQuery" name="dtValuta">
+			<parameter name="@Action" value="2" />
+		</data>
+		<data command="spJKatalogTree" name="dtOrgShema">
+			<parameter name="@Action" value="orgshema" />
+		</data>		
+		<data command="spPrnOperaterPogonQuery" name="dtPogon">
+			<parameter name="@Action" value="0" />
+			<parameter name="@OperateriId" value="@@OperateriId" />
+		</data>	
+		<data command="spPorukeQuery" name="dtPoruke">
+			<parameter name="@Action" value="3" />
+			<parameter name="@Id" value="0" />
+			<parameter name="@VrstaPromid" value="110" />
+		</data>
+		<data command="spProPlanProizvodnje_Bilanca" name="dtPrnPlanBilancaMG">
+			<parameter name="@list" value="#grdMaster.selectedids" />
+		</data>
+		<data command="spProPlanProizvodnje_Sirovine" name="dtPrnPlanSirovineMG">
+			<parameter name="@list" value="#grdMaster.selectedids" />
+		</data>
+	</datalist>
+</root>

@@ -1,0 +1,307 @@
+﻿<root version="1.1">
+
+	<form name="frmRadnaMjesta" type="master" caption="Predlošci radnih mjesta"  saveformlayout="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtMaster" />
+		</event>
+		<event type="onshown">
+			<action type="control populate"  value="#grdRadnaMjesta" />
+		</event>
+		<managerlayout>
+			<grid name="grdRadnaMjesta" key="ZNRRadnaMjestaId" type="master" dataname="~dtMaster" preventfocusgroup="false" fieldsmartspaces="false" multiselect="true" bestfitonrefresh="true" savelayout="true">
+				<event type="cellvaluechanged">
+					<action type="datarun nonquery" value="~dtUpdateIndUmirovljeno" />
+					<action type="control populate keepfocus" value="#grdRadnaMjesta" />
+				</event>
+				<fields inherited="true">
+					<field name="RadnoMjesto" caption="Radno mjesto"  fixed="true"/>
+					<field name="PosloviRizik" caption="Poslovi prema procjeni rizika" fixwidth="500" rowautoheight="true"/>
+					<field name="StrucnoOsposobljavanje" caption="Stručno osposobljavanje" fixwidth="500" rowautoheight="true"/>
+					<field name="Clanak" caption="Članak i točka pravilnika" fixwidth="300" rowautoheight="true"/>
+					<field name="IndUmirovljeno" caption="Ne koristi se" editable="true" edittype="bit"/>
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnos" caption="Unesi" begingroup="true">
+					<event type="click">
+						<action type="form open" value="frmPromjenaRM">
+							<parameter name="caption" value="Unos predloška radnog mjesta" />
+							<parameter name="ZNRRadnaMjestaId" value="null"/>
+						</action>
+						<action if="dialogresult!=cancel">
+							<action type="control populate " value="#grdRadnaMjesta" >
+								<action type="control focus" value="#grdRadnaMjesta">
+									<parameter value="$Fokus"/>
+								</action>
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmjena" caption="Izmijeni">
+					<event type="click">
+						<action type="form open" value="frmPromjenaRM">
+							<parameter name="caption" value="Izmjena predloška radnog mjesta" />
+							<parameter name="ZNRRadnaMjestaId" value="#grdRadnaMjesta.@ZNRRadnaMjestaId"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdRadnaMjesta" />
+					</event>
+				</button>
+				<button name="btnBrisanje" caption="Obriši">
+					<event type="click">
+						<action type="confirm" value="Da li ste sigurni da želite obrisati označeni predložak radnog mjesta?">
+							<action type="datarun reader" value="~dtDelete"></action>
+						</action>
+						<action type="control populate" value="#grdRadnaMjesta"></action>
+					</event>
+				</button>
+				<button name="btnKopiraj" caption="Kopiranje predloška" begingroup="true" >
+					<event type="click">
+						<action type="form open" value="frmKopiranjePredloska">
+							<parameter name="caption" value="Kopiranje predloška radnog mjesta" />
+						</action>
+						<action if="dialogresult!=cancel">
+							<action type="control populate " value="#grdRadnaMjesta" >
+								<action type="control focus" value="#grdRadnaMjesta">
+									<parameter value="$FokusK"/>
+								</action>
+							</action>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spZNRRadnaMjesta_Query" name="dtMaster">
+				<parameter name="@Action" value="Master_pregled"/>
+			</data>
+			<data command="spZNRRadnaMjesta_Azur" name="dtDelete">
+				<parameter name="@Action" value="Brisanje" />
+				<parameter name="@ZNRRadnaMjestaId" value="#grdRadnaMjesta.@ZNRRadnaMjestaId" />
+			</data>
+			<data command="spZNRRadnaMjesta_Azur" name="dtUpdateIndUmirovljeno">
+				<parameter name="@Action" value="Update_IndUmirovljeno"/>
+				<parameter name="@ZNRRadnaMjestaId" value="#grdRadnaMjesta.@ZNRRadnaMjestaId"/>
+				<parameter name="@IndUmirovljeno" value="#grdRadnaMjesta.@IndUmirovljeno"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!--* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
+
+	<form name="frmPromjenaRM" caption="$caption" height="300"  width="800" fixedsize="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$ZNRRadnaMjestaId!=null"/>
+		</event>
+		<layout textposition="left" >
+			<group cols="1" rows="9"   groupbordervisible="false">
+				<item caption="Radno mjesto:" row="1" col="1" highlight="false">
+					<comboedit name="cmbRadnoMjesto"  valuefield="HRRadnaMjestaId" displayfield="RadnoMjesto" datavalue="~dtGet.@HRRadnaMjestaId" dataname="~dtRadnoMjesto" required="true" />
+				</item>
+				<item caption="Poslovna jedinica:" row="2" col="1" highlight="false">
+					<searchedit name="srcOrgShema" fieldvalue="OrgShemaId" fieldtext="Naziv" dataname="~dtOrgShema" datavalue="~dtGet.@OrgShemaId" datatext="~dtGet.@Naziv" required="false">
+						<event type="valuechanged">
+							<action type="datarun reader" value="~dtPodaciOvlastenik"  />
+							<action type="control value" value="#srcHRKadrovi"  >
+								<parameter value="~dtPodaciOvlastenik.@HRKadroviId" text="~dtPodaciOvlastenik.@Ovlastenik"/>
+							</action>
+						</event>
+					</searchedit>
+				</item>
+				<item caption="Ovlaštenik poslodavca:" row="3" col="1" highlight="false">
+					<searchedit name="srcHRKadrovi" fieldvalue="HRKadroviId" fieldtext="Ovlastenik" dataname="~dtHRKadrovi" datavalue="~dtGet.@HRKadroviId" datatext="~dtGet.@Ovlastenik" required="false"/>
+				</item>
+				<item caption="Mjesto rada:" row="4" col="1" highlight="false">
+					<comboedit name="cmbMjestoRada"  valuefield="ZNRMjestaRadaId" displayfield="MjestoRada" datavalue="~dtGet.@ZNRMjestaRadaId" dataname="~dtMjestaRada" />
+				</item>
+				<item caption="Poslovi prema procjeni rizika:" row="5" col="1" highlight="false">
+					<combomultiedit name="cmbPosloviRizik"  valuefield="ZNRPosloviRizikId" displayfield="PosloviRizik" datavalue="~dtGet.@ZNRPosloviRizikId" dataname="~dtPosloviRizik" >
+						<event type="valuechanged">
+							<action type="datarun reader" value="~dtPodaciPosloviRizik"  />
+							<action type="datarun reader" value="~dtPodaciPosloviPosebni"  />
+							<action type="datarun reader" value="~dtPodaciStrucnaOsposobljavanja"  />
+							<action type="datarun reader" value="~dtPodaciProvjeraRok"  />
+							<action type="control value" value="#txtPosebniUvjeti"  >
+								<parameter value="~dtPodaciPosloviRizik.@PosebniUvjetiId" />
+							</action>
+							<action type="control value" value="#cmbStrucno"  >
+								<parameter value="~dtPodaciStrucnaOsposobljavanja.@ZNRStrucnaOsposobljavanjaId" text="~dtPodaciStrucnaOsposobljavanja.@Strucno"/>
+							</action>
+							<action type="control value" value="#cmbClanak"  >
+								<parameter value="~dtPodaciPosloviPosebni.@ZNRPosloviPosebniId" text="~dtPodaciPosloviPosebni.@Clanak"/>
+							</action>
+							<action type="control value" value="#txtProvjera"  >
+								<parameter value="~dtPodaciProvjeraRok.@ProvjeraRok" />
+							</action>
+						</event>
+					</combomultiedit>
+				</item>
+				<item caption="Posebni uvjeti rada:" row="6" col="1" highlight="false">
+					<comboedit name="txtPosebniUvjeti" valuefield="PosebniUvjetiId" displayfield="PosebniUvjeti" datavalue="~dtGet.@PosebniUvjetiId" dataname="~dtPosebniUvjeti"   />
+				</item>
+				<item caption="Stručna osposobljavanja:" row="7" col="1" highlight="false">
+					<combomultiedit name="cmbStrucno" valuefield="ZNRStrucnaOsposobljavanjaId" displayfield="Strucno" datavalue="~dtGet.@ZNRStrucnaOsposobljavanjaId" dataname="~dtStrucno" />
+				</item>
+				<item caption="Članak i točka pravilnika:" row="8" col="1" highlight="false">
+					<combomultiedit name="cmbClanak" valuefield="ZNRPosloviPosebniId" displayfield="Clanak" datavalue="~dtGet.@ZNRPosloviPosebniId" dataname="~dtClanak" />
+				</item>
+				<item caption="Rok za ponovnu provjeru sposobnosti(mj):" row="9" col="1" highlight="false">
+					<textedit name="txtProvjera" datavalue="~dtGet.@ProvjeraRok" required="false" />
+				</item>
+			</group >
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun reader" value="~dtIzmjena" if="$ZNRRadnaMjestaId!=null"/>
+						<action type="datarun reader" value="~dtUnos" else="" >
+							<action type="variable value">
+								<parameter name="parent.$Fokus" value="~dtUnos.@Fokus" type="int"/>
+							</action>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"  dock="right"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spZNRRadnaMjesta_Query" name="dtRadnoMjesto">
+				<parameter name="@Action" value="Cmb_RadnaMjesta" />
+				<parameter name="@ZNRRadnaMjestaId" value="$ZNRRadnaMjestaId" />
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtOrgShema">
+				<parameter name="@Action" value="Src_OrgShema" />
+				<parameter name="@Tekst" value="#srcOrgShema.text"/>
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtPodaciOvlastenik">
+				<parameter name="@Action" value="Ovlastenik_PJ"/>
+				<parameter name="@OrgShemaId" value="#srcOrgShema"/>
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtHRKadrovi">
+				<parameter name="@Action" value="Src_HRKadrovi" />
+				<parameter name="@Tekst" value="#srcHRKadrovi.text"/>
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtMjestaRada">
+				<parameter name="@Action" value="Cmb_MjestaRada" />
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtPosloviRizik">
+				<parameter name="@Action" value="Cmb_PosloviRizik" />
+			</data>
+			<data command="spZNRPosloviRizik_Query" name="dtPosebniUvjeti">
+				<parameter name="@Action" value="Cmb_PosebniUvjeti" />
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtStrucno">
+				<parameter name="@Action" value="Cmb_Strucno" />
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtClanak">
+				<parameter name="@Action" value="Cmb_Clanak" />
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtPodaciPosloviRizik">
+				<parameter name="@Action" value="Dohvati_PosebniUvjeti" />
+				<parameter name="@SelectedRizikIds" value="#cmbPosloviRizik" />
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtPodaciStrucnaOsposobljavanja">
+				<parameter name="@Action" value="Dohvati_StrucnaOsposobljavanja" />
+				<parameter name="@SelectedRizikIds" value="#cmbPosloviRizik" />
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtPodaciPosloviPosebni">
+				<parameter name="@Action" value="Dohvati_Clanak" />
+				<parameter name="@SelectedRizikIds" value="#cmbPosloviRizik" />
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtPodaciProvjeraRok">
+				<parameter name="@Action" value="Dohvati_Rok" />
+				<parameter name="@SelectedRizikIds" value="#cmbPosloviRizik" />
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtGet">
+				<parameter name="@Action" value="Dohvati_izmjena" />
+				<parameter name="@ZNRRadnaMjestaId" value="$ZNRRadnaMjestaId" />
+			</data>
+			<data command="spZNRRadnaMjesta_Azur" name="dtUnos">
+				<parameter name="@Action" value="Unos_spremi" />
+				<parameter name="@HRRadnaMjestaId" value="#cmbRadnoMjesto" />
+				<parameter name="@OrgShemaId" value="#srcOrgShema" />
+				<parameter name="@HRKadroviId" value="#srcHRKadrovi" />
+				<parameter name="@ZNRMjestaRadaId" value="#cmbMjestoRada" />
+				<parameter name="@SelectedRizikIds" value="#cmbPosloviRizik" />
+				<parameter name="@PosebniUvjetiId" value="#txtPosebniUvjeti" />
+				<parameter name="@SelectedStrucnoIds" value="#cmbStrucno" />
+				<parameter name="@SelectedPosebniIds" value="#cmbClanak" />
+				<parameter name="@ProvjeraRok" value="#txtProvjera" />
+			</data>
+			<data command="spZNRRadnaMjesta_Azur" name="dtIzmjena">
+				<parameter name="@Action" value="Izmjena_spremi" />
+				<parameter name="@ZNRRadnaMjestaId" value="$ZNRRadnaMjestaId" />
+				<parameter name="@HRRadnaMjestaId" value="#cmbRadnoMjesto" />
+				<parameter name="@OrgShemaId" value="#srcOrgShema" />
+				<parameter name="@HRKadroviId" value="#srcHRKadrovi" />
+				<parameter name="@ZNRMjestaRadaId" value="#cmbMjestoRada" />
+				<parameter name="@SelectedRizikIds" value="#cmbPosloviRizik" />
+				<parameter name="@PosebniUvjetiId" value="#txtPosebniUvjeti" />
+				<parameter name="@SelectedStrucnoIds" value="#cmbStrucno" />
+				<parameter name="@SelectedPosebniIds" value="#cmbClanak" />
+				<parameter name="@ProvjeraRok" value="#txtProvjera" />
+			</data>
+		</datalist>
+	</form>
+
+	<!--* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
+
+	<form name="frmKopiranjePredloska" caption="$caption" height="200"  width="500" fixedsize="true">
+		<layout textposition="left" >
+			<group cols="1" rows="5"   groupbordervisible="false">
+				<item caption="" row="1" col="1" highlight="false">
+					<labeledit name="lblIzvor" value="Predložak radnog mjesta koji je izvor za kreiranje novog predloška:" />
+				</item>
+				<item caption="" row="2" col="1" highlight="false">
+					<comboedit name="cmbIzvorRM"  valuefield="HRRadnoMjestoIzvorId" displayfield="RadnoMjestoIzvor" dataname="~dtRadnaMjestaIzvor" required="true"/>
+				</item>
+				<item caption="" row="3" col="1" highlight="false">
+					<labeledit name="lblCilj" value="Radno mjesto za koje će se kreirati predložak prema odabranom izvoru:" />
+				</item>
+				<item caption="" row="4" col="1" highlight="false">
+					<comboedit name="cmbCiljRM"  valuefield="HRRadnaMjestaId" displayfield="RadnoMjesto" dataname="~dtRadnaMjestaCilj" required="true"/>
+				</item>
+				<item caption="" row="5" col="1" highlight="false" textposition="right" >
+					<checkedit name="chkIndUputnica" caption="kreiraj predložak uputnice prema izvoru" value="1"  />
+				</item>
+			</group >
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnKopiraj" caption="Kopiraj" type="add">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun reader" value="~dtKopiraj" >
+							<action type="variable value">
+								<parameter name="parent.$FokusK" value="~dtKopiraj.@Fokus" type="int"/>
+							</action>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"  dock="right"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spZNRRadnaMjesta_Query" name="dtRadnaMjestaIzvor">
+				<parameter name="@Action" value="Cmb_RadnaMjestaIzvor" />
+			</data>
+			<data command="spZNRRadnaMjesta_Query" name="dtRadnaMjestaCilj">
+				<parameter name="@Action" value="Cmb_RadnaMjesta" />
+			</data>
+			<data command="spZNRRadnaMjesta_Azur" name="dtKopiraj">
+				<parameter name="@Action" value="Kopiranje_spremi" />
+				<parameter name="@Izvor" value="#cmbIzvorRM" />
+				<parameter name="@Cilj" value="#cmbCiljRM" />
+				<parameter name="@IndUputnica" value="#chkIndUputnica" />
+			</data>
+		</datalist>
+	</form>
+
+
+</root>
+

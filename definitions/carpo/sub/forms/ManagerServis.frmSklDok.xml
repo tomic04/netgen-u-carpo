@@ -1,0 +1,166 @@
+<root>
+	<form name="frmSklDokIzmijeni" path="frmSklDokIzmijeni.xml"/>
+    <form name="frmSklDok" caption="Dodaj skladišni dokument" width="350" height="500" fixedsize="true">
+        <event type="oninit">
+			<action type="datarun reader" value="~dtGet" />
+			<action type="variable value">
+				<parameter name="Global.VrstaDokId" value="~dtGet.@VrstaDokId" type="string" />
+			</action>
+			
+        </event>				
+        <event type="shown">
+			<action type="control value" value="txtRN">
+				<parameter value="global.$Broj" type="string" />
+			</action>				
+        </event>				
+        <layout textposition="left" itemspadding="3">
+            <group cols="1" rows="1">
+				<tabs row="1" col="1" padding="4">
+					<group caption="Osnovno" name="tabOsnovno" rows="8" cols="1" row="1" col="1" entermovenextcontrol="true">
+						<item caption="Broj:" row="1" col="1">
+							<textedit name="txtBrojDok" datavalue="~dtGet.@BrojDok" readonly="true" />
+						</item>
+						<item caption="Vrsta dokumenta:" row="2" col="1">
+							<comboedit name="cmbVrstaDok" valuefield="VrstaDokId" displayfield="Opis" datavalue="~dtGet.@VrstaDokId" dataname="dtVrstaDok" required="true" allownull="false"/>
+							<event>
+								<action type="variable value">
+									<parameter name="Global.VrstaDokId" value="#cmbVrstaDok.@VrstaDokId" type="string" />
+								</action>
+							</event>
+						</item>
+						<item caption="Datum:" row="3" col="1">
+							<dateedit name="datDatumdok" datavalue="~dtGet.@DatumDok" required="true" savevalue="session"/>
+						</item>
+						<item caption="Skladište:" row="4" col="1">
+							<comboedit name="cmbSkladiste" valuefield="SkladisteId" displayfield="Opis" dataname="Global.~dtSkladiste" datavalue="~dtget.@SkladisteId" datatext="~dtget.@Skladiste" required="true">
+							</comboedit>
+						</item>
+						<item caption="OrgShema:" row="5" col="1">
+							<combotreeedit name="cmbOrgShema" valuefield="ID" displayfield="Naziv" dataname="global.~dtNositelj" required="true" tabindex="12" datavalue="~dtGet.@RealOrgShemaId" savevalue="app"/>
+						</item>
+						<item caption="Odgovorna osoba:" row="6" col="1">
+							<searchedit name="srcOdgovornaOsoba" dataname="global.~dtOdgovornaOsoba" fieldvalue="OsobeId" fieldtext="Naziv" required="true" tabindex="4" datavalue="~dtGet.@OdgovornaOsobaId" datatext="~dtGet.@OdgovornaOsoba" savevalue="app"/>
+						</item>				
+
+						<item caption="Radni nalog:" row="7" col="1">
+							<textedit name="txtRN" readonly="true" >			
+							</textedit>
+						</item>
+						<item caption="Opis:" row="8" col="1">
+							<textedit name="txtOpis" datavalue="~dtGet.@Opis"/>
+						</item>
+					</group>				
+				</tabs>
+            </group>
+        </layout>
+        <panelbuttons>
+            <buttons>
+                <button name="btnSpremiSklDok" caption="Spremi" type="add" dock="left" function="SpremiSklDok">
+                    <event type="click">
+                        <action type="validate" />
+						<action if="1==1"> <!-- if ako treba neka provjera -->
+							<action type="datarun scalar" value="~dtSktGlaInsert">
+								<parameter name="global.brojskldok" value="~dtSktGlaInsert.@Broj"/>
+								<parameter name="global.sktprometglaid" value="~dtSktGlaInsert.@sktprometglaid"/>
+							</action>
+							<action if="global.$brojskldok!=NULL">
+								<action type="message" value="Skladišni je dokument kreiran"/>	
+								<action type="form close" />
+								<action type="form open" value="frmSklDokIzmijeni">
+									<parameter name="ServisRnGlaId" value="global.$ServisRNGlaId"/>
+									<parameter name="RNvrstadokid" value="global.$rnvrstadokid"/>
+									<parameter name="BrojRN" value="global.$Broj"/>
+									<parameter name="BrojSklDok" value="global.$brojskldok"/>
+									<parameter name="global.sktprometglaid" value="#grdSkladiste.$sktprometglaid"/>
+								</action>
+							</action>
+						
+							<action if="global.$brojskldok==NULL">
+								<action type="message" value="Nije kreiran skladišni dokument" />
+							</action>
+<!-- 							<action if="global.$brojskldok!=NULL">
+									<action type="message" value="Skladišni je dokument kreiran"/>	
+										<action type="form close" />
+										<action type="form open" value="frmSklDokIzmijeni">
+											<parameter name="ServisRnGlaId" value="global.$ServisRNGlaId"/>
+											<parameter name="RNvrstadokid" value="global.$rnvrstadokid"/>
+											<parameter name="BrojRN" value="global.$Broj"/>
+											<parameter name="BrojSklDok" value="global.$brojskldok"/>
+											
+											<parameter name="glboal.$sktprometglaid" value="#grdSkladiste.$sktprometglaid"/>
+										</action>
+									<action type="message" value="!"/>								
+							</action> -->
+							<action type="control populate" value="parent.#grdDetail, parent.#grdskladiste" />	
+						</action>
+							<!-- <action type="control enable" value="parent.#btnFakturiraj" if="global.$FaktureId==null"/> -->
+							<!-- <action type="control disable" value="parent.#btnFakturiraj" if="global.$FaktureId!=null"/> -->
+							
+						<!-- </action> -->
+						<action type="message" value="ako treba neka provjera" else="" />
+                    </event>
+                </button>
+                <button caption="ODUSTANI" type="cancel" dock="right" />
+            </buttons>
+        </panelbuttons>
+        <datalist>
+		<data name="dtGet" command="spServisRNDetQueryCarpo">
+			<parameter name="@Action" value="SkladisniGla"/>
+			<parameter name="@ID" value="$SktPrometGlaId"/>
+		</data>
+			<data command="spServisUnosCarpo" name="dtVrstaDok">
+                <parameter name="@action" value="ServisRNVrstaDok" />
+                <parameter name="@id" value="Global.$RNvrstadokid" />
+            </data>
+<!--             <data command="spServisRNFakturiranjeCarpo" name="dtFakturiraj">
+                <parameter name="@ServisRNGlaId" value="global.$ServisRNGlaId" />
+                <parameter name="@ServisRNBroj" value="#txtBroj" />
+                <parameter name="@DatumDok" value="#datDatumDok" />
+				<parameter name="@DatumIsporuke" value="#datDatumIsporuke" />
+                <parameter name="@PartneriId" value="#srcPartner" />
+                <parameter name="@ParStruId" value="#srcParstru" />
+                <parameter name="@OsobeParId" value="#srcKontakt" />
+				<parameter name="@FaktureId" value="null" />
+				<parameter name="@Broj" value="null" />
+            </data> -->
+			
+			<data command="spSklad_Gla_Unos" name="dtSktGlaInsert">
+				<parameter name="@ID" value="null" />
+				<parameter name="@VrstaDokId" value="#cmbVrstaDok" />
+				<parameter name="@OrgShemaId" value="#cmbOrgShema" />
+				<parameter name="@DatumDok" value="#datDatumDok" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+				<parameter name="@SkladisteId" value="#cmbSkladiste" />
+				<!-- <parameter name="@OrgDok" value="#txtOpis" /> -->
+				<parameter name="@Memo" value="#txtOpis" />
+				<parameter name="@OperaterLock" value="@@operateriid" />
+				<parameter name="@OsobeId" value="#srcOdgovornaOsoba" />
+<!-- 				<parameter name="@HrKadroviId" value="#srcOsoba" if="Global.$VisibleGlaOsoba==True"/>
+				<parameter name="@VozacId" value="#srcVozac" if="Global.$VisibleGlaVozac==True"/>
+				<parameter name="@PartneriId" value="#srcPartner" if="Global.$VisibleGlaPartner==True"/>
+				<parameter name="@ParStruId" value="#srcParStru" if="Global.$VisibleGlaParStru==True"/>
+				<parameter name="@OsobeParId" value="#cmbKontakt" />
+				<parameter name="@Skladiste2Id" value="#cmbSkladisteUlaza" /> -->
+				<parameter name="@RnNaloziId" value="global.$ServisRNGlaId" />
+			</data>	
+		<data command="spServisRNFakturiranjeCarpo" name="dtServisFak">
+			<parameter name="@ServisRNGlaid"  value="global.$ServisRNGlaId" /> 
+		<!-- 	<parameter name="@ServisRNBroj"  value="parent.#txtBroj" /> -->
+			<parameter name="@Faktureid"  value="global.$FaktureId" />
+			<parameter name="@Model"  value="global.$Model" />
+			<parameter name="@KlasaUslugeId"  value="parent.$KlasaUslugeId" />
+		</data>
+		
+
+		<data command="spNG_Combo" name="dtVrstaDokFak">
+			<parameter name="@Action" value="VrstaDok" />
+			<parameter name="@Oznaka" value="30" />
+		</data>
+		<data command="spTraziOsobe" name="dtKontakt">
+			<parameter name="@Action" value="Osobe" />
+			<parameter name="@PartneriId" value="#srcPartner" />
+		</data>
+        </datalist>
+    </form>
+	<form name="frmFakturaIzmjena:frmFakturaIzmjena" path="Faktura.frmFakturaIzmjena.xml" />
+</root>

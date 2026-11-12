@@ -1,0 +1,231 @@
+<root>
+	<!--
+  Komentari:
+  4.11.2025. MP - PERMISSION -> FUNCTION NAME
+  09.11.2021. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmIsprave" caption="Dokumenti, isprave i certifikati za {parent.#txtPrezime} {parent.#txtIme}" width="850" height="350" >
+		<event type="load">
+			<action type="control populate" value="#grdDokumenti"/>		
+			<action type="control disable" value="#btnIzmjena,btnBrisanje" if="#grdDokumenti.rowcount==0"/>
+
+		</event>
+		<layout>
+			<group cols="1" rows="2" groupbordervisible="false">
+				<group cols="1" rows="1" groupbordervisible="true" col="1" row="1" spacing="2,2,2,1">
+					<item row="1" col="1" highlight="false">
+						<grid name="grdDokumenti" key="HRKadroviIspraveId" dataname="~dtIsprave" multiselect="true" savelayout="true" fieldsmartspaces="false" showgrouppanel="false" bestfitonrefresh="true">
+							<fields inherited="true">
+							</fields>
+							<event type="doubleclick">
+								<action type="form open" value="frmUnosIzmjenaIsprave" function="IZMJENA_ISPRAVE">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviIspraveId" value="#grdDokumenti.@HRKadroviIspraveId" />	
+									<parameter name="Caption" value="Izmjena isprave za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdDokumenti"/>	
+								<action type="control populate" value="parent.#grdPodaci"/>	
+							</event>
+						</grid>
+					</item>
+				</group>
+				<group cols="8" rows="1" groupbordervisible="true" col="1" row="2" spacing="2,2,1,2">
+					<item row="1" col="1" highlight="false" height="40">
+						<button name="btnUnos" caption="Unos" function="UNOS_ISPRAVE"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaIsprave"> 
+									<parameter name="Caption" value="Unos isprave za {parent.#txtPrezime} {parent.#txtIme}"/>		
+									<parameter name="HRKadroviIspraveId" value="0"/>   
+									<parameter name="HRKadroviId" value="$HRKadroviId" />	
+
+								</action>  
+								<action type="control populate keepfocus" value="#grdDokumenti"/>	
+								<action type="control populate" value="parent.#grdPodaci"/>	
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="2" highlight="false" height="40" >
+						<button name="btnIzmjena" caption="Izmjena" function="IZMJENA_ISPRAVE"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaIsprave">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviIspraveId" value="#grdDokumenti.@HRKadroviIspraveId" />	
+									<parameter name="Caption" value="Izmjena isprave za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdDokumenti"/>
+								<action type="control populate" value="parent.#grdPodaci"/>	
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="3" highlight="false" height="40">
+						<button name="btnBrisanje" caption="Brisanje" function="BRISANJE_ISPRAVE"> 
+							<event type="click">   
+								<action type="confirm" value="Jeste li sigurni da želite obrisati izabrani zapis?">
+									<action type="datarun nonquery" value="~dtBrisanjeIsprave">
+
+									</action>
+								</action>
+								<action type="control populate" value="#grdDokumenti,parent.#grdPodaci"></action>    
+								<action type="control disable" value="#btnIzmjena,btnBrisanje" if="#grdDokumenti.rowcount==0"/>
+							</event>  
+						</button>
+					</item>
+
+					<item row="1" col="4" colspan="4" highlight="false" height="40"/>
+					<item row="1" col="8" highlight="false" height="40">
+						<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+							<event type="click">
+								<action type="form close" />
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+
+		</layout>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_Isprave_CP" name="dtIsprave">
+				<parameter name="@action" value="grid_Isprave" />
+				<parameter name="@hrkadroviid" value="$HRKadroviId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Isprave_CP" name="dtBrisanjeIsprave">
+				<parameter name="@action" value="brisanje"/>
+				<parameter name="@HRKadroviIspraveId" value="#grdDokumenti.@HRKadroviIspraveId"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!-- FORMA ZA UNOS,IZMJENU-->
+	<form name="frmUnosIzmjenaIsprave" caption="$Caption" width="380" height="390" fixedsize="true">
+		<event type="init">
+			<action  type="datarun reader" value="~dtGetIspraveD" if="$HRKadroviIspraveId!=0"/>
+		</event>
+		<event type="shown">
+			<!-- AKO JE IZMIJENA, POPUNI KONTROLE-->
+			<action if="$Tip=='Izmjena'">
+			<action type="control disable" value="#dtDatumIzdanja" if="~dtGetIspraveD.@DatumIzdavanja==null"></action>
+			<action type="control disable" value="#dtVrijediDo" if="~dtGetIspraveD.@DatumIsteka==null"></action>
+			<action if="~dtGetIspraveD.@DatumIzdavanja==null">
+					<action type="control value" value="#dtDatumIzdanja" >
+						<parameter value="now" />
+					</action>
+				</action>
+				<action if="~dtGetIspraveD.@DatumIsteka==null">
+					<action type="control value" value="#dtVrijediDo" >
+						<parameter value="now" />
+					</action>
+				</action>
+			</action>
+			</event>
+		<layout>
+			<group cols="2" rows="6" groupbordervisible="true">
+				<item row="1" col="1" caption="Dokument:" highlight="false" colspan="2">
+					<comboedit name="cmbDokument" required="true" valuefield="HRIspraveId" displayfield="Naziv"  dataname="dtGetIsprave" datavalue="~dtGetIspraveD.@HRIspraveId"/>
+					  
+				</item>
+				<item row="2" col="1" caption="Izdao:" highlight="false" colspan="2">
+					<textedit name="txtIzdao" datavalue="~dtGetIspraveD.@izdao"/>
+				</item>
+				<item row="3" col="1" caption="Datum izdanja:" highlight="false">
+					<dateedit name="dtDatumIzdanja" value="now" allownull="true" datavalue="~dtGetIspraveD.@DatumIzdavanja">
+					</dateedit>
+				</item>
+				<item row="3" col="2" caption="Datum isteka:" highlight="false">
+					<dateedit name="dtVrijediDo" value="now" allownull="true" datavalue="~dtGetIspraveD.@DatumIsteka">
+					</dateedit>
+				</item>
+				<item row="4" col="1" caption="Broj:" highlight="false" colspan="2">
+					<textedit name="txtBroj" datavalue="~dtGetIspraveD.@Broj"/>
+				</item>
+				<item row="5" col="1" caption="Napomena:" highlight="false" rowspan="2" colspan="2">
+					<memoedit name="memNapomena" datavalue="~dtGetIspraveD.@napomena">
+					</memoedit>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+						<action type="validate"/>
+						<action if="$HRKadroviIspraveId==0">
+							<action type="datarun reader" value="~dtUnosIsprave">
+								<action type="control populate" value="parent.#grdDokumenti">
+									<action type="control focus" value="parent.#grdDokumenti">
+										<parameter value="$noviID"/>
+									</action>
+								</action>
+							</action>
+							<action type="control enable" value="parent.#btnIzmjena,parent.#btnBrisanje"/>
+						</action>
+						<action if="$indGreske==0">
+							<action type="message" value="Uspješno spremljeno!"/>
+							<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+							<action type="variable value" value="global.$RefreshajMaster">
+								<parameter value="1" type="int"/>
+							</action>
+							<action type="form close" />
+						</action>
+						<action if="$HRKadroviIspraveId!=0">
+							<action type="datarun reader" value="~dtIzmjenaIsprave"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+								<action type="variable value" value="global.$RefreshajMaster">
+									<parameter value="1" type="int"/>
+								</action>
+								<action type="form close"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_Isprave_CP" name="dtGetIspraveD">
+				<parameter name="@action" value="getIsprave"/>
+				<parameter name="@HRKadroviIspraveId" value="$HRKadroviIspraveId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Isprave_CP" name="dtGetIsprave">
+				<parameter name="@action" value="hrisprave"/>
+				<parameter name="@hrkadroviid" value="$hrkadroviid" type="int"/>
+				<parameter name="@HRKadroviIspraveId" value="$HRKadroviIspraveId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Isprave_CP" name="dtUnosIsprave">
+				<parameter name="@action" value="unos"/>
+				<parameter name="@HRKadroviIspraveId.output.int" variablename="noviID"/>
+				<parameter name="@hrkadroviid" value="$HRKadroviId"/>
+				<parameter name="@HRIspraveId" value="#cmbDokument"/>
+				<parameter name="@DatumIzdavanja" value="#dtDatumIzdanja"/>
+				<parameter name="@DatumIsteka" value="#dtVrijediDo"/>
+				<parameter name="@Izdao" value="#txtIzdao"/>
+				<parameter name="@Broj" value="#txtBroj"/>
+				<parameter name="@napomena" value="#memNapomena"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Isprave_CP" name="dtIzmjenaIsprave">
+				<parameter name="@action" value="izmjena"/>
+				<parameter name="@HRKadroviIspraveId" value="$HRKadroviIspraveId"/>
+				<parameter name="@hrkadroviid" value="$HRKadroviId"/>
+				<parameter name="@HRIspraveId" value="#cmbDokument"/>
+				<parameter name="@DatumIzdavanja" value="#dtDatumIzdanja"/>
+				<parameter name="@DatumIsteka" value="#dtVrijediDo"/>
+				<parameter name="@Izdao" value="#txtIzdao"/>
+				<parameter name="@Broj" value="#txtBroj"/>
+				<parameter name="@napomena" value="#memNapomena"/>
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+</root>

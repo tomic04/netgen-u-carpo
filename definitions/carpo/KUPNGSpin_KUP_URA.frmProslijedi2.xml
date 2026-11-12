@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+KUPNGSpin_KUP_URA - subforma: PROFORM2 (NetGen) → frmProslijedi2 (Carpo)
+Wizard korak 2: odabir statusa i izvršenje prosljeđivanja.
+-->
+<root version="1.2">
+  <form name="frmProslijedi2" caption="Proslijedi" type="dialog" width="620" height="260" fixedsize="true">
+    <event type="init">
+      <action type="variable value">
+        <parameter name="$OperaterTo" value="$OperaterTo"/>
+      </action>
+    </event>
+
+    <event type="shown">
+      <action type="control populate" value="#cmbOperaterTo,#cmbStatus"/>
+      <action type="control value" value="#cmbOperaterTo">
+        <parameter value="$OperaterTo"/>
+      </action>
+    </event>
+
+    <layout>
+      <group cols="2" rows="2" groupbordervisible="false">
+        <item col="1" row="1" caption="Operater:" textposition="left">
+          <comboedit name="cmbOperaterTo" dataname="~dtOperaterTo" valuefield="OperateriId" displayfield="Naziv" enabled="false"/>
+        </item>
+        <item col="1" row="2" colspan="2" caption="Status:" textposition="left">
+          <comboedit name="cmbStatus" dataname="~dtStatus" valuefield="kupstatusid" displayfield="naziv" required="true"/>
+        </item>
+      </group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnProslijedi" caption="PROSLIJEDI">
+          <event type="click" waittype="progress" waitcaption="Obrada" waittext="Prosljeđujem...">
+            <action type="validate"/>
+            <action type="datarun nonquery" value="~dtProslijedi"/>
+            <action type="form close"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" dock="right">
+          <event type="click">
+            <action type="form close"/>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data name="dtOperaterTo" type="text" timeout="300"
+            command="select operateriid as OperateriId, naziv as Naziv from ssoperateri where operateriid=@id">
+        <parameter name="@id" value="$OperaterTo" type="int"/>
+      </data>
+
+      <data name="dtStatus" type="text" timeout="300"
+            command="select s.kupstatusid, s.opis as naziv
+                    from kupstatus s
+                    inner join kupstatusoperateri o on s.kupstatusid=o.kupstatusid
+                    where o.operateriid=@operaterto
+                    order by s.korak">
+        <parameter name="@operaterto" value="$OperaterTo" type="int"/>
+      </data>
+
+      <data name="dtProslijedi" command="spKUPPrometAzurN" timeout="300">
+        <!-- NetGen: spKUPPrometAzurN @action = 33,@ID=@@id,@OperateriIdFrom=@@operateriid,@OperateriIdTo=@@operaterto,@KupStatusId=@@KUPStatusId,@orgshemaid=@@orgshemaid -->
+        <parameter name="@action" value="33"/>
+        <parameter name="@ID" value="$Id"/>
+        <parameter name="@OperateriIdFrom" value="@@operateriid"/>
+        <parameter name="@OperateriIdTo" value="$OperaterTo"/>
+        <parameter name="@KupStatusId" value="#cmbStatus"/>
+        <!-- TODO: NetGen je slao @orgshemaid (nedefinisano u formi). Ovdje ostavljamo null dok ne potvrdimo izvor vrijednosti. -->
+        <parameter name="@orgshemaid" value="null"/>
+        <parameter name="RaiseInfoMsg" value="true"/>
+      </data>
+    </datalist>
+  </form>
+</root>
+

@@ -1,0 +1,158 @@
+<root version="8.0.0.2">
+	<form name="frmOdabirEmail" caption="Pregled i izbor poruke" savelayout="true" width="600" height="400" statusbar="true">
+		<method name="Sender" dll="Valisend" class="Valisend.ComProvider" method="Send" />
+		<event type="load">
+		</event>
+		<event type="shown">
+			<action type="control populate" value="#grdEmail" />
+		</event>
+		<layout>
+			<group cols="1" rows="1" backgroundcolor="" groupbordervisible="true">
+				<item col="1" row="1" caption="Odabir e-maila:" highlight="false">
+					<grid name="grdEmail" dataname="dtMail" bestfitonrefresh="true" savelayout="true" key="MarAktEmailId">
+						<event type="focusedrowchanged">
+							<action type="menu disable" value="#menEdit,#menDelete" if="#grdEmail.@IndEdit==1" />
+							<action type="menu enable" value="#menEdit,#menDelete" if="#grdEmail.@IndEdit==0" />
+							<action type="datarun scalar" value="~dtSljedeci">
+								<parameter name="idnext" />
+							</action>
+						</event>
+						<fields>
+							<field name="Naslov" caption="Naslov" />
+							<field name="Body" caption="Body" />
+							<field name="Attachment" caption="Prilog" />
+						</fields>
+						<event type="doubleclick">
+							<action type="form open" value="frmEmail">
+								<parameter name="MarAktEmailId" value="#grdEmail.@MarAktEmailId" />
+								<parameter name="Indikator" value="1" />
+								<parameter name="Caption" value="E-mail poruka" />
+							</action>
+						</event>
+						<styles>
+							<style name="fontcolor" value="green" if="#grdEmail.@IndEdit==0" />
+							<style name="fontcolor" value="red" if="#grdEmail.@IndEdit==1" />
+						</styles>
+						<menu showalways="true">
+							<menuitem caption="Editiraj" name="menEdit">
+								<event type="click">
+									<action type="form open" value="frmEmail">
+										<parameter name="MarAktEmailId" value="#grdEmail.@MarAktEmailId" />
+										<parameter name="Indikator" value="2" />
+										<parameter name="Caption" value="Uredi e-mail poruku" />
+									</action>
+									<action type="control populate keepfocus" value="#grdEmail" />
+									<!-- <action type="control refreshvalue" value="#grdEmail" /> -->
+								</event>
+							</menuitem>
+							<menuitem caption="Nova poruka">
+								<event type="click">
+									<action type="form open" value="frmEmail">
+										<parameter name="Indikator" value="3" />
+										<parameter name="Caption" value="Nova e-mail poruka" />
+									</action>
+									<action type="control refreshvalue" value="#grdEmail" />
+								</event>
+							</menuitem>
+							<menuitem caption="Kopiraj">
+								<event type="click">
+									<action type="form open" value="frmEmail">
+										<parameter name="MarAktEmailId" value="#grdEmail.@MarAktEmailId" />
+										<parameter name="Indikator" value="4" />
+										<parameter name="Caption" value="Nova e-mail poruka" />
+									</action>
+									<action type="control refreshvalue" value="#grdEmail" />
+								</event>
+							</menuitem>
+							<menuitem caption="Obriši" name="menDelete">
+								<event type="click">
+									<action type="variable value">
+										<parameter name="IdObrisan" value="#grdEmail.@MarAktEmailId" />
+									</action>
+									<action type="confirm" value="Jeste li sigurni da želite obrisati poruku '{#grdEmail.@Naslov}'?">
+										<action type="datarun nonquery" value="~dtDelete" />
+									</action>
+									<action type="control populate" value="#grdEmail" />
+									<action type="control focus" value="#grdEmail">
+										<parameter value="$idnext" />
+									</action>
+								</event>
+							</menuitem>
+						</menu>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPregled" caption="PREGLED" dock="left">
+					<event type="click">
+						<action type="form open" value="frmEmail">
+							<parameter name="MarAktEmailId" value="#grdEmail.@MarAktEmailId" />
+							<parameter name="Indikator" value="1" />
+							<parameter name="Caption" value="E-mail poruka" />
+						</action>
+					</event>
+				</button>
+				<button name="btnPosalji" caption="ODABERI" dock="left">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtUnosStatusa3" />
+						<action type="method run" value="Sender" waittype="progress" waitcaption="" waittext="Slanje maila u tijeku...">
+							<parameter name="server" value="@@server" />
+							<parameter name="datebase" value="@@database" />
+							<parameter name="IDs" value="global.$SendId" />
+							<parameter name="templateMessageID" value="#grdEmail.@MarAktEmailId" />
+							<parameter name="operatorID" value="@@operateriid" />
+							<parameter name="code" value="global.$MarKanalKod" />
+						</action>
+						<action type="datarun nonquery" value="~dtUnosStatusa4">
+						</action>
+						<action type="control refreshvalue" value="parent.#grdOsobeSlanje" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnPoruka" caption="NOVA PORUKA" dock="left">
+					<event type="click">
+						<action type="form open" value="frmEmail">
+							<parameter name="Indikator" value="3" />
+							<parameter name="Caption" value="Nova e-mail poruka" />
+						</action>
+						<action type="control refreshvalue" value="#grdEmail" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right">
+					<event type="click">
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMarAktEmailQuery" name="dtMail">
+				<parameter name="@Action" value="1" />
+			</data>
+			<data command="spMarAktEmailQuery" name="dtGetMail">
+				<parameter name="@Action" value="2" />
+				<parameter name="@MarAktEmailId" value="#cmbPredlozak" />
+			</data>
+			<data command="spMarAktSendAzur" name="dtUnosStatusa3">
+				<parameter name="@Action" value="5" />
+				<parameter name="@IDs" value="global.$IDs" />
+				<parameter name="@MarKanalKod" value="global.$MarKanalKod" />
+				<parameter name="@SendId" value="global.$SendId" />
+			</data>
+			<data command="spMarAktSendAzur" name="dtUnosStatusa4">
+				<parameter name="@Action" value="6" />
+				<parameter name="@IDs" value="global.$IDs" />
+			</data>
+			<data command="spMarAktEmailAzur" name="dtDelete">
+				<parameter name="@Action" value="3" />
+				<parameter name="@MarAktEmailId" value="#grdEmail.@MarAktEmailId" />
+			</data>
+			<data command="spMarAktEmailQuery" name="dtSljedeci">
+				<parameter name="@action" value="7" type="int" />
+				<parameter name="@MarAktEmailId" value="$IdObrisan" />
+			</data>
+		</datalist>
+		<form name="frmEmail" path="frmEmail.xml" />
+	</form>
+</root>

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+<PROJECT  
+   ONLOAD=":FILTERFORM"  
+      CMD1CAPTION="Parametri:FILTERFORM" 
+      CMD2CAPTION="" 
+      CMD3CAPTION="Ažuriraj:AZURIRAJ" 
+      CMD4CAPTION="" 
+      CMD5CAPTION="Ažuriraj sve:AZURSVE" 
+      CMD6CAPTION="Kartica:KARTICA"   
+      CMD7CAPTION="Lista"   
+      CMD8CAPTION=""
+COMMANDTIMEOUT="600"
+   BUTTONS=""
+	  CHECKBOXVISIBLE="FALSE"
+	  DETCHECKBOXVISIBLE="FALSE"
+      TOTALROWVISIBLE="TRUE"
+      DETTOTALROWVISIBLE="FALSE"
+      REPORT="" 
+	  DETAILGRID = "spMPStanjeKarticaNG @action = 1, @robaid = @@robaid, @prikaz= 0, @trgovinaid = @@trgid, @datumod = @@datum, @datumdo = @@datum, @totalgen= 1,@operateriid = @@operateriid, @samodatum = 1"
+      MASTERDBLCLICK=""
+      POPUPMASTER="Filter:FILTERFORM"
+   PAGEHEADERLEFT="Od @@datumod do @@datumdo"
+   PAGEHEADERRIGHT="@@tkosmomi"
+   SETDEFAULTS="select dbo.fnTkoSmoMi() as tkosmomi">
+
+	<DETAILCOLUMNS>
+		<COLUMN INDEX="" NAME="Količina1200" WIDTH="" CAPTION="Količina" FORMAT="#,##0.0000" VISIBLE="" />
+	</DETAILCOLUMNS>
+	
+	
+  <NAME>Kontrola Zaduženja proizvoda u MP </NAME>
+  <CAPTION>Kontrola Zaduženja proizvoda u MP</CAPTION>
+ 
+  <KOMENTAR> </KOMENTAR>
+
+
+
+
+	<FILTERFORM 
+						   FILLEXPLORER="TRUE" 
+						   REPORT=""  
+						   WIDTH="9000" 
+						   ONSUBMIT="spmpKontrolaProizvodnje2 @action = 1,  " 
+						   ONLOAD="select @@datumod as datumod, @@datumdo as datumdo, @@trgovinaid as trgovinaid, 1 as ne" 
+						   HEIGHT="3500" 
+						   CAPTION="Upišite uvjete pregleda "  
+						   BORDERSTYLE="3" 
+									CMD1CAPTION="Pokaži" 
+									CMD2CAPTION="Odustani" 
+									CMD3CAPTION=""  
+									NEXTFORM=""  >
+
+
+
+
+		<INPUT TYPE="date" 
+					NAME="datumod" 
+						CAPTION="Datum od" 
+					VALUE="DATE2" 
+					HEIGHT="320" 
+					WIDTH="1500" 
+						CHECKBOX="FALSE"/>
+
+		<INPUT TYPE="date" 
+					NAME="datumdo" 
+						CAPTION="Datum do" 
+					VALUE="DATE" 
+					HEIGHT="320" 
+					WIDTH="1500" 
+					CHECKBOX="FALSE"/>
+		<INPUT TYPE="combo" NAME="trgovinaid" ALLOWEMPTY="TRUE" CAPTION="Trgovinaid" ONLOSTFOCUS="" SQL="spmpdajtrgovinaNG @operateriid = @@operateriid" />
+
+		<INPUT TYPE="search" NAME="robaid"  WIDTH="5000" SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid' " ALLOWEMPTY="TRUE" CAPTION="Proizvod:"/>
+
+    <INPUT TYPE="check" NAME="ne"  WIDTH="5000" SQL=" " ALLOWEMPTY="TRUE" CAPTION="Samo neobrađeni:"/>
+  </FILTERFORM>
+
+
+  <AZURIRAJ
+      WIDTH="8700"
+      ONSUBMIT=""
+      ONLOAD="select @@trgid as trgid,@@datum as datum, 1 as ponovi, @@datum as datknjizenja"
+      HEIGHT="4200"
+      CAPTION="Obračun proizvodnje ?"
+      BORDERSTYLE="3">
+
+    <INPUT TYPE="combo" NAME="trgid" CAPTION="Trgovina" HEIGHT="302" WIDTH="4501" ALLOWEMPTY="FALSE" ENABLED="FALSE" STYLE="1"
+				    SQL="spMPDajTrgovinaNG @operateriid = @@operateriid "
+			      ONLOSTFOCUS=""/>
+
+    <INPUT TYPE="date" NAME="datum" CAPTION="Datum " HEIGHT="288" WIDTH="1498" ENABLED="FALSE" STYLE=""
+            ONLOSTFOCUS=""/>
+
+	  <INPUT TYPE="checkbox" NAME="ponovi" CAPTION="Ponovi obračun" ENABLED="FALSE" STYLE="1"/>
+
+    <INPUT TYPE="button" NAME="OK" CAPTION="Obračunaj" TOP="2100" LEFT="800" WIDTH="1400" HEIGHT="322"
+			   ONCLICK="if (select coalesce(indproi,0) from trgovina where trgovinaid = @@trgid) = 0 begin 
+									exec spRaiserror 69001, &apos;Trgovina nema proizvodnju. Nije potreban obračun !!&apos;
+								end 
+								else begin 
+									exec spMPProizvodiNG  @action = 8, @trgovinaid = @@trgid, @datum = @@datum , @operateriid = @@operateriid, @ponovi = @@ponovi, @obrproiz = 1, @indminuskolicina = 1
+								end #OK"  />
+    <INPUT TYPE="button" NAME="Odustani" CAPTION="Odustani" TOP="2100" LEFT="2300" WIDTH="1400" HEIGHT="322" ONCLICK="close"  />
+
+  </AZURIRAJ>
+
+  <AZURSVE
+      WIDTH="5700"
+      ONSUBMIT=""
+      ONLOAD="select 'Želite li ponoviti obračun za sve trgovine ? ' as poruka"
+      HEIGHT="4200"
+      CAPTION="Obračun proizvodnje ?"
+      BORDERSTYLE="3">
+
+    <INPUT TYPE="label" NAME="lbl1" CAPTION="Želite li ponoviti obračun za sve trgovine ? " ENABLED="TRUE" HEIGHT="288" WIDTH="5000" TOP="1000" LEFT="500" SIZE="11" STYLE="1"/>
+
+    <INPUT TYPE="button" NAME="OK" CAPTION="Obračunaj" TOP="2100" LEFT="800" WIDTH="1400" HEIGHT="322"
+			   ONCLICK="exec spmpKontrolaProizvodnje2  @action = 2,  @datumod = @@datumod , @datumdo = @@datumdo,  @trgovinaid = @@trgovinaid , @operateriid = @@operateriid
+								 #OK"  />
+    <INPUT TYPE="button" NAME="Odustani" CAPTION="Odustani" TOP="2100" LEFT="2300" WIDTH="1400" HEIGHT="322" ONCLICK="close"  />
+
+  </AZURSVE>
+
+  <KARTICA
+		FILLEXPLORER="TRUE"
+		WIDTH="15000"
+		ONSUBMIT=""
+		ONLOAD="select userid,naziv from roba where robaid = @@robaid"
+		HEIGHT="8500"
+		CAPTION="Kartica robe -- @@userid - @@naziv"
+		BORDERSTYLE="3">
+
+    <INPUT TYPE="grid"
+			   NAME="kartica"
+			   REFRESHAFTERCHILD="TRUE"
+			   TOP="200" LEFT = "200" WIDTH="16500" HEIGHT="6500"
+			   CHECKBOXVISIBLE="FALSE"
+			   TOTALROW="FALSE"
+			   DETTOTALROWVISIBLE="FALSE"
+			   GROUPBYBOXVISIBLE="TRUE"
+			   SQL="spMPStanjeKarticaNG @action = 1, @robaid = @@robaid, @prikaz= 0, @trgovinaid = @@trgid, @datumod = @@datum, @datumdo = @@datum, @totalgen= 1,@operateriid = @@operateriid, @samodatum = 1" />
+
+    <INPUT TYPE="button" NAME="cancel" TABINDEX="16" CAPTION="Kraj" TOP="7500" LEFT="1000" WIDTH="1400" HEIGHT="322" ONCLICK="close"  />
+  </KARTICA>
+
+
+
+
+
+
+</PROJECT>
+ 

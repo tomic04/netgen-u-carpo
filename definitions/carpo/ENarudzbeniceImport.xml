@@ -1,0 +1,97 @@
+<root>
+  <form type="master" caption = "eNarudžbenice import">
+    <method name="ERacImportDll" dll="MojERacunImportXml" class="MojERacunImportXml.Start" method="CarpoStart" />
+    <method name="Response" dll="MojERacun" class="MojERacun.Start" method="CarpoResponse" />
+    <method name="OpenInvoicePdf" dll="MojERacun" class="MojERacun.Start" method="CarpoInvoicePdf" />
+    <managerlayout>
+      <tree name="tree" autopopulate="true" dataname="~dtTree" caption="Vremenska podjela">
+        <fields>
+          <field name="Name"/>
+        </fields>
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdMaster"/>
+        </event>
+      </tree>
+      <grid name="grdMaster" type="master" autopopulate="true" dataname="~dtMaster" bestfitonrefresh="True">
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdDetalj" />
+        </event>
+      </grid>
+      <grid name="grdDetalj" dataname="~dtDetalj" savelayout="true" bestfitonrefresh="True">
+      </grid>
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnImport" caption="&amp;UVEZI">
+          <dropdownitem caption="Sa &amp;web servisa">
+            <event type="click">
+              <action type="method run" value="ERacImportDll">
+                <parameter name="cs" value="@@connection" />
+                <parameter name="operateriId" value="@@operateriid"/>
+                <parameter name="parameter" value="web"/>
+                <parameter name="vrstaPromSifra" value="0.5" />
+              </action>
+              <action type="control populate" value="#grdMaster"/>
+            </event>
+          </dropdownitem>
+          <dropdownitem caption="Pretraži &amp;sistem">
+            <event type="click">
+              <action type="method run" value="ERacImportDll">
+                <parameter name="cs" value="@@connection" />
+                <parameter name="operateriId" value="@@operateriid"/>
+                <parameter name="parameter" value="sys"/>
+              </action>
+              <action type="control populate" value="#grdMaster"/>
+            </event>
+          </dropdownitem>
+        </button>
+        <button name="btnAttachment" caption="PRI&amp;VITCI" >
+          <event type="click">
+            <action type="method run" value="ERacImportDll">
+              <parameter name="cs" value="@@connection" />
+              <parameter name="operateriId" value="@@operateriid"/>
+              <parameter name="parameter" value="prew"/>
+              <parameter name="id" value="#grdMaster.selectedids" type="string"/>
+              <parameter name="vrstaPromSifra" value="0.5" />
+            </action>
+          </event>
+        </button>
+        <button caption="OBRIŠI" name="btnDelete">
+          <event type="click">
+            <menuitem control="#grdMaster" />
+            <action type="confirm" value="Želite li obrisati označene stavke?"/>
+            <action type="datarun nonquery" value="~dtObrisi" />
+            <action type="control populate" value="#grdMaster" />
+            <action type="control populate" value="#grdDetalj" />
+          </event>
+        </button>
+        <button name="btnResponse" caption="&amp;ODGOVORI" begingroup="true">
+          <event type="click">
+            <action type="message" value="Zbog dorada na servisu Moj-eRačun trenutno nije moguće odgovoriti na eDokument!"/>
+            <!-- <action type="method run" value="Response">
+              <parameter name="cs" value="@@connection" />
+              <parameter name="operateriId" value="@@operateriid"/>
+              <parameter name="id" value="#grdMaster.selectedids"/>
+            </action> -->
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data name="dtTree" type="integrated" command="VremenskaPodjela"/>
+      <data name="dtMaster" command="spEDI_NarUlaz">
+        <parameter name="@Action" value="narudzbenice"/>
+        <parameter name="@DatumOd" value="#tree.@DatumOd"/>
+        <parameter name="@DatumDo" value="#tree.@DatumDo"/>
+      </data>
+      <data  name="dtDetalj" command="spEDI_NarUlaz">
+        <parameter name="@Action" value="detalj"/>
+        <parameter name="@EDI_NarUlazGlaId" value="#grdMaster.@EDI_NarUlazGlaId"/>
+      </data>
+      <data name="dtObrisi" command="spEDI_NarUlaz">
+        <parameter name="@action" value="delete"/>
+        <parameter name="@EDI_NarUlazGlaId" value="#grdMaster.@EDI_NarUlazGlaId"/>
+      </data>
+    </datalist>
+  </form>
+</root>

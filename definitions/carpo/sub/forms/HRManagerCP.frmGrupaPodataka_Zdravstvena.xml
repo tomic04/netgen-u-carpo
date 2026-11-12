@@ -1,0 +1,93 @@
+<root>
+	<!--
+  Komentari:
+  4.11.2025. MP - PERMISSION -> FUNCTION NAME
+  09.11.2021. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmZdravstvena" caption="Zdravstvena knjižica za {parent.#txtPrezime} {parent.#txtIme}" width="400" height="230" fixedsize="true">
+				<event type="init">
+<action type="datarun reader" value="~dtGetZdravstvena" if="$HRKadroviId!=0" />
+		</event>
+		<event type="shown">
+		<!-- AKO JE IZMIJENA, POPUNI KONTROLE-->
+			<action if="$Tip=='Izmjena'">
+			<action type="control disable" value="#dtDatumIzdavanjaZI" if="~dtGetZdravstvena.@DatumIzdavanjaZI==null"></action>
+			<action type="control disable" value="#dtDatumZI" if="~dtGetZdravstvena.@DatumDoZI==null"></action>
+			<action if="~dtGetZdravstvena.@DatumIzdavanjaZI==null">
+					<action type="control value" value="#dtDatumIzdavanjaZI" >
+						<parameter value="now" />
+					</action>
+				</action>
+			<action if="~dtGetZdravstvena.@DatumDoZI==null">
+					<action type="control value" value="#dtDatumZI" >
+						<parameter value="now" />
+					</action>
+				</action>
+			</action>
+		</event>
+		<layout>
+		<group cols="1" rows="4" groupbordervisible="true" spacing="2,2,2,2">
+				<item row="1" col="1" caption="Broj osiguranja" highlight="false" textposition="left">
+					<textedit name="txtBrojOsiguranja" datavalue="~dtGetZdravstvena.@brosiguranja">
+				</textedit>
+				</item>
+				<item row="2" col="1" caption="Matični broj osigurane osobe:" highlight="false" textposition="left">
+					<textedit name="txtMaticniBroj" datavalue="~dtGetZdravstvena.@MBOO"/>
+				</item>
+				<item row="3" col="1" caption="Datum izdavanja ZI:" highlight="false" textposition="left">
+					<dateedit name="dtDatumIzdavanjaZI" value="now" allownull="true" datavalue="~dtGetZdravstvena.@DatumIzdavanjaZI">
+					</dateedit>
+				</item>
+				<item row="4" col="1" caption="ZI vrijedi do:" highlight="false" textposition="left">
+					<dateedit name="dtDatumZI" value="now" allownull="true" datavalue="~dtGetZdravstvena.@DatumDoZI">
+					</dateedit>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left" function="SPREMI_ZDRAVSTVENA">
+					<event type="click">
+						<action type="validate"/>
+						
+						<action if="$HRKadroviId!=0">
+							<action type="datarun reader" value="~dtIzmjena"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<action type="control populate" value="parent.#grdPodaci"/>
+								<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+								<action type="variable value" value="global.$RefreshajMaster">
+									<parameter value="1" type="int"/>
+								</action>
+								<action type="form close"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+		<data command="spHRManagerMaster_Podaci_Zdravstvena_CP" name="dtGetZdravstvena">
+				<parameter name="@action" value="getZdravstvena" />
+				<parameter name="@HRKadroviId" value="$HRKadroviId" type="int"/>
+			</data>
+			<data  command="spHRManagerMaster_Podaci_Zdravstvena_CP" name="dtIzmjena">
+				<parameter name="@action" value="izmjena"/>
+				<parameter name="@HRKadroviId" value="$HRKadroviId"/>
+				<parameter name="@brosiguranja"  value="#txtBrojOsiguranja" />
+				<parameter name="@mboo"  value="#txtMaticniBroj" />
+				<parameter name="@datumizdavanjazi" value="#dtDatumIzdavanjaZI"/>
+				<parameter name="@datumdozi"  value="#dtDatumZI" />
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+</root>

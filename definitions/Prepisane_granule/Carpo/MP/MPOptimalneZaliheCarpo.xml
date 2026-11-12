@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+
+<root version="1.0.0.1" loglevel="0">
+
+	<form name="frmMaster" type="master" caption="Ažuriranje optimalnih zaliha asortimana MP trgovina" width="500">
+		<event type="init">
+			<action type="variable value">
+				<parameter name="Global.var" value="0"/>
+			</action>
+		</event>
+
+		<event type="shown">
+			<action type="control populate" value="#trTree"/>
+		</event>
+
+		<event type="load">
+		</event>
+
+		<layout>
+			<group rows="2" cols="1" groupbordervisible="false">
+
+				<group row="1" col="1" rows="4" cols="8">
+					<item row="1" col="1" colspan="2" caption="Trgovina">
+						<comboedit name="cmbTrgovina" displayfield="Naziv" valuefield="trgovinaid" dataname="~dtTrgovina" >
+						</comboedit>
+					</item>
+					<item row="1" col="3" colspan="2" caption="Roba">
+						<searchedit name="srcRoba"  fieldtext="NazivId" fieldvalue="robaid" dataname="~dtRoba" datavalue="" datatext="" netgenfields="true">
+						</searchedit>
+					</item>	
+
+					<item row="1" col="5" caption="">
+						<checkedit caption="Samo roba u akciji" name="cheAkcija">
+						</checkedit>
+					</item>	
+					<item row="1" col="6" caption="">
+						<button name="btnMore" caption="Više robe">
+							<event type="click">
+								<action type="message" value="'Molimo odaberite prvo trgovinu'" if="#cmbTrgovina=='null'" >
+								</action>
+								<action type="form open" value="frmRoba" else="">
+									<parameter name="trgovinaid" value="#cmbTrgovina"/>
+								</action>
+							</event>
+						</button>
+					</item>
+					<item row="2" col="1" caption="Dana prometa za dnevni prosjek">
+						<textedit name="txtpromet" value= "0" format="n0" datavalue="" textposition=""  >
+						</textedit>
+					</item>	
+					<item row="2" col="2" caption="Dana za optimalnu zalihu">
+						<textedit name="txtdana" value= "0" format="n0" datavalue="" textposition="" >
+						</textedit>
+					</item>	
+					<item row="2" col="3"  colspan="2" caption="Dodatna klasa">
+						<combotreeedit name="cmbMKlasa" valuefield="klrobaid" displayfield="Dodatna klasa"  dataname="dtMKlasa" datavalue="" >
+						</combotreeedit>
+					</item>		
+					<item row="2" col="5" caption="">
+						<checkedit caption="Pokaži i podklase" name="chePodKl">
+						</checkedit>
+					</item>	
+					<item row="2" col="6" caption="">
+						<checkedit caption="Zakruži na pakiranje" name="chePak" enabled="false" visible="">
+						</checkedit>
+					</item>	
+					<item row="2" col="7" caption="">
+						<button name="btnShow" caption="Pokaži">
+							<event type="click">
+							<action type="control populate" value="#grdMaster" waittype="progress" waitcaption="Obrada" waittext="Dohvat podataka..." />
+							</event>
+						</button>
+					</item>	
+					<item row="3" col="1" textposition="" caption="Period prometa za dnevni prosjek od">
+						<dateedit name="datod" required="true" value="" datavalue="" enabled="false">
+						</dateedit>
+					</item>	
+					<item row="3" col="2" textposition="" caption="do">
+						<dateedit name="datdo" required="true" value="" datavalue="" enabled="false">
+						</dateedit>
+					</item>	
+					<rowsdefinition>
+						<row position="1" size="40"/>
+						<row position="2" size="40"/>
+						<row position="3" size="40"/>
+						<row position="4" size="100%"/>
+					</rowsdefinition>
+					<columnsdefinition>
+						<column position="1" size="200"/>
+						<column position="2" size="200"/>
+						<column position="3" size="250"/>
+						<column position="4" size="150"/>
+						<column position="5" size="150"/>
+						<column position="6" size="150"/>
+						<column position="7" size="150"/>
+						<column position="8" size="100%"/>
+					</columnsdefinition>					
+				</group>
+
+				<group row="2" col="1" rows="1" cols="2">
+					<group row="1" col="1" rows="1" cols="1">
+						<item row="1" col="1">
+							<tree name="trTree" dataname="dtTree" key="id" expandallonload="true">
+								<event type="" raiseonload="false">
+								</event>
+								<fields>
+									<field name="caption" />
+								</fields>
+							</tree>
+						</item>
+					</group>
+
+					<group row="1" col="2" rows="1" cols="1">
+						<item row="1" col="1">
+							<grid name="grdMaster" dataname="dtZaliha" netgenfields="true" keyfield="robaid" bestfitonrefresh="true">
+								<fields>
+								</fields>
+							</grid>
+						</item>
+					</group>
+					<columnsdefinition>
+						<column position="1" size="25%"/>
+						<column position="2" size="75%"/>
+					</columnsdefinition>
+
+				</group>
+				<rowsdefinition>
+					<row position="1" size="15%"/>
+					<row position="2" size="85%"/>
+				</rowsdefinition>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnAdd" caption="Spremi izmjene">
+					<event type="click">
+					</event>
+				</button>
+				<button name="btnCancel" caption="Odustani" type="cancel">
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spTreeKlMasterRoba" name="dtTree">
+			</data>
+			<data command="spmpdajtrgovinang" name="dtTrgovina">
+				<parameter name="@operateriid" value="@@operateriid" />
+			</data>
+			<data command="spMPRobaZaMPNG" name="dtRoba">
+				<parameter name="@trgovinaid" value="" />
+				<parameter name="@trazi" value="#srcRoba.text" />
+			</data>
+			<data command="select klrobaid, (left('          ', len(rtrim(sortkey))) +' ' + naziv) as [Dodatna klasa]  from klroba where klklrobaid = 10 order by sortkey"  type="text" name="dtMKlasa">
+			</data>
+			<data command="spmpOptimalneZaliheTest2" name="dtZaliha">
+				<parameter name="@action" value="1" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@trgovinaid" value="#cmbTrgovina" />
+				<parameter name="@KlasaID" value="#trTree.@value" />
+				<parameter name="@danaprometa" value="#txtpromet" type="int"/>
+				<parameter name="@danazalihe" value="#txtdana" type="int"/>
+				<parameter name="@pakovanje" value="#chePak" />
+				<parameter name="@robaid" value="#srcRoba" />
+				<parameter name="@dodklasaid" value="#cmbMKlasa" />
+				<parameter name="@akcija" value="#cheAkcija" />
+				<parameter name="@dodpodklasa" value="#chePodKl" />
+				<parameter name="@datodprom" value="#datod" />
+				<parameter name="@datdoprom" value="#datdo" />
+			</data>
+			<data command="update parasortimanstru set kolicina = @kolicina where parasortimanstruid = @stavke" type="text" name="dtSpremi">
+				<parameter name="@kolicina" value="#grdMaster.Optimalna__za_ažuriranje" />
+				<parameter name="@stavke" value="#grdMaster" />
+			</data>
+		</datalist>
+
+
+	</form>
+
+	<form name="frmRoba" caption="Odabir artikala za asortiman">
+		<event type="init">
+		</event>
+		<event type="load">
+		</event>
+		<event type="shown">
+		</event>
+		<layout>
+			<group rows="4" cols="3">
+				<item row="1" col="1" colspan="2" caption="Roba">
+					<searchedit name="srcRoba"  fieldtext="NazivId" fieldvalue="robaid" dataname="~dtRoba" datavalue="" datatext="" netgenfields="true">
+						<event type="valuechanged">
+							<action type="datarun reader" value="~dtKontrolaRoba" if="#srcRoba!='null'&amp;&amp;#srcRoba!=999999999">
+							</action>
+						</event>
+					</searchedit>
+				</item>
+				<item row="2" col="1" caption="">
+					<button name="btnAdd" caption="Dodaj">
+						<event type="click">
+							<action type="datarun nonquery" value="~dtAdd" if="#srcRoba!='null'&amp;&amp;#srcRoba!=999999999">
+							</action>
+							<action type="control populate" value="#grdRoba"/>
+						</event>
+					</button>
+				</item>
+				<item row="3" col="1" colspan="2">
+					<grid name="grdRoba" dataname="dtStavke" netgenfields="true" keyfield="robaid" bestfitonrefresh="true">
+						<fields>
+						</fields>
+					</grid>
+				</item>
+				<rowsdefinition>
+					<row position="2" size="40"/>
+					<row position="3" size="300"/>
+					<row position="4" size="100%"/>
+				</rowsdefinition>
+				<columnsdefinition>
+					<column position="1" size="200"/>
+					<column position="2" size="200"/>
+					<column position="3" size="100%"/>
+				</columnsdefinition>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnEnd" caption="Kraj odabira">
+					<action type="form close" />
+				</button>
+				<button name="btnDel" caption="Obriši">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtDel">
+						</action>
+						<action type="control populate" value="#grdRoba"/>
+					</event>
+				</button>
+				<button name="btnDelAll" caption="Obriši sve">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtDelAll" >
+						</action>
+						<action type="control populate" value="#grdRoba"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spMPRobaZaMPNG" name="dtRoba">
+				<parameter name="@trgovinaid" value="" />
+				<parameter name="@trazi" value="#srcRoba.text" />
+			</data>
+			<data command="spmpKontrolaOdabraneRobeNG" name="dtKontrolaRoba">
+				<parameter name="@robaid" value="#srcRoba" />
+			</data>
+			<data command="spmpOptimalneZaliheTest2" name="dtAdd">
+				<parameter name="@action" value="5" />
+				<parameter name="@trgovinaid" value="$trgovinaid" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@robaid" value="#srcRoba" />
+			</data>
+			<data command="spmpOptimalneZaliheTest2" name="dtDel">
+				<parameter name="@action" value="6" />
+				<parameter name="@trgovinaid" value="$trgovinaid" />
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@robaid" value="#grdRoba.@robaid" />
+			</data>
+			<data command="spmpOptimalneZaliheTest2" name="dtDelAll">
+				<parameter name="@action" value="7" />
+				<parameter name="@trgovinaid" value="$trgovinaid" />
+				<parameter name="@operateriid" value="@@operateriid" />
+			</data>
+			<data command="spmpOptimalneZaliheTest2" name="dtStavke">
+				<parameter name="@action" value="4" />
+				<parameter name="@trgovinaid" value="$trgovinaid" />
+				<parameter name="@operateriid" value="@@operateriid" />
+			</data>
+		</datalist>
+	</form>
+
+</root>

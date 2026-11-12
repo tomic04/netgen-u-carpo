@@ -1,0 +1,210 @@
+<root>
+	<!--	********** GLAVNA FORMA *************	-->
+
+  <form name="frmNaziv" type="master" caption="Praznici" width="800" height="800">
+
+    <managerlayout>
+      <!--filter drveta-->
+      <lookup name="cmbFilter">
+        <comboitem value="VremenskaPodjela" />
+      </lookup>
+      <!--drvo-->
+      
+      <!--caption zamjenjuje filter tree; ukoliko nije naveden prikzuje se tekst unutar captiona -->
+      <tree name="tree" caption="Godine" expandallonload="True" dataname="dtTree" valuefield="Id" allowdrop="false">
+        <!-- Pri promjeni vrijednosti na drvetu osvježi mi podatke na gridu -->
+        <event type="focusedrowchanged">
+          <action type="control populate" value="#grdGrid"/>
+        </event>
+        <fields>
+          <field name="Naziv" />
+        </fields>
+      </tree>
+      
+      
+      <!--glava grid-->
+      <!--master je obavezan atribut ukoliko na manageru imamo 2 grida-->
+      <grid name="grdGrid" dataname="dtGrid" key="HRPrazniciId" type="master" bestfitonrefresh="True"	multiselect="true" allowdrag="false">
+				<!-- Enable/disable buttona, ovisno da li u gridu ima barem jedan zapis ili ne -->
+				<event type="focusedrowchanged">
+					<action type="control enable" value="#btnIzmijeni,#btnObrisi" if="#grdGrid.rowcount!=0"/>
+					<action type="control disable" value="#btnIzmijeni,#btnObrisi" else=""/>
+				</event>
+				<fields inherited="true">
+					<field name="Naziv" fontbold="true"/>
+				</fields>
+			</grid>
+     
+    </managerlayout>
+    <panelbuttons>
+      <buttons>
+        <button name="btnUnesi" caption="UNESI" type="add" image="add">
+          <event type="click">
+            <action type="form open" value="frmPraznici"/>
+            <action type="control populate" value="#grdGrid" />
+          </event>
+        </button>
+        <button name="btnIzmijeni" caption="&amp;IZMIJENI" type="edit" image="edit" >
+          <menuitem control="#grdGrid"/>
+          <event type="click">
+            <action type="form open" value="frmPraznici">
+              <parameter name="HRPrazniciId" value="#grdGrid.@HRPrazniciId" />
+            </action>
+            <action type="control populate keepfocus" value="#grdGrid" />
+          </event>
+        </button>
+        <button name="btnObrisi" caption="OBRIŠI" type="delete" image="delete" >
+          <menuitem control="#grdGrid"/>
+          <event type="click">
+            <!-- Ako se potvrdno odgovori na poruku odvija se nestani kod (brisanje zapisa) -->
+            <action type="confirm" value="Želite li obrisati praznik '{#grdGrid.@Naziv}' ?">
+              <action type="datarun nonquery" value="~dtDelete" />
+            </action>
+            <action type="control populate" value="#grdGrid" />
+          </event>
+        </button>
+
+        <button name="btnPopuni" caption="POPUNI PRAZNIKE" type="add" image="">
+          <event type="click">
+            <action type="form open" value="frmPopuni">
+              <parameter name="godina" value="#tree.@Naziv" />
+            </action>/>
+            <action type="control populate" value="#grdGrid" />
+          </event>
+        </button>
+        
+      </buttons>
+    </panelbuttons>
+
+
+    <!-- datalist -->
+    <datalist>
+      <data command="spHRPrazniciCarpo_All" name="dtTree">
+        <parameter name="@Action" value="tree"/>
+      </data>
+
+      <data command="spHRPrazniciCarpo_All" name="dtGrid">
+        <parameter name="@Action" value="praznici"/>
+        <parameter name="@godina" value="#tree.@Id" if="#tree.level==0" />
+      </data>
+
+      <data command="spHRPrazniciCarpo_All" name="dtDelete">
+        <parameter name="@Action" value="brisanje"/>
+        <parameter name="@selectedids" value="#grdGrid.selectedids"/>
+      </data>
+
+    </datalist>
+  </form>
+
+
+  <form name="frmPraznici" caption="PRAZNICI">
+    <!-- na inicijalizaciji forme okidaju se podaci potrebni da kontrole poprime vrijednosti za izmijenu (u slučaju da smo na formi za izmijenu - IF)-->
+    <event type="init">
+      <action type="datarun reader" value="~dtGet" if="$HRPrazniciId!=null"/>
+    </event>
+    
+    
+    <layout textposition="left">
+      <group cols="1" rows="2" >
+        <item caption="Naziv:" col="1" row="1" >
+          <textedit name="txtNaziv" required="true" nulltext="Naziv praznika" datavalue="#dtGet.@Naziv"/>
+        </item>
+        <item caption="Datum:" col="1" row="2">
+          <dateedit name="datDatum" datavalue="#dtGet.@datum" required="true"/>
+        </item>
+        
+      </group>
+    </layout>
+    
+    <datalist>
+      <data command="spHRPrazniciCarpo_All" name="dtAdd">
+        <parameter name="@Action" value="unos"/>
+        <parameter name="@Naziv" value="#txtNaziv"/>
+        <parameter name="@Datum" value="#datDatum"/>
+      </data>
+      <data command="spHRPrazniciCarpo_All" name="dtEdit">
+        <parameter name="@Action" value="izmjena"/>
+        <parameter name="@Id" value="$HRPrazniciId"/>
+        <parameter name="@Naziv" value="#txtNaziv"/>
+        <parameter name="@Datum" value="#datDatum"/>
+      </data>
+      <data command="spHRPrazniciCarpo_All" name="dtGet">
+        <parameter name="@Action" value="Praznik"/>
+        <parameter name="@Id" value="$HRPrazniciId"/>
+      </data>
+    </datalist>
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="SPREMI">
+          <event type="click">
+            <!-- Provjeri required fields -->
+            <action type="validate" />
+            <!-- Okini storu -->
+            <action type="datarun nonquery" value="~dtEdit" if="$HRPrazniciId!=null"/>
+            <action type="datarun nonquery" value="~dtAdd" else="" />
+            <!-- Osvježi grid na parent formi -->
+            <action type="control populate" value="parent.#grdGrid"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+      </buttons>
+    </panelbuttons>
+  </form>
+
+
+  <form name="frmPopuni" caption="POPUNJAVANJE PRAZNIKA">
+    <event type="load">
+      <action type="control value" value="#txtGodinaOd">
+        <parameter value="$godina"></parameter>
+      </action>
+      <action type="control value" value="#txtGodinaDo">
+        <parameter value="$godina"></parameter>
+      </action>
+    </event>
+    
+    
+    <layout textposition="left">
+      <group cols="1" rows="3" >
+        <item caption="Od godine:" col="1" row="1" >
+          <textedit name="txtGodinaOd" required="true"  value="" format="n0"/>
+        </item>
+        <item caption="Do godine:" col="1" row="2" >
+          <textedit name="txtGodinaDo" required="true"  value="" format="n0"/>
+        </item>
+        <item  col="1" row="3" >
+          <checkedit caption="Ažuriraj kalendar" name="indUpdateKalendar"  value="true" fontsizedelta="1" />
+        </item>
+
+      </group>
+    </layout>
+
+    <datalist>
+      <data command="spHRPrazniciNapuni" name="dtPopuni">
+        <parameter name="@godinaod" value="#txtGodinaOd" type="int"/>
+        <parameter name="@godinado" value="#txtGodinaDo" type="int"/>
+        <parameter name="@indUpdateKalendar" value="#indUpdateKalendar"/>
+      </data>
+      
+    </datalist>
+    <panelbuttons>
+      <buttons>
+        <button name="btnPopuni" caption="POPUNI">
+          <event type="click">
+            <!-- Provjeri required fields -->
+            <action type="validate" />
+            <!-- Okini storu -->
+            <action type="datarun nonquery" value="~dtPopuni"/>
+
+            <action type="control populate" value="parent.#tree"/>
+            <!-- Osvježi grid na parent formi -->
+            <action type="control populate" value="parent.#grdGrid"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+      </buttons>
+    </panelbuttons>
+  </form>
+
+
+
+</root>

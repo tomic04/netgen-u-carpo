@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+
+<root version="1.0.0.2" loglevel="0">
+
+	<form name="frmMaster" type="master" caption="MP Otpremnica">
+
+		<event type="init">
+			<action type="datarun reader" value="global.dtPubVars"/>
+			<action type="datarun reader" value="global.dtVrstaDok"/>
+			<action type="datarun reader" value="global.dtPremmision"/>
+			<action type="variable value">
+				<parameter name="DatumOd" value="now" type="date"/>
+				<parameter name="DatumDo" value="now" type="date"/>
+				<parameter name="TrgovinaId" value="null" type="int"/>
+				<parameter name="Status" value="null" type="int"/>
+			</action>
+		</event>
+
+		<managerlayout>
+
+			<lookup name="filter">
+				<comboitem value="Vremenska podjela"/>
+				<comboitem value="Operater"/>
+				<comboitem value="Status"/>
+			</lookup>
+
+			<tree name="trTree" dataname="dtTree" key="id">
+				<fields>
+					<field name="Name"/>
+				</fields>
+
+				<event type="focusedrowchanged">
+					<action type="variable value">
+						<parameter name="DatumOd" value="#trTree.@datumod" />
+						<parameter name="DatumDo" value="#trTree.@datumdo" />
+						<parameter name="TrgovinaId" value="null" />
+						<parameter name="Status" value="null" />
+					</action>
+					<action type="control populate" value="#grdMaster" />
+
+				</event>
+			</tree>
+
+
+			<grid name="grdMaster" type="master" dataname="~dtMaster" id="maloprodajaglaid" netgenfields="true">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetail" />
+					<!-- kontrole -->
+					<action type="menu disable" value="#menOtkljucaj" if="#grdMaster.rowcount==0||#grdMaster.@Status=='Nezaključen'"  />
+					<action type="menu enable" value="#menOtkljucaj" else=""  />
+
+					<action type="menu disable" value="#menZakljucaj" if="#grdMaster.rowcount==0||#grdMaster.@Status=='Zaključen'"  />
+					<action type="menu enable" value="#menZakljucaj" else=""  />
+
+					<action type="menu disable" value="#menIzmjeni" if="#grdMaster.@Status=='Zaključen'"  />
+					<action type="menu enable" value="#menIzmjeni" else=""  />
+
+					<action type="menu disable" value="#menStorno" if="#grdMaster.@Storno0600=='S'||#grdMaster.@Status=='Nezaključen'"  />
+					<action type="menu enable" value="#menStorno" else=""  />
+
+
+					<action type="control disable" value="#btnPrint" if="#grdMaster.rowcount==0||#grdDetail.rowcount==0" />
+					<action type="control enable" value="#btnPrint" else="" />
+
+					<action type="control disable" value="#btnZakljui" if="#grdMaster.rowcount==0||#grdMaster.@Status=='Zaključen'||#grdDetail.rowcount==0"  />
+					<action type="control enable" value="#btnZakljui"  else="" />
+
+					<action type="control disable" value="#btnIzmjeni" if="#grdMaster.@Status=='Zaključen'||#grdMaster.rowcount==0"  />
+					<action type="control enable" value="#btnIzmjeni"  else="" />					
+				</event>
+
+				<event type="doubleclick">
+					<action type="form open" value="frmIzmjeni" if="#grdMaster.@Status!='Zaključen'"/>
+				</event>
+
+				<fields>
+				</fields>
+
+				<menu>
+					<!-- meni na masteru -->
+					<menuitem name="menOtkljucaj" caption="OTKLJUČAJ" sort="1">
+						<event type="click">
+							<action type="confirm" value="Želite li sigurno otključati otpremnicu broj {#grdMaster.@Broj Dokumenta} ?"/>
+							<action type="datarun nonquery" value="~dtOkljucaj">
+								<action type="control refreshvalue" value="#grdMaster"/>
+							</action>
+						</event>
+					</menuitem>
+					<menuitem name="menZakljucaj" caption="ZAKLJUČI" sort="2">
+						<event type="click">
+							<action type="confirm" value="Želite li sigurno zaključiti otpremnicu broj {#grdMaster.@Broj Dokumenta} ?"/>
+							<action type="datarun nonquery" value="~dtZakljuci">
+								<action type="control refreshvalue" value="#grdMaster"/>
+							</action>
+						</event>
+					</menuitem>
+					<menuitem name="menStorno" caption="STORNO" sort="3">
+						<event type="click">
+							<action type="confirm" value="Želite li sigurno stornirati otpremnicu broj {#grdMaster.@Broj Dokumenta} ?"/>
+							<action type="datarun nonquery" value="~dtStorno">
+								<action type="control refreshvalue" value="#grdMaster"/>
+							</action>
+						</event>
+					</menuitem>
+					<menuitem name="menParametar" caption="PARAMETRI" sort="4">
+						<event type="click">
+							<action type="form open" value="frmParametri"/>
+						</event>
+					</menuitem>
+					<menuitem name="menIzmjeni" caption="IZMJENI" sort="5">
+						<event type="click">
+							<action type="form open" value="frmIzmjeni"/>
+						</event>
+					</menuitem>
+				</menu>
+
+				<styles>
+					<style name="fontcolor" value="red" if="#grdMaster.@Status=='Nezaključen'&amp;&amp;#grdMaster.@Datum1000&lt;'now'" />
+					<style name="fontcolor" value="green" if="#grdMaster.@Status=='Zaključen'" />
+
+				</styles>
+
+			</grid>
+
+			<grid name="grdDetail" dataname="~dtGrid" netgenfields="true">
+				<fields>
+				</fields>
+			</grid>
+
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnParamtri" caption="Parametri">
+					<event type="click">
+						<action type="form open" value="frmParametri"/>
+						<action type="control populate keepfocus" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnDodaj" caption="Dodaj">
+					<event type="click">
+						<action type="form open" value="frmDodaj"/>
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnIzmjeni" caption="Izmjeni">
+					<event type="click">
+						<action type="form open" value="frmIzmjeni">
+							<parameter name="id" value="#grdMaster.@maloprodajaglaid"/>
+							<parameter name="partneriid" value="#grdMaster.@partneriid"/>
+							<parameter name="nenc" value="~dtPremmision.@nenc"/>
+						</action>
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnZakljui" caption="Zaključi">
+					<event type="click">
+						<action type="confirm" value="Želite li sigurno zaključiti otpremnicu broj {#grdMaster.@Broj}?"/>
+						<action type="datarun nonquery" value="~dtZakljuci">
+							<action type="control populate" value="#grdMaster"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnPrint" caption="Print dok.">
+					<event type="click" >
+						<action type="datarun nonquery" value="~dtKontrolaPartner"/>
+						<action type="control printcontrol" value="#grdMaster"/>
+					</event>
+				</button>
+			</buttons>		
+		</panelbuttons>
+
+		<datalist>
+			<data command="VremenskaPodjela" type="integrated" name="dtTree" if="#filter==Vremenska podjela"/>
+
+			<data command="spmp_CarpoFilterQuery" name="dtTree">
+				<!-- drvo query -->
+				<parameter name="@action" value="#filter"/>,
+				<parameter name="@sifra" value="~dtVrstaDok.@Sifra"/>
+			</data>
+			<data command="spMPQueryGlaIDetNG" name="dtMaster">
+				<!-- master query -->
+				<parameter name="@action" value="1"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@sifradok" value="~dtVrstaDok.@Sifra"/>
+				<parameter name="@datumod" value="$datumod"/>
+				<parameter name="@datumdo" value="$datumdo"/>
+				<parameter name="@kredit" value="null"/>
+				<parameter name="@trazi" value="%-BB%"/>
+				<parameter name="@nenc" value="~dtPremmision.@nenc"/>
+				<parameter name="@status" value="$status" />
+				<parameter name="@trgovinaid" value="$trgovinaid" />
+			</data>
+			<data command="spMPQueryGlaIDetNG" name="dtGrid">
+				<!-- grid query -->
+				<parameter name="@action" value="2"/>
+				<parameter name="@id" value="#grdMaster.@maloprodajaglaid"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@sifradok" value="~dtVrstaDok.@Sifra"/>
+				<parameter name="@nenc" value="~dtPremmision.@nenc"/>
+			</data>
+			<data command="spmpzakljucidokNG" name="dtZakljuci">
+				<parameter name="@id" value="#grdMaster.@maloprodajaglaid"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+			</data>
+			<data command="spMPOdkljucajDokNG" name="dtOkljucaj">
+				<parameter name="@id" value="#grdMaster.@maloprodajaglaid"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+			</data>
+			<data command="spMPStornoDOkNG" name="dtStorno">
+				<parameter name="@action" value="1"/>
+				<parameter name="@id" value="#grdMaster.@maloprodajaglaid"/>
+				<parameter name="@operateriid" value="@@operateriid" />
+				<parameter name="@poruka" value ="1"/>
+			</data>	
+			<data command="spmpKontrolaOdabranogPartneraNG" name="dtKontrolaPartner">
+				<parameter name="@action" value="0"/>
+				<parameter name="@id" value="#grdMaster.@maloprodajaglaid"/>
+				<parameter name="@ispis" value="1" />
+			</data>	
+		</datalist>
+
+	</form>
+
+	<datalist>
+		<data command="select p.VrstaPromId as VrstaPromId, d.VrstaDokId as VrstaDokId, p.Sifra as Sifra, d.kolicinaminus as predznak from VrstaProm p join VrstaDok d on p.VrstaPromId = d.VrstaPromId where d.VrstaDokId = '228'" type="text" name="dtVrstaDok" />
+		<data command="spDajPubVarse" name="dtPubVars" />
+		<data command="spmpPermissionNG" name="dtPremmision" >
+			<parameter name="@action" value="0"/>
+			<parameter name="@operateriid" value="@@operateriid" />
+			<parameter name="@object" value="MPOtpremnicaBB.xml" />
+			<parameter name="@sifradok" value="~dtVrstaDok.@Sifra" />
+			<parameter name="@trazi" value="%-BBC%" />
+		</data>
+	</datalist>
+
+	<form name="frmParametri" path="frmParametri.xml"/>
+	<form name="frmDodaj" path="frmDodaj.xml"/>
+	<form name="frmIzmjeni" path="frmIzmjeni.xml"/>
+	<form name="frmIzmjeniStavku" path="frmIzmjeniStavka.xml"/>
+	<form name="frmDonos" path="frmDonos.xml"/>
+	<form name="frmDonosRoba" path="frmDonosRoba.xml"/>
+	<form name="frmDonosTerminal" path="frmDonosTerminal.xml"/>
+	<form name="frmDonosIzmjenaTerminal" path="frmDonosIzmjenaTerminal.xml"/>
+
+</root>

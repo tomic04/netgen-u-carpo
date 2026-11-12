@@ -1,0 +1,617 @@
+﻿<root xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <form name="frmMaster" type="master" caption="Predložak" saveformlayout="true">
+    <event type="shown">
+      <action type="control disable" value="#btnBrisanje,#btnIzmjena"/>
+      <action type="control enable" value="#btnIzmjena,#btnBrisanje" if="#grdMaster.@ZRPredlozakId!=null" />
+    </event>
+    <managerlayout>
+      <!--glava grid-->
+      <grid name="grdMaster" autopopulate="true" type="master" async="true" bestfitonrefresh="true" key="ZRPredlozakId"  multiselect="true" showfooter="false" fieldsmartspaces="false" >
+        <event type="focusedrowchanged">
+          <action type="control disable" value="#btnBrisanje,#btnIzmjena,#btnPrint"/>
+          <action type="control enable" value="#btnIzmjena,#btnPrint,#btnBrisanje" if="#grdMaster.@ZRPredlozakId!=null" />
+        </event>
+
+        <data command="spZRPredlozak_Query" name="master">
+          <parameter name="@Action" value="master"  />
+        </data>
+
+      </grid>
+    </managerlayout>
+
+    <panelbuttons>
+      <buttons>
+        <!-- KONTROLA: BUTTON -->
+        <button name="btnUnos" caption="Unos" type="add" displayfield="Opis" dataname="">
+          <event type="click">
+            <action type="variable value" value="$ZRPredlozakId" >
+              <parameter value="#grdMaster.@ZRPredlozakId" type="int" />
+            </action>
+            <action type="form open" value="frmUnos" >
+              <parameter name="ZRPredlozakId" value="null" type="int" />
+            </action>
+            <action type="control populate" value="#grdMaster" >
+              <action type="control focus" value="#grdMaster" >
+                <parameter value="$ZRPredlozakId" />
+              </action>
+            </action>
+          </event>
+        </button>
+
+        <button name="btnIzmjena" caption="Izmjena" type="add" displayfield="Opis" dataname="">
+          <event type="click">
+            <action type="form open" value="frmUnos" >
+              <parameter name="ZRPredlozakId" value="#grdMaster.@ZRPredlozakId" type="int" />
+            </action>
+            <action type="control populate keepfocus" value="#grdMaster" />
+          </event>
+        </button>
+
+
+        <button name="btnBrisanje" caption="Brisanje" type="del" displayfield="Opis" dataname="">
+          <event type="click">
+            <action type="confirm" value="Želite li obrisati predložak {#grdMaster.@Naziv}?">
+              <action type="datarun nonquery" value="~dtDelete">
+                <action type="control populate" value="#grdMaster" >
+                  <action type="control focus" value="#grdMaster" >
+                  </action>
+                </action>
+
+              </action>
+            </action>
+          </event>
+        </button>
+
+        <button name="btnKopiranje" caption="Kopiranje" type="add" displayfield="Opis" dataname="">
+          <event type="click">
+            <action type="form open" value="frmKopiranje"/>
+            <action type="control populate keepfocus" value="#grdMaster" />
+          </event>
+        </button>
+
+        <!--
+        <button name="btnPrint" caption="ISPIŠI" >
+          <event type="click">
+            <action type="message" value="#grdMaster.@HRKadroviLijecnickiId"/> 
+            <action type="control print" value="#grdMaster">
+              <action type="print template" value="repx:rptZROzljedeNaRadu">
+                <parameter name="action" value="ispis" />
+                <parameter name="id" value="#grdMaster.@ZROzljedeNaRaduId" />
+                <parameter name="id" value="1" /> 
+              </action>
+            </action>
+          </event>
+        </button>
+        !-->
+
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <data command="spZRPredlozak_Azur" name="dtDelete">
+        <parameter name="@Action" value="brisanje" type="string"/>
+        <parameter name="@ZRPredlozakId" value="#grdMaster.@ZRPredlozakId" type="int"/>
+      </data>
+
+    </datalist>
+
+  </form>
+
+  <form name="frmKopiranje" caption="Kopiranje predloška"  maxsize="false" width="380" height="100"  fixedsize="false"  saveformlayout="true">
+    <event type="onshown">
+      <action type="control focus" value="#txtNaziv" />
+    </event>
+
+    <layout textposition="left" itemspadding="3">
+      <group cols="1" rows="2" groupbordervisible="false">
+        <item caption="Naziv novog predloška:" col="1" row="1" >
+          <textedit name="txtNaziv" required="true" readonly="false" nulltext="Naziv novog predloška..."/>
+        </item>
+        <item caption="Predložak:" col="1" row="2" >
+          <comboedit name="cmbZRPredlozak" autopopulate="true" readonly="false" required="true" valuefield="ZRPredlozakId" displayfield="Naziv" dataname="dtZRPredlozak">
+          </comboedit>
+        </item>
+      </group >
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="Spremi" type="add" image="add">
+          <event type="click">
+            <action type="datarun nonquery" value="~dtKopirajPredlozak"/>
+            <action type="form close"/>
+          </event>
+        </button>
+
+        <button name="IZLAZ" caption="IZLAZ" type="cancel" dock="right"/>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spZRPredlozak_Azur" name="dtKopirajPredlozak">
+        <parameter name="@Action" value="kopiranje" type="string"/>
+        <parameter name="@Naziv" value="#txtNaziv"/>
+        <parameter name="@ZRPredlozakId" value="#cmbZRPredlozak"/>
+      </data>
+
+      <data command="spZRPredlozak_Help" name="dtZRPredlozak">
+        <parameter name="@Action" value="zrpredlozakid" />
+      </data>
+    </datalist>
+
+  </form>
+
+
+  <form name="frmUnos" caption="Predložak" maxsize="false" width="600" fixedsize="false" saveformlayout="true">
+    <!-- na inicijalizaciji forme okidaju se podaci potrebni da kontrole poprime vrijednosti za izmijenu (u slučaju da smo na formi za izmijenu - IF)-->
+    <event type="init">
+      <action type="variable value">
+        <parameter name="HRKadroviId" value="0" type="int"/>
+      </action>
+      <action type="datarun reader" value="~dtGet" if="$ZRPredlozakId!=null"/>
+      <action type="datarun reader" value="~dtInit" else=""/>
+      <!-- <action type="datarun reader" value="~dtInit"/> -->
+    </event>
+
+    <event type="load">
+
+      <action type="control populate" value="#cmbZRVrstaPregleda"  if="$ZRPredlozakId==null" />
+      <action type="control refreshvalue" value="#cmbZRVrstaPregleda" if="$ZRPredlozakId==null"/>
+      <action type="control value" value="#cmbZRVrstaPregleda" if="$ZRPredlozakId==null">
+        <parameter value="~dtInit.@ZRVrstaPregledaId"/>
+      </action>
+    </event>
+
+    <layout textposition="left">
+      <group cols="1" rows="3" groupbordervisible="false">
+
+        <group cols="2" rows="5" col="1" row="1" spacing="2,2,2,1">
+          <item caption="Naziv:" col="1" row="1" >
+            <textedit name="txtNaziv" required="true" readonly="false" nulltext="Naziv predloška..." datavalue="#dtGet.@Naziv"/>
+          </item>
+          <item caption="Članak:" col="1" row="2" >
+            <textedit name="txtClanak" required="true" readonly="false" nulltext="Članak..." datavalue="#dtGet.@Clanak"/>
+          </item>
+          <item caption="Točka:" col="2" row="2" >
+            <textedit name="txtTocka" required="true" readonly="false" nulltext="Točka..." datavalue="#dtGet.@Tocka"/>
+          </item>
+          <item caption="Drugi poslovi:" col="1" row="3" >
+            <textedit name="txtDrugiPoslovi" required="false" readonly="false" nulltext="Poslovi prema drugim zakonima, propisima ili kolektivnom ugovoru..." datavalue="#dtGet.@DrugiPoslovi"/>
+          </item>
+          <item caption="Vrsta pregleda:" col="2" row="3" >
+            <comboedit name="cmbZRVrstaPregleda" autopopulate="true" readonly="false" required="true" valuefield="ZRVrstaPregledaId" displayfield="Naziv" datavalue="~dtGet.@ZRVrstaPregledaId" dataname="dtZRVrstaPregleda">
+            </comboedit>
+          </item>
+          <item caption="Posebni uvjeti rada:" col="1" row="4" >
+            <textedit name="txtPosebniUvjetiRada" required="false" readonly="false" nulltext="Posebni uvjeti rada..." datavalue="#dtGet.@PosebniUvjetiRada"/>
+          </item>
+          <item caption="Opis poslova:" col="2" row="4" >
+            <textedit name="txtOpisPoslova" required="false" readonly="false" nulltext="Kratak opis poslova..." datavalue="#dtGet.@OpisPoslova"/>
+          </item>
+          <item caption="Strojevi:" col="1" row="5" >
+            <textedit name="txtStrojevi" required="false" readonly="false" nulltext="Strojevi, alati, aparati..." datavalue="#dtGet.@Strojevi"/>
+          </item>
+          <item caption="Predmet rada:" col="2" row="5" >
+            <textedit name="txtPredmetRada" required="false" readonly="false" nulltext="Predmet rada..." datavalue="#dtGet.@PredmetRada"/>
+          </item>
+        </group>
+
+        <group cols="1" rows="1" col="1" row="2" spacing="2,2,1,1">
+          <tabs row="1" col="1" padding="4">
+
+            <group cols="5" rows="2" col="1" row="1" groupbordervisible="false" caption="Mjesto rada" name="tabMjesto rada">
+              <item caption="u zatvorenom" col="1" row="1"  textposition="right">
+                <checkedit name="chkMR_zatvoreno" datavalue="#dtGet.@MR_zatvoreno" />
+              </item>
+
+              <item caption="na otvorenom" col="2" row="1" textposition="right">
+                <checkedit name="chkMR_otvoreno" datavalue="#dtGet.@MR_otvoreno"/>
+              </item>
+
+              <item caption="na visini" col="3" row="1" textposition="right">
+                <checkedit name="chkMR_visina" datavalue="#dtGet.@MR_visina"/>
+              </item>
+
+              <item caption="u jami" col="4" row="1" textposition="right">
+                <checkedit name="chkMR_jama" datavalue="#dtGet.@MR_jama"/>
+              </item>
+
+              <item caption="u vodi" col="1" row="2" textposition="right">
+                <checkedit name="chkMR_voda" datavalue="#dtGet.@MR_voda"/>
+              </item>
+
+              <item caption="pod vodom" col="2" row="2" textposition="right">
+                <checkedit name="chkMR_pod_vodom" datavalue="#dtGet.@MR_pod_vodom"/>
+              </item>
+
+              <item caption="u mokrom" col="3" row="2" textposition="right">
+                <checkedit name="chkMR_mokro" datavalue="#dtGet.@MR_mokro"/>
+              </item>
+            </group>
+
+            <group cols="6" rows="2" col="1" row="1" groupbordervisible="false" caption="Organizacija" name="tabOrganizacija">
+              <item caption="u smjenama" col="1" row="1" textposition="right">
+                <checkedit name="chkORG_smjena" datavalue="#dtGet.@ORG_smjena"/>
+              </item>
+
+              <item caption="noćni rad" col="2" row="1" textposition="right">
+                <checkedit name="chkORG_noc" datavalue="#dtGet.@ORG_noc"/>
+              </item>
+
+              <item caption="terenski rad" col="3" row="1" textposition="right">
+                <checkedit name="chkORG_teren" datavalue="#dtGet.@ORG_teren"/>
+              </item>
+
+              <item caption="radi sam" col="4" row="1" textposition="right">
+                <checkedit name="chkORG_rad_sam" datavalue="#dtGet.@ORG_rad_sam"/>
+              </item>
+
+              <item caption="radi s grupom" col="5" row="1" textposition="right">
+                <checkedit name="chkORG_rad_grupa" datavalue="#dtGet.@ORG_rad_grupa"/>
+              </item>
+
+              <item caption="radi sa strankama" col="1" row="2" textposition="right">
+                <checkedit name="chkORG_rad_stranke" datavalue="#dtGet.@ORG_rad_stranke"/>
+              </item>
+
+              <item caption="radi na traci" col="2" row="2" textposition="right">
+                <checkedit name="chkORG_traka" datavalue="#dtGet.@ORG_traka"/>
+              </item>
+
+              <item caption="brzi tempo rada" col="3" row="2" textposition="right">
+                <checkedit name="chkORG_brzi_tempo" datavalue="#dtGet.@ORG_brzi_tempo"/>
+              </item>
+
+              <item caption="ritam određen" col="4" row="2" textposition="right">
+                <checkedit name="chkORG_ritam" datavalue="#dtGet.@ORG_ritam"/>
+              </item>
+
+              <item caption="monotonija" col="5" row="2" textposition="right">
+                <checkedit name="chkORG_monotonija" datavalue="#dtGet.@ORG_monotonija"/>
+              </item>
+            </group>
+
+            <group cols="6" rows="4" col="1" row="1" groupbordervisible="false" caption="Položaj tijela i aktivnosti" name="tabAktivnosti">
+              <item caption="rad stojeći" col="1" row="1" textposition="right">
+                <checkedit name="chkPT_stojeci" datavalue="#dtGet.@PT_stojeci"/>
+              </item>
+
+              <item caption="učestalo sagibanje" col="2" row="1" textposition="right">
+                <checkedit name="chkPT_sagibanje" datavalue="#dtGet.@PT_sagibanje"/>
+              </item>
+
+              <item caption="podvlačenje" col="3" row="1" textposition="right">
+                <checkedit name="chkPT_podvlacenje" datavalue="#dtGet.@PT_podvlacenje"/>
+              </item>
+
+              <item caption="rad sjedeći" col="4" row="1" textposition="right">
+                <checkedit name="chkPT_sjedeci" datavalue="#dtGet.@PT_sjedeci"/>
+              </item>
+
+              <item caption="zakretanje trupa" col="5" row="1" textposition="right">
+                <checkedit name="chkPT_zakretanje" datavalue="#dtGet.@PT_zakretanje"/>
+              </item>
+
+              <item caption="balansiranje" col="1" row="2" textposition="right">
+                <checkedit name="chkPT_balansiranje" datavalue="#dtGet.@PT_balansiranje"/>
+              </item>
+
+              <item caption="u pokretu" col="2" row="2" textposition="right">
+                <checkedit name="chkPT_pokret" datavalue="#dtGet.@PT_pokret"/>
+              </item>
+
+              <item caption="klečanje" col="3" row="2" textposition="right">
+                <checkedit name="chkPT_klecanje" datavalue="#dtGet.@PT_klecanje"/>
+              </item>
+
+              <item caption="uspinjanje ljestvama" col="4" row="2" textposition="right">
+                <checkedit name="chkPT_uspinjanje_ljestve" datavalue="#dtGet.@PT_uspinjanje_ljestve"/>
+              </item>
+
+              <item caption="kombinirano" col="5" row="2" textposition="right">
+                <checkedit name="chkPT_kombinirano" datavalue="#dtGet.@PT_kombinirano"/>
+              </item>
+
+              <item caption="čučanje" col="1" row="3" textposition="right">
+                <checkedit name="chkPT_cucanje" datavalue="#dtGet.@PT_cucanje"/>
+              </item>
+
+              <item caption="uspinjanje stepenicama" col="2" row="3" textposition="right">
+                <checkedit name="chkPT_uspinjanje_stepenice" datavalue="#dtGet.@PT_uspinjanje_stepenice"/>
+              </item>
+
+              <item caption="diz. tereta" col="3" row="3" textposition="right">
+                <checkedit name="chkPT_diz_teret" datavalue="#dtGet.@PT_diz_teret"/>
+              </item>
+
+              <item caption="kg" col="4" row="3" textposition="right">
+                <textedit name="txtPT_kol_diz_teret" format="n2" required="false" enabled="true" nulltext="Kg..." datavalue="#dtGet.@PT_kol_diz_teret"/>
+              </item>
+
+              <item caption="prenoš. tereta" col="1" row="4" textposition="right">
+                <checkedit name="chkPT_prenos_teret" datavalue="#dtGet.@PT_prenos_teret"/>
+              </item>
+
+              <item caption="kg" col="2" row="4"  textposition="right">
+                <textedit name="txtPT_kol_prenos_teret" format="n2" required="false" enabled="true" nulltext="Kg..." datavalue="#dtGet.@PT_kol_prenos_teret"/>
+              </item>
+
+              <item caption="guranje tereta" col="3" row="4" textposition="right">
+                <checkedit name="chkPT_guranje_teret" datavalue="#dtGet.@PT_guranje_teret"/>
+              </item>
+
+              <item caption="kg" col="4" row="4"  textposition="right">
+                <textedit name="txtPT_kol_guranje_teret" format="n2" required="false" enabled="true" nulltext="Kg..." datavalue="#dtGet.@PT_kol_guranje_teret"/>
+              </item>
+
+            </group>
+
+
+            <group cols="6" rows="1" col="1" row="1" groupbordervisible="false" caption="U poslu je važan" name="tabPosao">
+              <item caption="vid na daljinu" col="1" row="1" textposition="right">
+                <checkedit name="chkPV_vid_daljina" datavalue="#dtGet.@PV_vid_daljina"/>
+              </item>
+
+              <item caption="vid na blizinu" col="2" row="1" textposition="right">
+                <checkedit name="chkPV_vid_blizina" datavalue="#dtGet.@PV_vid_blizina"/>
+              </item>
+
+              <item caption="raspoznavanje boja" col="3" row="1" textposition="right">
+                <checkedit name="chkPV_boje" datavalue="#dtGet.@PV_boje"/>
+              </item>
+
+              <item caption="dobar sluh" col="4" row="1" textposition="right">
+                <checkedit name="chkPV_sluh" datavalue="#dtGet.@PV_sluh"/>
+              </item>
+
+              <item caption="jasan govor" col="5" row="1" textposition="right">
+                <checkedit name="chkPV_govor" datavalue="#dtGet.@PV_govor"/>
+              </item>
+
+            </group>
+
+            <group cols="5" rows="3" col="1" row="1" groupbordervisible="false" caption="Uvjeti rada" name="tabUvjeti rada">
+              <item caption="visoka temperatura" col="1" row="1" textposition="right">
+                <checkedit name="chkUR_visoka_temp" datavalue="#dtGet.@UR_visoka_temp"/>
+              </item>
+
+              <item caption="visoka vlažnost" col="2" row="1" textposition="right">
+                <checkedit name="chkUR_visoka_vlaznost" datavalue="#dtGet.@UR_visoka_vlaznost"/>
+              </item>
+
+              <item caption="niska temperatura" col="3" row="1" textposition="right">
+                <checkedit name="chkUR_niska_temp" datavalue="#dtGet.@UR_niska_temp"/>
+              </item>
+
+              <item caption="buka" col="4" row="1" textposition="right">
+                <checkedit name="chkUR_buka" datavalue="#dtGet.@UR_buka"/>
+              </item>
+
+              <item caption="vibracije stroja ili alata" col="1" row="2" textposition="right">
+                <checkedit name="chkUR_vibracije_stroja" datavalue="#dtGet.@UR_vibracije_stroja"/>
+              </item>
+
+              <item caption="vibracije poda" col="2" row="2" textposition="right">
+                <checkedit name="chkUR_vibracije_poda" datavalue="#dtGet.@UR_vibracije_poda"/>
+              </item>
+
+              <item caption="povišeni atmosferski tlak" col="3" row="2" textposition="right">
+                <checkedit name="chkUR_visoki_tlak" datavalue="#dtGet.@UR_visoki_tlak"/>
+              </item>
+
+              <item caption="povećana izloženost ozljedama" col="4" row="2" textposition="right">
+                <checkedit name="chkUR_izlozenost_ozljede" datavalue="#dtGet.@UR_izlozenost_ozljede"/>
+              </item>
+
+              <item caption="ionizirajuća zračenja" col="1" row="3" textposition="right">
+                <checkedit name="chkUR_ion_zracenja" datavalue="#dtGet.@UR_ion_zracenja"/>
+              </item>
+
+              <item caption="neionizirajuća zračenja" col="2" row="3" textposition="right">
+                <checkedit name="chkUR_neion_zracenja" datavalue="#dtGet.@UR_neion_zracenja"/>
+              </item>
+
+              <item caption="prašina" col="3" row="3" textposition="right">
+                <checkedit name="chkUR_prasina" datavalue="#dtGet.@UR_prasina"/>
+              </item>
+
+            </group>
+
+
+          </tabs>
+        </group>
+        
+        <group cols="2" rows="1" col="1" row="3" spacing="2,2,1,2" >
+          <item caption="Kemijske tvari:" col="1" row="1" >
+            <textedit name="txtKemijskeTvari" required="false" readonly="false" nulltext="Kemijske tvari..." datavalue="#dtGet.@KemijskeTvari"/>
+          </item>
+          <item caption="Biološke štetnosti:" col="2" row="1" >
+            <textedit name="txtBioloskeStetnosti" required="false" readonly="false" nulltext="Biološke štetnosti..." datavalue="#dtGet.@BioloskeStetnosti"/>
+          </item>
+        </group>
+      </group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="SPREMI">
+          <event type="click">
+            <!-- Provjeri required fields -->
+            <action type="validate" />
+            <!-- Okini storu -->
+            <action type="datarun nonquery" value="~dtEdit" if="$ZRPredlozakId!=null"/>
+            <action type="datarun nonquery" value="~dtAdd" else="" />
+            <!-- Osvježi grid na parent formi -->
+            <action type="control populate" value="parent.#grdMaster"/>
+            <action type="form close"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right"/>
+      </buttons>
+    </panelbuttons>
+
+
+    <datalist>
+      <data command="spZRPredlozak_Query" name="dtGet">
+        <parameter name="@Action" value="izmjena"/>
+        <parameter name="@ZRPredlozakId" value="$ZRPredlozakId"/>
+      </data>
+
+      <data command="spZRPredlozak_Help" name="dtInit">
+        <parameter name="@Action" value="ucitaj_zrpredlozak"/>
+      </data>
+
+      <data command="spZRPredlozak_Azur" name="dtAdd">
+        <parameter name="@Action" value="unos" type="string"/>
+        <parameter name="@Naziv" value="#txtNaziv" type="string"/>
+        <parameter name="@Clanak" value="#txtClanak" type="string"/>
+        <parameter name="@Tocka" value="#txtTocka" type="string"/>
+        <parameter name="@DrugiPoslovi" value="#txtDrugiPoslovi" type="string"/>
+        <parameter name="@ZRVrstaPregledaId" value="#cmbZRVrstaPregleda"  type="int"/>
+        <parameter name="@PosebniUvjetiRada" value="#txtPosebniUvjetiRada" type="string"/>
+        <parameter name="@OpisPoslova" value="#txtOpisPoslova" type="string"/>
+        <parameter name="@Strojevi" value="#txtStrojevi" type="string"/>
+        <parameter name="@PredmetRada" value="#txtPredmetRada" type="string"/>
+        <parameter name="@MR_zatvoreno" value="#chkMR_zatvoreno"/>
+        <parameter name="@MR_otvoreno" value="#chkMR_otvoreno"/>
+        <parameter name="@MR_visina" value="#chkMR_visina"/>
+        <parameter name="@MR_jama" value="#chkMR_jama"/>
+        <parameter name="@MR_voda" value="#chkMR_voda"/>
+        <parameter name="@MR_pod_vodom" value="#chkMR_pod_vodom"/>
+        <parameter name="@MR_mokro" value="#chkMR_mokro"/>
+        <parameter name="@ORG_smjena" value="#chkORG_smjena"/>
+        <parameter name="@ORG_noc" value="#chkORG_noc"/>
+        <parameter name="@ORG_teren" value="#chkORG_teren"/>
+        <parameter name="@ORG_rad_sam" value="#chkORG_rad_sam"/>
+        <parameter name="@ORG_rad_grupa" value="#chkORG_rad_grupa"/>
+        <parameter name="@ORG_rad_stranke" value="#chkORG_rad_stranke"/>
+        <parameter name="@ORG_traka" value="#chkORG_traka"/>
+        <parameter name="@ORG_brzi_tempo" value="#chkORG_brzi_tempo"/>
+        <parameter name="@ORG_ritam" value="#chkORG_ritam"/>
+        <parameter name="@ORG_monotonija" value="#chkORG_monotonija"/>
+        <parameter name="@PT_stojeci" value="#chkPT_stojeci"/>
+        <parameter name="@PT_sagibanje" value="#chkPT_sagibanje"/>
+        <parameter name="@PT_podvlacenje" value="#chkPT_podvlacenje"/>
+        <parameter name="@PT_sjedeci" value="#chkPT_sjedeci"/>
+        <parameter name="@PT_zakretanje" value="#chkPT_zakretanje"/>
+        <parameter name="@PT_balansiranje" value="#chkPT_balansiranje"/>
+        <parameter name="@PT_pokret" value="#chkPT_pokret"/>
+        <parameter name="@PT_klecanje" value="#chkPT_klecanje"/>
+        <parameter name="@PT_uspinjanje_ljestve" value="#chkPT_uspinjanje_ljestve"/>
+        <parameter name="@PT_kombinirano" value="#chkPT_kombinirano"/>
+        <parameter name="@PT_cucanje" value="#chkPT_cucanje"/>
+        <parameter name="@PT_uspinjanje_stepenice" value="#chkPT_uspinjanje_stepenice"/>
+        <parameter name="@PT_diz_teret" value="#chkPT_diz_teret"/>
+        <parameter name="@PT_kol_diz_teret" value="#txtPT_kol_diz_teret" type="decimal"/>
+        <parameter name="@PT_prenos_teret" value="#chkPT_prenos_teret"/>
+        <parameter name="@PT_kol_prenos_teret" value="#txtPT_kol_prenos_teret" type="decimal"/>
+        <parameter name="@PT_guranje_teret" value="#chkPT_guranje_teret"/>
+        <parameter name="@PT_kol_guranje_teret" value="#txtPT_kol_guranje_teret" type="decimal"/>
+
+        <parameter name="@PV_vid_daljina" value="#chkPV_vid_daljina"/>
+        <parameter name="@PV_vid_blizina" value="#chkPV_vid_blizina"/>
+        <parameter name="@PV_boje" value="#chkPV_boje"/>
+        <parameter name="@PV_sluh" value="#chkPV_sluh"/>
+        <parameter name="@PV_govor" value="#chkPV_govor"/>
+        <parameter name="@UR_visoka_temp" value="#chkUR_visoka_temp"/>
+        <parameter name="@UR_visoka_vlaznost" value="#chkUR_visoka_vlaznost"/>
+        <parameter name="@UR_niska_temp" value="#chkUR_niska_temp"/>
+        <parameter name="@UR_buka" value="#chkUR_buka"/>
+        <parameter name="@UR_vibracije_stroja" value="#chkUR_vibracije_stroja"/>
+        <parameter name="@UR_vibracije_poda" value="#chkUR_vibracije_poda"/>
+        <parameter name="@UR_visoki_tlak" value="#chkUR_visoki_tlak"/>
+        <parameter name="@UR_izlozenost_ozljede" value="#chkUR_izlozenost_ozljede"/>
+        <parameter name="@UR_ion_zracenja" value="#chkUR_ion_zracenja"/>
+        <parameter name="@UR_neion_zracenja" value="#chkUR_neion_zracenja"/>
+        <parameter name="@UR_prasina" value="#chkUR_prasina"/>
+
+        <parameter name="@KemijskeTvari" value="#txtKemijskeTvari" type="string"/>
+        <parameter name="@BioloskeStetnosti" value="#txtBioloskeStetnosti" type="string"/>
+      </data>
+
+      <data command="spZRPredlozak_Azur" name="dtEdit">
+        <parameter name="@Action" value="izmjena" type="string"/>
+        <parameter name="@ZRPredlozakId" value="$ZRPredlozakId" type="int"/>
+        <parameter name="@Naziv" value="#txtNaziv" type="string"/>
+        <parameter name="@Clanak" value="#txtClanak" type="string"/>
+        <parameter name="@Tocka" value="#txtTocka" type="string"/>
+        <parameter name="@DrugiPoslovi" value="#txtDrugiPoslovi" type="string"/>
+        <parameter name="@ZRVrstaPregledaId" value="#cmbZRVrstaPregleda"  type="int"/>
+        <parameter name="@PosebniUvjetiRada" value="#txtPosebniUvjetiRada" type="string"/>
+        <parameter name="@OpisPoslova" value="#txtOpisPoslova" type="string"/>
+        <parameter name="@Strojevi" value="#txtStrojevi" type="string"/>
+        <parameter name="@PredmetRada" value="#txtPredmetRada" type="string"/>
+        <parameter name="@MR_zatvoreno" value="#chkMR_zatvoreno"/>
+        <parameter name="@MR_otvoreno" value="#chkMR_otvoreno"/>
+        <parameter name="@MR_visina" value="#chkMR_visina"/>
+        <parameter name="@MR_jama" value="#chkMR_jama"/>
+        <parameter name="@MR_voda" value="#chkMR_voda"/>
+        <parameter name="@MR_pod_vodom" value="#chkMR_pod_vodom"/>
+        <parameter name="@MR_mokro" value="#chkMR_mokro"/>
+        <parameter name="@ORG_smjena" value="#chkORG_smjena"/>
+        <parameter name="@ORG_noc" value="#chkORG_noc"/>
+        <parameter name="@ORG_teren" value="#chkORG_teren"/>
+        <parameter name="@ORG_rad_sam" value="#chkORG_rad_sam"/>
+        <parameter name="@ORG_rad_grupa" value="#chkORG_rad_grupa"/>
+        <parameter name="@ORG_rad_stranke" value="#chkORG_rad_stranke"/>
+        <parameter name="@ORG_traka" value="#chkORG_traka"/>
+        <parameter name="@ORG_brzi_tempo" value="#chkORG_brzi_tempo"/>
+        <parameter name="@ORG_ritam" value="#chkORG_ritam"/>
+        <parameter name="@ORG_monotonija" value="#chkORG_monotonija"/>
+        <parameter name="@PT_stojeci" value="#chkPT_stojeci"/>
+        <parameter name="@PT_sagibanje" value="#chkPT_sagibanje"/>
+        <parameter name="@PT_podvlacenje" value="#chkPT_podvlacenje"/>
+        <parameter name="@PT_sjedeci" value="#chkPT_sjedeci"/>
+        <parameter name="@PT_zakretanje" value="#chkPT_zakretanje"/>
+        <parameter name="@PT_balansiranje" value="#chkPT_balansiranje"/>
+        <parameter name="@PT_pokret" value="#chkPT_pokret"/>
+        <parameter name="@PT_klecanje" value="#chkPT_klecanje"/>
+        <parameter name="@PT_uspinjanje_ljestve" value="#chkPT_uspinjanje_ljestve"/>
+        <parameter name="@PT_kombinirano" value="#chkPT_kombinirano"/>
+        <parameter name="@PT_cucanje" value="#chkPT_cucanje"/>
+        <parameter name="@PT_uspinjanje_stepenice" value="#chkPT_uspinjanje_stepenice"/>
+        <parameter name="@PT_diz_teret" value="#chkPT_diz_teret"/>
+        <parameter name="@PT_kol_diz_teret" value="#txtPT_kol_diz_teret" type="decimal"/>
+        <parameter name="@PT_prenos_teret" value="#chkPT_prenos_teret"/>
+        <parameter name="@PT_kol_prenos_teret" value="#txtPT_kol_prenos_teret" type="decimal"/>
+        <parameter name="@PT_guranje_teret" value="#chkPT_guranje_teret"/>
+        <parameter name="@PT_kol_guranje_teret" value="#txtPT_kol_guranje_teret" type="decimal"/>
+
+        <parameter name="@PV_vid_daljina" value="#chkPV_vid_daljina"/>
+        <parameter name="@PV_vid_blizina" value="#chkPV_vid_blizina"/>
+        <parameter name="@PV_boje" value="#chkPV_boje"/>
+        <parameter name="@PV_sluh" value="#chkPV_sluh"/>
+        <parameter name="@PV_govor" value="#chkPV_govor"/>
+        <parameter name="@UR_visoka_temp" value="#chkUR_visoka_temp"/>
+        <parameter name="@UR_visoka_vlaznost" value="#chkUR_visoka_vlaznost"/>
+        <parameter name="@UR_niska_temp" value="#chkUR_niska_temp"/>
+        <parameter name="@UR_buka" value="#chkUR_buka"/>
+        <parameter name="@UR_vibracije_stroja" value="#chkUR_vibracije_stroja"/>
+        <parameter name="@UR_vibracije_poda" value="#chkUR_vibracije_poda"/>
+        <parameter name="@UR_visoki_tlak" value="#chkUR_visoki_tlak"/>
+        <parameter name="@UR_izlozenost_ozljede" value="#chkUR_izlozenost_ozljede"/>
+        <parameter name="@UR_ion_zracenja" value="#chkUR_ion_zracenja"/>
+        <parameter name="@UR_neion_zracenja" value="#chkUR_neion_zracenja"/>
+        <parameter name="@UR_prasina" value="#chkUR_prasina"/>
+
+        <parameter name="@KemijskeTvari" value="#txtKemijskeTvari" type="string"/>
+        <parameter name="@BioloskeStetnosti" value="#txtBioloskeStetnosti" type="string"/>
+      </data>
+
+      <data command="spZRPredlozak_Help" name="dtHRKadrovi">
+        <parameter name="@Action" value="hrkadroviid" />
+        <parameter name="@tekst" value="#srcHRKadrovi.text" />
+      </data>
+
+      <data command="spZRPredlozak_Query" name="dtHRRadnaMjesta">
+        <parameter name="@Action" value="hrradnamjestaid" />
+      </data>
+
+      <data command="spZRPredlozak_Help" name="dtZRVrstaPregleda">
+        <parameter name="@Action" value="zrvrstapregledaid" />
+      </data>
+
+    </datalist>
+
+  </form>
+
+</root>

@@ -1,0 +1,675 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT
+	POPUPMASTER=""
+	MASTERDBLCLICK=""
+    BUTTONS="Osvježi prikaz podataka:FILTERFORM
+			#	
+			#Pripremi period:MULTISELECTPRIPREMI
+			#Označi za zaključenje i knjiženje:MULTISELECTPRIPREMIZAKLJUCAK
+			#
+			#Proknjiži na temeljnicu:MULTISELECTPROKNJIZI
+			#
+			#Zaključi pripremljeni period:ZAKLJUCIPRIPREMU
+			#Zaključi period bez pripreme:ZAKLJUCI
+			#
+			#Obnovi nab.cijenu:UPDATE_NC"
+			
+	GROUPBYBOXVISIBLE="TRUE"
+	ONLOAD="spMPZakljucakPeriodaMPNGBiovega @action = 8,  @operateriid = @@operateriid "
+	COMMANDTIMEOUT="3600"
+	CHECKBOXVISIBLE="TRUE">
+
+	<NAME>Zaključak perioda maloprodaje </NAME>
+	<CAPTION>Zaključak perioda maloprodaje </CAPTION>
+
+
+	<FILTERFORM
+		FILLEXPLORER="">
+	</FILTERFORM>
+
+
+	<MULTISELECTPRIPREMI
+		NAME="MULTISELECTPRIPREMI" HEIGHT="6500" WIDTH="8500"
+		CAPTION="Priprema zaključaka perioda "
+		ONSUBMIT=""
+		ONLOAD="if object_id('tempdb..#tempprovjera1') is not null drop table #tempprovjera1
+		
+				select t.id as trgovinaid, o.datumobrade
+				into #tempprovjera1
+				from totalgenmultiselecttemp t 
+				inner join trgovina tr with(nolock) on t.id=tr.trgovinaid
+				inner join (select trgovinaid,max(datumobrade) as datumobrade from mpobrada group by trgovinaid) o on t.id=o.trgovinaid
+				where t.operateriid=@@operateriid
+
+					
+				if (select min(datumobrade) from #tempprovjera1) &lt;&gt; (select max(datumobrade) from #tempprovjera1) begin 
+					exec spRaiserror 69001, 'Razdoblje pripreme (datum od-do) nije isto za sve trgovine! Priprema može ići samo za isto razdoblje svih obuhvaćenih trgovina .'
+					return 
+				end 
+				
+				select top 1 datumobrade as datumod from #tempprovjera1
+				
+				drop table #tempprovjera1"
+		ONLOADED=""
+		FILLEXPLORER="TRUE"
+		REFRESHAFTERCHILD="TRUE">
+
+		<INPUT TYPE="date" NAME="datumdo" TOP="550" LEFT="1600" CAPTION="Datum do*" ENABLED="TRUE" DEFAULT="today"/>
+		<INPUT TYPE="date" NAME="datumod" TOP="-550" LEFT="1600" CAPTION="" ENABLED="FALSE"/>
+
+
+		<INPUT TYPE="grid"
+			   NAME="stavke"
+			   CAPTION="Priprema perioda za zaključak"
+			   TOP="1000" LEFT="1600"
+			   WIDTH="6700" HEIGHT="3500"
+			   SQL="select tr.trgovinaid,o.datumobrade+1 as [Datum zadnje obrade2000],tr.oznaka as [Oznaka trgovine1000], tr.opis as [Trgovina3000], 
+					case when tr.vrstatrg='V' then 'Maloprodaja iz veleprodaje' else 'Klasična maloprodaja' end as [Vrsta trgovina2000]
+					from totalgenmultiselecttemp t 
+					inner join trgovina tr with(nolock) on t.id=tr.trgovinaid
+					inner join (select trgovinaid,max(datumobrade) as datumobrade from mpobrada group by trgovinaid) o on t.id=o.trgovinaid
+					where t.operateriid=@@operateriid"
+			   CHECKBOXVISIBLE="FALSE"/>
+
+		<INPUT TYPE="button" NAME="" CAPTION="Ukloni trgovinu iz prikaza" TOP="2000" LEFT="140" WIDTH="1200" HEIGHT="600"
+			   ONCLICK="delete from totalgenmultiselecttemp where id=@@stavke and operateriid=@@operateriid
+						#select 'refresh' as stavke"  />
+		
+		<INPUT TYPE="button" NAME="ok" CAPTION="Pripremi" TOP="5500" LEFT="300" WIDTH="1400" HEIGHT="322"
+			   ONCLICK="spMPZakljucakPeriodaMPNGBiovega @action = 11, @operateriid = @@operateriid, @datumdo=@@datumdo, @porukagreska=1#ok"  />
+		
+		<INPUT TYPE="button" NAME="b33" CAPTION="Pokaži nezak.dok." TOP="5500" LEFT="2800" WIDTH="1400" HEIGHT="322" 
+			   ONCLICK=":NEZAKDOK" HOTKEY="" />
+		
+		<INPUT TYPE="button" NAME="close" CAPTION="Odustani" TOP="5500" LEFT="5300" WIDTH="1400" HEIGHT="322"
+			   ONCLICK="CLOSE#delete from totalgenmultiselecttemp where operateriid =  @@operateriid"  />
+
+	</MULTISELECTPRIPREMI>
+
+
+
+	<MULTISELECTPRIPREMIZAKLJUCAK
+		NAME="MULTISELECTPRIPREMIZAKLJUCAK" HEIGHT="6500" WIDTH="8500"
+		CAPTION="Priprema perioda za zaključak i knjiženje"
+		ONSUBMIT=""
+		ONLOAD="if object_id('tempdb..#tempprovjera2') is not null drop table #tempprovjera2
+		
+				select t.id as trgovinaid, o.datumobrade
+				into #tempprovjera2
+				from totalgenmultiselecttemp t 
+				inner join (select trgovinaid,max(datumobrade) as datumobrade from mpobrada group by trgovinaid) o on t.id=o.trgovinaid
+				where t.operateriid=@@operateriid
+
+				declare @poruka varchar(200), @trgovinaopis varchar(50)
+					
+				if (select count(*) from mpobrada mp
+					inner join #tempprovjera2 t on mp.trgovinaid=t.trgovinaid and mp.DatumObrade=t.datumobrade 
+					where mp.datumobrade &lt;= (select datumknjizenja from knttem where knttemid in 
+						(select max(mattemid) from maloprodajagla where trgovinaid=mp.trgovinaid and mattemid in (select knttemid from knttem))))>0 begin 
+						
+					set @trgovinaopis = (select oznaka +' ' +opis from trgovina where Trgovinaid in
+						(select top 1 mp.Trgovinaid from mpobrada mp
+						inner join #tempprovjera2 t on mp.trgovinaid=t.trgovinaid and mp.DatumObrade=t.datumobrade 
+						where mp.datumobrade &lt;= (select datumknjizenja from knttem where knttemid in 
+							(select max(mattemid) from maloprodajagla where trgovinaid=mp.trgovinaid and mattemid in (select knttemid from knttem)))))
+					
+					set @poruka = 'Odabrano razdoblje za zaključak i knjiženje za trgovinu '+@trgovinaopis+' je već proknjiženo! Ne može se ponovno knjižiti isti period !' 
+					exec spRaiserror 69001, @poruka
+					return 
+				end 
+				
+			if (select count(*) from mpobrada mp
+					inner join #tempprovjera2 t on mp.trgovinaid=t.trgovinaid and mp.DatumObrade=t.datumobrade 
+					where mp.status&lt;2)>0 begin 
+						
+					set @trgovinaopis = (select oznaka +' ' +opis from trgovina where Trgovinaid in
+						(select top 1 mp.Trgovinaid from mpobrada mp
+						inner join #tempprovjera2 t on mp.trgovinaid=t.trgovinaid and mp.DatumObrade=t.datumobrade 
+						where mp.status&lt;2))
+					
+					set @poruka = 'Za odabrano razdoblje za zaključak i knjiženje za trgovinu '+@trgovinaopis+' nije odrađena analiza kartica! Prvo se mora odraditi analiza kartica !' 
+					exec spRaiserror 69001, @poruka
+					return 
+				end 
+				
+				drop table #tempprovjera2"
+		ONLOADED=""
+		FILLEXPLORER="TRUE"
+		REFRESHAFTERCHILD="TRUE">
+
+
+		<INPUT TYPE="grid"
+			   NAME="stavke"
+			   CAPTION="Periodi označeni za zaključak i knjiženje"
+			   TOP="1000" LEFT="1600"
+			   WIDTH="6700" HEIGHT="3500"
+			   SQL="select tr.trgovinaid,o.datumobrade as [Datum zadnje obrade2000],tr.oznaka as [Oznaka trgovine1000], tr.opis as [Trgovina3000], 
+					case when tr.vrstatrg='V' then 'Maloprodaja iz veleprodaje' else 'Klasična maloprodaja' end as [Vrsta trgovina2000]
+					from totalgenmultiselecttemp t 
+					inner join trgovina tr with(nolock) on t.id=tr.trgovinaid
+					inner join (select trgovinaid,max(datumobrade) as datumobrade from mpobrada group by trgovinaid) o on t.id=o.trgovinaid
+					where t.operateriid=@@operateriid"
+			   CHECKBOXVISIBLE="FALSE"/>
+
+		<INPUT TYPE="button" NAME="" CAPTION="Ukloni trgovinu iz prikaza" TOP="2000" LEFT="140" WIDTH="1200" HEIGHT="600"
+			   ONCLICK="delete from totalgenmultiselecttemp where id=@@stavke and operateriid=@@operateriid
+						#select 'refresh' as stavke"  />
+
+		<INPUT TYPE="button" NAME="ok" CAPTION="Označi" TOP="5500" LEFT="300" WIDTH="1400" HEIGHT="322"
+			   ONCLICK="spMPZakljucakPeriodaMPNGBiovega @action = 13, @operateriid = @@operateriid, @datumdo=@@datumdo, @porukagreska=1#ok"  />
+
+		<INPUT TYPE="button" NAME="close" CAPTION="Odustani" TOP="5500" LEFT="5300" WIDTH="1400" HEIGHT="322"
+			   ONCLICK="CLOSE#delete from totalgenmultiselecttemp where operateriid =  @@operateriid"  />
+
+	</MULTISELECTPRIPREMIZAKLJUCAK>
+
+
+
+	<ZAKLJUCIPRIPREMU
+		NAME="MAINFORM"
+		HEIGHT="8000"
+		WIDTH="9000"
+		COMMANDTIMEOUT="600"
+		ONESCKEY="select 1"
+		CAPTION="Zaključak perioda maloprodaje "
+		ONLOAD="SELECT '''                                                     ''' as prazno, 0 as brojNezak, 0 as razlikasalda, convert(char(100) , '' ) as tekstporuke, @@id as trgovinaid"
+		ONLOAD2="if (select count(*) from mpobrada where trgovinaid = @@trgovinaid and pripremaind=1)=0 begin exec spRaiserror 69001, 'Ne postoji pripremljeno razdoblje za odabranu trgovinu ! Potrebno prvo pripremiti razdoblje prije zaključka perioda !' end"
+		ONLOADED="select top 1 mpobradaid as mpobrada2id from mpobrada where trgovinaid = @@trgovinaid and pripremaind=1 order by mpobradaid
+				      #select datumprethodneobrade+1 as datumod, datumobrade as datumdo, kontrolaind as kontrola, anivelacijeind as anivelacija from mpobrada where mpobradaid=@@mpobrada2id"
+		MAXIMIZEBOX="TRUE"
+		FOCUS="trgovinaid"
+		WINDOWSTATE="0">
+
+		<INPUT TYPE="number" NAME="mpobrada2id" CAPTION="" TOP="-3500" LEFT="3000" WIDTH="1200" ENABLED="FALSE"/>
+
+		<INPUT TYPE="group" NAME="topgroupbox" DOCK="1" CAPTION="Uvjeti:" TOP="200" HEIGHT="1900"    />
+		<INPUT TYPE="group" NAME="bottomgroupbox" DOCK="2" HEIGHT="850"  />
+		<INPUT TYPE="group" NAME="midlegroupbox" DOCK="0" CAPTION="Status dokumenata i salda :" TOP="2000" LEFT="50" WIDTH="8600" HEIGHT="3500"  />
+		<INPUT TYPE="group" NAME="midlegroupbox2" DOCK="0" CAPTION="Status obrade zaključka perioda:" TOP="5500" LEFT="50" WIDTH="8600" HEIGHT="1000"  />
+
+		<INPUT TYPE="combo" NAME="trgovinaid" TOP="500" LEFT="1500" WIDTH="4500" 
+           SQL="select Trgovinaid, left(oznaka,3)+ ' ' + opis  as naziv	from trgovina" ALLOWEMPTY="FALSE" ENABLED="FALSE" CAPTION="Trgovina:*" />
+		<INPUT TYPE="date" NAME="datumod" CAPTION="Razdoblje od:*" TOP="1000" LEFT="1500" WIDTH="1500" ENABLED="FALSE" />
+		<INPUT TYPE="date" NAME="datumdo" CAPTION="do:*" TOP="1000" LEFT="3700" WIDTH="1500" ENABLED="FALSE" />
+
+
+
+		<INPUT TYPE="number" NAME="KOLminus" CAPTION="Broj MP kartica s minus količinom:*" DECIMALS="0" TOP="3100" LEFT="3000" WIDTH="1000" ENABLED ="FALSE" STYLE="1"/>
+
+		<INPUT TYPE="button" NAME="minus" CAPTION="Pokaži" PARENT="midlegroupbox" TOP="1100" LEFT="4500" WIDTH="1500" HEIGHT="322"
+			   ONCLICK=":MPSTANJEMINUS" HOTKEY="" />
+
+		<INPUT TYPE="number" NAME="kontrola" CAPTION="" DECIMALS="" TOP="-3500" LEFT="3000" WIDTH="1200" ENABLED ="FALSE" STYLE="1"/>
+		<INPUT TYPE="number" NAME="zakljuci" CAPTION="" DECIMALS="" TOP="-3500" LEFT="3000" WIDTH="1200" ENABLED ="FALSE" STYLE="1"/>
+		<INPUT TYPE="number" NAME="anivelacija" CAPTION="" DECIMALS="" TOP="-3500" LEFT="3000" WIDTH="1200" ENABLED ="FALSE" STYLE="1"/>
+		<INPUT TYPE="number" NAME="saldoKP" CAPTION="Saldo knjige popisa:*" DECIMALS="2" TOP="3700" LEFT="3000" WIDTH="1500" ENABLED ="FALSE" STYLE="1"/>
+		<INPUT TYPE="number" NAME="saldostanja" CAPTION="Saldo stanja robe:*" DECIMALS="2" TOP="4100" LEFT="3000" WIDTH="1500" ENABLED ="FALSE" STYLE="1"/>
+		<INPUT TYPE="number" NAME="razlikasalda" CAPTION="Razlika :*" DECIMALS="2" TOP="4500" LEFT="3000" WIDTH="1500" ENABLED ="FALSE" STYLE="1"/>
+
+		<INPUT TYPE="button" NAME="b33" CAPTION="Obnovi" PARENT="midlegroupbox" TOP="2500" LEFT="4500" WIDTH="1500" HEIGHT="322"
+			   ONCLICK="select 'Provjeravam salda !                                         .' as poruka#select 'refresh' as poruka
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 2, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo
+						#select 'Provjerite razliku salda !' as poruka#select 'refresh' as poruka" HOTKEY="" />
+
+		<INPUT TYPE="button" NAME="a1" CAPTION="Analiza kartica" PARENT="midlegroupbox" TOP="3000" LEFT="4500" WIDTH="2000" HEIGHT="322"
+			   ONCLICK="update mpobrada set status=2 where mpobradaid=@@mpobrada2id#:ANALIZAKARTICA" HOTKEY="" />
+
+		<INPUT TYPE="labelporuka" NAME="poruka" CAPTION="" SIZE="12" DECIMALS="" TOP="5900" LEFT="1000" WIDTH="6200" STYLE="1"/>
+
+		<INPUT TYPE="button" NAME="b1" CAPTION="1.Kontrola" PARENT="bottomgroupbox" TOP="200" LEFT="500" WIDTH="1500" HEIGHT="322" ENABLED="TRUE" VISIBLE="TRUE"
+			   ONCLICK="select 0 as kontrola , 0 as saldoKP, 0 as saldostanja, 0 as razlikasalda
+						#if @@datumdo &lt; @@datumod begin exec spRaiserror 69001, 'Razdoblje nije dobro odabrano ! Provjerite polje Razdoblje DO !' end
+						#select 'Provjeravam nezaključene dokumente !                                   .' as poruka
+						#spMPKontrolaNivelacijaNG @action = 16, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo, @operateriid = @@operateriid 
+						#select 'Zaključite nezaključene dokumente !                                   .' as poruka#if @@brojNezak > 0 begin exec spRaiserror 69001, 'Postoje nezaključeni dokumenti !' end 
+						#select 'Provjeravam duple nivelacije!                                   .' as poruka
+						#if @@brojnezak = 0 begin exec spMPKontrolaNivelacijaNG @action = 4, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo , @operateriid = @@operateriid end
+						#select 'Provjeravam nepotrebne dokumente !                                   .' as poruka
+						#if @@brojnezak = 0 begin exec spMPKontrolaNivelacijaNG @action = 7, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo , @operateriid = @@operateriid end
+						#select 'Provjeravam količine na nivelacijama !                                   .' as poruka
+						#if @@brojnezak = 0 begin exec spMPKontrolaNivelacijaNG @action = 10, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo, @operateriid = @@operateriid end
+						#select 'Provjeravam salda !                                   .' as poruka
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 2, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo
+						#if @@brojnezak = 0 begin select 'Kontrola nivelacija završena. Provjerite status dokumenata !                                   .' as poruka , 1 as kontrola end" HOTKEY="" />
+
+		<INPUT TYPE="button" NAME="b2" CAPTION="2.A-nivelacije" PARENT="bottomgroupbox" TOP="200" LEFT="2300" WIDTH="1500" HEIGHT="322" ENABLED="TRUE" VISIBLE="TRUE"
+			   ONCLICK="#if @@datumdo &lt; @@datumod begin exec spRaiserror 69001, 'Razdoblje nije dobro odabrano ! Provjerite polje Razdoblje DO !' end
+						#if @@kontrola = 0 and (select vrstatrg from trgovina where trgovinaid = @@trgovinaid) in ('M','F') begin exec spRaiserror 69001, 'Niste napravili kontrolu dokumenata !' end
+						#select 'Pripremam podatke za automatske nivelacije!                                   .' as poruka
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 6, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 7, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo
+						#select 'Kreiram dokumente automatske nivelacije!                                   .' as poruka
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 5, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo
+						#select 'Provjeravam salda !                                   .' as poruka
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 2, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo
+						#select 'A-Nivelacije napravljene. Provjerite razliku salda i nesipravne kartice !                                   .' as poruka, 1 as anivelacija" HOTKEY="" />
+
+		<INPUT TYPE="button" NAME="b3" CAPTION="3.Zaključi" PARENT="bottomgroupbox" TOP="200" LEFT="4100" WIDTH="1500" HEIGHT="322"
+			   ONCLICK="#if @@datumdo &lt; @@datumod begin exec spRaiserror 69001, 'Razdoblje nije dobro odabrano ! Provjerite polje Razdoblje DO !' end
+						#if @@zakljuci = 1 begin exec spRaiserror 69001, 'Period je već zaključen !' end 
+						#if @@anivelacija = 0 and (select vrstatrg from trgovina where trgovinaid = @@trgovinaid) in ('M','F') begin exec spRaiserror 69001, 'Niste napravili a-nivelacije !' end
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 1, @mpobradaid=@@mpobrada2id, @trgovinaid=@@trgovinaid, @datumod=@@datumod, @datumdo=@@datumdo, @operateriid = @@operateriid 
+						#select 'Zaključak perioda je napravljen !' as poruka, 1 as zakljuci " HOTKEY="" />
+
+		<INPUT TYPE="button" NAME="b4" CAPTION="Odustani" PARENT="bottomgroupbox" TOP="200" LEFT="6700" WIDTH="1500" HEIGHT="322" ONCLICK="close" HOTKEY="" />
+	</ZAKLJUCIPRIPREMU>
+
+
+
+	<ZAKLJUCI
+		NAME="MAINFORM"
+		HEIGHT="8000"
+		WIDTH="9000"
+		COMMANDTIMEOUT="600"
+		ONESCKEY="select 1"
+		CAPTION="Zaključak perioda maloprodaje "
+		ONLOAD="SELECT '''                                                     ''' as prazno, 0 as brojNezak, 0 as brojnepotrebnih, 0 as brojduplih, 0 as razlikasalda, convert(char(100) , '' ) as tekstporuke, @@id as trgovinaid"
+		ONLOAD2="if (select count(*) from mpobrada where trgovinaid=@@id and coalesce(pripremaind,0)=1)&gt; 0 begin
+					 exec spRaiserror 69001, 'Za odabranu trgovinu postoji pripremljeno razdoblje! Ne može se zaključivati naredni period dok se ne zaključi pripremljeni period !'
+				 end
+				 else begin
+				 select 'b1' = case when (select vrstatrg from trgovina where trgovinaid=@@id)='V' then 'disable' else 'enable' end,
+				 'b2' = case when (select vrstatrg from trgovina where trgovinaid=@@id)='V' then 'disable' else 'enable' end end"
+		ONLOADED=""
+		MAXIMIZEBOX="TRUE"
+		FOCUS="trgovinaid"
+		WINDOWSTATE="0">
+
+		<INPUT TYPE="group" NAME="topgroupbox" DOCK="1" CAPTION="Uvjeti:" TOP="200" HEIGHT="1900"    />
+		<INPUT TYPE="group" NAME="bottomgroupbox" DOCK="2" HEIGHT="850"  />
+		<INPUT TYPE="group" NAME="midlegroupbox" DOCK="0" CAPTION="Status dokumenata i salda :" TOP="2000" LEFT="50" WIDTH="8600" HEIGHT="3500"  />
+		<INPUT TYPE="group" NAME="midlegroupbox2" DOCK="0" CAPTION="Status obrade zaključka perioda:" TOP="5500" LEFT="50" WIDTH="8600" HEIGHT="1000"  />
+
+		<INPUT TYPE="combo" NAME="trgovinaid" TOP="500" LEFT="1500" WIDTH="4500" 
+         SQL="select Trgovinaid, left(oznaka,3)+ ' ' + opis  as naziv	from trgovina" ALLOWEMPTY="FALSE" ENABLED="FALSE" CAPTION="Trgovina:*"
+			   ONLOSTFOCUS="select top 1 datumobrade+1 as datumod from mpobrada where trgovinaid = @@trgovinaid order by 1 desc#select 'refresh' as datumod"
+			   ONCLICK="select 0 as kontrola, 0 as zakljuci, 0 as anivelacija#select top 1 datumobrade+1 as datumod from mpobrada where trgovinaid = @@trgovinaid order by 1 desc#select 'refresh' as datumod"/>
+		<INPUT TYPE="date" NAME="datumod" CAPTION="Razdoblje od:*" TOP="1000" LEFT="1500" WIDTH="1500" ENABLED="FALSE" />
+		<INPUT TYPE="date" NAME="datumdo" CAPTION="do:*" TOP="1000" LEFT="3700" WIDTH="1500"/>
+		<INPUT TYPE="number" NAME="brojNezak" CAPTION="Broj nezaključenih dokumenata:*" DECIMALS="0" TOP="2700" LEFT="3000" WIDTH="1000" ENABLED ="FALSE" />
+		<INPUT TYPE="text" NAME="prazno" CAPTION="Broj nezaključenih dokumenata:*" DECIMALS="0" TOP="-2700" LEFT="3000" WIDTH="1000" ENABLED ="FALSE" />
+
+		<INPUT TYPE="button" NAME="b33" CAPTION="Pokaži" PARENT="midlegroupbox" TOP="700" LEFT="4500" WIDTH="1500" HEIGHT="322"
+			   ONCLICK=":NEZAKDOK" HOTKEY="" />
+
+
+		<INPUT TYPE="number" NAME="KOLminus" CAPTION="Broj MP kartica s minus količinom:*" DECIMALS="0" TOP="3100" LEFT="3000" WIDTH="1000" ENABLED ="FALSE" STYLE="1"/>
+
+		<INPUT TYPE="button" NAME="minus" CAPTION="Pokaži" PARENT="midlegroupbox" TOP="1100" LEFT="4500" WIDTH="1500" HEIGHT="322"
+			   ONCLICK=":MPSTANJEMINUS" HOTKEY="" />
+
+		<INPUT TYPE="number" NAME="kontrola" CAPTION="" DECIMALS="" TOP="-3500" LEFT="3000" WIDTH="1200" ENABLED ="FALSE" STYLE="1"/>
+		<INPUT TYPE="number" NAME="zakljuci" CAPTION="" DECIMALS="" TOP="-3500" LEFT="3000" WIDTH="1200" ENABLED ="FALSE" STYLE="1"/>
+		<INPUT TYPE="number" NAME="anivelacija" CAPTION="" DECIMALS="" TOP="-3500" LEFT="3000" WIDTH="1200" ENABLED ="FALSE" STYLE="1"/>
+		<INPUT TYPE="number" NAME="saldoKP" CAPTION="Saldo knjige popisa:*" DECIMALS="2" TOP="3700" LEFT="3000" WIDTH="1500" ENABLED ="FALSE" STYLE="1"/>
+		<INPUT TYPE="number" NAME="saldostanja" CAPTION="Saldo stanja robe:*" DECIMALS="2" TOP="4100" LEFT="3000" WIDTH="1500" ENABLED ="FALSE" STYLE="1"/>
+		<INPUT TYPE="number" NAME="razlikasalda" CAPTION="Razlika :*" DECIMALS="2" TOP="4500" LEFT="3000" WIDTH="1500" ENABLED ="FALSE" STYLE="1"/>
+
+		<INPUT TYPE="button" NAME="b33" CAPTION="Obnovi" PARENT="midlegroupbox" TOP="2500" LEFT="4500" WIDTH="1500" HEIGHT="322"
+			   ONCLICK="select 'Provjeravam salda !                                         .' as poruka#select 'refresh' as poruka
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 2, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo
+						#select 'Provjerite razliku salda !' as poruka#select 'refresh' as poruka" HOTKEY="" />
+
+		<INPUT TYPE="button" NAME="a1" CAPTION="Analiza kartica" PARENT="midlegroupbox" TOP="3000" LEFT="4500" WIDTH="2000" HEIGHT="322"
+			   ONCLICK=":ANALIZAKARTICA" HOTKEY="" />
+
+		<INPUT TYPE="labelporuka" NAME="poruka" CAPTION="" SIZE="12" DECIMALS="" TOP="5900" LEFT="1000" WIDTH="6200" STYLE="1"/>
+
+		<INPUT TYPE="button" NAME="b1" CAPTION="1.Kontrola" PARENT="bottomgroupbox" TOP="200" LEFT="500" WIDTH="1500" HEIGHT="322"
+			   ONCLICK="select 0 as kontrola , 0 as saldoKP, 0 as saldostanja, 0 as razlikasalda
+						#if year(@@datumdo) &lt; &gt; year(@@datumod) begin exec spRaiserror 69001, 'Razdoblje nije dobro odabrano ! Podesite godinu u polju Razdoblje DO da odgovara godini u polju Razdoblje OD!' end
+						#if @@datumdo &lt; @@datumod begin exec spRaiserror 69001, 'Razdoblje nije dobro odabrano ! Provjerite polje Razdoblje DO !' end
+						#select 'Provjeravam nezaključene dokumente !                                   .' as poruka
+						#spMPKontrolaNivelacijaNG @action = 16, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo, @operateriid = @@operateriid 
+						#select 'Zaključite nezaključene dokumente !                                   .' as poruka#if @@brojNezak > 0 begin exec spRaiserror 69001, 'Postoje nezaključeni dokumenti !' end 
+						#select 'Provjeravam duple nivelacije!                                   .' as poruka
+						#if @@brojnezak = 0 begin exec spMPKontrolaNivelacijaNG @action = 4, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo , @operateriid = @@operateriid end
+						#select 'Provjeravam nepotrebne dokumente !                                   .' as poruka
+						#if @@brojnezak = 0 begin exec spMPKontrolaNivelacijaNG @action = 7, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo , @operateriid = @@operateriid end
+						#select 'Provjeravam količine na nivelacijama !                                   .' as poruka
+						#if @@brojnezak = 0 begin exec spMPKontrolaNivelacijaNG @action = 10, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo, @operateriid = @@operateriid end
+						#select 'Provjeravam salda !                                   .' as poruka
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 2, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo
+						#if @@brojnezak = 0 begin select 'Kontrola nivelacija završena. Provjerite status dokumenata !                                   .' as poruka , 1 as kontrola end" HOTKEY="" />
+
+		<INPUT TYPE="button" NAME="b2" CAPTION="2.A-nivelacije" PARENT="bottomgroupbox" TOP="200" LEFT="2300" WIDTH="1500" HEIGHT="322"
+			   ONCLICK="#if @@datumdo &lt; @@datumod begin exec spRaiserror 69001, 'Razdoblje nije dobro odabrano ! Provjerite polje Razdoblje DO !' end
+						#if @@kontrola = 0 and (select vrstatrg from trgovina where trgovinaid = @@trgovinaid) in ('M','F') begin exec spRaiserror 69001, 'Niste napravili kontrolu dokumenata !' end
+						#select 'Pripremam podatke za automatske nivelacije!                                   .' as poruka
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 6, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 7, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo
+						#select 'Kreiram dokumente automatske nivelacije!                                   .' as poruka
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 5, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo
+						#select 'Provjeravam salda !                                   .' as poruka
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 2, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo
+						#select 'A-Nivelacije napravljene. Provjerite razliku salda i nesipravne kartice !                                   .' as poruka, 1 as anivelacija" HOTKEY="" />
+
+		<INPUT TYPE="button" NAME="b3" CAPTION="3.Zaključi" PARENT="bottomgroupbox" TOP="200" LEFT="4100" WIDTH="1500" HEIGHT="322"
+			   ONCLICK="#if @@datumdo &lt; @@datumod begin exec spRaiserror 69001, 'Razdoblje nije dobro odabrano ! Provjerite polje Razdoblje DO !' end
+						#if @@zakljuci = 1 begin exec spRaiserror 69001, 'Period je već zaključen !' end 
+						#if @@anivelacija = 0 and (select vrstatrg from trgovina where trgovinaid = @@trgovinaid) in ('M','F') begin exec spRaiserror 69001, 'Niste napravili a-nivelacije !' end
+						#exec spMPZakljucakPeriodaMPNGBiovega @action = 1, @trgovinaid=@@trgovinaid , @datumod=@@datumod, @datumdo=@@datumdo, @operateriid = @@operateriid 
+						#select 'Zaključak perioda je napravljen !' as poruka, 1 as zakljuci " HOTKEY="" />
+
+		<INPUT TYPE="button" NAME="b4" CAPTION="Odustani" PARENT="bottomgroupbox" TOP="200" LEFT="6700" WIDTH="1500" HEIGHT="322" ONCLICK="close" HOTKEY="" />
+	</ZAKLJUCI>
+	
+	
+	
+	
+	<UPDATE_NC
+		NAME="UPDATE_NC" HEIGHT="3200" WIDTH="8000"
+		CAPTION="Obnova nabavnih cijena po maloprodajnim dokumentima ?"
+		ONSUBMIT="spMPZakljucakPeriodaMPNGBiovega @action = 10, @trgovinaid=@@id, @operateriid = @@operateriid, "
+		ONLOAD="select opis as trgovina  from trgovina where trgovinaid = @@id"
+		ONLOADEDstaro="declare @vrstadokid int, @orgshemaid int, @datum datetime, @datumobrade datetime
+
+				set @orgshemaid = (select orgshemaid from trgovina where trgovinaid = @@id)
+
+				set @vrstadokid  = ( select vrstadokid From vrstadok v 
+				inner join vrstaprom vp on v.vrstapromid = vp.vrstapromid and sifra = '52'
+				where v.opis like '%tem%mat%mp%') 
+
+				--set @datum = cast(year(getdate()) as char(4))+'0101'--ksenija 20110914 zakomentirala
+				set @datum = cast((year(getdate())-1) as char(4))+'1231'--ksenija 20110914 postavila na 31.12.prethodne godine da bi u obnovu ušlo i PS u MP ove godine
+
+				set @datumobrade = (select coalesce(max(datumknjizenja),@datum) from knttem k with (nolock)
+				inner join kntpromet kp with (nolock) on k.knttemid = kp.knttemid 
+				where k.vrstadokid = @vrstadokid 
+				and kp.orgshemaid = @orgshemaid)
+				
+				select @datumobrade as datumobrade"
+		ONLOADED="select datumknjizenja+1 as datumobrade from knttem where knttemid in (select max(mattemid) from maloprodajagla where trgovinaid=@@id and mattemid in (select knttemid from knttem))"
+		FILLEXPLORER=""
+		CMD1CAPTION="Obnovi"
+		CMD2CAPTION="Odustani">
+
+		<INPUT TYPE="text"  NAME="trgovina" TOP="360" LEFT="2200" HEIGHT="317" WIDTH="3500" CAPTION="_Trgovina*" TABINDEX="1" ENABLED="FALSE"/>
+		<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite obnoviti NC na odabranoj trgovini? " />
+		<INPUT TYPE="date" NAME="datumobrade" TOP="760" LEFT="2200" CAPTION="Početni datum obnove NC u MP*" ENABLED="TRUE" />
+	</UPDATE_NC>
+
+
+
+	<PROKNJIZI
+		NAME="PROKNJIZI" HEIGHT="3200" WIDTH="8000"
+		CAPTION="Knjiženje zaključka perioda "
+		ONSUBMIT="spMPZakljucakPeriodaMPNGBiovega @action = 9, @trgovinaid=@@id, @operateriid = @@operateriid, "
+		ONLOADstaro="declare @vrstadokid int, @orgshemaid int, @datum datetime, @datumobrade datetime
+
+				set @orgshemaid = (select orgshemaid from trgovina where trgovinaid = @@id)
+
+				set @vrstadokid  = ( select vrstadokid From vrstadok v 
+				inner join vrstaprom vp on v.vrstapromid = vp.vrstapromid and sifra = '52'
+				where v.opis like '%tem%mat%mp%') 
+
+				--set @datum = cast(year(getdate()) as char(4))+'0101'--ksenija 20110914 zakomentirala
+				set @datum = cast((year(getdate())-1) as char(4))+'1231'--ksenija 20110914 postavila na 31.12.prethodne godine da bi u obnovu ušlo i PS u MP ove godine
+
+				set @datumobrade = (select coalesce(max(datumknjizenja),@datum) from knttem k with (nolock)
+				inner join kntpromet kp with (nolock) on k.knttemid = kp.knttemid 
+				where k.vrstadokid = @vrstadokid 
+				and kp.orgshemaid = @orgshemaid)
+				
+			   update mpobrada set datumknjizenja=null where trgovinaid = @@id and datumknjizenja is not null and datumobrade > @datumobrade"
+		ONLOAD="declare @datumobrade datetime
+				set @datumobrade = (select datumknjizenja from knttem where knttemid in 
+									(select max(mattemid) from maloprodajagla where trgovinaid=@@id and mattemid in (select knttemid from knttem)))
+				 update mpobrada set datumknjizenja=null where trgovinaid = @@id and datumknjizenja is not null and datumobrade > @datumobrade"
+		ONLOADEDstaro="select opis as trgovina, (select max(datumobrade) from mpobrada where trgovinaid = @@id ) as datumdo from trgovina where trgovinaid = @@id"
+		ONLOADED="select opis as trgovina, (select min(datumobrade) from mpobrada where trgovinaid = @@id and datumknjizenja is null and year(datumobrade)=year(getdate())) as datumdo from trgovina where trgovinaid = @@id"
+		FILLEXPLORER=""
+		CMD1CAPTION="Proknjiži"
+		CMD2CAPTION="Odustani">
+
+		<INPUT TYPE="text"  NAME="trgovina" TOP="360" LEFT="2200" HEIGHT="317" WIDTH="3500" CAPTION="_Trgovina*" TABINDEX="1" ENABLED="FALSE"/>
+		<INPUT TYPE="date" NAME="datumdo" TOP="760" LEFT="2200" CAPTION="Datum do*" ENABLED="TRUE" DEFAULT="today"/>
+		<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite proknjižiti temeljnicu na odabranoj trgovini? " />
+	</PROKNJIZI>
+
+
+
+	<MULTISELECTPROKNJIZI
+		NAME="MULTISELECTPROKNJIZI" HEIGHT="6500" WIDTH="8500"
+		CAPTION="Knjiženje zaključaka perioda "
+		ONSUBMIT=""
+		ONLOAD=""
+		ONLOADED=""
+		FILLEXPLORER="TRUE"
+		REFRESHAFTERCHILD="TRUE">
+
+		<INPUT TYPE="date" NAME="datumdo" TOP="550" LEFT="1600" CAPTION="Datum do*" ENABLED="TRUE" DEFAULT="today"/>
+		<INPUT TYPE="label" NAME="stat" TOP="1000" LEFT="1600" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite proknjižiti temeljnicu na odabranim trgovinama? " />
+
+		<INPUT TYPE="grid" 
+			   NAME="stavke" 
+			   CAPTION="Proknjižavanje MP temeljnica" 
+			   TOP="1400" LEFT="1600" 
+			   WIDTH="6700" HEIGHT="3500" 
+			   SQL="select tr.trgovinaid,tr.oznaka as [Oznaka trgovine1000], tr.opis as [Trgovina3000], 
+					case when tr.vrstatrg='V' then 'Maloprodaja iz veleprodaje' else 'Klasična maloprodaja' end as [Vrsta trgovina2000]
+					from totalgenmultiselecttemp t 
+					inner join trgovina tr on t.id=tr.trgovinaid
+					where t.operateriid=@@operateriid"
+			   CHECKBOXVISIBLE="FALSE"/>
+		
+		<INPUT TYPE="button" NAME="" CAPTION="Ukloni trgovinu iz prikaza" TOP="2000" LEFT="140" WIDTH="1200" HEIGHT="600" 
+			   ONCLICK="delete from totalgenmultiselecttemp where id=@@stavke and operateriid=@@operateriid
+						#select 'refresh' as stavke"  />
+		<INPUT TYPE="button" NAME="ok" CAPTION="Proknjiži" TOP="5500" LEFT="224" WIDTH="1386" HEIGHT="322" 
+			   ONCLICK="FOREACHROW(stavke)#spMPZakljucakPeriodaMPNGBiovega @action = 9, @trgovinaid=@@stavke, @operateriid = @@operateriid, @datumdo=@@datumdo, @porukagreska=1#click(close)"  />
+		<INPUT TYPE="button" NAME="close" CAPTION="Odustani" TOP="5500" LEFT="5236" WIDTH="1050" HEIGHT="322" 
+			   ONCLICK="CLOSE#delete from totalgenmultiselecttemp where operateriid =  @@operateriid"  />
+
+
+		
+	</MULTISELECTPROKNJIZI>
+
+
+
+	<ANALIZAKARTICA
+		HEIGHT="7500"
+		WIDTH="15000"
+		CAPTION="Analiza kartica trgovine @@comboboxtrgovinaid za period @@datumod do @@datumdo"
+		ONSUBMIT=""
+		CHECKBOXVISIBLE="TRUE"
+		ONLOAD="select convert(char(4),year(@@datumod))+'0101' as datod, coalesce(ugoind,0) as ugoind from trgovina where trgovinaid=@@trgovinaid">
+
+		<INPUT TYPE="date" NAME="datod" CAPTION="" TOP="-1000" LEFT="1500" WIDTH="1500" ENABLED="FALSE" />
+		<INPUT TYPE="number" NAME="ugoind" CAPTION="" TOP="-1000" LEFT="1500" WIDTH="1500" ENABLED="FALSE" DECIMALS="0"/>
+
+		<INPUT TYPE="grid"
+			   NAME="analizakartica"
+			   TOP="200" LEFT="200" WIDTH="14500" HIGHT="6000"
+			   TOTALROW="TRUE"
+			   CHECKBOXVISIBLE="FALSE"
+			   PAGEORIENTATION="LANDSCAPE"
+			   SQL="spMPStanjeQueryNG @action=500, @kartica = 1, @komisija = 2, @neispravno = 1, @skladisteid = @@trgovinaid , @datumod = @@datod , @datumdo = @@datumdo, @ugoind=@@ugoind "
+			   CAPTION="Kartica robe"/>
+
+		<COLUMN INDEX="" NAME="[Stanje0800]" AGREGATEFUNCTION="0"/>
+
+		<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="200" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Kartica" TOP="6500" LEFT="2200" WIDTH="1500" HEIGHT="322" ONCLICK=":KARTICA"/>
+	</ANALIZAKARTICA>
+
+
+	<NEZAKDOK
+		HEIGHT="7500"
+		WIDTH="16000"
+		CAPTION="Nezaključeni dokumenti u periodu od @@datumod do @@datumdo"
+		ONSUBMIT=""
+		CHECKBOXVISIBLE="TRUE"
+		ONLOAD="">
+
+		<INPUT TYPE="date" NAME="datumod" CAPTION="" TOP="-1000" LEFT="1500" WIDTH="1500" ENABLED="FALSE" />
+
+		<INPUT TYPE="grid"
+			   NAME="nezakdok" TOP="200" LEFT="200" WIDTH="15500" HIGHT="6000"
+			   TOTALROW="TRUE"
+			   CHECKBOXVISIBLE="FALSE"
+			   PAGEORIENTATION="LANDSCAPE"
+			   SQL="spMPZakljucakPeriodaMPNGBiovega @action=12, @operateriid = @@operateriid, @datumod=@@datumod, @datumdo=@@datumdo"
+			   CAPTION=""/>
+
+		<COLUMN INDEX="" NAME="" AGREGATEFUNCTION="0"/>
+
+		<INPUT TYPE="button" NAME="" CAPTION="Zaključi" TOP="-6500" LEFT="200" WIDTH="1500" HEIGHT="322" ONCLICK="exec spmpzakljucidokNG @id = @@nezakdok#select 'refresh' as nezakdok"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="4000" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+	</NEZAKDOK>
+
+
+	<MPSTANJEMINUS
+		HEIGHT="7500"
+		WIDTH="16000"
+		CAPTION="Kartice roba na Stanju MP s količinom u minusu u periodu od @@datumod do @@datumdo"
+		ONSUBMIT=""
+		CHECKBOXVISIBLE="FALSE"
+		ONLOAD="" >
+
+
+		<INPUT TYPE="grid"
+			   NAME="analizakartica" TOP="200" LEFT="200" WIDTH="15500" HIGHT="6000"
+			   TOTALROW="TRUE"
+			   CHECKBOXVISIBLE="FALSE"
+			   PAGEORIENTATION="LANDSCAPE"
+			   SQL="exec spMPStanjeQueryNG @action=500,@RobaId=null, @SkladisteId=@@trgovinaid, @DatumOd=@@datumod, @DatumDo=@@datumdo,
+					@KlMasterRobaId=null, @status=-1, @kolicinaod=0, @kolicinado=0, @kartica=0, @neispravno=0, @komisija=2, @podklase = 0, @dakolicina = 0"
+			   CAPTION=""/>
+
+		<COLUMN INDEX="" NAME="" AGREGATEFUNCTION="0"/>
+
+		<INPUT TYPE="button" NAME="" CAPTION="Kartica" TOP="6500" LEFT="1200" WIDTH="1500" HEIGHT="322" ONCLICK=":KARTICA"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="4000" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+	</MPSTANJEMINUS>
+
+
+	<KARTICA
+		FILLEXPLORER="TRUE"
+		WIDTH="17000"
+		ONSUBMIT=""
+		ONLOAD=""
+		HEIGHT="9500"
+		CAPTION="Kartica robe"
+		BORDERSTYLE="3">
+
+		<INPUT TYPE="grid"
+			   NAME="kartica"
+			   REFRESHAFTERCHILD="TRUE"
+			   TOP="200" LEFT = "200" WIDTH="16500" HEIGHT="8000"
+			   CHECKBOXVISIBLE="FALSE"
+			   TOTALROW="FALSE"
+			   DETTOTALROWVISIBLE="FALSE"
+			   GROUPBYBOXVISIBLE="FALSE"
+			   SQL="spMPStanjeKarticaNG @action = 1, @robaid = @@analizakartica, @prikaz= 0, @trgovinaid = @@trgovinaid, @datumod = @@datumod, @datumdo = @@datumdo, @totalgen= 1,@operateriid = @@operateriid" />
+
+		<INPUT TYPE="button" NAME="cancel" TABINDEX="16" CAPTION="Kraj" TOP="8500" LEFT="1000" WIDTH="1400" HEIGHT="322" ONCLICK="close"  />
+		<INPUT TYPE="button" NAME="cijena" TABINDEX="16" CAPTION="Cijena" TOP="8500" LEFT="3000" WIDTH="1400" HEIGHT="322" ONCLICK=":IZMJENIFORM"  />
+		<INPUT TYPE="button" NAME="Staracij" TABINDEX="16" CAPTION="Stara cij" TOP="8500" LEFT="5000" WIDTH="1400" HEIGHT="322" ONCLICK=":IZMJENISTARUMPC"  />
+		<INPUT TYPE="button" NAME="Kolicina" TABINDEX="16" CAPTION="Količina" TOP="8500" LEFT="7000" WIDTH="1400" HEIGHT="322" ONCLICK=":IZMJENIKOL"  />
+		<INPUT TYPE="button" NAME="KolicinaA" TABINDEX="16" CAPTION="Količina A-niv" TOP="8500" LEFT="9000" WIDTH="1400" HEIGHT="322" ONCLICK=":IZMJENIKOLA"  />
+		<INPUT TYPE="button" NAME="StaracijA" TABINDEX="16" CAPTION="Stara Cij A-niv" TOP="8500" LEFT="11000" WIDTH="1400" HEIGHT="322" ONCLICK=":IZMJENISTARUMPCA"  />
+	</KARTICA>
+
+
+
+	<IZMJENIFORM
+	  WIDTH="5500"
+	  ONSUBMIT="spMPKontrolaNivelacijaNG @action=8, @maloprodajadetid = @@gridkarticamaloprodajadetid, @vrstadok = '@@gridkarticaVrsta_dokumenta' ,"
+	  ONLOAD="if @@gridkarticamaloprodajadetid is not null begin 
+				select mpcijena as cijena from maloprodajadet where maloprodajadetid = @@gridkarticamaloprodajadetid
+				end
+				else begin 
+					exec spRaiserror 69001, 'Niste odabrali dokumant nivelacije!'	   
+				end "
+	  HEIGHT="2500"
+	  CAPTION="Izmjeni cijenu"
+	  CMD1CAPTION="Spremi"
+	  CMD2CAPTION="Odustani"
+	  FILLEXPLORER="">
+
+		<INPUT TYPE="number" NAME="cijena" CAPTION="Cijena" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" />
+	</IZMJENIFORM>
+
+
+
+	<IZMJENIKOL
+	  WIDTH="5500"
+	  ONSUBMIT="spMPKontrolaNivelacijaNG @action=15, @stavke = @@gridkarticamaloprodajadetid, @vrstadok = '@@gridkarticaVrsta_dokumenta' , "
+	  ONLOAD="if @@gridkarticamaloprodajadetid is not null begin 
+					select kolicinaulaz as kolicina from maloprodajadet where maloprodajadetid= @@gridkarticamaloprodajadetid
+				end
+				else begin 
+					exec spRaiserror 69001, 'Niste odabrali dokumant nivelacije !'	   
+				end"
+	  HEIGHT="2500"
+	  CAPTION="Izmjeni količinu"
+	  CMD1CAPTION="Spremi"
+	  CMD2CAPTION="Odustani"
+	  FILLEXPLORER="">
+
+		<INPUT TYPE="number" NAME="kolicina" CAPTION="Kolicina" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" />
+	</IZMJENIKOL>
+
+
+
+	<IZMJENIKOLA
+	  WIDTH="5500"
+	  ONSUBMIT="spMPKontrolaNivelacijaNG @action=13, @stavke = @@kartica, @vrstadok = '@@gridkarticaVrsta_dokumenta' ,"
+	  ONLOAD="if @@gridkarticampniveldetid is not null begin 
+					select kolicinaulaz as kolicina from mpniveldet where mpniveldetid= @@gridkarticampniveldetid
+				end
+				else begin 
+					exec spRaiserror 69001, 'Niste odabrali A-nivelaciju!'	   
+				end"
+	  HEIGHT="2500"
+	  CAPTION="Izmjeni količinu"
+	  CMD1CAPTION="Spremi"
+	  CMD2CAPTION="Odustani"
+	  FILLEXPLORER="">
+
+		<INPUT TYPE="number" NAME="kolicina" CAPTION="Kolicina" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" />
+	</IZMJENIKOLA>
+
+
+
+	<IZMJENISTARUMPC
+	  WIDTH="5500"
+	  ONSUBMIT="spMPKontrolaNivelacijaNG @action=9, @stavke = @@gridkarticamaloprodajadetid, @vrstadok = '@@gridkarticaVrsta_dokumenta' ,"
+	  ONLOAD="if @@gridkarticamaloprodajadetid is not null begin
+					select nabcijena as cijena from maloprodajadet where maloprodajadetid = @@gridkarticamaloprodajadetid
+				end
+				else begin 
+					exec spRaiserror 69001, 'Niste odabrali dokumant nivelacije !'	   
+				end"
+	  HEIGHT="2500"
+	  CAPTION="Izmjeni cijenu"
+	  CMD1CAPTION="Spremi"
+	  CMD2CAPTION="Odustani"
+	  FILLEXPLORER="">
+
+		<INPUT TYPE="number" NAME="cijena" CAPTION="Cijena" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" />
+	</IZMJENISTARUMPC>
+
+
+
+	<IZMJENISTARUMPCA
+	  WIDTH="5500"
+	  ONSUBMIT="spMPKontrolaNivelacijaNG @action=14, @stavke = @@kartica, @ANIV = 1, @vrstadok = '@@gridkarticaVrsta_dokumenta' ,"
+	  ONLOAD="if @@gridkarticampniveldetid is not null begin 
+					select nabcijena+povnaknadaroba as cijena from mpniveldet where mpniveldetid = @@gridkarticampniveldetid
+				end
+				else begin 
+					exec spRaiserror 69001, 'Niste odabrali A-NIvelaciju!'	   
+				end"
+	  HEIGHT="2500"
+	  CAPTION="Izmjeni cijenu"
+	  CMD1CAPTION="Spremi"
+	  CMD2CAPTION="Odustani"
+	  FILLEXPLORER="">
+
+		<INPUT TYPE="number" NAME="cijena" CAPTION="Cijena" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" />
+	</IZMJENISTARUMPCA>
+
+
+</PROJECT>

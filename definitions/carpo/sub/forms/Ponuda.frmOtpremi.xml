@@ -1,0 +1,168 @@
+<!-- 
+03.03.2023. AR i DA - dodali varijablu VrDokID na onshown i kod promijene u padajućem izborniku i slanje na formu otpremnice zbog popravka polja radni nalog
+17.10.2022. MB popravila podizanje forme za Otpremu i povlačenje Napomene. Stavila ProNptpGlaId kao Output
+-->
+<root>
+    <form name="frmOtpremi" caption="Otprema" width="350" height="300" fixedsize="true">
+		<event type="oninit">
+            <action type="datarun reader" value="~dtGet" />
+			<action type="variable value">
+				<parameter name="PartneriId" value="~dtGet.@PartneriId" />
+			</action>
+			<action type="variable value">
+				<parameter name="IndMi" value="~dtGet.@IndMi" />
+			</action>
+			<action type="variable value">
+				<parameter name="Global.VrstaPromSifra" value="09" type="string" />
+			</action>
+			<action type="variable value">
+				<parameter name="Global.VrstaPromId" value="22" type="int" />
+			</action>
+		</event>
+		<event type="onclose">
+			<action type="control refreshrow" value="parent.#grdGlava">
+				<parameter value="global.~dtGet"/>
+			</action>			
+        </event>
+		<event type="onload">
+			<action type="control disable" value="#srcParstru, #srcPartner, #cmbKontakt" if="$IndMi==1"/>
+			<action type="control enable" value="#srcParstru, #srcPartner, #cmbKontakt" else="" />
+        </event>
+		<event type="onshown">
+			<action type="variable value">
+				<parameter name="VrDokId" value="#cmbVrstaDok" />
+			</action>
+		</event>		
+        <layout textposition="left" itemspadding="3">
+            <group cols="1" rows="1">
+                <group rows="6" cols="1" row="1" col="1" entermovenextcontrol="true">
+                    <item caption="Skladište:" row="1" col="1">
+                        <comboedit name="cmbSkladiste" valuefield="SkladisteId" displayfield="Opis" datavalue="#dtGet.@SkladisteId" dataname="Global.dtSkladiste" required="true"/>
+                    </item>
+                    <item caption="Vrsta dokumenta:" row="2" col="1">
+                        <comboedit name="cmbVrstaDok" valuefield="VrstaDokId" displayfield="Opis" datavalue="#dtGet.@VrstaDokId" dataname="Global.dtVrstaDokNotp" required="true"/>
+							<event type="valuechanged">
+								<action type="variable value">
+									<parameter name="VrDokId" value="#cmbVrstaDok" />
+								</action>
+							</event>
+					</item>
+                    <item caption="Datum:" row="3" col="1">
+                        <dateedit name="datDatumdok" datavalue="#dtGet.@DatumDok" required="true">
+                        </dateedit>
+                    </item>
+                    <item caption="Partner:" row="4" col="1" >
+						<searchedit netgenfields="true" name="srcPartner" required="true" fontbold="true" dataname="Global.dtPartneri" fieldtext="NazivId" fieldvalue="partneriid" datavalue="#dtGet.@PartneriId" datatext="#dtGet.@PartnerNaziv">
+							<event type="valuechanged">
+								<action type="variable value">
+									<parameter name="PartneriId" value="#srcPartner" />
+								</action>	
+								<action type="variable value">
+									<parameter name="IndPromijenjeno" value="1" />
+								</action>																
+								<action type="control enable" value="#cmbKontakt" if="#srcPartner!=null&amp;&amp;$IndLoad==0">
+									<action type="control populate" value="#cmbKontakt" />
+								</action>
+								<action type="control disable" value="#cmbKontakt" if="#srcPartner==null">
+									<action type="control datasource empty" value="#cmbKontakt" />
+								</action>	
+								<action type="variable value">
+									<parameter name="IndLoad" value="0" />
+								</action>								
+							</event>
+							<event type="leave">						
+								<action type="datarun reader" value="Global.dtDajPartnera" if="#srcPartner!=null"/>						
+								<action type="control value" value="#srcParstru" if="#srcPartner!=null&amp;&amp;#srcPartner.@BrojLokacija_Id==1">
+									<parameter value="~dtDajPartnera.@parstruid" text="~dtDajPartnera.@Naziv"/>
+								</action>
+								<action type="form open" value="frmLokacije" if="#srcPartner.@BrojLokacija_Id!=null&amp;&amp;#srcPartner.@BrojLokacija_Id&gt;1&amp;&amp;$IndPromijenjeno==1">
+									<parameter name="PartneriId" value="#srcPartner" />
+									<parameter name="IndLokacija" value="1" />
+									<parameter name="ParStruId" value="#srcParstru" />
+								</action>
+								<action type="control refreshvalue" value="#srcParstru" if="#srcPartner==null"/>
+								<action type="variable value">
+									<parameter name="IndLokacija" value="0" />
+								</action>
+								<action type="variable value">
+									<parameter name="IndPromijenjeno" value="0" />
+								</action>							
+							</event>
+						</searchedit>
+                    </item>
+                    <item caption="Lokacija:" row="5" col="1">
+						<searchedit netgenfields="true" name="srcParstru" required="true" dataname="Global.dtParstru" fieldtext="NazivId" fieldvalue="ParStruId" datavalue="#dtGet.@ParStruId" datatext="#dtGet.@ParStruNaziv" autopopulate="false" >
+							<event type="leave">
+								<action type="datarun reader" value="Global.dtDajPartnera" if="#srcParstru!=null"/>
+								<action type="control value" value="#srcPartner" if="#srcPartner==null&amp;&amp;#srcParstru!=null">
+									<parameter value="~dtDajPartnera.@partneriid" text="~dtDajPartnera.@Naziv"/>
+								</action>
+							</event>			
+						</searchedit>
+                    </item>
+                    <item caption="Kontakt:" row="6" col="1">
+                        <comboedit name="cmbKontakt" valuefield="OsobeId" displayfield="Osoba" datavalue="#dtGet.@OsobeParId" dataname="Global.dtKontakt" />
+                    </item>				
+                </group>
+            </group>
+        </layout>
+        <panelbuttons>
+            <buttons>
+                <button caption="OTPREMI" type="add" dock="left">
+					<event type="click">
+						<action type="validate" />
+						<action type="confirm" value="Želite li kreirati otpremnicu?">
+							<action type="datarun reader" value="~dtOtprema"/>
+							<!-- <action type="variable value" value="Global.$ProNotpGlaId">
+								<parameter value="$ProNotpGlaId" />
+							</action> -->
+							<!-- <action type="control populate keepfocus" value="parent.#grdGlava" /> -->
+							<action type="form close" />
+							<!-- zbog otvaranja otpreme privremeno u Global.DokId stavljam pronotpglaid  -->
+							<!-- <action type="variable value">
+								<parameter name="Global.DokId" value="$ProNotpGlaId" type="int"/>
+							</action>	-->
+							<action type="variable value" value="global.$tablicaGla">
+								<parameter value="ProNOtpGla" />
+							</action>
+							<action type="variable value" value="global.$tablicaDet">
+								<parameter value="ProNotpDet" />
+							</action>
+							<action type="variable value">
+								<parameter name="VrstaDok" value="Nalog za otpremu"/>
+							</action>
+							<action type="form open" value="frmDokIzmjena" if="$ProNotpGlaId!=null">
+								<parameter name="ProNotpGlaId" value="$ProNotpGlaId" />
+								<parameter name="Status" value="1"/>
+								<parameter name="PartneriId" value="#srcPartner"/>
+								<parameter name="IndPonuda" value="1" type="int"/>
+								<parameter name="VrstaDok" value="$VrstaDok"/>
+								<parameter name="VrstaDokId" value="$VrDokId"/>
+							</action>
+						</action>
+						<!-- vraćam na proponglaid, privremeno je na otpremi bio pronotpglaid  -->
+						<!-- <action type="variable value">
+							<parameter name="Global.DokId" value="$ProPonGlaId" type="int"/> 
+						</action> -->
+					</event>	
+                </button>
+                <button caption="ODUSTANI" type="cancel" dock="right" />
+            </buttons>
+        </panelbuttons>
+        <datalist>
+            <data command="spProd_PonGla_Otpremi" name="dtGet">
+                <parameter name="@ProPonGlaId" value="$ProPonGlaId" />
+            </data>
+            <data command="spProd_Notp_IzPonude" name="dtOtprema">
+                <parameter name="@ProPonGlaId" value="$ProPonGlaId" />
+				<parameter name="@TestId.output.int" variablename="ProNOtpGlaId" />
+                <parameter name="@vrstadokid" value="#cmbVrstaDok" />
+                <parameter name="@skladisteid" value="#cmbSkladiste" />
+                <parameter name="@DatumDok" value="#datDatumdok" />
+                <parameter name="@PartneriId" value="#srcPartner" />
+                <parameter name="@ParStruId" value="#srcParstru" />
+                <parameter name="@OsobeParId" value="#cmbKontakt" />
+            </data>
+        </datalist>
+    </form>
+</root>

@@ -1,0 +1,281 @@
+﻿<root version="1.1">
+
+	<form name="frmStrojevi" type="master" caption="Radni strojevi"  saveformlayout="true">
+		<!--<method name="funDmsAdd" dll="DmsManagerV1" class="DmsManagerV1.Start" method="AddDocuments" />-->
+		<event type="oninit">
+			<action type="datarun reader" value="~dtDrvoPozicija" />
+			<!--<action type="datarun reader" value="~dtZNRDMS" />-->
+		</event>
+		<event type="onshown">
+			<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdStrojevi.rowcount==0" />
+			<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+			<action type="control populate" value="#tree" >
+				<action type="control focus" value="#tree">
+					<parameter name="key" value="~dtDrvoPozicija.@Poz" />
+				</action>
+			</action>
+			<!--<action type="control visible" value="#menDokument" if="~dtZNRDMS.@Postavka==0">
+				<parameter value="false"/>
+			</action>-->
+		</event>
+		<managerlayout>
+			<tree name="tree"  keyfield="Id" key="Id"  filtermode="smart" expandedlevel="2" dataname="dtTree">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdStrojevi" />
+					<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdStrojevi.rowcount==0" />
+					<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+				</event>
+				<fields>
+					<field name="Naziv" />
+				</fields>
+			</tree>
+			<grid name="grdStrojevi" key="ZNRStrojeviId" type="master" async="true" dataname="dtMaster" preventfocusgroup="false" fieldsmartspaces="false" multiselect="false" bestfitonrefresh="true">
+				<event type="cellvaluechanged">
+					<action type="datarun nonquery" value="~dtUpdateIndIzvanUpotrebe" />
+					<action type="control populate keepfocus" value="#grdStrojevi" />
+				</event>
+				<fields inherited="true">
+					<field name="InvBroj" caption="Inventurni broj" fixed="true" />
+					<field name="Naziv" fixed="true" />
+					<field name="SerBroj" caption="Serijski broj"/>
+					<field name="MT" caption="Mjesto troška"/>
+					<field name="DatNabave" caption="Datum nabave"/>
+					<field name="TvorBroj" caption="Tvornički broj"/>
+					<field name="TehPodaci" caption="Tehnički podaci" fixwidth="300" rowautoheight="true"/>
+					<field name="Namjena" caption="" fixwidth="300" rowautoheight="true"/>
+					<field name="MjestoRada" caption="Mjesto rada"/>
+					<field name="PrikljucniNaziv" caption="Priključni stroj" fixwidth="300" rowautoheight="true"/>
+					<field name="IndIzvanUpotrebe" caption="Ne koristi se" editable="true" edittype="bit"/>
+				</fields>
+				<menu>
+					<menuitem caption="Dodaj sliku" name="menSlika" sort="1">
+						<event type="click">
+							<action type="form open" value="frmSlika" >
+								<parameter name="caption" value="Izmjena slike radnog stroja {#grdStrojevi.@Naziv} (inv.broj:{#grdStrojevi.@InvBroj})" />
+								<parameter name="ZNRStrojeviId" value="#grdStrojevi.@ZNRStrojeviId" />
+							</action>
+							<action type="control populate" value="#grdStrojevi" />
+						</event>
+					</menuitem>
+					<!--<menuitem type="separator"/>
+					<menuitem caption="Priloži dokument" name="menDokument" sort="2">
+						<event type="click">
+							<action type="method run" value="funDmsAdd">
+								<parameter name="server" value="@@server" />
+								<parameter name="database" value="@@database" />
+								<parameter name="username" value="" />
+								<parameter name="password" value="" />
+								<parameter name="operaterid" value="@@operateriid"/>
+								<parameter name="entityName" value="ZNRStrojevi" />
+								<parameter name="entityId" value="#grdStrojevi.@ZNRStrojeviId" />
+							</action>
+						</event>
+					</menuitem>
+					<menuitem caption="Pregled dokumenata" name="menDokumentPregled" sort="3">
+						<event type="click">
+							<action type="form open" value="frmDokumentiPregled">
+								<parameter name="ZNRStrojeviId" value="#grdStrojevi.@ZNRStrojeviId"/>
+								<parameter name="caption" value="Pregled dokumenata radnog stroja {#grdStrojevi.@Naziv} (inv.broj:{#grdStrojevi.@InvBroj})"/>
+								<parameter name="tip" value="strojevi"/>
+								<parameter name="EntityName" value="ZNRStrojevi"/>
+							</action>
+						</event>
+					</menuitem>-->
+				</menu>
+				<event type="doubleclick">
+					<action type="variable value" value="global.ZNRStrojeviId">
+						<parameter value="#grdStrojevi.@ZNRStrojeviId" />
+					</action>
+					<action type="variable value" value="global.Naziv">
+						<parameter value="#grdStrojevi.@Naziv" />
+					</action>
+					<action type="variable value" value="global.InvBroj">
+						<parameter value="#grdStrojevi.@InvBroj" />
+					</action>
+					<action type="form open" value="frmKarticaStrojaRucno" if="#grdStrojevi.@OSImovinaId==null">
+						<parameter name="caption" value="Radni stroj {#grdStrojevi.@Naziv} (inv.broj:{#grdStrojevi.@InvBroj}) - pregled" />
+						<parameter name="tip" value="izmjena rucno" />
+					</action>
+					<action type="form open" value="frmKarticaStroja" else="">
+						<parameter name="caption" value="Radni stroj {#grdStrojevi.@Naziv} (inv.broj:{#grdStrojevi.@InvBroj}) - pregled" />
+						<parameter name="tip" value="izmjena" />
+					</action>
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnos" caption="Unesi" >
+					<event type="click">
+						<action type="variable value" value="global.ZNRStrojeviId">
+							<parameter value="null" />
+						</action>
+						<action type="variable value" value="global.Naziv">
+							<parameter value="null" />
+						</action>
+						<action type="variable value" value="global.InvBroj">
+							<parameter value="null" />
+						</action>
+						<action type="form open" value="frmKarticaStroja">
+							<parameter name="caption" value="Unos novog radnog stroja" />
+							<parameter name="tip" value="unos" />
+						</action>
+						<action if="dialogresult!=cancel">
+							<action type="control populate " value="#grdStrojevi" >
+								<action type="control focus" value="#grdStrojevi">
+									<parameter value="$Fokus"/>
+								</action>
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmjena" caption="Izmijeni">
+					<event type="click">
+						<action type="variable value" value="global.ZNRStrojeviId">
+							<parameter value="#grdStrojevi.@ZNRStrojeviId" />
+						</action>
+						<action type="variable value" value="global.Naziv">
+							<parameter value="#grdStrojevi.@Naziv" />
+						</action>
+						<action type="variable value" value="global.InvBroj">
+							<parameter value="#grdStrojevi.@InvBroj" />
+						</action>
+						<action type="form open" value="frmKarticaStrojaRucno" if="#grdStrojevi.@OSImovinaId==null">
+							<parameter name="caption" value="Radni stroj {#grdStrojevi.@Naziv} (inv.broj:{#grdStrojevi.@InvBroj}) - pregled" />
+							<parameter name="tip" value="izmjena rucno" />
+						</action>
+						<action type="form open" value="frmKarticaStroja" else="">
+							<parameter name="caption" value="Radni stroj {#grdStrojevi.@Naziv} (inv.broj:{#grdStrojevi.@InvBroj}) - pregled" />
+							<parameter name="tip" value="izmjena" />
+						</action>
+						<action type="control populate keepfocus" value="#grdStrojevi" />
+					</event>
+				</button>
+				<button name="btnBrisanje" caption="Obriši">
+					<event type="click">
+						<action type="confirm" value="Da li ste sigurni da želite obrisati radni stroj {#grdStrojevi.@Naziv} (inv.broj:{#grdStrojevi.@InvBroj})?">
+							<action type="datarun reader" value="~dtDeleteRucno" if="#grdStrojevi.@OSImovinaId==null"></action>
+							<action type="datarun reader" value="~dtDelete" else=""></action>
+						</action>
+						<action type="control populate" value="#grdStrojevi"></action>
+					</event>
+				</button>
+				<button name="btnUnosOst" caption="Unesi ručno" begingroup="true">
+					<event type="click">
+						<action type="variable value" value="global.ZNRStrojeviId">
+							<parameter value="null" />
+						</action>
+						<action type="variable value" value="global.Naziv">
+							<parameter value="null" />
+						</action>
+						<action type="variable value" value="global.InvBroj">
+							<parameter value="null" />
+						</action>
+						<action type="form open" value="frmKarticaStrojaRucno">
+							<parameter name="caption" value="Ručni unos novog radnog stroja" />
+							<parameter name="tip" value="unos rucno" />
+						</action>
+						<action if="dialogresult!=cancel">
+							<action type="control populate " value="#grdStrojevi" >
+								<action type="control focus" value="#grdStrojevi">
+									<parameter value="$Fokus"/>
+								</action>
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnPregledPS" caption="Priključni strojevi" >
+					<event type="click">
+						<action type="form open" value="frmPrikljucniPregled" >
+							<parameter name="tip" value="pregled PS" />
+							<parameter name="caption" value="Pregled priključnih strojeva " />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+
+
+
+
+		<datalist>
+			<!--<data command="spZNRDjelatnici_Help" name="dtZNRDMS">
+				<parameter name="@Action" value="DMS_dohvati"/>
+			</data>-->
+			<data command="spZNRStrojevi_Query" name="dtTree">
+				<parameter name="@Action" value="OSStatusi_tree" />
+			</data>
+			<data command="spZNRStrojevi_Query" name="dtDrvoPozicija">
+				<parameter name="@Action" value="Pozicija_drvo" />
+			</data>
+			<data command="spZNRStrojevi_Query" name="dtMaster">
+				<parameter name="@Action" value="Master_pregled"/>
+				<parameter name="@OSStatusiId" value="#tree.@Id" />
+			</data>
+			<data command="spZNRStrojevi_Azur" name="dtDelete">
+				<parameter name="@Action" value="Brisanje" />
+				<parameter name="@ZNRStrojeviId" value="#grdStrojevi.@ZNRStrojeviId" />
+			</data>
+			<data command="spZNRStrojevi_Azur" name="dtDeleteRucno">
+				<parameter name="@Action" value="Brisanje_Rucno" />
+				<parameter name="@ZNRStrojeviId" value="#grdStrojevi.@ZNRStrojeviId" />
+			</data>
+			<data command="spZNRStrojevi_Azur" name="dtUpdateIndIzvanUpotrebe">
+				<parameter name="@Action" value="Update_IndIzvanUpotrebe"/>
+				<parameter name="@ZNRStrojeviId" value="#grdStrojevi.@ZNRStrojeviId"/>
+				<parameter name="@IndIzvanUpotrebe" value="#grdStrojevi.@IndIzvanUpotrebe"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!--* * * * * * * * * * * * * * * * * * * * * * * * * * * * PROMJENA SLIKE RADNOG STROJA * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
+
+	<form name="frmSlika" type="master" caption="$caption" fixedsize="false" width="600" height="100" >
+
+		<layout textposition="left" >
+			<group cols="1" rows="1" groupbordervisible="false">
+				<item caption="" col="1" row="1" textposition="left" rowspan="7">
+					<browseedit name="brwDatoteka" type="file" required="true" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Spremi" type="add" dock="left">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun reader" value="~dtSpremiSliku"/>
+						<action if="~dtSpremiSliku.@indgreske==1">
+							<action type="message" value="~dtSpremiSliku.@poruka"/>
+						</action>
+						<action if="~dtSpremiSliku.@indgreske==0">
+							<action type="message" value="~dtSpremiSliku.@poruka"/>
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<button caption="Izlaz" type="cancel" dock="right">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spZNRStrojevi_Azur" name="dtSpremiSliku">
+				<parameter name="@Action" value="Slika_izmjena"/>
+				<parameter name="@ZNRStrojeviId" value="$ZNRStrojeviId"/>
+				<parameter name="@slikaVarbinary" value="#brwDatoteka" type="varbinary"/>
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmKarticaStroja" path="frmKarticaStroja.xml"/>
+	<form name="frmKarticaStrojaRucno" path="frmKarticaStrojaRucno.xml"/>
+	<form name="frmPrikljucniPregled" path="frmPrikljucniPregled.xml"/>
+	<form name="frmDokumentiPregled" path="frmDokumentiPregled.xml"/>
+	<form name="frmKreirajIspitivanje" path="frmKreirajIspitivanje.xml"/>
+
+</root>
+

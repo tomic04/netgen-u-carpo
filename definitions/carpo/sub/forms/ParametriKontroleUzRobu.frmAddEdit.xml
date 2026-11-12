@@ -1,0 +1,148 @@
+<root>
+	<form name="frmAddEdit" caption="Parametri za robu" statusbar="true">
+	<!-- učitavanje naziva robe iz master grida -->
+		<event type="init">
+			<action type="datarun reader" value="~dtPopulate"/>
+			<action type="datarun reader" value="~dtPopulateClass"/>
+		</event>
+		
+		<event type="load">
+			<action type="control populate" value="#grdParametri"/>
+			<action type="footer text" value="Broj parametara: {#grdParametri.rowcount}."/>
+		</event>
+		
+		<layout>
+			<group rows="2" cols="1">
+				<group row="1" col="1" rows="2" cols="1" caption="Vrijedi za:">
+					<item row="1" col="1" caption="Za robu:" textposition="left">
+					<!-- tražilica -->
+						<searchedit name="srcRoba" datavalue="~dtPopulate.@RobaId" datatext="~dtPopulate.@Naziv" dataname="~dtTraziRoba"
+									netgenfields="true" fieldtext="Roba3000" fieldvalue="RobaId">
+							<event type="valuechanged" raiseonload="false"> <!-- raiseonload="false" kako bi se pri pokretanju eventa akcije mogle izvesti -->
+							<!-- promjena vrijednosti parametra RobaId -->
+								<action type="variable value" value="$RobaId">
+									<parameter value="#srcRoba.@RobaId"/>
+								</action>
+							<!-- update robe -->
+                                <action type="datarun reader" value="~dtParametri"/>
+                                <action type="control populate" value="#grdParametri"/>
+							<!-- update klase -->
+								<action type="datarun reader" value="~dtPopulateClass"/>
+                                <action type="control value" value="#txtKlas">
+									<parameter value="#srcRoba.@klasifikacija3000"/>
+								</action>
+                            </event>
+						</searchedit>
+					</item>
+					<item row="2" col="1" caption="Klasa robe:" textposition="left">
+						<textedit name="txtKlas" datavalue="~dtPopulateClass.@Naziv" readonly="true"/>
+					</item>
+				</group>
+				<group row="2" col="1" rows="1" cols="2">
+					<columnsdefinition>
+						<column position="2" size="100"/>
+					</columnsdefinition>
+					<item row="1" col="1">
+					<!-- grid s parametrima -->
+						<grid name="grdParametri" dataname="~dtParametri" autopopulate="true" key="KKvalLnParametarRobaId" multiselect="true" master="true" savelayout="true">
+							<fields>
+								<field name="Naziv" minwidth="150"/>
+								<field name="strdefault" caption="Default"/>
+								<field name="DecMin" caption="Min"/>
+								<field name="DecMax" caption="Max"/>
+								<field name="Opis"/>
+								<field name="StrObavezan" caption="Obavezan"/>
+								<field name="DatumParametarRoba" caption="Datum" minwidth="100"/>
+							</fields>
+							<event type="refr">
+								<action type="footer text" value="Broj parametara: {#grdParametri.rowcount}."/>
+							</event>
+						</grid>
+					</item>
+					<group row="1" col="2" rows="4" cols="1" groupbordervisible="false">
+						<rowsdefinition>
+							<row position="1" size="50"/>
+							<row position="2" size="50"/>
+							<row position="3" size="50"/>
+						</rowsdefinition>
+						<item row="1" col="1">
+						<!-- dodaj -->
+							<button caption="Dodaj">
+								<event type="click">
+									<action type="form open" value="frmEditPar">
+										<parameter name="RobaParId" value="$RobaId"/>
+										<action type="control populate" value="#grdParametri"/>
+										<action type="control populate" value="parent.#grdDetail"/>
+									</action>
+								</event>
+							</button>
+						</item>
+						<item row="2" col="1">
+						<!-- izmijeni -->
+							<button caption="Izmijeni">
+								<event type="click">
+									<action type="form open" value="frmEditPar">
+										<parameter name="RobaParId" value="$RobaId"/>
+										<parameter name="KKvalLnParametarRobaId" value="#grdParametri.@KKvalLnParametarRobaId"/>
+										<parameter name="KKvalParametriId" value="#grdParametri.@KKvalParametriId"/>
+										<parameter name="tip" value="#grdParametri.@tip"/>
+									</action>
+									<action type="control populate" value="#grdParametri"/>
+									<action type="control populate" value="parent.#grdDetail"/>
+								</event>
+							</button>
+						</item>
+						<item row="3" col="1">
+						<!-- obriši -->
+							<button caption="Obriši">
+								<event type="click">
+									<action type="confirm" value="Želite li obrisati parametar?"/>
+									<action type="datarun nonquery" value="~dtDelete">
+										
+									</action>
+									<action type="control populate" value="#grdParametri"/>
+								</event>
+							</button>
+						</item>
+					</group>
+				</group>
+			</group>
+		</layout>
+		<!-- <panelbuttons>
+			<buttons>
+			zatvori
+				<button caption="Zatvori">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons> -->
+	<!-- store -->
+		<datalist>
+			<data name="dtPopulate" command="spZaPojedinuRobu">
+				<parameter name="@Action" value="roba"/>
+				<parameter name="@RobaId" value="$RobaId"/>	
+			</data>
+ 			<data name="dtPopulateClass" command="spZaPojedinuRobu">
+				<parameter name="@Action" value="klasa"/>
+				<parameter name="@KlMasterRobaId" value="$KlMasterRobaId" if="#txtKlas==null"/>
+			</data>
+			<data name="dtTraziRoba" command="spTraziRoba">
+				<parameter name="@Action" value="Roba"/>
+				<parameter name="@Uvjet" value="#srcRoba.text"/>
+			</data>
+			<data name="dtParametri" command="spCarpoKKvalLnParRobaQuery">
+				<parameter name="@action" value="1" />
+				<parameter name="@RobaId" value="$RobaId" />
+			</data>
+			<data name="dtDelete" command="spCarpoKKvalLnParRobaAzur">
+				<parameter name="@Action" value="4"/>
+				<!-- <parameter name="@RobaId" value="$RobaId"/> -->
+				<parameter name="@selectedids" value="#grdParametri.selectedids"/>
+				<!-- <parameter name="@KKvalLnParametarRobaId" value="#grdParametri.@KKvalLnParametarRobaId"/> -->
+			</data>
+		</datalist>
+	</form>
+	<form name="frmEditPar" path="frmEditPar.xml"/>
+</root>

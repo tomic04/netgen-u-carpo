@@ -1,0 +1,204 @@
+<root version="1.0">
+
+  <!--******************************************OBRAČUN AMORTIZACIJE****************************************-->
+  <form name="frmObracun" type="master" caption="Obračun amortizacije" fixedsize="true" height="350" width="700" >
+    <event type="oninit">
+      <action type="datarun reader" value="~dtGet" />
+    </event>
+    
+    <layout textposition="left" >
+      <group cols="1" rows="6" caption="Postavke obračuna" spacing="2,2,2,2">
+        
+        <group col="1" row="1" cols="7" rows="1" groupbordervisible="false">
+          <item col="1" row="1" highlight="false" colspan="2">
+            <labeledit  value="Razdoblje obračuna:"  />
+          </item>
+          <item col="3" row="1" highlight="false" colspan="2">
+            <dateedit name="datDatumOd" datavalue="~dtGet.@DatumOd"/>
+          </item>
+          <item col="5" row="1" highlight="false" >
+            <labeledit  value="-" />
+          </item>
+          <item  col="6" row="1" highlight="false" colspan="2" >
+            <dateedit name="datDatumDo" datavalue="~dtGet.@DatumDo" />
+          </item>
+        </group>
+
+        <group col="1" row="2" cols="6" rows="1" groupbordervisible="false">
+          <item col="1" row="1" highlight="false" colspan="2">
+            <labeledit value="Obračunsko razdoblje od:" />
+          </item>
+          <item col="3" row="1" highlight="false" colspan="2" >
+            <labeledit  name="lblDatumOd" datavalue="~dtGet.@DatumOd" fontbold="true" />
+          </item>
+          <item col="5" row="1" highlight="false" >
+            <labeledit  value="-" />
+          </item>
+          <item col="6" row="1" highlight="false" colspan="2" >
+            <labeledit name="lblDatumDo" datavalue="~dtGet.@DatumDo" fontbold="true" />
+          </item>
+        </group>
+        
+        <group col="1" row="3" cols="6" rows="1" groupbordervisible="false">
+          <item col="1" row="1" highlight="false" colspan="2">
+            <labeledit value="Zadnji obračun:" />
+          </item>
+          <item col="3" row="1" highlight="false" colspan="2">
+            <labeledit name="lblObracun" datavalue="~dtGet.@DatumObracuna" fontbold="true"/>
+          </item>
+          <item col="5" row="1" >
+          </item>
+          <item col="6" row="1" >
+          </item>
+        </group>
+        
+        <group col="1" row="4" cols="6" rows="1" groupbordervisible="false">
+          <item col="1" row="1" highlight="false" colspan="2">
+            <labeledit value="Obračun završno s:" />
+          </item>
+          <item col="3" row="1" highlight="false" >
+            <comboedit name="cmbMjeseci"  valuefield="MjesecId" displayfield="Mjesec" datavalue="~dtGet.@MjesecId" dataname="~dtMjeseci" allownull="false"/>
+          </item>
+          <item col="4" row="1" highlight="false" colspan="2">
+            <labeledit value="(mjesec s kojim završava obračun)" />
+          </item>
+          <item col="6" row="1" >
+          </item>
+        </group>     
+        
+        
+        <group col="1" row="5" cols="8" rows="1" groupbordervisible="false" >
+          <item col="1" row="1" highlight="false" colspan="3" >
+            <labeledit value="Koeficijent iskorištenosti kapaciteta:" />
+          </item>
+          <item col="4" row="1" highlight="false" colspan="1" >
+            <textedit name="txtKoef" datavalue="~dtGet.@Koef" format="n2"/>
+          </item>
+          <item col="6" row="1" >
+          </item>
+          <item col="7" row="1" >
+          </item>
+          <item col="8" row="1" >
+          </item>
+        </group>
+
+        <group col="1" row="6" cols="6" rows="1" groupbordervisible="false">
+          <item col="1" row="1" >
+          </item>
+          <item col="2" row="1" >
+          </item>
+          <item col="3" row="1" >
+          </item>
+          <item col="4" row="1" colspan="3" >
+            <button name="btnSpremiP"  caption="Spremi izmjene" type="add" function="SpremiIzmjeneAM">
+              <event type="click">
+                <action type="validate"/>
+                <action type="datarun reader" value="~dtKontrola"/>
+                <action type="confirm" value="Da li ste sigurni da želite spremiti izmjene?" if="~dtKontrola.@Id==0">
+                  <action type="datarun reader" value="~dtSpremi"  />
+                  <action type="message" value="~dtSpremi.@Poruka" />
+                  <action type="control value" value="#lblDatumOd" >
+                    <parameter value="{#datDatumOd::dd.MM.yyyy}"  />
+                  </action>
+                  <action type="control value" value="#lblDatumDo" >
+                    <parameter value="{#datDatumDo::dd.MM.yyyy}"  />
+                  </action>
+                  <action type="control populate" value="#cmbMjeseci" >                    
+                  </action>
+                </action>
+                <action type="message" value="~dtKontrola.@Poruka" else="~dtKontrola.@Id!=0"/>
+              </event>
+            </button>
+          </item>
+        </group>
+
+      </group>
+    </layout>
+    
+    <panelbuttons>
+      <buttons>
+        <button name="btnObracun" caption="Obračunaj" type="add" function="ObracunajAM">
+          <event type="click">
+            <action type="validate"/>
+            <action type="datarun reader" value="~dtKontrolaBlokade"/>
+            <action type="message" value="~dtKontrolaBlokade.@Poruka" if="~dtKontrolaBlokade.@IndGreska==1" />
+            <action type="datarun reader" value="~dtKontrolaObracun"/>
+            <action type="message" value="~dtKontrolaObracun.@Poruka" if="~dtKontrolaObracun.@IndGreska==1&amp;&amp;~dtKontrolaBlokade.@IndGreska==0" />
+            <action type="confirm" value="Jeste li sigurni da želite obračunati amortizaciju?"  if="~dtKontrolaBlokade.@IndGreska==0&amp;&amp;~dtKontrolaObracun.@IndGreska==0">              
+              <action type="datarun reader" value="~dtObracun"  waittype="progress" waitcaption="Pričekajte..." waittext="..obračun amortizacije u tijeku..."  />
+              <action type="message" value="~dtObracun.@Poruka" />
+              <action type="datarun reader" value="~dtGet" />
+              <action type="control value" value="#lblObracun" >
+                <parameter value="~dtGet.@DatumObracuna"/>
+              </action>
+            </action>
+          </event>
+        </button>
+        <button name="btnObrisi" caption="Obriši obračun" type="delete" function="ObrisiObracunAM">
+          <event type="click">
+            <action type="validate"/>
+            <action type="datarun reader" value="~dtKontrolaBlokade"/>            
+            <action type="message" value="~dtKontrolaBlokade.@Poruka" if="~dtKontrolaBlokade.@IndGreska==1" />
+            <action type="datarun reader" value="~dtKontrolaKnjizenja"/>
+            <action type="message" value="~dtKontrolaKnjizenja.@Poruka" if="~dtKontrolaKnjizenja.@IndGreska==1&amp;&amp;~dtKontrolaBlokade.@IndGreska==0" />
+            <action type="confirm" value="Jeste li sigurni da želite obrisati amortizaciju?" if="~dtKontrolaBlokade.@IndGreska==0&amp;&amp;~dtKontrolaKnjizenja.@IndGreska==0" >              
+              <action type="datarun reader" value="~dtBrisi"  waittype="progress" waitcaption="Pričekajte..." waittext="..brisanje u tijeku..." >
+              </action>
+              <action type="message" value="~dtBrisi.@Poruka"/>
+            </action>
+          </event>
+        </button>
+        
+        <button name="btnOdustani"  caption="Odustani" type="cancel" dock="right" >
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+  
+    <datalist>
+      <data command="spOSAmortizacija_QueryCP" name="dtKontrolaObracun">
+        <parameter name="@Action" value="Kontrola_obracun"/>
+      </data>
+      <data command="spOSAmortizacija_QueryCP" name="dtKontrolaKnjizenja">
+        <parameter name="@Action" value="Broj_dokumenata"/>
+      </data>
+      <data command="spOSAmortizacija_QueryCP" name="dtKontrolaBlokade">
+        <parameter name="@Action" value="Kontrola_blokade"/>
+      </data>
+      <data command="spOSAmortizacija_QueryCP" name="dtMjeseci">
+        <parameter name="@Action" value="Mjeseci_obracun"/>
+        <parameter name="@DatumOd" value="#datDatumOd"/>
+        <parameter name="@DatumDo" value="#datDatumDo"/>
+      </data>
+      <data command="spOSAmortizacija_QueryCP" name="dtGet">
+         <parameter name="@Action" value="Postavke_obracuna"/>
+      </data>
+      <data command="spOSAmortizacija_QueryCP" name="dtKontrola">
+        <parameter name="@Action" value="Kontrola_razdoblje"/>
+        <parameter name="@DatumOd" value="#datDatumOd"/>
+        <parameter name="@DatumDo" value="#datDatumDo"/>
+      </data>
+      <data command="spOSAmortizacija_QueryCP" name="dtSpremi">
+        <parameter name="@Action" value="PostavkeObracuna_izmjena"/>
+        <parameter name="@DatumOd" value="#datDatumOd"/>
+        <parameter name="@DatumDo" value="#datDatumDo"/>
+        <parameter name="@Koef" value="#txtKoef"/>
+      </data>
+      <data command="spOSObracunAM_CP" timeout="600" name="dtObracun">
+        <parameter name="@DatumOdRazd" value="#datDatumOd"/>
+        <parameter name="@mjdo" value="#cmbMjeseci"/>
+        <parameter name="@Koef" value="#txtKoef"/>
+        <parameter name="@OperateriId" value="@@OperateriId"/>
+      </data>
+      <data command="spOSAmortizacija_QueryCP" timeout="600" name="dtBrisi">
+        <parameter name="@Action" value="Brisanje"/>
+        <parameter name="@DatumOd" value="#datDatumOd"/>
+        <parameter name="@DatumDo" value="#datDatumDo"/>
+      </data>
+    </datalist>
+  
+  </form>
+  <!--**********************************KRAJ OBRAČUN AMORTIZACIJE****************************************-->
+</root>

@@ -1,0 +1,124 @@
+<!--v 1.0.0.4.  8.2.2022. SV stavio fixedsize="false" -->
+<!--v 1.0.0.3. 20.5.2020. AA timeot na 7200 i convert datuma u string-->
+<!--v 1.0.0.2. 22.3.2018. AA pamćenje kontrola, preimenovanje procedura, sitne dorade-->
+<root version="1.0.0.4">
+	<form name="frmRobnoObrada" type="master" caption="Povezivanje ulaza i izlaza" fixedsize="false" statusbar="true">
+		<event type="init"> 
+			<action type="datarun reader" value="~dtDatumPubVars"/>
+		</event>
+		<event type="load">	
+			<action type="control value" value="#datDatumDo">
+				<parameter value="~dtDatumPubVars.@DatumDo" type="date" />
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control focus" value="#cmbNacin"/>
+		</event>
+		<layout itemspadding="2" >
+			<group cols="1" rows="8" groupbordervisible="true">
+				<item col="1" row="1" caption=" " >
+					<labeledit name="txtOpis"  fontsizedelta="2" value="Povezivanje ulaza i izlaza za sva skladišta na kojima se vodi cijena po izabranoj metodi"/>
+				</item>
+				<item col="1" row="2" caption="" >
+					<labeledit name="txtOpis1"  fontsizedelta="2" value="uvažavajući dokumente do zadanog datuma."/>
+				</item>
+				<item col="1" row="3"  textvisible="False" >
+					<separator dark="true" backcolor="gray" />
+				</item>
+				<item col="1" row="4"  caption="" >
+					<labeledit name="txtUpozorenje" fontsizedelta="4" value="UPOZORENJE:"/>
+				</item>
+				<item col="1" row="5"  caption="" >
+					<labeledit name="txtUpozorenje1"  fontsizedelta="2" value="Izvršavanje ove opcije treba pustiti u vremenu kada nije značajan promet na serveru."/>
+				</item>
+				<item col="1" row="6"   textvisible="False" >
+					<separator dark="true" backcolor="gray" />
+				</item>
+				<group cols="3" rows="2" col="1" row="7" groupbordervisible="false">
+					<columnsdefinition>
+						<column size="20%" position="1" />
+						<column size="60%" position="2" />
+						<column size="20%" position="3" />
+					</columnsdefinition>
+					<item col="2" row="1"   textposition="top" highlight="false" caption="Poveži ulaze i izlaze za skladišta koja se vode po metodi:" >
+						<comboedit name="cmbNacin" required="true" allownull="false" savevalue="app" autopopulate="true" valuefield="NacinId" displayfield="Opis" dataname="dtNacin"/>
+					</item>
+					<group cols="1" rows="1" col="2" row="2" groupbordervisible="false">
+						<columnsdefinition>
+							<column size="100%" position="1" />
+						</columnsdefinition>
+						<item col="1" row="1" highlight="false" textposition="top" caption="Datum:" >
+							<dateedit  name="datDatumDo" required="true"/>
+						</item>
+					</group>
+				</group>
+				<item col="1" row="8"  colspan="2" textvisible="False" >
+					<separator dark="true" backcolor="gray" />
+				</item>
+			</group>	
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnIzvrsi" caption="&amp;IZVRŠI ODMAH" dock="left">
+					<event type="click" waittype="progress" waitcaption="Obrada" waittext="Radim... " sleep="7200">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="~dtDelPubVars"/>
+						<!-- BRISANJE PubVarsa -->
+						<action type="datarun reader" value="~dtDatumConvert"/>
+						<action type="variable value">
+							<parameter name="DatumOd" value="~dtDatumConvert.@DatumOd"/>
+						</action>	
+						<action type="variable value">
+							<parameter name="DatumDo" value="~dtDatumConvert.@DatumDo"/>
+						</action>						
+						<action type="datarun nonquery" value="~dtInsertPubVars"/> 
+						<!-- INSERT PubVarsa --> 
+						<action type="datarun nonquery" value="~dtDatumPubVars"/>
+						<!-- KONTROLA PubVarsa -->
+						<action type="datarun scalar" value="~dtObnovi">
+							<!-- Izvrši robno knjiženje po izabranoj metodi -->
+							<parameter name="BrojStavki"/>
+							<action type="footer text" value="Gotovo! Kreirano zapisa: {$BrojStavki}"/>
+						</action>	
+					</event>
+				</button>
+				<button caption="ODUSTANI" dock="right">
+					<event type="click">
+						<action type="form close"/>	
+					</event>
+				</button>						
+				<button caption="UPUTI ME" type="HELP" dock="right" enabled="false"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="select 1 as NacinId,'F-FIFO metoda' as Opis
+						  union all
+						  select 2 as NacinId,'A-Metoda prosječnih cijena' as Opis
+						  union all
+						  select 3 as NacinId,'P-Metoda planskih cijena' as Opis " type="text" name="dtNacin"/>
+			<data command="delete from PubVars where VarIme = 'FIFODatum'" type="text" name="dtDelPubVars"/>	
+			<data command="insert into PubVars (VarIme, VarSet, VarOpis) 
+                           values ('FIFODatum', @Datum, 'Datum za spRobnoPrometFIFO a') " type="text" name="dtInsertPubVars">
+				<parameter name="@Datum" value="$DatumDo" type="string"/>
+			</data>
+			<data command="spCRobnoKnjizenjeDatumi" name="dtDatumPubVars">
+				<parameter name="@action" value="1"/>
+			</data>
+			<data command="spRobnoPrometFIFO" name="dtObnovi" if="#cmbNacin==1" timeout="7200">
+				<parameter name="@datumdo" value="$DatumDo" type="string"/>
+				<parameter name="@datumod" value="$DatumOd" type="string"/>
+			</data>
+			<data command="spRobnoPrometProsjecne" name="dtObnovi" elseif="#cmbNacin==2" timeout="7200">
+				<parameter name="@datumdo" value="$DatumDo" type="string"/>
+				<parameter name="@datumod" value="$DatumOd" type="string"/>
+			</data>
+			<data command="spRobnoPrometPlanske" name="dtObnovi" else="" timeout="7200">
+				<parameter name="@datumdo" value="$DatumDo" type="string"/>
+				<parameter name="@datumod" value="$DatumOd" type="string"/>
+			</data> 
+			<data command="select convert(varchar(8),@Datum,112) as DatumDo, cast(year(@Datum)as char(4))+'0101' as DatumOd" type="text" name="dtDatumConvert">
+				<parameter name="@Datum" value="#datDatumDo" type="date"/>
+			</data>
+		</datalist>
+	</form>
+</root>

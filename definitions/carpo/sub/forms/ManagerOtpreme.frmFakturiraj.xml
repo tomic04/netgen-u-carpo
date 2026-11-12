@@ -1,0 +1,172 @@
+<!--19.05.2022. DA - vrstaptomid na 2-->
+<!--10.02.2022 AR - Doradio da se u padajućem izborniku za kontakt prikazuje kolona OsobaZastita-->
+<!--08.02.2022 DA i AR - popravili povlačenje kontakata kod ulaska u formu i kod izmjene partnera-->
+<!--04.02.2022 AR - zakomentirao setanje DatumaIsporuke u ONSHOWN jer je dobivao krivi datum isporuke kad se fakturira s proširenog grida-->
+
+<root>
+    <form name="frmFakturiraj" caption="Fakturiranje" width="350" height="300" fixedsize="true">
+        <event type="oninit">
+			    <action type="datarun reader" value="~dtGet" />
+			    <action type="variable value">
+				    <parameter name="Global.VrstaPromSifra" value="30" type="string" />
+			    </action>
+          <action type="variable value">
+            <parameter name="Global.VrstaPromId" value="2" type="int" />
+          </action>          
+        </event>
+        <event type="onshown">
+			<!--<action type="control value" value="#datDatumIsporuke">
+				<parameter value="parent.#grdGlava.@DAtumIsporuke"/>
+			</action>-->
+        </event>		
+        <event type="onclose">
+			<action type="variable value">
+				<parameter name="Global.VrstaPromSifra" value="09" type="string" />
+			</action>
+			<action type="control refreshrow" value="parent.#grdGlava">
+				<parameter value="global.~dtGet"/>
+			</action>
+        </event>			
+        <layout textposition="left" itemspadding="3">
+            <group cols="1" rows="1">
+				<tabs row="1" col="1" padding="4">
+					<group caption="Osnovno" name="tabOsnovno" rows="6" cols="1" row="1" col="1" entermovenextcontrol="true">
+						<item caption="Vrsta dokumenta:" row="1" col="1">
+							<comboedit name="cmbVrstaDok" valuefield="VrstaDokId" displayfield="Opis" datavalue="#dtGet.@VrstaDokId" dataname="Global.dtVrstaDokFak" required="true"/>
+						</item>
+						<item caption="Datum fakture:" row="2" col="1">
+							<dateedit name="datDatumdok" datavalue="#dtGet.@DatumDok" required="true"/>
+						</item>
+						<item caption="Datum isporuke:" row="3" col="1">
+							<dateedit name="datDatumIsporuke" datavalue="#dtGet.@DatumIsporuke" required="true"/>
+						</item>					
+						<item caption="Partner:" row="4" col="1" >
+							<searchedit netgenfields="true" name="srcPartner" required="true" fontbold="true" dataname="Global.dtPartneri" fieldtext="NazivId" fieldvalue="partneriid" datavalue="#dtGet.@PartneriId" datatext="#dtGet.@PartnerNaziv">
+								<event type="valuechanged">
+									<action type="variable value">
+										<parameter name="PartneriId" value="#srcPartner" />
+									</action>	
+									<action type="variable value">
+										<parameter name="IndPromijenjeno" value="1" />
+									</action>																
+									<action type="control enable" value="#cmbKontakt" if="#srcPartner!=null&amp;&amp;$IndLoad==0">
+										<action type="control populate" value="#cmbKontakt" />
+									</action>
+									<action type="control disable" value="#cmbKontakt" if="#srcPartner==null">
+										<action type="control datasource empty" value="#cmbKontakt" />
+									</action>	
+									<action type="variable value">
+										<parameter name="IndLoad" value="0" />
+									</action>								
+								</event>
+								<event type="leave">						
+									<action type="datarun reader" value="Global.dtDajPartnera" if="#srcPartner!=null"/>						
+									<action type="control value" value="#srcParstru" if="#srcPartner!=null&amp;&amp;#srcPartner.@BrojLokacija_Id==1">
+										<parameter value="~dtDajPartnera.@parstruid" text="~dtDajPartnera.@Naziv"/>
+									</action>
+									<action type="form open" value="frmLokacije" if="#srcPartner.@BrojLokacija_Id!=null&amp;&amp;#srcPartner.@BrojLokacija_Id&gt;1&amp;&amp;$IndPromijenjeno==1">
+										<parameter name="PartneriId" value="#srcPartner" />
+										<parameter name="IndLokacija" value="1" />
+										<parameter name="ParStruId" value="#srcParstru" />
+									</action>
+									<action type="control refreshvalue" value="#srcParstru" if="#srcPartner==null"/>
+									<action type="variable value">
+										<parameter name="IndLokacija" value="0" />
+									</action>
+									<action type="variable value">
+										<parameter name="IndPromijenjeno" value="0" />
+									</action>
+									<action type="control refreshvalue" value="#cmbKontakt" />
+								</event>
+							</searchedit>
+						</item>
+						<item caption="Lokacija:" row="5" col="1">
+							<searchedit netgenfields="true" name="srcParstru" required="true" dataname="Global.dtParstru" fieldtext="NazivId" fieldvalue="ParStruId" datavalue="#dtGet.@ParStruId" datatext="#dtGet.@ParStruNaziv" autopopulate="false" >
+								<event type="leave">
+									<action type="datarun reader" value="Global.dtDajPartnera" if="#srcParstru!=null"/>
+									<action type="control value" value="#srcPartner" if="#srcPartner==null&amp;&amp;#srcParstru!=null">
+										<parameter value="~dtDajPartnera.@partneriid" text="~dtDajPartnera.@Naziv"/>
+									</action>
+									<action type="control refreshvalue" value="#cmbKontakt" />
+								</event>			
+							</searchedit>
+						</item>
+						<item caption="Kontakt:" row="6" col="1">
+							<comboedit name="cmbKontakt" valuefield="OsobeId" displayfield="OsobaZastita" datavalue="#dtGet.@OsobeParId" dataname="dtKontakt" />
+						</item>
+					</group>
+					<group caption="Napomena" name="tabNapomena" cols="3" rows="3" col="1" row="1" alignmode="local">
+						<part name="Napomena" path="prtProdNapomena.xml"/>						
+					</group>					
+				</tabs>
+            </group>
+        </layout>
+        <panelbuttons>
+            <buttons>
+                <button caption="FAKTURIRAJ" type="add" dock="left">
+					<event type="click">
+						<action type="validate" />
+						<action type="confirm" value="Želite li kreirati fakturu?">
+							<action type="datarun reader" value="~dtFakturiraj"/>
+							<action type="variable value">
+								<parameter name="FaktureId" value="~dtFakturiraj.@FaktureId"/>
+							</action>
+							<action type="variable value" value="Global.$FaktureId">
+								<parameter value="~dtFakturiraj.@FaktureId" />
+							</action>
+							<action type="variable value">
+								<parameter name="BrojOpis" value="~dtFakturiraj.@Broj"/>
+							</action>
+							<!--<action type="control populate keepfocus" value="parent.#grdGlava" />-->
+							<action type="form close" />
+							<action type="variable value" value="global.$tablicaGla">
+								<parameter value="Fakture" />
+							</action>
+							<action type="variable value" value="global.$tablicaDet">
+								<parameter value="FakDetalj" />
+							</action>
+							<action type="variable value">
+								<parameter name="VrstaDok" value="Faktura"/>
+							</action>
+							<action type="form open" value="frmFakturaIzmjena" if="$FaktureId!=null">
+								<parameter name="VrstaDok" value="$VrstaDok"/>
+								<parameter name="FaktureId" value="$FaktureId"/>
+								<parameter name="StatusFak" value="1" />
+								<!-- ovo utvrdo -->
+								<parameter name="Broj" value="$BrojOpis"/>
+							</action>
+							<!-- <action type="variable value" value="global.$tablicaGla"> -->
+							<!-- <parameter value="ProNOtpGla" /> -->
+							<!-- </action> -->
+							<!-- <action type="variable value" value="global.$tablicaDet"> -->
+							<!-- <parameter value="ProNotpDet" /> -->
+							<!-- </action>							 -->
+						</action>
+					</event>
+                </button>
+                <button caption="ODUSTANI" type="cancel" dock="right" />
+            </buttons>
+        </panelbuttons>
+        <datalist>
+            <data command="spProd_NotpGla_Fakturiraj" name="dtGet">
+                <parameter name="@ProNOtpGlaId" value="$ProNOtpGlaId" />
+            </data>
+            <data command="spFakturaIzNaloga" name="dtFakturiraj">
+                <parameter name="@ProNOtpGlaId" value="$ProNOtpGlaId" />
+                <parameter name="@vrstadokid" value="#cmbVrstaDok" />
+                <parameter name="@Memo" value="#MemoGlava" />
+                <parameter name="@DatumDok" value="#datDatumDok" />
+				<parameter name="@DatumIsporuke" value="#datDatumIsporuke" />
+                <parameter name="@PartneriId" value="#srcPartner" />
+                <parameter name="@ParStruId" value="#srcParstru" />
+                <parameter name="@OsobeParId" value="#cmbKontakt" />
+				<parameter name="@FaktureId" value="null" />
+				<parameter name="@Broj" value="null" />
+            </data>
+			<data command="spTraziOsobe" name="dtKontakt">
+				<parameter name="@Action" value="Osobe" />
+				<parameter name="@PartneriId" value="$PartneriId" />
+			</data>
+        </datalist>
+    </form>
+</root>

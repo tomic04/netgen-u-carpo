@@ -1,0 +1,249 @@
+<!--jupiter2012, spin20160126-->
+<!--v 1.0.4. 30.11.2017. AA fokusi i savevalue, DSP na procedure-->
+<!--v 1.0.3. 7.11.2017. AA odvojen spCKntPlanAQueryAct10-->
+<!--v 1.0.2. 10.10.2017. AA dodala multiselect za export u excel-->
+<!--v 1.0.1. 29.9.2017. AA izmjene na layoutu-Josip tracer-->
+<!--v 1.0.0. početno-->
+<root version="1.0.4.">
+	<form type="master" name="frmGlavni" caption="Stanja partnera - devizno" saveformsize="true" template="splitter" maximized="true">
+		<method name="CarpoNew" dll="Carpo" class="Carpo.Gen.Start" method="Run"/>
+		<event type="init">
+			<action type="datarun reader" value="~dtPrviDan"/>
+		</event>
+		<event type="load">
+			<action type="control value" value="#datOd">
+				<parameter value="~dtPrviDan.@prvidan" type="date"/>
+			</action>
+			<action type="control value" value="#datDo">
+				<parameter value="now" type="date"/>
+			</action>
+			<action type="control value" value="#txtIznos">
+				<parameter value="0"/>
+			</action>
+			<action type="variable value" >
+				<parameter name="global.$DatumOd" value="#datOd"/>
+			</action>
+			<action type="variable value" >
+				<parameter name="global.$DatumDo" value="#datDo"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control focus" value="#cmbKonto"/>
+		</event>
+		<layout  name="panel1" type="collapsable">
+			<group  cols="2" rows="9" groupbordervisible="false" >
+				<columnsdefinition>
+					<column size="200" position="1"/>
+					<column size="200" position="2"/>
+				</columnsdefinition>
+				<item col="1" row="1" colspan="2" textposition="left" caption="Konto:" fontsizedelta="1">
+					<combomultiedit name="cmbKonto" savevalue="app" required="true" showmultiselecttext="false" allownull="false" dataname="~dtCmbKonto" valuefield="KntPlanAId" displayfield="KNaziv" tabindex="0"/>
+				</item>
+				<item col="1" row="2" colspan="2" textposition="left" caption="Valuta:" fontsizedelta="1">
+					<comboedit name="cmbValuta" savevalue="app" allownull="false" dataname="~dtValuta" valuefield="ValuteId" displayfield="Oznaka" tabindex="1">
+
+					</comboedit>
+				</item>
+				<item col="1" row="3" colspan="2" textposition="left" caption="Partner:" fontsizedelta="1">
+					<searchedit name="srcPartner" savevalue="app" type="partner" fieldvalue="PartneriId" fieldtext="Naziv" entermovenextcontrol="false" tabindex="2">
+						<event type="valuechanged">
+							<action type="control focus" value="#cmbKlasaPartnera"/>
+						</event>
+					</searchedit>
+				</item>				
+				<item col="1" row="4" colspan="2" textposition="left" caption="Klasa partnera" fontsizedelta="1">
+					<comboedit name="cmbKlasaPartnera" dataname="~dtCmbKlasaPartnera" valuefield="SortKey" displayfield="Naziv" tabindex="3"/>
+				</item>
+
+				<item col="1" row="5" colspan="2" textposition="left" caption="Županija:" fontsizedelta="1">
+					<comboedit name="cmbZupanije" dataname="~dtCmbZupanije" displayfield="Naziv" valuefield="ZupanijeId" tabindex="4">
+						<event type="valuechanged">
+							<action type="control populate" value="#cmbMjesta"/>
+						</event>
+					</comboedit>
+				</item>
+				<item col="1" row="6" colspan="2" textposition="left" caption="Mjesto:" fontsizedelta="1">
+					<comboedit name="cmbMjesta" dataname="~dtCmbMjesta" valuefield="MjestaId" displayfield="Naziv" tabindex="5">
+						<event type="valuechanged">
+							<!--zbog reda u mjestima s nazivom null koji poprima vrijednost nakon ponistavanja odabira mjesta-->
+							<action type="variable value">
+								<parameter name="MjestaNaziv" value="#cmbMjesta.@Naziv"/>
+							</action>
+						</event>
+					</comboedit>
+				</item>
+				<group col="1" row="7" colspan="2" cols="2" rows="1" groupbordervisible="false" >
+					<item col="1" row="1" textposition="left" caption="Datum od:" fontsizedelta="1" tabindex="6">
+						<dateedit name="datOd" tabindex="4">
+							<event type="valuechanged">
+								<action type="variable value">
+									<parameter name="global.$DatumOd" value="#datOd"/>
+								</action>
+								<action type="datarun reader" value="~dtGodina">
+									<parameter name="Godina"/>
+								</action>
+							</event>
+						</dateedit>
+					</item>
+					<item  col="2" row="1" textposition="left" caption="Datum do:" fontsizedelta="1" tabindex="7">
+						<dateedit name="datDo" >
+							<event type="valuechanged">
+								<action type="variable value">
+									<parameter name="global.$DatumDo" value="#datDo"/>
+								</action>
+							</event>						
+						</dateedit>
+					</item>
+				</group>
+				<item col="1" row="8" textposition="left" caption="Iznos veći od:" fontsizedelta="1">
+					<textedit name="txtIznos" format="n2" formattype="numeric" tabindex="8">
+						<event type="leave">
+							<action type="control focus" value="#btnIzvrši"/>
+						</event>
+					</textedit>
+				</item>
+				<item col="1" row="9"/>
+			</group>
+		</layout>
+		<layout name="panel2">
+			<group cols="1" rows="1">
+				<item col="1" row="1">
+					<grid name="grdGlavni" dataname="~dtGlavni" bestfitonrefresh="true" showfooter="true" multiselect="true">
+						<event type="focusedrowchanged">
+							<action type="datarun scalar" value="~dtTablica">
+								<parameter name="Tablica"/>
+							</action>
+						</event>
+						<fields>
+							<field name="Sifra" caption="Šifra"/>
+							<field name="Konto"/>
+							<field name="Naziv"/>
+							<field name="Mjesto"/>
+							<field name="OIB" caption="OIB"/>
+							<field name="Ps" caption="Početno stanje"/>
+							<field name="Duguje" caption=""/>
+							<field name="Potrazuje" caption="Potražuje"/>
+							<field name="Saldo"/>
+							<field name="Dospjelo"/>
+						</fields>
+						<print  caption="Stanje partnera od {#datOd::dd.MM.yyy} do {#datDo::dd.MM.yyyy}"
+								captionalign="center"
+								header="Konto: {~dtKontoOznaka.@Konto} Valuta: {#cmbValuta.@Oznaka} \n Iznos veći od: {#txtIznos}"
+								headeralign="left"/>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnIzvrši" caption="IZVRŠI" tabindex="9">
+					<event type="click">
+						<action type="validate"/>
+						<action type="variable value" if="#cmbKlasaPartnera==null&amp;&amp;$MjestaNaziv==null&amp;&amp;#cmbZupanije==null">
+							<parameter name="IndPrikaz" value="0"/>
+						</action>
+						<action type="variable value" if="#cmbKlasaPartnera==null&amp;&amp;#cmbZupanije==null&amp;&amp;$MjestaNaziv!=null"> 
+							<parameter name="IndPrikaz" value="5"/>
+						</action>
+						<action type="variable value" if="#cmbKlasaPartnera!=null&amp;&amp;#cmbZupanije==null&amp;&amp;$MjestaNaziv==null">
+							<parameter name="IndPrikaz" value="1"/>
+						</action>	
+						<action type="variable value" if="#cmbKlasaPartnera==null&amp;&amp;#cmbZupanije!=null&amp;&amp;$MjestaNaziv==null">
+							<parameter name="IndPrikaz" value="4"/>
+						</action>
+						<action type="variable value" if="#cmbKlasaPartnera!=null&amp;&amp;#cmbZupanije!=null&amp;&amp;$MjestaNaziv==null">
+							<parameter name="IndPrikaz" value="3"/>
+						</action>
+						<action type="variable value" if="#cmbKlasaPartnera!=null&amp;&amp;#cmbZupanije==null&amp;&amp;$MjestaNaziv!=null">
+							<parameter name="IndPrikaz" value="2"/>
+						</action>
+						<action type="variable value" if="#cmbKlasaPartnera!=null&amp;&amp;#cmbZupanije!=null&amp;&amp;$MjestaNaziv!=null">
+							<parameter name="IndPrikaz" value="2"/>
+						</action>
+						<action type="variable value" if="#cmbKlasaPartnera==null&amp;&amp;#cmbZupanije!=null&amp;&amp;$MjestaNaziv!=null">
+							<parameter name="IndPrikaz" value="5"/>
+						</action>
+						<action type="variable value" if="#srcPartner!=null">
+							<parameter name="IndPrikaz" value="6"/>
+						</action>
+						<action type="control populate" value="#grdGlavni"/>
+						<!-- <action type="panel collapse" value="panel1" if="#grdGlavni.rowcount!=0"/>	-->
+						<action type="datarun reader" value="~dtKontoOznaka"/>
+						<action type="form caption" value="Stanja partnera - devizno od {#datOd::dd.MM.yyy} do {#datDo::dd.MM.yyyy}, Konto: {~dtKontoOznaka.@Konto} Valuta: {#cmbValuta.@Oznaka}, Partner: {#srcPartner.@Naziv}" if="#srcPartner!=null"/>
+						<action type="form caption" value="Stanja partnera - devizno od {#datOd::dd.MM.yyy} do {#datDo::dd.MM.yyyy}, Konto: {~dtKontoOznaka.@Konto} Valuta: {#cmbValuta.@Oznaka}" elseif="#srcPartner==null"/>					
+					</event>
+				</button>
+				<button name="btnKartica" caption="KARTICA KONTA" tabindex="10">
+					<event type="click">
+						<action type="method run" value="CarpoNew">
+							<!--za testiranje-->
+							<!-- <parameter name="moduleid" value="D:\puštanje paketa\DeviznaKarticaKonta\DeviznaKarticaKonta.xml"/> -->
+							<!--za produkciju-->
+							<parameter name="moduleid" value="DeviznaKarticaKonta.xml"/>
+							<parameter name="global.IndikatorGranulaPrevara" type="var" valuetype="int" value="1"/>
+							<parameter name="global.DatumOd" type="var" valuetype="date" value="global.$DatumOd"/>
+							<parameter name="global.DatumDo" type="var" valuetype="date" value="global.$DatumDo"/>		
+							<parameter name="KntPlanAId" type="var" valuetype="int" value="#grdGlavni.@KntPlanAId"/>
+							<parameter name="Konto" type="var" valutype="int" value="#grdGlavni.@Konto"/> 
+							<parameter name="KontoNaziv" type="var" value="#grdGlavni.@KontoNaziv"/>
+							<parameter name="PartneriId" type="var" valuetype="int" value="#grdGlavni.@partneriId"/>
+							<parameter name="PartneriNaziv" type="var" value="#grdGlavni.@Naziv"/>							
+							<parameter name="AnalitikaPS" type="var" value="0" />
+							<parameter name="ValuteId" type="var" value="#cmbValuta"/>
+							<parameter name="Tablica" type="var" value="$Tablica"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIspis" caption="ISPIS" tabindex="11">
+					<event type="click"> 
+						<action type="control printcontrol" value="#grdGlavni">
+							<action type="datarun reader" value="~dtKontoOznaka"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzlaz" caption="IZLAZ" tabindex="12">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtCmbKonto" command="spCKntPlanAQueryAct10">
+				<parameter name="@Action" value="10"/>
+			</data>
+			<data name="dtCmbKlasaPartnera" command="spKlPartneriQueryCarpoDSP">
+				<parameter name="@Action" value="0"/>
+			</data>
+			<data name="dtCmbZupanije" command="spZupanijeQueryCarpoDSP">
+				<parameter name="@Action" value="0"/>
+			</data>
+			<data name="dtCmbMjesta" command="spMjestaQueryCarpoDSP">
+				<parameter name="@Action" value="0" if="#cmbZupanije==null"/>			
+				<parameter name="@Action" value="2" else=""/>
+				<parameter name="@ID" value="#cmbZupanije"/>
+			</data>
+			<data name="dtValuta" command="spValuteQueryCarpoDSP">
+				<parameter name="@Action" value="0"/>
+			</data>
+			<data type="text" name="dtPrviDan" command="select dateadd(yy,datediff(yy,0,getdate()),0) as prvidan"/>
+			<data name="dtGlavni" command="spCKntStanjaPartneraDev">
+				<parameter name="@Action" value="$IndPrikaz"/>
+				<parameter name="@KntPlanAIdList" value="#cmbKonto"/>
+				<parameter name="@DevValuteId" value="#cmbValuta"/>
+				<parameter name="@DatumOd" value="#datOd"/>
+				<parameter name="@DatumDo" value="#datDo"/>
+				<parameter name="@Iznos" value="#txtIznos"/>
+				<parameter name="@PartneriId" value="#srcPartner" if="#srcPartner!=null"/>
+				<parameter name="@SortKey" value="#cmbKlasaPartnera" if="#cmbKlasaPartnera!=null"/>
+				<parameter name="@MjestaId" value="#cmbMjesta" if="#cmbMjesta!=null"/>
+				<parameter name="@ZupanijeId" value="#cmbZupanije" if="#cmbZupanije!=null"/>
+			</data>
+			<data name="dtTablica" command="spCKntKarticaKontaDevQuery">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@KntPlanAId" value="#grdGlavni.@KntPlanAId"/>
+			</data>
+			<data name="dtKontoOznaka" type="text" command="select 1 as a,(select konto +', ' as 'data()' from kntplana where kntplanaid in ({#cmbKonto}) for xml path('')) as Konto"/>
+		</datalist>
+	</form>
+</root>

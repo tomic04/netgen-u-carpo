@@ -1,0 +1,154 @@
+<root>
+	<form name="frmMaster" type="master" caption="Definiranje zamjene naređenih">
+		<managerlayout>
+			<grid name="grdGlava" type="master" editdirection="vertical" multiselect="false" >
+				<event type="focusedrowchanged">
+                    <action type="control enable" value="#btnObrisi, #btnIzmijeni" if="#grdGlava.rowcount!=0" />
+                    <action type="control disable" value="#btnObrisi, #btnIzmijeni" else="" />
+                </event>
+				<data command="spHRKadroviZamjena_Query" >
+					<parameter name="@Action" value="master" />
+				</data>
+				<fields inherited="true">
+												
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="Unesi">
+					<event type="click">
+						<action type="form open" value="frmStavka"/>
+						<action type="control populate" value="#grdGlava" />
+					</event>
+			    </button>
+				<button name="btnIzmijeni" caption="Izmijeni" >
+					<event type="click" >
+						<action type="form open" value="frmStavka">							
+							<parameter name="HRKadroviZamjenskaOsobaId" value="#grdGlava.@HRKadroviZamjenskaOsobaId" />
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava" />
+					</event>				
+				</button>
+				<button name="btnObrisi" caption="Obriši" type="delete" >
+					<event type="click">
+                        <action type="confirm" value="Jeste li sigurni da želite obrisati označenu stavku?">
+                            <action type="datarun nonquery" value="~dtDelete">
+								<action type="control populate" value="#grdGlava" />
+							</action>
+                        </action>						
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spHRKadroviZamjena_Azur" name="dtDelete">
+				<parameter name="@Action" value="brisanje"/>	
+				<parameter name="@HRKadroviZamjenskaOsobaId" value="#grdGlava.@HRKadroviZamjenskaOsobaId" />	
+			</data>	
+		</datalist>
+	</form>
+	<form name="frmStavka" >
+		<event type="oninit">
+			<action type="datarun reader" value="~dtGet" if="$HRKadroviZamjenskaOsobaId!=null" />
+		</event>
+		<event type="onshown">
+			<action type="control disable" value="#cmbDjelatnik" if="$HRKadroviZamjenskaOsobaId!=null"/>
+			<action type="form caption" value="Izmjena" if="$HRKadroviZamjenskaOsobaId!=null" />
+			<action type="form caption" value="Unos" else="" />			
+		</event>
+		<layout textposition="top" itemspadding="3">
+			<group cols="1" rows="5" col="1" row="1" backgroundcolor="">
+				<item caption="Djelatnik:" row="1" col="1">
+					<comboedit name="cmbDjelatnik" valuefield="hrkadroviid" displayfield="Naziv" datavalue="~dtGet.@hrkadroviid" dataname="Global.dtcmbDjelatnik" required="true"/>
+				</item>	
+				<item caption="Zamjenska osoba:" row="2" col="1"> 
+					<comboedit name="cmbZamjenskaOsoba" valuefield="hrkadroviid" displayfield="Naziv" datavalue="~dtGet.@hrkadrovizamjenaid" dataname="Global.dtcmbZamjenskaOsoba" required="true"/>
+				</item>					
+				<item caption="Datum od:" row="3" col="1">
+					<dateedit name="datDatumOd" required="true" value="Now" datavalue="~dtGet.@datumod"/>
+				</item>
+				<item caption="Datum do:" row="4" col="1">
+					<dateedit name="datDatumDo" required="true" value="Now" datavalue="~dtGet.@datumdo"/>
+				</item>		
+				<item caption="Tip zamjene:" row="5" col="1" >
+					<comboedit name="cmbTipZamjene" valuefield="HRTipZamjeneid" displayfield="Naziv" datavalue="~dtGet.@HRTipZamjeneid" dataname="Global.dtcmbTipZamjene" visible="false"/>
+				</item>				
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="~dtUpdate" if="$HRKadroviZamjenskaOsobaId!=null"/>
+						<action type="datarun nonquery" value="~dtInsert" else=""/>				
+						<action type="form close"/>						
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" />
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spHRKadroviZamjena_Query" name="dtGet" key="HRKadroviZamjenskaOsobaId">
+				<parameter name="@Action" value="izmjena" />
+				<parameter name="@HRKadroviZamjenskaOsobaId" value="$HRKadroviZamjenskaOsobaId" />
+			</data>
+			<data command="spHRKadroviZamjena_Azur" name="dtInsert">
+				<parameter name="@Action" value="unos" />
+				<parameter name="@hrkadroviid" value="#cmbDjelatnik" />
+				<parameter name="@HRKadroviZamjenaId" value="#cmbZamjenskaOsoba" />
+				<parameter name="@datumod" value="#datDatumOd" />
+				<parameter name="@datumdo" value="#datDatumDo" />
+				<parameter name="@HRTipZamjeneId" value="1" />
+			</data>				
+			<data command="spHRKadroviZamjena_Azur" name="dtUpdate">
+				<parameter name="@Action" value="izmjena" />
+				<parameter name="@HRKadroviZamjenskaOsobaId" value="$HRKadroviZamjenskaOsobaId" />
+				<parameter name="@HRKadroviId" value="#cmbDjelatnik" />
+				<parameter name="@HRKadroviZamjenaId" value="#cmbZamjenskaOsoba" />
+				<parameter name="@datumod" value="#datDatumOd" />
+				<parameter name="@datumdo" value="#datDatumDo" />
+				<parameter name="@HRTipZamjeneId" value="#cmbTipZamjene" />
+			</data>			
+		</datalist>
+	</form>
+	<datalist>
+		<data command="spHRKadroviZamjena_Help" name="dtcmbDjelatnik">
+			<parameter name="@Action" value="hrkadroviid"/>
+		</data>
+		<data command="spHRKadroviZamjena_Help" name="dtcmbZamjenskaOsoba">
+			<parameter name="@Action" value="hrkadrovizamjenaid"/>
+		</data>			
+		<data command="spHRKadroviZamjena_Help" name="dtcmbTipZamjene">
+			<parameter name="@Action" value="tipzamjene"/>
+		</data>			
+	</datalist>
+</root>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

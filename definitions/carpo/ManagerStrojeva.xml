@@ -1,0 +1,1113 @@
+<root>
+	<form type="master" name="frmMaster" caption="Manager strojeva">
+		<method name="funDmsAdd" dll="DmsManagerV1" class="DmsManagerV1.Start" method="AddDocuments"/>
+		<method name="funDmsOpen" dll="DmsManagerV1" class="DmsManagerV1.Start" method="OpenDocument"/>
+		<method name="funDmsSave" dll="DmsManagerV1" class="DmsManagerV1.Start" method="SaveDocuments"/>
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad"/>
+			<action type="variable value">
+				<parameter name="global.VoziloId" value="null"/>
+				<parameter name="global.model3" value="~dtLoad.@Model3"/>
+			</action>
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Vrste vozila"/>
+				<comboitem value="Tipovi vozila"/>
+				<comboitem value="Partneri"/>
+				<event type="valuechanged">
+					<action type="variable value">
+						<parameter name="global.look" value="#filter"/>
+					</action>
+				</event>
+			</lookup>
+			<tree name="trStrojevi" dataname="~dtStrojevi" expandallonload="false" expandedlevel="1" allowdrop="true" key="sortkey" parentfield="parentid">
+				<fields>
+					<field name="naziv"/>
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="variable value">
+						<parameter name="global.filter" value="#trStrojevi.@ID"/> <!-- kreiranje globalne varijable -->
+					</action>
+					<action type="control populate" value="#grdMaster"/>
+				</event>
+				<event type="dragover">
+					<action type="drop allow" value="true" if="#trStrojevi.@tip==m&amp;&amp;global.$look==Vrste vozila"/>
+				</event>
+				<menu type="drop">
+					<menuitem caption="Prenesi">
+						<event type="click">
+							<action type="datarun scalar" value="~dtPrenesi">
+								<parameter name="Id"/>
+							</action>
+							<action type="control focus" value="#trStrojevi">
+								<parameter value="$Id"/>
+							</action>
+						</event>
+					</menuitem>
+					<menuitem caption="Odustani"/>
+				</menu>
+			</tree>
+			<grid type="master" name="grdMaster" dataname="~dtMaster" key="VoziloId" allowdrag="true" allowdragmultiple="true" multiselect="true">
+				<fields>
+					<field name="GarazniBroj" caption="Garažni broj"/>
+					<field name="BrojSasije" caption="Serijski broj"/>
+					<field name="BrojMotora" caption="Broj motora"/>
+					<field name="RegOznaka" caption="Registarska oznaka"/>
+					<field name="GodinaProizvodnje" caption="Godina proizvodnje"/>
+					<field name="PartneriNaziv" caption="Partner"/>
+					<field name="OsobaNaziv" caption="Osoba"/>
+					<field name="DatumPrveReg" caption="Datum prve registracije"/>
+					<field name="DatumKupnje" caption="Datum kupnje"/>
+					<field name="Boja"/>
+					<field name="DatumProdaje" caption="Datum prodaje"/>
+					<field name="DatumOdjave" caption="Datum odjave"/>
+					<field name="ProizvodacNaziv" caption="Proizvođač"/>
+					<field name="TipVozila" caption="Tip"/>
+					<field name="ModelNaziv" caption="Model"/>
+					<field name="InvBroj" caption="Inventurni broj"/>
+					<field name="NazivKratki" caption="Naziv osnovnog sredstva"/>
+					<field name="DimOznaka" caption="Oznaka dimenzije"/>
+					<field name="DimNaziv" caption="Dimenzije"/>
+					<field name="Model1" caption="Model1" if="global.$model3==true"/>
+					<field name="Model2" caption="Model2" if="global.$model3==true"/>
+					<field name="Model3" caption="Model3" if="global.$model3==true"/>
+				</fields>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetail"/>
+					<action type="control populate" value="#grdDms"/>
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmUpsert" if="global.$model3==false||global.$model3==null">
+						<parameter name="global.$VoziloId" value="#grdMaster.@VoziloId"/>
+					</action>
+					<action type="form open" value="frmUpsert3" if="global.$model3==true">
+						<parameter name="global.$VoziloId" value="#grdMaster.@VoziloId"/>
+					</action>
+				</event>
+			</grid>
+			<tabs>
+				<tab caption="Radni nalozi">
+					<grid name="grdDetail" dataname="~dtDetail">
+						<fields>
+							<field name="broj" caption="Broj RN"/>
+							<field name="StanjeBrojaca" caption="Stanje brojača"/>
+							<field name="StanjeGoriva" caption="Stanje goriva"/>
+							<field name="Mjenjac" caption="Mjenjač"/>
+							<field name="Vozac" caption="Vozač"/>
+							<field name="ZadnjiServis" caption="Zadnji servis"/>
+							<field name="Opaska"/>
+							<field name="OstecenjaNaVozilu" caption="Oštećenja na vozilu"/>
+						</fields>
+					</grid>
+				</tab>
+				<tab caption="DMS">
+					<grid name="grdDms" keyfield="DokID" multiselect="true" dataname="dtDms" showmenuprintitem="false" showmenutools="false" savelayout="true">
+						<menu>
+							<menuitem caption="Spremi na disk">
+								<event type="click">
+									<action type="method run" value="funDmsSave">
+										<parameter name="server" value="@@server"/>
+										<parameter name="database" value="@@database"/>
+										<parameter name="username" value=""/>
+										<parameter name="password" value=""/>
+										<parameter name="operaterid" value="@@operateriid"/>
+										<parameter name="dokIDs" value="#grdDms.selectedids"/>
+									</action>
+								</event>
+							</menuitem>
+							<menuitem caption="Obriši" function="DokObrisi">
+								<event type="click">
+									<action type="confirm" value="Želite li sigurno obrisati označeni(e) dokument(e)?">
+										<action type="datarun nonquery" value="~dtDeleteDoc"/>
+										<action type="control populate" value="#grdDms"/>
+									</action>
+								</event>
+							</menuitem>
+						</menu>
+						<event type="doubleclick">
+							<action type="method run" value="funDmsOpen">
+								<parameter name="server" value="@@server"/>
+								<parameter name="database" value="@@database"/>
+								<parameter name="username" value=""/>
+								<parameter name="password" value=""/>
+								<parameter name="operateriid" value="@@operateriid"/>
+								<parameter name="dokID" value="#grdDms.@DokID"/>
+								<parameter name="name" value="#grdDms.@naziv"/>
+							</action>
+						</event>
+					</grid>
+				</tab>
+			</tabs>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="Unesi">
+					<event type="click">
+						<action type="form open" value="frmUpsert" if="global.$model3==false||global.$model3==null">
+							<parameter name="VoziloId" value="null"/>
+						</action>
+						<action type="form open" value="frmUpsert3" if="global.$model3==true">
+							<parameter name="VoziloId" value="null"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIspravi" caption="Ispravi">
+					<event type="click">
+						<action type="form open" value="frmUpsert" if="global.$model3==false||global.$model3==null">
+							<parameter name="VoziloId" value="#grdMaster.@VoziloId"/>
+						</action>
+						<action type="form open" value="frmUpsert3" if="global.$model3==true">
+							<parameter name="VoziloId" value="#grdMaster.@VoziloId"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="Obriši">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati {#grdMaster.@NazivSve}?"/>
+						<action type="datarun nonquery" value="~dtObrisi"/>
+						<action type="control populate" value="#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnIspisi" caption="Ispiši">
+					<event type="click">
+						<action type="control printcontrol" value="#grdMaster"/> <!-- print -->
+					</event>
+				</button>
+				<button name="btnPovezi" caption="Dodaj dokument" function="DokDodaj">
+					<event type="click">
+						<action type="method run" value="funDmsAdd">
+							<parameter name="server" value="@@server"/>
+							<parameter name="database" value="@@database"/>
+							<parameter name="username" value=""/>
+							<parameter name="password" value=""/>
+							<parameter name="operaterid" value="@@operateriid"/>
+							<parameter name="EntityName" value="Vozilo"/>
+							<parameter name="entityID" value="#grdMaster.@VoziloId"/>
+							<parameter name="tipInserta" value="windows"/>
+						</action> 
+						<action type="control populate" value="#grdDms"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="SELECT Model3 FROM ServisStrojParametri WHERE ServisStrojParametriId = 1" type="text"/>
+			<data name="dtStrojevi" command="spVozilaTreeQueryCarpo">
+				<parameter name="@Action" value="0" if="global.$look==Vrste vozila"/>
+				<parameter name="@Action" value="1" if="global.$look==Tipovi vozila"/>
+				<parameter name="@Action" value="2" if="global.$look==Partneri"/>
+			</data>
+			<data name="dtMaster" command="spManagerStrojevaGrid">
+				<parameter name="@Action" value="MASTER" if="global.$look==Vrste vozila"/>
+				<parameter name="@SortKey" value="#trStrojevi.@SortKey" if="global.$look==Vrste vozila"/>
+				<parameter name="@Action" value="TIPOVI" if="global.$look==Tipovi vozila"/>
+				<parameter name="@SortKey" value="#trStrojevi.@SortKey" if="global.$look==Tipovi vozila"/>
+				<parameter name="@Action" value="PARTNERI" if="global.$look==Partneri"/>
+				<parameter name="@PartneriId" value="global.$filter" if="global.$look==Partneri"/>
+			</data>
+			<data name="dtDetail" command="spManagerStrojevaGrid">
+				<parameter name="@Action" value="DETAIL"/>
+				<parameter name="@VoziloId" value="#grdMaster.@VoziloId"/>
+			</data>
+			<data name="dtObrisi" command="spVoziloAzurCarpo">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@ID" value="#grdMaster.@VoziloId"/>
+			</data>
+			<data name="dtPrenesi" command="spVoziloAzurCarpo">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@VozModelId" value="#trStrojevi.@Id"/>
+				<parameter name="@SelectedIds" value="#grdMaster.SelectedIds"/>
+			</data>
+			<data command="spCarpoDMSQuery" name="dtDms">
+				<parameter name="@EntityName" value="Vozilo"/>
+				<parameter name="@Id" value="#grdMaster.@VoziloId"/>
+			</data>
+			<data command="spCarpoDMSAzur" name="dtDeleteDoc">
+				<parameter name="@Action" value="Delete"/>
+				<parameter name="@EntityName" value="Vozilo"/>
+				<parameter name="@selectedids" value="#grdDms.selectedids"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUpsert" caption="{parent.#trStrojevi.@Naziv}" saveformsize="false" width="824">
+		<event type="init">
+			<action type="variable value" value="global.$VoziloId">
+				<parameter value="$VoziloId"/>
+			</action>
+			<action type="datarun reader" value="~dtLoad" if="global.$VoziloId!=null"/>
+		</event>
+		<event type="load">
+			<action if="global.$VoziloId!=null">
+				<action type="control disable" value="#datReg" if="~dtLoad.@DatumPrveReg==null"/>
+				<action type="control value" value="#chkReg">
+					<parameter value="True" if="~dtLoad.@DatumPrveReg!=null"/>
+					<parameter value="False" if="~dtLoad.@DatumPrveReg==null"/>
+				</action>
+				<action type="control disable" value="#datKup" if="~dtLoad.@DatumKupnje==null"/>
+				<action type="control value" value="#chkKup">
+					<parameter value="True" if="~dtLoad.@DatumKupnje!=null"/>
+					<parameter value="False" if="~dtLoad.@DatumKupnje==null"/>
+				</action>
+				<action type="control disable" value="#datPro" if="~dtLoad.@DatumProdaje==null"/>
+				<action type="control value" value="#chkPro">
+					<parameter value="True" if="~dtLoad.@DatumProdaje!=null"/>
+					<parameter value="False" if="~dtLoad.@DatumProdaje==null"/>
+				</action>
+				<action type="control disable" value="#datOdj" if="~dtLoad.@DatumOdjave==null"/>
+				<action type="control value" value="#chkOdj">
+					<parameter value="True" if="~dtLoad.@DatumOdjaved!=null"/>
+					<parameter value="False" if="~dtLoad.@DatumOdjave==null"/>
+				</action>
+				<action type="control disable" value="#datKasko" if="~dtLoad.@Kasko==null"/>
+				<action type="control value" value="#chkKasko">
+					<parameter value="True" if="~dtLoad.@Kasko!=null"/>
+					<parameter value="False" if="~dtLoad.@Kasko==null"/>
+				</action>
+				<action type="control disable" value="#datOsnovno" if="~dtLoad.@Osnovno==null"/>
+				<action type="control value" value="#chkOsnovno">
+					<parameter value="True" if="~dtLoad.@Osnovno!=null"/>
+					<parameter value="False" if="~dtLoad.@Osnovno==null"/>
+				</action>
+				<action type="control disable" value="#datTahograf" if="~dtLoad.@Tahograf==null"/>
+				<action type="control value" value="#chkTahograf">
+					<parameter value="True" if="~dtLoad.@Tahograf!=null"/>
+					<parameter value="False" if="~dtLoad.@Tahograf==null"/>
+				</action>
+			</action>
+			<action if="global.$VoziloId==null">
+				<action type="control disable" value="#datReg"/>
+				<action type="control value" value="#datReg">
+					<parameter value="null"/>
+				</action>
+				<action type="control disable" value="#datKup"/>
+				<action type="control value" value="#datKup">
+					<parameter value="null"/>
+				</action>
+				<action type="control disable" value="#datPro"/>
+				<action type="control value" value="#datPro">
+					<parameter value="null"/>
+				</action>
+				<action type="control disable" value="#datOdj"/>
+				<action type="control value" value="#datOdj">
+					<parameter value="null"/>
+				</action>
+				<action type="control disable" value="#datKasko"/>
+				<action type="control value" value="#datKasko">
+					<parameter value="null"/>
+				</action>
+				<action type="control disable" value="#datOsnovno"/>
+				<action type="control value" value="#datOsnovno">
+					<parameter value="null"/>
+				</action>
+				<action type="control disable" value="#datTahograf"/>
+				<action type="control value" value="#datTahograf">
+					<parameter value="null"/>
+				</action>
+			</action>
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<tabs>
+					<group rows="5" cols="6" caption="Osnovno">
+						<columnsdefinition>
+							<column position="1" size="123"/>
+							<column position="2" size="123"/>
+							<column position="3" size="123"/>
+							<column position="4" size="123"/>
+							<column position="5" size="123"/>
+							<column position="6" size="123"/>
+						</columnsdefinition>
+						<item row="1" col="1" colspan="3" caption="Model:">
+							<searchedit name="srcModel" dataname="global.~dtModel" datavalue="~dtLoad.@VozModelId" datatext="~dtLoad.@NazivSve2" fieldtext="Naziv" required="true"/>
+						</item>
+						<item row="1" col="4" colspan="3" caption="Kategorija vozila:">
+							<comboedit name="cmbKategorijaVozila" dataname="global.~dtKategorijeVozila" datavalue="~dtLoad.@KategorijeVozilaId" valuefield="KategorijeVozilaId" displayfield="Oznaka"/>
+						</item>
+						<item row="2" col="1" colspan="2" caption="Garažni broj:">
+							<textedit name="txtGarazni" datavalue="~dtLoad.@GarazniBroj"/>
+						</item>
+						<item row="2" col="3" colspan="2" caption="Serijski broj:">
+							<textedit name="txtSasija" datavalue="~dtLoad.@BrojSasije"/>
+						</item>
+						<item row="2" col="5" colspan="2" caption="Broj motora:">
+							<textedit name="txtMotor" datavalue="~dtLoad.@BrojMotora"/>
+						</item>
+						<item row="3" col="1" colspan="2" caption="Registarska oznaka:">
+							<textedit name="txtReg" datavalue="~dtLoad.@RegOznaka"/>
+						</item>
+						<item row="3" col="3" colspan="2" caption="Godina proizvodnje:">
+							<textedit name="txtGod" datavalue="~dtLoad.@GodinaProizvodnje"/>
+						</item>
+						<item row="3" col="5" colspan="2" caption="Boja:">
+							<textedit name="txtBoja" datavalue="~dtLoad.@Boja"/>
+						</item>
+						<item row="4" col="1" colspan="3" caption="Partner:">
+							<searchedit name="srcPartner" dataname="global.~dtPartner" datavalue="~dtLoad.@PartneriId" datatext="~dtLoad.@PartneriNaziv" fieldtext="Naziv"/>
+						</item>
+						<item row="4" col="4" colspan="3" caption="Osoba:">
+							<searchedit name="srcOsoba" dataname="global.~dtOsoba" datavalue="~dtLoad.@OsobeId" datatext="~dtLoad.@OsobaNaziv" fieldtext="Naziv"/>
+						</item>
+						<item row="5" col="1" colspan="3" caption="Osnovno sredstvo:">
+							<searchedit name="srcSredstvo" dataname="global.~dtSredstvo" datavalue="~dtLoad.@OSImovinaId" datatext="~dtLoad.@NazivKratki" fieldtext="Naziv kratki"/>
+						</item>
+						<item row="5" col="4" colspan="3" caption="Dimenzija:">
+							<searchedit name="srcDimenzija" dataname="global.~dtDimenzija" datavalue="~dtLoad.@DimenzijeId" datatext="~dtLoad.@DimNaziv" fieldtext="Naziv"/>
+						</item>
+					</group>
+					<group rows="3" cols="4" caption="Dodatno">
+						<rowsdefinition>
+							<row position="1" size="34%"/>
+							<row position="2" size="33%"/>
+							<row position="3" size="33%"/>
+						</rowsdefinition>
+						<group row="1" col="1" rows="1" cols="4" colspan="4" caption="Masa, nosivost, osovine">
+							<columnsdefinition>
+								<column position="1" size="25%"/>
+								<column position="2" size="25%"/>
+								<column position="3" size="25%"/>
+								<column position="4" size="25%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Masa praznog vozila (kg):">
+								<textedit name="txtMasa" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@Masa"/>
+							</item>
+							<item row="1" col="2" caption="Dopuštena nosivost (kg):">
+								<textedit name="txtNosivost" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@Nosivost"/>
+							</item>
+							<item row="1" col="3" caption="Broj osovina (kom):">
+								<textedit name="txtBrojOsovina" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@BrojOsovina"/>
+							</item>
+							<item row="1" col="4" caption="Broj pogonskih osovina (kom):">
+								<textedit name="txtBrojPogonskihOsovina" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@BrojPogonskihOsovina"/>
+							</item>
+						</group>
+						<group row="2" col="1" rows="1" cols="3" colspan="3" caption="Pneumatici">
+							<columnsdefinition>
+								<column position="1" size="34%"/>
+								<column position="2" size="33%"/>
+								<column position="3" size="33%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Ukupan broj (kom):">
+								<textedit name="txtBrojPneumatika" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@BrojPneumatika"/>
+							</item>
+							<item row="1" col="2" caption="Dimenzije (prednji):">
+								<textedit name="txtDimenzijePrednjihPneumatika" datavalue="~dtLoad.@DimenzijePrednjihPneumatika"/>
+							</item>
+							<item row="1" col="3" caption="Dimenzije (zadnji):">
+								<textedit name="txtDimenzijeZadnjihPneumatika" datavalue="~dtLoad.@DimenzijeZadnjihPneumatika"/>
+							</item>
+						</group>
+						<group row="3" col="1" rows="1" cols="3" colspan="3" caption="Motor">
+							<columnsdefinition>
+								<column position="1" size="34%"/>
+								<column position="2" size="33%"/>
+								<column position="3" size="33%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Obujam (ccm3):">
+								<textedit name="txtObujam" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@Obujam"/>
+							</item>
+							<item row="1" col="2" caption="Snaga (kW):">
+								<textedit name="txtSnaga" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@Snaga"/>
+							</item>
+							<item row="1" col="3" caption="Eko kategorija (euro):">
+								<textedit name="txtEkoKategorija" format="[1-9]" formattype="regex" datavalue="~dtLoad.@EkoKategorija"/>
+							</item>
+						</group>
+						<group row="2" col="4" rows="2" cols="2" rowspan="2" caption="DA/NE">
+							<rowsdefinition>
+								<row position="1" size="50%"/>
+								<row position="2" size="50%"/>
+							</rowsdefinition>
+							<columnsdefinition>
+								<column position="1" size="34%"/>
+								<column position="2" size="66%"/>
+							</columnsdefinition>
+							<item row="1" col="1" highlight="false">
+								<checkedit name="chkAdBlue" datavalue="~dtLoad.@AdBlue" caption="AdBlue"/>
+							</item>
+							<item row="2" col="1" highlight="false">
+								<checkedit name="chkGPSLokator" datavalue="~dtLoad.@GPSLokator" caption="GPS lokator"/>
+							</item>
+							<item row="2" col="2" highlight="false">
+								<checkedit name="chkSondaZaGorivo" datavalue="~dtLoad.@SondaZaGorivo" caption="Sonda za gorivo"/>
+							</item>
+							<item row="1" col="2" highlight="false">
+								<checkedit name="chkPratiRadHidraulike" datavalue="~dtLoad.@PratiRadHidraulike" caption="Praćenje rada hidraulike"/>
+							</item>
+						</group>
+					</group>
+					<group rows="3" cols="8" caption="Datumi">
+						<rowsdefinition>
+							<row position="1" size="34%"/>
+							<row position="2" size="33%"/>
+							<row position="3" size="33%"/>
+						</rowsdefinition>
+						<group row="1" col="1" rows="1" cols="8" colspan="8" caption="Osnovni datumi">
+							<columnsdefinition>
+								<column position="1" size="20%"/>
+								<column position="2" size="5%"/>
+								<column position="3" size="20%"/>
+								<column position="4" size="5%"/>
+								<column position="5" size="20%"/>
+								<column position="6" size="5%"/>
+								<column position="7" size="20%"/>
+								<column position="8" size="5%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Datum prve registracije:">
+								<dateedit name="datReg" datavalue="~dtLoad.@DatumPrveReg"/>
+							</item>
+							<item row="1" col="2" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkReg">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datReg" if="#chkReg==True"/>
+										<action type="control disable" value="#datReg" if="#chkReg==False"/>
+										<action type="control value" value="#datReg">
+											<parameter value="now" if="#chkReg==True"/>
+											<parameter value="null" if="#chkReg==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+							<item row="1" col="3" caption="Datum kupnje:">
+								<dateedit name="datKup" datavalue="~dtLoad.@DatumKupnje"/>
+							</item>
+							<item row="1" col="4" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkKup">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datKup" if="#chkKup==True"/>
+										<action type="control disable" value="#datKup" if="#chkKup==False"/>
+										<action type="control value" value="#datKup">
+											<parameter value="now" if="#chkKup==True"/>
+											<parameter value="null" if="#chkKup==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+							<item row="1" col="5" caption="Datum prodaje:">
+								<dateedit name="datPro" datavalue="~dtLoad.@DatumProdaje"/>
+							</item>
+							<item row="1" col="6" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkPro">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datPro" if="#chkPro==True"/>
+										<action type="control disable" value="#datPro" if="#chkPro==False"/>
+										<action type="control value" value="#datPro">
+											<parameter value="now" if="#chkPro==True"/>
+											<parameter value="null" if="#chkPro==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+							<item row="1" col="7" caption="Datum odjave:">
+								<dateedit name="datOdj" datavalue="~dtLoad.@DatumOdjave"/>
+							</item>
+							<item row="1" col="8" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkOdj">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datOdj" if="#chkOdj==True"/>
+										<action type="control disable" value="#datOdj" if="#chkodj==False"/>
+										<action type="control value" value="#datOdj">
+											<parameter value="now" if="#chkOdj==True"/>
+											<parameter value="null" if="#chkOdj==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+						</group>
+						<group row="2" col="1" rows="1" cols="6" colspan="8" caption="Osiguranje i tahograf">
+							<columnsdefinition>
+								<column position="1" size="28%"/>
+								<column position="2" size="6%"/>
+								<column position="3" size="27%"/>
+								<column position="4" size="6%"/>
+								<column position="5" size="27%"/>
+								<column position="6" size="6%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Kasko osiguranje:">
+								<dateedit name="datKasko" datavalue="~dtLoad.@Kasko"/>
+							</item>
+							<item row="1" col="2" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkKasko">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datKasko" if="#chkKasko==True"/>
+										<action type="control disable" value="#datKasko" if="#chkKasko==False"/>
+										<action type="control value" value="#datKasko">
+											<parameter value="now" if="#chkKasko==True"/>
+											<parameter value="null" if="#chkKasko==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+							<item row="1" col="3" caption="Osnovno osiguranje:">
+								<dateedit name="datOsnovno" datavalue="~dtLoad.@Osnovno"/>
+							</item>
+							<item row="1" col="4" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkOsnovno">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datOsnovno" if="#chkOsnovno==True"/>
+										<action type="control disable" value="#datOsnovno" if="#chkOsnovno==False"/>
+										<action type="control value" value="#datOsnovno">
+											<parameter value="now" if="#chkOsnovno==True"/>
+											<parameter value="null" if="#chkOsnovno==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+							<item row="1" col="5" caption="Tahograf:">
+								<dateedit name="datTahograf" datavalue="~dtLoad.@Tahograf"/>
+							</item>
+							<item row="1" col="6" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkTahograf">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datTahograf" if="#chkTahograf==True"/>
+										<action type="control disable" value="#datTahograf" if="#chkTahograf==False"/>
+										<action type="control value" value="#datTahograf">
+											<parameter value="now" if="#chkTahograf==True"/>
+											<parameter value="null" if="#chkTahograf==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+						</group>
+						<group row="3" col="1" rows="1" cols="3" colspan="8" caption="Pregledi i registracija">
+							<columnsdefinition>
+								<column position="1" size="34%"/>
+								<column position="2" size="33%"/>
+								<column position="3" size="33%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Periodični pregled:">
+								<textedit name="txtPregledPeriod" datavalue="~dtLoad.@PregledPeriod"/>
+							</item>
+							<item row="1" col="2" caption="Tehnički i reg. (dan):">
+								<textedit name="txtTehRegDan" datavalue="~dtLoad.@TehRegDan"/>
+							</item>
+							<item row="1" col="3" caption="Tehnički i reg. (mjesec):">
+								<textedit name="txtTehRegMj" datavalue="~dtLoad.@TehRegMj"/>
+							</item>
+						</group>
+					</group>
+				</tabs>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="global.~dtUpsert" if="global.$VoziloId!=null"/>
+						<action type="datarun scalar" value="global.~dtUpsert" if="global.$VoziloId==null">
+							<parameter name="VoziloId"/>
+						</action>
+						<action type="datarun reader" value="global.~dtGetKey"/>
+						<action type="variable value">
+							<parameter name="Global.ID" value="global.~dtGetKey.@sortkey"/>
+						</action>
+						<action type="control populate" value="parent.#trStrojevi"/>
+						<action type="control focus" value="parent.#trStrojevi">
+							<parameter value="Global.$ID"/>
+						</action>
+						<action type="control populate keepfocus" value="parent.#grdMaster" if="global.$VoziloId!=null"/>
+						<action type="control populate" value="parent.#grdMaster" if="global.$VoziloId==null"/>
+						<action type="control focus" value="parent.#grdMaster" if="global.$VoziloId==null">
+							<parameter value="VoziloId" type="int"/>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spManagerStrojevaGrid">
+				<parameter name="@Action" value="LOAD"/>
+				<parameter name="@VoziloId" value="global.$VoziloId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUpsert3" caption="{parent.#trStrojevi.@Naziv}" saveformsize="false" width="824">
+		<event type="init">
+			<action type="variable value" value="global.$VoziloId">
+				<parameter value="$VoziloId"/>
+			</action>
+			<action type="datarun reader" value="~dtLoad" if="global.$VoziloId!=null"/>
+		</event>
+		<event type="load">
+			<action if="global.$VoziloId!=null">
+				<action type="control disable" value="#datReg" if="~dtLoad.@DatumPrveReg==null"/>
+				<action type="control value" value="#chkReg">
+					<parameter value="True" if="~dtLoad.@DatumPrveReg!=null"/>
+					<parameter value="False" if="~dtLoad.@DatumPrveReg==null"/>
+				</action>
+				<action type="control disable" value="#datKup" if="~dtLoad.@DatumKupnje==null"/>
+				<action type="control value" value="#chkKup">
+					<parameter value="True" if="~dtLoad.@DatumKupnje!=null"/>
+					<parameter value="False" if="~dtLoad.@DatumKupnje==null"/>
+				</action>
+				<action type="control disable" value="#datPro" if="~dtLoad.@DatumProdaje==null"/>
+				<action type="control value" value="#chkPro">
+					<parameter value="True" if="~dtLoad.@DatumProdaje!=null"/>
+					<parameter value="False" if="~dtLoad.@DatumProdaje==null"/>
+				</action>
+				<action type="control disable" value="#datOdj" if="~dtLoad.@DatumOdjave==null"/>
+				<action type="control value" value="#chkOdj">
+					<parameter value="True" if="~dtLoad.@DatumOdjaved!=null"/>
+					<parameter value="False" if="~dtLoad.@DatumOdjave==null"/>
+				</action>
+				<action type="control disable" value="#datKasko" if="~dtLoad.@Kasko==null"/>
+				<action type="control value" value="#chkKasko">
+					<parameter value="True" if="~dtLoad.@Kasko!=null"/>
+					<parameter value="False" if="~dtLoad.@Kasko==null"/>
+				</action>
+				<action type="control disable" value="#datOsnovno" if="~dtLoad.@Osnovno==null"/>
+				<action type="control value" value="#chkOsnovno">
+					<parameter value="True" if="~dtLoad.@Osnovno!=null"/>
+					<parameter value="False" if="~dtLoad.@Osnovno==null"/>
+				</action>
+				<action type="control disable" value="#datTahograf" if="~dtLoad.@Tahograf==null"/>
+				<action type="control value" value="#chkTahograf">
+					<parameter value="True" if="~dtLoad.@Tahograf!=null"/>
+					<parameter value="False" if="~dtLoad.@Tahograf==null"/>
+				</action>
+			</action>
+			<action if="global.$VoziloId==null">
+				<action type="control disable" value="#datReg"/>
+				<action type="control value" value="#datReg">
+					<parameter value="null"/>
+				</action>
+				<action type="control disable" value="#datKup"/>
+				<action type="control value" value="#datKup">
+					<parameter value="null"/>
+				</action>
+				<action type="control disable" value="#datPro"/>
+				<action type="control value" value="#datPro">
+					<parameter value="null"/>
+				</action>
+				<action type="control disable" value="#datOdj"/>
+				<action type="control value" value="#datOdj">
+					<parameter value="null"/>
+				</action>
+				<action type="control disable" value="#datKasko"/>
+				<action type="control value" value="#datKasko">
+					<parameter value="null"/>
+				</action>
+				<action type="control disable" value="#datOsnovno"/>
+				<action type="control value" value="#datOsnovno">
+					<parameter value="null"/>
+				</action>
+				<action type="control disable" value="#datTahograf"/>
+				<action type="control value" value="#datTahograf">
+					<parameter value="null"/>
+				</action>
+			</action>
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<tabs>
+					<group rows="6" cols="6" caption="Osnovno">
+						<columnsdefinition>
+							<column position="1" size="123"/>
+							<column position="2" size="123"/>
+							<column position="3" size="123"/>
+							<column position="4" size="123"/>
+							<column position="5" size="123"/>
+							<column position="6" size="123"/>
+						</columnsdefinition>
+						<item row="1" col="1" colspan="3" caption="Model:">
+							<searchedit name="srcModel" dataname="global.~dtModel" datavalue="~dtLoad.@VozModelId" datatext="~dtLoad.@NazivSve2" fieldtext="Naziv" required="true"/>
+						</item>
+						<item row="1" col="4" colspan="3" caption="Kategorija vozila:">
+							<comboedit name="cmbKategorijaVozila" dataname="global.~dtKategorijeVozila" datavalue="~dtLoad.@KategorijeVozilaId" valuefield="KategorijeVozilaId" displayfield="Oznaka"/>
+						</item>
+						<item row="2" col="1" colspan="2" caption="Garažni broj:">
+							<textedit name="txtGarazni" datavalue="~dtLoad.@GarazniBroj"/>
+						</item>
+						<item row="2" col="3" colspan="2" caption="Serijski broj:">
+							<textedit name="txtSasija" datavalue="~dtLoad.@BrojSasije"/>
+						</item>
+						<item row="2" col="5" colspan="2" caption="Broj motora:">
+							<textedit name="txtMotor" datavalue="~dtLoad.@BrojMotora"/>
+						</item>
+						<item row="3" col="1" colspan="2" caption="Model1:">
+							<textedit name="txtModel1" datavalue="~dtLoad.@Model1"/>
+						</item>
+						<item row="3" col="3" colspan="2" caption="Model2:">
+							<textedit name="txtModel2" datavalue="~dtLoad.@Model2"/>
+						</item>
+						<item row="3" col="5" colspan="2" caption="Model3:">
+							<textedit name="txtModel3" datavalue="~dtLoad.@Model3"/>
+						</item>
+						<item row="4" col="1" colspan="2" caption="Registarska oznaka:">
+							<textedit name="txtReg" datavalue="~dtLoad.@RegOznaka"/>
+						</item>
+						<item row="4" col="3" colspan="2" caption="Godina proizvodnje:">
+							<textedit name="txtGod" datavalue="~dtLoad.@GodinaProizvodnje"/>
+						</item>
+						<item row="4" col="5" colspan="2" caption="Boja:">
+							<textedit name="txtBoja" datavalue="~dtLoad.@Boja"/>
+						</item>
+						<item row="5" col="1" colspan="3" caption="Partner:">
+							<searchedit name="srcPartner" dataname="global.~dtPartner" datavalue="~dtLoad.@PartneriId" datatext="~dtLoad.@PartneriNaziv" fieldtext="Naziv"/>
+						</item>
+						<item row="5" col="4" colspan="3" caption="Osoba:">
+							<searchedit name="srcOsoba" dataname="global.~dtOsoba" datavalue="~dtLoad.@OsobeId" datatext="~dtLoad.@OsobaNaziv" fieldtext="Naziv"/>
+						</item>
+						<item row="6" col="1" colspan="3" caption="Osnovno sredstvo:">
+							<searchedit name="srcSredstvo" dataname="global.~dtSredstvo" datavalue="~dtLoad.@OSImovinaId" datatext="~dtLoad.@NazivKratki" fieldtext="Naziv kratki"/>
+						</item>
+						<item row="6" col="4" colspan="3" caption="Dimenzija:">
+							<searchedit name="srcDimenzija" dataname="global.~dtDimenzija" datavalue="~dtLoad.@DimenzijeId" datatext="~dtLoad.@DimNaziv" fieldtext="Naziv"/>
+						</item>
+					</group>
+					<group rows="3" cols="4" caption="Dodatno">
+						<rowsdefinition>
+							<row position="1" size="34%"/>
+							<row position="2" size="33%"/>
+							<row position="3" size="33%"/>
+						</rowsdefinition>
+						<group row="1" col="1" rows="1" cols="4" colspan="4" caption="Masa, nosivost, osovine">
+							<columnsdefinition>
+								<column position="1" size="25%"/>
+								<column position="2" size="25%"/>
+								<column position="3" size="25%"/>
+								<column position="4" size="25%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Masa praznog vozila (kg):">
+								<textedit name="txtMasa" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@Masa"/>
+							</item>
+							<item row="1" col="2" caption="Dopuštena nosivost (kg):">
+								<textedit name="txtNosivost" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@Nosivost"/>
+							</item>
+							<item row="1" col="3" caption="Broj osovina (kom):">
+								<textedit name="txtBrojOsovina" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@BrojOsovina"/>
+							</item>
+							<item row="1" col="4" caption="Broj pogonskih osovina (kom):">
+								<textedit name="txtBrojPogonskihOsovina" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@BrojPogonskihOsovina"/>
+							</item>
+						</group>
+						<group row="2" col="1" rows="1" cols="3" colspan="3" caption="Pneumatici">
+							<columnsdefinition>
+								<column position="1" size="34%"/>
+								<column position="2" size="33%"/>
+								<column position="3" size="33%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Ukupan broj (kom):">
+								<textedit name="txtBrojPneumatika" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@BrojPneumatika"/>
+							</item>
+							<item row="1" col="2" caption="Dimenzije (prednji):">
+								<textedit name="txtDimenzijePrednjihPneumatika" datavalue="~dtLoad.@DimenzijePrednjihPneumatika"/>
+							</item>
+							<item row="1" col="3" caption="Dimenzije (zadnji):">
+								<textedit name="txtDimenzijeZadnjihPneumatika" datavalue="~dtLoad.@DimenzijeZadnjihPneumatika"/>
+							</item>
+						</group>
+						<group row="3" col="1" rows="1" cols="3" colspan="3" caption="Motor">
+							<columnsdefinition>
+								<column position="1" size="34%"/>
+								<column position="2" size="33%"/>
+								<column position="3" size="33%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Obujam (ccm3):">
+								<textedit name="txtObujam" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@Obujam"/>
+							</item>
+							<item row="1" col="2" caption="Snaga (kW):">
+								<textedit name="txtSnaga" format="[1-9]+[0-9]*" formattype="regex" datavalue="~dtLoad.@Snaga"/>
+							</item>
+							<item row="1" col="3" caption="Eko kategorija (euro):">
+								<textedit name="txtEkoKategorija" format="[1-9]" formattype="regex" datavalue="~dtLoad.@EkoKategorija"/>
+							</item>
+						</group>
+						<group row="2" col="4" rows="2" cols="2" rowspan="2" caption="DA/NE">
+							<rowsdefinition>
+								<row position="1" size="50%"/>
+								<row position="2" size="50%"/>
+							</rowsdefinition>
+							<columnsdefinition>
+								<column position="1" size="34%"/>
+								<column position="2" size="66%"/>
+							</columnsdefinition>
+							<item row="1" col="1" highlight="false">
+								<checkedit name="chkAdBlue" datavalue="~dtLoad.@AdBlue" caption="AdBlue"/>
+							</item>
+							<item row="2" col="1" highlight="false">
+								<checkedit name="chkGPSLokator" datavalue="~dtLoad.@GPSLokator" caption="GPS lokator"/>
+							</item>
+							<item row="2" col="2" highlight="false">
+								<checkedit name="chkSondaZaGorivo" datavalue="~dtLoad.@SondaZaGorivo" caption="Sonda za gorivo"/>
+							</item>
+							<item row="1" col="2" highlight="false">
+								<checkedit name="chkPratiRadHidraulike" datavalue="~dtLoad.@PratiRadHidraulike" caption="Praćenje rada hidraulike"/>
+							</item>
+						</group>
+					</group>
+					<group rows="3" cols="8" caption="Datumi">
+						<rowsdefinition>
+							<row position="1" size="34%"/>
+							<row position="2" size="33%"/>
+							<row position="3" size="33%"/>
+						</rowsdefinition>
+						<group row="1" col="1" rows="1" cols="8" colspan="8" caption="Osnovni datumi">
+							<columnsdefinition>
+								<column position="1" size="20%"/>
+								<column position="2" size="5%"/>
+								<column position="3" size="20%"/>
+								<column position="4" size="5%"/>
+								<column position="5" size="20%"/>
+								<column position="6" size="5%"/>
+								<column position="7" size="20%"/>
+								<column position="8" size="5%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Datum prve registracije:">
+								<dateedit name="datReg" datavalue="~dtLoad.@DatumPrveReg"/>
+							</item>
+							<item row="1" col="2" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkReg">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datReg" if="#chkReg==True"/>
+										<action type="control disable" value="#datReg" if="#chkReg==False"/>
+										<action type="control value" value="#datReg">
+											<parameter value="now" if="#chkReg==True"/>
+											<parameter value="null" if="#chkReg==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+							<item row="1" col="3" caption="Datum kupnje:">
+								<dateedit name="datKup" datavalue="~dtLoad.@DatumKupnje"/>
+							</item>
+							<item row="1" col="4" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkKup">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datKup" if="#chkKup==True"/>
+										<action type="control disable" value="#datKup" if="#chkKup==False"/>
+										<action type="control value" value="#datKup">
+											<parameter value="now" if="#chkKup==True"/>
+											<parameter value="null" if="#chkKup==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+							<item row="1" col="5" caption="Datum prodaje:">
+								<dateedit name="datPro" datavalue="~dtLoad.@DatumProdaje"/>
+							</item>
+							<item row="1" col="6" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkPro">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datPro" if="#chkPro==True"/>
+										<action type="control disable" value="#datPro" if="#chkPro==False"/>
+										<action type="control value" value="#datPro">
+											<parameter value="now" if="#chkPro==True"/>
+											<parameter value="null" if="#chkPro==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+							<item row="1" col="7" caption="Datum odjave:">
+								<dateedit name="datOdj" datavalue="~dtLoad.@DatumOdjave"/>
+							</item>
+							<item row="1" col="8" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkOdj">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datOdj" if="#chkOdj==True"/>
+										<action type="control disable" value="#datOdj" if="#chkodj==False"/>
+										<action type="control value" value="#datOdj">
+											<parameter value="now" if="#chkOdj==True"/>
+											<parameter value="null" if="#chkOdj==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+						</group>
+						<group row="2" col="1" rows="1" cols="6" colspan="8" caption="Osiguranje i tahograf">
+							<columnsdefinition>
+								<column position="1" size="28%"/>
+								<column position="2" size="6%"/>
+								<column position="3" size="27%"/>
+								<column position="4" size="6%"/>
+								<column position="5" size="27%"/>
+								<column position="6" size="6%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Kasko osiguranje:">
+								<dateedit name="datKasko" datavalue="~dtLoad.@Kasko"/>
+							</item>
+							<item row="1" col="2" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkKasko">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datKasko" if="#chkKasko==True"/>
+										<action type="control disable" value="#datKasko" if="#chkKasko==False"/>
+										<action type="control value" value="#datKasko">
+											<parameter value="now" if="#chkKasko==True"/>
+											<parameter value="null" if="#chkKasko==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+							<item row="1" col="3" caption="Osnovno osiguranje:">
+								<dateedit name="datOsnovno" datavalue="~dtLoad.@Osnovno"/>
+							</item>
+							<item row="1" col="4" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkOsnovno">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datOsnovno" if="#chkOsnovno==True"/>
+										<action type="control disable" value="#datOsnovno" if="#chkOsnovno==False"/>
+										<action type="control value" value="#datOsnovno">
+											<parameter value="now" if="#chkOsnovno==True"/>
+											<parameter value="null" if="#chkOsnovno==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+							<item row="1" col="5" caption="Tahograf:">
+								<dateedit name="datTahograf" datavalue="~dtLoad.@Tahograf"/>
+							</item>
+							<item row="1" col="6" spacing="0,0,16,0" highlight="false">
+								<checkedit name="chkTahograf">
+									<event type="checkedchanged">
+										<action type="control enable" value="#datTahograf" if="#chkTahograf==True"/>
+										<action type="control disable" value="#datTahograf" if="#chkTahograf==False"/>
+										<action type="control value" value="#datTahograf">
+											<parameter value="now" if="#chkTahograf==True"/>
+											<parameter value="null" if="#chkTahograf==False"/>
+										</action>
+									</event>
+								</checkedit>
+							</item>
+						</group>
+						<group row="3" col="1" rows="1" cols="3" colspan="8" caption="Pregledi i registracija">
+							<columnsdefinition>
+								<column position="1" size="34%"/>
+								<column position="2" size="33%"/>
+								<column position="3" size="33%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Periodični pregled:">
+								<textedit name="txtPregledPeriod" datavalue="~dtLoad.@PregledPeriod"/>
+							</item>
+							<item row="1" col="2" caption="Tehnički i reg. (dan):">
+								<textedit name="txtTehRegDan" datavalue="~dtLoad.@TehRegDan"/>
+							</item>
+							<item row="1" col="3" caption="Tehnički i reg. (mjesec):">
+								<textedit name="txtTehRegMj" datavalue="~dtLoad.@TehRegMj"/>
+							</item>
+						</group>
+					</group>
+				</tabs>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="global.~dtUpsert" if="global.$VoziloId!=null"/>
+						<action type="datarun scalar" value="global.~dtUpsert" if="global.$VoziloId==null">
+							<parameter name="VoziloId"/>
+						</action>
+						<action type="datarun reader" value="global.~dtGetKey"/>
+						<action type="variable value">
+							<parameter name="Global.ID" value="global.~dtGetKey.@sortkey"/>
+						</action>
+						<action type="control populate" value="parent.#trStrojevi"/>
+						<action type="control focus" value="parent.#trStrojevi">
+							<parameter value="Global.$ID"/>
+						</action>
+						<action type="control populate keepfocus" value="parent.#grdMaster" if="global.$VoziloId!=null"/>
+						<action type="control populate" value="parent.#grdMaster" if="global.$VoziloId==null"/>
+						<action type="control focus" value="parent.#grdMaster" if="global.$VoziloId==null">
+							<parameter value="VoziloId" type="int"/>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLoad" command="spManagerStrojevaGrid">
+				<parameter name="@Action" value="LOAD"/>
+				<parameter name="@VoziloId" value="global.$VoziloId"/>
+			</data>
+		</datalist>
+	</form>
+	<datalist>
+		<data name="dtUpsert" command="spVoziloAzurCarpo">
+			<parameter name="@Action" value="1" if="global.$VoziloId!=null"/>
+			<parameter name="@Action" value="0" if="global.$VoziloId==null"/>
+			<parameter name="@VozModelId" value="#srcModel"/>
+			<parameter name="@Model1" value="#txtModel1" if="global.$model3==true"/>
+			<parameter name="@Model2" value="#txtModel2" if="global.$model3==true"/>
+			<parameter name="@Model3" value="#txtModel3" if="global.$model3==true"/>
+			<parameter name="@GarazniBroj" value="#txtGarazni"/>
+			<parameter name="@BrojSasije" value="#txtSasija"/>
+			<parameter name="@BrojMotora" value="#txtMotor"/>
+			<parameter name="@RegOznaka" value="#txtReg"/>
+			<parameter name="@GodinaProizvodnje" value="#txtGod"/>
+			<parameter name="@Partneriid" value="#srcPartner"/>
+			<parameter name="@Osobeid" value="#srcOsoba"/>
+			<parameter name="@DatumPrveReg" value="#datReg"/>
+			<parameter name="@DatumKupnje" value="#datKup"/>
+			<parameter name="@Boja" value="#txtBoja"/>
+			<parameter name="@DatumProdaje" value="#datPro"/>
+			<parameter name="@DatumOdjave" value="#datOdj"/>
+			<parameter name="@OsImovinaId" value="#srcSredstvo"/>
+			<parameter name="@DimenzijeId" value="#srcDimenzija"/>
+			<parameter name="@KategorijeVozilaId" value="#cmbKategorijaVozila"/>
+			<parameter name="@Masa" value="#txtMasa"/>
+			<parameter name="@Nosivost" value="#txtNosivost"/>
+			<parameter name="@BrojOsovina" value="#txtBrojOsovina"/>
+			<parameter name="@BrojPogonskihOsovina" value="#txtBrojPogonskihOsovina"/>
+			<parameter name="@BrojPneumatika" value="#txtBrojPneumatika"/>
+			<parameter name="@DimenzijePrednjihPneumatika" value="#txtDimenzijePrednjihPneumatika"/>
+			<parameter name="@DimenzijeZadnjihPneumatika" value="#txtDimenzijeZadnjihPneumatika"/>
+			<parameter name="@Obujam" value="#txtObujam"/>
+			<parameter name="@Snaga" value="#txtSnaga"/>
+			<parameter name="@EkoKategorija" value="#txtEkoKategorija"/>
+			<parameter name="@AdBlue" value="#chkAdBlue"/>
+			<parameter name="@GPSLokator" value="#chkGPSLokator"/>
+			<parameter name="@SondaZaGorivo" value="#chkSondaZaGorivo"/>
+			<parameter name="@PratiRadHidraulike" value="#chkPratiRadHidraulike"/>
+			<parameter name="@PregledPeriod" value="#txtPregledPeriod"/>
+			<parameter name="@Kasko" value="#datKasko"/>
+			<parameter name="@OsnovnoOsiguranje" value="#datOsnovno"/>
+			<parameter name="@Tahograf" value="#datTahograf"/>
+			<parameter name="@TehnickiRegistracijaDan" value="#txtTehRegDan"/>
+			<parameter name="@TehnickiRegistracijaMjesec" value="#txtTehRegMj"/>
+			<parameter name="@ID" value="global.$VoziloId" if="global.$VoziloId!=null"/>
+		</data>
+		<data name="dtGetKey" command="spManagerStrojevaGetKey">
+			<parameter name="@Action" value="VRSTE" if="global.$look==Vrste vozila"/>
+			<parameter name="@Action" value="TIPOVI" if="global.$look==Tipovi vozila"/>
+			<parameter name="@Action" value="PARTNERI" if="global.$look==Partneri"/>
+			<parameter name="@ID" value="$VoziloId" if="global.$VoziloId==null"/>
+			<parameter name="@ID" value="global.$VoziloId" if="global.$VoziloId!=null"/>
+		</data>
+		<data name="dtModel" command="spVozModelQueryCarpo">
+			<parameter name="@Action" value="2"/>
+			<parameter name="@Trazi" value="#srcModel.text"/>
+		</data>
+		<data name="dtPartner" command="spPartneriQuery">
+			<parameter name="@Action" value="21"/>
+			<parameter name="@ID" value="0"/>
+			<parameter name="@IDPartneri" value="0"/>
+			<parameter name="@DownUnder" value="0"/>
+			<parameter name="@SortKey" value=""/>
+			<parameter name="@Naziv" value="#srcPartner.text"/>
+			<parameter name="@Sifra" value="#srcPartner.text"/>
+			<parameter name="@MatBroj" value="#srcPartner.text"/>
+			<parameter name="@Ziro" value="#srcPartner.text"/>
+		</data>
+		<data name="dtOsoba" command="spOsobeQueryCarpoVozila">
+			<parameter name="@Action" value="20"/>
+			<parameter name="@Ime" value="#srcOsoba.text"/>
+		</data>
+		<data name="dtSredstvo" command="spOSImovinaQueryCarpo">
+			<parameter name="@Action" value="0"/>
+			<parameter name="@String" value="#srcSredstvo.text"/>
+		</data>
+		<data name="dtDimenzija" command="spDimenzijeQueryCarpo">
+			<parameter name="@Action" value="1"/>
+			<parameter name="@Naziv" value="#srcDimenzija.text"/>
+		</data>
+		<data name="dtKategorijeVozila" command="spKategorijeVozilaCarpo">
+			<parameter name="@Action" value="MASTER"/>
+		</data>
+	</datalist>
+</root>

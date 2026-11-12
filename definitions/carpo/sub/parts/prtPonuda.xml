@@ -1,0 +1,308 @@
+<!--
+11.12.2020. AR - dodao okidanje dtDajNacinPlac nakon odabira partnera i automatsko ažuriranje polja Način plaćanja. TIA (HD CASE 61041)
+-->
+<parts>
+        <part name="partPonistavanje">
+            <action type="control value" value="#lblStvarnoVrijednost">
+                <parameter value="1"></parameter>
+            </action>
+            <action type="control value" value="#lblRaspolozivoVrijednost">
+                <parameter value="1"></parameter>
+            </action>
+            <action type="control value" value="#lblRezerviranoVrijednost">
+                <parameter value="1"></parameter>
+            </action>
+        </part>	
+        <part name="partSpremanjeStavke">
+			<action type="validate"/>
+			<action type="datarun nonquery" value="~dtRobaIzmjena" if="$Action==1"/>
+			<action if="$Action!=1">
+				<action type="variable value" >
+					<parameter name="UvjetTrazilice" value="#srcRoba.@UvjetId" />
+				</action>			
+				<action type="datarun scalar" value="~dtRobaUnos" if="$Action!=1">
+					<parameter name="ProPonDetId" />
+				</action>
+				<action type="control populate" value="parent.#grdRoba"/>
+				<action type="control focus" value="parent.#grdRoba">
+					<parameter value="$ProPonDetId" />
+				</action>					
+				<action type="variable value">
+					<parameter name="ProizvodiId" value="null"  />
+				</action>
+				<action type="control value" value="#lblSastavnica">
+					<parameter value="null"  />
+				</action>
+				<action type="control disable" value="#btnSastavnicaAdd" />
+				<action type="control disable" value="#btnSastavnicaDelete" />												
+				<action type="control refreshvalue" value="#srcRoba,#txtKolicinaPak,#txtKolicina,#lblNaknade,#txtRokPlacanja,#meNapomena,#chkOpcija"/>					
+				<action type="control value" value="#lblStvarnoVrijednost">
+					<parameter value="0"></parameter>
+				</action>						
+				<action type="control value" value="#lblRaspolozivoVrijednost">
+					<parameter value="0"></parameter>
+				</action>	
+				<action type="control value" value="#lblRezerviranoVrijednost">
+					<parameter value="0"></parameter>
+				</action>
+				<action type="control value" value="#cusCalc">
+					<parameter name="ResetCalcValues" value="true"/>
+				</action>
+				<action type="control value" value="#bteNabavna">
+					<parameter value="0"/>
+				</action>				
+				<action type="control focus" value="#srcRoba"/>
+			</action>
+			<action type="form close" if="$Action==1" />
+			<action type="control populate" value="parent.#grdUvjeti" />
+        </part>			
+        <part name="ponudaatributi1">
+            <item caption="Broj:" row="1" col="1" fontbold="true" >
+                <textedit name="txtBroj" datavalue="#dtGet.@Broj"  fontbold="true" nulltext="&lt;novi dokument&gt;"/>
+            </item>
+			<group padding="0" groupbordervisible="False" cols="3" rows="1" row="2" col="1">
+                <columnsdefinition>
+					<column size="200" position="1" />
+                    <column size="90" position="2" />
+                </columnsdefinition>			
+				<item caption="Datum:" row="1" col="1">
+					<dateedit name="datDatumdok" value="now" datavalue="#dtGet.@DatumDok" required="true"/>
+				</item>
+                <item caption="Vrijedi:" row="1" col="2" textalignmode="auto">
+                    <textedit name="txtOpcija" format="f0" datavalue="#dtGet.@VrijediDana" required="true" />
+                </item>
+                <item row="1" col="3" textvisible="False" padding="0,0,5,0">
+                    <labeledit value="dana" />
+                </item>								
+			</group>
+            <item caption="Org. shema:" row="3" col="1" >
+                <combotreeedit name="cmbOrgShema" valuefield="ID" displayfield="Naziv" datavalue="#dtGet.@OrgShemaId" dataname="Global.dtOrgShema" required="true" function="OrgShema"/>
+            </item>
+            <item caption="Odg. osoba:" row="4" col="1">
+                <comboedit name="cmbOsobe" valuefield="OsobeId" displayfield="Osoba" datavalue="#dtGet.@OsobeId" dataname="Global.dtOdgovornaOsoba" required="true"/>
+            </item>
+        </part>			
+			<!-- <group padding="0" groupbordervisible="false" cols="3" rows="1" col="1" row="5"> -->
+				<!-- <columnsdefinition> -->
+					<!-- <column size="45" position="1" /> -->
+                    <!-- <column size="39" position="2" /> -->
+					<!-- <column size="206" position="3" /> -->
+                <!-- </columnsdefinition> -->
+				<!-- <item caption="Skladište:" row="1" col="1"> -->
+					<!-- <labeledit name="lblSkladiste" value="" /> -->
+				<!-- </item> -->
+				<!-- <item caption="" row="1" col="2" > -->
+					<!-- <labeledit name="lblZvjezdica" value="" fontcolor="#c80000" fontsizedelta="1" fontbold="false"/> -->
+				<!-- </item> -->
+				<!-- <item caption="" row="1" col="3"> -->
+					<!-- <comboedit name="cmbSkladiste" valuefield="SkladisteId" displayfield="Opis" datavalue="#dtGet.@SkladisteId" dataname="Global.dtSkladiste" /> -->
+				<!-- </item> -->
+			<!-- </group>			 -->
+		<part name="ponudaatributi2">			
+            <item caption="Partner:" row="6" col="1" fontbold="true"> 
+                <searchedit netgenfields="true" name="srcPartner" required="true" fontbold="true" dataname="Global.dtPartneri" fieldtext="NazivId" fieldvalue="partneriid" datavalue="#dtGet.@PartneriId" datatext="#dtGet.@PartnerNaziv">
+					<event type="valuechanged">
+						<action type="variable value">
+							<parameter name="PartneriId" value="#srcPartner" />
+						</action>	
+						<action type="variable value">
+							<parameter name="IndPromijenjeno" value="1" />
+						</action>						
+						<action type="control enable" value="#cmbKontakt" if="#srcPartner!=null&amp;&amp;$IndLoad==0">
+                            <action type="control populate" value="#cmbKontakt" />
+                        </action>
+                        <action type="control disable" value="#cmbKontakt" if="#srcPartner==null">
+                            <action type="control datasource empty" value="#cmbKontakt" />
+                        </action>	
+						<action type="variable value">
+							<parameter name="IndLoad" value="0" />
+						</action>					
+                    </event>
+					<event type="leave">
+						<action type="variable value">
+							<parameter name="PartneriId" value="#srcPartner"/>
+						</action>					
+                    	<action type="datarun reader" value="Global.dtDajPartnera" if="#srcPartner!=null"/>					
+						<action type="control value" value="#srcParstru" if="#srcPartner!=null&amp;&amp;#srcPartner.@BrojLokacija_Id==1">
+							<parameter value="~dtDajPartnera.@parstruid" text="~dtDajPartnera.@Naziv"/>
+						</action>
+						<action type="datarun reader" value="Global.dtValutaZaPartnera" if="#srcPartner!=null&amp;&amp;$Izmjena==0"/>
+						<action type="datarun reader" value="Global.dtDajNacinPlac" if="#srcPartner!=null&amp;&amp;$Izmjena==0"/>
+						<action type="control value" value="#cmbValuta" if="#srcPartner!=null&amp;&amp;~dtValutaZaPartnera.@valuteid!=null&amp;&amp;$Izmjena==0">
+							<parameter value="~dtValutaZaPartnera.@valuteid"/>
+						</action>
+						<action type="control value" value="#cmbNacinOtpreme" if="#srcPartner!=null&amp;&amp;~dtValutaZaPartnera.@ProNacinIsporukeId!=null&amp;&amp;$Izmjena==0">
+							<parameter value="~dtValutaZaPartnera.@ProNacinIsporukeId"/>
+						</action>
+						<!--Dodao Andrej za TIA-u da se povlači način plaćanja odabran na partneru (HD CASE 61041)-->
+						<action type="control value" value="#cmbNacinPlacanja" if="#srcPartner!=null&amp;&amp;~dtDajNacinPlac.@ProNacinNaplateId!=null&amp;&amp;$Izmjena==0">
+							<parameter value="~dtDajNacinPlac.@ProNacinNaplateId"/>
+						</action>
+						<!--Kraj-->
+						<!--Povlačenje načina plaćanja iz ugovora s kupcem. Ireksova funkcionalnost-->
+						<action type="control value" value="#cmbNacinPlacanja" if="#srcPartner!=null&amp;&amp;~dtValutaZaPartnera.@ProNacinNaplateId!=null&amp;&amp;$Izmjena==0">
+							<parameter value="~dtValutaZaPartnera.@ProNacinNaplateId"/>
+						</action>
+						<!--Kraj-->					
+						<action type="form open" value="frmLokacije" if="#srcPartner!=null&amp;&amp;#srcPartner.@BrojLokacija_Id!=1&amp;&amp;$IndPromijenjeno==1">
+							<parameter name="PartneriId" value="#srcPartner" />
+							<parameter name="IndLokacija" value="1" />
+							<parameter name="ParStruId" value="#srcParstru" />
+						</action>
+						<!-- <action type="control refreshvalue" value="#srcParstru" if="#srcPartner==null"/> -->
+						<action type="control value" value="#srcParstru" if="#srcPartner==null">
+							<parameter value="null"/>
+						</action>						
+						<action type="variable value">
+							<parameter name="IndLokacija" value="0" />
+						</action>
+						<action type="variable value">
+							<parameter name="IndPromijenjeno" value="0" />
+						</action>						
+					</event>
+                </searchedit>
+            </item>
+            <item caption="Lokacija:" row="7" col="1">
+                <searchedit netgenfields="true" name="srcParstru" required="true" dataname="Global.dtParstru" fieldtext="NazivId" fieldvalue="ParStruId" datavalue="#dtGet.@ParStruId" datatext="#dtGet.@ParStruNaziv" savelayout="true">                  
+					<event type="leave">
+                    	<action type="datarun reader" value="Global.dtDajPartnera" if="#srcParstru!=null"/>
+                        <action type="control value" value="#srcPartner" if="#srcPartner==null&amp;&amp;#srcParstru!=null">
+							<parameter value="~dtDajPartnera.@partneriid" text="~dtDajPartnera.@Naziv"/>
+						</action>
+						<action type="datarun reader" value="Global.dtDajOsobuLokacije" if="#srcParstru!=null"/>
+						<action type="control value" value="#cmbOsobe">
+							<parameter value="~dtDajOsobuLokacije.@OsobeId"/>
+						</action>						
+					</event>			
+                </searchedit>
+            </item>
+            <item caption="Kontakt:" row="8" col="1">
+                <comboedit name="cmbKontakt" valuefield="OsobeId" displayfield="Osoba" datavalue="#dtGet.@OsobeParId" dataname="Global.dtKontakt" autopopulate="false" />
+            </item>
+			<item caption="Datum isporuke:" row="9" col="1">
+				<textedit name="datDatumIsporuke" required="true" formattype="datetime" datavalue="#dtGet.@DatumIsporuke" format="dd.MM.yyyy HH:mm" value="now" function="DatumIsporuke"></textedit>
+			</item>			
+			<item caption="Mjesto isporuke:" row="10" col="1" textalignmode="">
+				<textedit name="txtMjestoIsporuke" maxlength="100" format="" datavalue="#dtGet.@MjestoIsporuke" required="" />
+			</item>			
+            <item caption="Način otpreme:" row="11" col="1">
+                <comboedit name="cmbNacinOtpreme" valuefield="NacinIsporukeId" displayfield="Naziv" datavalue="#dtGet.@NacinIsporukeId" dataname="Global.dtNacinIsporuke" required="true" function="NacinOtpreme"/>
+            </item>
+            <item caption="Način plaćanja:" row="12" col="1">
+                <comboedit name="cmbNacinPlacanja" valuefield="ProNacinNaplateId" displayfield="Opis" datavalue="~dtGet.@ProNacinNaplateId" dataname="Global.dtNacinPlacanja" required="true" function="NacinPlacanja">
+ 					<event type="leave">
+						<action type="variable value" >
+							<parameter name="IndKredit" value="#cmbNacinPlacanja.@Indikator"/>
+						</action>
+						<action if="$ProPonGlaId!=null">
+							<action type="control populate" value="#grdUvjeti" if="$"/>
+							<action type="control enable" value="#btnKredit, #grdUvjeti" if="#cmbNacinPlacanja.@Indikator==2&amp;&amp;$StatusPon==1&amp;&amp;$Smije==1" />
+							<action type="control disable" value="#btnKredit, #grdUvjeti" else="" />
+							<action type="control disable" value="#btnIzmijeniDane, #txtDani" if="#cmbNacinPlacanja.@Indikator==2||$StatusPon!=1||$Smije!=1" />
+							<action type="control enable" value="#btnIzmijeniDane, #txtDani" else="" />
+						</action>						
+					</event>
+				</comboedit>
+            </item>		
+            <item caption="Instr. plaćanja:" row="13" col="1">
+                <comboedit name="cmbInstrumentPlacanja" valuefield="KntNacinPlacId" displayfield="Naziv" datavalue="#dtGet.@KntNacinPlacId" dataname="Global.dtInstrumentPlacanja" required="true" function="InstrumentPlacanja"/>
+            </item>				
+            <group padding="0" groupbordervisible="False" cols="2" rows="1" col="1" row="14">
+			    <columnsdefinition>
+					<column size="240" position="1" />
+                    <column size="100" position="2" />
+                </columnsdefinition> 
+                <item caption="Valuta:" row="1" col="1">
+                    <comboedit name="cmbValuta" valuefield="ValuteId" displayfield="Naziv" datavalue="#dtGet.@DevValuteId" dataname="Global.dtValuta" >
+						<action type="variable value">
+							<parameter name="InitValuta" value="#cmbValuta" />
+						</action>
+						<event type="valuechanged">						
+							<action type="variable value">
+								<parameter name="IndConfirmValuta" value="Ne" />
+							</action>
+							<action type="confirm" value="Jeste li sigurni da želite promijeniti valutu na dokumentu?" stoponconfirm="false" if="$ProPonGlaId!=null&amp;&amp;#cmbValuta!=$InitValuta">							
+								<action type="variable value" >
+									<parameter name="BrDecimalaValuta" value="#cmbValuta.@BrDecimala" />
+								</action>								
+								<action type="control attribute" value="bteVrBoda">
+									<parameter name="format" value="n{$BrDecimalaValuta}"></parameter>
+								</action>									
+								<action type="control enable" value="#bteVrBoda" if="#cmbValuta!=null" />
+								<action type="control disable" value="#bteVrBoda" else="" />
+								<action type="datarun reader" value="Global.dtTecaj" if="#cmbValuta!=null"/>
+								<action type="control value" value="#bteVrBoda" if="#cmbValuta!=null">
+									<parameter value="~dtTecaj.@Tecaj"/>
+								</action>
+								<action type="control value" value="#bteVrBoda" else="">
+									<parameter value="~dtPubVars.@NasBod"/>
+								</action>
+								<action type="datarun nonquery" value="Global.dtPromijeniTecaj">
+									<action type="control populate" value="#grdRoba" />
+								</action>
+								<action type="variable value">
+									<parameter name="IndConfirmValuta" value="Da" />
+								</action>								
+							</action>
+							<action type="control value" value="#cmbValuta" if="$ProPonGlaId!=null&amp;&amp;$IndConfirmValuta==Ne">
+								<parameter value="$InitValuta"/>
+							</action>							
+							<action type="variable value">
+								<parameter name="InitValuta" value="#cmbValuta" />
+							</action>							
+							<action if="$ProPonGlaId==null">
+								<action type="variable value" if="#cmbValuta!=null">
+									<parameter name="BrDecimalaValuta" value="#cmbValuta.@BrDecimala" />
+								</action>
+								<action type="variable value" else="">
+									<parameter name="BrDecimalaValuta" value="6" />
+								</action>								
+								<action type="control attribute" value="bteVrBoda" >
+									<parameter name="format" value="n{$BrDecimalaValuta}"></parameter>
+								</action>							
+								<action type="control enable" value="#bteVrBoda" if="#cmbValuta!=null" />
+								<action type="control disable" value="#bteVrBoda" else="" />
+								<action type="datarun reader" value="Global.dtTecaj" if="#cmbValuta!=null"/>
+								<action type="control value" value="#bteVrBoda" if="#cmbValuta!=null">
+									<parameter value="~dtTecaj.@Tecaj"/>
+								</action>
+								<action type="control value" value="#bteVrBoda" else="">
+									<parameter value="~dtPubVars.@NasBod"/>
+								</action>
+							</action>
+							<action type="control itemcaption" value="#bteVrBoda">
+								<parameter value="Tečaj:" if="#cmbValuta!=null"/>
+								<parameter value="Bod:" else=""/>>
+							</action>
+							<action type="variable value">
+								<parameter name="InitTecaj" value="#bteVrBoda" />
+							</action>								
+						</event>
+					</comboedit>
+                </item>
+                <item caption="Bod:" row="1" col="2" textalignmode="auto">				
+                    <textedit name="bteVrBoda" format="n6" datavalue="#dtGet.@VrBoda" >				
+						<event type="leave">
+							<action type="variable value">
+								<parameter name="IndConfirm" value="Ne" />
+							</action>							
+							<action type="confirm" value="Jeste li sigurni da želite promijeniti vrijednost tečaja na dokumentu?" stoponconfirm="false" if="$ProPonGlaId!=null&amp;&amp;$InitTecaj!=#bteVrBoda">
+ 								<action type="datarun nonquery" value="Global.dtPromijeniTecaj">
+									<action type="control populate" value="#grdRoba" if="$IndLoad==1"/>
+								</action>
+								<action type="variable value">
+									<parameter name="IndConfirm" value="Da" />
+								</action>								
+							</action>
+							<action type="control value" value="#bteVrBoda" if="$ProPonGlaId!=null&amp;&amp;$IndConfirm==Ne">
+								<parameter value="$InitTecaj"/>
+							</action>							
+							<action type="variable value">
+								<parameter name="InitTecaj" value="#bteVrBoda" />
+							</action>
+						</event>
+					</textedit>	
+                </item>									
+            </group>			
+        </part>
+    </parts>

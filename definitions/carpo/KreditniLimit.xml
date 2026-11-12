@@ -1,0 +1,356 @@
+<root>
+	<form name="frmGlava" type="master"  template="splitter" splitterposition="
+		750" maximized="true" caption="Kreditni limiti">
+		<event type="load">
+			<action type="datarun reader" value="~dtPuniMasterGrid" />
+			<action type="control populate" value="#grdGlava" />
+		</event>
+			<layout name="panel1">
+				<group cols="1" rows="1">
+					<item col="1" row="1">
+						<grid name="grdGlava" dataname="~dtPuniMasterGrid" key="partneriid" multiselect="true" printcaption="STANDARDNI KREDITNI LIMIT" printcaptionalign="center">
+							<event type="focusedrowchanged">
+								<action type="datarun reader" value="~dtPuniDetaljGrid" />
+								<action type="control populate" value="#grdDetalj" />
+								<action type="control disable" value="#btnObrisi" if="#grdGlava.@obrisan=='Da'" />
+								<action type="control disable" value="#btnIzmijeni" if="#grdGlava.@obrisan=='Da'" />
+								<action type="control enable" value="#btnObrisi" if="#grdGlava.@obrisan=='Ne'" />
+								<action type="control enable" value="#btnIzmijeni" if="#grdGlava.@obrisan=='Ne'" />
+							</event>
+							<event type="doubleclick">
+								<action type="form open" value="frmIzmjena">
+										<parameter name="ID" value="#grdGlava.@PartneriStandardniKreditniLimitID" />
+								</action>
+							</event>
+								<fields inherited="true">
+									<field name="PartneriStandardniKreditniLimitID" visible="false"/>
+									<field name="Partner" caption="Partner" />
+									<field name="Standardni kreditni limit" caption="Standardni kreditni limit" />
+									<field name="Privremeni kreditni limit" caption="Privremeni kreditni limit" />
+									<field name="Datum od" caption="Datum od" />
+									<field name="Datum do" caption="Datum do" />
+									<field name="Obrisan" caption="Obrisan" />
+									<field name="Aktivan" caption="Aktivan" visible="false" />
+									<field name="Partneriid" visible="false"/>
+								</fields>
+								<styles>
+									<style name="fontcolor" value="gray" if="#grdGlava.@obrisan=='Da'" />
+								</styles>
+						</grid>
+					</item>
+				</group>
+			</layout>
+
+			<layout name="panel2">
+				<group cols="1" rows="1">
+					<item col="1" row="1">
+						<grid name="grdDetalj" dataname="~dtPuniDetaljGrid">
+							<fields inherited="true">
+								<field name="Partner" caption="Partner" />
+								<field name="Standardni kreditni limit" caption="Standardni kreditni limit" />
+								<field name="Privremeni kreditni limit" caption="Privremeni kreditni limit" />
+								<field name="Datum od" caption="Datum od" />
+								<field name="Datum do" caption="Datum do" />
+								<field name="Audit user" caption="Operater izmjene" />
+								<field name="Datum izmjene" caption="Datum izmjene" />
+								<field name="AuditCommand" caption="Naredba izmjene" />
+								<field name="Audit action" caption="Audit action" visible="False" />
+							</fields>
+						</grid>
+					</item>
+				</group>
+			</layout>
+
+	<panelbuttons>		
+		<buttons>
+			<button name="btnUnos" caption="UNESI">
+				<event type="click">
+					<action type="form open" value="frmUnos" />
+				</event>
+			</button>
+			<button name="btnIzmijeni" caption="IZMIJENI">
+				<event type="click">
+					<action type="form open" value="frmIzmjena">
+						<parameter name="id" value="#grdGlava.@PartneriStandardniKreditniLimitID" />
+					</action>
+				</event>
+			</button>
+			<button name="btnObrisi" caption="OBRIŠI">
+				<event type="click">
+					<action type="confirm" value="Želite li zaista obrisati kreditni limit za odabranog partnera?">
+						<action type="datarun nonquery" value="~dtDelete" />
+						<action type="control populate" value="#grdGlava" />
+						<action type="control populate" value="#grdDetalj" />
+					</action>
+				</event>
+			</button>
+		</buttons>
+	</panelbuttons>
+
+		<datalist>
+			<data command="spProd_stLimit_grid" name="dtPuniMasterGrid">
+			</data>
+			<data command="spProd_stLimit_detaljGrid" name="dtPuniDetaljGrid">
+				<parameter name="@PartneriStandardniKreditniLimitID" value="#grdGlava.@PartneriStandardniKreditniLimitID" />
+				<parameter name="@Partneriid" value="#grdGlava.@partneriid" />
+			</data>
+			<data command="spProd_stLimit_delete" name="dtDelete">
+				<parameter name="@PartneriStandardniKreditniLimitID" value="#grdGlava.@PartneriStandardniKreditniLimitID" />
+				<parameter name="@partneriid" value="#grdGlava.@partneriid" />
+				<parameter name="@StandardniKreditniLimit" value="#grdGlava.@Standardni kreditni limit" />
+				<parameter name="@PrivremeniKreditniLimit" value="#grdGlava.@Privremeni kreditni limit" />
+				<parameter name="@datumod" value="#grdGlava.@datum od" />
+				<parameter name="@datumdo" value="#grdGlava.@datum do" />
+				<parameter name="@operateriid" value="@@operateriid" />
+			</data>
+			<data command="spProd_stLimit_PartnerOrder" name="dtPartneriID">
+			</data>
+			
+		</datalist>
+
+	</form>
+	<form name="frmUnos" caption="Unos">
+		<event type="init">
+			<action type="datarun reader" value="~dtdatumDo"/>
+		</event>
+		<event type="load">
+			<action type="control disable" value="#txtPrivKredLim" if="#chkPrivLim==false" />
+			<action type="control disable" value="#datod" if="#chkPrivLim==false" />
+			<action type="control disable" value="#datdo" if="#chkPrivLim==false" />
+		</event>
+		<event type="close">
+			<action type="variable value" value="parent.Partneriid">
+				<parameter value="#srcPartneri" />
+			</action>
+				<action type="control populate" value="parent.#grdGlava" />
+				<action type="control focus" value="parent.#grdGlava">
+					<parameter value="parent.$Partneriid" type="int"/>
+				</action>				
+		</event>
+	
+		<layout itemspadding="3">
+
+ 				<group cols="1" rows="2">
+ 					<group cols="2" rows="3" col="1" row="1">
+	 					<item col="1" row="1" caption="Partner:" colspan="2">
+							<searchedit name="srcPartneri" fontbold="True" fieldtext="Partner3000" fieldvalue="PartneriID" dataname="Global.dtNapuniPartnera" function="srcPartneri" required="true" entermovenextcontrol="true">
+							<event type="valuechanged">
+                        		<action type="variable value">
+                            		<parameter name="PartneriId" value="#srcPartneri" />
+                        		</action>
+                        		<action type="datarun reader" value="~dtDajPartnera" if="#srcPartneri!=null" />                        
+                        			<action type="control value" value="#txtStdKredLim" if="#srcPartneri!=null">
+                            				<parameter value="~dtDajPartnera.@kreditnilimit"/>
+                        			</action>
+                        			<action type="control value" value="#txtStdKredLim">
+                        				<parameter value="~dtDajPartnera.@kreditnilimit" />
+                        			</action> 
+                        	</event>  
+							<event type="leave">
+			                        <action type="variable value">
+			                            <parameter name="partneriid" value="#srcPartneri" />
+			                        </action>
+			                        <action type="datarun reader" value="~dtDajPartnera" if="#srcPartneri!=null" />                        
+                        			<action type="control value" value="#txtStdKredLim" if="#srcPartneri!=null">
+                            				<parameter value="~dtDajPartnera.@kreditnilimit"/>
+                        			</action>
+                        			<action type="control value" value="#txtStdKredLim">
+                        				<parameter value="~dtDajPartnera.@kreditnilimit" />
+                        			</action>
+                    		</event>
+                    	</searchedit>
+						</item>
+							<item col="1" row="2" caption="Standardni kreditni limit:" colspan="2">
+						<textedit name="txtStdKredLim" format="n4"  value="0" />
+					</item>
+					</group>
+					<group cols="2" rows="3" col="1" row="2">
+						<item col="1" row="1">
+							<checkedit name="chkPrivLim" value="False">
+								<event type="checkedchanged">
+									<action type="control enable" value="#txtPrivKredLim" if="#chkPrivLim==true" />
+									<action type="control disable" value="#txtPrivKredLim" if="#chkPrivLim==false" />
+									<action type="control enable" value="#datod" if="#chkPrivLim==true" />
+									<action type="control disable" value="#datod" if="#chkPrivLim==false" />
+									<action type="control enable" value="#datdo" if="#chkPrivLim==true" />
+									<action type="control disable" value="#datdo" if="#chkPrivLim==false" />
+									<action type="control value" value="#txtPrivKredLim" if="#chkPrivLim==false">
+										<parameter value="0" />
+									</action>
+								</event>
+							</checkedit>
+						</item>
+
+						<item col="1" row="2" caption="Privremeni kreditni limit:" colspan="2" required="true">
+						<textedit name="txtPrivKredLim" format="n4" value="0" />
+							</item>
+						<item col="1" row="3" caption="Datum od:">
+							<dateedit name="datOd"  dataname="~dtDatumdo" valuefield="datumdo" datavalue="~dtDatumdo.@Sutra" required="true"/>
+						</item>
+						<item col="2" row="3" caption="Datum do:">
+							<dateedit name="datDo" dataname="~dtDatumdo" valuefield="datumdo" datavalue="~dtDatumdo.@Datumdo" required="true"/>
+						</item>
+						</group>
+ 					</group>
+
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPotvrdi" caption="POTVRDI">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="Global.dtUnos">
+								<parameter name="parent.$Partneriid" />
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" dock="right" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spTraziPartneri" name="dtNapuniPartnera">
+				<parameter name="@action" value="Partneri"></parameter>
+				<parameter name="@uvjet" value="#srcPartneri.text"></parameter>
+			</data>
+			<data name="dtDatumDo" command="spProd_StLimit_UzmiDatume"> </data>
+			<data command="spProd_stLimit_dajPartnera" name="dtDajPartnera">	
+			  	<parameter name="@partneriid" value="#srcPartneri" />
+		  	</data>	
+		</datalist>
+	</form>
+	<form name="frmIzmjena" caption="Izmijeni">
+		<event type="init">
+			<action type="datarun reader" value="~dtGetEdit" />
+			<action type="datarun reader" value="~dtdatumDo"></action>
+		</event>
+		<event type="onload">
+			<action type="control value" value="#chkPrivLim" if="#txtPrivKredLim&gt;0">
+				<parameter value="true" />
+			</action>
+			<action type="control value" value="#chkPrivLim" if="#txtPrivKredLim==0">
+				<parameter value="true" />
+			</action>
+			<action type="control value" value="#txtPrivKredLim" if="#txtPrivKredLim==null">
+				<parameter value="0" />
+			</action>
+			<action type="variable value" >
+				<parameter name="Sutra" value="~dtDatumDo.@Sutra" />
+			</action>
+			<action type="control disable" value="#srcPartneri" />
+			<action type="control disable" value="#txtPrivKredLim" if="#chkPrivLim==false" />
+			<action type="control disable" value="#datod" if="#chkPrivLim==false" />
+			<action type="control disable" value="#datdo" if="#chkPrivLim==false" />
+		</event>
+		<event type="shown">
+			<action type="control value" value="#datod" if="~dtGetEdit.@datumod==null">
+				<parameter value="now" />
+			</action>
+			<action type="control value" value="#datdo" if="~dtGetEdit.@datumdo==null">
+				<parameter value="now" />
+			</action>
+			<action type="control value" value="#datOd" if="#chkPrivLim==false">
+				<parameter value="$Sutra" />
+			</action>
+			<action type="control value" value="#datDo" if="#chkPrivLim==false">
+				<parameter value="$Sutra" />
+			</action>
+		</event>
+			<layout>
+				<group cols="1" rows="2">
+ 					<group cols="2" rows="3" col="1" row="1">
+	 					<item col="1" row="1" caption="Partner:" colspan="2">
+							<searchedit name="srcPartneri" dataname="~dtNapuniPartnera" fontbold="true" fieldvalue="partneriid" fieldtext="Naziv" datavalue="~dtGetEdit.@partneriid" datatext="~dtGetEdit.@naziv"/>
+						</item>
+						<item col="1" row="2" caption="Standardni kreditni limit:" colspan="2">
+							<textedit name="txtStdKredLim" datavalue="~dtGetEdit.@StandardniKreditniLimit" format="n4"/>
+						</item>
+					</group>
+					<group cols="2" rows="3" col="1" row="2" groupbordervisible="true">
+						<item col="1" row="1">
+						  <checkedit name="chkPrivLim" value="False">
+								<event type="checkedchanged">
+									<action type="control enable" value="#txtPrivKredLim" if="#chkPrivLim==true" />
+									<action type="control disable" value="#txtPrivKredLim" if="#chkPrivLim==false" />
+									<action type="control enable" value="#datod" if="#chkPrivLim==true" />
+									<action type="control disable" value="#datod" if="#chkPrivLim==false" />
+									<action type="control enable" value="#datdo" if="#chkPrivLim==true" />
+									<action type="control disable" value="#datdo" if="#chkPrivLim==false" />
+									<action type="control value" value="#txtPrivKredLim" if="#chkPrivLim==false">
+										<parameter value="0" />
+									</action>
+								</event>
+							</checkedit>
+						</item>
+						<item col="1" row="2" caption="Privremeni kreditni limit:" colspan="2" required="true">
+						<textedit name="txtPrivKredLim" datavalue="~dtGetEdit.@PrivremeniKreditniLimit" format="n4"/>
+							</item>
+						<item col="1" row="3" caption="Datum od:">
+							<dateedit name="datOd" required="true" datavalue="~dtGetEdit.@datumod"/>
+						</item>
+						<item col="2" row="3" caption="Datum do:">
+							<dateedit name="datDo" datavalue="~dtGetEdit.@datumdo" required="true"/>
+						</item>
+						</group>
+ 					</group>
+ 			</layout>
+ 			<panelbuttons>
+ 				<buttons>
+ 					<button name="btnPotvrdi" caption="POTVRDI">
+ 						<event type="click">
+	 						<action type="validate" />
+	 						<action type="datarun nonquery" value="~dtUpdate" />
+	 						<action type="control populate" value="parent.#grdGlava" />
+	 						<action type="control populate" value="parent.#grdDetalj" />
+	 						<action type="form close" /> 
+	 					</event>
+ 					</button>
+ 					<button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right">
+ 						</button>
+ 				</buttons>
+ 			</panelbuttons>
+ 		<datalist>
+ 			<data name="dtDatumDo" command="spProd_StLimit_UzmiDatume"> </data>
+	 		<data command="spProd_stLimit_Edit" name="dtGetEdit">
+				<parameter name="@id" value="$id" />
+			</data>
+			<data command="spTraziPartneri" name="dtNapuniPartnera">
+				<parameter name="@action" value="Partneri"></parameter>
+				<parameter name="@uvjet" value="#srcPartneri.text"></parameter>
+			</data>
+			<data command="spProd_stLimit_Update" name="dtUpdate">
+				<parameter name="@id" value="$id" />
+				<parameter name="@partneriid" value="#srcPartneri" />
+				<parameter name="@stKredLimit" value="#txtStdKredLim" />
+				<parameter name="@privKredLimit" value="#txtPrivKredLim" if="#chkPrivLim==true"/>
+				<parameter name="@privKredLimit" value="null" if="#chkPrivLim==false"/>
+				<parameter name="@datumod" value="#datOd" if="#chkPrivLim==true"/>
+				<parameter name="@datumod" value="null" if="#chkPrivLim==false"/>
+				<parameter name="@datumdo" value="#datDo" if="#chkPrivLim==true"/>
+				<parameter name="@datumdo" value="null" if="#chkPrivLim==false"/>
+				<parameter name="@operateriid" value="@@operateriid" />
+			</data>
+			<data name="dtDatumDo" command="spProd_StLimit_UzmiDatume"> </data>
+ 		</datalist>
+	</form>
+	<datalist>
+		<data command="spProd_stLimit_Edit" name="dtIzmjena">
+			<parameter name="@id" value="$id" />
+		</data>
+		<data command="spTraziPartneri" name="dtNapuniPartnera">
+				<parameter name="@action" value="Partneri"></parameter>
+				<parameter name="@uvjet" value="#srcPartneri.text"></parameter>
+		</data>
+		<data command="spProd_stLimit_Insert" name="dtUnos">
+				<parameter name="@partneriid" value="#srcPartneri"/>
+				<parameter name="@stKredLimit" value="#txtStdKredLim" />
+				<parameter name="@privKredLimit" value="#txtPrivKredLim" if="#chkPrivLim==true"/>
+				<parameter name="@privKredLimit" value="null" if="#chkPrivLim==false"/>
+				<parameter name="@datumod" value="#datOd" if="#chkPrivLim==true"/>
+				<parameter name="@datumod" value="null" if="#chkPrivLim==false"/>
+				<parameter name="@datumdo" value="#datDo" if="#chkPrivLim==true"/>
+				<parameter name="@datumdo" value="null" if="#chkPrivLim==false"/>
+				<parameter name="@operaterid" value="@@operateriid" />
+		</data>
+	</datalist>
+</root>

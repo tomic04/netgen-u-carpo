@@ -1,0 +1,299 @@
+﻿<!--
+28.4.2022. AA uvela permission za gumb Račun po Ireks zahtjevu
+28.4.2022. AA uklonila uputi me i račun not caps lock
+21.01.2022. SV dodao provjeru kod pregleda dmsa dtDMSProvjera da li ide na kupskener ili kuppromet 
+18.08.2021. v.1.0.0.6. IF Novi Carpo bug fixing - prikaz podataka ///
+	- dodao u layout1 caption="Saldo 0" u checkedit
+  - splitterposition="200"
+29.10.2019. v.1.0.0.5 AA veličina lijevog i desnog grida
+30.08.2018. v.1.0.0.4 PJ ispis ide preko Idlist (selectedids.table)
+29.08.2018. v.1.0.0.3 PJ poziva se <form name="frmFakturaRacun" path="IOSObrazac.frmFakturaRacun.xml"/> za račun
+27.06.2018. v.1.0.0.2 PJ multiselect=true na grdDetalj 
+16.02.2018. v.1.0.0.1 AČ u pozivu printa niz konto type="string" -inače pošalje samo prvu vrijednost 
+28.11.2017. v.1.0.0.0 AČ dodala savevalue="app" i na Izvrši waittype="progress" 
+-->
+<root version="1.0.0.6" loglevel="3">	
+    <form name="frmIOS" type="master" caption="IOS Obrazac" statusbar="true" template="splitter" maximized="true" splitterposition="200" spliterfixed="true">
+		<!-- <event type="init"> -->
+			<!-- <action type="datarun reader" value="~dtKontoInit"/> -->
+			<!-- <action type="datarun reader" value="~dtPotpisInit"/> -->
+		<!-- </event> -->
+		<event type="shown">
+			<action type="control value" value="#datDatumDo">
+				<parameter value="now"/>
+			</action>
+			<action type="datarun scalar" value="~dtDMSProvjera">
+				<parameter name="DMSOznaka"/>
+			</action>
+		</event>
+		<layout name="panel1" autotaborder="false" type="collapsable" itemspadding="1">
+			<!--group cols="4" rows="4" bordervisible="false" -->
+				<group cols="2" rows="9" groupbordervisible="false" >
+					<item row="1" col="1" colspan="2" caption="Konto:">
+						<combomultiedit name="cmbKonto" valuefield="KntPlanAId" displayfield="KNaziv" dataname="~dtKonto" savevalue="app" tabindex="0"/>
+					</item>
+					<item row="2" col="1" colspan="2" caption="Datum dokumenta do:">
+						<dateedit name="datDatumDo" tabindex="1" value="getdate" savevalue="app"/> 
+					</item>
+					<item row="3" col="1" colspan="2" caption="Partner:" >
+						<searchedit  name="srcPartner"  savevalue="app" fieldtext="Partner" fieldvalue="PartneriId" dataname="dtGetPartneri" datavalue="~dtGet.@PartneriId" datatext="~dtGet.@PartneriTra" tabindex="2" savelayout="true"/>
+					</item>
+					<item row="4" col="1" colspan="2" caption="Klasa:">
+						<comboedit name="cmbKlasa" dataname="~dtKlase" valuefield="KlPartneriID" savevalue="app" displayfield="Naziv" tabindex="3"/>	
+					</item>
+					<item row="5" col="1" colspan="2" caption="Županije:">
+						<comboedit name="cmbZupanije" dataname="~dtZupanije" valuefield="ZupanijeId" savevalue="app" displayfield="Naziv" tabindex="4">
+							<event type="valuechanged">
+								<action type="datarun reader" value="~dtMjesta"/>
+								<action type="control populate" value="#cmbMjesta"/>
+							</event>
+						</comboedit>
+					</item>
+					<item row="6" col="1" colspan="2" caption="Mjesta:">
+						<comboedit name="cmbMjesta" dataname="~dtMjesta" datavalue="~dtMjesta.#cmbZupanije" valuefield="MjestaId" savevalue="app" displayfield="Naziv" tabindex="5" />
+					</item>
+					<item row="7" col="1" caption="Ukupni saldo >">
+						 <textedit name="txtIznos" value="0" format="n2" tabindex="6" /> 
+					</item>
+					 <item row="7" col="2" >
+						 <checkedit name="cksaldo" tabindex="7" savevalue="app" caption="Saldo 0"/> 
+					</item>
+					<item row="8" col="1" colspan="2" caption="Napomena:">
+						<comboedit name="cmbNapomena" dataname="~dtNapomena" valuefield="PorukedocId" displayfield="Poruka" savevalue="app" tabindex="8"/>
+					</item>
+					<group rows="2" cols="2" row="9" col="1" rowspan="1" colspan="2" caption="Podaci na dokumentu">
+						<item row="1" col="4" caption="Potpis:">
+							<comboedit name="cmbOdgOsobe" dataname="~dtOdgOsobe" datavalue="~dtPotpisInit.@OsobeId" valuefield="OsobeId" savevalue="app" displayfield="Naziv" required="True" tabindex="9"/>
+						</item>
+					</group>
+				</group>
+			</layout>
+		<layout name="panel2">
+			<group  row="3" cols="4" rows="1" col="1" colspan="4" bordervisible="false">
+				<columnsdefinition>
+					<column size="27%" position="1" /> 
+					<column size="7%" position="2" /> 
+					<column size="36%" position="3" /> 
+					<column size="30%" position="3" /> 
+				</columnsdefinition>
+				<item row="2" col="1" rowspan="2" colspan="2">
+					<grid name="grdGlava" dataname="~dtMGrid" multiselect="true" key="gridPid" savelayout="true">
+						<event type="focusedrowchanged"> 
+							<action type="datarun reader" value="~dtDGrid"/>
+							<action type="control populate" value="#grdDetalj" />
+							<action type="footer text" value="Broj stavki na lijevom prikazu: {#grdGlava.rowcount} / Broj stavki na desnom prikazu: {#grdDetalj.rowcount}"/>
+						</event>
+						<event type="selectionchanged" >
+							 <action type="variable value">
+								<parameter name="SelectedIDs" value="#grdGlava.selectedids.table" />
+							 </action>
+							 							 
+						</event>
+
+						<fields>
+							<field name="partner" caption="Partner" minwidth="200"/> 
+							<field name="OIB" caption="OIB"/> 
+							<field name="ukupno" caption="Ukupno"/> 
+						</fields>
+					</grid>
+				</item>
+				<item row="2" col="3" rowspan="2" colspan="2">
+					<grid name="grdDetalj" dataname="~dtDGrid" multiselect="true" savelayout="true">
+						<event type="focusedrowchanged">
+							<action type="datarun scalar" value="~dtRacKontrola">
+								<parameter name="VrstaKonta"/>
+								<!-- <action type="control disable" value="btnRacun" if="$VrstaKonta!=Fakture"/> -->
+								<!-- <action type="control enable" value="btnRacun" else=""/> -->
+							</action>
+						</event>
+						<fields inherited="true">
+							<field name="Konto" caption="Konto" minwidth="50"/>
+							<field name="Broj" caption="Broj" minwidth="100"/>
+							<field name="DatumDokumenta" caption="Datum dokumenta" minwidth="60"/>
+							<field name="DatValute" caption="Datum valute" minwidth="60"/>
+							<field name="Duguje" caption="Duguje" minwidth="80"/>
+							<field name="Potrazuje" caption="Potrazuje" minwidth="80"/>
+							<field name="Saldo" caption="Saldo" minwidth="100"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+        <panelbuttons>
+            <buttons>
+                <button name="btnIzvrsi" caption="Izvrši">
+					<event type="click" waittype="progress" waitcaption="Obrada" waittext="Učitavanje stavaka..." sleep="2000">
+						<action type="datarun scalar" value="~dtMGrid">
+							<parameter name="Id"/>
+						</action>
+						<action type="control populate" value="#grdGlava" />
+					</event>
+				</button>
+              <!--  <button name="btnRacun" caption="Račun" >
+					<event type="click">
+						<action type="form open" value="frmRacun">
+							<parameter name="KId" value="#grdDetalj.@KId"/>
+							<parameter name="Konto" value="#grdDetalj.@Konto"/>
+						</action>
+					</event>
+				</button> -->
+				<button name="btnRacun" caption="&amp;Račun" function="Racun">   
+					<event type="click">
+						<!--dodano pregledavanje iz DMS-a za dobavljače-->
+						<action type="datarun reader" value="~dtPoveziKupFaktureDobSkener" if="#grdDetalj.@Tablica==FaktureDob"/>
+						<action if="$DMSOznaka==KupSkener">	
+						<action type="form open" value="frmDMS" if="~dtPoveziKupFaktureDobSkener.@KupSkenerId!=null&amp;&amp;#grdDetalj.@Tablica==FaktureDob">
+							<parameter name="KupSkenerId" value="~dtPoveziKupFaktureDobSkener.@KupSkenerId"/>
+						</action>
+						</action>
+						<action if="$DMSOznaka==KupPromet">
+						<action type="form open" value="frmDMS" if="~dtPoveziKupFaktureDobSkener.@KupPrometId!=null&amp;&amp;#grdDetalj.@Tablica==FaktureDob">
+							<parameter name="KupPrometId" value="~dtPoveziKupFaktureDobSkener.@KupPrometId"/>
+						</action>		
+						</action>
+						<action type="form open" value="frmFakturaRacun" if="#grdDetalj.@Tablica==Fakture">
+							<parameter name="FaktureId" value="#grdDetalj.@KId"/>
+							<parameter name="StatusFak" value="2"/>
+							<parameter name="PartneriId" value="#grdGlava.@gridPid"/>
+						</action>							
+						<!-- <action type="form open" value="frmRacun" if="global.$Tablica==FaktureDob&amp;&amp;#grdGlavni.@slozi==2"/> -->
+					</event>
+				</button>
+				<button name="btnPrint" caption="Ispiši dok." dataname="~dtPrint" displayfield="Opis" >
+					<event type="click">
+						<!--action type="variable value" >
+							<parameter name="@nizId" value="#grdGrid.selectedids.table" />
+						</action-->
+						<action type="datarun nonquery" value="~dtIdIzbor">
+							<!--parameter name="@nizId" value="#grdGrid.selectedids.table" /-->
+						</action>
+						<action type="control print" value="#grdGlava" singleprint="true" >
+							<action type="print template" value="#btnPrint.@Template">
+								<!--parameter name="id" value="3971,2948,5885,4470" type="string"  /-->
+								<parameter name="NizKonto" value="#cmbKonto" type="string"/>
+								<parameter name="DatumDo" value="#datDatumDo" />
+								<parameter name="potpis" value="#cmbOdgOsobe"/>
+								<parameter name="NapomenaId" value="#cmbNapomena"/>
+							</action>
+						</action>
+					</event>
+				</button>
+
+                <button name="btnIzlaz" caption="Izlaz" dock="right">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>
+            </buttons>
+        </panelbuttons>
+        <datalist>
+			<!--KONTROLE-->	
+            <data command="spCKntPopuniKontrole" name="dtZupanije">
+				<parameter name="@Action" value="zupanije"/>
+				<parameter name="@ID" value="null"/>
+			</data>
+			<data command="spCKntPopuniKontrole" name="dtMjesta">
+				<parameter name="@Action" value="mjesta"/>
+				<parameter name="@ID" value="#cmbZupanije"/><!--još vidjeti ne radi-->
+			</data>
+			<data command="spCKntPopuniKontrole" name="dtKlase">
+				<parameter name="@Action" value="klpartneri"/>
+				<parameter name="@ID" value="null"/>
+			</data>
+			<data command="spCKntPopuniKontrole" name="dtNapomena">
+				<parameter name="@Action" value="napomene"/>
+				<parameter name="@ID" value="null"/>
+			</data>
+			<data command="spCKntPopuniKontrole" name="dtOdgOsobe">
+				<parameter name="@Action" value="odgosobe"/>
+				<parameter name="@ID" value="null"/>
+			</data>
+			<data command="spCKntPopuniKontrole" name="dtKonto">
+				<parameter name="@Action" value="konto"/>
+				<parameter name="@ID" value="null"/>
+			</data>
+			<!--Kontrole vrijednost pri učitavanju forme-->
+			<!-- <data name="dtKontoInit" command="spCKntPopuniKontrole"> -->
+				<!-- <parameter name="@Action" value="kontoInit"/> -->
+				<!-- <parameter name="@ID" value="null"/> -->
+			<!-- </data> -->
+			<!-- <data name="dtPotpisInit" command="spCKntPopuniKontrole"> -->
+				<!-- <parameter name="@Action" value="odgOsobeInit"/> -->
+				<!-- <parameter name="@ID" value="null"/> -->
+			<!-- </data> -->
+			<!--Grid-->
+			<data command="spCKntIOSObrazac" name="dtMGrid" timeout="200">
+				<parameter name="@Action" value="2"/>
+				<!--parameter name="@DatumOd" value="null"/-->
+				<parameter name="@DatumDo" value="#datDatumDo"/>
+				<parameter name="@IDPAR" value="#srcPartner"/>
+				<parameter name="@IDOsoba" value="#cmbOdgOsobe"/>
+				<!--parameter name="@IDOrg" value="null"/-->
+				<!--parameter name="@Sortkey" value="konto"/-->
+				<parameter name="@IDMjesto" value="#cmbMjesta"/>
+				<parameter name="@IDZup" value="#cmbZupanije"/>
+				<parameter name="@IZNOS" value="#txtIznos"/>
+				<!--parameter name="@iznoss" value="konto"/-->
+				<!--parameter name="@Konto" value="#cmbKonto"/-->
+				<!--parameter name="@Tuzba" value="null"/-->
+				<!--parameter name="@Imehost" value="konto"/-->
+				<parameter name="@potpis" value="#cmbOdgOsobe"/>
+				<!--parameter name="@username2" value="konto"/-->
+				<parameter name="@IDKlasa" value="#cmbKlasa"/>
+				<parameter name="@Saldo" value="#cksaldo"/>
+				<parameter name="@nizKonto" value="#cmbKonto"/>
+				<!--parameter name="@SelectedId" value="#cmbKonto.selectedids.table"/--><!--nije omogućeno za combomultiedit još-->
+			</data>
+			<data command="spCKntIOSObrazac" name="dtDGrid" timeout="200">
+				<parameter name="@Action" value="22"/>
+				<!--parameter name="@DatumOd" value="null"/-->
+				<parameter name="@DatumDo" value="#datDatumDo"/>
+				<parameter name="@IDPAR" value="#grdGlava.@gridPid"/>
+				<parameter name="@IDOsoba" value="#cmbOdgOsobe"/>
+				<!--parameter name="@IDOrg" value="null"/-->
+				<!--parameter name="@Sortkey" value="konto"/-->
+				<parameter name="@IDMjesto" value="#cmbMjesta"/>
+				<parameter name="@IDZup" value="#cmbZupanije"/>
+				<parameter name="@IZNOS" value="#txtIznos"/>
+				<!--parameter name="@iznoss" value="konto"/-->
+				<!--parameter name="@Konto" value="#cmbKonto"/-->
+				<!--parameter name="@Tuzba" value="null"/-->
+				<!--parameter name="@Imehost" value="konto"/-->
+				<parameter name="@potpis" value="#cmbOdgOsobe"/>
+				<!--parameter name="@username2" value="konto"/-->
+				<parameter name="@IDKlasa" value="#cmbKlasa"/>
+				<parameter name="@Saldo" value="#cksaldo"/>
+				<parameter name="@nizKonto" value="#cmbKonto"/>				
+			</data>
+			<!--Print-->
+			<data command="spCKntIOSObrazac" name="dtPrint">
+				<parameter name="@Action" value="16" />
+			</data>	
+			<data command="spCKntIOSObrazacRS" name="dtIdIzbor">
+				<parameter name="@Action" value="23"/>
+				<parameter name="@nizId" value="$SelectedIDs" />
+			</data>
+			<!--kontrola vrste konta za gumb Račun-->
+			<data command="spCKntIOSObrazac" name="dtRacKontrola">
+				<parameter name="@Action" value="12"/>
+				<parameter name="@nizKonto" value="#grdDetalj.@Konto"/>			
+			</data>
+			<data name="dtPoveziKupFaktureDobSkener" command="spCKntDMS">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Id" value="#grdDetalj.@KId"/>
+			</data>	
+			<data command="spCKntTemTraziPartneri" name="dtGetPartneri">
+				<parameter name="@Action" value="Partneri" />
+				<parameter name="@Uvjet" value="#srcPartner.text" />
+				<parameter name="@broj_lokacija" value="1" />
+			</data>	
+			<!-- provjera da li je kupskener ili kuppromet iz dmsa -->
+			<data name="dtDMSProvjera" command="spCKntKarticaKontaDMSProvjera">
+				<parameter name="@Action" value="1"/>
+			</data>		
+        </datalist>
+    </form>
+	<form name="frmRacun" path="frmRacun.xml"/>
+	<form name="frmFakturaRacun" path="frmFakturaRacun.xml"/>
+	<form name="frmDMS" path="KnjigaUra.frmDMS.xml"/>	
+</root>

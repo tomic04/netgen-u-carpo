@@ -1,0 +1,120 @@
+﻿<root>
+  <form name="frmStatusi" type="master" caption="Statusi imovine" width="1000" height="800">
+
+    <managerlayout textposition="left">
+      <grid name="grdStatusi" type="master" dataname="dtStatusi" showautofilterrow="false">
+        <fields inherited="true">
+          <field name="Naziv" caption="Naziv" />
+          <field name="Oznaka" caption="Oznaka" />
+        </fields>
+      </grid>
+    </managerlayout>
+    
+    <panelbuttons>
+      <buttons>
+        <!--GUMB UNESI-->
+        <button name="btnUnesi" caption="Dodaj" type="add">
+          <menuitem control="#grdStatusi"></menuitem>
+          <event type="click">
+            <action type="form open" value="frmPromjena">
+            </action>
+          </event>
+        </button>
+        <!--GUMB IZMIJENI-->
+        <button name="btnIzmijeni" caption="Izmijeni" type="edit">
+          <menuitem control="#grdStatusi"></menuitem>
+          <event type="click">
+            <action type="form open" value="frmPromjena">
+              <!--ovdje salje id doprinosa sa grida ukoliko je kliknut gumb izmijeni-->
+              <parameter name="OSStatusiId" value="#grdStatusi.@OSStatusiId" />
+            </action>
+            <action type="control populate keepfocus" value="#grdStatusi" />
+          </event>
+        </button>
+        <!--GUMB OBRIŠI-->
+        <button name="btnBrisi" caption="Obriši" type="delete">
+          <menuitem control="#grdStatusi"></menuitem>
+          <event type="click">
+            <action type="confirm" value="Da li ste sigurni da želite obrisati označeni status?">
+              <action type="datarun nonquery" value="~dtDelete"></action>
+            </action>
+            <action type="control populate" value="#grdStatusi"></action>
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    
+    <datalist>
+      <data command="spOSStatusiQueryCP" name="dtStatusi">
+        <parameter name="@Action" value="Master" type="string"/>
+      </data>
+      <data command="spOSStatusiAzurCP" name="dtDelete">
+        <parameter name="@Action" value="Brisanje" />
+        <parameter name="@OSStatusiId" value="#grdStatusi.@OSStatusiId" />
+      </data>
+    </datalist>
+  </form>
+
+
+  <!--LAYOUT FORMA ZA UNOS/BRISANJE/IZMJENU STATUSA-->
+  <form name="frmPromjena" caption="Statusi imovine" height="435"  width="400" >
+    <event type="init">
+      <!--ovaj init služi da pokupi podatke s grida ukoliko je nešto odabrano i kliknut će se na gumb izmijeni-->
+      <!--dtget.naziv kupi popunjene podatke sa master grida-->
+      <action type="datarun reader" value="~dtGet" if="$OSStatusiId!=null"/>
+    </event>
+
+    <layout textposition="left" >
+      <group cols="1" rows="2"   groupbordervisible="false">
+        <item caption="Naziv:" row="1" col="1" highlight="false">
+          <textedit name="txtNaziv" datavalue="~dtGet.@Naziv"  />
+        </item>
+        <item caption="Oznaka:" row="2" col="1" highlight="false">
+          <textedit name="txtOznaka"  datavalue="~dtGet.@Oznaka"/>
+        </item>         
+      </group >
+    </layout>
+    
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi" caption="Spremi" type="add">
+          <event type="click">
+            <!-- Provjeri required fields -->
+            <action type="validate" />
+            <!-- Okini storu -->
+            <!--ukoliko je id null onda ide action add, ukoliko nije onda edit-->
+            <action type="datarun nonquery" value="~dtEdit" if="$OSStatusiId!=null"/>
+            <action type="datarun nonquery" value="~dtAdd" else="" />
+            <!-- Osvježi grid na parent formi -->
+            <action type="form close"></action>
+            <action type="control populate" value="parent.#grdStatusi"/>
+          </event>
+        </button>
+        <button name="btnOdustani" caption="Odustani" type="cancel" />
+      </buttons>
+    </panelbuttons>
+
+    <datalist>
+      <!--punjenje comba vrsta-->
+      <data command="spOSStatusiQueryCP" name="dtGet">
+        <parameter name="@Action" value="Statusi_edit" />
+        <parameter name="@OsStatusiId" value="$OSStatusiId"/>       
+      </data>
+      <!--action koji se poziva ukoliko je unos u pitanju- onda se combo postavlja na prvi id iz tablice-->
+      <data command="spOSStatusiAzurCP" name="dtEdit">
+        <parameter name="@Action" value="Izmjena" />
+        <parameter name="@OsStatusiId" value="$OsStatusiId" />
+        <parameter name="@Naziv" value="#txtNaziv" />
+        <parameter name="@Oznaka" value="#txtOznaka" />
+      </data>
+      <!--okidanje store i unos novih podataka u bazu-->
+      <data command="spOSStatusiAzurCP" name="dtAdd">
+        <parameter name="@Action" value="Unos"/>
+        <parameter name="@Naziv" value="#txtNaziv" />
+        <parameter name="@Oznaka" value="#txtOznaka" />
+      </data>
+    </datalist>
+
+  </form>
+
+</root>

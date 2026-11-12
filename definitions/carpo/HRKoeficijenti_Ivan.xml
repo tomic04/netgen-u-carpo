@@ -1,0 +1,193 @@
+﻿<root>	
+	<form name="frmHRKoeficijenti" type="master" caption="Koeficijenti plaće" width="500" height="500" saveformlayout="true">
+
+		<managerlayout>			
+			<!-- ***KONTROLA: MG*** -->
+			<grid name="grdMaster"  type="master" key="HRKoeficijentiId"  dataname="~dtMaster" fieldsmartspaces="false">
+				<menu>
+					<menuitem caption="Unos koeficijenta" name="menUnos" sort="1">
+						<event type="click">
+							<action type="form open" value="frmHRKoeficijentiPromjena">
+								<parameter name="caption" value="Unos koeficijenta za djelatnika" />
+								<parameter name="HRKoeficijentiId" value="0" type="int"/>
+								<parameter  name="Tip" value="UnosM"/>
+							</action>
+						</event>
+					</menuitem>
+					<menuitem caption="Izmjeni koeficijent" name="menIzmjeni" sort="2">
+						<event type="click">
+							<action type="form open" value="frmHRKoeficijentiPromjena">
+								<parameter name="HRKoeficijentiId" value="#grdMaster.@HRKoeficijentiId" type="int" />
+								<parameter name="caption" value="Izmjena djelatnika {#grdMaster.@Ime} {#grdMaster.@Prezime}" />
+								<parameter name="Tip" value="IzmjenaM" />
+							</action>
+							<action type="control refreshvalue" value="#grdMaster" />
+						</event>
+					</menuitem>
+				</menu>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnos" caption="Unesi" type="add" >
+					<event type="click">
+						<action type="form open" value="frmHRKoeficijentiPromjena">
+							<parameter name="HRKoeficijentiId" value="0" type="int"/>
+							<parameter name="caption" value="Unos novog djelatnika" />
+							<parameter name="Tip" value="Unos" />
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnIzmjena" caption="Izmjeni" type="edit" >
+					<event type="click">
+						<action type="form open" value="frmHRKoeficijentiPromjena">
+							<parameter name="HRKoeficijentiId" value="#grdMaster.@HRKoeficijentiId" type="int" />
+							<parameter name="caption" value="Izmjena djelatnika {#grdMaster.@Ime} {#grdMaster.@Prezime}" />
+							<parameter name="Tip" value="Izmjena" />
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnObrisi" caption="Obriši" type="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati djelatnika: '{#grdMaster.@Prezime}'?">
+							<action type="datarun nonquery" value="~dtDelete">
+							</action>
+						</action>
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spHRKoeficijenti_Ivan" name="dtMaster">
+				<parameter name="@Action" value="MasterGrid"/>
+			</data>
+			<data command="spHRKoeficijenti_Ivan" name="dtDelete">
+				<parameter name="@Action" value="Brisanje"/>
+				<parameter name="@Hrkoeficijentiid" value="#grdMaster.@HRKoeficijentiId"/>
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmHRKoeficijentiPromjena"  caption="$caption" width="400" height="400" fixedsize="true" saveformlayout="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$hrkoeficijentiid!=0"/> 
+			<action type="datarun reader" value="~dtDatumZadnji" />
+		</event>
+		<event type="load">			
+			<action if="$Tip==izmjena||$Tio==IzmjenaM">				
+				<action type="control disable" value="#srcDjelatnik"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action if="$Tip==Unos||$Tip==UnosM">
+				<action type="control value" value="#datDatumDo">
+					<parameter value="~dtDatumZadnji.@datum"  />
+				</action>
+			</action>
+			
+
+		</event>
+		<layout>
+			<group cols="3" rows="8" groupbordervisible="false">
+				<rowsdefinition>
+					<row position="1" size="50" />
+				</rowsdefinition>			
+				<item row="1" col="1" colspan="2" caption="Djelatnik:" textposition="left" highlight="false">
+					<searchedit name="srcDjelatnik" dataname="~dtDjelatnik" fieldtext="Djelatnik" fieldvalue="hrkadroviid" required="true" datavalue="~dtGet.@hrkadroviid" datatext="~dtGet.@Djelatnik"/>
+				</item>
+				<item row="2" col="1" colspan="2" caption="Datum od:" textposition="left" highlight="false" >
+					<dateedit name="datDatumOd" value="now" datavalue="~dtGet.@DatumOd" required="true" allownull="false"/>
+				</item>
+				<item row="3" col="1" colspan="2" caption="Datum do:" textposition="left" highlight="false" >
+					<dateedit name="datDatumDo"  datavalue="~dtGet.@DatumDo" required="true" allownull="false"/>
+				</item>
+				<item row="4" col="1" colspan="2" caption="Koeficijent:" textposition="left" highlight="false">
+					<textedit name="txtKoeficijent" format="n2" value="0" datavalue="~dtGet.@Koeficijent" required="true" allownull="false"/>
+				</item>
+				<item row="5" col="1" colspan="2" caption="Radno mjesto:" textposition="left" highlight="false">
+					<comboedit name="cmbRadnoMjesto"  valuefield="HRRadnaMjestaId" displayfield="Naziv" dataname="~dtRadnoMjesto" datavalue="~dtGet.@HRRadnaMjestaId"/>
+				</item>
+				<item row="6" col="1" colspan="2" caption="Org.jedinica:" textposition="left" highlight="false">
+					<comboedit name="cmbOrgJedinica"  valuefield="OrgShemaId" displayfield="Naziv" dataname="~dtOrgJednice" datavalue="~dtGet.@OrgShemaId"/>
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<!-- Button Spremi -->
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun reader" value="~dtUnosKoef" if="$tip=='Unos'||$Tip=='UnosM'">
+							<parameter name="HRKoeficijentiId" value="int"/>
+							<action type="control populate" value="parent.#grdMaster" />
+							<action type="message" value="~dtUnosKoef.@poruka" if="~dtUnosKoef.@greska!=0"/>
+							<action type="message" value="~dtUnosKoef.@poruka" else=""/>
+							<action type="control refreshvalue" value="#srcDjelatnik, #datDatumOd, #datDatumDo, #txtKoeficijent, #cmbRadnoMjesto, #cmbOrgJedinica" if="~dtUnosKoef.@greska!=1">
+								<action type="control value" value="#datDatumDo">
+									<parameter value="~dtDatumZadnji.@datum"  />
+								</action>
+							</action>
+						</action>
+						<action type="datarun reader" value="~dtIzmjenaKoef" if="$tip=='Izmjena'||$Tip=='IzmjenaM'">
+							<parameter name="HRKoeficijentiId" type="int"/>
+								<action type="control populate keepfocus" value="parent.#grdMaster" />
+							<action type="message" value="~dtIzmjenaKoef.@poruka" if="~dtIzmjenaKoef.@greska!=0"/>
+							<action type="form close" if="~dtIzmjenaKoef.@greska!=1"/>
+						</action>
+					</event>
+				</button>
+				<!-- Button Odustani -->
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+					<event type="click">
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<!--ovaj data puni grid-->
+			<data command="spHRKoeficijenti_Ivan" name="dtGet">
+				<parameter name="@action" value="dtGet" />
+				<parameter name="@HRKoeficijentiId" value="$HRKoeficijentiId" />
+			</data>
+
+			<data command="spHRKoeficijenti_Ivan" name="dtUnosKoef">
+				<parameter name="@action" value="Unos" />
+				<parameter name="@HRKadroviId" value="#srcDjelatnik" />
+				<parameter name="@HRRadnoMjestoId" value="#cmbRadnoMjesto" />
+				<parameter name="@OrgShemaId" value="#cmbOrgJedinica" />
+				<parameter name="@Koeficijent" value="#txtKoeficijent" />
+				<parameter name="@DatumOd" value="#datDatumOd" />
+				<parameter name="@DatumDo" value="#datDatumDo" />
+			</data>
+			<data command="spHRKoeficijenti_Ivan" name="dtIzmjenaKoef">
+				<parameter name="@action" value="Izmjena" />
+				<parameter name="@HRRadnoMjestoId" value="#cmbRadnoMjesto" />
+				<parameter name="@OrgShemaId" value="#cmbOrgJedinica" />
+				<parameter name="@Koeficijent" value="#txtKoeficijent" />
+				<parameter name="@DatumOd" value="#datDatumOd" />
+				<parameter name="@DatumDo" value="#datDatumDo" />
+				<parameter name="@HRKoeficijentiId" value="$HRKoeficijentiId" />
+			</data>
+			<data command="spHRKoeficijenti_Ivan" name="dtDjelatnik">
+				<parameter name="@action" value="dtSearch" />
+				<parameter name="@tekst" value="#srcDjelatnik.text" />
+			</data>
+			<data command="spHRKoeficijenti_Ivan" name="dtRadnoMjesto">
+				<parameter name="@action" value="RadnoMjesto" />
+			</data>
+			<data command="spHRKoeficijenti_Ivan" name="dtOrgJednice">
+				<parameter name="@action" value="OrgJednice" />
+			</data>
+			<data command="spHRKoeficijenti_Ivan" name="dtDatumZadnji">
+				<parameter name="@action" value="ZadnjiDanUGodini" />
+			</data>
+		</datalist>
+	</form>
+
+</root>

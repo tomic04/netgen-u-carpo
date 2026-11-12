@@ -1,0 +1,221 @@
+<root>
+	<form name="frmGlavna" caption="Roba minus na skladištu" type="master">
+		<managerlayout>
+			<grid name="grdGlava" dataname="~dtGridQuery" type="master" multiselect="true">
+				<fields>
+					<field name="Šifra" />
+					<field name="Naziv" caption="Roba" />
+					<!-- <field name="Skladište" /> -->
+					<field name="RobaID" visible="false" />
+				</fields>
+
+				<event type="doubleclick">
+					<action type="form open" value="frmIzmjena">
+							<parameter name="RobaID" value="#grdGlava.@robaid" />
+						</action>
+				</event>
+			</grid>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="UNESI">
+					<event type="click">
+						<action type="form open" value="frmUnos">
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI">
+					<event type="click">
+						<action type="form open" value="frmIzmjena">
+							<parameter name="RobaID" value="#grdGlava.@robaid" />
+						</action>
+					</event>
+				</button>
+				<button name="btnDelete" caption="OBRIŠI" >
+					<event type="click">
+						<action type="confirm" value="Želite li zaista obrisati stavku '{#grdGlava.@Naziv}' ">
+						<action type="control foreachrow selected" value="#grdGlava">
+							<action type="datarun nonquery" value="~dtDelete" />
+							</action>
+						</action>
+						<action type="control populate" value="#grdGlava" />
+					</event>
+				</button>
+				</buttons>
+		</panelbuttons>
+	<datalist>
+		<data command="spSklad_RobaMinus_MasterQuery" name="dtgridQuery" />
+		<data command="spSklad_RobaMinus_delete" name="dtDelete">
+			<parameter name="@robaid" value="#grdGlava.@robaid" />
+		</data>
+	</datalist>
+	</form>
+	<form name="frmUnos" caption="UNESI">
+		<event type="init">
+			<action type="datarun scalar" value="~dtDetaljGrid" />
+
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdDetalj" />
+		</event>
+		<layout textposition="left">
+			<group cols="3" rows="3" col="2" row="1">
+				<item col="1" row="1" colspan="3" caption="Roba:" >
+					<searchedit name="srcRoba" dataname="~dtTraziRobu" valuefield="robaid" textfield="Naziv3000" fontbold="true" fontsizedelta="1" required="true"/>
+				</item>
+				<item col="1" row="2" colspan="3" >
+					<grid name="grdDetalj" dataname="~dtDetaljGrid"  bestfitonrefresh="true" showcheckboxes="true">
+
+						<fields>
+							<field name="Opis" caption="Skladište" />
+							<field name="Oznaka" caption="Oznaka" />
+							<field name="Skladište u minus" caption="Skladište ima dozvoljen minus" />
+							<field name="Grupa skladišta" caption="Grupa skladišta" />
+							<field name="SkladisteID" visible="false" />
+						</fields>
+
+						<styles>
+							<style name="bold" value="true" if="#grdDetalj.@Skladište u minus=='Da'" />
+						</styles>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action type="validate" />
+						<action type="control foreachrow selected" value="#grdDetalj">
+							<action type="datarun nonquery" value="~dtInsert" />
+							<action type="control populate" value="parent.#grdGlava" />
+						</action>
+						<action type="control refreshvalue" value="#srcRoba" />
+						<action type="control refreshvalue" value="#grdDetalj" />
+						<action type="control focus" value="#srcRoba" />
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnCancel" caption="ODUSTANI" dock="right" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+	<datalist>
+		<data command="spSklad_RobaMinus_SkladistaQuery" name="dtDetaljGrid" />
+		<data command="spTraziRoba" name="dtTraziRobu">
+			<parameter name="@action" value="Roba"/>
+			<parameter name="@Uvjet" value="#srcRoba.text"/>
+		</data>
+		<data command="spSklad_RobaMinus_Insert" name="dtInsert">
+			<parameter name="@robaid" value="#srcRoba" />
+			<parameter name="@skladisteid" value="#grdDetalj.@skladisteid" />
+		</data>
+	</datalist>
+	</form>
+	<form name="frmIzmjena" caption="IZMJENA">
+		<event type="oninit">
+			<action type="datarun reader" value="~dtDetaljGrid" />
+			<action type="datarun reader" value="~dtPuniRobu" />
+			<action type="datarun scalar" value="~dtDohvatiOznaceneId">
+				<parameter name="selectedids"/>
+			</action>
+		</event>
+		<event type="onload">
+			<action type="control disable" value="#srcRoba" />
+			<action type="control populate" value="#grdDetalj" />
+			<action type="control selectedrows" value="#grdDetalj">
+				<parameter value="$selectedids"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="3" rows="2" col="2" row="1">
+					<item col="1" row="1" colspan="3" caption="Roba:" >
+						   <searchedit name="srcRoba" fieldtext="NazivId" fieldvalue="robaid" dataname="~dtPuniRobu" required="true" datavalue="~dtPuniRobu.@robaid" datatext="~dtPuniRobu.@naziv" fontbold="true" fontsizedelta="1"/>
+		          </item>
+					<item col="1" row="2" colspan="3">
+						<grid name="grdDetalj" key="SelectedIDs"  dataname="~dtDetaljGrid"  bestfitonrefresh="true" showcheckboxes="true">
+							<fields>
+								<field name="Aktivno" caption="Aktivno" visible="false"/>
+								<field name="Opis" caption="Skladište" />
+								<field name="Oznaka" caption="Oznaka" />
+								<field name="Minus" caption="Skladište ima dozvoljen minus" />
+								<field name="Grupa skladišta" caption="Grupa skladišta" />
+								<field name="skladisteid" caption="SkladisteID" visible="false"/>
+							</fields> 
+
+						<styles>
+							<style name="bold" value="true" if="#grdDetalj.@Minus=='Da'" />
+						</styles>
+
+
+						<event type="selectionchanged">
+								<action type="datarun nonquery" value="~dtBrisiOznacene">
+										<parameter name="@robaid" value="$robaid" />
+										<parameter name="@skladisteid" value="#grdDetalj.@skladisteid" />
+								</action>
+						</event>	
+						<!-- <event type="selectionchanged">
+							<action type="datarun nonquery" value="~dtEdit">
+								<action type="control populate" value="parent.#grdGlava" />
+
+							</action>
+						</event> -->
+						<!-- <event type="cellvaluechanged">
+							<action type="datarun nonquery" value="~dtEdit" if="#grdDetalj.@aktivno=='True'">
+								<action type="control populate" value="parent.#grdGlava" />
+							</action>
+							<action type="datarun nonquery" value="~dtDelSklad" if="#grdDetalj.@aktivno=='False'">
+								<action type="control populate" value="parent.#grdGlava" />
+							</action>
+						</event> -->
+
+						</grid>
+					</item>
+				</group>
+		</layout>
+			<panelbuttons>
+					<buttons>
+						<button name="btnIzmijeni" caption="SPREMI">
+							<event type="click">
+								<action type="control foreachrow selected" value="#grdDetalj">
+								<action type="datarun nonquery" value="~dtEdit" />
+								</action>
+								<action type="control populate" value="parent.#grdGlava" />
+								<action type="form close" />
+							</event>
+						</button>
+						<button name="btnOdustani" caption="ODUSTANI" type="cancel" dock="right"/>
+					</buttons>
+			</panelbuttons>	
+		<datalist>
+			<data command="spSklad_RobaMinus_SkladistaEditQuery" name="dtDetaljGrid">
+				<parameter name="@robaid" value="$RobaID" />
+			</data>
+			<data command="spTraziRoba" name="dtTraziRobu">
+					<parameter name="@action" value="Roba"/>
+					<parameter name="@Uvjet" value="#srcRoba.text"/>
+			</data>
+			<data command="spSklad_RobaMinus_PuniRobu" name="dtPuniRobu">
+				<parameter name="@robaid" value="$RobaID" />
+			</data>
+			<data command="spSklad_RobaMinus_Edit" name="dtEdit">
+				<parameter name="@robaid" value="$robaID" />
+				<parameter name="@skladisteid" value="#grdDetalj.@skladisteid" />
+			</data>
+			<data command="spSklad_RobaMinus_DeleteSkladiste" name="dtDelSklad">
+				<parameter name="@robaid" value="$robaID" />
+				<parameter name="@skladisteid" value="#grdDetalj.@skladisteid" />
+			</data>
+
+			<data command="spSklad_RobaMinus_SelectedIDs" name="dtDohvatiOznaceneId">
+				<parameter name="@robaid" value="$robaID" />
+			</data>
+
+			<data command="spSklad_RobaMinus_BrisiOznacene" name="dtBrisiOznacene">
+					<parameter name="@robaid" value="$robaid" />
+					<parameter name="@skladisteid" value="#grdDetalj.@skladisteid" />
+			</data>
+
+		</datalist>
+	</form>
+</root>

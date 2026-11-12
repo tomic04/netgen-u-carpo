@@ -1,0 +1,414 @@
+<!--v 1.0.2. 8.11.2017. AA izdvojena spCKntPlanAQueryURA-->
+<!--version 1.0.1. 28.9.2017. AA ispravak warna za buttone, upozorenje ako postoji knjiženje s odabranom shemom-->
+<!--version 1.0.0. početna-->
+<root version="1.0.2." loglevel="3">
+	<form type="master" name="frmGlavna" caption="Shema knjiženja URA">
+		<managerlayout>
+			<grid name="grdGlavni" type="master" dataname="~dtGlavni" height="500" key="KntMasterShemaKnjId">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetalj"/>
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmStavke">
+						<parameter name="KntMasterShemaKnjId" value="#grdGlavni.@KntMasterShemaKnjId"/>
+					</action>
+					<action type="control populate keepfocus" value="#grdGlavni"/>
+					<action if="#grdGlavni.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObriši"  />	
+					<action type="control enable" value="#btnIzmijeni, #btnObriši" elseif="#grdGlavni.rowcount!=0" />
+				</event>
+				<fields>
+					<field name="Naziv"/>
+					<field name="KntPlanA" caption="Konto"/>
+					<field name="KntPlanA_Dev" caption="Konto devizni"/>
+					<field name="VrstaDok" caption="Vrsta dokumenta"/>
+				</fields>
+			</grid>
+			<grid name="grdDetalj" caption="Stavke" dataname="~dtDetalj" height="800" key="KntDetailShemaKnjId" showpanel="false">
+				<event type="doubleclick">
+					<action type="form open" value="frmUnosDetalj">
+						<parameter name="IndUnosa" value="2"/>
+					</action>
+					<action type="control populate keepfocus" value="#grdDetalj"/>
+				</event>
+				<fields>
+					<field name="Konto"/>
+					<field name="Naziv" caption="Naziv konta"/>
+					<field name="DP" caption="Dug/Pot"/>
+					<field name="Formula"/>
+					<field name="orgshema" caption="Organizacijska shema"/>
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="UNESI">
+					<event type="click">
+						<action type="form open" value="frmUnos"/>
+						<action type="control populate keepfocus" value="#grdDetalj"/>
+						<action type="control populate keepfocus" value="#grdGlavni"/>
+						<action if="#grdGlavni.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObriši"  />	
+						<action type="control enable" value="#btnIzmijeni, #btnObriši" elseif="#grdGlavni.rowcount!=0" />
+						<action type="datarun scalar" value="~dtGlavniScope">
+							<parameter name="KntMasterShemaKnjId"/>
+						</action>
+						<action type="control focus" value="#grdGlavni">
+							<parameter value="$KntMasterShemaKnjId" type="int"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI">
+					<event type="click">
+						<action type="form open" value="frmStavke">
+							<parameter name="KntMasterShemaKnjId" value="#grdGlavni.@KntMasterShemaKnjId"/>
+						</action>
+						<!-- <action type="control populate keepfocus" value="#grdDetalj"/> -->
+						<action type="control populate keepfocus" value="#grdGlavni"/>
+						<action if="#grdGlavni.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObriši"  />	
+						<action type="control enable" value="#btnIzmijeni, #btnObriši" elseif="#grdGlavni.rowcount!=0" />
+					</event>				
+				</button>
+				<button name="btnObriši" caption="OBRIŠI">
+					<event type="click">
+						<action type="datarun reader" value="~dtProvjera"/>
+						<action type="confirm" value="Jeste li sigurni da želite obrisati shemu {#grdGlavni.@Naziv}?" if="~dtProvjera.@rez==0">
+							<action type="datarun nonquery" value="~dtObrisiMaster"/>
+						</action>						
+						<action type="confirm" value="Postoji knjiženje s shemom {#grdGlavni.@Naziv}! Ipak obrisati?" elseif="~dtProvjera.@rez==1">
+							<action type="datarun nonquery" value="~dtObrisiMaster"/>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlavni"/>
+						<action if="#grdGlavni.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObriši"  />	
+						<action type="control enable" value="#btnIzmijeni, #btnObriši" elseif="#grdGlavni.rowcount!=0" />
+					</event>				
+				</button>				
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDetalj" command="spCKntShemaKnj">
+				<parameter name="@Action" value="13"/>
+				<parameter name="@MasterId" value="#grdGlavni.@KntMasterShemaKnjId"/>
+			</data>
+			<data name="dtGlavni" command="spCKntShemaKnj">
+				<parameter name="@Action" value="3"/>
+			</data>
+			<data name="dtObrisiMaster" command="spCKntShemaKnj">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@MasterId" value="#grdGlavni.@KntMasterShemaKnjId"/>
+			</data>
+			<data name="dtGlavniScope" command="spCKntShemaKnj">
+				<parameter name="@Action" value="5"/>
+			</data>
+			<data name="dtProvjera" command="spCKntShemaKnj">
+				<parameter name="@Action" value="20"/>
+				<parameter name="@MasterId" value="#grdGlavni.@KntMasterShemaKnjId"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUnos" width="750" caption="Shema knjiženja URA" saveformsize="false">
+		<layout >
+			<part name="prtUnosMaster" path="prtShemaKnjizenjaURA.xml"/>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="Stavke" name="btnStavke" image="rightend" imagelocation="middleright">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun scalar" value="~dtUnosMaster">  <!--scalar inserta podatak u bazu i prima u varijablu scope identity-->
+							<parameter name="KntMasterShemaKnjId"/>
+						</action>
+						<action type="control populate" value="parent.#grdGlavni"/>
+						<!-- <action if="parent.#grdGlavni.rowcount==0" type="control disable" value="#btnIzmijeni, #btnObriši"  />	 -->
+						<!-- <action type="control enable" value="#btnIzmijeni, #btnObriši" elseif="parent.#grdGlavni.rowcount!=0" /> -->
+						<action type="datarun scalar" value="~dtGlavniScope">
+							<parameter name="KntMasterShemaKnjId"/>
+						</action>
+						<action type="control focus" value="parent.#grdGlavni">
+							<parameter value="$KntMasterShemaKnjId" type="int"/>
+						</action>
+						<action type="form close"/>
+						<action type="form open" value="frmStavke">
+							<parameter name="KntMasterShemaKnjId" value="$KntMasterShemaKnjId"/>
+						</action>
+					</event>
+				</button>
+				<button caption="Odustani" name="btnOdustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtComboKonto" command="spCKntShemaKnj">
+				<parameter name="@Action" value="101"/>
+			</data>
+			<data name="dtComboKontoDev" command="spCKntShemaKnj">
+				<parameter name="@Action" value="102"/>
+			</data>
+			<data name="dtComboVrstaDok" command="spCKntShemaKnj">
+				<parameter name="@Action" value="103"/>
+			</data>
+			<data name="dtUnosMaster" command="spCKntShemaKnj">
+				<parameter name="@Action" value="0"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				<parameter name="@KntPlanAId" value="#cmbKonto"/>
+				<parameter name="@KntPlanAid_Dev" value="#cmbKontoDev"/>
+				<parameter name="@VrstaDokId" value="#cmbVrstaDok"/>
+			</data>
+			<data name="dtGlavniScope" command="spCKntShemaKnj">
+				<parameter name="@Action" value="5"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmStavke" caption="Shema knjiženja URA" width="750" height="500" saveformsize="false">
+		<event type="load">
+			<action type="datarun reader" value="~dtGet"/>
+			<action type="control populate" value="#grdStavke"/>
+			<!-- <action if="#grdStavke.rowcount==0" type="control disable" value="#btnStavkeIzmijeni, #btnStavkeObriši"  />	 -->
+			<!-- <action type="control enable" value="#btnStavkeIzmijeni, #btnStavkeObriši" elseif="#grdStavke.rowcount!=0" /> -->
+		</event>
+		<event type="onshown">
+			<action type="control value" value="#txtNaziv">
+				<parameter value="~dtGet.@Naziv" />
+			</action>
+			<action type="control value" value="#cmbKonto">
+				<parameter value="~dtGet.@KntPlanAId"/>
+			</action>
+			<action type="control value" value="#cmbKontoDev">
+				<parameter value="~dtGet.@KntPlanAId_Dev"/>
+			</action>
+			<action type="control value" value="#cmbVrstaDok">
+				<parameter value="~dtGet.@VrstaDokId"/>
+			</action>
+			<action if="#grdStavke.rowcount==0" type="control disable" value="#btnStavkeIzmijeni, #btnStavkeObriši"  />	
+			<action type="control enable" value="#btnStavkeIzmijeni, #btnStavkeObriši" elseif="#grdStavke.rowcount!=0" />
+		</event>
+		<layout>
+			<group cols="1" rows="2"  groupbordervisible="false">
+				<part name="prtUnosMaster" path="prtShemaKnjizenjaURA.xml"/>
+				<group col="1" row="2" cols="6" rows="6" caption="Stavke">
+					<item col="1" row="1" colspan="5" rowspan="6">
+						<grid name="grdStavke" dataname="~dtDetalj" showgrouppanel="false" key="KntDetailShemaKnjId">
+							<fields>
+								<field name="Konto"/>
+								<field name="Naziv" caption="Naziv konta"/>
+								<field name="DP" caption="Dug/Pot"/>
+								<field name="Formula"/>
+								<field name="orgshema" caption="Organizacijska shema"/>
+							</fields>
+						</grid>
+					</item>
+					<item col="6" row="1" >
+						<button name="btnStavkeUnesi" caption="Unesi">
+							<event type="click">
+								<action type="form open" value="frmUnosDetalj">
+									<parameter name="IndUnosa" value="1"/>
+								</action>
+								<action type="control populate" value="#grdStavke"/>
+								<action if="#grdStavke.rowcount==0" type="control disable" value="#btnStavkeIzmijeni, #btnStavkeObriši"  />	
+								<action type="control enable" value="#btnStavkeIzmijeni, #btnStavkeObriši" elseif="#grdStavke.rowcount!=0" />
+								<action type="datarun scalar" value="~dtDetaljScope">
+									<parameter name="KntDetailShemaKnjId"/>
+								</action>
+								<action type="control focus" value="#grdStavke">
+									<parameter value="$KntDetailShemaKnjId" type="int"/>
+								</action>
+							</event>
+						</button>
+					</item>
+					<item col="6" row="2" >
+						<button name="btnStavkeIzmijeni" caption="Izmijeni">
+							<event type="click">
+								<action type="form open" value="frmUnosDetalj">
+									<parameter name="IndUnosa" value="0"/>
+								</action>
+								<action type="control populate keepfocus" value="#grdStavke"/>
+								<action if="#grdStavke.rowcount==0" type="control disable" value="#btnStavkeIzmijeni, #btnStavkeObriši"  />	
+								<action type="control enable" value="#btnStavkeIzmijeni, #btnStavkeObriši" elseif="#grdStavke.rowcount!=0" />
+							</event>
+						</button>
+					</item>
+					<item col="6" row="3" >
+						<button name="btnStavkeObriši" caption="Obriši">
+							<event type="click">
+								<action type="confirm" value="Jeste li sigurni da želite obrisati stavku {#grdStavke.@Naziv}?">
+									<action type="datarun nonquery" value="~dtDetaljObriši"/>
+								</action>
+								<action type="control populate keepfocus" value="#grdStavke"/>
+								<action if="#grdStavke.rowcount==0" type="control disable" value="#btnStavkeIzmijeni, #btnStavkeObriši"  />	
+								<action type="control enable" value="#btnStavkeIzmijeni, #btnStavkeObriši" elseif="#grdStavke.rowcount!=0" />
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Spremi">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun nonquery" value="dtIzmjenaMaster"/>
+						<action type="control populate keepfocus" value="parent.#grdGlavni"/>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button caption="Odustani" name="btnOdustani" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtDetalj" command="spCKntShemaKnj">
+				<parameter name="@Action" value="13"/>
+				<parameter name="@MasterId" value="$KntMasterShemaKnjId"/>
+			</data>
+			<data name="dtComboKonto" command="spCKntShemaKnj">
+				<parameter name="@Action" value="101"/>
+			</data>
+			<data name="dtComboKontoDev" command="spCKntShemaKnj">
+				<parameter name="@Action" value="102"/>
+			</data>
+			<data name="dtComboVrstaDok" command="spCKntShemaKnj">
+				<parameter name="@Action" value="103"/>
+			</data>
+			<data name="dtGet" command="spCKntShemaKnj">
+				<parameter name="@Action" value="4"/>
+				<parameter name="@MasterId" value="$KntMasterShemaKnjId"/>
+			</data>
+			<data name="dtIzmjenaMaster" command="spCKntShemaKnj">
+				<parameter name="@Action" value="1"/>
+				<parameter name="@Naziv" value="#txtNaziv"/>
+				<parameter name="@KntPlanAId" value="#cmbKonto"/>
+				<parameter name="@KntPlanAid_Dev" value="#cmbKontoDev"/>
+				<parameter name="@VrstaDokId" value="#cmbVrstaDok"/>
+				<parameter name="@MasterId" value="$KntMasterShemaKnjId"/>
+			</data>
+			<data name="dtDetaljObriši" command="spCKntShemaKnj">
+				<parameter name="@Action" value="12"/>
+				<parameter name="@DetailId" value="#grdStavke.@KntDetailShemaKnjId"/>
+			</data>
+			<data name="dtDetaljScope" command="spCKntShemaKnj">
+				<parameter name="@Action" value="7"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUnosDetalj" caption="Shema knjiženja URA" height="300" width="600" saveformsize="false">
+		<event type="load">
+			<action type="datarun reader" value="~dtDetaljGet" if="$IndUnosa==0"/>
+			<action type="datarun reader" value="~dtDetaljGet" if="$IndUnosa==2"/>
+			<action type="control populate" value="#grdPolja"/>
+			<action type="control populate" value="#cmbOrgShema"/>	
+		</event>
+		<event type="onshown">
+			<action type="control value" value="#rdoPotrazuje" if="#dtDetaljGet.@DP==P">
+				<parameter value="true"/>
+			</action>
+			<action type="control value" value="#rdoDuguje" if="#dtDetaljGet.@DP==D">
+				<parameter value="true"/>
+			</action>
+			<action type="control value" value="#cmbOrgShema">
+				<parameter value="#dtDetaljGet.@OrgShemaId"/>
+			</action>
+			<action type="control value" value="#txtFormula">
+				<parameter value="~dtDetaljGet.@Formula"/>
+			</action>
+		</event>
+		<layout itemspadding="2">
+			<group cols="2" rows="1" groupbordervisible="false">
+				<columnsdefinition>
+					<column size="75%" position="1"/>
+					<column size="25%" position="2"/>
+				</columnsdefinition>
+				<group col="1" row="1" cols="1" rows="5" >
+					<item col="1" row="1" caption="Konto:" textposition="left" padding="5" >
+						<searchedit name="srcKonto" required="true" fieldtext="Konto" fieldvalue="KntPlanAId" dataname="~dtSearchKonto" datavalue="~dtDetaljGet.@KntPlanAId" datatext="~dtDetaljGet.@Konto">
+							<event type="valuechanged">
+								<action type="datarun reader" value="~dtKontoNaziv"/>
+								<action type="control value" value="#lblKonto">
+									<parameter value="~dtKontoNaziv.@Naziv"/>
+								</action>
+							</event>
+						</searchedit>
+					</item>
+					<item col="1" row="2">
+						<labeledit name="lblKonto" datavalue="~dtDetaljGet.@Naziv"/>
+					</item>
+					<group col="1" row="3" cols="4" rows="1" groupbordervisible="false">
+						<item col="1" row="1">
+							<radioedit name="rdoPotrazuje" groupindex="1" value="false" caption="Potražuje"/>
+						</item>
+						<item col="2" row="1">
+							<radioedit name="rdoDuguje" groupindex="1" value="true" caption="Duguje">
+							</radioedit>
+						</item>
+					</group>
+					<item col="1" row="4" caption="Org. shema:" textposition="left">
+						<comboedit name="cmbOrgShema" dataname="~dtComboOrgShema" valuefield="OrgShemaId" displayfield="Naziv" datavalue="~dtDetaljGet.@OrgShemaId" autopopulate="true"/>
+					</item>
+					<item col="1" row="5" caption="Formula:" required="true" textposition="left" textalignmode="right">
+						<textedit name="txtFormula" />
+					</item>
+				</group>
+				<group col="2" row="1" cols="1" rows="1">
+					<item row="1" col="1"  caption="Polja za formulu:">
+						<grid name="grdPolja" dataname="~dtPolja" autowidth="true" showautofilter="false" autoheight="true" showgrouppanel="false" showcolumnheaders="false" showfooter="false">
+							<event type="doubleclick">
+								<action type="datarun reader" value="~dtString"/>
+								<action type="control value" value="#txtFormula">
+									<parameter value="~dtString.@tekst"/>
+								</action>
+							</event>
+							<fields>
+								<field name="name" caption=" "/>
+							</fields>
+						</grid>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremiStavke" caption="Spremi">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtDetaljUnos"/>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel"/>  
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtSearchKonto" command="spCKntPlanAQueryURA">
+				<parameter name="@Action" value="9"/>
+				<parameter name="@Konto" value="#srcKonto.text"/>
+			</data>
+			<data name="dtComboOrgShema" command="spOrgShemaQuery">
+				<parameter name="@Action" value="0"/>
+			</data>
+			<data name="dtPolja" command="spCKntShemaKnj">
+				<parameter name="@Action" value="6"/>
+			</data>
+			<data name="dtString" command="select coalesce(@polje2,'')+@polje1 as tekst" type="text">
+				<parameter name="@polje1" value="#grdPolja.@name"/>
+				<parameter name="@polje2" value="#txtFormula"/>
+			</data>
+			<data name="dtKontoNaziv" command="spCKntPlanAQueryURA">
+				<parameter name="@Action" value="3"/>
+				<parameter name="@Konto" value="#srcKonto.text"/>
+			</data>
+			<data name="dtDetaljUnos" command="spCKntShemaKnj">
+				<parameter name="@Action" value="10" if="$IndUnosa==1"/>
+				<parameter name="@Action" value="11" if="$IndUnosa==0"/>
+				<parameter name="@Action" value="11" if="$IndUnosa==2"/>
+				<parameter name="@DP" value="P" if="#rdoPotrazuje==true" />
+				<parameter name="@DP" value="D" if="#rdoDuguje==true" />
+				<parameter name="@KntPlanAId" value="#srcKonto" />
+				<parameter name="@Formula" value="#txtFormula" />
+				<parameter name="@OrgShemaId" value="#cmbOrgShema" />
+				<parameter name="@DetailId" value="parent.#grdStavke.@KntDetailShemaKnjId" if="$IndUnosa==0"/>
+				<parameter name="@DetailId" value="parent.#grdDetalj.@KntDetailShemaKnjId" if="$IndUnosa==2"/>
+				<parameter name="@MasterId" value="parent.$KntMasterShemaKnjId" if="$IndUnosa==1"/>
+			</data>
+			<data name="dtDetaljGet" command="spCKntShemaKnj">
+				<parameter name="@Action" value="14"/>
+				<parameter name="@DetailId" value="parent.#grdStavke.@KntDetailShemaKnjId" if="$IndUnosa==0"/>
+				<parameter name="@DetailId" value="parent.#grdDetalj.@KntDetailShemaKnjId" if="$IndUnosa==2"/>
+			</data>
+		</datalist>
+	</form>
+</root>

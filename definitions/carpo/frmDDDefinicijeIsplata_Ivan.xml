@@ -1,0 +1,434 @@
+﻿<root>
+	<form name="frmDDDefinicijaIsplate" type="master" caption="Vrste isplata" width="800" height="800">
+		<event type="init">
+			<action type="datarun reader" value="~dtMaster" />
+			<action type="datarun reader" value="~dtFormule" />
+			<action type="datarun reader" value="~dtKoeficijenti" />
+			<action type="datarun reader" value="~dtVirmani" />
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdMaster" />
+			<action type="control populate" value="#grdFormule" />
+			<action type="control populate" value="#grdKoef" />
+			<action type="control populate" value="#grdTip" />
+		</event>		
+		<managerlayout>			
+			<grid name="grdMaster"  type="master" dataname="~dtMaster" key="OOPisStavkeId">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdFormule" />
+					<action type="control populate" value="#grdKoef" />
+					<action type="control populate" value="#grdTip" />
+				</event>
+				<fields inherited="true">
+					<field name="VrstaIsplate" caption="Vrsta isplate" />
+				</fields>       
+			</grid>
+			<tabs name="tabovi">
+				<tab caption="Formule" name="formule">
+					<grid name="grdFormule" keyfield="OOPIsStavkeDefId" multiselect="true" dataname="dtFormule" showmenuprintitem="false" showmenutools="false" savelayout="true" fieldsmartspaces="false">
+						<fields inherited="true">
+							<field name="TipNaziv" caption="Tip naziv" />
+						</fields>
+					</grid>
+				</tab>
+				<tab caption="Koeficijenti" name="koeficijenti">
+					<grid name="grdKoef" keyfield="OOPIsStavkeKoefId" multiselect="true" dataname="dtKoeficijenti" showmenuprintitem="false" showmenutools="false" savelayout="true" fieldsmartspaces="false">
+					<fields inherited="true">
+						<field name="Koeficijent" caption="Koeficijent" format="n7"/>
+					</fields>
+					</grid>
+				</tab>
+				<tab caption="Virmani" name="virmani">
+					<grid name="grdTip" keyfield="OOPVirmaniIsId" multiselect="true" dataname="dtVirmani" showmenuprintitem="false" showmenutools="false" savelayout="true" fieldsmartspaces="false">
+						<fields inherited="true">
+							<field name="Stavka" caption="Stavka"/>
+						</fields>
+					</grid>
+				</tab>
+				<!--<tab caption="Virmani">
+					<grid name="grdVirmani" keyfield="VirmaniId" multiselect="true" dataname="dtVirmani" showmenuprintitem="false" showmenutools="false" savelayout="true" fieldsmartspaces="false">
+					</grid>
+				</tab>-->
+			</tabs>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<!-- KONTROLA: BUTTON -->
+				<button name="btnUnos" caption="Unos" type="add">
+					<event type="click">
+						<action type="form open" value="frmDDDefinicijaIsplatePromjena" >
+							<parameter name="oopisStavkeId" value="0" type="int" />
+							<parameter name="Tip" value="Unos" />
+							<parameter name="caption" value="Unos nove definicije isplate" />
+						</action>
+						<action type="control populate" value="#grdMaster" >		
+						</action>
+					</event>
+				</button>
+
+				<button name="btnIzmjena" caption="Izmjena" type="edit" >
+					<event type="click">
+						<action type="form open" value="frmDDDefinicijaIsplatePromjena">
+							<parameter name="oopisStavkeId" value="#grdMaster.@oopisstavkeid" type="int" />
+							<parameter name="Tip" value="Izmjena" />
+							<parameter name="caption" value="Izmjena naziva definicije isplate" />
+						</action>
+						<action type="control populate keepfocus" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnBrisanje" caption="Brisanje" type="del">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati definiciju: '{#grdMaster.@Naziv}'?">
+							<action type="datarun nonquery" value="~dtDelete">
+							</action>
+						</action>
+						<action type="control populate" value="#grdMaster" />
+					</event>
+				</button>
+				<button name="btnAzuriranje" caption="Ažuriranje detalja" begingroup="true">
+					<event type="click">
+						<action type="form open" value="frmDDDefinicijaIsplatePromjenaDetalj" if="#tabovi.selectedtab==formule">
+							<parameter name="oopisStavkeId" value="#grdMaster.@oopisStavkeId" type="int"/>
+							<parameter name="Tip" value="DetaljIzmF" />
+							<parameter name="caption" value="Izmjena formula" />
+						</action>
+						<action type="form open" value="frmDDDefinicijaIsplatePromjenaDetaljK" elseif="#tabovi.selectedtab==koeficijenti">
+							<parameter name="oopisStavkeId" value="#grdMaster.@oopisStavkeId" type="int"/>
+							<parameter name="Tip" value="DetaljIzmK" />
+							<parameter name="caption" value="Izmjena koeficijenata" />
+						</action>
+						<action type="form open" value="frmDDDefinicijaIsplateVirmani" elseif="#tabovi.selectedtab==virmani">
+							<parameter name="oopisStavkeId" value="#grdMaster.@oopisStavkeId" type="int"/>
+							<parameter name="Tip" value="DetaljIzmT" />
+							<parameter name="caption" value="Izmjena virmana" />
+						</action>
+						<action type="control populate keepfocus" value="#grdFormule" />
+						<action type="control populate keepfocus" value="#grdKoef" />
+						<action type="control populate keepfocus" value="#grdTip" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<!--poziv master grida-->
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtMaster">
+				<parameter name="@action" value="VrstaIsplate"/>
+			</data>
+			<!--poziv taba formule-->
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtFormule">
+				<parameter name="@action" value="Formule" />
+				<parameter name="@oopisStavkeId" value="#grdMaster.@oopisStavkeId" />
+			</data>
+			<!--poziv taba koeficijenti-->
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtKoeficijenti">
+				<parameter name="@action" value="Koeficijenti" />
+				<parameter name="@oopisStavkeId" value="#grdMaster.@oopisStavkeId" />
+			</data>
+			<!--poziv taba virmani-->
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtVirmani">
+				<parameter name="@action" value="Virmani" />
+				<parameter name="@oopisStavkeId" value="#grdMaster.@oopisStavkeId" />
+			</data>
+			<!--Poziv delete iz store-->
+			<data command="spDrugiDohodakAzurCP_Ivan" name="dtDelete">
+				<parameter name="@action" value="brisanje" />
+				<parameter name="@oopisStavkeId" value="#grdMaster.@oopisStavkeId" />
+			</data>
+		</datalist>
+	</form>
+
+	
+
+	<form name="frmDDDefinicijaIsplatePromjena"  caption="$caption" width="363" height="136" fixedsize="true">
+		<event type="init">
+			<action type="datarun reader" value="~dtGet" if="$oopisstavkeid!=0"/>
+		</event>			
+		<layout>
+			<group cols="2" rows="1" col="1" row="1" groupbordervisible="false" spacing="2,2,2,2">
+				<item row="1" col="1" colspan="2" caption="Naziv:" highlight="false">
+					<textedit name="txtNaziv" fieldtext="Naziv" datavalue="~dtGet.@Naziv" required="true"/>
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<!-- Button Spremi -->
+				<button name="btnSpremi" caption="Spremi" type="add">
+					<event type="click">
+						<action type="validate"/>
+						<action type="datarun reader" value="~dtUnosDefinicije" if="$tip==Unos">
+							<parameter name="oopisstavkeid" type="int"/>
+							<action type="form close"/>							
+						</action>
+
+						<action type="datarun reader" value="~dtIzmjenaDefinicije" if="$tip==Izmjena">
+							<parameter name="oopisstavkeid" value="#grdMaster.@oopisstavkeid" type="int"/>
+							<action type="form close">
+								<action type="control populate keepfocus" value="parent.#grdMaster" />
+							</action>
+						</action>
+					</event>
+
+				</button>
+				<!-- Button Odustani -->
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+					<event type="click">
+						<action type="control populate" value="parent.#grdMaster"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spDrugiDohodakAzurCP_Ivan" name="dtUnosDefinicije">
+				<parameter name="@action" value="Unos_definicije" />
+				<parameter name="@naziv" value="#txtNaziv" />			
+			</data>
+
+			<data command="spDrugiDohodakAzurCP_Ivan" name="dtIzmjenaDefinicije">
+				<parameter name="@action" value="izmjena_definicije" />
+				<parameter name="@oopisstavkeid" value="$oopisStavkeId" />
+				<parameter name="@naziv" value="#txtNaziv" />
+			</data>
+
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtGet">
+				<parameter name="@action" value="Dohvati_vrstu" />
+				<parameter name="@oopisstavkeid" value="$oopisStavkeId" />
+			</data>
+		</datalist>
+	</form>
+	
+	
+	
+	<form name="frmDDDefinicijaIsplatePromjenaDetalj"  caption="$caption" width="500" height="500" fixedsize="false">
+		<event type="init">
+			<action type="datarun reader" value="~dtGetFormule"/>
+			<action type="datarun reader" value="~dtGetVr"/>
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdFormuleIzm"/>
+			<action type="control disable" value="#txtVrIsplate" />
+			<action  if="#grdFormuleIzm.rowcount==0" type="control caption" value="#btnUnesiIza">
+				<parameter value="Unesi"/>
+			</action>
+			<action type="control disable" value="#btnUnesiIsp, #btnIzmjeniDet, #btnPomakG, #btnPomakD, #btnObrisiDet" if="#grdFormuleIzm.rowcount==0"/>
+		</event>
+
+		<layout>
+			<group cols="3" rows="3" col="1" row="1" groupbordervisible="false" spacing="2,2,2,2">
+				<item row="1" col="1" colspan="2" caption="Vrsta isplate" highlight="false">
+					<textedit name="txtVrIsplate" fieldtext="Vrsta isplate" datavalue="~dtGetVr.@Naziv"/>
+				</item>
+				<item row="2" col="1" colspan="3" caption="Vrsta isplate" highlight="false">
+					<grid name="grdFormuleIzm" type="detail" dataname="dtGetFormule" keyfield="oopisstavkedefid">
+						<fields inherited="true">
+							<field name="Naziv" caption="Naziv"/>
+							<field name="%" caption="%"/>
+							<field name="Formula" caption="Formula" />
+							<field name="Tip" caption="Tip" />
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<!-- Button Unesi -->
+				<button name="btnUnesiIza" caption="Unesi iza" type="add" dock="left">
+					<event type="click">
+						<action type="form open" value="frmDDDefinicijaIsplateAzur_Det">
+							<parameter name="oopisStavkeId" value="$oopisStavkeId" type="int" />
+							<parameter name="oopisstavkedefid" value="0" type="int" />
+							<parameter name="Tip" value="IzmjenaAzur" />
+							<parameter name="caption" value="Unos iza" />
+						</action>
+						<action  if="#grdFormuleIzm.rowcount!=0" type="control caption" value="#btnUnesiIza">
+							<parameter value="Unos iza"/>
+						</action>
+						<action type="control enable" value="#btnUnesiIsp, #btnIzmjeniDet, #btnPomakG, #btnPomakD, #btnObrisiDet" if="#grdFormuleIzm.rowcount!=0"/>
+						<action type="control disable" value="#btnUnesiIsp, #btnIzmjeniDet, #btnPomakG, #btnPomakD, #btnObrisiDet" if="#grdFormuleIzm.rowcount==0"/>
+					</event>
+				</button>
+				<button name="btnUnesiIsp" caption="Unesi ispred" type="add" dock="left">
+					<event type="click">
+						<action type="form open" value="frmDDDefinicijaIsplateAzur_Det">
+							<parameter name="oopisStavkeId" value="$oopisStavkeId" type="int" />
+							<parameter name="oopisstavkedefid" value="0" type="int" />
+							<parameter name="Tip" value="IzmjenaAzurI" />
+							<parameter name="caption" value="Unos ispred" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmjeniDet" caption="Izmijeni" type="edit" dock="left">
+					<event type="click">
+						<action type="form open" value="frmDDDefinicijaIsplateAzur_Det">
+							<parameter name="oopisstavkedefid" value="#grdFormuleIzm.@oopisstavkedefid" type="int"/>
+							<parameter name="Tip" value="IzmjenaDetAzur" />
+							<parameter name="caption" value="Izmjena formule" />
+						</action>
+						<action type="control populate" value="#grdFormuleIzm"/>
+						<action type="control focus"  value="#grdFormuleIzm">
+							<parameter value="$oopisstavkedefid" type="int"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnPomakG" image="top" type="edit" begingroup="true">
+					<event type="click">
+						<action type="datarun reader" value="~dtPomakG">
+							<parameter name="oopisstavkedefid" type="int"/>
+							<parameter name="rbr" type="int"/>
+						</action>
+						<action type="control populate" value="#grdFormuleIzm"/>
+						<action type="control focus"  value="#grdFormuleIzm">
+							<parameter value="oopisstavkedefid"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnPomakD" image="bottom" type="edit">
+					<event type="click">
+						<action type="datarun reader" value="~dtPomakD">
+							<parameter name="oopisstavkedefid" type="int"/>
+							<parameter name="rbr" type="int"/>
+						</action>
+						<action type="control populate" value="#grdFormuleIzm"/>
+						<action type="control focus"  value="#grdFormuleIzm">
+							<parameter value="oopisstavkedefid"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisiDet" caption="Obrisi" type="del">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati definiciju: '{#grdFormuleIzm.@Naziv}'?">
+							<action type="datarun nonquery" value="~dtDeleteDet">
+								<!--<parameter name="oopisStavkeId" type="int"/>
+								<parameter name="rbr" type="int"/>-->
+							</action>
+						</action>
+						<action type="control populate keepfocus" value="#grdFormuleIzm" />
+						<action type="control disable" value="#btnUnesiIsp, #btnIzmjeniDet, #btnPomakG, #btnPomakD, #btnObrisiDet" if="#grdFormuleIzm.rowcount==0"/>
+						<action  if="#grdFormuleIzm.rowcount==0" type="control caption" value="#btnUnesiIza">
+							<parameter value="Unesi"/>
+						</action>
+					</event>
+				</button>
+				<!-- Button Odustani -->
+				<button name="btnOdustani" caption="Odustani" type="cancel" begingroup="true">
+					<event type="click">
+						<action type="control populate" value="parent.#grdMaster"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtGetFormule">
+				<parameter name="@action" value="FormuleDetalj" />
+				<parameter name="@oopisstavkeid" value="$oopisStavkeId" />
+			</data>
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtGetVr">
+				<parameter name="@action" value="Dohvati_vrstu" />
+				<parameter name="@oopisstavkeid" value="$oopisStavkeId" />
+			</data>
+			<data command="spDrugiDohodakAzurCP_Ivan" name="dtDeleteDet">
+				<parameter name="@action" value="brisanjeDetalj" />
+				<parameter name="@OOPIsStavkeDefId" value="#grdFormuleIzm" />
+				<parameter name="@oopisStavkeId" value="$oopisStavkeId" />
+				<parameter name="@rbr" value="#grdFormuleIzm.@Rbr" />
+			</data>
+			<data command="spDrugiDohodakAzurCP_Ivan" name="dtPomakG">
+				<parameter name="@action" value="PomakGore" />
+				<parameter name="@oopisstavkeid" value="$oopisstavkeid" />
+				<parameter name="@rbr" value="#grdFormuleIzm.@Rbr" />
+			</data>
+			<data command="spDrugiDohodakAzurCP_Ivan" name="dtPomakD">
+				<parameter name="@action" value="PomakDolje" />
+				<parameter name="@oopisstavkeid" value="$oopisstavkeid" />
+				<parameter name="@rbr" value="#grdFormuleIzm.@Rbr" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmDDDefinicijaIsplatePromjenaDetaljK"  caption="$caption" width="500" height="500" fixedsize="false">
+		<event type="init">
+			<action type="datarun reader" value="~dtGetKoef"/>
+			<action type="datarun reader" value="~dtGetVr"/>
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdKoefIzm" />
+			<action type="control disable" value="#txtVrIsplate" />
+		</event>
+
+		<layout>
+			<group cols="3" rows="3" col="1" row="1" groupbordervisible="false" spacing="2,2,2,2">
+				<item row="1" col="1" colspan="2" caption="Vrsta dohotka" highlight="false">
+					<textedit name="txtVrIsplate" fieldtext="Vrsta dohotka" datavalue="~dtGetVr.@Naziv"/>
+				</item>
+				<item row="2" col="1" colspan="3" caption="Vrsta dohotka" highlight="false">
+					<grid name="grdKoefIzm" type="detail" dataname="dtGetKoef" keyfield="oopisstavkekoefid">
+						<fields inherited="true">
+							<field name="% Prireza" caption="%prireza"/>
+							<field name="Koeficijent" caption="Koeficijent" format="n7"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+
+		<panelbuttons>
+			<buttons>
+				<!-- Button Unesi -->
+				<button name="btnUnesiKoef" caption="Unesi" type="add">
+					<event type="click">
+						<action type="form open" value="frmDDDefinicijaIsplateAzur_DetKoef">
+							<parameter name="oopisStavkeId" value="$oopisStavkeId" type="int" />
+							<parameter name="OOPIsStavkeKoefId" value="0" type="int" />
+							<parameter name="Tip" value="UnosAzurKoef" />
+							<parameter name="caption" value="Unos koeficijenta" />
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmjeniKoef" caption="Izmijeni" type="edit">
+					<event type="click">
+						<action type="form open" value="frmDDDefinicijaIsplateAzur_DetKoef">
+							<parameter name="oopisStavkeId" value="$oopisStavkeId" type="int" />
+							<parameter name="OOPIsStavkeKoefId" value="#grdKoefIzm.@OOPIsStavkeKoefId" type="int"/>
+							<parameter name="Tip" value="IzmjenaAzurKoef" />
+							<parameter name="caption" value="Izmjena koeficijenta" />
+						</action>
+						<action type="control populate" value="#grdKoefIzm"/>
+						<action type="control focus"  value="#grdKoefIzm">
+							<parameter value="oopisstavkedefid"/>
+						</action>
+						
+					</event>
+				</button>
+				<!-- Button Odustani -->
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+					<event type="click">
+						<action type="control populate" value="parent.#grdMaster"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtGetKoef">
+				<parameter name="@action" value="KoeficijentDetalj" />
+				<parameter name="@oopisstavkeid" value="$oopisStavkeId" />
+			</data>
+			<data command="spDrugiDohodakQueryCP_Ivan" name="dtGetVr">
+				<parameter name="@action" value="Dohvati_vrstu" />
+				<parameter name="@oopisstavkeid" value="$oopisStavkeId" />
+			</data>
+		</datalist>
+	</form>
+
+	<!--child forma za azuriranje formula/koeficijenata/tipova-->
+	<form name="frmDDDefinicijaIsplateAzur_Det" path="frmDDDefinicijaIsplateAzur_Det.xml"/>
+	<form name="frmDDDefinicijaIsplateAzur_DetKoef" path="frmDDDefinicijaIsplateAzur_Det.xml"/>
+	
+	<form name="frmDDDefinicijaIsplateVirmani" path="frmDDDefinicijaIsplateVirmani.xml"/>
+	<form name="frmDDDefinicijaIsplateVirmaniAzur" path="frmDDDefinicijaIsplateVirmani.xml"/>
+</root>

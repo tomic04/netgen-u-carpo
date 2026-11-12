@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--1.9.2022. SV dodao FVrijednost u detalj grid  HD74245 -->
+<!--2.8.2022. AA i SV dodali name="Status" visible="false" u glavni grid zbog koristenja parent statusa -->
+<!--9.6.2022. AA datasetovi za refresh rekapitulacije-->
+<!--7.06.2022. IF dodao partove iz Temeljnica - bug fixing kod kreiranja nove URE iz UFE robnog-->
+<root version="1.0.0.0" loglevel="4">
+	<form name="frmUFERobnogInsert" path="UFERobnog.frmUFERobnogInsert.xml"/>
+	<form name="frmUFERobnogNepovezaneFakture" path="UFERobnog.frmUFERobnogNepovezaneFakture.xml"/>
+	<form name="frmUFERobnogTrosak" path="UFERobnog.frmUFERobnogTrosak.xml"/>
+	<form name="frmUFERobnogTrosakDetail" path="UFERobnog.frmUFERobnogTrosakDetail.xml"/>
+	<form name="frmKnjigaUraInsert" path="KnjigaUra.frmKnjigaUraInsert.xml"/>
+	<form name="frmUFERobnogDonos" path="UFERobnog.frmUFERobnogDonos.xml"/>
+	<form name="frmUrednikRabata" path="UFERobnog.frmUrednikRabata.xml"/>
+	<form name="frmUFERobnogStavka" path="UFERobnog.frmUFERobnogStavka.xml"/>
+	<form name="frmMaster" type="master" caption="UFE robnog knjigovodstva">
+		<event type="init">
+			<action type="datarun reader" value="~dtDrvoPozicijaDanas"/>
+			<action type="datarun reader" value="global.~dtPubVars"/>
+			<action type="variable value">
+				<parameter name="global.pbvMinRokTrajanja" value="global.~dtPubVars.@MinRokTrajanja" type="int"/>
+				<parameter name="global.pbvKkvalObavezan" value="global.~dtPubVars.@KkvalObavezan" type="int"/>
+				<parameter name="global.NKU_Rasporedi" value="global.~dtPubVars.@NKU_Rasporedi"/>
+			</action>
+		</event>
+		<event type="shown">
+			<action type="variable value">
+				<parameter name="global.OperaterLockId" value="0" type="int"/>
+			</action>	
+		</event>
+		<managerlayout>
+			<lookup name="filter" savevalue="app">	
+				<comboitem value="VremenskaPodjela" searchfield="VPKeyId"/>
+				<comboitem value="Dobavljači"  searchfield="DobKeyId"/>				
+				<event type="valuechanged">	
+					<action type="control populate" value="#tree"> 
+						<action type="control expand" value="#tree" if="#filter==VremenskaPodjela">				
+							<parameter name="key" value="~dtDrvoPozicijaDanas.@Poz" type="string" />					
+							<parameter name="level" value="1" type="int"/>
+						</action>					
+					</action>			
+				</event>
+			</lookup>
+			<tree name="tree" autopopulate="false" dataname="~dtTree" filtermode="smart" key="Id" parentfield="ParentId" searchfield="RobnoKalkGlaId">							
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava"/>
+				</event>
+				<fields>
+					<field name="Name"/>
+				</fields>
+			</tree>
+			<grid name="grdGlava" autopopulate="false" dataname="dtGlava" type="master" async="true" savelayout="true" multiselect="true" key="RobnoKalkGlaId" searchfield="RobnoKalkGlaId">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetail" />
+					<action type="control disable" value="#btnObrisi" if="#grdGlava.@StatusNaziv==Zaključen"/>
+					<action type="control enable" value="#btnObrisi" else=""/>
+					<action type="control disable" value="#btnPonistiZakljucak" if="#grdGlava.@StatusNaziv==Nezaključen"/>
+					<action type="control enable" value="#btnPonistiZakljucak" else=""/>	
+					<action type="control disable" value="#btnZakljuci" if="#grdDetail.rowcount==0||#grdGlava.@StatusNaziv==Zaključen"/>
+					<action type="control enable" value="#btnZakljuci" else=""/>					
+				</event>
+				<event type="doubleclick">
+					<part name="prtRobnoKalkUpdate" path="prtUFERobnog.xml"/>
+				</event>
+				<event type="keydown">
+					<!--DELETE-->
+					<action if="key==46">
+						<part name="prtRobnoKalkDelete" path="prtUFERobnog.xml"/>
+					</action>
+					<!--EDIT-->
+					<action if="key==13">
+						<part name="prtRobnoKalkUpdate" path="prtUFERobnog.xml"/>
+                    </action>
+					<!--INSERT-->
+					<action if="key==45">
+						<part name="prtRobnoKalkInsert" path="prtUFERobnog.xml"/>
+					</action>
+				</event>
+				<fields inherited = "false">
+					<field name="Broj" caption="Broj" fixed="left" fontbold="true"/>
+					<field name="BrojDok" caption="UFA"/>
+					<field name="Datum" caption="Datum"/>
+					<field name="PartnerNaziv" caption="Dobavljač"/>
+					<field name="Lokacija" caption="Lokacija"/>
+					<field name="StatusNaziv" caption="Status"/>
+					<field name="Status" visible="false"/>
+					<field name="OrgShemaNaziv" caption="Organizacijska shema"/>
+					<field name="IznosFakture" caption="Iznos"/>
+					<field name="PrijemniList" caption="Prijemni list"/>
+					<field name="DatumPrijemnogLista" caption="Datum primke"/>
+					<field name="TroskoviIznos" caption="Troškovi"/>
+					<field name="ValutaOznaka" caption="Valuta"/>
+					<field name="DevVrijednost" caption="Dev. vrijednost"/>
+					<field name="Tecaj" caption="Tečaj" format="n6"/>
+					<field name="OperaterZadnjeIzmjene" caption="Operater zadnje izmjene"/>
+				</fields>
+				<styles>
+					<style name="fontcolor" value="#CC0000" if="#grdGlava.@StatusNaziv==Nezaključen"/>
+					<style name="fontcolor" value="#228B22" if="#grdGlava.@StatusNaziv==Storno"/>
+				</styles>
+				<print caption="UFE - KALKULACIJE ROBNOG KNJIGOVODSTVA" captionalign="center"/>
+			</grid>
+			<grid name="grdDetail" dataname="dtDetail" showgrouppanel="false" showautofilterrow="true" savelayout="true" key="RobnoKalkDetId" wordwrap="true" cleargridfilter="true">
+				<fields inherited = "false">                
+					<field name="Roba" caption="Roba" fixed="left" fontbold="true"/>
+					<field name="RobaNaziv" caption="Naziv robe"/>
+					<field name="PrijemniList" caption="Prijemni list"/>
+					<field name="Kolicina" caption="Količina" format="n3"/>
+					<field name="JMNaziv" caption="JM"/>
+					<field name="FCIjena" caption="Fakt. cijena"/>
+					<field name="FVrijednost" caption="Fakt. Vrijednost"  visible="true"/>
+					<field name="Rabat1P" caption="Rabat 1(%)"/>
+					<field name="Rabat1I" caption="Rabat 1"/>
+					<field name="Rabat2P" caption="Rabat 2(%)"/>
+					<field name="Rabat2I" caption="Rabat 2"/>
+					<field name="Rabat3P" caption="Rabat 3(%)"/>
+					<field name="Rabat3I" caption="Rabat 3"/>
+					<field name="CarinaI" caption="Carina"/>
+					<field name="CarinaP" caption="Carina (%)"/>
+					<field name="TrosakP" caption="Trošak (%)"/>    
+					<field name="TrosakI" caption="Trošak"/>
+					<field name="NCijena" caption="Nab. cijena"/>
+					<field name="NVrijednost" caption="Nab. vrij. (+povrat)"/>
+					<field name="DevCijena" caption="Dev. cijena"/>
+					<field name="DevVrijednost" caption="Dev. vrijednost"/> 					 
+				</fields>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="&amp;UNESI">
+					<event type="click"> 
+						<part name="prtRobnoKalkInsert" path="prtUFERobnog.xml"/>
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="&amp;IZMIJENI">
+					<event type="click"> 				
+						<part name="prtRobnoKalkUpdate" path="prtUFERobnog.xml"/>
+					</event>					
+				</button>
+				<button name="btnObrisi" caption="&amp;OBRIŠI">
+					<event type="click"> 				
+						<part name="prtRobnoKalkDelete" path="prtUFERobnog.xml"/>
+					</event>
+				</button>
+				<button name="btnZakljuci" caption="&amp;ZAKLJUČI">
+					<event type="click"> 
+						<action type="confirm" value="Jeste li sigurni da želite zaključiti dokument?" if="#grdGlava.rowcount&gt;0&amp;&amp;#grdGlava.@StatusNaziv==Nezaključen">
+							<action type="control foreachrow selected" value="#grdGlava">
+								<action type="datarun nonquery" value="dtZakljuci"/>
+							</action>
+						</action>
+						<action type="control populate keepfocus" value="#grdGlava"/>
+					</event>
+				</button>
+				<button name="btnStorniraj" caption="&amp;STORNIRAJ">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite stornirati dokument?">
+							<action type="datarun nonquery" value="~dtStorno">
+								<action type="control populate keepfocus" value="#grdGlava"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnPonistiZakljucak" caption="PO&amp;NIŠTI ZAKLJUČAK" type="delete" function="">
+					<event type="click">	
+						<action type="confirm" value="Jeste li sigurni da želite poništiti zaključak?" if="#grdGlava.rowcount&gt;0&amp;&amp;#grdGlava.@StatusNaziv==Zaključen">
+							<action type="control foreachrow selected" value="#grdGlava">
+								<action type="datarun nonquery" value="~dtPonistiZakljucak"/>
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava"/>
+						</action>	
+					</event>
+				</button>
+				<button name="btnSearch" caption="P&amp;RONAĐI">
+					<event type="click">
+						<action type="search" value="~dtSearch"/>
+					</event> 				
+				</button>		
+				<button name="btnPrint" caption="IS&amp;PIŠI DOKUMENT" dataname="global.~dtPrint" displayfield="Opis" >
+					<event type="click">
+						<action type="control print" value="#grdGlava">
+							<action type="print template" value="#btnPrint.@Template">
+								<parameter name="id" value="#grdGlava.@RobnoKalkGlaId"/>
+							</action>							
+						</action>	
+					</event>
+				</button>
+				<button name="btnIspisSucelja" caption="ISPIŠI">
+					<event type="click">
+						<action type="control printcontrol" value="#grdGlava"/>
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>
+		<datalist>	
+			<data name="dtTree" command="spCarpoTreeVrijeme" key="RobnoKalkGlaId" if="#filter==VremenskaPodjela"> 
+				<parameter name="@jucer" value="1"/>
+				<parameter name="@danas" value="1"/>
+				<parameter name="@sutra" value="1"/>
+				<parameter name="@tjedan" value="1"/>
+				<parameter name="@tablica" value="RobnoKalkGla"/>
+				<parameter name="@minGodina" value="10"/>
+				<parameter name="@sidro" value="0"/>
+				<parameter name="@poljeDatum" value="Datum"/>
+			</data> 
+			<data name="dtTree" command="spCRobnoTreeFilterQuery" key="RobnoKalkGlaId" else="">
+				<parameter name="@Action"  value="dobavljaci"/>
+				<parameter name="@y"  value="10"/>
+			</data>			
+			<data name="dtGlava" command="spCRobnoKalkMG">
+				<parameter name="@Id" if="#filter==Dobavljači" value="#tree.@ValueId"/>
+				<parameter name="@Id" if="#filter==VremenskaPodjela" value="null"/>
+				<parameter name="@DatumOd" value="#tree.@DatumOd"/>
+				<parameter name="@DatumDo" value="#tree.@DatumDo"/>					
+			</data>
+			<data name="dtDetail" command="spCRobnoKalkDG">
+				<parameter name="@Id" value="#grdGlava.@RobnoKalkGlaId"/>
+			</data>			
+			<data name="dtSearch" command="spCarpoSearch">
+				<parameter name="@Table" value="UfeRobnog"/>
+				<parameter name="@Pojam" value="#btnSearch.searchtext"/>
+				<parameter name="@y"  value="10"/>
+			</data>
+			<data name="dtDrvoPozicijaDanas" command="select cast(YEAR(GETDATE()) as char(4))+right('00'+cast(MONTH(getdate()) as varchar(2)), 2)+right('00'+cast(DAY(getdate()) as varchar(2)), 2) as Poz" type="text"/>
+			<data name="dtPonistiZakljucak" command="spCRobnoKalkGlaAzur">
+				<parameter name="@action" value="4"/>
+				<parameter name="@Id" value="#grdGlava.@RobnoKalkGlaId"/>
+			</data>
+			<data name="dtZakljuci" command="spCRobnoKalkGlaAzur">
+				<parameter name="@action" value="3"/>
+				<parameter name="@Id" value="#grdGlava.@RobnoKalkGlaId"/>
+			</data>
+			<data name="dtStorno" command="spCRobnoKalkGlaStorno">
+				<parameter name="@Id" value="#grdGlava.@RobnoKalkGlaId"/>
+			</data>
+			<data name="dtObrisi" command="spCRobnoKalkGlaAzur">
+				<parameter name="@Action" value="2"/>
+				<parameter name="@ID" value="#grdGlava.@RobnoKalkGlaId"/>
+			</data>	
+			<data name="dtGlavaOne" command="spCRobnoKalkGlaOne">
+				<parameter name="@RobnoKalkGlaId" value="#grdGlava.@RobnoKalkGlaId"/>
+			</data>
+		</datalist>
+	</form>
+	<datalist>	
+		<data name="dtValuta" command="spKatalogSkladisteValuta">
+			<parameter name="@Action" value="valuta"/>
+		</data>
+		<data name="dtValutaTecaj" command="spTecajCarpoQuery">
+			<parameter name="@Action" value="5"/>
+			<parameter name="@ValuteId" value="#cmbValuta"/>
+			<parameter name="@datum" value="#datDatumdok" if="$UFADatumDok==null"/>
+			<parameter name="@datum" value="$UFADatumDok" if="$UFADatumDok!=null"/>
+		</data>		
+		<data name="dtTroskovi" command="spRobnoNabpriGlaQuery">
+			<parameter name="@Action" value="3"/>
+			<parameter name="@RobnoKalkGlaId"  value="$RobnoKalkGlaId"/>		
+		</data>
+		<data name="dtPrint" command="spCRobnoKalkPrint">
+			<parameter name="@Action" value="1"/>
+		</data>	
+		<data name="dtPubVars" command="spCRobnoKalkPubVars"/>	
+		<data name="dtPartUraUnos" command="spCKntTemPartSql">
+		  <parameter name="@Action" value="GetPartUra"/>
+		</data>
+		<data name="dtPartIraUnos" command="spCKntTemPartSql">
+		  <parameter name="@Action" value="GetPartIra"/>
+		</data>	
+		<data name="dtPartUraKupSpremiProknjizi" command="spCKntKnjigaUraPartSql">
+		  <parameter name="@Action" value="KupSpremiProknjizi"/>
+		  <parameter name="@OperateriId" value="@@operateriid"/>
+		</data>
+		<data name="dtPartcmbShemaKnj" command="spCKntKnjigaUraPartSql">
+		  <parameter name="@Action" value="CmbShemaKnj"/>
+		  <parameter name="@OperateriId" value="@@operateriid"/>
+		</data>
+		<data name="dtPartSpremiValidation" command="spCKntKnjigaUraPartSql">
+		  <parameter name="@Action" value="SpremiValidation"/>
+		  <parameter name="@OperateriId" value="@@operateriid"/>
+		</data>
+		<data name="dtPartObrisi" command="spCKntTemPartSql">
+		  <parameter name="@Action" value="TemObrisi"/>
+		  <parameter name="@OperateriId" value="@@operateriid"/>
+		</data>
+		<data name="dtPartOpisSaRacuna" command="spCKntTemPartSql">
+		  <parameter name="@Action" value="OpisSaRacuna"/>
+		  <parameter name="@OperateriId" value="@@operateriid"/>
+		</data>
+		<data name="dtIzracunSumeFakturnaParent" command="spCRobnoKalkCalcSum">
+			<parameter name="@Action" value="1"/>
+			<parameter name="@par1" value="parent.#grdStavke.@FVrijednost.sum" type="decimal"/>
+			<parameter name="@par2" value="parent.#grdStavke.@RabatUkupno.sum" type="decimal"/>
+			<parameter name="@tecaj" value="parent.#txtTecaj" type="decimal"/>
+			<parameter name="@par4" value="parent.#grdStavke.@DevVrijednost.sum" type="decimal"/>
+		</data>			
+		<data name="dtIzracunSumeTroskoviParent" command="spCRobnoKalkCalcSum">
+			<parameter name="@Action" value="2"/>
+			<parameter name="@par1" value="parent.#grdStavke.@TrosakI.sum" type="decimal"/>
+			<parameter name="@par2" value="parent.#grdStavke.@Trosarina.sum" type="decimal"/>
+			<parameter name="@par3" value="parent.#grdStavke.@CarinaI.sum" type="decimal"/>
+		</data>	
+		<data name="dtIzracunSumeNabavnaParent" command="spCRobnoKalkCalcSum">
+			<parameter name="@Action" value="3"/>
+			<parameter name="@par1" value="parent.#grdStavke.@NVrijednost.sum" type="decimal"/>
+			<parameter name="@tecaj" value="parent.#txtTecaj" type="decimal"/>
+			<parameter name="@par3" value="parent.#grdStavke.@PovratnaNaknada.sum" type="decimal"/>
+			<parameter name="@par4" value="parent.#txtNabVrijDevUkupno" type="decimal"/>
+			<parameter name="@par5" value="parent.#grdStavke.@NVrijednostDev.sum" type="decimal"/>
+			<parameter name="@par6" value="parent.#txtFVrijednost" type="decimal"/>
+		</data>		
+		<data name="dtRobaDetOne" command="spCRobnoKalkDetQueryOne">
+			<parameter name="@Action" value="2"/>
+			<parameter name="@id" value="$RobnoKalkGlaId"/>
+			<parameter name="@RobnoKalkDetId" value="$RobnoKalkDetId"/>
+		</data>			
+	</datalist>
+</root>

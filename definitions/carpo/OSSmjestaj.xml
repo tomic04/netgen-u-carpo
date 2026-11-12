@@ -1,0 +1,193 @@
+﻿
+<root  version="1.1">
+  
+  <!--1.1. MZ - maxlength na oznaka-->
+  
+  <form name="frmMaster" type="master" caption="Smještaj osnovnih sredstava">
+    
+      <managerlayout>
+      <tree name="tree" keyfield="SmjestajId" allowselfdrag="true" dataname="dtSmjestajTree" showcolumns="true" autofiltercondition="contains" expandallonload="true" expandedlevel="2">
+        <fields>
+          <field name="Naziv" />
+          <field name="Oznaka" />
+          <field name="OrgJedinica" caption="Org. jedinica" />
+        </fields>
+      </tree>
+    
+    </managerlayout>
+    
+    <panelbuttons displaycontrolsprint="false">
+      
+      
+ <!--Za drag and drop spremanje/odustajanje-->
+      <buttons type="tree">
+        <button name="btnDrag" caption="Spremi promjene" type="selfdrag" function="SpremiPromjeneSmjestaj">
+          <event type="click">
+            <action type="datarun nonquery" value="~dtSmjestajAzur" />
+            <action type="control defaultmode" value="#tree" />
+          </event>
+        </button>
+        
+        <button name="btnDrag" caption="Odustani" type="selfdragcancel">
+          <event type="click">
+            <action type="confirm" value="Želite odustati od reorganizacije?">
+              <action type="control populate" value="#tree" />
+              <action type="control dragmode" value="#tree" />
+            </action>
+          </event>
+        </button>
+        <button name="btnUnesi" caption="Unos novog smještaja" type="add" begingroup="true" function="UnesiSmjestaj">
+          <event type="click">
+            <action type="form open" value="frmPromjena">
+             <parameter name="SmjestajId" value="#tree" />
+             <parameter name="FormType" value="unos" />
+            </action>
+          </event>  
+        </button>
+        
+        <button name="btnEdit" caption="Izmjena smještaja" type="edit" function="IzmijeniSmjestaj">
+          <event type="click">
+             <action type="form open" value="frmPromjena" if="#tree.@Id!=-1">
+              <parameter name="Id" value="1" />
+              <parameter name="SmjestajId" value="#tree" />
+              <parameter name="FormType" value="izmjena" />
+             </action>
+             <action type="control populate keepfocus" value="#tree" />
+          </event>
+        </button>
+        
+        <button name="btnDelete" caption="Brisanje smještaja" type="delete" function="ObrisiSmjestaj">
+         <event type="click">
+          <action type="confirm" value="Jeste li sigurni da želite obrisati smještaj?" if="#tree.@ID!=-1">
+          <action type="datarun nonquery" value="~dtSmjestajDelete" />
+          </action>
+          <action type="control populate keepfocus" value="#tree" />
+         </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    
+    <datalist>
+      <data command="spSmjestajQueryCP" name="dtSmjestajTree">
+        <parameter name="@Action" value="getTree" />
+      </data>
+      <data command="spSmjestajTreeAzurCP" name="dtSmjestajAzur">
+        <parameter name="@Action" value="setTree" />
+        <parameter name="@TableVar" value="#tree.datasource" />
+      </data>
+      <data command="spSmjestajAzurCP" name="dtSmjestajDelete">
+        <parameter name="@Action" value="brisanje" />
+        <parameter name="@SmjestajID" value="#tree"/>
+        <parameter name="@Naziv" value="#txtNaziv" />
+        <parameter name="@Oznaka" value="#txtOznaka" />
+        <parameter name="@OrgShemaId" value="#srcOrgShema" />
+      </data>
+    </datalist>
+  </form>
+  
+    <!--FORMA ZA UNOS/IZMJENU SMJEŠTAJA-->
+      
+  <form name="frmPromjena" caption="Smještaj - {$formType}" height="300" width="500" fixedsize="true">
+    <event type="init">
+      <action type="datarun reader" value="~dtGet" if="$Id!=null" />
+    </event>
+
+    <layout textposition="left">
+      <group cols="1" rows="2" if="$Id==null">
+        
+        <group row="1" col="1" cols="1" rows="1" caption="pozicioniranje u odnosu na selektirani smještaj" spacing="0,0,0,10">
+          <group row="1" col="1" rows="1" cols="5" groupbordervisible="false">
+            <item row="1" col="1" highlight="false">
+              <radioedit name="rdo1" caption="Unutar" value="true" />
+            </item>
+            <item row="1" col="2" highlight="false">
+              <radioedit name="rdo2" caption="Iza" enabled="false" />
+            </item>
+            <item row="1" col="3" highlight="false">
+              <radioedit name="rdo3" caption="Ispred" enabled="false" />
+            </item>
+            <item row="1" col="4">
+            </item>
+            <item row="1" col="5" highlight="false">
+              <checkedit name="chkFormClose" value="true" tooltip="Zatvori formu nakon spremanja" />
+            </item>
+          </group>
+        </group>
+        
+        <group row="2" col="1" cols="1" rows="3" groupbordervisible="true">
+          <item caption="Naziv:" col="1" row="1"  >
+            <textedit name="txtNaziv" required="true" datavalue="~dtGet.@Naziv"/>
+          </item>
+          <item caption="Oznaka:" col="1" row="2">
+            <textedit name="txtOznaka" required="true" datavalue="~dtGet.@Oznaka" maxlength="10"/>
+          </item>
+          <item caption="Org.jedinica:" col="1" row="3">
+            <!--<textedit name="txtOznaka" required="true" datavalue="~dtGet.@Oznaka" />-->
+            <searchedit name="srcOrgShema" fieldtext="OrgShema_nazivId" fieldvalue="OrgShemaId" dataname="dtOrgShema" datavalue="~dtGet.@OrgShemaId" datatext ="~dtGet.@OrgShema_nazivId"></searchedit>
+          </item>
+        </group>
+        
+      </group>
+      
+      
+      
+      
+        <group cols="1" rows="3" else="">
+          <item caption="Naziv:" col="1" row="1"  >
+            <textedit name="txtNaziv" required="true" datavalue="~dtGet.@Naziv"/>
+          </item>
+          <item caption="Oznaka:" col="1" row="2">
+            <textedit name="txtOznaka" required="true" datavalue="~dtGet.@Oznaka" />
+          </item>
+          <item caption="Org.jedinica:" col="1" row="3">
+            <!--<textedit name="txtOznaka" required="true" datavalue="~dtGet.@Oznaka" />-->
+            <searchedit name="srcOrgShema" fieldtext="OrgShema_nazivId" fieldvalue="OrgShemaId" dataname="dtOrgShema" datavalue="~dtGet.@OrgShemaId" datatext ="~dtGet.@OrgShema_nazivId"></searchedit>
+          </item>
+        </group>
+    </layout>
+    
+    
+    <panelbuttons>
+      <buttons>
+        <button caption="Spremi" type="add" dock="left">
+          <event type="click">
+            <action type="validate" />
+            <action type="datarun scalar" value="~dtAzur" >
+			  	    <parameter name="Smjid"/>
+			   	    <!--<action type="message" value="$ID"></action>--> 
+		    	  </action>
+            <action type="control populate keepfocus" value="parent.#tree"/>	
+		    	  <action type="control expand" value="parent.#tree">
+	  		  	    <parameter name="key" value="$SmjId"></parameter>
+            </action>
+            <action type="form close" if="$Id!=null||#chkFormClose==true" />
+          </event>
+        </button>
+        <button caption="Odustani" type="cancel" dock="right" />
+      </buttons>
+    </panelbuttons>
+    
+    <datalist>
+      <data command="spSmjestajAzurCP" name="dtAzur">
+        <parameter name="@Action" value="Unos" if="$Id==null" />
+        <parameter name="@Action" value="Izmjena" else="" />
+        <parameter name="@SmjestajID" value="$SmjestajID" text="" />
+        <parameter name="@Naziv" value="#txtNaziv" />
+        <parameter name="@Oznaka" value="#txtOznaka" />
+        <parameter name="@OrgShemaId" value="#srcOrgShema" />        
+        <parameter name="@InsertTip" value="in" if="#rdo1==true" />
+        <parameter name="@InsertTip" value="down" elseif="#rdo2==true" />
+        <parameter name="@InsertTip" value="up" else="" />
+      </data>
+      <data command="spSmjestajQueryCP" name="dtGet">
+        <parameter name="@Action" value="GetSingle" />
+        <parameter name="@SmjestajID" value="$SmjestajID" />
+      </data>
+      <data command="spSmjestajQueryCP" name="dtOrgShema">
+        <parameter name="@Action" value="Orgshema_search" />
+        <parameter name="@Tekst" value="#srcOrgShema.text" />
+      </data>
+    </datalist>
+  </form>
+
+</root>

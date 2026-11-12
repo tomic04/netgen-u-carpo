@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root> 
+	<form name="frmMaster" type="master" caption="Sniženja po kontingentima">
+ 		<event type="oninit">
+            <action type="datarun reader" value="Global.~dtVrstaDok">
+			</action>
+			<action type="variable value">
+				<parameter name="VrstaDokId" value="~dtVrstaDok.@VrstaDokId"  />
+			</action>
+        </event> 
+		<event type="load">
+			<action type="variable value" >
+				<parameter name="tmpId" value="0" type="int"/>
+			</action>			
+		</event>
+		<managerlayout>
+			<event type="shown">
+				<action type="variable value" >
+					<parameter name="KntKompMasterId" value="0" type="int"/>
+				</action>					
+			</event>
+			<tree name="tree"  >
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdGlava" />
+				</event>
+				<data command="spCKntSktDokTreeVrijeme"   >
+                    <parameter name="@Action" value="0" />
+					<parameter name="@VrstaDokId" value="$VrstaDokId" />
+                </data>
+                <fields>
+                    <field name="Name" />
+                </fields>
+
+			</tree>
+			<grid name="grdGlava" type="master" async="true" key="SktPrometGlaId"  >
+			<event type="focusedrowchanged">
+				<action if="#grdGlava.rowcount!=0" type="control enable" value="#btnIzmijeni, #btnObrisi, #btnZakljuci" />
+				 <action else="" type="control disable" value="#btnIzmijeni, #btnObrisi, #btnZakljuci" />
+				 <action if="#grdGlava.@Status==2" type="control disable" value="#btnIzmijeni, #btnObrisi, #btnZakljuci" />
+				<action type="control populate" value="#grdDetalj" />
+			</event>
+				<data command="spKntSnizenjaPoKontingentima" >
+					<parameter name="@Action"  value="0"  />
+					<parameter name="@DatumOd" value="#tree.@DatumOd"/>
+                    <parameter name="@DatumDo" value="#tree.@DatumDo"/>
+				</data>
+				<fields>
+					<field name="DatumDok" caption="Datum Dokumenta" />
+					<field name="Skladiste" caption="Skladište" />
+					<field name="BrojDokumenta"  />
+					<field name="Operater"  />
+					<field name="Napomena" />
+					<field name="OdgovornaOsoba" />
+					<field name="StatusNaziv" caption="Status" />
+					<field name="VrijemeZakljucka" caption="Datum Zaključka"/>
+                </fields>
+				<menu>
+				<menuitem control="#grdGlava" caption="Poništi zaključak">
+					<event tyoe="click">
+						<action type="variable value">
+								<parameter name="id" value="#grdGlava.@SktPrometGlaId"  />
+						</action>
+						<action type="confirm" value="Želite li poništiti zaključak odabranog dokumenta?">							
+							<action type="datarun nonquery" value="Global.~dtPonZak">	
+
+							</action>
+							<action type="control populate keepfocus" value="#grdGlava" />
+						</action>
+					</event>
+				</menuitem>
+				<menuitem control="#grdGlava" caption="Storniraj">
+					<event tyoe="click">
+						<action type="variable value">
+								<parameter name="id" value="#grdGlava.@SktPrometGlaId"  />
+						</action>
+						<action type="confirm" value="Stornirani dokument kreirati će se s današnjim datumom i neće automatski biti proknjižen u robno. Jeste li sigurnida želite stornirati odabrani dokument? ">							
+							<action type="datarun nonquery" value="Global.~dtStorniraj">	
+								<action type="control populate keepfocus" value="#grdGlava" />
+							</action>
+						</action>
+					</event>
+				</menuitem>
+			</menu>
+			</grid>
+			<grid name="grdDetalj">
+				<data command="spKntSnizenjaPoKontingentima">
+				  <parameter name="@Action" value="1" />
+				  <parameter name="@Id" value="#grdGlava.@SktPrometGlaId" />
+				</data>
+				<fields>
+					<field name="Sifra" caption="Šifra" />
+					<field name="Naziv" caption="Roba" />
+					<field name="KolicinaUlaz" caption="Količina" />
+					<field name="NabCijena" caption="Nabavna cijena" />
+					<field name="Kontingent" caption="Kontingent" />
+					<field name="Barcode"  />
+				</fields>
+			 </grid>
+		</managerlayout>
+		<panelbuttons>
+            <buttons>
+				<button name="btnDodaj" caption="UNESI" type="add">
+					<event type="click">					
+						<action type="form open" value="frmDodaj"/>	
+						<action type="control populate" value="#grdGlava">
+							<action type="control focus" value="#grdGlava">
+								<!-- <action type="message" value="$tmpId" /> -->
+								<parameter value="$tmpId" />
+							</action>
+						</action>						
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" >
+					<event type="click">
+						<action type="form open" value="frmStavke">
+							<parameter name="SktPrometGlaId" value="#grdGlava.@SktPrometGlaId" type="int" />													
+						</action>	
+						<action type="control populate keepfocus" value="#grdGlava" />	
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete">
+					<event type="click">
+						<action type="variable value">
+								<parameter name="id" value="#grdGlava.@SktPrometGlaId"  />
+						</action>
+						<action type="confirm" value="Želite li doista obrisati označeni dokument?">							
+							<action type="datarun nonquery" value="Global.~dtDelete">	
+								<action type="control populate " value="#grdGlava" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnZakljuci" caption="ZAKLJUČI" >
+					<event type="click">
+						<action type="variable value">
+								<parameter name="SktPrometGlaId" value="#grdGlava.@SktPrometGlaId"  />
+						</action>
+						<action type="confirm" value="Želite li zaključiti označeni dokument? UPOZORENJE: Dokument će odmah biti proknjižen u robno!">							
+							<action type="datarun nonquery" value="Global.~dtZakljuci">	
+								<action type="control populate keepfocus" value="#grdGlava" />	
+							</action>
+						</action>											
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	</form>
+	
+	<form  name="frmDodaj" caption="Novi dokument" width="800">
+	<event type="oninit">
+		<action type="datarun reader" value="~dtPopuni"/>
+	</event>
+
+		<layout textposition="top" itemspadding="2" >
+			<part name="partUnos1" path="prtSnizenjaPoKontingentima.xml"/>
+				
+		</layout>
+		<panelbuttons>
+            <buttons>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+				</button>
+				<button name="btnStavke" caption="Stavke" type="add" dock="right">
+					<event type="click">
+					<action type="validate" />
+						<action type="datarun scalar" value="~dtNoviDok">
+							<parameter name="SktPrometGlaId" value="$SktPrometGlaId" />
+							
+						</action>
+						<action type="form close" />
+						<action type="control populate" value="parent.#grdGlava" />
+						<action type="form open" value="frmStavke">
+							<parameter name="SktPrometGlaId" value="$SktPrometGlaId" />
+							<!-- <parameter name="tmpId" value="$SktPrometGlaId"/> -->
+							<!--TODO focus na novi red preko neke temp varijable daz -->
+						</action>
+
+						<!--<action type="control populate keepfocus" value="Parent.#grdGlava" />-->
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+	<datalist>
+		<data command="spKntSnizenjaPoKontingentima" name="dtNoviDok">
+				<parameter name="@Action" value="10" />
+				<parameter name="@SkladisteId" value="#cmbSkladiste" />
+				<parameter name="@OrgShemaId" value="#cteOrgShema" />
+				<parameter name="@OsobeId" value="#cmbOsobe" />
+				<parameter name="@Memo" value="#meNapomena" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+		</data>
+		<data command="spKntSnizenjaPoKontingentima" name="dtDatumNovoga">
+				<parameter name="@Action"  value="4" />
+		</data>
+			<data command="spKntSnizenjaPoKontingentima" name="dtPopuni">
+				<parameter name="@Action"  value="4" />
+			</data>
+	</datalist>
+ 
+	</form>
+	
+	<form  name="frmStavke" caption="Dokument" width="800" height="800">
+	<event type="oninit">
+		<action type="datarun reader" value="~dtPopuni"/>
+	</event>
+		<layout textposition="top" itemspadding="2" >
+			<group cols="1" rows="1" groupbordervisible="false">
+				<group cols="1" rows="2" groupbordervisible="false">
+				    <rowsdefinition>
+						<row size="20%" position="1" />
+						<row size="70%" position="2" />
+					</rowsdefinition>
+					<group cols="1" rows="1" col="1" row="1" groupbordervisible="false">
+						<part name="partUnos1" path="prtSnizenjaPoKontingentima.xml"/>
+					</group>
+					<group cols="2" rows="3" col="1" row="2">
+						<columnsdefinition>
+							<column size="80%" position="1" />
+							<column size="20%" position="2" />
+						</columnsdefinition>
+						<item col="1" row="1" rowspan="3">
+							<grid name="grdStavke" autopopulate="True" showgrouppanel="False" showfooter="false">
+							<data command="spKntSnizenjaPoKontingentima">
+							  <parameter name="@Action" value="1" />
+							  <parameter name="@Id" value="$SktPrometGlaId" />
+							</data>
+							<fields>
+								<field name="Sifra" caption="Šifra" />
+								<field name="Naziv" caption="Roba" />
+								<field name="KolicinaUlaz" caption="Količina" />
+								<field name="NabCijena" caption="Nabavna cijena" />
+								<field name="Kontingent" caption="Kontingent" />
+							</fields>
+						  </grid>
+						</item>
+						<group col="2" row="1" cols="1" rows="2" groupbordervisible="false">
+							<item col="1" row="1" >
+								<button name="btnDonesi" caption="Donesi"  >
+									<event type="click">
+										<action type="form open" value="frmDonos">
+											<parameter name="RobaId" value="#grdStavke.@RobaId" />
+											<parameter name="SkladisteId" value="#cmbSkladiste" />
+											<parameter name="SktPrometGlaId" value="$SktPrometGlaId" />
+										</action>
+									</event>
+								</button>
+							</item>
+							<item col="1" row="2" >
+								<button name="btnObrisi" caption="Obriši"  >
+									<event type="click">
+										<action type="variable value">
+												<parameter name="SktPrometGlaId" value="$SktPrometGlaId"  />
+										</action>
+										<action type="confirm" value="UPOZORENJE: Sve stavke dokumenta biti će obrisane? Jeste li sigurni da želite nastaviti?">							
+											<action type="datarun nonquery" value="Global.~dtDeleteDetalj">	
+												<action type="control populate" value="#grdStavke" />
+											</action>
+										</action>
+									</event>
+								</button>
+							</item>
+						</group>
+					</group>
+				</group>
+			</group>			
+		</layout>
+		<panelbuttons>
+            <buttons>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+				</button>
+				<button name="btnSpremi" caption="Spremi"  dock="right">
+					<event type="click">
+						<action type="datarun nonquery" value="Global.~dtGlavaAzur">
+							<parameter name="SktPrometGlaId" value="$SktPrometGlaId" />
+						</action>
+							<action type="variable value"  >
+								<parameter name="parent.tmpId" value="$SktPrometGlaId" />
+							</action>
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spKntSnizenjaPoKontingentima" name="dtPopuni">
+				<parameter name="@Action"  value="3" />
+				<parameter name="@SktPrometGlaId"  value="$SktPrometGlaId" />
+			</data>
+		</datalist>
+	</form>
+	
+	
+	<form  name="frmDonos" caption="Donos stavki" width="800" height="600">
+		<event type="onload">
+				<action if="$RobaId!=null" type="control disable" value="#txtRoba" />
+		</event>
+		<layout textposition="top" itemspadding="2" >
+			<group cols="1" rows="1" groupbordervisible="false">
+				<group cols="2" rows="2" col="1" row="2">
+					<columnsdefinition>
+						<column size="80%" position="1" />
+						<column size="20%" position="2" />
+					</columnsdefinition>
+					<item col="1" row="1" caption="Roba:">
+						<searchedit name="txtRoba"   fontsizedelta="1" fontbold="True" entermovenextcontrol="False" dataname="Global.~dtTrazilicaRobe" fieldtext="Roba" fieldvalue="RobaId">
+							<event type="valuechanged">
+								<action type="variable value">
+									<parameter name="RobaID" value="#txtRoba"  />
+								</action>
+								<action type="control populate" value="#grdRoba" />
+							</event>
+						</searchedit>
+					</item>
+					<item col="2" row="1" caption="Nova cijena:">
+						<buttontextedit name="bteNabavna"  value="0" format="n2" fontsizedelta="2"  />
+							<event type="onlostfocus">
+								<action type="variable value">
+									<parameter name="NabCijena" value="#bteNabavna"  />
+								</action>
+							</event>
+					</item>
+					<item col="1" row="2" colspan="2" >
+						<grid name="grdRoba" autopopulate="True" showgrouppanel="False" showfooter="false" async="true">
+							<data command="spKntSnizenjaPoKontingentima">
+							  <parameter name="@Action" value="2" />
+							  <parameter name="@SkladisteId" value="$SkladisteId" />
+							  <parameter name="@RobaId" value="$RobaId" />
+							  <parameter name="@SktPrometGlaId" value="$SktPrometGlaId" />
+							</data>
+							<fields>
+								<field name="Sifra" caption="Šifra" />
+								<field name="Roba"  />
+								<field name="Kontingent"  />
+								<field name="Stanje"  />
+								<field name="SlobodnaKolicina"  />
+								<field name="Cijena"  />
+							</fields>
+						</grid>
+					</item>
+				</group>
+			</group>			
+		</layout>
+		<panelbuttons>
+            <buttons>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="right">
+				</button>
+				<button name="btnStavke" caption="Prenesi označene"  dock="right">
+					<event type="click">
+						<action type="validate"/>
+						<action type="message" value="Molim unijeti nabavnu cijenu!" if="#bteNabavna==0">
+						</action>
+						<action type="message" value="Molim odabrati robu!" if="$RobaID==null">
+						</action>
+					     <action type="control foreachrow selected" value="#grdRoba">
+                            <action type="datarun nonquery" value="Global.~dtDetaljInsert" if="#bteNabavna!=0">
+								<parameter name="SktPrometGlaId"  value="$SktPrometGlaId" />
+								<action type="form close" />
+							</action>
+                        </action>
+
+						<action type="control populate" value="Parent.#grdStavke" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		
+	</form>
+
+	<datalist>
+		<data command="spKntSnizenjaPoKontingentima" name="dtDelete">
+			<parameter name="@Action"  value="16" />
+			<parameter name="@SktPrometGlaId"  value="$id" />
+		</data>
+		<data command="spSkladisteQuery" name="dtSkladiste">
+			<parameter name="@Action" type="int" value="0" />
+		</data>
+		<data command="spOrgShemaPravaQuery2" name="dtOrgShema">
+			<parameter name="@Action" value="0" />
+		</data>
+		<data command="spOsobeQuery" name="dtOdgovornaOsoba">
+				<parameter name="@Action" value="16" />
+		</data> 
+		<data command="spKntSnizenjaPoKontingentima" name="dtGlavaAzur">
+				<parameter name="@Action" value="15" />
+				<parameter name="@Id" value="$SktPrometGlaId" />
+				<parameter name="@SkladisteId" value="#cmbSkladiste" />
+				<parameter name="@OrgShemaId" value="#cteOrgShema" />
+				<parameter name="@OsobeId" value="#cmbOsobe" />
+				<parameter name="@Memo" value="#meNapomena" />
+				<parameter name="@OperateriId" value="@@operateriid" />
+		</data>
+		<data command="spKntSnizenjaPoKontingentima" name="dtDetaljInsert">
+				<parameter name="@Action" value="20" />
+				<parameter name="@SktPrometGlaId" value="$SktPrometGlaId" />
+				<parameter name="@RobaId" value="$RobaId" />
+				<parameter name="@Kolicina" value="#grdRoba.@Stanje" />
+				<parameter name="@NabCijena" value="#bteNabavna" />
+				<parameter name="@MemoDet" value=" " />
+				<parameter name="@SktPrometDetIzvorId" value="#grdRoba.@SktPrometDetId" />
+				<parameter name="@KkvalGlaId" value="#grdRoba.@KkvalGlaId" />
+		</data>
+		<data command="spKntSnizenjaPoKontingentima" name="dtZakljuci">
+				<parameter name="@Action" value="30" />
+				<parameter name="@SktPrometGlaId" value="$SktPrometGlaId" />
+				<parameter name="@OperateriId" value="@@OperateriId" />
+		</data>
+		<data command="spKntSnizenjaPoKontingentima" name="dtDeleteDetalj">
+				<parameter name="@Action" value="27" />
+				<parameter name="@ID" value="$SktPrometGlaId" />
+		</data>
+		<data command="spKntSnizenjaPoKontingentima" name="dtPonZak">
+			<parameter name="@Action"  value="31" />
+			<parameter name="@SktPrometGlaId"  value="$id" />
+		</data>
+		<data command="spSktPrometGlaAzur" name="dtStorniraj">
+			<parameter name="@Action"  value="4" />
+			<parameter name="@Id"  value="$id" />
+		</data>
+		<data command="spKntSnizenjaPoKontingentima" name="dtRobno">
+			<parameter name="@Action"  value="35" />
+			<parameter name="@SktPromeGlaId"  value="$SktPromeGlaId" />
+		</data>
+		<data command="spKntSnizenjaPoKontingentima" name="dtRobnoBrisanje">
+			<parameter name="@Action"  value="37" />
+			<parameter name="@SktPromeGlaId"  value="$SktPromeGlaId" />
+		</data>
+		<data command="spKntSnizenjaPoKontingentima" name="dtVrstaDok">
+			<parameter name="@Action"  value="5" />
+		</data>
+		<data command="spKntSnizenjaPoKontingentima" name="dtTrazilicaRobe">
+			<parameter name="@Action"  value="6" />
+			<parameter name="@SkladisteId"  value="$SkladisteId" />
+			<parameter name="@Uvjet"  value="#txtRoba.text" />
+		</data>
+	</datalist>
+	</root>

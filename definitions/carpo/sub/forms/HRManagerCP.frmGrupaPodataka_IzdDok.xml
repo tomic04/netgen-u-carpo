@@ -1,0 +1,198 @@
+<root>
+	<!--
+  Komentari:
+  4.11.2025. MP - PERMISSION -> FUNCTION NAME
+  09.11.2021. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmIzdDok" caption="Izdani dokumenti za {parent.#txtPrezime} {parent.#txtIme}" width="850" height="350" >
+		<event type="load">
+			<action type="control populate" value="#grdIzdaniDokumenti"/>		
+			<action type="control disable" value="#btnIzmjena,btnBrisanje" if="#grdIzdaniDokumenti.rowcount==0"/>
+
+		</event>
+		<layout>
+			<group cols="1" rows="2" groupbordervisible="false">
+				<group cols="1" rows="1" groupbordervisible="true" col="1" row="1" spacing="2,2,2,1">
+					<item row="1" col="1" highlight="false">
+						<grid name="grdIzdaniDokumenti" key="HRKadroviDokumentiId" multiselect="true" savelayout="true" dataname="~dtDokument" fieldsmartspaces="false" showgrouppanel="false" bestfitonrefresh="true">
+							<fields inherited="true">
+							</fields>
+							<event type="doubleclick">
+								<action type="form open" value="frmUnosIzmjenaIzdDok" function="IZMJENA_DOK">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviDokumentiId" value="#grdIzdaniDokumenti.@HRKadroviDokumentiId" />	
+									<parameter name="Caption" value="Izmjena dokumenta za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdIzdaniDokumenti"/>		
+								<action type="control populate" value="parent.#grdPodaci"/>	
+							</event>
+						</grid>
+					</item>
+				</group>
+				<group cols="8" rows="1" groupbordervisible="true" col="1" row="2" spacing="2,2,1,2">
+					<item row="1" col="1" highlight="false" height="40">
+						<button name="btnUnos" caption="Unos" function="UNOS_DOK"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaIzdDok"> 
+									<parameter name="Caption" value="Unos dokumenta za {parent.#txtPrezime} {parent.#txtIme}"/>		
+									<parameter name="HRKadroviDokumentiId" value="0"/>   
+									<parameter name="HRKadroviId" value="$HRKadroviId" />	
+
+								</action>  
+								<action type="control populate keepfocus" value="#grdIzdaniDokumenti"/>	
+								<action type="control populate" value="parent.#grdPodaci"/>	
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="2" highlight="false" height="40" >
+						<button name="btnIzmjena" caption="Izmjena" function="IZMJENA_DOK"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaIzdDok">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviDokumentiId" value="#grdIzdaniDokumenti.@HRKadroviDokumentiId" />	
+									<parameter name="Caption" value="Izmjena dokumenta za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdIzdaniDokumenti"/>
+									<action type="control populate" value="parent.#grdPodaci"/>	
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="3" highlight="false" height="40">
+						<button name="btnBrisanje" caption="Brisanje" function="BRISANJE_DOK"> 
+							<event type="click">   
+								<action type="confirm" value="Jeste li sigurni da želite obrisati izabrani zapis?">
+									<action type="datarun nonquery" value="~dtBrisanjeDokumenta">
+
+									</action>
+								</action>
+								<action type="control populate" value="#grdIzdaniDokumenti,parent.#grdPodaci"></action>    
+								<action type="control disable" value="#btnIzmjena,btnBrisanje" if="#grdIzdaniDokumenti.rowcount==0"/>
+							</event>  
+						</button>
+					</item>
+
+					<item row="1" col="4" colspan="4" highlight="false" height="40"/>
+					<item row="1" col="8" highlight="false" height="40">
+						<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+							<event type="click">
+								<action type="form close" />
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+
+		</layout>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_IzdaniDok_CP" name="dtDokument">
+				<parameter name="@action" value="grid_IzdDok" />
+				<parameter name="@hrkadroviid" value="$HRKadroviId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_IzdaniDok_CP" name="dtBrisanjeDokumenta">
+				<parameter name="@action" value="brisanje"/>
+				<parameter name="@HRKadroviDokumentiId" value="#grdIzdaniDokumenti.@HRKadroviDokumentiId"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!-- FORMA ZA UNOS,IZMJENU-->
+	<form name="frmUnosIzmjenaIzdDok" caption="$Caption" width="380" height="390" fixedsize="true">
+		<event type="init">
+<action type="datarun reader" value="~dtDokumenti" if="$HRKadroviDokumentiId!=0" />
+		</event>
+		<event type="shown">
+		
+		</event>
+		<layout>
+		<group cols="2" rows="4" groupbordervisible="true">
+             <item row="1" col="1" caption="Vrsta dokumenta:" highlight="false" colspan="2">
+				<comboedit name="cmbVrstaDokumenta" required="true" valuefield="HRDokumentiId" displayfield="Naziv" dataname="~dtGetDokument" datavalue="~dtDokumenti.@HRDokumentiId"/>
+			</item>
+				<item row="2" col="1" caption="Datum izdavanja:" highlight="false" >
+				<dateedit name="dtDatumIzdavanja" value="now" allownull="false" datavalue="~dtDokumenti.@datum">
+						</dateedit>
+			</item>
+			<item row="3" col="1" caption="Razlog:" highlight="false" rowspan="2" colspan="2">
+				<memoedit name="memRazlog"  datavalue="~dtDokumenti.@razlog">
+						</memoedit>
+			</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+						<action type="validate"/>
+						<action if="$HRKadroviDokumentiId==0">
+							<action type="datarun reader" value="~dtUnos">
+								<action type="control populate" value="parent.#grdIzdaniDokumenti">
+									<action type="control focus" value="parent.#grdIzdaniDokumenti">
+										<parameter value="$noviID"/>
+									</action>
+								</action>
+							</action>
+							<action type="control enable" value="parent.#btnIzmjena,parent.#btnBrisanje"/>
+						</action>
+						<action if="$indGreske==0">
+							<action type="message" value="Uspješno spremljeno!"/>
+							<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+							<action type="variable value" value="global.$RefreshajMaster">
+								<parameter value="1" type="int"/>
+							</action>
+							<action type="form close" />
+						</action>
+						<action if="$HRKadroviDokumentiId!=0">
+							<action type="datarun reader" value="~dtIzmjena"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+								<action type="variable value" value="global.$RefreshajMaster">
+									<parameter value="1" type="int"/>
+								</action>
+								<action type="form close"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_IzdaniDok_CP" name="dtDokumenti">
+				<parameter name="@action" value="getIzdDok" />
+				<parameter name="@HRKadroviDokumentiId" value="$HRKadroviDokumentiId" type="int"/>
+			</data>
+		<data command="spHRHelp" name="dtGetDokument">
+				<parameter name="@action" value="hrdokument" />
+			</data>
+			<data command="spHRManagerMaster_Podaci_IzdaniDok_CP" name="dtUnos">
+				<parameter name="@action" value="unos"/>
+				<parameter name="@HRKadroviDokumentiId.output.int" variablename="noviID"></parameter>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@HRDokumentiId"  value="#cmbVrstaDokumenta" />
+				<parameter name="@Datum"  value="#dtDatumIzdavanja" />
+				<parameter name="@Razlog"  value="#memRazlog" />
+				<parameter name="@indGreske.output.int"/>					
+			</data>
+			<data  command="spHRManagerMaster_Podaci_IzdaniDok_CP" name="dtIzmjena">
+				<parameter name="@action" value="izmjena"/>
+				<parameter name="@HRKadroviDokumentiId" value="$HRKadroviDokumentiId"/>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@HRDokumentiId"  value="#cmbVrstaDokumenta" />
+				<parameter name="@Datum"  value="#dtDatumIzdavanja" />
+				<parameter name="@Razlog"  value="#memRazlog" />
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+</root>

@@ -1,0 +1,421 @@
+<root>
+	<form type="master" name="frmMaster" caption="Support korisnici">
+		<managerlayout>
+			<grid type="master" name="grdMaster" dataname="~dtMaster" fieldsmartspaces="false" bestfitonrefresh="true" key="suppKorisnikId" savelayout="true">
+				<fields inherited="true">
+					<field name="Napomene" visible="false"/>
+					<field name="OpisTvrtke" visible="false"/>
+					<field name="NapomeneChar" caption="Napomene" visible="true"/>
+					<field name="OpisTvrtkeChar" caption="Opis tvrtke" visible="true"/>
+				</fields>
+				<event type="doubleclick">
+					<action type="form open" value="frmUpsert">
+						<parameter name="SuppKorId" value="#grdMaster.@suppKorisnikId"/>
+					</action>
+				</event>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnDodaj" caption="Dodaj" function="add">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="SuppKorId" value="null"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnUredi" caption="Uredi" function="edit">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="SuppKorId" value="#grdMaster.@suppKorisnikId"/>
+						</action>
+					</event>
+				</button>
+				<!-- <button name="btnUmirovi" caption="Umirovi" function="retire"> -->
+					<!-- <event type="click"> -->
+						
+					<!-- </event> -->
+				<!-- </button> -->
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtMaster" command="spBugsSuppQueryCarpo">
+				<parameter name="@Action" value="MASTER"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUpsert" caption="Support korisnik" height="500" width="1000" saveformsize="false">
+		<event type="init">
+			<action type="datarun reader" value="~dtLoad" if="$SuppKorId!=null"/>
+			<action type="datarun reader" value="~dtLogo" if="$SuppKorId!=null"/>
+		</event>
+		<layout>
+			<group rows="1" cols="1">
+				<tabs row="1" col="1">
+					<group rows="3" cols="1" caption="OPĆENITO">
+						<group row="1" col="1" rows="1" cols="1" caption="KORISNIK" if="$SuppKorId==null">
+							<item row="1" col="1">
+								<comboedit name="cmbKorisnik" dataname="~dtKorisnik" valuefield="PartneriId" displayfield="Naziv" required="true">
+									<event type="valuechanged">
+										<action type="control populate" value="#cmbVoditeljPartnera"/>
+									</event>
+								</comboedit>
+							</item>
+						</group>
+						<group row="1" col="1" rows="1" cols="1" caption="KORISNIK" else="">
+							<item row="1" col="1">
+								<labeledit name="lblKorisnik" datavalue="~dtLoad.@Korisnik" fontsizedelta="1" fontbold="true" fontcolor="blue"/>
+							</item>
+						</group>
+						<group row="2" col="1" rows="4" cols="4">
+							<columnsdefinition>
+								<column position="1" size="25%"/>
+								<column position="2" size="25%"/>
+								<column position="3" size="25%"/>
+								<column position="4" size="25%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Datum ugovora:">
+								<dateedit name="datDatumUgovora" value="now" datavalue="~dtLoad.@Datum ugovora"/>
+							</item>
+							<item row="1" col="2" caption="Vrsta ugovora:">
+								<comboedit name="cmbVrstaUgovora" dataname="~dtVrstaUgovora" valuefield="VrstaUgovoraId" displayfield="VrstaUgovora" datavalue="~dtLoad.@VrstaUgovoraId" required="true"/>
+							</item>
+							<item row="1" col="3" caption="Broj ugovora:">
+								<textedit name="txtBrojUgovora" datavalue="~dtLoad.@Broj ugovora"/>
+							</item>
+							<item row="2" col="1" caption="Tip licence:">
+								<textedit name="txtTipLicence" datavalue="~dtLoad.@Tip licence"/>
+							</item>
+							<item row="2" col="2" caption="Nositelj licence:">
+								<comboedit name="cmbNositeljLicence" dataname="~dtPartneriLicence" valuefield="PartneriId" displayfield="Naziv" datavalue="~dtLoad.@NosLicParId"/>
+							</item>
+							<item row="2" col="3" caption="Support obveznik:">
+								<comboedit name="cmbSupportObveznik" dataname="~dtPartneriLicence" valuefield="PartneriId" displayfield="Naziv" datavalue="~dtLoad.@SuppObvParId"/>
+							</item>
+							<item row="2" col="4">
+								<checkedit name="chkAktivan" value="true" datavalue="~dtLoad.@Aktivan" caption="Aktivan"/>
+							</item>
+							<item row="3" col="1" caption="Vrijednost klijenta (kn):">
+								<textedit name="txtVrijednostKlijenta" value="0" datavalue="~dtLoad.@Vrijednost klijenta" format="n2"/>
+							</item>
+							<item row="3" col="2" caption="Model supporta:">
+								<comboedit name="cmbModelSupporta" dataname="~dtModelSupporta" valuefield="ModelSupporta" displayfield="Naziv" datavalue="~dtLoad.@ModelSupportaId"/>
+							</item>
+							<item row="3" col="3" caption="KAM:">
+								<comboedit name="cmbKAM" dataname="~dtKAM" valuefield="OsobeId" displayfield="Ime" datavalue="~dtLoad.@KamID"/>
+							</item>
+							<item row="3" col="4" caption="Voditelj kod Partnera:">
+								<comboedit name="cmbVoditeljPartnera" dataname="~dtVoditeljPartner" valuefield="OsobeId" displayfield="Osoba" datavalue="~dtLoad.@ParVodOsId"/>
+							</item>
+							<item row="4" col="1">
+								<labeledit name="lblNAP" value="Računanje triggerom prilikom ažuriranja licenci"/>
+							</item>
+							<item row="4" col="2">
+								<labeledit name="lblJS" value="0" datavalue="~dtLoad.@Broj JS klijenata" caption="Broj JS klijenata:"/>
+							</item>
+							<item row="4" col="3">
+								<labeledit name="lblMPBO" value="0" datavalue="~dtLoad.@Broj MP BO licenci" caption="Broj MP BO licenci:"/>
+							</item>
+							<item row="4" col="4">
+								<labeledit name="lblPOS" value="0" datavalue="~dtLoad.@Broj POS kasa" caption="Broj POS kasa:"/>
+							</item>
+						</group>
+						<group row="3" col="1" rows="1" cols="1" caption="NAPOMENA">
+							<item row="1" col="1">
+								<memoedit name="memNapomena" datavalue="~dtLoad.@Napomene" fontsizedelta="1"/>
+							</item>
+						</group>
+					</group>
+					<group rows="2" cols="1" caption="MARKETING I SISTEM">
+						<group row="1" col="1" rows="3" cols="5">
+							<columnsdefinition>
+								<column position="1" size="20%"/>
+								<column position="2" size="20%"/>
+								<column position="3" size="20%"/>
+								<column position="4" size="20%"/>
+								<column position="5" size="20%"/>
+							</columnsdefinition>
+							<item row="1" col="1" caption="Server:">
+								<comboedit name="cmbServer" dataname="~dtServer" valuefield="ServerId" displayfield="Server" datavalue="~dtLoad.@ServerId"/>
+							</item>
+							<item row="2" col="1" caption="Job email:">
+								<comboedit name="cmbJobEmail" dataname="~dtJobEmail" valuefield="AlertEmailId" displayfield="Email" datavalue="~dtLoad.@AlertEmailId"/>
+							</item>
+							<item row="1" col="2" caption="Broj PC-a:">
+								<textedit name="txtBrojPC" value="0" datavalue="~dtLoad.@Broj PC-a" required="true"/>
+							</item>
+							<item row="1" col="3" caption="Broj radnika:">
+								<textedit name="txtBrojRadnika" value="0" datavalue="~dtLoad.@Broj radnika" required="true"/>
+							</item>
+							<item row="1" col="4" caption="Referenca:">
+								<comboedit name="cmbReferenca" dataname="~dtReferenca" valuefield="ReferencaId" displayfield="Referenca" datavalue="~dtLoad.@ReferencaId" required="true"/>
+							</item>
+							<group row="1" col="5" rows="1" cols="1" groupbordervisible="false" if="$SuppKorId!=null">
+								<item row="1" col="1" caption="Logo:">
+									<button name="btnLogo" caption="Logo (DMS)">
+										<event type="click">
+											<action type="form open" value="frmDMS">
+												<parameter name="SuppKorId" value="$SuppKorId"/>
+											</action>
+										</event>
+									</button>
+								</item>
+							</group>
+							<group row="2" col="5" rows="1" cols="1" rowspan="2" groupbordervisible="false" if="$SuppKorId!=null">
+								<item row="1" col="1">
+									<pictureedit name="picLogo" dbimg="~dtLogo.@Slika"/>
+								</item>
+							</group>
+							<item row="2" col="2" caption="Ref. SortKey:">
+								<textedit name="txtRefSortKey" datavalue="~dtLoad.@RefSortKey"/>
+							</item>
+							<item row="2" col="3" caption="Detalji - stranica:">
+								<textedit name="txtDetalji" datavalue="~dtLoad.@OpisTvrtkeDetLink"/>
+							</item>
+							<item row="2" col="4">
+								<labeledit name="lblTop500" datavalue="~dtLoad.@Top500" fontsizedelta="1" caption="Top 500:"/>
+							</item>
+							<item row="3" col="1">
+								<checkedit name="chkOsnovniNositelj" value="true" datavalue="~dtLoad.@Nositelj" caption="Osnovni nositelj"/>
+							</item>
+							<item row="3" col="2">
+								<checkedit name="chkVPN" value="true" datavalue="~dtLoad.@VPN Connect" caption="VPN Connect"/>
+							</item>
+							<item row="3" col="3">
+								<checkedit name="chkJSAdmin" value="true" datavalue="~dtLoad.@JS Admin" caption="JS Admin"/>
+							</item>
+							<item row="3" col="4">
+								<checkedit name="chkJSPartner" datavalue="~dtLoad.@JupiterPartner" caption="JS Partner"/>
+							</item>
+						</group>
+						<group row="3" col="1" rows="1" cols="1" caption="OPIS TVRTKE (prikaz na JS web stranici - reference)">
+							<item row="1" col="1">
+								<memoedit name="memOpisTvrtke" datavalue="~dtLoad.@OpisTvrtke" fontsizedelta="1"/>
+							</item>
+						</group>
+					</group>
+				</tabs>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="SPREMI">
+					<event type="click">
+						<action if="$SuppKorId==null">
+							<action type="validate"/>
+							<action type="datarun scalar" value="~dtUpsert">
+								<parameter name="NewId"/>
+							</action>
+							<action type="control populate" value="parent.#grdMaster"/>
+							<action type="control focus" value="parent.#grdMaster">
+								<parameter value="$NewId"/>
+							</action>
+							<action type="form close"/>
+						</action>
+						<action else="">
+							<action type="validate"/>
+							<action type="datarun nonquery" value="~dtUpsert"/>
+							<action type="control populate keepfocus" value="parent.#grdMaster"/>
+							<action type="form close"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="ODUSTANI" type="cancel"/>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLogo" command="spGetImageFromDMS">
+				<parameter name="@EntityName" value="suppKorisnik"/>
+				<parameter name="@Id" value="$SuppKorId"/>
+			</data>
+			<data name="dtKorisnik" command="spBugsSuppQueryCarpo">
+				<parameter name="@Action" value="KORISNIK"/>
+			</data>
+			<data name="dtVrstaUgovora" command="spBugsSuppQueryCarpo">
+				<parameter name="@Action" value="VRSTA UGOVORA"/>
+			</data>
+			<data name="dtJobEmail" command="spBugsSuppQueryCarpo">
+				<parameter name="@Action" value="JOB EMAIL"/>
+			</data>
+			<data name="dtPartneriLicence" command="spBugsSuppQueryCarpo">
+				<parameter name="@Action" value="PARTNERI LICENCE"/>
+			</data>
+			<data name="dtModelSupporta" command="spBugsSuppQueryCarpo">
+				<parameter name="@Action" value="MODEL SUPPORTA"/>
+			</data>
+			<data name="dtKAM" command="spBugsSuppQueryCarpo">
+				<parameter name="@Action" value="KAM"/>
+			</data>
+			<data name="dtVoditeljPartner" command="spBugsSuppQueryCarpo">
+				<parameter name="@Action" value="VODITELJ PARTNER"/>
+				<parameter name="@ID" value="parent.#grdMaster.@partneriid" if="$SuppKorId!=null"/>
+				<parameter name="@ID" value="#cmbKorisnik" else=""/>
+			</data>
+			<data name="dtReferenca" command="spBugsSuppQueryCarpo">
+				<parameter name="@Action" value="REFERENCA"/>
+			</data>
+			<data name="dtServer" command="spBugsSuppQueryCarpo">
+				<parameter name="@Action" value="SERVER"/>
+			</data>
+			<data name="dtLoad" command="spBugsSuppQueryCarpo">
+				<parameter name="@Action" value="MASTER"/>
+				<parameter name="@ID" value="$SuppKorId"/>
+			</data>
+			<data name="dtUpsert" command="spBugsSuppAzurCarpo">
+				<parameter name="@Action" value="INSERT" if="$SuppKorId==null"/>
+				<parameter name="@Action" value="UPDATE" if="$SuppKorId!=null"/>
+				<parameter name="@PartneriId" value="#cmbKorisnik" if="$SuppKorId==null"/>
+				<parameter name="@suppKorisnikId" value="$SuppKorId" if="$SuppKorId!=null"/>
+				<parameter name="@Datum" value="#datDatumUgovora"/>
+				<parameter name="@ServerId" value="#cmbServer"/>
+				<parameter name="@BrojPc" value="#txtBrojPC"/>
+				<parameter name="@Referenca" value="#cmbReferenca"/>
+				<parameter name="@BrojRadnika" value="#txtBrojRadnika"/>
+				<parameter name="@TipLicence" value="#txtTipLicence"/>
+				<parameter name="@VrijednostKlijenta" value="#txtVrijednostKlijenta"/>
+				<parameter name="@ModelSupporta" value="#cmbModelSupporta"/>
+				<parameter name="@KamID" value="#cmbKAM"/>
+				<parameter name="@Napomene" value="#memNapomena"/>
+				<parameter name="@StatusAkt" value="#chkAktivan"/>
+				<parameter name="@SuppNositelj" value="#chkOsnovniNositelj"/>
+				<parameter name="@RefSortKey" value="#txtRefSortKey"/>
+				<parameter name="@VPNConnect" value="#chkVPN"/>
+				<parameter name="@JSAdmin" value="#chkJSAdmin"/>
+				<parameter name="@OpisTvrtkeDetLink" value="#txtDetalji"/>
+				<parameter name="@JupiterPartner" value="#chkJSPartner"/>
+				<parameter name="@OpisTvrtke" value="#memOpisTvrtke"/>
+				<parameter name="@NosLicParId" value="#cmbNositeljLicence"/>
+				<parameter name="@SuppObvParId" value="#cmbSupportObveznik"/>
+				<parameter name="@VrstaUgovora" value="#cmbVrstaUgovora"/>
+				<parameter name="@AlertEmailId" value="#cmbJobEmail"/>
+				<parameter name="@ParVodOsId" value="#cmbVoditeljPartnera"/>
+				<parameter name="@InicijalniJSUgovor" value="#txtBrojUgovora"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDMS" caption="DMS" width="500" height="500" savesize="true">
+		<method name="funDmsAdd" dll="DmsManagerV1" class="DmsManagerV1.Start" method="AddDocuments"/>
+		<method name="funDmsOpen" dll="DmsManagerV1" class="DmsManagerV1.Start" method="OpenDocument"/>
+		<method name="funDmsSave" dll="DmsManagerV1" class="DmsManagerV1.Start" method="SaveDocuments"/>
+		<event type="load">
+			<action type="variable value" value="$EntityName">
+				<parameter value="suppKorisnik"/>
+			</action>
+			<action type="variable value" value="$Id">
+				<parameter value="$SuppKorId"/>
+			</action>			
+		</event>
+		<event type="shown">
+			<action type="control populate" value="#grdDms"/>
+		</event>
+		<event type="close">
+			<action type="datarun reader" value="~dtLogo"/>
+			<action type="control attribute" value="parent.#picLogo">
+				<parameter name="dbimg" value="~dtLogo.@Slika"/>
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="1" groupbordervisible="false">
+				<item col="1" row="1" >
+					<grid name="grdDms" keyfield="DokId" bestfitonrefresh="true" multiselect="true" dataname="~dtDMS" showmenuprintitem="true" showmenutools="false" savelayout="true">
+						<event type="doubleclick">
+							<action type="method run" value="funDmsOpen" if="#grdDms.rowcount&gt;0">
+								<parameter name="server" value="@@server" />
+								<parameter name="database" value="@@database" />
+								<parameter name="username" value="" />
+								<parameter name="password" value="" />
+								<parameter name="operaterid" value="@@operateriid" />
+								<parameter name="dokId" value="#grdDms.@DokID" />
+								<parameter name="name" value="#grdDms.@Naziv" />
+							</action>
+						</event>
+						<fields inherited="true">
+							<field name="Naziv" fontbold="true"/>
+							<field name="Size" caption="Size [KB]"/>
+							<field name="DatumKreiranja" caption="Datum kreiranja"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPovezi" caption="DODAJ" function="DokDodaj">
+					<event type="click">
+						<action type="method run" value="funDmsAdd">
+							<parameter name="server" value="@@server"/>
+							<parameter name="database" value="@@database"/>
+							<parameter name="username" value=""/>
+							<parameter name="password" value=""/>
+							<parameter name="operaterid" value="@@operateriid"/>
+							<parameter name="EntityName" value="$EntityName"/>
+							<parameter name="entityID" value="$Id"/>
+							<parameter name="tipInserta" value="windows"/>
+						</action>
+						<!-- <action waittype="progress" waitcaption="Upload" waittext="Upload dokumenta u tijeku..." sleep="10000"/>	 -->
+						<action type="control populate" value="#grdDms"/>
+					</event>
+				</button>
+				<button name="btnOtvori" caption="OTVORI">
+					<event type="click">
+						<action type="method run" value="funDmsOpen" if="#grdDms.rowcount&gt;0">
+							<parameter name="server" value="@@server"/>
+							<parameter name="database" value="@@database"/>
+							<parameter name="username" value=""/>
+							<parameter name="password" value=""/>
+							<parameter name="operaterid" value="@@operateriid"/>
+							<parameter name="dokId" value="#grdDms.@DokID"/>
+							<parameter name="name" value="#grdDms.@Naziv"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnSpremi" caption="PREUZMI">
+					<event type="click">
+						<action type="method run" value="funDmsSave">
+							<parameter name="server" value="@@server"/>
+							<parameter name="database" value="@@database"/>
+							<parameter name="username" value=""/>
+							<parameter name="password" value=""/>
+							<parameter name="operaterid" value="@@operateriid"/>
+							<parameter name="dokIds" value="#grdDms.selectedids"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI">
+					<event type="click">
+						<action type="confirm" value="Želite li sigurno obrisati označene dokumente?">
+						<action type="datarun nonquery" value="~dtDMSDelete"/>
+						<action type="control populate" value="#grdDms"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnZavrši" caption="ZAVRŠI">
+					<event type="click">
+						<action type="datarun reader" value="~dtLogo"/>
+						<action type="control attribute" value="parent.#picLogo">
+							<parameter name="dbimg" value="~dtLogo.@Slika"/>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data name="dtLogo" command="spGetImageFromDMS">
+				<parameter name="@EntityName" value="suppKorisnik"/>
+				<parameter name="@Id" value="$SuppKorId"/>
+			</data>
+			<!--za DMS, obvezne procedure-->
+			<data command="spCarpoDMSQuery" name="dtDMS">
+				<parameter name="@EntityName" value="$EntityName"/>
+				<parameter name="@Id" value="$Id"/>
+			</data>
+			<data command="spCarpoDMSAzur" name="dtDMSDelete">
+				<parameter name="@Action" value="Delete"/>
+				<parameter name="@EntityName" value="$EntityName"/>
+				<parameter name="@selectedids" value="#grdDms.selectedids"/>
+			</data>	
+		</datalist>
+	</form>
+	<!-- <form name="frmUpsert" path="frmUpsert.xml"/> -->
+</root>

@@ -1,0 +1,103 @@
+<!-- Server: Jupiter2017 / Baza: KomercijalaSklad_Test -->
+<root>
+	<form type="master" statusbar="true" name="frmMaster" caption="Import podataka iz Excela / export u .txt">
+		<method name="ExcelDonos" dll="ExcelImport" class="ExcelImport.Start" method="TotalGen"/>
+		<event type="init">
+			<action type="datarun reader" value="global.~dtExportPutanjaDok"/>
+			<action type="variable value">
+				<parameter name="PutanjaDok" value="global.~dtExportPutanjaDok.@Putanja"/>
+			</action>
+		</event>
+		<managerlayout>
+			<grid name="grdGlava" type="master" autopopulate="true" dataname="~dtGetGrid" savelayout="true" bestfitonrefresh="true">
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnImport" caption="Import iz Excela" image="list" imagelocation="middleleft" function="Excel">
+					<event type="click">
+						<action type="datarun reader" value="global.~dtDonosParametri"/>
+						<action type="variable value">
+							<parameter name="param" value="global.~dtDonosParametri.@param"/>
+						</action>
+						<action type="method run" value="ExcelDonos">
+							<!-- <parameter name="id" value="$GlaId" /> -->
+							<parameter name="operateriId" value="@@OperateriId"/>
+							<parameter name="cs" value="server={@@server};database={@@database};uid={@@uid};pwd={@@pwd}"/>
+							<parameter name="param" value="" />
+							<parameter name="param2" value="$param"/>
+						</action>
+						<action type="form open" value="frmImportPregled"/>
+						<action type="control populate" value="#grdGlava"/>
+					</event>
+				</button>
+				<button name="btnExport" caption="Export u .txt" imagelocation="middleleft" image="next">
+					<event type="click">
+						<action type="datarun reader" value="global.~dtExport"/>
+						<action type="text export">
+							<parameter name="filePath" value="$PutanjaDok"/>
+							<parameter name="fileName" value="TestExport"/>
+							<parameter name="extension" value="txt" />
+							<parameter name="showOpenFileDialog" value="true" />
+							<parameter name="textContent" value="global.~dtExport.@text"/>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spImportExcel_StavkeGrid" name="dtGetGrid" timeout="60"/>
+		</datalist>
+	</form>
+	<form name="frmImportPregled" caption="Import iz Excela">
+		<event type="load">
+			<action type="control populate" value="#grdDonos"/>
+		</event>
+		<event type="close">
+			<action type="form close" value="~dtDataDelete"/>
+		</event>
+		<layout textposition="top">
+			<group cols="1" rows="1">
+				<item col="1" row="3" highlight="false" caption="Pronađene stavke:" fontbold="true">
+					<grid name="grdDonos" dataname="~dtDonosGet" multiselect="true" bestfitonrefresh="true">
+						<fields inherited="true">
+							<field name="BrojRacuna" caption="Broj računa" fontbold="true" fixed="true"/>
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Donesi">
+					<event type="click">
+						<action type="datarun scalar" value="~dtDataInsert">
+							<parameter name="Id"/>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel">
+					<event type="click">
+						<action type="datarun nonquery" value="~dtDataDelete"/>
+						<action type="form close"/>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<!-- import -->
+			<data command="spImportExcel_Query" name="dtDonosGet" timeout="360"/>
+			<data command="spImportExcel_Azur" name="dtDataInsert" timeout="360"/>
+			<data command="spImportExcel_Delete" name="dtDataDelete"/>
+		</datalist>
+	</form>
+	<datalist>
+		<data command="spImportExcel_GetDonosParametri" name="dtDonosParametri"/>
+		<!-- export -->
+		<data command="spExport_Sadrzaj" name="dtExport"/>
+		<data command="spExport_PutanjaDok" name="dtExportPutanjaDok">
+			<parameter name="@Login" value="@@Login"/>
+		</data>
+	</datalist>
+</root>

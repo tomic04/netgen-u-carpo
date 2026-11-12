@@ -1,0 +1,133 @@
+<root>
+	<!--
+  Komentari:
+  4.11.2025. MP - PERMISSION -> FUNCTION NAME
+  09.11.2021. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmSocijalniStatus" caption="Socijalni status za {parent.#txtPrezime} {parent.#txtIme}" width="650" height="250" fixedsize="true">
+				<event type="init">
+<action type="datarun reader" value="~dtGetSocijalniStatus" if="$HRKadroviId!=0" />
+		</event>
+		<event type="shown">
+		<!-- AKO JE IZMIJENA, POPUNI KONTROLE-->
+			<action if="$Tip=='Izmjena'">
+			<action type="control disable" value="#dtDatumOd" if="~dtGetSocijalniStatus.@datneposrednaopasnostinv==null"></action>
+			<action if="~dtGetSocijalniStatus.@datneposrednaopasnostinv==null">
+					<action type="control value" value="#dtDatumOd" >
+						<parameter value="now" />
+					</action>
+				</action>
+			</action>
+		</event>
+		<layout>
+		<group cols="4" rows="3" groupbordervisible="true" spacing="2,2,2,2">
+			<columnsdefinition>
+						<column position="1" size="140"/>
+						<column position="2" size="130"/>
+						<column position="3" size="160"/>	
+						<column position="4" size="160"/>
+					</columnsdefinition>
+				
+				<!-- red 1 -->
+				<item row="1" col="1"  highlight="false">
+					<checkedit name="chckOsosbaSInvalidi" caption="Osoba s invaliditetom" datavalue="~dtGetSocijalniStatus.@invalidnaosoba" />
+				</item>
+				
+				<item row="1" col="2"  highlight="false">
+					<checkedit name="chckInvalidiRada" caption="Invalid rada" datavalue="~dtGetSocijalniStatus.@invalidrada" />
+				</item>
+				
+				<item row="1" col="3"  highlight="false">
+					<checkedit name="chckNeposredna" caption="Opasnost od nastanka inv." datavalue="~dtGetSocijalniStatus.@neposrednaopasnostinv" tooltip="Utvrđena je neposredna opasnost nastanka invaliditeta?" />
+				</item>
+				
+				<item row="1" col="4" caption="Datum od:"  highlight="false" >
+					<dateedit name="dtDatumOd" allownull="true" value="now"  datavalue="~dtGetSocijalniStatus.@datneposrednaopasnostinv" tooltip="Datum utvrđenja neposredne opasnosti nastanka invaliditeta">
+					</dateedit>
+				</item>
+				
+				<!-- red 2 -->
+
+				<item row="2" col="1"  highlight="false">
+					<checkedit name="chckInvalidiRVojni" caption="Invalid rata - vojni" datavalue="~dtGetSocijalniStatus.@invalidratavojni" />
+				</item>
+				<item row="2" col="2"  highlight="false">
+					<checkedit name="chckInvalidiRCivilni" caption="Invalid rata - civilni" datavalue="~dtGetSocijalniStatus.@invalidratacivilni" />
+				</item>
+				<item row="2" col="3"  highlight="false">
+					<checkedit name="chckHRVI" caption="HRVI" datavalue="~dtGetSocijalniStatus.@hrvi" tooltip="Ima li osoba status Hrvatskog Ratnog Vojnog Invalida?" />
+				</item>
+				<item row="2" col="4" caption="Broj mjeseci provedenih u HV:"  highlight="false">
+					<textedit name="txtBrojMjeseci" format="1[0-2]|[0-9]" formattype="regex"  value="0" datavalue="~dtGetSocijalniStatus.@mjeseciuhv" />
+				</item>
+
+				<!-- red 3 --> 
+				
+				
+				
+				<item row="3" col="1"  highlight="false">
+					<checkedit name="chckSamohraniR" caption="Samohrani roditelj" datavalue="~dtGetSocijalniStatus.@samohraniroditelj" />
+				</item>
+				<item row="3" col="2" caption="% invalidnosti:"  highlight="false">
+					<textedit name="txtPostotakInv"  format="n2" value="0" datavalue="~dtGetSocijalniStatus.@postotakinvalidnosti" />
+				</item>		
+				<item row="3" col="3" caption="% invalidnosti za GO:"  highlight="false">
+					<textedit name="txtPostotakInvGO"  format="n2" value="0" datavalue="~dtGetSocijalniStatus.@gopostotakinvalidnosti" />
+				</item>	
+				
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left" function="SPREMI_SOCIJALNI">
+					<event type="click">
+						<action type="validate"/>
+						
+						<action if="$HRKadroviId!=0">
+							<action type="datarun reader" value="~dtIzmjena"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<action type="control populate" value="parent.#grdPodaci"/>
+								<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+								<action type="variable value" value="global.$RefreshajMaster">
+									<parameter value="1" type="int"/>
+								</action>
+								<action type="form close"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+		<data command="spHRManagerMaster_Podaci_SocStatus_CP" name="dtGetSocijalniStatus">
+				<parameter name="@action" value="getSocStatus" />
+				<parameter name="@HRKadroviId" value="$HRKadroviId" type="int"/>
+			</data>
+			<data  command="spHRManagerMaster_Podaci_SocStatus_CP" name="dtIzmjena">
+				<parameter name="@action" value="izmjena"/>
+				<parameter name="@HRKadroviId" value="$HRKadroviId"/>
+				<parameter name="@hrvi"  value="#chckHRVI" />
+				<parameter name="@invalidratacivilni"  value="#chckInvalidiRCivilni" />
+				<parameter name="@invalidratavojni" value="#chckInvalidiRVojni"/>
+				<parameter name="@samohraniroditelj"  value="#chckSamohraniR" />
+				<parameter name="@invalidrada"  value="#chckInvalidiRada" />
+				<parameter name="@postotakinvalidnosti" value="#txtPostotakInv"/>
+				<parameter name="@gopostotakinvalidnosti"  value="#txtPostotakInvGO" />
+				<parameter name="@mjeseciuhv"  value="#txtBrojMjeseci" />
+				<parameter name="@invalidnaosoba" value="#chckOsosbaSInvalidi"/>
+				<parameter name="@neposrednaopasnostinv"  value="#chckNeposredna" />
+				<parameter name="@datneposrednaopasnostinv"  value="#dtDatumOd" />
+				<parameter name="@indGreske.output.int"/>
+			</data>
+		</datalist>
+	</form>
+</root>

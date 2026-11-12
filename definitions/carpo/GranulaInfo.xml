@@ -1,0 +1,176 @@
+<root>
+	<form type="master" caption="Granula Info">
+		<method name="funDmsAdd" dll="DmsManagerV1" class="DmsManagerV1.Start" method="AddDocuments" />
+		<method name="funDmsOpen" dll="DmsManagerV1" class="DmsManagerV1.Start" method="OpenDocument" />
+		<method name="funDmsSave" dll="DmsManagerV1" class="DmsManagerV1.Start" method="SaveDocuments" />
+		<event type="init">
+			<action type="variable value">
+				<parameter name="Global.DokId" value="0" type="int" />
+			</action>
+		</event>
+		<event type="load">
+			<action type="control populate" value="#grdDms"/>
+		</event>
+		<event type="shown">
+			<action type="variable value">
+				<parameter name="jupiterobjectId" value="#grdMaster.@jupiterobjectId" />
+			</action>
+			<action type="control populate" value="#grdDms"/>
+		</event>
+		<managerlayout>
+			<grid name="grdMaster" type="master" dataname="Global.~dtMaster" key="jupiterobjectId" autopopulate="true" async="true" savelayout="true">
+				<fields inherited="false">
+					<field name="Granula"/>
+					<field name="Parametar"/>
+					<field name="Kod"/>
+					<field name="PLM"/>
+				</fields>
+				<event type="doubleclick">
+					<action type="variable value" value="Global.$DokId">
+						<parameter value="#grdGlava.@jupiterobjectId" />
+					</action>
+					<action type="form open" value="frmInfo">
+						<parameter name="jupiterobjectId" value="#grdMaster.@jupiterobjectId"/>
+					</action>
+				</event>
+				<event type="keydown" value="13">
+					<action type="variable value" value="Global.$DokId">
+						<parameter value="#grdGlava.@jupiterobjectId" />
+					</action>
+					<action type="form open" value="frmInfo">
+						<parameter name="jupiterobjectId" value="#grdMaster.@jupiterobjectId"/>
+					</action>
+				</event>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDms"/>
+				</event>
+			</grid>
+			<tabs>
+				<tab caption="DMS">
+					<grid name="grdDms" keyfield="DokID" multiselect="true" showmenuprintitem="false" showmenutools="false" savelayout="true">
+						<data command="spCarpoDMSQuery">
+							<parameter name="@EntityName" value="GranulaInfo"/>
+							<parameter name="@Id" value="#grdMaster.@JupiterObjectId"/>
+						</data>
+						<menu>
+							<menuitem caption="Pogledaj">
+								<event type="click">
+									<action type="method run" value="funDmsOpen">
+										<parameter name="server" value="@@server" />
+										<parameter name="database" value="@@database" />
+										<parameter name="username" value="" />
+										<parameter name="password" value="" />
+										<parameter name="operateriid" value="@@operateriid" />
+										<parameter name="dokID" value="#grdDms.@DokID" />
+										<parameter name="name" value="#grdDms.@naziv" />
+									</action>
+								</event>
+							</menuitem>
+							<!-- Parametri potrebni za poziv Dms metode za spremanje dokumenata -->
+							<menuitem caption="Spremi na disk">
+								<event type="click">
+									<action type="method run" value="funDmsSave">
+										<parameter name="server" value="@@server" />
+										<parameter name="database" value="@@database" />
+										<parameter name="username" value="" />
+										<parameter name="password" value="" />
+										<parameter name="operaterid" value="@@operateriid" />
+										<parameter name="dokIDs" value="#grdDms.selectedids" />
+									</action>
+								</event>
+							</menuitem>
+							<menuitem caption="Obriši" function="DokObrisi">
+								<event type="click">
+									<action type="confirm" value="Želite li sigurno obrisati označeni(e) dokument(e)?">
+										<action type="datarun nonquery" value="~dtDeleteDoc" />
+										<action type="control populate" value="#grdDms" />
+									</action>
+								</event>
+							</menuitem>
+						</menu>
+						<!-- Parametri potrebni za poziv Dms metode za otvaranje dokumenata -->
+						<event type="doubleclick">
+							<action type="method run" value="funDmsOpen">
+								<parameter name="server" value="@@server" />
+								<parameter name="database" value="@@database" />
+								<parameter name="username" value="" />
+								<parameter name="password" value="" />
+								<parameter name="operateriid" value="@@operateriid" />
+								<parameter name="dokID" value="#grdDms.@DokID" />
+								<parameter name="name" value="#grdDms.@naziv" />
+							</action>
+						</event>
+						<fields inherited="true">
+							<field name="Naziv" fontbold="true" />
+							<field name="Size" caption="Size [KB]" />
+						</fields>
+					</grid>
+				</tab>
+				<tab caption="Detalj">
+					<grid name="grdDetalj" showgrouppanel="false" showautofilterrow="true" savelayout="false" bestfitonrefresh="true" keyfield="">
+						<fields inherited="true">
+							<field/>
+							<field/>
+						</fields>
+					</grid>
+				</tab>
+			</tabs>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnInfo" caption="&amp;INFO" type="add">
+					<event type="click">
+						<action type="variable value" value="Global.$DokId">
+							<parameter value="#grdGlava.@jupiterobjectId" />
+						</action>
+						<action type="form open" value="frmInfo">
+							<parameter name="jupiterobjectId" value="#grdMaster.@jupiterobjectId"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnPovezi" caption="&amp;Dodaj dokument" function="DokDodaj">
+					<event type="click">
+						<action type="method run" value="funDmsAdd">
+							<parameter name="server" value="@@server" />
+							<parameter name="database" value="@@database"/>
+							<parameter name="username" value="" />
+							<parameter name="password" value="" />
+							<parameter name="operaterid" value="@@operateriid" />
+							<parameter name="EntityName" value="GranulaInfo" />
+							<parameter name="entityID" value="#grdMaster.@JupiterObjectId" />
+							<parameter name="tipInserta" value="windows" />
+						</action>
+						<action type="control populate" value="#grdDms" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spCarpoDMSQuery" name="dtDms">
+				<parameter name="@EntityName" value="GranulaInfo"/>
+				<parameter name="@Id" value="#grdMaster.@JupiterObjectId"/>
+			</data>
+			<data command="spCarpoDMSAzur" name="dtDeleteDoc">
+				<parameter name="@Action" value="Delete"/>
+				<parameter name="@EntityName" value="GranulaInfo"/>
+				<parameter name="@selectedids" value="#grdDms.selectedids"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmInfo" path="frmInfo.xml" />
+	<datalist>
+		<data command="spGranulaInfo_GlaGrid" name="dtMaster" />
+		<data command="spGranulaInfo_QueryCarpo" name="dtGet">
+			<parameter name="@Id" value="$jupiterobjectId" />
+		</data>
+		<data command="spGranulaInfo_Export" name="dtExport">
+			<parameter name="@JupiterObjectId" value="$jupiterObjectId" />
+		</data>
+		<data command="spGranulaInfo_ExportNazivDok" name="dtExportNazivDok">
+			<parameter name="@JupiterObjectId" value="$jupiterObjectId" />
+		</data>
+		<data command="spGranulaInfo_ExportPutanjaDok" name="dtExportPutanjaDok">
+			<parameter name="@Login" value="@@Login" />
+		</data>
+	</datalist>
+</root>

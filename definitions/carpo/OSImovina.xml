@@ -1,0 +1,794 @@
+﻿<root version="1.0">
+
+	<!--*****************************************IMOVINA****************************************-->
+
+	<form name="frmMaster" type="master" caption="Imovina" >
+		<method name="funDmsAdd" dll="DmsManagerV1" class="DmsManagerV1.Start" method="AddDocuments" />
+		<method name="funDmsOpen" dll="DmsManagerV1" class="DmsManagerV1.Start" method="OpenDocument" />
+		<method name="funDmsSave" dll="DmsManagerV1" class="DmsManagerV1.Start" method="SaveDocuments" />
+		<method name="fnDimenzije" dll="Dimenzije" class="DimenzijeNet.DimenzijeCarpo" method="run" />
+		<event type="init">
+			<action type="datarun reader" value="~dtOSBrisanje" />
+			<action type="datarun reader" value="~dtOSDMS" />
+			<action type="datarun reader" value="~dtTudjaUlaganjaTab" />
+			<action type="datarun reader" value="~dtDimenzijeGumb" />
+			<action type="variable value">
+				<parameter name="Click" value="" type="string"/>
+			</action>
+		</event>
+		<event type="onshown">
+			<action type="control visible" value="#btnPovezi" if="~dtOSDMS.@Postavka==0">
+				<parameter value="false"/>
+			</action>
+			<action type="control visible" value="#btnDimenzije" if="~dtDimenzijeGumb.@Postavka==0">
+				<parameter value="false"/>
+			</action>
+			<action if="#tabs.selectedtab==Financijski">
+				<action type="control disable" value="#btnPovezi" />
+				<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdFinancijski.@StatusId==2||#grdFinancijski.rowcount==0" />
+				<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+			</action>
+			<action elseif="#tabs.selectedtab==Smjestajni">
+				<action type="control disable" value="#btnPovezi" />
+				<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdSmjestaj.@StatusId==2||#grdSmjestaj.rowcount==0" />
+				<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+			</action>
+			<action elseif="#tabs.selectedtab==Trosak">
+				<action type="control disable" value="#btnPovezi" />
+				<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdTrosak.rowcount==0" />
+				<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+			</action>
+			<action elseif="#tabs.selectedtab==Obracunski">
+				<action type="control disable" value="#btnPovezi" />
+				<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdObracunski.rowcount==0" />
+				<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+			</action>
+			<action elseif="#tabs.selectedtab==Statusi">
+				<action type="control disable" value="#btnPovezi" />
+				<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdStatusi.rowcount==0" />
+				<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+			</action>
+			<action elseif="#tabs.selectedtab==Klase">
+				<action type="control disable" value="#btnPovezi" />
+				<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdKlase.rowcount==0" />
+				<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+			</action>
+			<action elseif="#tabs.selectedtab==Dodatni">
+				<action type="control disable" value="#btnPovezi" />
+				<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdDodatni.rowcount==0" />
+				<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+			</action>
+			<action elseif="#tabs.selectedtab==Sastavnice">
+				<action type="control disable" value="#btnPovezi" />
+				<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdSastavnice.rowcount==0" />
+				<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+			</action>
+			<action elseif="#tabs.selectedtab==DMS">
+				<action type="control enable" value="#btnPovezi" />
+				<action type="control disable" value="#btnUnos,#btnIzmjena,#btnBrisanje" />
+				<action type="control enable" value="#btnUnos,#btnIzmjena,#btnBrisanje" else="" />
+			</action>
+		</event>
+
+		<managerlayout>
+			<!--filter drveta-->
+			<lookup name="filter" >
+				<comboitem value="Grupe"/>
+				<comboitem value="Statusi" />
+				<comboitem value="Vrste"/>
+				<comboitem value="Klase"/>
+				<comboitem value="Organizacijske jedinice"/>
+				<comboitem value="Filter imovine"/>
+				<event type="valuechanged">
+					<action type="variable value">
+						<parameter name="global.filter" value="#filter" />
+					</action>
+				</event>
+			</lookup>
+
+			<!--*****stablo*****-->
+			<tree name="tree"  keyfield="OSImovinaId"  filtermode="smart" expandedlevel="2" dataname="dtTree">
+
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdImovina" />
+				</event>
+				<fields>
+					<field name="Naziv" />
+				</fields>
+			</tree>
+
+			<!--Grid Glava-->
+			<grid name="grdImovina" key="OSImovinaId" type="master" async="true" dataname="dtMaster" preventfocusgroup="false" fieldsmartspaces="false" multiselect="true" bestfitonrefresh="true" savelayout="true">
+				<fields inherited="true">
+					<field name="InvBroj" caption="Inv. broj"  fixed="true"/>
+					<field name="Naziv" caption="Naziv" fixed="true"/>
+					<field name="Opis" fixwidth="500" rowautoheight="true"/>
+					<!--treba nam barem jedan IF na bilo koje polje da krenemo u reincijalizaciju polja kako bismo mogli pronaći OsImovinaSmjestajDetId-->
+					<field name="DatumNabave" caption="Datum nabave"  />
+					<field name="DatumAktiviranja" caption="Datum aktiviranja"  />
+					<field name="DatumOtpisa" caption="Datum početka otpisa"  />
+					<field name="Status" caption="Status"  />
+					<field name="Grupa" caption="Grupa"  />
+					<field name="Vrsta" caption="Vrsta"  />
+					<field name="TipAmortizacije" caption="Tip amortizacije"  />
+					<field name="RedovnaStopa" caption="Redovna stopa"  />
+					<field name="UbrzanaStopa" caption="Ubrzana stopa"  />
+					<field name="JednokratnaStopa" caption="Jednokratna stopa"  />
+					<field name="UmanjenaStopa" caption="Umanjena stopa"  />
+					<field name="MjestoTroska" caption="Mjesto troška"  />
+					<field name="KontoNabave" caption="Konto nabave"  />
+					<field name="KontoPripreme" caption="Konto pripreme"  />
+					<field name="KontoIspravka" caption="Konto ispravka"  />
+					<field name="KontoTroska" caption="Konto troška"  />
+					<field name="ZaduzeniSmjestaj" caption="Zaduženi smještaj"  />
+				</fields>
+				<!--desni klik za brisanje-->
+				<menu>
+					<menuitem caption="Razduži imovinu" name="menRazdIm" sort="1">
+						<event type="click">
+							<action type="form open" value="frmIzmjSmj" >
+								<parameter name="SelectedIds" value="#grdImovina.selectedids" />
+								<parameter name="Tip" value="Razduzenje" />
+								<parameter name="caption" value="Razduženje imovine" />
+							</action>
+							<action type="control populate" value="#grdImovina" />
+						</event>
+					</menuitem>
+					<menuitem caption="Izmijeni smještaj" name="menIzmjSmj" sort="2">
+						<event type="click">
+							<action type="form open" value="frmIzmjSmj" >
+								<parameter name="SelectedIds" value="#grdImovina.selectedids" />
+								<parameter name="Tip" value="Prezaduzenje" />
+								<parameter name="caption" value="Izmjena smještaja imovine" />
+							</action>
+							<action type="control populate" value="#grdImovina" />
+						</event>
+					</menuitem>
+					<menuitem caption="Izmijeni status" name="menIzmjStat" sort="3">
+						<event type="click">
+							<action type="form open" value="frmIzmjStat" >
+								<parameter name="SelectedIds" value="#grdImovina.selectedids" />
+								<parameter name="Tip" value="Statusi" />
+								<parameter name="caption" value="Izmjena statusa imovine" />
+							</action>
+							<action type="control populate" value="#grdImovina" />
+						</event>
+					</menuitem>
+					<menuitem caption="Izmijeni mjesto troška" name="menIzmjTro" sort="4">
+						<event type="click">
+							<action type="form open" value="frmIzmjTro" >
+								<parameter name="SelectedIds" value="#grdImovina.selectedids" />
+								<parameter name="Tip" value="Mjesto troska" />
+								<parameter name="caption" value="Izmjena mjesta troška imovine" />
+							</action>
+							<action type="control populate" value="#grdImovina" />
+						</event>
+					</menuitem>
+					<menuitem caption="Izmijeni obračunske podatke" name="menIzmjObr" sort="5">
+						<event type="click">
+							<action type="form open" value="frmIzmjObr" >
+								<parameter name="SelectedIds" value="#grdImovina.selectedids" />
+								<parameter name="Tip" value="Obracunski podaci" />
+								<parameter name="caption" value="Izmjena obračunskih podataka" />
+							</action>
+							<action type="control populate" value="#grdImovina" />
+						</event>
+					</menuitem>
+
+					<!-- BRISANJE IMOVINE ONEMOGUĆENO NA ZAHTJEV KORISNIKA-->
+					<menuitem caption="Obriši" name="menObrisi" sort="6" function="ObrisiOS">
+						<event type="click">
+							<action type="validate"/>
+							<action type="datarun reader" value="~dtKontrolaBrisanje" />
+							<action type="confirm" value="Da li ste sigurni da želite obrisati imovinu?" if="~dtKontrolaBrisanje.@Id==0">
+								<action type="datarun reader" value="~dtDelImovina"  waittype="progress" waitcaption="Pričekajte..." waittext="..brisanje u tijeku..."/>
+								<action type="message" value="~dtDelImovina.@Poruka" />
+							</action>
+							<action type="message" value="~dtKontrolaBrisanje.@Poruka" if="#dtKontrolaBrisanje.@Id!=0"/>
+							<action type="control populate" value="#grdImovina" if="~dtDelImovina.@IndGreska==0"/>
+						</event>
+					</menuitem>
+					<!--<menuitem type="separator"/>-->
+					<!--kartica os-->
+					<menuitem caption="Kartica OS" sort="7">
+						<event type="click">
+							<action type="form open" value="frmOSKartica" >
+								<parameter name="OSImovinaId" value="#grdImovina.@OSImovinaId" type="int" />
+								<parameter name="NabavaRootId" value="0" type="int" />
+								<parameter name="NazivImovina" value="{#grdImovina.@InvBroj} {#grdImovina.@Naziv}" />
+							</action>
+						</event>
+					</menuitem>
+          <menuitem type="separator"/>
+          <menuitem caption="Kopiranje OS" sort="8">
+            <event type="click">
+              <action type="form open" value="frmKopiranje" >
+                <parameter name="OSImovinaId" value="#grdImovina.@OSImovinaId" type="int" />
+                <parameter name="Tip" value="Kopiranje OS" />
+                <parameter name="Caption" value="Kopiranje podataka za {#grdImovina.@InvBroj} {#grdImovina.@Naziv}" />
+              </action>
+            </event>
+          </menuitem>
+
+
+				</menu>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdFinancijski"/>
+					<action type="control populate" value="#grdSmjestaj"></action>
+					<action type="control populate" value="#grdTrosak"></action>
+					<action type="control populate" value="#grdObracunski"></action>
+					<action type="control populate" value="#grdStatusi"></action>
+					<action type="control populate" value="#grdKlase"></action>
+					<action type="control populate" value="#grdOsnovni"></action>
+					<action type="control populate" value="#grdDodatni"></action>
+					<action type="control populate" value="#grdSastavnice"></action>
+					<action type="control populate" value="#grddms"></action>
+					<action type="control populate" value="#grdTudjaUlaganja"></action>
+
+					<!--prvo enejblaj sve gumbe, a onda hendlaj ponašanje-->
+					<action type="control enable" value="#btnUnos,#btnIzmjena,#btnBrisanje"/>
+					<action if="#tabs.selectedtab==Financijski">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdFinancijski.@StatusId==2||#grdFinancijski.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Smjestajni">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdSmjestaj.@StatusId==2||#grdSmjestaj.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Trosak">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdTrosak.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Obracunski">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdObracunski.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Statusi">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdStatusi.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Klase">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdKlase.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Dodatni">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdDodatni.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Sastavnice">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdSastavnice.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==DMS">
+						<action type="control enable" value="#btnPovezi" />
+						<action type="control disable" value="#btnUnos,#btnIzmjena,#btnBrisanje" />
+						<action type="control enable" value="#btnUnos,#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<!--dodao i ovo obzirom se osnovni podaci mogu SAMO mijenjati-->
+					<action elseif="#tabs.selectedtab==Osnovni">
+						<action type="control disable" value="#btnUnos,#btnBrisanje"/>
+					</action>
+					<action type="menu enable" value="#menObrisi" if="~dtOSBrisanje.@Postavka==0&amp;&amp;global.$filter!=Filter imovine"/>
+					<action type="menu disable" value="#menObrisi" else="" />
+					<action type="menu enable" value="#menIzmjSmj" if="global.$filter==Filter imovine"/>
+					<action type="menu disable" value="#menIzmjSmj" else="" />
+					<action type="menu enable" value="#menRazdIm" if="global.$filter==Filter imovine"/>
+					<action type="menu disable" value="#menRazdIm" else="" />
+					<action type="menu enable" value="#menIzmjStat" if="global.$filter==Filter imovine"/>
+					<action type="menu disable" value="#menIzmjStat" else="" />
+					<action type="menu enable" value="#menIzmjTro" if="global.$filter==Filter imovine"/>
+					<action type="menu disable" value="#menIzmjTro" else="" />
+					<action type="menu enable" value="#menIzmjObr" if="global.$filter==Filter imovine"/>
+					<action type="menu disable" value="#menIzmjObr" else="" />
+				</event>
+			</grid>
+			<!--TABOVI u detalju-->
+			<tabs name="tabs">
+				<event type="selectedtabchanged">
+					<!--prvo enejblaj sve gumbe, a onda hendlaj ponašanje-->
+					<action type="control enable" value="#btnUnos,#btnIzmjena,#btnBrisanje"/>
+					<action type="control disable" value="#btnUnos" if="#tabs.selectedtab==Osnovni" />
+					<action type="control enable" value="#btnUnos" else="" />
+					<action type="control disable" value="#btnBrisanje" if="#tabs.selectedtab==Osnovni" />
+					<action type="control enable" value="#btnBrisanje" else="" />
+					<action if="#tabs.selectedtab==Financijski">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdFinancijski.@StatusId==2||#grdFinancijski.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Smjestajni">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdSmjestaj.@StatusId==2||#grdSmjestaj.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Trosak">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdTrosak.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Obracunski">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdObracunski.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Statusi">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdStatusi.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Klase">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdKlase.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Dodatni">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdDodatni.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==Sastavnice">
+						<action type="control disable" value="#btnPovezi" />
+						<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdSastavnice.rowcount==0" />
+						<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+					<action elseif="#tabs.selectedtab==DMS">
+						<action type="control enable" value="#btnPovezi" />
+						<action type="control disable" value="#btnUnos,#btnIzmjena,#btnBrisanje" />
+						<action type="control enable" value="#btnUnos,#btnIzmjena,#btnBrisanje" else="" />
+					</action>
+				</event>
+				<tab caption="Promet financijski" name="Financijski">
+					<grid name="grdFinancijski" dataname="dtFinancijski" fieldsmartspaces="false" bestfitonrefresh="true">
+						<fields inherited="true">
+							<field name="DatumPromjene" caption="Datum stavke"/>
+						</fields>
+						<menu>
+							<menuitem caption="Otključaj dokument" name="menOtklj" sort="1" function="OtkljucajOSFin">
+								<event type="click">
+									<action type="confirm" value="Da li ste sigurni da želite otključati dokument?" >
+										<!--<action type="message" value="#grdInvImovina.selectedids" />-->
+										<action type="datarun reader" value="~dtOtkljucaj"  />
+									</action>
+									<action type="control populate" value="#grdFinancijski" />
+								</event>
+							</menuitem>
+							<menuitem caption="Zaključi dokument" name="menZaklj" sort="2" function="ZakluciOSFin">
+								<event type="click">
+									<action type="confirm" value="Da li ste sigurni da želite zaključiti dokument?" >
+										<!--<action type="message" value="#grdInvImovina.selectedids" />-->
+										<action type="datarun reader" value="~dtZaključaj"  />
+									</action>
+									<action type="control populate" value="#grdFinancijski" />
+								</event>
+							</menuitem>
+						</menu>
+						<event type="focusedrowchanged" >
+							<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdFinancijski.@StatusId==2" />
+							<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+							<action type="menu enable" value="#menOtklj" if="#grdFinancijski.@StatusId==2"/>
+							<action type="menu disable" value="#menOtklj" else="" />
+							<action type="menu enable" value="#menZaklj" if="#grdFinancijski.@StatusId==1"/>
+							<action type="menu disable" value="#menZaklj" else="" />
+						</event>
+						<styles>
+							<style name="fontcolor" value="#000000" if="#grdFinancijski.@statusid==1" />
+							<style name="fontcolor" value="#008000" if="#grdFinancijski.@statusid==2" />
+						</styles>
+					</grid>
+				</tab>
+				<tab caption="Promet smještaj" name="Smjestajni">
+					<grid name="grdSmjestaj" dataname="dtSmjestaj" fieldsmartspaces="false" bestfitonrefresh="true">
+						<fields inherited="true">
+							<field name="DatumDok" caption="Datum dokumenta"/>
+						</fields>
+						<menu>
+							<menuitem caption="Otključaj dokument" name="menOtkljS" sort="1" function="OtkljucajOSSmj">
+								<event type="click">
+									<action type="confirm" value="Da li ste sigurni da želite otključati dokument?" >
+										<!--<action type="message" value="#grdInvImovina.selectedids" />-->
+										<action type="datarun reader" value="~dtOtkljucajDok"  />
+									</action>
+									<action type="control populate" value="#grdSmjestaj" />
+								</event>
+							</menuitem>
+							<menuitem caption="Zaključi dokument" name="menZakljS" sort="2" function="ZakljucajOSSmj">
+								<event type="click">
+									<action type="confirm" value="Da li ste sigurni da želite zaključiti dokument?" >
+										<!--<action type="message" value="#grdInvImovina.selectedids" />-->
+										<action type="datarun reader" value="~dtZaključajDok"  />
+									</action>
+									<action type="control populate" value="#grdSmjestaj" />
+								</event>
+							</menuitem>
+						</menu>
+						<event type="focusedrowchanged" >
+							<action type="control disable" value="#btnIzmjena,#btnBrisanje" if="#grdSmjestaj.@StatusId==2" />
+							<action type="control enable" value="#btnIzmjena,#btnBrisanje" else="" />
+							<action type="menu enable" value="#menOtkljS" if="#grdSmjestaj.@StatusId==2"/>
+							<action type="menu disable" value="#menOtkljS" else="" />
+							<action type="menu enable" value="#menZakljS" if="#grdSmjestaj.@StatusId==1"/>
+							<action type="menu disable" value="#menZakljS" else="" />
+						</event>
+
+						<styles>
+							<style name="fontcolor" value="#000000" if="#grdSmjestaj.@statusid==1" />
+							<style name="fontcolor" value="#008000" if="#grdSmjestaj.@statusid==2" />
+						</styles>
+					</grid>
+				</tab>
+				<tab caption="Mjesto troška" name="Trosak">
+					<grid name="grdTrosak" dataname="dtTrosak"  fieldsmartspaces="false" bestfitonrefresh="true">
+					</grid>
+				</tab>
+				<tab caption="Obračunski podaci" name="Obracunski">
+					<grid name="grdObracunski" dataname="dtObracunski" fieldsmartspaces="false" bestfitonrefresh="true">
+					</grid>
+				</tab>
+				<tab caption="Statusi" name="Statusi">
+					<grid name="grdStatusi" dataname="dtStatusi"  fieldsmartspaces="false" bestfitonrefresh="true">
+					</grid>
+				</tab>
+				<tab caption="Klase" name="Klase">
+					<grid name="grdKlase" dataname="dtKlase"  fieldsmartspaces="false" bestfitonrefresh="true">
+					</grid>
+				</tab>
+				<tab caption="Osnovni podaci" name="Osnovni">
+					<grid name="grdOsnovni" dataname="dtOsnovni" fieldsmartspaces="false" bestfitonrefresh="true">
+					</grid>
+				</tab>
+				<tab caption="Dodatni podaci" name="Dodatni">
+					<grid name="grdDodatni" dataname="dtDodatni" bestfitonrefresh="true" fieldsmartspaces="false" >
+						<fields inherited="true">
+							<field name="Vrijednost" caption="Vrijednost" rowautoheight="true" />
+						</fields>
+					</grid>
+				</tab>
+				<tab caption="Sastavnice" name="Sastavnice">
+					<grid name="grdSastavnice" dataname="dtSastavnice" bestfitonrefresh="true" fieldsmartspaces="false" >
+					</grid>
+				</tab>
+				<tab caption="DMS" if="~dtOSDMS.@Postavka==1" name="DMS">
+					<grid name="grdDms" keyfield="DokId" multiselect="true" dataname="dtDms" showmenuprintitem = "false" showmenutools = "false" savelayout="true" fieldsmartspaces="false" bestfitonrefresh="true">
+						<menu>
+							<menuitem caption="Spremi na disk" >
+								<event type="click">
+									<action type="method run" value="funDmsSave">
+										<parameter name="server" value="@@server" />
+										<parameter name="database" value="@@database" />
+										<parameter name="username" value="" />
+										<parameter name="password" value="" />
+										<parameter name="operaterid" value="@@operateriid" />
+										<parameter name="dokIds" value="#grdDms.selectedids" />
+									</action>
+								</event>
+							</menuitem>
+							<menuitem caption="Obriši" function="dmsobrisi">
+								<event type="click">
+									<action type="confirm" value="Želite li sigurno obrisati označeni(e) dokument(e)?">
+										<action type="datarun nonquery"   value="~dtDeleteDoc"/>
+										<action type="control populate" value="#grdDms"/>
+									</action>
+								</event>
+							</menuitem>
+
+						</menu>
+						<event type="doubleclick">
+							<action type="method run" value="funDmsOpen" >
+								<parameter name="server" value="@@server" />
+								<parameter name="database" value="@@database" />
+								<parameter name="username" value="" />
+								<parameter name="password" value="" />
+								<parameter name="operaterid" value="@@operateriid" />
+								<parameter name="dokId" value="#grdDms.@DokID" />
+								<parameter name="name" value="#grdDms.@Naziv" />
+							</action>
+						</event>
+						<fields inherited="true">
+							<field name="Naziv" fontbold="true"/>
+							<field name="Size" caption="Size [KB]"/>
+						</fields>
+					</grid>
+				</tab>
+				<tab caption="Tuđa ulaganja" if="~dtTudjaUlaganjaTab.@Postavka==1">
+					<grid name="grdTudjaUlaganja" dataname="dtTudjaUlaganja"  fieldsmartspaces="false">
+						<fields inherited="true">
+							<field name="Postotak" format="n8"/>
+						</fields>
+					</grid>
+				</tab>
+			</tabs>
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<!--<button caption="Test">
+          <event type="click">
+            <action type="control focus" value="#tree">
+              <parameter value="2" type="int"/>
+            </action>
+            <action type="control focus" value="#grdImovina">
+              <parameter value="7164" type="int"/>
+            </action>
+          </event>
+        </button>-->
+				<button name="btnUnosImovine" caption="Unos novog OS" function="UnosOS">
+					<event type="click">
+						<action type="form open" value="frmNoviUnos">
+							<parameter name="Caption" value="Unos nove imovine"/>
+							<parameter name="Tip" value="Unos novo"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnPretraga" caption="Pretraga OS">
+					<event type="click">
+						<action type="form open" value="frmPretraga">
+							<parameter name="Caption" value="Pretraga imovine"/>
+							<parameter name="Tip" value="Pretraga"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnFilter" caption="Filtriranje OS" function="FiltriranjeOS">
+					<event type="click">
+						<action type="form open" value="frmFilter">
+							<parameter name="Caption" value="Filtriranje imovine"/>
+							<parameter name="Tip" value="Filter"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnUnos" caption="Unesi" begingroup="true" function="UnesiOSTab">
+					<event type="click">
+						<action type="variable value" value="$Click">
+							<parameter value="Unos"/>
+						</action>
+						<part name="prtClick" path="prtUnosIzmjena.xml"/>
+					</event>
+					<action type="control populate" value="#grdGlava" />
+				</button>
+				<button name="btnIzmjena" caption="Izmijeni" function="IzmijeniOSTav">
+					<event type="click">
+						<action type="variable value" value="$Click" >
+							<parameter value="Izmjena"/>
+						</action>
+						<action if="#tabs.selectedtab==Smjestajni">
+							<action type="datarun reader" value="~dtKontrolaIzmjena"/>
+							<action type="message" value="~dtKontrolaIzmjena.@Poruka" if="~dtKontrolaIzmjena.@IndGreska==1"/>
+							<action type="variable value" value="$Click" if="~dtKontrolaIzmjena.@IndGreska==0">
+								<parameter value="Izmjena"/>
+							</action>
+							<action type="variable value" value="$Click" elseif="~dtKontrolaIzmjena.@IndGreska==1">
+								<parameter value="Greska"/>
+							</action>
+						</action>
+						<action  if="#tabs.selectedtab==Financijski">
+							<action type="datarun reader" value="~dtKontrolaIzmjenaFin"/>
+							<action type="message" value="~dtKontrolaIzmjenaFin.@Poruka" if="~dtKontrolaIzmjenaFin.@IndGreska==1"/>
+							<action type="variable value" value="$Click" if="~dtKontrolaIzmjenaFin.@IndGreska==0">
+								<parameter value="Izmjena"/>
+							</action>
+							<action type="variable value" value="$Click" elseif="~dtKontrolaIzmjenaFin.@IndGreska==1">
+								<parameter value="Greska"/>
+							</action>
+						</action>
+						<action if="$Click!=Greska">
+							<part name="prtClick" path="prtUnosIzmjena.xml" />
+						</action>
+					</event>
+				</button>
+				<button name="btnBrisanje" caption="Obriši" function="BrisiOSTab">
+					<event type="click">
+						<action type="variable value" value="$Click">
+							<parameter value="Brisanje"/>
+						</action>
+						<part name="prtClick" path="prtUnosIzmjena.xml"/>
+					</event>
+					<action type="control populate" value="#grdGlava" />
+				</button>
+
+				<button name="btnPovezi" caption="&amp;Dodaj dokument" begingroup="true" function="DMSOS">
+					<event type="click">
+						<action type="method run" value="funDmsAdd">
+							<parameter name="server" value="@@server" />
+							<parameter name="database" value="@@database" />
+							<parameter name="username" value="" />
+							<parameter name="password" value="" />
+							<parameter name="operaterid" value="@@operateriid"/>
+							<parameter name="entityName" value="OSImovina" />
+							<parameter name="entityId" value="#grdImovina.@OSImovinaId" />
+						</action>
+						<action type="control populate" value="#grdDms"/>
+					</event>
+				</button>
+				<button name="btnDimenzije"  caption="Dimenzije" begingroup="true" >
+					<event type="click">
+						<action type="method run" value="fnDimenzije">
+							<parameter name="server" value="@@server" />
+							<parameter name="database" value="@@database" />
+							<parameter name="username" value="@@username" />
+							<parameter name="password" value="" />
+							<parameter name="OperateriId" value="@@operateriid" />
+							<parameter name="Parent" value="0" />
+							<parameter name="pTop" value="0" />
+							<parameter name="pLeft" value="0" />
+							<parameter name="path" value="" />
+							<parameter name="tip" value="OSTrosakId" />
+							<parameter name="id" value="#grdTrosak.@OSTrosakId" />
+							<parameter name="glaid" value="0" />
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="spOSImovinaTreeQueryCP" name="dtTree">
+				<parameter name="@Action" value="Grupe_tree" if="global.$filter==Grupe"/>
+				<parameter name="@Action" value="Statusi_tree" elseif="global.$filter==Statusi"/>
+				<parameter name="@Action" value="Vrste_tree" elseif="global.$filter==Vrste"/>
+				<parameter name="@Action" value="Klase_tree" elseif="global.$filter==Klase"/>
+				<parameter name="@Action" value="OrganizacijskeJedinice_tree" elseif="global.$filter==Organizacijske jedinice"/>
+				<parameter name="@Action" value="FilterImovine_tree" elseif="global.$filter==Filter imovine"/>
+			</data>
+			<!--data koji puni oba grida-->
+			<data command="spOSImovinaMasterQueryCP" name="dtMaster">
+				<parameter name="@Action" value="Master"/>
+				<parameter name="@OperateriId"  value="@@OperateriId" />
+				<parameter name="@OSGrupeId" if="global.$filter==Grupe" value="#tree.@ID" />
+				<parameter name="@OSStatusiId" if="global.$filter==Statusi" value="#tree.@ID" />
+				<parameter name="@OSVrsteId" if="global.$filter==Vrste" value="#tree.@ID" />
+				<parameter name="@OSKlaseId" if="global.$filter==Klase" value="#tree.@ID" />
+				<parameter name="@OrgShemaId" if="global.$filter==Organizacijske jedinice" value="#tree.@ID" />
+				<parameter name="@OSFilterId" if="global.$filter==Filter imovine" value="#tree.@ID" />
+			</data>
+			<data command="spOSImovinaDetaljQueryCP" name="dtFinancijski">
+				<parameter name="@Action" value="Tab_Financijski"/>
+				<parameter name="@OSImovinaId" value="#grdImovina.@OSImovinaId"/>
+			</data>
+			<data command="spOSImovinaDetaljQueryCP" name="dtSmjestaj">
+				<parameter name="@Action" value="Tab_Smještaj"/>
+				<parameter name="@OSImovinaId" value="#grdImovina.@OSImovinaId"/>
+			</data>
+			<data command="spOSImovinaDetaljQueryCP" name="dtTrosak">
+				<parameter name="@Action" value="Tab_Trošak"/>
+				<parameter name="@OSImovinaId" value="#grdImovina.@OSImovinaId"/>
+			</data>
+			<data command="spOSImovinaDetaljQueryCP" name="dtObracunski">
+				<parameter name="@Action" value="Tab_Obračunski"/>
+				<parameter name="@OSImovinaId" value="#grdImovina.@OSImovinaId"/>
+			</data>
+			<data command="spOSImovinaDetaljQueryCP" name="dtStatusi">
+				<parameter name="@Action" value="Tab_Statusi"/>
+				<parameter name="@OSImovinaId" value="#grdImovina.@OSImovinaId" />
+			</data>
+			<data command="spOSImovinaDetaljQueryCP" name="dtKlase">
+				<parameter name="@Action" value="Tab_Klase"/>
+				<parameter name="@OSImovinaId" value="#grdImovina.@OSImovinaId"/>
+			</data>
+			<data command="spOSImovinaDetaljQueryCP" name="dtOsnovni">
+				<parameter name="@Action" value="Tab_Osnovni"/>
+				<parameter name="@OSImovinaId" value="#grdImovina.@OSImovinaId"/>
+			</data>
+			<data command="spOSImovinaDetaljQueryCP" name="dtDodatni">
+				<parameter name="@Action" value="Tab_Dodatni"/>
+				<parameter name="@OSImovinaId" value="#grdImovina.@OSImovinaId"/>
+			</data>
+			<data command="spOSImovinaDetaljQueryCP" name="dtSastavnice">
+				<parameter name="@Action" value="Tab_Sastavnice"/>
+				<parameter name="@OSImovinaId" value="#grdImovina.@OSImovinaId"/>
+			</data>
+			<data command="spOSImovina_AzurCP" name="dtKontrolaBrisanje">
+				<parameter name="@Action" value="Kontrola_Brisanje"/>
+				<parameter name="@OSImovinaId" value="#grdImovina.@OSImovinaId"/>
+			</data>
+			<data command="spOSImovina_AzurCP" name="dtDelImovina">
+				<parameter name="@Action" value="Brisanje" />
+				<parameter name="@OSImovinaId" value="#grdImovina.@OSImovinaId" />
+			</data>
+			<!--zaključavanje i otključavanje dokumenata-->
+			<data command="spOSPrometFin_GlaAzur" name="dtOtkljucaj">
+				<parameter name="@Action" value="11"/>
+				<parameter name="@OSPrometGlaId" value="#grdFinancijski.@OSPrometGlaId"/>
+			</data>
+			<data command="spOSPrometFin_GlaAzur" name="dtZaključaj">
+				<parameter name="@Action" value="10"/>
+				<parameter name="@OSPrometGlaId" value="#grdFinancijski.@OSPrometGlaId"/>
+			</data>
+			<data command="spOSImovinaSmjestaj_AzurCP" name="dtOtkljucajDok">
+				<parameter name="@Action" value="Otkljucavanje"/>
+				<parameter name="@OSImovinaSmjestajGlaId" value="#grdSmjestaj.@OSImovinaSmjestajGlaId"/>
+			</data>
+			<data command="spOSImovinaSmjestaj_AzurCP" name="dtZaključajDok">
+				<parameter name="@Action" value="Zakljucavanje"/>
+				<parameter name="@OSImovinaSmjestajGlaId" value="#grdSmjestaj.@OSImovinaSmjestajGlaId"/>
+			</data>
+			<data command="spOSImovina_HelpCP" name="dtOSBrisanje">
+				<parameter name="@Action" value="OSBrisanje"/>
+			</data>
+			<data command="spOSImovina_HelpCP" name="dtOSDMS">
+				<parameter name="@Action" value="DMSGrid"/>
+			</data>
+			<data command="spOSImovinaSmjestaj_HelpCP" name="dtKontrolaIzmjena">
+				<parameter name="@Action" value="Kontrola_blokade"/>
+				<parameter name="@DatumDok" value="#grdSmjestaj.@DatumDok"/>
+			</data>
+			<data command="spOSPrometFin_Help" name="dtKontrolaIzmjenaFin">
+				<parameter name="@Action" value="Kontrola_blokade_fin"/>
+				<parameter name="@TemDatum" value="#grdFinancijski.@TemDatum"/>
+			</data>
+			<data command="spOSImovina_HelpCP" name="dtDimenzijeGumb">
+				<parameter name="@Action" value="DimenzijeGumb"/>
+			</data>
+			<data command="spCarpoDMSQuery" name="dtDms">
+				<parameter name="@EntityName" value="OSImovina"/>
+				<parameter name="@Id" value="#grdImovina.@OSImovinaId"/>
+			</data>
+			<data command="spCarpoDMSAzur" name="dtDeleteDoc">
+				<parameter name="@Action" value="Delete"/>
+				<parameter name="@EntityName" value="OSImovina"/>
+				<parameter name="@selectedids" value="#grdDms.selectedids"/>
+			</data>
+			<!--postavka vidljivosti taba Tuđa ulaganja-->
+			<data command="spOSImovina_HelpCP" name="dtTudjaUlaganjaTab">
+				<parameter name="@Action" value="TudjaUlaganjaTAB"/>
+			</data>
+			<data command="spOSTudjaUlaganja_QueryCP" name="dtTudjaUlaganja">
+				<parameter name="@Action" value="grid"/>
+				<parameter name="@OSImovinaId" value="#grdImovina.@OSImovinaId" />
+			</data>
+		</datalist>
+	</form>
+
+	<form name="frmOSPrometFin_UnosDet" path="frmOSPrometFin_Unos.xml"/>
+	<form name="frmOSPrometFin_Unos" path="frmOSPrometFin_Unos.xml"/>
+	<form name="frmOSPrometFin_KarticaOS" path="frmOSPrometFin_Unos.xml"/>
+	<form name="frmOSPrometFin_Brisanje" path="frmOSPrometFin_Brisanje.xml"/>
+
+	<form name="frmOSPrometSmjestaj" path="frmOSPrometSmjestaj.xml"/>
+	<form name="frmZaduzi" path="frmOSPrometSmjestaj.xml"/>
+	<form name="frmOSPrometSmjestaj_Brisanje" path="frmOSPrometSmjestaj_Brisanje.xml"/>
+
+	<form name="frmOSImovinaTrosak" path="frmOSImovinaTrosak.xml"/>
+	<form name="frmOSImovinaTrosak_Brisanje" path="frmOSImovinaTrosak_Brisanje.xml"/>
+
+	<form name="frmOSImovinaOP" path="frmOSImovinaOP.xml"/>
+	<form name="frmOSImovinaOP_Brisanje" path="frmOSImovinaOP_Brisanje.xml"/>
+
+	<form name="frmOSImovinaStatus" path="frmOSImovinaStatus.xml"/>
+	<form name="frmOSImovinaStatus_Brisanje" path="frmOSImovinaStatus_Brisanje.xml"/>
+
+	<form name="frmOSImovinaKlasa" path="frmOSImovinaKlasa.xml"/>
+	<form name="frmOSImovinaKlasa_Brisanje" path="frmOSImovinaKlasa_Brisanje.xml"/>
+
+	<form name="frmOSImovinaOsnovni" path="frmOSImovinaOsnovni.xml"/>
+
+	<form name="frmOSImovinaDodatni" path="frmOSImovinaDodatni.xml"/>
+	<form name="frmOSImovinaDodatni_Brisanje" path="frmOSImovinaDodatni_Brisanje.xml"/>
+
+	<form name="frmOSImovinaSastavnice" path="frmOSImovinaSastavnice.xml"/>
+	<form name="frmOSImovinaSastavnice_Brisanje" path="frmOSImovinaSastavnice_Brisanje.xml"/>
+
+	<form name="frmNoviUnos" path="frmNoviUnos.xml"/>
+	<form name="frmPretraga" path="frmPretraga.xml"/>
+	<form name="frmFilter" path="frmFilter.xml"/>
+	<form name="frmOSKartica" path="frmOSKartica.xml"/>
+	<form name="frmIzmjSmj" path="frmIzmjSmj.xml"/>
+	<form name="frmIzmjStat" path="frmIzmjStat.xml"/>
+	<form name="frmIzmjTro" path="frmIzmjTro.xml"/>
+	<form name="frmIzmjObr" path="frmIzmjObr.xml"/>
+  <form name="frmKopiranje" path="frmKopiranje.xml"/>
+
+
+	<form name="frmOSTudjaUlaganja" path="frmOSTudjaUlaganja.xml"/>
+	<form name="frmOSTudjaUlaganja_Brisanje" path="frmOSTudjaUlaganja_Brisanje.xml"/>
+
+</root>
+
+
+<!--*****************************************KRAJ IMOVINA****************************************-->

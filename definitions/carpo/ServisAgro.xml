@@ -1,0 +1,248 @@
+<root>
+	<form name="frmMaster" type="master" caption="Servis agro">
+		<event type="init">
+			<action type="variable value" >
+				<parameter name="tmpId" value="0" type="int" />
+				<parameter name="DatumOd" value="0" type="date" />
+				<parameter name="DatumDo" value="0" type="date" />
+			</action>			
+		</event>
+		<managerlayout>
+
+			<grid name="grdServis" type="master" async="true" dataname="Global.dtMaster">
+				<event type="focusedrowchanged">
+					<action type="control enable" value="#btnIzmijeni, #btnObrisi" if="#grdServis.rowcount!=0" />
+					<action type="control disable" value="#btnIzmijeni, #btnObrisi" else="" />
+				</event>
+				<event type="doubleclick">
+					<action type="form open" value="frmEdit"  if="#grdServis.rowcount&gt;0">
+						<parameter name="ProPonGlaId" value="#grdServis.@ProPonGlaId" />
+						<parameter name="StatusPon" value="#grdServis.@Status" />
+					</action>
+					<action type="control populate keepfocus" value="#grdServis" />
+				</event>
+				<fields>
+					<field name="Naziv" caption="Servis" fontbold="true" />
+					<field name="Period" caption="Period" />
+					<field name="datum" caption="Datum" />
+					<field name="RegOznaka" caption="Reg. oznaka" />
+					<field name="Brojilo" caption="Brojilo" />
+					<field name="stroj" caption="Stroj" />
+					<field name="firma" caption="Tvrtka" />
+					<field name="invbroj" caption="MB" />
+					<field name="Napomena" caption="Napomena" />
+				</fields>
+				<styles>
+				</styles>
+			</grid>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnUnesi" caption="&amp;UNESI" type="add" >
+					<menuitem control="#grdServis"/>
+					<event type="click">
+						<action type="form open" value="frmPromet" />
+						<action type="control populate" value="#grdServis" />
+					</event>
+				</button>
+				<button name="btnIzmijeni" caption="IZMIJENI" type="edit">
+					<menuitem control="#grdServis"/>
+					<event type="click">
+						<action type="form open" value="frmPromet"  if="#grdServis.rowcount&gt;0">
+							<parameter name="ServisAgroPrometId" value="#grdServis.@ServisAgroPrometId" />
+						</action>
+						<action type="control populate keepfocus" value="#grdServis" />
+					</event>
+				</button>
+				<button name="btnObrisi" caption="OBRIŠI" type="delete">
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati promet?">
+							<action type="datarun nonquery" value="Global.~dtDelete">
+								<action type="control populate" value="#grdServis" />
+							</action>
+						</action>
+					</event>
+				</button>
+				<button name="btnFilter" caption="Filter" type="">
+					<event type="click">
+						<action type="form open" value="frmFilter" >
+
+						</action>
+						<action type="control populate" value="#grdServis" />
+					</event>
+				</button>				
+			</buttons>
+		</panelbuttons>
+	</form>
+
+	<form name="frmPromet" caption="Promet" fixedsize="true">
+		<event type="oninit">
+			<action type="datarun reader" value="Global.~dtGet" if="$ServisAgroPrometId!=null" />
+			<action type="datarun scalar" value="Global.~dtSuma">
+				<parameter name="Suma" value="$Suma" />
+			</action>	
+		</event>	
+		<event type="load">
+			<action type="variable value" >
+				<parameter name="Period" value="0" type="int" if="$ServisAgroPrometId==null"/>
+				<parameter name="Period" value="#dtGet.@Period" type="int" else=""/>
+				<parameter name="Suma" value="0" type="int" if="$ServisAgroPrometId==null"/>
+				<action type="datarun scalar" value="Global.~dtSuma">
+					<parameter name="Suma" value="$Suma" />
+				</action>
+			</action>
+			<action type="control value" value="#txtNapomena" >
+				<parameter value="#dtGet.@Napomena"/>
+			</action>			
+		</event>
+		<event type="shown">
+			<action type="control value" value="#txtPeriod">
+				<parameter value="$Suma" />
+			</action>		
+		</event>
+		<layout textposition="top" itemspadding="4">
+			<group cols="1" rows="6">
+				<item caption="Servis:" col="1" row="1" >
+					<comboedit name="cmbServis" valuefield="ServisAgroId" displayfield="Naziv" datavalue="#dtGet.@ServisAgroId" dataname="Global.dtServis">
+						<event type="valuechanged">
+							<!-- <action type="variable value" > -->
+							<action type="datarun scalar" value="Global.~dtPeriod">
+								<parameter name="Period" value="$Period" />
+							</action>	
+							<!-- </action> -->
+							<action type="datarun scalar" value="Global.~dtSuma">
+								<parameter name="Suma" value="$Suma" />
+							</action>
+							<action type="control value" value="#txtPeriod">
+								<parameter value="$Suma" />
+							</action>							
+						</event>
+					</comboedit>
+				</item>
+				<item caption="Datum:" col="1" row="2" >
+					<dateedit name="datDatum" datavalue="#dtGet.@Datum" required="true" value="now">
+					</dateedit>
+				</item>
+				<item caption="Registracijska oznaka:"  col="1" row="3">
+					<textedit name="txtRegOznaka" required="True" datavalue="#dtGet.@RegOznaka" maxlength="8"/>
+				</item>
+				<item caption="Brojilo:"  col="1" row="4" >
+					<textedit name="txtBrojilo" required="True" datavalue="#dtGet.@Brojilo" format="f0" value="0">
+						<event type="valuechanged" raiseonload="false" >
+							<action type="datarun scalar" value="Global.~dtSuma">
+								<parameter name="Suma" value="$Suma" />
+							</action>
+							<action type="control value" value="#txtPeriod">
+								<parameter value="$Suma" />
+							</action>
+						</event>					
+					</textedit>
+				</item>
+				<item caption="Sljedeći servis na:" col="1" row="5" >
+					<textedit name="txtPeriod" value="$Suma" readonly="true" format="f0" />
+				</item>	
+				<item caption="Napomena:" col="1" row="6" >
+					<textedit name="txtNapomena"  />
+				</item>					
+
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button caption="SPREMI" type="add" dock="right">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="Global.~dtEdit" if="$ServisAgroPrometId!=null"/>
+						<action type="datarun nonquery" value="Global.~dtAdd" else=""/>
+						<!-- <action type="control populate" value="parent.#grdServis" /> -->
+						<action type="form close" />
+					</event>
+				</button>
+				<button caption="ODUSTANI" type="cancel" dock="right" />
+			</buttons>
+		</panelbuttons>
+	</form>	
+
+	<form name="frmFilter" caption="Filter" fixedsize="true">
+		<layout testposition="top">
+			<group cols="2" rows="1">
+				<item caption="Datum od:" col="1" row="1" >
+					<dateedit name="datDatumOd" required="true" value="now" />
+				</item>
+				<item caption="Datum od:" col="2" row="1" >
+					<dateedit name="datDatumDo" required="true" value="now" />
+				</item>				
+			</group>
+		</layout>	
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Prihvati" >
+					<event type="click">
+						<action type="validate"/>
+						<action type="variable value"  >
+							<parameter name="parent.tmpId" value="1"/>
+							<parameter name="parent.DatumOd" value="#datDatumOd"/>
+							<parameter name="parent.DatumDo" value="#datDatumDo"/>
+						</action>
+						<action type="form close"/>
+					</event>
+				</button>	
+				<button name="btnOdustani" caption="Odustani" type="cancel">
+					<event type="click">
+						<action type="form close"/>
+					</event>
+				</button>	
+			</buttons>
+		</panelbuttons>				
+	</form>
+
+	<datalist>
+		<data command="spServisAgroPrometQuery" name="dtMaster" if="$tmpId==0">
+			<parameter name="@Action" value="0" />	
+		</data>	
+		<data command="spServisAgroPrometQuery" name="dtMaster" if="$tmpId==1">
+			<parameter name="@Action" value="2" />
+			<parameter name="@DatumOd" value="$DatumOd" />
+			<parameter name="@DatumDo" value="$DatumDo" />
+		</data>			
+		<data command="spServisAgroPrometAzur" name="dtAdd">
+			<parameter name="@Action" value="0"/>
+			<parameter name="@Datum" value="#datDatum"/>
+			<parameter name="@RegOznaka" value="#txtRegOznaka"/>
+			<parameter name="@Brojilo" value="#txtBrojilo"/>
+			<parameter name="@ServisAgroId" value="#cmbServis"/>
+			<parameter name="@OperateriId" value="@@OperateriId"/>
+			<parameter name="@Napomena" value="#txtNapomena"/>
+		</data>
+		<data command="spServisAgroPrometAzur" name="dtEdit">
+			<parameter name="@Action" value="1"/>
+			<parameter name="@Datum" value="#datDatum"/>
+			<parameter name="@RegOznaka" value="#txtRegOznaka"/>
+			<parameter name="@Brojilo" value="#txtBrojilo"/>
+			<parameter name="@ServisAgroId" value="#cmbServis"/>
+			<parameter name="@ID" value="$ServisAgroPrometId"/>
+			<parameter name="@OperateriId" value="@@OperateriId"/>
+			<parameter name="@Napomena" value="#txtNapomena"/>
+		</data>
+		<data command="spServisAgroPrometQuery" name="dtGet">
+			<parameter name="@Action" value="1"/>
+			<parameter name="@ID" value="$ServisAgroPrometId"/>
+		</data>
+		<data command="spServisAgroPrometAzur" name="dtDelete">
+			<parameter name="@Action" value="2"/>
+			<parameter name="@ID" value="#grdServis.@ServisAgroPrometId"/>
+		</data>
+		<data command="spServisAgroQuery" name="dtServis">
+			<parameter name="@Action" value="0"/>
+		</data>		
+		<data command="select @Period + @Brojilo as Suma" type="text" name="dtSuma">
+			<parameter name="@Period" value="$Period" type="int"/>
+			<parameter name="@Brojilo" value="#txtBrojilo" type="int"/>
+		</data>
+		<data command="spServisAgroQuery" name="dtPeriod">
+			<parameter name="@Action" value="1"/>
+			<parameter name="@ID" value="#cmbServis"/>
+		</data>			
+	</datalist>
+
+</root>

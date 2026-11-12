@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+
+<root version="1.0.0.1">
+
+	<form name="frmMaster" type="master" caption="Primka - Kalkulacija MP">
+
+		<event type="init">
+			<action type="datarun reader" value="global.dtPubVars"/>
+			<action type="datarun reader" value="global.dtVrstaDok"/>
+			<action type="datarun reader" value="global.dtPremmision"/>
+			<action type="variable value">
+				<!-- parametri za pretraživanje -->
+				<parameter name="DatumOd" value="now" type="date"/>
+				<parameter name="DatumDo" value="now" type="date"/>
+				<parameter name="TrgovinaId" value="null" type="int"/>				
+				<parameter name="Partnerid" value="null" type="int"/>
+				<parameter name="Status" value="null" type="int"/>
+				<parameter name="BrojDok" value="null" type="text"/>
+				<!-- pomoćne varijable -->
+				<parameter name="check" value="0" type="int"/>
+				<parameter name="osobeid" value="0" type="int"/>
+			</action>
+		</event>
+
+		<event type="load">
+		</event>
+
+		<event type="shown">
+		</event>
+
+		<managerlayout>
+
+			<lookup name="filter">
+				<comboitem value="Vremenska podjela"/>
+				<comboitem value="Operater"/> <!-- nije u upotrebi potrebna dorada store -->
+			</lookup>
+
+			<tree name="trTree" dataname="dtTree" key="id">
+				<event type="focusedrowchanged">
+					<action type="variable value">
+						<parameter name="DatumOd" value="#trTree.@datumod" />
+						<parameter name="DatumDo" value="#trTree.@datumdo" />
+						<parameter name="TrgovinaId" value="null" />
+						<parameter name="Partnerid" value="null" />
+						<parameter name="Status" value="null" />
+						<parameter name="BrojDok" value="null" />
+					</action>
+					<action type="control populate" value="#grdMaster" waittype="progress" waitcaption="Obrada" waittext="Dohvat podataka..."/>
+
+				</event>
+
+				<fields>
+					<field name="Name"/>
+				</fields>
+			</tree>
+
+			<grid name="grdMaster" type="master" dataname="dtMaster" id="maloprodajaglaid" netgenfields="true">
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetail" />
+
+					<action type="menu disable" value="#menUnLock" if="#grdMaster.rowcount==0"  />
+					<action type="menu enable" value="#menUnLock" else=""  />
+
+					<action type="menu disable" value="#menLock" if="#grdMaster.rowcount==0"  />
+					<action type="menu enable" value="#menLock" else=""  />
+
+					<action type="menu disable" value="#menLockAdmin" if="#grdMaster.rowcount==0"  />
+					<action type="menu enable" value="#menLockAdmin" else=""  />
+
+					<action type="menu disable" value="#menCann" if="#grdMaster.@Storno0600=='S'||#grdMaster.@Status=='Nezaključen'"  />
+					<action type="menu enable" value="#menCann" else=""  />
+
+					<action type="menu disable" value="#menUnBind" if="#grdMaster.@Narudžbenica1200=='null'"  />
+					<action type="menu enable" value="#menUnBind" else=""  />
+
+					<action type="control disable" value="#btnEdit" if="#grdMaster.rowcount==0"  />
+					<action type="control enable" value="#btnEdit"  else="" />	
+
+					<action type="control disable" value="#btnLock" if="#grdMaster.rowcount==0||#grdDetail.rowcount==0"  />
+					<action type="control enable" value="#btnLock"  else="" />
+
+					<action type="control disable" value="#btnCheck" if="global.dtPremmision.@mpczaduzenje==0"/>
+					<action type="control enable" value="#btnCheck" else=""/>
+
+					<action type="control disable" value="#btnTerms" if="#grdMaster.rowcount==0"  />
+					<action type="control enable" value="#btnTerms"  else="" />
+
+					<action type="control disable" value="#btnBind" if="#grdMaster.rowcount==0"  />
+					<action type="control enable" value="#btnBind"  else="" />
+
+					<action type="control disable" value="#btnCopy" if="#grdMaster.rowcount==0"  />
+					<action type="control enable" value="#btnCopy"  else="" />
+
+					<action type="control disable" value="#btnPrint" if="#grdMaster.rowcount==0||#grdDetail.rowcount==0" />
+					<action type="control enable" value="#btnPrint" else="" />
+
+
+				</event>
+				
+				<event type="doubleclick">
+					<action type="form open" value="frmIzmjeni" if="#grdMaster.@Status!='Zaključen'">
+						<parameter name="id" value="#grdMaster.@maloprodajaglaid"/>
+					</action>
+					<action type="control populate" value="#grdMaster" waittype="progress" waitcaption="Obrada" waittext="Dohvat podataka..."/>
+				</event>
+
+				<fields>
+					<!-- raspisati polja -->
+				</fields>
+
+				<menu><!-- meni na masteru -->
+					<menuitem name="menFilter" caption="Filter" sort="1">
+						<event type="click">
+							<action type="form open" value="frmFilter">
+							</action>
+							<action type="control populate" value="#grdMaster" waittype="progress" waitcaption="Obrada" waittext="Dohvat podataka..."/>
+						</event>
+					</menuitem>
+
+					<menuitem name="menLock" caption="Zaključi" sort="2">
+						<event type="click">
+							<action type="message" value="'Dokument je zaključen. Ne može se više zaključivati!'" if="#grdMaster.@Status=='Zaključen'">
+								<action type="variable value">
+									<parameter name="check" value="1" type="int"/>
+								</action>
+							</action>
+							<action type="message" value="'Dokument nema stavaka. Ne može se zaključiti !'" if="#grdDetail.rowcount==0&amp;&amp;$check!=1">
+								<action type="variable value">
+									<parameter name="check" value="1" type="int"/>
+								</action>
+							</action>
+							<action type="confirm" value="Želite li sigurno zaključiti otpremnicu broj: {#grdMaster.@Broj dokumenta}?" if="$check!=1">
+								<action type="datarun nonquery" value="~dtLock">
+									<action type="control populate" value="#grdMaster"/>
+								</action>
+							</action>
+							<action type="variable value">
+								<parameter name="check" value="0" type="int"/>
+							</action>
+						</event>
+					</menuitem>
+
+					<menuitem name="menUnLock" caption="Otključaj" sort="3">
+						<event type="click">
+							<action type="message" value="Dokument nije zaključen. Ne možete ga otključati !'" if="#grdMaster.@Status=='Nezaključen'">
+								<action type="variable value">
+									<parameter name="check" value="1" type="int"/>
+								</action>
+							</action>
+							<action type="confirm" value="Želite li sigurno zaključiti otpremnicu broj: {#grdMaster.@Broj dokumenta}?" if="$check!=1">
+								<action type="datarun nonquery" value="~dtUnLock">
+									<action type="control populate" value="#grdMaster"/>
+								</action>
+							</action>
+							<action type="variable value">
+								<parameter name="check" value="0" type="int"/>
+							</action>
+						</event>
+					</menuitem>
+
+					<menuitem name="menCann" caption="Storniraj" sort="4">
+						<event type="click">
+							<action type="message" value="Dokument nije zaključen. Ne možete ga stornirati !'" if="#grdMaster.@Status=='Nezaključen'">
+								<action type="variable value">
+									<parameter name="check" value="1" type="int"/>
+								</action>
+							</action>
+							<action type="message" value="'Dokument je već storniran. Ne možete ga stornirati !'" if="#grdMaster.@Storno0600=='S'&amp;&amp;$check!=1">
+								<action type="variable value">
+									<parameter name="check" value="1" type="int"/>
+								</action>
+							</action>
+							<action type="confirm" value="Želite li sigurno zaključiti otpremnicu broj: {#grdMaster.@Broj dokumenta}?" if="$check!=1">
+								<action type="datarun nonquery" value="~dtCann">
+									<action type="control populate" value="#grdMaster"/>
+								</action>
+							</action>
+							<action type="variable value">
+								<parameter name="check" value="0" type="int"/>
+							</action>
+						</event>
+					</menuitem>
+
+					<menuitem name="menLockAdmin" caption="Zaključi kao Administrator" sort="5">
+						<event type="click">
+							<action type="message" value="'Dokument je zaključen. Ne može se više zaključivati!'" if="#grdMaster.@Status=='Zaključen'">
+								<action type="variable value">
+									<parameter name="check" value="1" type="int"/>
+								</action>
+							</action>
+							<action type="message" value="'Dokument nema stavaka. Ne može se zaključiti !'" if="#grdDetail.rowcount==0&amp;&amp;$check!=1">
+								<action type="variable value">
+									<parameter name="check" value="1" type="int"/>
+								</action>
+							</action>
+							<action type="confirm" value="Želite li sigurno zaključiti otpremnicu broj: {#grdMaster.@Broj dokumenta}?" if="$check!=1">
+								<action type="datarun nonquery" value="~dtLockAdmin">
+									<action type="control populate" value="#grdMaster"/>
+								</action>
+							</action>
+							<action type="variable value">
+								<parameter name="check" value="0" type="int"/>
+							</action>
+						</event>
+					</menuitem>
+
+					<menuitem name="menUnBind" caption="Razveži od MP narudžbe" sort="6">
+						<event type="click">
+							<action type="form open" value="frmRaskiniNar">
+								<parameter name="id" value="#grdMaster.@maloprodajaglaid"/>
+							</action>
+							<action type="control refreshvalue" value="#grdMaster"/>
+						</event>
+					</menuitem>					
+				</menu>
+
+				<styles>
+					<style name="fontcolor" value="FireBrick" if="#grdMaster.@Status=='Nezaključen'&amp;&amp;#grdMaster.@Datum&lt;'now'" />
+					<style name="fontcolor" value="Green" if="#grdMaster.@Status=='Zaključen'" />
+				</styles>
+			</grid>
+
+			<grid name="grdDetail" dataname="dtGrid" netgenfields="true">
+				<fields>
+					<!-- raspisati polja -->
+				</fields>
+
+				<styles>
+					<style name="backgroundcolor" value="LightSalmon" if="#grdDetail.@MPCijena1000==0" />
+				</styles>
+			</grid>
+
+		</managerlayout>
+
+		<panelbuttons>
+			<buttons>
+				<button name="btnFilter" caption="Filter">
+					<event type="click">
+						<action type="form open" value="frmFilter">
+						</action>
+						<action type="control populate" value="#grdMaster" waittype="progress" waitcaption="Obrada" waittext="Dohvat podataka..."/>
+					</event>
+				</button>
+
+				<button name="btnAdd" caption="Dodaj">
+					<event type="click">
+						<action type="form open" value="frmDodaj">
+						</action>
+						<action type="control populate" value="#grdMaster" waittype="progress" waitcaption="Obrada" waittext="Dohvat podataka..."/>
+					</event>
+				</button>
+
+				<button name="btnEdit" caption="Izmjeni">
+					<event type="click">
+						<action type="form open" value="frmIzmjeni">
+							<parameter name="id" value="#grdMaster.@maloprodajaglaid"/>
+						</action>
+						<action type="control populate" value="#grdMaster" waittype="progress" waitcaption="Obrada" waittext="Dohvat podataka..."/>
+					</event>
+				</button>
+
+				<button name="btnLock" caption="Zaključi">
+					<event type="click">
+						<action type="message" value="'Dokument je zaključen. Ne može se više zaključivati!'" if="#grdMaster.@Status=='Zaključen'">
+							<action type="variable value">
+								<parameter name="check" value="1" type="int"/>
+							</action>
+						</action>
+						<action type="message" value="'Dokument nema stavaka. Ne može se zaključiti !'" if="#grdDetail.rowcount==0&amp;&amp;$check!=1">
+							<action type="variable value">
+								<parameter name="check" value="1" type="int"/>
+							</action>
+						</action>
+						<action type="confirm" value="Želite li sigurno zaključiti otpremnicu broj: {#grdMaster.@Broj dokumenta}?" if="$check!=1">
+							<action type="datarun nonquery" value="~dtLock">
+								<action type="control populate" value="#grdMaster"/>
+							</action>
+						</action>
+						<action type="variable value">
+							<parameter name="check" value="0" type="int"/>
+						</action>
+					</event>
+				</button>
+
+				<button name="btnCheck" caption="Kontrola">
+					<event type="click">
+						<action type="datarun reader" value="~dtDoc"/>
+						<action type="variable value">
+							<parameter name="osobeid" value="~dtDoc.@osobeid" type="int"/>
+						</action>
+						<action type="message" value="'Dokument nije zaključen. Ne može se još potvrditi kontrola!'" if="#grdMaster.@Status=='Nezaključen'">
+							<action type="variable value">
+								<parameter name="check" value="1" type="int"/>
+							</action>
+						</action>
+						<action type="message" value="'Dokument nema stavaka. Ne može se zaključiti i iskontrolirati !'" if="#grdDetail.rowcount==0&amp;&amp;$check!=1">
+							<action type="variable value">
+								<parameter name="check" value="1" type="int"/>
+							</action>
+						</action>
+						<action type="confirm" value="Želite li sigurno zaključiti otpremnicu broj: {#grdMaster.@Broj dokumenta}?" if="$check!=1">
+							<action type="datarun nonquery" value="~dtCheck">
+								<action type="control populate" value="#grdMaster"/>
+							</action>
+						</action>
+						<action type="variable value">
+							<parameter name="check" value="0" type="int"/>
+							<parameter name="osobeid" value="0" type="int"/>
+						</action>
+					</event>
+				</button>
+
+				<button name="btnTerms" caption="Korekcija nab. uvjeta">
+					<event type="click">
+						<action type="message" value="'Dokument nije zaključen. Korekcija se može raditi samo na zaključenom dokumentu !'" if="#grdMaster.@Status=='Nezaključen'">
+							<action type="variable value">
+								<parameter name="check" value="1" type="int"/>
+							</action>
+						</action>
+						<action type="form open" value="frmNabUvjeti" if="$check==0">
+							<parameter name="id" value="#grdMaster.@maloprodajaglaid"/>
+						</action>
+						<action type="variable value">
+							<parameter name="check" value="0" type="int"/>
+						</action>
+						<action type="control populate" value="#grdMaster" waittype="progress" waitcaption="Obrada" waittext="Dohvat podataka..."/>
+					</event>
+				</button>
+
+				<button name="btnBind" caption="Poveži s MP nar.">
+					<event type="click">
+						<action type="form open" value="frmPoveziNar">
+							<parameter name="id" value="#grdMaster.@maloprodajaglaid"/>
+						</action>
+						<action type="control refreshvalue" value="#grdMaster"/>
+					</event>
+				</button>
+
+				<button name="btnCopy" caption="Kopiraj">
+					<event type="click">
+						<action type="form open" value="frmKopiraj">
+							<parameter name="id" value="#grdMaster.@maloprodajaglaid"/>
+						</action>
+					</event>
+				</button>
+
+				<button name="btnPrint" caption="Print dok." dataname="~dtPrint" displayfield="Opis" >
+					<event type="click">
+						<action type="control print" value="#grdMaster">
+							<action type="print template" value="#btnPrint.@Template">
+								<parameter name="id" value="#grdMaster.@maloprodajaglaid" />
+							</action>
+						</action>
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+
+		<datalist>
+			<data command="VremenskaPodjela" type="integrated" name="dtTree" if="#filter==Vremenska podjela"/>
+			<data command="spmp_CarpoFilterQuery" name="dtTree" if="#filter!=Vremenska podjela">
+				<parameter name="@action" value="#filter"/>,
+				<parameter name="@sifra" value="~dtVrstaDok.@Sifra"/>
+			</data>
+			<data command="spMPQueryGlaIDetNG" name="dtMaster"><!-- master query -->
+				<parameter name="@action" value="1"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@datumod" value="$datumod"/>
+				<parameter name="@datumdo" value="$datumdo"/>
+				<parameter name="@sifradok" value="~dtVrstaDok.@Sifra"/>
+				<parameter name="@nenc" value="~dtPremmision.@nenc"/>
+				<parameter name="@dir" value="0"/>
+				<parameter name="@ind_prim" value="0"/>
+				<parameter name="@trgovinaid" value="$trgovinaid" />
+				<parameter name="@partneriid" value="$Partnerid" />
+				<parameter name="@status" value="$status" />
+				<parameter name="@trazibroj" value="$BrojDok" />
+			</data>
+			<data command="spMPQueryGlaIDetNG" name="dtGrid"><!-- grid query -->
+				<parameter name="@action" value="2"/>
+				<parameter name="@id" value="#grdMaster.@maloprodajaglaid"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@nenc" value="~dtPremmision.@nenc"/>
+			</data>
+			<data command="spmpzakljucidokNG" name="dtLock">
+				<parameter name="@id" value="#grdMaster.@maloprodajaglaid"/>
+			</data>
+			<data command="spMPOdkljucajDokNG" name="dtUnLock">
+				<parameter name="@id" value="#grdMaster.@maloprodajaglaid"/>
+			</data>
+			<data command="spmpzakljucidokNG" name="dtLockAdmin">
+				<parameter name="@id" value="#grdMaster.@maloprodajaglaid"/>
+				<parameter name="@admin" value="1"/>
+			</data>
+			<data command="spMPStornoDOkNG" name="dtCann">
+				<parameter name="@action" value="1"/>
+				<parameter name="@id" value="#grdMaster.@maloprodajaglaid"/>
+				<parameter name="@operateriid" value="@@operateriid"/>
+				<parameter name="@poruka" value="1"/>
+			</data>
+			<data command="spMPInsertGlaIdetNG" name="dtCheck">
+				<parameter name="@action" value="55"/>
+				<parameter name="@id" value="#grdMaster.@maloprodajaglaid"/>
+				<parameter name="@osobeid" value="$osobeid"/>
+			</data>
+			<data command="spMPQueryGlaIDetNG" name="dtDoc">
+				<parameter name="@action" value="3"/>
+				<parameter name="@id" value="#grdMaster.@maloprodajaglaid"/>
+			</data>
+			<data command="spCarpoPrint" name="dtPrint">
+				<parameter name="@Action" value="GetTemplates" />
+				<parameter name="@Id" value="#grdMaster.@maloprodajaglaid" type="int" />
+				<parameter name="@Tablica" value="maloprodajagla" />
+			</data>		  	
+		</datalist>
+
+	</form>
+
+	<datalist>
+		<data command="select p.VrstaPromId as VrstaPromId, d.VrstaDokId as VrstaDokId, p.Sifra as Sifra, d.kolicinaminus as predznak from VrstaProm p join VrstaDok d on p.VrstaPromId = d.VrstaPromId where p.sifra = '99'" type="text" name="dtVrstaDok" />
+		<data command="spDajPubVarse" name="dtPubVars" />
+		<data command="spmpPermissionNG" name="dtPremmision" >
+			<parameter name="@action" value="0"/>
+			<parameter name="@operateriid" value="@@operateriid" />
+			<parameter name="@object" value="@@moduleid" />
+			<parameter name="@sifradok" value="~dtVrstaDok.@Sifra" />
+			<parameter name="@trazi" value="dir" />
+			<parameter name="@aktivni" value="1" />
+		</data>
+	</datalist>
+
+	<form name="frmFilter" path="frmFilter.xml"/>
+	<form name="frmDodaj" path="frmDodaj.xml"/>
+	<form name="frmIzmjeni" path="frmIzmjeni.xml"/>
+	<form name="frmOdRabat" path="frmOdRabat.xml"/>
+	<form name="frmIzmjeniStavku" path="frmIzmjeniStavku.xml"/>
+	<form name="frmKol" path="frmIzmjeni.xml"/>
+	<form name="frmKopiraj" path="frmKopiraj.xml"/>
+	<form name="frmPoveziNar" path="frmPoveziNar.xml"/>
+	<form name="frmRaskiniNar" path="frmPoveziNar.xml"/>
+	<form name="frmDonos" path="frmDonos.xml"/>
+	<form name="frmDonosTerminal" path="frmDonos.xml"/>
+	<form name="frmDonosIzmjenaTerminal" path="frmDonos.xml"/>
+	<form name="frmDonosRoba" path="frmDonos.xml"/>
+	<form name="frmDonosNar" path="frmDonos.xml"/>
+	<form name="frmDonosZad" path="frmDonos.xml"/>
+	<form name="frmStavkaNar" path="frmDonos.xml"/>
+	<form name="frmStavkaZad" path="frmDonos.xml"/>
+	<form name="frmNabUvjeti" path="frmNabUvjeti.xml"/>
+	<form name="frmIzmjeniStavkuTerm" path="frmNabUvjeti.xml"/>
+
+	
+
+</root>

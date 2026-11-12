@@ -1,0 +1,186 @@
+﻿<root>
+
+  <!--******************************************UNOS / IZMJENA MJESTA TROŠKA****************************************-->
+  <form name="frmGrupeUnos" caption="$Caption" fixedsize="false" width="450" >
+
+    <event type="oninit">
+      <action type="datarun reader" value="~dtGet" if="$OSGrupeId!=0"/>
+    </event>
+    <event type="onload">
+      <action type="control disable" value="#chkNadgrupa" if="$OSGrupeId!=0" />
+      <action type="control enable" value="#chkNadgrupa" else="" />
+
+      <action type="control value" value="#chkNadgrupa" if="~dtGet.@NadgrupaId==0">
+        <parameter value="true"/>
+      </action>
+      <action type="control value" value="#chkNadgrupa" else="">
+        <parameter value="false"/>
+      </action>
+      
+      
+      <action type="control disable" value="#txtOznaka,#cmbNadgrupa,#txtRedovna,#txtUbrzana,#txtJednokratna,#txtUmanjena,#srcNabava,#srcPriprema,#srcIspravak,#srcTrosak" if="~dtGet.@NadgrupaId==0"/>
+      <action type="control enable" value="#txtOznaka,#cmbNadgrupa,#txtRedovna,#txtUbrzana,#txtJednokratna,#txtUmanjena,#srcNabava,#srcPriprema,#srcIspravak,#srcTrosak" else=""/>
+    </event>
+
+
+    <layout textposition="left" >
+
+      <group cols="1" rows="3" groupbordervisible="false">
+        <group row="1" col="1" cols="1" rows="3" spacing="2,2,2,1">
+          <group row="1" col="1" cols="2" rows="1" groupbordervisible="false">
+            <item caption="Naziv:" row="1" col="1">
+              <textedit name="txtGrupa" datavalue="~dtGet.@NazivGrupe" textposition="left" allownull="false"/>
+            </item>
+            <item caption="Nadgrupa:" row="1" col="2">
+              <checkedit name="chkNadgrupa" datavalue="~dtGet.@Nadgrupa" >
+                <event type="valuechanged">
+                  <action type="control disable" value="#txtOznaka,#cmbNadgrupa,#txtRedovna,#txtUbrzana,#txtJednokratna,#txtUmanjena,#srcNabava,#srcPriprema,#srcIspravak,#srcTrosak" if="#chkNadgrupa==true"/>
+                  <action type="control enable" value="#txtOznaka,#cmbNadgrupa,#txtRedovna,#txtUbrzana,#txtJednokratna,#txtUmanjena,#srcNabava,#srcPriprema,#srcIspravak,#srcTrosak" else=""/>
+                </event>
+              </checkedit>
+            </item>
+          </group>
+          <item caption="Oznaka:" row="2" col="1">
+            <textedit name="txtOznaka" datavalue="~dtGet.@Oznaka" textposition="left" allownull="false"/>
+          </item>
+          <item caption="Nadgrupa:" row="3" col="1" highlight="false">
+            <comboedit name="cmbNadgrupa" valuefield="NadgrupaId" displayfield="Nadgrupa" datavalue="~dtGet.@NadgrupaId" dataname="~dtNadgrupe" allownull="false"  />
+          </item>
+        </group>
+
+        <!--stope amortizacije-->
+        <group row="2" col="1" rows="4" cols="1" caption="Stope amortizacije"  spacing="2,2,1,1">
+          <item caption="Redovna:"  row="1" col="1" >
+            <textedit name="txtRedovna" datavalue="~dtGet.@Redovna" format="n2" textposition="left" value="0"/>
+          </item>
+          <item caption="Ubrzana:"  row="2" col="1" >
+            <textedit name="txtUbrzana" datavalue="~dtGet.@Ubrzana" format="n2" textposition="left" value="0"/>
+          </item>
+          <item caption="Jednokratna:"  row="3" col="1" >
+            <textedit name="txtJednokratna" datavalue="~dtGet.@Jednokratna" format="n2" textposition="left" value="0"/>
+          </item>
+          <item caption="Umanjena:"  row="4" col="1" >
+            <textedit name="txtUmanjena" datavalue="~dtGet.@Umanjena" format="n2" textposition="left" value="0"/>
+          </item>
+        </group>
+
+        <!--tražilice konta-->
+        <group row="3" col="1" cols="1" rows="4" caption="Konta"  spacing="2,2,1,2">
+          <item caption="Nabava:" col="1" row="1" >
+            <searchedit name="srcNabava" fieldvalue="KntNabaveId" fieldtext="KontoN" dataname="dtNabava" datavalue="~dtGet.@KntNabaveId" datatext="~dtGet.@KontoN"/>
+          </item>
+          <item caption="Priprema:" col="1" row="2" >
+            <searchedit name="srcPriprema" fieldvalue="KntPripremeId" fieldtext="KontoP" dataname="dtPriprema" datavalue="~dtGet.@KntPripremeId" datatext="~dtGet.@KontoP"/>
+          </item>
+          <item caption="Ispravak:" col="1" row="3" >
+            <searchedit name="srcIspravak" fieldvalue="KntIspravkaId" fieldtext="KontoI" dataname="dtIspravak" datavalue="~dtGet.@KntIspravkaId" datatext="~dtGet.@KontoI"/>
+          </item>
+          <item caption="Trošak:" col="1" row="4" >
+            <searchedit name="srcTrosak" fieldvalue="KntTroskaId" fieldtext="KontoT" dataname="dtTrosak" datavalue="~dtGet.@KntTroskaId" datatext="~dtGet.@KontoT"/>
+          </item>
+        </group>
+      </group>
+    </layout>
+
+    <panelbuttons>
+      <buttons>
+        <button name="btnSpremi"  caption="Spremi" type="add" >
+          <event type="click">
+            <action type="validate" />
+
+            <!-- I izmjena PODgrupe -->
+            <action type="datarun reader" value="~dtEdit" if="$OSGrupeId!=0"/>
+            <!-- II unos NADgrupe -->
+            <action type="datarun reader" value="~dtAdd" elseif="#chkNadgrupa==true">
+              <action type="variable value">
+                <parameter name="global.$NovaNadId" value="~dtAdd.@id"/>
+              </action>
+            </action>
+            <!-- III unos PODgrupe -->
+            <action type="datarun reader" value="~dtAdd" else="">
+              <action type="variable value">
+                <parameter name="global.$NovaPodId" value="~dtAdd.@id"/>
+              </action>
+            </action>
+
+            <action type="message" value="~dtAdd.@Poruka" if="$OSGrupeId==0"/>
+            <action type="message" value="~dtEdit.@Poruka" else=""/>
+
+
+            <!--<action type="control populate" value="parent.#grdMaster" />-->
+            <action type="form close" />
+          </event>
+        </button>
+        <button caption="Izlaz" type="cancel" dock="right">
+          <event type="click">
+            <action type="form close" />
+          </event>
+        </button>
+      </buttons>
+    </panelbuttons>
+    <datalist>
+      <data command="spOSGrupe_QueryCP" name="dtNadgrupe">
+        <parameter name="@Action" value="Nadgrupa_edit"/>
+        <parameter name="@OSGrupeId" value="parent.#tree.@Id"/>
+      </data>
+      <data command="spOSGrupe_QueryCP" name="dtNabava">
+        <parameter name="@Action" value="Konto_nabave"/>
+        <parameter name="@Tekst" value="#srcNabava.text"/>
+      </data>
+      <data command="spOSGrupe_QueryCP" name="dtPriprema">
+        <parameter name="@Action" value="Konto_pripreme"/>
+        <parameter name="@Tekst" value="#srcPriprema.text"/>
+      </data>
+      <data command="spOSGrupe_QueryCP" name="dtIspravak">
+        <parameter name="@Action" value="Konto_ispravka"/>
+        <parameter name="@Tekst" value="#srcIspravak.text"/>
+      </data>
+      <data command="spOSGrupe_QueryCP" name="dtTrosak">
+        <parameter name="@Action" value="Konto_troska"/>
+        <parameter name="@Tekst" value="#srcTrosak.text"/>
+      </data>
+      <data command="spOSGrupe_QueryCP" name="dtStopaTip">
+        <parameter name="@Action" value="Tip_stope"/>
+      </data>
+      <data command="spOSGrupe_QueryCP" name="dtGrupa">
+        <parameter name="@Action" value="Amortizacijska_grupa"/>
+      </data>
+      <data command="spOSGrupe_QueryCP" name="dtGet">
+        <parameter name="@Action" value="Grupa_edit"/>
+        <parameter name="@OSGrupeId" value="$OSGrupeId"/>
+      </data>
+      <data command="spOSGrupe_AzurCP" name="dtAdd">
+        <parameter name="@Action" value="Grupe_unos"/>
+        <parameter name="@NadgrupaId" value="#cmbNadgrupa"/>
+        <parameter name="@NazivGrupe" value="#txtGrupa" />
+        <parameter name="@Oznaka" value="#txtOznaka"/>
+        <parameter name="@Redovna" value="#txtRedovna" type="decimal"/>
+        <parameter name="@Ubrzana" value="#txtUbrzana" type="decimal"/>
+        <parameter name="@Jednokratna" value="#txtJednokratna" type="decimal"/>
+        <parameter name="@Umanjena" value="#txtUmanjena" type="decimal"/>
+        <parameter name="@KntNabaveId" value="#srcNabava"/>
+        <parameter name="@KntPripremeId" value="#srcPriprema"/>
+        <parameter name="@KntIspravkaId" value="#srcIspravak"/>
+        <parameter name="@KntTroskaId" value="#srcTrosak"/>
+        <parameter name="@Nadgrupa" value="#chkNadgrupa"/>
+      </data>
+      <data command="spOSGrupe_AzurCP" name="dtEdit">
+        <parameter name="@Action" value="Grupe_izmjena"/>
+        <parameter name="@OSGrupeId" value="$OSGrupeId"/>
+        <parameter name="@NadgrupaId" value="#cmbNadgrupa"/>
+        <parameter name="@NazivGrupe" value="#txtGrupa" />
+        <parameter name="@Oznaka" value="#txtOznaka"/>
+        <parameter name="@Redovna" value="#txtRedovna" type="decimal"/>
+        <parameter name="@Ubrzana" value="#txtUbrzana" type="decimal"/>
+        <parameter name="@Jednokratna" value="#txtJednokratna" type="decimal"/>
+        <parameter name="@Umanjena" value="#txtUmanjena" type="decimal"/>
+        <parameter name="@KntNabaveId" value="#srcNabava"/>
+        <parameter name="@KntPripremeId" value="#srcPriprema"/>
+        <parameter name="@KntIspravkaId" value="#srcIspravak"/>
+        <parameter name="@KntTroskaId" value="#srcTrosak"/>
+        <parameter name="@Nadgrupa" value="#chkNadgrupa"/>
+      </data>
+    </datalist>
+  </form>
+  <!--*******************************************KRAJ UNOS / IZMJENA MJESTA TROŠKA**************************************************-->
+</root>

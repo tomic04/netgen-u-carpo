@@ -1,0 +1,207 @@
+<root>
+	<form name="frmMaster" type="master" caption="Dodavanje operatera servisu" template="splitter" splitterposition="335" maximized="true">
+		<event type="oninit">
+			<action type="datarun nonquery" value="~dtMaster">
+			</action>
+		</event>
+		<event type="shown">
+			<action type="control populate" value="#grdMaster" />
+		</event>
+		<layout name="panel1">
+			<group rows="1" cols="1" groupbordervisible="false">
+				<item col="1" row="1">
+					<grid name="grdMaster" dataname="dtMaster" caption="Popis Servisa" key="ServisId" showgrouppanel="true" showfooter="true" bestfitonrefresh="true" savelayout="true">
+						<event type="focusedrowchanged">
+							<action type="control populate" value="#grdDetail" />
+						</event>
+						<fields inherited="true">
+							<field name="Servis" />
+							<field name="Adresa" />
+							<field name="Mjesto" />
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<layout name="panel2">
+			<group rows="1" cols="1" groupbordervisible="false">
+				<item col="1" row="1">
+					<grid name="grdDetail" dataname="dtDetail" caption="Popis Operatera" key="ServisPravaId" bestfitonrefresh="true" savelayout="true">
+						<fields>
+							<field name="Operater" />
+						</fields>
+					</grid>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnAdd" caption="Dodaj" image="add" imagelocation="middleleft">
+					<event type="click">
+						<action type="form open" value="frmDodaj">
+							<parameter name="ServisId" value="#grdMaster.@ServisId" />
+							<parameter name="Servis" value="#grdMaster.@Servis" />
+							<parameter name="Caption" value="Forma za unos" type="string" />
+							<parameter name="NewId" value="null" />
+						</action>
+					</event>
+				</button>
+				<button name="btnEdit" caption="Izmijeni" image="edit" imagelocation="middleleft">
+					<event type="click">
+						<action type="form open" value="frmIzmijeni">
+							<parameter name="ServisId" value="#grdMaster.@ServisId" />
+							<parameter name="Servis" value="#grdMaster.@Servis" />
+							<parameter name="Caption" value="Forma za izmjenu" type="string" />
+							<parameter name="ServisPravaId" value="#grdDetail.@ServisPravaId" />
+							<parameter name="Operateriid" value="#grdDetail.@operateriid" />
+						</action>
+					</event>
+				</button>
+				<button name="btnDelete" caption="Obriši" image="delete" imagelocation="middleleft">
+					<event type="click">
+						<action type="confirm" value="Jeste li sigurni da želite obrisati prava za operatera {#grdDetail.@Operater} za servis {#grdMaster.@Servis}?" />
+						<action type="datarun nonquery" value="~dtDelete" />
+						<action type="control populate" value="#grdDetail" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spServisPrava_Query" name="dtMaster">
+				<parameter name="@action" value="2" />
+			</data>
+			<data command="spServisPrava_Query" name="dtDetail">
+				<parameter name="@action" value="3" />
+				<parameter name="@servisid" value="#grdMaster.@ServisId" type="int" />
+			</data>
+			<data command="spServisPrava_Azur" name="dtDelete">
+				<parameter name="@Action" value="2" />
+				<parameter name="@id" value="#grdDetail.@ServisPravaId" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmDodaj" caption="Dodaj operatera">
+		<event type="shown">
+			<action type="control disable" value="#txtServis" />
+		</event>
+		<event type="load">
+			<action type="control value" value="#txtServis">
+				<parameter value="$Servis" />
+			</action>
+		</event>
+		<layout>
+			<group rows="2" cols="1">
+				<item row="1" col="1" caption="Servis" textposition="left">
+					<textedit name="txtServis" />
+				</item>
+				<item row="2" col="1" caption="Operater" textposition="left">
+					<comboedit name="cmbOperater" dataname="~dtOperaterCombo" valuefield="OperateriId" displayfield="Naziv" />
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Dodaj" dock="left" image="add" imagelocation="middleleft">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun scalar" value="~dtAdd">
+							<parameter name="NewId" />
+						</action>
+						<action type="control populate" value="parent.#grdDetail">
+							<parameter value="$Servisid" type="int" />
+						</action>
+						<action type="control focus" value="parent.#grdDetail">
+							<parameter value="$NewId" />
+						</action>
+						<action type="control refreshvalue" value="#cmbOperater" />
+						<action type="form close" />
+						<action type="form open" value="frmDodaj">
+							<parameter name="ServisId" value="#grdMaster.@ServisId" />
+							<parameter name="Servis" value="#grdMaster.@Servis" />
+							<parameter name="Caption" value="Forma za unos" type="string" />
+							<parameter name="NewId" value="null" />
+						</action>
+						<!--
+						<action type="control value" value="##">
+						<parameter value="" />
+						</action>
+						-->
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="left" image="delete" imagelocation="middleleft">
+					<event type="click">
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spServisPrava_Query" name="dtOperaterCombo">
+				<parameter name="@action" value="5" />
+				<parameter name="@servisid" value="$ServisId" />
+			</data>
+			<data command="spServisPrava_Azur" name="dtAdd">
+				<parameter name="@action" value="0" />
+				<parameter name="@servisid" value="$ServisId" />
+				<parameter name="@operateriid" value="#cmbOperater" />
+			</data>
+		</datalist>
+	</form>
+	<form name="frmIzmijeni" caption="Izmijeni operatera">
+		<event type="init">
+			<action type="datarun reader" value="dtGet" />
+		</event>
+		<event type="shown">
+			<action type="control disable" value="#txtServis" />
+		</event>
+		<event type="onload">
+			<action type="control value" value="#txtServis">
+				<parameter value="$Servis" />
+			</action>
+			<action type="control value" value="#cmbOperater">
+				<parameter value="$Operateriid" />
+			</action>
+		</event>
+		<layout>
+			<group rows="2" cols="1">
+				<item row="1" col="1" caption="Servis" textposition="left">
+					<textedit name="txtServis" />
+				</item>
+				<item row="2" col="1" caption="Operater" textposition="left">
+					<comboedit name="cmbOperater" dataname="~dtGet" valuefield="OperateriId" displayfield="Naziv" />
+					<!-- <comboedit name="cmbOperater" dataname="~dtGet" valuefield="OperateriId" displayfield="Naziv" datavalue="~dtGet.@ServisPravaId" /> -->
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnSpremi" caption="Izmijeni" dock="left" image="add" imagelocation="middleleft">
+					<event type="click">
+						<action type="validate" />
+						<action type="datarun nonquery" value="~dtUpdate" />
+						<action type="control populate" value="parent.#grdDetail">
+							<parameter value="$Servisid" type="int" />
+						</action>
+						<action type="form close" />
+					</event>
+				</button>
+				<button name="btnOdustani" caption="Odustani" type="cancel" dock="left" image="delete" imagelocation="middleleft">
+					<event type="click">
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spServisPrava_Query" name="dtGet">
+				<parameter name="@action" value="6" />
+				<parameter name="@servisid" value="$ServisId" />
+				<parameter name="@operateriid" value="$Operateriid" />
+			</data>
+			<data command="spServisPrava_Azur" name="dtUpdate">
+				<parameter name="@action" value="1" />
+				<parameter name="@servisid" value="$ServisId" />
+				<parameter name="@operateriid" value="#cmbOperater" />
+				<parameter name="@id" value="$ServisPravaId" />
+			</data>
+		</datalist>
+	</form>
+</root>

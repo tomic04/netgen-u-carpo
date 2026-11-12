@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<!-- Definicija metoda koje pozivamo iz DmsManagerV1.DLL-a -->
+	<method name="funDmsAdd" dll="DmsManagerV1" class="DmsManagerV1.Start" method="AddDocuments" />
+	<method name="funDmsOpen" dll="DmsManagerV1" class="DmsManagerV1.Start" method="OpenDocument" />
+	<method name="funDmsSave" dll="DmsManagerV1" class="DmsManagerV1.Start" method="SaveDocuments" />
+
+	<!-- 
+			- ssPermissions - http://spin-iis8/Carpo/Primjeri/SearchResult/sspermiss#docs-73
+				U Carpo je ugrađena standardna Jupiter ssPermission logika.
+				Procedura za definiranje prava na određenu funkcionalnost:
+					-unutar ssPermission tablice definiramo objekt (granulu) na koju se odnosi permission - asm:Carpo.Start:UrednikZemljovida.xml i naziv funkcije.. npr. "edit"
+					-unutar xml-a objektu pridružimo naziv funkcije preko "function" atributa.. npr. function="edit"	
+		
+			- DMS - http://spin-iis8/Carpo/Primjeri/Index/tab-dms#docs-133 
+			
+			- postavljanje granule u izbornik (ssMeni)
+				- server: Jupiter2019 (baza Spin); 
+				- aplikacija: Carpo obuka; => parametar: 
+					- u folderu obuka kreirati folder sa svojim imenom \\spin-sql\JupiterSrv\Carpo\OBUKA 
+					- u isti zatim kopirati UrednikZemljovida.xml 
+					
+						asm:Carpo.Start:UrednikZemljovida.xml //primjer poziva
+
+						asm:Carpo.Start:OBUKA/svojeIme/UrednikZemljovida.xml   // poziv za vježbu
+	-->
+
+	<!--  **********  frmUrednik   ********** -->
+	<form name="frmUrednik" type="master" caption="Urednik :: Carpo obuke">
+		<event type="init">
+			<action type="variable value">
+				<parameter name="global.DrzaveId" value="5" type="int"/>
+			</action>
+		</event>
+		<managerlayout>
+			<lookup name="filter">
+				<comboitem value="Svijet"/>
+				<comboitem value="Hrvatska"/>
+			</lookup>
+			<tree name="tree" caption="Države - Županije" expandlast="true" dataname="dtTree" valuefield="IdMain">
+				<event type="focusedrowchanged">
+					<action type="variable value" value="global.DrzaveId">
+						<parameter value="#tree" type="int"/>
+					</action>
+					<action type="control populate" value="#grdMaster"/>
+				</event>
+				<fields>
+					<field name="Naziv"/>
+				</fields>
+			</tree>
+			<grid caption="Popis svih mjesta iz '{#tree.@Naziv}'" name="grdMaster" type="master" dataname="~dtGrid" key="MjestaId" multiselect="true" savelayout="true">
+				<fields inherited="true">
+					<field name="Naziv" caption="Mjesto" fontbold="true"/>
+					<field name="HptBroj" caption="Poštanski broj"/>
+					<field name="Zupanija" caption="Županija"/>
+				</fields>
+				<event type="doubleclick">
+					<action type="form open" value="frmUpsert">
+						<parameter name="MjestaId" value="#grdMaster.@MjestaId"/>
+					</action>
+				</event>
+				<event type="focusedrowchanged">
+					<action type="control populate" value="#grdDetail"/>
+				</event>
+				<menu>
+					<menuitem caption="Testiram poruku">
+						<event type="click">
+							<action type="message" value="poruka direktno preko menua na gridu"/>
+						</event>
+					</menuitem>
+				</menu>
+			</grid>
+			<tabs>
+				<tab caption="Detalj">
+					<grid caption="Detalj grid" name="grdDetail" dataname="dtDetaljGrid"></grid>
+				</tab>
+				<tab caption="DMS">
+					<grid name="grdDms" keyfield="DokID" multiselect="true" dataname="dtDms" showmenuprintitem="false" showmenutools="false" savelayout="true">
+						<menu>
+							<!-- Parametri potrebni za poziv Dms metode za spremanje dokumenata -->
+							<menuitem caption="Spremi na disk">
+								<event type="click">
+									<action type="method run" value="funDmsSave">
+										<parameter name="server" value="@@server" />
+										<parameter name="database" value="@@database" />
+										<parameter name="username" value="" />
+										<parameter name="password" value="" />
+										<parameter name="operaterid" value="@@operateriid" />
+										<parameter name="dokIDs" value="#grdDms.selectedids" />
+									</action>
+								</event>
+							</menuitem>
+							<menuitem caption="Obriši" function="DokObrisi">
+								<event type="click">
+									<action type="confirm" value="Želite li sigurno obrisati označeni(e) dokument(e)?">
+										<action type="datarun nonquery" value="~dtDeleteDoc" />
+										<action type="control populate" value="#grdDms" />
+									</action>
+								</event>
+							</menuitem>
+						</menu>
+
+						<!-- Parametri potrebni za poziv Dms metode za otvaranje dokumenata -->
+						<event type="doubleclick">
+							<action type="method run" value="funDmsOpen">
+								<parameter name="server" value="@@server" />
+								<parameter name="database" value="@@database" />
+								<parameter name="username" value="" />
+								<parameter name="password" value="" />
+								<parameter name="operateriid" value="@@operateriid" />
+								<parameter name="dokID" value="#grdDms.@DokID" />
+								<parameter name="name" value="#grdDms.@naziv" />
+							</action>
+						</event>
+					</grid>
+				</tab>
+
+			</tabs>
+		</managerlayout>
+		<panelbuttons>
+			<buttons>
+				<button name="btnPoruka" caption="Poruka">
+					<event type="click">
+						<action type="message" value="event click"/>
+					</event>
+				</button>
+				<button name="btnUnos" caption="Unesi">
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="MjestaId" value="null"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnIzmjena" caption="Izmijeni">					<!-- function="edit"> -->
+					<menuitem control="#grdMaster"></menuitem>
+					<event type="click">
+						<action type="form open" value="frmUpsert">
+							<parameter name="MjestaId" value="#grdMaster.@MjestaId"/>
+						</action>
+					</event>
+				</button>
+				<button name="btnDelete" caption="Obriši">
+					<menuitem control="#grdMaster"></menuitem>
+					<event type="click">
+						<action type="confirm" value="Želite li obrisati označeni zapis?"/>
+						<action type="datarun nonquery" value="~dtDelete"/>
+						<action type="control populate" value="#grdMaster"/>
+					</event>
+				</button>
+				<button name="btnPovezi" caption="Dodaj dokument" function="DokDodaj">
+					<event type="click">
+						<action type="method run" value="funDmsAdd">
+							<parameter name="server" value="@@server" />
+							<parameter name="database" value="@@database"/>
+							<parameter name="username" value="" />
+							<parameter name="password" value="" />
+							<parameter name="operaterid" value="@@operateriid" />
+							<parameter name="EntityName" value="KupUgovoriGla" />
+							<parameter name="entityID" value="#grdGlava.@kupugovoriglaid" />
+							<parameter name="tipInserta" value="windows" />
+						</action>
+						<action type="control populate" value="#grdDms" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spJDrzaveUrednikAzur" name="dtDelete">
+				<parameter name="@Action" value="delete"/>
+				<parameter name="@MjestaId" value="#grdMaster.@MjestaId"/>
+			</data>
+			<data command="spJDrzaveUrednik" name="dtTree" if="#filter==Svijet">
+				<parameter name="@Action" value="tree"/>
+			</data>
+			<data command="spJDrzaveUrednik" name="dtTree" if="#filter==Hrvatska">
+				<parameter name="@Action" value="tree_cro"/>
+				<parameter name="@DrzaveId" value="$DrzaveId"/>
+			</data>
+			<data command="spJDrzaveUrednik" name="dtGrid">
+				<parameter name="@Action" value="mjesta"/>
+				<parameter name="@DrzaveId" value="global.$DrzaveId" if="#tree.level==0"/>
+				<parameter name="@ZupanijeId" value="#tree" if="#tree.level==1"/>
+			</data>
+			<data command="spJDrzaveUrednik" name="dtDetaljGrid">
+				<parameter name="@Action" value="ulice_po_mjestima"/>
+				<parameter name="@MjestaId" value="#grdMaster.@MjestaId"/>
+			</data>
+
+
+        <!-- store za dohvaćanje i brisanje dokumenata iz dms-a -->
+     
+			<data command="spCarpoDMSQuery" name="dtDms">
+				<parameter name="@EntityName" value="KupUgovoriGla"/>
+				<parameter name="@Id" value="#grdGlava.@kupugovoriglaid"/>
+			</data>
+			<data command="spCarpoDMSAzur" name="dtDeleteDoc">
+				<parameter name="@Action" value="Delete"/>
+				<parameter name="@EntityName" value="KupUgovoriGla"/>
+				<parameter name="@selectedids" value="#grdDms.selectedids"/>
+			</data>
+		</datalist>
+	</form>
+	<form name="frmUpsert" path="frmUpsert.xml"/>
+</root>

@@ -1,0 +1,425 @@
+<root>
+	<!--
+  Komentari:
+  4.11.2025. MP - PERMISSION -> FUNCTION NAME
+  03.09.2024. Jadranka Vučenović Vojvodić - kreirala sub formu za unos i izmjenu.
+  -->
+	<form name="frmJezici" caption="Jezici za {parent.#txtPrezime} {parent.#txtIme}" width="850" height="350" >
+		<event type="load">
+			<action type="control populate" value="#grdJezici"/>		
+			<action type="control disable" value="#btnIzmjenaJ,btnBrisanjeJ" if="#grdJezici.rowcount==0"/>
+
+		</event>
+		<layout>
+			<group cols="1" rows="2" groupbordervisible="false">
+				<group cols="1" rows="1" groupbordervisible="true" col="1" row="1" spacing="2,2,2,1">
+					<item row="1" col="1" highlight="false">
+						<grid name="grdJezici" key="JeziciId" dataname="~dtJezici" multiselect="true" savelayout="true" fieldsmartspaces="false" showgrouppanel="false" bestfitonrefresh="true">
+							<fields inherited="true">
+							</fields>
+							<event type="doubleclick">
+								<action type="form open" value="frmUnosIzmjenaJezika">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviJeziciId" value="#grdJezici.@HRKadroviJeziciId" />	
+									<parameter name="Caption" value="Izmjena za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdJezici"/>	
+							    <action type="control populate" value="parent.#grdPodaci"/>									
+							</event>
+						</grid>
+					</item>
+				</group>
+				<group cols="8" rows="1" groupbordervisible="true" col="1" row="2" spacing="2,2,1,2">
+					<item row="1" col="1" highlight="false" height="40">
+						<button name="btnUnos" caption="Dodaj" function="UNOS_JEZICI"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaJezika"> 
+									<parameter name="Caption" value="Unos za {parent.#txtPrezime} {parent.#txtIme}"/>		
+									<parameter name="HRKadroviJeziciId" value="0"/>   
+									<parameter name="HRKadroviId" value="$HRKadroviId" />	
+									<parameter  name="Tip" value="unos"/>
+								</action>  
+								<action type="control populate keepfocus" value="#grdJezici"/>
+							<action type="control populate" value="parent.#grdPodaci"/>								
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="2" highlight="false" height="40" >
+						<button name="btnIzmjenaJ" caption="Izmjeni" function="IZMJENA_JEZICI"> 
+							<event type="click">   
+								<action type="form open" value="frmUnosIzmjenaJezika">  
+									<parameter name="Tip" value="Izmjena"/>
+									<parameter name="HRKadroviId" value="$HRKadroviId" />
+									<parameter name="HRKadroviJeziciId" value="#grdJezici.@HRKadroviJeziciId" />	
+									<parameter name="Caption" value="Izmjena za {parent.#txtPrezime} {parent.#txtIme}"/>										
+								</action>  
+								<action type="control populate keepfocus" value="#grdJezici"/>	
+								<action type="control populate" value="parent.#grdPodaci"/>								
+							</event>  
+						</button>
+					</item>
+					<item row="1" col="3" highlight="false" height="40">
+						<button name="btnBrisanjeJ" caption="Obriši" function="BRISANJE_JEZICI"> 
+							<event type="click">   
+								<action type="confirm" value="Jeste li sigurni da želite obrisati izabrani zapis?">
+									<action type="datarun nonquery" value="~dtBrisanjeJezika">
+
+									</action>
+								</action>
+								<action type="control populate" value="#grdJezici,parent.#grdPodaci"></action>    
+								<action type="control disable" value="#btnIzmjenaJ,btnBrisanjeJ" if="#grdJezici.rowcount==0"/>
+							</event>  
+						</button>
+					</item>
+
+					<item row="1" col="4" colspan="4" highlight="false" height="40"/>
+					<item row="1" col="8" highlight="false" height="40">
+						<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+							<event type="click">
+								<action type="form close" />
+							</event>
+						</button>
+					</item>
+				</group>
+			</group>
+		</layout>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_Jezici_CP" name="dtJezici">
+				<parameter name="@action" value="gridJezici" />
+				<parameter name="@hrkadroviid" value="$HRKadroviId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Jezici_CP" name="dtBrisanjeJezika">
+				<parameter name="@action" value="brisanje"/>
+				<parameter name="@HRKadroviJeziciId" value="#grdJezici.@HRKadroviJeziciId"/>
+			</data>
+		</datalist>
+	</form>
+
+	<!-- FORMA ZA UNOS,IZMJENU ZAPOSLENJA -->
+	<form name="frmUnosIzmjenaJezika" caption="$Caption" width="380" height="200" >
+		<event type="init">
+			<action type="datarun reader" value="~dtGetJezik" if="$HRKadroviJeziciId!=0" />
+		</event>
+		<event type="onload">
+			<action if="$Tip=='Izmjena'">			
+				<action type="control value" value="#rdoCitaNula" if="parent.#grdJezici.@Čita==0">
+					<parameter value="true" />
+				</action>
+				<action type="control value" value="#rdoCitaJedan" elseif="parent.#grdJezici.@Čita==1">
+					<parameter value="true" />
+				</action>
+				<action type="control value" value="#rdoCitaDva" elseif="parent.#grdJezici.@Čita==2">
+					<parameter value="true" />
+				</action>
+				<action type="control value" value="#rdoCitaTri" elseif="parent.#grdJezici.@Čita==3">
+					<parameter value="true" />
+				</action>
+				<action type="control value" value="#rdoCitaCetiri" elseif="parent.#grdJezici.@Čita==4">
+					<parameter value="true" />
+				</action>
+				<action type="control value" value="#rdoCitaPet" elseif="parent.#grdJezici.@Čita==5">
+					<parameter value="true" />
+				</action>
+				
+				<action type="control value" value="#rdoPiseNula" if="parent.#grdJezici.@Piše==0">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoPiseJedan" elseif="parent.#grdJezici.@Piše==1">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoPiseDva" elseif="parent.#grdJezici.@Piše==2">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoPiseTri" elseif="parent.#grdJezici.@Piše==3">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoPiseCetiri" elseif="parent.#grdJezici.@Piše==4">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoPisePet" elseif="parent.#grdJezici.@Piše==5">
+					<parameter value="true" />
+				</action>
+				
+				<action type="control value" value="#rdoGovoriNula" if="parent.#grdJezici.@Govori==0">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoGovoriJedan" elseif="parent.#grdJezici.@Govori==1">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoGovoriDva" elseif="parent.#grdJezici.@Govori==2">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoGovoriTri" elseif="parent.#grdJezici.@Govori==3">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoGovoriCetiri" elseif="parent.#grdJezici.@Govori==4">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoGovoriPet" elseif="parent.#grdJezici.@Govori==5">
+					<parameter value="true" />
+				</action>
+				
+				<action type="control value" value="#rdoRazumijeNula" if="parent.#grdJezici.@Razumije==0">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoRazumijeJedan" elseif="parent.#grdJezici.@Razumije==1">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoRazumijeDva" elseif="parent.#grdJezici.@Razumije==2">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoRazumijeTri" elseif="parent.#grdJezici.@Razumije==3">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoRazumijeCetiri" elseif="parent.#grdJezici.@Razumije==4">
+					<parameter value="true" />          
+				</action>                               
+				<action type="control value" value="#rdoRazumijePet" elseif="parent.#grdJezici.@Razumije==5">
+					<parameter value="true" />
+				</action>
+			</action>
+		</event>
+		<layout>
+			<group cols="1" rows="8" groupbordervisible="true">
+				<item row="1" col="1" caption="Jezik:" highlight="false" >
+					<comboedit name="cmbJezik" valuefield="JeziciId" displayfield="Naziv" required="true" dataname="~dtJezici" datavalue="~dtGetJezik.@JeziciId"/>
+				</item>
+				<group col="1" row="2" cols="6" rows="1" groupbordervisible="true" caption="Čita:" >
+					<item row="1" col="1" highlight="false" >
+					<radioedit caption="0" name="rdoCitaNula" groupindex="1" datavalue="#dtGetJezik.@cita" value="true" >
+					</radioedit>
+					</item>
+					<item row="1" col="2"  highlight="false" >
+					<radioedit caption="1" name="rdoCitaJedan" groupindex="1" datavalue="#dtGetJezik.@cita" >
+					</radioedit>
+					</item>
+					<item row="1" col="3"  highlight="false" >
+					<radioedit caption="2" name="rdoCitaDva" groupindex="1" datavalue="#dtGetJezik.@cita">
+					</radioedit>
+					</item>
+					<item row="1" col="4"  highlight="false" >
+					<radioedit caption="3" name="rdoCitaTri" groupindex="1" datavalue="#dtGetJezik.@cita">
+					</radioedit>
+					</item>
+					<item row="1" col="5"  highlight="false" >
+					<radioedit caption="4" name="rdoCitaCetiri" groupindex="1" datavalue="#dtGetJezik.@cita">
+					</radioedit>
+					</item>
+					<item row="1" col="6"  highlight="false" >
+					<radioedit caption="5" name="rdoCitaPet" groupindex="1" datavalue="#dtGetJezik.@cita">
+					</radioedit>
+					</item>
+				</group>
+				<group col="1" row="3" cols="6" rows="1" groupbordervisible="true" caption="Piše:" >
+					<item row="1" col="1" highlight="false" >
+					<radioedit caption="0" name="rdoPiseNula" groupindex="2" datavalue="#dtGetJezik.@pise" value="true">
+					</radioedit>
+					</item>
+					<item row="1" col="2"  highlight="false" >
+					<radioedit caption="1" name="rdoPiseJedan" groupindex="2" datavalue="#dtGetJezik.@pise">
+					</radioedit>
+					</item>
+					<item row="1" col="3"  highlight="false" >
+					<radioedit caption="2" name="rdoPiseDva" groupindex="2" datavalue="#dtGetJezik.@pise">
+					</radioedit>
+					</item>
+					<item row="1" col="4"  highlight="false" >
+					<radioedit caption="3" name="rdoPiseTri" groupindex="2" datavalue="#dtGetJezik.@pise">
+					</radioedit>
+					</item>
+					<item row="1" col="5"  highlight="false" >
+					<radioedit caption="4" name="rdoPiseCetiri" groupindex="2" datavalue="#dtGetJezik.@pise">
+					</radioedit>
+					</item>
+					<item row="1" col="6"  highlight="false" >
+					<radioedit caption="5" name="rdoPisePet" groupindex="2" datavalue="#dtGetJezik.@pise">
+					</radioedit>
+					</item>
+				</group>
+				<group col="1" row="4" cols="6" rows="1" groupbordervisible="true" caption="Govori:" >
+					<item row="1" col="1" highlight="false" >
+					<radioedit caption="0" name="rdoGovoriNula" groupindex="3" datavalue="#dtGetJezik.@govori" value="true">
+					</radioedit>
+					</item>
+					<item row="1" col="2"  highlight="false" >
+					<radioedit caption="1" name="rdoGovoriJedan" groupindex="3" datavalue="#dtGetJezik.@govori">
+					</radioedit>
+					</item>
+					<item row="1" col="3"  highlight="false" >
+					<radioedit caption="2" name="rdoGovoriDva" groupindex="3" datavalue="#dtGetJezik.@govori">
+					</radioedit>
+					</item>
+					<item row="1" col="4"  highlight="false" >
+					<radioedit caption="3" name="rdoGovoriTri" groupindex="3" datavalue="#dtGetJezik.@govori">
+					</radioedit>
+					</item>
+					<item row="1" col="5"  highlight="false" >
+					<radioedit caption="4" name="rdoGovoriCetiri" groupindex="3" datavalue="#dtGetJezik.@govori">
+					</radioedit>
+					</item>
+					<item row="1" col="6"  highlight="false" >
+					<radioedit caption="5" name="rdoGovoriPet" groupindex="3" datavalue="#dtGetJezik.@govori">
+					</radioedit>
+					</item>
+				</group>
+				<group col="1" row="5" cols="6" rows="1" groupbordervisible="true" caption="Razumije:" >
+					<item row="1" col="1" highlight="false" >
+					<radioedit caption="0" name="rdoRazumijeNula" groupindex="4" datavalue="#dtGetJezik.@razumije" value="true">
+					</radioedit>
+					</item>
+					<item row="1" col="2"  highlight="false" >
+					<radioedit caption="1" name="rdoRazumijeJedan" groupindex="4" datavalue="#dtGetJezik.@razumije">
+					</radioedit>
+					</item>
+					<item row="1" col="3"  highlight="false" >
+					<radioedit caption="2" name="rdoRazumijeDva" groupindex="4" datavalue="#dtGetJezik.@razumije">
+					</radioedit>
+					</item>
+					<item row="1" col="4"  highlight="false" >
+					<radioedit caption="3" name="rdoRazumijeTri" groupindex="4" datavalue="#dtGetJezik.@razumije">
+					</radioedit>
+					</item>
+					<item row="1" col="5"  highlight="false" >
+					<radioedit caption="4" name="rdoRazumijeCetiri" groupindex="4" datavalue="#dtGetJezik.@razumije">
+					</radioedit>
+					</item>
+					<item row="1" col="6"  highlight="false" >
+					<radioedit caption="5" name="rdoRazumijePet" groupindex="4" datavalue="#dtGetJezik.@razumije">
+					</radioedit>
+					</item>
+				</group>
+				<item row="6" col="1" caption="Certfikat:"  highlight="false" >
+					 <checkedit caption="Certfikat" name="chkCertifikat" datavalue="~dtGetJezik.@certifikat" />
+				</item>
+				<item row="7" col="1" caption="Napomena:" highlight="false" colspan="2" rowspan="2">
+					<memoedit name="memoNapomena" datavalue="~dtGetJezik.@napomena"/>
+				</item>
+			</group>
+		</layout>
+		<panelbuttons>
+			<buttons>
+				<!-- BUTTON SPREMI-->
+				<button name="btnSpremi" caption="Spremi" dock="left">
+					<event type="click">
+					<action type="validate"/>
+						<action if="$HRKadroviJeziciId==0">
+							<action type="datarun reader" value="~dtUnosJezika">
+								<action type="control populate" value="parent.#grdJezici">
+									<action type="control focus" value="parent.#grdJezici">
+										<parameter value="$noviID"/>
+									</action>
+								</action>
+							</action>
+							<action type="control enable" value="parent.#btnIzmjenaJ,parent.#btnBrisanjeJ"/>
+						</action>
+						<action if="$indGreske==0">
+							<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+							<action type="variable value" value="global.$RefreshajMaster">
+								<parameter value="1" type="int"/>
+							</action>
+							<action type="message" value="Uspješno spremljeno!"/>
+							<action type="form close" />
+						</action>
+						<action if="$HRKadroviJeziciId!=0">
+							<action type="datarun reader" value="~dtIzmjenaJezika"/>
+							<action if="$indGreske==0">
+								<action type="message" value="Uspješno spremljeno!"/>
+								<!-- setiraj globalnu varijablu koju će se postavljati na child formama a ovisno o vrijednosti pozivati refresh grida
+		  ovime se omogućuje da se ne troši vrijeme na refresh ako child forma nije ništa odradila -->
+								<action type="variable value" value="global.$RefreshajMaster">
+									<parameter value="1" type="int"/>
+								</action>
+								<action type="form close"/>
+							</action>
+						</action>
+					</event>
+				</button>
+				<!-- BUTTON ODUSTANI-->
+				<button name="btnOdustani" caption="Odustani" dock="right" type="cancel">
+					<event type="click">
+						<action type="form close" />
+					</event>
+				</button>
+			</buttons>
+		</panelbuttons>
+		<datalist>
+			<data command="spHRManagerMaster_Podaci_Jezici_CP" name="dtJezici">
+				<parameter name="@action" value="cmbJezici"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Jezici_CP" name="dtGetJezik">
+				<parameter name="@action" value="getJezici" />
+				<parameter name="@hrkadroviid" value="$hrkadroviid" type="int"/>
+				<parameter name="@HRKadroviJeziciId" value="$HRKadroviJeziciId" type="int"/>
+			</data>
+			<data command="spHRManagerMaster_Podaci_Jezici_CP" name="dtUnosJezika">
+				<parameter name="@action" value="unos"/>
+				<parameter name="@HRKadroviJeziciId.output.int" variablename="noviID"></parameter>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@jeziciid"  value="#cmbJezik" />				
+				<parameter name="@cita" value="0" if="#rdoCitaNula==True" />
+                <parameter name="@cita" value="1" elseif="#rdoCitaJedan==True" />
+				<parameter name="@cita" value="2" elseif="#rdoCitaDva==True" />
+				<parameter name="@cita" value="3" elseif="#rdoCitaTri==True" />
+				<parameter name="@cita" value="4" elseif="#rdoCitaCetiri==True" />
+				<parameter name="@cita" value="5" elseif="#rdoCitaPet==True" />
+				<parameter name="@pise" value="0" if="#rdoPiseNula==True" />
+                <parameter name="@pise" value="1" elseif="#rdoPiseJedan==True" />
+				<parameter name="@pise" value="2" elseif="#rdoPiseDva==True" />
+				<parameter name="@pise" value="3" elseif="#rdoPiseTri==True" />
+				<parameter name="@pise" value="4" elseif="#rdoPiseCetiri==True" />
+				<parameter name="@pise" value="5" elseif="#rdoPisePet==True" />
+				<parameter name="@govori" value="0" if="#rdoGovoriNula==True" />
+                <parameter name="@govori" value="1" elseif="#rdoGovoriJedan==True" />
+				<parameter name="@govori" value="2" elseif="#rdoGovoriDva==True" />
+				<parameter name="@govori" value="3" elseif="#rdoGovoriTri==True" />
+				<parameter name="@govori" value="4" elseif="#rdoGovoriCetiri==True" />
+				<parameter name="@govori" value="5" elseif="#rdoGovoriPet==True" />
+				<parameter name="@razumije" value="0" if="#rdoRazumijeNula==True" />
+                <parameter name="@razumije" value="1" elseif="#rdoRazumijeJedan==True" />
+				<parameter name="@razumije" value="2" elseif="#rdoRazumijeDva==True" />
+				<parameter name="@razumije" value="3" elseif="#rdoRazumijeTri==True" />
+				<parameter name="@razumije" value="4" elseif="#rdoRazumijeCetiri==True" />
+				<parameter name="@razumije" value="5" elseif="#rdoRazumijePet==True" />			
+				<parameter name="@certifikat"  value="#chkCertifikat" />
+				<parameter name="@napomena"  value="#memoNapomena" />
+				<parameter name="@indGreske.output.int"/>			
+			</data>
+			<data command="spHRManagerMaster_Podaci_Jezici_CP" name="dtIzmjenaJezika">
+				<parameter name="@action" value="izmjena"/>
+				<parameter name="@HRKadroviJeziciId" value="$HRKadroviJeziciId"></parameter>
+				<parameter name="@hrkadroviid"  value="$HRKadroviId" />
+				<parameter name="@jeziciid"  value="#cmbJezik" />
+				<parameter name="@cita" value="0" if="#rdoCitaNula==True" />
+                <parameter name="@cita" value="1" elseif="#rdoCitaJedan==True" />
+				<parameter name="@cita" value="2" elseif="#rdoCitaDva==True" />
+				<parameter name="@cita" value="3" elseif="#rdoCitaTri==True" />
+				<parameter name="@cita" value="4" elseif="#rdoCitaCetiri==True" />
+				<parameter name="@cita" value="5" elseif="#rdoCitaPet==True" />
+				<parameter name="@pise" value="0" if="#rdoPiseNula==True" />
+                <parameter name="@pise" value="1" elseif="#rdoPiseJedan==True" />
+				<parameter name="@pise" value="2" elseif="#rdoPiseDva==True" />
+				<parameter name="@pise" value="3" elseif="#rdoPiseTri==True" />
+				<parameter name="@pise" value="4" elseif="#rdoPiseCetiri==True" />
+				<parameter name="@pise" value="5" elseif="#rdoPisePet==True" />
+				<parameter name="@govori" value="0" if="#rdoGovoriNula==True" />
+                <parameter name="@govori" value="1" elseif="#rdoGovoriJedan==True" />
+				<parameter name="@govori" value="2" elseif="#rdoGovoriDva==True" />
+				<parameter name="@govori" value="3" elseif="#rdoGovoriTri==True" />
+				<parameter name="@govori" value="4" elseif="#rdoGovoriCetiri==True" />
+				<parameter name="@govori" value="5" elseif="#rdoGovoriPet==True" />
+				<parameter name="@razumije" value="0" if="#rdoRazumijeNula==True" />
+                <parameter name="@razumije" value="1" elseif="#rdoRazumijeJedan==True" />
+				<parameter name="@razumije" value="2" elseif="#rdoRazumijeDva==True" />
+				<parameter name="@razumije" value="3" elseif="#rdoRazumijeTri==True" />
+				<parameter name="@razumije" value="4" elseif="#rdoRazumijeCetiri==True" />
+				<parameter name="@razumije" value="5" elseif="#rdoRazumijePet==True" />		
+				<parameter name="@certifikat"  value="#chkCertifikat" />
+				<parameter name="@napomena"  value="#memoNapomena" />
+				<parameter name="@indGreske.output.int"/>			
+			</data>
+
+		</datalist>
+	</form>
+</root>
