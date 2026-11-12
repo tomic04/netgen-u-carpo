@@ -7,6 +7,8 @@ using Carpo.NetGen.Kontrole;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
 using Carpo.NetGen.Xml;
+using DevExpress.Skins;
+using DevExpress.UserSkins;
 using DevExpress.XtraEditors;
 using DevExpress.XtraEditors.Controls;
 using DevExpress.XtraGrid;
@@ -23,6 +25,8 @@ namespace Carpo.NetGen.Ui
     {
         public Dijalog()
         {
+            BonusSkins.Register();
+            SkinManager.EnableFormSkins();
             StartPosition = FormStartPosition.CenterParent;
             Width = 480;
             Height = 320;
@@ -44,6 +48,19 @@ namespace Carpo.NetGen.Ui
                 Width = sirina;
             if (visina > 0)
                 Height = visina;
+            string rub = Raspored.Rub(forma.Atributi == null ? null : forma.Atributi.Vrijednost("BORDERSTYLE"));
+            if (rub == "FixedDialog")
+                FormBorderStyle = FormBorderStyle.FixedDialog;
+            else if (rub == "FixedSingle")
+                FormBorderStyle = FormBorderStyle.FixedSingle;
+            else if (rub == "Fixed3D")
+                FormBorderStyle = FormBorderStyle.Fixed3D;
+            else if (rub == "None")
+                FormBorderStyle = FormBorderStyle.None;
+            else if (rub == "FixedToolWindow")
+                FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            else if (rub == "SizableToolWindow")
+                FormBorderStyle = FormBorderStyle.SizableToolWindow;
 
             NgDnevnik.Akcija("otvara formu " + forma.Ime + " node=" + (kontekst == null ? "" : kontekst.Node));
             int zadnji = 0;
@@ -69,6 +86,7 @@ namespace Carpo.NetGen.Ui
                 if (m.ImaVidljivo)
                     c.Visible = m.Vidljivo;
                 PostaviTekst(c, k, m);
+                CarpoIzgled.Primijeni(c, k.Grana);
                 if (m.Natpis)
                 {
                     var l = new LabelControl();
@@ -96,6 +114,7 @@ namespace Carpo.NetGen.Ui
                     b.Width = 96;
                     b.Anchor = AnchorStyles.Left | AnchorStyles.Bottom;
                     b.DialogResult = Odustajanje(b.Text) ? DialogResult.Cancel : DialogResult.OK;
+                    CarpoIzgled.Gumb(b);
                     Controls.Add(b);
                     x += 104;
                 }
@@ -106,6 +125,7 @@ namespace Carpo.NetGen.Ui
                 ok.Text = "OK";
                 ok.DialogResult = DialogResult.OK;
                 ok.Dock = DockStyle.Bottom;
+                CarpoIzgled.Gumb(ok);
                 Controls.Add(ok);
                 AcceptButton = ok;
             }

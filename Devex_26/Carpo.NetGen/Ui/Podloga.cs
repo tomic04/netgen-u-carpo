@@ -38,6 +38,7 @@ namespace Carpo.NetGen.Ui
         private readonly GridView _detailPogled;
         private readonly RibbonPageGroup _naredbe;
         private readonly BarStaticItem _status;
+        private readonly BarStaticItem _veza;
         private readonly Stablo _stablo = new Stablo();
         private readonly MasterGrid _master = new MasterGrid();
         private readonly DetailGrid _detail = new DetailGrid();
@@ -68,8 +69,13 @@ namespace Carpo.NetGen.Ui
             _status = new BarStaticItem();
             _status.Caption = "";
             _status.AutoSize = BarStaticItemSize.Spring;
+            _veza = new BarStaticItem();
+            _veza.Caption = "";
             if (ribbonControl1 != null && ribbonControl1.StatusBar != null)
+            {
                 ribbonControl1.StatusBar.ItemLinks.Add(_status);
+                ribbonControl1.StatusBar.ItemLinks.Add(_veza);
+            }
 
             _drvo = new TreeList();
             _drvo.Dock = DockStyle.Fill;
@@ -89,6 +95,7 @@ namespace Carpo.NetGen.Ui
             _combo.Properties.NullText = "";
             _combo.Properties.ShowHeader = false;
             _combo.Properties.ShowFooter = false;
+            CarpoIzgled.Combo(_combo);
             _combo.Visible = false;
             _combo.EditValueChanged += Combo_EditValueChanged;
 
@@ -155,6 +162,7 @@ namespace Carpo.NetGen.Ui
             pogled.OptionsSelection.MultiSelectMode = GridMultiSelectMode.RowSelect;
             if (master)
                 pogled.OptionsView.ShowIndicator = true;
+            CarpoIzgled.Pogled(pogled);
         }
 
         public bool Prikazi(string xml, string server, string baza, int operater)
@@ -167,6 +175,7 @@ namespace Carpo.NetGen.Ui
             }
             _projekt = r.Projekt;
             Text = string.IsNullOrEmpty(_projekt.Naslov) ? "NetGen" : _projekt.Naslov;
+            _veza.Caption = (server ?? "") + " · " + (baza ?? "") + " · " + operater.ToString();
             var kontekst = new SqlKontekst();
             kontekst.OperaterId = operater.ToString();
             kontekst.XmlName = Path.GetFileName(xml ?? "");
@@ -431,6 +440,27 @@ namespace Carpo.NetGen.Ui
                 if (k.Sirina > 0)
                     c.Width = k.Sirina;
                 c.OptionsColumn.AllowEdit = k.Uredivanje;
+                if (!string.IsNullOrEmpty(k.Format))
+                {
+                    c.DisplayFormat.FormatString = k.Format;
+                    c.DisplayFormat.FormatType = k.Format.IndexOf("yy", System.StringComparison.OrdinalIgnoreCase) >= 0
+                        || k.Format.IndexOf("dd", System.StringComparison.OrdinalIgnoreCase) >= 0
+                        ? DevExpress.Utils.FormatType.DateTime
+                        : DevExpress.Utils.FormatType.Numeric;
+                }
+                if (string.Equals(k.Poravnanje, "Far", System.StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(k.Poravnanje, "Right", System.StringComparison.OrdinalIgnoreCase))
+                    c.AppearanceCell.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
+                else if (string.Equals(k.Poravnanje, "Center", System.StringComparison.OrdinalIgnoreCase))
+                    c.AppearanceCell.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
+                if (string.Equals(k.PoravnanjeZaglavlja, "Far", System.StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(k.PoravnanjeZaglavlja, "Right", System.StringComparison.OrdinalIgnoreCase))
+                    c.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
+                else if (string.Equals(k.PoravnanjeZaglavlja, "Center", System.StringComparison.OrdinalIgnoreCase))
+                    c.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
+                else if (string.Equals(k.PoravnanjeZaglavlja, "Near", System.StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(k.PoravnanjeZaglavlja, "Left", System.StringComparison.OrdinalIgnoreCase))
+                    c.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Near;
             }
             if (pogled.RowCount > 0)
                 pogled.FocusedRowHandle = 0;
@@ -447,6 +477,7 @@ namespace Carpo.NetGen.Ui
                 var item = new BarButtonItem(ribbonControl1.Manager, b.Natpis ?? "");
                 item.Tag = b.Naredba;
                 item.ImageOptions.ImageUri.Uri = Ikona(b.Natpis);
+                item.ItemAppearance.Normal.Font = new System.Drawing.Font(System.Drawing.SystemFonts.DefaultFont.FontFamily, 7f, System.Drawing.FontStyle.Bold);
                 item.ItemClick += Gumb_ItemClick;
                 _naredbe.ItemLinks.Add(item);
             }

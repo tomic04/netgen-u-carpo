@@ -353,6 +353,7 @@ namespace Carpo.NetGen.GridTest
                 && Raspored.Editor(NgGrana.Button) == "SimpleButton"
                 && Raspored.Editor(NgGrana.StatusStrip) == "LabelControl"
                 && Raspored.Editor(NgGrana.Nijedna).Length == 0, "");
+            T("rub-filter", Raspored.Rub("3") == "FixedDialog" && Raspored.Rub("") == "" && Raspored.Rub("4") == "Sizable", Raspored.Rub("3"));
         }
 
         private static void KomandeTestovi()

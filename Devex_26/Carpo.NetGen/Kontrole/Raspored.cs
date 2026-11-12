@@ -173,6 +173,29 @@ namespace Carpo.NetGen.Kontrole
             return (tekst ?? "").Replace("_", "").Replace("!!", "\r\n");
         }
 
+        /// <summary>FormBorderStyle kao WinForms broj. Nepoznat ili prazan ostaje prazan tekst.</summary>
+        public static string Rub(string vrijednost)
+        {
+            int n;
+            if (vrijednost == null || !int.TryParse(vrijednost.Trim(), out n))
+                return "";
+            if (n == 0)
+                return "None";
+            if (n == 1)
+                return "FixedSingle";
+            if (n == 2)
+                return "Fixed3D";
+            if (n == 3)
+                return "FixedDialog";
+            if (n == 4)
+                return "Sizable";
+            if (n == 5)
+                return "FixedToolWindow";
+            if (n == 6)
+                return "SizableToolWindow";
+            return "";
+        }
+
         private static bool? Zastavica(string v)
         {
             if (v == null)

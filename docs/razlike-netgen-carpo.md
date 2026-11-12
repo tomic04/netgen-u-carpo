@@ -1,6 +1,6 @@
 # Razlike NetGen / Carpo
 
-Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i nastavi od zadnjeg `R`. R01–R53 su QA (#16, #17, #19). Carpo.NetGen od R54 dopisuje odluku, test i PR u istom PR-u. Zadnji broj na ovoj grani je R64.
+Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i nastavi od zadnjeg `R`. R01–R53 su QA (#16, #17, #19). Carpo.NetGen od R54 dopisuje odluku, test i PR u istom PR-u. Zadnji broj na ovoj grani je R65.
 
 ## Odluka u Carpo.NetGen
 
@@ -570,3 +570,12 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 - **Odluka:** namjerno odstupanje, izgled. Zaglavlje kartice je vidljivo. Odabir `Explorer` i sakriveni `DMS` ostaju NetGen.
 - **Test:** nema. Korisnik vidi kartice na KntKompVerizne.
 - **PR:** otvaranje
+
+## R65 Editori, stupci i status su Carpo izgled
+
+- **Element:** combo, tekst, broj, datum, check, gumb, stupac grida, status, filter forma
+- **NetGen:** WinForms editori, Janus stupac s `FORMAT` i poravnanjem, `StatusStrip` s verzijom i serverom, `BORDERSTYLE=3` je fiksni dijalog. Zaglavlje grida nije prelomljeno, nema naizmjeničnih redova.
+- **Carpo:** isti DevExpress editori kao Carpo komponente: combo `NullText` `...` i `ImmediatePopup`, datum maska `DateTimeAdvancingCaret` bez clear gumba, broj desno, check `EnterMoveNextControl`, gumb 7 pt bold. Stupac crta `FORMAT` i poravnanje iz modela. Grid ima naizmjenični red, prelom zaglavlja i auto-filter bez izbora uvjeta. Statusna traka ribbana drži poruku i `server · baza · operater`. Filter forma je `XtraForm` sa skinom; `BORDERSTYLE` se čita.
+- **Odluka:** namjerno odstupanje, izgled. Vrijednosti, SQL i `@@node` se ne mijenjaju. Format stupca je NetGen podatak koji se sada vidi.
+- **Test:** `rub-filter`
+- **PR:** izgled-kontrole
