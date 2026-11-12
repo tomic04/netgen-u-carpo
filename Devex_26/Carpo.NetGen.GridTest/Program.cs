@@ -5,6 +5,7 @@ using System.Text;
 using System.Data.SqlClient;
 using System.IO;
 using Carpo.NetGen.Grid;
+using Carpo.NetGen.Komande;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Xml;
 
@@ -23,6 +24,7 @@ namespace Carpo.NetGen.GridTest
             Kolone();
             PisanjeIServer();
             StabloTestovi();
+            KomandeTestovi();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -219,6 +221,39 @@ namespace Carpo.NetGen.GridTest
             gErr.ZabiljeziGresku("Invalid column name 'oznaka2'.");
             T("sql-greska-ne-puni", gErr.Stanje.Kolone.Count == 0 && gErr.Stanje.Tablica == null && gErr.Stanje.Poruka != null && gErr.Stanje.Poruka.IndexOf("oznaka2", StringComparison.Ordinal) >= 0, gErr.Stanje.Poruka);
             T("log-greska", NgDnevnik.Zapisi.Count > 0 && NgDnevnik.Zapisi[NgDnevnik.Zapisi.Count - 1].Razina == "Error", "");
+        }
+
+        private static void KomandeTestovi()
+        {
+            T("sp-lijepi-parametre", Lanac.Lijepi("spKultureNGAzur @Action=0,", "@Cijena=''")
+                .EndsWith("@Cijena=''"), "");
+            T("dml-ne-lijepi", Lanac.Lijepi("select 1", "@a=1") == "select 1", "");
+            T("uzvicnik-gasi-lijepljenje", Lanac.Lijepi("spX @Action=0 !!", "@a=1").IndexOf("@a") < 0, "");
+            T("caption-novi-red", Lanac.Caption("a!!b") == "a\r\nb", "");
+            T("prazan-broj", Lanac.PrazanBroj() == "0", "");
+            T("prazan-tekst", Lanac.PrazanTekst() == "''", "");
+            T("apostrof", Lanac.USql(Lanac.TekstVrijednost("a'b")) == "'a''b'", "");
+            T("search-tag", Lanac.SearchParametar("") == "null" && Lanac.SearchParametar("5") == "5", "");
+            T("search-tablica", Lanac.SearchTablica("roba#robaid#userid%#!cast(userid as varchar)#%naziv%") == "roba", "");
+            T("datum", Lanac.Datum(2026, 1, 1) == "20260101" && Lanac.PrviDanGodine(2026) == "01.01.2026", "");
+            T("multidrop", Lanac.MultiDrop(new[] { "1", "2" }) == "1~2", "");
+            T("allowempty", Lanac.AllowEmpty("TRUE") && !Lanac.AllowEmpty("false"), "");
+            var prekid = Lanac.Izvrsi("spRaiserror 'x'#OK", true, "nema ok");
+            T("raiserror-prekida", prekid.Prekinuto && !prekid.Zatvara, "");
+            var guta = Lanac.Izvrsi("spRaiserror 'x'#OK", true, "poruka #OK");
+            T("hash-ok-guta", !guta.Prekinuto && guta.Zatvara, "");
+            var fokus = Lanac.Izvrsi("spRaiserror 'x'#OK", true, "+focus(partneriid)");
+            T("focus-nije-ok", fokus.Fokus == "partneriid" && fokus.Prekinuto, "");
+            T("prazan-segment", Lanac.Izvrsi("##OK", true, null).Zatvara, "");
+            T("okstay", Lanac.Izvrsi("OKSTAY", true, null).Ostaje && !Lanac.Izvrsi("OKSTAY", true, null).Zatvara, "");
+            T("close-button2", Lanac.Izvrsi("CLOSE", true, null).Button2 && Lanac.Izvrsi("CLOSEPARENT", true, null).CloseParent, "");
+            T("tilde-u-lanacu", Lanac.Izvrsi("REFRESHMASTERGRID~CLOSE", true, null).RefreshMasterGrid, "");
+            T("refreshmaster-nije-grid", !Lanac.Izvrsi("REFRESHMASTER", true, null).RefreshMasterGrid, "");
+            var fe = Lanac.Izvrsi("FOREACHSELECTED(x)#spAzur", true, null);
+            var podloga = Lanac.Izvrsi("FOREACHROW(x)#spAzur", false, null);
+            T("foreach-dijalog", fe.Foreach == "cekirani" && fe.Odigrano.Count == 1 && fe.Odigrano[0] == "spAzur", "");
+            T("foreach-podloga", podloga.Foreach.Length == 0 && podloga.Odigrano.Count == 0, "");
+            T("foreach-plavi", Lanac.Izvrsi("FOREACHBLUEROW(x)#spAzur", true, null).Foreach == "plavi", "");
         }
 
         private static void StabloTestovi()

@@ -30,6 +30,9 @@ namespace Carpo.NetGen.Granule
             var sve = new List<Stavka>();
             sve.AddRange(OznakaKL.Provjeri(root));
             sve.AddRange(JeziciNG.Provjeri(root));
+            sve.AddRange(Kulture.Provjeri(root));
+            sve.AddRange(KarticaPartnera.Provjeri(root));
+            sve.AddRange(KupNg.Provjeri(root));
 
             string tekst = Qa.Tekst(sve);
             Console.WriteLine(tekst);

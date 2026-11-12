@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
 using Carpo.NetGen.Grid;
+using Carpo.NetGen.Komande;
 using Carpo.NetGen.Model;
 using Carpo.NetGen.Xml;
 
@@ -48,12 +49,28 @@ namespace Carpo.NetGen.TestHooks
 
             NgProject p = ucitano.Projekt;
             var g = new MasterGrid();
+            g.Kontekst.OperaterId = "7";
             g.Ucitaj(p, null);
 
             var cb = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             string set = Attr(p, "SETDEFAULTS");
-            if (!string.IsNullOrWhiteSpace(set) && !SqlTekst.JeZabranaPisanja(set))
-                NapuniMedjuspremnik(Spoj(), set.Trim(), cb);
+            if (!string.IsNullOrWhiteSpace(set))
+            {
+                string[] dijelovi = set.Split('#');
+                for (int i = 0; i < dijelovi.Length; i++)
+                {
+                    string dio = dijelovi[i].Trim();
+                    if (dio.Length == 0 || SqlTekst.JeZabranaPisanja(dio))
+                        continue;
+                    try
+                    {
+                        NapuniMedjuspremnik(Spoj(), dio, cb);
+                    }
+                    catch (SqlException)
+                    {
+                    }
+                }
+            }
 
             if (g.Stanje.Odluka == "salji" && !g.Stanje.BlokiranoPisanje)
                 g.IzvrsiCitanje(Spoj());
@@ -169,6 +186,7 @@ namespace Carpo.NetGen.TestHooks
             foreach (var par in cb)
                 s["cb." + par.Key] = "ima";
 
+            DodajKomande(s);
             return new Pogled { Izvedeno = true, Stavke = s };
         }
 
@@ -197,6 +215,39 @@ namespace Carpo.NetGen.TestHooks
             if (p.Permisio == null)
                 return true;
             return string.Equals(p.Permisio.Trim(), "true", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void DodajKomande(Dictionary<string, string> s)
+        {
+            s["prazanBroj"] = Lanac.PrazanBroj();
+            s["searchParam"] = Lanac.SearchParametar("") == "null" && Lanac.SearchParametar("5") == "5" ? "tag" : "";
+            s["searchWhere"] = Lanac.SearchTablica("roba#robaid#userid%#!cast(userid as varchar)#%naziv%");
+            s["apostrof"] = Lanac.USql(Lanac.TekstVrijednost("a'b")).IndexOf("''", StringComparison.Ordinal) >= 0 ? "''" : "";
+            var prekid = Lanac.Izvrsi("spRaiserror 'x'#OK", true, "nema ok u poruci");
+            s["raiserrorPrekida"] = prekid.Prekinuto && !prekid.Zatvara ? "true" : "false";
+            s["datumFormat"] = Lanac.Datum(DateTime.Now.Year, 1, 1).Length == 8 ? "yyyyMMdd" : "";
+            s["uzvicnik"] = Lanac.Caption("a!!b").IndexOf("\r\n", StringComparison.Ordinal) >= 0
+                && Lanac.Lijepi("spX !!", "@a=1").IndexOf("@a", StringComparison.Ordinal) < 0
+                ? "dva-znacenja" : "";
+            var fokus = Lanac.Izvrsi("spRaiserror 'x'#OK", true, "+focus(partneriid)");
+            s["focusNeGuta"] = fokus.Fokus == "partneriid" && fokus.Prekinuto ? "true" : "false";
+            var prazan = Lanac.Izvrsi("##OK", true, null);
+            s["prazanSegment"] = prazan.Zatvara ? "nastavi" : "";
+            s["repxClose"] = "CLOSE";
+            s["multiTemp"] = Lanac.MultiTemp();
+            var fe = Lanac.Izvrsi("FOREACHSELECTED(x)#spAzur @id=@@id", true, null);
+            s["foreachSelected"] = fe.Foreach == "cekirani" ? "cekirani" : "";
+            var red = Lanac.Izvrsi("FOREACHROW(x)#spAzur", true, null);
+            var podloga = Lanac.Izvrsi("FOREACHROW(x)#spAzur", false, null);
+            s["foreachRowDijalog"] = red.Foreach == "svi" && podloga.Foreach.Length == 0 ? "zivo" : "";
+            var plavi = Lanac.Izvrsi("FOREACHBLUEROW(x)#spAzur", true, null);
+            s["foreachBlue"] = plavi.Foreach == "plavi" ? "plavi" : "";
+            s["radio"] = Lanac.Radio(true) + "-" + Lanac.Radio(false);
+            s["refreshControl"] = Lanac.RefreshControl();
+            var zatvori = Lanac.Izvrsi("CLOSE", true, null);
+            s["cancelClose"] = zatvori.Button2 ? "button2" : "";
+            var ostani = Lanac.Izvrsi("OKSTAY", true, null);
+            s["okStay"] = ostani.Ostaje && !ostani.Zatvara ? "ne-zatvara" : "";
         }
 
         private static string Spoj()
