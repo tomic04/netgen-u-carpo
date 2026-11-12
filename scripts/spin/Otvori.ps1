@@ -113,6 +113,12 @@ foreach ($ime in $imena) {
         Write-Host "$ime prazno"
         continue
     }
+    $provjera = $sql.Replace("~~", ",")
+    if ($provjera.Trim().StartsWith("@") -or $provjera.IndexOf("@@") -gt 0) {
+        [void]$sb.AppendLine("| $ime | preskok | ExecSql ne salje dok ostane @@ |")
+        Write-Host "$ime preskok"
+        continue
+    }
     $ishod = "pad"
     $poruka = ""
     for ($pokusaj = 1; $pokusaj -le 2; $pokusaj++) {

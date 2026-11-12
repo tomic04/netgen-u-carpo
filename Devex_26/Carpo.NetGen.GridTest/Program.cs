@@ -23,6 +23,7 @@ namespace Carpo.NetGen.GridTest
         private static int Main(string[] args)
         {
             SqlPreskoci();
+            IntrastatPreskok();
             Zamjene();
             OznakaBezBaze();
             JeziciBezBaze();
@@ -50,6 +51,18 @@ namespace Carpo.NetGen.GridTest
                 Console.WriteLine("PRESKOCENO spin (nema CARPO_SPIN=1)");
             Console.WriteLine("FAIL=" + fail.ToString());
             return fail == 0 ? 0 : 1;
+        }
+
+        private static void IntrastatPreskok()
+        {
+            NgProject p = Ucitaj("Intrastat.xml");
+            var g = new MasterGrid();
+            g.Kontekst.OperaterId = "7";
+            if (p != null)
+                g.Ucitaj(p, null);
+            string sql = g.Stanje == null ? "" : (g.Stanje.SqlZaSlanje ?? "");
+            bool preskok = p != null && g.Stanje.Odluka == "ostao-@@" && sql.IndexOf("@@godina", StringComparison.Ordinal) > 0 && g.Stanje.Tablica == null;
+            T("intrastat-ostao", preskok, g.Stanje == null ? "" : g.Stanje.Odluka);
         }
 
         private static void ZastitaTestovi()

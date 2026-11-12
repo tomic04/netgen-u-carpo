@@ -19,6 +19,8 @@ To nisu prava poslovna tijela. Da test bude vjerodostojan, korisnik treba dati:
 
 `AOPNovi` šalje `@id='null'`. Konverzija u int ostaje, kao u NetGenu. Stub se za to ne pravi.
 
+`Intrastat` ONLOAD je `spIntrastat_Query ... @godina = @@godina`. `Form1.SrediSQL` ne dira `@@godina`. `Class1.ExecSql` ne šalje tekst u kojem `IndexOf("@@") > 0` (`Class1.vb` 113–118). Otvaranje na spinu taj slučaj bilježi kao `preskok`, ne kao pad konverzije. Procedura se ne izmišlja.
+
 `PrijemniList` nema projektni `ONLOAD`. `Poruke`, `TecRazOTV`, `RealizacijaFakture` i `RealizacijaStavkeNG` nemaju XML u repou.
 
 ## Već nadomješteno praznim objektom
