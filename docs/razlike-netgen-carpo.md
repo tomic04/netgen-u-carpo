@@ -816,6 +816,15 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `opz-nije-dll`, `bvg-carpoform`
 - **PR:** ostalo-kljuc
 
+## R100 Stablo iz store: stupci 0–3, id 0 se preskače
+
+- **Element:** `TREE` koji zove proceduru
+- **NetGen:** stupac 0 je id, 1 parent, 2 natpis, 3 tag (`Form1.vb` 4450, 4461). Korijen je prvi red. Dijete kojem je id 0 se preskače (`4498`). Tag bez dvotočke postane `vrijednost:imeForme` (`4474`).
+- **Carpo:** isti raspored. `Statusi` daje `vrijednost:POPUNI_FORM`.
+- **Odluka:** NetGen logika. Jupiter se ne dira.
+- **Test:** `sta-stablo`
+- **PR:** stablo-kljuc
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

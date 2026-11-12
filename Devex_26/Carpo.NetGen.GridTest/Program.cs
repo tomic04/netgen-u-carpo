@@ -39,6 +39,7 @@ namespace Carpo.NetGen.GridTest
             NextFormTest();
             GridKljucevi();
             OstaloKljucevi();
+            StabloKljucevi();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -80,6 +81,15 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void StabloKljucevi()
+        {
+            var s = new Dictionary<string, string>(StringComparer.Ordinal);
+            NgProject sta = Ucitaj("Statusi.xml");
+            Stablo.Kljucevi(sta, s);
+            T("sta-stablo", sta != null && s["treeStupci"] == "0,1,2,3" && s["preskociId0"] == "true"
+                && s["tagBezDvotocke"] == "vrijednost:POPUNI_FORM", s.ContainsKey("tagBezDvotocke") ? s["tagBezDvotocke"] : "");
         }
 
         private static void OstaloKljucevi()

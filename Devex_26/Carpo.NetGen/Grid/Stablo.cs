@@ -348,6 +348,29 @@ namespace Carpo.NetGen.Grid
             return dr[i].ToString().Trim();
         }
 
+        /// <summary>
+        /// Store stablo: stupci 0 id, 1 parent, 2 natpis, 3 tag. Korijen je prvi red.
+        /// Dijete s id 0 se preskače. Tag bez dvotočke dobije ime forme iza dvotočke u TREE.
+        /// </summary>
+        public static void Kljucevi(NgProject p, Dictionary<string, string> s)
+        {
+            if (p == null || s == null)
+                return;
+            string tree = (p.Tree ?? "").Trim();
+            if (tree.Length == 0)
+                return;
+            s["treeStupci"] = "0,1,2,3";
+            s["preskociId0"] = "true";
+            int kolon = tree.IndexOf(':');
+            if (kolon < 0)
+                return;
+            string forma = tree.Substring(kolon + 1);
+            int hash = forma.IndexOf('#');
+            if (hash >= 0)
+                forma = forma.Substring(0, hash);
+            s["tagBezDvotocke"] = "vrijednost:" + forma.Trim();
+        }
+
         private static string Atr(NgProject projekt, string ime)
         {
             if (projekt == null || projekt.Atributi == null || !projekt.Atributi.Ima(ime))
