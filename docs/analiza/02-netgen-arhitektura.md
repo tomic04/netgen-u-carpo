@@ -258,4 +258,96 @@ Caption koji počinje s `_` ne ulazi u parametre (search: `SudjelujeUParametrima
 
 ## 10. Što ovo znači za novi projekt
 
-NetGen nije „grid koji treba zamijeniti DevExpressom“. On je interpreter: tolerantni XML, apsolutni raspored, string-komande, lijepljenje SQL-a, `!!`, `#OK` u tekstu iznimke, temp tablica za multi-select, DMS→baza→disk. Janus je uglavnom grid i numerički editor. Zamjena samo te dvije klase ostavlja 90% semantike u `Form1`/`Form2`/`Class1`, što i jest dio koji `Carpo.NetGen` mora ponoviti ili svjesno odbiti.
+NetGen nije „grid koji treba zamijeniti DevExpressom“. On je interpreter. Zamjena samo `GridEX` i `NumericEditBox` ostavlja komande, SQL, DMS, fiskalizaciju i `ASSEMBLYLOAD` neportirane. Odluka iteracije 2: sve to ide u port.
+
+## 11. Ugovor koji Jupiter stvarno zove
+
+Izvor Jupitera nije u repou. Ugovor je ono što je `public` na `Loader` i `frm`.
+
+`Loader` (`netgen/Loader.vb` 9–18) drži polja koja Jupiter postavi **prije** poziva: `moduleId`, `strNGParams`, `mainHandle`, `Ikona`, `Koler`. Nakon poziva čita `WCaption` i `hWnd`. `ShellResize(w, h)` (22–26) radi `SetWindowPos` na `hWnd`.
+
+`Run8` (122–190): `On Error Resume Next`, `New Form1` u **istom** AppDomainu (AppDomain je zakomentiran 22.04.2024, linije 169–175), prepiše polja, zove `ob.Run(...)`. `Run8 = ob` je u komentaru, pa funkcija vraća `Nothing`. Stari `Run` (79–119) još radi `Run = ob` i diže AppDomain.
+
+`Form1.Run8` (1087–1096) samo proslijedi u `Form1.Run` (1098). Taj `Run` složi `strXML2`, konekcije, `JupiterLog.Inicijaliziraj`, `Show` i `SetParent`. Lozinka ide u lokalne varijable `strSQLSERVERlogin` / `strSQLSERVERpassword` (1142–1146). CB log je u starom kodu znao ispisati password; novi port to ne smije u trajni log.
+
+`frm.Run8` (72–119) isto, ali `New Form2`, plus `ulazniID` i `ulaznaForma`. `frm.Run` (35–69) **nema** `New` — instanca je zakomentirana. Ako Jupiter negdje još zove `frm.Run`, to je null. Živi put je `Run8`.
+
+Potpis oba `Run8`:
+
+```text
+Run8(server, database, userId, password, operater As Int32,
+     clientHandle As Int32, top As Short, left As Short, remoteDllPath As String) As Object
+```
+
+`Carpo.NetGen` koji Jupiter treba prepoznati mora imati klasu s tim poljima i tom metodom. Ime assemblyja (`NetGenDLL` naspram novog) je otvoreno pitanje 1 u sažetku.
+
+## 12. DMS, baza, disk
+
+`Form1.ProcitajXMLzaPodlogu` (3167–3286), red koji se mora kopirati:
+
+1. `Assembly.Load("SpinDMSUtil")`, `CreateInstance("SpinDMSUtil.NetGenFinder")`, `GetFile(strXMLsakojimRadim)` (3172–3182). Greška ide u CB log, ne u korisnika. Na objektu se čitaju `source`, `exception`, `connstring`, `JupiterClientIniPath`.
+2. Ako je `InnerXml` prazan i `Conn4` otvoren: ime fajla bez putanje, `select body from netgenxml where xml = '...'` (3210). `body` je `byte()`, dekriptira se `KriptirajDekriptiraj.EncryptDecrypt.Decrypt(v1, "tan123ge")` (3221–3228). Ključ je u izvoru, nije nova tajna.
+3. Ako baza ne vrati XML: `m_xmld.Load` s diska (3262–3263). Greška tek tada ide u `MsgBox`.
+4. `InterniXML` prazan nije: ugrađeni `Resource1` (3278).
+
+`Form2` (oko 789–838) preskače DMS ako je XML već došao iz baze. `INCLUDE` (844–943) ponavlja DMS pa disk po svakoj putanji odvojenoj `#`.
+
+Carpo `FileFinder("Carpo")` gleda drugi skup dokumenata. Poziv te klase za NetGen XML vratio bi krivi fajl ili ništa. Port zove `NetGenFinder`.
+
+## 13. `TotalGenMultiSelectTemp`
+
+Kad ime forme počinje s `multiselect` ili `multiblue` (`Form1.vb` 4932–5037):
+
+1. `delete from TotalGenMultiSelectTemp where susersname = suser_sname()`.
+2. `delete ... where operateriid = @@operateriid`.
+3. Za svaki čekirani red (`multiselect`) ili svaki plavi red (`multiblue`) `insert into TotalGenMultiSelectTemp (id, hostname, susersname, operateriid) select <@@id>, host_name(), suser_sname(), <operater>`.
+4. Onda se forma otvori. Procedura unutar forme čita tu tablicu. Nema parametra `@id` s listom.
+
+Ako je čekiran nula ili jedan red i ime ipak počinje s `multiselect`, ubaci se samo trenutni `GetID()` (5003–5006).
+
+Tablica je privremeni spremnik na SQL Serveru, ne kontrole. Dva Jupiter prozora istog operatera brišu jedan drugome redove. To je današnje ponašanje i ostaje (odluka 5). Carpo `foreachrow` to ne zamjenjuje.
+
+U korpusu je 94 otvaranja forme čije ime počinje s `MULTISELECT` i 52 s `MULTIBLUE` (heuristika brojača, dokument 03).
+
+## 14. `ASSEMBLYLOAD`
+
+Oblik: `ASSEMBLYLOAD(ImeAssembly.ImeKlase)`.
+
+Podloga, `NovaGenerickaForma` (`Form1.vb` 4584–4623):
+
+- assembly je sve lijevo od zadnje točke (`Substring(0, InStrRev-1)`)
+- `CreateInstance` cijelog imena
+- `o.totalgen(id, operateriid, connection, zadnjiSqlMastera, parametriGrida)`
+- connection dobije prefiks `Driver={SQL Server};` ako ga već nema
+
+Ista komanda u `Form1.Rafalno` (6681 i `:ASSEMBLYLOAD` 6602) razlikuje se u zadnja dva argumenta (zadnji SQL naspram praznog, ili parametri grida). Dijalog (`Form2.vb` 7424–7456) zove `totalgen(id, operater, connection, strParametriSvi, strParametriSvi)` — parametri forme, ne SQL mastera.
+
+Ako `Load` ili `CreateInstance` padne, ide CB log i `Exit Sub` (prekida ostatak lanca). Nema sučelja u repou: klasa je tuđi DLL koji mora imati javnu `totalgen` s pet argumenata. Port ne smije to pretvoriti u Carpo `comdll` (drugi potpis). U korpusu 55 pogodaka. Najmanji primjeri: `definitions/netgen/BIOVEGA/MPNGPregDokMAIL.xml`, `Bilanca-GFI.xml`.
+
+## 15. Fiskalizacija
+
+Jedna metoda `Form1.Fiskalizacija(id, tablica)` (`Form1.vb` 286). Dijalog je prosljeđuje (`Form2.vb` 7459–7493).
+
+| Komanda | Tablica | Napomena |
+|---|---|---|
+| `FISKALIZACIJA(id)` | 1 | račun, `mpblagajnagla` |
+| `FISKALIZACIJAN(id)` | | `FiskalizacijaNapojnica` (615), isti CIS, drugi XML čvor |
+| `FISKALIZACIJAFAKTURE(id)` | 2 | |
+| `FISKALIZACIJABSRACUNI(id)` | 3 | |
+| `FISKALIZACIJAPD(id)` | 4 | logara, id je `mpponudaglaid` |
+| `FISKALIZACIJAPONUDE(id)` | 5 | |
+| `POSLOVNIPROSTOR(id)` | | `PoslovniProstor` (809), ne tablica |
+| `SLOPP(id)` | | tijelo komentirano (`Form2.vb` 7494–7498), ne radi |
+
+Tok `Fiskalizacija`:
+
+1. `select * from mpfiskalizacija` s `where` koji ovisi o tablici (296–306). Prazno ili datum u budućnosti: izlaz, samo CB log.
+2. Kolone `pfx`, `lozinkazapfx`, `url`, `timeout`, `PutanjaZaZahtjeveiOdgovoreOdPorezne`.
+3. Ako URL sadrži `fu.gov.si`: `Assembly.Load("SLOFISKAL")`, klasa `SLOFISKAL.Program`, metoda `SLORacun(id, tablica)` (341–354).
+4. Inače `Assembly.Load("Raverus.FiskalizacijaDEV.COM")`, klasa `Raverus.FiskalizacijaDEV.COM.CentralniInformacijskiSustav` (360–368). Mape zahtjeva/odgovora pod `C:\FISKALIZACIJA\RACUNI\...` ili pod putanjom iz tablice (497–504).
+
+Na podlozi, ako je čekirano više redova, `FISKALIZACIJA` se zove za svaki (`Form1.vb` 4643–4664). To nije `FOREACH*`.
+
+Carpo `FiscalOutlookActions` (`ZKI`/`JIR`) je drugi kod i drugi XML. Ne zamjenjuje ovaj put. DLL-ovi `Raverus.FiskalizacijaDEV.COM` i `SLOFISKAL` nisu u repou; trebaju na stroju u runtimeu (dokument 09). U korpusu najmanji pogodak je `FaktureNeFisk.xml` (11 kontrola, ima `FISKAL`).
+
+`POSALJIRACUNENASERVER`, `POSALJIZAKLJUCKENASERVER`, `POSALJIPORUKENASERVER` i `BLAGAJNAENABLE` su susjedne komande (blagajna/Mlinar), ne Raverus. Ostaju u portu komandi jer su u istom `Rafalno`, ali nisu fiskalni CIS. U korpusu su rijetke (`BLAGAJNAENABLE` 3). Njihov vanjski DLL u ovoj fazi nije identificiran izvan `Class1.BlagajnaEnableZaMlinar` — **neprovjereno** što ta metoda učitava.

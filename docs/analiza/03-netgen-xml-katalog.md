@@ -357,7 +357,123 @@ Imena `@@trgovinaid` i slična **nisu** ključne riječi. To su `NAME` kontrola.
 
 `CHILDFORM` na 65 datoteka je kandidat za ručnu provjeru prije nego se proglasi mrtvim. U ovoj fazi: lookup ga ne zove.
 
-## 11. Što katalog govori o redoslijedu izrade
+## 12. Potpuni popis tolerancija (iteracija 2)
+
+Odluka: adapter radi ono što radi današnji `On Error Resume Next` i `InStr`, ne „ispravlja“ autora. Tri sloja.
+
+### 12.1 Kod sam traži pogrešno slovkanje
+
+Ako autor napiše ispravno, ništa se ne dogodi. Adapter mora tražiti **lijevi** stupac.
+
+| Kod traži | Ispravno bi bilo | Dokaz |
+|---|---|---|
+| `CLEARCOLUMS` | CLEARCOLUMNS | `Form1.vb` 3295, 3308; `Form2.vb` 1703; `Grid.vb` 32 |
+| `AGREGATEFUNCTION` | AGGREGATEFUNCTION | `Grid.vb` 97 |
+| `PERMISIO` | PERMISSION / u korpusu `PERMISSIO` | `Form1.vb` 3395, `Form2.vb` 1097 |
+
+U korpusu (609 jedinstvenih): `AGREGATEFUNCTION` (jedno G, kod čita) 1951 puta; `AGGREGATEFUNCTION` (dva G, kod ne čita) 518 puta na 34 datoteke. `PERMISSIO` je na 2 `PROJECT` čvora i zato prava ne uključi.
+
+### 12.2 `TYPE` nije enum
+
+Prvi podstring u `Form2.vb` ~1256–2737. Posljedice koje korpus stvarno dira:
+
+| Napisano | Broj | Što nastane |
+|---|---|---|
+| `checkbox`, `vb.checkbox` | 404 + 56 | `check` (sadrži `check`) |
+| `datetime` | 35 | `date` |
+| `trazilica` | 49 | tražilica (grana traži i tu riječ) |
+| `cmeditvb6.curmedit` | 8 | broj, jer sadrži `cur` |
+| `vb.textbox`, `tmedit2vb6.textmedit2` | 8 + 2 | text, jer sadrži `text` |
+| `cbex3.comboboxex3` | 1 | combo |
+| `buttonnevrijedi` | 2 | gumb (sadrži `button`) |
+| `b_utton`, `bxutton`, `b1utton`, `buttton` | 15+11+3+2 | **ništa** (nema podstring `button`) |
+| `t1ext`, `tekst` | 14+2 | ništa |
+| `g_rid` | 4 | ništa |
+| `datetiem` | 5 | ništa |
+| `picture` | 2 | ništa (`picturebox` se traži cijeli) |
+| `int` | 3 | ništa |
+| prazan `TYPE` | 1 | ništa |
+
+Adapter koji „popravi“ `b_utton` u gumb crta kontrolu koje u NetGenu nema.
+
+### 12.3 Atributi u korpusu koje `GetNamedItem`/`Attributes` ne traže
+
+Skripta je našla 156 takvih imena. Ovo su sva s najmanje 2 pojave. Adapter ih ne čita i ne mapira na Carpo svojstvo. `TEXT` je Callisto šum (17971).
+
+| Atribut | Broj | Datoteka | Vjerojatni tipfeler od |
+|---|---|---|---|
+| `TEXT` | 17971 | 331 | nije tipfeler, duplikat captiona |
+| `BORDERSTYLE` | 898 | 274 | WinForms svojstvo koje ova petlja ne čita |
+| `BOLD` | 828 | 157 | |
+| `AGGREGATEFUNCTION` | 518 | 34 | `AGREGATEFUNCTION` |
+| `CHECKBOX` | 391 | 90 | `CHECKBOXVISIBLE` |
+| `REPORT` | 299 | 191 | |
+| `CHILDFORM` | 156 | 65 | nije tipfeler; lookup ga nema. Port ga i dalje ignorira dok se ne nađe drugi pristup |
+| `CANCELONSUBMIT` | 114 | 28 | |
+| `AUTOFITCOLUMNS` | 68 | 62 | |
+| `ALOWEMPTY` | 127 | 52 | `ALLOWEMPTY` |
+| `HIGHT` | 43 | 22 | `HEIGHT` |
+| `WUDTH` | 23 | 12 | `WIDTH` |
+| `MAXLENGHT` | 21 | 9 | `MAXLENGTH` |
+| `DECIMAL` | 20 | 10 | `DECIMALS` |
+| `SKIPDEFAULTLOAD2` | 19 | 10 | `SKIPDEFAULTLOAD` |
+| `STILE` | 17 | 8 | `STYLE` |
+| `CMD1CAPTION1` … `CMD8CAPTION1` | 16 svaki | 16 | `CMDnCAPTION` |
+| `ONCLICKKK` | 16 | 15 | `ONCLICK` |
+| `SQLOLD` | 12 | 4 | stara kopija, ne čita se |
+| `STYILE` | 12 | 4 | `STYLE` |
+| `ANCHOR2` | 11 | 3 | |
+| `KOMENTAR` (kao atribut) | 11 | 9 | |
+| `CAPITON` | 9 | 5 | `CAPTION` |
+| `ONLOADEDD` | 9 | 8 | `ONLOADED` |
+| `O1NLOAD` | 8 | 6 | `ONLOAD` |
+| `ONLOSFOCUS` | 8 | 1 | `ONLOSTFOCUS` |
+| `EDITCOLUMNS22` | 7 | 6 | `EDITCOLUMNS` |
+| `GROUPBOXVISIBLE` | 7 | 6 | `GROUPBYBOXVISIBLE` |
+| `ONCELLEDITED22` | 7 | 6 | `ONCELLEDITED` |
+| `B_UTTONS` | 6 | 6 | `BUTTONS` |
+| `ENABLE` | 6 | 1 | `ENABLED` |
+| `ONCHANGED` | 6 | 3 | `ONCHANGE` |
+| `ONCLOSE` | 6 | 2 | `ONCLOSED` |
+| `ONCLOSED2` | 6 | 2 | |
+| `HEIGTH` | 5 | 5 | `HEIGHT` |
+| `ONLOAD5` | 5 | 5 | |
+| `ONLOSRFOCUS` | 5 | 4 | `ONLOSTFOCUS` |
+| `SETDEFAULTSKIP` | 5 | 5 | `SETDEFAULTS` |
+| `VISIBE` | 4 | 4 | `VISIBLE` |
+| `DESIMALS` | 4 | 1 | `DECIMALS` |
+| `INCLUDEE` | 4 | 4 | `INCLUDE` |
+| `ONCLICKSTARO` | 4 | 3 | |
+| `GRUOPBYBOXVISIBLE` | 3 | 3 | `GROUPBYBOXVISIBLE` |
+| `ONCLICKKKKK`, `ONCLIOCK` | 3+3 | 3 | `ONCLICK` |
+| `ONLOADED33`, `ONLOADSTARO` | 3+3 | 3 | |
+| `MAXLENGH` | 3 | 1 | `MAXLENGTH` |
+| `DEFALUT` | 2 | 2 | `DEFAULT` |
+| `PERMISSIO` | 2 | 2 | `PERMISIO` |
+| `SKIPDEFAUILTLOAD` | 2 | 2 | `SKIPDEFAULTLOAD` |
+| `VISBLE`, `VIZIBLE` | 2+1 | | `VISIBLE` |
+| `O_NLOAD`, `NOLOAD2`, `ONLOAD666`, `ONLOADDD` | 2 | | `ONLOAD` |
+| `P_OPUP` | 2 | 1 | `POPUP` |
+| `SCROLLBAR` | 2 | 2 | `SCROLLBARS` |
+| `GROUPBYBOX` | 2 | 2 | `GROUPBYBOXVISIBLE` |
+
+Imena s jednom pojavom (ostatak do 156) su u `tools/out/netgen-xml-katalog.json`, ključ `corpus_attributes_not_in_code_lookup`. Ne nabrajaju se ovdje jer su jednokratni šum (`KASA`, `V.PDV`, `SQLL`, …).
+
+Posebno, viđeno u fajlu a nije u `GetNamedItem` izvan komentara u `Resource1`: `GRIDALLOWEDIT` i `GRIDALLOWEDITCOLUMNS` na `definitions/netgen/BIOVEGA/OznakaKL.xml`. Ne uključuju uređivanje ćelija. Uređivanje ide preko `EDITCOLUMNS`.
+
+### 12.4 Atributi koje kod traži, a ovih 609 fajlova nema
+
+37 imena. Port ih i dalje čita, jer XML iz baze `netgenxml` može biti jedini korisnik. Popis: `AUTOMATICSORTDET`, `AUTOSIZE`, `BEFORECELLEDITEDDET`, `COLUMNAUTORESIZE`, `COLUMNHEADERFORMAT`, `COMBOCLICK`, `COMBOCOLUMNS`, `CUSTOMCONNECTIONSTRING`, `DEFAULTACTIVECOLUMN`, `DEFAULTCONNECTION`, `DETMOVELAST`, `DXGRID`, `ENTERASTAB`, `FONT`, `GROUPBYBOXDETVISIBLE`, `HELPKEY`, `INPUTMASK`, `MASTERMOVELAST`, `MAXIMUMSIZE`, `MAXLINES`, `MENU`, `MINIMUMSIZE`, `NEGATIVERED`, `NFCSQL`, `NOTZERORED`, `ONACTIVATED`, `ONCLOSING`, `ORIENTATION`, `RELATION`, `RESIZE`, `SQL3`, `SQL4`, `TIMER`, `TRANSLATEDETCOLUMNS`, `TREEDRAGDROP`, `WORDWRAP`, `XML`.
+
+### 12.5 Ostale tihe tolerancije u kodu
+
+- Nedostajući atribut: `GetNamedItem(...).Value` baci, `On Error Resume Next` nastavi, vrijednost ostane prazna ili prethodna. Zato `STARTUPSTORA` preživi ako `ONLOAD` ne postoji (`Form1.vb` 3367–3368).
+- `CMDxCAPTION` bez dvotočke: `IndexOf(":")` baci i taj gumb ostane prazan. To **nije** mekana tolerancija. Adapter neka isto preskoči gumb i upiše u log, ne ruši granulu (današnji `On Error Resume Next` oko petlje).
+- Komande se uspoređuju s `ToUpper`. `ok` i `OK` su isto (`JeziciNG.xml` ima `ONCLICK="ok"`).
+- `##` u lancu je prazan segment između dva `#` i preskače se.
+- SQL koji još sadrži `@@` se ne šalje (`Class1.vb` 113–118).
+
+## 13. Što katalog govori o redoslijedu izrade
 
 Pokriće po broju kontrola, ne po egzotici:
 

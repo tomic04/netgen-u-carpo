@@ -1,5 +1,7 @@
 # 05 — Rupe i rizici
 
+**Iteracija 2.** Rupe koje su bile „pitaj korisnika“ sada su odluke: SQL tekst ostaje, tipfeleri se šute, multi-select tablica ostaje, fiskalizacija i DMS i `ASSEMBLYLOAD` se portaju, raspored smije odstupati. Donja tablica i dalje opisuje što Carpo model sam ne napravi. To više nije razlog da se izbace iz opsega.
+
 „Carpo to ne umije“ ovdje znači: postojeći `JRoot` + `Events.Checking` + `ControlInit` nemaju to ponašanje. Ne znači da se na DevExpressu ne može nacrtati. Većina rupa je semantička, ne grafička.
 
 ## 1. Što NetGen radi, a Carpo model nema
@@ -29,11 +31,20 @@
 
 ## 2. Razlike u ponašanju koje će korisnik vidjeti
 
-### Raspored
+### Raspored (prihvaćena razlika)
 
-NetGen forma kultura je 7085×4104 jedinica, odnosno oko 506×293 px, kontrole na fiksnim koordinatama, labela često ručno postavljena (`Label17` na `LEFT=317`) **i** automatska ako caption završava s `*`. Carpo prepis iste granule je `width="450"` i pet redova. Ako adapter prebaci sve na `LayoutControl`, ekran će biti uredniji i **drugi**: tab order, preklapanja koja su u XML-u namjerna (dva gumba na istom `TOP`), okviri `frame` koji ne obuhvaćaju točno djecu. Ako adapter crta apsolutno na panelu, ekran ostaje ružan kao NetGen i DX teme (padding, font 26.1) ipak pomaknu piksel.
+NetGen forma kultura je 7085×4104 jedinica (`/14` ≈ 506×293 px), kontrole na fiksnim koordinatama. Carpo prepis iste granule je `width="450"` i retci. Korisnik je prihvatio da ekran ne bude isti piksel.
 
-`FakPretvorbe` je 14, ne 15. Tko podijeli s 15, sve je ~7% premalo. To je lako pogriješiti jer 1440/96 = 15.
+Što ide 1:1: vrsta kontrole, `CAPTION` (uz `_`, `!!`, završni `*`), `ENABLED`/`VISIBLE` kad su `true`/`false`, `TABINDEX`, kolone grida (`NAME`/`INDEX`, `FORMAT`, `VISIBLE`, `AGREGATEFUNCTION` s jednim G), combo stupac 0/1.
+
+Što se dokumentira korisniku, a ne lovi se kao bug:
+
+- drugi razmak i font DevExpress 26 naspram WinFormsa iz 2005.
+- `frame`/`group` ne drže djecu apsolutno unutar okvira
+- dvije kontrole na istom `TOP` mogu se u DX layoutu razdvojiti
+- `FakPretvorbe` se **ne** koristi za crtanje. Tko ga ipak upotrijebi, dijeli s 14, ne s 15
+
+Poznata razlika ide u release bilješku granule, ne u iznimku.
 
 ### Redoslijed događaja
 
@@ -95,7 +106,7 @@ Datum s ugašenom kvačicom šalje `null`. Broj prazan šalje `0`. Tekst prazan 
 
 11. **Multi-select temp tablica** je dijeljeni globalni spremnik po `suser_sname()` i `operateriid`. Dva klika odjednom (dva Jupiter prozora, isti SQL login) brišu jedno drugome id-eve. To je današnji bug. Adapter koji ga sačuva sačuva i bug. Adapter koji ga „popravi“ lomi procedure. Treba odluku (pitanje 8 u sažetku).
 
-12. **Fiskalizacija i `ASSEMBLYLOAD`** (22 + 55 pogodaka) diraju novac i tuđi DLL. Ne ulaze u prvi rez. Ako parser naiđe na njih, mora stati s jasnom porukom, ne preskočiti.
+12. **Fiskalizacija i `ASSEMBLYLOAD`** (22 + 55 pogodaka) jesu u opsegu (odluka 2). Diraju novac i tuđi DLL kojeg nema u gitu. Ne ulaze u prvi smoke (`OznakaKL`, `JeziciNG`). Kad komanda dođe, a DLL fali, port radi kao `Form1.vb` 360–365 i 4600–4611: CB log i prekid lanca, ne tihi nastavak i ne Carpo `ZKI`. Pravi poziv porezne uprave nije automatski test.
 
 ## 4. Što nije rupa
 

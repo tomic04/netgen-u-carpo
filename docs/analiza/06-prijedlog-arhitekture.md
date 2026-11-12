@@ -1,6 +1,8 @@
 # 06 — Prijedlog arhitekture `Carpo.NetGen`
 
-Novi projekt je class library u `Carpo.sln`, .NET Framework 4.8, bez reference na Janus. Ne mijenja postojeće Carpo projekte u prvoj isporuci. Ulaz kasnije može biti tanki poziv iz `Carpo.Gen.Start` ili iz Jupitera, ali parser i komande ne žive u `Carpo.UI`.
+**Iteracija 2.** Hibrid (opcija C) ostaje. Mijenja se ulaz i opseg: klasa koju Jupiter zove mora izgledati kao `Loader.Run8`, TestShell mora znati otvoriti `<PROJECT>`, a fiskalizacija, `ASSEMBLYLOAD` i DMS više nisu iza prekidača. SQL se ne parametrizira. Raspored je Carpo layout gdje je preslikavanje 1:1, uz popis razlika. Faze i kriteriji prihvaćanja su u dokumentu 08; ovdje ostaje obrazloženje zašto ne A i ne B.
+
+Novi projekt je class library u `Carpo.sln`, .NET Framework 4.8, bez reference na Janus. Parser i komande ne žive u `Carpo.UI`. TestShell dobiva jednu granu u `cmdGen_Click`. To je jedina predviđena izmjena postojećeg projekta uz novi csproj u solutionu.
 
 Tri opcije. Sve učitavaju **izvorni** NetGen XML. Nijedna ne traži od autora da pređe na `<root>`.
 
@@ -80,11 +82,13 @@ Cijena C: komandni interpreter se piše iznova, uz VB kao specifikaciju. To je v
 ### Što se namjerno ne radi
 
 - ne pretvarati XML u `<root>` i spremati ga pored stare granule
-- ne „ispravljati“ `HIGHT`, `ALOWEMPTY`, `AGGREGATEFUNCTION`, `PERMISSIO`
-- ne mijenjati ime procedure
-- ne paliti `FOREACH*` na podlozi
-- ne gutati `ASSEMBLYLOAD` i fiskalizaciju u tišini
+- ne „ispravljati“ `HIGHT`, `ALOWEMPTY`, `AGGREGATEFUNCTION`, `PERMISSIO` (dokument 03, odjeljak 12)
+- ne mijenjati ime procedure i ne slati `SqlParameter`
+- ne paliti `FOREACH*` na podlozi dok pitanje 3 u sažetku ne kaže drugačije; default je rupa kao u `Form1.vb` 6841–6850
+- ne gutati `ASSEMBLYLOAD` i fiskalizaciju u tišini: ako DLL fali, isti CB log i prekid lanca kao `Form1.vb` 4600–4611 i 360–365
+- ne zvati `FileFinder("Carpo")` za NetGen XML
 - ne zvati Janus
+- ne crtati apsolutni piksel-layout kao cilj (odluka 4)
 
 ### Kuka u hostu, kasnije
 
@@ -93,6 +97,8 @@ Kad C zna otvoriti jednu granulu, `Carpo.Gen.Start.RegisterForm` može na počet
 Druga kuka, `customcontrol`, nije dovoljna: ona očekuje da okolo već postoji Carpo forma.
 
 ## Faze
+
+Donji M0–M4 su skica iz iteracije 1. **Vrijedi dokument 08** (M0–M7, Jupiter `Run8`, TestShell grana, fiskalizacija i DMS unutra). Ako se tekstovi raziđu, 08 je noviji.
 
 Svaka faza ima provjeru koja ne traži „izgleda dobro“. Dok nema Windows builda (dokument 07), provjera je onoliko koliko ide na Linuxu: parser i stringovi. UI faze čekaju runner.
 
@@ -153,11 +159,9 @@ Provjera:
 - redoslijed izvora je sučelje `IXmlSource` s tri fake izvora; test dokaže DMS pa baza pa disk, uključujući preskok DMS-a na dijalogu ako je log već `JupiterXML Database`
 - jedan REPX poziv s parametrima iz kartice (`rptKarticaKontaSKTele2`, imena parametara) — mock, bez pisača
 
-### M5 — multi-select tablica, clipboard, prava, fiskalizacija, `ASSEMBLYLOAD`
+### M5 i dalje — vidi dokument 08
 
-Svaka stavka ima poseban prekidač i nije uključena dok korisnik ne odgovori na pitanja 2, 8 i 18. Default: komanda se prepozna, korisnik dobije poruku „nije uključeno“, SQL se ne šalje. To je namjerno glasnije od NetGena.
-
-Provjera: XML koji sadrži `ASSEMBLYLOAD` ne zove `Assembly.Load` u test procesu.
+Stari tekst ove faze gasio je fiskalizaciju i `ASSEMBLYLOAD` porukom „nije uključeno“. To je povučeno. Oba su u opsegu, zajedno s DMS-om i `TotalGenMultiSelectTemp`. Redoslijed i kriteriji prihvaćanja su u `08-plan-implementacije.md`, ne ovdje. Jedini test koji i dalje ne smije zvati pravi `Assembly.Load` jest jedinični test parsera na Linuxu. Windows test s pravim DLL-om je kasnija stavka, ne izuzimanje iz proizvoda.
 
 ## Harness nad korpusom
 

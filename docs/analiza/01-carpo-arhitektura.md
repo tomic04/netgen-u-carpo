@@ -1,5 +1,7 @@
 # 01 — Arhitektura Carpa
 
+**Iteracija 2.** Jupiter i TestShell su oba ciljna ulaza. `IJupiterStart` nije ugovor koji `Starter` implementira; vidi kraj ovog dokumenta. Raspored ne mora biti piksel-identičan.
+
 Izvor je `Devex_26/` (C#, .NET Framework 4.8, DevExpress 26.1.3.0). Solution `Devex_26/Carpo.sln` ima 12 projekata. DLL-ovi nisu u gitu, pa graf ovisnosti dolazi iz `.csproj` i `.sln`, ne iz pokrenutog builda.
 
 ## 1. Graf projekata
@@ -233,4 +235,19 @@ start.ModuleId = Path.GetFileName(xml);
 start.Run(server, database, username, password, operateriId, (int)pnlShell.Handle, 0, 0, "");
 ```
 
-Harness za korpus zato ne može biti „pusti TestShell nad 609 fajlova“ bez novog ulaza. Vidi dokument 06, odjeljak o provjeri.
+Harness za korpus zato ne može biti „pusti TestShell nad 609 fajlova“ bez novog ulaza. Vidi dokument 08.
+
+## 10. Ispravka: dva Jupiter ugovora, ne jedan
+
+`IJupiterStart` (`Devex_26/Carpo.Structure/Interfaces/IJupiterStart.cs`) glasi:
+
+```csharp
+void Run(string server, string database, string username, string password,
+         int operateriid, string menuID, int parent, short pTop, short pLeft, string path);
+```
+
+`Starter` tu sučelje **ne** nasljeđuje. Njegov `Run` (`Starter.cs` 78) nema `menuID`. `MenuID` je svojstvo koje Jupiter može postaviti na objekt prije `Run` (`Starter.cs` 48, čita se u `RegisterForm` 346–352). TestShell zove točno tih 9 argumenata i prije toga postavi `TestXmlPath` i `ModuleId` (`Carpo.TestShell/Main.cs` 181–184). Roditeljski handle je `(int)pnlShell.Handle`.
+
+Carpo forma se veže na Jupitera u `Forms.Jupiter.Base.Start` (`Base.cs` 103–122): `SetParent(this.Handle, ParentHandle)`, zatim `Show` ili `ShowDialog` ako je `isModal`. Nema metode `ShellResize`. NetGen je ima na `Loader` (`netgen/Loader.vb` 22–26). Zato `Carpo.NetGen` koji zamjenjuje NetGen ne smije samo naslijediti `Starter`: Jupiterov poziv NetGen granule ne prolazi kroz `Carpo.Gen.Start`.
+
+TestShell danas ne gleda korijen XML-a. `cmdGen_Click` uvijek radi `new Gen.Start()` osim ako je uključen XmlGen. Da bi se NetGen XML testirao iz istog prozora, ta grana mora prepoznati `<PROJECT>` i zvati drugi `Run`. To je jedina predviđena izmjena TestShella; opis je u dokumentu 08.

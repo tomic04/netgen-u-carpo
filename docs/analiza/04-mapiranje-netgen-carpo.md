@@ -1,5 +1,7 @@
 # 04 — Mapiranje NetGen → Carpo
 
+**Iteracija 2.** Raspored: preslikati 1:1 ono što Carpo već zna (kontrola, natpis, tab order, kolone grida, `value`/`display` kad su stupci 0 i 1). `TOP`/`LEFT` se ne tjeraju u piksel. Razlika se zapisuje, ne popravlja. SQL se ne mapira na `<parameter>`. `TotalGenMultiSelectTemp`, DMS `NetGenFinder`, `ASSEMBLYLOAD`→`totalgen` i `FISKALIZACIJA`→Raverus/`SLOFISKAL` nemaju Carpo ekvivalent i ostaju vlastiti kod. Tipfeleri iz dokumenta 03 odjeljak 12 se ne „popravljaju“ u Carpo atribute.
+
 Tri oznake:
 
 - **direktno** — Carpo već ima isti smisao i može se napuniti bez novog koda, ili uz tanak adapter koji ne mijenja semantiku
@@ -155,7 +157,7 @@ Zajednički atributi:
 | `DEFAULT` | `default` / početni `value` | adapter. Za datum posebni tokeni |
 | `SQL` | `datalist/data` | adapter |
 | `REFRESHAFTERCHILD` | `control populate` nakon `form close` | adapter. NetGen pamti SQL kontrole |
-| `TOP LEFT WIDTH HEIGHT` | `row col` | **nema** kao isti model. Adapter drži apsolutni panel, ne `LayoutControl` tablice |
+| `TOP LEFT WIDTH HEIGHT` | `row col` samo kao gruba složenost, ne kao koordinata | **poznata razlika** (odluka 4). Ne crtati apsolutni panel kao obvezu. Zapisati u log granulu koja ima preklop (dva kontrole isti `TOP`/`LEFT`) |
 | `TEXT` | ništa | ignorirati |
 | `BOLD` `BORDERSTYLE` | `fontbold` postoji na layout itemu | ne kopirati `BOLD` jer ga NetGen ne čita. Inače prepis „poboljša“ ekran |
 | `ALOweMPTY` | ne mapirati na `allownull` | NetGen ga ne čita |

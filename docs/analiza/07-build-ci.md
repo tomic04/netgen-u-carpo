@@ -1,5 +1,7 @@
 # 07 — Build i CI
 
+**Iteracija 2.** Korisnik će donijeti DLL-ove. Dovoljan cilj builda je TestShell plus budući `Carpo.NetGen`, ne cijeli Designer/CMS/Lite. Točan popis datoteka je u `09-potrebni-dll-ovi.md`. Spajanje na bazu `spin` nije dio ovog builda; opcije su u dokumentu 08. Nacrt workflowa i dalje nije u `.github/workflows/`.
+
 Čist clone na Linuxu se ne može prevesti: projekti su .NET Framework 4.8, a reference pokazuju na Jupiterov `SharedAssemblies` i na instalirani DevExpress. Ovaj dokument je popis onoga što Windows runner mora imati. Nacrt workflowa je `docs/analiza/draft-carpo-build.yml`. **Nije** u `.github/workflows/` i neće se sam pokrenuti.
 
 Ništa od ključeva nije upisano u repo. Feed i lozinke ostaju secret.

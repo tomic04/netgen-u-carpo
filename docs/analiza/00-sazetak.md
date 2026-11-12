@@ -4,9 +4,22 @@ Datum: 2026-11-12. Ovo je statička analiza. Ni Carpo ni NetGen nisu građeni: D
 
 Novi projekt `Carpo.NetGen` **nije** započet. Ručno prepisivanje XML-a nije prihvatljivo rješenje, i ručni prepisi u `definitions/Prepisane_granule/` to i pokazuju: mijenjaju procedure, polja i raspored.
 
+## Odluke (iteracija 2)
+
+Korisnik je zatvorio pitanja iz prve verzije ovog sažetka. Ovo vrijedi za sve ostale dokumente.
+
+1. **Dva ulaza.** Jupiter je glavni program i danas pokreće i Carpo i NetGen. `Carpo.NetGen` mora se zvati iz Jupitera **istim ugovorom kao NetGen** (`Loader.Run8`, polja `moduleId`, `strNGParams`, `mainHandle`, `Ikona`, `Koler`, nakon toga `WCaption` i `hWnd`, plus `ShellResize`). Za test Carpa postoji `Carpo.TestShell`. Isti XML mora se moći otvoriti i odatle (roditelj je `pnlShell.Handle`, putanja je `TestXmlPath`). Detalj je u `08-plan-implementacije.md`.
+2. **Fiskalizacija, `ASSEMBLYLOAD` i DMS ulaze u opseg.** Nisu kasnija faza koja se smije preskočiti. Ponašanje je port starog koda, ne Carpo `ZKI`/`JIR` i ne Carpo `FileFinder("Carpo")`.
+3. **SQL ostaje slobodan tekst.** Nema prelaska na `SqlParameter`. Postupak `!!`, lijepljenje `@ime=` i preskok ako `@@` ostane moraju ostati.
+4. **Raspored ne mora biti isti piksel.** Što se može 1:1 (kontrola, natpis, tab order, grid kolone), preslikati. Ostatak (`TOP`/`LEFT` naspram Carpo tablice) je poznata razlika za korisnike, zapisana u dokumentu 05, ne bug.
+5. **`TotalGenMultiSelectTemp` ostaje.** Objašnjenje je u dokumentu 02, odjeljak koji je dodan u iteraciji 2. Procedure i dalje čitaju tu tablicu.
+6. **Tipfeleri se toleriraju kao danas.** Adapter čita isto pogrešno slovkanje koje kod traži (`CLEARCOLUMS`, `AGREGATEFUNCTION`, `PERMISIO`) i ignorira slovkanja koja kod ne traži (`HIGHT`, `ALOWEMPTY`, `AGGREGATEFUNCTION`, `PERMISSIO`). Potpuni popis je u dokumentu 03, odjeljak 12.
+7. **Prva granula nije odabrana.** Predloženi redoslijed smoke testova, od najtanje prema fiskalizaciji, je u dokumentu 08. Ne kreće se od kultura: njihov Carpo prepis zove druge procedure.
+8. **DLL-ove korisnik donosi kasnije.** Dovoljan je build TestShella i budućeg `Carpo.NetGen`. Popis je `09-potrebni-dll-ovi.md`. Baza `spin` na stalno upaljenom testnom serveru spaja se u sljedećoj iteraciji; ovdje su samo opcije (self-hosted runner na tom serveru).
+
 ## Što je cilj, jednom rečenicom
 
-NetGen XML ostaje kakav jest (`<PROJECT>`, apsolutne koordinate, `@@`, lanac komandi odvojen s `#`). U runtimeu ga izvršava novi sloj na DevExpressu i na servisima Carpa (konekcija, log, ispis), a ne Janus i ne stari NetGenDLL.
+NetGen XML ostaje kakav jest. Jupiter ga i dalje zove kao danas NetGen, TestShell ga može otvoriti kao danas Carpo XML, a crtanje ide na DevExpress 26 uz punu kompatibilnost SQL teksta, DMS-a, `ASSEMBLYLOAD` i fiskalizacije.
 
 ## Najvažniji nalazi
 
@@ -14,9 +27,9 @@ NetGen XML ostaje kakav jest (`<PROJECT>`, apsolutne koordinate, `@@`, lanac kom
 
 2. **Janus je uži nego što zvuči, ali je i dalje blokada.** U VB-u se stvarno koriste `GridEX`, `GridEXColumn`, `GridEXRow`, `GridEXGroup`, `GridEXFormatCondition`, `GridEXPrintDocument`, `GridEXExporter`, `NumericEditBox` i `Janus.Data.InheritableBoolean`. Combo je obični WinForms `ComboBox`, datum je `DateTimePicker`, tekst je `TextBox`. `UIComboBox`, `CalendarCombo`, `ExplorerBar`, `Schedule` i `TabStrip` u `.vb` izvoru nisu nađeni. Referenca je Janus GridEX **v3.5** (`netgen/NetGenDLL.vbproj` 93–104). Mapa `DevExpress131/` na koju `HintPath` pokazuje **nije u gitu** (0 datoteka). NetGen uz Janus vuče i DevExpress **13.1.7** (grid, checked combo, ispis). Carpo je DevExpress **26.1.3.0**.
 
-3. **Raspored se ne može prevesti u Carpo layout bez gubitka.** NetGen dijeli `TOP`/`LEFT`/`WIDTH`/`HEIGHT` s `FakPretvorbe = 14` (`netgen/Module1.vb` 65, `netgen/Form2.vb` 1093–1094 i 2945–2950). To su apsolutni pikseli. Carpo slaže kontrole u tablicu `row`/`col` unutar DevExpress `LayoutControl` (`Devex_26/Carpo.Structure/Models/Core/Layouts.cs` 170–194, `Devex_26/Carpo.UI/Logic/Layout/ControlInit.cs`). Ručni prepisi (npr. kulture) ne čuvaju koordinate: NetGen forma 7085×4104 twip-jedinica postaje Carpo `width="450"` i retci.
+3. **Raspored: 1:1 gdje ide, razlika gdje ne ide (odluka).** NetGen dijeli koordinate s `FakPretvorbe = 14` (`netgen/Module1.vb` 65, `netgen/Form2.vb` 1093–1094). Carpo slaže `row`/`col`. Korisnik ne traži isti piksel. Kontrola, natpis i redoslijed tabulatora idu 1:1. Apsolutni `TOP`/`LEFT` i preklapanja ostaju dokumentirana razlika, ne bug.
 
-4. **SQL nije parametarski.** NetGen lijepi tekst `@ime=vrijednost` na kraj `ONSUBMIT`, osim ako SQL počinje s `INSERT`/`DELETE`/`UPDATE`/`SELECT` (tada se `@@` ugrade u sam tekst i niz se briše) ili ako SQL sadrži `!!` (tada se `!!` obriše i parametri se **ne** dodaju). To je u `netgen/Form2.vb` 3367–3388 i `netgen/Form1.vb` 5445–5514. Carpo izvršava `JData.Command` s tipiziranim `<parameter>` (`Devex_26/Carpo.UI/Logic/Data/Core.cs`). Postojeće procedure očekuju NetGen oblik. Adapter mora zadržati slaganje stringa, ne „popraviti“ ga u prave `SqlParameter` dok se ponašanje ne dokaže.
+4. **SQL ostaje slobodan tekst (odluka).** NetGen lijepi `@ime=vrijednost` na kraj `ONSUBMIT`, osim ako SQL počinje s `INSERT`/`DELETE`/`UPDATE`/`SELECT` ili sadrži `!!`. Izvor: `netgen/Form2.vb` 3367–3388 i `netgen/Form1.vb` 5445–5514. Prelazak na prave `SqlParameter` je odbačen jer bi tražio izmjenu procedura kod klijenata.
 
 5. **`@@` i greške iz SQL-a su kontrolni tok.** `ExecSql` preskače prazan SQL, SQL koji počinje s `@`, i SQL u kojem `@@` preživi zamjenu (`netgen/Class1.vb` 105–118). Poruka servera s `#OK` / `+OK` guta grešku, `#close` zatvara formu, `#FOCUS(ime)` vraća fokus (`netgen/Class1.vb` 170–205). Carpo `message` / `confirm` / `validate` to ne rade nad tekstom SQL iznimke.
 
@@ -40,27 +53,31 @@ NetGen XML ostaje kakav jest (`<PROJECT>`, apsolutne koordinate, `@@`, lanac kom
 | `04-mapiranje-netgen-carpo.md` | Element/atribut → direktno / adapter / nema u Carpu, uz parove prepisa |
 | `05-gap-i-rizici.md` | Što Carpo danas ne umije, razlike u ponašanju, rizici |
 | `06-prijedlog-arhitekture.md` | Tri opcije, preporuka, faze, kako se faza provjerava |
-| `07-build-ci.md` | Kako složiti Windows build, što fali, nacrt workflowa |
+| `07-build-ci.md` | Windows build, nacrt workflowa |
+| `08-plan-implementacije.md` | Faze, zadaci, kriteriji, smoke redoslijed, harness |
+| `09-potrebni-dll-ovi.md` | Što korisnik treba donijeti da se TestShell i `Carpo.NetGen` prevedu |
 
-## Pitanja za korisnika
+## Ispravke iz drugog prolaza
 
-1. Tko hosta `Carpo.NetGen` u produkciji: postojeći Jupiter i dalje zove `Loader.Run8`, novi ulaz u `Carpo.Gen.Start`, ili oba dok traje prijelaz? Jupiterov `SetParent` / `mainHandle` je dio ugovora (`netgen/CLAUDE.md`).
-2. Mora li prva verzija pokriti fiskalizaciju (`FISKALIZACIJA*`, `Raverus.FiskalizacijaDEV.COM`, `SLOFISKAL`), `ASSEMBLYLOAD` / `totalgen(...)` i DMS (`SpinDMSUtil.NetGenFinder`)? U korpusu je `FISKALIZACIJA` 22 puta, `ASSEMBLYLOAD` 55. To su late-bound DLL-ovi kojih nema u repou.
-3. Je li prihvatljivo da SQL i dalje ide kao slobodan tekst (isti rizik i isti ugovor prema procedurama), ili se smije prijeći na prave parametre čim se string poklopi?
-4. `!!` na kraju `ONSUBMIT` (npr. kartica partnera) gasi dodavanje `@ime=...`. Treba li to sačuvati bajt-po-bajt? Vidi `netgen/Form1.vb` 5449–5514.
-5. Raspored: traži li se vizualno isti ekran (pikseli iz `/14`), ili je dovoljan čitljiv DevExpress layout koji ne čuva `TOP`/`LEFT`?
-6. Stablo `yearmonth` u kodu puni godine **2005–2009** (`NetGenBot/docs/NetGen-Engine.md`, `Form1.vb` grana `DazovaVremenska`). Je li to živo u produkciji ili mrtav ostatak koji adapter smije ne kopirati?
-7. `FOREACHROW` / `FOREACHSELECTED` / `FOREACHBLUEROW` na **podlozi** (`Form1`) su zakomentirani i ne rade. Na dijalogu rade. Adapter treba li kopirati i tu rupu?
-8. `TotalGenMultiSelectTemp` (brisanje po `suser_sname()` i `operateriid`, pa insert id-eva) je ugovor s procedurama. Smije li ostati ta tablica, ili se multi-select prebacuje na Carpo `foreachrow`?
-9. Atributi koje autor piše, a kod ne čita: `AGGREGATEFUNCTION` (518, ispravno slovkanje; kod čita tipfeler `AGREGATEFUNCTION`, 1951), `ALOweMPTY`/`ALOWEMPTY` (127), `TEXT` (17971, Callisto šum), `REPORT` (176 na `PROJECT`), `BOLD`, `BORDERSTYLE`. Treba li adapter namjerno ignorirati isto što i NetGen, uključujući tipfelere?
-10. Deset datoteka ne prolazi strogi XML parse (neescapani znakovi). Primjer: `definitions/netgen/Agronom granule/MPKaseOperNG.xml`. Jesu li u produkciji? Tolerantni parser mora li ih progutati?
-11. `definitions/netgen` i `NetGenBot/granule` su isti sadržaj. Je li jedan od njih višak koji smijemo tretirati kao duplikat u testovima?
-12. Ručni prepisi mijenjaju ime procedure i skup polja (kulture: `spKultureNG*` → `spKulture`, izbačeni Standard1–3, cijena, `ind`). Potvrđujete li da `Carpo.NetGen` **ne smije** slijediti te prepise, nego stari SQL?
-13. Ispis: produkcija ide preko `Spin.Printing.v23` / `v9.1`, `PrintDlg2010`, `rptDevRepx` i `NetGenExtensions` (sve late-bound). Carpo zove `print` i REPX preko `Spin.Printing.v26` (`Carpo.UI.csproj`). Koji ispis je izvor istine za granule koje u captionu imaju `::repx/...` (u korpusu 481 takvih komandi)?
-14. DevExpress NuGet ključ i mapa `SharedAssemblies` (Carpo DLL-ovi, `RibbonBase.v26`, `Spin.Printing.v26`, `SpinDMSUtil`, `JupiterLogger`, `JupiterTranslator10`, `Dimenzije`, `adodb`) — hoće li doći kao repo secret i privatni artifact, ili se CI oslanja na već instaliran Jupiter na runneru?
-15. Smije li `Carpo.NetGen` biti novi projekt u `Carpo.sln` koji **ne mijenja** postojeće Carpo projekte u prvoj fazi (samo ga oni kasnije referenciraju)?
-16. `DXGRID="true"` na `PROJECT` prebacuje master s Janusa na DevExpress 13. U ovom korpusu taj atribut **nema nijedne** pojave (kod ga čita: `Form1.vb`). Je li na terenu ipak uključen iz baze/DMS XML-a kojeg nema u gitu?
-17. Veza na drugu bazu (`DEFAULTCONNECTION`, `CUSTOMCONNECTIONSTRING`, `Conn3`) u korpusu nema nijedan pogodak, a kod je čita. Treba li je u opsegu?
-18. Prijevod i `PERMISIO` (kod čita `PERMISIO`, ne `PERMISSIO`; u korpusu je `PERMISSIO` na 2 `PROJECT` čvora i zato ne radi). Je li provjera prava uvjet za prvu granulu?
-19. Koji je prvi vertikalni rez za dokaz: jedna mala granula (npr. kulture, ali sa **starim** `spKultureNG*`) ili cijeli master+filter obrazac (kartica partnera: `ONLOAD=":FILTERFORM"`, `multidrop`, tražilica, `!!`, `PRINTMASTER`, `repx`)?
-20. Test bez SQL Servera: je li dovoljan harness koji učita svih 609 XML-ova, izgradi stablo kontrola i snapshot komandi, a pravi SQL ostaje za kasniji Windows posao s bazom `spin`?
+- `Loader.Run8` **ne vraća** formu. `Run8 = ob` je zakomentiran (`netgen/Loader.vb` 175). Jupiter čita `WCaption` i `hWnd` s objekta `Loader`. Stari `Run` jest vraćao objekt (`Loader.vb` 95).
+- `frm.Run` (ne Run8) deklarira `Form2` bez `New` (`netgen/frm.vb` 39–52, instanciranje je u komentaru). Živi dijalog-ulaz je `frm.Run8` (88), koji radi `New Form2`.
+- `IJupiterStart` (`Devex_26/Carpo.Structure/Interfaces/IJupiterStart.cs`) ima dodatni `menuID` i `Starter` ga **ne implementira**. Stvarni Carpo ulaz je `Starter.Run` s 9 argumenata (`Starter.cs` 78). NetGen ulaz je drugi potpis i druga klasa. Ne smiju se pomiješati.
+- Carpo nema `ShellResize`. NetGen `Loader.ShellResize` (`Loader.vb` 22–26) Jupiter zove da razvuče dijete. Zamjena NetGena mora tu metodu imati.
+- DMS za NetGen je `SpinDMSUtil.NetGenFinder.GetFile` (`Form1.vb` 3172–3182), ne Carpo `FileFinder("Carpo")` (`Starter.cs` 76). Isti DLL, druga klasa i drugi folder.
+- `yearmonth` je potvrđen u kodu: `For g = 2005 To 2009` (`Form1.vb` 4527–4534), ne samo u starom markdownu.
+- `HEADERALIGNMENT` kod čita na `MASTERCOLUMNS` / `DETAILCOLUMNS` (`Form1.vb` 3296–3309). Nije mrtav atribut.
+- `GRIDALLOWEDIT` i `GRIDALLOWEDITCOLUMNS` (npr. `definitions/netgen/BIOVEGA/OznakaKL.xml`) **nisu** u `GetNamedItem` izvan uzorka u `Resource1.Designer.vb`. Engine ih ne primjenjuje. `STARTUPSTORA` bez `ONLOAD` preživi jer linija 3368 padne na `On Error Resume Next` i ne prepiše 3367.
+
+## Pitanja koja su još otvorena
+
+Zatvoreno u iteraciji 2 i više se ne pita: ulaz (Jupiter + TestShell), fiskalizacija/`ASSEMBLYLOAD`/DMS u opsegu, SQL kao tekst, raspored nije piksel-identičan, `TotalGenMultiSelectTemp` ostaje, tipfeleri se toleriraju, DLL-ove donosi korisnik, baza `spin` ide sljedeći put.
+
+1. **Ime assemblyja koji Jupiter traži.** Izvornik Jupitera nije u repou. Vidljivi ugovor je klasa `Loader` s `Run8`. Ako izbornik (`ssMeni` ili ini) tvrdo piše `NetGenDLL`, novi DLL mora ili nositi to ime (zamjena u `SharedAssemblies`) ili se redak izbornika mijenja na `Carpo.NetGen`. Koji od ta dva je dozvoljen?
+2. **`yearmonth` 2005–2009** (`Form1.vb` 4530). Kopirati raspon kakav jest, ili ga proširiti? Kopija je kompatibilna i vjerojatno kriva za korisnika.
+3. **`FOREACH*` na podlozi je mrtav** (`Form1.vb` 6841–6850). Kopirati rupu (klik ne radi ništa) ili na podlozi ipak izvršiti petlju? Puna kompatibilnost kaže rupu. Treba potvrdu jer je to tihi gubitak.
+4. **Deset XML-ova ne prolazi strogi parse** (npr. `definitions/netgen/Agronom granule/MPKaseOperNG.xml`). Ako `XmlDocument.Load` i na disku padne, NetGen ide na DMS/bazu. Treba li parser javiti istu grešku, ili ih pokušati popraviti?
+5. **Ispis.** 481 komanda ide u `repx/`. Stari kod zove `Spin.Printing.v23` / `v9.1`, `PrintDlg2010`, `rptDevRepx`, `NetGenExtensions`. Carpo ima `Spin.Printing.v26`. Je li v26 zamjena za te pozive, ili na stroj moraju ostati i stari DLL-ovi?
+6. **Ime servera i autentikacija baze `spin`.** `netgen/CLAUDE.md` spominje `jupiter2022`, Windows auth. Je li to taj stalno upaljeni server? Treba li SQL login za runner koji nije u domeni?
+7. **`DXGRID`, `DEFAULTCONNECTION`, `CUSTOMCONNECTIONSTRING`** kod čita, u 609 fajlova ih nema. XML samo u `netgenxml` tablici ih može imati. Ulaze u port (da, jer kod postoji) — treba li testni XML iz baze kad se spoji `spin`?
+8. **Smije li TestShell dobiti jednu granu** (ako korijen nije `<root>`, zovi `Carpo.NetGen`) u istoj isporuci kad krene kod? Bez tog retka u `Main.cs` `cmdGen_Click` TestShell i dalje zna samo `Gen.Start`.
+9. **`refreshmaster` u `JeziciNG.xml`** (`CMD1CAPTION="Unesi:Unesi#refreshmaster"`) nije komanda `REFRESHMASTERGRID`. Klik će tražiti formu tog imena. Je li to poznati kvar granule ili postoji skriveno značenje koje nismo našli?
