@@ -354,6 +354,78 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 - **Posljedica:** ispis dokumenata i Carpo izmjena kupca obrišu temp retke operatera iako gumb nije `MULTISELECT` punjenje.
 - **Test:** `MPB-05`, `BVG-04`
 
+## R45 Dijaloško stablo nije podložno stablo
+
+- **Element:** `INPUT TYPE="tree"` naspram `TREE` na projektu
+- **NetGen:** dijalog (`Form2.vb` 2558–2608, `2825–2864`) reže SQL po `#` i `:`. `yearmonth` ima prazno tijelo (`2576–2577`). Tag je stupac 3 kako jest, bez `:ImeForme`. Parametar je cijeli tag (`3667–3671`). `ExpandAll`. Nema `TREETRANSLATE`. Podloga (`Form1.vb` 4474–4478, `4511–4514`) doda `:ImeForme` ako stupac 3 nema dvotočku, a `@@node` je dio prije `:`.
+- **Carpo:** jedan `JTree` s `key`/`parentfield` po imenu (`ComponentTree.cs` 770–793). Nema dva ugovora taga.
+- **Posljedica:** `RobaWebKlase` `@@klrobawebklasaid` dobije sirovi stupac 3. Isti SQL na podlozi dobije sufiks `:PUNI` i pokvari `int`.
+- **Test:** `RIJ-11`, `RIJ-13`, `RIJ-40`
+
+## R46 `yearmonth` na dijalog stablu ne crta godine
+
+- **Element:** segment `yearmonth:` u `INPUT TYPE="tree"`
+- **NetGen:** na dijalogu grana je prazna (`Form2.vb` 2576–2577). Na podlozi zove `DazovaVremenska` (`Form1.vb` 4348–4349), godine 2005–2009.
+- **Carpo:** nema te riječi. Prazan segment i godine 2005–2009 nisu isto.
+- **Posljedica:** prepis podložnog `yearmonth` na kontrolu dijaloga nacrta godine kojih u NetGenu nema.
+- **Test:** `RIJ-40`
+
+## R47 WebBrowser `URL` je velika slova
+
+- **Element:** `TYPE="webbrowser"`
+- **NetGen:** `Navigate` na `URL` nakon `ToUpper` (`Form2.vb` 1431–1433). Prije toga, ako `ONLOAD` ima kolonu imena kontrole, navigira njen tekst (`1419–1420`). `refresh` nije adresa (`4908–4913`).
+- **Carpo:** `JLayout` nema `webbrowser` (`docs/analiza/04`).
+- **Posljedica:** `RatArkod` otvara `preglednik.arkod.hr` iz `ONLOAD`, ne iz `URL`. Atribut `URL` bi host pretvorio u velika slova.
+- **Test:** `RIJ-16`, `RIJ-41`
+
+## R48 PictureBox: `LOCATION` velikim slovima, `http` zove `Load`
+
+- **Element:** `TYPE="picturebox"`
+- **NetGen:** `ImageLocation = LOCATION.ToUpper` (`Form2.vb` 2710). Kolona istog imena prepiše (`2712–2713`). `http` zove `Load` (`2715–2716`). `StretchImage` (`2726`), `SendToBack` (`2732`).
+- **Carpo:** `pictureedit` nema ovo (`docs/analiza/04`).
+- **Posljedica:** `slikalocation` traži kolonu tog imena. UNC iz `BlaBSUnos` postane velika slova. Preimenovanje kontrole ugasi sliku.
+- **Test:** `RIJ-18`, `RIJ-19`, `RIJ-42`
+
+## R49 `NEXTFORM` i dozvola prve forme
+
+- **Element:** `NEXTFORM`
+- **NetGen:** nakon OK, dok atribut nije prazan, zatvori formu i otvori sljedeću (`Form2.vb` 4431–4464). Id je prvi stupac submita (`4435–4438`). Provjera dozvole zove `Form2b.strImeForme` (`4459`), ime prve forme, ne sljedeće.
+- **Carpo:** `form open` ne veže se na uspješan OK prethodne i ne nasljeđuje taj id sam.
+- **Posljedica:** `DobUgovori` unos otvara izmjenu. `Narudzbe` `UnosStavkeNar` zove samu sebe dok je OK. Dozvola se ne pita za ime sljedeće forme.
+- **Test:** `RIJ-21`, `RIJ-24`
+
+## R50 DB clipboard nije Carpo stanje forme
+
+- **Element:** `DBCLIPBOARD` / ime `filter`
+- **NetGen:** ime koje sadrži `filter` upali clipboard osim ako je `DBCLIPBOARD` `false` (`Form2.vb` 1102–1103). `true` čita `NetGenDBClipboard` (`1170–1172`). Pad selecta ugasi clipboard. `CREATE TABLE` je komentar (`1173–1176`).
+- **Carpo:** nema tu tablicu. `savevalue` na kontroli je drugi mehanizam.
+- **Posljedica:** filter bez izričitog `false` pamti zadnji unos. `FILTERFORM` s `DBCLIPBOARD="false"` ne pamti. Ako tablice nema, NetGen ne stvara je.
+- **Test:** `RIJ-28`, `MAIL-05`
+
+## R51 `SETDEFAULTS` nije jedan SQL
+
+- **Element:** `SETDEFAULTS`
+- **NetGen:** rez po `#`, svaki komad `ExecSql` (`Form1.vb` 3862–3866, `3945–3962`). Kolona `formcaption` prepiše naslov (`3964–3967`).
+- **Carpo:** jedan `data` s `#` u tekstu SQL Server odbije.
+- **Posljedica:** `JeziciNG` je jedan select. `PrijemniList` ima više segmenata i padne ako se spoje.
+- **Test:** `RIJ-26`
+
+## R52 Ikona stabla je slika 0, `TREETRANSLATE` je samo podloga
+
+- **Element:** `TREETRANSLATE`, `TreeView2`
+- **NetGen:** prijevod stupca 2 samo ako je atribut `true` (`Form1.vb` 4461–4464, `4501–4504`). Statički čvor se prevodi uvijek (`4353`). Dijaloško stablo se ne prevodi. `TreeView2` ima `ImageList2` i indeks 0 za sve čvorove (`Form1.designer.vb` 575–579). Kod ne čita ikonu po čvoru. `ikonaid` je ikona retka grida (`7902–7905`). `ICON` je ikona forme (`3392`).
+- **Carpo:** `tree` nema `ImageList2` ni prisilan indeks 0. Prijevod natpisa nije `TREETRANSLATE`.
+- **Posljedica:** svi čvorovi podloge izgledaju isto. Uključiti `TREETRANSLATE` na dijalog stablu ne prevede ništa. Zamjena s `ikonaid` crta krivu stvar.
+- **Test:** `RIJ-23`
+
+## R53 Grid na dijalogu nije master
+
+- **Element:** `INPUT TYPE="grid"`
+- **NetGen:** Janus `Grid` (`Form2.vb` 1623), osim ako je `dxgrid` (`1579`). `SKIPDEFAULTLOAD="TRUE"` ne puni odmah (`1643–1646`). `CHECKBOXVISIBLE="FALSE"` sakrije stupac 1 (`1754–1755`). `SQL2`–`SQL4` se spreme velikim slovima (`1630–1632`). Suma je uključena osim `TOTALROW="FALSE"` (`1745–1748`). `PRINTGRID` i `PRINTREPXGRID` zovu isti ispis `"lodani"` (`6950`, `6985`, `9041`).
+- **Carpo:** master grid i `grid` na formi dijele jedan `GridControl`. Nema `"lodani"` ni sakrivanja baš stupca 1.
+- **Posljedica:** `klasa_da` na `RobaWebKlase` nema kvačice i puni se čim se forma čita. Sakriti stupac 0 sakrije id, a NetGen sakrije stupac 1.
+- **Test:** `RIJ-14`
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
@@ -377,3 +449,8 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 | `DobUgovori.md` | `SHOWCHECKBOX`, `TRANSLATE`, `sp` search, group, status bez `TEXT2` | R25, R26, R16, R33, R32 |
 | `MPNGPregDokMAIL.md` | nije Carpo subforma, `TREE33`, clipboard `false` | R35, R31, R18, R36 |
 | `Kontrole-matrica.md` | InStr red i atributi iz tablice | R24–R34 |
+| `RijetkeKontrole.md` | katalog 11/3/5 i pravila | R45–R53 |
+| `AOPNovi.md` / `RobaWebKlase` | dijalog stablo, tag, yearmonth | R45, R46 |
+| `RatArkod.md` | webbrowser | R47 |
+| `RobaAtributiUredi.md` | picturebox | R48 |
+| `Narudzbe.md` | TREETRANSLATE, ikona, NEXTFORM, grid | R49, R52, R53 |

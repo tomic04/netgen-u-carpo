@@ -50,6 +50,7 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(MpBlagajnaIspis.Provjeri(root));
             sve.AddRange(KarticaIspis.Provjeri(root));
             sve.AddRange(JeziciIspis.Provjeri(root));
+            sve.AddRange(RijetkeKontrole.Provjeri(root));
 
             string tekst = Qa.Tekst(sve);
             Console.WriteLine(tekst);
