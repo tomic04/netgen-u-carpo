@@ -1,8 +1,34 @@
 # Otvoreno za implementaciju
 
-Izvor je CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31), commit `b7d8989`, izvještaj `SVE ukupno=571 zeleno=411 otvoreno=160 pad=0`.
+Tekući broj je iz zelenog CI-ja [43269944426](https://github.com/tomic04/netgen-u-carpo/actions/runs/43269944426), grana `cursor/netgen-rucni-start-3266`, commit `ef710b9`: `SVE ukupno=354 zeleno=341 otvoreno=13 pad=0`.
 
-Svih 160 stavki je otvoreno. Nijedna nije pad. Grupe su po elementu NetGena i poredane po broju granula. Uz svaku stavku je linija izvora i razlog zašto je ostala otvorena.
+Od tih 13, 11 je red u `ssMeni` kojeg na spinu nema, `DOS-11` traži tri procedure kojih na spinu nema, a `JEZ-31` je tijelo `spJeziciQuery`. Donji odjeljci su snimak CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31) (tada 160 otvorenih) i nisu tekući popis. QA tablica 164 ukupno / 35 otvoreno stoji na starijem vrhu, prije ovog CI-ja.
+
+## Tekuće otvoreno (13)
+
+| Stavka | Očekivano | Izvor | Zašto je otvoreno |
+|---|---|---|---|
+| FakPar `FAK-10` | red u `ssMeni.Parametar` | `dbo.ssMeni` | 0 redova, red se ne izmišlja |
+| KntDospjeleStavke `DOS-10` | isto za `KntDospjeleStavke.xml` | `dbo.ssMeni` | 0 redova |
+| Kulture `KUL-12` | isto za `Kulture.xml` | `dbo.ssMeni` | 0 redova |
+| KUPDostKN `KND-06` | isto za `KUPDostKN.xml` | `dbo.ssMeni` | 0 redova |
+| KUPDostKnNGBvg `BVG-07` | isto za `KUPDostKnNGBvg.xml` | `dbo.ssMeni` | 0 redova |
+| KUPNG `KUC-07` | isto za `KUPNG.xml` | `dbo.ssMeni` | 0 redova |
+| KUPNG `KUP-05` | isto za `KUPNG.xml` | `dbo.ssMeni` | 0 redova |
+| MPNarIzdSkl `NAR-09` | isto za `MPNarIzdSkl.xml` | `dbo.ssMeni` | 0 redova |
+| MPNGPregDokMAIL `MAIL-07` | isto za `MPNGPregDokMAIL.xml` | `dbo.ssMeni` | 0 redova |
+| Rijetke `RIJ-31` | isto za `RatArkod.xml` | `dbo.ssMeni` | 0 redova |
+| Rijetke `RIJ-33` | isto za `RobaWebKlase.xml` | `dbo.ssMeni` | 0 redova |
+| KntDospjeleStavke `DOS-11` | tri procedure na spinu | `sys.objects` | nema tijela s klijenta, ne izmišlja se |
+| JeziciNG `JEZ-31` | `spJeziciQuery @action=0` je čitanje i vrati red | `netgen/Form1.vb:3882`, `netgen/Class1.vb:113-118` | dokaz tijela na spinu, ova grana |
+
+`JEZ-31` NetGen šalje: `PokaziUpit` (`Form1.vb` 3882), a `ExecSql` preskače samo prazan tekst, tekst koji počinje s `@` i tekst u kojem je `@@` (`Class1.vb` 105–118). U pozivu nema `@@`. Port i dalje ne šalje tijelo koje nakon komentara, zaglavlja `CREATE/ALTER PROC` i `WITH EXECUTE AS` ima upis ili `exec`/`into`.
+
+## Snimak CI #31
+
+Izvor snimka je CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31), commit `b7d8989`, izvještaj `SVE ukupno=571 zeleno=411 otvoreno=160 pad=0`.
+
+Svih 160 stavki je u tom snimku otvoreno. Nijedna nije pad. Grupe su po elementu NetGena i poredane po broju granula. Uz svaku stavku je linija izvora i razlog zašto je tada ostala otvorena.
 
 | # | Element | Granula | Stavki |
 |---|---|---:|---:|

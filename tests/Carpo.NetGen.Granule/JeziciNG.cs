@@ -176,9 +176,10 @@ namespace Carpo.NetGen.Granule
                 l.Add(Qa.O(Ime, "JEZ-31", "spJeziciQuery se smije citati samo ako tijelo nema upis", "netgen/Class1.vb:85", defGreska));
                 return;
             }
-            if (!CistoTijelo(def))
+            string razlogTijela = CistoTijelo(def);
+            if (razlogTijela != null)
             {
-                l.Add(Qa.O(Ime, "JEZ-31", "spJeziciQuery se ne izvrsava jer tijelo nije dokazano samo citanje", "netgen/Class1.vb:85", "tijelo sadrzi upis ili poziv"));
+                l.Add(Qa.O(Ime, "JEZ-31", "spJeziciQuery se ne izvrsava jer tijelo nije dokazano samo citanje", "netgen/Class1.vb:113-118", razlogTijela));
                 return;
             }
             var q = Citanje.Select(OnLoad, 50);
@@ -190,18 +191,9 @@ namespace Carpo.NetGen.Granule
                     : Qa.O(Ime, "JEZ-31", "spJeziciQuery nije vratio red", "netgen/Form1.vb:3882", "0 redova"));
         }
 
-        private static bool CistoTijelo(string def)
+        private static string CistoTijelo(string def)
         {
-            if (string.IsNullOrWhiteSpace(def))
-                return false;
-            string l = " " + def.ToLowerInvariant() + " ";
-            string[] z = { " insert ", " update ", " delete ", " merge ", " drop ", " alter ", " truncate ", " exec ", " execute ", " into " };
-            for (int i = 0; i < z.Length; i++)
-            {
-                if (l.Contains(z[i]))
-                    return false;
-            }
-            return true;
+            return Citanje.RazlogTijela(def);
         }
 
         private static void Runtime(List<Stavka> l, string xml)

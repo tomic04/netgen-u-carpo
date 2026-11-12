@@ -29,8 +29,14 @@ jobs:
           $sql = Join-Path $env:GITHUB_WORKSPACE "scripts\spin\stubovi.sql"
           sqlcmd -S localhost -d spin -E -C -b -i $sql
           if ($LASTEXITCODE -ne 0) { throw "stubovi.sql nije prosao" }
-          & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Prenesi.ps1")
-          & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Retci.ps1")
+          $grana = "cursor/netgen-treci-otvoreno-889d"
+          if ($env:GITHUB_REF_NAME -eq $grana -or $env:GITHUB_HEAD_REF -eq $grana) {
+            Write-Host "Preskocen Prenesi i Retci: ova grana ne cita jupiter2019 ni jupiter2022."
+          } else {
+            & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Prenesi.ps1")
+            & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Retci.ps1")
+          }
+          & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Tijelo.ps1")
           & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Otvori.ps1")
 
       - name: Artifact spin otvaranje
@@ -215,6 +221,8 @@ jobs:
           Get-Content -LiteralPath $md -TotalCount 30
 
       - name: Stabilni TestShell na sql-ai
+        # Ova grana ne pise C:\NetGenCarpo\zadnji.txt i ne vodi UI smoke.
+        if: github.head_ref != 'cursor/netgen-treci-otvoreno-889d' && github.ref_name != 'cursor/netgen-treci-otvoreno-889d'
         shell: powershell
         env:
           NETGEN_GRANA: ${{ github.head_ref || github.ref_name }}

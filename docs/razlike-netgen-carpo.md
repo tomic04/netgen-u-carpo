@@ -845,6 +845,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** korak `Spin stubovi i otvaranje` na sql-ai
 - **PR:** spin-otvaranje
 
+## R104 `spJeziciQuery` ide tek kad je tijelo čitanje
+
+- **Element:** master `ONLOAD` JeziciNG
+- **NetGen:** `PokaziUpit` šalje `spJeziciQuery @action=0, @id=''` (`Form1.vb` 3882). `ExecSql` taj tekst ne preskače: nema `@@` i ne počinje s `@` (`Class1.vb` 105–118).
+- **Carpo:** test na spinu pročita `object_definition`. Komentar, zaglavlje `CREATE/ALTER PROC` i `WITH EXECUTE AS` nisu upis. Ako ostane `insert`, `update`, `delete`, `merge`, `drop`, `alter`, `truncate`, `exec`, `execute` ili `into`, poziv se ne šalje. Inače ide isti `@action=0`.
+- **Posljedica:** `WITH EXECUTE AS` i komentar ne drže `JEZ-31` otvorenim. Tijelo koje stvarno piše ili zove drugu proceduru ostaje neposlano, iako bi ga NetGen poslao.
+- **Odluka:** NetGen tok za čisto tijelo. Upis se ne šalje.
+- **Test:** `JEZ-31`
+- **PR:** treci-otvoreno
+
 ## R103 `WIDTH` prepisuje širinu koju je SQL već složio
 
 - **Element:** `MASTERCOLUMNS` `WIDTH`
