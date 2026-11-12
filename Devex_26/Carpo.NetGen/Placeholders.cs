@@ -61,6 +61,8 @@ namespace Carpo.NetGen.Print
         public const string Klasa = "Spin.Printing.Start";
 
         public static object Stroj;
+        public static object Repx;
+        public static string PutanjaDll = "";
 
         public static string Vrsta(string naredba, bool dijalog)
         {
@@ -130,7 +132,7 @@ namespace Carpo.NetGen.Print
         public static bool Ispisi(string naredba, bool dijalog, string id, string operater, string konekcija, string login, string zadnjiSql, string parametriGrida, string parametriSvi, string lijevo, string centar, string desno, string naslov, object grid, string pageOrientation, DataTable tablica)
         {
             if (JePredlozak(naredba) && Vrsta(naredba, dijalog).Length == 0)
-                return Predlozak(naredba, konekcija, parametriSvi);
+                return Predlozak(naredba, konekcija, parametriSvi, id);
             string vrsta = Vrsta(naredba, dijalog);
             if (vrsta.Length == 0)
                 return false;
@@ -163,24 +165,78 @@ namespace Carpo.NetGen.Print
             }
         }
 
-        public static bool Predlozak(string naredba, string konekcija, string parametri)
+        public static bool Predlozak(string naredba, string konekcija, string parametri, string id)
         {
             object o = Ucitaj();
-            if (o == null)
+            bool slozeno = false;
+            if (o != null)
+            {
+                try
+                {
+                    o.GetType().InvokeMember(
+                        "Print",
+                        BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance,
+                        null,
+                        o,
+                        new object[] { konekcija ?? "", ImePredloska(naredba), parametri ?? "", "Carpo" });
+                    slozeno = true;
+                }
+                catch (Exception ex)
+                {
+                    NgDnevnik.Greska("Greška kod Spin.Printing.Print : " + ex.Message);
+                }
+            }
+            if (slozeno)
+                return true;
+            return DevRepx(naredba, konekcija, parametri, id);
+        }
+
+        /// <summary>Form6.vb 134–161. isnetgen=1, DoPrint2, putanja SharedDLLs\repx.</summary>
+        public static bool DevRepx(string naredba, string konekcija, string parametri, string id)
+        {
+            object r = Repx;
+            if (r == null)
+            {
+                try
+                {
+                    Assembly a = Assembly.Load("rptDevRepx");
+                    r = a.CreateInstance("rptDevRepx.clsReport");
+                }
+                catch (Exception ex)
+                {
+                    NgDnevnik.Greska("Greška kod Assembly.Load(rptDevRepx) : " + ex.Message);
+                    return false;
+                }
+            }
+            if (r == null)
                 return false;
             try
             {
-                o.GetType().InvokeMember(
-                    "Print",
+                Type t = r.GetType();
+                PropertyInfo prop = t.GetProperty("isnetgen", BindingFlags.Instance | BindingFlags.Public);
+                if (prop != null && prop.CanWrite)
+                    prop.SetValue(r, 1, null);
+                else
+                {
+                    FieldInfo polje = t.GetField("isnetgen", BindingFlags.Instance | BindingFlags.Public);
+                    if (polje != null)
+                        polje.SetValue(r, 1);
+                }
+                string korijen = (PutanjaDll ?? "").Trim();
+                if (korijen.Length == 0)
+                    korijen = "C:\\JupiterClient";
+                string mapa = korijen.TrimEnd('\\') + "\\SharedDLLs\\repx";
+                t.InvokeMember(
+                    "DoPrint2",
                     BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance,
                     null,
-                    o,
-                    new object[] { konekcija ?? "", ImePredloska(naredba), parametri ?? "", "Carpo" });
+                    r,
+                    new object[] { konekcija ?? "", id ?? "0", mapa, ImePredloska(naredba), 0, "", parametri ?? "" });
                 return true;
             }
             catch (Exception ex)
             {
-                NgDnevnik.Greska("Greška kod Spin.Printing.Print : " + ex.Message);
+                NgDnevnik.Greska("Greška kod rptDevRepx.DoPrint2 : " + ex.Message);
                 return false;
             }
         }

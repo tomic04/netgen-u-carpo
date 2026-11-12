@@ -151,10 +151,19 @@ namespace Carpo.NetGen.GridTest
                 T("print-lodani", ok && LazniSpin.Metoda == "PrintLink" && LazniSpin.Caption == "Dijalog" && LazniSpin.Kontrola == detailGrid, LazniSpin.Caption);
                 ok = Carpo.NetGen.Print.PrintBridge.Ispisi(":repx/rptKartica", false, "7", "3", "conn", "login", "", "", "@id=7", "", "", "", "", null, "", null);
                 T("print-repx", ok && LazniSpin.Metoda == "Print" && LazniSpin.Predlozak == "rptKartica" && LazniSpin.Parametri == "@id=7" && LazniSpin.Tko == "Carpo", LazniSpin.Predlozak);
+                LazniSpin.Baci = true;
+                Carpo.NetGen.Print.PrintBridge.Repx = stroj;
+                ok = Carpo.NetGen.Print.PrintBridge.Ispisi(":repx/rptKartica", false, "9", "3", "conn", "login", "", "", "@id=9", "", "", "", "", null, "", null);
+                T("print-do2", ok && LazniSpin.Metoda == "DoPrint2" && stroj.isnetgen == 1
+                    && LazniSpin.Predlozak == "rptKartica" && LazniSpin.Id == "9"
+                    && LazniSpin.Putanja.EndsWith("\\SharedDLLs\\repx", StringComparison.Ordinal)
+                    && LazniSpin.Parametri == "@id=9", LazniSpin.Metoda + " " + LazniSpin.Putanja);
             }
             finally
             {
+                LazniSpin.Baci = false;
                 Carpo.NetGen.Print.PrintBridge.Stroj = null;
+                Carpo.NetGen.Print.PrintBridge.Repx = null;
             }
             bool bacio = false;
             try
@@ -1697,6 +1706,10 @@ namespace Carpo.NetGen.GridTest
         public static string Predlozak;
         public static string Parametri;
         public static string Tko;
+        public static string Putanja;
+        public static string Id;
+        public static bool Baci;
+        public int isnetgen;
 
         public void PrintLink(object konekcija, object operater, object kontrola, System.Collections.Generic.Dictionary<string, string> zaglavlje, System.Data.DataTable combo, System.Data.DataSet podaci, System.IO.Stream raspored, bool landscape)
         {
@@ -1711,11 +1724,23 @@ namespace Carpo.NetGen.GridTest
 
         public void Print(object konekcija, object predlozak, object parametri, object tko)
         {
+            if (Baci)
+                throw new InvalidOperationException("pad");
             Metoda = "Print";
             Konekcija = Convert.ToString(konekcija);
             Predlozak = Convert.ToString(predlozak);
             Parametri = Convert.ToString(parametri);
             Tko = Convert.ToString(tko);
+        }
+
+        public void DoPrint2(object konekcija, object id, object putanja, object report, object kopija, object pisac, object parametri)
+        {
+            Metoda = "DoPrint2";
+            Konekcija = Convert.ToString(konekcija);
+            Id = Convert.ToString(id);
+            Putanja = Convert.ToString(putanja);
+            Predlozak = Convert.ToString(report);
+            Parametri = Convert.ToString(parametri);
         }
     }
 

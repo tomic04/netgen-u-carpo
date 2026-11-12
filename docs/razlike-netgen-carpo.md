@@ -336,7 +336,7 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `repx/` / `repx:`
 - **NetGen:** shell zamijeni `repx/` i `REPX/` s `repx:` (`Form1.vb` 5238–5239). Dijalog zamijeni s `repx:/` odnosno `REPX:/` (`Form2.vb` 4296–4297). `PrintRpt` (`Class1.vb` 594–632) prvo `IspisiMePrekoSpinPrintinga`: `Assembly.Load("Spin.Printing.v23")`, u catch `v9.1`, klasa `Spin.Printing.Start` (`297–304`). `Print` ili `PrintMulti`. Ako parametar već ima `@id=`, ne dodaje se drugi (`320–327`). Pad s hwnd pokuša bez hwnd (`362–369`). Ako Spin padne, `Form6` učita `rptDevRepx.clsReport`, `isnetgen = 1`, `DoPrint2` ili `DoPrintDB` za `FROMDB-` (`Form6.vb` 134–161). Putanja predloška je `SharedDLLs\repx`.
-- **Carpo:** `PrintBridge.Predlozak` učita `Spin.Printing.v26`, klasu `Spin.Printing.Start`, i zove `Print(konekcija, ime, parametri, "Carpo")`. v23 i v9.1 se ne učitavaju. Ako `Print` baci, zapis je u dnevniku. `rptDevRepx.DoPrint2` se iz tog hvata još ne zove.
+- **Carpo:** `PrintBridge.Predlozak` učita `Spin.Printing.v26` i zove `Print`. Ako `Print` baci ili sklopa nema, `rptDevRepx.clsReport` dobije `isnetgen = 1` i `DoPrint2` (`Form6.vb` 134–161). v23 i v9.1 se ne učitavaju.
 - **Posljedica:** učitati v23 „da bude kao VB“ krši odluku. Učitati samo v26 s drugim imenom metode ne ispiše. `repx:/` i `repx:` moraju oba skinuti prefiks prije imena izvještaja.
 - **Test:** `KAR-32`, `KAR-33`, `ISP-01`
 
@@ -930,6 +930,14 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Carpo:** `Dijalog.SviParametri` skuplja check, lookup i tekst. Search, grid i radio još nisu u nizu. Shell i `Rafalno` potpisi jesu u `AssemblyPoziv`.
 - **Posljedica:** adapter dijaloga dobije `@ime` tekstualnih kontrola. Search box i grid iz forme ne uđu u peti argument dok se `PokupiParametre` ne prenese cijeli.
 - **Test:** `assembly-dijalog` provjerava da su zadnja dva argumenta isti niz, ne da je niz potpun.
+
+## R110 `PrintLink` nema NetGen zaglavlje ni `lodani`
+
+- **Element:** `PRINTMASTER` / `PRINTGRID` na `Spin.Printing.Start.PrintLink`
+- **NetGen:** `IspisGRIDREPX` šalje `"master"`, `"detail"` ili `"lodani"` i `PageHeaderLeft/Center/Right` (`Form1.vb` 5995–6003, `6085`, `Form2.vb` 9056).
+- **Carpo:** `PrintLink` (`ComponentGrid.PrintControl`) prima kontrolu grida, rječnik `caption`/`header`/`subHeader` i `bool isLandscape`. Nema te tri riječi ni tri PageHeader svojstva. Centar ide u `caption`, lijevo u `header`, desno u `subHeader`. `LANDSCAPE` je `true`. Tablica predložaka je prazna; Carpo je inače puni iz `printDialogComboTemplates`.
+- **Posljedica:** ispis liste ide kroz Spin, ali raspored zaglavlja je onaj koji `PrintLink` zna, ne Janus tri stupca.
+- **Test:** `print-master`, `print-lodani`, `print-do2`
 
 ## R109 Fiskalizacija ne zove `PosaljiSoapPorukuCertifikatDatoteka`
 
