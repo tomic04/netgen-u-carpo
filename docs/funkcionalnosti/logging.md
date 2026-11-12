@@ -37,6 +37,8 @@ Host (TestShell, kasnije forma) zove `NgDnevnik.Spoji(logger)` s instancom `Carp
 
 Grid to već radi: preskok i zabrana pisanja u `MasterGrid.Ucitaj`, poslani SQL u `IzvrsiCitanje`, greška koja se pokaže korisniku u `ZabiljeziGresku`. Tiha SQL greška ostaje bez reda, kao u `ExecSql`.
 
+Filter `FILTERFORM` s `FILLEXPLORER=true` šalje `ONSUBMIT` i taj tekst ide u `NgDnevnik.Sql` (`Class1.vb` 138 je bio `NapuniCBLog`). Opis u listi je `NetGen SQL`, razina `InfoData`. Nema drugog CBLog zapisa.
+
 ## Otvoreno
 
 - NetGen forma još ne postoji, pa Ctrl+F11 nema kome stići. Kad se prozor nacrta, `KeyDown` mora otvoriti `Carpo.Core.Log.Log` s loggerom koji je spojen na `NgDnevnik`. TestShell logger spaja, ali nema taj prozor.

@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
+using Carpo.NetGen.Log;
 using Carpo.NetGen.Kontrole;
 using Carpo.NetGen.Poziv;
 using Carpo.NetGen.Print;
@@ -110,7 +111,17 @@ namespace Carpo.NetGen.TestHooks
                     s["stabloSql"] = string.Join(" || ", stablo.Stanje.SqlPozivi.ToArray());
                 }
                 else if (FillExplorer.SaljeMaster(fill))
-                    s["masterSql"] = FillExplorer.NoviMaster(forma, s["formaParam"]);
+                {
+                    string sql = SqlTekst.Sredi(FillExplorer.NoviMaster(forma, s["formaParam"]), new SqlKontekst
+                    {
+                        OperaterId = "7",
+                        Node = "null",
+                        XmlName = Path.GetFileName(zahtjev.XmlPutanja ?? "")
+                    });
+                    s["masterSql"] = sql;
+                    NgDnevnik.Sql(sql);
+                    s["dnevnik"] = OpisDnevnika(sql);
+                }
                 string onloaded = forma.Atributi != null && forma.Atributi.Ima("ONLOADED")
                     ? (forma.Atributi.Vrijednost("ONLOADED") ?? "")
                     : "";
@@ -124,8 +135,18 @@ namespace Carpo.NetGen.TestHooks
                 Raspored.KljuceviForme(forma, s);
                 s["datumParam"] = ImaDatum(forma) ? "yyyyMMdd" : "";
             }
-            s["dnevnik"] = "NetGen SQL";
             return new Pogled { Izvedeno = true, Stavke = s };
+        }
+
+        private static string OpisDnevnika(string sql)
+        {
+            for (int i = NgDnevnik.Zapisi.Count - 1; i >= 0; i--)
+            {
+                NgZapis z = NgDnevnik.Zapisi[i];
+                if (z != null && string.Equals(z.Tekst, sql ?? "", StringComparison.Ordinal))
+                    return z.Opis ?? "";
+            }
+            return "";
         }
 
         private static NgButton NadjiGumb(NgProject p, string cilj)
