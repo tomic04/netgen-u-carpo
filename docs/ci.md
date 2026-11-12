@@ -14,7 +14,7 @@ Push i pull request pokreću `build`. To je brzi skup.
 
 `nocni-otvaranje` otvara svaku NetGen datoteku pod `definitions/netgen` i svaki `asm:NetGenDLL` red iz `ssMeni` (`--ssmeni`, metoda `Repo`). To je puni skup. Ništa od tih testova nije obrisano.
 
-Raspored je `0 1 * * *` (UTC). To je 02:00 Europe/Zagreb zimi (CET). Ljeti je 03:00. Ručno pokretanje je `workflow_dispatch` na istom workflowu.
+Raspored je `0 21 * * *` (UTC). To je 22:00 Europe/Zagreb zimi (CET). Ljeti je 23:00. Ručno pokretanje je `workflow_dispatch` na istom workflowu.
 
 `build` i dalje ima svoj `workflow_dispatch`, i on pokreće brzi skup.
 
