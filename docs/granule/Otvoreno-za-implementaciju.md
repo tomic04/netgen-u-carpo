@@ -1,23 +1,25 @@
 # Otvoreno za implementaciju
 
-Brojke su prema kuki na `cursor/netgen-nextform-3266` (`5015fe1`), bez upita na Jupiter. Spin je testni server i smije se čitati. Jupiter se ne dira.
+Brojke su prema kuki na [#61](https://github.com/tomic04/netgen-u-carpo/pull/61) `cursor/netgen-refresh-ok-3266` (`bb53bfa`). Jupiter se ne dira. Spin smije.
 
-[#54](https://github.com/tomic04/netgen-u-carpo/pull/54) je poslije toga na `1bc0bc3`: gasi vezu prema Jupiteru i na spinu, ako stupca nema, doda `klmasterroba.oznaka2`. To ne zatvara nijednu od 164 stavki. #55 i #56 taj commit još nemaju. Brojke ispod ostaju.
+Provjera 13 `Qa.Mora` stavki na tom kodu, bez baze: sve prolaze. `Prihvati`/`Odustani` na `FRMEDIT` su `CMD` natpisi, `Unesi` nosi `#refreshmaster`, `Izmijeni.buttonOK` završava s `#OK`, `NEF` treći segment je `REFRESHMASTER`. `OKL-71` i `JEZ-70` dobiju `''` i `sqlImaZalijep=false` kao stalnu vrijednost kuke, ne iz teksta updatea. Test kako je napisan ipak prolazi.
 
 | Element | Ukupno | Zatvoreno | Otvoreno |
 |---|---:|---:|---:|
 | grid | 34 | 0 | 34 |
 | stablo | 20 | 0 | 20 |
 | combo | 5 | 0 | 5 |
-| gumbi/lanac | 38 | 6 | 32 |
-| dijalog | 28 | 0 | 28 |
+| gumbi/lanac | 38 | 18 | 20 |
+| dijalog | 28 | 1 | 27 |
 | ispis | 4 | 0 | 4 |
 | ostalo | 35 | 0 | 35 |
-| **sve** | **164** | **6** | **158** |
+| **sve** | **164** | **19** | **145** |
 
 Grid je detail, kvačica, suma, sort i stupci mastera. Stablo je čvor, lijevi panel i `onlytree`. Combo je odjeljak 13. Gumbi/lanac su naredba, `OK`/`CLOSE`, `NEXTFORM`, `FILLEXPLORER` i `FOREACH`. Dijalog je datum, raspored, prazan broj, tražilica i kontrole na formi. Ispis je `PRINTREPX`. Ostalo je izbornik, `totalgen`, XML kojeg nema i `ssMeni`.
 
-Trinaest stavki bez baze sada je pad dok kuka ne vrati ključ: `OKL-69`–`OKL-73`, `JEZ-61`–`JEZ-65`, `JEZ-68`, `JEZ-70`, `NEF-20`. Zatvorenih šest (`OKL-61`, `OKL-74`, `JEZ-58`, `JEZ-67`, `KAR-21`, `KAR-23`) ostaje usporedba koja ne ruši build dok akcija nije izvedena.
+Tih 13 (`OKL-69`–`OKL-73`, `JEZ-61`–`JEZ-65`, `JEZ-68`, `JEZ-70`, `NEF-20`) plus ranijih šest (`OKL-61`, `OKL-74`, `JEZ-58`, `JEZ-67`, `KAR-21`, `KAR-23`) čini 19. `JEZ-62` je u dijalogu, ostalih 12 novih u gumbi/lanac. Na ovoj QA grani kuka te akcije još ne prima, pa `Qa.Mora` ovdje i dalje pada.
+
+Grid, 31 od 34, sada je isti pad. `OKL-39`–`OKL-44`, `OKL-46`–`OKL-53`, `OKL-57`–`OKL-59` i `OKL-79` traže shemu mastera na spinu. `STA-36`–`STA-39`, `BLA-33`–`BLA-35`, `PL-23`, `PL-24`, `PL-33`, `PL-34`, `INT-20` i `MPK-42` traže detail, timeout ili selector. `OKL-25`, `OKL-26` i `OKL-27` već idu svojim putem. Jupiter se ne zove.
 
 Izvor polaznog izvještaja je CI [#34](https://github.com/tomic04/netgen-u-carpo/pull/34), commit `30236ff`, `SVE ukupno=624 zeleno=460 otvoreno=164 pad=0`.
 

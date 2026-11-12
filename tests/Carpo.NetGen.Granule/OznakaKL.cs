@@ -187,43 +187,43 @@ namespace Carpo.NetGen.Granule
             R(l, xml, "OKL-81", "Nema TIMER: statusna oznaka timera je skrivena",
                 "netgen/Form1.vb:3449-3450", "otvori", "", "timerVidljiv", "false");
             l.Add(Izgled("OKL-38", "NetGen sakrije DX grid. Port crta DevExpress.", "netgen/Form1.vb:1906-1908"));
-            R(l, xml, "OKL-39", "CHECKBOXVISIBLE FALSE sakrije checkbox stupac. Janus Icon 22 je izgled – Carpo",
+            M(l, xml, "OKL-39", "CHECKBOXVISIBLE FALSE sakrije checkbox stupac. Janus Icon 22 je izgled – Carpo",
                 "netgen/Form1.vb:2043-2046", "otvori", "", "selectorVidljiv", "false");
-            R(l, xml, "OKL-40", "klmasterrobaid je skriven jer ime zavrsava na ID",
+            M(l, xml, "OKL-40", "klmasterrobaid je skriven jer ime zavrsava na ID",
                 "netgen/Class1.vb:1124-1126", "otvori", "", "kolona.klmasterrobaid.vidljiva", "false");
-            R(l, xml, "OKL-41", "Int stupac: sirina 34, format ##0, EditType NoEdit. Poravnanje Far je izgled – Carpo",
+            M(l, xml, "OKL-41", "Int stupac: sirina 34, format ##0, EditType NoEdit. Poravnanje Far je izgled – Carpo",
                 "netgen/Class1.vb:1087-1139", "otvori", "", "kolona.klmasterrobaid.format", "##0");
-            R(l, xml, "OKL-42", "String stupac bez WIDTH u MASTERCOLUMNS ima sirinu 100 (nije 200; to je samo hijerarhijski put)",
+            M(l, xml, "OKL-42", "String stupac bez WIDTH u MASTERCOLUMNS ima sirinu 100 (nije 200; to je samo hijerarhijski put)",
                 "netgen/Class1.vb:1201-1204", "otvori", "", "kolona.Naziv.sirina", "100");
-            R(l, xml, "OKL-43", "Natpis stupca DodatnaOznaka je alias iz SQL-a, ne oznaka2",
+            M(l, xml, "OKL-43", "Natpis stupca DodatnaOznaka je alias iz SQL-a, ne oznaka2",
                 "netgen/Class1.vb:1037", "otvori", "", "kolona.DodatnaOznaka.natpis", "DodatnaOznaka");
-            R(l, xml, "OKL-44", "TotalRow na kraju FALSE iako CreateGridColumns prvo stavi True",
+            M(l, xml, "OKL-44", "TotalRow na kraju FALSE iako CreateGridColumns prvo stavi True",
                 "netgen/Class1.vb:1363; netgen/Form1.vb:2049-2050", "otvori", "", "totalRow", "false");
             l.Add(Izgled("OKL-45", "NetGen HeaderLines je 3. Visina zaglavlja se ne trazi.", "netgen/Class1.vb:1364"));
-            R(l, xml, "OKL-46", "GroupByBox je skriven, FrozenColumns je 0",
+            M(l, xml, "OKL-46", "GroupByBox je skriven, FrozenColumns je 0",
                 "netgen/Form1.vb:3350,3362", "otvori", "", "groupByBox", "false");
-            R(l, xml, "OKL-47", "FrozenColumns je 0",
+            M(l, xml, "OKL-47", "FrozenColumns je 0",
                 "netgen/Form1.vb:3362", "otvori", "", "frozenColumns", "0");
-            R(l, xml, "OKL-48", "AUTOMATICSORT nije false pa sort klikom na zaglavlje ostaje ukljucen",
+            M(l, xml, "OKL-48", "AUTOMATICSORT nije false pa sort klikom na zaglavlje ostaje ukljucen",
                 "netgen/Form1.vb:3401-3404", "otvori", "", "automaticSort", "true");
-            R(l, xml, "OKL-49", "EDITCOLUMNS prazan i GRIDALLOWEDIT se ne cita: nema editiranja celije",
+            M(l, xml, "OKL-49", "EDITCOLUMNS prazan i GRIDALLOWEDIT se ne cita: nema editiranja celije",
                 "netgen/Form1.vb:3466; netgen/Class1.vb:1137-1139; netgen/Resource1.Designer.vb:75", "otvori", "", "editType", "NoEdit");
-            R(l, xml, "OKL-50", "EditMode je EditOff",
+            M(l, xml, "OKL-50", "EditMode je EditOff",
                 "netgen/Class1.vb:1003", "otvori", "", "editMode", "EditOff");
-            R(l, xml, "OKL-51", "Enter na gridu ne otvara formu (EnterKeyBehavior None, nema ONENTERKEY)",
+            M(l, xml, "OKL-51", "Enter na gridu ne otvara formu (EnterKeyBehavior None, nema ONENTERKEY)",
                 "netgen/Form1.vb:3419-3423", "otvori", "", "enterKey", "None");
-            R(l, xml, "OKL-52", "Selekcija je visestruka (designer), ne DX default jednog reda",
+            M(l, xml, "OKL-52", "Selekcija je visestruka (designer), ne DX default jednog reda",
                 "netgen/Form1.designer.vb:654", "otvori", "", "selectionMode", "MultipleSelection");
-            R(l, xml, "OKL-53", "IncrementalSearch je AllCharacters",
+            M(l, xml, "OKL-53", "IncrementalSearch je AllCharacters",
                 "netgen/Form1.designer.vb:641", "otvori", "", "incrementalSearch", "AllCharacters");
             l.Add(Izgled("OKL-54", "NetGen EmptyRows je true. Prazni retci se ne traze.", "netgen/Class1.vb:1000"));
             l.Add(Izgled("OKL-55", "NetGen row header je vidljiv. Ne trazi se.", "netgen/Form1.designer.vb:655"));
             l.Add(Izgled("OKL-56", "NetGen HideSelection je Highlight. Ne trazi se.", "netgen/Form1.designer.vb:640"));
-            R(l, xml, "OKL-57", "Grid je Dock Fill",
+            M(l, xml, "OKL-57", "Grid je Dock Fill",
                 "netgen/Form1.vb:1906", "otvori", "", "gridDock", "Fill");
-            R(l, xml, "OKL-58", "Ako ima redova, fokus je na gridu",
+            M(l, xml, "OKL-58", "Ako ima redova, fokus je na gridu",
                 "netgen/Form1.vb:2059-2072", "otvori", "", "fokus", "grid");
-            R(l, xml, "OKL-59", "Nema kolone id pa je @@id vrijednost Cells(2), prvi podatak (klmasterrobaid)",
+            M(l, xml, "OKL-59", "Nema kolone id pa je @@id vrijednost Cells(2), prvi podatak (klmasterrobaid)",
                 "netgen/Form1.vb:5566-5582", "otvori", "", "idJe", "klmasterrobaid");
             R(l, xml, "OKL-60", "Vidljiv je samo gumb Izmjena, naredba FRMEDIT",
                 "netgen/Form1.vb:3827-3837,5664-5667", "otvori", "", "gumb.1", "Izmjena|FRMEDIT|true");
@@ -264,7 +264,7 @@ namespace Carpo.NetGen.Granule
                 "netgen/Form1.vb:3620-3673", "otvori", "", "kontekst",
                 "Spremi postavke grida|Reset grida|Export grid|Grupiraj / razgrupiraj|Format style|Izgled grida|Ispis REPX|Ispis");
             l.Add(Izgled("OKL-78", "NetGen group header ima prefiks [ i sufiks razmak ]. Krom se ne trazi.", "netgen/Form1.vb:2136-2142"));
-            R(l, xml, "OKL-79", "Pocetni poredak redova je poredak SQL-a, grid sam ne sortira",
+            M(l, xml, "OKL-79", "Pocetni poredak redova je poredak SQL-a, grid sam ne sortira",
                 "netgen/Form1.vb:1999", "otvori", "", "pocetniSort", "sql");
             R(l, xml, "OKL-80", "Nema ICON pa ikona dolazi iz hosta (Ikona), ne iz Graphics\\Icons",
                 "netgen/Form1.vb:3430-3440", "otvori", "", "ikona", "host");

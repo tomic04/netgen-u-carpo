@@ -50,7 +50,7 @@ namespace Carpo.NetGen.Granule
                 ? Qa.Z(Ime, "INT-10", "CLEARCOLUMS=false ne sakrije ostale. Sirina SifraRobe je 900/14", "netgen/Form1.vb:7459-7462,7522")
                 : Qa.P(Ime, "INT-10", "detail stupci", "netgen/Form1.vb:7522", det == null ? "nema" : det.ClearColums));
             l.Add(Pet.Izgled("INT-11", "Row header, prazni retci i HeaderLines su izgled. Kontrola je DevExpress."));
-            l.Add(Qa.Kljuc(Ime, "INT-20", "Master timeout je 300 i detail salje @@id", "netgen/Class1.vb:99", Pet.Putanja(root, "Intrastat.xml"), "otvori", "", "timeout", "300"));
+            l.Add(Qa.Mora(Ime, "INT-20", "Master timeout je 300 i detail salje @@id", "netgen/Class1.vb:99", Pet.Putanja(root, "Intrastat.xml"), "otvori", "", "timeout", "300"));
             return l;
         }
     }

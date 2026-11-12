@@ -70,6 +70,11 @@ namespace Carpo.NetGen.Granule
         {
             l.Add(Qa.Kljuc(granula, id, opis, izvor, xml, "otvori", "", kljuc, ocek));
         }
+
+        public static void M(List<Stavka> l, string granula, string xml, string id, string opis, string izvor, string kljuc, string ocek)
+        {
+            l.Add(Qa.Mora(granula, id, opis, izvor, xml, "otvori", "", kljuc, ocek));
+        }
     }
 
     public static class Statusi
@@ -138,10 +143,10 @@ namespace Carpo.NetGen.Granule
             Stablo.K(l, Ime, xml, "STA-33", "AfterSelect: @@node je dio taga prije dvotocke, forma iza", "netgen/Form1.vb:7182-7188", "cvorForma", "POPUNI_FORM");
             Stablo.K(l, Ime, xml, "STA-34", "Forma bez kontrola ne otvara dijalog; FILLEXPLORER zamijeni master ONSUBMIT-om", "netgen/Form1.vb:5369-5370,5445-5452", "cvorSql", "spStatusiQuery @action=0, @node=@@node");
             Stablo.K(l, Ime, xml, "STA-35", "Punjenje stabla ide SqlDataAdapterom, ne ExecSql: prezivjeli @@ se ipak salje", "netgen/Form1.vb:4446-4447", "treeZaobilaziExecSql", "true");
-            Stablo.K(l, Ime, xml, "STA-36", "Promjena reda mastera ponovo zove DETAILGRID", "netgen/Form1.vb:7413-7416", "detailNaSelekciji", "true");
-            Stablo.K(l, Ime, xml, "STA-37", "Tijekom punjenja mastera detail se preskace (PunimMasterGrid), pa jednom na kraju", "netgen/Form1.vb:2270,2099-2109", "detailNakonMastera", "true");
-            Stablo.K(l, Ime, xml, "STA-38", "DETCHECKBOXVISIBLE FALSE sakrije selector detaila (stupac 1)", "netgen/Form1.vb:2402-2406", "detSelector", "false");
-            Stablo.K(l, Ime, xml, "STA-39", "Drugi detail upit ne radi CreateGridColumns ako RootTable vec postoji", "netgen/Form1.vb:2334-2336", "detailKoloneJednom", "true");
+            Stablo.M(l, Ime, xml, "STA-36", "Promjena reda mastera ponovo zove DETAILGRID", "netgen/Form1.vb:7413-7416", "detailNaSelekciji", "true");
+            Stablo.M(l, Ime, xml, "STA-37", "Tijekom punjenja mastera detail se preskace (PunimMasterGrid), pa jednom na kraju", "netgen/Form1.vb:2270,2099-2109", "detailNakonMastera", "true");
+            Stablo.M(l, Ime, xml, "STA-38", "DETCHECKBOXVISIBLE FALSE sakrije selector detaila (stupac 1)", "netgen/Form1.vb:2402-2406", "detSelector", "false");
+            Stablo.M(l, Ime, xml, "STA-39", "Drugi detail upit ne radi CreateGridColumns ako RootTable vec postoji", "netgen/Form1.vb:2334-2336", "detailKoloneJednom", "true");
             return l;
         }
     }
@@ -227,9 +232,9 @@ namespace Carpo.NetGen.Granule
             Stablo.K(l, Ime, xml, "BLA-30", "Klik na Blagajne: tag je ':' pa je ime forme prazno i NovaGenerickaForma izadje", "netgen/Form1.vb:4354,7185-7187,4546", "klikBlagajne", "prazno");
             Stablo.K(l, Ime, xml, "BLA-31", "@@operateriid u TREE store se zamijeni prije SqlDataAdapter.Fill", "netgen/Form1.vb:4442-4446", "treeOperater", "zamijenjen");
             Stablo.K(l, Ime, xml, "BLA-32", "Tri storea su tri korijena, ne podgrane cvora Blagajne", "netgen/Form1.vb:4347-4480", "treeKorijeni", "4");
-            Stablo.K(l, Ime, xml, "BLA-33", "Detail se ponovi na SelectionChanged mastera", "netgen/Form1.vb:7413-7416", "detailNaSelekciji", "true");
-            Stablo.K(l, Ime, xml, "BLA-34", "CLEARCOLUMS detaila sakrije stupce koji nisu u DETAILCOLUMNS", "netgen/Form1.vb:2347,7459", "detClear", "true");
-            Stablo.K(l, Ime, xml, "BLA-35", "Sirina VrstaBlagajne je 2500/14 = 179", "netgen/Form1.vb:7522", "kolona.VrstaBlagajne.sirina", "179");
+            Stablo.M(l, Ime, xml, "BLA-33", "Detail se ponovi na SelectionChanged mastera", "netgen/Form1.vb:7413-7416", "detailNaSelekciji", "true");
+            Stablo.M(l, Ime, xml, "BLA-34", "CLEARCOLUMS detaila sakrije stupce koji nisu u DETAILCOLUMNS", "netgen/Form1.vb:2347,7459", "detClear", "true");
+            Stablo.M(l, Ime, xml, "BLA-35", "Sirina VrstaBlagajne je 2500/14 = 179", "netgen/Form1.vb:7522", "kolona.VrstaBlagajne.sirina", "179");
             return l;
         }
     }
@@ -287,14 +292,14 @@ namespace Carpo.NetGen.Granule
             Stablo.R(l, Ime, xml, "PL-20", "COMBO drzi stablo vidljivim iako TREE atribut ne postoji", "netgen/Form1.vb:4310-4320,7730-7733", "stabloVidljivo", "true");
             Stablo.R(l, Ime, xml, "PL-21", "Combo je vidljiv", "netgen/Form1.vb:3340-3347", "comboVidljiv", "true");
             Stablo.R(l, Ime, xml, "PL-22", "Splitter 180 tek kad TREE tekst postoji (nakon SelectedValue)", "netgen/Form1.vb:4323-4324", "lijeviSplitter", "180");
-            Stablo.R(l, Ime, xml, "PL-23", "Detail SQL je declare/exec", "netgen/Form1.vb:3373", "detailSql", det);
-            Stablo.R(l, Ime, xml, "PL-24", "CHECKBOXVISIBLE FALSE", "netgen/Form1.vb:2043", "selectorVidljiv", "false");
+            Stablo.M(l, Ime, xml, "PL-23", "Detail SQL je declare/exec", "netgen/Form1.vb:3373", "detailSql", det);
+            Stablo.M(l, Ime, xml, "PL-24", "CHECKBOXVISIBLE FALSE", "netgen/Form1.vb:2043", "selectorVidljiv", "false");
             Stablo.R(l, Ime, xml, "PL-25", "Nema ONLOAD: pocetni master SQL je prazan", "netgen/Form1.vb:3367-3368,1830", "sqlTrag", "");
             Stablo.K(l, Ime, xml, "PL-30", "SelectedValueChanged upise SelectedValue u strTreeNodes i ponovo zove NapuniDrvoVrijeme", "netgen/Form1.vb:7730-7733", "comboPuniDrvo", "true");
             Stablo.K(l, Ime, xml, "PL-31", "Dok je TREE jos prazan, NapuniDrvo izadje prije splitter-a i prije Enable gumba", "netgen/Form1.vb:4310-4320", "comboPrviProlaz", "izlaz");
             Stablo.K(l, Ime, xml, "PL-32", "Vrijednost combo stupca 0 mora biti TREE tekst (segmenti s # i :)", "netgen/Form1.vb:3342-3344,4344", "comboStupac0", "tree");
-            Stablo.K(l, Ime, xml, "PL-33", "Detail se veze na trenutni @@id nakon master reda", "netgen/Form1.vb:2294-2304,7413", "detailNaSelekciji", "true");
-            Stablo.K(l, Ime, xml, "PL-34", "Kolicina na detailu: sirina 1000/14 = 71, format #,####0.0000", "netgen/Form1.vb:7522-7524", "det.Kolicina", "71|#,####0.0000");
+            Stablo.M(l, Ime, xml, "PL-33", "Detail se veze na trenutni @@id nakon master reda", "netgen/Form1.vb:2294-2304,7413", "detailNaSelekciji", "true");
+            Stablo.M(l, Ime, xml, "PL-34", "Kolicina na detailu: sirina 1000/14 = 71, format #,####0.0000", "netgen/Form1.vb:7522-7524", "det.Kolicina", "71|#,####0.0000");
             Stablo.K(l, Ime, xml, "PL-35", "REFRESHMASTER na dvostrukom kliku ne osvjezava preko rijeci REFRESHMASTERGRID", "netgen/Form1.vb:4570", "dblRefresh", "nije-grid");
             return l;
         }
