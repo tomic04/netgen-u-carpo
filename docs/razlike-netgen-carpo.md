@@ -930,3 +930,11 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Carpo:** `Dijalog.SviParametri` skuplja check, lookup i tekst. Search, grid i radio još nisu u nizu. Shell i `Rafalno` potpisi jesu u `AssemblyPoziv`.
 - **Posljedica:** adapter dijaloga dobije `@ime` tekstualnih kontrola. Search box i grid iz forme ne uđu u peti argument dok se `PokupiParametre` ne prenese cijeli.
 - **Test:** `assembly-dijalog` provjerava da su zadnja dva argumenta isti niz, ne da je niz potpun.
+
+## R109 Fiskalizacija ne zove `PosaljiSoapPorukuCertifikatDatoteka`
+
+- **Element:** `FISKALIZACIJA`
+- **NetGen:** `Form1.vb` 520 šalje XML i certifikat u Raverus. Povrat je SOAP tekst. `DohvatiJir` čita JIR (`548`).
+- **Carpo:** učita isti DLL i klasu (`FiskalPoziv.Ucitaj`). Metodom slanja se ne zove, da zahtjev ne ode poreznoj.
+- **Posljedica:** bez `Raverus.FiskalizacijaDEV.COM.dll` na stroju fiskalizacija staje na `Assembly.Load`, kao i NetGen. Kad DLL stigne, slanje je još jedan poziv iste metode, ne nova implementacija.
+- **Test:** `fiskal-nema-slanja`

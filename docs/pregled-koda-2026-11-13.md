@@ -94,8 +94,17 @@ Pregledano je 9 modula. Popravljeno: `FILLEXPLORER` nakon OK, `ONLOAD2` po natpi
 | Carpo | `Poziv/AssemblyPoziv.cs`. Gumb na podlozi zove shell potpis. Dijalog zove dijalog potpis. |
 | Razlika | Bila je DA (samo zapis u dnevnik). Sada se sklop stvarno učita i zove `totalgen`. Tuđi DLL nije u repou; ako ga na stroju nema, lanac staje, kao kod NetGena. |
 
+## 12. Fiskalizacija je vanjski DLL
+
+| | |
+|---|---|
+| NetGen | `Form1.vb` 360–368 učita `Raverus.FiskalizacijaDEV.COM` i klasu `CentralniInformacijskiSustav`. `GenerirajUuid` (454), `ZastitniKodIzracunCertifikatDatoteka` s 8 argumenata (457), `PosaljiSoapPorukuCertifikatDatoteka` (520) vraća SOAP, `DohvatiJir` (548). URL s `fu.gov.si` ide u `SLOFISKAL.Program.SLORacun` (341–354). |
+| Carpo | `Poziv/FiskalPoziv.cs` učita isti sklop i istu klasu. `PosaljiSoapPorukuCertifikatDatoteka` se ne zove. |
+| Razlika | DA za slanje. Izvorni kod Raverusa nije potreban. Treba DLL na stroju. |
+
 ## Što ostaje otvoreno
 
-- Fiskalizacija i Word još nemaju tijelo.
+- Word još nema tijelo.
+- Fiskalizacija ne šalje SOAP dok DLL nije na stroju, i ovaj kod ga ne zove.
 - `strParametriSvi` na dijalogu za `ASSEMBLYLOAD` skuplja check, lookup i tekst. Search, grid i radio iz `Form2.vb` 3432 još nisu u tom nizu.
 - 12 redova `ssMeni` i XML-ovi kojih nema u repou. Shema se ne dira.

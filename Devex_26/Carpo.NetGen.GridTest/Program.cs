@@ -29,6 +29,7 @@ namespace Carpo.NetGen.GridTest
             Jez57();
             Pregled();
             AssemblyLoad();
+            Fiskal();
             Zamjene();
             OznakaBezBaze();
             JeziciBezBaze();
@@ -120,6 +121,20 @@ namespace Carpo.NetGen.GridTest
             {
                 Carpo.NetGen.Print.Prevod.Vanjski = null;
             }
+        }
+
+        private static void Fiskal()
+        {
+            T("fiskal-raverus", Carpo.NetGen.Poziv.FiskalPoziv.Sklop == "Raverus.FiskalizacijaDEV.COM"
+                && Carpo.NetGen.Poziv.FiskalPoziv.Klasa == "Raverus.FiskalizacijaDEV.COM.CentralniInformacijskiSustav"
+                && Carpo.NetGen.Poziv.FiskalPoziv.ZastitniKod == "ZastitniKodIzracunCertifikatDatoteka"
+                && Carpo.NetGen.Poziv.FiskalPoziv.PosaljiSoap == "PosaljiSoapPorukuCertifikatDatoteka"
+                && Carpo.NetGen.Poziv.FiskalPoziv.DohvatiJir == "DohvatiJir", "");
+            T("fiskal-slo", Carpo.NetGen.Poziv.FiskalPoziv.JeSlovenija("https://example.fu.gov.si/x")
+                && !Carpo.NetGen.Poziv.FiskalPoziv.JeSlovenija("https://cis.example/lokalno")
+                && Carpo.NetGen.Poziv.FiskalPoziv.SloRacun == "SLORacun", "");
+            var i = Carpo.NetGen.Poziv.FiskalPoziv.Ucitaj("");
+            T("fiskal-nema-slanja", i.Poslano == false, i.Greska);
         }
 
         private static void AssemblyLoad()
