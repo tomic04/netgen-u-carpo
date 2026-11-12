@@ -803,4 +803,9 @@ Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88
 | `PDVPromjenaNEW.md` | `:FILTERFORM`, store, `!!` na brisanju | R18, R01, R14 |
 | `MPNarPredis.md` | nema `ONLOAD`, `vrstadokid-` | R10, R01, R43, R11 |
 | `NacinOtpremeNG.md` | `OKStay` pa prazna polja | R41 |
+| `MPEurParam.md` | `:UPDATEFORM`, `@action=2` | R18 |
+| `MPAzurPubVars.md` | obnovi šalje `@action = 1` dvaput | R14 |
+| `MPTrgovinaPortal.md` | dvostruki klik `:TRGOVINAFORM` | R65 |
+| `MPUvjetiKase.md` | `:FILTERFORM`, brisanje `@action=5` | R18 |
+| `Obrazac.md` | store, `onlytree`, `OBRAZAC(@obrazacid=0)` | R01, R54, R55 |
 | `Smoke-prazno-uzorak.md` | 20 praznih iz smokea #35 | |
