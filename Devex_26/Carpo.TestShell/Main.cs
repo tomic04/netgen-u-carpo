@@ -223,7 +223,7 @@ namespace Carpo.TestShell
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("cmdGen_Click exception: " + ex.ToString());
-                MessageBox.Show(ex.Message, "Start Error");
+                MessageBox.Show(ex.ToString(), "Start Error");
             }
             finally
             {

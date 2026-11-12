@@ -24,6 +24,7 @@ namespace Carpo.NetGen.GridTest
         {
             SqlPreskoci();
             IntrastatPreskok();
+            RucniStart();
             Zamjene();
             OznakaBezBaze();
             JeziciBezBaze();
@@ -51,6 +52,34 @@ namespace Carpo.NetGen.GridTest
                 Console.WriteLine("PRESKOCENO spin (nema CARPO_SPIN=1)");
             Console.WriteLine("FAIL=" + fail.ToString());
             return fail == 0 ? 0 : 1;
+        }
+
+        private static void RucniStart()
+        {
+            var prije = GranulaSesija.Izvrsi;
+            GranulaSesija.Izvrsi = null;
+            try
+            {
+                T("rucni-oznaka", RucniSql("OznakaKL.xml"), "");
+                T("rucni-verizne", RucniSql("KntKompVerizne.xml"), "");
+                T("rucni-kuka-null", GranulaSesija.Izvrsi == null, "");
+            }
+            finally
+            {
+                GranulaSesija.Izvrsi = prije;
+            }
+        }
+
+        private static bool RucniSql(string xml)
+        {
+            NgProject p = Ucitaj(xml);
+            if (p == null)
+                return false;
+            var g = new MasterGrid();
+            g.Kontekst.OperaterId = "7";
+            g.Kontekst.Node = "null";
+            g.Ucitaj(p, null);
+            return g.Stanje != null && g.Stanje.Odluka == "salji" && !string.IsNullOrEmpty(g.Stanje.SqlZaSlanje);
         }
 
         private static void IntrastatPreskok()

@@ -364,7 +364,10 @@ namespace Carpo.UI.Forms.Master
 
         private void TreeWithGrids_Load(object sender, EventArgs e)
         {
-            //this.WindowState = FormWindowState.Maximized;//zakomentirati kod js10
+            // NetGen Podloga zove prazni Manager(). Nema JSettings ni Logger.
+            // PopulateTreeFilter tada dira JSettings.ComboEdit i ruši Start.
+            if (JSettings == null)
+                return;
 
             if (!(string.IsNullOrEmpty(FormName)))
                 this.Name = FormName;
@@ -385,7 +388,8 @@ namespace Carpo.UI.Forms.Master
                 }
                 catch (Exception ex)
                 {
-                    JMessages.Error(ex, ex.Message);
+                    try { JMessages.Error(ex, ex.Message); }
+                    catch { }
                 }
             }
         }
@@ -1219,10 +1223,14 @@ namespace Carpo.UI.Forms.Master
 
         private void Manager_FormClosing(object sender, FormClosingEventArgs e)//zatvaranje i spremanje
         {
+            // Ručni NetGen nema Carpo definiciju. Spremanje layouta traži Logger i service.
+            if (JSettings == null || Logger == null)
+                return;
+
             MergeCurrentFilterLayoutIntoSettingsBeforeClose();
 
             string menuIdEff = GetEffectiveMenuIdForFilterPostavke();
-            if (!string.IsNullOrEmpty(menuIdEff))
+            if (service != null && !string.IsNullOrEmpty(menuIdEff))
             {
                 foreach (var item in settings)
                     service.SaveSettings(item.Key, PubVars.OperateriId, menuIdEff, item.Value);
@@ -1280,7 +1288,7 @@ namespace Carpo.UI.Forms.Master
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error("Manager_FormClosing", "Problem sa spremanjem layouta grida : " + ex.Message, ex);
+                        Logger?.Error("Manager_FormClosing", "Problem sa spremanjem layouta grida : " + ex.Message, ex);
                     }
                 }
 
@@ -1315,7 +1323,7 @@ namespace Carpo.UI.Forms.Master
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error("Manager_FormClosing", "Problem sa spremanjem layouta grida : " + ex.Message, ex);
+                        Logger?.Error("Manager_FormClosing", "Problem sa spremanjem layouta grida : " + ex.Message, ex);
                     }
                 }
                 if (splitMain.PanelVisibility == SplitPanelVisibility.Both)
@@ -1334,7 +1342,7 @@ namespace Carpo.UI.Forms.Master
             }
             catch (Exception ex)
             {
-                Logger.Error("Neuspješno spremanje layout grida", ex.Message, ex);
+                Logger?.Error("Neuspješno spremanje layout grida", ex.Message, ex);
             }
         }
 
