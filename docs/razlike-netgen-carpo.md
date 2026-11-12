@@ -854,6 +854,15 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `bla-width-prepisuje`
 - **PR:** spin-otvaranje
 
+## R104 Čvor stabla, prazan klik i combo koji puni drvo
+
+- **Element:** `TREE`, `COMBO`, dvostruki klik
+- **NetGen:** `AfterSelect` uzme tekst prije dvotočke kao `@@node`, a ime forme iza (`Form1.vb` 7182). Forma bez kontrola i s `FILLEXPLORER=TRUE` ne otvara dijalog; master postane `ONSUBMIT` (`5369`, `5445`). Store ide kroz `SqlDataAdapter`, ne `ExecSql` (`4446`). `@@operateriid` se zamijeni prije `Fill` (`4442`). Statični čvor `Blagajne:` ima tag `:` i `NovaGenerickaForma` odmah izađe (`4354`, `4546`). Svaki `#` segment je korijen. Prazan `TREE` izađe prije splittera (`4310`). Combo stupac 0 je vrijednost, a `SelectedValueChanged` ponovo puni drvo (`3344`, `7730`). `REFRESHMASTER` na dvostrukom kliku nije `REFRESHMASTERGRID` (`4570`).
+- **Carpo:** `cvorForma`, `cvorSql`, `treeZaobilaziExecSql`, `treeOperater`, `treeKorijeni`, `klikBlagajne`, `comboPuniDrvo`, `comboPrviProlaz`, `comboStupac0`, `dblRefresh`. Bez `ONLOAD` trag mastera ostaje prazan. `BLA-35` i dalje daje širinu 179.
+- **Odluka:** NetGen logika. Jupiter se ne dira.
+- **Test:** `sta-stablo`, `bla-stablo`, `pl-combo-drvo`
+- **PR:** cvor-stabla
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

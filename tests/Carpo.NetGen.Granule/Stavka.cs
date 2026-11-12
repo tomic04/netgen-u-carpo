@@ -110,6 +110,43 @@ namespace Carpo.NetGen.Granule
         }
 
         /// <summary>
+        /// Isto kao Runtime, ali neizvedena akcija je pad. Build ostaje crven dok kuka ne vrati kljuc.
+        /// </summary>
+        public static Stavka Mora(string granula, string id, string opis, string izvor, string xml, string akcija, string cilj, string kljuc, string ocekivano)
+        {
+            if (GranulaSesija.Izvrsi == null)
+                return P(granula, id, opis, izvor, "Kuka nije spojena");
+
+            Pogled pogled;
+            try
+            {
+                pogled = GranulaSesija.Izvrsi(new Zahtjev
+                {
+                    XmlPutanja = xml,
+                    Akcija = akcija,
+                    Cilj = cilj,
+                    MasterId = "0",
+                    Vrijednosti = ""
+                });
+            }
+            catch (Exception ex)
+            {
+                return P(granula, id, opis, izvor, "Izvrsi je bacio: " + ex.GetType().Name + ": " + ex.Message);
+            }
+
+            if (pogled == null || !pogled.Izvedeno)
+            {
+                string razlog = pogled == null ? "Izvrsi je vratio null" : (pogled.Napomena ?? "Izvedeno=false");
+                return P(granula, id, opis, izvor, razlog);
+            }
+
+            if (pogled.Stavke == null || !pogled.Stavke.ContainsKey(kljuc))
+                return P(granula, id, opis, izvor, "nema kljuca " + kljuc);
+
+            return Jednako(granula, id, opis, izvor, ocekivano, pogled.Stavke[kljuc]);
+        }
+
+        /// <summary>
         /// Isti poziv kao Runtime. Nedostajuci kljuc ostaje otvoren. Kriva vrijednost je pad.
         /// </summary>
         public static Stavka Kljuc(string granula, string id, string opis, string izvor, string xml, string akcija, string cilj, string kljuc, string ocekivano)

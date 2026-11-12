@@ -89,7 +89,21 @@ namespace Carpo.NetGen.GridTest
             NgProject sta = Ucitaj("Statusi.xml");
             Stablo.Kljucevi(sta, s);
             T("sta-stablo", sta != null && s["treeStupci"] == "0,1,2,3" && s["preskociId0"] == "true"
-                && s["tagBezDvotocke"] == "vrijednost:POPUNI_FORM", s.ContainsKey("tagBezDvotocke") ? s["tagBezDvotocke"] : "");
+                && s["tagBezDvotocke"] == "vrijednost:POPUNI_FORM" && s["cvorForma"] == "POPUNI_FORM"
+                && s["cvorSql"] == "spStatusiQuery @action=0, @node=@@node" && s["treeZaobilaziExecSql"] == "true",
+                s.ContainsKey("cvorSql") ? s["cvorSql"] : "");
+            s.Clear();
+            NgProject bla = Ucitaj("KntBlaZak.xml");
+            Stablo.Kljucevi(bla, s);
+            T("bla-stablo", bla != null && s["klikBlagajne"] == "prazno" && s["treeOperater"] == "zamijenjen"
+                && s["treeKorijeni"] == "4",
+                s.ContainsKey("treeKorijeni") ? s["treeKorijeni"] : "");
+            s.Clear();
+            NgProject pl = Ucitaj("PrijemniList.xml");
+            Stablo.Kljucevi(pl, s);
+            T("pl-combo-drvo", pl != null && s["comboPuniDrvo"] == "true" && s["comboPrviProlaz"] == "izlaz"
+                && s["comboStupac0"] == "tree" && s["dblRefresh"] == "nije-grid",
+                s.ContainsKey("dblRefresh") ? s["dblRefresh"] : "");
         }
 
         private static void OstaloKljucevi()

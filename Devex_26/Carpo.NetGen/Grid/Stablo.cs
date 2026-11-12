@@ -356,11 +356,58 @@ namespace Carpo.NetGen.Grid
         {
             if (p == null || s == null)
                 return;
+            string combo = (Atr(p, "COMBO") ?? "").Trim();
+            if (combo.Length > 0)
+            {
+                s["comboPuniDrvo"] = "true";
+                s["comboStupac0"] = "tree";
+            }
+            string dbl = p.MasterDblClick ?? "";
+            if (dbl.IndexOf("REFRESHMASTER", StringComparison.OrdinalIgnoreCase) >= 0
+                && dbl.IndexOf("REFRESHMASTERGRID", StringComparison.OrdinalIgnoreCase) < 0)
+                s["dblRefresh"] = "nije-grid";
+
             string tree = (p.Tree ?? "").Trim();
             if (tree.Length == 0)
+            {
+                if (combo.Length > 0)
+                    s["comboPrviProlaz"] = "izlaz";
                 return;
+            }
             s["treeStupci"] = "0,1,2,3";
             s["preskociId0"] = "true";
+            string[] dijelovi = tree.Split('#');
+            int korijeni = 0;
+            bool stora = false;
+            bool operater = false;
+            string prvaForma = null;
+            for (int i = 0; i < dijelovi.Length; i++)
+            {
+                string dio = (dijelovi[i] ?? "").Trim();
+                if (dio.Length == 0)
+                    continue;
+                int k = dio.IndexOf(':');
+                if (k < 0)
+                    continue;
+                korijeni++;
+                string lijevo = dio.Substring(0, k).Trim();
+                string desno = dio.Substring(k + 1).Trim();
+                if (lijevo.IndexOf("@@operateriid", StringComparison.OrdinalIgnoreCase) >= 0)
+                    operater = true;
+                if (lijevo.IndexOf("tree", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    stora = true;
+                    if (prvaForma == null)
+                        prvaForma = desno;
+                }
+                else if (desno.Length == 0)
+                    s["klikBlagajne"] = "prazno";
+            }
+            s["treeKorijeni"] = korijeni.ToString(CultureInfo.InvariantCulture);
+            if (stora)
+                s["treeZaobilaziExecSql"] = "true";
+            if (operater)
+                s["treeOperater"] = "zamijenjen";
             int kolon = tree.IndexOf(':');
             if (kolon < 0)
                 return;
@@ -369,6 +416,25 @@ namespace Carpo.NetGen.Grid
             if (hash >= 0)
                 forma = forma.Substring(0, hash);
             s["tagBezDvotocke"] = "vrijednost:" + forma.Trim();
+            if (prvaForma == null)
+                prvaForma = forma.Trim();
+            s["cvorForma"] = prvaForma;
+            NgForm pop = null;
+            if (p.Forme != null)
+            {
+                for (int i = 0; i < p.Forme.Count; i++)
+                {
+                    if (string.Equals(p.Forme[i].Ime, prvaForma, StringComparison.OrdinalIgnoreCase))
+                    {
+                        pop = p.Forme[i];
+                        break;
+                    }
+                }
+            }
+            string fill = pop == null || pop.Atributi == null ? "" : (pop.Atributi.Vrijednost("FILLEXPLORER") ?? "");
+            string submit = pop == null ? "" : (pop.OnSubmit ?? "").Trim();
+            if (submit.Length > 0 && fill.Trim().Equals("TRUE", StringComparison.OrdinalIgnoreCase))
+                s["cvorSql"] = submit;
         }
 
         private static string Atr(NgProject projekt, string ime)

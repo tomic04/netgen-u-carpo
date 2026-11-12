@@ -204,7 +204,13 @@ namespace Carpo.NetGen.TestHooks
 
             var s = new Dictionary<string, string>(StringComparer.Ordinal);
             string master = g.Stanje.IzvorSql ?? "";
-            s["sqlTrag"] = string.IsNullOrWhiteSpace(set) ? master : (set.Trim() + " || " + master);
+            if (string.IsNullOrWhiteSpace(p.OnLoad))
+                s["sqlTrag"] = "";
+            else
+                s["sqlTrag"] = string.IsNullOrWhiteSpace(set) ? master : (set.Trim() + " || " + master);
+            string enter = Attr(p, "ONENTERKEY");
+            if (!string.IsNullOrWhiteSpace(enter))
+                s["enterForma"] = enter.Trim();
 
             var raspored = p.Raspored;
             s["stabloVidljivo"] = B(raspored != null && raspored.StabloVidljivo);

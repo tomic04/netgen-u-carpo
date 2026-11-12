@@ -45,7 +45,7 @@ namespace Carpo.NetGen.Granule
 
         public static void K(List<Stavka> l, string granula, string xml, string id, string opis, string izvor, string kljuc, string ocek)
         {
-            l.Add(Qa.Kljuc(granula, id, opis, izvor, xml, "otvori", "", kljuc, ocek));
+            l.Add(Qa.Mora(granula, id, opis, izvor, xml, "otvori", "", kljuc, ocek));
         }
     }
 
