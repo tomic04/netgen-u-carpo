@@ -133,9 +133,15 @@ namespace Carpo.NetGen.Komande
             return ukljucen ? "1" : "0";
         }
 
+        /// <summary>Form2.vb 6915: select 'refresh' as ime.</summary>
+        public static string RefreshSql(string ime)
+        {
+            return "select 'refresh' as " + (ime ?? "").Trim();
+        }
+
         public static string RefreshControl()
         {
-            return "select 'refresh' as ime";
+            return "select refresh";
         }
 
         public static string MultiTemp()

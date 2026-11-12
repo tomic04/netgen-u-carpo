@@ -243,7 +243,7 @@ namespace Carpo.NetGen.TestHooks
             var plavi = Lanac.Izvrsi("FOREACHBLUEROW(x)#spAzur", true, null);
             s["foreachBlue"] = plavi.Foreach == "plavi" ? "plavi" : "";
             s["radio"] = Lanac.Radio(true) + "-" + Lanac.Radio(false);
-            s["refreshControl"] = Lanac.RefreshControl();
+            s["refreshControl"] = Lanac.RefreshSql("ime") == "select 'refresh' as ime" ? Lanac.RefreshControl() : "";
             var zatvori = Lanac.Izvrsi("CLOSE", true, null);
             s["cancelClose"] = zatvori.Button2 ? "button2" : "";
             var ostani = Lanac.Izvrsi("OKSTAY", true, null);

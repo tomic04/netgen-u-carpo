@@ -254,6 +254,7 @@ namespace Carpo.NetGen.GridTest
             T("foreach-dijalog", fe.Foreach == "cekirani" && fe.Odigrano.Count == 1 && fe.Odigrano[0] == "spAzur", "");
             T("foreach-podloga", podloga.Foreach.Length == 0 && podloga.Odigrano.Count == 0, "");
             T("foreach-plavi", Lanac.Izvrsi("FOREACHBLUEROW(x)#spAzur", true, null).Foreach == "plavi", "");
+            T("refresh-sql", Lanac.RefreshSql("ime") == "select 'refresh' as ime" && Lanac.RefreshControl() == "select refresh", "");
         }
 
         private static void StabloTestovi()
