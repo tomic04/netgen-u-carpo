@@ -71,20 +71,34 @@ if ($lose.Rows.Count -gt 0 -and ($lose.Rows[0].Parent -is [DBNull])) {
     Exec "delete from ssMeni where Parametar = N'$param'" | Out-Null
 }
 
-$ima = Q "select count(*) as n from ssMeni where Parametar = N'$param' and Parent is not null"
-if ([int]$ima.Rows[0].n -eq 0) {
+function ParentJeNivo([string]$nivo, [string]$parent) {
+    if ([string]::IsNullOrEmpty($nivo)) { return $false }
+    if ($nivo.Length -eq 2) { return [string]::IsNullOrEmpty($parent) }
+    if ([string]::IsNullOrEmpty($parent)) { return $false }
+    return $parent -eq $nivo.Substring(0, $nivo.Length - 2)
+}
+
+$trenutni = Q "select rtrim(Nivo) as Nivo, rtrim(Parent) as Parent from ssMeni where Parametar = N'$param'"
+$vecDobar = $false
+if ($trenutni.Rows.Count -eq 1) {
+    $tn = [string]$trenutni.Rows[0].Nivo
+    $tp = ""
+    if (-not ($trenutni.Rows[0].Parent -is [DBNull])) { $tp = [string]$trenutni.Rows[0].Parent }
+    if (ParentJeNivo $tn $tp) {
+        $imaNivo = Q "select count(*) as n from ssMeni where rtrim(Nivo) = N'$tp'"
+        if ($tn.Length -eq 2 -or [int]$imaNivo.Rows[0].n -gt 0) { $vecDobar = $true }
+    }
+}
+if (-not $vecDobar) {
+    if ($trenutni.Rows.Count -gt 0) { Exec "delete from ssMeni where Parametar = N'$param'" | Out-Null }
     $roditelji = Q @"
-select p.MeniID, rtrim(p.Nivo) as Nivo, p.AplikacijeID,
-       min(len(rtrim(c.Nivo)) - len(rtrim(p.Nivo))) as Korak
-from ssMeni c
-join ssMeni p on p.MeniID = c.Parent
-where c.Parent is not null
-  and len(rtrim(c.Nivo)) > len(rtrim(p.Nivo))
-  and left(rtrim(c.Nivo), len(rtrim(p.Nivo))) = rtrim(p.Nivo)
-group by p.MeniID, rtrim(p.Nivo), p.AplikacijeID
-order by count(*) desc, len(rtrim(p.Nivo)), p.MeniID
+select p.MeniID, rtrim(p.Nivo) as Nivo, p.AplikacijeID, 2 as Korak
+from ssMeni p
+where len(rtrim(p.Nivo)) between 2 and $($nivoLen - 2)
+  and exists (select 1 from ssMeni c where rtrim(c.Parent) = rtrim(p.Nivo))
+order by len(rtrim(p.Nivo)), p.MeniID
 "@
-    if ($roditelji.Rows.Count -eq 0) { throw "Nijedan red ssMeni nema Parent na postojeci MeniID. Ne izmisljam formulu i ne gasim fk." }
+    if ($roditelji.Rows.Count -eq 0) { throw "Nijedan Nivo nema dijete po formuli left(nivo, len(nivo)-2). Ne gasim fk." }
     Write-Host ("roditelja s djecom: " + $roditelji.Rows.Count + " prvi MeniID=" + $roditelji.Rows[0].MeniID + " Nivo=" + $roditelji.Rows[0].Nivo + " korak=" + $roditelji.Rows[0].Korak)
 
     $kolone = Q @"
@@ -132,28 +146,30 @@ order by c.column_id
             Write-Host ("insert nije prosao za Nivo " + $kandidat + ": " + $_.Exception.Message)
             continue
         }
-        $prov = Q "select Parent from ssMeni where Parametar = N'$param'"
-        $parentOk = $false
-        if ($prov.Rows.Count -eq 1 -and -not ($prov.Rows[0].Parent -is [DBNull]) -and [int]$prov.Rows[0].Parent -eq $roditeljId) {
-            $parentOk = $true
+        $prov = Q "select rtrim(Nivo) as Nivo, rtrim(Parent) as Parent from ssMeni where Parametar = N'$param'"
+        $pn = ""
+        $pp = ""
+        if ($prov.Rows.Count -eq 1) {
+            $pn = [string]$prov.Rows[0].Nivo
+            if (-not ($prov.Rows[0].Parent -is [DBNull])) { $pp = [string]$prov.Rows[0].Parent }
         }
-        if ($parentOk) {
-            Write-Host "ubacen Statusi.xml Nivo=$kandidat Parent=$roditeljId"
+        if ((ParentJeNivo $pn $pp) -and $pp -eq $baza) {
+            Write-Host "ubacen Statusi.xml Nivo=$kandidat Parent=$pp (char(6), left nivo)"
             $uspio = $true
             break
         }
-        Write-Host ("Parent za Nivo " + $kandidat + " nije MeniID " + $roditeljId + ". Brisem i idem dalje.")
+        Write-Host ("Parent za Nivo " + $kandidat + " je [" + $pp + "], ocekuje se Nivo [" + $baza + "]. Brisem i idem dalje.")
         Exec "delete from ssMeni where Parametar = N'$param'" | Out-Null
     }
-    if (-not $uspio) { throw "Nijedan postojeci roditelj nije dao Parent na svoj MeniID. fk_meni nije gasen." }
+    if (-not $uspio) { throw "Formula left(nivo, len(nivo)-2) nije dala Parent jednak roditeljskom Nivo. fk_meni nije gasen." }
 }
 
 $provjera = Q @"
-select c.MeniID, rtrim(c.Nivo) as Nivo, c.Parent, p.MeniID as RoditeljPostoji
+select c.MeniID, rtrim(c.Nivo) as Nivo, rtrim(c.Parent) as Parent
 from ssMeni c
-join ssMeni p on p.MeniID = c.Parent
 where c.Parametar = N'$param'
+  and exists (select 1 from ssMeni p where rtrim(p.Nivo) = rtrim(c.Parent))
 "@
-if ($provjera.Rows.Count -ne 1) { throw "Statusi.xml nema Parent na postojeci MeniID." }
+if ($provjera.Rows.Count -ne 1) { throw "Statusi.xml nema Parent koji je postojeci Nivo." }
 $conn.Close()
 Write-Host ("STA-12 ssMeni MeniID=" + $provjera.Rows[0].MeniID + " Nivo=" + $provjera.Rows[0].Nivo + " Parent=" + $provjera.Rows[0].Parent)

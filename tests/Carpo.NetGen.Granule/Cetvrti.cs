@@ -49,18 +49,19 @@ namespace Carpo.NetGen.Granule
                     return Qa.P(ime, id, opis, izvor, g1 ?? "fk");
                 if (ugasen != "0")
                     return Qa.P(ime, id, opis, izvor, "fk_meni je ugasen");
-                DataTable red = Tablica("select Parametar, Parent from ssMeni where Parametar = N'" + param + "'");
+                DataTable red = Tablica("select rtrim(Nivo) as Nivo, rtrim(cast(Parent as varchar(20))) as Parent from ssMeni where Parametar = N'" + param + "'");
                 if (red.Rows.Count != 1)
                     return Qa.P(ime, id, opis, izvor, "redova=" + red.Rows.Count);
-                if (red.Rows[0]["Parent"] == DBNull.Value)
-                    return Qa.P(ime, id, opis, izvor, "Parent je null");
-                string parent = Convert.ToString(red.Rows[0]["Parent"]);
+                string nivo = Convert.ToString(red.Rows[0]["Nivo"]).Trim();
+                string parent = Convert.ToString(red.Rows[0]["Parent"]).Trim();
+                if (nivo.Length <= 2 || parent != nivo.Substring(0, nivo.Length - 2))
+                    return Qa.P(ime, id, opis, izvor, "Parent [" + parent + "] nije left(Nivo, len-2) od [" + nivo + "]");
                 string postoji = Citanje.PrviTekst(
-                    "select cast(count(*) as varchar(10)) from ssMeni where MeniID = " + parent,
+                    "select cast(count(*) as varchar(10)) from ssMeni where rtrim(Nivo) = N'" + parent.Replace("'", "") + "'",
                     out string g2);
-                if (postoji != "1")
-                    return Qa.P(ime, id, opis, izvor, "Parent " + parent + " nije MeniID. " + (g2 ?? ""));
-                string module = MeniParametar.ModuleId(Convert.ToString(red.Rows[0]["Parametar"]));
+                if (postoji == null || postoji == "0")
+                    return Qa.P(ime, id, opis, izvor, "Nivo " + parent + " ne postoji. " + (g2 ?? ""));
+                string module = MeniParametar.ModuleId(param);
                 if (module != "Statusi.xml")
                     return Qa.P(ime, id, opis, izvor, "moduleId [" + module + "]");
                 string xml = Path.Combine(root, "definitions", "netgen", "Agronom granule", "Statusi.xml");
