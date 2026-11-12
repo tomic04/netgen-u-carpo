@@ -144,6 +144,51 @@ foreach ($ime in $imena) {
     Write-Host "$ime $ishod $kratko"
 }
 
+$klijenti = Join-Path $root "xml\klijenti"
+if (Test-Path -LiteralPath $klijenti) {
+    [void]$sb.AppendLine("")
+    [void]$sb.AppendLine("## Klijentski XML")
+    [void]$sb.AppendLine("")
+    [void]$sb.AppendLine("| Datoteka | Ishod | Poruka |")
+    [void]$sb.AppendLine("|---|---|---|")
+    $enc = [System.Text.Encoding]::GetEncoding(1250)
+    Get-ChildItem -LiteralPath $klijenti -Filter *.xml | Sort-Object Name | ForEach-Object {
+        $ime = $_.Name
+        $tekst = $enc.GetString([System.IO.File]::ReadAllBytes($_.FullName))
+        $doc = New-Object System.Xml.XmlDocument
+        $doc.XmlResolver = $null
+        try { $doc.LoadXml($tekst) } catch {
+            [void]$sb.AppendLine("| $ime | xml | $($_.Exception.Message) |")
+            return
+        }
+        $raw = $doc.DocumentElement.GetAttribute("ONLOAD")
+        if ([string]::IsNullOrWhiteSpace($raw)) { $raw = $doc.DocumentElement.GetAttribute("STARTUPSTORA") }
+        $sql = Zamijeni $raw
+        if ([string]::IsNullOrWhiteSpace($sql)) {
+            [void]$sb.AppendLine("| $ime | prazno | nema ONLOAD ni STARTUPSTORA |")
+            return
+        }
+        if ($sql.StartsWith(":")) {
+            [void]$sb.AppendLine("| $ime | forma | $sql |")
+            return
+        }
+        $provjera = $sql.Replace("~~", ",")
+        if ($provjera.Trim().StartsWith("@") -or $provjera.IndexOf("@@") -gt 0) {
+            [void]$sb.AppendLine("| $ime | preskok | ExecSql ne salje dok ostane @@ |")
+            return
+        }
+        try {
+            $poruka = Otvori $sql
+            [void]$sb.AppendLine("| $ime | otvoreno | $poruka |")
+        } catch {
+            $poruka = $_.Exception.Message
+            $kratko = ([string]$poruka -replace "\|", "/" -replace "`r|`n", " ")
+            if ($kratko.Length -gt 180) { $kratko = $kratko.Substring(0, 180) }
+            [void]$sb.AppendLine("| $ime | pad | $kratko |")
+        }
+    }
+}
+
 $conn.Close()
 [System.IO.File]::WriteAllText($izlaz, $sb.ToString(), (New-Object System.Text.UTF8Encoding $false))
 $stubTxt = if ($kreirano.Count -eq 0) { "Nijedan novi stub." } else { ($kreirano -join "`r`n") }
