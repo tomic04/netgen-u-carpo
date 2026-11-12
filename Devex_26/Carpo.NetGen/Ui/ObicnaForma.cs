@@ -158,6 +158,11 @@ namespace Carpo.NetGen.Ui
                     Osvjezi();
                 else if (vrsta == "forma")
                     Otvori(s);
+                else if (vrsta == "word")
+                {
+                    if (!Carpo.NetGen.Print.WordDot.Otvori(s, _spoj, new[] { IdReda() }))
+                        break;
+                }
                 else if (vrsta == "ispis")
                     Carpo.NetGen.Print.PrintBridge.Ispisi(s, false, IdReda(), _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, ParametriReda(), "", "", "", "", Text, _grid, Orijentacija(), _master.Stanje.Tablica);
                 else if (vrsta == "assembly")

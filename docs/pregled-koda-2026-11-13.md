@@ -133,7 +133,7 @@ Ostalo što nije NetGen tijelo:
 
 ## Što ostaje otvoreno
 
-- Word (`Form1.vb` 5093) još nema tijelo.
+- Word (`Form1.vb` 5093) otvara `.dot` preko `Word.Application` kad je Word instaliran. `WORDDOT1` plus putanja.
 - Fiskalizacija ne šalje SOAP.
 - `PrintLink` nema lijevo/centar/desno ni riječ `lodani`. To su ulazi koje Carpo složi u `caption`/`header`/`subHeader` i u odabir grida.
 - `JeZabranaPisanja` na spinu ostaje uključena.

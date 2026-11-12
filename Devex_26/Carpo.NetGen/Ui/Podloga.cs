@@ -374,6 +374,11 @@ namespace Carpo.NetGen.Ui
                     if (jednako > 0)
                         PostaviGumb(stanje.Substring(0, jednako), stanje.Substring(jednako + 1) != "disable");
                 }
+                else if (GumbTok.Akcija(_projekt, s) == "word")
+                {
+                    if (!WordDot.Otvori(s, _spoj, new[] { _master.Stanje.Id }))
+                        return;
+                }
                 else if (IspisMotora.JeIspisImena(s) || s.StartsWith("PRINT", StringComparison.OrdinalIgnoreCase))
                 {
                     string vrsta = PrintBridge.Vrsta(s, false);

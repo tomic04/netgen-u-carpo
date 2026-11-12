@@ -175,6 +175,17 @@ namespace Carpo.NetGen.GridTest
                 bacio = true;
             }
             T("print-nema-dll", bacio == false, "");
+            var word = new LazniWord();
+            Carpo.NetGen.Print.WordDot.Aplikacija = word;
+            try
+            {
+                bool w = Carpo.NetGen.Print.WordDot.Otvori("WORDDOT1C:\\dot\\racun.dot", "Server=localhost", new[] { "4" });
+                T("word-dot", w && word.Visible && word.Dodan == "C:\\dot\\racun.dot" && word.Makro == "Pokreni" && word.Id == "4", word.Dodan);
+            }
+            finally
+            {
+                Carpo.NetGen.Print.WordDot.Aplikacija = null;
+            }
         }
 
         private static void Include()
@@ -1691,6 +1702,28 @@ namespace Carpo.NetGen.GridTest
                 return null;
             }
             return null;
+        }
+    }
+
+    public sealed class LazniWord
+    {
+        public bool Visible { get; set; }
+        public string Dodan;
+        public string Makro;
+        public string Id;
+        public object Documents { get { return this; } }
+
+        public object Add(object putanja)
+        {
+            Dodan = Convert.ToString(putanja);
+            return this;
+        }
+
+        public void Run(object ime, object idjevi, object veza)
+        {
+            Makro = Convert.ToString(ime);
+            var niz = idjevi as string[];
+            Id = niz != null && niz.Length > 0 ? niz[0] : "";
         }
     }
 

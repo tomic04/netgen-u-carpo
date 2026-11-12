@@ -19,6 +19,8 @@ namespace Carpo.NetGen.Komande
             if (s.Length == 0)
                 return "";
             string u = s.ToUpperInvariant();
+            if (u.StartsWith("WORDDOT1", StringComparison.Ordinal))
+                return "word";
             if (u.IndexOf("REFRESHMASTERGRID", StringComparison.Ordinal) >= 0)
                 return "osvjezi";
             if (u.IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0)
