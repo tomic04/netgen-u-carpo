@@ -131,6 +131,7 @@ namespace Carpo.NetGen.Ui
             _master.Ucitaj(_projekt, null);
             NapuniGrid();
             NapuniGumbe();
+            PrimijeniOnLoad2();
             return true;
         }
 
@@ -308,6 +309,18 @@ namespace Carpo.NetGen.Ui
                     _polja["izvjestaj"] = iz;
                 if (dij.DialogResult != DialogResult.OK)
                     return;
+                string explorer = DijalogTok.SqlNakonOk(forma);
+                if (explorer.Length > 0)
+                {
+                    string sql = SqlTekst.Sredi(explorer, _master.Kontekst).Replace("~~", ",");
+                    _master.Stanje.IzvorSql = explorer;
+                    _master.Stanje.ZadnjiSql = sql;
+                    _master.Stanje.SqlZaSlanje = sql;
+                    _master.Stanje.Odluka = SqlTekst.Odluka(sql);
+                    if (_master.Stanje.Odluka == "salji" && !SqlTekst.JeZabranaPisanja(sql))
+                        NapuniGrid();
+                    return;
+                }
                 string sljedeca = DijalogTok.NextForm(forma);
                 if (sljedeca.Length > 0)
                     OtvoriFormu(sljedeca);
@@ -547,6 +560,43 @@ namespace Carpo.NetGen.Ui
             string naredba = gumb == null || gumb.Tag == null ? "" : gumb.Tag.ToString();
             NgDnevnik.Akcija("gumb " + (gumb == null ? "" : gumb.Text) + " " + naredba);
             IzvrsiLanac(naredba);
+        }
+
+        private void PrimijeniOnLoad2()
+        {
+            if (_projekt == null || _projekt.Atributi == null || !_projekt.Atributi.Ima("ONLOAD2"))
+                return;
+            string raw = (_projekt.Atributi.Vrijednost("ONLOAD2") ?? "").Trim();
+            if (raw.Length == 0)
+                return;
+            string sql = SqlTekst.Sredi(raw, _master.Kontekst).Replace("~~", ",");
+            if (SqlTekst.Odluka(sql) != "salji" || SqlTekst.JeZabranaPisanja(sql))
+                return;
+            DataTable t = Citaj(sql);
+            if (t == null || t.Rows.Count == 0)
+                return;
+            DataRow row = t.Rows[0];
+            for (int i = 0; i < pnlButtons.Controls.Count; i++)
+            {
+                var gumb = pnlButtons.Controls[i] as SimpleButton;
+                if (gumb == null)
+                    continue;
+                string natpis = (gumb.Text ?? "").Replace("\r\n", "").Trim();
+                if (!row.Table.Columns.Contains(natpis))
+                    continue;
+                string v = row[natpis] == DBNull.Value ? "" : Convert.ToString(row[natpis]);
+                string akcija = OnLoad2.Akcija(v);
+                if (akcija == "visible")
+                    gumb.Visible = true;
+                else if (akcija == "invisible")
+                    gumb.Visible = false;
+                else if (akcija == "enable")
+                    gumb.Enabled = true;
+                else if (akcija == "disable")
+                    gumb.Enabled = false;
+                else if (akcija == "natpis")
+                    gumb.Text = v;
+            }
         }
 
         private void PostaviStatus(string tekst)

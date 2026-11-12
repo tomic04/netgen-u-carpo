@@ -27,6 +27,7 @@ namespace Carpo.NetGen.GridTest
             RucniStart();
             Odabir();
             Jez57();
+            Pregled();
             Zamjene();
             OznakaBezBaze();
             JeziciBezBaze();
@@ -54,6 +55,26 @@ namespace Carpo.NetGen.GridTest
                 Console.WriteLine("PRESKOCENO spin (nema CARPO_SPIN=1)");
             Console.WriteLine("FAIL=" + fail.ToString());
             return fail == 0 ? 0 : 1;
+        }
+
+        private static void Pregled()
+        {
+            T("onload2-disable", Carpo.NetGen.Komande.OnLoad2.Akcija("disable") == "disable"
+                && Carpo.NetGen.Komande.OnLoad2.Akcija("enable") == "enable"
+                && Carpo.NetGen.Komande.OnLoad2.Akcija("") == ""
+                && Carpo.NetGen.Komande.OnLoad2.Akcija("Dodaj") == "natpis", "");
+            var statusi = Ucitaj("Statusi.xml");
+            Carpo.NetGen.Model.NgForm popuni = null;
+            if (statusi != null)
+            {
+                for (int i = 0; i < statusi.Forme.Count; i++)
+                {
+                    if (string.Equals(statusi.Forme[i].Ime, "POPUNI_FORM", StringComparison.OrdinalIgnoreCase))
+                        popuni = statusi.Forme[i];
+                }
+            }
+            string sql = Carpo.NetGen.Komande.DijalogTok.SqlNakonOk(popuni);
+            T("fillexplorer-statusi", sql.IndexOf("spStatusiQuery", StringComparison.OrdinalIgnoreCase) >= 0, sql);
         }
 
         private static void Jez57()

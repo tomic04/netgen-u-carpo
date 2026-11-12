@@ -46,6 +46,17 @@ namespace Carpo.NetGen.Komande
             return (forma.Atributi.Vrijednost("NEXTFORM") ?? "").Trim();
         }
 
+        /// <summary>FILLEXPLORER=TRUE zamijeni master sa ONSUBMIT. Form1.vb 5445–5453.</summary>
+        public static string SqlNakonOk(NgForm forma)
+        {
+            if (!PuniExplorer(forma))
+                return "";
+            string stora = forma == null ? "" : (forma.OnSubmit ?? "").Trim();
+            if (stora.Length == 0)
+                return "";
+            return Lanac.Lijepi(stora, "");
+        }
+
         public static bool PuniExplorer(NgForm forma)
         {
             if (forma == null || forma.Atributi == null || !forma.Atributi.Ima("FILLEXPLORER"))
