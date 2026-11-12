@@ -187,10 +187,18 @@ namespace Carpo.NetGen.Komande
         /// </summary>
         public static string SqlNakonOk(NgForm forma, SqlKontekst kontekst, IDictionary<string, string> cb)
         {
+            return SqlNakonOk(forma, kontekst, cb, "");
+        }
+
+        public static string SqlNakonOk(NgForm forma, SqlKontekst kontekst, IDictionary<string, string> cb, string parametri)
+        {
             Klik klik = Gumb(forma, 1, "", false);
             if (!klik.FillExplorer)
                 return "";
-            string sql = SqlTekst.Sredi(klik.MasterSql ?? "", kontekst);
+            string sql = klik.MasterSql ?? "";
+            if (!string.IsNullOrWhiteSpace(parametri) && !Lanac.Prvih6JeDml(sql) && sql.IndexOf("!!", StringComparison.Ordinal) < 0)
+                sql = sql.TrimEnd() + " " + parametri.Trim();
+            sql = SqlTekst.Sredi(sql, kontekst);
             return Dozvola.Poslije(sql, cb);
         }
 

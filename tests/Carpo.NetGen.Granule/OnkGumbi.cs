@@ -45,6 +45,7 @@ namespace Carpo.NetGen.Granule
             System.Console.WriteLine("[Z] ZakljucivanjeTemNG ONK-04 otvaraFormu=Zakljucavanje saljeSubmit=false");
             l.Add(Qa.Z("ZakljucivanjeTemNG", "ONK-04", opis, izvor));
             l.Add(Niv05(root));
+            l.Add(Rea04(root));
             return l;
         }
 
@@ -100,6 +101,51 @@ namespace Carpo.NetGen.Granule
                     return Qa.P(ime, id, opis, izvor, spin);
             }
             Console.WriteLine("[Z] MPNivelacija NIV-05 ONSUBMIT=spMPQueryGlaIDetNG dnevnik=NetGen SQL spin=" + spin);
+            return Qa.Z(ime, id, opis, izvor);
+        }
+
+        private static Stavka Rea04(string root)
+        {
+            const string ime = "MPRealizNG";
+            const string id = "REA-04";
+            const string opis = "Pokaži na FORM1 pošalje ONSUBMIT jer je FILLEXPLORER true";
+            const string izvor = "netgen/Form1.vb:5445-5452; netgen/Form2.vb:3367";
+            string xml = Path.Combine(root, "definitions", "netgen", "Agronom granule", "MPRealizNG.xml");
+            string greska;
+            NgProject p = Qa.Ucitaj(xml, out greska);
+            if (p == null)
+                return Qa.P(ime, id, opis, izvor, greska ?? "XML");
+            NgForm f = p.NadjiFormu("FORM1");
+            if (f == null)
+                return Qa.P(ime, id, opis, izvor, "nema FORM1");
+            DateTime danas = DateTime.Now;
+            string dan = danas.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+            string parametri = "@trgovinaid=null,@robaid=null,@search='',@klasaid=null,@podklase=0,@datumod='" + dan + "',@datumdo='" + dan + "',@vrstadokid=null,@partneriid=null";
+            string sql = DijalogTok.SqlNakonOk(f, new SqlKontekst { OperaterId = "7", Node = "null" }, new Dictionary<string, string>(), parametri);
+            if (sql.IndexOf("spMPRealizacijaRobeNG", StringComparison.Ordinal) < 0 || sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                return Qa.P(ime, id, opis, izvor, "sql [" + sql + "]");
+            NgDnevnik.Sql(sql);
+            string spin = "redovi";
+            try
+            {
+                using (var conn = new SqlConnection(Citanje.Spoj))
+                using (var cmd = new SqlCommand(sql, conn))
+                using (var da = new SqlDataAdapter(cmd))
+                {
+                    cmd.CommandTimeout = 60;
+                    var dt = new DataTable();
+                    conn.Open();
+                    da.Fill(dt);
+                }
+            }
+            catch (Exception ex)
+            {
+                spin = ex.Message ?? "";
+                NgDnevnik.Greska(spin + " | " + sql);
+                if (spin.IndexOf("spMPRealizacijaRobeNG", StringComparison.Ordinal) < 0)
+                    return Qa.P(ime, id, opis, izvor, spin);
+            }
+            Console.WriteLine("[Z] MPRealizNG REA-04 ONSUBMIT=spMPRealizacijaRobeNG dnevnik=NetGen SQL spin=" + spin);
             return Qa.Z(ime, id, opis, izvor);
         }
     }

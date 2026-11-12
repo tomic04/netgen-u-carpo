@@ -32,11 +32,11 @@ Snimak CI #31 ima 160 stavki. U ovom prolazu su iz tablice izašle `MPK-30`, `MP
 | 22 | Tražilica | 1 | 2 |
 | 23 | Redoslijed punjenja podloge | 1 | 1 |
 | 24 | fidus nema tablicu ssMeni | 1 | 1 |
-| 25 | Gumbi/lanac: Pokaži šalje ONSUBMIT | 1 | 1 |
+| 25 | Gumbi/lanac: Pokaži šalje ONSUBMIT | 0 | 0 |
 
-Zbroj stavki u tablici ispod je 151.
+Zbroj stavki u tablici ispod je 150.
 
-Tri gumba iz retka gumbi/lanac na PR #60 nisu imala ID. Od šest, zatvoreni su `MPK-30`, `MPK-31` i `STA-34`. Preostala tri su `ONK-04`, `NIV-05` i `REA-04` (dijalozi `ZakljucivanjeTemNG`, `MPNivelacija`, `MPRealizNG`). `ONK-04` je slučaj 4 u `Onclick-dijalog-testovi.md`.
+Tri gumba iz retka gumbi/lanac na PR #60 nisu imala ID. Od šest, `MPK-30`, `MPK-31` i `STA-34` su bili zatvoreni. Preostala tri su `ONK-04`, `NIV-05` i `REA-04`. Sva tri su sada zatvorena.
 
 ## 1. XML nije u spin ssMeni
 
@@ -149,11 +149,7 @@ Tri gumba iz retka gumbi/lanac na PR #60 nisu imala ID. Od šest, zatvoreni su `
 
 ## Gumbi/lanac — ID koji nisu bili u tablici
 
-`ONK-04` je zatvoren u ovom prolazu: `Zaključi` otvara `Zakljucavanje` i ne šalje `spKntZakljucivanjeTem` (`Form2.vb` 6882).
-
-| Stavka | Očekivano | Izvor | Zašto je otvoreno |
-|---|---|---|---|
-| MPRealizNG `REA-04` | Pokaži na FORM1 pošalje ONSUBMIT jer je FILLEXPLORER true | `netgen/Form1.vb:5445-5452; netgen/Form2.vb:3367` | dijalog još nije potvrdio master |
+`ONK-04`, `NIV-05` i `REA-04` su zatvoreni. `Pokaži` šalje `ONSUBMIT` (`Form1.vb` 5445, `Form2.vb` 3367). `Zaključi` otvara `Zakljucavanje` (`Form2.vb` 6882).
 
 ## 7. Kvačica, suma, sort, edit, Enter i selekcija
 
