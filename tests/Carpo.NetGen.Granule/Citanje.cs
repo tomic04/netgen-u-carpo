@@ -110,6 +110,36 @@ namespace Carpo.NetGen.Granule
             return r;
         }
 
+        public static string PrviTekst(string sql, out string greska)
+        {
+            greska = null;
+            if (!JeCitanje(sql))
+            {
+                greska = "odbio sam naredbu koja nije cisto citanje";
+                return null;
+            }
+            try
+            {
+                using (var conn = new SqlConnection(Spoj))
+                {
+                    conn.Open();
+                    using (var cmd = new SqlCommand(sql, conn))
+                    {
+                        cmd.CommandTimeout = 30;
+                        object o = cmd.ExecuteScalar();
+                        if (o == null || o is DBNull)
+                            return "";
+                        return Convert.ToString(o);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                greska = ex.GetType().Name + ": " + ex.Message;
+                return null;
+            }
+        }
+
         public static string TipoviStupaca(string tablica, IList<string> imena)
         {
             var sb = new StringBuilder();

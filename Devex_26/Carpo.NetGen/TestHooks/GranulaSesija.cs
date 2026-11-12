@@ -21,7 +21,7 @@ namespace Carpo.NetGen.TestHooks
     {
         public string XmlPutanja { get; set; }
 
-        /// <summary>otvori | gumb | dblclick | prihvati | odustani | escape | kontrola</summary>
+        /// <summary>otvori | gumb | dblclick | prihvati | odustani | escape | kontrola. Za kontrolu Cilj je Forma.ImeKontrole.</summary>
         public string Akcija { get; set; }
 
         /// <summary>Natpis gumba podloge, ili ime kontrole na dijalogu.</summary>
