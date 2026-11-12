@@ -590,6 +590,32 @@ Implementacijski registar na `cursor/netgen-otvaranje-3266` završava s R64. Slj
 - **Posljedica:** port ne stavlja gumbe u Office ribbon s velikim ikonama. Donji red ostaje. Lijevi combo i stablo ostaju. Status pokazuje broj slogova. Naredbe, SQL i redoslijed gumba ostaju NetGen.
 - **Test:** `docs/granule/Izgled-Carpo-checklista.md`
 
+Najnovija implementacijska grana `cursor/netgen-raspored-3266` završava s R67. Ove stavke su R75, da se brojevi ne sudare.
+
+## R75 `DETAILDBLCLICK` nije dvostruki klik mastera
+
+- **Element:** `DETAILDBLCLICK`
+- **NetGen:** čita se u `strDBlClickDetForm` (`Form1.vb` 3390). `GridEX2_DoubleClick` zove `NovaGenerickaForma` s tim imenom (`7201–7202`). Master i dalje gleda `MASTERDBLCLICK` (`6935`).
+- **Carpo:** jedan događaj dvostrukog klika lako otvori master formu i na detailu.
+- **Posljedica:** `MPKaseOperNG` na detailu otvara `UPDATE_FORM`. Klik na master to ne radi.
+- **Test:** `KAS-04`
+
+## R76 `PAGEORIENTATION=PORTAL` nije landscape
+
+- **Element:** `PAGEORIENTATION`
+- **NetGen:** default je `PORTRAIT` (`Form1.vb` 50). Atribut se učita (`3458`). Orijentaciju promijeni samo `LANDSCAPE` (`5930`). `PORTAL` ne ulazi u tu granu.
+- **Carpo:** nepoznata riječ lako se protumači kao pejzaž ili se baci.
+- **Posljedica:** `MPKnjigaPopisa` ostaje uspravno. `LANDSCAPE` i dalje vrijedi samo za Janus `IspisNovi`, ne za `PRINTMASTER` (R41).
+- **Test:** `KNP-03`
+
+## R77 `REFRESHAFTERCHILD` na projektu se samo upiše
+
+- **Element:** `REFRESHAFTERCHILD` na `<PROJECT>`
+- **NetGen:** vrijednost ide u `strREFRESHAFTERCHILD` (`Form1.vb` 3396). Na podlozi se taj string dalje ne čita. Na kontroli ga čita `SrediKontrolu` (`Form2.vb` 3058).
+- **Carpo:** atribut na projektu lako osvježi master nakon svakog dijaloga.
+- **Posljedica:** `KOD_RSPostavke` ima `REFRESHAFTERCHILD="TRUE"` na projektu. Sam taj atribut master ne osvježava.
+- **Test:** `KOD-05`
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
@@ -637,3 +663,9 @@ Implementacijski registar na `cursor/netgen-otvaranje-3266` završava s R64. Slj
 | `TecRazOTV.md` | XML nije u repou | |
 | `RealizacijaStavkeNG.md` | `#ISEMPTY`, timeout 180, `PRINTREPXMASTER` | R72, R65, R41 |
 | `Izgled-Carpo-checklista.md` | Manager ponuda, ne Office ribbon | R74 |
+| `MPKaseOperNG.md` | `DETAILDBLCLICK`, `Lista` bez `:`, detail `@@id` | R75, R60, R11 |
+| `KOD_RSPostavke.md` | stablo store, `IZMJENA(@…)`, `REFRESHAFTERCHILD` | R55, R54, R77, R65 |
+| `RealizacijaFakture.md` | `#ISEMPTY`, timeout 180 | R72, R65 |
+| `MPKnjigaPopisa.md` | `PORTAL`, nema gumba za `MAINFORM`, `KARTICA` ne postoji | R76, R53 |
+| `SkladisteNG.md` | `ONLOAD` je SQL, `PRINTMASTER` | R41 |
+| `Poruke.md` | XML nije u repou | |
