@@ -11,11 +11,17 @@ namespace Carpo.NetGen.Granule
         {
             string root = null;
             string izvjestaj = null;
+            string ssmeni = null;
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == "--izvjestaj" && i + 1 < args.Length)
                 {
                     izvjestaj = args[++i];
+                    continue;
+                }
+                if (args[i] == "--ssmeni" && i + 1 < args.Length)
+                {
+                    ssmeni = args[++i];
                     continue;
                 }
                 if (root == null && !args[i].StartsWith("--", StringComparison.Ordinal))
@@ -26,6 +32,8 @@ namespace Carpo.NetGen.Granule
                 Console.Error.WriteLine("Upotreba: Carpo.NetGen.Granule.exe <korijen-repa> --izvjestaj <datoteka>");
                 return 2;
             }
+            if (ssmeni != null)
+                return SmokeMeni.Pokreni(root, ssmeni);
 
             var sve = new List<Stavka>();
             sve.AddRange(OznakaKL.Provjeri(root));
