@@ -27,6 +27,7 @@ namespace Carpo.NetGen.GridTest
             OznakaBezBaze();
             JeziciBezBaze();
             Kolone();
+            OznakaStupci();
             PisanjeIServer();
             StabloTestovi();
             KomandeTestovi();
@@ -81,6 +82,47 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void OznakaStupci()
+        {
+            NgProject p = Ucitaj("OznakaKL.xml");
+            var t = new DataTable();
+            t.Columns.Add("klmasterrobaid", typeof(int));
+            t.Columns.Add("sortkey", typeof(string));
+            t.Columns.Add("Naziv", typeof(string));
+            t.Columns.Add("oznaka", typeof(string));
+            t.Columns.Add("DodatnaOznaka", typeof(string));
+            t.Rows.Add(1, "01", "Klasa", "A", "X");
+            var g = new MasterGrid();
+            if (p != null)
+                g.Ucitaj(p, t);
+            GridKolona id = null;
+            GridKolona naziv = null;
+            GridKolona dod = null;
+            string prvi = null;
+            if (g.Stanje != null && g.Stanje.Kolone != null)
+            {
+                for (int i = 0; i < g.Stanje.Kolone.Count; i++)
+                {
+                    GridKolona k = g.Stanje.Kolone[i];
+                    if (k.Selektor || k.Podatak == "Icon")
+                        continue;
+                    if (prvi == null)
+                        prvi = k.Podatak;
+                    if (string.Equals(k.Podatak, "klmasterrobaid", StringComparison.OrdinalIgnoreCase))
+                        id = k;
+                    if (string.Equals(k.Podatak, "Naziv", StringComparison.Ordinal))
+                        naziv = k;
+                    if (string.Equals(k.Podatak, "DodatnaOznaka", StringComparison.Ordinal))
+                        dod = k;
+                }
+            }
+            T("okl-40", id != null && !id.Vidljiva, id == null ? "nema" : id.Vidljiva.ToString());
+            T("okl-41", id != null && id.Sirina == 34 && id.Format == "##0" && id.EditTip == "NoEdit", id == null ? "nema" : id.Format);
+            T("okl-42", naziv != null && naziv.Sirina == 100, naziv == null ? "nema" : naziv.Sirina.ToString());
+            T("okl-43", dod != null && dod.Natpis == "DodatnaOznaka", dod == null ? "nema" : dod.Natpis);
+            T("okl-59", prvi == "klmasterrobaid", prvi ?? "");
         }
 
         private static void StabloKljucevi()

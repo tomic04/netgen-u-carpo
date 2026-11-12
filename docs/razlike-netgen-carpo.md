@@ -854,6 +854,15 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `bla-width-prepisuje`
 - **PR:** spin-otvaranje
 
+## R105 Stupac iz reda: ID se krije, string je 100
+
+- **Element:** master stupci iz rezultata `STARTUPSTORA`
+- **NetGen:** ime koje završava na `ID` je skriveno, int je 34 i `##0`, string bez `WIDTH` je 100, natpis je alias iz SQL-a (`Class1.vb` 1087–1244). `@@id` je prvi podatak ako nema stupca `id` (`Form1.vb` 5566).
+- **Carpo:** isti raspored na predanoj tablici. `OznakaKL`: `klmasterrobaid` skriven, `Naziv` 100, `DodatnaOznaka` ostaje alias.
+- **Odluka:** NetGen logika. Shema dolazi iz rezultata, ne iz izmišljenog stupca.
+- **Test:** `okl-40`, `okl-41`, `okl-42`, `okl-43`, `okl-59`
+- **PR:** grid-stupac
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
