@@ -155,7 +155,8 @@ Carpo.NetGen radi isto kad NetGen XML **nema** `FILTERMODE`: auto-filter red je 
 
 ## Otvoreno
 
-- `OznakaKL` na `spin`: 0 redova, jer nema `oznaka2` (ima `Oznaka`, tablica ima 947 redova).
+- `OznakaKL` na `spin`: master je pao jer nema `oznaka2` (ima `Oznaka`, tablica ima 947 redova). `scripts/spin/Otvori.ps1` na sql-ai doda prazan `varchar(50) NULL` i ponovi otvaranje. XML se ne mijenja.
+- QA #5 (prazan TREE gasi lijevi panel, `GRIDALLOWEDIT` se ne čita, nema kolone `id` pa je `@@id` prvi podatak, string širina 100, `HeaderLines` 3, `EmptyRows`, višestruka selekcija) pokrivaju testovi `oznaka-stablo-0`, `oznaka-edit-ignorira-gridallowedit`, `oznaka-gridallowedit-nije-edit` i ključevi `idJe` / `headerLines` / `emptyRows` / `selectionMode`.
 - `EDITCOLUMNS` koji je SQL (44 datoteke) se ne izvršava da bi se dobio popis stupaca.
 - `ONCELLEDITED` / `BEFORECELLEDITED` se čitaju, izmjena ćelije se ne vrti.
 - `TRANSLATECOLUMNS` i `MASTERGRIDLAYOUTFILE`.

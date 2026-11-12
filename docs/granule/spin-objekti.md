@@ -1,12 +1,23 @@
 # Objekti na spinu
 
-`scripts/spin/Prenesi.ps1` na sql-ai čita definicije s jupiter2019 i jupiter2022. Samo `sys.columns` i `sys.sql_modules`. Procedure se tamo ne pokreću i retci tablica se ne čitaju. Tijelo se kreira na spinu. Ako tekst procedure ima INSERT, UPDATE, DELETE ili MERGE, izvor je označen s `pise`.
+Jupiter se u ovom koraku ne čita. Na jupiter2019 i jupiter2022 smije samo otvaranje granula, i to nije ovaj skript.
 
-Redoslijed baza: Biovega, CentarTehnike, Setcor, Enna, Ireks (jupiter2019), zatim Panissimo, Tusak, CentarTehnike, Setcor (jupiter2022).
+`scripts/spin/stubovi.sql` i `scripts/spin/Otvori.ps1` rade samo na `localhost` / baza `spin`. Ako otvaranje javi da procedura ne postoji, skripta kreira prazan `SELECT ... WHERE 1 = 0` s parametrima iz poziva. Ako javi nepoznat stupac u jednostavnom `FROM`, doda `varchar(50) NULL`. Ništa od toga ne piše retke. Popis kreiranog ide u `artifacts/spin/stubovi-kreirani.md`, ishod u `artifacts/spin/otvaranje.md`.
 
-Nakon runa izvor je u `artifacts/spin/izvori.md`, a otvaranje u `artifacts/spin/otvaranje.md`.
+To nisu prava poslovna tijela. Da test bude vjerodostojan, korisnik treba dati:
 
-Prazan stub iz `stubovi.sql` ostaje samo ako definicije nema ni u jednoj od tih baza.
+| Objekt | Poziv iz XML-a | Što stub ne zna |
+|---|---|---|
+| `klmasterroba.oznaka2` | `OznakaKL` SELECT | pravi tip i duljina; stub je `varchar(50) NULL` |
+| `spKultureNGQuery` | `@Action=1` i `@Action=2, @KultureId` | stupci i filteri mastera |
+| `spFakPartneriUvjetiQuery` | bez parametara, i `@action=2` | stupci uvjeta partnera |
+| `spKUPPrometQueryN` | `@action=4,@operateriid=7,@dostavnaknjigaid=0,@aktivni=1` | ako na spinu fali, stub je prazan SELECT |
+| `spStatusiQuery` | `@action=0, @node=0` | isto |
+| `spBLZakljucakQueryNG` | `@action=0` | isto |
+
+`AOPNovi` šalje `@id='null'`. Konverzija u int ostaje, kao u NetGenu. Stub se za to ne pravi.
+
+`PrijemniList` nema projektni `ONLOAD`. `Poruke`, `TecRazOTV`, `RealizacijaFakture` i `RealizacijaStavkeNG` nemaju XML u repou.
 
 ## Već nadomješteno praznim objektom
 
