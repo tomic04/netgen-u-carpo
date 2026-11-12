@@ -297,18 +297,18 @@ namespace Carpo.TestShell
             }
             if (!ImaSnimku(snimka) && granula != null && !granula.IsDisposed)
             {
-                var rok = DateTime.UtcNow.AddSeconds(3);
+                var rok = DateTime.UtcNow.AddSeconds(4);
                 while (DateTime.UtcNow < rok && !ImaSnimku(snimka))
                 {
+                    Application.DoEvents();
                     SnimiProzor(granula.Handle, snimka);
-                    if (ImaSnimku(snimka))
-                        break;
-                    Thread.Sleep(200);
+                    var korak = DateTime.UtcNow.AddMilliseconds(200);
+                    while (DateTime.UtcNow < korak)
+                        Application.DoEvents();
                 }
             }
             if (!ImaSnimku(snimka))
             {
-                SnimiEkran(snimka + ".ekran.png");
                 UpisiIshod(snimka, "FAIL nema screenshota " + TekstSnimke(snimka));
                 return 4;
             }
