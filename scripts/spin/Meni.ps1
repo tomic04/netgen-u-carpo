@@ -144,6 +144,8 @@ where Parametar like N'%:$f' or Parametar like N'%\$f' or Parametar like N'%/$f'
             $izrazi.Add("N'" + $param.Replace("'", "''") + "'")
         } elseif ($ime -eq "Opis") {
             $izrazi.Add("N'" + $opis + "'")
+        } elseif ($ime -eq "Parent") {
+            $izrazi.Add("(select top 1 MeniID from ssMeni where Parametar like N'asm:NetGenDLL.loader:%')")
         } elseif ($ime -eq "Nivo") {
             $dulj = [int]$c.max_length
             if ($tip -match "nvar|nchar") { if ($dulj -gt 0) { $dulj = [int]($dulj / 2) } }
@@ -169,6 +171,7 @@ where Parametar like N'%:$f' or Parametar like N'%\$f' or Parametar like N'%/$f'
     } else {
         $sql = "insert into ssMeni (" + ($imena -join ",") + ") values (" + ($izrazi -join ",") + ")"
     }
+    Write-Host $sql
     Exec $sql | Out-Null
     Write-Host "ubacen testni red $param"
 }
