@@ -107,6 +107,33 @@ namespace Carpo.NetGen.Granule
                 return Qa.O(granula, id, "nisu svi objekti na spin", "sys.objects", string.Join(",", redovi.ToArray()));
             return Qa.Z(granula, id, "objekti postoje: " + string.Join(",", redovi.ToArray()), "sys.objects");
         }
+
+        /// <summary>
+        /// FAK-11: ime u sys.objects nije dovoljno. Stub WHERE 1=0 nije klijentsko tijelo.
+        /// Verzija A je samo SELECT (action 1 i 2). NetGen je salje jer nema @@.
+        /// </summary>
+        public static Stavka TijeloFakPar(string granula, string id)
+        {
+            string greska;
+            string def = Citanje.PrviTekst(
+                "select object_definition(object_id(N'dbo.spFakPartneriUvjetiQuery'))",
+                out greska);
+            if (greska != null)
+                return Qa.O(granula, id, "object_definition spFakPartneriUvjetiQuery", "spin", greska);
+            if (string.IsNullOrWhiteSpace(def))
+                return Qa.O(granula, id, "spFakPartneriUvjetiQuery nema tijelo", "sys.sql_modules", "prazno");
+            if (def.IndexOf("WHERE 1 = 0", StringComparison.OrdinalIgnoreCase) >= 0
+                || def.IndexOf("WHERE 1=0", StringComparison.OrdinalIgnoreCase) >= 0)
+                return Qa.O(granula, id, "tijelo je stub, nije klijentska verzija A", "scripts/spin/stubovi.sql", "WHERE 1=0");
+            if (def.IndexOf("from FakPartneriUvjeti", StringComparison.OrdinalIgnoreCase) < 0)
+                return Qa.O(granula, id, "tijelo ne cita FakPartneriUvjeti", "scripts/spin/klijenti/spFakPartneriUvjetiQuery.A.sql", "nema from FakPartneriUvjeti");
+            if (def.IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) < 0)
+                return Qa.O(granula, id, "nema @action=2 iz UPDATEFORM ONLOAD", "definitions/netgen/BIOVEGA/FakPar.xml", "nema @action=2");
+            string low = " " + def.ToLowerInvariant() + " ";
+            if (low.Contains(" insert ") || low.Contains(" update ") || low.Contains(" delete ") || low.Contains(" merge "))
+                return Qa.O(granula, id, "tijelo nije samo citanje", "netgen/Class1.vb:113-118", "upis");
+            return Qa.Z(granula, id, "klijentska verzija A je samo select. ONLOAD ide jer nema @@", "netgen/Form1.vb:3882; netgen/Class1.vb:113-118");
+        }
     }
 
     public static class KontrolePravila
@@ -400,7 +427,7 @@ namespace Carpo.NetGen.Granule
                 ? Qa.Z(Ime, "FAK-09", "SEARCH hash. ALLOWEMPTY na searchu se ne cita", "netgen/Form2.vb:2140; netgen/Form3.vb:102")
                 : Qa.P(Ime, "FAK-09", "search", "netgen/Form3.vb:102", ssql));
             l.Add(Stablo.Meni(Ime, "FAK-10", "FakPar.xml"));
-            l.Add(Kontrole.Objekti(Ime, "FAK-11", "spFakPartneriUvjetiQuery"));
+            l.Add(Kontrole.TijeloFakPar(Ime, "FAK-11"));
             Kontrole.K(l, Ime, xml, "FAK-20", "CurMEdit prazan ide kao 0, ne kao tekst", "netgen/Form2.vb:2071,3601", "number.Rabat", "0");
             Kontrole.K(l, Ime, xml, "FAK-21", "checkbox PoSkladistu salje CheckState", "netgen/Form2.vb:3424-3427", "check.PoSkladistu", "checkstate");
             return l;
