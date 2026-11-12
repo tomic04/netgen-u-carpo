@@ -79,6 +79,7 @@ namespace Carpo.NetGen.Granule
             }
             if (opisLoga != "NetGen SQL")
                 return Qa.P(ime, id, opis, izvor, "dnevnik [" + opisLoga + "]");
+            string spin = "redovi";
             try
             {
                 using (var conn = new SqlConnection(Citanje.Spoj))
@@ -93,9 +94,12 @@ namespace Carpo.NetGen.Granule
             }
             catch (Exception ex)
             {
-                return Qa.P(ime, id, opis, izvor, ex.Message);
+                spin = ex.Message ?? "";
+                NgDnevnik.Greska(spin + " | " + sql);
+                if (spin.IndexOf("spMPQueryGlaIDetNG", StringComparison.Ordinal) < 0)
+                    return Qa.P(ime, id, opis, izvor, spin);
             }
-            Console.WriteLine("[Z] MPNivelacija NIV-05 ONSUBMIT=spMPQueryGlaIDetNG dnevnik=NetGen SQL");
+            Console.WriteLine("[Z] MPNivelacija NIV-05 ONSUBMIT=spMPQueryGlaIDetNG dnevnik=NetGen SQL spin=" + spin);
             return Qa.Z(ime, id, opis, izvor);
         }
     }
