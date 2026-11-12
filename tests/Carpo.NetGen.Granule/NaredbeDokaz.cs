@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Poziv;
+using Carpo.NetGen.Print;
 
 namespace Carpo.NetGen.Granule
 {
@@ -20,6 +21,7 @@ namespace Carpo.NetGen.Granule
             l.Add(Prostor(root));
             l.Add(Blagajna(root));
             l.Add(Roditelj(root));
+            l.Add(Ispis(root));
             return l;
         }
 
@@ -153,6 +155,24 @@ namespace Carpo.NetGen.Granule
             if (!ishod.CloseParent || !ishod.Button2 || !imaSql)
                 return Qa.P(granula, id, opis, izvor, "closeParent=" + ishod.CloseParent + " sql=" + imaSql);
             Console.WriteLine("[Z] MPIzdVPNG NRD-RODITELJ closeParent=da sql=spMPIzdatnicaSKLMP");
+            return Qa.Z(granula, id, opis, izvor);
+        }
+
+        private static Stavka Ispis(string root)
+        {
+            const string granula = "JeziciNG";
+            const string id = "NRD-ISPIS";
+            const string opis = "Ispiši je ispis mastera, ne ime forme";
+            const string izvor = "netgen/Form1.vb:4945-4947; netgen/Form1.vb:6003";
+            string xml = Path.Combine(root, "definitions", "netgen", "BIOVEGA", "JeziciNG.xml");
+            string tekst = Procitaj(xml);
+            if (tekst == null || tekst.IndexOf("PRINTREPXMASTER", StringComparison.Ordinal) < 0)
+                return Qa.P(granula, id, opis, izvor, "XML nema PRINTREPXMASTER");
+            if (GumbTok.Akcija(null, "PRINTREPXMASTER") != "ispis")
+                return Qa.P(granula, id, opis, izvor, "akcija [" + GumbTok.Akcija(null, "PRINTREPXMASTER") + "]");
+            if (PrintBridge.Vrsta("PRINTREPXMASTER", false) != "master")
+                return Qa.P(granula, id, opis, izvor, "vrsta [" + PrintBridge.Vrsta("PRINTREPXMASTER", false) + "]");
+            Console.WriteLine("[Z] JeziciNG NRD-ISPIS PRINTREPXMASTER vrsta=master");
             return Qa.Z(granula, id, opis, izvor);
         }
 
