@@ -136,6 +136,22 @@ namespace Carpo.NetGen.Ui
             ShowDialog();
         }
 
+        public string Vrijednost(string ime)
+        {
+            if (string.IsNullOrEmpty(ime))
+                return "";
+            Control[] n = Controls.Find(ime, true);
+            if (n.Length == 0)
+                return "";
+            var look = n[0] as LookUpEdit;
+            if (look != null && look.EditValue != null)
+                return Convert.ToString(look.EditValue);
+            var edit = n[0] as TextEdit;
+            if (edit != null)
+                return edit.Text ?? "";
+            return n[0].Text ?? "";
+        }
+
         private static Control Napravi(NgControl k)
         {
             NgGrana g = k.Grana;

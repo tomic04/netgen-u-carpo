@@ -5,8 +5,10 @@ using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
+using Carpo.NetGen.Komande;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
+using Carpo.NetGen.Print;
 using Carpo.NetGen.Xml;
 using DevExpress.Skins;
 using DevExpress.UserSkins;
@@ -37,6 +39,7 @@ namespace Carpo.NetGen.Ui
         private bool _punim;
         private int _redovaDetail;
         private DataTable _comboRedovi;
+        private readonly System.Collections.Generic.Dictionary<string, string> _polja = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         public Podloga()
         {
@@ -181,13 +184,7 @@ namespace Carpo.NetGen.Ui
                     splitGrid.SplitterPosition = (int)(visina * 0.62);
             }
             if (_master.Stanje.OtvaraFormu)
-            {
-                string ime = _master.Stanje.ImeForme ?? "";
-                int hash = ime.IndexOf('#');
-                if (hash >= 0)
-                    ime = ime.Substring(0, hash);
-                OtvoriFormu(ime.Trim());
-            }
+                IzvrsiLanac(_master.Stanje.ImeForme ?? "");
         }
 
         private void NapuniCombo()
@@ -287,6 +284,61 @@ namespace Carpo.NetGen.Ui
             }
             var dij = new Dijalog();
             dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj);
+            string iz = dij.Vrijednost("izvjestaj");
+            if (!string.IsNullOrEmpty(iz))
+                _polja["izvjestaj"] = iz;
+        }
+
+        private void IzvrsiLanac(string naredba)
+        {
+            string[] seg = Lanac.Segmenti(naredba ?? "");
+            for (int i = 0; i < seg.Length; i++)
+            {
+                string s = (seg[i] ?? "").Trim();
+                if (s.StartsWith(":", StringComparison.Ordinal))
+                    s = s.Substring(1).Trim();
+                if (s.Length == 0)
+                    continue;
+                if (s.StartsWith("select", StringComparison.OrdinalIgnoreCase))
+                {
+                    string stanje = Lanac.GumbIzCase(s, Polje("izvjestaj"));
+                    int jednako = stanje.IndexOf('=');
+                    if (jednako > 0)
+                        PostaviGumb(stanje.Substring(0, jednako), stanje.Substring(jednako + 1) != "disable");
+                }
+                else if (IspisMotora.JeIspisImena(s) || s.StartsWith("PRINT", StringComparison.OrdinalIgnoreCase))
+                    NgDnevnik.Akcija("ispis " + s);
+                else if (s.ToUpperInvariant().IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0)
+                    NgDnevnik.Akcija("assembly " + s);
+                else if (string.Equals(s, "REFRESHMASTERGRID", StringComparison.OrdinalIgnoreCase))
+                {
+                    _master.Ucitaj(_projekt, null);
+                    NapuniGrid();
+                }
+                else
+                    OtvoriFormu(s);
+            }
+        }
+
+        private string Polje(string ime)
+        {
+            string v;
+            if (_polja.TryGetValue(ime, out v))
+                return v ?? "";
+            return "";
+        }
+
+        private void PostaviGumb(string natpis, bool ukljucen)
+        {
+            for (int i = 0; i < pnlButtons.Controls.Count; i++)
+            {
+                var gumb = pnlButtons.Controls[i] as SimpleButton;
+                if (gumb == null)
+                    continue;
+                string t = (gumb.Text ?? "").Replace("\r\n", "").Trim();
+                if (string.Equals(t, natpis, StringComparison.OrdinalIgnoreCase))
+                    gumb.Enabled = ukljucen;
+            }
         }
 
         private void Pogled_FocusedRowChanged(object sender, DevExpress.XtraGrid.Views.Base.FocusedRowChangedEventArgs e)
@@ -453,11 +505,7 @@ namespace Carpo.NetGen.Ui
             var gumb = sender as SimpleButton;
             string naredba = gumb == null || gumb.Tag == null ? "" : gumb.Tag.ToString();
             NgDnevnik.Akcija("gumb " + (gumb == null ? "" : gumb.Text) + " " + naredba);
-            if (string.Equals(naredba.Trim(), "REFRESHMASTERGRID", StringComparison.OrdinalIgnoreCase))
-            {
-                _master.Ucitaj(_projekt, null);
-                NapuniGrid();
-            }
+            IzvrsiLanac(naredba);
         }
 
         private void PostaviStatus(string tekst)
