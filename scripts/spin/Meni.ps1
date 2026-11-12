@@ -4,9 +4,11 @@
 # (Form1.vb 1251-1258) i otvori remotedllpath\SharedDLLs\xml\ + Mid (1139).
 # Ovo nije klijentski red. Jupiter se ne cita.
 $ErrorActionPreference = "Stop"
-$cs = "Server=localhost;Database=spin;Integrated Security=True;TrustServerCertificate=True;Pooling=false;Connect Timeout=15;Application Name=CarpoNetGen-ssMeni"
+$cs = "Server=localhost;Database=spin;Integrated Security=True;TrustServerCertificate=True;Pooling=false;Connect Timeout=15;Application Name=CarpoNetGen-ssMeni;ApplicationIntent=ReadOnly"
 $conn = New-Object System.Data.SqlClient.SqlConnection $cs
 $conn.Open()
+$info = Q "select db_name() as db, cast(object_id(N'ssMeni') as varchar(20)) as oid"
+Write-Host ("baza=" + $info.Rows[0].db + " object_id(ssMeni)=" + $info.Rows[0].oid)
 
 function Q([string]$sql) {
     $cmd = $conn.CreateCommand()
