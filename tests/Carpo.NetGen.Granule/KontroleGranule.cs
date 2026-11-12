@@ -236,7 +236,7 @@ namespace Carpo.NetGen.Granule
             const string izvor = "netgen/Form2.vb:2430-2431,2503-2504";
             string[] problemi = new string[4];
             problemi[0] = Stupci("dbo.spKntPopuniKontroleNG @Action = 'konto'", false, "1", "1000");
-            problemi[1] = Stupci("dbo.spKntPopuniKontroleNG @Action = 'klpartneri'", true, "null", "");
+            problemi[1] = Stupci("dbo.spKntPopuniKontroleNG @Action = 'klpartneri'", true, "", "");
             problemi[2] = Stupci("spOrgShemaQuery @action=0", false, "1", "Test shema");
             string[] greska = new string[1];
             DataTable grid = ComboDijalog.Ucitaj("dbo.spKntOtvStavkeQueryNG", false, delegate(string s)

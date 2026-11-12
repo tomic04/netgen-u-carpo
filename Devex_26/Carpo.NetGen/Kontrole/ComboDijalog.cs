@@ -29,9 +29,15 @@ namespace Carpo.NetGen.Kontrole
             if (tablica == null || tablica.Columns.Count == 0)
                 return;
             DataRow red = tablica.NewRow();
-            red[0] = "null";
+            // Form2.vb 2408 je pod On Error Resume Next. String primi "null".
+            // Int stupac iz procedure to ne primi i ostane prazan.
+            try { red[0] = "null"; }
+            catch (Exception) { red[0] = DBNull.Value; }
             if (tablica.Columns.Count > 1)
-                red[1] = "";
+            {
+                try { red[1] = ""; }
+                catch (Exception) { red[1] = DBNull.Value; }
+            }
             tablica.Rows.InsertAt(red, 0);
         }
 
