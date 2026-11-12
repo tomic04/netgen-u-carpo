@@ -11,6 +11,7 @@ using Carpo.NetGen.Poziv;
 using Carpo.NetGen.Print;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
+using Carpo.NetGen.TestHooks;
 using Carpo.NetGen.Xml;
 
 namespace Carpo.NetGen.GridTest
@@ -37,6 +38,7 @@ namespace Carpo.NetGen.GridTest
             GridDijalogTest();
             NextFormTest();
             GridKljucevi();
+            OstaloKljucevi();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -78,6 +80,26 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void OstaloKljucevi()
+        {
+            string opz = null;
+            var dir = new DirectoryInfo(Environment.CurrentDirectory);
+            while (dir != null && opz == null)
+            {
+                string k = Path.Combine(dir.FullName, "definitions", "netgen", "BIOVEGA", "KntOPZ-STAT-1.xml");
+                if (File.Exists(k))
+                    opz = k;
+                dir = dir.Parent;
+            }
+            Pogled g = opz == null ? null : GranulaIzvrsenje.Izvrsi(new Zahtjev { XmlPutanja = opz, Akcija = "gumb", Cilj = "Eporezna" });
+            string dll = "";
+            if (g != null && g.Stavke != null && g.Stavke.ContainsKey("dll"))
+                dll = g.Stavke["dll"];
+            T("opz-nije-dll", g != null && g.Izvedeno && dll == "ne", dll);
+            NgProject bvg = Ucitaj("KUPDostKnNGBvg.xml");
+            T("bvg-carpoform", GranulaIzvrsenje.CarpoFormKup(bvg) == "KnjigaUra.frmKnjigaUraKupEdit.xml", GranulaIzvrsenje.CarpoFormKup(bvg));
         }
 
         private static void GridKljucevi()

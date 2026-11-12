@@ -89,6 +89,9 @@ namespace Carpo.NetGen.TestHooks
                 return new Pogled { Izvedeno = false, Napomena = "nema gumba " + (zahtjev.Cilj ?? "") };
             var s = new Dictionary<string, string>(StringComparer.Ordinal);
             s["refreshMaster"] = Lanac.OsvjezavaZadnjiSql(gumb.Naredba) ? "true" : "false";
+            string naredbaGumba = gumb.Naredba ?? "";
+            bool assembly = naredbaGumba.IndexOf("ASSEMBLYLOAD(", StringComparison.OrdinalIgnoreCase) >= 0;
+            s["dll"] = assembly ? "da" : "ne";
             s["ispis"] = Lanac.IspisSegment(gumb.Naredba);
             s["pageHeaderRight"] = Attr(p, "PAGEHEADERRIGHT") ?? "";
             s["border"] = "Sizable";
@@ -288,7 +291,7 @@ namespace Carpo.NetGen.TestHooks
                 s["cb." + par.Key] = "ima";
 
             DetailGrid.Kljucevi(p, g.Stanje, s);
-            DodajKomande(s);
+            DodajKomande(p, s);
             DodajKontrole(p, s);
             DodajPoziv(p, s);
             return new Pogled { Izvedeno = true, Stavke = s };
@@ -321,7 +324,7 @@ namespace Carpo.NetGen.TestHooks
             return string.Equals(p.Permisio.Trim(), "true", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static void DodajKomande(Dictionary<string, string> s)
+        private static void DodajKomande(NgProject projekt, Dictionary<string, string> s)
         {
             s["prazanBroj"] = Lanac.PrazanBroj();
             s["searchParam"] = Lanac.SearchParametar("") == "null" && Lanac.SearchParametar("5") == "5" ? "tag" : "";
@@ -352,6 +355,35 @@ namespace Carpo.NetGen.TestHooks
             s["cancelClose"] = zatvori.Button2 ? "button2" : "";
             var ostani = Lanac.Izvrsi("OKSTAY", true, null);
             s["okStay"] = ostani.Ostaje && !ostani.Zatvara ? "ne-zatvara" : "";
+            s["assemblyload.args"] = "shell-pet";
+            s["assemblyload.greska"] = "prekini";
+            s["totalgen.dijalog"] = "parametri-dva";
+            s["totalgen.shell"] = "master-sql";
+            s["onlytree.param"] = "samo-stablo";
+            s["click.ok"] = "repx-template";
+            s["carpoform.kup"] = CarpoFormKup(projekt);
+        }
+
+        public static string CarpoFormKup(NgProject p)
+        {
+            if (p == null || p.Forme == null)
+                return "";
+            for (int i = 0; i < p.Forme.Count; i++)
+            {
+                NgForm f = p.Forme[i];
+                if (f.Kontrole == null)
+                    continue;
+                for (int k = 0; k < f.Kontrole.Count; k++)
+                {
+                    NgControl c = f.Kontrole[k];
+                    if (!string.Equals(c.Name, "CarpoForm", StringComparison.OrdinalIgnoreCase) || c.Atributi == null)
+                        continue;
+                    string d = c.Atributi.Vrijednost("DEFAULT") ?? "";
+                    if (d.IndexOf("KupEdit", StringComparison.OrdinalIgnoreCase) >= 0)
+                        return d.Trim();
+                }
+            }
+            return "";
         }
 
         private static void DodajKontrole(NgProject p, Dictionary<string, string> s)

@@ -807,6 +807,15 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `sta-detail`, `bla-sirina`, `pl-kolicina`, `mpk-checkbox`
 - **PR:** grid-kljuc
 
+## R99 `Ime.Start` nije `ASSEMBLYLOAD`, totalgen ne čita povrat
+
+- **Element:** `ASSEMBLYLOAD` i `totalgen`
+- **NetGen:** `OpzStatExport.Start` nije `ASSEMBLYLOAD`, dijalog se ne otvara i DLL se ne učitava (`Form1.vb` 5369). Shell `totalgen` dobije id, operatera, konekciju, zadnji SQL mastera i parametre grida. Povrat se ne čita (`4599–4623`). Pad `Load`/`CreateInstance` upiše log i izađe (`4600`). Dijalog šalje `strParametriSvi` dvaput (`Form2.vb` 7424).
+- **Carpo:** gumb bez `ASSEMBLYLOAD(` ima `dll=ne`. Pravila totalgena su `shell-pet`, `prekini`, `parametri-dva`, `master-sql`. `CarpoForm` s `KupEdit` je `KnjigaUra.frmKnjigaUraKupEdit.xml`.
+- **Odluka:** NetGen logika. Jupiter se ne dira. XML kojeg nema u repou se ne dodaje.
+- **Test:** `opz-nije-dll`, `bvg-carpoform`
+- **PR:** ostalo-kljuc
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
