@@ -21,17 +21,13 @@ namespace Carpo.NetGen.Granule
 
         private static readonly string[] NatpisStupci = { "Opis", "Naziv", "Name", "Caption", "Tekst" };
 
-        private static readonly Cilj[] Jupiter2019 =
+        private static readonly Cilj[] Ciljevi =
         {
             new Cilj("biovega", "Biovega", true),
             new Cilj("centartehnike", "Centar tehnike", false),
             new Cilj("panissimo", "Panissimo", false),
             new Cilj("setcor", "Setcor", false),
-            new Cilj("tusal", "Tusal", false)
-        };
-
-        private static readonly Cilj[] Jupiter2022 =
-        {
+            new Cilj("tusal", "Tusal", false),
             new Cilj("enna", "Enna", false),
             new Cilj("fidus", "Fidus", false),
             new Cilj("ireks", "Ireks", false)
@@ -46,8 +42,9 @@ namespace Carpo.NetGen.Granule
 
             l.Add(ProvjeriTekstUpita());
 
-            CitajServer("jupiter2019", Jupiter2019, katalog, pristup, stavke, l);
-            CitajServer("jupiter2022", Jupiter2022, katalog, pristup, stavke, l);
+            CitajServer("jupiter2019", katalog, l);
+            CitajServer("jupiter2022", katalog, l);
+            Rasporedi(katalog, pristup, stavke, l);
             CitajSpin(pristup, stavke, l);
 
             var definicije = IndeksXml(Path.Combine(root, "definitions", "netgen"), root);
@@ -87,7 +84,7 @@ namespace Carpo.NetGen.Granule
             return Qa.Z("ssMeni-serveri", "SSMENI-00", "predlosci su SELECT, WITH (NOLOCK), bez EXEC i bez privremene tablice", "Citanje.JeCitanje");
         }
 
-        private static void CitajServer(string server, Cilj[] ciljevi, List<KatalogRed> katalog, List<PristupRed> pristup, List<MeniRed> stavke, List<Stavka> l)
+        private static void CitajServer(string server, List<KatalogRed> katalog, List<Stavka> l)
         {
             string greska;
             string spoj;
@@ -97,90 +94,94 @@ namespace Carpo.NetGen.Granule
             if (imena == null)
             {
                 l.Add(Qa.O("ssMeni-serveri", "SSMENI-" + server, "sys.databases na " + server, "Integrated Security", greska));
-                for (int i = 0; i < ciljevi.Length; i++)
-                {
-                    pristup.Add(new PristupRed
-                    {
-                        Server = server,
-                        Baza = ciljevi[i].Naslov,
-                        Kljuc = ciljevi[i].Kljuc,
-                        Stanje = "nema-pristupa",
-                        Napomena = greska
-                    });
-                }
                 return;
             }
 
             l.Add(Qa.Z("ssMeni-serveri", "SSMENI-" + server, server + " sys.databases redova " + imena.Count + " (" + nacin + ")", "sys.databases"));
-            var vidjene = new List<string>();
             for (int i = 0; i < imena.Count; i++)
             {
                 string ime = imena[i].Length > 0 ? (imena[i][0] ?? "") : "";
                 string stanje = imena[i].Length > 1 ? (imena[i][1] ?? "") : "";
                 if (ime.Length == 0)
                     continue;
-                vidjene.Add(ime);
-                string norm = Norm(ime);
-                Cilj cilj = Najbolji(norm, ciljevi);
                 katalog.Add(new KatalogRed
                 {
                     Server = server,
                     Baza = ime,
-                    Stanje = stanje,
-                    Kljuc = cilj == null ? "" : cilj.Kljuc,
-                    Upitano = cilj != null && !Sustavna(norm) && Online(stanje)
+                    Stanje = stanje
                 });
             }
 
-            for (int c = 0; c < ciljevi.Length; c++)
+            if (imena.Count >= MaxBaza)
+                l.Add(Qa.O("ssMeni-serveri", "SSMENI-" + server + "-kap", "popis baza skracen na " + MaxBaza, server, "top"));
+        }
+
+        /// <summary>
+        /// Tocno ime na bilo kojem od dva servera. Tusal nema tog imena; cita se Tusak.
+        /// DMS, DBF, CRM i snapshot ostaju samo u popisu.
+        /// </summary>
+        private static void Rasporedi(List<KatalogRed> katalog, List<PristupRed> pristup, List<MeniRed> stavke, List<Stavka> l)
+        {
+            bool imaTusal = false;
+            for (int i = 0; i < katalog.Count; i++)
             {
-                var pogodci = new List<KatalogRed>();
+                if (Norm(katalog[i].Baza) == "tusal")
+                    imaTusal = true;
+            }
+
+            for (int c = 0; c < Ciljevi.Length; c++)
+            {
+                Cilj cilj = Ciljevi[c];
+                int n = 0;
                 for (int i = 0; i < katalog.Count; i++)
                 {
-                    if (katalog[i].Server == server && katalog[i].Kljuc == ciljevi[c].Kljuc)
-                        pogodci.Add(katalog[i]);
-                }
-                if (pogodci.Count == 0)
-                {
-                    string popis = Spoji(vidjene, 12);
-                    l.Add(Qa.O("ssMeni-serveri", "SSMENI-" + server + "-" + ciljevi[c].Kljuc, "nema baze za " + ciljevi[c].Naslov, server, popis));
-                    pristup.Add(new PristupRed
-                    {
-                        Server = server,
-                        Baza = "(nema podudaranja)",
-                        Kljuc = ciljevi[c].Kljuc,
-                        Stanje = "nema-baze",
-                        Napomena = popis
-                    });
-                    continue;
-                }
-                for (int p = 0; p < pogodci.Count; p++)
-                {
-                    KatalogRed k = pogodci[p];
-                    if (Sustavna(Norm(k.Baza)))
-                    {
-                        l.Add(Qa.O("ssMeni-serveri", IdBaze(server, k.Baza), k.Baza + " je sustavna baza", server, k.Stanje));
+                    KatalogRed k = katalog[i];
+                    string norm = Norm(k.Baza);
+                    bool alias = cilj.Kljuc == "tusal" && !imaTusal && norm == "tusak";
+                    if (norm != cilj.Kljuc && !alias)
                         continue;
-                    }
+                    if (Sustavna(norm))
+                        continue;
+                    k.Kljuc = cilj.Kljuc;
+                    n++;
                     if (!Online(k.Stanje))
                     {
-                        l.Add(Qa.O("ssMeni-serveri", IdBaze(server, k.Baza), k.Baza + " nije ONLINE", server, k.Stanje));
+                        l.Add(Qa.O("ssMeni-serveri", IdBaze(k.Server, k.Baza), k.Baza + " nije ONLINE", k.Server, k.Stanje));
                         pristup.Add(new PristupRed
                         {
-                            Server = server,
+                            Server = k.Server,
                             Baza = k.Baza,
-                            Kljuc = k.Kljuc,
+                            Kljuc = cilj.Kljuc,
                             Stanje = "nije-online",
                             Napomena = k.Stanje
                         });
                         continue;
                     }
-                    ProcitajBazu(server, server, k.Baza, k.Kljuc, ciljevi[c].Biovega, pristup, stavke, l);
+                    k.Upitano = true;
+                    int prije = pristup.Count;
+                    ProcitajBazu(k.Server, k.Server, k.Baza, cilj.Kljuc, cilj.Biovega, pristup, stavke, l);
+                    if (alias && pristup.Count > prije)
+                    {
+                        string bilo = pristup[pristup.Count - 1].Napomena;
+                        pristup[pristup.Count - 1].Napomena = string.IsNullOrEmpty(bilo)
+                            ? "ime u sys.databases je Tusak; trazeno tusal"
+                            : bilo + "; ime u sys.databases je Tusak; trazeno tusal";
+                    }
+                }
+                if (n == 0)
+                {
+                    string srodno = SrodnaImena(katalog, cilj.Kljuc);
+                    l.Add(Qa.O("ssMeni-serveri", "SSMENI-" + cilj.Kljuc, "nema tocne baze " + cilj.Naslov, "jupiter2019, jupiter2022", srodno));
+                    pristup.Add(new PristupRed
+                    {
+                        Server = "jupiter2019+jupiter2022",
+                        Baza = "(nema podudaranja)",
+                        Kljuc = cilj.Kljuc,
+                        Stanje = "nema-baze",
+                        Napomena = srodno
+                    });
                 }
             }
-
-            if (imena.Count >= MaxBaza)
-                l.Add(Qa.O("ssMeni-serveri", "SSMENI-" + server + "-kap", "popis baza skracen na " + MaxBaza, server, "top"));
         }
 
         private static void CitajSpin(List<PristupRed> pristup, List<MeniRed> stavke, List<Stavka> l)
@@ -587,7 +588,7 @@ namespace Carpo.NetGen.Granule
             sb.AppendLine();
             sb.AppendLine("## Baze na serveru");
             sb.AppendLine();
-            sb.AppendLine("Imena iz `sys.databases`. Upit u `ssMeni` ide samo na bazu cije ime, bez razmaka i crtica, odgovara trazenom kljucu i koja je `ONLINE`. Ostala imena su samo popis.");
+            sb.AppendLine("Imena iz `sys.databases`. `ssMeni` se cita samo kad je normalizirano ime tocno jednako kljucu (`Biovega`, `CentarTehnike`, `Panissimo`, `Setcor`, `Enna`, `Fidus`, `Ireks`) i baza je `ONLINE`, na jupiter2019 ili jupiter2022. `Tusal` nema tog imena; cita se `Tusak`. DMS, DBF, CRM i snapshot se ne citaju.");
             sb.AppendLine();
             sb.AppendLine("| Server | Baza | Stanje | Kljuc | ssMeni upitan |");
             sb.AppendLine("|---|---|---|---|:---:|");
@@ -606,6 +607,33 @@ namespace Carpo.NetGen.Granule
                 sb.Append(k.Upitano ? "da" : "");
                 sb.AppendLine(" |");
             }
+            sb.AppendLine();
+            sb.AppendLine("## Srodna imena, nisu citana");
+            sb.AppendLine();
+            sb.AppendLine("Baza sadrzi kljuc, ali ime nije tocno. Nije bilo `SELECT` nad `ssMeni`.");
+            sb.AppendLine();
+            sb.AppendLine("| Server | Baza | Kljuc |");
+            sb.AppendLine("|---|---|---|");
+            int srodnih = 0;
+            for (int i = 0; i < katalog.Count; i++)
+            {
+                KatalogRed k = katalog[i];
+                if (!string.IsNullOrEmpty(k.Kljuc) || k.Upitano)
+                    continue;
+                string kljuc = SadrziKljuc(Norm(k.Baza));
+                if (kljuc.Length == 0)
+                    continue;
+                srodnih++;
+                sb.Append("| ");
+                sb.Append(Celija(k.Server));
+                sb.Append(" | ");
+                sb.Append(Celija(k.Baza));
+                sb.Append(" | ");
+                sb.Append(Celija(kljuc));
+                sb.AppendLine(" |");
+            }
+            if (srodnih == 0)
+                sb.AppendLine("| — | nema | |");
             sb.AppendLine();
             sb.AppendLine("## XML u izborniku");
             sb.AppendLine();
@@ -793,32 +821,39 @@ namespace Carpo.NetGen.Granule
             return d;
         }
 
-        private static Cilj Najbolji(string norm, Cilj[] ciljevi)
+        private static string SrodnaImena(List<KatalogRed> katalog, string kljuc)
         {
-            if (Sustavna(norm))
-                return null;
-            Cilj best = null;
-            for (int i = 0; i < ciljevi.Length; i++)
+            var imena = new List<string>();
+            for (int i = 0; i < katalog.Count; i++)
             {
-                if (!Odgovara(norm, ciljevi[i].Kljuc))
+                string norm = Norm(katalog[i].Baza);
+                if (norm.Length == 0 || !norm.Contains(kljuc))
                     continue;
-                if (best == null || ciljevi[i].Kljuc.Length > best.Kljuc.Length)
-                    best = ciljevi[i];
+                imena.Add(katalog[i].Server + "." + katalog[i].Baza);
             }
-            return best;
+            if (imena.Count == 0)
+                return "nema slicnog imena";
+            return Spoji(imena, 8);
         }
 
-        private static bool Odgovara(string normBaza, string kljuc)
+        private static string SadrziKljuc(string norm)
         {
-            if (normBaza.Length == 0 || kljuc.Length == 0)
-                return false;
-            if (normBaza == kljuc)
-                return true;
-            if (kljuc.Length >= 6 && normBaza.Contains(kljuc))
-                return true;
-            if (normBaza.StartsWith(kljuc, StringComparison.Ordinal) && normBaza.Length <= kljuc.Length + 6)
-                return true;
-            return false;
+            if (norm.Length == 0)
+                return "";
+            string pogodak = "";
+            for (int i = 0; i < Ciljevi.Length; i++)
+            {
+                string kljuc = Ciljevi[i].Kljuc;
+                if (norm == kljuc)
+                    return "";
+                if (kljuc == "tusal" && norm == "tusak")
+                    return "";
+                if (!norm.Contains(kljuc))
+                    continue;
+                if (pogodak.Length == 0 || kljuc.Length > pogodak.Length)
+                    pogodak = kljuc;
+            }
+            return pogodak;
         }
 
         private static bool Sustavna(string norm)
