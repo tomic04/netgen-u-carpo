@@ -94,6 +94,7 @@ namespace Carpo.NetGen.TestHooks
             s["dll"] = assembly ? "da" : "ne";
             s["ispis"] = Lanac.IspisSegment(gumb.Naredba);
             s["pageHeaderRight"] = Carpo.NetGen.Print.IspisZaglavlje.Desno(Attr(p, "PAGEHEADERRIGHT") ?? "", Medjuspremnik(p));
+            s["pageFooterRight"] = Carpo.NetGen.Print.IspisZaglavlje.Podnozje(Attr(p, "PAGEFOOTERRIGHT") ?? "", Medjuspremnik(p));
             s["border"] = "Sizable";
             NgForm forma = FormaGumba(p, gumb.Naredba);
             if (forma != null)

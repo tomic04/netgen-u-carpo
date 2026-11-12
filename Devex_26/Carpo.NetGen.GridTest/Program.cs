@@ -75,6 +75,50 @@ namespace Carpo.NetGen.GridTest
             }
             string sql = Carpo.NetGen.Komande.DijalogTok.SqlNakonOk(popuni);
             T("fillexplorer-statusi", sql.IndexOf("spStatusiQuery", StringComparison.OrdinalIgnoreCase) >= 0, sql);
+            Carpo.NetGen.Model.NgForm onlydet = null;
+            if (statusi != null)
+            {
+                for (int i = 0; i < statusi.Forme.Count; i++)
+                {
+                    if (string.Equals(statusi.Forme[i].Ime, "INSERTOPFORM", StringComparison.OrdinalIgnoreCase))
+                        onlydet = statusi.Forme[i];
+                }
+            }
+            T("onlydet-nije-master", Carpo.NetGen.Komande.DijalogTok.SqlNakonOk(onlydet).Length == 0, Carpo.NetGen.Komande.DijalogTok.SqlNakonOk(onlydet));
+            T("onlydet-detalj", Carpo.NetGen.Komande.DijalogTok.OsvjeziDetalj(onlydet) && !Carpo.NetGen.Komande.DijalogTok.OsvjeziDetalj(popuni), "");
+            var rute = Ucitaj("BSRute.xml");
+            Carpo.NetGen.Model.NgForm stablo = null;
+            if (rute != null)
+            {
+                for (int i = 0; i < rute.Forme.Count; i++)
+                {
+                    if (string.Equals(rute.Forme[i].Ime, "REFRESHTREEFORM", StringComparison.OrdinalIgnoreCase))
+                        stablo = rute.Forme[i];
+                }
+            }
+            T("onlytree-nije-master", stablo != null && Carpo.NetGen.Komande.DijalogTok.SqlNakonOk(stablo).Length == 0 && Carpo.NetGen.Komande.DijalogTok.OsvjeziStablo(stablo) && !Carpo.NetGen.Komande.DijalogTok.OsvjeziDetalj(stablo), "");
+            var jezici = Ucitaj("JeziciNG.xml");
+            T("obicna-unesi", Carpo.NetGen.Komande.GumbTok.Akcija(jezici, "Unesi") == "forma", Carpo.NetGen.Komande.GumbTok.Akcija(jezici, "Unesi"));
+            T("obicna-refreshmaster", Carpo.NetGen.Komande.GumbTok.Akcija(jezici, "refreshmaster") == "osvjezi", Carpo.NetGen.Komande.GumbTok.Akcija(jezici, "refreshmaster"));
+            T("obicna-ispis", Carpo.NetGen.Komande.GumbTok.Akcija(jezici, "PRINTREPXMASTER") == "ispis", Carpo.NetGen.Komande.GumbTok.Akcija(jezici, "PRINTREPXMASTER"));
+            T("obicna-grid", Carpo.NetGen.Komande.GumbTok.Akcija(jezici, "REFRESHMASTERGRID") == "osvjezi", "");
+            var cbIme = new System.Collections.Generic.Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
+            cbIme["ime"] = "";
+            T("isempty-prazno", Carpo.NetGen.Print.IspisZaglavlje.Desno("ISEMPTY(@@ime)#vise#jedno: @@ime", cbIme) == "vise", Carpo.NetGen.Print.IspisZaglavlje.Desno("ISEMPTY(@@ime)#vise#jedno: @@ime", cbIme));
+            cbIme["ime"] = "Glavno";
+            T("isempty-vrijednost", Carpo.NetGen.Print.IspisZaglavlje.Desno("ISEMPTY(@@ime)#vise#jedno: @@ime", cbIme) == "jedno: Glavno", Carpo.NetGen.Print.IspisZaglavlje.Desno("ISEMPTY(@@ime)#vise#jedno: @@ime", cbIme));
+            T("podnozje-isempty", Carpo.NetGen.Print.IspisZaglavlje.Podnozje("ISEMPTY(@@ime)#lijevo#desno: @@ime", cbIme) == "desno: Glavno", Carpo.NetGen.Print.IspisZaglavlje.Podnozje("ISEMPTY(@@ime)#lijevo#desno: @@ime", cbIme));
+            T("prevod-hrv", Carpo.NetGen.Print.Prevod.Tekst("Jezici", "hrv") == "Jezici" && Carpo.NetGen.Print.Prevod.Tekst("Jezici", "") == "Jezici", "");
+            T("prevod-bez-dll", Carpo.NetGen.Print.Prevod.Tekst("Jezici", "eng") == "Jezici", Carpo.NetGen.Print.Prevod.Tekst("Jezici", "eng"));
+            Carpo.NetGen.Print.Prevod.Vanjski = delegate(string s) { return s == "Jezici" ? "Languages" : s; };
+            try
+            {
+                T("prevod-eng", Carpo.NetGen.Print.IspisZaglavlje.Desno("Jezici", cbIme, "eng") == "Languages", Carpo.NetGen.Print.IspisZaglavlje.Desno("Jezici", cbIme, "eng"));
+            }
+            finally
+            {
+                Carpo.NetGen.Print.Prevod.Vanjski = null;
+            }
         }
 
         private static void Jez57()

@@ -46,6 +46,25 @@ namespace Carpo.NetGen.Komande
             return (forma.Atributi.Vrijednost("NEXTFORM") ?? "").Trim();
         }
 
+        /// <summary>FILLEXPLORER=onlytree samo NapuniDrvoVrijeme. Form1.vb 5475–5476.</summary>
+        public static bool OsvjeziStablo(NgForm forma)
+        {
+            return string.Equals(FillExplorer(forma), "onlytree", StringComparison.Ordinal);
+        }
+
+        /// <summary>FILLEXPLORER=ONLYDET ne dira master. Osvježi detail. Form1.vb 5470–5473.</summary>
+        public static bool OsvjeziDetalj(NgForm forma)
+        {
+            return string.Equals(FillExplorer(forma), "onlydet", StringComparison.Ordinal);
+        }
+
+        private static string FillExplorer(NgForm forma)
+        {
+            if (forma == null || forma.Atributi == null || !forma.Atributi.Ima("FILLEXPLORER"))
+                return "";
+            return (forma.Atributi.Vrijednost("FILLEXPLORER") ?? "").Trim().ToLowerInvariant();
+        }
+
         /// <summary>FILLEXPLORER=TRUE zamijeni master sa ONSUBMIT. Form1.vb 5445–5453.</summary>
         public static string SqlNakonOk(NgForm forma)
         {

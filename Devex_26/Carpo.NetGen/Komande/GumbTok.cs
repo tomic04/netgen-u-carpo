@@ -1,0 +1,53 @@
+using System;
+using Carpo.NetGen.Model;
+
+namespace Carpo.NetGen.Komande
+{
+    /// <summary>
+    /// Klik gumba na podlozi. Form1.Button1_Click 5664 zove NovaGenerickaForma.
+    /// REFRESHMASTERGRID osvježi odmah (4570). PRINT* izađe prije forme (4945).
+    /// Ostalo je ime forme (4906). Forma bez kontrola ima OKClick i PokaziUpit (5369, 5519),
+    /// pa nepostojeći refreshmaster ipak osvježi master.
+    /// </summary>
+    public static class GumbTok
+    {
+        public static string Akcija(NgProject projekt, string segment)
+        {
+            string s = (segment ?? "").Trim();
+            if (s.StartsWith(":", StringComparison.Ordinal))
+                s = s.Substring(1).Trim();
+            if (s.Length == 0)
+                return "";
+            string u = s.ToUpperInvariant();
+            if (u.IndexOf("REFRESHMASTERGRID", StringComparison.Ordinal) >= 0)
+                return "osvjezi";
+            if (u.IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0)
+                return "assembly";
+            if (u == "CLOSE" || u == "CANCEL")
+                return "zatvori";
+            if (s.StartsWith("select", StringComparison.OrdinalIgnoreCase))
+                return "sql";
+            if (u.StartsWith("PRINT", StringComparison.Ordinal))
+                return "ispis";
+            string ime = s;
+            int z = ime.IndexOf('(');
+            if (z > 0)
+                ime = ime.Substring(0, z).Trim();
+            if (ImaFormu(projekt, ime))
+                return "forma";
+            return "osvjezi";
+        }
+
+        private static bool ImaFormu(NgProject projekt, string ime)
+        {
+            if (projekt == null || projekt.Forme == null || ime.Length == 0)
+                return false;
+            for (int i = 0; i < projekt.Forme.Count; i++)
+            {
+                if (string.Equals(projekt.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+    }
+}

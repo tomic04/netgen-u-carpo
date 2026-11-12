@@ -321,6 +321,17 @@ namespace Carpo.NetGen.Ui
                         NapuniGrid();
                     return;
                 }
+                if (DijalogTok.OsvjeziDetalj(forma))
+                {
+                    OsvjeziDetail();
+                    return;
+                }
+                if (DijalogTok.OsvjeziStablo(forma))
+                {
+                    _stablo.Ucitaj(_projekt, Citaj);
+                    NapuniDrvo();
+                    return;
+                }
                 string sljedeca = DijalogTok.NextForm(forma);
                 if (sljedeca.Length > 0)
                     OtvoriFormu(sljedeca);

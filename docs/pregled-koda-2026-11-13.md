@@ -4,7 +4,7 @@ Uspoređen je `Devex_26/Carpo.NetGen` s `netgen/Form1.vb`, `Form2.vb`, `Class1.v
 
 ## Sažetak
 
-Pregledano je 9 modula. Nađene su dvije greške i obje su popravljene: `FILLEXPLORER` nakon OK i `ONLOAD2` po natpisu gumba. Ostaje otvoreno: `Translate` na ispisu, `Rafalna_Priprema` (`#ISEMPTY`) izvan zaglavlja koje je već riješeno za `@@tkosmomi`, i puni `Form2` klik na običnoj formi (gumb se samo zabilježi).
+Pregledano je 9 modula. Popravljeno: `FILLEXPLORER` nakon OK, `ONLOAD2` po natpisu gumba, `Translate` na ispisu, `Rafalna_Priprema` i na podnožju, lanac gumba na običnoj formi, `FILLEXPLORER=ONLYDET`.
 
 ## 1. Loader i XML
 
@@ -78,10 +78,15 @@ Pregledano je 9 modula. Nađene su dvije greške i obje su popravljene: `FILLEXP
 | Carpo | `Manager.cs` `Manager_FormClosing`: izlaz odmah ako nema `JSettings` ili `Logger`. |
 | Razlika | NE. Raniji `NullReference` na liniji 1337 bio je `Logger.Error` dok logger nije postojao. |
 
+## 10. Translate, Rafalna, obična forma, ONLYDET
+
+| | |
+|---|---|
+| NetGen | `Module1.vb` 266–284: prazan jezik i `hrv` ostaju, inače vanjski prevoditelj, greška ostavlja izvor. `Form1.vb` 6001 i 6034: `Translate(Rafalna_Priprema(...))` na zaglavlju i podnožju. `Rafalna_Priprema` 7737–7773 bira granu `ISEMPTY`. `Button1_Click` 5664–5667 zove `NovaGenerickaForma`. `REFRESHMASTERGRID` je 4570. `PRINT` izlazi prije forme (4945). Forma bez kontrola ima `OKClick` i `PokaziUpit` (5369, 5519). `ONLYDET` osvježi detail, ne master (5470–5473). |
+| Carpo | `Print/Prevod.cs`, `Print/IspisZaglavlje.cs` `Desno` i `Podnozje`, `Komande/GumbTok.cs`, `Ui/ObicnaForma.cs` klik, `Ui/Podloga.cs` nakon OK. |
+| Razlika | Bila je DA. Popravljeno. `onlytree` osvježi samo stablo (`Form1.vb` 5475). Fiskalizacija, Word i `ASSEMBLYLOAD` i dalje se samo zabilježe. |
+
 ## Što ostaje otvoreno
 
-- `Translate` prije ispisa (`Form1.vb` 6001) nema rječnik.
-- `Rafalna_Priprema` (`#ISEMPTY`) nije u svakom tekstu, samo zamjena `@@` u zaglavlju.
-- Gumb na `ObicnaForma` se zabilježi, lanac se ne izvrši.
-- `FILLEXPLORER=ONLYDET` nije posebna grana.
+- Fiskalizacija, Word i `ASSEMBLYLOAD` nemaju tijelo (namjerno, nema vanjskog DLL-a).
 - 12 redova `ssMeni` i XML-ovi kojih nema u repou. Shema se ne dira.

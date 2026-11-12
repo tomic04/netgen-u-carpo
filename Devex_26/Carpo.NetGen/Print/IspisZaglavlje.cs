@@ -12,7 +12,7 @@ namespace Carpo.NetGen.Print
     /// </summary>
     public static class IspisZaglavlje
     {
-        public static string Desno(string sirovo, IDictionary<string, string> cb)
+        public static string Desno(string sirovo, IDictionary<string, string> cb, string jezik)
         {
             string sql = SqlTekst.Sredi(sirovo ?? "", new SqlKontekst());
             sql = sql.Replace("##", "\r\n").Replace("!!", "\r\n");
@@ -38,7 +38,19 @@ namespace Carpo.NetGen.Print
                     break;
                 sql = sql.Replace(token, vrijednost);
             }
-            return sql;
+            sql = SqlTekst.Sredi(IspisMotora.Zaglavlje(sql), new SqlKontekst());
+            return Prevod.Tekst(sql, jezik);
+        }
+
+        public static string Desno(string sirovo, IDictionary<string, string> cb)
+        {
+            return Desno(sirovo, cb, "");
+        }
+
+        /// <summary>Form1.vb 6034. Podnožje ide istim Rafalna_Priprema i Translate kao zaglavlje.</summary>
+        public static string Podnozje(string sirovo, IDictionary<string, string> cb)
+        {
+            return Desno(sirovo, cb, "");
         }
 
         private static string IzCb(string token, IDictionary<string, string> cb)
