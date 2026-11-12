@@ -109,7 +109,9 @@ $stavke = @(
     @("RobaWebKlase.xml", "test RobaWebKlase")
 )
 
+$redni = 0
 foreach ($s in $stavke) {
+    $redni++
     $fajl = $s[0]
     $opis = $s[1].Replace("'", "''")
     $param = "asm:NetGenDLL.loader:" + $fajl
@@ -142,6 +144,12 @@ where Parametar like N'%:$f' or Parametar like N'%\$f' or Parametar like N'%/$f'
             $izrazi.Add("N'" + $param.Replace("'", "''") + "'")
         } elseif ($ime -eq "Opis") {
             $izrazi.Add("N'" + $opis + "'")
+        } elseif ($ime -eq "Nivo") {
+            $dulj = [int]$c.max_length
+            if ($tip -match "nvar|nchar") { if ($dulj -gt 0) { $dulj = [int]($dulj / 2) } }
+            $kod = "Z{0:d2}" -f $redni
+            if ($dulj -gt 0 -and $kod.Length -gt $dulj) { $kod = $kod.Substring(0, $dulj) }
+            $izrazi.Add("N'" + $kod + "'")
         } elseif ([int]$c.pk -eq 1) {
             $izrazi.Add("(select isnull(max(" + $qime + "), 0) + 1 from ssMeni)")
         } elseif ($imaPredlozak) {
