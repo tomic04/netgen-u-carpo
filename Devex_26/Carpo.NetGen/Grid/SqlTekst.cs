@@ -72,6 +72,35 @@ namespace Carpo.NetGen.Grid
             return "salji";
         }
 
+        /// <summary>
+        /// Form2 prije ProcitajXML: ID = GetID() (prazan grid je "0"), DetID = GetDetID() ("0"),
+        /// Node ostaje onaj s podloge ("null" dok se čvor ne odabere). Form1.vb 5293–5298.
+        /// </summary>
+        public static SqlKontekst ZaFormu(SqlKontekst izvor)
+        {
+            var k = new SqlKontekst();
+            if (izvor != null)
+            {
+                k.Id = izvor.Id;
+                k.DetId = izvor.DetId;
+                k.Node = izvor.Node;
+                k.OperaterId = izvor.OperaterId;
+                k.Tablica = izvor.Tablica;
+                k.XmlName = izvor.XmlName;
+                k.JupiterSrvPath = izvor.JupiterSrvPath;
+                k.EditedColumn = izvor.EditedColumn;
+                k.LastValue = izvor.LastValue;
+                k.SelectedColor = izvor.SelectedColor;
+            }
+            if (string.IsNullOrEmpty(k.Id))
+                k.Id = "0";
+            if (string.IsNullOrEmpty(k.DetId))
+                k.DetId = "0";
+            if (k.Node == null)
+                k.Node = "null";
+            return k;
+        }
+
         public static bool JeZabranaPisanja(string sql)
         {
             if (sql == null)

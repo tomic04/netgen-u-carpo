@@ -63,6 +63,13 @@ namespace Carpo.NetGen.GridTest
             string s = SqlTekst.Sredi("select @@id, @@operateriid, @@node", k);
             T("sql-zamjena", s == "select 5, 7, null", s);
             T("sql-zamjena-nema-atat", SqlTekst.Odluka(s) == "salji", "");
+            var forma = SqlTekst.ZaFormu(null);
+            string fid = SqlTekst.Sredi("select opis from trgovina where trgovinaid = @@id", forma);
+            T("forma-id-0", forma.Id == "0" && forma.DetId == "0" && forma.Node == "null" && fid.IndexOf("trgovinaid = 0", StringComparison.Ordinal) >= 0, fid);
+            var red = new SqlKontekst();
+            red.Id = "15";
+            red.Node = "abc";
+            T("forma-id-red", SqlTekst.ZaFormu(red).Id == "15" && SqlTekst.ZaFormu(red).Node == "abc", "");
         }
 
         private static void Zamjene()

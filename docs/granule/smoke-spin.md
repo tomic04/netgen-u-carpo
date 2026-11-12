@@ -14,7 +14,7 @@ Izvor: CI PR #27, commit `28a39f2`, run 43236761185. Baza `spin`, samo čitanje.
 - `pretvorba` na AOP: NetGen šalje `@id='null'` (`Node` kreće kao `"null"`, odabir čvora je komentar).
 - `nema-procedure` (91 u repou): procedura nije u spinu. XML i baza se ne mijenjaju.
 - `nema-forme`: `ONLOAD` traži element `/PROJECT/ime`. `FILTER` ili `FORM1` tog imena nema (NetGen `SelectSingleNode` radi isto). `NAME` atribut se ne čita kao ime forme.
-- `sintaksa` na MPTrgOprNG: `@@id` je prazan tekst, kao `Class1.MasterID = ""` prije prvog reda grida, pa `trgovinaid =` ostane bez vrijednosti.
+- `sintaksa` na MPTrgOprNG: u mjerenju #27 `@@id` je otišao prazan. NetGen za formu zove `GetID()`, a prazan grid vrati `0` (`Form1.vb` 5293–5298, 5566–5582). To se ispravlja u sljedećem koraku (`SqlTekst.ZaFormu`). Master upit i dalje vidi prazan `ID` dok grid ne postoji.
 - `krivi-stupac` OznakaKL: stupac `oznaka2` ne postoji u `klmasterroba`.
 - `ostalo`: procedura odbije parametar ili SQL u XML-u ima dvostruki stupac. Tekst upita se ne mijenja.
 

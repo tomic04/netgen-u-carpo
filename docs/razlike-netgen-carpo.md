@@ -1,6 +1,6 @@
 # Razlike NetGen / Carpo
 
-Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i nastavi od zadnjeg `R`. R01–R53 su QA (#16, #17, #19). Carpo.NetGen od R54 dopisuje odluku, test i PR u istom PR-u. Zadnji broj na ovoj grani je R65.
+Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i nastavi od zadnjeg `R`. R01–R53 su QA (#16, #17, #19). Carpo.NetGen od R54 dopisuje odluku, test i PR u istom PR-u. Zadnji broj na ovoj grani je R66.
 
 ## Odluka u Carpo.NetGen
 
@@ -579,3 +579,12 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 - **Odluka:** namjerno odstupanje, izgled. Vrijednosti, SQL i `@@node` se ne mijenjaju. Format stupca je NetGen podatak koji se sada vidi.
 - **Test:** `rub-filter`
 - **PR:** izgled-kontrole
+
+## R66 Dijalog `@@id` je `GetID()`, prazan grid je `0`
+
+- **Element:** ONLOAD forme (FILTERFORM i ostale)
+- **NetGen:** `NovaGenerickaForma1` stavi `Form2.ID = GetID()` i `MasterID = Form2.ID` (`Form1.vb` 5293–5298). `GetID` bez redova vrati `"0"` (`5566–5582`). `@@node` na formi je `Node` podloge, koji je i dalje `"null"`. Master upit prije toga ide kroz `Form1.SrediSQL` i `ID` koji je još `""`.
+- **Carpo:** do ovog koraka forma je slala prazan `@@id`, pa `trgovinaid =` pukne (MPTrgOprNG). Sada `SqlTekst.ZaFormu` prazan id pretvori u `0`. Odabrani red grida ide u id forme.
+- **Odluka:** NetGen logika.
+- **Test:** `forma-id-0`, `forma-id-red`
+- **PR:** id-forme

@@ -347,14 +347,34 @@ namespace Carpo.NetGen.Ui
                 return;
             }
             var dij = new Dijalog();
-            dij.Prikazi(forma, _master.Kontekst, Citaj);
+            dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj);
         }
 
         private void Pogled_FocusedRowChanged(object sender, DevExpress.XtraGrid.Views.Base.FocusedRowChangedEventArgs e)
         {
             if (_punim)
                 return;
+            SpojiId();
             OsvjeziDetail();
+        }
+
+        private void SpojiId()
+        {
+            string id = "0";
+            DataRow row = _pogled.GetFocusedDataRow();
+            if (row != null)
+            {
+                if (row.Table.Columns.Contains("id"))
+                    id = Convert.ToString(row["id"]);
+                else if (row.Table.Columns.Count > 0)
+                    id = Convert.ToString(row[0]);
+                if (string.IsNullOrEmpty(id))
+                    id = "0";
+            }
+            else if (!string.IsNullOrEmpty(_master.Stanje.Id))
+                id = _master.Stanje.Id;
+            _master.Stanje.Id = id;
+            _master.Kontekst.Id = id;
         }
 
         private void NapuniGrid()
@@ -362,6 +382,7 @@ namespace Carpo.NetGen.Ui
             _punim = true;
             _master.IzvrsiCitanje(_spoj);
             VeziGrid(_pogled, _grid, _master.Stanje.Tablica, _master.Stanje.Kolone, _master.Stanje.Poruka, _master.Stanje.CheckboxVidljiv, _master.Stanje.GroupByBox, _master.Stanje.FilterRed || _master.Stanje.FilterNamjernoOdstupanje || !_master.Stanje.FilterIzXml);
+            SpojiId();
             _punim = false;
             OsvjeziDetail();
         }

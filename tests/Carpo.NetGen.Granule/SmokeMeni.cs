@@ -164,9 +164,8 @@ namespace Carpo.NetGen.Granule
                 r.Greska = "otvorena " + ime + (on.Length == 0 ? "" : ", ONLOAD forme je opet forma");
                 return;
             }
-            var kontekst = new SqlKontekst();
+            var kontekst = SqlTekst.ZaFormu(null);
             kontekst.OperaterId = "7";
-            kontekst.Node = "null";
             string sql = SqlTekst.Sredi(on, kontekst);
             string odluka = SqlTekst.Odluka(sql);
             if (odluka != "salji" || SqlTekst.JeZabranaPisanja(sql))
