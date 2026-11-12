@@ -814,4 +814,6 @@ Implementacija `cursor/netgen-filter-forma-3266` (`14d3208`) ima svoje R84–R88
 | `MPIzduMPZaprimi.md` | prvi čvor prazan, `UPDATE_FORM` i `UPDATEFORM` | R10, R60 |
 | `CarinskaTarifaNG.md` | šifrarnik, Odustani je `ok` | R41 |
 | `MPZakljPerioda.md` | `select` stupca `prazno`, `@action=8` | R65 |
+| `Obrasci.md` | tipovi iz #49, predstavnici, ne svih 431 | |
+| `Otvoreno-za-implementaciju.md` | 6 stavki zeleno na kuki #56, Jupiter se ne dira | |
 | `Smoke-prazno-uzorak.md` | 20 praznih iz smokea #35 | |

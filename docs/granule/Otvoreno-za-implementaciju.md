@@ -2,7 +2,34 @@
 
 Izvor je CI [#34](https://github.com/tomic04/netgen-u-carpo/pull/34), commit `30236ff`, izvještaj `SVE ukupno=624 zeleno=460 otvoreno=164 pad=0`.
 
-Svih 164 stavki je otvoreno. Nijedna nije pad. Grupe su po elementu NetGena i poredane po broju granula. Uz svaku stavku je linija izvora i razlog zašto je ostala otvorena.
+Svih 164 stavki je otvoreno u izvještaju [#34](https://github.com/tomic04/netgen-u-carpo/pull/34). Nijedna nije pad. Grupe su po elementu NetGena. Tablica ispod i dalje opisuje to stanje. Novije stanje, prema implementaciji [#50](https://github.com/tomic04/netgen-u-carpo/pull/50), [#52](https://github.com/tomic04/netgen-u-carpo/pull/52), [#54](https://github.com/tomic04/netgen-u-carpo/pull/54), [#55](https://github.com/tomic04/netgen-u-carpo/pull/55) i [#56](https://github.com/tomic04/netgen-u-carpo/pull/56), vrh je `cursor/netgen-nextform-3266` (`5015fe1`), stoji u sljedećem odjeljku.
+
+## Stanje prema #50, #52, #54, #55 i #56
+
+Vrh je `cursor/netgen-nextform-3266` (`5015fe1`). Zeleno je samo ono što kuka `GranulaIzvrsenje` vrati testu, bez upita. Provjera deset Biovega granula na Jupiteru je otkazana. `jupiter2019` i `jupiter2022` se ne diraju, ni `SELECT`.
+
+| Stavka | Test | Zašto je zeleno |
+|---|---|---|
+| OznakaKL `OKL-61` | `dblclick` → `forma=FRMEDIT` | `MASTERDBLCLICK` je `FRMEDIT`. Kuka ne šalje SQL. |
+| JeziciNG `JEZ-58` | `dblclick` → `forma=Izmijeni` | `MASTERDBLCLICK` je `Izmijeni`. Kuka ne šalje SQL. |
+| JeziciNG `JEZ-67` | `kontrola` `Izmijeni.buttonCLOSE` → `refreshMaster=false` | `ONCLICK` je `CLOSE`. `DijalogKlik` ne šalje SQL. |
+| OznakaKL `OKL-74` | `gumb` `Izmjena` → `acceptButton` prazan | `Raspored.KljuceviForme` stavi prazan `acceptButton`. Nema upita. |
+| KarticaPartnera `KAR-21` | `otvori` → `uzvicnik=dva-znacenja` | `ONLOAD` je `:FILTERFORM`, master se ne šalje. `Lanac.Caption` i `Lanac.Lijepi` daju oba značenja `!!`. |
+| KarticaPartnera `KAR-23` | `otvori` → `prazanSegment=nastavi` | Isti otvor bez master SQL-a. `##OK` i dalje zatvara. |
+
+To je 6 stavki. `OKL-72` ostaje otvoren: akcija testa je `odustani`, a kuka je ne prima (`Izvedeno=false`). `KUP-17` ima ključ `okStay` tek nakon uspjelog otvaranja. `KUPNG` ulaz je `spKUPPrometQueryN`. Ako taj upit padne, test ostane otvoren. Upit nije ponovno slan.
+
+Ostale stavke ostaju otvorene. Kuka na `otvori` ih ne zatvara, ili ljuska ih ne izvrši:
+
+- `refreshmaster` klasifikator vidi (`Lanac.OsvjezavaZadnjiSql`). Ljuska osvježi samo na `REFRESHMASTERGRID`. Otvoreno: `JEZ-65`, `NEF-20`, `PL-35`, `OKL-69`, `JEZ-68`.
+- `NEXTFORM` se pročita i ne otvori se nakon `OK`. Forma koje nema samo zabilježi da je nema. Otvoreno: `JEZ-63`, `JEZ-64`.
+- SQL s gumba ide u `Klik.Naredbe` i `GumbKlik` ga ne pošalje. Otvoreno: `JEZ-61`, `JEZ-70`, `OKL-70`, `OKL-71`.
+- Combo i grid u dijalogu pošalju samo `select` koji zaštita ne označi kao proceduru ili upis. `sp` se preskoči. Širina iz zadnje četvorke i skriven `ID` nisu u tom punjenju.
+- `FILLEXPLORER=true` složi `MasterSql`. Ljuska ga nakon dijaloga ne stavi u master. Otvoreno: `MPK-30`, `MPK-31`, `STA-34`.
+
+Grid test na vrhu (#56) posebno drži `rupa-zakljuci` (`:Zakljucavanje` otvara formu i ne šalje SQL) i `rupa-pokazi` (`FILLEXPLORER` složi SQL, a na Jupiteru ga ne šalje). To nisu stavke iz ovih 164. Master ljuske se i dalje ne zamijeni.
+
+`smoke-jupiter.md` se ne čita kao dokaz. Brojači su prazni, a novi upit prema Jupiteru nije dopušten.
 
 | # | Element | Granula | Stavki |
 |---|---|---:|---:|
