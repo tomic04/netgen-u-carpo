@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
+using Carpo.NetGen.Poziv;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
@@ -302,6 +303,10 @@ namespace Carpo.NetGen.Ui
             {
                 var dij = new Dijalog();
                 dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server));
+                dij.Konekcija = _spoj;
+                dij.Operater = _master.Kontekst.OperaterId;
+                dij.Id = _master.Stanje.Id;
+                dij.ZadnjiSql = _master.Stanje.ZadnjiSql;
                 dij.OtvoriDrugu = OtvoriFormu;
                 dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj);
                 string iz = dij.Vrijednost("izvjestaj");
@@ -372,7 +377,11 @@ namespace Carpo.NetGen.Ui
                 else if (IspisMotora.JeIspisImena(s) || s.StartsWith("PRINT", StringComparison.OrdinalIgnoreCase))
                     NgDnevnik.Akcija("ispis " + s);
                 else if (s.ToUpperInvariant().IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0)
-                    NgDnevnik.Akcija("assembly " + s);
+                {
+                    var poziv = AssemblyPoziv.Pozovi(s, "shell", _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "");
+                    if (poziv.Prekinuto)
+                        return;
+                }
                 else
                     OtvoriFormu(s);
             }

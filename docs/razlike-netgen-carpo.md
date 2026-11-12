@@ -922,3 +922,11 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 | `MatTem.md` | `:FILTERFORM`, `!!`, `LANDSCAPE` ne dira `PRINTMASTER` | R18, R14, R41, R65 |
 | `MPPSNG.md` | stablo bez `:`, `AUTOFITCOLUMNS`, `Lista`, `vrstadokid-` | R10, R80, R60, R43, R57 |
 | `MPStanje.md` | `INCLUDE`, `SKIPDEFAULTLOAD` | R78, R53, R65 |
+
+## R108 Dijalog `strParametriSvi` nije cijeli `PokupiParametre`
+
+- **Element:** `ASSEMBLYLOAD` na dijalogu
+- **NetGen:** `Form2.vb` 3406–3486 skuplja check, radio, combo, search, grid i tekst u `strParametriSvi`. Taj niz ide dvaput u `totalgen` (`7424–7456`).
+- **Carpo:** `Dijalog.SviParametri` skuplja check, lookup i tekst. Search, grid i radio još nisu u nizu. Shell i `Rafalno` potpisi jesu u `AssemblyPoziv`.
+- **Posljedica:** adapter dijaloga dobije `@ime` tekstualnih kontrola. Search box i grid iz forme ne uđu u peti argument dok se `PokupiParametre` ne prenese cijeli.
+- **Test:** `assembly-dijalog` provjerava da su zadnja dva argumenta isti niz, ne da je niz potpun.

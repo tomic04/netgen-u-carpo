@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Text;
 using System.Globalization;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
@@ -31,6 +32,10 @@ namespace Carpo.NetGen.Ui
 
         public string OtvorenaForma = "";
         public string MasterSql = "";
+        public string Konekcija = "";
+        public string Operater = "";
+        public string Id = "0";
+        public string ZadnjiSql = "";
         public Action<string> OtvoriDrugu;
 
         public void JupiterNeSaljeGumb(bool jupiter)
@@ -244,6 +249,16 @@ namespace Carpo.NetGen.Ui
                 DialogResult = DialogResult.Cancel;
                 return;
             }
+            for (int i = 0; i < klik.Naredbe.Count; i++)
+            {
+                string n = klik.Naredbe[i] ?? "";
+                if (n.IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) < 0)
+                    continue;
+                string svi = SviParametri();
+                var poziv = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(n, "dijalog", Id, Operater, Konekcija, ZadnjiSql, "", svi);
+                if (poziv.Prekinuto)
+                    return;
+            }
             if (klik.SaljeSql && _citaj != null)
             {
                 MasterSql = klik.MasterSql;
@@ -270,6 +285,36 @@ namespace Carpo.NetGen.Ui
                 DialogResult = DialogResult.OK;
             else if (b != null)
                 b.DialogResult = DialogResult.None;
+        }
+
+        private string SviParametri()
+        {
+            var sb = new StringBuilder();
+            foreach (Control c in Controls)
+            {
+                if (string.IsNullOrEmpty(c.Name))
+                    continue;
+                var chk = c as CheckEdit;
+                if (chk != null)
+                {
+                    sb.Append("@").Append(c.Name.Trim()).Append("=").Append((int)chk.CheckState).Append(",");
+                    continue;
+                }
+                var look = c as LookUpEdit;
+                if (look != null)
+                {
+                    object v = look.EditValue;
+                    string t = v == null || v == DBNull.Value || Convert.ToString(v).Length == 0 ? "null" : Convert.ToString(v);
+                    sb.Append("@").Append(c.Name.Trim()).Append("=").Append(t).Append(",");
+                    continue;
+                }
+                var txt = c as TextEdit;
+                if (txt != null)
+                {
+                    sb.Append("@").Append(c.Name.Trim()).Append("='").Append(txt.Text ?? "").Append("',");
+                }
+            }
+            return sb.ToString();
         }
 
         public string Vrijednost(string ime)

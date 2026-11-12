@@ -28,6 +28,7 @@ namespace Carpo.NetGen.GridTest
             Odabir();
             Jez57();
             Pregled();
+            AssemblyLoad();
             Zamjene();
             OznakaBezBaze();
             JeziciBezBaze();
@@ -119,6 +120,35 @@ namespace Carpo.NetGen.GridTest
             {
                 Carpo.NetGen.Print.Prevod.Vanjski = null;
             }
+        }
+
+        private static void AssemblyLoad()
+        {
+            string tip = "ASSEMBLYLOAD(Carpo.NetGen.GridTest.TgSonda)";
+            TgSonda.Zadnji = null;
+            var shell = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(tip, "shell", "7", "3", "Server=localhost;Database=spin", "select 1 as id", "@id='7' , ", "");
+            T("assembly-shell", shell.Pozvan && !shell.Prekinuto
+                && shell.Sklop == "Carpo.NetGen.GridTest"
+                && TgSonda.Zadnji != null
+                && TgSonda.Zadnji[0] == "7" && TgSonda.Zadnji[1] == "3"
+                && TgSonda.Zadnji[2] == "Driver={SQL Server};Server=localhost;Database=spin"
+                && TgSonda.Zadnji[3] == "select 1 as id" && TgSonda.Zadnji[4] == "@id='7' , "
+                && TgSonda.Vratio == "NE", shell.Pozvan ? (TgSonda.Zadnji == null ? "" : string.Join("|", TgSonda.Zadnji)) : shell.Sklop);
+            var raf = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(tip, "rafalno", "7", "3", "Server=localhost", "select 1 as id", "@id='7' , ", "@a=1");
+            T("assembly-rafalno", raf.Pozvan && TgSonda.Zadnji[2] == "Server=localhost" && TgSonda.Zadnji[4] == "", TgSonda.Zadnji == null ? "" : TgSonda.Zadnji[4]);
+            var dij = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(tip, "dijalog", "7", "3", "Server=localhost", "select 1 as id", "grid", "@CarpoForm='x',");
+            T("assembly-dijalog", dij.Pozvan && TgSonda.Zadnji[3] == "@CarpoForm='x'," && TgSonda.Zadnji[4] == "@CarpoForm='x',"
+                && TgSonda.Zadnji[2].StartsWith("Driver={SQL Server};", StringComparison.Ordinal), TgSonda.Zadnji == null ? "" : TgSonda.Zadnji[3]);
+            TgSonda.Zadnji = null;
+            var nema = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi("ASSEMBLYLOAD(Nema.Takvog.Tipa)", "shell", "1", "2", "Server=x", "select 1", "", "");
+            T("assembly-nema", nema.Prekinuto && !nema.Pozvan && TgSonda.Zadnji == null, nema.Sklop);
+            var tab = new System.Data.DataTable();
+            tab.Columns.Add("id");
+            tab.Columns.Add("Naziv2500");
+            tab.Columns.Add("prazno");
+            tab.Rows.Add("5", "A B", System.DBNull.Value);
+            string red = Carpo.NetGen.Poziv.AssemblyPoziv.ParametriReda(tab.Rows[0]);
+            T("assembly-red", red == "@id='5' , @Naziv='A B' , ", red);
         }
 
         private static void Jez57()
@@ -1519,6 +1549,26 @@ namespace Carpo.NetGen.GridTest
                 return null;
             }
             return null;
+        }
+    }
+
+    public sealed class TgSonda
+    {
+        public static string[] Zadnji;
+        public static string Vratio = "";
+
+        public string totalgen(object id, object operater, object konekcija, object zadnji, object parametri)
+        {
+            Zadnji = new[]
+            {
+                Convert.ToString(id),
+                Convert.ToString(operater),
+                Convert.ToString(konekcija),
+                Convert.ToString(zadnji),
+                Convert.ToString(parametri)
+            };
+            Vratio = "NE";
+            return Vratio;
         }
     }
 }

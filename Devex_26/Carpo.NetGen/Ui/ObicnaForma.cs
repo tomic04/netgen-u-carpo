@@ -161,12 +161,41 @@ namespace Carpo.NetGen.Ui
                 else if (vrsta == "ispis")
                     NgDnevnik.Akcija("ispis " + s);
                 else if (vrsta == "assembly")
-                    NgDnevnik.Akcija("assembly " + s);
+                {
+                    var poziv = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(s, "shell", IdReda(), _master.Kontekst.OperaterId, _spoj, _master.Stanje.ZadnjiSql, ParametriReda(), "");
+                    if (poziv.Prekinuto)
+                        break;
+                }
                 else if (vrsta == "zatvori")
                     Close();
                 else if (vrsta == "sql")
                     PrimijeniSelect(s);
             }
+        }
+
+        private string IdReda()
+        {
+            DataRow red = _pogled.GetFocusedDataRow();
+            if (red == null)
+                return "0";
+            if (red.Table.Columns.Contains("id") && red["id"] != DBNull.Value)
+            {
+                string id = Convert.ToString(red["id"]);
+                if (!string.IsNullOrEmpty(id))
+                    return id;
+            }
+            if (red.Table.Columns.Count > 0 && red[0] != DBNull.Value)
+            {
+                string id = Convert.ToString(red[0]);
+                if (!string.IsNullOrEmpty(id))
+                    return id;
+            }
+            return "0";
+        }
+
+        private string ParametriReda()
+        {
+            return Carpo.NetGen.Poziv.AssemblyPoziv.ParametriReda(_pogled.GetFocusedDataRow());
         }
 
         private void PrimijeniSelect(string sql)
@@ -230,6 +259,10 @@ namespace Carpo.NetGen.Ui
             {
                 var dij = new Dijalog();
                 dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server));
+                dij.Konekcija = _spoj;
+                dij.Operater = _master.Kontekst.OperaterId;
+                dij.Id = IdReda();
+                dij.ZadnjiSql = _master.Stanje.ZadnjiSql;
                 dij.OtvoriDrugu = Otvori;
                 dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj);
                 if (dij.DialogResult != DialogResult.OK)

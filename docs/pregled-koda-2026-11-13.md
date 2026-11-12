@@ -86,7 +86,16 @@ Pregledano je 9 modula. Popravljeno: `FILLEXPLORER` nakon OK, `ONLOAD2` po natpi
 | Carpo | `Print/Prevod.cs`, `Print/IspisZaglavlje.cs` `Desno` i `Podnozje`, `Komande/GumbTok.cs`, `Ui/ObicnaForma.cs` klik, `Ui/Podloga.cs` nakon OK. |
 | Razlika | Bila je DA. Popravljeno. `onlytree` osvježi samo stablo (`Form1.vb` 5475). Fiskalizacija, Word i `ASSEMBLYLOAD` i dalje se samo zabilježe. |
 
+## 11. ASSEMBLYLOAD
+
+| | |
+|---|---|
+| NetGen | `Form1.vb` 4584–4623: sklop je lijevo od zadnje točke, `CreateInstance` cijelog imena, `totalgen(id, operater, konekcija, zadnji SQL, ParametriSaGrida)`. Konekcija bez `driver` dobije `Driver={SQL Server};`. Pad `Load`/`CreateInstance` prekida lanac. Povrat se ne čita. `Form1.vb` 6681–6727 peti argument je `""` i nema Driver prefiksa. `Form2.vb` 7424–7456 zadnja dva su `strParametriSvi`. |
+| Carpo | `Poziv/AssemblyPoziv.cs`. Gumb na podlozi zove shell potpis. Dijalog zove dijalog potpis. |
+| Razlika | Bila je DA (samo zapis u dnevnik). Sada se sklop stvarno učita i zove `totalgen`. Tuđi DLL nije u repou; ako ga na stroju nema, lanac staje, kao kod NetGena. |
+
 ## Što ostaje otvoreno
 
-- Fiskalizacija, Word i `ASSEMBLYLOAD` nemaju tijelo (namjerno, nema vanjskog DLL-a).
+- Fiskalizacija i Word još nemaju tijelo.
+- `strParametriSvi` na dijalogu za `ASSEMBLYLOAD` skuplja check, lookup i tekst. Search, grid i radio iz `Form2.vb` 3432 još nisu u tom nizu.
 - 12 redova `ssMeni` i XML-ovi kojih nema u repou. Shema se ne dira.
