@@ -153,6 +153,27 @@ jobs:
             throw "Smoke invarijante parsera nisu prosle (OznakaKL, JeziciNG, HIGHT, TYPE, UTF-16). Pad pojedinog drugog XML-a je u FAILED_LIST i sam ne ruši run."
           }
 
+      - name: Spin priprema stupca oznaka2
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $conn = New-Object System.Data.SqlClient.SqlConnection "Server=localhost;Database=spin;Integrated Security=true;Application Name=CarpoNetGen-priprema"
+          try {
+            $conn.Open()
+            $cmd = $conn.CreateCommand()
+            $cmd.CommandText = @"
+IF OBJECT_ID(N'dbo.klmasterroba', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.klmasterroba', N'oznaka2') IS NULL
+    ALTER TABLE dbo.klmasterroba ADD oznaka2 varchar(50) NULL;
+"@
+            $cmd.ExecuteNonQuery() | Out-Null
+            Write-Host "spin klmasterroba.oznaka2 je spreman"
+          } catch {
+            Write-Host "oznaka2 nije dodan: $($_.Exception.Message)"
+          } finally {
+            if ($conn.State -eq 'Open') { $conn.Close() }
+          }
+
       - name: Grid testovi i defaulti
         shell: powershell
         env:
@@ -179,7 +200,8 @@ jobs:
           Get-Content (Join-Path $env:GITHUB_WORKSPACE "artifacts\granule\smoke-spin.md")
 
       - name: Jupiter smoke
-        if: github.head_ref == 'cursor/netgen-jupiter-smoke-3266' || github.ref_name == 'cursor/netgen-jupiter-smoke-3266'
+        # Korisnik je zabranio svaki upit prema jupiter2019 i jupiter2022 dok sam ne odobri.
+        if: false
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
