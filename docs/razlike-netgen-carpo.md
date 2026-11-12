@@ -721,6 +721,15 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `zastita-zakljucivanje`, `zastita-preknjizi`, `otvaranje-nema-zakljucivanje`, `otvaranje-nema-preknjizi`
 - **PR:** jupiter-smoke
 
+## R90 Klik na dijalogu ide kroz lanac, upis ne
+
+- **Element:** `ONCLICK` gumba na formi
+- **NetGen:** `Rafalno` (`Form2.vb` 6884–6890). `OKStay` ostaje i fokusira. `OK` zatvara i osvježi master. `ok` je OKClick pa `NEXTFORM`. `CLOSE` ne šalje SQL.
+- **Carpo:** isti lanac za ostanak, zatvaranje, fokus i `refreshMaster`. `sqlImaZalijep` je false: ONCLICK je Rafalno, ne drugi niz `@ime=`. SELECT se pošalje. Poziv procedure koji piše se ne šalje (R89).
+- **Odluka:** NetGen logika za tok. Upis ostaje zaštićen.
+- **Test:** `dijalog-ostaje`, `dijalog-ok`, `dijalog-close`, `dijalog-refresh`
+- **PR:** dijalog-gumb
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

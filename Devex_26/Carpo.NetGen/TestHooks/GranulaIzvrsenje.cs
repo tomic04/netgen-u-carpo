@@ -32,6 +32,8 @@ namespace Carpo.NetGen.TestHooks
                 return DblClick(zahtjev.XmlPutanja);
             if (string.Equals(zahtjev.Akcija, "gumb", StringComparison.OrdinalIgnoreCase))
                 return Gumb(zahtjev);
+            if (string.Equals(zahtjev.Akcija, "kontrola", StringComparison.OrdinalIgnoreCase))
+                return Kontrola(zahtjev);
             if (!string.Equals(zahtjev.Akcija, "otvori", StringComparison.OrdinalIgnoreCase))
             {
                 return new Pogled
@@ -84,6 +86,36 @@ namespace Carpo.NetGen.TestHooks
             s["ispis"] = Lanac.IspisSegment(gumb.Naredba);
             s["pageHeaderRight"] = Attr(p, "PAGEHEADERRIGHT") ?? "";
             s["border"] = "Sizable";
+            NgForm forma = FormaGumba(p, gumb.Naredba);
+            if (forma != null)
+                Raspored.KljuceviForme(forma, s);
+            return new Pogled { Izvedeno = true, Stavke = s };
+        }
+
+        private static NgForm FormaGumba(NgProject p, string naredba)
+        {
+            if (p == null || p.Forme == null || string.IsNullOrEmpty(naredba))
+                return null;
+            string[] dijelovi = naredba.Split('#');
+            string ime = dijelovi.Length == 0 ? "" : dijelovi[0].Trim();
+            if (ime.StartsWith(":", StringComparison.Ordinal))
+                ime = ime.Substring(1);
+            if (ime.Length == 0)
+                return null;
+            for (int i = 0; i < p.Forme.Count; i++)
+            {
+                if (string.Equals(p.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
+                    return p.Forme[i];
+            }
+            return null;
+        }
+
+        private static Pogled Kontrola(Zahtjev zahtjev)
+        {
+            NgProject p = Projekt(zahtjev.XmlPutanja);
+            Dictionary<string, string> s = DijalogKlik.Stavke(p, zahtjev.Cilj);
+            if (s == null)
+                return new Pogled { Izvedeno = false, Napomena = "nema kontrole " + (zahtjev.Cilj ?? "") };
             return new Pogled { Izvedeno = true, Stavke = s };
         }
 

@@ -3,6 +3,7 @@ using System.Data;
 using System.Globalization;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
+using Carpo.NetGen.Komande;
 using Carpo.NetGen.Kontrole;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
@@ -23,6 +24,9 @@ namespace Carpo.NetGen.Ui
     /// </summary>
     public sealed class Dijalog : XtraForm
     {
+        private Func<string, DataTable> _citaj;
+        private SqlKontekst _kontekst;
+
         public Dijalog()
         {
             BonusSkins.Register();
@@ -37,6 +41,8 @@ namespace Carpo.NetGen.Ui
         {
             if (forma == null)
                 return;
+            _citaj = citaj;
+            _kontekst = kontekst;
             string naslov = forma.Atributi == null ? null : forma.Atributi.Vrijednost("CAPTION");
             if (string.IsNullOrEmpty(naslov))
                 naslov = forma.Ime;
@@ -87,6 +93,12 @@ namespace Carpo.NetGen.Ui
                     c.Visible = m.Vidljivo;
                 PostaviTekst(c, k, m);
                 CarpoIzgled.Primijeni(c, k.Grana);
+                var dugme = c as SimpleButton;
+                if (dugme != null)
+                {
+                    dugme.Tag = k.Atributi == null ? "" : (k.Atributi.Vrijednost("ONCLICK") ?? "");
+                    dugme.Click += GumbKlik;
+                }
                 if (m.Natpis)
                 {
                     var l = new LabelControl();
@@ -113,7 +125,8 @@ namespace Carpo.NetGen.Ui
                     b.Top = ClientSize.Height - 36;
                     b.Width = 96;
                     b.Anchor = AnchorStyles.Left | AnchorStyles.Bottom;
-                    b.DialogResult = Odustajanje(b.Text) ? DialogResult.Cancel : DialogResult.OK;
+                    b.Tag = g.Naredba ?? "";
+                    b.Click += GumbKlik;
                     CarpoIzgled.Gumb(b);
                     Controls.Add(b);
                     x += 104;
@@ -134,6 +147,52 @@ namespace Carpo.NetGen.Ui
             if (on.TrimStart().StartsWith("select", StringComparison.OrdinalIgnoreCase) && citaj != null)
                 NapuniIzOnLoad(on, kontekst, citaj);
             ShowDialog();
+        }
+
+        private void GumbKlik(object sender, EventArgs e)
+        {
+            var b = sender as SimpleButton;
+            string naredba = b == null ? "" : (b.Tag as string ?? "");
+            if (naredba.Trim().Length == 0)
+            {
+                DialogResult = b != null && Odustajanje(b.Text) ? DialogResult.Cancel : DialogResult.OK;
+                return;
+            }
+            Lanac.Ishod ishod = Lanac.Izvrsi(naredba, true, null);
+            string[] seg = Lanac.Segmenti(naredba);
+            for (int i = 0; i < seg.Length; i++)
+            {
+                string t = (seg[i] ?? "").Trim();
+                if (!t.StartsWith("select", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (ZastitaSql.Tekst(t).Pise || _citaj == null)
+                    continue;
+                string sql = SqlTekst.Sredi(t, _kontekst);
+                NgDnevnik.Sql(sql);
+                try
+                {
+                    _citaj(sql);
+                }
+                catch (Exception ex)
+                {
+                    NgDnevnik.Greska(ex.Message + " | " + sql);
+                }
+            }
+            string fokus = DijalogKlik.Fokus(naredba);
+            if (fokus.Length > 0)
+            {
+                Control[] n = Controls.Find(fokus, true);
+                if (n.Length > 0)
+                    n[0].Focus();
+            }
+            if (ishod.Ostaje)
+            {
+                if (b != null)
+                    b.DialogResult = DialogResult.None;
+                return;
+            }
+            if (ishod.Zatvara || ishod.Button2)
+                DialogResult = ishod.Button2 ? DialogResult.Cancel : DialogResult.OK;
         }
 
         public string Vrijednost(string ime)
@@ -235,7 +294,6 @@ namespace Carpo.NetGen.Ui
             if (gumb != null)
             {
                 gumb.Text = tekst;
-                gumb.DialogResult = Odustajanje(tekst) ? DialogResult.Cancel : DialogResult.OK;
                 return;
             }
             var label = c as LabelControl;

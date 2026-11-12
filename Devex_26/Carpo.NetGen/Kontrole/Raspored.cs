@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Model;
 using Carpo.NetGen.Xml;
@@ -194,6 +195,175 @@ namespace Carpo.NetGen.Kontrole
             if (n == 6)
                 return "SizableToolWindow";
             return "";
+        }
+
+        /// <summary>
+        /// Ključevi forme koju gumb otvara. Natpis, /14, tab i tekst kontrole kao Form2.SrediKontrolu.
+        /// AcceptButton se ne postavlja (Form2.vb 3367).
+        /// </summary>
+        public static void KljuceviForme(NgForm forma, Dictionary<string, string> s)
+        {
+            if (forma == null || s == null)
+                return;
+            string naslov = forma.Atributi == null ? "" : (forma.Atributi.Vrijednost("CAPTION") ?? "");
+            s["formaNaslov"] = naslov.Trim();
+            int sirina;
+            int visina;
+            Velicina(forma.Atributi, out sirina, out visina);
+            s["formaSirina"] = sirina.ToString();
+            s["formaVisina"] = visina.ToString();
+            s["acceptButton"] = "";
+            s["tab"] = TabRed(forma);
+            string onload = (forma.OnLoad ?? "").Trim();
+            if (forma.Kontrole == null)
+                return;
+            for (int i = 0; i < forma.Kontrole.Count; i++)
+            {
+                NgControl k = forma.Kontrole[i];
+                if (k == null || string.IsNullOrEmpty(k.Name))
+                    continue;
+                int z = 0;
+                Mjesto m = Izracunaj(k.Grana, k.Atributi, ref z);
+                string prefiks = "kontrola." + k.Name + ".";
+                s[prefiks + "tekst"] = m.Tekst ?? "";
+                if (k.Atributi != null && k.Atributi.Ima("TOP"))
+                    s[prefiks + "top"] = m.Vrh.ToString();
+                if (k.Atributi != null && k.Atributi.Ima("LEFT"))
+                    s[prefiks + "left"] = m.Lijevo.ToString();
+                if (k.Atributi != null && k.Atributi.Ima("SIZE"))
+                    s[prefiks + "velicina"] = (k.Atributi.Vrijednost("SIZE") ?? "").Trim();
+                if (OnLoadPuni(onload, k.Name) && (k.Grana == NgGrana.Text || k.Grana == NgGrana.Number || k.Grana == NgGrana.Date || k.Grana == NgGrana.Search))
+                    s[prefiks + "izOnLoada"] = "true";
+            }
+        }
+
+        public static string TabRed(NgForm forma)
+        {
+            if (forma == null)
+                return "";
+            int cur = -1;
+            int brojac = 0;
+            var red = new List<string>();
+            var indeks = new List<int>();
+            var poredak = new List<int>();
+            int n = 0;
+            if (forma.Kontrole != null)
+            {
+                for (int i = 0; i < forma.Kontrole.Count; i++)
+                {
+                    NgControl k = forma.Kontrole[i];
+                    if (k == null || string.IsNullOrEmpty(k.Name))
+                        continue;
+                    bool ukljuceno = Ukljuceno(k.Atributi, "ENABLED");
+                    bool vidljivo = Ukljuceno(k.Atributi, "VISIBLE");
+                    int idx;
+                    bool uRedu;
+                    int tab;
+                    if (k.Atributi != null && k.Atributi.Ima("TABINDEX") && int.TryParse((k.Atributi.Vrijednost("TABINDEX") ?? "").Trim(), out tab))
+                    {
+                        idx = tab;
+                        uRedu = tab >= 0;
+                    }
+                    else
+                    {
+                        cur = cur + 1;
+                        idx = cur;
+                        uRedu = true;
+                    }
+                    if (!ukljuceno)
+                        uRedu = false;
+                    if (uRedu)
+                    {
+                        red.Add(k.Name);
+                        indeks.Add(idx);
+                        poredak.Add(n);
+                        n++;
+                    }
+                    if (BrojiTab(k.Grana) && ukljuceno && vidljivo)
+                        brojac++;
+                }
+            }
+            if (forma.Gumbi != null)
+            {
+                for (int i = 0; i < forma.Gumbi.Count; i++)
+                {
+                    string natpis = forma.Gumbi[i].Natpis ?? "";
+                    if (natpis.Length == 0)
+                        continue;
+                    red.Add(natpis);
+                    indeks.Add(brojac + i + 1);
+                    poredak.Add(n);
+                    n++;
+                }
+            }
+            for (int a = 0; a < red.Count; a++)
+            {
+                for (int b = a + 1; b < red.Count; b++)
+                {
+                    if (indeks[b] < indeks[a] || (indeks[b] == indeks[a] && poredak[b] < poredak[a]))
+                    {
+                        string ts = red[a];
+                        red[a] = red[b];
+                        red[b] = ts;
+                        int ti = indeks[a];
+                        indeks[a] = indeks[b];
+                        indeks[b] = ti;
+                        int tp = poredak[a];
+                        poredak[a] = poredak[b];
+                        poredak[b] = tp;
+                    }
+                }
+            }
+            return string.Join(",", red.ToArray());
+        }
+
+        private static bool OnLoadPuni(string onload, string ime)
+        {
+            if (string.IsNullOrEmpty(onload) || string.IsNullOrEmpty(ime))
+                return false;
+            string s = onload.ToLowerInvariant();
+            if (s.IndexOf("select", StringComparison.Ordinal) != 0 && s.TrimStart().IndexOf("select", StringComparison.Ordinal) != 0)
+                return false;
+            s = s.TrimStart();
+            if (s.StartsWith("select *", StringComparison.Ordinal) || s.StartsWith("select*", StringComparison.Ordinal))
+                return true;
+            return ImeUSql(s, ime.ToLowerInvariant());
+        }
+
+        private static bool ImeUSql(string sql, string ime)
+        {
+            int od = 0;
+            while (od < sql.Length)
+            {
+                int i = sql.IndexOf(ime, od, StringComparison.Ordinal);
+                if (i < 0)
+                    return false;
+                bool prije = i == 0 || !Slovo(sql[i - 1]);
+                int kraj = i + ime.Length;
+                bool poslije = kraj >= sql.Length || !Slovo(sql[kraj]);
+                if (prije && poslije)
+                    return true;
+                od = i + 1;
+            }
+            return false;
+        }
+
+        private static bool Slovo(char c)
+        {
+            return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
+        }
+
+        private static bool Ukljuceno(NgAttributeBag a, string ime)
+        {
+            if (a == null || !a.Ima(ime))
+                return true;
+            bool? z = Zastavica(a.Vrijednost(ime));
+            return !z.HasValue || z.Value;
+        }
+
+        private static bool BrojiTab(NgGrana grana)
+        {
+            return grana != NgGrana.Label && grana != NgGrana.Group && grana != NgGrana.Panel;
         }
 
         private static bool? Zastavica(string v)

@@ -30,6 +30,7 @@ namespace Carpo.NetGen.GridTest
             StabloTestovi();
             KomandeTestovi();
             ZastitaTestovi();
+            DijalogKlikTest();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -71,6 +72,34 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void DijalogKlikTest()
+        {
+            NgProject p = Ucitaj("JeziciNG.xml");
+            Dictionary<string, string> ok = DijalogKlik.Stavke(p, "Unesi.buttonOK");
+            T("dijalog-ostaje", ok != null && ok["ostajeOtvorena"] == "true" && ok["fokus"] == "naziv" && ok["sqlImaZalijep"] == "false",
+                ok == null ? "nema" : ok["fokus"]);
+            Dictionary<string, string> zatvori = DijalogKlik.Stavke(p, "Unesi.buttonCLOSE");
+            T("dijalog-ok", zatvori != null && zatvori["okClick"] == "true" && zatvori["dodajPoruka"] == "", "");
+            Dictionary<string, string> odustani = DijalogKlik.Stavke(p, "Izmijeni.buttonCLOSE");
+            T("dijalog-close", odustani != null && odustani["refreshMaster"] == "false", "");
+            Dictionary<string, string> spremi = DijalogKlik.Stavke(p, "Izmijeni.buttonOK");
+            T("dijalog-refresh", spremi != null && spremi["refreshMaster"] == "true" && spremi["ostajeOtvorena"] == "false", "");
+            NgProject oznaka = Ucitaj("OznakaKL.xml");
+            NgForm frm = null;
+            if (oznaka != null)
+            {
+                for (int i = 0; i < oznaka.Forme.Count; i++)
+                {
+                    if (string.Equals(oznaka.Forme[i].Ime, "FRMEDIT", StringComparison.OrdinalIgnoreCase))
+                        frm = oznaka.Forme[i];
+                }
+            }
+            var kljucevi = new Dictionary<string, string>();
+            Raspored.KljuceviForme(frm, kljucevi);
+            T("frmedit-tab", frm != null && kljucevi["tab"] == "Label16,oznaka2,Prihvati,Odustani" && kljucevi["formaNaslov"] == "Izmjena oznake" && kljucevi["acceptButton"] == "",
+                kljucevi.ContainsKey("tab") ? kljucevi["tab"] : "");
         }
 
         private static bool Ima(List<string> upiti, string dio)
