@@ -2,7 +2,9 @@
 
 `scripts/spin/Prenesi.ps1` na sql-ai čita s jupiter2019 i jupiter2022 samo `sys.columns` i `sys.sql_modules`. Procedure se tamo ne pokreću i retci tablica se ne čitaju. Tijelo se kreira na spinu. Ako tekst ima INSERT, UPDATE, DELETE ili MERGE, izvor je označen s `pise`. Redoslijed: Biovega, pa ostale baze na jupiter2019, zatim jupiter2022. Izvor nakon runa je u `artifacts/spin/izvori.md`.
 
-`scripts/spin/stubovi.sql` i `scripts/spin/Otvori.ps1` rade samo na `localhost` / baza `spin`. Ako otvaranje javi da procedura ne postoji, skripta kreira prazan `SELECT ... WHERE 1 = 0` s parametrima iz poziva. Ako javi nepoznat stupac u jednostavnom `FROM`, doda `varchar(50) NULL`. Ništa od toga ne piše retke. Popis kreiranog ide u `artifacts/spin/stubovi-kreirani.md`, ishod u `artifacts/spin/otvaranje.md`.
+`scripts/spin/stubovi.sql` i `scripts/spin/Otvori.ps1` rade samo na `localhost` / baza `spin`. Ako otvaranje javi da procedura ne postoji, skripta kreira prazan `SELECT ... WHERE 1 = 0` s parametrima iz poziva. Ako javi nepoznat stupac u jednostavnom `FROM`, doda `varchar(50) NULL`. Stub nastaje samo kad `Prenesi.ps1` nije našao tijelo. Popis kreiranog ide u `artifacts/spin/stubovi-kreirani.md`, ishod u `artifacts/spin/otvaranje.md`.
+
+`scripts/spin/Retci.ps1` na spinu složi `dbo.klmasterroba` iz `sys.columns` (isti serveri, bez čitanja redaka). Ako definicije nema, stub su stupci iz `OznakaKL` SELECT-a: `klmasterrobaid`, `sortkey`, `Naziv`, `oznaka`, `oznaka2`. Ako je tablica prazna, ubaci jedan red (`Naziv = NetGen test`, `sortkey = 01`). Postojeći retci se ne diraju. NetGen stavlja fokus na grid kad `RowCount > 0` (`Form1.vb` 2059–2072). Izvještaj je `artifacts/spin/retci.md`. `OKL-58` time dobiva uvjet za `fokus=grid`; stavka nije zatvorena dok test na sql-ai ne vrati taj ključ.
 
 To nisu prava poslovna tijela. Da test bude vjerodostojan, korisnik treba dati:
 
