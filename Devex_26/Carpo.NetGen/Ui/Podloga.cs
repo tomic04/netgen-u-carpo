@@ -130,7 +130,7 @@ namespace Carpo.NetGen.Ui
             pogled.OptionsView.ShowGroupPanel = true;
             pogled.OptionsSelection.MultiSelect = true;
             pogled.OptionsSelection.EnableAppearanceFocusedCell = false;
-            pogled.FocusRectStyle = DrawFocusRectStyle.RowFocus;
+            pogled.FocusRectStyle = DevExpress.XtraGrid.Views.Grid.DrawFocusRectStyle.RowFocus;
             pogled.OptionsSelection.MultiSelectMode = GridMultiSelectMode.RowSelect;
             if (master)
                 pogled.OptionsView.ShowIndicator = true;
