@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
@@ -37,6 +39,7 @@ namespace Carpo.NetGen.Ui
         private NgProject _projekt;
         private string _spoj = "";
         private string _server = "";
+        private string _sqlGreska = "";
         private bool _punim;
         private int _redovaDetail;
         private DataTable _comboRedovi;
@@ -579,10 +582,221 @@ namespace Carpo.NetGen.Ui
             }
             catch (Exception ex)
             {
+                _sqlGreska = ex.Message;
                 NgDnevnik.Greska(ex.Message + " | " + sql);
                 PostaviStatus(ex.Message);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Klik na podlozi. Upis i fiskalizacija se ne šalju. Dijalog se zatvara kao Button2.
+        /// </summary>
+        public List<string> ProvediKlikove()
+        {
+            var redovi = new List<string>();
+            string granula = _projekt == null ? Text : (_projekt.Naslov ?? Text);
+            int master = _master.Stanje.Tablica == null ? 0 : _master.Stanje.Tablica.Rows.Count;
+            bool sqlMaster = MasterPuni();
+            if (!string.IsNullOrEmpty(_sqlGreska))
+                redovi.Add(Linija(granula, "master", "grid", "GRESKA", _sqlGreska, "netgen/Form1.vb:3882"));
+            else if (sqlMaster && master == 0)
+                redovi.Add(Linija(granula, "master", "grid", "PRAZAN", "NetGen puni master, grid je prazan", "netgen/Form1.vb:3882"));
+            else
+                redovi.Add(Linija(granula, "master", "grid", "OK", master.ToString() + " redova", "netgen/Form1.vb:3882"));
+
+            if (!_detail.Stanje.Nema && !_detail.Stanje.OtvaraFormu)
+            {
+                int det = _detail.Stanje.Tablica == null ? 0 : _detail.Stanje.Tablica.Rows.Count;
+                if (!string.IsNullOrEmpty(_sqlGreska) && det == 0)
+                    redovi.Add(Linija(granula, "detail", "grid", "GRESKA", _sqlGreska, "netgen/Form1.vb:2258"));
+                else if (master > 0 && det == 0)
+                    redovi.Add(Linija(granula, "detail", "grid", "PRAZAN", "master ima red, detail je prazan", "netgen/Form1.vb:2258"));
+                else
+                    redovi.Add(Linija(granula, "detail", "grid", "OK", det.ToString() + " redova", "netgen/Form1.vb:2258"));
+            }
+
+            var tab = NadjiTab();
+            if (tab != null)
+            {
+                for (int i = 0; i < tab.TabPages.Count; i++)
+                {
+                    try
+                    {
+                        tab.SelectedTabPageIndex = i;
+                        redovi.Add(Linija(granula, "tab", tab.TabPages[i].Text, "OK", "", "netgen/Form1.vb:2258"));
+                    }
+                    catch (Exception ex)
+                    {
+                        redovi.Add(Linija(granula, "tab", tab.TabPages[i].Text, "GRESKA", ex.Message, "netgen/Form1.vb:2258"));
+                    }
+                }
+            }
+
+            if (trMain.Nodes.Count > 0)
+            {
+                _sqlGreska = "";
+                try
+                {
+                    PokreniZatvaranje();
+                    trMain.FocusedNode = trMain.Nodes[0];
+                    Application.DoEvents();
+                    if (!string.IsNullOrEmpty(_sqlGreska))
+                        redovi.Add(Linija(granula, "stablo", "cvor", "GRESKA", _sqlGreska, "netgen/Form1.vb:7426"));
+                    else
+                        redovi.Add(Linija(granula, "stablo", "cvor", "OK", "prvi cvor", "netgen/Form1.vb:7426"));
+                }
+                catch (Exception ex)
+                {
+                    redovi.Add(Linija(granula, "stablo", "cvor", "GRESKA", ex.Message, "netgen/Form1.vb:7426"));
+                }
+            }
+
+            var gumbi = new List<SimpleButton>();
+            for (int i = 0; i < pnlButtons.Controls.Count; i++)
+            {
+                var g = pnlButtons.Controls[i] as SimpleButton;
+                if (g != null)
+                    gumbi.Add(g);
+            }
+            for (int i = 0; i < gumbi.Count; i++)
+            {
+                SimpleButton g = gumbi[i];
+                string naredba = g.Tag == null ? "" : g.Tag.ToString();
+                string natpis = (g.Text ?? "").Replace("\r\n", " ").Trim();
+                if (Destruktivan(naredba))
+                {
+                    redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", naredba, "netgen/Form1.vb:5664"));
+                    continue;
+                }
+                _sqlGreska = "";
+                try
+                {
+                    PokreniZatvaranje();
+                    g.PerformClick();
+                    Application.DoEvents();
+                    if (!string.IsNullOrEmpty(_sqlGreska))
+                        redovi.Add(Linija(granula, "gumb", natpis, "GRESKA", _sqlGreska, "netgen/Form1.vb:5664"));
+                    else
+                        redovi.Add(Linija(granula, "gumb", natpis, "OK", naredba, "netgen/Form1.vb:5664"));
+                }
+                catch (Exception ex)
+                {
+                    redovi.Add(Linija(granula, "gumb", natpis, "GRESKA", ex.Message, "netgen/Form1.vb:5664"));
+                }
+            }
+            ZaustaviZatvaranje();
+            return redovi;
+        }
+
+        private bool _zatvaraj;
+
+        private void PokreniZatvaranje()
+        {
+            if (_zatvaraj)
+                return;
+            _zatvaraj = true;
+            var nit = new Thread(ZatvarajDijaloge);
+            nit.IsBackground = true;
+            nit.Start();
+        }
+
+        private void ZaustaviZatvaranje()
+        {
+            _zatvaraj = false;
+        }
+
+        private void ZatvarajDijaloge()
+        {
+            while (_zatvaraj)
+            {
+                Thread.Sleep(200);
+                Form[] otvorene;
+                try
+                {
+                    otvorene = new Form[Application.OpenForms.Count];
+                    for (int i = 0; i < Application.OpenForms.Count; i++)
+                        otvorene[i] = Application.OpenForms[i];
+                }
+                catch
+                {
+                    continue;
+                }
+                for (int i = 0; i < otvorene.Length; i++)
+                {
+                    Form f = otvorene[i];
+                    if (f == null || f == this || f.IsDisposed || !(f is Dijalog))
+                        continue;
+                    try
+                    {
+                        f.BeginInvoke(new Action(delegate ()
+                        {
+                            if (!f.IsDisposed)
+                            {
+                                f.DialogResult = DialogResult.Cancel;
+                                f.Close();
+                            }
+                        }));
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+        }
+
+        private bool MasterPuni()
+        {
+            if (_projekt == null)
+                return false;
+            string on = (_projekt.OnLoad ?? "").Trim();
+            if (on.Length > 0 && !on.StartsWith(":", StringComparison.Ordinal))
+                return true;
+            return !string.IsNullOrWhiteSpace(_master.Stanje.IzvorSql);
+        }
+
+        private static bool Destruktivan(string naredba)
+        {
+            if (string.IsNullOrEmpty(naredba))
+                return false;
+            if (naredba.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            return ImaRijec(naredba, "insert") || ImaRijec(naredba, "update") || ImaRijec(naredba, "delete");
+        }
+
+        private static bool ImaRijec(string tekst, string rijec)
+        {
+            string t = tekst.ToLowerInvariant();
+            int i = 0;
+            while (i <= t.Length - rijec.Length)
+            {
+                int n = t.IndexOf(rijec, i, StringComparison.Ordinal);
+                if (n < 0)
+                    return false;
+                bool lijevo = n == 0 || !char.IsLetter(t[n - 1]);
+                int kraj = n + rijec.Length;
+                bool desno = kraj >= t.Length || !char.IsLetter(t[kraj]);
+                if (lijevo && desno)
+                    return true;
+                i = n + 1;
+            }
+            return false;
+        }
+
+        private XtraTabControl NadjiTab()
+        {
+            for (int i = 0; i < splitGrid.Panel2.Controls.Count; i++)
+            {
+                var t = splitGrid.Panel2.Controls[i] as XtraTabControl;
+                if (t != null)
+                    return t;
+            }
+            return null;
+        }
+
+        private static string Linija(string granula, string dio, string ime, string ishod, string poruka, string izvor)
+        {
+            return granula + "\t" + dio + "\t" + ime + "\t" + ishod + "\t" + (poruka ?? "").Replace("\t", " ").Replace("\r", " ").Replace("\n", " ") + "\t" + izvor;
         }
 
         private void OtvoriCarpoLog()

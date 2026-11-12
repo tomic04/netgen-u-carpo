@@ -251,6 +251,11 @@ namespace Carpo.TestShell
         /// </summary>
         public int PokreniUiSmoke(string snimka)
         {
+            return PokreniUiSmoke(snimka, false);
+        }
+
+        public int PokreniUiSmoke(string snimka, bool klik)
+        {
             _uiIshod = 0;
             _uiKlikGotov = false;
             var dir = Path.GetDirectoryName(snimka);
@@ -319,6 +324,24 @@ namespace Carpo.TestShell
                 SnimiEkran(snimka + ".ekran.png");
                 UpisiIshod(snimka, "FAIL nema screenshota " + TekstSnimke(snimka));
                 return 4;
+            }
+            if (klik && granula != null && !granula.IsDisposed)
+            {
+                var podloga = granula as Carpo.NetGen.Ui.Podloga;
+                if (podloga == null)
+                    File.WriteAllText(snimka + ".klik.txt", "nije NetGen podloga\tforma\t" + granula.GetType().Name + "\tGRESKA\t\tnetgen/Form1.vb:5664");
+                else
+                {
+                    try
+                    {
+                        var redovi = podloga.ProvediKlikove();
+                        File.WriteAllLines(snimka + ".klik.txt", redovi);
+                    }
+                    catch (Exception ex)
+                    {
+                        File.WriteAllText(snimka + ".klik.txt", "klik\t\t\tGRESKA\t" + ex.Message + "\tnetgen/Form1.vb:5664");
+                    }
+                }
             }
             try
             {

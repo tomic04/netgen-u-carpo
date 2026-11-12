@@ -9,6 +9,17 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      klik:
+        description: kratko je 3 granule, puno je noćni popis
+        type: choice
+        options:
+          - kratko
+          - puno
+        default: kratko
+  schedule:
+    # Noćni puni klik-pregled. GitHub ga pali s default grane.
+    - cron: "30 1 * * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -222,6 +233,21 @@ jobs:
           if ($LASTEXITCODE -eq 3) { throw "Jupiter smoke je poslao upis. Vidi docs/granule/smoke-jupiter.md" }
           if ($LASTEXITCODE -ne 0) { throw "Jupiter smoke nije zavrsio. Kod $LASTEXITCODE" }
           Get-Content -LiteralPath $md -TotalCount 30
+
+      - name: Klik pregled
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $exe = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin\Carpo.TestShell.exe"
+          if (-not (Test-Path -LiteralPath $exe)) { throw "Nema $exe" }
+          $puni = $env:GITHUB_EVENT_NAME -eq "schedule" -or "${{ github.event.inputs.klik }}" -eq "puno"
+          $popis = Join-Path $env:GITHUB_WORKSPACE "scripts\ui\klik-kratko.txt"
+          if ($puni) { $popis = Join-Path $env:GITHUB_WORKSPACE "scripts\ui\klik-puno.txt" }
+          $snimke = Join-Path $env:GITHUB_WORKSPACE "artifacts\ui-smoke"
+          Write-Host "Klik pregled $popis"
+          & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSmoke.ps1") -Exe $exe -XmlRoot (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Shots $snimke -Popis $popis -Klik
+          if ($LASTEXITCODE -ne 0) { throw "Klik pregled nije prosao. Kod $LASTEXITCODE" }
+          Get-Content -LiteralPath (Join-Path $snimke "klik-pregled.md")
 
       - name: Stabilni TestShell na sql-ai
         # Ova grana ne pise C:\NetGenCarpo\zadnji.txt i ne vodi UI smoke.
