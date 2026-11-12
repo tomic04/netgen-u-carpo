@@ -17,6 +17,7 @@ namespace Carpo.NetGen.Granule
             l.Add(Click(root));
             l.Add(MsgBox(root));
             l.Add(Assembly(root));
+            l.Add(Prostor(root));
             return l;
         }
 
@@ -78,6 +79,27 @@ namespace Carpo.NetGen.Granule
             if (!ishod.Prekinuto || ishod.Pozvan || ishod.Argumenti[3] != "@a=1" || ishod.Argumenti[4] != "@a=1")
                 return Qa.P(granula, id, opis, izvor, "prekinuto=" + ishod.Prekinuto + " pozvan=" + ishod.Pozvan);
             Console.WriteLine("[Z] MPOdjavaNarNG NRD-ASSEMBLY tip=ExportToExcelNG.clsExportToExcelNG sklop=ExportToExcelNG prekinuto=da");
+            return Qa.Z(granula, id, opis, izvor);
+        }
+
+        private static Stavka Prostor(string root)
+        {
+            const string granula = "MPTrgovinaPortal";
+            const string id = "NRD-PROSTOR";
+            const string opis = "ODJAVI zove poslovni prostor jednom i lanac ide do OK";
+            const string izvor = "netgen/Form2.vb:7489-7493";
+            string xml = Path.Combine(root, "definitions", "netgen", "BIOVEGA", "MPTrgovinaPortal.xml");
+            string tekst = Procitaj(xml);
+            const string komad = "POSLOVNIPROSTOR(@@gridmasterTrgovinaId)#OK";
+            if (tekst == null || tekst.IndexOf(komad, StringComparison.Ordinal) < 0)
+                return Qa.P(granula, id, opis, izvor, "XML nema POSLOVNIPROSTOR");
+            string naredba = "POSLOVNIPROSTOR(@@gridmasterTrgovinaId)";
+            if (!ProstorNaredba.Je(naredba) || ProstorNaredba.Argument(naredba) != "@@GRIDMASTERTRGOVINAID")
+                return Qa.P(granula, id, opis, izvor, "argument [" + ProstorNaredba.Argument(naredba) + "]");
+            Lanac.Ishod ishod = Lanac.Izvrsi("update trgovina set aktivno = 0#" + komad, true, null);
+            if (!ishod.Zatvara || ishod.Prekinuto)
+                return Qa.P(granula, id, opis, izvor, "zatvara=" + ishod.Zatvara);
+            Console.WriteLine("[Z] MPTrgovinaPortal NRD-PROSTOR argument=@@GRIDMASTERTRGOVINAID zatvara=da");
             return Qa.Z(granula, id, opis, izvor);
         }
 
