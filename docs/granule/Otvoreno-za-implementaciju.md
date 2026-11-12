@@ -13,7 +13,7 @@ Snimak CI #31 ima 160 stavki. U ovom prolazu su iz tablice izašle `MPK-30`, `MP
 | 3 | Datum: format, ključne riječi, krivi atribut | 5 | 6 |
 | 4 | Detail grid: veza, jednokratne kolone, selector | 4 | 9 |
 | 5 | totalgen i ASSEMBLYLOAD | 4 | 6 |
-| 6 | onlytree, CLICK, enable po natpisu, dnevnik | 3 | 3 |
+| 6 | onlytree, CLICK, enable po natpisu, dnevnik | 2 | 2 |
 | 7 | Kvačica, suma, sort, edit, Enter i selekcija | 3 | 14 |
 | 8 | Raspored dijaloga: /14, tab, label, ONLOAD polja | 3 | 12 |
 | 9 | Stupac mastera: tip, širina, skrivanje, poredak | 3 | 11 |
@@ -33,7 +33,7 @@ Snimak CI #31 ima 160 stavki. U ovom prolazu su iz tablice izašle `MPK-30`, `MP
 | 23 | Redoslijed punjenja podloge | 1 | 1 |
 | 24 | fidus nema tablicu ssMeni | 1 | 1 |
 
-Zbroj stavki u tablici ispod je 153.
+Zbroj stavki u tablici ispod je 152.
 
 ## 1. XML nije u spin ssMeni
 
@@ -142,7 +142,7 @@ Zbroj stavki u tablici ispod je 153.
 
 ## 6. onlytree, CLICK, enable po natpisu, dnevnik
 
-**3 granula, 3 stavki:** KntBlaPromet, LVObracun, MPPorKPNG.
+**2 granula, 2 stavki:** KntBlaPromet, MPPorKPNG. `LVO-20` je zatvoren: `onlytree` puni samo stablo, ime forme je tekst prije zagrade.
 
 **NetGen:** `FILLEXPLORER=onlytree` zove samo `NapuniDrvoVrijeme` (`Form1.vb` 5475). `Ime(@a=)` nije ime forme (`Form2.vb` 4407). `CLICK(Ok)` izvrši `ONCLICK` te kontrole (`Form2.vb` 7151–7155). SQL filtera ide u NgDnevnik, ne u CB log.
 
@@ -150,7 +150,6 @@ Zbroj stavki u tablici ispod je 153.
 
 | Stavka | Očekivano | Izvor | Zašto je otvoreno |
 |---|---|---|---|
-| LVObracun `LVO-20` | onlytree ne salje master. Ime(@a=) nije ime forme | `netgen/Form1.vb:5475; netgen/Form2.vb:4407` | kuka nema ključ |
 | KntBlaPromet `KBP-20` | CLICK(Ok) izvrsi ONCLICK, ne samo zatvaranje | `netgen/Form2.vb:7151-7155` | kuka nema ključ |
 | MPPorKPNG `MPK-43` | SQL filtera ide u NgDnevnik, ne u CBLog | `docs/funkcionalnosti/logging.md` | dijalog još nije u kuki |
 

@@ -432,16 +432,16 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `onlytree`
 - **NetGen:** prazna forma se ne prikaže (`Form2.vb` 4430). Vrijednost `onlytree` zove samo `NapuniDrvoVrijeme` (`Form1.vb` 5475–5476). Master SQL se ne šalje. `true` zamijeni master (`5445–5452`).
-- **Carpo:** `control populate` nema ovu treću vrijednost. `CommandRunner` ispis još ne izvršava (`Placeholders.cs` 19–24).
-- **Posljedica:** `LVObracun` i `JOPPD` gumb „Osvježi drvo“ ne smije ponovo poslati master. `STATUS` s `true` smije.
+- **Carpo:** `FillExplorer.SamoStablo` na praznoj formi zove `Stablo.Ucitaj` i ne dira master (`Podloga.OtvoriFormu`). `true` i dalje zamijeni master.
+- **Posljedica:** `LVObracun` „Osvježi drvo“ šalje `spLVGla_Tree`, ne `spLVGla_Query`. `STATUS` s `true` i dalje zamijeni master.
 - **Test:** `LVO-04`, `JOP-03`
 
 ## R55 `ImeForme(@a=@@x)` nije ime forme
 
 - **Element:** poziv forme s zagradom
 - **NetGen:** `NovaGenerickaForma2` reže na `(` (`Form2.vb` 4407–4418). Lijevo je ime forme, unutra ide na početak `strParametriSvi`. `-freezid` u tom nizu zabrani novi id (`4413–4415`). Vodeća `:` i dalje otvara formu (`Form1.vb` 4862–4867).
-- **Carpo:** `form open` ne parsira `@a=@@x` iz istog tokena.
-- **Posljedica:** `LVObracun` `INSERTLVGLA(@hrkadroviid = 0)` traži formu `INSERTLVGLA`, a `0` je parametar. Cijeli string kao ime forme ne postoji.
+- **Carpo:** `PozivForme.Rastavi` reže na `(` (`Podloga.OtvoriFormu`, kuka gumba). Ime je lijevo, unutrašnjost je `ParametriForme`. `-freezid` postavi `FreezId`.
+- **Posljedica:** `LVObracun` `Unos` otvara `INSERTLVGLA`, a `@hrkadroviid = 0` je parametar, ne dio imena.
 - **Test:** `LVO-05`, `LVO-20`
 
 ## R56 `BUTTONS` prepiše samo prvih N gumba

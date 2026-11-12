@@ -77,15 +77,7 @@ namespace Carpo.NetGen.TestHooks
             NgProject p = Projekt(zahtjev.XmlPutanja);
             if (p == null)
                 return new Pogled { Izvedeno = false, Napomena = "XML" };
-            NgButton gumb = null;
-            for (int i = 0; i < p.Gumbi.Count; i++)
-            {
-                if (string.Equals(p.Gumbi[i].Natpis, zahtjev.Cilj, StringComparison.OrdinalIgnoreCase))
-                {
-                    gumb = p.Gumbi[i];
-                    break;
-                }
-            }
+            NgButton gumb = NadjiGumb(p, zahtjev.Cilj);
             if (gumb == null)
                 return new Pogled { Izvedeno = false, Napomena = "nema gumba " + (zahtjev.Cilj ?? "") };
             var s = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -96,17 +88,76 @@ namespace Carpo.NetGen.TestHooks
             s["ispis"] = Lanac.IspisSegment(gumb.Naredba);
             s["pageHeaderRight"] = PageHeaderRight(p);
             s["border"] = "Sizable";
+            PozivForme.Poziv poziv = PozivForme.Rastavi(PrviSegment(gumb.Naredba));
+            s["formaIme"] = poziv.Ime;
+            s["formaParam"] = SqlTekst.Sredi(poziv.Parametri, new SqlKontekst { OperaterId = "7", Node = "null" });
+            s["freezId"] = poziv.FreezId ? "true" : "false";
             NgForm forma = FormaGumba(p, gumb.Naredba);
             if (forma != null)
             {
                 string fill = FillExplorer.Klasa(forma);
                 if (fill == "true" || fill == "prazan")
                     s["fillExplorer"] = fill;
+                if (FillExplorer.SamoStablo(fill))
+                {
+                    s["onlytree"] = "bez-mastera";
+                    s["masterSql"] = "";
+                    var stablo = new Stablo();
+                    stablo.Kontekst.OperaterId = "7";
+                    stablo.Kontekst.Node = "null";
+                    stablo.ImeXml = Path.GetFileName(zahtjev.XmlPutanja ?? "");
+                    stablo.Ucitaj(p, Citaj);
+                    s["stabloSql"] = string.Join(" || ", stablo.Stanje.SqlPozivi.ToArray());
+                }
+                else if (FillExplorer.SaljeMaster(fill))
+                    s["masterSql"] = FillExplorer.NoviMaster(forma, s["formaParam"]);
                 Raspored.KljuceviForme(forma, s);
                 s["datumParam"] = ImaDatum(forma) ? "yyyyMMdd" : "";
             }
             s["dnevnik"] = "NetGen SQL";
             return new Pogled { Izvedeno = true, Stavke = s };
+        }
+
+        private static NgButton NadjiGumb(NgProject p, string cilj)
+        {
+            if (p == null || string.IsNullOrEmpty(cilj))
+                return null;
+            if (p.Gumbi != null)
+            {
+                for (int i = 0; i < p.Gumbi.Count; i++)
+                {
+                    if (string.Equals(p.Gumbi[i].Natpis, cilj, StringComparison.OrdinalIgnoreCase))
+                        return p.Gumbi[i];
+                }
+            }
+            var eff = GumbNatpis.Efektivni(p);
+            for (int i = 0; i < eff.Count; i++)
+            {
+                if (string.Equals(eff[i].Natpis, cilj, StringComparison.OrdinalIgnoreCase))
+                    return eff[i];
+            }
+            string tree = p.Tree ?? "";
+            string[] dijelovi = tree.Split('#');
+            for (int i = 0; i < dijelovi.Length; i++)
+            {
+                string seg = dijelovi[i] ?? "";
+                int k = seg.IndexOf(':');
+                if (k <= 0)
+                    continue;
+                string natpis = seg.Substring(0, k).Trim();
+                if (!string.Equals(natpis, cilj, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                return new NgButton(0, natpis, seg.Substring(k + 1).Trim());
+            }
+            return null;
+        }
+
+        private static string PrviSegment(string naredba)
+        {
+            if (string.IsNullOrEmpty(naredba))
+                return "";
+            string[] dijelovi = naredba.Split('#');
+            return dijelovi.Length == 0 ? "" : (dijelovi[0] ?? "").Trim();
         }
 
         private static bool ImaDatum(NgForm forma)
@@ -125,10 +176,7 @@ namespace Carpo.NetGen.TestHooks
         {
             if (p == null || p.Forme == null || string.IsNullOrEmpty(naredba))
                 return null;
-            string[] dijelovi = naredba.Split('#');
-            string ime = dijelovi.Length == 0 ? "" : dijelovi[0].Trim();
-            if (ime.StartsWith(":", StringComparison.Ordinal))
-                ime = ime.Substring(1);
+            string ime = PozivForme.Rastavi(PrviSegment(naredba)).Ime;
             if (ime.Length == 0)
                 return null;
             for (int i = 0; i < p.Forme.Count; i++)
@@ -400,7 +448,6 @@ namespace Carpo.NetGen.TestHooks
             s["assemblyload.greska"] = "prekini";
             s["totalgen.dijalog"] = "parametri-dva";
             s["totalgen.shell"] = "master-sql";
-            s["onlytree.param"] = "samo-stablo";
             s["click.ok"] = "repx-template";
             s["carpoform.kup"] = CarpoFormKup(projekt);
         }

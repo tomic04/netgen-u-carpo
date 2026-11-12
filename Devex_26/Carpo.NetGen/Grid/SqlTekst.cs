@@ -18,6 +18,7 @@ namespace Carpo.NetGen.Grid
         public string EditedColumn = "";
         public string LastValue = "";
         public string SelectedColor = "";
+        public string ParametriForme = "";
     }
 
     public static class SqlTekst
@@ -91,6 +92,7 @@ namespace Carpo.NetGen.Grid
                 k.EditedColumn = izvor.EditedColumn;
                 k.LastValue = izvor.LastValue;
                 k.SelectedColor = izvor.SelectedColor;
+                k.ParametriForme = izvor.ParametriForme;
             }
             if (string.IsNullOrEmpty(k.Id))
                 k.Id = "0";

@@ -38,6 +38,17 @@ namespace Carpo.NetGen.Komande
             return klasa == "prazan";
         }
 
+        /// <summary>onlytree zove samo NapuniDrvoVrijeme. Master se ne šalje. Form1.vb 5475–5476.</summary>
+        public static bool SamoStablo(string klasa)
+        {
+            return klasa == "onlytree";
+        }
+
+        public static bool SaljeMaster(string klasa)
+        {
+            return klasa == "true" || klasa == "treeandmaster" || klasa == "treeandrefreshmaster";
+        }
+
         /// <summary>ONSUBMIT, plus parametri ako prvih 6 nije DML i nema !!. Form2.vb 3378–3388.</summary>
         public static string NoviMaster(NgForm forma, string parametri)
         {
@@ -280,6 +291,46 @@ namespace Carpo.NetGen.Komande
             if (double.TryParse(norm, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out broj))
                 return norm;
             return v;
+        }
+    }
+
+    /// <summary>
+    /// IMEFORME(@a=@@x) nije ime forme. Form2.vb 4407–4418.
+    /// Lijevo od prve zagrade je ime. Unutrašnjost ide u parametre. -freezid zabrani novi id.
+    /// </summary>
+    public static class PozivForme
+    {
+        public sealed class Poziv
+        {
+            public string Ime = "";
+            public string Parametri = "";
+            public bool FreezId;
+        }
+
+        public static Poziv Rastavi(string token)
+        {
+            var p = new Poziv();
+            if (string.IsNullOrWhiteSpace(token))
+                return p;
+            string t = token.Trim();
+            if (t.StartsWith(":", StringComparison.Ordinal))
+                t = t.Substring(1).Trim();
+            int z = t.IndexOf('(');
+            if (z <= 0)
+            {
+                p.Ime = t;
+                return p;
+            }
+            p.Ime = t.Substring(0, z).Trim();
+            int duljina = t.Length - z - 2;
+            string unutra = duljina > 0 ? t.Substring(z + 1, duljina) : "";
+            if (unutra.IndexOf("-freezid", StringComparison.Ordinal) >= 0)
+            {
+                p.FreezId = true;
+                unutra = unutra.Replace("-freezid", "");
+            }
+            p.Parametri = unutra;
+            return p;
         }
     }
 }

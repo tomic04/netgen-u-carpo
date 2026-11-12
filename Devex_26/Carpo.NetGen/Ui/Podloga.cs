@@ -257,14 +257,31 @@ namespace Carpo.NetGen.Ui
                 IzvrsiSql(sqlNaredba);
             else
             {
-                string master = _projekt == null ? "" : (_projekt.OnLoad ?? "");
-                if (master.IndexOf("@@node", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (!SamoStablo(naredba))
                 {
-                    _master.Ucitaj(_projekt, null);
-                    NapuniGrid();
+                    string master = _projekt == null ? "" : (_projekt.OnLoad ?? "");
+                    if (master.IndexOf("@@node", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        _master.Ucitaj(_projekt, null);
+                        NapuniGrid();
+                    }
                 }
                 OtvoriFormu(naredba);
             }
+        }
+
+        private bool SamoStablo(string naredba)
+        {
+            if (_projekt == null || _projekt.Forme == null)
+                return false;
+            string ime = PozivForme.Rastavi(naredba).Ime;
+            for (int i = 0; i < _projekt.Forme.Count; i++)
+            {
+                if (!string.Equals(_projekt.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                return FillExplorer.SamoStablo(FillExplorer.Klasa(_projekt.Forme[i]));
+            }
+            return false;
         }
 
         private int _dubinaForme;
@@ -273,11 +290,10 @@ namespace Carpo.NetGen.Ui
         {
             if (string.IsNullOrWhiteSpace(naredba) || _projekt == null || _dubinaForme > 8)
                 return;
-            string trazeno = naredba.Trim();
-            if (trazeno.StartsWith(":", StringComparison.Ordinal))
-                trazeno = trazeno.Substring(1).Trim();
-            int zagrada = trazeno.IndexOf('(');
-            string ime = zagrada > 0 ? trazeno.Substring(0, zagrada).Trim() : trazeno;
+            PozivForme.Poziv poziv = PozivForme.Rastavi(naredba);
+            string ime = poziv.Ime;
+            if (poziv.Parametri.Length > 0)
+                _master.Kontekst.ParametriForme = poziv.Parametri + (string.IsNullOrEmpty(_master.Kontekst.ParametriForme) ? "" : "," + _master.Kontekst.ParametriForme);
             if (Lanac.OsvjezavaSegment(ime))
             {
                 OsvjeziMaster();
@@ -304,6 +320,12 @@ namespace Carpo.NetGen.Ui
                 try
                 {
                     string bez = FillExplorer.Klasa(forma);
+                    if (FillExplorer.SamoStablo(bez))
+                    {
+                        _stablo.Ucitaj(_projekt, Citaj);
+                        NapuniDrvo();
+                        return;
+                    }
                     if (FillExplorer.ZamjenjujeMaster(bez) || FillExplorer.PonavljaZadnji(bez))
                         PrimijeniFill(forma);
                     string dalje = DijalogTok.NextForm(forma);
