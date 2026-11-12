@@ -158,6 +158,8 @@ namespace Carpo.NetGen.Ui
                     Osvjezi();
                 else if (vrsta == "forma")
                     Otvori(s);
+                else if (vrsta == "stupci")
+                    PrimijeniStupce(s);
                 else if (vrsta == "word")
                 {
                     if (!Carpo.NetGen.Print.WordDot.Otvori(s, _spoj, new[] { IdReda() }))
@@ -196,6 +198,18 @@ namespace Carpo.NetGen.Ui
                     return id;
             }
             return "0";
+        }
+
+        private void PrimijeniStupce(string naredba)
+        {
+            var mapa = Carpo.NetGen.Komande.StupciNaredba.Primijeni(naredba);
+            foreach (var par in mapa)
+            {
+                var c = _pogled.Columns.ColumnByFieldName(par.Key);
+                if (c == null)
+                    continue;
+                c.Visible = par.Value;
+            }
         }
 
         private string Orijentacija()

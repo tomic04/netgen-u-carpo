@@ -349,6 +349,29 @@ namespace Carpo.NetGen.Ui
             }
         }
 
+        private void PrimijeniStupce(string naredba)
+        {
+            var mapa = StupciNaredba.Primijeni(naredba);
+            foreach (var par in mapa)
+            {
+                var c = gvGla.Columns.ColumnByFieldName(par.Key);
+                if (c == null)
+                {
+                    for (int i = 0; i < gvGla.Columns.Count; i++)
+                    {
+                        if (string.Equals(gvGla.Columns[i].Caption, par.Key, StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(gvGla.Columns[i].FieldName, par.Key, StringComparison.OrdinalIgnoreCase))
+                        {
+                            c = gvGla.Columns[i];
+                            break;
+                        }
+                    }
+                }
+                if (c != null)
+                    c.Visible = par.Value;
+            }
+        }
+
         private void OsvjeziMaster()
         {
             if (DijalogTok.JeJupiter(_server) || _projekt == null)
@@ -374,6 +397,8 @@ namespace Carpo.NetGen.Ui
                     if (jednako > 0)
                         PostaviGumb(stanje.Substring(0, jednako), stanje.Substring(jednako + 1) != "disable");
                 }
+                else if (GumbTok.Akcija(_projekt, s) == "stupci")
+                    PrimijeniStupce(s);
                 else if (GumbTok.Akcija(_projekt, s) == "word")
                 {
                     if (!WordDot.Otvori(s, _spoj, new[] { _master.Stanje.Id }))

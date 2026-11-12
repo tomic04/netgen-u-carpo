@@ -296,6 +296,17 @@ namespace Carpo.NetGen.GridTest
             T("param-search", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "0", "Kava, mljevena") == "@roba=null,@searchboxroba='Kava  mljevena',", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "0", "Kava, mljevena"));
             T("param-search-id", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "15", "Kava") == "@roba=15,@searchboxroba='Kava',", "");
             T("param-grid", Carpo.NetGen.Komande.ParametriSvi.Grid("stavke", "8", "8~9", "", 2) == "@stavke=8,@arrayofblueidsstavke='~8~9~',@nizplavihajdijevastavke='~8~9~',@nizoznacenihajdijevastavke='',@rowcountstavke=2,", Carpo.NetGen.Komande.ParametriSvi.Grid("stavke", "8", "8~9", "", 2));
+            var sakrij = Carpo.NetGen.Komande.StupciNaredba.Primijeni("HIDECOLUMNS(mastergrid,oznaka)");
+            bool oznaka = true;
+            bool masterStupac = true;
+            bool nasaoO = sakrij.TryGetValue("oznaka", out oznaka);
+            bool nasaoM = sakrij.TryGetValue("MASTERGRID", out masterStupac);
+            T("stupci-hide", nasaoO && nasaoM && oznaka == false && masterStupac == false, sakrij.Count.ToString());
+            var pokazi = Carpo.NetGen.Komande.StupciNaredba.Primijeni("SHOWCOLUMNS(mastergrid,oznaka)");
+            bool vidljiv = false;
+            pokazi.TryGetValue("oznaka", out vidljiv);
+            T("stupci-show", vidljiv, "");
+            T("stupci-nije-master", Carpo.NetGen.Komande.StupciNaredba.Primijeni("HIDECOLUMNS(detalj,oznaka)").Count == 0, "");
         }
 
         private static void AssemblyLoad()

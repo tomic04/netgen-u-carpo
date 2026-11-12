@@ -131,6 +131,39 @@ Ostalo što nije NetGen tijelo:
 | `:repx/` izvještaj | `PrintBridge.Predlozak` zove `Spin.Printing.Start.Print` | `Class1.vb` 348–353, `Carpo.UI` `PrintDialog` | Poziv postoji. v23 i v9.1 se ne učitavaju, samo v26. |
 | QA kuka | `GranulaSesija` | nema je | Produkcijski `Loader` je ne zove. Ostaje isključena. |
 
+## Naredbe
+
+Stanje je `radi` kad se naredba izvrši, `nije` kad se samo preskoči ili zabilježi. R59 (izgled Carpo) nije u tablici.
+
+| Naredba | NetGen | Carpo | Stanje |
+|---|---|---|---|
+| REFRESHMASTERGRID | `Form1.vb` 4570, 6674 | `GumbTok`, `Lanac` | radi |
+| refreshmaster bez forme | `Form1.vb` 5369, 5519 | `GumbTok` | radi |
+| ASSEMBLYLOAD | `Form1.vb` 4584–4623, `Form2.vb` 7424 | `AssemblyPoziv` | radi |
+| WORDDOT1 | `Form1.vb` 5093–5159 | `WordDot` | radi |
+| PRINTMASTER / PRINTREPXMASTER / PRINTGRID / PRINTREPXGRID | `Form1.vb` 4945, 5984, `Form2.vb` 9056 | `PrintBridge.PrintLink` | radi, R110 |
+| :repx/ | `Class1.vb` 594–632, `Form6.vb` 134–161 | `Print` pa `DoPrint2` | radi |
+| OK / OKSTAY / CLOSE / CANCEL | `Form1.vb` 6671, 6809 | `Lanac`, `DijalogTok` | radi |
+| FILLEXPLORER true / ONLYDET / onlytree | `Form1.vb` 5445, 5470, 5475 | `DijalogTok` | radi |
+| ONLOAD2 | `Form1.vb` 3914, 4013 | `OnLoad2` | radi |
+| INCLUDE | `Form2.vb` 844–934 | `IncludeXml` | radi |
+| select na podlozi | `Form1.vb` 4875–4898 | `ObicnaForma.PrimijeniSelect` | radi |
+| HIDECOLUMNS / SHOWCOLUMNS | `Form1.vb` 6730–6766 | `StupciNaredba` | radi |
+| FISKALIZACIJA* | `Form1.vb` 4643–4779, 493–548 | `FiskalPoziv.Posalji` postoji, gumb je ne zove | nije |
+| FOREACHSELECTED / FOREACHROW / FOREACHBLUEROW | `Form1.vb` 6843–6850 tijelo komentirano; `Form2` izvršava | `Lanac` samo zabilježi | nije |
+| CLICK( | `Form2.vb` 7151–7155 | nema | nije |
+| MSGBOX( | `Form2.vb` 7165 | nema | nije |
+| OPENFORM( | `Form1.vb` 6582 | nema | nije |
+| POSLOVNIPROSTOR( | `Form1.vb` 4783 | nema | nije |
+| BLAGAJNAENABLE( | `Form1.vb` 4635 | nema | nije |
+| UNCHECKMASTERGRID | `Form1.vb` 4626 | nema | nije |
+| CLOSEPARENT | `Form1.vb` 6838 | `Lanac` zabilježi | nije |
+| ISEMPTY u lancu | `Form1.vb` 6768 | zaglavlje da, lanac ne | nije |
+| GRID_COLUMN_VALUE( | `Form1.vb` 6785 | nema | nije |
+| BEEP() | `Form1.vb` 6579 | nema | nije |
+| STARTSEARCH( | `Form1.vb` 6592 | komentirano i u NetGenu | nije |
+| CLICK na podlozi | `Form1.vb` 6852 | komentirano i u NetGenu | nije |
+
 ## Što ostaje otvoreno
 
 - Word (`Form1.vb` 5093) otvara `.dot` preko `Word.Application` kad je Word instaliran. `WORDDOT1` plus putanja.

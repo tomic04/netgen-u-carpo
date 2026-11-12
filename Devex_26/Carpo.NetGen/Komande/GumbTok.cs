@@ -19,6 +19,8 @@ namespace Carpo.NetGen.Komande
             if (s.Length == 0)
                 return "";
             string u = s.ToUpperInvariant();
+            if (u.IndexOf("HIDECOLUMNS(", StringComparison.Ordinal) >= 0 || u.IndexOf("SHOWCOLUMNS(", StringComparison.Ordinal) >= 0)
+                return "stupci";
             if (u.StartsWith("WORDDOT1", StringComparison.Ordinal))
                 return "word";
             if (u.IndexOf("REFRESHMASTERGRID", StringComparison.Ordinal) >= 0)
