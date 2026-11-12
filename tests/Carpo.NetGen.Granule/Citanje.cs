@@ -160,6 +160,11 @@ namespace Carpo.NetGen.Granule
 
         public static List<string> Stupac(string sql, out string greska)
         {
+            return StupacDo(sql, 20, out greska);
+        }
+
+        public static List<string> StupacDo(string sql, int max, out string greska)
+        {
             var lista = new List<string>();
             greska = null;
             if (!JeCitanje(sql))
@@ -180,7 +185,7 @@ namespace Carpo.NetGen.Granule
                             while (rd.Read())
                             {
                                 lista.Add(rd.IsDBNull(0) ? "" : Convert.ToString(rd.GetValue(0)));
-                                if (lista.Count >= 20)
+                                if (max > 0 && lista.Count >= max)
                                     break;
                             }
                         }
