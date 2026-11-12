@@ -590,7 +590,7 @@ Implementacijski registar na `cursor/netgen-otvaranje-3266` završava s R64. Slj
 - **Posljedica:** port ne stavlja gumbe u Office ribbon s velikim ikonama. Donji red ostaje. Lijevi combo i stablo ostaju. Status pokazuje broj slogova. Naredbe, SQL i redoslijed gumba ostaju NetGen.
 - **Test:** `docs/granule/Izgled-Carpo-checklista.md`
 
-Najnovija implementacijska grana `cursor/netgen-raspored-3266` završava s R67. Ove stavke su R75, da se brojevi ne sudare.
+Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od R75 ide dalje, da se brojevi ne sudare.
 
 ## R75 `DETAILDBLCLICK` nije dvostruki klik mastera
 
@@ -615,6 +615,46 @@ Najnovija implementacijska grana `cursor/netgen-raspored-3266` završava s R67. 
 - **Carpo:** atribut na projektu lako osvježi master nakon svakog dijaloga.
 - **Posljedica:** `KOD_RSPostavke` ima `REFRESHAFTERCHILD="TRUE"` na projektu. Sam taj atribut master ne osvježava.
 - **Test:** `KOD-05`
+
+## R78 `INCLUDE` spoji tuđi PROJECT u isti dokument
+
+- **Element:** `INCLUDE` na formi
+- **NetGen:** ako je globalni include prazan, čita se s forme (`Form2.vb` 844–849). Vrijednost se cijepa po `#` (`863`). Ime datoteke zamijeni zadnji segment putanje (`869`). Prvo `SpinDMSUtil.NetGenFinder.GetFile`, pa `XmlDocument.Load` (`905–908`). Djeca `/PROJECT` se uvezu (`916–934`). `On Error Resume Next` je na ulazu u `ProcitajXML` (`706`). Datoteka koja ne postoji ostavi formu kakva je napisana (`913`).
+- **Carpo:** atribut se spremi (`NetGenXmlReader.cs` 118). Drugi XML se ne učitava i kontrole se ne dodaju.
+- **Posljedica:** `MPStanje` `MAINFORM` traži `MPKarticaRobe.xml` u istom folderu. Te datoteke nema. Kad stigne, njeni čvorovi moraju ući u dokument prije crtanja `MAINFORM`.
+- **Test:** `MPS-04`
+
+## R79 `DETCHECKBOXVISIBLE` nije kvačica mastera
+
+- **Element:** `DETCHECKBOXVISIBLE` / `DETTOTALROWVISIBLE`
+- **NetGen:** oba se učitaju velikim slovima (`Form1.vb` 3461–3462). Nakon detaila, `FALSE` sakrije `GridEX2` stupac 1 i ugasi sumu (`2402–2412`). Prazan string ostavi stupac vidljiv i sumu uključenu. Master gleda `CHECKBOXVISIBLE` (`2043–2052`).
+- **Carpo:** jedan grid lako dijeli jednu zastavicu. Sakriti stupac 0 sakrije id.
+- **Posljedica:** `Statusi` gasi selector detaila, a master ima svoju zastavicu. `VrCjenik` i `InstrumentiPlacanjaNG` imaju `FALSE`, ali nemaju `DETAILGRID`, pa grana pod `On Error Resume Next` (`2400`) ne crta detail.
+- **Test:** `STA-38`, `VRC-04`
+
+## R80 `AUTOFITCOLUMNS` se ne čita
+
+- **Element:** `AUTOFITCOLUMNS`
+- **NetGen:** `GetNamedItem("AUTOFITCOLUMNS")` nema u `netgen/*.vb`. Širina ostaje ona iz `Class1.vb` (`1087–1244`). `False` i `True` ne mijenjaju grid.
+- **Carpo:** `BestFitColumns` suzi stupce na sadržaj.
+- **Posljedica:** `MPPSNG` ima `AUTOFITCOLUMNS="False"`. To ne gasi autofit, jer autofita nema. Širine ostaju izračunate.
+- **Test:** `MPSNG-05`
+
+## R81 `HELPKOD` pali JupiterHelp
+
+- **Element:** `HELPKOD`
+- **NetGen:** neprazan kod pokaže `ButtonHELP` (`Form1.vb` 3491–3494). F1 (`1356–1367`) i klik (`7777–7778`) zovu `DajPokaziHelp`. Proces je `JupiterHelp.exe` s `-h` i kodom (`7792–7799`). Prazan kod sakrije gumb.
+- **Carpo:** Manager ponuda nema taj gumb (R74). Kod se spremi u test kuku, proces se ne pokreće.
+- **Posljedica:** `InstrumentiPlacanjaNG` `HELPKOD="MER252"` na F1 otvara help. Ikona `credit_card.ico` ostaje izgled – Carpo (R74).
+- **Test:** `INS-04`
+
+## R82 `REFRESHAFTERCHILD` na formi se ne čita
+
+- **Element:** `REFRESHAFTERCHILD` na elementu forme
+- **NetGen:** projekt ga samo upiše (`Form1.vb` 3396, R77). Kontrola ga čita u `SrediKontrolu` i, ako je točno `TRUE`, doda red u `Cdt` (`Form2.vb` 3058–3066). Atribut na `<UNOS_VRC>` nije ni projekt ni kontrola.
+- **Carpo:** `TRUE` na formi lako osvježi master nakon zatvaranja dijaloga.
+- **Posljedica:** `VrCjenik` unos i izmjena ne osvježavaju master samo zato što forma nosi taj atribut.
+- **Test:** `VRC-05`
 
 ## Pokrivenost checklisti
 
@@ -669,3 +709,8 @@ Najnovija implementacijska grana `cursor/netgen-raspored-3266` završava s R67. 
 | `MPKnjigaPopisa.md` | `PORTAL`, nema gumba za `MAINFORM`, `KARTICA` ne postoji | R76, R53 |
 | `SkladisteNG.md` | `ONLOAD` je SQL, `PRINTMASTER` | R41 |
 | `Poruke.md` | XML nije u repou | |
+| `VrCjenik.md` | `REFRESHAFTERCHILD` na formi, `DETCHECKBOXVISIBLE` | R82, R79, R05 |
+| `InstrumentiPlacanjaNG.md` | `HELPKOD`, `refreshmaster`, `PRINTREPXMASTER` | R81, R04, R41, R79 |
+| `MatTem.md` | `:FILTERFORM`, `!!`, `LANDSCAPE` ne dira `PRINTMASTER` | R18, R14, R41, R65 |
+| `MPPSNG.md` | stablo bez `:`, `AUTOFITCOLUMNS`, `Lista`, `vrstadokid-` | R10, R80, R60, R43, R57 |
+| `MPStanje.md` | `INCLUDE`, `SKIPDEFAULTLOAD` | R78, R53, R65 |
