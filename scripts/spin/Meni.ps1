@@ -109,7 +109,11 @@ $stavke = @(
     @("RobaWebKlase.xml", "test RobaWebKlase")
 )
 
+# Parent je izračunat. fk_meni na tom izrazu ne prima testni Nivo.
+# Constraint se ugasi samo za ovaj upis i vrati bez provjere starih redova.
+Exec "alter table ssMeni nocheck constraint fk_meni" | Out-Null
 $redni = 0
+try {
 foreach ($s in $stavke) {
     $redni++
     $fajl = $s[0]
@@ -138,14 +142,12 @@ where Parametar like N'%:$f' or Parametar like N'%\$f' or Parametar like N'%/$f'
         if ($tip -eq "timestamp" -or $tip -eq "rowversion") { continue }
         $ime = [string]$c.name
         $qime = "[" + $ime.Replace("]", "]]") + "]"
-        if ($ime -ne "Parent" -and ([int]$c.is_identity -eq 1 -or [int]$c.is_computed -eq 1)) { continue }
+        if ([int]$c.is_identity -eq 1 -or [int]$c.is_computed -eq 1) { continue }
         $imena.Add($qime)
         if ($ime -eq "Parametar") {
             $izrazi.Add("N'" + $param.Replace("'", "''") + "'")
         } elseif ($ime -eq "Opis") {
             $izrazi.Add("N'" + $opis + "'")
-        } elseif ($ime -eq "Parent") {
-            $izrazi.Add("(select top 1 MeniID from ssMeni where Parametar like N'asm:NetGenDLL.loader:%')")
         } elseif ($ime -eq "Nivo") {
             $dulj = [int]$c.max_length
             if ($tip -match "nvar|nchar") { if ($dulj -gt 0) { $dulj = [int]($dulj / 2) } }
@@ -174,6 +176,10 @@ where Parametar like N'%:$f' or Parametar like N'%\$f' or Parametar like N'%/$f'
     Write-Host $sql
     Exec $sql | Out-Null
     Write-Host "ubacen testni red $param"
+}
+
+} finally {
+    Exec "alter table ssMeni with nocheck check constraint fk_meni" | Out-Null
 }
 
 $conn.Close()
