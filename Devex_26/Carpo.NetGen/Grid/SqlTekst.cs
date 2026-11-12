@@ -18,6 +18,7 @@ namespace Carpo.NetGen.Grid
         public string EditedColumn = "";
         public string LastValue = "";
         public string SelectedColor = "";
+        public string ParametriSaGrida = "";
     }
 
     public static class SqlTekst
@@ -54,7 +55,39 @@ namespace Carpo.NetGen.Grid
             sql = Zamijeni(sql, "@@LASTVALUE", k.LastValue);
             sql = Zamijeni(sql, "@@selectedcolor", k.SelectedColor);
             sql = Zamijeni(sql, "@@SELECTEDCOLOR", k.SelectedColor);
+            if (!string.IsNullOrEmpty(k.ParametriSaGrida))
+                sql = DetailGrid.ZamijeniOstatak(sql, k.ParametriSaGrida);
             return sql;
+        }
+
+        /// <summary>
+        /// Form1.vb 2556-2576: stupci od drugog, zadnje 4 znamenke se skidaju ako nisu 0.
+        /// Broj i tekst idu u navodnike. Zarez u broju postaje točka.
+        /// </summary>
+        public static string IzReda(System.Data.DataRow red)
+        {
+            if (red == null || red.Table == null)
+                return "";
+            var sb = new System.Text.StringBuilder();
+            for (int i = 1; i < red.Table.Columns.Count; i++)
+            {
+                object v = red[i];
+                if (v == null || v == System.DBNull.Value)
+                    continue;
+                string ime = red.Table.Columns[i].ColumnName.Trim();
+                if (ime.Length >= 4)
+                {
+                    int n;
+                    if (int.TryParse(ime.Substring(ime.Length - 4), out n) && n != 0)
+                        ime = ime.Substring(0, ime.Length - 4);
+                }
+                ime = ime.Replace(" ", "_").Replace("!", "");
+                string tekst = Convert.ToString(v, System.Globalization.CultureInfo.InvariantCulture) ?? "";
+                if (v is IFormattable && !(v is string))
+                    tekst = tekst.Replace(",", ".");
+                sb.Append("@").Append(ime).Append("='").Append(tekst.Replace("'", "''")).Append("' , ");
+            }
+            return sb.ToString();
         }
 
         /// <summary>
@@ -91,6 +124,7 @@ namespace Carpo.NetGen.Grid
                 k.EditedColumn = izvor.EditedColumn;
                 k.LastValue = izvor.LastValue;
                 k.SelectedColor = izvor.SelectedColor;
+                k.ParametriSaGrida = izvor.ParametriSaGrida;
             }
             if (string.IsNullOrEmpty(k.Id))
                 k.Id = "0";

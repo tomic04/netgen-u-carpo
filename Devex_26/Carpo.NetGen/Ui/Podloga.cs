@@ -415,6 +415,7 @@ namespace Carpo.NetGen.Ui
                 id = _master.Stanje.Id;
             _master.Stanje.Id = id;
             _master.Kontekst.Id = id;
+            _master.Kontekst.ParametriSaGrida = SqlTekst.IzReda(row);
         }
 
         private void NapuniGrid()
@@ -578,6 +579,7 @@ namespace Carpo.NetGen.Ui
             }
             if (SqlTekst.JeZabranaPisanja(sql) && !DijalogTok.DozvoliUpis)
                 return null;
+            bool filter = sql.IndexOf("NetGenDBFilter", StringComparison.OrdinalIgnoreCase) >= 0;
             _zadnjiSql = sql;
             try
             {
@@ -594,9 +596,11 @@ namespace Carpo.NetGen.Ui
             }
             catch (Exception ex)
             {
-                _sqlGreska = ex.Message;
+                if (!filter)
+                    _sqlGreska = ex.Message;
                 NgDnevnik.Greska(ex.Message + " | " + sql);
-                PostaviStatus(ex.Message);
+                if (!filter)
+                    PostaviStatus(ex.Message);
                 return null;
             }
         }
