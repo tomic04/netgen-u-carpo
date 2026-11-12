@@ -170,11 +170,57 @@ namespace Carpo.NetGen.Ui
                 NapuniIzOnLoad(on, kontekst, citaj);
             if (modal)
             {
-                if (vlasnik != null && vlasnik != this && !vlasnik.IsDisposed)
-                    ShowDialog(vlasnik);
-                else
-                    ShowDialog();
+                // Form1.vb 5362: Form2.ShowDialog(Me). Form1 je običan Form.
+                // Podloga je RibbonForm. ShowDialog(RibbonForm) iz klika ne uđe u petlju
+                // i OnShown se ne dogodi, pa Odustani nema tko stisnuti.
+                Form nosac = VlasnikKojiNijeRibbon(vlasnik);
+                Form skriven = null;
+                if (nosac == null)
+                {
+                    skriven = new Form();
+                    skriven.ShowInTaskbar = false;
+                    skriven.FormBorderStyle = FormBorderStyle.None;
+                    skriven.StartPosition = FormStartPosition.Manual;
+                    skriven.Location = new System.Drawing.Point(-32000, -32000);
+                    skriven.Size = new System.Drawing.Size(1, 1);
+                    skriven.Show();
+                    nosac = skriven;
+                }
+                try
+                {
+                    ShowDialog(nosac);
+                }
+                finally
+                {
+                    if (skriven != null)
+                        skriven.Close();
+                }
             }
+        }
+
+        private static Form VlasnikKojiNijeRibbon(Form predlozen)
+        {
+            if (predlozen != null && !predlozen.IsDisposed && !JeRibbon(predlozen))
+                return predlozen;
+            foreach (Form f in Application.OpenForms)
+            {
+                if (f == null || f.IsDisposed || !f.IsHandleCreated || JeRibbon(f))
+                    continue;
+                return f;
+            }
+            return null;
+        }
+
+        private static bool JeRibbon(Control f)
+        {
+            for (Type t = f.GetType(); t != null && t != typeof(object); t = t.BaseType)
+            {
+                string n = t.FullName ?? "";
+                if (n.IndexOf("RibbonForm", StringComparison.Ordinal) >= 0
+                    || n.IndexOf("RibbonBase", StringComparison.Ordinal) >= 0)
+                    return true;
+            }
+            return false;
         }
 
         protected override void OnShown(EventArgs e)

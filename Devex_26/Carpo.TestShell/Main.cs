@@ -437,6 +437,9 @@ namespace Carpo.TestShell
                 o.PerformClick();
             };
             timer.Start();
+            var cekaj = new Thread(delegate () { SnimiZastoj(snimka, granula, delegate () { return odustao; }); });
+            cekaj.IsBackground = true;
+            cekaj.Start();
             try
             {
                 gumb.PerformClick();
@@ -459,6 +462,69 @@ namespace Carpo.TestShell
             }
             trag = "podforma=" + otvori;
             return 0;
+        }
+
+        private void SnimiZastoj(string snimka, Form granula, Func<bool> gotovo)
+        {
+            Thread.Sleep(20000);
+            if (gotovo())
+                return;
+            var sb = new StringBuilder();
+            sb.AppendLine("20s prozori");
+            int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+            EnumWindows(delegate (IntPtr h, IntPtr l)
+            {
+                uint wpid;
+                GetWindowThreadProcessId(h, out wpid);
+                if (wpid != (uint)pid)
+                    return true;
+                var klasa = new StringBuilder(256);
+                GetClassName(h, klasa, klasa.Capacity);
+                sb.Append(IsWindowVisible(h) ? "vidljiv " : "skriven ");
+                sb.Append(klasa).Append(" | ").Append(NaslovProzora(h));
+                sb.AppendLine();
+                EnumChildWindows(h, delegate (IntPtr c, IntPtr p)
+                {
+                    var ck = new StringBuilder(256);
+                    GetClassName(c, ck, ck.Capacity);
+                    string t = NaslovProzora(c);
+                    if (t.Length == 0 && ck.ToString().IndexOf("32770", StringComparison.Ordinal) < 0)
+                        return true;
+                    sb.Append("  dijete ").Append(ck).Append(" | ").Append(t).AppendLine();
+                    return true;
+                }, IntPtr.Zero);
+                return true;
+            }, IntPtr.Zero);
+            string stack = "";
+            var ev = new ManualResetEvent(false);
+            try
+            {
+                BeginInvoke(new Action(delegate ()
+                {
+                    stack = Environment.StackTrace;
+                    ev.Set();
+                }));
+            }
+            catch (Exception ex)
+            {
+                stack = ex.Message;
+                ev.Set();
+            }
+            if (!ev.WaitOne(3000))
+                stack = "UI nit ne crta: BeginInvoke nije odrađen za 3 s. ShowDialog nije u petlji poruka.";
+            sb.AppendLine(stack);
+            try
+            {
+                foreach (Form f in Application.OpenForms)
+                    sb.Append("OpenForm ").Append(f.GetType().Name).Append(" ").Append(f.Text).Append(" visible=").Append(f.Visible).AppendLine();
+            }
+            catch (Exception ex)
+            {
+                sb.AppendLine("OpenForms " + ex.Message);
+            }
+            if (granula != null)
+                sb.Append("granula ").Append(granula.GetType().FullName).AppendLine();
+            try { File.WriteAllText(snimka + ".prozori.txt", sb.ToString()); } catch { }
         }
 
         private static string TekstGumba(Control korijen)
@@ -867,6 +933,9 @@ namespace Carpo.TestShell
 
         [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
         private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
         [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
         private static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint msg, IntPtr wParam, StringBuilder lParam, uint flags, uint timeout, out IntPtr result);

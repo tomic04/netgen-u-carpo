@@ -33,7 +33,7 @@ function Pokreni([string]$xml, [string]$png) {
         $p = Start-Process -FilePath $Exe -ArgumentList $linija -WorkingDirectory $rad -PassThru
         if (-not $p.WaitForExit(75000)) {
             try { $p.Kill() } catch { }
-            throw "timeout $xml"
+            return -1
         }
         return $p.ExitCode
     }
@@ -64,6 +64,9 @@ foreach ($rel in $granule) {
     Write-Host $tekst
     $snimkaGreska = $png + ".snimka.txt"
     if (Test-Path -LiteralPath $snimkaGreska) { Write-Host (Get-Content -LiteralPath $snimkaGreska -Raw) }
+    $prozori = $png + ".prozori.txt"
+    if (Test-Path -LiteralPath $prozori) { Write-Host (Get-Content -LiteralPath $prozori -Raw) }
+    if ($kod -eq -1) { throw "timeout $xml" }
     if ($kod -ne 0) { throw "UI smoke $ime kod $kod. $tekst" }
     if ($tekst -notlike "OK*") { throw "UI smoke $ime nema OK. $tekst" }
     if (-not (Test-Path -LiteralPath $png)) { throw "UI smoke $ime nema screenshot" }
