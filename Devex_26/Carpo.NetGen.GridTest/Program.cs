@@ -129,25 +129,28 @@ namespace Carpo.NetGen.GridTest
         {
             T("print-vrste", Carpo.NetGen.Print.PrintBridge.Vrsta("PRINTREPXMASTER", false) == "master"
                 && Carpo.NetGen.Print.PrintBridge.Vrsta("PRINTDET", false) == "detail"
-                && Carpo.NetGen.Print.PrintBridge.Vrsta("PRINTREPXGRID", true) == "lodani", "");
-            T("print-orijentacija", Carpo.NetGen.Print.PrintBridge.RepxGledaOrijentaciju() == false
-                && Carpo.NetGen.Print.PrintBridge.JanusOrijentacija("LANDSCAPE") == "vertical"
-                && Carpo.NetGen.Print.PrintBridge.JanusOrijentacija("") == "horizontal", "");
+                && Carpo.NetGen.Print.PrintBridge.Vrsta("PRINTREPXGRID", true) == "lodani"
+                && Carpo.NetGen.Print.PrintBridge.Vrsta("PRINTGRID", false) == "master", "");
+            T("print-landscape", Carpo.NetGen.Print.PrintBridge.JeLandscape("LANDSCAPE")
+                && !Carpo.NetGen.Print.PrintBridge.JeLandscape(""), "");
             T("print-centar", Carpo.NetGen.Print.PrintBridge.Centar("", "Stanje v[1]", false) == "Stanje"
                 && Carpo.NetGen.Print.PrintBridge.Centar("", "Cijeli naslov", true) == "Cijeli naslov", "");
-            var stroj = new LazniRepex();
+            var stroj = new LazniSpin();
+            object masterGrid = new object();
+            object detailGrid = new object();
             Carpo.NetGen.Print.PrintBridge.Stroj = stroj;
             try
             {
-                bool ok = Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTREPXMASTER", false, "7", "3", "conn", "login", "select 1", "@g=1", "@svi=1", "", "", "", "Naslov v[2]");
-                T("print-master", ok && LazniRepex.Vrsta == "master" && LazniRepex.Konekcija == "Driver={SQL Server};login" && LazniRepex.Parametri == "@g=1" && stroj.PageHeaderCenter == "Naslov", LazniRepex.Konekcija);
-                var det = new LazniRepex();
-                Carpo.NetGen.Print.PrintBridge.Stroj = det;
-                ok = Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTDET", false, "7", "3", "conn", "login", "select 1", "@g=1", "@svi=1", "L", "C", "D", "Naslov");
-                T("print-detail", ok && LazniRepex.Vrsta == "detail" && LazniRepex.Konekcija == "Driver={SQL Server};conn" && det.PageHeaderLeft == null, LazniRepex.Vrsta);
-                Carpo.NetGen.Print.PrintBridge.Stroj = stroj;
-                ok = Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTREPXGRID", true, "7", "3", "conn", "login", "select 1", "@g=1", "@svi=1", "", "", "", "Dijalog");
-                T("print-lodani", ok && LazniRepex.Vrsta == "lodani" && LazniRepex.Parametri == "@svi=1" && stroj.PageHeaderCenter == "Dijalog", LazniRepex.Parametri);
+                bool ok = Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTREPXMASTER", false, "7", "3", "conn", "login", "select 1", "@g=1", "@svi=1", "Lijevo", "", "Desno", "Naslov v[2]", masterGrid, "LANDSCAPE", null);
+                T("print-master", ok && LazniSpin.Metoda == "PrintLink" && LazniSpin.Kontrola == masterGrid
+                    && LazniSpin.Landscape && LazniSpin.Caption == "Naslov" && LazniSpin.Header == "Lijevo" && LazniSpin.Sub == "Desno"
+                    && LazniSpin.Konekcija == "conn", LazniSpin.Metoda + " " + LazniSpin.Caption);
+                ok = Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTDET", false, "7", "3", "conn", "login", "select 1", "@g=1", "@svi=1", "L", "C", "D", "Naslov", detailGrid, "", null);
+                T("print-detail", ok && LazniSpin.Metoda == "PrintLink" && LazniSpin.Kontrola == detailGrid && !LazniSpin.Landscape, LazniSpin.Metoda);
+                ok = Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTREPXGRID", true, "7", "3", "conn", "login", "select 1", "@g=1", "@svi=1", "", "", "", "Dijalog", detailGrid, "", null);
+                T("print-lodani", ok && LazniSpin.Metoda == "PrintLink" && LazniSpin.Caption == "Dijalog" && LazniSpin.Kontrola == detailGrid, LazniSpin.Caption);
+                ok = Carpo.NetGen.Print.PrintBridge.Ispisi(":repx/rptKartica", false, "7", "3", "conn", "login", "", "", "@id=7", "", "", "", "", null, "", null);
+                T("print-repx", ok && LazniSpin.Metoda == "Print" && LazniSpin.Predlozak == "rptKartica" && LazniSpin.Parametri == "@id=7" && LazniSpin.Tko == "Carpo", LazniSpin.Predlozak);
             }
             finally
             {
@@ -156,7 +159,7 @@ namespace Carpo.NetGen.GridTest
             bool bacio = false;
             try
             {
-                Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTMASTER", false, "1", "2", "c", "l", "", "", "", "", "", "", "");
+                Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTMASTER", false, "1", "2", "c", "l", "", "", "", "", "", "", "", null, "", null);
             }
             catch
             {
@@ -1682,20 +1685,37 @@ namespace Carpo.NetGen.GridTest
         }
     }
 
-    public sealed class LazniRepex
+    public sealed class LazniSpin
     {
-        public static string Vrsta;
+        public static string Metoda;
         public static string Konekcija;
+        public static object Kontrola;
+        public static bool Landscape;
+        public static string Caption;
+        public static string Header;
+        public static string Sub;
+        public static string Predlozak;
         public static string Parametri;
-        public string PageHeaderLeft;
-        public string PageHeaderCenter;
-        public string PageHeaderRight;
+        public static string Tko;
 
-        public void PrintDocumentREPX(object vrsta, object grid, object xml, object node, object sql, object id, object operater, object konekcija, object parametri, object zadnji)
+        public void PrintLink(object konekcija, object operater, object kontrola, System.Collections.Generic.Dictionary<string, string> zaglavlje, System.Data.DataTable combo, System.Data.DataSet podaci, System.IO.Stream raspored, bool landscape)
         {
-            Vrsta = Convert.ToString(vrsta);
+            Metoda = "PrintLink";
             Konekcija = Convert.ToString(konekcija);
+            Kontrola = kontrola;
+            Landscape = landscape;
+            Caption = zaglavlje["caption"];
+            Header = zaglavlje["header"];
+            Sub = zaglavlje["subHeader"];
+        }
+
+        public void Print(object konekcija, object predlozak, object parametri, object tko)
+        {
+            Metoda = "Print";
+            Konekcija = Convert.ToString(konekcija);
+            Predlozak = Convert.ToString(predlozak);
             Parametri = Convert.ToString(parametri);
+            Tko = Convert.ToString(tko);
         }
     }
 

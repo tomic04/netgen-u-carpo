@@ -249,6 +249,20 @@ namespace Carpo.NetGen.Ui
                 DialogResult = DialogResult.Cancel;
                 return;
             }
+            if (Carpo.NetGen.Print.PrintBridge.Vrsta(naredba, true).Length > 0)
+            {
+                DevExpress.XtraGrid.GridControl grid = null;
+                foreach (Control c in Controls)
+                {
+                    grid = c as DevExpress.XtraGrid.GridControl;
+                    if (grid != null)
+                        break;
+                }
+                string orij = _forma != null && _forma.Atributi != null && _forma.Atributi.Ima("PAGEORIENTATION")
+                    ? _forma.Atributi.Vrijednost("PAGEORIENTATION") : "";
+                DataTable tab = grid == null ? null : grid.DataSource as DataTable;
+                Carpo.NetGen.Print.PrintBridge.Ispisi(naredba, true, Id, Operater, Konekcija, "", ZadnjiSql, "", SviParametri(), "", "", "", Text, grid, orij, tab);
+            }
             for (int i = 0; i < klik.Naredbe.Count; i++)
             {
                 string n = klik.Naredbe[i] ?? "";

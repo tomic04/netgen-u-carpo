@@ -375,7 +375,17 @@ namespace Carpo.NetGen.Ui
                         PostaviGumb(stanje.Substring(0, jednako), stanje.Substring(jednako + 1) != "disable");
                 }
                 else if (IspisMotora.JeIspisImena(s) || s.StartsWith("PRINT", StringComparison.OrdinalIgnoreCase))
-                    PrintBridge.Ispisi(s, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "", "", "", "", Text);
+                {
+                    string vrsta = PrintBridge.Vrsta(s, false);
+                    object grid = vrsta == "detail" ? (object)gcDet : gcGla;
+                    DataTable tab = null;
+                    var gc = grid as GridControl;
+                    if (gc != null)
+                        tab = gc.DataSource as DataTable;
+                    string orij = _projekt != null && _projekt.Atributi != null && _projekt.Atributi.Ima("PAGEORIENTATION")
+                        ? _projekt.Atributi.Vrijednost("PAGEORIENTATION") : "";
+                    PrintBridge.Ispisi(s, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "", "", "", "", Text, grid, orij, tab);
+                }
                 else if (s.ToUpperInvariant().IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0)
                 {
                     var poziv = AssemblyPoziv.Pozovi(s, "shell", _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "");

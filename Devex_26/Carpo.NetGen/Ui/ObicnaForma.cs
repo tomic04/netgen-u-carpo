@@ -159,7 +159,7 @@ namespace Carpo.NetGen.Ui
                 else if (vrsta == "forma")
                     Otvori(s);
                 else if (vrsta == "ispis")
-                    Carpo.NetGen.Print.PrintBridge.Ispisi(s, false, IdReda(), _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, ParametriReda(), "", "", "", "", Text);
+                    Carpo.NetGen.Print.PrintBridge.Ispisi(s, false, IdReda(), _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, ParametriReda(), "", "", "", "", Text, _grid, Orijentacija(), _master.Stanje.Tablica);
                 else if (vrsta == "assembly")
                 {
                     var poziv = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(s, "shell", IdReda(), _master.Kontekst.OperaterId, _spoj, _master.Stanje.ZadnjiSql, ParametriReda(), "");
@@ -191,6 +191,13 @@ namespace Carpo.NetGen.Ui
                     return id;
             }
             return "0";
+        }
+
+        private string Orijentacija()
+        {
+            if (_projekt == null || _projekt.Atributi == null || !_projekt.Atributi.Ima("PAGEORIENTATION"))
+                return "";
+            return _projekt.Atributi.Vrijednost("PAGEORIENTATION") ?? "";
         }
 
         private string ParametriReda()

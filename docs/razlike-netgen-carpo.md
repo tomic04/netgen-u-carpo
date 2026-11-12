@@ -328,15 +328,15 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `PRINTMASTER` / `PRINTREPXMASTER` / `PRINTGRID`
 - **NetGen:** oba prefiksa na podlozi zovu `IspisGRIDREPX` i izađu (`Form1.vb` 4945–4955). `Button7_Click` (Janus, tu je `PAGEORIENTATION`, `6039–6043`) se ne zove. REPX master (`5984–6003`) puni zaglavlje, `##` i `!!` su novi red, prazan centar reže naslov do `v[`. Konekcija je `strGlobalSQLSERVERlogin`. Detail (`6067–6085`) koristi `Conn` i prefiks `Driver={SQL Server};`. Na dijalogu `PRINTGRID(` i `PRINTREPXGRID(` zovu istu `IspisGRIDREPX` (`6950–6957`, `6985–6991`) s argumentom `"lodani"` i zaglavljem grida (`9041–9056`). Prazan centar dijaloga je cijeli `Me.Text`, ne rez do `v[`.
-- **Carpo:** `PrintBridge` zove `NetGenExtensions.frmGridExPrintingREPX.PrintDocumentREPX`. Master, detail i `lodani` su tri prva argumenta. REPX i dalje ne gleda `PAGEORIENTATION`. Janus grana i dalje mapira `LANDSCAPE` na `Vertical` (`6039`).
-- **Posljedica:** lista se okrene samo ako se zove Janus `Button7`, a `PRINTMASTER` ga ne zove. `PAGEORIENTATION` na Kartici i dalje ne okreće REPX.
+- **Carpo:** `PrintBridge` zove `Spin.Printing.Start.PrintLink` (`ComponentGrid.PrintControl`). Koji je grid (master, detail, dijalog) bira NetGen pravilo. `PAGEORIENTATION=LANDSCAPE` ide u `isLandscape`.
+- **Posljedica:** `PrintLink` nema `PageHeaderLeft/Center/Right` ni argument `lodani`. Centar, lijevo i desno idu u `caption`, `header` i `subHeader`. Prazan `DataTable` predložaka nije `printDialogComboTemplates`.
 - **Test:** `KAR-30`, `KAR-31`, `JEP-02`, `MPB-02`
 
 ## R42 `:repx/` ide u Spin.Printing, pa u `rptDevRepx`
 
 - **Element:** `repx/` / `repx:`
 - **NetGen:** shell zamijeni `repx/` i `REPX/` s `repx:` (`Form1.vb` 5238–5239). Dijalog zamijeni s `repx:/` odnosno `REPX:/` (`Form2.vb` 4296–4297). `PrintRpt` (`Class1.vb` 594–632) prvo `IspisiMePrekoSpinPrintinga`: `Assembly.Load("Spin.Printing.v23")`, u catch `v9.1`, klasa `Spin.Printing.Start` (`297–304`). `Print` ili `PrintMulti`. Ako parametar već ima `@id=`, ne dodaje se drugi (`320–327`). Pad s hwnd pokuša bez hwnd (`362–369`). Ako Spin padne, `Form6` učita `rptDevRepx.clsReport`, `isnetgen = 1`, `DoPrint2` ili `DoPrintDB` za `FROMDB-` (`Form6.vb` 134–161). Putanja predloška je `SharedDLLs\repx`.
-- **Carpo:** odluka je `Spin.Printing` v26 i `rptDevRepx`, v23 i v9.1 se ne zovu (`docs/analiza/00-sazetak.md`). `PrintBridge` to još ne radi (`Placeholders.cs` 46–52). Nije provjereno da je klasa i dalje `Spin.Printing.Start`.
+- **Carpo:** `PrintBridge.Predlozak` učita `Spin.Printing.v26`, klasu `Spin.Printing.Start`, i zove `Print(konekcija, ime, parametri, "Carpo")`. v23 i v9.1 se ne učitavaju. Ako `Print` baci, zapis je u dnevniku. `rptDevRepx.DoPrint2` se iz tog hvata još ne zove.
 - **Posljedica:** učitati v23 „da bude kao VB“ krši odluku. Učitati samo v26 s drugim imenom metode ne ispiše. `repx:/` i `repx:` moraju oba skinuti prefiks prije imena izvještaja.
 - **Test:** `KAR-32`, `KAR-33`, `ISP-01`
 

@@ -106,9 +106,9 @@ Pregledano je 9 modula. Popravljeno: `FILLEXPLORER` nakon OK, `ONLOAD2` po natpi
 
 | | |
 |---|---|
-| NetGen | `PRINTREPXMASTER` i `PRINTMASTER` zovu `IspisGRIDREPX` i izađu (`Form1.vb` 4945–4955). Master šalje `"master"` i login (`6003`). Detail šalje `"detail"` i `Conn` (`6085`). Dijalog šalje `"lodani"` (`Form2.vb` 9056). `PAGEORIENTATION` je samo u Janus `Button7` (`6039`): `LANDSCAPE` postane `Vertical`. |
-| Carpo | `Placeholders.cs` `PrintBridge`. Ako nema `NetGenExtensions`, log i izlaz, bez iznimke. |
-| Razlika | NE za tri potpisa. DA ostaje: REPX ne okreće stranicu. |
+| NetGen | `PRINTREPXMASTER` i `PRINTMASTER` zovu ispis master grida (`Form1.vb` 4945–4955). Detail je drugi grid (`6067`). Dijalog šalje `"lodani"` u NetGenExtensions (`Form2.vb` 9056). Zaglavlje je lijevo, centar i desno (`5995–6001`). |
+| Carpo | `PrintBridge` zove `Spin.Printing.v26` / `Spin.Printing.Start.PrintLink`, isto kao `ComponentGrid.PrintControl`. `:repx/` zove `Print`, isto kao `PrintDialog`. |
+| Razlika | `PrintLink` nema riječi master/detail/lodani ni `PageHeaderLeft/Center/Right`. Grid se predaje kao kontrola. Centar ide u `caption`, lijevo u `header`, desno u `subHeader`. `PAGEORIENTATION=LANDSCAPE` ide u `isLandscape`. Nema tablice predložaka `printDialogComboTemplates`. |
 
 ## 14. Placeholdere i što ugasiti prije produkcije
 
@@ -128,14 +128,14 @@ Ostalo što nije NetGen tijelo:
 | `jupiter2022` u `SpinVeza.Spoj` baca | `SqlTekst.cs` 135–136 | NetGen se spaja | Ostaje ugašeno. Nema čitanja ni upisa na taj server. |
 | SOAP fiskalizacije | `FiskalPoziv.Ucitaj` | `Form1.vb` 520 `PosaljiSoapPorukuCertifikatDatoteka` | Ne uključivati dok `Raverus.FiskalizacijaDEV.COM.dll` nije na stroju. Ovaj kod metodu ne zove. |
 | Word | nema poziva | `Form1.vb` 5093 `WORDDOT1` i `CreateObject("Word.Application")` | Nije implementirano. |
-| `:repx/` izvještaj | `IspisMotora` kaže da se pisač ne zove | `Class1.vb` 297 `Spin.Printing.Start` | Grid REPX ide kroz `PrintBridge`. Spin.Printing za `:repx/` još nije poziv. |
+| `:repx/` izvještaj | `PrintBridge.Predlozak` zove `Spin.Printing.Start.Print` | `Class1.vb` 348–353, `Carpo.UI` `PrintDialog` | Poziv postoji. v23 i v9.1 se ne učitavaju, samo v26. |
 | QA kuka | `GranulaSesija` | nema je | Produkcijski `Loader` je ne zove. Ostaje isključena. |
 
 ## Što ostaje otvoreno
 
 - Word (`Form1.vb` 5093) još nema tijelo.
 - Fiskalizacija ne šalje SOAP.
-- `:repx/` ne zove `Spin.Printing`.
+- `PrintLink` nema lijevo/centar/desno ni riječ `lodani`. To su ulazi koje Carpo složi u `caption`/`header`/`subHeader` i u odabir grida.
 - `JeZabranaPisanja` na spinu ostaje uključena.
 - `strParametriSvi` na dijalogu za `ASSEMBLYLOAD` skuplja check, lookup i tekst. Search, grid i radio iz `Form2.vb` 3432 još nisu u tom nizu.
 - 12 redova `ssMeni` i XML-ovi kojih nema u repou. Shema se ne dira.
