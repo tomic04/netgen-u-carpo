@@ -44,6 +44,7 @@ namespace Carpo.TestShell
         private string paramList = "";
         private bool _autoMode = false;
         private int _uiIshod;
+        private bool _uiKlikGotov;
 
         
         public Main()
@@ -251,6 +252,7 @@ namespace Carpo.TestShell
         public int PokreniUiSmoke(string snimka)
         {
             _uiIshod = 0;
+            _uiKlikGotov = false;
             var dir = Path.GetDirectoryName(snimka);
             if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);
@@ -272,6 +274,7 @@ namespace Carpo.TestShell
                     return 1;
                 }
                 cmdGen_Click(this, EventArgs.Empty);
+                _uiKlikGotov = true;
             }
             catch (Exception ex)
             {
@@ -288,8 +291,19 @@ namespace Carpo.TestShell
                 UpisiIshod(snimka, "FAIL nema prozora granule");
                 return 2;
             }
-            if (granula != null)
-                SnimiFormu(granula, snimka);
+            if (granula != null && !granula.IsDisposed)
+            {
+                SnimiProzor(granula.Handle, snimka);
+                if (!ImaSnimku(snimka))
+                    SnimiFormu(granula, snimka);
+            }
+            if (!ImaSnimku(snimka))
+                SnimiEkran(snimka);
+            if (!ImaSnimku(snimka))
+            {
+                UpisiIshod(snimka, "FAIL nema screenshota " + TekstSnimke(snimka));
+                return 4;
+            }
             try
             {
                 if (granula != null && !granula.IsDisposed)
@@ -335,16 +349,27 @@ namespace Carpo.TestShell
                 if (prozor != IntPtr.Zero)
                 {
                     _uiIshod = 2;
-                    Thread.Sleep(800);
-                    SnimiEkran(snimka);
-                    PostMessage(prozor, 0x0010, IntPtr.Zero, IntPtr.Zero);
+                    if (!_uiKlikGotov && !ImaSnimku(snimka))
+                    {
+                        Thread.Sleep(800);
+                        SnimiProzor(prozor, snimka);
+                        if (!ImaSnimku(snimka))
+                            SnimiEkran(snimka);
+                        if (ImaSnimku(snimka))
+                            PostMessage(prozor, 0x0010, IntPtr.Zero, IntPtr.Zero);
+                    }
                 }
             }
             if (_uiIshod == 0)
             {
                 SnimiEkran(snimka);
-                UpisiIshod(snimka, "FAIL timeout");
+                UpisiIshod(snimka, "FAIL timeout " + TekstSnimke(snimka));
                 Environment.Exit(2);
+            }
+            if (_uiIshod == 2 && !ImaSnimku(snimka) && !_uiKlikGotov)
+            {
+                UpisiIshod(snimka, "FAIL screenshot " + TekstSnimke(snimka));
+                Environment.Exit(4);
             }
         }
 
@@ -392,11 +417,115 @@ namespace Carpo.TestShell
             return nadjen;
         }
 
-        private static void SnimiEkran(string put)
+        private static bool ImaSnimku(string put)
         {
             try
             {
-                var ekran = Screen.PrimaryScreen.Bounds;
+                return File.Exists(put) && new FileInfo(put).Length >= 500;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string TekstSnimke(string put)
+        {
+            try
+            {
+                string extra = put + ".snimka.txt";
+                if (File.Exists(extra))
+                    return File.ReadAllText(extra);
+            }
+            catch
+            {
+            }
+            return "";
+        }
+
+        private static void ZapisiSnimku(string put, string tekst)
+        {
+            try { File.WriteAllText(put + ".snimka.txt", tekst); } catch { }
+        }
+
+        private static void SnimiProzor(IntPtr hwnd, string put)
+        {
+            if (hwnd == IntPtr.Zero || ImaSnimku(put))
+                return;
+            RECT r;
+            if (!GetWindowRect(hwnd, out r))
+            {
+                ZapisiSnimku(put, "GetWindowRect nije uspio");
+                return;
+            }
+            int w = r.Right - r.Left;
+            int h = r.Bottom - r.Top;
+            if (w < 50 || h < 50)
+            {
+                ZapisiSnimku(put, "prozor " + w + "x" + h);
+                return;
+            }
+            try
+            {
+                using (var bmp = new System.Drawing.Bitmap(w, h))
+                using (var g = System.Drawing.Graphics.FromImage(bmp))
+                {
+                    IntPtr hdc = g.GetHdc();
+                    bool tisak = false;
+                    try
+                    {
+                        tisak = PrintWindow(hwnd, hdc, 2) || PrintWindow(hwnd, hdc, 0);
+                    }
+                    finally
+                    {
+                        g.ReleaseHdc(hdc);
+                    }
+                    if (!tisak)
+                    {
+                        IntPtr src = GetWindowDC(hwnd);
+                        try
+                        {
+                            IntPtr hdc2 = g.GetHdc();
+                            try
+                            {
+                                tisak = BitBlt(hdc2, 0, 0, w, h, src, 0, 0, 0x00CC0020);
+                            }
+                            finally
+                            {
+                                g.ReleaseHdc(hdc2);
+                            }
+                        }
+                        finally
+                        {
+                            ReleaseDC(hwnd, src);
+                        }
+                    }
+                    if (!tisak)
+                    {
+                        ZapisiSnimku(put, "PrintWindow i BitBlt nisu uspjeli " + w + "x" + h);
+                        return;
+                    }
+                    bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
+                }
+            }
+            catch (Exception ex)
+            {
+                ZapisiSnimku(put, ex.ToString());
+            }
+        }
+
+        private static void SnimiEkran(string put)
+        {
+            if (ImaSnimku(put))
+                return;
+            try
+            {
+                var ekran = Screen.PrimaryScreen == null ? System.Drawing.Rectangle.Empty : Screen.PrimaryScreen.Bounds;
+                if (ekran.Width < 50 || ekran.Height < 50)
+                {
+                    ZapisiSnimku(put, "nema ekrana " + ekran.Width + "x" + ekran.Height);
+                    return;
+                }
                 using (var bmp = new System.Drawing.Bitmap(ekran.Width, ekran.Height))
                 {
                     using (var g = System.Drawing.Graphics.FromImage(bmp))
@@ -404,18 +533,22 @@ namespace Carpo.TestShell
                     bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                ZapisiSnimku(put, ex.ToString());
             }
         }
 
         private static void SnimiFormu(Form forma, string put)
         {
+            if (ImaSnimku(put))
+                return;
             try
             {
                 var r = forma.Bounds;
                 if (r.Width < 50 || r.Height < 50)
                 {
+                    ZapisiSnimku(put, "forma " + r.Width + "x" + r.Height);
                     SnimiEkran(put);
                     return;
                 }
@@ -425,8 +558,9 @@ namespace Carpo.TestShell
                     bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                ZapisiSnimku(put, ex.ToString());
                 SnimiEkran(put);
             }
         }
@@ -459,6 +593,30 @@ namespace Carpo.TestShell
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint nFlags);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr GetWindowDC(IntPtr hWnd);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
+
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        private static extern bool BitBlt(IntPtr hdc, int x, int y, int cx, int cy, IntPtr hdcSrc, int x1, int y1, uint rop);
 
         private void Postavke()
         {

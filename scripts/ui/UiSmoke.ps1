@@ -59,6 +59,8 @@ foreach ($rel in $granule) {
     $tekst = ""
     if (Test-Path -LiteralPath ($png + ".txt")) { $tekst = Get-Content -LiteralPath ($png + ".txt") -Raw }
     Write-Host $tekst
+    $snimkaGreska = $png + ".snimka.txt"
+    if (Test-Path -LiteralPath $snimkaGreska) { Write-Host (Get-Content -LiteralPath $snimkaGreska -Raw) }
     if ($kod -ne 0) { throw "UI smoke $ime kod $kod. $tekst" }
     if ($tekst -notlike "OK*") { throw "UI smoke $ime nema OK. $tekst" }
     if (-not (Test-Path -LiteralPath $png)) { throw "UI smoke $ime nema screenshot" }
