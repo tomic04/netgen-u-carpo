@@ -221,7 +221,10 @@ namespace Carpo.NetGen.Granule
 
         private static SqlKontekst FormaKontekst()
         {
-            var k = SqlTekst.ZaFormu(null);
+            var k = new SqlKontekst();
+            k.Id = "0";
+            k.DetId = "0";
+            k.Node = "null";
             k.OperaterId = "7";
             return k;
         }
