@@ -375,7 +375,7 @@ namespace Carpo.NetGen.Ui
                         PostaviGumb(stanje.Substring(0, jednako), stanje.Substring(jednako + 1) != "disable");
                 }
                 else if (IspisMotora.JeIspisImena(s) || s.StartsWith("PRINT", StringComparison.OrdinalIgnoreCase))
-                    NgDnevnik.Akcija("ispis " + s);
+                    PrintBridge.Ispisi(s, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "", "", "", "", Text);
                 else if (s.ToUpperInvariant().IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0)
                 {
                     var poziv = AssemblyPoziv.Pozovi(s, "shell", _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "");

@@ -328,8 +328,8 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `PRINTMASTER` / `PRINTREPXMASTER` / `PRINTGRID`
 - **NetGen:** oba prefiksa na podlozi zovu `IspisGRIDREPX` i izađu (`Form1.vb` 4945–4955). `Button7_Click` (Janus, tu je `PAGEORIENTATION`, `6039–6043`) se ne zove. REPX master (`5984–6003`) puni zaglavlje, `##` i `!!` su novi red, prazan centar reže naslov do `v[`. Konekcija je `strGlobalSQLSERVERlogin`. Detail (`6067–6085`) koristi `Conn` i prefiks `Driver={SQL Server};`. Na dijalogu `PRINTGRID(` i `PRINTREPXGRID(` zovu istu `IspisGRIDREPX` (`6950–6957`, `6985–6991`) s argumentom `"lodani"` i zaglavljem grida (`9041–9056`). Prazan centar dijaloga je cijeli `Me.Text`, ne rez do `v[`.
-- **Carpo:** `print` čije ime počinje s `repx` ide u REPX (`docs/analiza/01-carpo-arhitektura.md`). Nema dva potpisa master/detail ni `lodani`. `PrintBridge` još ne zove pisač (`Placeholders.cs` 46–52).
-- **Posljedica:** `PAGEORIENTATION="LANDSCAPE"` na Kartici ne okrene ispis liste. `PRINTGRID` i `PRINTREPXGRID` nisu dva ispisa.
+- **Carpo:** `PrintBridge` zove `NetGenExtensions.frmGridExPrintingREPX.PrintDocumentREPX`. Master, detail i `lodani` su tri prva argumenta. REPX i dalje ne gleda `PAGEORIENTATION`. Janus grana i dalje mapira `LANDSCAPE` na `Vertical` (`6039`).
+- **Posljedica:** lista se okrene samo ako se zove Janus `Button7`, a `PRINTMASTER` ga ne zove. `PAGEORIENTATION` na Kartici i dalje ne okreće REPX.
 - **Test:** `KAR-30`, `KAR-31`, `JEP-02`, `MPB-02`
 
 ## R42 `:repx/` ide u Spin.Printing, pa u `rptDevRepx`

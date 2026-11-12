@@ -159,7 +159,7 @@ namespace Carpo.NetGen.Ui
                 else if (vrsta == "forma")
                     Otvori(s);
                 else if (vrsta == "ispis")
-                    NgDnevnik.Akcija("ispis " + s);
+                    Carpo.NetGen.Print.PrintBridge.Ispisi(s, false, IdReda(), _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, ParametriReda(), "", "", "", "", Text);
                 else if (vrsta == "assembly")
                 {
                     var poziv = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(s, "shell", IdReda(), _master.Kontekst.OperaterId, _spoj, _master.Stanje.ZadnjiSql, ParametriReda(), "");

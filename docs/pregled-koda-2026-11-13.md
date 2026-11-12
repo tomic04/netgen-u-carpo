@@ -102,6 +102,14 @@ Pregledano je 9 modula. Popravljeno: `FILLEXPLORER` nakon OK, `ONLOAD2` po natpi
 | Carpo | `Poziv/FiskalPoziv.cs` učita isti sklop i istu klasu. `PosaljiSoapPorukuCertifikatDatoteka` se ne zove. |
 | Razlika | DA za slanje. Izvorni kod Raverusa nije potreban. Treba DLL na stroju. |
 
+## 13. Ispis grida
+
+| | |
+|---|---|
+| NetGen | `PRINTREPXMASTER` i `PRINTMASTER` zovu `IspisGRIDREPX` i izađu (`Form1.vb` 4945–4955). Master šalje `"master"` i login (`6003`). Detail šalje `"detail"` i `Conn` (`6085`). Dijalog šalje `"lodani"` (`Form2.vb` 9056). `PAGEORIENTATION` je samo u Janus `Button7` (`6039`): `LANDSCAPE` postane `Vertical`. |
+| Carpo | `Placeholders.cs` `PrintBridge`. Ako nema `NetGenExtensions`, log i izlaz, bez iznimke. |
+| Razlika | NE za tri potpisa. DA ostaje: REPX ne okreće stranicu. |
+
 ## Što ostaje otvoreno
 
 - Word još nema tijelo.

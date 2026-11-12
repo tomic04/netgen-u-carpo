@@ -31,6 +31,7 @@ namespace Carpo.NetGen.GridTest
             AssemblyLoad();
             Fiskal();
             Include();
+            Ispis();
             Zamjene();
             OznakaBezBaze();
             JeziciBezBaze();
@@ -122,6 +123,46 @@ namespace Carpo.NetGen.GridTest
             {
                 Carpo.NetGen.Print.Prevod.Vanjski = null;
             }
+        }
+
+        private static void Ispis()
+        {
+            T("print-vrste", Carpo.NetGen.Print.PrintBridge.Vrsta("PRINTREPXMASTER", false) == "master"
+                && Carpo.NetGen.Print.PrintBridge.Vrsta("PRINTDET", false) == "detail"
+                && Carpo.NetGen.Print.PrintBridge.Vrsta("PRINTREPXGRID", true) == "lodani", "");
+            T("print-orijentacija", Carpo.NetGen.Print.PrintBridge.RepxGledaOrijentaciju() == false
+                && Carpo.NetGen.Print.PrintBridge.JanusOrijentacija("LANDSCAPE") == "vertical"
+                && Carpo.NetGen.Print.PrintBridge.JanusOrijentacija("") == "horizontal", "");
+            T("print-centar", Carpo.NetGen.Print.PrintBridge.Centar("", "Stanje v[1]", false) == "Stanje"
+                && Carpo.NetGen.Print.PrintBridge.Centar("", "Cijeli naslov", true) == "Cijeli naslov", "");
+            var stroj = new LazniRepex();
+            Carpo.NetGen.Print.PrintBridge.Stroj = stroj;
+            try
+            {
+                bool ok = Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTREPXMASTER", false, "7", "3", "conn", "login", "select 1", "@g=1", "@svi=1", "", "", "", "Naslov v[2]");
+                T("print-master", ok && LazniRepex.Vrsta == "master" && LazniRepex.Konekcija == "Driver={SQL Server};login" && LazniRepex.Parametri == "@g=1" && stroj.PageHeaderCenter == "Naslov", LazniRepex.Konekcija);
+                var det = new LazniRepex();
+                Carpo.NetGen.Print.PrintBridge.Stroj = det;
+                ok = Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTDET", false, "7", "3", "conn", "login", "select 1", "@g=1", "@svi=1", "L", "C", "D", "Naslov");
+                T("print-detail", ok && LazniRepex.Vrsta == "detail" && LazniRepex.Konekcija == "Driver={SQL Server};conn" && det.PageHeaderLeft == null, LazniRepex.Vrsta);
+                Carpo.NetGen.Print.PrintBridge.Stroj = stroj;
+                ok = Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTREPXGRID", true, "7", "3", "conn", "login", "select 1", "@g=1", "@svi=1", "", "", "", "Dijalog");
+                T("print-lodani", ok && LazniRepex.Vrsta == "lodani" && LazniRepex.Parametri == "@svi=1" && stroj.PageHeaderCenter == "Dijalog", LazniRepex.Parametri);
+            }
+            finally
+            {
+                Carpo.NetGen.Print.PrintBridge.Stroj = null;
+            }
+            bool bacio = false;
+            try
+            {
+                Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTMASTER", false, "1", "2", "c", "l", "", "", "", "", "", "", "");
+            }
+            catch
+            {
+                bacio = true;
+            }
+            T("print-nema-dll", bacio == false, "");
         }
 
         private static void Include()
@@ -1638,6 +1679,23 @@ namespace Carpo.NetGen.GridTest
                 return null;
             }
             return null;
+        }
+    }
+
+    public sealed class LazniRepex
+    {
+        public static string Vrsta;
+        public static string Konekcija;
+        public static string Parametri;
+        public string PageHeaderLeft;
+        public string PageHeaderCenter;
+        public string PageHeaderRight;
+
+        public void PrintDocumentREPX(object vrsta, object grid, object xml, object node, object sql, object id, object operater, object konekcija, object parametri, object zadnji)
+        {
+            Vrsta = Convert.ToString(vrsta);
+            Konekcija = Convert.ToString(konekcija);
+            Parametri = Convert.ToString(parametri);
         }
     }
 
