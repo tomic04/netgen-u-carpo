@@ -97,8 +97,24 @@ namespace Carpo.NetGen.TestHooks
             s["border"] = "Sizable";
             NgForm forma = FormaGumba(p, gumb.Naredba);
             if (forma != null)
+            {
                 Raspored.KljuceviForme(forma, s);
+                s["datumParam"] = ImaDatum(forma) ? "yyyyMMdd" : "";
+            }
+            s["dnevnik"] = "NetGen SQL";
             return new Pogled { Izvedeno = true, Stavke = s };
+        }
+
+        private static bool ImaDatum(NgForm forma)
+        {
+            if (forma == null || forma.Kontrole == null)
+                return false;
+            for (int i = 0; i < forma.Kontrole.Count; i++)
+            {
+                if (forma.Kontrole[i].Grana == NgGrana.Date)
+                    return true;
+            }
+            return false;
         }
 
         private static NgForm FormaGumba(NgProject p, string naredba)
@@ -179,13 +195,11 @@ namespace Carpo.NetGen.TestHooks
             if (g.Stanje.Odluka == "salji" && !g.Stanje.BlokiranoPisanje)
                 g.IzvrsiCitanje(Spoj());
 
-            if (!string.IsNullOrEmpty(g.Stanje.SqlGreska))
+            string sqlGreska = g.Stanje.SqlGreska;
+            if (g.Stanje.Kolone.Count == 0)
             {
-                return new Pogled
-                {
-                    Izvedeno = false,
-                    Napomena = "NetGen Catch: poruka, grid nije napunjen. " + (g.Stanje.Poruka ?? g.Stanje.SqlGreska)
-                };
+                g.Stanje.Kolone.Add(new GridKolona { Podatak = "Icon", Natpis = "", Sirina = 22, Vidljiva = false, EditTip = "NoEdit" });
+                g.Stanje.Kolone.Add(new GridKolona { Podatak = "Selector", Natpis = "", Sirina = 22, Selektor = true, Vidljiva = g.Stanje.CheckboxVidljiv, EditTip = "CheckBox" });
             }
 
             var s = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -295,7 +309,10 @@ namespace Carpo.NetGen.TestHooks
             DodajKomande(p, s);
             DodajKontrole(p, s);
             DodajPoziv(p, s);
-            return new Pogled { Izvedeno = true, Stavke = s };
+            var pogled = new Pogled { Izvedeno = true, Stavke = s };
+            if (!string.IsNullOrEmpty(sqlGreska))
+                pogled.Napomena = "NetGen Catch: poruka, grid nije napunjen. " + sqlGreska;
+            return pogled;
         }
 
         private static void NapuniMedjuspremnik(string spoj, string sql, Dictionary<string, string> cb)

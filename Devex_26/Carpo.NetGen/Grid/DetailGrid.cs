@@ -210,8 +210,7 @@ namespace Carpo.NetGen.Grid
                 string ime = k.Name ?? "";
                 if (ime.Length == 0)
                     continue;
-                if (!detail && s.ContainsKey("kolona." + ime + ".sirina"))
-                    continue;
+                // WIDTH iz XML-a prepisuje sirinu koju je SQL vec slozio (Form1.vb 7522).
                 int w = 100;
                 string width = k.Atributi == null ? null : k.Atributi.Vrijednost("WIDTH");
                 int n;

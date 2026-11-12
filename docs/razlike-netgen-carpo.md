@@ -845,6 +845,15 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** korak `Spin stubovi i otvaranje` na sql-ai
 - **PR:** spin-otvaranje
 
+## R103 `WIDTH` prepisuje širinu koju je SQL već složio
+
+- **Element:** `MASTERCOLUMNS` `WIDTH`
+- **NetGen:** `CreateGridColumns` prvo stavi širinu po tipu, zatim `CustomFormatKolona` prepiše je s `WIDTH/14` (`Form1.vb` 7522).
+- **Carpo:** isto. `VrstaBlagajne` kao string nije 100 nego 179. Combo koji drži stablo, a `TREE` je prazan, uzme `SPLITTERDISTANCE` (prijemni list 180).
+- **Odluka:** NetGen logika.
+- **Test:** `bla-width-prepisuje`
+- **PR:** spin-otvaranje
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

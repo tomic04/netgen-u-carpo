@@ -64,20 +64,24 @@ namespace Carpo.NetGen.Shell
             else if (treePrazan)
             {
                 s.GumbDrvoEnabled = false;
-                s.LijeviSplitter = 243;
+                s.LijeviSplitter = Splitter(projekt, 243);
             }
             else
             {
                 s.GumbDrvoEnabled = true;
-                int d = 290;
-                string raw = projekt.Atributi == null ? null : projekt.Atributi.Vrijednost("SPLITTERDISTANCE");
-                int parsed;
-                if (!string.IsNullOrEmpty(raw) && int.TryParse(raw.Trim(), out parsed))
-                    d = parsed;
-                s.LijeviSplitter = d;
+                s.LijeviSplitter = Splitter(projekt, 290);
             }
             s.DetailSplitterNaDno = s.DetailSql.Trim().Length == 0;
             return s;
+        }
+
+        private static int Splitter(NgProject projekt, int inace)
+        {
+            string raw = projekt == null || projekt.Atributi == null ? null : projekt.Atributi.Vrijednost("SPLITTERDISTANCE");
+            int parsed;
+            if (!string.IsNullOrEmpty(raw) && int.TryParse(raw.Trim(), out parsed))
+                return parsed;
+            return inace;
         }
     }
 }

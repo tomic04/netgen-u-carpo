@@ -127,6 +127,21 @@ namespace Carpo.NetGen.GridTest
             DetailGrid.Kljucevi(bla, master, s);
             T("bla-sirina", bla != null && s["detClear"] == "true" && s["kolona.VrstaBlagajne.sirina"] == "179" && s["detailNaSelekciji"] == "true",
                 s.ContainsKey("kolona.VrstaBlagajne.sirina") ? s["kolona.VrstaBlagajne.sirina"] : "");
+            if (bla != null)
+            {
+                var tab = new DataTable();
+                tab.Columns.Add("VrstaBlagajne", typeof(string));
+                tab.Rows.Add("blagajna");
+                var gm = new MasterGrid();
+                gm.Ucitaj(bla, tab);
+                GridKolona vb = null;
+                for (int i = 0; i < gm.Stanje.Kolone.Count; i++)
+                {
+                    if (string.Equals(gm.Stanje.Kolone[i].Podatak, "VrstaBlagajne", StringComparison.OrdinalIgnoreCase))
+                        vb = gm.Stanje.Kolone[i];
+                }
+                T("bla-width-prepisuje", vb != null && vb.Sirina == 179, vb == null ? "nema" : vb.Sirina.ToString());
+            }
             s.Clear();
             NgProject pl = Ucitaj("PrijemniList.xml");
             DetailGrid.Kljucevi(pl, master, s);
