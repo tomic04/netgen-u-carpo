@@ -73,6 +73,7 @@ Ostale stavke ostaju otvorene. Kuka na `otvori` ih ne zatvara, ili ljuska ih ne 
 - `BVG-07` odbijen. Test gleda `Parametar like`. `Meni.ps1` upise `asm:NetGenDLL.loader:KUPDostKnNGBvg.xml`. `fk_meni` je `nocheck` jer izracunati Parent ne prolazi. Nema NetGen linije koja ovo potvrduje. Ostaje otvoren. Sazetak 164 / 138 / 26.
 - `KUC-07` odbijen. Test gleda `Parametar like`. `Meni.ps1` upise `asm:NetGenDLL.loader:KUPNG.xml`. `fk_meni` je `nocheck` jer izracunati Parent ne prolazi. Nema NetGen linije koja ovo potvrduje. Ostaje otvoren. Sazetak 164 / 138 / 26.
 - `KUP-05` odbijen. Test gleda `Parametar like`. `Meni.ps1` upise `asm:NetGenDLL.loader:KUPNG.xml`. `fk_meni` je `nocheck` jer izracunati Parent ne prolazi. Nema NetGen linije koja ovo potvrduje. Ostaje otvoren. Sazetak 164 / 138 / 26.
+- `NAR-09` odbijen. Test gleda `Parametar like`. `Meni.ps1` upise `asm:NetGenDLL.loader:MPNarIzdSkl.xml`. `fk_meni` je `nocheck` jer izracunati Parent ne prolazi. Nema NetGen linije koja ovo potvrduje. Ostaje otvoren. Sazetak 164 / 138 / 26.
 
 Grid test na vrhu (#56) posebno drži `rupa-zakljuci` (`:Zakljucavanje` otvara formu i ne šalje SQL) i `rupa-pokazi` (`FILLEXPLORER` složi SQL, a na Jupiteru ga ne šalje). To nisu stavke iz ovih 164. Master ljuske se i dalje ne zamijeni.
 
