@@ -473,6 +473,8 @@ namespace Carpo.TestShell
                         PostMessage(prozor, 0x0010, IntPtr.Zero, IntPtr.Zero);
                 }
             }
+            if (_uiKlikGotov)
+                return;
             if (_uiIshod == 0)
             {
                 SnimiEkran(snimka);
