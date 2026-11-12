@@ -60,11 +60,16 @@ function Skalar($conn, [string]$sql) {
     return $v
 }
 
+function Celija($row, [string]$ime) {
+    if ($row -eq $null -or [string]::IsNullOrEmpty($ime)) { return $null }
+    return $row[$ime]
+}
+
 function TipSql($row) {
-    $tip = [string]$row.tip
-    $len = [int]$row.max_length
-    $prec = [int]$row.precision
-    $scale = [int]$row.scale
+    $tip = [string](Celija $row "tip")
+    $len = [int](Celija $row "max_length")
+    $prec = [int](Celija $row "precision")
+    $scale = [int](Celija $row "scale")
     switch ($tip) {
         "varchar" { if ($len -lt 0) { return "varchar(max)" } else { return "varchar($len)" } }
         "char" { return "char($len)" }
@@ -142,11 +147,12 @@ if ($stupci -ne $null) {
     if ($ima -eq $null) {
         $dijelovi = New-Object System.Collections.Generic.List[string]
         foreach ($r in $stupci.Rows) {
-            if ($r.is_computed) { continue }
+            if (Celija $r "is_computed") { continue }
+            $ime = [string](Celija $r "name")
+            if ([string]::IsNullOrWhiteSpace($ime)) { continue }
             $kol = TipSql $r
-            $id = $(if ($r.is_identity) { " IDENTITY(1,1)" } else { "" })
-            $nulla = $(if ($r.is_identity -or -not $r.is_nullable) { "NOT NULL" } else { "NULL" })
-            $ime = [string]$r.name
+            $id = $(if (Celija $r "is_identity") { " IDENTITY(1,1)" } else { "" })
+            $nulla = $(if ((Celija $r "is_identity") -or -not (Celija $r "is_nullable")) { "NOT NULL" } else { "NULL" })
             $dijelovi.Add("[$ime] $kol$id $nulla")
         }
         $sql = "CREATE TABLE dbo.klmasterroba (" + ($dijelovi -join ", ") + ");"
@@ -158,8 +164,9 @@ if ($stupci -ne $null) {
         }
     } else {
         foreach ($r in $stupci.Rows) {
-            if ($r.is_computed) { continue }
-            $ime = [string]$r.name
+            if (Celija $r "is_computed") { continue }
+            $ime = [string](Celija $r "name")
+            if ([string]::IsNullOrWhiteSpace($ime)) { continue }
             $postoji = Skalar $spin "SELECT COL_LENGTH(N'dbo.klmasterroba', N'$ime')"
             if ($postoji -ne $null) { continue }
             $kol = TipSql $r
@@ -231,14 +238,16 @@ ORDER BY c.column_id
     $vrijednosti = New-Object System.Collections.Generic.List[string]
     $moze = $true
     foreach ($r in $meta.Rows) {
-        if ($r.is_identity -or $r.is_computed) { continue }
-        $tip = [string]$r.tip
+        if ((Celija $r "is_identity") -or (Celija $r "is_computed")) { continue }
+        $tip = [string](Celija $r "tip")
         if ($tip -eq "timestamp" -or $tip -eq "rowversion") { continue }
-        $ime = [string]$r.name
+        $ime = [string](Celija $r "name")
+        if ([string]::IsNullOrWhiteSpace($ime)) { continue }
         $lit = Literal $ime $tip
-        if ($r.is_nullable -and $ime -ne "Naziv" -and $ime -ne "sortkey" -and $ime -ne "oznaka" -and $ime -ne "oznaka2") { continue }
+        $nullable = [bool](Celija $r "is_nullable")
+        if ($nullable -and $ime -ne "Naziv" -and $ime -ne "sortkey" -and $ime -ne "oznaka" -and $ime -ne "oznaka2") { continue }
         if ($lit -eq $null) {
-            if (-not $r.is_nullable) { $moze = $false; $linije.Add("- nema literala za NOT NULL $ime ($tip)") }
+            if (-not $nullable) { $moze = $false; $linije.Add("- nema literala za NOT NULL $ime ($tip)") }
             continue
         }
         $imena.Add("[$ime]")
