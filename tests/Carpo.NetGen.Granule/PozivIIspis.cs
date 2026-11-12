@@ -118,7 +118,7 @@ namespace Carpo.NetGen.Granule
             l.Add(pop.IndexOf("ADAPTER_FORM~REFRESHMASTERGRID", StringComparison.Ordinal) >= 0
                 ? Qa.Z(Ime, "KUC-06", "Popup s tildom ide u Rafalno, ne u NovaGenerickaForma", "netgen/Form1.vb:5743-5757")
                 : Qa.P(Ime, "KUC-06", "popup", "netgen/Form1.vb:5743", ""));
-            l.Add(Stablo.Meni(Ime, "KUC-07", "KUPNG.xml"));
+            l.Add(Stablo.Otvori(Ime, "KUC-07", "KUPNG.xml", root));
             Ispis.K(l, Ime, xml, "KUC-20", "Dijalog totalgen: id, operater, konekcija, strParametriSvi, strParametriSvi", "netgen/Form2.vb:7424-7456", "totalgen.dijalog", "parametri-dva");
             Ispis.K(l, Ime, xml, "KUC-21", "Shell bez tildu: zadnji SQL mastera i ParametriSaGrida. Povrat se ne cita", "netgen/Form1.vb:4623,5275-5278", "totalgen.shell", "master-sql");
             return l;
