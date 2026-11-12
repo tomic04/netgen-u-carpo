@@ -1,5 +1,11 @@
 # Objekti na spinu
 
+## Testni retci, nisu s klijenta
+
+`scripts/spin/Meni.ps1` u `dbo.ssMeni.Parametar` stavlja `asm:NetGenDLL.loader:<datoteka>.xml`. To je oblik koji spin već ima (`PrijemniList.xml` u dokumentu 06). Jupiter iza druge dvotočke preda `ModuleID`. NetGen ga spremi u `Mid` (`Form1.vb` 1251–1258) i otvori `remotedllpath\SharedDLLs\xml\` + `Mid` (`1139`). Datoteke: `FakPar.xml` (`FAK-10`), `KntDospjeleStavke.xml` (`DOS-10`), `Kulture.xml` (`KUL-12`), `KUPDostKN.xml` (`KND-06`), `KUPDostKnNGBvg.xml` (`BVG-07`), `KUPNG.xml` (`KUP-05` i `KUC-07`), `MPNarIzdSkl.xml` (`NAR-09`), `MPNGPregDokMAIL.xml` (`MAIL-07`), `RatArkod.xml` (`RIJ-31`), `RobaWebKlase.xml` (`RIJ-33`). Nije klijentski red izbornika.
+
+`scripts/spin/dospjele.sql` radi `DOS-11`. Combo i multidrop dobiju stupac 0 (vrijednost) i stupac 1 (natpis), `Form2.vb` 2430–2431 i 2503–2504. `spKntPopuniKontroleNG` prima `@Action` i `@id` kako piše u `KntDospjeleStavke.xml` (`konto`, `klpartneri`, `odgosobe`, `zupanije`, `mjesta`). `spOrgShemaQuery` prima `@action`. `spKntOtvStavkeQueryNG` prima parametre grida iz istog XML-a. Tijela su testni SELECT, ne klijentska procedura.
+
 `scripts/spin/Prenesi.ps1` na sql-ai čita s jupiter2019 i jupiter2022 samo `sys.columns` i `sys.sql_modules`. Procedure se tamo ne pokreću i retci tablica se ne čitaju. Tijelo se kreira na spinu. Ako tekst ima INSERT, UPDATE, DELETE ili MERGE, izvor je označen s `pise`. Redoslijed: Biovega, pa ostale baze na jupiter2019, zatim jupiter2022. Izvor nakon runa je u `artifacts/spin/izvori.md`.
 
 `scripts/spin/stubovi.sql` i `scripts/spin/Otvori.ps1` rade samo na `localhost` / baza `spin`. Ako otvaranje javi da procedura ne postoji, skripta kreira prazan `SELECT ... WHERE 1 = 0` s parametrima iz poziva. Ako javi nepoznat stupac u jednostavnom `FROM`, doda `varchar(50) NULL`. Stub nastaje samo kad `Prenesi.ps1` nije našao tijelo. Popis kreiranog ide u `artifacts/spin/stubovi-kreirani.md`, ishod u `artifacts/spin/otvaranje.md`.

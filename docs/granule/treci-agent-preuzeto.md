@@ -14,5 +14,5 @@ Polazni broj je iz zelenog CI-ja [43269944426](https://github.com/tomic04/netgen
 
 | Stavka | Zašto ostaje |
 |---|---|
-| `FAK-10`, `DOS-10`, `KUL-12`, `KND-06`, `BVG-07`, `KUC-07`, `KUP-05`, `NAR-09`, `MAIL-07`, `RIJ-31`, `RIJ-33` | Red u `ssMeni.Parametar` nije u spinu. Red se ne izmišlja i `ssMeni` se ne ispravlja. |
-| `DOS-11` | `spKntPopuniKontroleNG`, `spOrgShemaQuery` i `spKntOtvStavkeQueryNG` nisu na spinu. Tijelo postoji samo kod klijenata. Ne izmišlja se. |
+| `FAK-10`, `DOS-10`, `KUL-12`, `KND-06`, `BVG-07`, `KUC-07`, `KUP-05`, `NAR-09`, `MAIL-07`, `RIJ-31`, `RIJ-33` | Testni red `asm:NetGenDLL.loader:<xml>` u `scripts/spin/Meni.ps1`. Nije klijentski red. |
+| `DOS-11` | `scripts/spin/dospjele.sql`: tri procedure, stupac 0/1 kao `Form2.vb` 2430–2431 i 2503–2504. Testni SELECT, ne klijentsko tijelo. |
