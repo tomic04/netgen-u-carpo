@@ -1,6 +1,15 @@
+using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+using System.Globalization;
 using System.IO;
+using Carpo.NetGen.Grid;
+using Carpo.NetGen.Komande;
+using Carpo.NetGen.Log;
+using Carpo.NetGen.Model;
 using Carpo.NetGen.TestHooks;
+using Carpo.NetGen.Xml;
 
 namespace Carpo.NetGen.Granule
 {
@@ -35,7 +44,59 @@ namespace Carpo.NetGen.Granule
             }
             System.Console.WriteLine("[Z] ZakljucivanjeTemNG ONK-04 otvaraFormu=Zakljucavanje saljeSubmit=false");
             l.Add(Qa.Z("ZakljucivanjeTemNG", "ONK-04", opis, izvor));
+            l.Add(Niv05(root));
             return l;
+        }
+
+        private static Stavka Niv05(string root)
+        {
+            const string ime = "MPNivelacija";
+            const string id = "NIV-05";
+            const string opis = "Pokaži na FILTERFORM pošalje ONSUBMIT jer je FILLEXPLORER true";
+            const string izvor = "netgen/Form1.vb:5445-5452; netgen/Form2.vb:3367";
+            string xml = Path.Combine(root, "definitions", "netgen", "BIOVEGA", "MPNivelacija.xml");
+            string greska;
+            NgProject p = Qa.Ucitaj(xml, out greska);
+            if (p == null)
+                return Qa.P(ime, id, opis, izvor, greska ?? "XML");
+            NgForm f = p.NadjiFormu("FILTERFORM");
+            if (f == null)
+                return Qa.P(ime, id, opis, izvor, "nema FILTERFORM");
+            var cb = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            DateTime danas = DateTime.Now;
+            cb["xdatumod"] = danas.Year.ToString("0000", CultureInfo.InvariantCulture) + "0101";
+            cb["xdatumdo"] = danas.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+            string sql = DijalogTok.SqlNakonOk(f, new SqlKontekst { OperaterId = "7", Node = "null" }, cb);
+            if (sql.IndexOf("spMPQueryGlaIDetNG", StringComparison.Ordinal) < 0 || sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                return Qa.P(ime, id, opis, izvor, "sql [" + sql + "]");
+            int prije = NgDnevnik.Zapisi.Count;
+            NgDnevnik.Sql(sql);
+            string opisLoga = "";
+            for (int i = NgDnevnik.Zapisi.Count - 1; i >= prije; i--)
+            {
+                if (string.Equals(NgDnevnik.Zapisi[i].Tekst, sql, StringComparison.Ordinal))
+                    opisLoga = NgDnevnik.Zapisi[i].Opis ?? "";
+            }
+            if (opisLoga != "NetGen SQL")
+                return Qa.P(ime, id, opis, izvor, "dnevnik [" + opisLoga + "]");
+            try
+            {
+                using (var conn = new SqlConnection(Citanje.Spoj))
+                using (var cmd = new SqlCommand(sql, conn))
+                using (var da = new SqlDataAdapter(cmd))
+                {
+                    cmd.CommandTimeout = 60;
+                    var dt = new DataTable();
+                    conn.Open();
+                    da.Fill(dt);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Qa.P(ime, id, opis, izvor, ex.Message);
+            }
+            Console.WriteLine("[Z] MPNivelacija NIV-05 ONSUBMIT=spMPQueryGlaIDetNG dnevnik=NetGen SQL");
+            return Qa.Z(ime, id, opis, izvor);
         }
     }
 }

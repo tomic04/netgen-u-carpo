@@ -32,9 +32,9 @@ Snimak CI #31 ima 160 stavki. U ovom prolazu su iz tablice izašle `MPK-30`, `MP
 | 22 | Tražilica | 1 | 2 |
 | 23 | Redoslijed punjenja podloge | 1 | 1 |
 | 24 | fidus nema tablicu ssMeni | 1 | 1 |
-| 25 | Gumbi/lanac: Pokaži šalje ONSUBMIT | 2 | 2 |
+| 25 | Gumbi/lanac: Pokaži šalje ONSUBMIT | 1 | 1 |
 
-Zbroj stavki u tablici ispod je 152.
+Zbroj stavki u tablici ispod je 151.
 
 Tri gumba iz retka gumbi/lanac na PR #60 nisu imala ID. Od šest, zatvoreni su `MPK-30`, `MPK-31` i `STA-34`. Preostala tri su `ONK-04`, `NIV-05` i `REA-04` (dijalozi `ZakljucivanjeTemNG`, `MPNivelacija`, `MPRealizNG`). `ONK-04` je slučaj 4 u `Onclick-dijalog-testovi.md`.
 
@@ -153,7 +153,6 @@ Tri gumba iz retka gumbi/lanac na PR #60 nisu imala ID. Od šest, zatvoreni su `
 
 | Stavka | Očekivano | Izvor | Zašto je otvoreno |
 |---|---|---|---|
-| MPNivelacija `NIV-05` | Pokaži na FILTERFORM pošalje ONSUBMIT jer je FILLEXPLORER true | `netgen/Form1.vb:5445-5452; netgen/Form2.vb:3367` | dijalog još nije potvrdio master |
 | MPRealizNG `REA-04` | Pokaži na FORM1 pošalje ONSUBMIT jer je FILLEXPLORER true | `netgen/Form1.vb:5445-5452; netgen/Form2.vb:3367` | dijalog još nije potvrdio master |
 
 ## 7. Kvačica, suma, sort, edit, Enter i selekcija

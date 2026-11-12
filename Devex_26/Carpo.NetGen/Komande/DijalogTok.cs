@@ -182,6 +182,18 @@ namespace Carpo.NetGen.Komande
             return "";
         }
 
+        /// <summary>
+        /// Pokaži je Button1. FILLEXPLORER true šalje ONSUBMIT. Form2.vb 3367, Form1.vb 5445.
+        /// </summary>
+        public static string SqlNakonOk(NgForm forma, SqlKontekst kontekst, IDictionary<string, string> cb)
+        {
+            Klik klik = Gumb(forma, 1, "", false);
+            if (!klik.FillExplorer)
+                return "";
+            string sql = SqlTekst.Sredi(klik.MasterSql ?? "", kontekst);
+            return Dozvola.Poslije(sql, cb);
+        }
+
         public static bool PreskociGrid(NgControl k)
         {
             return Skip(k);
