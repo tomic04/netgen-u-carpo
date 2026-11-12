@@ -83,8 +83,8 @@ Runtime, late-bound, nisu reference u csproj. Bez njih se TestShell prevede, a g
 | `Raverus.FiskalizacijaDEV.COM` | `FISKALIZACIJA*` | `Raverus.FiskalizacijaDEV.COM.CentralniInformacijskiSustav` |
 | `SLOFISKAL` | isti, ako URL sadrži `fu.gov.si` | `SLOFISKAL.Program` |
 | assembly iz `ASSEMBLYLOAD(Ime.Klasa)` | po granuli | javna metoda `totalgen(id, operater, connection, a, b)` |
-| `Spin.Printing.v23` i/ili `v9.1` | stari ispis u `Class1` | samo ako v26 nije prihvaćen kao zamjena (pitanje 5) |
-| `PrintDlg2010`, `rptDevRepx`, `NetGenExtensions` | REPX / dijalog ispisa | isto, ovisi o pitanju 5 |
+| `rptDevRepx.dll` | `::repx/` i dijalog ispisa | `rptDevRepx.clsReport`, `isnetgen = 1` (`Form6.vb` 134–136). Već je DevExpress 26 |
+| `Spin.Printing.v26.dll` | ispis preko `Spin.Printing.Start` | zamjena za v23/v9.1 (`Class1.vb` 297–304). v23 i v9.1 se ne isporučuju |
 | `JupiterTranslator10.dll` | prijevod | već u compile skupu Commona; NetGen ga još i `Assembly.Load`a u `Form1.Run` |
 | `JupiterLogger.dll` | log | već u compile skupu Corea |
 
@@ -94,7 +94,7 @@ Runtime, late-bound, nisu reference u csproj. Bez njih se TestShell prevede, a g
 
 - `Janus.Windows.GridEX.v3`, `Janus.Data.v3`, `Janus.Windows.Common.v3`
 - `DevExpress.*.v13.1`
-- `GridExPrinting.dll` (x86, stari ispis Janusa) — osim ako se pitanje 5 riješi tako da se stari ispis zove bajt-po-bajt
+- `GridExPrinting.dll`, `Spin.Printing.v23`, `Spin.Printing.v9.1` — ispis ide na v26 i `rptDevRepx`
 - `ILCalc`, `JupiterHelpClient` (stari NetGen vbproj)
 - `Dimenzije.dll` dok se ne gradi `Carpo.Specific`
 
@@ -109,6 +109,7 @@ SharedAssemblies\
     JupiterLogger.dll
     RibbonBase.v26.dll
     Spin.Printing.v26.dll
+    rptDevRepx.dll
     SpinDMSUtil.dll
     Microsoft.Office.Interop.Outlook.dll
     Raverus.FiskalizacijaDEV.COM.dll

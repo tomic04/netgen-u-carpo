@@ -12,15 +12,15 @@ Tri mape:
 | `NetGenBot/granule` | 605 | 10 (isti fajlovi) |
 | `definitions/Prepisane_granule/Netgen` | 28 | 0 |
 | **na disku** | **1238** | |
-| **jedinstven SHA-256** | **609** | **10** |
+| **jedinstven SHA-256** | **609** | **0** |
 
 `definitions/netgen` i `NetGenBot/granule` su isti skup bajtova. Razlikuju se imena mapa: `Agronom granule` naspram `Agronom`, `xml-ovi s nevkoša-zubak` naspram `Nevkos`, `BIOVEGA` naspram `Biovega`. Unutar jednog stabla još 22 datoteke su kopija Agronom↔Biovega (npr. `MPEurParam.xml`, `KntOPZ-STAT-1.xml`, `KOD_RAD1.xml`). `Prepisane_granule/Netgen` dodaje 26 novih sadržaja; 2 se poklapaju s glavnim skupom.
 
 Svi brojevi ispod su nad **609 jedinstvenih** sadržaja. Sirovi zbroj po mapama u JSON-u pod `corpora` duplikate još ima, namjerno, da se vidi koliko ih je na disku.
 
-Encoding: 587× windows-1250, 17× UTF-8, 5× UTF-8 s BOM. Callisto granule su cp1250. Skripta prvo pokuša UTF-8, pa cp1250.
+Encoding nad jedinstvenim fajlovima: 577× windows-1250, 17× UTF-8, 5× UTF-8 s BOM, **10× UTF-16 LE** (BOM `FF FE`). Skripta u prvoj iteraciji te desetke je čitala kao cp1250 i lažno javila pad strogog parsera. Ispravka je u `tools/netgen_xml_katalog.py` (`read_text`). Ponovno brojanje: strogi `xml.etree` pada na **0** datoteka.
 
-Parser je tolerantni regex (komentari se izbace, atributi `ime="..."` / `ime='...'`). Strogi `xml.etree` pada na 10 datoteka. Uzorak: `definitions/netgen/Agronom granule/MPKaseOperNG.xml`, `MPPOSmeni.xml`, `MPPovijestPrijava.xml`, `MPTestBlagajni.xml`, `definitions/netgen/BIOVEGA/MPEFaktureOtpremnice.xml`, `MPKase.xml`, `MPKaseOperNG.xml`, `MPKaseTemplate.xml`, `MPPOSmeni.xml`, `MPTrgovineOstalo.xml`. Uzrok nije ručno otvaran za svaku; tipično su neescapani `&` ili `<` unutar atributa. **Neprovjereno** je li svaka od tih deset u produkciji. NetGenov `XmlDocument.Load` na njima može pasti i otići na DMS/bazu — to nije pokrenuto.
+Tih 10 (`MPKase.xml`, `MPKaseOperNG.xml`, `MPKaseTemplate.xml`, `MPPOSmeni.xml`, `MPPovijestPrijava.xml`, `MPTestBlagajni.xml`, `MPTrgovineOstalo.xml`, `MPEFaktureOtpremnice.xml`, u Agronomu i/ili Biovegi) jesu ispravan XML. .NET `XmlDocument.Load` čita BOM i učita ih. NetGen ih ne odbija i ne „popravlja“. Port radi isto: encoding po BOM-u, bez prepisivanja fajla. Ako `Load` ipak baci (neispravan XML koji u ovom korpusu više nemamo), poruka je ista kao `Form1.vb` 3264–3265 (`MsgBox` s putanjom), bez pokušaja popravka.
 
 Kod-atributi: skripta vadi `GetNamedItem("X")` i `.Attributes("X")` iz `netgen/*.vb`. Pristup koji slaže ime atributa u runtimeu skripta ne vidi. Zato „nema u kodu“ znači „nema u tom obrascu“, ne apsolutnu nemogućnost.
 
@@ -34,8 +34,8 @@ Strukturni elementi koji jesu jezik (broj pojavljivanja / broj datoteka):
 
 | Element | Broj | Datoteka | Značenje |
 |---|---|---|---|
-| `PROJECT` | 598 | 598 | korijen. 11 jedinstvenih fajlova nema `PROJECT` (pokvareni ili fragment). |
-| `INPUT` | 54165 | 589 | kontrola. `TYPE` odlučuje klasu |
+| `PROJECT` | 608 | 608 | korijen. Jedan jedinstveni fajl nema `PROJECT` (fragment ili komentar). |
+| `INPUT` | 54635 | 599 | kontrola. `TYPE` odlučuje klasu |
 | `COLUMN` | 2918 | 170 | format kolone grida |
 | `NAME` | 598 | 597 | dijete `PROJECT`, staro ime; engine naslov vuče iz `CAPTION` |
 | `CAPTION` | 598 | 597 | naslov prozora, prvi tekstualni child |
@@ -73,26 +73,26 @@ Najčešća **imena formi** (element = ime, svaka pojava je jedna definicija):
 
 Uzorak `*_FORM` (`DANAS_FORM`, `JUCER_FORM`, `PROSLIMJESEC_FORM`, `TEKUCIMJESEC_FORM`, `FILTERODDO_FORM`) je gotovo isti na ~85–97 datoteka. To je Callisto predložak filtera razdoblja, ne 97 različitih jezika. Adapter koji prođe jedan takav predložak pokriva cijeli taj skup.
 
-Ukupno različitih imena elemenata: 2120. Od toga je dugi rep ime forme. Puni popis je u JSON-u, ključ `elements`.
+Ukupno različitih imena elemenata: 2144. Od toga je dugi rep ime forme. Puni popis je u JSON-u, ključ `elements`.
 
 ## 3. `TYPE` na `INPUT`
 
-Engine: prvi podstring u `Form2.vb` (dokument 02). Broj je nad 54165 kontrola.
+Engine: prvi podstring u `Form2.vb` (dokument 02). Broj je nad 54635 kontrola (ponovno brojanje nakon UTF-16).
 
 | TYPE kako je napisan | Broj | Datoteka | Grana koja ga uzme |
 |---|---|---|---|
-| `label` | 12964 | 421 | `label` |
-| `button` | 11731 | 491 | `button` |
-| `text` | 7506 | 420 | `text` |
-| `number` | 6491 | 321 | `number` |
-| `combo` | 4609 | 485 | `combo` |
-| `date` | 2618 | 403 | `date` |
-| `grid` | 2029 | 387 | `grid` (Janus) |
-| `search` | 1728 | 339 | `search` |
-| `frame` | 1603 | 281 | `frame` → GroupBox |
-| `check` | 1355 | 230 | `check` |
+| `label` | 12971 | 425 | `label` |
+| `button` | 11834 | 501 | `button` |
+| `text` | 7695 | 427 | `text` |
+| `number` | 6494 | 322 | `number` |
+| `combo` | 4639 | 493 | `combo` |
+| `date` | 2620 | 404 | `date` |
+| `grid` | 2051 | 395 | `grid` (Janus) |
+| `search` | 1729 | 340 | `search` |
+| `frame` | 1638 | 286 | `frame` → GroupBox |
+| `check` | 1371 | 235 | `check` |
 | `group` | 474 | 74 | `group` → isti GroupBox |
-| `checkbox` | 404 | 138 | sadrži `check`, radi |
+| `checkbox` | 458 | 140 | sadrži `check`, radi |
 | `radio` | 299 | 45 | `radio` |
 | `vb.checkbox` | 56 | 29 | sadrži `check`, radi; VB6 ostatak |
 | `trazilica` | 49 | 29 | `trazilica` |
@@ -175,7 +175,7 @@ Najčešći (broj kontrola, ne datoteka):
 
 | Atribut | Broj | Kod u `SrediKontrolu` / grani |
 |---|---|---|
-| `TYPE` | 54165 | da |
+| `TYPE` | 54635 | da |
 | `NAME` | 54136 | da. 29 kontrola bez imena — parametar se ne može složiti |
 | `TOP` | 51696 | da, `/14` |
 | `WIDTH` | 51466 | da, `/14` |

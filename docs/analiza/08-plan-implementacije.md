@@ -1,6 +1,6 @@
 # 08 — Plan implementacije
 
-Ovo je plan, ne kod. Projekt `Carpo.NetGen` se još ne otvara. Faze slijede odluke iz `00-sazetak.md`: Jupiter ulaz kao NetGen, TestShell, SQL kao tekst, tipfeleri kao danas, `TotalGenMultiSelectTemp`, DMS, `ASSEMBLYLOAD`, fiskalizacija. Raspored smije odstupati od piksela.
+Ovo je plan, ne kod. Projekt `Carpo.NetGen` (namespace `Carpo`) se još ne otvara; analiza je zrela za M0 čim stignu DLL-ovi iz dokumenta 09. Faze slijede odluke do iteracije 3: dva Jupiter ulaza (dokument 06), TestShell smije se mijenjati, SQL kao tekst, tipfeleri, `TotalGenMultiSelectTemp`, DMS, `ASSEMBLYLOAD`, fiskalizacija, `yearmonth` 2005–2009, `FOREACH*` na podlozi se ne piše, ispis je v26 + `rptDevRepx`. Testna baza je samo `sql-ai` / `spin`. `jupiter2022` se ne koristi.
 
 Svaka faza ima kriterij prihvaćanja koji se može pročitati bez „izgleda u redu“. Dok nema DLL-ova (dokument 09), radi se samo ono što ne traži prevodenje: zlatni fajlovi i opisi. Čim TestShell prođe build, kreće M0 u C#.
 
@@ -33,7 +33,7 @@ TestShell i dalje nema CLI. Automatski harness nije klikanje Postavki. Harness j
 
 ### M0 — parser
 
-Zadatak: učitati NetGen XML u model (forme, `INPUT`, atributi, `TYPE` grana po `InStr` redu). Nepoznati atribut se čuva. Deset strogo neispravnih fajlova dobije status `Failed`, ne iznimku koja ruši skup.
+Zadatak: učitati NetGen XML u model (forme, `INPUT`, atributi, `TYPE` grana po `InStr` redu). Nepoznati atribut se čuva. Encoding je onaj koji `XmlDocument` pročita iz BOM-a, uključujući UTF-16. Fajl se ne popravlja. Ako `Load` baci, status je greška s istom porukom kao `Form1.vb` 3264–3265, ne iznimka koja ruši cijeli skup. U ovom korpusu takvih fajlova nema.
 
 Prihvaćanje:
 
@@ -66,7 +66,7 @@ Prihvaćanje:
 
 ### M3 — tražilica, grid u formi, `FOREACH*`, multi-select tablica
 
-Zadatak: oba oblika tražilice (`sp`/`select` i `tablica#id#kolona`). Grid parametri `@gridIme`, nizovi plavih i čekiranih. `FOREACH*` samo na dijalogu. Na podlozi no-op (dok sažetak pitanje 3 ne kaže drugačije). `multiselect`/`multiblue` pune `TotalGenMultiSelectTemp` točno SQL-om iz `Form1.vb` 4934–5032.
+Zadatak: oba oblika tražilice (`sp`/`select` i `tablica#id#kolona`). Grid parametri `@gridIme`, nizovi plavih i čekiranih. `FOREACH*` samo na dijalogu (`Form2.vb` 7040–7047, tijela 8310–8363). Na podlozi petlja ne postoji (dokaz u dokumentu 10): `Rafalno` ima poziv u komentaru i živ `i = i + 1` (`Form1.vb` 6843–6850), a `NovaGenerickaForma` tu riječ ne grana. `multiselect`/`multiblue` pune `TotalGenMultiSelectTemp` točno SQL-om iz `Form1.vb` 4934–5032.
 
 Prihvaćanje:
 
@@ -147,7 +147,9 @@ Tri razine.
 
    - **Self-hosted GitHub runner na testnom serveru** (ili na stroju u istoj mreži). Job dobije Windows auth ako je runner u istoj domeni kao SQL, inače SQL login u secretu `SPIN_SQL_USER` / `SPIN_SQL_PASSWORD`. Connection string se ne commita. Ovo je preporuka: cloud runner (`windows-latest`) do `spin` obično nema rutu.
    - **VPN ili privatni endpoint** s cloud runnera. Radi samo ako mreža to već ima. Ne otvarati SQL port prema internetu radi ovog posla.
-   - **Ručni smoke na serveru** bez GitHuba: TestShell + connection na `spin`, deset datoteka iz tablice. Dovoljno za prvu provjeru prije automatizacije. `netgen/CLAUDE.md` spominje server `jupiter2022` i bazu `spin`; treba potvrditi da je to isti stroj (pitanje 6).
+   - **Ručni smoke** na stroju koji vidi `sql-ai`: TestShell, baza `spin`, deset datoteka iz tablice. `jupiter2022` se ne otvara.
+
+   Self-hosted runner je preporuka za sljedeću iteraciju (spajanje clouda). Može stajati na `sql-ai` ili na drugom Windows stroju u istoj mreži. Cloud `windows-latest` do `sql-ai` nema rutu osim ako se mreža namjerno otvori, a SQL port prema internetu se ne otvara. M0 build ne treba taj runner.
 
    Automatski test na bazi ne pokreće svih 609. Većina zove procedure i `spRaiserror`. Lista je gornjih 10, i samo čitanje (`select` / query action), bez fiskalnog CIS-a i bez `ASSEMBLYLOAD` koji piše.
 
@@ -157,7 +159,7 @@ Tri razine.
 - font i tema DevExpress 26
 - `AGGREGATEFUNCTION` s dva G i dalje ne zbraja
 - `ALOWEMPTY`, `HIGHT`, `WUDTH` i ostalo iz odjeljka 12.3 i dalje ne rade
-- `yearmonth` i dalje staje na 2009, ako se tako odluči
-- `FOREACH*` na podlozi i dalje ne radi, ako se rupa kopira
+- `yearmonth` i dalje staje na 2009 (odluka: kopija)
+- `FOREACH*` na podlozi i dalje ne vrti petlju (odluka: ne implementirati)
 - `SLOPP` i dalje ne radi
 - `GRIDALLOWEDIT` na `OznakaKL` i dalje ne uključuje edit (kao ni danas)

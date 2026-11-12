@@ -173,6 +173,10 @@ ACTION_ATTRS = {
 
 def read_text(path: Path) -> tuple[str, str]:
     raw = path.read_bytes()
+    # .NET XmlDocument.Load cita BOM. Deset granula je UTF-16 LE (FF FE).
+    # Bez ovoga cp1250 procita nule i strogi parse lažno padne.
+    if raw.startswith(b"\xff\xfe") or raw.startswith(b"\xfe\xff"):
+        return raw.decode("utf-16"), "utf-16"
     if raw.startswith(b"\xef\xbb\xbf"):
         return raw.decode("utf-8-sig", errors="replace"), "utf-8-sig"
     # Callisto granule su gotovo uvijek windows-1250. Ako header kaze drugo,

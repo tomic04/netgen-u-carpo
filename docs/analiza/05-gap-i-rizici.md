@@ -88,13 +88,13 @@ Datum s ugašenom kvačicom šalje `null`. Broj prazan šalje `0`. Tekst prazan 
 
 2. **Dvije DevExpress verzije.** NetGen 13.1.7 (i to samo za `multidrop`, `dxgrid`, preview) i Carpo 26.1.3. `CheckedComboBoxEdit` API između 13 i 26 nije čitan red-po-red. `GetCheckedItems()` u `Form2.vb` 3446 može se zvati drugačije. To treba provjeriti na Windows buildu, ne pretpostaviti.
 
-3. **Janus DLL-ova nema u gitu**, mapa `DevExpress131/` je prazna (0 datoteka). Ne možemo ni otvoriti staro ponašanje grida da ga usporedimo s DX 26. Usporedba „isti group panel“ ostaje **neprovjerena** dok netko ne da DLL i jednu granulu na `jupiter2022`.
+3. **Janus DLL-ova nema u gitu**, mapa `DevExpress131/` je prazna (0 datoteka). Usporedba starog grida s DX 26 ostaje neprovjerena dok DLL-ovi ne dođu. Testna baza je `sql-ai` / `spin`. `jupiter2022` je produkcija i ne koristi se.
 
 4. **Host.** `SetParent` na Jupiter handle, zabranjen vlastiti message loop (`CLAUDE.md`). Novi projekt koji se testira kao običan `Application.Run` može pasti na isti `StackOverflow`. TestShell to već rješava tako da granula sjedi u panelu (`pnlShell.Handle`). Taj put je bliži od novog exe-a.
 
 5. **DMS i baza `netgenxml`.** 609 fajlova u gitu nisu sve granule na terenu. `DXGRID`, `CUSTOMCONNECTIONSTRING`, `NEGATIVERED` imaju kod i nula pogodaka ovdje. XML iz baze može biti jedini korisnik. Katalog nije produkcijski inventar.
 
-6. **Deset fajlova ne prolazi strogi XML.** Ako je `XmlDocument.Load` jednako strog, te granule danas već ne rade s diska i idu na DMS/bazu. Tolerantni parser koji ih „popravi“ može učitati drugačije stablo nego što produkcija vidi. Bolje: prijaviti parse error isto kao NetGen, ne pogađati.
+6. **UTF-16 nije bio kvar.** Deset fajlova (`MPKase.xml` i srodni) ima BOM `FF FE`. `XmlDocument.Load` ih učita. Prva skripta ih je krivo čitala kao cp1250. Port ne popravlja XML. Ako `Load` baci, ista `MsgBox` poruka kao `Form1.vb` 3264–3265.
 
 7. **`On Error Resume Next` je značajka.** Atribut koji fali, krivi `TYPE`, `HIGHT`, `ALOWEMPTY` — produkcija šuti. Adapter na C# s iznimkama bit će glasniji i „pokvariti“ granule koje su godinama šutjele. Prva verzija treba logirati i ići dalje, ne bacati.
 

@@ -1,8 +1,20 @@
 # 06 — Prijedlog arhitekture `Carpo.NetGen`
 
-**Iteracija 2.** Hibrid (opcija C) ostaje. Mijenja se ulaz i opseg: klasa koju Jupiter zove mora izgledati kao `Loader.Run8`, TestShell mora znati otvoriti `<PROJECT>`, a fiskalizacija, `ASSEMBLYLOAD` i DMS više nisu iza prekidača. SQL se ne parametrizira. Raspored je Carpo layout gdje je preslikavanje 1:1, uz popis razlika. Faze i kriteriji prihvaćanja su u dokumentu 08; ovdje ostaje obrazloženje zašto ne A i ne B.
+**Iteracija 3.** Hibrid (opcija C) ostaje. Projekt se zove `Carpo.NetGen`, namespace `Carpo`, i ulazi u `Carpo.sln`. Dva načina na koja Jupiter dođe do njega opisana su odmah ispod. Ispis je `Spin.Printing` v26 i `rptDevRepx`. `FOREACH*` na podlozi se ne piše (dokaz u dokumentu 10). `yearmonth` je 2005–2009, kopija. Faze su u dokumentu 08.
 
-Novi projekt je class library u `Carpo.sln`, .NET Framework 4.8, bez reference na Janus. Parser i komande ne žive u `Carpo.UI`. TestShell dobiva jednu granu u `cmdGen_Click`. To je jedina predviđena izmjena postojećeg projekta uz novi csproj u solutionu.
+Novi projekt je class library u `Carpo.sln`, .NET Framework 4.8, namespace `Carpo`, bez reference na Janus. Parser i komande ne žive u `Carpo.UI`. TestShell (`Main.cs`) smije se mijenjati.
+
+## Dva ulaza iz Jupitera
+
+Izvornik Jupitera nije u repou. Iz komentara u `Loader.vb` (167) Jupiter 10 diže NetGen preko `Assembly.Load`, ne preko projektne reference. Redak izbornika u bazi klijenta veže granulu na assembly `NetGenDLL`. Točno ime stupca nije u ovom repou (otvoreno pitanje u sažetku). Dok se to ne vidi, plan računa da redak nosi bar ime assemblyja, a klasa je `Loader` s metodom `Run8` jer je to jedini javni ugovor.
+
+**Način A — test, granula po granula.** Korisnik u Jupiteru/bazi na jednoj granuli promijeni poziv s `NetGenDLL` na `Carpo.NetGen`. Ostale granule i dalje učitavaju stari DLL. Klasa koju Jupiter treba naći: `Carpo.Loader` (namespace `Carpo`), ista polja i `Run8` kao `netgen/Loader.vb`. Unutra se ne kopira VB; zove se implementacija u `Carpo.NetGen`. TestShell ne ide preko tog assembly imena: `Main.cs` vidi korijen `<PROJECT>` i zove istu klasu izravno, s `TestXmlPath` i `pnlShell.Handle`.
+
+**Način B — kasnije, drop-in.** Kad A radi na dovoljno granula, isporuči se tanki assembly čije je ime i dalje `NetGenDLL`, klasa i dalje `NetGenDLL.Loader`, `Run8` samo proslijedi na `Carpo.Loader`. Stavi se u `SharedAssemblies` umjesto starog `NetGenDLL.dll`. Redovi u bazama klijenata se ne mijenjaju. Stari VB se više ne izvršava. Shim nema vlastitu logiku osim delegiranja, da se bugovi ne popravljaju na dva mjesta.
+
+Prelaz: A dok se uspoređuje ponašanje na `sql-ai`. B tek kad korisnik kaže da je skup granula dovoljan. A i B dijele istu implementaciju; razlika je samo ime assemblyja koji Jupiter učita.
+
+`jupiter2022` se ne koristi ni u A ni u B.
 
 Tri opcije. Sve učitavaju **izvorni** NetGen XML. Nijedna ne traži od autora da pređe na `<root>`.
 
@@ -109,7 +121,7 @@ Ulaz: svih 609 jedinstvenih XML-ova. Izlaz: objekt (forme, `INPUT`, atributi, `T
 Provjera:
 
 - proširiti `tools/netgen_xml_katalog.py` nije dovoljno za C#; M0 dobije NUnit projekt `Carpo.NetGen.Tests` koji na Linuxu **ne može** (net48). Zato M0 prvo ima isti kontrakt u čistom C# kad build postoji, a do tada zlatni fajl ostaje JSON iz ove skripte
-- broj `INPUT`, broj formi i `TYPE` grana za svaki fajl mora se poklopiti s JSON-om (dopuštena razlika: 10 strogo neispravnih — oni se broje kao `ParseStatus=Failed`, ne kao uspjeh)
+- broj `INPUT`, broj formi i `TYPE` grana za svaki fajl mora se poklopiti s JSON-om. Strogi pad više nije dopuštena razlika: svih 609, uključujući 10 UTF-16, mora proći `XmlDocument.Load`
 - snapshot za `Kulture.xml` i `KarticaPartnera.xml`: ime svake kontrole, grana `TYPE`, `ONSUBMIT`, prisutnost `!!`
 - nepoznati atribut se čuva, ne baca
 
@@ -137,7 +149,7 @@ Provjera:
 - `ALLOWEMPTY` false i prazan combo → pokušaj vrijednosti `1`
 - combo: value = stupac 0, display = stupac 1, iako se kolone zovu drugačije
 - datum `firstdayofyear` na poznati datum (zamrznuti sat u testu)
-- 10 neispravnih XML-ova i dalje `Failed`, ne iznimka iz testa
+- UTF-16 (10 fajlova, npr. `MPKase.xml`) prolazi `XmlDocument.Load`. XML se ne popravlja. Ako load baci, greška je kao u NetGenu, ne tihi popravak
 
 ### M3 — tražilica, grid u formi, multidrop, `FOREACH*` samo na dijalogu
 

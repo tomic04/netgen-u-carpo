@@ -35,7 +35,7 @@ NetGen XML ostaje kakav jest. Jupiter ga i dalje zove kao danas NetGen, TestShel
 
 6. **Korpus je manji nego što izgleda s diska.** Na disku je 1238 XML-ova. Jedinstvenih sadržaja (SHA-256) je **609**. `definitions/netgen` (605) i `NetGenBot/granule` (605) su isti skup bajtova, samo su mape drugačije (`Agronom granule` naspram `Agronom`, `xml-ovi s nevkoša-zubak` naspram `Nevkos`). Unutar jednog stabla 22 datoteke su kopija između Agronoma i Biovege (npr. `MPEurParam.xml`). `Prepisane_granule/Netgen` dodaje 26 novih i 2 koja već postoje u glavnom skupu. Brojač je `tools/netgen_xml_katalog.py`, sirovina `tools/out/netgen-xml-katalog.json`.
 
-7. **Jezik je mali, imena formi su dugačak rep.** Nad 609 datoteka: 54165 `INPUT`, 44 vrijednosti `TYPE`, 2120 različitih imena elemenata od čega je ~2098 **ime forme** (`INSERT`, `FILTERFORM`, `BRISISTAVKU`, …), ne ključna riječ. `TYPE` se ne uspoređuje kao enum nego kao podstring (`InStr`), redom. Zato `checkbox` upadne u `check`, `textarea` u `text`, `currency` u broj. U korpusu su i tipfeleri (`b_utton`, `t1ext`, `buttton`, `datetiem`) koje grana ne pogodi.
+7. **Jezik je mali, imena formi su dugačak rep.** Nad 609 datoteka: 54635 `INPUT`, 46 vrijednosti `TYPE`, 2144 različitih imena elemenata. Broj je nakon ispravka UTF-16 (10 fajlova s BOM-om `FF FE` su ispravan XML; `XmlDocument.Load` ih učita). `TYPE` je podstring. Tipfeleri koje grana ne pogodi (`b_utton`, `t1ext`) ne crtaju se.
 
 8. **Carpo već ima tri NetGen kuke, i one nisu interpreter.** Na gridu postoje atributi `netgenfields`, `netgensizes`, `netgenstyles` (`Devex_26/Carpo.Structure/Models/Core/DataControls.cs` 550–568). `Style.ParseNetGenStyles` parsira `bold,italic,boja` (`Devex_26/Carpo.UI/Logic/Style.cs` 88). Ručni prepisi tražilice stavljaju `netgenfields="true"`. To je kozmetika kolona, ne učitavanje `<PROJECT>`.
 
@@ -56,6 +56,7 @@ NetGen XML ostaje kakav jest. Jupiter ga i dalje zove kao danas NetGen, TestShel
 | `07-build-ci.md` | Windows build, nacrt workflowa |
 | `08-plan-implementacije.md` | Faze, zadaci, kriteriji, smoke redoslijed, harness |
 | `09-potrebni-dll-ovi.md` | Što korisnik treba donijeti da se TestShell i `Carpo.NetGen` prevedu |
+| `10-nedoumice-za-tim.md` | Što je kopirano kako jest, s pitanjem za ljude koji poznaju granule |
 
 ## Ispravke iz drugog prolaza
 
@@ -68,16 +69,26 @@ NetGen XML ostaje kakav jest. Jupiter ga i dalje zove kao danas NetGen, TestShel
 - `HEADERALIGNMENT` kod čita na `MASTERCOLUMNS` / `DETAILCOLUMNS` (`Form1.vb` 3296–3309). Nije mrtav atribut.
 - `GRIDALLOWEDIT` i `GRIDALLOWEDITCOLUMNS` (npr. `definitions/netgen/BIOVEGA/OznakaKL.xml`) **nisu** u `GetNamedItem` izvan uzorka u `Resource1.Designer.vb`. Engine ih ne primjenjuje. `STARTUPSTORA` bez `ONLOAD` preživi jer linija 3368 padne na `On Error Resume Next` i ne prepiše 3367.
 
+## Odluke (iteracija 3)
+
+1. Projekt je `Carpo.NetGen`, namespace `Carpo`, u `Carpo.sln`. Za test se u Jupiteru/bazi granula po granula prebaci na taj assembly. Kasnije, tanki shim i dalje zvan `NetGenDLL` s istim `Loader.Run8` delegira na `Carpo.NetGen`, da se baze klijenata ne diraju. Oba ulaza su u dokumentu 06.
+2. `yearmonth` se kopira 1:1, godine 2005–2009 (`Form1.vb` 4530).
+3. `FOREACH*` na podlozi se **ne implementira**. Dokaz je u dokumentu 10: u `Form1` nema tijela petlje, pozivi su komentar, a `i = i + 1` je živo pa se na putu `Rafalno` pojede i sljedeći segment. Gumbi podloge idu kroz `NovaGenerickaForma`, koja tu riječ uopće ne prepoznaje.
+4. XML se ne popravlja. Deset „neispravnih“ fajlova su UTF-16 i `XmlDocument.Load` ih učita. Ako load baci, ista greška kao NetGen.
+5. Ispis je `Spin.Printing` **v26** i `rptDevRepx` (već DevExpress 26). v23 i v9.1 se ne zovu.
+6. Testni server je **`sql-ai`**, baza **`spin`**. `jupiter2022` je produkcija i ne smije se spominjati kao test. Spajanje clouda je sljedeća iteracija.
+7. `Carpo.TestShell/Main.cs` i drugi Carpo kod smiju se mijenjati koliko treba da granula radi.
+
+## Je li zrelo za M0
+
+Da, za kostur projekta i build. Parser, ulazi i pravilo „ne popravljaj XML“ dovoljno su određeni da se otvori `Carpo.NetGen` i grana u TestShellu. Pitanja u `10-nedoumice-za-tim.md` ne blokiraju prazan projekt ni učitavanje XML-a. Blokiraju kasnije faze (ispis v26 potpis klase, pravi CIS, `totalgen`).
+
+M0 od korisnika traži samo DLL-ove iz dokumenta 09 (Jupiter + DevExpress 26.1.3), na Windows stroju. Ne traži `sql-ai`, ne traži NuGet ključ ako je DevExpress instaliran ili su DX DLL-ovi u istom paketu, i ne traži runner. Runner na mreži `sql-ai` treba tek kad testovi idu u bazu.
+
 ## Pitanja koja su još otvorena
 
-Zatvoreno u iteraciji 2 i više se ne pita: ulaz (Jupiter + TestShell), fiskalizacija/`ASSEMBLYLOAD`/DMS u opsegu, SQL kao tekst, raspored nije piksel-identičan, `TotalGenMultiSelectTemp` ostaje, tipfeleri se toleriraju, DLL-ove donosi korisnik, baza `spin` ide sljedeći put.
+Tehničke odluke iz iteracije 3 su zatvorene. Ostalo je za ljude koji poznaju granule, u `10-nedoumice-za-tim.md`, plus ovo što i dalje treba prije kasnijih faza:
 
-1. **Ime assemblyja koji Jupiter traži.** Izvornik Jupitera nije u repou. Vidljivi ugovor je klasa `Loader` s `Run8`. Ako izbornik (`ssMeni` ili ini) tvrdo piše `NetGenDLL`, novi DLL mora ili nositi to ime (zamjena u `SharedAssemblies`) ili se redak izbornika mijenja na `Carpo.NetGen`. Koji od ta dva je dozvoljen?
-2. **`yearmonth` 2005–2009** (`Form1.vb` 4530). Kopirati raspon kakav jest, ili ga proširiti? Kopija je kompatibilna i vjerojatno kriva za korisnika.
-3. **`FOREACH*` na podlozi je mrtav** (`Form1.vb` 6841–6850). Kopirati rupu (klik ne radi ništa) ili na podlozi ipak izvršiti petlju? Puna kompatibilnost kaže rupu. Treba potvrdu jer je to tihi gubitak.
-4. **Deset XML-ova ne prolazi strogi parse** (npr. `definitions/netgen/Agronom granule/MPKaseOperNG.xml`). Ako `XmlDocument.Load` i na disku padne, NetGen ide na DMS/bazu. Treba li parser javiti istu grešku, ili ih pokušati popraviti?
-5. **Ispis.** 481 komanda ide u `repx/`. Stari kod zove `Spin.Printing.v23` / `v9.1`, `PrintDlg2010`, `rptDevRepx`, `NetGenExtensions`. Carpo ima `Spin.Printing.v26`. Je li v26 zamjena za te pozive, ili na stroj moraju ostati i stari DLL-ovi?
-6. **Ime servera i autentikacija baze `spin`.** `netgen/CLAUDE.md` spominje `jupiter2022`, Windows auth. Je li to taj stalno upaljeni server? Treba li SQL login za runner koji nije u domeni?
-7. **`DXGRID`, `DEFAULTCONNECTION`, `CUSTOMCONNECTIONSTRING`** kod čita, u 609 fajlova ih nema. XML samo u `netgenxml` tablici ih može imati. Ulaze u port (da, jer kod postoji) — treba li testni XML iz baze kad se spoji `spin`?
-8. **Smije li TestShell dobiti jednu granu** (ako korijen nije `<root>`, zovi `Carpo.NetGen`) u istoj isporuci kad krene kod? Bez tog retka u `Main.cs` `cmdGen_Click` TestShell i dalje zna samo `Gen.Start`.
-9. **`refreshmaster` u `JeziciNG.xml`** (`CMD1CAPTION="Unesi:Unesi#refreshmaster"`) nije komanda `REFRESHMASTERGRID`. Klik će tražiti formu tog imena. Je li to poznati kvar granule ili postoji skriveno značenje koje nismo našli?
+1. Koji točno stupac u izborniku Jupitera drži ime assemblyja i klase (da shim i prebacivanje granule po granuli pogode pravo polje)? Shema nije u ovom repou.
+2. Je li javni tip u `Spin.Printing.v26` i dalje `Spin.Printing.Start`, kao u v23 (`Class1.vb` 297–298)?
+3. Kad DLL-ovi stignu: jesu li `rptDevRepx.clsReport` i `isnetgen` (`Form6.vb` 134–136) isti na DX 26?
