@@ -171,6 +171,62 @@ namespace Carpo.NetGen.Grid
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Ključevi detaila koji ne ovise o retcima: selekcija ponovo zove DETAILGRID,
+        /// stupci se slože jednom, DETCHECKBOXVISIBLE i CLEARCOLUMS, širina WIDTH/14.
+        /// </summary>
+        public static void Kljucevi(NgProject p, GridStanje master, Dictionary<string, string> s)
+        {
+            if (p == null || s == null)
+                return;
+            bool cb = master == null || master.CheckboxVidljiv;
+            s["checkboxVidljiv"] = cb ? "true" : "false";
+            int timeout = master == null ? 30 : master.TimeoutSekundi;
+            s["timeout"] = timeout.ToString(CultureInfo.InvariantCulture);
+            bool ima = !string.IsNullOrWhiteSpace(p.DetailGrid);
+            s["detailNaSelekciji"] = ima ? "true" : "false";
+            s["detailNakonMastera"] = ima ? "true" : "false";
+            s["detailKoloneJednom"] = ima ? "true" : "false";
+            NgColumnGroup det = p.NadjiGrupu("DETAILCOLUMNS");
+            bool clear = det != null && string.Equals(det.ClearColums, "true", StringComparison.OrdinalIgnoreCase);
+            s["detClear"] = clear ? "true" : "false";
+            string detCb = "";
+            if (p.Atributi != null && p.Atributi.Ima("DETCHECKBOXVISIBLE"))
+                detCb = p.Atributi.Vrijednost("DETCHECKBOXVISIBLE") ?? "";
+            bool detSel = detCb.Trim().Length == 0 || detCb.Trim().ToUpperInvariant() != "FALSE";
+            s["detSelector"] = ima && detSel ? "true" : "false";
+            UpisiSirine(det, "det.", s);
+            UpisiSirine(p.NadjiGrupu("MASTERCOLUMNS"), "kolona.", s);
+        }
+
+        private static void UpisiSirine(NgColumnGroup grupa, string prefiks, Dictionary<string, string> s)
+        {
+            if (grupa == null)
+                return;
+            bool detail = prefiks == "det.";
+            for (int i = 0; i < grupa.Kolone.Count; i++)
+            {
+                NgColumn k = grupa.Kolone[i];
+                string ime = k.Name ?? "";
+                if (ime.Length == 0)
+                    continue;
+                if (!detail && s.ContainsKey("kolona." + ime + ".sirina"))
+                    continue;
+                int w = 100;
+                string width = k.Atributi == null ? null : k.Atributi.Vrijednost("WIDTH");
+                int n;
+                if (!string.IsNullOrEmpty(width) && int.TryParse(width.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out n) && n > 0)
+                    w = MasterGrid.VbJedinica(n);
+                if (detail)
+                {
+                    string fmt = k.Atributi == null ? "" : (k.Atributi.Vrijednost("FORMAT") ?? "").Trim();
+                    s["det." + ime] = w.ToString(CultureInfo.InvariantCulture) + "|" + fmt;
+                }
+                else
+                    s["kolona." + ime + ".sirina"] = w.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
         public static string ZamijeniOstatak(string sql, string parametri)
         {
             if (sql == null)

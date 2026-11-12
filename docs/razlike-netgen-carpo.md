@@ -798,6 +798,15 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `jez-refreshmaster`, `jez-next`, `okl-prihvati`, `okl-odustani`, `okl-escape`
 - **PR:** refresh-ok
 
+## R98 Detail se veže na red, širina je WIDTH/14
+
+- **Element:** `DETAILGRID`, `DETCHECKBOXVISIBLE`, `CLEARCOLUMS`, `COMMANDTIMEOUT`, `WIDTH`
+- **NetGen:** promjena reda ponovo zove detail (`Form1.vb` 7413). Za vrijeme punjenja mastera detail se preskoči, pa jednom na kraju (`2270`, `2099`). Drugi upit ne radi `CreateGridColumns` ako stupci već postoje (`2334`). `DETCHECKBOXVISIBLE=FALSE` sakrije selector (`2402`). `CLEARCOLUMS` na detailu sakrije ostale stupce (`2347`). Širina iz XML-a dijeli se s 14 (`7522`).
+- **Carpo:** isti ključevi na otvaranju. `VrstaBlagajne` 2500/14 je 179. `Kolicina` 1000/14 je 71, format `#,####0.0000`. Intrastat i prijemni list imaju timeout 300. `OznakaKL` i dalje treba stupac `oznaka2` na spinu da master prođe.
+- **Odluka:** NetGen logika. Jupiter se ne dira.
+- **Test:** `sta-detail`, `bla-sirina`, `pl-kolicina`, `mpk-checkbox`
+- **PR:** grid-kljuc
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

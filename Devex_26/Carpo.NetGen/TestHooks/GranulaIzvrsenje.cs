@@ -287,6 +287,7 @@ namespace Carpo.NetGen.TestHooks
             foreach (var par in cb)
                 s["cb." + par.Key] = "ima";
 
+            DetailGrid.Kljucevi(p, g.Stanje, s);
             DodajKomande(s);
             DodajKontrole(p, s);
             DodajPoziv(p, s);

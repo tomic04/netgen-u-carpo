@@ -36,6 +36,7 @@ namespace Carpo.NetGen.GridTest
             OnClickTest();
             GridDijalogTest();
             NextFormTest();
+            GridKljucevi();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -77,6 +78,36 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void GridKljucevi()
+        {
+            var s = new Dictionary<string, string>(StringComparer.Ordinal);
+            var master = new GridStanje();
+            master.CheckboxVidljiv = false;
+            master.TimeoutSekundi = 300;
+            NgProject sta = Ucitaj("Statusi.xml");
+            DetailGrid.Kljucevi(sta, master, s);
+            T("sta-detail", sta != null && s["detailNaSelekciji"] == "true" && s["detailNakonMastera"] == "true"
+                && s["detSelector"] == "false" && s["detailKoloneJednom"] == "true", s.ContainsKey("detSelector") ? s["detSelector"] : "");
+            s.Clear();
+            NgProject bla = Ucitaj("KntBlaZak.xml");
+            DetailGrid.Kljucevi(bla, master, s);
+            T("bla-sirina", bla != null && s["detClear"] == "true" && s["kolona.VrstaBlagajne.sirina"] == "179" && s["detailNaSelekciji"] == "true",
+                s.ContainsKey("kolona.VrstaBlagajne.sirina") ? s["kolona.VrstaBlagajne.sirina"] : "");
+            s.Clear();
+            NgProject pl = Ucitaj("PrijemniList.xml");
+            DetailGrid.Kljucevi(pl, master, s);
+            T("pl-kolicina", pl != null && s["det.Kolicina"] == "71|#,####0.0000" && s["timeout"] == "300" && s["checkboxVidljiv"] == "false",
+                s.ContainsKey("det.Kolicina") ? s["det.Kolicina"] : "");
+            s.Clear();
+            NgProject por = Ucitaj("MPPorKPNG.xml");
+            var gp = new MasterGrid();
+            if (por != null)
+                gp.Ucitaj(por, null);
+            DetailGrid.Kljucevi(por, gp.Stanje, s);
+            T("mpk-checkbox", por != null && s["checkboxVidljiv"] == "true" && gp.Stanje.SortKlikom && gp.Stanje.TotalRed,
+                s.ContainsKey("checkboxVidljiv") ? s["checkboxVidljiv"] : "");
         }
 
         private static void NextFormTest()
