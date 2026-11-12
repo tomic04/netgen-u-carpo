@@ -83,6 +83,17 @@ namespace Carpo.NetGen.GridTest
                 && Lanac.OsvjezavaZadnjiSql("REFRESHMASTERGRID")
                 && !Lanac.OsvjezavaZadnjiSql("PRINTREPXMASTER")
                 && Lanac.IspisSegment("Ispiši#PRINTREPXMASTER") == "PRINTREPXMASTER", "");
+            var filt = Ucitaj("KntPreknjizavanjeNG.xml");
+            bool imaFilter = false;
+            if (filt != null)
+            {
+                for (int i = 0; i < filt.Forme.Count; i++)
+                {
+                    if (string.Equals(filt.Forme[i].Ime, "FILTER", StringComparison.OrdinalIgnoreCase))
+                        imaFilter = true;
+                }
+            }
+            T("filter-je-forma", filt != null && imaFilter, filt == null ? "nema xml" : filt.Forme.Count.ToString());
         }
 
         private static void Zamjene()

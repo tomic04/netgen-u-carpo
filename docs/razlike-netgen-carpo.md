@@ -665,6 +665,52 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** nema slike.
 - **PR:** dblclick
 
+## R84 `FILTER` na projektu je forma
+
+- **Element:** 14 redova `nema-forme` u smokeu
+- **NetGen:** `SelectNodes("/PROJECT/" & strImeForme)` (`Form2.vb` 957). Ime je element, ne atribut `NAME`.
+- **Carpo:** parser je `FILTER` držao strukturnim, pa `/PROJECT/FILTER` nije bio forma. To je naš propust. `MPUvjetiKaseNEW` ima element `FILTERFORM1` i `NAME=FILTERFORM`, a `ONLOAD` traži `FILTERFORM`. `MPPregRbTrNG2` traži `FORM1`, element je `FILTERFORM`. `MPOptimalneZaliheNEWv2` traži `FILTERFORM`, element je `MAINFORM`. Te tri NetGen isto ne nađe.
+- **Odluka:** NetGen logika. `FILTER` se čita kao forma. Tri datoteke bez tog elementa ostaju `nema-forme`.
+- **Test:** `filter-je-forma`
+- **PR:** filter-forma
+
+## R85 `spMPTrgovineNG` nema parametar `@operateriid`
+
+- **Element:** smoke `ostalo`, `MPPovijestPrijava.xml`
+- **NetGen:** `SrediSQL` zamijeni `@@operateriid` i pošalje isti tekst (`Form1.vb` 2482).
+- **Carpo:** upit je `spMPTrgovineNG @action=1, @operateriid = 7`. Spin javi da procedura nema taj parametar. Port tekst nije prepisao.
+- **Odluka:** NetGen logika. XML se ne mijenja.
+- **Test:** nema
+- **PR:** filter-forma
+
+## R86 `MPKasaPolog` ima dvostruke stupce u SQL-u
+
+- **Element:** drugi smoke `ostalo`
+- **NetGen:** šalje `ONLOAD` kako je napisan.
+- **Carpo:** spin javi `Ambiguous column name 'odsat'`, `odmin`, `dosat`, `domin`. Isti tekst.
+- **Odluka:** NetGen logika. XML se ne mijenja.
+- **Test:** nema
+- **PR:** filter-forma
+
+## R87 `oznaka2` nije stupac u `klmasterroba`
+
+- **Element:** smoke `krivi-stupac`, `OznakaKL.xml`
+- **NetGen:** master je `select ... oznaka2 as DodatnaOznaka from klmasterroba`.
+- **Carpo:** spin javi `Invalid column name 'oznaka2'`. Zato QA stavke OznakaKL koje traže napunjen grid ostaju otvorene.
+- **Odluka:** NetGen logika. Upit se ne prepravlja.
+- **Test:** nema
+- **PR:** filter-forma
+
+## R88 Prazan master na uzorku od 20
+
+- **Element:** 413 praznih u smokeu repoa
+- **Uzorak:** Akcije, OdobreniKaloNG, MPPonudaWeb, UcinakObr_Agrar, MER_ZahtjevZaNabavkuNG (nema master `ONLOAD`, ima `TREE` ili `COMBO`). KntOPZ-STAT-1, MPKasaImport, MPPDV, MPPrMPCNG, RealizacijaPonuda, ZakljucivanjeTemNG, kntDobDospRac, MPAnalKNG, MPePotvrdeNarudzbe, MPKntNacinPlacAzur, MPNeZakNG, MPPregKlaseStanja, MPPrMPRNG, MPTestKomisRobe, MPTrgovinaPortal (`ONLOAD` je `:forma` ili prazan).
+- **NetGen:** prazan `ONLOAD` ne šalje master. `:forma` otvori formu i master čeka `FILLEXPLORER`. Stablo se ne klikne samo.
+- **Carpo:** isti predložak. Nismo poslali drugačiji parametar ni filter. Prazno je podatak ili čekanje na čvor ili formu, ne kriva zamjena.
+- **Odluka:** NetGen logika.
+- **Test:** nema
+- **PR:** filter-forma
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

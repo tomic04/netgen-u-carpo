@@ -16,7 +16,7 @@ namespace Carpo.NetGen.Xml
         {
             "PROJECT", "NAME", "CAPTION", "KOMENTAR", "HISTORY", "INPUT", "COLUMN",
             "MASTERCOLUMNS", "DETAILCOLUMNS", "DETAILCOLUMNS2", "DETAILCOLUMNS3", "DETAILCOLUMNS4",
-            "ROW", "ROWS", "FILTER", "MENUITEM", "MENU", "INCLUDE"
+            "ROW", "ROWS", "MENUITEM", "MENU", "INCLUDE"
         };
 
         public static bool JeNetGenProjekt(string putanja)
