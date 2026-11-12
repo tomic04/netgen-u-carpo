@@ -85,8 +85,8 @@ namespace Carpo.NetGen.GridTest
             T("oznaka-groupby-false", g.Stanje.GroupByBox.HasValue && g.Stanje.GroupByBox.Value == false, "");
             T("oznaka-frozen-0", g.Stanje.ZamrznuteKolone == 0, "");
             T("oznaka-edit-ignorira-gridallowedit", g.Stanje.EnterTipka == "None", g.Stanje.EnterTipka);
-            T("oznaka-nema-filter", !g.Stanje.FilterRed, "");
-            T("oznaka-dx-nema-autofilter", Ima(g, "OptionsView.ShowAutoFilterRow=false"), "");
+            T("oznaka-filter-carpo", g.Stanje.FilterRed && g.Stanje.FilterNamjernoOdstupanje && !g.Stanje.FilterIzXml, "");
+            T("oznaka-dx-autofilter", Ima(g, "OptionsView.ShowAutoFilterRow=true"), "");
             T("oznaka-dx-sort-on", Ima(g, "OptionsCustomization.AllowSort=true"), "");
             T("oznaka-redoslijed", g.Stanje.Redoslijed[0] == "startup-sql" && g.Stanje.Redoslijed.Contains("sredi"), string.Join(",", g.Stanje.Redoslijed.ToArray()));
         }
@@ -160,6 +160,12 @@ namespace Carpo.NetGen.GridTest
             T("total-default-ukljucen", new GridStanje().TotalRed, "");
             T("sort-default-ukljucen", new GridStanje().SortKlikom, "");
             T("filter-default-iskljucen", !new GridStanje().FilterRed, "");
+            var gFilt = new MasterGrid();
+            gFilt.Ucitaj(Projekt("ONLOAD", "select 1"), null);
+            T("filtermode-nema-carpo-ukljucen", gFilt.Stanje.FilterRed && gFilt.Stanje.FilterNamjernoOdstupanje, "");
+            var gFiltOff = new MasterGrid();
+            gFiltOff.Ucitaj(ProjektS("ONLOAD", "select 1", "FILTERMODE", "false"), null);
+            T("filtermode-false-gasi", !gFiltOff.Stanje.FilterRed && gFiltOff.Stanje.FilterIzXml && !gFiltOff.Stanje.FilterNamjernoOdstupanje, "");
             var gDef = new MasterGrid();
             var dtDef = new DataTable();
             dtDef.Columns.Add("a", typeof(int));

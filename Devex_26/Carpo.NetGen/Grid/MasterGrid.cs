@@ -41,6 +41,8 @@ namespace Carpo.NetGen.Grid
         public bool TotalRed = true;
         public bool SortKlikom = true;
         public bool FilterRed;
+        public bool FilterIzXml;
+        public bool FilterNamjernoOdstupanje;
         public bool AllowEditKadJeFilter;
         public string EnterTipka = "None";
         public int? ZamrznuteKolone;
@@ -238,11 +240,23 @@ namespace Carpo.NetGen.Grid
             if (fr != null && int.TryParse(fr.Trim(), out fz))
                 Stanje.ZamrznuteKolone = fz;
             string fm = Attr(projekt, "FILTERMODE");
-            if (fm != null && fm.Trim().ToLowerInvariant() == "true")
+            if (fm == null)
             {
+                // Carpo: ShowAutoFilterRow je uključen osim ako XML eksplicitno kaže false.
+                // Janus FilterMode je None. Filter red ne mijenja SQL ni podatke.
                 Stanje.FilterRed = true;
-                string ed = Attr(projekt, "EDITCOLUMNS");
-                Stanje.AllowEditKadJeFilter = ed != null && ed.Trim().Length > 0;
+                Stanje.FilterNamjernoOdstupanje = true;
+            }
+            else
+            {
+                Stanje.FilterIzXml = true;
+                Stanje.FilterNamjernoOdstupanje = false;
+                Stanje.FilterRed = fm.Trim().ToLowerInvariant() == "true";
+                if (Stanje.FilterRed)
+                {
+                    string ed = Attr(projekt, "EDITCOLUMNS");
+                    Stanje.AllowEditKadJeFilter = ed != null && ed.Trim().Length > 0;
+                }
             }
             string timeout = Attr(projekt, "COMMANDTIMEOUT");
             int ts;
@@ -439,6 +453,7 @@ namespace Carpo.NetGen.Grid
         {
             s.DxPostavke.Clear();
             s.DxPostavke.Add("OptionsView.ShowAutoFilterRow=" + (s.FilterRed ? "true" : "false"));
+            s.DxPostavke.Add("OptionsFilter.AllowAutoFilterConditionChange=false");
             s.DxPostavke.Add("OptionsView.ShowGroupPanel=" + (s.GroupByBox.HasValue ? (s.GroupByBox.Value ? "true" : "false") : "true"));
             s.DxPostavke.Add("OptionsView.ShowFooter=" + (s.TotalRed ? "true" : "false"));
             s.DxPostavke.Add("OptionsView.ColumnAutoWidth=false");

@@ -103,7 +103,7 @@ Kad XML šuti, Carpo prati **kontrolu koju NetGen drži na formi**: designer (`F
 |---|---|---|---|---|
 | Sort klikom na header | `AutomaticSort=True` | ostaje True (kod gasi samo na `false`, `3401`) | sort kolone je uključen | `AllowSort=true` |
 | Group panel | `GroupByBoxVisible=True` | ostaje True (designer ne dira) | panel DX-a nije isti objekt | `ShowGroupPanel=true` |
-| Auto-filter | `FilterMode=None` | ostaje None dok nije `FILTERMODE=true` | `ActiveFilterEnabled=True` | `ShowAutoFilterRow=false` |
+| Auto-filter | `FilterMode=None` | ostaje None dok XML nema `FILTERMODE` | `ActiveFilterEnabled=True` | **namjerno odstupanje:** `ShowAutoFilterRow=true` kao Carpo, osim ako XML ima `FILTERMODE` |
 | Total red | `TotalRow=False` | kod ga upali osim na `FALSE` (`2049`) | footer nije uključen | `ShowFooter=true` (pratimo kod, ne svježi GridEX) |
 | Uređivanje | `AllowEdit=True`, `EditMode=EditOff` | stupci `NoEdit` | `Editable=True` | `Editable=false` |
 | Enter | `EnterKeyBehavior=NextRow` | kod stavi `None` ako nema `EDITCOLUMNS` (`3419`) | Enter zna otvoriti editor | `Enter=None` |
@@ -120,7 +120,7 @@ Kad XML šuti, Carpo prati **kontrolu koju NetGen drži na formi**: designer (`F
 
 Najvažnije razlike koje su morale biti eksplicitne, jer DX default nije Janus:
 
-- auto-filter: DX `ActiveFilterEnabled=True`, Janus `FilterMode=None` → `ShowAutoFilterRow=false` (Carpo `ComponentGrid` inače pali filter red)
+- auto-filter: vidi odjeljak Namjerno odstupanje. `FILTERMODE` u XML-u i dalje odlučuje.
 - uređivanje: DX `Editable=True`, Janus `EditMode=EditOff` → `Editable=false`
 - Enter: Janus tvornički `NextRow`, NetGen kod `None` kad nema edit stupaca → `Enter=None`
 - selekcija: svježi GridEX i DX su jedan red, designer NetGena je `MultipleSelection` → `MultiSelect=true`
@@ -132,10 +132,23 @@ Ponašanja koja nisu jedno svojstvo:
 |---|---|---|
 | Enter | `None` bez `EDITCOLUMNS` | `oznaka-edit-ignorira-gridallowedit` |
 | Sort klikom | uključen osim `AUTOMATICSORT=false` | `oznaka-sort` |
-| Auto-filter | ugašen osim `FILTERMODE=true` | `oznaka-nema-filter` |
+| Auto-filter | ugašen u Janus-u (`FilterMode=None`) osim `FILTERMODE=true` | namjerno odstupanje, vidi ispod |
 | Dvostruki klik | `MASTERDBLCLICK` otvara formu | otvoreno, nije ovaj element |
 | Više redova | designer `MultipleSelection` | `MultiSelect=true` |
 | Scroll pri refreshu | ponovi zadnji SQL, fokus po id / `MASTERMOVELAST` | `refresh-koristi-zadnji-tekst`, `fokus-zadnji` |
+
+## Namjerno odstupanje
+
+Filter red. Janus `FilterMode` je `None` dok XML ne kaže `FILTERMODE=true` (`Form1.vb` 2169). Carpo u `ComponentGrid.SetProperties` (`Carpo.UI/Components/Base/ComponentGrid.cs` 772–773) radi:
+
+```csharp
+if (!(definition.ShowAutoFilterRow == false))
+    gridView1.OptionsView.ShowAutoFilterRow = true;
+```
+
+`ShowAutoFilterRow` je `bool?` na gridu (`Carpo.Structure/Models/Core/DataControls.cs` 42 i 196). Atribut u Carpo XML-u je `showautofilterrow`. Ako ga nema (`null`) ili je `true`, red je uključen. Samo eksplicitni `false` ga gasi. Uz to Carpo zaključa promjenu operatora: `OptionsFilter.AllowAutoFilterConditionChange = False` (isti fajl, 797) i `ShowFilterPanelMode = Default` (794).
+
+Carpo.NetGen radi isto kad NetGen XML **nema** `FILTERMODE`: auto-filter red je uključen. Razlog: red samo sužava prikaz, ne mijenja SQL, fokus ni spremanje. Ako `FILTERMODE` postoji, vrijedi NetGen: `true` uključi, sve ostalo (uključujući `false`) isključi. `AllowEdit` se i dalje dira samo kad je `FILTERMODE=true`, kao u `Form1.vb` 2178, da dodatni red ne ugasi uređivanje.
 
 ## Otvoreno
 
