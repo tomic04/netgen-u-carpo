@@ -26,7 +26,13 @@ namespace Carpo.NetGen.TestHooks
 
         public static Pogled Izvrsi(Zahtjev zahtjev)
         {
-            if (zahtjev == null || !string.Equals(zahtjev.Akcija, "otvori", StringComparison.OrdinalIgnoreCase))
+            if (zahtjev == null)
+                return new Pogled { Izvedeno = false, Napomena = "nema zahtjeva" };
+            if (string.Equals(zahtjev.Akcija, "dblclick", StringComparison.OrdinalIgnoreCase))
+                return DblClick(zahtjev.XmlPutanja);
+            if (string.Equals(zahtjev.Akcija, "gumb", StringComparison.OrdinalIgnoreCase))
+                return Gumb(zahtjev);
+            if (!string.Equals(zahtjev.Akcija, "otvori", StringComparison.OrdinalIgnoreCase))
             {
                 return new Pogled
                 {
@@ -42,6 +48,51 @@ namespace Carpo.NetGen.TestHooks
             {
                 return new Pogled { Izvedeno = false, Napomena = "SQL: " + ex.Message };
             }
+        }
+
+        private static Pogled DblClick(string xml)
+        {
+            NgProject p = Projekt(xml);
+            if (p == null)
+                return new Pogled { Izvedeno = false, Napomena = "XML" };
+            string forma = p.MasterDblClick ?? "";
+            if (forma.StartsWith(":", StringComparison.Ordinal))
+                forma = forma.Substring(1);
+            var s = new Dictionary<string, string>(StringComparer.Ordinal);
+            s["forma"] = forma;
+            return new Pogled { Izvedeno = true, Stavke = s };
+        }
+
+        private static Pogled Gumb(Zahtjev zahtjev)
+        {
+            NgProject p = Projekt(zahtjev.XmlPutanja);
+            if (p == null)
+                return new Pogled { Izvedeno = false, Napomena = "XML" };
+            NgButton gumb = null;
+            for (int i = 0; i < p.Gumbi.Count; i++)
+            {
+                if (string.Equals(p.Gumbi[i].Natpis, zahtjev.Cilj, StringComparison.OrdinalIgnoreCase))
+                {
+                    gumb = p.Gumbi[i];
+                    break;
+                }
+            }
+            if (gumb == null)
+                return new Pogled { Izvedeno = false, Napomena = "nema gumba " + (zahtjev.Cilj ?? "") };
+            var s = new Dictionary<string, string>(StringComparer.Ordinal);
+            s["refreshMaster"] = Lanac.OsvjezavaZadnjiSql(gumb.Naredba) ? "true" : "false";
+            s["ispis"] = Lanac.IspisSegment(gumb.Naredba);
+            s["pageHeaderRight"] = Attr(p, "PAGEHEADERRIGHT") ?? "";
+            s["border"] = "Sizable";
+            return new Pogled { Izvedeno = true, Stavke = s };
+        }
+
+        private static NgProject Projekt(string xml)
+        {
+            var ucitano = NetGenXmlReader.Ucitaj(xml);
+            if (!ucitano.Uspjeh)
+                return null;
+            return ucitano.Projekt;
         }
 
         private static Pogled Otvori(string xml)

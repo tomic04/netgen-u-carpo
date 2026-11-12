@@ -58,6 +58,7 @@ namespace Carpo.NetGen.Ui
             PodesiPogled(gvGla, true);
             PodesiPogled(gvDet, false);
             gvGla.FocusedRowChanged += Pogled_FocusedRowChanged;
+            gvGla.DoubleClick += Pogled_DoubleClick;
             trMain.OptionsView.ShowColumns = false;
             trMain.OptionsView.ShowIndicator = false;
             trMain.OptionsBehavior.Editable = false;
@@ -339,6 +340,13 @@ namespace Carpo.NetGen.Ui
                 if (string.Equals(t, natpis, StringComparison.OrdinalIgnoreCase))
                     gumb.Enabled = ukljucen;
             }
+        }
+
+        private void Pogled_DoubleClick(object sender, EventArgs e)
+        {
+            if (_projekt == null || string.IsNullOrWhiteSpace(_projekt.MasterDblClick))
+                return;
+            IzvrsiLanac(_projekt.MasterDblClick);
         }
 
         private void Pogled_FocusedRowChanged(object sender, DevExpress.XtraGrid.Views.Base.FocusedRowChangedEventArgs e)

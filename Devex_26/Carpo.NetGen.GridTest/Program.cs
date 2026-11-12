@@ -79,6 +79,10 @@ namespace Carpo.NetGen.GridTest
                 && !("AOPuExcel.clsGFIPOD(GFI-POD601.xls)".ToUpperInvariant().IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0), "");
             T("isempty-preskoci", IspisMotora.Zaglavlje("#ISEMPTY()# #Od 1. do 2.") == ""
                 && IspisMotora.Zaglavlje("#ISEMPTY(1)# #Od 1. do 2.") == "Od 1. do 2.", IspisMotora.Zaglavlje("#ISEMPTY(1)# #Od 1. do 2."));
+            T("dblclick-refresh", Lanac.OsvjezavaZadnjiSql("Unesi#refreshmaster")
+                && Lanac.OsvjezavaZadnjiSql("REFRESHMASTERGRID")
+                && !Lanac.OsvjezavaZadnjiSql("PRINTREPXMASTER")
+                && Lanac.IspisSegment("Ispiši#PRINTREPXMASTER") == "PRINTREPXMASTER", "");
         }
 
         private static void Zamjene()

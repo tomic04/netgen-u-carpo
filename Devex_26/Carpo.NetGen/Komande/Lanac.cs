@@ -31,6 +31,37 @@ namespace Carpo.NetGen.Komande
             return (naredba ?? "").Replace("~", "#").Split('#');
         }
 
+        /// <summary>
+        /// REFRESHMASTERGRID ponovi zadnji SQL. Segment refreshmaster nije ta riječ,
+        /// ali prazna forma i dalje ima OKClick pa PokaziUpit (Form1.vb 4570, 5354–5370, 5519).
+        /// </summary>
+        public static bool OsvjezavaZadnjiSql(string naredba)
+        {
+            string[] seg = Segmenti(naredba);
+            for (int i = 0; i < seg.Length; i++)
+            {
+                string u = (seg[i] ?? "").Trim();
+                if (u.StartsWith(":", StringComparison.Ordinal))
+                    u = u.Substring(1).Trim();
+                if (u.Equals("REFRESHMASTERGRID", StringComparison.OrdinalIgnoreCase)
+                    || u.Equals("REFRESHMASTER", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        public static string IspisSegment(string naredba)
+        {
+            string[] seg = Segmenti(naredba);
+            for (int i = 0; i < seg.Length; i++)
+            {
+                string s = (seg[i] ?? "").Trim();
+                if (s.StartsWith("PRINT", StringComparison.OrdinalIgnoreCase))
+                    return s;
+            }
+            return "";
+        }
+
         /// <summary>ONLOAD koji počinje s : ide u NovaGenerickaForma i reže se na #. Form1.vb 3879, 4558.</summary>
         public static string[] OnLoadLanac(string onload)
         {
