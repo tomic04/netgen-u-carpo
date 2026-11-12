@@ -33,6 +33,9 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(Statusi.Provjeri(root));
             sve.AddRange(KntBlaZak.Provjeri(root));
             sve.AddRange(PrijemniList.Provjeri(root));
+            sve.AddRange(Kulture.Provjeri(root));
+            sve.AddRange(KarticaPartnera.Provjeri(root));
+            sve.AddRange(KupNg.Provjeri(root));
 
             string tekst = Qa.Tekst(sve);
             Console.WriteLine(tekst);
