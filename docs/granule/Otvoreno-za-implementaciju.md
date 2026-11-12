@@ -2,18 +2,18 @@
 
 Brojke su prema CI implementacije [43269944426](https://github.com/tomic04/netgen-u-carpo/actions/runs/43269944426) (`ef710b9`) i [#74](https://github.com/tomic04/netgen-u-carpo/pull/74). Jupiter QA ne zove. Testovi nisu popušteni.
 
-Od 159 zatvorenih, **131 je pravilo** i **28 je spin podatak**. Devet je `OznakaKL` (`OKL-25`–`27`, `OKL-40`–`43`, `OKL-58`, `OKL-59`): 947 redova. Deseti je `JEZ-31`. Jedanaesti je `FAK-11`. Dvanaesti je `PL-32`. Trinaesti je `MPP-20`. Četrnaesti je `STA-12`: `Parent` `0701` vodi na `MeniID` 1611, `Loader.Run8` otvori `Statusi.xml`. Petnaesti je `JEZ-57`: desno zaglavlje je `naziv` iz `SETDEFAULTS`, ne `@@tkosmomi`. `Form1.vb` 6001, `Class1.vb` 966.
+Od 160 zatvorenih, **131 je pravilo** i **29 je spin podatak**. Devet je `OznakaKL` (`OKL-25`–`27`, `OKL-40`–`43`, `OKL-58`, `OKL-59`): 947 redova. Deseti je `JEZ-31`. Jedanaesti je `FAK-11`. Dvanaesti je `PL-32`. Trinaesti je `MPP-20`. Četrnaesti je `STA-12`: `Parent` `0701` vodi na `MeniID` 1611, `Loader.Run8` otvori `Statusi.xml`. Petnaesti je `JEZ-57`: desno zaglavlje je `naziv` iz `SETDEFAULTS`, ne `@@tkosmomi`. `Form1.vb` 6001, `Class1.vb` 966.
 
 | Element | Ukupno | Zatvoreno | Pravilo | Spin podaci | Otvoreno |
 |---|---:|---:|---:|---:|---:|
 | grid | 34 | 34 | 25 | 9 | 0 |
 | stablo | 20 | 20 | 19 | 1 | 0 |
 | combo | 5 | 5 | 5 | 0 | 0 |
-| gumbi/lanac | 38 | 37 | 36 | 1 | 1 |
+| gumbi/lanac | 38 | 38 | 36 | 2 | 0 |
 | dijalog | 28 | 28 | 28 | 0 | 0 |
 | ispis | 4 | 4 | 3 | 1 | 0 |
 | ostalo | 35 | 31 | 15 | 16 | 4 |
-| **sve** | **164** | **159** | **131** | **28** | **5** |
+| **sve** | **164** | **160** | **131** | **29** | **4** |
 
 [#66](https://github.com/tomic04/netgen-u-carpo/pull/66) zatvara pravilo, ne redove iz baze. `STA-33` je forma iza dvotočke (`Form1.vb` 7186–7187). `STA-35` puni stablo adapterom (`4441–4447`). `BLA-30` prazan tag `:` ide u `NovaGenerickaForma` (`4353–4355`, `7187`). `BLA-31` `SrediSQL` prije `Fill` (`4442`). `BLA-32` četiri korijena: natpis `Blagajne` plus tri store (`4344–4356`). `PL-30` i `PL-31` slijede `7730–7733` i izlaz dok je `TREE` prazan (`4310`). `PL-35` je `REFRESHMASTER` koji nije `REFRESHMASTERGRID` (`4570`).
 
@@ -46,6 +46,7 @@ Po stavci, [#74](https://github.com/tomic04/netgen-u-carpo/pull/74) `af3816f`:
 - `RIJ-33` potvrđen. Run [43305196144](https://github.com/tomic04/netgen-u-carpo/actions/runs/43305196144) (`1f1a837`) je zelen. `[Z] asm:NetGenDLL.loader:RobaWebKlase.xml -> RobaWebKlase.xml otvoren`. `Loader.vb` 183 stavi `ModuleID`, `Form1.vb` 1251–1258 spremi `Mid`, `1139` otvori `SharedDLLs\xml\` plus taj modul. `ONLOAD` učitanog XML-a je isti kao u repou. `fk_meni` se ne gasi. Sažetak 164 / 157 / 7.
 - `ONK-04` potvrđen. Tri gumba su `ONK-04`, `NIV-05`, `REA-04`. Run [43304310432](https://github.com/tomic04/netgen-u-carpo/actions/runs/43304310432) (`2138faf`) je zelen. `[Z] otvaraFormu=Zakljucavanje saljeSubmit=false`. Gumb `Zaključi` ima `ONCLICK=:Zakljucavanje`. `Form2.vb` 6882 otvara tu formu i ne šalje `spKntZakljucivanjeTem`. Sažetak 164 / 158 / 6.
 - `NIV-05` potvrđen. Run [43307347232](https://github.com/tomic04/netgen-u-carpo/actions/runs/43307347232) (`99e36b4`) je zelen. `[Z] ONSUBMIT=spMPQueryGlaIDetNG dnevnik=NetGen SQL redovi=1`. `Pokaži` je `Button1` (`Form2.vb` 3367, `OKClick=True`). `FILTERFORM` ima `FILLEXPLORER=TRUE`, pa `Form1.vb` 5445–5452 pošalje `ONSUBMIT`. `@@` je zamijenjen i upit vrati red. Sažetak 164 / 159 / 5.
+- `REA-04` potvrđen. Isti run. `[Z] ONSUBMIT=spMPRealizacijaRobeNG dnevnik=NetGen SQL redovi=1`. `Pokaži` na `FORM1` je `Button1` (`Form2.vb` 3367). `FILLEXPLORER=TRUE` pošalje `ONSUBMIT` (`Form1.vb` 5445–5452). `@@` je zamijenjen i upit vrati red. Ovo nije `REA-00`. Sažetak 164 / 160 / 4.
 - `MPK-30` potvrđen. `FILTERFORM` ima `FILLEXPLORER=TRUE` i `ONSUBMIT` `spMPPoravnajKP`. `Form1.vb` 5445–5452 zamijeni master tim SQL-om. Test nije konstanta: kriva klasa ili procedura bez tog imena pada. Sažetak 164 / 139 / 25.
 - `MPK-31` potvrđen. `DODAJIZNOS` ima prazan `FILLEXPLORER`. To nije grana `true`. `Form1.vb` 5509–5519 izvrši `ONSUBMIT` pa ponovi zadnji master. Gumb je `Dodaj:DODAJIZNOS`. Sažetak 164 / 140 / 24.
 - `STA-34` potvrđen. `POPUNI_FORM` nema kontrola pa se dijalog ne otvara (`Form1.vb` 5369–5370, `OKClick=True`). `FILLEXPLORER=TRUE` stavi master na `spStatusiQuery @action=0, @node=@@node` (`5445–5452`). Test traži taj tekst, nije konstanta. Sažetak 164 / 141 / 23.
@@ -69,7 +70,7 @@ Po stavci, [#74](https://github.com/tomic04/netgen-u-carpo/pull/74) `af3816f`:
 
 [#72](https://github.com/tomic04/netgen-u-carpo/pull/72) stavlja klijentski XML izvan `definitions/netgen`. `TRZ-01`, `POR-01`, `RFA-00` i `REA-00` ostaju otvoreni. [#71](https://github.com/tomic04/netgen-u-carpo/pull/71) ispravno ne šalje `@@godina` (`Class1.vb` 113). To nije zatvorena stavka.
 
-Ostaje otvoreno: `TRZ-01`, `POR-01`, `RFA-00`, `REA-00`, `REA-04`. Tri gumba su `ONK-04` i `NIV-05` zatvoreni, `REA-04` otvoren.
+Ostaje otvoreno: `TRZ-01`, `POR-01`, `RFA-00`, `REA-00`. Tri gumba `ONK-04`, `NIV-05` i `REA-04` su zatvoreni.
 
 Uzorak po tipu: samo-grid `OznakaKL` (spin). Šifrarnik `JeziciNG`: `JEZ-56` pravilo, `JEZ-31` spin. Manager `KntBlaZak` i `PrijemniList`: čvor je pravilo, `PL-32` je spin. Stablo-master `Statusi`: `STA-33` i `STA-35` su pravilo. Rijetke `RIJ-40`–`42` su `[Z]` na istom CI-ju, i dalje pravilo kuke, ne red iz baze.
 
@@ -79,7 +80,7 @@ Grid je detail, kvačica, suma, sort i stupci mastera. Stablo je čvor, lijevi p
 
 Što korisnik donosi s klijenata (SQL koji fali na spinu i 63 XML-a) je u [fali-od-korisnika.md](fali-od-korisnika.md). Jupiter nije pitan, pa nijedan objekt nije zapisan kao odsutan na oba Jupitera. Stavke se tim popisom ne zatvaraju.
 
-Od 5 otvorenih, 4 XML-a (`TRZ-01`, `POR-01`, `RFA-00`, `REA-00`) i gumb `REA-04`.
+Od 4 otvorenih, sva četiri su XML: `TRZ-01`, `POR-01`, `RFA-00`, `REA-00`. Tri gumba `ONK-04`, `NIV-05`, `REA-04` su zatvoreni.
 
 Stari CI `b7d8989` ima 571 / 411 / 160. Novi `ef710b9` ima 354 / 341 / 13. Od 160, 117 je još u katalogu (13 i dalje otvoreno, 104 zeleno). 42 prave stavke nema u novom katalogu. 36 ima NetGen dokaz i ostaje zatvoreno. Šest je izbačeno bez dokaza i ostaje otvoreno: `STA-12`, `MPP-20`, `PL-32`, `MPK-30`, `MPK-31`, `STA-34`.
 
