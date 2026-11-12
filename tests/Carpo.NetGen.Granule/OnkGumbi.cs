@@ -80,27 +80,18 @@ namespace Carpo.NetGen.Granule
             }
             if (opisLoga != "NetGen SQL")
                 return Qa.P(ime, id, opis, izvor, "dnevnik [" + opisLoga + "]");
-            string spin = "redovi";
+            int redova;
             try
             {
-                using (var conn = new SqlConnection(Citanje.Spoj))
-                using (var cmd = new SqlCommand(sql, conn))
-                using (var da = new SqlDataAdapter(cmd))
-                {
-                    cmd.CommandTimeout = 60;
-                    var dt = new DataTable();
-                    conn.Open();
-                    da.Fill(dt);
-                }
+                redova = Redova(sql);
             }
             catch (Exception ex)
             {
-                spin = ex.Message ?? "";
-                NgDnevnik.Greska(spin + " | " + sql);
-                if (spin.IndexOf("spMPQueryGlaIDetNG", StringComparison.Ordinal) < 0)
-                    return Qa.P(ime, id, opis, izvor, spin);
+                return Qa.P(ime, id, opis, izvor, ex.Message);
             }
-            Console.WriteLine("[Z] MPNivelacija NIV-05 ONSUBMIT=spMPQueryGlaIDetNG dnevnik=NetGen SQL spin=" + spin);
+            if (redova < 1)
+                return Qa.P(ime, id, opis, izvor, "0 redova");
+            Console.WriteLine("[Z] MPNivelacija NIV-05 ONSUBMIT=spMPQueryGlaIDetNG dnevnik=NetGen SQL redovi=" + redova.ToString(CultureInfo.InvariantCulture));
             return Qa.Z(ime, id, opis, izvor);
         }
 
@@ -125,28 +116,33 @@ namespace Carpo.NetGen.Granule
             if (sql.IndexOf("spMPRealizacijaRobeNG", StringComparison.Ordinal) < 0 || sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
                 return Qa.P(ime, id, opis, izvor, "sql [" + sql + "]");
             NgDnevnik.Sql(sql);
-            string spin = "redovi";
+            int redova;
             try
             {
-                using (var conn = new SqlConnection(Citanje.Spoj))
-                using (var cmd = new SqlCommand(sql, conn))
-                using (var da = new SqlDataAdapter(cmd))
-                {
-                    cmd.CommandTimeout = 60;
-                    var dt = new DataTable();
-                    conn.Open();
-                    da.Fill(dt);
-                }
+                redova = Redova(sql);
             }
             catch (Exception ex)
             {
-                spin = ex.Message ?? "";
-                NgDnevnik.Greska(spin + " | " + sql);
-                if (spin.IndexOf("spMPRealizacijaRobeNG", StringComparison.Ordinal) < 0)
-                    return Qa.P(ime, id, opis, izvor, spin);
+                return Qa.P(ime, id, opis, izvor, ex.Message);
             }
-            Console.WriteLine("[Z] MPRealizNG REA-04 ONSUBMIT=spMPRealizacijaRobeNG dnevnik=NetGen SQL spin=" + spin);
+            if (redova < 1)
+                return Qa.P(ime, id, opis, izvor, "0 redova");
+            Console.WriteLine("[Z] MPRealizNG REA-04 ONSUBMIT=spMPRealizacijaRobeNG dnevnik=NetGen SQL redovi=" + redova.ToString(CultureInfo.InvariantCulture));
             return Qa.Z(ime, id, opis, izvor);
+        }
+
+        private static int Redova(string sql)
+        {
+            using (var conn = new SqlConnection(Citanje.Spoj))
+            using (var cmd = new SqlCommand(sql, conn))
+            using (var da = new SqlDataAdapter(cmd))
+            {
+                cmd.CommandTimeout = 60;
+                var dt = new DataTable();
+                conn.Open();
+                da.Fill(dt);
+                return dt.Rows.Count;
+            }
         }
     }
 }
