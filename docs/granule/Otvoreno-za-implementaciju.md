@@ -17,7 +17,9 @@ Od 138 zatvorenih, **128 je pravilo** i **10 je spin podatak**. Devet je `Oznaka
 
 [#66](https://github.com/tomic04/netgen-u-carpo/pull/66) zatvara pravilo, ne redove iz baze. `STA-33` je forma iza dvotočke (`Form1.vb` 7186–7187). `STA-35` puni stablo adapterom (`4441–4447`). `BLA-30` prazan tag `:` ide u `NovaGenerickaForma` (`4353–4355`, `7187`). `BLA-31` `SrediSQL` prije `Fill` (`4442`). `BLA-32` četiri korijena: natpis `Blagajne` plus tri store (`4344–4356`). `PL-30` i `PL-31` slijede `7730–7733` i izlaz dok je `TREE` prazan (`4310`). `PL-35` je `REFRESHMASTER` koji nije `REFRESHMASTERGRID` (`4570`).
 
-[#74](https://github.com/tomic04/netgen-u-carpo/pull/74) `af3816f`, CI 43280318919: potvrđen je samo `JEZ-31`. Odbijeno je 12. Jedanaest `ssMeni` stavki prolazi jer `Meni.ps1` upiše `asm:NetGenDLL.loader:<xml>`, a test gleda samo `Parametar like`. `fk_meni` je ugašen (`nocheck`) jer izračunati `Parent` ne prolazi. To je stvarna greška retka, ne klijentski izbornik. `DOS-11` prolazi jer `dospjele.sql` napravi tri procedure, a test broji ime u `sys.objects`. Skripta sama kaže da to nije klijentsko tijelo. `Form2.vb` 2430–2431 se ne provjerava.
+Po stavci, [#74](https://github.com/tomic04/netgen-u-carpo/pull/74) `af3816f`:
+
+- `JEZ-31` potvrđen. `spJeziciQuery @action=0` vratio je `JeziciId, Naziv` i 15 redova. Tijelo nema upis. `Class1.vb` 113–118 šalje poziv jer nema `@@`. `Form1.vb` 3882. Sažetak 164 / 138 / 26.
 
 [#72](https://github.com/tomic04/netgen-u-carpo/pull/72) stavlja klijentski XML izvan `definitions/netgen`. `TRZ-01`, `POR-01`, `RFA-00` i `REA-00` ostaju otvoreni. [#71](https://github.com/tomic04/netgen-u-carpo/pull/71) ispravno ne šalje `@@godina` (`Class1.vb` 113). To nije zatvorena stavka.
 
