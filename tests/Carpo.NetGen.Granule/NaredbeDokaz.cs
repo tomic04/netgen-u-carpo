@@ -22,6 +22,7 @@ namespace Carpo.NetGen.Granule
             l.Add(Blagajna(root));
             l.Add(Roditelj(root));
             l.Add(Ispis(root));
+            l.Add(DoPrint(root));
             return l;
         }
 
@@ -173,6 +174,63 @@ namespace Carpo.NetGen.Granule
             if (PrintBridge.Vrsta("PRINTREPXMASTER", false) != "master")
                 return Qa.P(granula, id, opis, izvor, "vrsta [" + PrintBridge.Vrsta("PRINTREPXMASTER", false) + "]");
             Console.WriteLine("[Z] JeziciNG NRD-ISPIS PRINTREPXMASTER vrsta=master");
+            return Qa.Z(granula, id, opis, izvor);
+        }
+
+        private sealed class LazniRepx
+        {
+            public int isnetgen;
+            public string Poziv = "";
+            public string Veza = "";
+            public string Id = "";
+            public string Putanja = "";
+            public string Predlozak = "";
+            public int Kopije = -1;
+            public string Pisac = "";
+            public string Parametri = "";
+
+            public void DoPrint2(string cs, string id, string put, string report, int kopije, string pisac, string param)
+            {
+                Poziv = "DoPrint2";
+                Veza = cs ?? "";
+                Id = id ?? "";
+                Putanja = put ?? "";
+                Predlozak = report ?? "";
+                Kopije = kopije;
+                Pisac = pisac ?? "";
+                Parametri = param ?? "";
+            }
+        }
+
+        private static Stavka DoPrint(string root)
+        {
+            const string granula = "KntBlaPromet";
+            const string id = "NRD-DOPRINT";
+            const string opis = "REPX predložak padne na rptDevRepx.DoPrint2";
+            const string izvor = "netgen/Form6.vb:134-161";
+            string xml = Path.Combine(root, "definitions", "netgen", "Agronom granule", "KntBlaPromet.xml");
+            string tekst = Procitaj(xml);
+            const string naredba = ":REPX/@@template (@id=@@BLPrometGlaId)";
+            if (tekst == null || tekst.IndexOf(naredba, StringComparison.Ordinal) < 0)
+                return Qa.P(granula, id, opis, izvor, "XML nema REPX predložak");
+            var lazni = new LazniRepx();
+            object prije = PrintBridge.Repx;
+            PrintBridge.Repx = lazni;
+            bool proslo;
+            try
+            {
+                proslo = PrintBridge.DevRepx(naredba, "Server=localhost", "@id=4", "9");
+            }
+            finally
+            {
+                PrintBridge.Repx = prije;
+            }
+            if (!proslo || lazni.isnetgen != 1 || lazni.Poziv != "DoPrint2"
+                || lazni.Putanja != "C:\\JupiterClient\\SharedDLLs\\repx"
+                || lazni.Predlozak != "@@template (@id=@@BLPrometGlaId)"
+                || lazni.Kopije != 0 || lazni.Pisac != "" || lazni.Parametri != "@id=4" || lazni.Id != "9")
+                return Qa.P(granula, id, opis, izvor, "put [" + lazni.Putanja + "] predlozak [" + lazni.Predlozak + "] isnetgen=" + lazni.isnetgen);
+            Console.WriteLine("[Z] KntBlaPromet NRD-DOPRINT DoPrint2 put=SharedDLLs\\repx isnetgen=1 predlozak=@@template");
             return Qa.Z(granula, id, opis, izvor);
         }
 
