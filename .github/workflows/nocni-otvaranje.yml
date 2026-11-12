@@ -1,0 +1,105 @@
+# Puni otvarač svih NetGen XML-ova na spinu. Nije uz svaki push.
+# GitHub cron je UTC. 01:00 UTC je 02:00 Europe/Zagreb zimi (CET).
+# Ljeti (CEST) isti sat je 03:00. Ručno: workflow_dispatch.
+
+name: nocni-otvaranje
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  otvaranje:
+    runs-on: [self-hosted, sql-ai]
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Spin stubovi
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $sql = Join-Path $env:GITHUB_WORKSPACE "scripts\spin\stubovi.sql"
+          sqlcmd -S localhost -d spin -E -C -b -i $sql
+          if ($LASTEXITCODE -ne 0) { throw "stubovi.sql nije prosao" }
+          & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Prenesi.ps1")
+          & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Retci.ps1")
+
+      - name: Build do Granule
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $msb = "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe"
+          if (-not (Test-Path $msb)) { throw "Nema MSBuild: $msb" }
+          $jupiter = "C:\Users\ntomic\Desktop\Jupiter Client\Programs\SharedAssemblies"
+          if (-not (Test-Path $jupiter)) { throw "Nema Jupiter SharedAssemblies: $jupiter" }
+          $dxRoot = "C:\Program Files\DevExpress 26.1\Components"
+          $dx = Join-Path $dxRoot "Bin\Framework"
+          $probe = Join-Path $dx "DevExpress.Data.v26.1.dll"
+          if (-not (Test-Path $probe)) {
+            $found = Get-ChildItem -Path $dxRoot -Filter "DevExpress.Data.v26.1.dll" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $found) { throw "Nema DevExpress.Data.v26.1.dll" }
+            $dx = $found.DirectoryName
+          }
+          $refs = Join-Path $env:GITHUB_WORKSPACE "artifacts\refs"
+          $out = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin"
+          New-Item -ItemType Directory -Force -Path (Join-Path $refs "Spin") | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $refs "Microsoft") | Out-Null
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $treba = @(
+            "JupiterTranslator10.dll","JupiterLogger.dll","RibbonBase.v26.dll","Spin.Printing.v26.dll",
+            "SpinDMSUtil.dll","Microsoft.Office.Interop.Outlook.dll","Dimenzije.dll"
+          )
+          foreach ($n in $treba) {
+            $src = Join-Path $jupiter "Spin\$n"
+            if (-not (Test-Path $src)) { throw "Fali $n" }
+            Copy-Item $src (Join-Path $refs "Spin\$n") -Force
+          }
+          $adodb = Join-Path $jupiter "Microsoft\adodb.dll"
+          $adodbVs = "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\PublicAssemblies\adodb.dll"
+          if (Test-Path $adodb) { Copy-Item $adodb (Join-Path $refs "Microsoft\adodb.dll") -Force }
+          elseif (Test-Path $adodbVs) { Copy-Item $adodbVs (Join-Path $refs "Microsoft\adodb.dll") -Force }
+          else { throw "Fali adodb.dll" }
+          if (-not $out.EndsWith("\")) { $out = $out + "\" }
+          $pShared = "/p:SharedAssembliesDir=$refs"
+          $pOut = "/p:OutputPath=$out"
+          $pDx = "/p:DevExpressBinDir=$dx"
+          $projekti = @(
+            "Devex_26\Carpo.Structure\Carpo.Structure.csproj",
+            "Devex_26\Carpo.Common\Carpo.Common.csproj",
+            "Devex_26\Carpo.Data\Carpo.Data.csproj",
+            "Devex_26\Carpo.Core\Carpo.Core.csproj",
+            "Devex_26\Carpo.UI\Carpo.UI.csproj",
+            "Devex_26\Carpo.Gen\Carpo.csproj",
+            "Devex_26\Carpo.NetGen\Carpo.NetGen.csproj",
+            "tests\Carpo.NetGen.Granule\Carpo.NetGen.Granule.csproj"
+          )
+          foreach ($p in $projekti) {
+            & $msb (Join-Path $env:GITHUB_WORKSPACE $p) /t:Build /m:1 /nologo /v:minimal /p:Configuration=Debug /p:Platform=AnyCPU $pShared $pOut $pDx
+            if ($LASTEXITCODE -ne 0) { throw "Build pao: $p" }
+            Copy-Item ($out + "*.dll") (Join-Path $refs "Spin") -Force
+          }
+
+      - name: Sve granule na spinu
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin"
+          $md = Join-Path $env:GITHUB_WORKSPACE "artifacts\granule\smoke-spin.md"
+          & (Join-Path $out "Carpo.NetGen.Granule.exe") $env:GITHUB_WORKSPACE --ssmeni $md
+          if ($LASTEXITCODE -ne 0) { throw "Puni otvarač nije pročitao ssMeni. Kod $LASTEXITCODE" }
+          Get-Content -LiteralPath $md -TotalCount 40
+
+      - name: Artifact punog otvaranja
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spin-sve-granule
+          if-no-files-found: warn
+          path: artifacts/granule/smoke-spin.md

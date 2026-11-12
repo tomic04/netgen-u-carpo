@@ -48,6 +48,49 @@ namespace Carpo.NetGen.Granule
             return 0;
         }
 
+        /// <summary>
+        /// Brzi skup: 2–3 granule po tipu forme. Puni Repo ostaje u Pokreni.
+        /// </summary>
+        public static int Uzorak(string root, string izlaz)
+        {
+            var indeks = Indeks(Path.Combine(root, "definitions", "netgen"));
+            string[] imena = new string[]
+            {
+                "KntKompVerizne.xml",
+                "Statusi.xml",
+                "KntBlaZak.xml",
+                "OznakaKL.xml",
+                "JeziciNG.xml",
+                "RealizacijaStavkeNG.xml",
+                "KarticaPartnera.xml"
+            };
+            var redovi = new List<Red>();
+            for (int i = 0; i < imena.Length; i++)
+            {
+                string put = Nadji(indeks, imena[i]);
+                if (put == null)
+                {
+                    var r = new Red();
+                    r.Parametar = imena[i];
+                    r.Uzrok = "nema-xml";
+                    r.Greska = imena[i];
+                    redovi.Add(r);
+                    continue;
+                }
+                redovi.Add(OtvoriDatoteku(put, imena[i]));
+            }
+            string tekst = Izvjestaj("Uzorak po tipu forme", "Manager: KntKompVerizne, Statusi, KntBlaZak. Obična forma: OznakaKL, JeziciNG. Dijalog na ulazu: RealizacijaStavkeNG, KarticaPartnera. Puni popis svih XML-ova ide noću (--ssmeni).", redovi);
+            Console.WriteLine(tekst);
+            if (!string.IsNullOrWhiteSpace(izlaz))
+            {
+                string dir = Path.GetDirectoryName(izlaz);
+                if (!string.IsNullOrEmpty(dir))
+                    Directory.CreateDirectory(dir);
+                File.WriteAllText(izlaz, tekst, new UTF8Encoding(false));
+            }
+            return 0;
+        }
+
         private static List<string> Lista(out string greska)
         {
             var lista = new List<string>();
