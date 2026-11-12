@@ -22,6 +22,7 @@ namespace Carpo.NetGen.GridTest
             JeziciBezBaze();
             Kolone();
             PisanjeIServer();
+            StabloTestovi();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
                 Spin();
             else
@@ -214,6 +215,49 @@ namespace Carpo.NetGen.GridTest
             gErr.ZabiljeziGresku("Invalid column name 'oznaka2'.");
             T("sql-greska-ne-puni", gErr.Stanje.Kolone.Count == 0 && gErr.Stanje.Tablica == null && gErr.Stanje.Poruka != null && gErr.Stanje.Poruka.IndexOf("oznaka2", StringComparison.Ordinal) >= 0, gErr.Stanje.Poruka);
             T("log-greska", NgDnevnik.Zapisi.Count > 0 && NgDnevnik.Zapisi[NgDnevnik.Zapisi.Count - 1].Razina == "Error", "");
+        }
+
+        private static void StabloTestovi()
+        {
+            var prazno = new Stablo();
+            prazno.Ucitaj(Ucitaj("JeziciNG.xml"), null);
+            T("stablo-jezici-skriveno", !prazno.Stanje.Vidljivo && prazno.Stanje.Splitter == 0 && !prazno.Stanje.GumbDrvo && prazno.Stanje.Node == "null", prazno.Stanje.Splitter.ToString());
+            T("stablo-obrub-none", prazno.Stanje.Obrub == "None" && prazno.Stanje.AllowDrop && prazno.Stanje.ShowPlusMinus && prazno.Stanje.ShowRootLines, "");
+
+            var stat = new Stablo();
+            stat.Ucitaj(Projekt("TREE", "Klase:FILTER#Osvježi drvo:REFRESHTREEFORM"), null);
+            T("stablo-static", stat.Stanje.Vidljivo && stat.Stanje.Splitter == 290 && stat.Stanje.Korijen.Count == 2, stat.Stanje.Korijen.Count.ToString());
+            T("stablo-static-tag", stat.Stanje.Korijen[0].Natpis == "Klase" && stat.Stanje.Korijen[0].Node == "" && stat.Stanje.Korijen[0].Naredba == "FILTER", stat.Stanje.Korijen[0].Tag);
+            stat.Odaberi(stat.Stanje.Korijen[0]);
+            T("stablo-afterselect", stat.Stanje.Node == "" && stat.Kontekst.Node == "" && stat.Stanje.ZadnjaNaredba == "FILTER", stat.Stanje.Node);
+
+            var ym = new Stablo();
+            ym.Ucitaj(Projekt("TREE", "yearmonth:FORM"), null);
+            T("stablo-yearmonth", ym.Stanje.Korijen.Count == 5 && ym.Stanje.Korijen[0].Djeca.Count == 12, ym.Stanje.Korijen.Count.ToString());
+            T("stablo-yearmonth-tag", ym.Stanje.Korijen[0].Tag == "20050101#20051231:FORM" && ym.Stanje.Korijen[0].Djeca[0].Tag == "2005101#2005130:FORM", ym.Stanje.Korijen[0].Djeca[0].Tag);
+
+            var dt = new DataTable();
+            dt.Columns.Add("id", typeof(string));
+            dt.Columns.Add("parentid", typeof(string));
+            dt.Columns.Add("naziv", typeof(string));
+            dt.Columns.Add("vrijednost", typeof(string));
+            dt.Rows.Add("0", "", "Sve", "0");
+            dt.Rows.Add("5", "0", "Dio", "5");
+            dt.Rows.Add("0", "0", "nula", "9");
+            var store = new Stablo();
+            store.Ucitaj(ProjektS("TREE", "spTreeKlMasterRoba:KLAS", "SPLITTERDISTANCE", "200"), delegate (string sql) { return dt; });
+            T("stablo-splitter-200", store.Stanje.Splitter == 200, store.Stanje.Splitter.ToString());
+            T("stablo-store", store.Stanje.Korijen.Count == 1 && store.Stanje.Korijen[0].Natpis == "Sve" && store.Stanje.Korijen[0].Djeca.Count == 1, store.Stanje.Korijen.Count == 0 ? "nema" : store.Stanje.Korijen[0].Djeca.Count.ToString());
+            T("stablo-store-tag", store.Stanje.Korijen[0].Tag == "0:KLAS" && store.Stanje.Korijen[0].Djeca[0].Tag == "5:KLAS" && store.Stanje.Korijen[0].Djeca[0].Oznaka == "5", store.Stanje.Korijen[0].Djeca[0].Tag);
+            T("stablo-store-sql", store.Stanje.SqlPozivi.Count > 0 && store.Stanje.SqlPozivi[0].IndexOf("spTreeKlMasterRoba", StringComparison.Ordinal) >= 0, "");
+
+            var prev = new Stablo();
+            prev.Ucitaj(Projekt("TREETRANSLATE", "TRUE"), null);
+            T("stablo-translate-zastavica", prev.Stanje.Prevedi && !prev.Stanje.Vidljivo, "");
+
+            var drag = new Stablo();
+            drag.Ucitaj(Projekt("TREEDRAGDROP", "delete from x"), null);
+            T("stablo-drag-ne-pise", drag.SqlOtpusta() == "", "");
         }
 
         private static void PisanjeIServer()
