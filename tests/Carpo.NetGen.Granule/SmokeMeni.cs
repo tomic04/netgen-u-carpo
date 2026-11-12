@@ -383,11 +383,19 @@ namespace Carpo.NetGen.Granule
         {
             var po = new Dictionary<string, int>(StringComparer.Ordinal);
             int otvoreno = 0;
+            int sRetcima = 0;
+            int prazno = 0;
             int greske = 0;
             for (int i = 0; i < redovi.Count; i++)
             {
                 if (redovi[i].Otvoreno)
+                {
                     otvoreno++;
+                    if (redovi[i].Redova > 0)
+                        sRetcima++;
+                    else
+                        prazno++;
+                }
                 else if (redovi[i].Uzrok != "nema-xml" && redovi[i].Uzrok != "nema-puta")
                     greske++;
                 int n;
@@ -399,7 +407,7 @@ namespace Carpo.NetGen.Granule
             var sb = new StringBuilder();
             sb.Append("# Smoke spin: ").Append(naslov).Append("\n\n");
             sb.Append(uvod).Append("\n\n");
-            sb.Append("Ukupno ").Append(redovi.Count).Append(", otvoreno ").Append(otvoreno).Append(", greske ").Append(greske).Append(".\n\n");
+            sb.Append("Ukupno ").Append(redovi.Count).Append(", otvoreno ").Append(otvoreno).Append(" (s retcima ").Append(sRetcima).Append(", prazno ").Append(prazno).Append("), greske ").Append(greske).Append(".\n\n");
             sb.Append("## Uzroci\n\n");
             sb.Append("| Uzrok | Broj |\n|---|---|\n");
             for (int i = 0; i < kljucevi.Count; i++)
