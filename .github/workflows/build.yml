@@ -114,6 +114,7 @@ jobs:
             "Devex_26\Carpo.CMS\Carpo.CMS.csproj",
             "Devex_26\Carpo.NetGen\Carpo.NetGen.csproj",
             "Devex_26\Carpo.NetGen.Corpus\Carpo.NetGen.Corpus.csproj",
+            "tests\Carpo.NetGen.Granule\Carpo.NetGen.Granule.csproj",
             "Devex_26\Carpo.Lite\Carpo.Lite.csproj",
             "Devex_26\Carpo.Specific\Carpo.Specific.csproj",
             "Devex_26\Carpo.Designer\Carpo.Designer.csproj",
@@ -149,6 +150,20 @@ jobs:
             throw "Smoke invarijante parsera nisu prosle (OznakaKL, JeziciNG, HIGHT, TYPE, UTF-16). Pad pojedinog drugog XML-a je u FAILED_LIST i sam ne ruši run."
           }
 
+      - name: Testovi granula
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin"
+          $exe = Join-Path $out "Carpo.NetGen.Granule.exe"
+          if (-not (Test-Path $exe)) { throw "Nema $exe" }
+          $dir = Join-Path $env:GITHUB_WORKSPACE "artifacts\granule"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          & $exe $env:GITHUB_WORKSPACE --izvjestaj (Join-Path $dir "izvjestaj.txt")
+          if ($LASTEXITCODE -ne 0) {
+            throw "Granule: ima padova (neocekivani fail). Otvorene stavke ne ruse build. Izvjestaj: artifacts/granule/izvjestaj.txt"
+          }
+
       - name: Artifact TestShell, NetGen i smoke
         uses: actions/upload-artifact@v4
         with:
@@ -163,3 +178,6 @@ jobs:
             artifacts/bin/Carpo.TestShell.pdb
             artifacts/smoke/izvjestaj.txt
             artifacts/smoke/korpus.tsv
+            artifacts/granule/izvjestaj.txt
+            artifacts/bin/Carpo.NetGen.Granule.exe
+            artifacts/bin/Carpo.NetGen.Granule.pdb
