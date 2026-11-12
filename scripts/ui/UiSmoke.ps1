@@ -69,3 +69,5 @@ foreach ($rel in $granule) {
     if (-not (Test-Path -LiteralPath $png)) { throw "UI smoke $ime nema screenshot" }
 }
 Write-Host "UI smoke svih $($granule.Count) granula je prosao."
+# Start-Process ne postavlja LASTEXITCODE. Prazan kod workflow cita kao pad.
+$global:LASTEXITCODE = 0
