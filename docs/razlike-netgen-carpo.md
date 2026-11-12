@@ -499,23 +499,23 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 - **Test:** `zabrana-insert`, `ne-jupiter2022`
 - **PR:** #4
 
-## R57 TestShell crta `DataGridView`, ugovor je DevExpress niz
+## R57 Master i detail su `GridControl`
 
 - **Element:** prozor granule
 - **NetGen:** Janus `GridEX`.
-- **Carpo:** `Podloga.cs` 79–111 crta `DataGridView` s NetGen defaultima. `MasterGrid.DxPostavke` je niz za DevExpress host.
-- **Odluka:** Carpo mehanika za crtež.
+- **Carpo:** `Podloga` crta `GridControl` / `GridView` (auto-filter, fokus retka, stupci iz NetGen modela). `MasterGrid.DxPostavke` i dalje opisuje ista svojstva.
+- **Odluka:** namjerno odstupanje, izgled. Vidi R62.
 - **Test:** `dx-header-empty-select`
-- **PR:** #4, #9
+- **PR:** izgled
 
-## R58 Zamjenska ikona umjesto `OrdersDetails16.ico`
+## R58 Čvor stabla nema `ImageList`
 
 - **Element:** `ImageList2`
-- **NetGen:** ključ `OrdersDetails16.ico`, indeks 0 (`Form1.designer.vb` 575–579).
-- **Carpo.NetGen:** datoteke nema. `Podloga` stavi sličicu 16×16 i drži indeks 0. `ikonaid` na gridu nije ta slika.
-- **Odluka:** Carpo mehanika za sliku. Indeks ostaje 0.
-- **Test:** `stablo-prevod`
-- **PR:** #9
+- **NetGen:** svaki čvor je slika 0, ključ `OrdersDetails16.ico` (`Form1.designer.vb` 575–579).
+- **Carpo.NetGen:** `TreeList` tu sličicu ne crta. Datoteke nema. `ikonaid` na gridu i dalje nije ikona stabla. U modelu indeks ostaje 0.
+- **Odluka:** namjerno odstupanje, izgled.
+- **Test:** `stablo-prevod`, `ikona-nije-grid`
+- **PR:** izgled
 
 ## R59 `GroupTotals=Always` nije mapiran
 
@@ -539,7 +539,7 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 
 - **Element:** `COMBO` bez `TREE` (Narudžbe, Prijemni list)
 - **NetGen:** prazan `strTreeNodes` i pun combo ne gase stablo i ne diraju splitter (`4310–4320`). Veza comboa odabere prvi red i `SelectedValueChanged` stavi stupac 0 u `strTreeNodes`, pa opet `NapuniDrvoVrijeme` (`7730–7733`, `4322–4330`). Splitter tada postane `SPLITTERDISTANCE` ili 290.
-- **Carpo:** `JTree` ne čita taj combo.
+- **Carpo:** `LookUpEdit` uzme prvi red i `Stablo.IzTeksta` napuni stablo.
 - **Odluka:** NetGen logika. Podloga ima combo, prva vrijednost puni stablo.
 - **Test:** `combo-prvi-prolaz`, `combo-puni-drvo`
 - **PR:** #22
