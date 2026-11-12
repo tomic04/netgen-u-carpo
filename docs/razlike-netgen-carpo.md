@@ -426,6 +426,46 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 - **Posljedica:** `klasa_da` na `RobaWebKlase` nema kvačice i puni se čim se forma čita. Sakriti stupac 0 sakrije id, a NetGen sakrije stupac 1.
 - **Test:** `RIJ-14`
 
+## R54 `FILLEXPLORER=onlytree` puni samo stablo
+
+- **Element:** `onlytree`
+- **NetGen:** prazna forma se ne prikaže (`Form2.vb` 4430). Vrijednost `onlytree` zove samo `NapuniDrvoVrijeme` (`Form1.vb` 5475–5476). Master SQL se ne šalje. `true` zamijeni master (`5445–5452`).
+- **Carpo:** `control populate` nema ovu treću vrijednost. `CommandRunner` ispis još ne izvršava (`Placeholders.cs` 19–24).
+- **Posljedica:** `LVObracun` i `JOPPD` gumb „Osvježi drvo“ ne smije ponovo poslati master. `STATUS` s `true` smije.
+- **Test:** `LVO-04`, `JOP-03`
+
+## R55 `ImeForme(@a=@@x)` nije ime forme
+
+- **Element:** poziv forme s zagradom
+- **NetGen:** `NovaGenerickaForma2` reže na `(` (`Form2.vb` 4407–4418). Lijevo je ime forme, unutra ide na početak `strParametriSvi`. `-freezid` u tom nizu zabrani novi id (`4413–4415`). Vodeća `:` i dalje otvara formu (`Form1.vb` 4862–4867).
+- **Carpo:** `form open` ne parsira `@a=@@x` iz istog tokena.
+- **Posljedica:** `LVObracun` `INSERTLVGLA(@hrkadroviid = 0)` traži formu `INSERTLVGLA`, a `0` je parametar. Cijeli string kao ime forme ne postoji.
+- **Test:** `LVO-05`, `LVO-20`
+
+## R56 `BUTTONS` prepiše samo prvih N gumba
+
+- **Element:** `BUTTONS` i `CMDxCAPTION`
+- **NetGen:** `CMD` se složi prvi (`Form1.vb` 3319–3330). Ako `BUTTONS` nije prazan, segment `j` prepiše gumb `j+1` (`3770–3796`). Kasniji `CMD` ostaju. `Button6` iz `BUTTONS` je tek šesti segment (`j = 5`).
+- **Carpo:** jedan niz gumba. Nema ostatka `CMD` iza kraćeg `BUTTONS`.
+- **Posljedica:** `KntKompVerizne` ima pet `BUTTONS` i još `CMD6`–`CMD8` `repx/`. Repx gumbi se vide. Brisati ih jer „BUTTONS zamjenjuje CMD“ makne ispis.
+- **Test:** `KOV-04`, `KOV-05`
+
+## R57 `enable` gleda natpis gumba
+
+- **Element:** `ONLOAD2` i rafalni `select` na podlozi
+- **NetGen:** stupac se traži po `Button.Text` (`Form1.vb` 3914–3921 i 4886–4896). To je natpis, ne `NAME`.
+- **Carpo:** `control enable` veže se na `name`.
+- **Posljedica:** `MPPonuda` `ONLOAD2` stupac `Dodaj` gasi gumb čiji je natpis Dodaj. Veza po `NAME` ne nađe stupac.
+- **Test:** `MPP-04`, `MPP-20`
+
+## R58 `CLICK(ime)` klikne tu kontrolu
+
+- **Element:** `CLICK(`
+- **NetGen:** `Rafalno` skine `CLICK(`, ostatak je ime, `Glbl_Click` na toj kontroli (`Form2.vb` 7151–7155). `KntBlaPromet` `ONLOADED="click(Ok)"` tako stisne gumb `ok`, čiji je `ONCLICK` `close#:REPX/@@template (@id=@@BLPrometGlaId)`.
+- **Carpo:** nema `CLICK(ime)`. Zatvaranje forme ne pokrene `ONCLICK` tog gumba.
+- **Posljedica:** ispis blagajne ostane na praznoj formi ako se `click(Ok)` preskoči. Ime izvještaja je vrijednost `@@template` iz `ONLOAD`.
+- **Test:** `KBP-04`, `KBP-20`
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
@@ -454,3 +494,9 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 | `RatArkod.md` | webbrowser | R47 |
 | `RobaAtributiUredi.md` | picturebox | R48 |
 | `Narudzbe.md` | TREETRANSLATE, ikona, NEXTFORM, grid | R49, R52, R53 |
+| `Prioritet.md` | 141 red `ssMeni`, rang stablo+detail | |
+| `LVObracun.md` | `onlytree`, `@@lvglaid`, `Ime(@a=)` | R54, R55 |
+| `JOPPD.md` | `onlytree`, `@@id` naspram `@@kodjoppdaid`, tilda | R54, R20, R04 |
+| `KntKompVerizne.md` | `sptree`, `BUTTONS` ne briše kasniji CMD, `repx/` | R56, R42 |
+| `KntBlaPromet.md` | `CLICK(Ok)`, `@@template`, `CLEARCOLUMS` | R58, R42, R08 |
+| `MPPonuda.md` | nema `ONLOAD`, natpis gumba, `vrstadokid-` | R57, R43 |

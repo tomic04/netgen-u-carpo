@@ -52,6 +52,11 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(JeziciIspis.Provjeri(root));
             sve.AddRange(RijetkeKontrole.Provjeri(root));
             sve.AddRange(PrioritetMeni.Provjeri(root));
+            sve.AddRange(LVObracun.Provjeri(root));
+            sve.AddRange(Joppd.Provjeri(root));
+            sve.AddRange(KntKompVerizne.Provjeri(root));
+            sve.AddRange(KntBlaPromet.Provjeri(root));
+            sve.AddRange(MPPonuda.Provjeri(root));
 
             string tekst = Qa.Tekst(sve);
             if (!string.IsNullOrEmpty(PrioritetMeni.Tekst))
