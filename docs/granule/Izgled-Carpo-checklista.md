@@ -28,6 +28,24 @@ Provjera je usporedba NetGen podloge s ovim kontrolama. Boja, font i skin su izg
 | Veliki flat gumbi na dnu | `pnlButtons` (`JPanelButtonsControl`), `Dock = Bottom`, visina 42, bez obruba (`709–719`). XML `<panelbuttons>` (`AIOPonuda.xml` 375) | Jedan red gumba na dnu desnog dijela. Natpis i naredba su NetGen `CMD` / `BUTTONS`. Nisu u Office ribbonu. |
 | Status `Broj slogova` | `bbiBrojSlogova.Caption = "Broj slogova:"` (`JupitetShared.Designer.cs` 122–126). Master i detail imaju `bbiBrojSlogovaMasterGrid` i `bbiBrojSlogovaDetailsGrid` (`Manager.cs` 507–517) | Status pokazuje broj redova mastera. Tekst počinje s `Broj slogova`. |
 
+## Stanje porta (#33, `cursor/netgen-raspored-3266` `4267122`)
+
+`Podloga` nasljeđuje `Carpo.UI.Forms.Master.Manager`. Ovo odgovara checklisti:
+
+- Ribbon stranice su obrisane, zaglavlje stranica je skriveno (`Podloga.cs` 48–54). Gumbi granule su `SimpleButton` na `pnlButtons`, ne velike ikone ribbona.
+- Lijevo su `bbiLookUpFilter` / `cmbComboEditFilter` (`RepositoryItemComboBox`) i `trMain`. Prazan `TREE` i prazan combo sklone lijevu stranu (`OnShown` 165–166, `ShellLayout.cs` 56–63).
+- `bar2` ostaje iz dizajnera: sakrij bočnu traku, raširi, reset, postavke, izvoz, ikone 16 px (`Manager.Designer.cs` 381–400).
+- `splitGrid.Horizontal = false` (`645`). Detail je ispod mastera.
+- `pnlButtons` je `Dock = Bottom`, visina 42, na desnom panelu (`709–719`).
+- `bbiBrojSlogova.Caption` je `Broj slogova:` (`Podloga.cs` 72).
+
+Ovo ne odgovara:
+
+- Klik gumba izvrši samo `REFRESHMASTERGRID`. Ostale NetGen naredbe ostanu u `Tag` i uđu u dnevnik (`Podloga.cs` 451–460). Checklista traži da naredba gumba bude NetGen `CMD` / `BUTTONS`.
+- Broj detalja u statusu ostane 0 nakon prvog punjenja. `PostaviStatus` ide iz mastera prije `OsvjeziDetail`, a vezanje detalja ne ponovi status (`319–326`, `385–390`, `464–470`).
+- Kartica je uvijek jedna, natpis `Stavke` (`Podloga.cs` 62–69). NetGen skine DMS karticu samo kad je `DMSDET` prazan (`Form1.vb` 2433–2437). Port je ne doda ni kad `DMSDET` ima SQL.
+- Uključena kvačica ide u `CheckBoxRowSelect` (`379–380`). NetGen sakrije ili pokaže stupac 1 (`Form1.vb` 2043–2046). `CHECKBOXVISIBLE=FALSE` ne doda selektor, pa uobičajeni slučaj izgleda ugašeno.
+
 ## Što port ne smije
 
 - Staviti NetGen gumbe u ribbon stranicu s velikim ikonama.

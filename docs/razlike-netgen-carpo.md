@@ -656,6 +656,22 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Posljedica:** `VrCjenik` unos i izmjena ne osvježavaju master samo zato što forma nosi taj atribut.
 - **Test:** `VRC-05`
 
+## R83 `POPUPDETAIL` nije izbornik mastera
+
+- **Element:** `POPUPDETAIL`
+- **NetGen:** `POPUP` se prepiše s `POPUPMASTER` (`Form1.vb` 3384–3385) i puni `ContextMenuStrip1`, pa standardne stavke (`3562–3676`). `POPUPDETAIL` ide u `strPopUpDet` (`3386`) i puni `ContextMenuStrip2` (`3702–3750`). Desni klik detalja zove `ContextMenuStrip2.Show` na `GridEX2` (`7225`).
+- **Carpo:** jedan izbornik grida lako pokaže stavke mastera i na detalju.
+- **Posljedica:** `MPKase` na detalju ima `Dodaj` i `Izmjeni`. `Izmjeni` traži `UPDATEFORM`. Forma je `UPDATE_FORM` (R19). Master taj izbornik nema.
+- **Test:** `KSE-05`
+
+## R84 `MAXIMIZEBOX=FALSE` gasi povećanje dijaloga
+
+- **Element:** `MAXIMIZEBOX` na formi
+- **NetGen:** `Me.MaximizeBox` dobije tekst atributa (`Form2.vb` 1031). `FALSE` je Boolean false. Prazan string pod `On Error Resume Next` ne mijenja okvir.
+- **Carpo:** dijalog koji naslijedi master često ostavi gumb za povećanje.
+- **Posljedica:** `FaktureMinMaxDat` i `SklMinMaxDat` `MAINFORM` nemaju povećanje. Naslov podloge i dalje je element `CAPTION` projekta (`Klase tečajeva`), a dijalog nosi svoj `CAPTION`.
+- **Test:** `FMD-03`, `SMD-03`
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
@@ -714,3 +730,8 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 | `MatTem.md` | `:FILTERFORM`, `!!`, `LANDSCAPE` ne dira `PRINTMASTER` | R18, R14, R41, R65 |
 | `MPPSNG.md` | stablo bez `:`, `AUTOFITCOLUMNS`, `Lista`, `vrstadokid-` | R10, R80, R60, R43, R57 |
 | `MPStanje.md` | `INCLUDE`, `SKIPDEFAULTLOAD` | R78, R53, R65 |
+| `MPTrgOprNG.md` | `:FILTERFORM`, detail `@@id`, `BUTTONS` | R18, R11, R56 |
+| `MPKase.md` | `POPUPDETAIL`, `DETAILDBLCLICK`, `Lista` | R83, R75, R60, R19 |
+| `FaktureMinMaxDat.md` | `MAXIMIZEBOX`, datum `#OK` | R84, R24 |
+| `KntKonfShemeMatTem.md` | `ONLOAD` je `sp … 1`, `LANDSCAPE` bez ispisa | R41 |
+| `SklMinMaxDat.md` | `MAXIMIZEBOX`, datum `#OK` | R84, R24 |

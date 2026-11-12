@@ -1,8 +1,8 @@
 # Otvoreno za implementaciju
 
-Izvor je CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31), commit `b7d8989`, izvještaj `SVE ukupno=571 zeleno=411 otvoreno=160 pad=0`.
+Izvor je CI [#34](https://github.com/tomic04/netgen-u-carpo/pull/34), commit `30236ff`, izvještaj `SVE ukupno=624 zeleno=460 otvoreno=164 pad=0`.
 
-Svih 160 stavki je otvoreno. Nijedna nije pad. Grupe su po elementu NetGena i poredane po broju granula. Uz svaku stavku je linija izvora i razlog zašto je ostala otvorena.
+Svih 164 stavki je otvoreno. Nijedna nije pad. Grupe su po elementu NetGena i poredane po broju granula. Uz svaku stavku je linija izvora i razlog zašto je ostala otvorena.
 
 | # | Element | Granula | Stavki |
 |---|---|---:|---:|
@@ -11,27 +11,28 @@ Svih 160 stavki je otvoreno. Nijedna nije pad. Grupe su po elementu NetGena i po
 | 3 | Datum: format, ključne riječi, krivi atribut | 5 | 6 |
 | 4 | Detail grid: veza, jednokratne kolone, selector | 4 | 9 |
 | 5 | totalgen i ASSEMBLYLOAD | 4 | 6 |
-| 6 | onlytree, CLICK, enable po natpisu, dnevnik | 4 | 4 |
-| 7 | Kvačica, suma, sort, edit, Enter i selekcija | 3 | 14 |
-| 8 | Raspored dijaloga: /14, tab, label, ONLOAD polja | 3 | 12 |
-| 9 | Stupac mastera: tip, širina, skrivanje, poredak | 3 | 11 |
-| 10 | Stablo iz SQL-a i klik na čvor | 3 | 10 |
-| 11 | Radio, check, OKSTAY, CLOSE i REFRESHCONTROL | 3 | 6 |
-| 12 | Ovisni combo, multidrop, status, WUDTH, TRANSLATE | 3 | 5 |
-| 13 | Prazan broj, apostrof i spRaiserror | 3 | 5 |
-| 14 | FILLEXPLORER i prazan početni master | 3 | 4 |
-| 15 | Ispis mastera, zaglavlje i Spin.Printing | 3 | 4 |
-| 16 | Procedura ili tijelo nisu dostupni za čitanje | 3 | 3 |
-| 17 | Lijevi panel: prazno stablo, combo, splitter | 2 | 9 |
-| 18 | Izbornik, help, timer, PERMISIO, popup, ikona | 1 | 7 |
-| 19 | !!, +FOCUS, prazan ## i repx #CLOSE | 1 | 4 |
-| 20 | Temp tablica i FOREACH | 1 | 4 |
-| 21 | Dijaloško stablo, web i slika | 1 | 3 |
-| 22 | Tražilica | 1 | 2 |
-| 23 | Redoslijed punjenja podloge | 1 | 1 |
-| 24 | fidus nema tablicu ssMeni | 1 | 1 |
+| 6 | XML izbornika nije u repou | 4 | 4 |
+| 7 | onlytree, CLICK, enable po natpisu, dnevnik | 4 | 4 |
+| 8 | Kvačica, suma, sort, edit, Enter i selekcija | 3 | 14 |
+| 9 | Raspored dijaloga: /14, tab, label, ONLOAD polja | 3 | 12 |
+| 10 | Stupac mastera: tip, širina, skrivanje, poredak | 3 | 11 |
+| 11 | Stablo iz SQL-a i klik na čvor | 3 | 10 |
+| 12 | Radio, check, OKSTAY, CLOSE i REFRESHCONTROL | 3 | 6 |
+| 13 | Ovisni combo, multidrop, status, WUDTH, TRANSLATE | 3 | 5 |
+| 14 | Prazan broj, apostrof i spRaiserror | 3 | 5 |
+| 15 | FILLEXPLORER i prazan početni master | 3 | 4 |
+| 16 | Ispis mastera, zaglavlje i Spin.Printing | 3 | 4 |
+| 17 | Procedura ili tijelo nisu dostupni za čitanje | 3 | 3 |
+| 18 | Lijevi panel: prazno stablo, combo, splitter | 2 | 9 |
+| 19 | Izbornik, help, timer, PERMISIO, popup, ikona | 1 | 7 |
+| 20 | !!, +FOCUS, prazan ## i repx #CLOSE | 1 | 4 |
+| 21 | Temp tablica i FOREACH | 1 | 4 |
+| 22 | Dijaloško stablo, web i slika | 1 | 3 |
+| 23 | Tražilica | 1 | 2 |
+| 24 | Redoslijed punjenja podloge | 1 | 1 |
+| 25 | fidus nema tablicu ssMeni | 1 | 1 |
 
-Zbroj stavki je 160.
+Zbroj stavki je 164.
 
 ## 1. XML nije u spin ssMeni
 
@@ -139,7 +140,22 @@ Zbroj stavki je 160.
 | KUPDostKnNGBvg `BVG-20` | clsCarpoKupUra i clsCarpoKnjigaUra dijele totalgen, razlikuje se CarpoForm | `netgen/Form2.vb:7456` | SELECT na spinu nije prošao |
 | KntOPZ-STAT-1 `OPZ-20` | Eporezna ne otvara dijalog i ne ucitava DLL | `netgen/Form1.vb:5369-5370` | dijalog još nije u kuki |
 
-## 6. onlytree, CLICK, enable po natpisu, dnevnik
+## 6. XML izbornika nije u repou
+
+**4 granula, 4 stavki:** Poruke, RealizacijaFakture, RealizacijaStavkeNG, TecRazOTV.
+
+**NetGen:** Stavka ostaje otvorena dok datoteka iz `ssMeni.Parametar` ne stigne u `definitions/netgen`. Agronom primjerak, kad postoji, nije menijska putanja `MER\`.
+
+**Nedostatak:** Port ne može provjeriti ponašanje granule bez tog XML-a. Menijska putanja i primjerak u drugom folderu nisu ista datoteka.
+
+| Stavka | Očekivano | Izvor | Zašto je otvoreno |
+|---|---|---|---|
+| TecRazOTV `TRZ-01` | TecRazOTV.xml nije u definitions/netgen | `docs/granule/ssMeni-svi-serveri.md` | nema datoteke, checklista ponašanja čeka XML |
+| RealizacijaStavkeNG `REA-00` | MER\RealizacijaStavkeNG.xml nije u repou. Provjera je Agronom primjerak | `docs/granule/Prioritet.md` | C:\actions-runner\_work\netgen-u-carpo\netgen-u-carpo\definitions\netgen\MER\RealizacijaStavkeNG.xml |
+| RealizacijaFakture `RFA-00` | MER\RealizacijaFakture.xml nije u repou | `docs/granule/Prioritet.md` | C:\actions-runner\_work\netgen-u-carpo\netgen-u-carpo\definitions\netgen\MER\RealizacijaFakture.xml |
+| Poruke `POR-01` | Poruke.xml nije u definitions/netgen | `docs/granule/ssMeni-svi-serveri.md` | otvoreno dok XML ne stigne |
+
+## 7. onlytree, CLICK, enable po natpisu, dnevnik
 
 **4 granula, 4 stavki:** KntBlaPromet, LVObracun, MPPonuda, MPPorKPNG.
 
@@ -154,7 +170,7 @@ Zbroj stavki je 160.
 | MPPonuda `MPP-20` | enable/disable trazi Button.Text, ne NAME | `netgen/Form1.vb:3914-3921` | SELECT na spinu nije prošao |
 | MPPorKPNG `MPK-43` | SQL filtera ide u NgDnevnik, ne u CBLog | `docs/funkcionalnosti/logging.md` | dijalog još nije u kuki |
 
-## 7. Kvačica, suma, sort, edit, Enter i selekcija
+## 8. Kvačica, suma, sort, edit, Enter i selekcija
 
 **3 granula, 14 stavki:** MPPorKPNG, OznakaKL, PrijemniList.
 
@@ -179,7 +195,7 @@ Zbroj stavki je 160.
 | MPPorKPNG `MPK-42` | Checkbox stupac je vidljiv, total je ukljucen, sort klikom ostaje | `netgen/Form1.vb:2043-2053,3401-3404` | kuka nema ključ |
 | PrijemniList `PL-24` | CHECKBOXVISIBLE FALSE | `netgen/Form1.vb:2043` | SELECT na spinu nije prošao |
 
-## 8. Raspored dijaloga: /14, tab, label, ONLOAD polja
+## 9. Raspored dijaloga: /14, tab, label, ONLOAD polja
 
 **3 granula, 12 stavki:** JeziciNG, MPPorKPNG, OznakaKL.
 
@@ -202,7 +218,7 @@ Zbroj stavki je 160.
 | JeziciNG `JEZ-66` | Izmijeni ONLOAD napuni Naziv iz stupca | `netgen/Form2.vb:2016` | dijalog još nije u kuki |
 | MPPorKPNG `MPK-40` | datumdok i napomena dijele indeks 1. Red je datum pa napomena | `netgen/Form2.vb:3027-3030` | dijalog još nije u kuki |
 
-## 9. Stupac mastera: tip, širina, skrivanje, poredak
+## 10. Stupac mastera: tip, širina, skrivanje, poredak
 
 **3 granula, 11 stavki:** KntBlaZak, OznakaKL, PrijemniList.
 
@@ -224,7 +240,7 @@ Zbroj stavki je 160.
 | KntBlaZak `BLA-35` | Sirina VrstaBlagajne je 2500/14 = 179 | `netgen/Form1.vb:7522` | kuka nema ključ |
 | PrijemniList `PL-34` | Kolicina na detailu: sirina 1000/14 = 71, format #,####0.0000 | `netgen/Form1.vb:7522-7524` | SELECT na spinu nije prošao |
 
-## 10. Stablo iz SQL-a i klik na čvor
+## 11. Stablo iz SQL-a i klik na čvor
 
 **3 granula, 10 stavki:** KntBlaZak, PrijemniList, Statusi.
 
@@ -245,7 +261,7 @@ Zbroj stavki je 160.
 | PrijemniList `PL-30` | SelectedValueChanged upise SelectedValue u strTreeNodes i ponovo zove NapuniDrvoVrijeme | `netgen/Form1.vb:7730-7733` | SELECT na spinu nije prošao |
 | PrijemniList `PL-32` | Vrijednost combo stupca 0 mora biti TREE tekst (segmenti s # i :) | `netgen/Form1.vb:3342-3344,4344` | SELECT na spinu nije prošao |
 
-## 11. Radio, check, OKSTAY, CLOSE i REFRESHCONTROL
+## 12. Radio, check, OKSTAY, CLOSE i REFRESHCONTROL
 
 **3 granula, 6 stavki:** FakPar, KUPNG, MPInventura.
 
@@ -262,7 +278,7 @@ Zbroj stavki je 160.
 | MPInventura `INV-22` | radio rbtnKumulativ je 1 ili 0 | `netgen/Form2.vb:3432-3435` | SELECT na spinu nije prošao |
 | FakPar `FAK-21` | checkbox PoSkladistu salje CheckState | `netgen/Form2.vb:3424-3427` | SELECT na spinu nije prošao |
 
-## 12. Ovisni combo, multidrop, status, WUDTH, TRANSLATE
+## 13. Ovisni combo, multidrop, status, WUDTH, TRANSLATE
 
 **3 granula, 5 stavki:** DobUgovori, KntDospjeleStavke, MPNarIzdSkl.
 
@@ -278,7 +294,7 @@ Zbroj stavki je 160.
 | MPNarIzdSkl `NAR-21` | WUDTH se ignorira | `netgen/Form2.vb:2949` | SELECT na spinu nije prošao |
 | DobUgovori `DOB-21` | TRANSLATE prevodi samo prikaz | `netgen/Form2.vb:2420-2424` | kuka nema ključ |
 
-## 13. Prazan broj, apostrof i spRaiserror
+## 14. Prazan broj, apostrof i spRaiserror
 
 **3 granula, 5 stavki:** FakPar, KntDospjeleStavke, Kulture.
 
@@ -294,7 +310,7 @@ Zbroj stavki je 160.
 | KntDospjeleStavke `DOS-22` | prazan iznos ide kao 0 | `netgen/Form2.vb:3601` | kuka nema ključ |
 | FakPar `FAK-20` | CurMEdit prazan ide kao 0, ne kao tekst | `netgen/Form2.vb:2071,3601` | SELECT na spinu nije prošao |
 
-## 14. FILLEXPLORER i prazan početni master
+## 15. FILLEXPLORER i prazan početni master
 
 **3 granula, 4 stavki:** MPPorKPNG, PrijemniList, Statusi.
 
@@ -309,7 +325,7 @@ Zbroj stavki je 160.
 | Statusi `STA-34` | Forma bez kontrola ne otvara dijalog; FILLEXPLORER zamijeni master ONSUBMIT-om | `netgen/Form1.vb:5369-5370,5445-5452` | kuka nema ključ |
 | PrijemniList `PL-25` | Nema ONLOAD: pocetni master SQL je prazan | `netgen/Form1.vb:3367-3368,1830` | SELECT na spinu nije prošao |
 
-## 15. Ispis mastera, zaglavlje i Spin.Printing
+## 16. Ispis mastera, zaglavlje i Spin.Printing
 
 **3 granula, 4 stavki:** JeziciNG, KarticaPartnera, MPBlagajna.
 
@@ -324,7 +340,7 @@ Zbroj stavki je 160.
 | MPBlagajna `MPB-20` | Spin.Printing.v23 pa v9.1. Port zove v26, ne v23 | `netgen/Class1.vb:297-304; Devex_26/Carpo.NetGen/Placeholders.cs:46-52` | kuka nema ključ |
 | KarticaPartnera `KAR-40` | Ako Spin.Printing padne, Form6 zove rptDevRepx.DoPrint2 | `netgen/Form6.vb:134-161; netgen/Class1.vb:606-632` | kuka nema ključ |
 
-## 16. Procedura ili tijelo nisu dostupni za čitanje
+## 17. Procedura ili tijelo nisu dostupni za čitanje
 
 **3 granula, 3 stavki:** FakPar, JeziciNG, KntDospjeleStavke.
 
@@ -338,7 +354,7 @@ Zbroj stavki je 160.
 | KntDospjeleStavke `DOS-11` | nisu svi objekti na spin | `sys.objects` | spKntPopuniKontroleNG,spOrgShemaQuery |
 | FakPar `FAK-11` | nisu svi objekti na spin | `sys.objects` | otvoreno |
 
-## 17. Lijevi panel: prazno stablo, combo, splitter
+## 18. Lijevi panel: prazno stablo, combo, splitter
 
 **2 granula, 9 stavki:** OznakaKL, PrijemniList.
 
@@ -358,7 +374,7 @@ Zbroj stavki je 160.
 | PrijemniList `PL-22` | Splitter 180 tek kad TREE tekst postoji (nakon SelectedValue) | `netgen/Form1.vb:4323-4324` | SELECT na spinu nije prošao |
 | PrijemniList `PL-31` | Dok je TREE jos prazan, NapuniDrvo izadje prije splitter-a i prije Enable gumba | `netgen/Form1.vb:4310-4320` | SELECT na spinu nije prošao |
 
-## 18. Izbornik, help, timer, PERMISIO, popup, ikona
+## 19. Izbornik, help, timer, PERMISIO, popup, ikona
 
 **1 granula, 7 stavki:** OznakaKL.
 
@@ -376,7 +392,7 @@ Zbroj stavki je 160.
 | OznakaKL `OKL-81` | Nema TIMER: statusna oznaka timera je skrivena | `netgen/Form1.vb:3449-3450` | SELECT na spinu nije prošao |
 | OznakaKL `OKL-60` | Vidljiv je samo gumb Izmjena, naredba FRMEDIT | `netgen/Form1.vb:3827-3837,5664-5667` | SELECT na spinu nije prošao |
 
-## 19. !!, +FOCUS, prazan ## i repx #CLOSE
+## 20. !!, +FOCUS, prazan ## i repx #CLOSE
 
 **1 granula, 4 stavki:** KarticaPartnera.
 
@@ -391,7 +407,7 @@ Zbroj stavki je 160.
 | KarticaPartnera `KAR-23` | Prazan segment ## ne preskače sljedeći OK | `netgen/Form2.vb:6821-6822` | kuka nema ključ |
 | KarticaPartnera `KAR-24` | repx naredba s #CLOSE zatvara formu nakon ispisa | `netgen/Form2.vb:7033; netgen/Form1.vb:4276` | kuka nema ključ |
 
-## 20. Temp tablica i FOREACH
+## 21. Temp tablica i FOREACH
 
 **1 granula, 4 stavki:** KUPNG.
 
@@ -406,7 +422,7 @@ Zbroj stavki je 160.
 | KUPNG `KUP-12` | FOREACHROW vrti sve retke grida. Na podlozi Form1 petlja je komentar | `netgen/Form2.vb:7046-7048,8310-8327; netgen/Form1.vb:6843-6846` | SELECT na spinu nije prošao |
 | KUPNG `KUP-13` | FOREACHBLUEROW vrti SelectedItems redom od 0 | `netgen/Form2.vb:7043-7045,8363-8394` | SELECT na spinu nije prošao |
 
-## 21. Dijaloško stablo, web i slika
+## 22. Dijaloško stablo, web i slika
 
 **1 granula, 3 stavki:** Rijetke.
 
@@ -420,7 +436,7 @@ Zbroj stavki je 160.
 | Rijetke `RIJ-41` | webbrowser Navigate. URL atribut je ToUpper. refresh nije URL | `netgen/Form2.vb:1419-1433` | kuka nema ključ |
 | Rijetke `RIJ-42` | picturebox StretchImage. http zove Load. LOCATION je ToUpper | `netgen/Form2.vb:2710-2726` | kuka nema ključ |
 
-## 22. Tražilica
+## 23. Tražilica
 
 **1 granula, 2 stavki:** Kulture.
 
@@ -433,7 +449,7 @@ Zbroj stavki je 160.
 | Kulture `KUL-21` | Tražilica šalje Tag (id), ne tekst. Prazan tag je null | `netgen/Form2.vb:3626-3632` | SELECT na spinu nije prošao |
 | Kulture `KUL-22` | Search SQL roba: id=robaid, LIKE na userid i naziv, ! stupac samo sort | `netgen/Form3.vb:102-126` | SELECT na spinu nije prošao |
 
-## 23. Redoslijed punjenja podloge
+## 24. Redoslijed punjenja podloge
 
 **1 granula, 1 stavki:** OznakaKL.
 
@@ -445,7 +461,7 @@ Zbroj stavki je 160.
 |---|---|---|---|
 | OznakaKL `OKL-30` | Redoslijed: nema SETDEFAULTS, drvo, pa master SQL, detail se ne zove | `netgen/Form1.vb:3862-3883,2104-2113` | SELECT na spinu nije prošao |
 
-## 24. fidus nema tablicu ssMeni
+## 25. fidus nema tablicu ssMeni
 
 **1 granula, 1 stavki:** ssMeni-serveri.
 

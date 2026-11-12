@@ -53,6 +53,11 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(MatTem.Provjeri(root));
             sve.AddRange(MpPsNg.Provjeri(root));
             sve.AddRange(MpStanje.Provjeri(root));
+            sve.AddRange(MpTrgOpr.Provjeri(root));
+            sve.AddRange(MpKase.Provjeri(root));
+            sve.AddRange(FaktureMinMax.Provjeri(root));
+            sve.AddRange(KntKonfSheme.Provjeri(root));
+            sve.AddRange(SklMinMax.Provjeri(root));
             sve.AddRange(Statusi.Provjeri(root));
             sve.AddRange(KntBlaZak.Provjeri(root));
             sve.AddRange(PrijemniList.Provjeri(root));
