@@ -42,6 +42,7 @@ Po stavci, [#74](https://github.com/tomic04/netgen-u-carpo/pull/74) `af3816f`:
 - `FAK-11` potvrđen. Run [43284832210](https://github.com/tomic04/netgen-u-carpo/actions/runs/43284832210) i [43284846734](https://github.com/tomic04/netgen-u-carpo/actions/runs/43284846734) (`08a871c`) su zeleni. `FakPar` se otvorio s 3 reda i 11 stupaca, bez `Invalid object name 'FakPartneriUvjeti'`. Tablica je iz `scripts/spin/FakPartneriUvjeti.sql`. `ONLOAD` je `spFakPartneriUvjetiQuery` bez `@@`, pa `Class1.vb` 113–118 šalje poziv, a `Form1.vb` 3882 ga prikaže. Stupci su aliasi action 1: `Šifra partnera`, `Partner`, `Učestalost`, `Grupiranje`, `Valuta`, `Rabat`, `Povrat`, `Žiro račun`, `Ugovor`; `FakPartneriUvjetiid` i `parziroid` su skriveni. `PoSkladistu` je samo checkbox forme. Test pada ako tijelo ima `WHERE 1=0` ili ako stupac ne odgovara. Sažetak 164 / 141 / 23.
 - `PL-32` potvrđen. Run [43287798889](https://github.com/tomic04/netgen-u-carpo/actions/runs/43287798889) (`d221ac6`) ima `[Z] Cetvrti.Pl32 IzTeksta Danas:Promet#spNgTreeNabPri:Skladiste`. Stupac 0 iz `spNg_combo` nije natpis. `IzTeksta` cijepa po `#` i `:` (`Form1.vb` 3342–3344, 4344): `Danas` ide na `Promet`, a `spNgTreeNabPri` napuni `Sva skladista` s jednim djetetom. Krivi stupac ili izostanak store pada. Sažetak 164 / 142 / 22.
 - `MPP-20` potvrđen. Isti run ima `[Z] Cetvrti.Mpp20 @@dodaj=1 Button.Text=Dodaj stanje=enable`. `spmpPermissionNG` vrati stupac `dodaj`, ne `INSERTFORM1`. `@@dodaj` se zamijeni prije `ExecSql` (`Class1.vb` 765–849, 932–964). `Form1.vb` 3914–3921 čita `Button.Text` `Dodaj`. Kuka vrati `gumb.stanje=enable`. Sažetak 164 / 143 / 21.
+- `STA-12` odbijen na `d221ac6`. `fk_meni` je na `AplikacijeID` i `disabled=False`; nije gašen. `Parent` je izračunat `char(6)`, `left(nivo, len(nivo)-2)`, ne `MeniID`. Priprema je pala: Statusi.xml nema Parent na postojeći `MeniID`. Test: `Parent 0701   nije MeniID`. `Loader.Run8` (`Form1.vb` 1139, 1251–1258) se nije izvršio. Ostaje otvoren. Sažetak 164 / 143 / 21.
 
 [#72](https://github.com/tomic04/netgen-u-carpo/pull/72) stavlja klijentski XML izvan `definitions/netgen`. `TRZ-01`, `POR-01`, `RFA-00` i `REA-00` ostaju otvoreni. [#71](https://github.com/tomic04/netgen-u-carpo/pull/71) ispravno ne šalje `@@godina` (`Class1.vb` 113). To nije zatvorena stavka.
 
@@ -55,7 +56,7 @@ Grid je detail, kvačica, suma, sort i stupci mastera. Stablo je čvor, lijevi p
 
 Što korisnik donosi s klijenata (SQL koji fali na spinu i 63 XML-a) je u [fali-od-korisnika.md](fali-od-korisnika.md). Jupiter nije pitan, pa nijedan objekt nije zapisan kao odsutan na oba Jupitera. Stavke se tim popisom ne zatvaraju.
 
-Od 21 otvorenih, 17 je ostalo (12 `ssMeni`, 4 XML-a, `DOS-11`), `JEZ-57` i tri gumba.
+Od 21 otvorenih, 17 je ostalo (12 `ssMeni`, među njima `STA-12`, 4 XML-a, `DOS-11`), `JEZ-57` i tri gumba.
 
 Stari CI `b7d8989` ima 571 / 411 / 160. Novi `ef710b9` ima 354 / 341 / 13. Od 160, 117 je još u katalogu (13 i dalje otvoreno, 104 zeleno). 42 prave stavke nema u novom katalogu. 36 ima NetGen dokaz i ostaje zatvoreno. Šest je izbačeno bez dokaza i ostaje otvoreno: `STA-12`, `MPP-20`, `PL-32`, `MPK-30`, `MPK-31`, `STA-34`.
 
