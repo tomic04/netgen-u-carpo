@@ -67,7 +67,7 @@ Po stavci, [#74](https://github.com/tomic04/netgen-u-carpo/pull/74) `af3816f`:
 
 [#72](https://github.com/tomic04/netgen-u-carpo/pull/72) stavlja klijentski XML izvan `definitions/netgen`. `TRZ-01`, `POR-01`, `RFA-00` i `REA-00` ostaju otvoreni. [#71](https://github.com/tomic04/netgen-u-carpo/pull/71) ispravno ne šalje `@@godina` (`Class1.vb` 113). To nije zatvorena stavka.
 
-Ostaje otvoreno: 11 redova `ssMeni`. `Meni.ps1` više ne gasi `fk_meni`.
+Ostaje otvoreno: `TRZ-01`, `POR-01`, `RFA-00`, `REA-00` i tri gumba. 11 `ssMeni` redova je zatvoreno. `fk_meni` se ne gasi.
 
 Uzorak po tipu: samo-grid `OznakaKL` (spin). Šifrarnik `JeziciNG`: `JEZ-56` pravilo, `JEZ-31` spin. Manager `KntBlaZak` i `PrijemniList`: čvor je pravilo, `PL-32` je spin. Stablo-master `Statusi`: `STA-33` i `STA-35` su pravilo. Rijetke `RIJ-40`–`42` su `[Z]` na istom CI-ju, i dalje pravilo kuke, ne red iz baze.
 
