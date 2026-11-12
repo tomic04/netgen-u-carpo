@@ -297,15 +297,8 @@ namespace Carpo.TestShell
             }
             if (!ImaSnimku(snimka) && granula != null && !granula.IsDisposed)
             {
-                var rok = DateTime.UtcNow.AddSeconds(4);
-                while (DateTime.UtcNow < rok && !ImaSnimku(snimka))
-                {
-                    Application.DoEvents();
-                    SnimiProzor(granula.Handle, snimka);
-                    var korak = DateTime.UtcNow.AddMilliseconds(200);
-                    while (DateTime.UtcNow < korak)
-                        Application.DoEvents();
-                }
+                try { granula.Update(); } catch { }
+                SnimiProzor(granula.Handle, snimka);
             }
             if (!ImaSnimku(snimka))
             {
