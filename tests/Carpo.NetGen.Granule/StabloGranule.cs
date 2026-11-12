@@ -50,7 +50,9 @@ namespace Carpo.NetGen.Granule
         public static Stavka Meni(string granula, string id, string fajl)
         {
             string greska;
-            string sql = "select Parametar from ssMeni where Parametar like '%" + fajl.Replace("'", "") + "%'";
+            string safe = fajl.Replace("'", "");
+            string sql = "select Parametar from ssMeni where Parametar like '%:" + safe
+                + "' or Parametar like '%\\" + safe + "' or Parametar like '%/" + safe + "'";
             List<string> redovi = Citanje.Stupac(sql, out greska);
             if (redovi == null)
                 return Qa.O(granula, id, "ssMeni (samo citanje) za " + fajl, "docs/analiza/06-prijedlog-arhitekture.md", greska);

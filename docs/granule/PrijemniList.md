@@ -50,4 +50,4 @@ Isto vrijedi za `CMD2CAPTION` (`&Izmijeni:IzmijeniPL#REFRESHMASTER`). `&` je mne
 - Kostur koji vidi samo atribut `TREE` ostavi ovu granulu bez stabla. Combo je drugi ulaz u isti `NapuniDrvoVrijeme`.
 - `REFRESHMASTER` ne osvježava master (`4570`). Riječ koja to radi je `REFRESHMASTERGRID`.
 - Detail `@robaid` je lokalna SQL varijabla u `declare`, nije `@@robaid` (`DETAILGRID` na projektu).
-- `SPLITTERDISTANCE` se primijeni samo u grani nepraznog `strTreeNodes` (`4323`), ne čim atribut postoji.
+- `SETDEFAULTS` na ovoj granuli je nekoliko naredbi odvojenih s `#` (`Form1.vb` 3862-3866). Svaka ide u svoj `ExecSql`. Jedan batch sa `#select` SQL Server odbije (`Incorrect syntax near '#select'`). To je razlog zašto otvaranje ove granule u kuki trenutno padne na SQL-u prije stabla.
