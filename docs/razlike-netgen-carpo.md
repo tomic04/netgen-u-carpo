@@ -448,9 +448,9 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `BUTTONS` i `CMDxCAPTION`
 - **NetGen:** `CMD` se složi prvi (`Form1.vb` 3319–3330). Ako `BUTTONS` nije prazan, segment `j` prepiše gumb `j+1` (`3770–3796`). Kasniji `CMD` ostaju. `Button6` iz `BUTTONS` je tek šesti segment (`j = 5`).
-- **Carpo:** jedan niz gumba. Nema ostatka `CMD` iza kraćeg `BUTTONS`.
-- **Posljedica:** `KntKompVerizne` ima pet `BUTTONS` i još `CMD6`–`CMD8` `repx/`. Repx gumbi se vide. Brisati ih jer „BUTTONS zamjenjuje CMD“ makne ispis.
-- **Test:** `KOV-04`, `KOV-05`
+- **Carpo:** `GumbiNiz.Slozi` radi isti raspored: `BUTTONS` prepiše slot `j+1`, `Button7` samo ako je CMD7 prazan, CMD iza kraćeg niza ostaje.
+- **Posljedica:** `KntKompVerizne` ima pet `BUTTONS` i još `CMD6`–`CMD8` `repx/`. Oba niza su na traci.
+- **Test:** `buttons-ostaju-cmd`, `buttons-sedmi-ne-brise-cmd7`
 
 ## R57 `enable` gleda natpis gumba
 

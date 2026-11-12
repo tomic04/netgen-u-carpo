@@ -10,6 +10,7 @@ using Carpo.NetGen.Komande;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
 using Carpo.NetGen.Print;
+using Carpo.NetGen.Shell;
 using Carpo.NetGen.Xml;
 using DevExpress.Skins;
 using DevExpress.UserSkins;
@@ -627,9 +628,10 @@ namespace Carpo.NetGen.Ui
             pnlButtons.Controls.Clear();
             if (_projekt == null)
                 return;
-            for (int i = _projekt.Gumbi.Count - 1; i >= 0; i--)
+            var slozeni = GumbiNiz.Slozi(_projekt.Gumbi, _projekt.Buttons);
+            for (int i = slozeni.Count - 1; i >= 0; i--)
             {
-                NgButton b = _projekt.Gumbi[i];
+                NgButton b = slozeni[i];
                 var gumb = new SimpleButton();
                 gumb.Text = (b.Natpis ?? "").Replace("!!", "\r\n");
                 gumb.Tag = b.Naredba;

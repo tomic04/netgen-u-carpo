@@ -357,6 +357,8 @@ namespace Carpo.TestShell
             string tag = null;
             if (ime.Equals("OznakaKL.xml", StringComparison.OrdinalIgnoreCase))
                 otvori = "Izmjena";
+            else if (ime.Equals("KntKompVerizne.xml", StringComparison.OrdinalIgnoreCase))
+                tag = "OBRISI_FORM";
             if (otvori == null && tag == null)
                 return 0;
             var gumb = tag != null ? NadjiPoTag(granula, tag) : NadjiGumb(granula, otvori);

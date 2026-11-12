@@ -26,6 +26,7 @@ namespace Carpo.NetGen.GridTest
             IntrastatPreskok();
             RucniStart();
             Odabir();
+            GumbiButtons();
             Jez57();
             Pregled();
             AssemblyLoad();
@@ -185,6 +186,61 @@ namespace Carpo.NetGen.GridTest
             finally
             {
                 Carpo.NetGen.Print.WordDot.Aplikacija = null;
+            }
+        }
+
+        private static void GumbiButtons()
+        {
+            var cmd = new List<NgButton>();
+            cmd.Add(new NgButton(6, "Ispis", "repx/rptA"));
+            cmd.Add(new NgButton(7, "Report Dob", "repx/rptB"));
+            cmd.Add(new NgButton(8, "Report Kup", "repx/rptC"));
+            string buttons = "Dodaj:DODAJ_FORM#Izmjeni:IZMJENI_FORM#Obrisi:OBRISI_FORM#Zakljuci:ZAKLJUCI_FORM#Proknjizi:PROKNJIZI_FORM";
+            var s = Carpo.NetGen.Shell.GumbiNiz.Slozi(cmd, buttons);
+            bool obrisi = false;
+            bool repx = false;
+            bool dob = false;
+            for (int i = 0; i < s.Count; i++)
+            {
+                if (s[i].Redni == 3 && s[i].Naredba == "OBRISI_FORM")
+                    obrisi = true;
+                if (s[i].Redni == 6 && s[i].Naredba == "repx/rptA")
+                    repx = true;
+                if (s[i].Redni == 7 && s[i].Naredba == "repx/rptB")
+                    dob = true;
+            }
+            T("buttons-ostaju-cmd", s.Count == 8 && obrisi && repx && dob, s.Count.ToString());
+            var sedmi = Carpo.NetGen.Shell.GumbiNiz.Slozi(cmd, "a:A#b:B#c:C#d:D#e:E#f:F#g:G");
+            bool cmd7 = false;
+            for (int i = 0; i < sedmi.Count; i++)
+            {
+                if (sedmi[i].Redni == 7 && sedmi[i].Naredba == "repx/rptB")
+                    cmd7 = true;
+            }
+            T("buttons-sedmi-ne-brise-cmd7", cmd7, "");
+            var prazan7 = Carpo.NetGen.Shell.GumbiNiz.Slozi(new List<NgButton>(), "a:A#b:B#c:C#d:D#e:E#f:F#g:G");
+            bool popunjen = false;
+            for (int i = 0; i < prazan7.Count; i++)
+            {
+                if (prazan7[i].Redni == 7 && prazan7[i].Naredba == "G")
+                    popunjen = true;
+            }
+            T("buttons-sedmi-prazan", popunjen, "");
+            string put = Path.Combine("definitions", "netgen", "Agronom granule", "KntKompVerizne.xml");
+            if (File.Exists(put))
+            {
+                var p = NetGenXmlReader.Ucitaj(put).Projekt;
+                var zivi = Carpo.NetGen.Shell.GumbiNiz.Slozi(p.Gumbi, p.Buttons);
+                bool ima = false;
+                bool ispis = false;
+                for (int i = 0; i < zivi.Count; i++)
+                {
+                    if (zivi[i].Naredba == "OBRISI_FORM")
+                        ima = true;
+                    if (zivi[i].Naredba != null && zivi[i].Naredba.IndexOf("repx/", StringComparison.OrdinalIgnoreCase) >= 0)
+                        ispis = true;
+                }
+                T("buttons-verizne", ima && ispis, zivi.Count.ToString());
             }
         }
 
