@@ -222,7 +222,7 @@ namespace Carpo.NetGen.Granule
             l.Add(datum != null && datum.Grana == NgGrana.Date && Kontrole.A(datum, "DEFAULT") == null && Kontrole.A(datum, "SHOWCHECKBOX") == null
                 ? Qa.Z(Ime, "DOS-09", "datum bez DEFAULT i bez SHOWCHECKBOX. Nije today", "netgen/Form2.vb:2252,2275,3531")
                 : Qa.P(Ime, "DOS-09", "datum", "netgen/Form2.vb:2252", ""));
-            l.Add(Stablo.Meni(Ime, "DOS-10", "KntDospjeleStavke.xml"));
+            l.Add(Stablo.Otvori(Ime, "DOS-10", "KntDospjeleStavke.xml", root));
             l.Add(DospjeleNaSpinu());
             Kontrole.K(l, Ime, xml, "DOS-20", "statusstrip TEXT1 u tag velikim slovima, @@rowcount i dalje se nadje", "netgen/Form2.vb:1258; netgen/Class1.vb:865; netgen/Form2.vb:3818", "status.s1", "TEXT1-upper");
             Kontrole.K(l, Ime, xml, "DOS-21", "zupanijeid refresh ponovo puni mjestaid i vrati ALLOWEMPTY red", "netgen/Form2.vb:5158-5176", "combo.refresh.mjestaid", "refresh+allowempty");
