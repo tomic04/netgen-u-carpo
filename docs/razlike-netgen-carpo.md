@@ -759,6 +759,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `combo-1-prazan` do `combo-10-nula`, `combo-prazan-red`
 - **PR:** combo-prazan
 
+## R94 `ONCLICK` je lanac, `exec` se ne lijepi
+
+- **Element:** `ONCLICK` i `ONSUBMIT` koji počinje s `exec`
+- **NetGen:** `ONCLICK` ide u `Tag` i `Rafalno` (`Form2.vb` 6221–6228, 6806). `!!` skine lijepljenje (`Form1.vb` 5511–5512). `exec sp...` nije `sp` na početku, pa se drugi niz `@ime=` ne dodaje.
+- **Carpo:** segmenti se kupe. `:forma` otvara formu. `OK` zatvara. Na jupiter2019 i jupiter2022 nijedan `ONCLICK` ni `ONSUBMIT` se ne šalje. `exec` i `!!` ostanu bez drugog niza.
+- **Posljedica:** `MPInventura` Stavke šalje `spMPInventuraNG` pa `OK`, ali ne s Jupitera. `KntPreknjizavanjePartnera` `exec spKntPreknjizavanjePartnera @Action=1` ne dobije `@PartnerSTARIid=9` na kraj.
+- **Odluka:** NetGen logika. Jupiter gumb se ne izvršava.
+- **Test:** `onclick-jupiter`, `onclick-exec-ne-lijepi`
+- **PR:** onclick-lanac
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

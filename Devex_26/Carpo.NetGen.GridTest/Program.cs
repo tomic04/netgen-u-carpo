@@ -33,6 +33,7 @@ namespace Carpo.NetGen.GridTest
             DijalogKlikTest();
             DijalogRupe();
             ComboDijalogTest();
+            OnClickTest();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -74,6 +75,39 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void OnClickTest()
+        {
+            NgForm inv = Forma(Ucitaj("MPInventura.xml"), "INSERTFORM");
+            NgControl ok = null;
+            if (inv != null)
+            {
+                for (int i = 0; i < inv.Kontrole.Count; i++)
+                {
+                    string o = inv.Kontrole[i].Atributi == null ? "" : (inv.Kontrole[i].Atributi.Vrijednost("ONCLICK") ?? "");
+                    if (o.IndexOf("spMPInventuraNG", StringComparison.OrdinalIgnoreCase) >= 0)
+                        ok = inv.Kontrole[i];
+                }
+            }
+            string naredba = ok == null || ok.Atributi == null ? "" : (ok.Atributi.Vrijednost("ONCLICK") ?? "");
+            DijalogTok.Klik jup = DijalogTok.Gumb(inv, 0, naredba, true);
+            bool imaSp = false;
+            for (int i = 0; i < jup.Naredbe.Count; i++)
+            {
+                if (jup.Naredbe[i].IndexOf("spMPInventuraNG", StringComparison.OrdinalIgnoreCase) >= 0)
+                    imaSp = true;
+            }
+            DijalogTok.Klik cisto = DijalogTok.Gumb(null, 0, "spX @a=1#OK", true);
+            T("onclick-ok", cisto.Zatvara && !cisto.SaljeSql && cisto.Naredbe.Count == 1 && cisto.Naredbe[0].IndexOf("spX", StringComparison.Ordinal) >= 0, "");
+            T("onclick-jupiter", ok != null && !jup.SaljeSql && imaSp, jup.SaljeSql ? "salje" : "ne");
+            NgForm partner = Forma(Ucitaj("KntPreknjizavanjePartnera.xml"), "FILTERFORM");
+            string submit = partner == null ? "" : partner.OnSubmit;
+            string zalijepljeno = Lanac.Lijepi(submit, "@PartnerSTARIid=9,@PartnerNOVIid=8,");
+            T("onclick-exec-ne-lijepi", submit.TrimStart().StartsWith("exec", StringComparison.OrdinalIgnoreCase)
+                && zalijepljeno.IndexOf("PartnerSTARIid=9", StringComparison.Ordinal) < 0
+                && zalijepljeno.IndexOf("!!", StringComparison.Ordinal) < 0
+                && zalijepljeno.IndexOf("@Action=1", StringComparison.Ordinal) >= 0, zalijepljeno);
         }
 
         private static void ComboDijalogTest()

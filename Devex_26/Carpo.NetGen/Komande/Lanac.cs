@@ -113,10 +113,15 @@ namespace Carpo.NetGen.Komande
         public static string Lijepi(string stora, string parametri)
         {
             string sql = stora ?? "";
+            string bez = sql.Replace("!!", "");
             if (sql.Contains("!!"))
-                return sql.Replace("!!", "");
-            if (Prvih6JeDml(sql))
-                return sql;
+                return bez;
+            string pocetak = bez.TrimStart();
+            if (pocetak.StartsWith("exec", StringComparison.OrdinalIgnoreCase)
+                || pocetak.StartsWith("execute", StringComparison.OrdinalIgnoreCase))
+                return bez;
+            if (Prvih6JeDml(bez))
+                return bez;
             if (string.IsNullOrWhiteSpace(parametri))
                 return sql;
             return sql + " " + parametri.Trim();

@@ -28,6 +28,7 @@ namespace Carpo.NetGen.Komande
             public string MasterSql = "";
             public bool SaljeSql;
             public string NextForm = "";
+            public readonly List<string> Naredbe = new List<string>();
         }
 
         public static bool JeJupiter(string server)
@@ -94,8 +95,8 @@ namespace Carpo.NetGen.Komande
                 k.Zatvara = true;
                 k.FillExplorer = PuniExplorer(forma);
                 if (k.FillExplorer && forma != null)
-                    k.MasterSql = (forma.OnSubmit ?? "").Trim();
-                k.SaljeSql = k.MasterSql.Length > 0 && !jupiter && !ZastitaSql.Tekst(k.MasterSql).Pise;
+                    k.MasterSql = Lanac.Lijepi((forma.OnSubmit ?? "").Trim(), "");
+                k.SaljeSql = !jupiter && k.MasterSql.Length > 0 && !ZastitaSql.Tekst(k.MasterSql).Pise;
                 return k;
             }
             string[] seg = Lanac.Segmenti(naredba);
@@ -123,14 +124,24 @@ namespace Carpo.NetGen.Komande
                 {
                     k.Zatvara = true;
                     if (forma != null)
-                        k.MasterSql = (forma.OnSubmit ?? "").Trim();
-                    k.SaljeSql = k.MasterSql.Length > 0 && !jupiter && !ZastitaSql.Tekst(k.MasterSql).Pise;
+                        k.MasterSql = Lanac.Lijepi((forma.OnSubmit ?? "").Trim(), "");
+                    if (!jupiter && k.MasterSql.Length > 0 && !ZastitaSql.Tekst(k.MasterSql).Pise)
+                        k.SaljeSql = true;
                 }
                 else if (u == "OKSTAY")
                 {
                     k.Zatvara = false;
                 }
+                else
+                {
+                    string svedeno = Lanac.Lijepi(t, "");
+                    k.Naredbe.Add(svedeno);
+                    if (!jupiter && !ZastitaSql.Tekst(svedeno).Pise)
+                        k.SaljeSql = true;
+                }
             }
+            if (jupiter)
+                k.SaljeSql = false;
             return k;
         }
 
