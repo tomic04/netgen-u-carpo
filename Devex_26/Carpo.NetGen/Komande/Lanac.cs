@@ -31,6 +31,41 @@ namespace Carpo.NetGen.Komande
             return (naredba ?? "").Replace("~", "#").Split('#');
         }
 
+        /// <summary>ONLOAD koji počinje s : ide u NovaGenerickaForma i reže se na #. Form1.vb 3879, 4558.</summary>
+        public static string[] OnLoadLanac(string onload)
+        {
+            string s = (onload ?? "").Trim();
+            if (!s.StartsWith(":", StringComparison.Ordinal))
+                return new string[0];
+            return s.Substring(1).Replace("~", "#").Split('#');
+        }
+
+        /// <summary>select case ... then 'disable' else 'enable' end as Natpis. Vrijednost je @@izvjestaj.</summary>
+        public static string GumbIzCase(string segment, string izvjestaj)
+        {
+            string s = (segment ?? "").Replace("@@izvjestaj", izvjestaj ?? "").Replace("@@IZVJESTAJ", izvjestaj ?? "");
+            var navodnici = new List<string>();
+            int i = 0;
+            while (i < s.Length)
+            {
+                int a = s.IndexOf('\'', i);
+                if (a < 0)
+                    break;
+                int b = s.IndexOf('\'', a + 1);
+                if (b < 0)
+                    break;
+                navodnici.Add(s.Substring(a + 1, b - a - 1));
+                i = b + 1;
+            }
+            if (navodnici.Count < 4)
+                return "";
+            string vrijednost = string.Equals(navodnici[0], navodnici[1], StringComparison.Ordinal) ? navodnici[2] : navodnici[3];
+            int asAt = s.LastIndexOf(" as ", StringComparison.OrdinalIgnoreCase);
+            if (asAt < 0)
+                return "";
+            return s.Substring(asAt + 4).Trim() + "=" + vrijednost;
+        }
+
         public static bool Prvih6JeDml(string sql)
         {
             if (sql == null)

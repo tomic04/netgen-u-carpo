@@ -70,6 +70,15 @@ namespace Carpo.NetGen.GridTest
             red.Id = "15";
             red.Node = "abc";
             T("forma-id-red", SqlTekst.ZaFormu(red).Id == "15" && SqlTekst.ZaFormu(red).Node == "abc", "");
+            string[] lanac = Lanac.OnLoadLanac(":FILTERFORM#select case when '@@izvjestaj'='GFI-POD' then 'disable' else 'enable' end as TSI#select case when '@@izvjestaj'='TSI-POD' then 'disable' else 'enable' end as GFI");
+            T("onload-lanac", lanac.Length == 3 && lanac[0] == "FILTERFORM"
+                && Lanac.GumbIzCase(lanac[1], "GFI-POD") == "TSI=disable"
+                && Lanac.GumbIzCase(lanac[2], "GFI-POD") == "GFI=enable", Lanac.GumbIzCase(lanac[1], "GFI-POD"));
+            T("cls-gfipod-nije-ispis", !IspisMotora.JeIspisImena("AOPuExcel.clsGFIPOD(GFI-POD601.xls)")
+                && IspisMotora.JeIspisImena("rpt.clsReport")
+                && !("AOPuExcel.clsGFIPOD(GFI-POD601.xls)".ToUpperInvariant().IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0), "");
+            T("isempty-preskoci", IspisMotora.Zaglavlje("#ISEMPTY()# #Od 1. do 2.") == ""
+                && IspisMotora.Zaglavlje("#ISEMPTY(1)# #Od 1. do 2.") == "Od 1. do 2.", IspisMotora.Zaglavlje("#ISEMPTY(1)# #Od 1. do 2."));
         }
 
         private static void Zamjene()

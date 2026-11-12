@@ -47,6 +47,56 @@ namespace Carpo.NetGen.Print
             return s.StartsWith("vrstadokid-", StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>Form1.vb 5215. .clsreport je ispis. .clsGFIPOD nije.</summary>
+        public static bool JeIspisImena(string ime)
+        {
+            string u = (ime ?? "").Trim();
+            if (u.Length < 3)
+                return false;
+            string g = u.ToUpperInvariant();
+            if (g.StartsWith("VRSTADOKID-", StringComparison.Ordinal) || g.StartsWith("REPX:", StringComparison.Ordinal) || g.StartsWith("REPX/", StringComparison.Ordinal) || g.StartsWith("PR10/", StringComparison.Ordinal) || g.StartsWith("PR10:", StringComparison.Ordinal))
+                return true;
+            string tri = g.Substring(0, 3);
+            if (tri == "RSGEN" || tri == "GG/" || tri == "RS/" || tri == "RS:")
+                return true;
+            return u.ToLowerInvariant().IndexOf(".clsreport", StringComparison.Ordinal) >= 0;
+        }
+
+        /// <summary>Form1.Rafalna_Priprema 7744–7768. Prazan ISEMPTY preskoči sadržaj.</summary>
+        public static string Zaglavlje(string tekst)
+        {
+            string st = tekst ?? "";
+            string ts = st.ToUpperInvariant().IndexOf("ISEMPTY(", StringComparison.Ordinal) >= 0 ? "" : st;
+            if (st.Trim().Length == 0)
+                return ts;
+            string[] ar = st.Split('#');
+            for (int i = 0; i < ar.Length; i++)
+            {
+                if (ar[i].ToUpperInvariant().IndexOf("ISEMPTY(", StringComparison.Ordinal) < 0)
+                    continue;
+                string param = ar[i].ToUpperInvariant();
+                int a = param.IndexOf("ISEMPTY(", StringComparison.Ordinal);
+                param = param.Substring(a + "ISEMPTY(".Length);
+                int z = param.LastIndexOf(')');
+                if (z >= 0)
+                    param = param.Substring(0, z);
+                if (param.ToLowerInvariant() == "null" || param.Trim().Length == 0)
+                {
+                    i = i + 1;
+                    if (i < ar.Length)
+                        ts += ar[i].Trim();
+                    i = i + 1;
+                }
+                else
+                {
+                    i = i + 2;
+                    if (i < ar.Length)
+                        ts += ar[i].Trim().Replace("**", " ");
+                }
+            }
+            return ts;
+        }
+
         public static bool BriseTemp(string imeForme)
         {
             string s = (imeForme ?? "").Trim();
