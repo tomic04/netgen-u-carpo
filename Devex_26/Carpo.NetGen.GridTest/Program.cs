@@ -361,6 +361,12 @@ namespace Carpo.NetGen.GridTest
             prazna.Rows.Add("5", "A");
             ComboDijalog.UbaciPrazan(prazna);
             T("combo-prazan-red", Convert.ToString(prazna.Rows[0][0]) == "null" && Convert.ToString(prazna.Rows[0][1]) == "", Convert.ToString(prazna.Rows[0][0]));
+            var prazanId = new DataTable();
+            prazanId.Columns.Add("id", typeof(int));
+            prazanId.Columns.Add("naziv", typeof(string));
+            prazanId.Rows.Add(5, "A");
+            ComboDijalog.UbaciPrazan(prazanId);
+            T("combo-prazan-int", prazanId.Rows[0][0] == DBNull.Value && Convert.ToString(prazanId.Rows[0][1]) == "", Convert.ToString(prazanId.Rows[0][0]));
         }
 
         private static void DijalogRupe()

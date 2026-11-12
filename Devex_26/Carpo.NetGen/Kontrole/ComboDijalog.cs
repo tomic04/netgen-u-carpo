@@ -29,8 +29,9 @@ namespace Carpo.NetGen.Kontrole
             if (tablica == null || tablica.Columns.Count == 0)
                 return;
             DataRow red = tablica.NewRow();
-            red[0] = "null";
-            if (tablica.Columns.Count > 1)
+            if (tablica.Columns[0].DataType == typeof(string))
+                red[0] = "null";
+            if (tablica.Columns.Count > 1 && tablica.Columns[1].DataType == typeof(string))
                 red[1] = "";
             tablica.Rows.InsertAt(red, 0);
         }
