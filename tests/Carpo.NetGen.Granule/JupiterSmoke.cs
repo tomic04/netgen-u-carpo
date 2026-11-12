@@ -415,7 +415,7 @@ namespace Carpo.NetGen.Granule
 
         private static SqlConnection Nova(string server, string baza)
         {
-            string cs = "Server=" + server + ";Database=" + baza + ";Integrated Security=True;Pooling=false;Connect Timeout=15;Application Name=CarpoNetGen-smoke";
+            string cs = "Server=" + server + ";Database=" + baza + ";Integrated Security=True;TrustServerCertificate=True;Pooling=false;Connect Timeout=15;Application Name=CarpoNetGen-smoke";
             return new SqlConnection(cs);
         }
 

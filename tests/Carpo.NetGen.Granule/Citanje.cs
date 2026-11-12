@@ -17,8 +17,10 @@ namespace Carpo.NetGen.Granule
             {
                 string e = Environment.GetEnvironmentVariable("SPIN_SQL");
                 if (!string.IsNullOrWhiteSpace(e))
-                    return e;
-                return "Server=localhost;Database=spin;Integrated Security=True;Connect Timeout=15;ApplicationIntent=ReadOnly";
+                    return e.IndexOf("TrustServerCertificate", StringComparison.OrdinalIgnoreCase) >= 0
+                        ? e
+                        : e.Trim().TrimEnd(';') + ";TrustServerCertificate=True";
+                return "Server=localhost;Database=spin;Integrated Security=True;TrustServerCertificate=True;Connect Timeout=15;ApplicationIntent=ReadOnly";
             }
         }
 

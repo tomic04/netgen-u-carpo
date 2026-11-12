@@ -134,7 +134,7 @@ namespace Carpo.NetGen.Grid
         {
             if (!string.IsNullOrEmpty(server) && server.IndexOf("jupiter2022", StringComparison.OrdinalIgnoreCase) >= 0)
                 throw new InvalidOperationException("jupiter2022 se ne koristi.");
-            return "Server=" + server + ";Database=" + baza + ";Integrated Security=true;";
+            return "Server=" + server + ";Database=" + baza + ";Integrated Security=true;TrustServerCertificate=True;";
         }
     }
 }
