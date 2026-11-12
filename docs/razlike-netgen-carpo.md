@@ -769,6 +769,15 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `onclick-jupiter`, `onclick-exec-ne-lijepi`
 - **PR:** onclick-lanac
 
+## R95 Grid na dijalogu puni SQL osim SKIPDEFAULTLOAD
+
+- **Element:** grid `SQL` na formi
+- **NetGen:** bez `SKIPDEFAULTLOAD=TRUE` grid zove `ExecSql` čim se složi (`Form2.vb` 1635–1646). `TRUE` ostavi grid prazan.
+- **Carpo:** isti uvjet. `MPRealizNG` `PROMET.stavke` šalje `@action=2`. `BSDok` grid s `SKIPDEFAULTLOAD` ne šalje SQL. To nije `ONCLICK` ni `ONSUBMIT`, pa Jupiter i dalje ne izvršava gumbe.
+- **Odluka:** NetGen logika.
+- **Test:** `grid-puni`, `grid-skip`
+- **PR:** grid-dijalog
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |

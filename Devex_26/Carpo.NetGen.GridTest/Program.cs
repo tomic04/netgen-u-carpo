@@ -34,6 +34,7 @@ namespace Carpo.NetGen.GridTest
             DijalogRupe();
             ComboDijalogTest();
             OnClickTest();
+            GridDijalogTest();
             if (Environment.GetEnvironmentVariable("CARPO_SPIN") == "1")
             {
                 Spin();
@@ -75,6 +76,34 @@ namespace Carpo.NetGen.GridTest
             string master2;
             List<string> preUpiti = Otvaranje.Upiti(pre, new SqlKontekst(), "KntPreknjizavanjeNG.xml", out master2);
             T("otvaranje-nema-preknjizi", pre != null && !Ima(preUpiti, "spKntPreknjizavanjeNG"), preUpiti.Count.ToString());
+        }
+
+        private static void GridDijalogTest()
+        {
+            NgForm promet = Forma(Ucitaj("MPRealizNG.xml"), "PROMET");
+            DijalogTok.Punjenje stavke = null;
+            List<DijalogTok.Punjenje> lista = DijalogTok.PriOtvori(promet);
+            for (int i = 0; i < lista.Count; i++)
+            {
+                if (string.Equals(lista[i].Ime, "stavke", StringComparison.OrdinalIgnoreCase))
+                    stavke = lista[i];
+            }
+            T("grid-puni", stavke != null && !stavke.Preskoceno && stavke.Sql.IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) >= 0, stavke == null ? "nema" : stavke.Sql);
+            NgProject bs = Ucitaj("BSDok.xml");
+            DijalogTok.Punjenje preskok = null;
+            if (bs != null)
+            {
+                for (int f = 0; f < bs.Forme.Count && preskok == null; f++)
+                {
+                    List<DijalogTok.Punjenje> p = DijalogTok.PriOtvori(bs.Forme[f]);
+                    for (int i = 0; i < p.Count; i++)
+                    {
+                        if (p[i].Preskoceno)
+                            preskok = p[i];
+                    }
+                }
+            }
+            T("grid-skip", preskok != null && preskok.Sql.Length == 0, preskok == null ? "nema" : preskok.Ime);
         }
 
         private static void OnClickTest()
