@@ -30,49 +30,48 @@ namespace Carpo.NetGen.Xml
             return g.Substring(0, kosa + 1) + datoteka;
         }
 
-        public static void Spoji(XmlDocument doc, string putanja)
+        /// <summary>
+        /// Form2.vb 844–850. Include s forme samo ako je globalni prazan.
+        /// Inače se uvozi već postavljeni globalni. Ucitaj projekta ovo ne zove:
+        /// Form1 samo zapamti atribut, ne miješa tuđi XML u brojač.
+        /// </summary>
+        public static void SpojiFormu(XmlDocument doc, string putanja, string imeForme, string globalni)
         {
             if (doc == null || doc.DocumentElement == null)
                 return;
-            var lista = new List<string>();
-            XmlAttribute naProjektu = doc.DocumentElement.Attributes["INCLUDE"];
-            if (naProjektu != null && naProjektu.Value.Trim().Length > 0)
-                Dodaj(lista, naProjektu.Value.ToUpperInvariant());
-            foreach (XmlNode dijete in doc.DocumentElement.ChildNodes)
+            string izvor = (globalni ?? "").Trim();
+            if (izvor.Length == 0)
             {
-                if (dijete.Attributes == null)
-                    continue;
-                XmlAttribute naFormi = dijete.Attributes["INCLUDE"];
-                if (naFormi != null && naFormi.Value.Trim().Length > 0)
-                    Dodaj(lista, naFormi.Value.Trim());
-            }
-            var vidjeno = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < lista.Count; i++)
-            {
-                string[] komadi = lista[i].Split('#');
-                for (int k = 0; k < komadi.Length; k++)
+                XmlNode forma = null;
+                foreach (XmlNode d in doc.DocumentElement.ChildNodes)
                 {
-                    string ime = (komadi[k] ?? "").Trim();
-                    if (ime.Length == 0)
-                        continue;
-                    string st = Putanja(putanja, ime);
-                    if (!vidjeno.Add(st))
-                        continue;
-                    Uvezi(doc, st);
+                    if (string.Equals(d.LocalName, imeForme, StringComparison.OrdinalIgnoreCase))
+                    {
+                        forma = d;
+                        break;
+                    }
                 }
-            }
-        }
-
-        private static void Dodaj(List<string> lista, string tekst)
-        {
-            if (tekst == null)
-                return;
-            for (int i = 0; i < lista.Count; i++)
-            {
-                if (string.Equals(lista[i], tekst, StringComparison.OrdinalIgnoreCase))
+                if (forma == null || forma.Attributes == null)
                     return;
+                XmlAttribute a = forma.Attributes["INCLUDE"];
+                if (a == null)
+                    return;
+                izvor = (a.Value ?? "").Trim();
             }
-            lista.Add(tekst);
+            if (izvor.Length == 0)
+                return;
+            string[] komadi = izvor.Split('#');
+            var vidjeno = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (int k = 0; k < komadi.Length; k++)
+            {
+                string ime = (komadi[k] ?? "").Trim();
+                if (ime.Length == 0)
+                    continue;
+                string st = Putanja(putanja, ime);
+                if (!vidjeno.Add(st))
+                    continue;
+                Uvezi(doc, st);
+            }
         }
 
         private static void Uvezi(XmlDocument glavni, string stIncl)

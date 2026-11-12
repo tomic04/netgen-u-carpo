@@ -12,7 +12,7 @@ Pregledano je 9 modula. Popravljeno: `FILLEXPLORER` nakon OK, `ONLOAD2` po natpi
 |---|---|
 | NetGen | `Loader.vb` `Run8`: ista polja, `hWnd` 0 dok nema prozora. `Form2.ProcitajXML` čita atribute kako jesu. |
 | Carpo | `Ulaz/Loader.cs` 60–96 i `Xml/NetGenXmlReader.cs` 47–127. |
-| Razlika | NE za ulaz. `INCLUDE` uvozi djecu `/PROJECT` (`Xml/IncludeXml.cs`, `Form2.vb` 844–934). Nema datoteke: forma ostaje. |
+| Razlika | NE za učitavanje projekta. `INCLUDE` se ne miješa u model pri `Ucitaj`. `SpojiFormu` radi kao `Form2.vb` 844–934: s forme samo ako je globalni prazan, zadnji segment putanje, nema datoteke ostavlja formu. |
 
 ## 2. ExecSql i @@
 
@@ -146,7 +146,7 @@ Stanje je `radi` kad se naredba izvrši, `nije` kad se samo preskoči ili zabilj
 | OK / OKSTAY / CLOSE / CANCEL | `Form1.vb` 6671, 6809 | `Lanac`, `DijalogTok` | radi |
 | FILLEXPLORER true / ONLYDET / onlytree | `Form1.vb` 5445, 5470, 5475 | `DijalogTok` | radi |
 | ONLOAD2 | `Form1.vb` 3914, 4013 | `OnLoad2` | radi |
-| INCLUDE | `Form2.vb` 844–934 | `IncludeXml` | radi |
+| INCLUDE | `Form2.vb` 844–934 | `IncludeXml.SpojiFormu`, ne u `Ucitaj` | radi |
 | select na podlozi | `Form1.vb` 4875–4898 | `ObicnaForma.PrimijeniSelect` | radi |
 | HIDECOLUMNS / SHOWCOLUMNS | `Form1.vb` 6730–6766 | `StupciNaredba` | radi |
 | FISKALIZACIJA* | `Form1.vb` 4643–4781 | `FiskalNaredba` bira tablicu i broj poziva, SOAP je `FiskalPoziv.Posalji` | radi, bez porezne |

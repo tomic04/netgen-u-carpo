@@ -212,7 +212,17 @@ namespace Carpo.NetGen.GridTest
                             ostao = true;
                     }
                 }
-                T("include-dijete", ima && ostao, ima ? "ima" : "nema");
+                T("include-ucitaj-ne-miesa", !ima && ostao && p.Forme.Count == 1, ima ? "ima" : "nema");
+                var doc = new System.Xml.XmlDocument();
+                doc.XmlResolver = null;
+                doc.Load(host);
+                Carpo.NetGen.Xml.IncludeXml.SpojiFormu(doc, host, "MAINFORM", "");
+                T("include-dijete", doc.GetElementsByTagName("IZTUDEG").Count == 1, doc.GetElementsByTagName("IZTUDEG").Count.ToString());
+                var docGlobal = new System.Xml.XmlDocument();
+                docGlobal.XmlResolver = null;
+                docGlobal.Load(host);
+                Carpo.NetGen.Xml.IncludeXml.SpojiFormu(docGlobal, host, "MAINFORM", "nema-te-datoteke.xml");
+                T("include-global-ne-formu", docGlobal.GetElementsByTagName("IZTUDEG").Count == 0, "");
                 string prazan = Path.Combine(dir, "prazan.xml");
                 File.WriteAllText(prazan, "<PROJECT><HOST NAME=\"HOST\" INCLUDE=\"nema-te-datoteke.xml\"></HOST></PROJECT>");
                 var p2 = NetGenXmlReader.Ucitaj(prazan).Projekt;
@@ -239,20 +249,12 @@ namespace Carpo.NetGen.GridTest
                     d.LoadXml("<PROJECT><IZFINDERA NAME=\"IZFINDERA\"></IZFINDERA></PROJECT>");
                     return d;
                 };
-                var p3 = NetGenXmlReader.Ucitaj(dom).Projekt;
-                bool finder = false;
-                bool diskForma = false;
-                if (p3 != null)
-                {
-                    for (int i = 0; i < p3.Forme.Count; i++)
-                    {
-                        if (p3.Forme[i].Ime == "IZFINDERA")
-                            finder = true;
-                        if (p3.Forme[i].Ime == "SDISKA")
-                            diskForma = true;
-                    }
-                }
-                T("include-finder", finder && !diskForma, finder ? "finder" : "disk");
+                var docF = new System.Xml.XmlDocument();
+                docF.XmlResolver = null;
+                docF.Load(dom);
+                Carpo.NetGen.Xml.IncludeXml.SpojiFormu(docF, dom, "DOM", "");
+                T("include-finder", docF.GetElementsByTagName("IZFINDERA").Count == 1
+                    && docF.GetElementsByTagName("SDISKA").Count == 0, "");
             }
             finally
             {
