@@ -4,6 +4,8 @@ Izvor: `definitions/netgen/Agronom granule/JeziciNG.xml` (windows-1250). Stavka 
 
 Dijeljenje s 14 i VB zaokruživanje na parni su isti kao u `OznakaKL.md` (`Form2.vb:58`). `2500/14` = 178,571… → širina **179**, ne 178 (cjelobrojno dijeljenje u C# nije isto što i VB operator `/`).
 
+Izgled je Carpo (R59). **izgled – Carpo** ne ruši QA. Širina 179, skriveni checkbox, edit, natpis gumba, redoslijed i fokus ostaju.
+
 ## Podloga
 
 | ID | Očekivano | NetGen |
@@ -35,9 +37,9 @@ Ikona: `MOJremotedllpath\Graphics\Icons\Jezici.ico` (`3440`, `JEZ-44`). Ako dato
 
 ## Master grid
 
-Isti Janus put kao OznakaKL (nema `DXGRID`): ikona skrivena 22, selector 22 skriven jer je checkbox `FALSE`, zatim stupci iz procedure. `HeaderLines=3`, `EditMode=EditOff`, `EnterKeyBehavior=None`, višestruka selekcija, `EmptyRows`, total na kraju ugašen, group box skriven.
+Nema `DXGRID`. Selector je skriven jer je checkbox `FALSE`. `EditMode=EditOff`, `EnterKeyBehavior=None`, višestruka selekcija, total na kraju ugašen, group box skriven. Janus ikona stupca, `HeaderLines=3` i `EmptyRows` su **izgled – Carpo**. Kontrola je DevExpress.
 
-`CustomFormatKolona` nađe stupac `Naziv` po imenu (`INDEX` prazan → `Val` 0). `CLEARCOLUMS` nije `true`, ostali stupci iz rezultata ostaju. Širina `2500/14` = 179. Natpis `Naziv`. `FORMAT` i `VISIBLE` prazni ne diraju vrijednost. `HEADERALIGNMENT` `1` ide u `HeaderAlignment` samo te kolone (`7530-7531`). Dva G se ne čitaju (`7496` traži jedno G).
+`CustomFormatKolona` nađe stupac `Naziv` po imenu (`INDEX` prazan → `Val` 0). `CLEARCOLUMS` nije `true`, ostali stupci iz rezultata ostaju. Širina `2500/14` = 179. Natpis `Naziv`. `FORMAT` i `VISIBLE` prazni ne diraju vrijednost. `HEADERALIGNMENT` `1` je **izgled – Carpo**. Dva G se ne čitaju (`7496` traži jedno G).
 
 String stupac koji nije naveden u `COLUMN` dobije širinu **100** u `CreateGridColumns` (`Class1.vb:1203`). Širina 200 je samo hijerarhijski put `DodatnoFormatirajGridnakonRetriveStructure` (`Form1.vb:1799`), a ovdje `RELATION` nije `self` ni `multi`.
 
@@ -47,12 +49,13 @@ String stupac koji nije naveden u `COLUMN` dobije širinu **100** u `CreateGridC
 | JEZ-46 | `totalRow` | `false` |
 | JEZ-47 | `groupByBox` | `false` |
 | JEZ-48 | `kolona.Naziv.sirina` | `179` |
-| JEZ-49 | `kolona.Naziv.headerAlignment` | `1` |
+| JEZ-49 | | **izgled – Carpo.** NetGen `HEADERALIGNMENT=1` |
 | JEZ-50 | `kolona.Naziv.agregat` | prazno |
 | JEZ-51 | `clearSakrivaSve` | `false` |
 | JEZ-52 | `stringSirina` | `100` |
 | JEZ-53 | `editType` | `NoEdit` |
-| JEZ-54 | `headerLines` | `3` |
+| JEZ-54 | | **izgled – Carpo.** NetGen `HeaderLines=3` |
+| JEZ-74 | `selectionMode` | `MultipleSelection`. Enter `None` je `JEZ-72` |
 | JEZ-55 | `gumb.5` | `Ispiši\|PRINTREPXMASTER\|true` |
 | JEZ-72 | `enterKey` | `None` |
 | JEZ-73 | `cb.tkosmomi` | `ima` |
@@ -70,13 +73,13 @@ String stupac koji nije naveden u `COLUMN` dobije širinu **100** u `CreateGridC
 
 ## Dijalozi
 
-Nema `CMD1`–`CMD6` na formama. Gumbi su `INPUT TYPE="button"`. Panel s Prihvati/Odustani je skriven (`2750`). `ONCLICK` ide u `Glbl_ClickButton` → `Rafalno` (`6221-6228`), ne u `Button1` dok segment nije `OK` / `OKStay` / `CLOSE`.
+Nema `CMD1`–`CMD6` na formama. Gumbi su `INPUT TYPE="button"`. Standardni panel Prihvati/Odustani je skriven (`2750`): ti gumbi se ne vide. To je enable/visible, ne položaj. `ONCLICK` ide u `Glbl_ClickButton` → `Rafalno` (`6221-6228`), ne u `Button1` dok segment nije `OK` / `OKStay` / `CLOSE`.
 
 `TEXT=ButtonNG0` se ne čita. Natpis je `CAPTION` (`JEZ-23`). `frame` je `GroupBox`. Nema `CAPTION`, `TEXT=FrmJezici` se ne čita, natpis okvira ostaje prazan (`JEZ-24`, `JEZ-59`).
 
-`BORDERSTYLE=3` nema `GetNamedItem` u učitavanju forme. Ostaje WinForms `Sizable` (`JEZ-20`, `JEZ-69`). `REFRESHAFTERCHILD` na **formi** `SrediKontrolu` ne vidi; taj kod gleda samo `INPUT` (`3058`, `JEZ-21`). Ne radi poseban refresh zbog tog atributa.
+`BORDERSTYLE=3` nema `GetNamedItem` u učitavanju forme (`JEZ-20`). WinForms ostane `Sizable`. **izgled – Carpo** (`JEZ-69`): obrub forme je Carpo, ne traži se `Sizable`. `REFRESHAFTERCHILD` na **formi** `SrediKontrolu` ne vidi; taj kod gleda samo `INPUT` (`3058`, `JEZ-21`). Ne radi poseban refresh zbog tog atributa.
 
-Zvjezdica: `SIZE=13` postavi veličinu fonta (`3077-3081`, `JEZ-22`, `JEZ-60`). `BOLD` se ne čita.
+Zvjezdica: XML ima `SIZE=13` (`JEZ-22`). Nacrtana veličina fonta je **izgled – Carpo** (`JEZ-60`). `BOLD` se ne čita.
 
 ### Unesi
 
@@ -117,7 +120,7 @@ Visina `1699/14` = 121, širina `4608/14` = 329.
 ## Što namjerno ne radi
 
 - `AGGREGATEFUNCTION` s dva G ne zbraja.
-- `BORDERSTYLE` i `REFRESHAFTERCHILD` na formi ne mijenjaju formu.
+- `BORDERSTYLE` na formi NetGen ne čita. Nacrtani obrub je **izgled – Carpo**. `REFRESHAFTERCHILD` na formi ne radi poseban refresh.
 - `TEXT` na gumbu i okviru nije natpis.
 - `refreshmaster` nije alias za `REFRESHMASTERGRID`, ali prazna forma tog imena ipak ponovo pošalje zadnji master SQL.
 - `Dodaj` se traži i ne nađe, bez dijaloške greške.

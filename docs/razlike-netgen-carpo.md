@@ -2,6 +2,8 @@
 
 Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Carpo citat je kod kontrole ili `docs/analiza/04-mapiranje-netgen-carpo.md` kad port tu kontrolu još ne crta. Port koji već prati NetGen nije ovdje ponovljen kao rupa.
 
+Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom (boja, stil gumba, gumbi na dnu, prazni retci, row header, visina zaglavlja, font, obrub). I dalje se strogo gleda natpis i redoslijed gumba, što gumb radi, širina i skriveni stupac, sort, edit, checkbox stupac, raspored kontrola na dijalogu, tab, enable/visible i fokus. XML se ne mijenja.
+
 ## R01 Stablo iz SQL-a nije Carpo `tree`
 
 - **Element:** `TREE` / `TreeView2` naspram `JTree`
@@ -54,8 +56,8 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 
 - **Element:** master grid
 - **NetGen:** `DXGRID` nije true → Janus (`Form1.vb` 1906–1908). Više redova, row header, incremental search (`Form1.designer.vb` 640–641, 655, 657). Stupac čije ime završava na `ID` je skriven (`Class1.vb` 1125–1127). `GetID` bez stupca `id` uzme ćeliju 2 (`Form1.vb` 5566–5580). Širina je `jedinica/14` uz VB zaokruživanje na parni (`Form2.vb` 58). `AUTOMATICSORT` nije `false` → sort klikom ostaje (`3401–3404`).
-- **Carpo:** `GridControl` nema te Janus početke. Port širinu računa u `MasterGrid.VbJedinica` (`MasterGrid.cs` 88–90). Ostalo (selection, `GetID` → ćelija 2) nije taj grid.
-- **Posljedica:** OznakaKL `@@id` je `klmasterrobaid`, ne prvi vidljivi stupac. Širina 2500 je 179, ne 178.
+- **Carpo:** `GridControl` nema te Janus početke. Port širinu računa u `MasterGrid.VbJedinica` (`MasterGrid.cs` 88–90). Ostalo (selection, `GetID` → ćelija 2) nije taj grid. Krom (row header, prazni retci, `HeaderLines`, highlight, font, obrub) je R59, ne rupa.
+- **Posljedica:** OznakaKL `@@id` je `klmasterrobaid`, ne prvi vidljivi stupac. Širina 2500 je 179, ne 178. Izgled kontrole je DevExpress.
 - **Test:** `OKL-31` nadalje, `JEZ` širina
 
 ## R08 `AGGREGATEFUNCTION` s dva G se ne čita; `"0"` s jednim G se čita
@@ -415,14 +417,14 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 - **Element:** `TREETRANSLATE`, `TreeView2`
 - **NetGen:** prijevod stupca 2 samo ako je atribut `true` (`Form1.vb` 4461–4464, `4501–4504`). Statički čvor se prevodi uvijek (`4353`). Dijaloško stablo se ne prevodi. `TreeView2` ima `ImageList2` i indeks 0 za sve čvorove (`Form1.designer.vb` 575–579). Kod ne čita ikonu po čvoru. `ikonaid` je ikona retka grida (`7902–7905`). `ICON` je ikona forme (`3392`).
 - **Carpo:** `tree` nema `ImageList2` ni prisilan indeks 0. Prijevod natpisa nije `TREETRANSLATE`.
-- **Posljedica:** svi čvorovi podloge izgledaju isto. Uključiti `TREETRANSLATE` na dijalog stablu ne prevede ništa. Zamjena s `ikonaid` crta krivu stvar.
+- **Posljedica:** čvor ne dobije ikonu iz podatka ni iz `ikonaid`. `ImageList` indeks 0 je izgled – Carpo (R59). Uključiti `TREETRANSLATE` na dijalog stablu ne prevede ništa.
 - **Test:** `RIJ-23`
 
 ## R53 Grid na dijalogu nije master
 
 - **Element:** `INPUT TYPE="grid"`
 - **NetGen:** Janus `Grid` (`Form2.vb` 1623), osim ako je `dxgrid` (`1579`). `SKIPDEFAULTLOAD="TRUE"` ne puni odmah (`1643–1646`). `CHECKBOXVISIBLE="FALSE"` sakrije stupac 1 (`1754–1755`). `SQL2`–`SQL4` se spreme velikim slovima (`1630–1632`). Suma je uključena osim `TOTALROW="FALSE"` (`1745–1748`). `PRINTGRID` i `PRINTREPXGRID` zovu isti ispis `"lodani"` (`6950`, `6985`, `9041`).
-- **Carpo:** master grid i `grid` na formi dijele jedan `GridControl`. Nema `"lodani"` ni sakrivanja baš stupca 1.
+- **Carpo:** master grid i `grid` na formi dijele jedan DevExpress `GridControl` (R59). Nema `"lodani"` ni sakrivanja baš stupca 1.
 - **Posljedica:** `klasa_da` na `RobaWebKlase` nema kvačice i puni se čim se forma čita. Sakriti stupac 0 sakrije id, a NetGen sakrije stupac 1.
 - **Test:** `RIJ-14`
 
@@ -466,12 +468,20 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 - **Posljedica:** ispis blagajne ostane na praznoj formi ako se `click(Ok)` preskoči. Ime izvještaja je vrijednost `@@template` iz `ONLOAD`.
 - **Test:** `KBP-04`, `KBP-20`
 
+## R59 Izgled je Carpo, ponašanje je NetGen
+
+- **Element:** podloga, gumbi, kontrole, skin. Namjerno odstupanje.
+- **NetGen:** podloga je WinForms `Form1`. Gumbi `Button1`–`Button8` stoje na dnu, širina 79, razmak 8 (`Form1.vb` 3312, 3827–3848). Dijalog drži Prihvati/Odustani u panelu (`Form2.vb` 2750–2757). Master je Janus `GridEX` kad `DXGRID` nije true (`Form1.vb` 1906–1908): `HeaderLines=3`, `EmptyRows`, `RowHeaders`, `HideSelection=Highlight` (`Class1.vb` 1000, 1364, `Form1.designer.vb` 640, 655). `BORDERSTYLE` se na formi ne čita, ostaje WinForms `Sizable`. `SIZE` mijenja font (`Form2.vb` 3077–3081). Čvor stabla crta `ImageList2` indeks 0 (`Form1.designer.vb` 575–579).
+- **Carpo:** podloga nasljeđuje Carpo `RibbonBase` (`Devex_26/Carpo.UI/Forms/Jupiter/Base.cs`). Gumbi podloge idu u ribbon. Sve kontrole, uključujući dijalog i editore, su DevExpress. Skin i komponente su Carpo gdje postoje. XML se ne mijenja i ne prevodi se u Carpo XML.
+- **Posljedica:** QA ne traži boju, stil gumba, položaj gumba dolje, prazne retke, row header, broj redova zaglavlja, highlight bez fokusa, font, obrub ni sliku čvora. Pad nije ako to ne izgleda kao Janus. I dalje se gleda natpis i redoslijed gumba, naredba gumba, širina i skriveni stupac, sort, editabilnost, checkbox stupac, raspored kontrola na dijalogu, tab, enable/visible i fokus.
+- **Test:** `OKL-38`, `OKL-45`, `OKL-54`, `OKL-55`, `OKL-56`, `OKL-78`, `JEZ-49`, `JEZ-54`, `JEZ-60`, `JEZ-69` su oznaka, ne pad.
+
 ## Pokrivenost checklisti
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
 |---|---|---|
-| `OznakaKL.md` | prazno stablo, Janus, `GetID`, `PERMISIO`, širina `/14`, label `TEXT`/`BOLD` | R02, R06, R07, R34 |
-| `JeziciNG.md` | dva G, `refreshmaster`, `TEXT` na gumbu nije natpis, širina 179, `PRINTREPXMASTER` | R04, R08, R07, R34, R41 |
+| `OznakaKL.md` | prazno stablo, `GetID`, `PERMISIO`, širina `/14`, label `TEXT`. Janus krom je R59 | R02, R06, R07, R34, R59 |
+| `JeziciNG.md` | dva G, `refreshmaster`, `TEXT` na gumbu nije natpis, širina 179, `PRINTREPXMASTER`. Font, obrub i HeaderLines su R59 | R04, R08, R07, R34, R41, R59 |
 | `Statusi.md` | adapter stabla, samo prvi korijen, id 0, prazna forma, detail kolone jednom, `v[` | R01, R05, R09, R19 |
 | `KntBlaZak.md` | susjed nije roditelj, tri korijena, ime stupca, `CLEARCOLUMS` jednom, agregat `"0"` | R10, R11, R09, R08 |
 | `PrijemniList.md` | combo umjesto `TREE`, `REFRESHMASTER`, `@robaid`, `SETDEFAULTS` po `#` | R03, R04, R13, R12 |

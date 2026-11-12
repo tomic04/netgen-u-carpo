@@ -4,6 +4,8 @@ Izvor XML-a: `definitions/netgen/BIOVEGA/OznakaKL.xml` (windows-1250). Stavka `O
 
 Jedinica na formi dijeli se s `FakPretvorbe = 14` (`netgen/Form2.vb:58`, `netgen/Module1.vb:65`). Dodjela u `Integer` ide VB zaokruživanjem na najbliži parni. XML u atributu pretvara novi red u razmak (pravilo XML-a), pa `ONSUBMIT` nakon `XmlDocument.Load` nema prijelom retka.
 
+Izgled je Carpo (R59): ribbon, DevExpress kontrole, Carpo skin. Stavke označene **izgled – Carpo** ne ruše QA. Natpis i redoslijed gumba, naredba, širina, skriveni stupac, sort, edit, checkbox, raspored na dijalogu, tab, enable/visible i fokus ostaju.
+
 Stavke `OKL-01`–`OKL-27` parser i čitanje baze mogu proći odmah. `OKL-30` nadalje traže izvedbu. Dok je `Carpo.NetGen.TestHooks.GranulaSesija.Izvrsi` null, test ih broji kao otvorene. Ključ u stupcu „ključ” je ime u `Pogled.Stavke`.
 
 ## Podloga (Form1)
@@ -39,13 +41,13 @@ Prozor je uvijek isti kostur (stablo lijevo, master, detail), ali prazan `TREE` 
 6. Naslov iz `CAPTION` (`3522`).
 7. Nema `MENU` → `MenuStrip1.Visible = False` (`3552-3553`).
 8. Nema `POPUP` → kontekst se očisti, zatim se **ipak** dodaju standardne stavke (`3620-3673`).
-9. Nema `BUTTONS`, pa CMD gumbi ostaju. Vidljivost po tekstu, razmak 8 px (`3827-3848`). `Button1.Width = 79` (`3312`), a designer ima `AutoSize = True` (`Form1.designer.vb:475`).
+9. Nema `BUTTONS`, pa CMD gumbi ostaju. Vidljivost po tekstu (`3827-3848`). Širina 79, razmak 8 px i `AutoSize` su **izgled – Carpo**: gumbi podloge su u ribbonu, ne na dnu. Natpis, redoslijed i naredba ostaju.
 10. Detail splitter na pola visine (`3852`), pa kasnije, jer nema detail SQL-a, na `Height - 50` (`2111-2113`).
 11. `SETDEFAULTS` nema, petlja se preskače (`3862`).
 12. `NapuniDrvoVrijeme`: `TREE` prazan i `COMBO` prazan → `TreeView2.Visible = False`, `SplitContainer1.SplitterDistance = 0`, `ButtonZaDrvo.Enabled = False` (`4310-4316`).
 13. `PERMISIO` nije u XML-u. Prije petlje je `strPermisio = True` (`3153`), atribut ga ne prepiše, pa se zove `ssPermissionProcitaj` (`3414-3416`). SQL je select nad `ssPermission` za ime datoteke (`2706`). Poruka greške koja sadrži `sspermission` se guta (`Class1.vb:162-163`).
 14. `strStartupStora` ne počinje s `:`, pa `PokaziUpit` (`3879-3882`). `@@` u ovom SQL-u nema, pa `ExecSql` ne preskače (`Class1.vb:113-118`).
-15. `DXGRID` nije zadan (reset `3103`, atribut ne postoji) → Janus grana, `GridEX1.Dock = Fill`, DevExpress grid skriven (`1906-1908`).
+15. `DXGRID` nije zadan (reset `3103`). NetGen tada crta Janus i sakrije DevExpress grid (`1906-1908`). **izgled – Carpo:** crta se DevExpress. Grid i dalje puni područje mastera.
 
 | ID | Očekivano | Ključ | NetGen |
 |---|---|---|---|
@@ -58,25 +60,25 @@ Prozor je uvijek isti kostur (stablo lijevo, master, detail), ali prazan `TREE` 
 | OKL-36 | Izbornik skriven. | `menuVidljiv=false` | `Form1.vb:3552-3553` |
 | OKL-37 | Help skriven (nema `HELPKOD`). | `helpVidljiv=false` | `Form1.vb:3491-3494` |
 | OKL-81 | Nema `TIMER`: statusna oznaka timera je skrivena. | `timerVidljiv=false` | `Form1.vb:3449-3450` |
-| OKL-38 | Ne crta se DX grid. | `dxGrid=false` | `Form1.vb:1861,1906-1908` |
+| OKL-38 | **izgled – Carpo.** NetGen sakrije DX grid. Port crta DevExpress. | | `Form1.vb:1906-1908`, R59 |
 | OKL-76 | Select nad `ssPermission` uđe u trag. Vrijednost ključa je oznaka, ne cijeli SQL. | `permisioSql=ssPermission` | `Form1.vb:3153,2706` |
 | OKL-77 | Kontekst: Spremi postavke grida, Reset grida, Export grid, Grupiraj / razgrupiraj, Format style, Izgled grida, Ispis REPX, Ispis. | `kontekst` | `Form1.vb:3625-3673` |
 | OKL-80 | Nema `ICON`: ikona je ona s hosta (`Ikona`), ne `Graphics\Icons\`. | `ikona=host` | `Form1.vb:3430-3436` |
 | OKL-60 | Jedini vidljivi gumb podloge je Izmjena → `FRMEDIT`. | `gumb.1=Izmjena\|FRMEDIT\|true` | `Form1.vb:3827,5667` |
 
-## Master grid (Janus, ne DevExpress default)
+## Master grid
 
 `CreateGridColumns` (`Class1.vb:982`) radi kolone iz rezultata. Zatim `SetDataBinding` (`Form1.vb:1999`). Nema `MASTERCOLUMNS`, pa `CustomFormatKolona` odmah izađe (`7454-7455`).
 
 Stupci, ovim redom:
 
-1. `Icon`, nevezan, širina 22, `Visible=False`, `AllowSort=False` (`Class1.vb:1010-1020`).
-2. `Selector`, checkbox, širina 22, `ActAsSelector=True` (`1022-1027`). `CHECKBOXVISIBLE=FALSE` ga sakrije: `RootTable.Columns(1).Visible = False` (`Form1.vb:2043-2046`). Usporedba je točno `"FALSE"` nakon `ToUpper`.
+1. `Icon`, nevezan, širina 22, `Visible=False` (`Class1.vb:1010-1020`). **izgled – Carpo.** Port nema Janus ikonu stupca.
+2. `Selector`, checkbox, širina 22, `ActAsSelector=True` (`1022-1027`). `CHECKBOXVISIBLE=FALSE` ga sakrije: `RootTable.Columns(1).Visible = False` (`Form1.vb:2043-2046`). Usporedba je točno `"FALSE"` nakon `ToUpper`. Skriven checkbox ostaje.
 3. Podaci redom iz SQL-a. Ime kolone je ime (alias) stupca.
 
 Pravila po tipu (`Class1.vb`, `InStr` na ime .NET tipa):
 
-- `int`: širina 34, format `##0`, tekst i zaglavlje `Far`, `EditType=NoEdit` jer `EDITCOLUMNS` prazan (`1087-1139`).
+- `int`: širina 34, format `##0`, `EditType=NoEdit` jer `EDITCOLUMNS` prazan (`1087-1139`). Poravnanje `Far` je **izgled – Carpo**.
 - `string`: širina **100**, ne 200. 200 je samo u `DodatnoFormatirajGridnakonRetriveStructure` (`Form1.vb:1799`), a taj put je za `self`/`multi`, ne za ovu granulu (`1201-1239`).
 - `decimal`/`double`: širina 44, `#,##0.00`, `Far`, agregat Sum (`1146-1172`).
 - `date`: širina 100, `dd.MM.yyyy` (`1247-1270`).
@@ -84,9 +86,9 @@ Pravila po tipu (`Class1.vb`, `InStr` na ime .NET tipa):
 - Zadnja 4 znaka natpisa ako su broj: širina = taj broj / 14, natpis se skrati. Ovdje nema takvog imena.
 - `EditMode = EditOff` (`1003`). `AllowEdit = False` samo ako je `FILTERMODE=true` (`Form1.vb:2169-2178`). `FILTERMODE` nema, pa ta grana ne dira `AllowEdit`. Edit ipak ne radi jer je svaki `EditType` `NoEdit`.
 - `EnterKeyBehavior = None` jer je `EDITCOLUMNS` prazan (`3419-3421`). `ENTERKEYBEHAVIOR` ne postoji, dodjela padne, ostane `None`.
-- Zatim `TotalRow = True` i `HeaderLines = 3` (`1363-1364`). Poslije toga `TOTALROWVISIBLE=FALSE` vrati `TotalRow` na False (`2049-2050`). `HeaderLines` ostaje 3.
-- `EmptyRows = True` (`1000`).
-- Designer, koji XML ne gazi: `SelectionMode = MultipleSelection` (`Form1.designer.vb:654`), `IncrementalSearchMode = AllCharacters` (`641`), `RowHeaders = True` (`655`), `HideSelection = Highlight` (`640`). DevExpress grid po defaultu nije višestruki i nema prazne retke do dna. Carpo mora dati ove Janus vrijednosti.
+- Zatim `TotalRow = True` i `HeaderLines = 3` (`1363-1364`). Poslije toga `TOTALROWVISIBLE=FALSE` vrati `TotalRow` na False (`2049-2050`). Total ostaje ugašen. `HeaderLines` je **izgled – Carpo**.
+- `EmptyRows = True` (`1000`) je **izgled – Carpo**.
+- Designer, koji XML ne gazi: `SelectionMode = MultipleSelection` (`Form1.designer.vb:654`) i `IncrementalSearchMode = AllCharacters` (`641`) ostaju. `RowHeaders = True` (`655`) i `HideSelection = Highlight` (`640`) su **izgled – Carpo**.
 - `GroupByBoxVisible = False` (`3350`). `FrozenColumns = 0` (`3362`).
 - `AUTOMATICSORT` nije `false`, pa se sort klikom na zaglavlje **ne gasi** (`3401-3404`). Početni poredak je poredak SQL-a (`ORDER BY sortkey`), grid sam ne primjenjuje drugi sort (`1999`).
 - Group header total: `AggregateFunction.Count`, prefiks `[`, sufiks ` ]` (`2136-2142`).
@@ -96,13 +98,13 @@ Pravila po tipu (`Class1.vb`, `InStr` na ime .NET tipa):
 
 | ID | Ključ | Vrijednost |
 |---|---|---|
-| OKL-39 | `kolonePocetak` | `Icon:false:22\|Selector:false:22` |
+| OKL-39 | `selectorVidljiv` | `false`. Icon 22 je **izgled – Carpo** |
 | OKL-40 | `kolona.klmasterrobaid.vidljiva` | `false` |
 | OKL-41 | `kolona.klmasterrobaid.format` | `##0` |
 | OKL-42 | `kolona.Naziv.sirina` | `100` |
 | OKL-43 | `kolona.DodatnaOznaka.natpis` | `DodatnaOznaka` |
 | OKL-44 | `totalRow` | `false` |
-| OKL-45 | `headerLines` | `3` |
+| OKL-45 | | **izgled – Carpo.** NetGen `HeaderLines=3` |
 | OKL-46 | `groupByBox` | `false` |
 | OKL-47 | `frozenColumns` | `0` |
 | OKL-48 | `automaticSort` | `true` |
@@ -111,13 +113,13 @@ Pravila po tipu (`Class1.vb`, `InStr` na ime .NET tipa):
 | OKL-51 | `enterKey` | `None` |
 | OKL-52 | `selectionMode` | `MultipleSelection` |
 | OKL-53 | `incrementalSearch` | `AllCharacters` |
-| OKL-54 | `emptyRows` | `true` |
-| OKL-55 | `rowHeaders` | `true` |
-| OKL-56 | `hideSelection` | `Highlight` |
+| OKL-54 | | **izgled – Carpo.** NetGen `EmptyRows=true` |
+| OKL-55 | | **izgled – Carpo.** NetGen row header |
+| OKL-56 | | **izgled – Carpo.** NetGen `HideSelection=Highlight` |
 | OKL-57 | `gridDock` | `Fill` |
 | OKL-58 | `fokus` | `grid` |
 | OKL-59 | `idJe` | `klmasterrobaid` |
-| OKL-78 | `groupCount` | `[ ]` |
+| OKL-78 | | **izgled – Carpo.** NetGen prefiks `[` i sufiks ` ]` na group headeru |
 | OKL-79 | `pocetniSort` | `sql` |
 
 `OKL-25`–`OKL-27` čitaju isti SELECT na `spin` (samo čitanje) i provjeravaju imena stupaca i da `sortkey` ne opada. Tipovi s poslužitelja određuju koju granu iz `CreateGridColumns` stupac dobije.
@@ -157,7 +159,7 @@ Ostale koordinate, isto zaokruživanje: label `Left` 158/14 = 11, `Height` 288/1
 | OKL-75 | `tab=Label16,oznaka2,Prihvati,Odustani` | `Form2.vb:3027-3043,2775` |
 | OKL-74 | `acceptButton` prazan. Enter u tekstu ne šalje formu. `AcceptButton` se nigdje ne postavlja. | `Form2.vb:3367` |
 
-Panel s Prihvati/Odustani je vidljiv (`2750-2757`). Gumbi su `AutoSize` iz designera, `Left` se slaže s razmakom 8.
+Prihvati i Odustani su vidljivi (`2750-2757`). Njihov panel na dnu, `AutoSize` i razmak 8 su **izgled – Carpo** (gumbi dijaloga idu u ribbon). Natpis, redoslijed, tab i naredba ostaju.
 
 ### Prihvati, Odustani, Escape
 
@@ -189,7 +191,7 @@ Test **ne šalje** `UPDATE`. U `sql` ključu mora stajati tekst koji bi otišao,
 ## Što se namjerno ne događa
 
 - `GRIDALLOWEDIT` ne uključuje edit ćelije.
-- `BOLD` i `TEXT` na labeli ne mijenjaju izgled odnosno natpis.
+- `TEXT` na labeli nije natpis. Font i `BOLD` su **izgled – Carpo**.
 - `KOMENTAR` (`CallistoII 1.0.0`) nije naslov.
 - Prazno stablo se ne crta kao prazan TreeView na pola forme. Splitter je 0.
 - Prevoditelj ne dira natpis dok jezik nije postavljen i nije različit od `hrv` (`Module1.vb:266-272`).

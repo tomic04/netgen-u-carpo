@@ -172,7 +172,7 @@ namespace Carpo.NetGen.Granule
                 string tt = pn.Atributi.Ima("TREETRANSLATE") ? (pn.Atributi.Vrijednost("TREETRANSLATE") ?? "") : "";
                 NgForm unos = pn.NadjiFormu("UnosStavkeNar");
                 l.Add(tt.Equals("TRUE", StringComparison.OrdinalIgnoreCase)
-                    ? Qa.Z(Ime, "RIJ-23", "TREETRANSLATE samo na podlozi, stupac 2. Dijalog stablo ne prevodi. Ikona cvora je 0", "netgen/Form1.vb:4461-4464; netgen/Form1.designer.vb:575-579")
+                    ? Qa.Z(Ime, "RIJ-23", "TREETRANSLATE samo na podlozi, stupac 2. Dijalog stablo ne prevodi. Slika cvora je izgled – Carpo", "netgen/Form1.vb:4461-4464; netgen/Form1.designer.vb:575-579")
                     : Qa.P(Ime, "RIJ-23", "TREETRANSLATE", "netgen/Form1.vb:4461", tt));
                 l.Add(Ispis.Atr(unos, "NEXTFORM") == "UnosStavkeNar"
                     ? Qa.Z(Ime, "RIJ-24", "NEXTFORM na isto ime vrti formu dok je OK", "netgen/Form2.vb:4431")

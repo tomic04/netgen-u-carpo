@@ -2,7 +2,7 @@
 
 Prvi element. Stablo i veza master-detail nisu ovdje: `DETAILGRID` se čita u parseru, ali se donji grid ne puni. Dijalog `INPUT TYPE="grid"` (2077 pojava) dijeli isti jezik kolona; host dijaloga nije ovaj korak.
 
-Korpus: 633 XML-a (`definitions/netgen` + `definitions/Prepisane_granule/Netgen`, uključujući `*.XML`). Jedan nije granula (`rptOpzStat1.xml`, korijen `report`). `DXGRID` se u korpusu ne pojavljuje, pa živi put je Janus `GridEX` (`Form1.PokaziUpit` grana bez DX-a), ne `NapuniDXGrid`. Carpo crta DevExpress 26, a ponašanje kopira Janus put. DevExpress defaulti se ne prepuštaju: vidi odjeljak Defaulti.
+Korpus: 633 XML-a (`definitions/netgen` + `definitions/Prepisane_granule/Netgen`, uključujući `*.XML`). Jedan nije granula (`rptOpzStat1.xml`, korijen `report`). `DXGRID` se u korpusu ne pojavljuje, pa živi put je Janus `GridEX` (`Form1.PokaziUpit` grana bez DX-a), ne `NapuniDXGrid`. Carpo crta DevExpress 26, a ponašanje kopira Janus put. Krom (boja, row header, prazni retci, visina zaglavlja, font, obrub) je izgled – Carpo, R59. Funkcionalni defaulti se ne prepuštaju: vidi odjeljak Defaulti.
 
 ## Atributi projekta koje grid čita
 
@@ -97,7 +97,7 @@ Automatski testovi grida na prošlom zelenom runu: **59 PASS, FAIL=0**. Nakon is
 
 Izvor mjerenja: `Carpo.NetGen.Defaults` na runneru, artifact `grid-defaults.tsv` (isti run). To su svježi `new GridEX()` i `new GridView()`, bez XML-a i bez NetGen designera.
 
-Kad XML šuti, Carpo prati **kontrolu koju NetGen drži na formi**: designer (`Form1.designer.vb` 624–664) plus kod u `PokaziUpit`. Svojstva koja designer ne dira ostaju na izmjerenoј tvorničkoj vrijednosti.
+Kad XML šuti, funkcionalni defaulti prate NetGen (sort, total, edit, Enter, višestruka selekcija, širina, checkbox). Krom je **izgled – Carpo** (R59): row header, prazni retci, `HeaderLines`, highlight bez fokusa, font, obrub. To se ne traži kao pad.
 
 | Svojstvo | Svježi Janus GridEX | NetGen kad XML šuti | Svježi DevExpress 26 | Što Carpo.NetGen postavlja |
 |---|---|---|---|---|
@@ -108,17 +108,17 @@ Kad XML šuti, Carpo prati **kontrolu koju NetGen drži na formi**: designer (`F
 | Uređivanje | `AllowEdit=True`, `EditMode=EditOff` | stupci `NoEdit` | `Editable=True` | `Editable=false` |
 | Enter | `EnterKeyBehavior=NextRow` | kod stavi `None` ako nema `EDITCOLUMNS` (`3419`) | Enter zna otvoriti editor | `Enter=None` |
 | Selekcija | `SingleSelection`, cijeli red | designer: `MultipleSelection` | `IsMultiSelect=False` | `MultiSelect=true` |
-| Selekcija bez fokusa | `HideSelection=HideSelection` | designer: `Highlight` | `FocusRectStyle=CellFocus` | `EnableAppearanceHideSelection=false` |
-| Row header | `RowHeaders=False` | designer: `True` | indicator | `ShowIndicator=true` |
-| Obrub | `SunkenLight3D` | designer: `None` | `BorderStyle=Default` | `NoBorder` |
+| Selekcija bez fokusa | `HideSelection=HideSelection` | designer: `Highlight` | `FocusRectStyle=CellFocus` | **izgled – Carpo** |
+| Row header | `RowHeaders=False` | designer: `True` | indicator | **izgled – Carpo** |
+| Obrub | `SunkenLight3D` | designer: `None` | `BorderStyle=Default` | **izgled – Carpo** |
 | Širina kolona | fiksne | isto | auto širina je čest DX default | `ColumnAutoWidth=false` |
 | Scroll | `ScrollBars=Automatic` | isto | `HorzScrollVisibility=Auto` | ne diramo |
 | Grupni total | `GroupTotals=Never` | designer: `Always` | `GroupFooterShowMode=VisibleIfExpanded` | otvoreno, nije mapirano |
-| Font | (designer) MS Sans Serif 8.25 | isto | tema | `Font=Microsoft Sans Serif, 8.25pt` |
+| Font | (designer) MS Sans Serif 8.25 | isto | tema | **izgled – Carpo** (skin) |
 | Checkbox stupac | nema ga dok `CreateGridColumns` ne doda Selector | vidljiv osim `CHECKBOXVISIBLE=FALSE` | nema ActAsSelector | stupac `Selector` |
 | `GRIDALLOWEDIT` | kod ga ne čita | ne pali edit | | ne postavlja se; ćelija ostaje `NoEdit` |
-| Prazni redovi | `EmptyRows` nije tvornički | `CreateGridColumns` stavi `True` (`1000`) | nema praznih redova | `EmptyRows=true` |
-| Redovi zaglavlja | 1 | `HeaderLines = 3` (`1364`) | 1 red | `HeaderLines=3` |
+| Prazni redovi | `EmptyRows` nije tvornički | `CreateGridColumns` stavi `True` (`1000`) | nema praznih redova | **izgled – Carpo** |
+| Redovi zaglavlja | 1 | `HeaderLines = 3` (`1364`) | 1 red | **izgled – Carpo** |
 | Širina stringa | — | `CreateGridColumns` 100; hijerarhija 200 | — | 100, osim zadnje 4 znamenke / `WIDTH` |
 
 Najvažnije razlike koje su morale biti eksplicitne, jer DX default nije Janus:
@@ -127,7 +127,7 @@ Najvažnije razlike koje su morale biti eksplicitne, jer DX default nije Janus:
 - uređivanje: DX `Editable=True`, Janus `EditMode=EditOff` → `Editable=false`
 - Enter: Janus tvornički `NextRow`, NetGen kod `None` kad nema edit stupaca → `Enter=None`
 - selekcija: svježi GridEX i DX su jedan red, designer NetGena je `MultipleSelection` → `MultiSelect=true`
-- obrub i row header: svježi GridEX je `SunkenLight3D` i bez row headera; forma ima `None` i `RowHeaders=True`
+- obrub, row header, prazni retci, `HeaderLines` i font su **izgled – Carpo** (R59), ne uvjet testa
 
 Ponašanja koja nisu jedno svojstvo:
 

@@ -8,7 +8,7 @@ XML: `definitions/netgen/Agronom granule/Narudzbe.xml`. `TREETRANSLATE="TRUE"` j
 
 Statički čvor (`Narudžbe:…` u `TREE`) uvijek se prevodi (`4353`), i kad je atribut `false`.
 
-Svaki čvor `TreeView2` nosi sliku 0 iz `ImageList2` (`Form1.designer.vb` 575–579). Nema stupca za ikonu čvora. `ikonaid` na gridu je drugi mehanizam (`7902–7905`).
+Svaki čvor `TreeView2` nosi sliku 0 iz `ImageList2` (`Form1.designer.vb` 575–579). Ta slika je **izgled – Carpo**. Nema stupca za ikonu čvora i `ikonaid` grida nije ikona stabla (`7902–7905`). To ostaje.
 
 ## NEXTFORM
 
@@ -25,6 +25,6 @@ Nakon OK lanac (`Form2.vb` 4431–4464) otvara sljedeću formu i prenese id iz p
 ## Rupe
 
 - `TREETRANSLATE` na dijalog stablu ne radi ništa.
-- Ikona stabla je uvijek 0. Nije `ICON` projekta i nije `ikonaid` grida.
+- Slika čvora (indeks 0) je **izgled – Carpo**. Čvor i dalje ne čita ikonu iz podatka, `ICON` ni `ikonaid`.
 - `NEXTFORM` sam na sebe (`UnosStavkeNar`) vrti formu dok je OK.
 - Grid dijaloga nije master. Sakriveni stupac je indeks 1.

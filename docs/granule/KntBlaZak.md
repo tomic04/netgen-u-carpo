@@ -31,7 +31,7 @@ Detail: `spBLPrometGlaQueryNG @Action=10,@Id=@@blagajneid,@BLZakljucciId=@@id`.
 
 Poziv detaila: jednom nakon mastera (`2109`) i na svaku promjenu selekcije (`7413-7416`), osim dok `PunimMasterGrid` (`2270`).
 
-`CLEARCOLUMS=TRUE` na `MASTERCOLUMNS` i `DETAILCOLUMNS`: sve kolone se sakriju, pa se navedene vrate (`7459-7462`). `HEADERALIGNMENT=2` (`7530`). `AGREGATEFUNCTION="0"` (jedno G) nije prazan, pa se dodjela agregata izvrši (`7506`). Širina `VrstaBlagajne` je `2500/14` = 179 (VB `/`, ne cjelobrojno dijeljenje, `7522`).
+`CLEARCOLUMS=TRUE` na `MASTERCOLUMNS` i `DETAILCOLUMNS`: sve kolone se sakriju, pa se navedene vrate (`7459-7462`). `HEADERALIGNMENT=2` je **izgled – Carpo**. `AGREGATEFUNCTION="0"` (jedno G) nije prazan, pa se dodjela agregata izvrši (`7506`). Širina `VrstaBlagajne` je `2500/14` = 179 (VB `/`, ne cjelobrojno dijeljenje, `7522`).
 
 `CHECKBOXVISIBLE=FALSE`. `TOTALROWVISIBLE` **nema**: grana `FALSE` ne ulazi, total ostaje uključen (`2049-2053`). `PERMISIO=TRUE` zove select nad `ssPermission` (`3414`, `2706`).
 

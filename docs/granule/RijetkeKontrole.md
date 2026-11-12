@@ -61,7 +61,7 @@ Samo podložno stablo (`Form1.vb` 3360, `4461–4464`, `4501–4504`): stupac 2 
 
 Statički čvor podloge uvijek zove `Translate`, i bez atributa (`4353`).
 
-`TreeView2.ImageList` je `ImageList2`, `ImageIndex` i `SelectedImageIndex` su 0 (`Form1.designer.vb` 575–579`). Kod čvora ne postavlja drugu ikonu. Dijaloško stablo nema `ImageList`. Ikona retka grida (`ikonaid` → `ImageList3`, `Form1.vb` 7902–7905`) nije ikona stabla. `ICON` na projektu je ikona forme (`3392`), ne čvora.
+`TreeView2.ImageList` je `ImageList2`, indeksi su 0 (`Form1.designer.vb` 575–579). Crtanje te slike je **izgled – Carpo**. Kod čvora ne postavlja ikonu iz podatka. Dijaloško stablo nema `ImageList`. Ikona retka grida (`ikonaid` → `ImageList3`, `Form1.vb` 7902–7905) nije ikona stabla. `ICON` na projektu je ikona forme (`3392`), ne čvora.
 
 ## Grid na dijalogu
 

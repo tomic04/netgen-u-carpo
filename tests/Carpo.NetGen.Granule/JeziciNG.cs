@@ -149,7 +149,7 @@ namespace Carpo.NetGen.Granule
             NgControl spremi = Nadji(unesi, "buttonOK");
             NgControl frame = Nadji(unesi, "FrmJezici");
             l.Add(zv != null && zv.Atributi.Vrijednost("SIZE") == "13" && zv.Atributi.Vrijednost("CAPTION") == "*"
-                ? Qa.Z(Ime, "JEZ-22", "Zvjezdica ima SIZE 13; kod cita SIZE, ne BOLD", "netgen/Form2.vb:3077-3081")
+                ? Qa.Z(Ime, "JEZ-22", "Zvjezdica u XML-u ima SIZE 13. Nacrtani font je izgled – Carpo. BOLD se ne cita", "netgen/Form2.vb:3077-3081")
                 : Qa.P(Ime, "JEZ-22", "SIZE 13", "netgen/Form2.vb:3078", zv == null ? "" : zv.Atributi.Vrijednost("SIZE")));
             l.Add(spremi != null && spremi.Atributi.Vrijednost("CAPTION") == "Spremi" && spremi.Atributi.Vrijednost("TEXT") == "ButtonNG0"
                 ? Qa.Z(Ime, "JEZ-23", "Natpis gumba je CAPTION, TEXT=ButtonNG0 se ne cita", "netgen/Form2.vb:2932")
@@ -215,18 +215,19 @@ namespace Carpo.NetGen.Granule
             R(l, xml, "JEZ-46", "Total red je ugašen", "netgen/Form1.vb:2049-2050", "otvori", "", "totalRow", "false");
             R(l, xml, "JEZ-47", "Group box je skriven, frozen je 0", "netgen/Form1.vb:3350,3362", "otvori", "", "groupByBox", "false");
             R(l, xml, "JEZ-48", "Naziv: širina 2500/14 = 179 (VB dijeljenje, ne cjelobrojno)", "netgen/Form1.vb:7522", "otvori", "", "kolona.Naziv.sirina", "179");
-            R(l, xml, "JEZ-49", "Zaglavlje Naziv ima HeaderAlignment 1", "netgen/Form1.vb:7530-7531", "otvori", "", "kolona.Naziv.headerAlignment", "1");
+            l.Add(Izgled("JEZ-49", "NetGen HEADERALIGNMENT Naziv je 1. Poravnanje zaglavlja se ne trazi.", "netgen/Form1.vb:7530-7531"));
             R(l, xml, "JEZ-50", "Dvo-G agregat ne zbraja", "netgen/Form1.vb:7496", "otvori", "", "kolona.Naziv.agregat", "");
             R(l, xml, "JEZ-51", "CLEARCOLUMS=false ne sakrije ostale stupce iz rezultata", "netgen/Form1.vb:7459-7462", "otvori", "", "clearSakrivaSve", "false");
             R(l, xml, "JEZ-52", "String stupac koji nije u COLUMN ima širinu 100, ne 200", "netgen/Class1.vb:1201-1204", "otvori", "", "stringSirina", "100");
             R(l, xml, "JEZ-53", "Nema edit stupaca", "netgen/Class1.vb:1237-1239", "otvori", "", "editType", "NoEdit");
-            R(l, xml, "JEZ-54", "HeaderLines je 3, selekcija višestruka, Enter None", "netgen/Class1.vb:1364; netgen/Form1.designer.vb:654; netgen/Form1.vb:3419", "otvori", "", "headerLines", "3");
+            l.Add(Izgled("JEZ-54", "NetGen HeaderLines je 3. Visina zaglavlja se ne trazi. Selekcija i Enter ostaju posebno.", "netgen/Class1.vb:1364"));
+            R(l, xml, "JEZ-74", "Selekcija mastera je visestruka", "netgen/Form1.designer.vb:654", "otvori", "", "selectionMode", "MultipleSelection");
             R(l, xml, "JEZ-55", "Gumb 4 ne postoji, Ispiši je redni 5", "netgen/Form1.vb:3827-3848", "otvori", "", "gumb.5", "Ispiši|PRINTREPXMASTER|true");
             R(l, xml, "JEZ-56", "Ispiši zove ispis mastera, ne formu tog imena", "netgen/Form1.vb:4945-4948,5984", "gumb", "Ispiši", "ispis", "PRINTREPXMASTER");
             R(l, xml, "JEZ-57", "Desno zaglavlje ispisa dolazi iz @@tkosmomi (SETDEFAULTS u CB)", "netgen/Form1.vb:6001; netgen/Class1.vb:932-966", "gumb", "Ispiši", "pageHeaderRight", "@@tkosmomi");
             R(l, xml, "JEZ-58", "Dvostruki klik otvara Izmijeni", "netgen/Form1.vb:6935", "dblclick", "", "forma", "Izmijeni");
             R(l, xml, "JEZ-59", "Unesi: okvir nema natpis FrmJezici", "netgen/Form2.vb:2932-2938", "gumb", "Unesi", "kontrola.FrmJezici.tekst", "");
-            R(l, xml, "JEZ-60", "Zvjezdica je font veličine 13", "netgen/Form2.vb:3077-3081", "gumb", "Unesi", "kontrola.LabelZvjezdica.velicina", "13");
+            l.Add(Izgled("JEZ-60", "NetGen SIZE=13 na zvjezdici. Font je Carpo skin.", "netgen/Form2.vb:3077-3081"));
             R(l, xml, "JEZ-61", "Spremi na Unesi ostaje na formi (OKStay), Naziv se isprazni", "netgen/Form2.vb:6884-6887,4627-4633,4970-4979", "kontrola", "Unesi.buttonOK", "ostajeOtvorena", "true");
             R(l, xml, "JEZ-62", "Nakon OKStay fokus je kontrola naziv", "netgen/Form2.vb:4627-4632", "kontrola", "Unesi.buttonOK", "fokus", "naziv");
             R(l, xml, "JEZ-63", "Odustani na Unesi je naredba ok: OKClick true, pa NEXTFORM Dodaj", "netgen/Form2.vb:6888; netgen/Form1.vb:5381", "kontrola", "Unesi.buttonCLOSE", "okClick", "true");
@@ -235,7 +236,7 @@ namespace Carpo.NetGen.Granule
             R(l, xml, "JEZ-66", "Izmijeni ONLOAD napuni Naziv iz stupca", "netgen/Form2.vb:2016", "gumb", "Izmijeni", "kontrola.Naziv.izOnLoada", "true");
             R(l, xml, "JEZ-67", "Izmijeni Odustani je CLOSE: nema SQL-a i nema refresha", "netgen/Form2.vb:7033; netgen/Form1.vb:5429", "kontrola", "Izmijeni.buttonCLOSE", "refreshMaster", "false");
             R(l, xml, "JEZ-68", "Izmijeni Spremi zatvori formu i osvježi master (Zadnji=true)", "netgen/Form2.vb:6888; netgen/Form1.vb:5519", "kontrola", "Izmijeni.buttonOK", "refreshMaster", "true");
-            R(l, xml, "JEZ-69", "BORDERSTYLE se ne primijeni: ostaje Sizable", "netgen/Form2.vb:999-1124", "gumb", "Unesi", "border", "Sizable");
+            l.Add(Izgled("JEZ-69", "NetGen BORDERSTYLE na formi ne cita, ostane Sizable. Obrub Carpo forme se ne trazi.", "netgen/Form2.vb:999-1124"));
             R(l, xml, "JEZ-70", "Azur na Unesi ide kroz Rafalno, ne kroz lijepljenje ONSUBMIT; @@ se zamijeni, drugi niz @ime= se ne dodaje, upis se ne šalje u testu", "netgen/Form2.vb:7510,3655", "kontrola", "Unesi.buttonOK", "sqlImaZalijep", "false");
             R(l, xml, "JEZ-71", "PERMISIO default true šalje select ssPermission", "netgen/Form1.vb:3153,2706", "otvori", "", "permisioSql", "ssPermission");
             R(l, xml, "JEZ-72", "Enter na gridu je None", "netgen/Form1.vb:3419-3421", "otvori", "", "enterKey", "None");
@@ -245,6 +246,11 @@ namespace Carpo.NetGen.Granule
         private static void R(List<Stavka> l, string xml, string id, string opis, string izvor, string akcija, string cilj, string kljuc, string ocekivano)
         {
             l.Add(Qa.Runtime(Ime, id, opis, izvor, xml, akcija, cilj, kljuc, ocekivano));
+        }
+
+        private static Stavka Izgled(string id, string opis, string izvor)
+        {
+            return Qa.Z(Ime, id, "izgled – Carpo. " + opis, izvor);
         }
 
         private static string Klik(NgForm f, string ime)
