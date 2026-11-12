@@ -1,26 +1,21 @@
 # Otvoreno za implementaciju
 
-Tekući broj je CI [43280318919](https://github.com/tomic04/netgen-u-carpo/actions/runs/43280318919), commit `2d95cd8`: `SVE ukupno=354 zeleno=354 otvoreno=0 pad=0`.
+Tekući broj je CI [43305196144](https://github.com/tomic04/netgen-u-carpo/actions/runs/43305196144), commit `1f1a837`: `SVE ukupno=354 zeleno=348 otvoreno=6 pad=0`.
 
-`JEZ-31` je prava procedura na spinu (15 redova, `JeziciId,Naziv`). Riječ `update` je bila u komentaru, ne u izvršnom tekstu. Jedanaest stavki `ssMeni` i `DOS-11` su testni redovi i testne procedure, ne klijentski podaci. Donji odjeljci su snimak CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31).
+`JEZ-31` je prava procedura na spinu (15 redova, `JeziciId,Naziv`). `DOS-11` zove testne procedure i provjerava stupac 0/1. Jedanaest stavki `ssMeni` otvara granulu iz `Parametar` preko loadera. Redovi su testni, ne klijentski. Donji odjeljci su snimak CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31).
 
-## Tekuće otvoreno (13)
+## Tekuće otvoreno (6)
+
+Red u `ssMeni` postoji. Test ne zatvara stavku dok loader ne otvori XML, isto kao `Form1.vb` 1139.
 
 | Stavka | Očekivano | Izvor | Zašto je otvoreno |
 |---|---|---|---|
-| FakPar `FAK-10` | red u `ssMeni.Parametar` | `dbo.ssMeni` | 0 redova, red se ne izmišlja |
-| KntDospjeleStavke `DOS-10` | isto za `KntDospjeleStavke.xml` | `dbo.ssMeni` | 0 redova |
-| Kulture `KUL-12` | isto za `Kulture.xml` | `dbo.ssMeni` | 0 redova |
-| KUPDostKN `KND-06` | isto za `KUPDostKN.xml` | `dbo.ssMeni` | 0 redova |
-| KUPDostKnNGBvg `BVG-07` | isto za `KUPDostKnNGBvg.xml` | `dbo.ssMeni` | 0 redova |
-| KUPNG `KUC-07` | isto za `KUPNG.xml` | `dbo.ssMeni` | 0 redova |
-| KUPNG `KUP-05` | isto za `KUPNG.xml` | `dbo.ssMeni` | 0 redova |
-| MPNarIzdSkl `NAR-09` | isto za `MPNarIzdSkl.xml` | `dbo.ssMeni` | 0 redova |
-| MPNGPregDokMAIL `MAIL-07` | isto za `MPNGPregDokMAIL.xml` | `dbo.ssMeni` | 0 redova |
-| Rijetke `RIJ-31` | isto za `RatArkod.xml` | `dbo.ssMeni` | 0 redova |
-| Rijetke `RIJ-33` | isto za `RobaWebKlase.xml` | `dbo.ssMeni` | 0 redova |
-| KntDospjeleStavke `DOS-11` | tri procedure na spinu | `sys.objects` | nema tijela s klijenta, ne izmišlja se |
-| JeziciNG `JEZ-31` | `spJeziciQuery @action=0` je čitanje i vrati red | `netgen/Form1.vb:3882`, `netgen/Class1.vb:113-118` | dokaz tijela na spinu, ova grana |
+| KarticaPartnera `KAR-12` | loader otvori `KarticaPartnera.xml` | `netgen/Form1.vb:1139` | red nije otvaranje granule |
+| MPInventura `INV-13` | loader otvori `MPInventura.xml` | `netgen/Form1.vb:1139` | red nije otvaranje granule |
+| DobUgovori `DOB-08` | loader otvori `DobUgovori.xml` | `netgen/Form1.vb:1139` | red nije otvaranje granule |
+| MPBlagajna `MPB-07` | loader otvori `MPBlagajna.xml` | `netgen/Form1.vb:1139` | red nije otvaranje granule |
+| Rijetke `RIJ-30` | loader otvori `AOPNovi.xml` | `netgen/Form1.vb:1139` | red nije otvaranje granule |
+| Rijetke `RIJ-32` | loader otvori `Narudzbe.xml` | `netgen/Form1.vb:1139` | red nije otvaranje granule |
 
 `JEZ-31` NetGen šalje: `PokaziUpit` (`Form1.vb` 3882), a `ExecSql` preskače samo prazan tekst, tekst koji počinje s `@` i tekst u kojem je `@@` (`Class1.vb` 105–118). U pozivu nema `@@`. Port i dalje ne šalje tijelo koje nakon komentara, zaglavlja `CREATE/ALTER PROC` i `WITH EXECUTE AS` ima upis ili `exec`/`into`.
 
