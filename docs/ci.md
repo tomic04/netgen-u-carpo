@@ -17,3 +17,5 @@ Push i pull request pokreću `build`. To je brzi skup.
 Raspored je `0 1 * * *` (UTC). To je 02:00 Europe/Zagreb zimi (CET). Ljeti je 03:00. Ručno pokretanje je `workflow_dispatch` na istom workflowu.
 
 `build` i dalje ima svoj `workflow_dispatch`, i on pokreće brzi skup.
+
+Na kraju `build` ide čišćenje `C:\NetGenCarpo`. Prvo dry-run ispiše što bi obrisao. Zatim ostavi 5 najnovijih mapa. Mapa iz `zadnji.txt` i mapa iz koje se `Carpo.TestShell` vrti se ne brišu.

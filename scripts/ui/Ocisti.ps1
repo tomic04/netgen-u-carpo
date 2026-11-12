@@ -1,7 +1,10 @@
-# Ostavi 5 najnovijih mapa u C:\NetGenCarpo.
+# Ostavi N najnovijih mapa u C:\NetGenCarpo.
 # Nikad ne brise mapu iz zadnji.txt ni mapu iz koje se Carpo.TestShell vrti.
+# -Sto samo ispisuje sto bi se obrisalo.
 param(
-    [Parameter(Mandatory = $true)][string]$Korijen
+    [Parameter(Mandatory = $true)][string]$Korijen,
+    [int]$Zadrzi = 5,
+    [switch]$Sto
 )
 $ErrorActionPreference = "Continue"
 if (-not (Test-Path -LiteralPath $Korijen)) { exit 0 }
@@ -41,9 +44,13 @@ foreach ($mapa in $mape) {
         Write-Host "cuvam (zadnji ili proces) $($mapa.Name)"
         continue
     }
-    if ($zadrzane -lt 5) {
+    if ($zadrzane -lt $Zadrzi) {
         $zadrzane++
         Write-Host "cuvam novu $($mapa.Name)"
+        continue
+    }
+    if ($Sto) {
+        Write-Host "DRY-RUN brisem $($mapa.FullName)"
         continue
     }
     Write-Host "brisem $($mapa.FullName)"
@@ -57,6 +64,7 @@ if (-not [string]::IsNullOrWhiteSpace($work)) {
     $granica = (Get-Date).AddDays(-2)
     if (Test-Path -LiteralPath $temp) {
         Get-ChildItem -LiteralPath $temp -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt $granica } | ForEach-Object {
+            if ($Sto) { Write-Host "DRY-RUN brisem temp $($_.FullName)"; return }
             Write-Host "brisem temp $($_.FullName)"
             Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
         }
