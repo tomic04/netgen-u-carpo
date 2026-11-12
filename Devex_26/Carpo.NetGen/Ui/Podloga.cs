@@ -36,6 +36,7 @@ namespace Carpo.NetGen.Ui
         private string _spoj = "";
         private bool _punim;
         private int _redovaDetail;
+        private DataTable _comboRedovi;
 
         public Podloga()
         {
@@ -192,7 +193,8 @@ namespace Carpo.NetGen.Ui
         private void NapuniCombo()
         {
             bbiLookUpFilter.Visibility = BarItemVisibility.Never;
-            cmbComboEditFilter.DataSource = null;
+            cmbComboEditFilter.Items.Clear();
+            _comboRedovi = null;
             if (_projekt == null || _projekt.Atributi == null || !_projekt.Atributi.Ima("COMBO"))
                 return;
             string sql = (_projekt.Atributi.Vrijednost("COMBO") ?? "").Trim();
@@ -201,19 +203,31 @@ namespace Carpo.NetGen.Ui
             DataTable t = Citaj(SqlTekst.Sredi(sql, _master.Kontekst));
             if (t == null || t.Columns.Count == 0 || t.Rows.Count == 0)
                 return;
-            cmbComboEditFilter.ValueMember = t.Columns[0].ColumnName;
-            cmbComboEditFilter.DisplayMember = t.Columns.Count > 1 ? t.Columns[1].ColumnName : t.Columns[0].ColumnName;
-            cmbComboEditFilter.ShowHeader = false;
-            cmbComboEditFilter.DataSource = t;
+            _comboRedovi = t;
+            int prikaz = t.Columns.Count > 1 ? 1 : 0;
+            for (int i = 0; i < t.Rows.Count; i++)
+                cmbComboEditFilter.Items.Add(Convert.ToString(t.Rows[i][prikaz]));
             bbiLookUpFilter.Visibility = BarItemVisibility.Always;
-            bbiLookUpFilter.EditValue = t.Rows[0][0];
+            bbiLookUpFilter.EditValue = Convert.ToString(t.Rows[0][prikaz]);
         }
 
         private void Combo_EditValueChanged(object sender, EventArgs e)
         {
-            if (bbiLookUpFilter.EditValue == null || bbiLookUpFilter.EditValue is DataRowView)
+            if (bbiLookUpFilter.EditValue == null || _comboRedovi == null)
                 return;
-            string vrijednost = Convert.ToString(bbiLookUpFilter.EditValue);
+            string prikaz = Convert.ToString(bbiLookUpFilter.EditValue);
+            int stupac = _comboRedovi.Columns.Count > 1 ? 1 : 0;
+            string vrijednost = "";
+            for (int i = 0; i < _comboRedovi.Rows.Count; i++)
+            {
+                if (Convert.ToString(_comboRedovi.Rows[i][stupac]) == prikaz)
+                {
+                    vrijednost = Convert.ToString(_comboRedovi.Rows[i][0]);
+                    break;
+                }
+            }
+            if (vrijednost.Length == 0)
+                return;
             _stablo.IzTeksta(vrijednost, _projekt, Citaj);
             NapuniDrvo();
             if (_stablo.Stanje.Vidljivo && _stablo.Stanje.Splitter > 0)
