@@ -1,0 +1,106 @@
+# NACRT. Nije aktivan.
+# Leži u docs/analiza/ namjerno, ne u .github/workflows/.
+# Ne kopirati tamo dok se ručno ne vidi da junction i DevExpress 26.1.3 stoje.
+# Dispatch only. Ključ feeda je secret DEVEXPRESS_NUGET_KEY.
+# Mapa Jupiter DLL-ova je env CARPO_SPIN_DIR (self-hosted ili artifact).
+# Ovaj workflow NE prepisuje HintPath. MSBuild i dalje traži relativni
+# put prema "Program Files (x86)\Jupiter Software\...". Korak junction to
+# pokušava spojiti i padne ako putanja ne postoji — to je svrha prvog pokretanja.
+
+name: draft-carpo-build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      # Postaviti u okruženju runnera ili kao repository variable prije prvog dispatcha.
+      CARPO_SPIN_DIR: ${{ vars.CARPO_SPIN_DIR }}
+    steps:
+      - name: Odbij pokretanje bez ključa i bez Spin mape
+        shell: pwsh
+        env:
+          DX_KEY: ${{ secrets.DEVEXPRESS_NUGET_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:DX_KEY)) {
+            throw "Nema secreta DEVEXPRESS_NUGET_KEY. Ne gradim i ne pišem feed u log."
+          }
+          if ([string]::IsNullOrWhiteSpace($env:CARPO_SPIN_DIR) -or -not (Test-Path $env:CARPO_SPIN_DIR)) {
+            throw "CARPO_SPIN_DIR nije postavljen ili mapa ne postoji. Treba SharedAssemblies (Carpo.*.dll, RibbonBase.v26, Spin.Printing.v26, SpinDMSUtil, JupiterLogger, JupiterTranslator10, Dimenzije, adodb)."
+          }
+          Write-Host "Spin mapa postoji. Sadržaj se ne ispisuje."
+
+      - uses: actions/checkout@v4
+
+      - name: Privremeni NuGet feed (ne u workspace)
+        shell: pwsh
+        env:
+          DX_KEY: ${{ secrets.DEVEXPRESS_NUGET_KEY }}
+        run: |
+          $cfg = Join-Path $env:RUNNER_TEMP "nuget.carpo.config"
+          $url = "https://nuget.devexpress.com/$($env:DX_KEY)/api/v3/index.json"
+          @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+              <add key="devexpress" value="$url" />
+            </packageSources>
+          </configuration>
+          "@ | Set-Content -Path $cfg -Encoding UTF8
+          Write-Host "Feed zapisan u RUNNER_TEMP. URL se ne ispisuje."
+          # Današnji csproj nema PackageReference na DevExpress.
+          # Restore ne spaja Reference Include Version=26.1.3.0.
+          # Korak postoji da feed bude spreman kad se csproj prebaci.
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Junction prema HintPath (pet razina iznad Carpo.UI)
+        shell: pwsh
+        run: |
+          $ui = Join-Path $env:GITHUB_WORKSPACE "Devex_26\Carpo.UI"
+          # Carpo.UI.csproj HintPath je ..\ pet puta, zatim "Program Files (x86)\..."
+          $anchor = $ui
+          1..5 | ForEach-Object { $anchor = Split-Path $anchor -Parent }
+          $target = Join-Path $anchor "Program Files (x86)\Jupiter Software\Jupiter Client\Programs\SharedAssemblies"
+          Write-Host "Junction bi sjeo na: $target"
+          Write-Host "Ako ta razina nije ona koju HintPath računa, prekini i popravi broj ..\ prije nego workflow postane služben."
+          New-Item -ItemType Directory -Force -Path (Split-Path $target -Parent) | Out-Null
+          if (Test-Path $target) { throw "Odredište junctiona već postoji: $target. Ne prepisujem." }
+          cmd /c mklink /J "$target" "$env:CARPO_SPIN_DIR"
+          if (-not (Test-Path (Join-Path $target "Spin"))) {
+            throw "Junction nema podmapu Spin. CARPO_SPIN_DIR mora biti SharedAssemblies (sadrži Spin\ i Microsoft\), ne sama Spin mapa."
+          }
+
+      - name: MSBuild redom, izlaz u artifacts (ne u Program Files)
+        shell: pwsh
+        run: |
+          $msb = vswhere -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe | Select-Object -First 1
+          if (-not $msb) { throw "MSBuild nije nađen." }
+          $out = Join-Path $env:GITHUB_WORKSPACE "artifacts\carpo"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $projects = @(
+            "Devex_26\Carpo.Structure\Carpo.Structure.csproj",
+            "Devex_26\Carpo.Common\Carpo.Common.csproj",
+            "Devex_26\Carpo.Data\Carpo.Data.csproj",
+            "Devex_26\Carpo.Core\Carpo.Core.csproj",
+            "Devex_26\Carpo.UI\Carpo.UI.csproj",
+            "Devex_26\Carpo.Gen\Carpo.csproj",
+            "Devex_26\Carpo.XmlGen\Carpo.XmlGen.csproj"
+          )
+          foreach ($p in $projects) {
+            Write-Host "=== $p ==="
+            & $msb (Join-Path $env:GITHUB_WORKSPACE $p) /t:Build /p:Configuration=Debug /p:Platform="Any CPU" /p:OutputPath="$out\\" /v:minimal
+            if ($LASTEXITCODE -ne 0) { throw "Build pao: $p" }
+            # Sljedeći projekt i dalje čita HintPath (junction), ne OutputPath.
+            # Kopija u junction/Spin da Structure.dll postoji i tamo.
+            Copy-Item "$out\*.dll" (Join-Path $env:CARPO_SPIN_DIR "Spin") -Force
+          }
+
+      - name: Ne pokreći TestShell
+        shell: pwsh
+        run: |
+          Write-Host "TestShell nema CLI. GUI i baza nisu dio ovog nacrta."
