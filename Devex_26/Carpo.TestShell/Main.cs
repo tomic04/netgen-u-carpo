@@ -357,8 +357,6 @@ namespace Carpo.TestShell
             string tag = null;
             if (ime.Equals("OznakaKL.xml", StringComparison.OrdinalIgnoreCase))
                 otvori = "Izmjena";
-            else if (ime.Equals("KntKompVerizne.xml", StringComparison.OrdinalIgnoreCase))
-                tag = "OBRISI_FORM";
             if (otvori == null && tag == null)
                 return 0;
             var gumb = tag != null ? NadjiPoTag(granula, tag) : NadjiGumb(granula, otvori);
@@ -371,6 +369,7 @@ namespace Carpo.TestShell
             }
             string pod = snimka + ".podforma.png";
             bool odustao = false;
+            string razlog = "";
             int pokusaj = 0;
             var timer = new System.Windows.Forms.Timer();
             timer.Interval = 400;
@@ -388,14 +387,21 @@ namespace Carpo.TestShell
                 if (dij == null)
                 {
                     if (pokusaj > 30)
+                    {
                         timer.Stop();
+                        razlog = "nema podforme";
+                    }
                     return;
                 }
                 var o = NadjiGumb(dij, "Odustani");
                 if (o == null)
                 {
                     if (pokusaj > 30)
+                    {
                         timer.Stop();
+                        razlog = dij.Text + " " + TekstGumba(dij);
+                        try { dij.Close(); } catch { }
+                    }
                     return;
                 }
                 timer.Stop();
@@ -420,11 +426,31 @@ namespace Carpo.TestShell
             timer.Dispose();
             if (!odustao || !ImaSnimku(pod))
             {
-                UpisiIshod(snimka, "FAIL podforma " + otvori);
+                UpisiIshod(snimka, "FAIL podforma " + otvori + " " + razlog);
                 return 5;
             }
             trag = "podforma=" + otvori;
             return 0;
+        }
+
+        private static string TekstGumba(Control korijen)
+        {
+            var sb = new StringBuilder();
+            SkupiGumbe(korijen, sb);
+            return sb.ToString();
+        }
+
+        private static void SkupiGumbe(Control korijen, StringBuilder sb)
+        {
+            if (korijen == null)
+                return;
+            foreach (Control c in korijen.Controls)
+            {
+                var b = c as SimpleButton;
+                if (b != null)
+                    sb.Append("[").Append(b.Text).Append("]");
+                SkupiGumbe(c, sb);
+            }
         }
 
         private static SimpleButton NadjiPoTag(Control korijen, string tag)
