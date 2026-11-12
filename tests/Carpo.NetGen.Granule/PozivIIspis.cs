@@ -159,7 +159,7 @@ namespace Carpo.NetGen.Granule
             l.Add(carpo != null && (Ispis.Atr(ad, "ONLOADED") ?? "").IndexOf("clsCarpoKnjigaUra", StringComparison.Ordinal) >= 0
                 ? Qa.Z(Ime, "KND-05", "CarpoForm i ONLOADED su dijalog potpis, ne shell", "netgen/Form2.vb:5796,7424-7456")
                 : Qa.P(Ime, "KND-05", "adapter", "netgen/Form2.vb:7456", ""));
-            l.Add(Stablo.Meni(Ime, "KND-06", "KUPDostKN.xml"));
+            l.Add(Stablo.Otvori(Ime, "KND-06", "KUPDostKN.xml", root));
             return l;
         }
     }
