@@ -11,8 +11,9 @@ Janus kontrole (grid, stablo) zamjenjuju se DevExpressom. Sve ostalo što se vid
 - [x] Gumbi `CMDx` / `BUTTONS` su `BarButtonItem` u grupi Naredbe, istim redom i natpisom. Poznate riječi (unesi, izmjeni, obriši, ispis, osvježi) dobiju DevExpress sliku Add/Edit/Delete/Print/Refresh.
 - [x] Master i detail su `GridControl` / `GridView`. Auto-filter red je uključen kao u Carpu. Širina, skriveni stupac, sort, zabrana izmjene i checkbox selekcija ostaju NetGen.
 - [x] Stablo je `TreeList`. Combo na podlozi je `LookUpEdit`.
-- [ ] Dijalozi INSERT/UPDATE/DELETE: `XtraForm` ili Carpo bazna dijalog forma, editori `TextEdit`, `SpinEdit`, `LookUpEdit`, `DateEdit`, `CheckEdit`, `RadioGroup`, `ButtonEdit`, `SimpleButton`. Raspored `TOP`/`LEFT`/`WIDTH`/`HEIGHT` ostaje, uz skaliranje.
-- [ ] Statusna traka, label, group/panel, webbrowser i picturebox: DevExpress ekvivalent (`RibbonStatusBar`, `LabelControl`, `GroupControl`, `PanelControl`, `WebBrowser` samo ako DX nema bolji, `PictureEdit`).
+- [x] Dijalozi su `XtraForm`. Editor po tipu: `TextEdit`, `SpinEdit`, `ButtonEdit`, `DateEdit`, `LookUpEdit`, `CheckedComboBoxEdit`, `CheckEdit`, `CheckEdit` s `RadioGroupIndex` (svaki RADIO drži svoj `TOP`/`LEFT`), `SimpleButton`, `LabelControl`, `GroupControl`, `PanelControl`, `PictureEdit`, `GridControl`, `TreeList`. Raspored je NetGen `SrediKontrolu` (`/ 14`).
+- [x] Status na dijalogu je `LabelControl` na dnu. WebBrowser ostaje WinForms jer DevExpress nema preglednik.
+- [ ] Klik gumba na dijalogu još ne vrti lanac (lanac je u `Lanac`, kuka ga već pokriva). Combo i grid na dijalogu ne šalju vlastiti SQL pri otvaranju.
 
 ## Što se ne dira
 

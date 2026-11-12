@@ -1,6 +1,6 @@
 # Razlike NetGen / Carpo
 
-Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i nastavi od zadnjeg `R`. R01–R53 su QA (#16, #17, #19). Carpo.NetGen od R54 dopisuje odluku, test i PR u istom PR-u.
+Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Prije novog broja povuci `docs/razlike-netgen-carpo.md` s najviše QA grane i nastavi od zadnjeg `R`. R01–R53 su QA (#16, #17, #19). Carpo.NetGen od R54 dopisuje odluku, test i PR u istom PR-u. Zadnji broj na ovoj grani je R63.
 
 ## Odluka u Carpo.NetGen
 
@@ -552,3 +552,12 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 - **Odluka:** namjerno odstupanje, samo izgled. Naredbe, SQL i redoslijed gumba ostaju NetGen. Širine stupaca, skriveni stupci, zabrana izmjene i checkbox selekcija ostaju.
 - **Test:** nema automatske slike. Korisnik gleda KntKompVerizne i KntBlaZak u TestShellu.
 - **PR:** izgled
+
+## R63 Dijalog je `XtraForm`, editori su DevExpress
+
+- **Element:** forme INSERT/UPDATE/DELETE i ostale
+- **NetGen:** `Form2` je WinForms (`TextBox`, `ComboBox`, `DateTimePicker`, `CheckBox`, `RadioButton`, `Button`, `Label`, `GroupBox`, `Panel`, `StatusStrip`, `WebBrowser`, `PictureBox`, Janus grid).
+- **Carpo:** `Dijalog` nasljeđuje `XtraForm`. Grana ide u `TextEdit`, `SpinEdit`, `ButtonEdit`, `DateEdit` (`AllowNullInput` false), `LookUpEdit`, `CheckedComboBoxEdit`, `CheckEdit`, `CheckEdit` s `RadioGroupIndex` (RADIO ostaje zasebna kontrola zbog `TOP`/`LEFT`), `SimpleButton`, `LabelControl`, `GroupControl`, `PanelControl`, `PictureEdit` (Stretch), `GridControl`, `TreeList`, `SplitContainerControl`. Status na dijalogu je `LabelControl` uz donji rub. `WebBrowser` ostaje WinForms: DevExpress nema preglednik. Mjesto je `SrediKontrolu`, jedinica `/ 14`. `WUDTH` se ne čita.
+- **Odluka:** namjerno odstupanje, izgled. SQL, parametri i lanac se ne mijenjaju. Klik gumba zatvara dijalog; lanac s tipke još nije spojen. Combo i grid na dijalogu ne šalju vlastiti SQL pri otvaranju.
+- **Test:** `raspored-auto`, `raspored-zvjezdica`, `raspored-width`, `raspored-wudth`, `editor-grana`
+- **PR:** dijalog

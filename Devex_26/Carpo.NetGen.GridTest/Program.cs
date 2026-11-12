@@ -10,6 +10,7 @@ using Carpo.NetGen.Kontrole;
 using Carpo.NetGen.Poziv;
 using Carpo.NetGen.Print;
 using Carpo.NetGen.Log;
+using Carpo.NetGen.Model;
 using Carpo.NetGen.Xml;
 
 namespace Carpo.NetGen.GridTest
@@ -313,6 +314,45 @@ namespace Carpo.NetGen.GridTest
             comboDt.Rows.Add("1", "", "Danas", "1:FORM");
             comboPrazan.IzTeksta("spTreeX:FORM", ProjektS("TREE", "", "SPLITTERDISTANCE", "180"), delegate (string q) { return comboDt; });
             T("combo-puni-drvo", comboPrazan.Stanje.PrviProlaz.Length == 0 && comboPrazan.Stanje.Splitter == 180 && comboPrazan.Stanje.GumbDrvo && comboPrazan.Stanje.Korijen.Count == 1 && comboPrazan.Stanje.Korijen[0].Tag == "1:FORM", comboPrazan.Stanje.Korijen.Count.ToString());
+            int z = 0;
+            var auto = Raspored.Izracunaj(NgGrana.Text, Bag("CAPTION", "Naziv"), ref z);
+            T("raspored-auto", auto.Vrh == 10 && auto.Lijevo == 140 && auto.Natpis && auto.NatpisLijevo == 10 && auto.NatpisTekst == "Naziv", auto.Vrh + "/" + auto.NatpisLijevo);
+            var drugi = Raspored.Izracunaj(NgGrana.Text, Bag("CAPTION", "Mjesto"), ref z);
+            T("raspored-drugi", drugi.Vrh == 40 && drugi.NatpisLijevo == 10, drugi.Vrh.ToString());
+            var sirina = Raspored.Izracunaj(NgGrana.Text, Bag("TOP", "280", "LEFT", "1960", "WIDTH", "2800", "CAPTION", "A"), ref z);
+            T("raspored-width", sirina.Vrh == 20 && sirina.Lijevo == 140 && sirina.Sirina == 200 && !sirina.Natpis, sirina.Sirina.ToString());
+            var wudth = Raspored.Izracunaj(NgGrana.Number, Bag("WUDTH", "2800", "TOP", "140", "CAPTION", "Iznos"), ref z);
+            T("raspored-wudth", wudth.Sirina == 0 && wudth.Vrh == 10, wudth.Sirina.ToString());
+            int z2 = 0;
+            var zv = Raspored.Izracunaj(NgGrana.Text, Bag("CAPTION", "Naziv*", "TOP", "280", "LEFT", "1960"), ref z2);
+            T("raspored-zvjezdica", zv.Vrh == 20 && zv.Lijevo == 140 && zv.Natpis && zv.NatpisTekst == "Naziv" && zv.NatpisLijevo == 100, zv.NatpisLijevo.ToString());
+            var rad = Raspored.Izracunaj(NgGrana.Radio, Bag("CAPTION", "Da", "DEFAULT", "1", "TOP", "140"), ref z2);
+            T("raspored-radio", rad.Tekst == "Da" && rad.Cekirano, rad.Tekst);
+            var tx = Raspored.Izracunaj(NgGrana.Text, Bag("CAPTION", "X", "DEFAULT", "a_b!!c", "TOP", "140"), ref z2);
+            T("raspored-default", tx.Tekst == "ab\r\nc", tx.Tekst);
+            int z3 = 0;
+            var ch = Raspored.Izracunaj(NgGrana.Check, Bag("CAPTION", "Aktivan"), ref z3);
+            T("raspored-check", ch.Vrh == 10 && !ch.Natpis, "");
+            int z4 = 5;
+            var lb = Raspored.Izracunaj(NgGrana.Label, Bag("CAPTION", "Info"), ref z4);
+            T("raspored-label", lb.Vrh == 0 && !lb.Natpis && z4 == 5, z4.ToString());
+            var en = Raspored.Izracunaj(NgGrana.Text, Bag("ENABLED", "false", "TOP", "140", "CAPTION", "A"), ref z4);
+            T("raspored-enabled", en.ImaUkljuceno && !en.Ukljuceno, "");
+            int fw;
+            int fh;
+            Raspored.Velicina(Bag("WIDTH", "6720", "HEIGHT", "4480"), out fw, out fh);
+            T("raspored-forma", fw == 480 && fh == 320, fw + "x" + fh);
+            T("editor-grana", Raspored.Editor(NgGrana.Text) == "TextEdit"
+                && Raspored.Editor(NgGrana.Number) == "SpinEdit"
+                && Raspored.Editor(NgGrana.Date) == "DateEdit"
+                && Raspored.Editor(NgGrana.Combo) == "LookUpEdit"
+                && Raspored.Editor(NgGrana.Radio) == "CheckEdit"
+                && Raspored.Editor(NgGrana.Search) == "ButtonEdit"
+                && Raspored.Editor(NgGrana.PictureBox) == "PictureEdit"
+                && Raspored.Editor(NgGrana.WebBrowser) == "WebBrowser"
+                && Raspored.Editor(NgGrana.Button) == "SimpleButton"
+                && Raspored.Editor(NgGrana.StatusStrip) == "LabelControl"
+                && Raspored.Editor(NgGrana.Nijedna).Length == 0, "");
         }
 
         private static void KomandeTestovi()
@@ -806,6 +846,14 @@ namespace Carpo.NetGen.GridTest
             {
                 Console.WriteLine("SPIN " + ime + " kontekst " + ex.Message);
             }
+        }
+
+        private static NgAttributeBag Bag(params string[] kv)
+        {
+            var d = new Dictionary<string, string>(StringComparer.Ordinal);
+            for (int i = 0; i + 1 < kv.Length; i += 2)
+                d[kv[i]] = kv[i + 1];
+            return new NgAttributeBag(d);
         }
 
         private static bool Ima(MasterGrid g, string s)
