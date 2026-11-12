@@ -46,6 +46,7 @@ namespace Carpo.TestShell
         private int _uiIshod;
         private bool _uiKlikGotov;
         private bool _klikPregled;
+        private Carpo.NetGen.Ui.Podloga _zadnjaPodloga;
 
         
         public Main()
@@ -206,9 +207,21 @@ namespace Carpo.TestShell
                         else
                         {
                             var forma = new Carpo.NetGen.Ui.Podloga();
+                            _zadnjaPodloga = forma;
                             if (!forma.Prikazi(xml, server, database, operateriId))
                                 MessageBox.Show(forma.Text, "Carpo.NetGen");
-                            forma.Show(this);
+                            else
+                            {
+                                try
+                                {
+                                    forma.Show(this);
+                                }
+                                catch (Exception ex)
+                                {
+                                    if (!_klikPregled)
+                                        MessageBox.Show(ex.ToString(), "Start Error");
+                                }
+                            }
                         }
                     }
                     else
@@ -291,7 +304,7 @@ namespace Carpo.TestShell
             }
             if (_uiIshod == 1 && !_klikPregled)
                 return 1;
-            Form granula = NadjiGranulu();
+            Form granula = _zadnjaPodloga != null ? _zadnjaPodloga : NadjiGranulu();
             if (granula == null && _klikPregled)
             {
                 var rokForme = DateTime.UtcNow.AddSeconds(45);
