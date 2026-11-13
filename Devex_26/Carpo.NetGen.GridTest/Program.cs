@@ -1977,6 +1977,40 @@ namespace Carpo.NetGen.GridTest
             string ostatak;
             T("combo-hash", ComboDijalog.OdvojiHash("sql##7", out odabrano, out ostatak) && odabrano == "7" && ostatak == "sql", odabrano);
             T("trazilica-preskok", Ponasanje.PreskociTrazilicu("", "x") && Ponasanje.PreskociTrazilicu("Kava", "Kava") && !Ponasanje.PreskociTrazilicu("*", "*") && !Ponasanje.PreskociTrazilicu("nova", "stara"), "");
+            T("trazilica-dijalog", Form2Dogadjaj.TrazilicaKorak("nova", "stara") == "trazilica"
+                && Form2Dogadjaj.PokaziTrazilicu(2) && !Form2Dogadjaj.PokaziTrazilicu(1) && !Form2Dogadjaj.PokaziTrazilicu(0)
+                && Form2Dogadjaj.TrazilicaKorak("Kava", "Kava") == "preskoci", "");
+            Form2Dogadjaj.Tipka enter = Form2Dogadjaj.KeyDown(true, false, false, false, true, 13, false, "", "select 1", "");
+            Form2Dogadjaj.Tipka ctrlA = Form2Dogadjaj.KeyDown(false, true, false, false, true, 65, true, "", "", "");
+            Form2Dogadjaj.Tipka enterGrid = Form2Dogadjaj.KeyDown(false, true, true, false, true, 13, false, ":STAVKA", "", "");
+            T("keydown-trazilica", enter.ValidirajTrazilicu && enter.Sljedeca && !enter.ObrisiStariTekst
+                && ctrlA.OdaberiSve && enterGrid.EnterNaredba == ":STAVKA" && enterGrid.Sljedeca, enterGrid.EnterNaredba);
+            T("dvoklik-vrijednost", Form2Dogadjaj.VrijednostDvoklika("1,5") == "1.5" && Form2Dogadjaj.VrijednostDvoklika("0,5") == "0,5", Form2Dogadjaj.VrijednostDvoklika("1,5"));
+            var izb = Form2Dogadjaj.Izbornik("Ispis:PRINTGRID#Kartica:KARTICA");
+            T("desni-klik", Form2Dogadjaj.DesniKlik(true, false) == "izbornik" && Form2Dogadjaj.DesniKlik(true, true) == "stupci"
+                && izb.Count == 2 && izb[0] == "Ispis|PRINTGRID" && izb[1] == "Kartica|KARTICA", izb.Count.ToString());
+            var timer = new Form2Dogadjaj.TimerFokusa();
+            timer.NakonTrazilice();
+            T("timer-fokus", timer.Tick() && !timer.Tick(), "");
+            string mapa = Path.Combine(Path.GetTempPath(), "ng-odg-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(mapa);
+            try
+            {
+                Form2Dogadjaj.SpremiOdgovor(mapa, "zakljucak", "<ok/>", "5", "2026");
+                Form2Dogadjaj.SpremiOdgovor(mapa, "racun", "<jir/>", "6", "2026");
+                string z = File.ReadAllText(Path.Combine(mapa, Form2Dogadjaj.Datoteka("zakljucak")));
+                string r = File.ReadAllText(Path.Combine(mapa, Form2Dogadjaj.Datoteka("racun")));
+                T("odgovor-datoteka", z.IndexOf("brojdokumenta: 5, godina2026", StringComparison.Ordinal) >= 0 && z.IndexOf("<ok/>", StringComparison.Ordinal) >= 0
+                    && r.IndexOf("<jir/>", StringComparison.Ordinal) >= 0, z);
+            }
+            finally
+            {
+                try { Directory.Delete(mapa, true); } catch { }
+            }
+            string jirUrl = Form2Dogadjaj.UrlJir("http://localhost/pos/", "10", "2", "2026", "5", "", "ABC", "20260101");
+            T("jir-test", jirUrl.IndexOf("a=2", StringComparison.Ordinal) >= 0 && jirUrl.IndexOf("vrijemejir=null", StringComparison.Ordinal) >= 0
+                && jirUrl.IndexOf("jir='ABC'", StringComparison.Ordinal) >= 0 && Form2Dogadjaj.JirTijelo == "<doc></doc>"
+                && Form2Dogadjaj.UrlJir("https://cis.porezna-uprava.hr/x", "1", "1", "2026", "1", "", "", "") == "", jirUrl);
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));

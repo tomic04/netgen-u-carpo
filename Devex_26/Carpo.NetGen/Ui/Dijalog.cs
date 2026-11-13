@@ -775,6 +775,9 @@ namespace Carpo.NetGen.Ui
         }
 
         private readonly System.Collections.Generic.Dictionary<Control, string> _stariTekst = new System.Collections.Generic.Dictionary<Control, string>();
+        private readonly Form2Dogadjaj.TimerFokusa _timerFokusa = new Form2Dogadjaj.TimerFokusa();
+        public string ZadnjaTrazilica = "";
+        public string ZadnjiIzbornik = "";
 
         private static string Attr(NgControl k, string ime)
         {
@@ -796,8 +799,14 @@ namespace Carpo.NetGen.Ui
                 {
                     string stari;
                     _stariTekst.TryGetValue(c, out stari);
-                    if (Ponasanje.PreskociTrazilicu(c.Text, stari) && (c.Text ?? "").Trim().Length == 0)
+                    string korak = Form2Dogadjaj.TrazilicaKorak(c.Text, stari);
+                    if (korak == "preskoci" && (c.Text ?? "").Trim().Length == 0)
                         c.Tag = "0";
+                    if (korak == "trazilica")
+                    {
+                        _timerFokusa.NakonTrazilice();
+                        ZadnjaTrazilica = c.Text ?? "";
+                    }
                     if (lost.Length > 0)
                         IzvrsiSql(lost);
                 };
@@ -822,6 +831,58 @@ namespace Carpo.NetGen.Ui
                 if (tekst != null && !(tekst is LookUpEdit) && !(tekst is DateEdit))
                     tekst.TextChanged += delegate { IzvrsiSql(promjena); };
             }
+            string got = Attr(k, "GOTFOCUS");
+            if (got.Length > 0)
+                c.Enter += delegate { IzvrsiSql(got); };
+            string dbl = Attr(k, "ONDBLCLICK");
+            string popup = Attr(k, "POPUP");
+            if (k.Grana == NgGrana.Grid || k.Grana == NgGrana.DxGrid)
+            {
+                var gc = c as GridControl;
+                var view = gc == null ? null : gc.MainView as GridView;
+                if (view != null && dbl.Length > 0)
+                {
+                    view.DoubleClick += delegate
+                    {
+                        object celija = null;
+                        if (view.FocusedColumn != null && view.FocusedRowHandle >= 0)
+                            celija = view.GetFocusedRowCellValue(view.FocusedColumn);
+                        if (_kontekst != null)
+                            _kontekst.LastValue = Form2Dogadjaj.VrijednostDvoklika(celija == null ? "" : Convert.ToString(celija));
+                        IzvrsiSql(dbl);
+                    };
+                }
+                if (view != null && popup.Length > 0)
+                {
+                    view.MouseUp += delegate (object s, MouseEventArgs e)
+                    {
+                        if (Form2Dogadjaj.DesniKlik(e.Button == MouseButtons.Right, (Control.ModifierKeys & Keys.Control) == Keys.Control) != "izbornik")
+                            return;
+                        var stavke = Form2Dogadjaj.Izbornik(popup);
+                        ZadnjiIzbornik = string.Join(";", stavke.ToArray());
+                    };
+                }
+            }
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            int kod = (int)(keyData & Keys.KeyCode);
+            bool control = (keyData & Keys.Control) == Keys.Control;
+            bool trazilica = ActiveControl is ButtonEdit;
+            bool grid = ActiveControl is GridControl;
+            Form2Dogadjaj.Tipka t = Form2Dogadjaj.KeyDown(trazilica, grid, false, false, true, kod, control, "", "", "");
+            if (t.ValidirajTrazilicu && trazilica)
+            {
+                _timerFokusa.NakonTrazilice();
+                ZadnjaTrazilica = ActiveControl.Text ?? "";
+            }
+            if (t.Sljedeca && ActiveControl != null)
+            {
+                SelectNextControl(ActiveControl, true, true, true, true);
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         private void PosaljiNaServer(string segment)
