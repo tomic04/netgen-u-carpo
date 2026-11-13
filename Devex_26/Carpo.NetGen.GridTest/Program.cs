@@ -1747,6 +1747,13 @@ namespace Carpo.NetGen.GridTest
             trazenje.Rows.Add(1, "a", "prvi");
             trazenje.Rows.Add(2, "b", "kava");
             var otvori = Carpo.NetGen.Komande.DijalogTok.Koraci("OPENFORM(FILTERFORM)#BLAGAJNAENABLE(4)#PRINTGRID(stavke)");
+            string[] zag = Carpo.NetGen.Print.PrintBridge.TriZaglavlja("Lijevo", "", "Desno!!x", "Naslov");
+            T("ispis-zaglavlje", zag.Length == 3 && zag[0] == "Lijevo" && zag[1] == "Naslov" && zag[2] == "Desno\r\nx"
+                && Carpo.NetGen.Print.PrintBridge.Vrsta("PRINTREPXGRID(g)", true) == "lodani", zag[1] + "|" + zag[2]);
+            T("redni-stupac", Carpo.NetGen.Ui.CarpoIzgled.RedniStupacVidljiv()
+                && Carpo.NetGen.Ui.CarpoIzgled.SirinaGumba == 79
+                && Carpo.NetGen.Ui.CarpoIzgled.LijevoGumba(1) == 87
+                && Carpo.NetGen.Ui.CarpoIzgled.CvorNaSliciNula(), "");
             T("open-blagajna-ispis", otvori.Count == 3 && otvori[0].Vrsta == "forma" && otvori[0].Tekst == "FILTERFORM"
                 && otvori[1].Vrsta == "blagajna" && otvori[2].Vrsta == "ispis"
                 && Carpo.NetGen.Komande.BlagajnaNaredba.Upit("4").IndexOf("4", StringComparison.Ordinal) >= 0, otvori[0].Tekst);

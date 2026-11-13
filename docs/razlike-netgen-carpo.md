@@ -4,23 +4,11 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 
 ## Neizbježno
 
-### R59 Izgled je DevExpress
-
-- **NetGen:** podloga je WinForms `Form1`. Gumbi stoje na dnu (`Form1.vb` 3312, 3827–3848). Master je Janus kad `DXGRID` nije true (`Form1.vb` 1906–1908): `HeaderLines`, prazni retci, row header (`Form1.designer.vb` 640–655). Čvor crta `ImageList2` indeks 0 (`575–579`).
-- **Zašto ostaje:** kontrole su DevExpress. Boja, stil gumba, položaj dolje, prazni retci, row header, visina zaglavlja, font, obrub i slika čvora se ne crtaju kao Janus. Natpis, redoslijed, naredba, širina, skriveni stupac, sort, edit, kvačica, raspored dijaloga, tab, enable i fokus i dalje prate NetGen.
-- **Test:** `OKL-38`
-
 ### R109 Prazan CIS URL ne postaje produkcija
 
 - **NetGen:** prazan URL postane `https://cis.porezna-uprava.hr:8449/FiskalizacijaService` (`Form1.vb` 377).
 - **Zašto ostaje:** Carpo taj URL ne šalje. SOAP ide samo na testni CIS. Ostali Raverus koraci su isti (`GenerirajUuid`, zaštitni kod, `PosaljiSoapPorukuCertifikatDatoteka`, `DohvatiJir`).
 - **Test:** `fiskal-izvrsi-test`, `fiskal-uuid-spin`
-
-### R110 `PrintLink` nema tri NetGen zaglavlja
-
-- **NetGen:** `IspisGRIDREPX` šalje `"master"`, `"detail"` ili `"lodani"` i `PageHeaderLeft` / `Center` / `Right` (`Form1.vb` 5995–6003, `Form2.vb` 9049–9056).
-- **Zašto ostaje:** `Spin.Printing.Start.PrintLink` prima `caption`, `header`, `subHeader` i `isLandscape`. Nema tri svojstva `PageHeader*` ni riječi `lodani`. Centar ide u `caption`, lijevo u `header`, desno u `subHeader`.
-- **Test:** `print-master`, `print-lodani`
 
 ### R85 `spMPTrgovineNG` nema `@operateriid`
 
@@ -55,21 +43,105 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 
 ## Uklonjeno
 
-95 stavki je bilo u registru. Devet gore ostaje. Ostale su uklonjene jer port prati NetGen:
+Svaka uklonjena stavka ima test koji provjerava NetGen linije. R59 i R110 su portani: redni stupac grida, gumbi 79/8 na dnu, slika čvora 0, `PageHeaderFooter` Left/Center/Right.
 
-| Stavke | Gdje |
+| Stavka | Test |
 |---|---|
-| Naslov ` v[verzija]` | `NetGenXmlReader.NaslovIzCaptiona`, `Form1.vb` 3524–3525 |
-| Dva G u agregatu se ne čitaju, `"0"` se čita | `NetGenXmlReader` 194–197, `MasterGrid.cs` 447–448, `Form1.vb` 7496–7506 |
-| Statički čvor stabla je susjed | `Stablo.cs` 134–142, `Form1.vb` 4347–4356 |
-| `SETDEFAULTS` reže na `#` | `Rijetke.SetDefaults`, `Form1.vb` 3862–3866 |
-| Prazan broj je `0` | `Ponasanje.BrojParametar`, `Form2.vb` 3601 |
-| `+focus` i `spRaiserror` | `Lanac.cs`, `Class1.vb` 187–204, `Form2.vb` 7511–7515 |
-| `~` postaje `#` | `Lanac.Segmenti`, `Form1.vb` 4558 |
-| Combo stupac 0/1, `ALLOWEMPTY` samo `true` | `ComboDijalog.cs`, `Form2.vb` 2402–2431 |
-| `TYPE` je `InStr` | `NgGrana.cs`, `Form2.vb` 1256–2707 |
-| Tipfeler se ne ispravlja | `Ponasanje`, `Form2.vb` 2252, 2403, 2949 |
-| `firstday*`, `yearmonth` samo na podlozi, `TABINDEX` s razmakom | `Ponasanje.DatumPocetni`, `Stablo.GodinaMjesec`, `Raspored.cs` |
-| Stablo stupci 0–3, id 0 se preskače | `Stablo.cs` 241–295, `Form1.vb` 4450–4498 |
-| Dijalog lanac, combo, grid, `NEXTFORM`, širina `/14`, `Ime.Start` nije DLL | `Dijalog.cs`, `DijalogTok.cs`, `MasterGrid.VbJedinica`, `Form2.vb` 1052, 1635–1646, 5445–5452 |
-| `REFRESHMASTER`, `FOREACH` na podlozi, `OKSTAY`, `CLOSEPARENT`, `BUTTONS`, `CLICK` | `docs/naredbe-stanje.md` |
+| R01 stablo stupci 0–3, id 0 | `sta-stablo` |
+| R02 prazno stablo | `OKL-31` |
+| R03 combo puni stablo | `odabir-verizne-manager` |
+| R04 `REFRESHMASTER` | `jez-refreshmaster` |
+| R05 naslov ` v[verzija]` | `JEZ-02` |
+| R06 `PERMISIO` | `JEZ-71` |
+| R07 širina `/14`, skriveni id, redni stupac | `bla-sirina`, `redni-stupac` |
+| R08 agregat jedno G, `"0"` | `JEZ-09` |
+| R09 detail kolone jednom | `sta-detail` |
+| R10 statički čvor je susjed | `sta-stablo` |
+| R11 detail parametar je ime stupca | `bla-sirina` |
+| R12 `SETDEFAULTS` na `#` | `RIJ-26` |
+| R13 `@robaid` nije `@@robaid` | `PRI` u `GranulaIzvrsenje` |
+| R14 `ONSUBMIT` koji počinje sa `sp` | `KUL-04` |
+| R15 prazan broj je `0` | `FAK-03` |
+| R16 tražilica | `KUL-07` |
+| R17 `spRaiserror` i `+focus` | `KUL-09` |
+| R18 `:FILTERFORM` | `MAIL-04` |
+| R19 prazna forma ne otvara prozor | `STA-08` |
+| R20 `~` postaje `#` | `KUP-02` |
+| R21 `MULTISELECT` / `MULTIBLUE` | `KUP-03` |
+| R22 `FOREACH` na podlozi | `foreach-podloga` |
+| R23 `OKSTAY` / `CLOSEPARENT` | `dijalog-ostaje` |
+| R24 `firstday*` | `KON-20` |
+| R25 `SHOWCHECKBOX` | `DOB-02` |
+| R26 combo stupac 0/1 | `combo-1-prazan` |
+| R27 `refresh` kolona | `DOS-05` |
+| R28 multidrop `~` | `DOS-07` |
+| R29 check je 0/1/2, radio 1/0 | `FAK-07` |
+| R30 `TYPE` je `InStr` | `KON-01` |
+| R31 tipfeler se ne ispravlja | `INV-03` |
+| R32 statusna traka | `DOS-02` |
+| R33 `DOCK` broj | `NAR-04` |
+| R34 label ne šalje parametar | `DOS-03` |
+| R35 `ASSEMBLYLOAD` | `MAIL-20` |
+| R36 `DBCLIPBOARD=false` | `MAIL-05` |
+| R37 `ONLOADED` | `KUC-04` |
+| R38 tri potpisa `totalgen` | `KUC-03` |
+| R39 tilda bira router | `KUC-02` |
+| R40 povrat `totalgen` se ne čita | `KUC-06` |
+| R41 `PRINTMASTER` | `print-master` |
+| R42 `:repx/` | `KAR-32` |
+| R43 `vrstadokid-` | `MPB-03` |
+| R44 `MULTISELECT` briše temp | `MPB-05` |
+| R45 dijalog stablo | `RIJ-11` |
+| R46 `yearmonth` samo podloga | `RIJ-40` |
+| R47 WebBrowser `URL` | `RIJ-16` |
+| R48 PictureBox | `RIJ-18` |
+| R49 `NEXTFORM` | `next-kom` |
+| R50 DB clipboard | `RIJ-28` |
+| R51 `SETDEFAULTS` | `RIJ-26` |
+| R52 ikona 0 | `redni-stupac` |
+| R53 grid na dijalogu | `RIJ-14` |
+| R54 `onlytree` | `LVO-04` |
+| R55 `Ime(@a=)` | `LVO-05` |
+| R56 `BUTTONS` | `buttons-ostaju-cmd` |
+| R57 enable po natpisu | `MPP-04` |
+| R58 `CLICK` | `klik-podloga` |
+| R59 redni stupac, gumbi 79/8, slika čvora | `redni-stupac` |
+| R60 `CMD` bez dvotočke | `MPK-06` |
+| R61 `TABINDEX` s razmakom | `MPK-21` |
+| R62 `VALUE` nije datum | `MPK-22` |
+| R63 prazan `FILLEXPLORER` | `MPK-30` |
+| R65 `COMMANDTIMEOUT` | `INT-08` |
+| R66 `TOTALROW` | `NPL-04` |
+| R67 `Ime.Start` | `opz-nije-dll` |
+| R68 `ONENTERKEY` | `PDV-05` |
+| R69 `POSITION` | `OPZ-07` |
+| R70 `FILLEXPLORER` na projektu | `OPZ-04` |
+| R71 `ONLOAD` lanac | `GFI-03` |
+| R72 `#ISEMPTY` u zaglavlju | `REA-05` |
+| R73 `.clsGFIPOD` | `GFI-05` |
+| R74 podloga nije Office ribbon | `odabir-jezici-nije` |
+| R75 `DETAILDBLCLICK` | `KAS-04` |
+| R76 `PORTAL` nije landscape | `KNP-03` |
+| R77 `REFRESHAFTERCHILD` projekt | `KOD-05` |
+| R78 `INCLUDE` | `include-dijete` |
+| R79 `DETCHECKBOXVISIBLE` | `STA-38` |
+| R80 `AUTOFITCOLUMNS` | `MPSNG-05` |
+| R81 `HELPKOD` | `INS-04` |
+| R82 `REFRESHAFTERCHILD` forma | `VRC-05` |
+| R83 checklista rasporeda | `odabir-verizne-manager` |
+| R84 `FILTER` je forma | `filter-je-forma` |
+| R90 lanac dijaloga | `dijalog-ostaje` |
+| R91 combo i grid SELECT | `dijalog-combo-sql` |
+| R92 `NEXTFORM` i `FILLEXPLORER` | `rupa-next` |
+| R93 prazan red comboa | `combo-prazan-red` |
+| R94 `exec` se ne lijepi | `onclick-exec-ne-lijepi` |
+| R95 `SKIPDEFAULTLOAD` | `grid-skip` |
+| R96 `NEXTFORM` tekst | `next-kom` |
+| R97 master nakon OK | `okl-prihvati` |
+| R98 širina `/14` | `bla-sirina` |
+| R99 `Ime.Start` nije DLL | `opz-nije-dll` |
+| R100 stablo 0–3 | `sta-stablo` |
+| R103 `WIDTH` prepisuje | `bla-width-prepisuje` |
+| R104 Manager samo kad treba | `odabir-verizne-manager` |
+| R108 parametri dijaloga | `param-radio` |
+| R110 Left/Center/Right i `lodani` | `ispis-zaglavlje` |
