@@ -2861,6 +2861,10 @@ namespace Carpo.NetGen.Ui
         private void UcitajOnLoad(string on, SqlKontekst kontekst, Func<string, DataTable> citaj)
         {
             string sql = SqlTekst.Sredi(on, kontekst);
+            // Form2.vb 1146: SrediSQLPosljeNextForme uvijek prođe ostatak @@ (CB ili null). Sredi to radi
+            // samo uz parametre grida, pa je @@gridX bez njih ostajao u SQL-u (sintaksna greška, ONL-02).
+            if (sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                sql = SrediPoslije.Petlja(sql, kontekst == null ? "" : kontekst.ParametriSaGrida, kontekst == null ? null : kontekst.Clipboard, false);
             NgDnevnik.Sql(sql);
             DataTable dt = null;
             try
