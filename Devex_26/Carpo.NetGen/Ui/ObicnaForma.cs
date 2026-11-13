@@ -32,6 +32,7 @@ namespace Carpo.NetGen.Ui
 
         public ObicnaForma()
         {
+            NgPoruka.Pripremi();
             BonusSkins.Register();
             SkinManager.EnableFormSkins();
             Text = "NetGen";

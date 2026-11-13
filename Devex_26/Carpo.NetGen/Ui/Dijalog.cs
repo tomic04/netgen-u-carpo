@@ -58,6 +58,7 @@ namespace Carpo.NetGen.Ui
 
         public Dijalog()
         {
+            NgPoruka.Pripremi();
             BonusSkins.Register();
             SkinManager.EnableFormSkins();
             StartPosition = FormStartPosition.CenterParent;

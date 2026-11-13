@@ -268,7 +268,7 @@ namespace Carpo.NetGen.Grid
             if (tablica != null)
             {
                 foreach (DataColumn c in tablica.Columns)
-                    Stanje.Kolone.Add(IzPodatka(c, EditStupci(projekt)));
+                    Stanje.Kolone.Add(IzPodatka(c, EditStupciIzUpita ?? EditStupci(projekt)));
             }
             if (projekt != null)
             {
@@ -277,6 +277,12 @@ namespace Carpo.NetGen.Grid
                 PrimijeniDefiniciju(projekt.NadjiGrupu("MASTERCOLUMNS"));
             }
         }
+
+        /// <summary>
+        /// Form1.vb 3468-3472: EDITCOLUMNS koji počinje sa sp/select izvrši podloga jednom pri čitanju XML-a,
+        /// a stupci su prva ćelija rezultata. Null znači da se koristi tekst atributa.
+        /// </summary>
+        public string EditStupciIzUpita;
 
         private static string EditStupci(NgProject projekt)
         {

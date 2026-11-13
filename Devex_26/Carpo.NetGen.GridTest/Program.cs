@@ -1993,6 +1993,8 @@ namespace Carpo.NetGen.GridTest
             RasporedDijaloga();
             IspisUcinak();
             PokaziUpitUcinak();
+            RafalnoPravila();
+            PodlogaRafalno();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -2578,6 +2580,167 @@ namespace Carpo.NetGen.GridTest
                 try { d.Close(); d.Dispose(); } catch { }
                 try { Directory.Delete(mapa, true); } catch { }
             }
+        }
+
+        /// <summary>Form1.Rafalno, ssPermission i poruka greške bez baze (RAF-01, DOZ-01, MSG-01).</summary>
+        private static void RafalnoPravila()
+        {
+            T("raf-vrsta", Form1Rafal.Vrsta("spX @a=1") == "sql" && Form1Rafal.Vrsta(":frm") == "forma" && Form1Rafal.Vrsta("REFRESHMASTERGRID") == "osvjezi"
+                && Form1Rafal.Vrsta("FOREACHROW(x)") == "foreach" && Form1Rafal.Vrsta("OK") == "nista" && Form1Rafal.Vrsta("colorpicker()") == "sql", "");
+            T("raf-isempty", Form1Rafal.IsEmptyPreskace("ISEMPTY(null)") && !Form1Rafal.IsEmptyPreskace("ISEMPTY( null )"), "");
+            var t = new DataTable();
+            t.Columns.Add("id", typeof(int));
+            t.Columns.Add("Kalo %1200", typeof(decimal));
+            t.Columns.Add("opis", typeof(string));
+            t.Rows.Add(7, 1.5m, "a, b");
+            string pc = Form1Rafal.ParametriCelije(t.Rows[0]);
+            T("raf-parametri-celije", pc == "@id='7' , @Kalo_%='1.5' , @opis='a. b' , ", pc);
+            var p = new DataTable();
+            p.Columns.Add("objectname");
+            p.Columns.Add("functionname");
+            p.Columns.Add("smije", typeof(bool));
+            p.Columns.Add("Vidljivost", typeof(bool));
+            p.Rows.Add("KUPNG.xml", "Obriši", false, false);
+            p.Rows.Add("KUPNG.xml", "Izmjeni", false, DBNull.Value);
+            p.Rows.Add("KUPNG.xml", "Izmjeni", true, DBNull.Value);
+            p.Rows.Add("KUPNG.xml", "UPDATEFORM", false, DBNull.Value);
+            Dozvole.Stanje g1 = Dozvole.Gumb(p, "kupng.xml", "&Obriši");
+            Dozvole.Stanje g2 = Dozvole.Gumb(p, "KUPNG.xml", "Izmjeni");
+            T("doz-gumb", g1.Omogucen == false && g1.Vidljiv == false && g2.Omogucen == true && g2.Vidljiv == null, "");
+            T("doz-komanda", !Dozvole.SmijeKomandu(p, ":UPDATEFORM") && Dozvole.SmijeKomandu(p, "INSERTFORM"), "");
+            SqlPoruka.Ishod ok = SqlPoruka.IzIznimke("Zadani konto ne postoji #OK");
+            SqlPoruka.Ishod tiha = SqlPoruka.IzIznimke("Invalid object name 'ssPermission'.");
+            T("msg-execsql", ok.Greska == "" && ok.Tekst == "Zadani konto ne postoji" && !tiha.Prikazi && tiha.Greska == "", ok.Tekst);
+            string poruka = null;
+            NgPoruka.Zapis = delegate (string x) { poruka = x; };
+            try
+            {
+                PorukaNaredba.Pokazi("MSGBOX(spremljeno)");
+            }
+            finally
+            {
+                NgPoruka.Zapis = null;
+            }
+            T("msg-msgbox-zadano", poruka == "SPREMLJENO", poruka);
+        }
+
+        private static object Polje(object o, string ime)
+        {
+            for (Type t = o.GetType(); t != null; t = t.BaseType)
+            {
+                FieldInfo f = t.GetField(ime, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                if (f != null)
+                    return f.GetValue(o);
+            }
+            return null;
+        }
+
+        private static object Zovi(object o, string ime, params object[] arg)
+        {
+            MethodInfo m = o.GetType().GetMethod(ime, BindingFlags.Instance | BindingFlags.NonPublic);
+            return m == null ? null : m.Invoke(o, arg);
+        }
+
+        /// <summary>
+        /// Podloga na spinu: EDITCOLUMNS/ONCELLEDITED (EDT-01/02), lanac desnog klika kroz Rafalno (RAF-01),
+        /// "select" u lancu gumba (BTN-03), REFRESHMASTERGRID sa zadnjim SQL-om (REF-01), ONCLOSED.
+        /// </summary>
+        private static void PodlogaRafalno()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "ngraf" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            Directory.CreateDirectory(dir);
+            string xml = Path.Combine(dir, "RafTest.xml");
+            File.WriteAllText(xml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n"
+                + "<PROJECT CMD1CAPTION=\"Dodaj:frmNema\" CMD2CAPTION=\"Stanje:select &apos;disable&apos; as Dodaj\""
+                + " ONLOAD=\"select 1 as id, &apos;abc&apos; as Naziv union all select 2, &apos;def&apos;\""
+                + " EDITCOLUMNS=\"Naziv\" CHECKBOXVISIBLE=\"TRUE\""
+                + " ONCELLEDITED=\"select &apos;@@Naziv,@@EDITEDCOLUMN,@@LASTVALUE,@@id&apos; as setcolorforcolorpicker\""
+                + " ONCLOSED=\"select &apos;zatvoreno&apos; as setcolorforcolorpicker\">\r\n"
+                + "<NAME>Projekt</NAME>\r\n<CAPTION>Rafalno test</CAPTION>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+            string greska = null;
+            NgPoruka.Zapis = delegate (string x) { greska = x; };
+            // Bez Application.DoEvents: Shown baznog Managera bez DI (Logger) u GridTestu baci iznimku i otvori modalni ThreadExceptionDialog.
+            var forma = new Podloga();
+            MasterGrid master = null;
+            try
+            {
+                forma.ShowInTaskbar = false;
+                forma.StartPosition = FormStartPosition.Manual;
+                forma.Location = new Point(-32000, -32000);
+                forma.Show();
+                bool otvoren = forma.Prikazi(xml, "localhost", "spin", 7);
+                var gv = Polje(forma, "gvGla") as DevExpress.XtraGrid.Views.Grid.GridView;
+                master = Polje(forma, "_master") as MasterGrid;
+                if (!otvoren || gv == null || master == null)
+                {
+                    T("edt01-uredjiv", false, "nije otvoreno");
+                    return;
+                }
+                var naziv = gv.Columns.ColumnByFieldName("Naziv");
+                var id = gv.Columns.ColumnByFieldName("id");
+                T("edt01-uredjiv", gv.OptionsBehavior.Editable && naziv != null && naziv.OptionsColumn.AllowEdit && id != null && !id.OptionsColumn.AllowEdit,
+                    "editable=" + gv.OptionsBehavior.Editable + " rows=" + gv.DataRowCount);
+                gv.FocusedRowHandle = 0;
+                // '|' nije granica tokena u SrediSQLPosljeNextForme (Class1 766-820), zato zarez.
+                gv.SetRowCellValue(0, naziv, "xyz");
+                string boja = master.Kontekst.SelectedColor ?? "";
+                T("edt02-oncelledited", boja == "xyz,Naziv,xyz,1" && gv.IsRowSelected(0), boja + " sel=" + gv.IsRowSelected(0));
+
+                FieldInfo projektPolje = typeof(Podloga).GetField("_projekt", BindingFlags.Instance | BindingFlags.NonPublic);
+                var projekt = projektPolje.GetValue(forma) as NgProject;
+                var mapa = typeof(NgAttributeBag).GetField("_map", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(projekt.Atributi) as Dictionary<string, string>;
+                mapa["ONCELLEDITED"] = "select 1/0 as x";
+                // Kao korisnik: ShowingEditor pamti staru vrijednost, PostEditor šalje CellValueChanged.
+                gv.FocusedRowHandle = 0;
+                gv.FocusedColumn = naziv;
+                gv.ShowEditor();
+                if (gv.ActiveEditor != null)
+                {
+                    gv.ActiveEditor.EditValue = "pogresno";
+                    gv.PostEditor();
+                    gv.CloseEditor();
+                }
+                else
+                    gv.SetRowCellValue(0, naziv, "pogresno");
+                string vraceno = Convert.ToString(gv.GetRowCellValue(0, naziv));
+                T("edt03-greska-vraca", (vraceno == "xyz" || vraceno == "abc") && (greska ?? "").Length > 0,
+                    Convert.ToString(gv.GetRowCellValue(0, naziv)) + " | " + greska);
+
+                master.Kontekst.SelectedColor = "";
+                Zovi(forma, "IzvrsiIzbornik", "frmNema~select 'q' as setcolorforcolorpicker");
+                T("raf01-izbornik-sql", master.Kontekst.SelectedColor == "q", master.Kontekst.SelectedColor);
+
+                var gumbi = Polje(forma, "pnlButtons") as Control;
+                DevExpress.XtraEditors.SimpleButton dodaj = null;
+                if (gumbi != null)
+                {
+                    foreach (Control c in gumbi.Controls)
+                    {
+                        var b = c as DevExpress.XtraEditors.SimpleButton;
+                        if (b != null && b.Text == "Dodaj")
+                            dodaj = b;
+                    }
+                }
+                Zovi(forma, "IzvrsiLanac", "select 'disable' as Dodaj");
+                T("btn03-select-gumbi", dodaj != null && !dodaj.Enabled, dodaj == null ? "nema gumba" : dodaj.Enabled.ToString());
+
+                master.Stanje.SqlZaSlanje = "select 9 as id, 'z' as Naziv";
+                master.Stanje.Odluka = "salji";
+                Zovi(forma, "IzvrsiRafalno", "REFRESHMASTERGRID");
+                T("ref01-zadnji-sql", gv.DataRowCount == 1 && Convert.ToString(gv.GetRowCellValue(0, "id")) == "9", "redova=" + gv.DataRowCount);
+            }
+            catch (Exception ex)
+            {
+                T("podloga-rafalno", false, ex.ToString());
+            }
+            finally
+            {
+                forma.Close();
+                forma.Dispose();
+                NgPoruka.Zapis = null;
+            }
+            T("onclosed", master != null && master.Kontekst.SelectedColor == "zatvoreno", master == null ? "" : master.Kontekst.SelectedColor);
+            try { Directory.Delete(dir, true); } catch { }
         }
 
         private static void PokaziUpitUcinak()
