@@ -225,6 +225,8 @@ namespace Carpo.NetGen.Ui
                     naredba = tag.Substring(crta + 1);
             }
             naredba = ZamijeniIzKontrola(naredba);
+            if (_kontekst != null)
+                naredba = SqlTekst.Sredi(naredba, _kontekst);
             DijalogTok.Klik klik = DijalogTok.Gumb(_forma, redni, naredba, _jupiter);
             if (klik.OtvaraFormu.Length > 0)
             {
@@ -481,6 +483,8 @@ namespace Carpo.NetGen.Ui
             {
                 string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col]);
                 _izUpita[col.ColumnName] = v;
+                if (kontekst != null)
+                    kontekst.ParametriSaGrida += "@" + col.ColumnName + "='" + v.Replace("'", "''") + "' , ";
             }
             foreach (DataColumn col in dt.Columns)
             {

@@ -820,11 +820,11 @@ namespace Carpo.NetGen.Ui
             if (f.Tag as string == "potvrdeno")
                 return true;
             PopuniTest(f);
-            for (int i = 0; i < f.Controls.Count; i++)
+            var gumbi = new List<SimpleButton>();
+            SkupiGumbe(f, gumbi);
+            for (int i = 0; i < gumbi.Count; i++)
             {
-                var b = f.Controls[i] as SimpleButton;
-                if (b == null)
-                    continue;
+                SimpleButton b = gumbi[i];
                 string tag = b.Tag as string ?? "";
                 string tekst = (b.Text ?? "").Trim();
                 if (tag.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0)
