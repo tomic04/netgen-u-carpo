@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Data;
 using System.Threading;
 using System.Text;
@@ -59,6 +60,7 @@ namespace Carpo.NetGen.GridTest
                 Spin();
                 SpinDetalj();
                 SpinStabloFill();
+                TragaNaStroju();
             }
             else
                 Console.WriteLine("PRESKOCENO spin (nema CARPO_SPIN=1)");
@@ -2065,6 +2067,45 @@ namespace Carpo.NetGen.GridTest
             Form2Dogadjaj.PostimajPort(port);
             string pisano = Form2Dogadjaj.PisiPort(port);
             T("serijski-port", port.Brzina == 19200 && port.Bitovi == 8 && port.Paritet == "None" && pisano == "aaaaa\r" && !port.Otvoren, pisano);
+            string pdfMapa = Path.Combine(Path.GetTempPath(), "ng-pdf-" + Guid.NewGuid().ToString("N"));
+            string zvanIme = "";
+            string zvanParam = "";
+            string zvanApp = "";
+            SpinIspis.PrintKuka = delegate (string k, string i, string p, string a) { zvanIme = i; zvanParam = p; zvanApp = a; };
+            bool jedanIspis = SpinIspis.Pozovi("Server=localhost", "REPX:/rptX", new int[] { 5, 8 }, "a=1");
+            SpinIspis.PrintKuka = null;
+            bool multi = false;
+            SpinIspis.MultiKuka = delegate (string k, string i, System.Collections.Generic.IList<string> l, string a) { multi = l != null && l.Count == 3 && l[0] == "@id=9"; };
+            bool tri = SpinIspis.Pozovi("", "repx/rpt", new int[] { 1, 2, 3 }, "@id=9");
+            SpinIspis.MultiKuka = null;
+            string pdf = "";
+            try
+            {
+                pdf = SpinIspis.Pdf(pdfMapa, "rptX", "@id=5,a=1");
+                T("spin-ispis", jedanIspis && zvanIme == "rptX" && zvanParam == "@id=5,a=1" && zvanApp == "Carpo"
+                    && tri && multi && SpinIspis.Grana("REPX:/x") == "spin" && SpinIspis.IzTaga("rpt:X") == "rptX"
+                    && SpinIspis.Vise(3) && !SpinIspis.Vise(2)
+                    && File.Exists(pdf) && new FileInfo(pdf).Length > 50, zvanParam + " " + pdf);
+            }
+            finally
+            {
+                try { Directory.Delete(pdfMapa, true); } catch { }
+            }
+            T("fokus-boja", Form2Dogadjaj.BojaFokusa() == "LightGreen" && Form2Dogadjaj.BojaTrazilice() == "LightYellow", "");
+            bool neZatvaraj = true;
+            bool otkaz = Form2Dogadjaj.OtkaziZatvaranje(ref neZatvaraj);
+            T("stupci-izbornik", Form2Dogadjaj.StupacPoNatpisu(new string[] { "Naziv", "Iznos" }, "iznos") == 1
+                && Form2Dogadjaj.Okreni(true) == false && otkaz && !neZatvaraj, "");
+            int x, y, w, h;
+            Ugradnja.Polozaj(100, 40, 300, 200, -8, -30, 308, 208, out x, out y, out w, out h);
+            T("ugradnja", !Ugradnja.Prazan(new IntPtr(1), new IntPtr(2)) && Ugradnja.Prazan(IntPtr.Zero, new IntPtr(2))
+                && x == 92 && y == 10 && w == 316 && h == 238
+                && Ugradnja.Zastavice() == (Ugradnja.SWP_NOZORDER | Ugradnja.SWP_NOACTIVATE | Ugradnja.SWP_SHOWWINDOW), x.ToString());
+            string doz = DozvolaDijaloga.Sql(@"D:\xml\JeziciNG.xml", "FILTER", 7);
+            T("dozvola-dijalog", doz.IndexOf("objectname='JeziciNG.xml.FILTER'", StringComparison.Ordinal) >= 0
+                && doz.IndexOf("order by sort desc", StringComparison.Ordinal) >= 0
+                && DozvolaDijaloga.Smije(true) && !DozvolaDijaloga.Smije(false)
+                && !DozvolaDijaloga.Vidljiva(false, true), doz);
             T("format-grid", Class1Pravila.SakrijId("RobaId") && !Class1Pravila.SakrijId("id") && !Class1Pravila.SakrijId("naziv")
                 && Class1Pravila.Sirina("Naziv0140") == 10 && Class1Pravila.ImeBezSirine("Naziv0140") == "Naziv", "");
             T("format-uvjet", Class1Pravila.FormatUvjeta("bold red") == "bold red" && Class1Pravila.FormatUvjeta("x") == "", "");
@@ -2309,6 +2350,38 @@ namespace Carpo.NetGen.GridTest
             ProvjeriSpin(ozn, "oznaka", 5);
             ProvjeriSpin(jez, "jezici", 1);
             SpinGreska();
+        }
+
+        private static void TragaNaStroju()
+        {
+            string izv = TragaDll.Izvjestaj() + TragaDll.Registar();
+            Console.WriteLine(izv);
+            string donijeti = TragaDll.Donijeti();
+            if (donijeti.Length > 0)
+                Console.WriteLine("DONIJETI\r\n" + donijeti);
+            bool spin = TragaDll.Nadji("Spin.Printing.v26.dll") != null;
+            bool prevDat = TragaDll.Nadji("JupiterTranslator10.dll") != null || TragaDll.Nadji("JupiterTranslator.dll") != null;
+            Type prevTip = TragaDll.Tip("JupiterTranslator10.dll", "JupiterTranslator.Translator");
+            if (prevTip == null)
+                prevTip = TragaDll.Tip("JupiterTranslator.dll", "JupiterTranslator.Translator");
+            string prevod = "";
+            if (prevTip != null)
+            {
+                try
+                {
+                    object r = prevTip.InvokeMember("TranslateString", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, new object[] { "Spremi", "NetGen" });
+                    prevod = r == null ? "" : Convert.ToString(r);
+                }
+                catch (Exception ex)
+                {
+                    prevod = ex.GetBaseException().Message;
+                }
+            }
+            T("dll-traga", spin && prevDat && izv.IndexOf("Spin.Printing.v26.dll", StringComparison.Ordinal) >= 0, izv + donijeti + " PREVOD=" + prevod);
+            Type raverus = TragaDll.Tip("Raverus.FiskalizacijaDEV.COM.dll", "Raverus.FiskalizacijaDEV.COM.CentralniInformacijskiSustav");
+            if (raverus != null)
+                FiskalPoziv.Cis = Activator.CreateInstance(raverus);
+            T("raverus-slo", true, (raverus == null ? "NEMA Raverus" : "IMA Raverus") + " " + (TragaDll.Nadji("SLOFISKAL.dll") ?? "NEMA SLOFISKAL"));
         }
 
         private static void SpinGreska()

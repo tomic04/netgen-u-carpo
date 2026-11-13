@@ -817,6 +817,9 @@ namespace Carpo.NetGen.Ui
                     }
                     if (lost.Length > 0 && _izlazTrazilice.Validated2Smije())
                         IzvrsiSql(lost);
+                    var zuta = c as TextEdit;
+                    if (zuta != null)
+                        zuta.BackColor = System.Drawing.Color.LightYellow;
                 };
             }
             else if (lost.Length > 0)
@@ -856,6 +859,15 @@ namespace Carpo.NetGen.Ui
             string got = Attr(k, "GOTFOCUS");
             if (got.Length > 0)
                 c.Enter += delegate { IzvrsiSql(got); };
+            var tekstFokus = c as TextEdit;
+            if (tekstFokus != null && !(tekstFokus is LookUpEdit))
+            {
+                c.Enter += delegate
+                {
+                    tekstFokus.BackColor = System.Drawing.Color.LightGreen;
+                    tekstFokus.SelectAll();
+                };
+            }
             string dbl = Attr(k, "ONDBLCLICK");
             string popup = Attr(k, "POPUP");
             if (k.Grana == NgGrana.Grid || k.Grana == NgGrana.DxGrid)
