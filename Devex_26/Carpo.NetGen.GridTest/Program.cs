@@ -2032,6 +2032,9 @@ namespace Carpo.NetGen.GridTest
                 }
                 trazi.Text = "nova";
                 trazi.Focus();
+                // Runner nema aktivni prozor, pa Focus() ne postavi ActiveControl.
+                // ProcessCmdKey gleda ActiveControl (Form2.vb KeyDown na tražilici).
+                d.ActiveControl = trazi;
                 int prije = sql.Count;
                 d.ProvediTipku(Keys.Enter);
                 onLeave.Invoke(trazi, new object[] { EventArgs.Empty });
