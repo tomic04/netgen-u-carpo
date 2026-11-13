@@ -403,7 +403,7 @@ namespace Carpo.NetGen.Ui
                 return;
             }
             MasterSql = _jupiter ? "" : klik.MasterSql;
-            if (Carpo.NetGen.Print.PrintBridge.Vrsta(naredba, true).Length > 0)
+            if (!DijalogTok.DozvoliUpis && Carpo.NetGen.Print.PrintBridge.Vrsta(naredba, true).Length > 0)
             {
                 DevExpress.XtraGrid.GridControl grid = null;
                 foreach (Control c in Controls)

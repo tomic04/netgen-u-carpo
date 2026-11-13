@@ -449,18 +449,28 @@ namespace Carpo.NetGen.Ui
                     return;
                 }
                 else if (GumbTok.Akcija(_projekt, s) == "poruka")
-                    PorukaNaredba.Pokazi(s);
+                {
+                    if (!DijalogTok.DozvoliUpis)
+                        PorukaNaredba.Pokazi(s);
+                }
                 else if (GumbTok.Akcija(_projekt, s) == "openform")
                     OtvoriFormu(OtvoriNaredba.Ime(s));
                 else if (GumbTok.Akcija(_projekt, s) == "stupci")
                     PrimijeniStupce(s);
                 else if (GumbTok.Akcija(_projekt, s) == "word")
                 {
+                    if (DijalogTok.DozvoliUpis)
+                        continue;
                     if (!WordDot.Otvori(s, _spoj, new[] { _master.Stanje.Id }))
                         return;
                 }
                 else if (IspisMotora.JeIspisImena(s) || s.StartsWith("PRINT", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (DijalogTok.DozvoliUpis)
+                    {
+                        NgDnevnik.Akcija("ispis preskocen " + s);
+                        continue;
+                    }
                     string vrsta = PrintBridge.Vrsta(s, false);
                     object grid = vrsta == "detail" ? (object)gcDet : gcGla;
                     DataTable tab = null;
