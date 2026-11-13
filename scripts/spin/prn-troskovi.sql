@@ -110,6 +110,12 @@ begin
     set nocount on;
     if @Action = 0
     begin
+        if @PrnTroskoviGlaId is null
+            select @PrnTroskoviGlaId = (
+                select top 1 PrnTroskoviGlaId
+                from dbo.PrnTroskoviGla
+                where KlMasterRobaId is null and RobaId is null
+                order by PrnTroskoviGlaId desc);
         insert into dbo.PrnTroskoviDet (PrnTroskoviGlaId, PrnVrstaTroskaId, OrgShemaId, Formula, Vrijednost)
         values (@PrnTroskoviGlaId, @PrnVrstaTroskaId, @OrgShemaId, @Formula, @Vrijednost);
         return;

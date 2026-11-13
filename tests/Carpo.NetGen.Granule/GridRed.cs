@@ -138,6 +138,14 @@ namespace Carpo.NetGen.Granule
                 ? Qa.Z("GridRed", "TRO-01", "Podforma stavke vidi @@PrnTroskoviGlaId iz ONLOAD-a roditelja", "netgen/Form2.vb:3906; netgen/Class1.vb:765-849")
                 : Qa.P("GridRed", "TRO-01", "@@PrnTroskoviGlaId iz roditelja", "netgen/Form2.vb:3906; netgen/Class1.vb:765-849", stavka));
 
+            var prazanKontekst = new SqlKontekst();
+            string bezMedjuspremnika = SqlTekst.ZaGumb("spPrnTroskoviDetAzur @Action=0, @PrnTroskoviGlaId=@@PrnTroskoviGlaId,", prazanKontekst);
+            bool troPrazno = bezMedjuspremnika.IndexOf("@@", StringComparison.Ordinal) < 0
+                && bezMedjuspremnika.IndexOf("@PrnTroskoviGlaId=null", StringComparison.Ordinal) >= 0;
+            l.Add(troPrazno
+                ? Qa.Z("GridRed", "TRO-02", "prazan međuspremnik pretvori @@PrnTroskoviGlaId u null", "netgen/Class1.vb:915")
+                : Qa.P("GridRed", "TRO-02", "prazan međuspremnik", "netgen/Class1.vb:915", bezMedjuspremnika));
+
             int spremi = PotvrdaGumba.Indeks(
                 new string[] { "ButtonNG142", "Spremi", "Odustani" },
                 new string[] { ":WEBBROWSER", "spRatArkod_Azur @action='insert'", "CLOSE" });

@@ -93,6 +93,18 @@ namespace Carpo.NetGen.Grid
         }
 
         /// <summary>
+        /// Gumb šalje SQL. Class1.vb 915: token kojeg nema ni u kontroli ni u međuspremniku je null.
+        /// Combo SQL ostaje na Sredi da @@trgovinaid pričeka odabir.
+        /// </summary>
+        public static string ZaGumb(string sql, SqlKontekst k)
+        {
+            string s = Sredi(sql, k);
+            if (s.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                s = DetailGrid.ZamijeniOstatak(s, k == null ? "" : k.ParametriSaGrida);
+            return s;
+        }
+
+        /// <summary>
         /// Nakon zamjene ~~ u zarez. "prazno" | "pocinje-s-@" | "ostao-@@" | "salji".
         /// </summary>
         public static string Odluka(string sql)

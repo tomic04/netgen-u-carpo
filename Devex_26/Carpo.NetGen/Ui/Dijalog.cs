@@ -484,7 +484,9 @@ namespace Carpo.NetGen.Ui
         {
             string s = ZamijeniIzKontrola(naredba);
             if (_kontekst != null)
-                s = SqlTekst.Sredi(s, _kontekst);
+                s = SqlTekst.ZaGumb(s, _kontekst);
+            else if (s.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                s = DetailGrid.ZamijeniOstatak(s, "");
             return s;
         }
 
