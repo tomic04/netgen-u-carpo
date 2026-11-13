@@ -2241,6 +2241,9 @@ namespace Carpo.NetGen.GridTest
             {
                 { "ONCLICK", "FOREACHROW(stavke)#update x set k='@(stavke..naziv)' where id=@@stavke" }
             }), true));
+            kontrole.Add(new NgControl("multidrop", NgGrana.MultiDrop, "vrste", new NgAttributeBag(new Dictionary<string, string> { { "SQL", "select vrstaid, naziv from vrste" } }), true));
+            kontrole.Add(new NgControl("button", NgGrana.Button, "oznaci", new NgAttributeBag(new Dictionary<string, string> { { "ONCLICK", "select '1~3' as vrste" } }), true));
+            kontrole.Add(new NgControl("button", NgGrana.Button, "salji", new NgAttributeBag(new Dictionary<string, string> { { "ONCLICK", "select '@@vrste' as v" } }), true));
             var atributi = new NgAttributeBag(new Dictionary<string, string>
             {
                 { "ONLOADED", "select 'ucitano' as status" }, { "ONESCKEY", "select 'esc' as status" }
@@ -2257,6 +2260,21 @@ namespace Carpo.NetGen.GridTest
                     dt.Columns.Add("kolicina");
                     dt.Columns.Add("napomena");
                     dt.Rows.Add("disable", "x1");
+                    return dt;
+                }
+                if (t.IndexOf("from vrste", StringComparison.Ordinal) >= 0)
+                {
+                    dt.Columns.Add("vrstaid", typeof(int));
+                    dt.Columns.Add("naziv", typeof(string));
+                    dt.Rows.Add(1, "A");
+                    dt.Rows.Add(2, "B");
+                    dt.Rows.Add(3, "C");
+                    return dt;
+                }
+                if (t.IndexOf("select '1~3' as vrste", StringComparison.Ordinal) >= 0)
+                {
+                    dt.Columns.Add("vrste");
+                    dt.Rows.Add("1~3");
                     return dt;
                 }
                 if (t.IndexOf("'refresh' as stavke", StringComparison.Ordinal) >= 0)
@@ -2356,6 +2374,14 @@ namespace Carpo.NetGen.GridTest
                 int prijeDjeteta = Broji(sql, "from stavke");
                 ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("dodaj", true)[0]).PerformClick();
                 T("rac01-nakon-djeteta", dijete == "DIJETE" && Broji(sql, "from stavke") == prijeDjeteta + 1, "dijete=" + dijete);
+
+                // MDR-01: MULTIDROP ima stavke iz SQL-a, rezultat "1~3" ih oznaci, a @@vrste je '1~3'.
+                var vise = (DevExpress.XtraEditors.CheckedComboBoxEdit)d.Controls.Find("vrste", true)[0];
+                bool stavke = vise.Properties.DataSource is DataTable && ((DataTable)vise.Properties.DataSource).Rows.Count == 3;
+                ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("oznaci", true)[0]).PerformClick();
+                ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("salji", true)[0]).PerformClick();
+                T("mdr01-multidrop", stavke && Broji(sql, "select '1~3' as v") == 1,
+                    "stavke=" + stavke + " oznaceno=" + Convert.ToString(vise.Properties.GetCheckedItems()) + " sql=" + string.Join(" | ", sql.ToArray()));
 
                 // FOR-01: tijelo ide kroz lanac za svaki red; @@stavke je id reda, @(stavke..naziv) stupac reda.
                 ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("svi", true)[0]).PerformClick();

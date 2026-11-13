@@ -447,7 +447,7 @@ namespace Carpo.NetGen.Ui
         {
             if (_citaj == null || k == null)
                 return;
-            if (k.Grana != NgGrana.Combo && k.Grana != NgGrana.Grid && k.Grana != NgGrana.DxGrid)
+            if (k.Grana != NgGrana.Combo && k.Grana != NgGrana.Grid && k.Grana != NgGrana.DxGrid && k.Grana != NgGrana.MultiDrop)
                 return;
             if (gotovSql == null && k.Grana != NgGrana.Combo && DijalogTok.PreskociGrid(k))
                 return;
@@ -466,7 +466,8 @@ namespace Carpo.NetGen.Ui
             }
             else if (_kontekst != null)
                 sql = SqlTekst.Sredi(sql, _kontekst);
-            bool prazan = ComboDijalog.AllowEmpty(k);
+            // MULTIDROP cita ALLOWEMPTY, ali ga ne koristi (2491): nema prazne stavke.
+            bool prazan = k.Grana != NgGrana.MultiDrop && ComboDijalog.AllowEmpty(k);
             DataTable dt = null;
             try
             {
@@ -478,6 +479,20 @@ namespace Carpo.NetGen.Ui
             }
             if (dt == null || dt.Columns.Count == 0)
                 return;
+            var vise = c as CheckedComboBoxEdit;
+            if (vise != null)
+            {
+                // Form2.vb 2478-2520: MULTIDROP, vrijednost stupac 0, natpis stupac 1 (MDR-01).
+                string bilo = Oznaceni(vise);
+                vise.Properties.DataSource = dt;
+                vise.Properties.ValueMember = dt.Columns[0].ColumnName;
+                vise.Properties.DisplayMember = dt.Columns.Count > 1 ? dt.Columns[1].ColumnName : dt.Columns[0].ColumnName;
+                if (gotovSql == null)
+                    vise.Text = "";
+                else
+                    OznaciVise(vise, bilo);
+                return;
+            }
             var look = c as LookUpEdit;
             if (look != null)
             {
@@ -1141,14 +1156,21 @@ namespace Carpo.NetGen.Ui
                     if (!DijalogTok.SmijePoslati(dio))
                         continue;
                     NgDnevnik.Sql(dio);
+                    DataTable rez;
                     try
                     {
-                        _citaj(dio);
+                        rez = _citaj(dio);
                     }
                     catch (Exception ex)
                     {
+                        // RefreshControls: greska prekida (GreskaKodIzvrsavanjaSQLa), forma ostaje otvorena.
                         NgDnevnik.Greska(ex.Message + " | " + dio);
+                        return;
                     }
+                    // Rafalno -> RefreshControls: rezultat gumba postavlja kontrole kao i dogadjaj (BTN-03).
+                    PrimeniRed(rez);
+                    if (IsDisposed)
+                        return;
                 }
                 if (klik.SaljeSql && !string.IsNullOrEmpty(klik.MasterSql) && DijalogTok.SmijePoslati(klik.MasterSql))
                 {
@@ -1248,7 +1270,10 @@ namespace Carpo.NetGen.Ui
                     var look = c as LookUpEdit;
                     var edit = c as TextEdit;
                     var datum = c as DateEdit;
-                    if (datum != null)
+                    var vise = c as CheckedComboBoxEdit;
+                    if (vise != null)
+                        kontrole[c.Name] = Oznaceni(vise);
+                    else if (datum != null)
                     {
                         // strParametriSvi daje datum kao 'yyyyMMdd' ili null (3522-3566), ne prikazani tekst.
                         kontrole[c.Name] = datum.EditValue is DateTime
@@ -1503,8 +1528,22 @@ namespace Carpo.NetGen.Ui
                     OdaberiUComboju(look, v);
                 return;
             }
-            if (c is CheckedComboBoxEdit)
+            var vise = c as CheckedComboBoxEdit;
+            if (vise != null)
+            {
+                // RefreshControls 4806-4830: "refresh" ponovno puni (strMultiDropSQL s ""), inace Tag su
+                // oznaceni id-evi (Timer3: id~id).
+                if (v.IndexOf("refresh", StringComparison.Ordinal) >= 0)
+                {
+                    NgControl def = NadjiKontrolu(c.Name);
+                    if (def != null)
+                        NapuniKontrolu(c, def, SrediPoslije.Zamijeni(Attr(def, "SQL"), "", _kontekst ?? new SqlKontekst(), _kontekst == null ? null : _kontekst.Clipboard, false));
+                    vise.SetEditValue(null);
+                }
+                else if (v.Trim().Length > 0 && !Form2Rezultat.JeStanje(v))
+                    OznaciVise(vise, v.Trim());
                 return;
+            }
             var datum = c as DateEdit;
             if (datum != null)
             {
@@ -2245,6 +2284,20 @@ namespace Carpo.NetGen.Ui
             return l;
         }
 
+        /// <summary>PokupiParametre 3443-3447: GetCheckedItems, zarez postane ~, bez razmaka.</summary>
+        private static string Oznaceni(CheckedComboBoxEdit c)
+        {
+            object o = c.Properties.GetCheckedItems();
+            return (Convert.ToString(o, CultureInfo.InvariantCulture) ?? "").Replace(",", "~").Replace(" ", "");
+        }
+
+        /// <summary>Timer3 (9711-9729): oznaci stavke ciji je id u "id~id".</summary>
+        private static void OznaciVise(CheckedComboBoxEdit c, string idjevi)
+        {
+            string niz = (idjevi ?? "").Replace("~", ",").Replace(" ", "");
+            c.SetEditValue(niz.Length == 0 ? null : niz);
+        }
+
         private static void Skupi(Control roditelj, List<Control> l)
         {
             foreach (Control c in roditelj.Controls)
@@ -2291,6 +2344,12 @@ namespace Carpo.NetGen.Ui
                 {
                     var trazi = (ButtonEdit)c;
                     sb.Append(ParametriSvi.Search(c.Name, c.Tag as string, trazi.Text));
+                    continue;
+                }
+                var vise = c as CheckedComboBoxEdit;
+                if (vise != null)
+                {
+                    sb.Append(ParametriSvi.Multi(c.Name, Oznaceni(vise)));
                     continue;
                 }
                 var txt = c as TextEdit;
@@ -2640,6 +2699,13 @@ namespace Carpo.NetGen.Ui
 
         private static void PostaviVrijednost(Control c, string v)
         {
+            var vise = c as CheckedComboBoxEdit;
+            if (vise != null)
+            {
+                // 2500-2502: Tag = vrijednost iz ONLOAD-a, Timer3 oznaci te id-eve.
+                OznaciVise(vise, v);
+                return;
+            }
             var broj = c as SpinEdit;
             if (broj != null)
             {
