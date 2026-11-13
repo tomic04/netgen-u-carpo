@@ -1971,7 +1971,7 @@ namespace Carpo.NetGen.GridTest
             GreskaSql.Izvrsi = delegate (string sql) { uhvaceno = sql; throw new InvalidOperationException("guta"); };
             GreskaSql.Zapisi(5, "nema 'x'", "select 'a'", "");
             GreskaSql.Izvrsi = null;
-            T("execsql2-poziv", greska == "dbo.spNetGenErrorLog @errorNumber=5, @errorDescription='nema ''x'',@ngLog='select ''a'''"
+            T("execsql2-poziv", greska == "dbo.spNetGenErrorLog @errorNumber=5, @errorDescription='nema ''x''',@ngLog='select ''a'''"
                 && uhvaceno == greska && GreskaSql.TimeoutSekundi == 100, uhvaceno);
             string odabrano;
             string ostatak;
