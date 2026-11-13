@@ -979,8 +979,8 @@ namespace Carpo.NetGen.Ui
         {
             try
             {
-                Citaj("delete from jezici where Naziv like N'klik-proba%'");
-                Citaj("delete from statusi where Korak like N'klik-proba%'");
+                Citaj("delete from jezici where Naziv like N'kp[0-9]%' or Naziv like N'klik-proba%'");
+                Citaj("delete from statusi where Korak like N'kp[0-9]%' or Korak like N'klik-proba%'");
             }
             catch
             {
