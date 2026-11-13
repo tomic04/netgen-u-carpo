@@ -847,6 +847,19 @@ namespace Carpo.NetGen.Ui
             return false;
         }
 
+        private static void SkupiGumbe(Control roditelj, List<SimpleButton> gumbi)
+        {
+            if (roditelj == null)
+                return;
+            for (int i = 0; i < roditelj.Controls.Count; i++)
+            {
+                var b = roditelj.Controls[i] as SimpleButton;
+                if (b != null)
+                    gumbi.Add(b);
+                SkupiGumbe(roditelj.Controls[i], gumbi);
+            }
+        }
+
         private static void PopuniTest(Form f)
         {
             string tekst = DijalogTok.TekstUpisa ?? "";
