@@ -2041,7 +2041,8 @@ namespace Carpo.NetGen.GridTest
                     if ((sql[i] ?? "").IndexOf("lostsearch", StringComparison.Ordinal) >= 0)
                         preskocio = false;
                 }
-                T("dijalog-ucinak", zelena && sel == 3 && zuta && tag0 && klik && preskocio, naziv.BackColor.Name + " sel=" + sel + " tag=" + trazi.Tag);
+                T("dijalog-ucinak", zelena && sel == 3 && zuta && tag0 && klik && preskocio, naziv.BackColor.Name + " sel=" + sel + " tag=" + trazi.Tag
+                    + " zelena=" + zelena + " zuta=" + zuta + " (" + trazi.BackColor.Name + ") klik=" + klik + " preskocio=" + preskocio + " sql=" + string.Join(" | ", sql.ToArray()));
             }
             finally
             {
