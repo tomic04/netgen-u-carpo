@@ -1997,6 +1997,7 @@ namespace Carpo.NetGen.GridTest
             PodlogaRafalno();
             GreskeDijaloga();
             DbClipboardDijalog();
+            StatusDijaloga();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -2763,6 +2764,34 @@ namespace Carpo.NetGen.GridTest
             finally
             {
                 DijalogTok.DozvoliUpis = bilo;
+            }
+        }
+
+        /// <summary>STATUSSTRIP TEXT1..3 (STS-01): velika slova, pa @@VERSION i ostali tokeni.</summary>
+        private static void StatusDijaloga()
+        {
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("statusstrip", NgGrana.StatusStrip, "s1", new NgAttributeBag(new Dictionary<string, string>
+                {
+                    { "TEXT1", "@@version" }, { "TEXT2", "Broj stavki:" }, { "TEXT3", "" }
+                }), true));
+                var forma = new NgForm("S1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                var k = new SqlKontekst();
+                k.Version = "NetGen v1.2.3";
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, k, delegate (string x) { return new DataTable(); });
+                    var s1 = d.Controls.Find("s1", true);
+                    string tekst = s1.Length > 0 ? s1[0].Text : "nema";
+                    T("sts01-status", tekst == "NetGen v1.2.3   BROJ STAVKI:", tekst);
+                }
+                T("sts01-verzija", NgVerzija.Tekst().StartsWith("NetGen v", StringComparison.Ordinal), NgVerzija.Tekst());
+            }
+            catch (Exception ex)
+            {
+                T("sts01", false, ex.ToString());
             }
         }
 

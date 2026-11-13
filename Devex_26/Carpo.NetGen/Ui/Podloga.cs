@@ -134,6 +134,7 @@ namespace Carpo.NetGen.Ui
             var kontekst = new SqlKontekst();
             kontekst.OperaterId = operater.ToString();
             kontekst.XmlName = Path.GetFileName(xml ?? "");
+            kontekst.Version = NgVerzija.Tekst();
             kontekst.Node = "null";
             _stablo.Kontekst = kontekst;
             _stablo.ImeXml = kontekst.XmlName;

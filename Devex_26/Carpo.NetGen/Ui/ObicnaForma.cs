@@ -78,6 +78,7 @@ namespace Carpo.NetGen.Ui
             var kontekst = new SqlKontekst();
             kontekst.OperaterId = operater.ToString();
             kontekst.XmlName = System.IO.Path.GetFileName(xml ?? "");
+            kontekst.Version = NgVerzija.Tekst();
             kontekst.Node = "null";
             _master = new MasterGrid();
             _master.Kontekst = kontekst;

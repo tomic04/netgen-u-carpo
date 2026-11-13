@@ -316,6 +316,7 @@ namespace Carpo.NetGen.Ui
             PrimijeniOnLoad();
             // Form2.vb 1170-1182 i čitanje po kontroli: NetGenDBClipboard nadjača ONLOAD i ONLOAD2 (DBC-01).
             UcitajDbClipboard(forma);
+            OsvjeziStatus();
         }
 
         public bool ProvediTipku(Keys keyData)
@@ -1505,6 +1506,8 @@ namespace Carpo.NetGen.Ui
             string temp = Form2Rezultat.Celija(r, "temp");
             if (temp.Length > 0)
                 PostaviId(temp);
+            // 4753-4757: StatusStrip prije petlje po kontrolama (STS-01).
+            OsvjeziStatus();
 
             var kontrole = SveKontrole().ToArray();
             for (int i = 0; i < kontrole.Length; i++)
