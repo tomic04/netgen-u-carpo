@@ -259,6 +259,18 @@ namespace Carpo.TestShell
             _uiIshod = 0;
             _uiVidjen = 0;
             _uiKlikGotov = false;
+            string sirovo = Dijalog.IznimkaObicnogVlasnika();
+            Console.WriteLine("KLJUC-SIROVO");
+            Console.WriteLine(sirovo);
+            string prikaz = Dijalog.IznimkaPrikaza(this);
+            Console.WriteLine("KLJUC-PRIKAZ");
+            Console.WriteLine(prikaz);
+            try { File.Delete(snimka + ".iznimka.txt"); } catch { }
+            if (prikaz.Length > 0)
+            {
+                UpisiIshod(snimka, "FAIL dijalog-kljuc " + prikaz);
+                return 6;
+            }
             var dir = Path.GetDirectoryName(snimka);
             if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);

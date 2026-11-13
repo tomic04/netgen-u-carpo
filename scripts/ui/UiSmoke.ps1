@@ -67,7 +67,11 @@ foreach ($rel in $granule) {
     $prozori = $png + ".prozori.txt"
     if (Test-Path -LiteralPath $prozori) { Write-Host (Get-Content -LiteralPath $prozori -Raw) }
     $iznimka = $png + ".iznimka.txt"
-    if (Test-Path -LiteralPath $iznimka) { Write-Host (Get-Content -LiteralPath $iznimka -Raw) }
+    if (Test-Path -LiteralPath $iznimka) {
+        $tijelo = Get-Content -LiteralPath $iznimka -Raw
+        Write-Host $tijelo
+        throw "ThreadExceptionDialog $ime. $tijelo"
+    }
     if ($kod -eq -1) { throw "timeout $xml" }
     if ($kod -ne 0) { throw "UI smoke $ime kod $kod. $tekst" }
     if ($tekst -notlike "OK*") { throw "UI smoke $ime nema OK. $tekst" }
