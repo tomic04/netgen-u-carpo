@@ -1023,17 +1023,25 @@ namespace Carpo.NetGen.Ui
             _izlazTrazilice.KeyDownPocinje();
             int kod = (int)(keyData & Keys.KeyCode);
             bool control = (keyData & Keys.Control) == Keys.Control;
-            bool trazilica = ActiveControl is ButtonEdit;
-            bool grid = ActiveControl is GridControl;
+            // DevExpress editor u fokusu: ActiveControl forme je njegov unutarnji MaskBox,
+            // ne ButtonEdit. Bez penjanja po roditeljima Enter u trazilici nije bio Enter u
+            // trazilici i ONLOSTFOCUS je otisao dvaput (Form2.vb KeyDown trazilice).
+            // LookUpEdit, DateEdit i SpinEdit su takodjer ButtonEdit, pa je trazilica tocno taj tip
+            // (Napravi: NgGrana.Search -> new ButtonEdit()).
+            Control aktivna = ActiveControl;
+            while (aktivna != null && aktivna != this && !(aktivna is DevExpress.XtraEditors.BaseEdit) && !(aktivna is GridControl))
+                aktivna = aktivna.Parent;
+            bool trazilica = aktivna != null && aktivna.GetType() == typeof(ButtonEdit);
+            bool grid = aktivna is GridControl;
             Form2Dogadjaj.Tipka t = Form2Dogadjaj.KeyDown(trazilica, grid, false, false, true, kod, control, "", "", "");
             if (t.ValidirajTrazilicu && trazilica)
             {
                 _izlazTrazilice.Validated();
-                ZadnjaTrazilica = ActiveControl.Text ?? "";
+                ZadnjaTrazilica = aktivna.Text ?? "";
             }
             if (t.Sljedeca && ActiveControl != null)
             {
-                SelectNextControl(ActiveControl, true, true, true, true);
+                SelectNextControl(trazilica || grid ? aktivna : ActiveControl, true, true, true, true);
                 return true;
             }
             return base.ProcessCmdKey(ref msg, keyData);
