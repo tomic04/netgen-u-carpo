@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing;
 using System.Text;
 using System.Globalization;
 using System.Windows.Forms;
@@ -147,6 +148,7 @@ namespace Carpo.NetGen.Ui
             if (DijalogTok.OnLoadJeUpit(on) && citaj != null)
                 UcitajOnLoad(on, kontekst, citaj);
             int zadnji = 0;
+            var roditelji = new List<KeyValuePair<Control, string>>();
             bool imaGumb = forma.Gumbi != null && forma.Gumbi.Count > 0;
             for (int i = 0; i < forma.Kontrole.Count; i++)
             {
@@ -170,6 +172,10 @@ namespace Carpo.NetGen.Ui
                     c.Visible = m.Vidljivo;
                 PostaviTekst(c, k, m);
                 CarpoIzgled.Primijeni(c, k.Grana);
+                PrimijeniIzgled(c, k);
+                string roditelj = Attr(k, "PARENT");
+                if (roditelj.Length > 0)
+                    roditelji.Add(new KeyValuePair<Control, string>(c, roditelj));
                 var dugme = c as SimpleButton;
                 if (dugme != null)
                 {
@@ -194,9 +200,30 @@ namespace Carpo.NetGen.Ui
                     _nakonDjeteta.Add(new KeyValuePair<Control, NgControl>(c, k));
             }
 
-            if (forma.Gumbi != null)
+            // Form2.vb Glbl.Parent = Controls(PARENT) (npr. 2361, 2414, 3010): kontrola ide u okvir i LEFT/TOP
+            // su relativni prema okviru. VB to radi odmah, pa okvir definiran kasnije ostane bez djece; ovdje
+            // ide nakon svih kontrola (LAY-01).
+            for (int i = 0; i < roditelji.Count; i++)
             {
-                int x = 8;
+                Control dijete = roditelji[i].Key;
+                Control[] okviri = Controls.Find(roditelji[i].Value, false);
+                if (okviri.Length == 0 || okviri[0] == dijete || !(okviri[0] is PanelControl))
+                    continue;
+                Control[] natpis = Controls.Find("lbl" + dijete.Name, false);
+                okviri[0].Controls.Add(dijete);
+                if (natpis.Length > 0)
+                    okviri[0].Controls.Add(natpis[0]);
+            }
+
+            if (forma.Gumbi != null && forma.Gumbi.Count > 0)
+            {
+                // Form2.designer: Panel1 dno (33) s Button1..6 na stalnim mjestima; prazan natpis skrije gumb
+                // (2747-2762), a bez ijednog natpisa nema ni Panel1.
+                var ploca = new PanelControl();
+                ploca.Name = "pnlGumbi";
+                ploca.Dock = DockStyle.Bottom;
+                ploca.Height = 33;
+                ploca.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
                 for (int i = 0; i < forma.Gumbi.Count; i++)
                 {
                     NgButton g = forma.Gumbi[i];
@@ -204,15 +231,15 @@ namespace Carpo.NetGen.Ui
                     b.Name = "cmd" + g.Redni.ToString();
                     b.Text = Raspored.SrediTekst(g.Natpis);
                     b.Tag = g.Redni.ToString() + "|" + (g.Naredba ?? "");
-                    b.Left = x;
-                    b.Top = ClientSize.Height - 36;
-                    b.Width = 96;
-                    b.Anchor = AnchorStyles.Left | AnchorStyles.Bottom;
+                    b.Left = Form2Izgled.LijevoGumba(g.Redni);
+                    b.Top = 4;
+                    b.Width = 75;
+                    b.Visible = (b.Text ?? "").Trim().Length > 0;
                     b.Click += GumbKlik;
                     CarpoIzgled.Gumb(b);
-                    Controls.Add(b);
-                    x += 104;
+                    ploca.Controls.Add(b);
                 }
+                Controls.Add(ploca);
             }
             if (!imaGumb)
             {
@@ -223,6 +250,16 @@ namespace Carpo.NetGen.Ui
                 CarpoIzgled.Gumb(ok);
                 Controls.Add(ok);
                 AcceptButton = ok;
+            }
+            // Dock: kontrola straga se slaze prva. Ploca s gumbima ide na dno prva, a Fill (grid, DOCK=5)
+            // zadnji, pa popuni ostatak (VB: grid i okvir BringToFront nakon Controls.Add).
+            Control[] gumbi = Controls.Find("pnlGumbi", false);
+            if (gumbi.Length > 0)
+                gumbi[0].SendToBack();
+            foreach (Control c in SveKontrole())
+            {
+                if (c.Dock == DockStyle.Fill)
+                    c.BringToFront();
             }
 
             PrimijeniOnLoad();
@@ -320,6 +357,44 @@ namespace Carpo.NetGen.Ui
             if (_forma == null || _forma.Atributi == null || !_forma.Atributi.Ima(ime))
                 return "";
             return (_forma.Atributi.Vrijednost(ime) ?? "").Trim();
+        }
+
+        /// <summary>
+        /// SrediKontrolu 3068-3150: STYLE/SIZE (font), FORECOLOR, BACKCOLOR; pa DOCK i ANCHOR (npr. 2362-2363).
+        /// Samo brojevi vrijede (vidi Form2Izgled).
+        /// </summary>
+        private static void PrimijeniIzgled(Control c, NgControl k)
+        {
+            FontStyle? stil = Form2Izgled.Stil(Attr(k, "STYLE"));
+            float? velicina = Form2Izgled.Velicina(Attr(k, "SIZE"));
+            if (stil.HasValue || velicina.HasValue)
+            {
+                Font f = c.Font;
+                try { c.Font = new Font(f.FontFamily, velicina ?? f.Size, stil ?? f.Style); }
+                catch (Exception) { }
+            }
+            Color? prednja = Form2Izgled.Boja(Attr(k, "FORECOLOR"), false);
+            if (prednja.HasValue)
+                c.ForeColor = prednja.Value;
+            Color? pozadina = Form2Izgled.Boja(Attr(k, "BACKCOLOR"), true);
+            if (pozadina.HasValue)
+                c.BackColor = pozadina.Value;
+            // WinForms: Anchor i Dock iskljucuju jedno drugo, vrijedi zadnje postavljeno. VB postavi Dock pa
+            // Anchor (labela, okvir, grid 1629/1737), osim dxgrida (1609-1610: Anchor pa Dock).
+            DockStyle? dock = Form2Izgled.Dock(Attr(k, "DOCK"));
+            AnchorStyles? sidro = Form2Izgled.Anchor(Attr(k, "ANCHOR"));
+            if (k.Grana == NgGrana.DxGrid)
+            {
+                if (sidro.HasValue)
+                    c.Anchor = sidro.Value;
+                if (dock.HasValue)
+                    c.Dock = dock.Value;
+                return;
+            }
+            if (dock.HasValue)
+                c.Dock = dock.Value;
+            if (sidro.HasValue)
+                c.Anchor = sidro.Value;
         }
 
         private void NapuniKontrolu(Control c, NgControl k)
@@ -1001,7 +1076,7 @@ namespace Carpo.NetGen.Ui
             if (!DijalogTok.DozvoliUpis && Carpo.NetGen.Print.PrintBridge.Vrsta(naredba, true).Length > 0)
             {
                 DevExpress.XtraGrid.GridControl grid = null;
-                foreach (Control c in Controls)
+                foreach (Control c in SveKontrole())
                 {
                     grid = c as DevExpress.XtraGrid.GridControl;
                     if (grid != null)
@@ -1083,7 +1158,7 @@ namespace Carpo.NetGen.Ui
         private string VrijednostIzGrida(string gridIme, string kolona)
         {
             GridControl grid = null;
-            foreach (Control c in Controls)
+            foreach (Control c in SveKontrole())
             {
                 var g = c as GridControl;
                 if (g != null && string.Equals((g.Name ?? "").Trim(), (gridIme ?? "").Trim(), StringComparison.OrdinalIgnoreCase))
@@ -1298,8 +1373,7 @@ namespace Carpo.NetGen.Ui
             if (temp.Length > 0)
                 PostaviId(temp);
 
-            var kontrole = new Control[Controls.Count];
-            Controls.CopyTo(kontrole, 0);
+            var kontrole = SveKontrole().ToArray();
             for (int i = 0; i < kontrole.Length; i++)
             {
                 Control c = kontrole[i];
@@ -1464,7 +1538,7 @@ namespace Carpo.NetGen.Ui
             {
                 bool vidi = akcija == "visible";
                 c.Visible = vidi;
-                Control[] natpis = Controls.Find("lbl" + c.Name, false);
+                Control[] natpis = Controls.Find("lbl" + c.Name, true);
                 if (natpis.Length > 0)
                     natpis[0].Visible = vidi;
                 return;
@@ -1545,7 +1619,7 @@ namespace Carpo.NetGen.Ui
 
         private void Fokusiraj(string ime)
         {
-            Control[] n = Controls.Find((ime ?? "").Trim(), false);
+            Control[] n = Controls.Find((ime ?? "").Trim(), true);
             if (n.Length == 0)
                 return;
             Control cilj = n[0];
@@ -1564,7 +1638,7 @@ namespace Carpo.NetGen.Ui
         /// <summary>click (4673-4677): Glbl_Click. Gumb pokrene svoj ONCLICK, ostalo ONCLICK ili TAG.</summary>
         private void KlikniKontrolu(string ime)
         {
-            Control[] n = Controls.Find(ime, false);
+            Control[] n = Controls.Find(ime, true);
             if (n.Length == 0)
                 return;
             var gumb = n[0] as SimpleButton;
@@ -1819,6 +1893,9 @@ namespace Carpo.NetGen.Ui
                     return true;
                 }
             }
+            // Form2_KeyDown 4192-4252: F1-F10 i * su HOTKEY (HOT-01).
+            if (Form2Izgled.JeHotkey(keyData & Keys.KeyCode) && PokreniHotkey(keyData & Keys.KeyCode))
+                return true;
             NgControl def = aktivna == null || aktivna == this ? null : NadjiKontrolu(aktivna.Name);
             string lost = Attr(def, "ONLOSTFOCUS");
             string greska = "";
@@ -1854,6 +1931,41 @@ namespace Carpo.NetGen.Ui
             if (obradjeno)
                 return true;
             return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        /// <summary>
+        /// HOTKEY (139 granula, gumbi F2/F8/F3, trazilica F5): gumb se klikne ako je ukljucen
+        /// (Glbl_ClickButton), combo, broj, trazilica i grid dobiju fokus. Ostale kontrole nista.
+        /// </summary>
+        private bool PokreniHotkey(Keys tipka)
+        {
+            bool pogodak = false;
+            foreach (Control c in SveKontrole())
+            {
+                if (string.IsNullOrEmpty(c.Name))
+                    continue;
+                NgControl def = NadjiKontrolu(c.Name);
+                if (def == null || !Form2Izgled.Pogodak(Attr(def, "HOTKEY"), tipka))
+                    continue;
+                var gumb = c as SimpleButton;
+                if (gumb != null)
+                {
+                    if (gumb.Enabled)
+                    {
+                        pogodak = true;
+                        gumb.PerformClick();
+                        if (IsDisposed)
+                            return true;
+                    }
+                    continue;
+                }
+                if (c is LookUpEdit || c is SpinEdit || c.GetType() == typeof(ButtonEdit) || c is GridControl)
+                {
+                    pogodak = true;
+                    c.Focus();
+                }
+            }
+            return pogodak;
         }
 
         private void PosaljiNaServer(string segment)
@@ -1910,7 +2022,7 @@ namespace Carpo.NetGen.Ui
             string gridIme = opisTekst.Substring(crta1 + 1, crta2 - crta1 - 1);
             string tijelo = opisTekst.Substring(crta2 + 1);
             GridControl grid = null;
-            foreach (Control c in Controls)
+            foreach (Control c in SveKontrole())
             {
                 var g = c as GridControl;
                 if (g != null && string.Equals(g.Name, gridIme, StringComparison.OrdinalIgnoreCase))
@@ -1988,7 +2100,7 @@ namespace Carpo.NetGen.Ui
             if (cb != null)
             {
                 var natpisi = new StringBuilder();
-                foreach (Control c in Controls)
+                foreach (Control c in SveKontrole())
                 {
                     var look = c as LookUpEdit;
                     if (look != null && !string.IsNullOrEmpty(c.Name))
@@ -2077,10 +2189,32 @@ namespace Carpo.NetGen.Ui
 
         public string ZadnjiTraziSql = "";
 
+        /// <summary>
+        /// Kontrole dijaloga, i one u okviru (PARENT, LAY-01). VB ide samo po Me.Controls, pa kontrola u
+        /// GroupBoxu nije parametar ni cilj RefreshControls/HOTKEY. U korpusu su u okvirima uglavnom gumbi
+        /// (424 od 500); za tekst, broj i radio u okviru Carpo ih ipak vidi (50-50 -> Carpo).
+        /// </summary>
+        private List<Control> SveKontrole()
+        {
+            var l = new List<Control>();
+            Skupi(this, l);
+            return l;
+        }
+
+        private static void Skupi(Control roditelj, List<Control> l)
+        {
+            foreach (Control c in roditelj.Controls)
+            {
+                l.Add(c);
+                if (c is PanelControl || c is SplitContainerControl)
+                    Skupi(c, l);
+            }
+        }
+
         private string SviParametri()
         {
             var sb = new StringBuilder();
-            foreach (Control c in Controls)
+            foreach (Control c in SveKontrole())
             {
                 if (string.IsNullOrEmpty(c.Name))
                     continue;
@@ -2187,7 +2321,7 @@ namespace Carpo.NetGen.Ui
 
         private GridView Pogled()
         {
-            foreach (Control c in Controls)
+            foreach (Control c in SveKontrole())
             {
                 var grid = c as GridControl;
                 if (grid != null)

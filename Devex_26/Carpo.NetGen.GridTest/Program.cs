@@ -1990,6 +1990,7 @@ namespace Carpo.NetGen.GridTest
             LanacNakonZamjene();
             DogadjajiPravila();
             DogadjajiDijaloga();
+            RasporedDijaloga();
             IspisUcinak();
             PokaziUpitUcinak();
             var traz = new DataTable();
@@ -2382,6 +2383,54 @@ namespace Carpo.NetGen.GridTest
             finally
             {
                 DijalogTok.DozvoliUpis = false;
+                d.Close();
+                d.Dispose();
+            }
+        }
+
+        /// <summary>Faza C4 (LAY-01, HOT-01): PARENT, DOCK, ANCHOR, STYLE, ploca s gumbima i HOTKEY.</summary>
+        private static void RasporedDijaloga()
+        {
+            var kontrole = new List<NgControl>();
+            kontrole.Add(new NgControl("group", NgGrana.Group, "GROUP2", new NgAttributeBag(new Dictionary<string, string> { { "DOCK", "2" }, { "HEIGHT", "700" } }), true));
+            kontrole.Add(new NgControl("button", NgGrana.Button, "spremi", new NgAttributeBag(new Dictionary<string, string>
+            {
+                { "PARENT", "GROUP2" }, { "LEFT", "140" }, { "TOP", "140" }, { "CAPTION", "Spremi" }, { "HOTKEY", "F2" }, { "ONCLICK", "select 'f2' as x" }
+            }), true));
+            kontrole.Add(new NgControl("grid", NgGrana.Grid, "stavke", new NgAttributeBag(new Dictionary<string, string> { { "DOCK", "5" } }), true));
+            kontrole.Add(new NgControl("label", NgGrana.Label, "naslov", new NgAttributeBag(new Dictionary<string, string>
+            {
+                { "STYLE", "1" }, { "BACKCOLOR", "red" }, { "ANCHOR", "13" }, { "CAPTION", "Naslov" }
+            }), true));
+            var gumbi = new List<NgButton> { new NgButton(1, "Unesi", ""), new NgButton(3, "Stavke", "STAVKE") };
+            var forma = new NgForm("T3", new NgAttributeBag(null), "", "", kontrole, gumbi, new List<string>());
+            var sql = new List<string>();
+            var d = new Dijalog();
+            try
+            {
+                d.Slozi(forma, new SqlKontekst(), delegate (string s) { sql.Add(s ?? ""); return null; });
+                d.ShowInTaskbar = false;
+                d.StartPosition = FormStartPosition.Manual;
+                d.Location = new Point(-32000, -32000);
+                d.Show();
+                Control grupa = d.Controls.Find("GROUP2", true)[0];
+                Control spremi = d.Controls.Find("spremi", true)[0];
+                Control grid = d.Controls.Find("stavke", true)[0];
+                Control naslov = d.Controls.Find("naslov", true)[0];
+                Control[] ploca = d.Controls.Find("pnlGumbi", true);
+                Control cmd3 = d.Controls.Find("cmd3", true)[0];
+                bool okvir = spremi.Parent == grupa && grupa.Dock == DockStyle.Bottom;
+                bool fill = grid.Dock == DockStyle.Fill && grid.Bottom <= (grupa.Top + 1);
+                bool stil = naslov.Font.Bold && naslov.BackColor.ToArgb() == Color.Yellow.ToArgb()
+                    && naslov.Anchor == (AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right);
+                bool panel = ploca.Length == 1 && ploca[0].Dock == DockStyle.Bottom && cmd3.Parent == ploca[0] && cmd3.Left == 174;
+                T("lay01-raspored", okvir && fill && stil && panel, "okvir=" + okvir + " fill=" + fill + " (grid " + grid.Bounds + ", grupa " + grupa.Bounds + ") stil=" + stil + " panel=" + panel);
+                d.ActiveControl = grid;
+                d.ProvediTipku(Keys.F2);
+                T("hot01-f2", Broji(sql, "select 'f2' as x") == 1, string.Join(" | ", sql.ToArray()));
+            }
+            finally
+            {
                 d.Close();
                 d.Dispose();
             }
