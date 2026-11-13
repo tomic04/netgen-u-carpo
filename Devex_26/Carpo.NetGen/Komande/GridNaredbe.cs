@@ -1,7 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
+using System.Net;
+using System.Text;
+using System.Windows.Forms;
 
 namespace Carpo.NetGen.Komande
 {
@@ -79,6 +84,19 @@ namespace Carpo.NetGen.Komande
     /// <summary>COLORPICKER Form2.vb 7156–7163 i Form1.vb 6813–6831. Boja ide u HTML.</summary>
     public static class BojaNaredba
     {
+        public static string Odabrana = "";
+
+        /// <summary>Form2.vb 7160–7162. ShowDialog je 1 (OK) pa HTML boja u @@selectedcolor.</summary>
+        public static string Pokazi()
+        {
+            using (var d = new ColorDialog())
+            {
+                if (d.ShowDialog() == DialogResult.OK)
+                    Odabrana = ColorTranslator.ToHtml(d.Color);
+            }
+            return Odabrana ?? "";
+        }
+
         public static string Html(Color boja)
         {
             return ColorTranslator.ToHtml(boja);
@@ -128,6 +146,22 @@ namespace Carpo.NetGen.Komande
                 + "&kasa=" + (kasa ?? "").ToUpperInvariant() + "&godina=" + godina
                 + "&vrijemejir=null&jir=null&brojdok=" + broj + "&datumdok=" + datum;
         }
+
+        /// <summary>Form2.vb 7770–7790. POST text/xml, timeout 3000, vraća tijelo odgovora.</summary>
+        public static string Post(string url, string tijelo)
+        {
+            byte[] bytes = Encoding.ASCII.GetBytes(tijelo ?? "");
+            var req = (HttpWebRequest)WebRequest.Create(url);
+            req.ContentType = "text/xml";
+            req.Method = "POST";
+            req.ContentLength = bytes.Length;
+            req.Timeout = 3000;
+            using (Stream os = req.GetRequestStream())
+                os.Write(bytes, 0, bytes.Length);
+            using (WebResponse resp = req.GetResponse())
+            using (var sr = new StreamReader(resp.GetResponseStream()))
+                return sr.ReadToEnd().Trim();
+        }
     }
 
     /// <summary>.VBS i .BAT Form2.vb 7402–7418. Jedan ~ dijeli datoteku i argument.</summary>
@@ -150,6 +184,26 @@ namespace Carpo.NetGen.Komande
             string[] a = (segment ?? "").Split('~');
             return a.Length > 1 ? a[1].Trim() : "";
         }
+
+        /// <summary>Form2.vb 7408–7417. Process.Start(datoteka) ili Process.Start(datoteka, argument).</summary>
+        public static int Pokreni(string segment)
+        {
+            string dat = Datoteka(segment);
+            string arg = Argument(segment);
+            if (dat.Length == 0)
+                return -1;
+            var info = new ProcessStartInfo();
+            info.FileName = dat;
+            info.Arguments = arg;
+            info.UseShellExecute = true;
+            info.CreateNoWindow = true;
+            Process p = arg.Length == 0 ? Process.Start(dat) : Process.Start(info);
+            if (p == null)
+                return -1;
+            if (!p.WaitForExit(8000))
+                return -2;
+            return p.ExitCode;
+        }
     }
 
     /// <summary>CHARTGRID i PIVOTGRID Form2.vb 9062–9102. NetGenExtensions.Form2.ChartGRID i Form1.PivotGRID.</summary>
@@ -160,5 +214,47 @@ namespace Carpo.NetGen.Komande
         public const string PivotKlasa = "NetGenExtensions.Form1";
         public const string ChartMetoda = "ChartGRID";
         public const string PivotMetoda = "PivotGRID";
+        public const string IspisKlasa = "NetGenExtensions.frmGridExPrintingREPX";
+
+        /// <summary>
+        /// Form1.vb 5988 i Form2.vb 9044, 9065, 9088: Assembly.Load("NetGenExtensions").
+        /// Traži DLL uz exe, u SharedAssemblies i u NetGen mapi. Prazan string ako ga nema.
+        /// </summary>
+        public static string Nadji()
+        {
+            string[] imena = new[] { "NetGenExtensions.dll" };
+            var mape = new List<string>();
+            mape.Add(AppDomain.CurrentDomain.BaseDirectory ?? "");
+            string env = Environment.GetEnvironmentVariable("SharedAssembliesDir");
+            if (!string.IsNullOrEmpty(env))
+                mape.Add(Path.Combine(env, "Spin"));
+            mape.Add(@"C:\Users\ntomic\Desktop\Jupiter Client\Programs\SharedAssemblies\Spin");
+            mape.Add(@"C:\Users\ntomic\Desktop\Jupiter Client\Programs\SharedAssemblies");
+            for (int i = 0; i < mape.Count; i++)
+            {
+                if (string.IsNullOrEmpty(mape[i]))
+                    continue;
+                string put = Path.Combine(mape[i], imena[0]);
+                if (File.Exists(put))
+                    return put;
+            }
+            return "";
+        }
+
+        public static string Ucitaj()
+        {
+            string put = Nadji();
+            if (put.Length == 0)
+                return "";
+            try
+            {
+                System.Reflection.Assembly.LoadFrom(put);
+                return put;
+            }
+            catch (Exception ex)
+            {
+                return "greska " + ex.Message;
+            }
+        }
     }
 }

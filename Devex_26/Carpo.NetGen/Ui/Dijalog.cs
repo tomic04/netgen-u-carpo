@@ -388,11 +388,28 @@ namespace Carpo.NetGen.Ui
                         FiskalTok.Izvrsi(FiskalNaredba.Tablica(korak.Tekst), FiskalNaredba.Argument(korak.Tekst), _citaj);
                         continue;
                     }
-                    if (korak.Vrsta == "sql" && _citaj != null && !_jupiter && !ZastitaSql.Tekst(korak.Tekst).Pise)
+                    if (korak.Vrsta == "boja")
                     {
-                        try { _citaj(korak.Tekst); }
-                        catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + korak.Tekst); }
+                        string html = BojaNaredba.Pokazi();
+                        if (_kontekst != null)
+                            _kontekst.SelectedColor = html;
+                        string unutra = BojaNaredba.Sql(korak.Tekst);
+                        if (unutra.Length > 0)
+                            IzvrsiSql(unutra);
+                        continue;
                     }
+                    if (korak.Vrsta == "pokretanje")
+                    {
+                        Pokretanje.Pokreni(korak.Tekst);
+                        continue;
+                    }
+                    if (korak.Vrsta == "posalji")
+                    {
+                        PosaljiNaServer(korak.Tekst);
+                        continue;
+                    }
+                    if (korak.Vrsta == "sql")
+                        IzvrsiSql(korak.Tekst);
                 }
                 return;
             }
@@ -454,6 +471,79 @@ namespace Carpo.NetGen.Ui
                 DialogResult = DialogResult.OK;
             else if (b != null)
                 b.DialogResult = DialogResult.None;
+        }
+
+        private void IzvrsiSql(string tekst)
+        {
+            if (_citaj == null || _jupiter)
+                return;
+            string sql = tekst ?? "";
+            if (sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                sql = SqlTekst.Sredi(sql, _kontekst ?? new SqlKontekst());
+            if (ZastitaSql.Tekst(sql).Pise)
+                return;
+            try
+            {
+                DataTable dt = _citaj(sql);
+                PrimeniRed(dt);
+            }
+            catch (Exception ex)
+            {
+                NgDnevnik.Greska(ex.Message + " | " + sql);
+            }
+        }
+
+        private void PrimeniRed(DataTable dt)
+        {
+            if (dt == null || dt.Rows.Count == 0)
+                return;
+            foreach (DataColumn col in dt.Columns)
+            {
+                Control[] n = Controls.Find(col.ColumnName, true);
+                if (n.Length == 0)
+                    continue;
+                string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col]);
+                var edit = n[0] as TextEdit;
+                if (edit != null && !(edit is LookUpEdit))
+                    edit.Text = v;
+            }
+        }
+
+        private void PosaljiNaServer(string segment)
+        {
+            if (_citaj == null)
+                return;
+            DataTable inst = null;
+            DataTable kasa = null;
+            try
+            {
+                inst = _citaj("select * from install");
+                kasa = _citaj("select * from mpkase");
+            }
+            catch (Exception ex)
+            {
+                NgDnevnik.Greska(ex.Message);
+                return;
+            }
+            if (inst == null || inst.Rows.Count == 0 || kasa == null || kasa.Rows.Count == 0)
+                return;
+            string servis = inst.Columns.Contains("webservice") && inst.Rows[0]["webservice"] != DBNull.Value
+                ? Convert.ToString(inst.Rows[0]["webservice"]) : "";
+            if (servis.Trim().Length == 0)
+                return;
+            string trgovina = kasa.Columns.Contains("oznakatrgovine") ? Convert.ToString(kasa.Rows[0]["oznakatrgovine"]) : "";
+            string kasaIme = kasa.Columns.Contains("kasa") ? Convert.ToString(kasa.Rows[0]["kasa"]) : "";
+            string url = PosaljiServer.Vrsta(segment) == "poruka"
+                ? PosaljiServer.UrlPoruke(servis, trgovina, kasaIme, "", "", "")
+                : PosaljiServer.UrlRacuna(servis, trgovina, kasaIme, "", "", "", "", "");
+            try
+            {
+                PosaljiServer.Post(url, "<poruka/>");
+            }
+            catch (Exception ex)
+            {
+                NgDnevnik.Greska(ex.Message + " | " + url);
+            }
         }
 
         private void IzvrsiForeach(string opis)

@@ -1,6 +1,7 @@
 using SpinDMSUtil;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -263,6 +264,97 @@ namespace Carpo.TestShell
         /// <summary>
         /// Isti klik na Start kao korisnik. Ne spaja GranulaSesija.
         /// </summary>
+        public int PokreniBoju(string xml, string snimka)
+        {
+            var r = Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(xml);
+            Carpo.NetGen.Model.NgForm forma = null;
+            if (r.Projekt != null && r.Projekt.Forme != null)
+            {
+                for (int i = 0; i < r.Projekt.Forme.Count; i++)
+                {
+                    if (string.Equals(r.Projekt.Forme[i].Ime, "GRUPEDODAJ_FORM", StringComparison.OrdinalIgnoreCase))
+                        forma = r.Projekt.Forme[i];
+                }
+            }
+            if (forma == null)
+            {
+                UpisiIshod(snimka, "FAIL nema GRUPEDODAJ_FORM");
+                return 5;
+            }
+            bool vidjen = false;
+            var nit = new Thread(delegate ()
+            {
+                for (int i = 0; i < 50; i++)
+                {
+                    Thread.Sleep(200);
+                    if (ZatvoriDijalogBoje())
+                    {
+                        vidjen = true;
+                        return;
+                    }
+                }
+            });
+            nit.IsBackground = true;
+            nit.SetApartmentState(ApartmentState.STA);
+            nit.Start();
+            var kontekst = new Carpo.NetGen.Grid.SqlKontekst();
+            kontekst.OperaterId = operateriId.ToString();
+            string ishod = "FAIL boja";
+            Dijalog.NakonPrikaza = delegate (Dijalog d)
+            {
+                SimpleButton gumb = NadjiGumb(d, "Odaberi boju");
+                if (gumb != null)
+                    gumb.PerformClick();
+                string tekst = "";
+                Control[] n = d.Controls.Find("boja", true);
+                if (n.Length > 0)
+                    tekst = n[0].Text ?? "";
+                bool ok = vidjen && tekst.Length > 0 && tekst == Carpo.NetGen.Komande.BojaNaredba.Odabrana;
+                ishod = ok ? "OK boja=" + tekst : "FAIL boja vidjen=" + vidjen + " tekst=" + tekst + " odabrana=" + Carpo.NetGen.Komande.BojaNaredba.Odabrana;
+                try { d.Close(); } catch { }
+            };
+            var dij = new Dijalog();
+            dij.Prikazi(forma, kontekst, CitajBoju, true, this);
+            Dijalog.NakonPrikaza = null;
+            UpisiIshod(snimka, ishod);
+            return ishod.StartsWith("OK", StringComparison.Ordinal) ? 0 : 5;
+        }
+
+        private static DataTable CitajBoju(string sql)
+        {
+            var dt = new DataTable();
+            using (var conn = new System.Data.SqlClient.SqlConnection(Carpo.NetGen.Grid.SpinVeza.Spoj("localhost", "spin")))
+            using (var cmd = new System.Data.SqlClient.SqlCommand(sql, conn))
+            using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
+            {
+                cmd.CommandTimeout = 30;
+                conn.Open();
+                da.Fill(dt);
+            }
+            return dt;
+        }
+
+        private static bool ZatvoriDijalogBoje()
+        {
+            bool nasao = false;
+            int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+            EnumWindows(delegate (IntPtr h, IntPtr l)
+            {
+                uint wpid;
+                GetWindowThreadProcessId(h, out wpid);
+                if (wpid != (uint)pid || !IsWindowVisible(h))
+                    return true;
+                var klasa = new StringBuilder(256);
+                GetClassName(h, klasa, klasa.Capacity);
+                if (klasa.ToString().IndexOf("32770", StringComparison.Ordinal) < 0)
+                    return true;
+                nasao = true;
+                PostMessage(h, 0x0111, (IntPtr)1, IntPtr.Zero);
+                return false;
+            }, IntPtr.Zero);
+            return nasao;
+        }
+
         public int PokreniUiSmoke(string snimka)
         {
             _uiIshod = 0;

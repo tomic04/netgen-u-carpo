@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Threading;
 using System.Text;
 using System.Data.SqlClient;
 using System.IO;
@@ -31,6 +32,7 @@ namespace Carpo.NetGen.GridTest
             Pregled();
             AssemblyLoad();
             Fiskal();
+            BatIPost();
             Include();
             Ispis();
             Zamjene();
@@ -1643,6 +1645,64 @@ namespace Carpo.NetGen.GridTest
                     return "idx " + i + " ocek [" + a[i] + "] dobiveno [" + b[i] + "]";
             }
             return "duljina " + a.Count + "/" + b.Count;
+        }
+
+        private static void BatIPost()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "ng-bat-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                string izlaz = Path.Combine(dir, "out.txt");
+                string bat = Path.Combine(dir, "pisi.bat");
+                File.WriteAllText(bat, "@echo off\r\necho ok> \"" + izlaz + "\"\r\n");
+                int kod = Carpo.NetGen.Komande.Pokretanje.Pokreni(bat);
+                string tijelo = "";
+                for (int i = 0; i < 20 && !File.Exists(izlaz); i++)
+                    Thread.Sleep(100);
+                if (File.Exists(izlaz))
+                    tijelo = File.ReadAllText(izlaz).Trim();
+                T("bat-pokretanje", kod == 0 && tijelo == "ok", kod + " " + tijelo);
+            }
+            finally
+            {
+                try { Directory.Delete(dir, true); } catch { }
+            }
+            var slusac = new System.Net.HttpListener();
+            string dobiveno = "";
+            try
+            {
+                slusac.Prefixes.Add("http://127.0.0.1:8765/");
+                slusac.Start();
+                var nit = new Thread(delegate ()
+                {
+                    var ctx = slusac.GetContext();
+                    using (var sr = new StreamReader(ctx.Request.InputStream, System.Text.Encoding.ASCII))
+                        dobiveno = sr.ReadToEnd();
+                    byte[] b = System.Text.Encoding.ASCII.GetBytes("1");
+                    ctx.Response.OutputStream.Write(b, 0, b.Length);
+                    ctx.Response.Close();
+                });
+                nit.IsBackground = true;
+                nit.Start();
+                string odg = Carpo.NetGen.Komande.PosaljiServer.Post("http://127.0.0.1:8765/", "<poruka>test</poruka>");
+                nit.Join(4000);
+                T("posalji-post", odg == "1" && dobiveno.IndexOf("<poruka>test</poruka>", StringComparison.Ordinal) >= 0, odg + " " + dobiveno);
+            }
+            catch (Exception ex)
+            {
+                T("posalji-post", false, ex.Message);
+            }
+            finally
+            {
+                try { slusac.Close(); } catch { }
+            }
+            string dll = Carpo.NetGen.Komande.EkstenzijaGrid.Nadji();
+            Console.WriteLine(dll.Length == 0
+                ? "NETGEN-EXTENSIONS nije na stroju. Treba donijeti NetGenExtensions.dll (NetGenExtensions.frmGridExPrintingREPX, Form1.PivotGRID, Form2.ChartGRID) u Jupiter SharedAssemblies."
+                : "NETGEN-EXTENSIONS " + dll);
+            T("netgen-extensions", Carpo.NetGen.Komande.EkstenzijaGrid.Sklop == "NetGenExtensions"
+                && Carpo.NetGen.Komande.EkstenzijaGrid.IspisKlasa == "NetGenExtensions.frmGridExPrintingREPX", dll);
         }
 
         private static void FiskalUuidSpin()
