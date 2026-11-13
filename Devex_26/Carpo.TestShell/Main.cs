@@ -539,7 +539,8 @@ namespace Carpo.TestShell
                             Form f = otvorene[i];
                             if (f == null || f == this || f.IsDisposed)
                                 continue;
-                            if (!(f is Dijalog))
+                            bool rok = DateTime.UtcNow > Carpo.NetGen.Ui.Podloga.RokUtc;
+                            if (!rok && !(f is Dijalog))
                                 continue;
                             try
                             {
