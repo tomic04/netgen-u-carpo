@@ -374,6 +374,7 @@ namespace Carpo.TestShell
             }
             string pod = snimka + ".podforma.png";
             bool odustao = false;
+            bool klikGotov = false;
             string razlog = "";
             int pokusaj = 0;
             var timer = new System.Windows.Forms.Timer();
@@ -390,9 +391,13 @@ namespace Carpo.TestShell
                     return;
                 }
                 try { dij.Update(); } catch { }
-                SnimiProzor(dij.Handle, pod);
+                if (!SnimiProzor(dij.Handle, pod))
+                    SnimiKontrolu(dij, pod);
                 odustao = true;
+                o.DialogResult = DialogResult.Cancel;
                 o.PerformClick();
+                if (!dij.IsDisposed)
+                    dij.Close();
             };
             timer.Tick += delegate
             {
@@ -437,15 +442,17 @@ namespace Carpo.TestShell
                 o.PerformClick();
             };
             timer.Start();
-            var cekaj = new Thread(delegate () { SnimiZastoj(snimka, granula, delegate () { return odustao; }); });
+            var cekaj = new Thread(delegate () { SnimiZastoj(snimka, granula, delegate () { return klikGotov; }); });
             cekaj.IsBackground = true;
             cekaj.Start();
             try
             {
                 gumb.PerformClick();
+                klikGotov = true;
             }
             catch (Exception ex)
             {
+                klikGotov = true;
                 timer.Stop();
                 timer.Dispose();
                 Dijalog.NakonPrikaza = null;
@@ -462,6 +469,23 @@ namespace Carpo.TestShell
             }
             trag = "podforma=" + otvori;
             return 0;
+        }
+
+        private static void SnimiKontrolu(Control c, string put)
+        {
+            try
+            {
+                if (c == null || c.Width < 50 || c.Height < 50)
+                    return;
+                using (var bmp = new System.Drawing.Bitmap(c.Width, c.Height))
+                {
+                    c.DrawToBitmap(bmp, new System.Drawing.Rectangle(0, 0, c.Width, c.Height));
+                    bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
+                }
+            }
+            catch
+            {
+            }
         }
 
         private void SnimiZastoj(string snimka, Form granula, Func<bool> gotovo)

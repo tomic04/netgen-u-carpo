@@ -333,12 +333,14 @@ namespace Carpo.NetGen.Ui
                     if (korak.Vrsta == "odustani")
                     {
                         DialogResult = DialogResult.Cancel;
+                        Close();
                         continue;
                     }
                     if (korak.Vrsta == "roditelj")
                     {
                         _zatvoriRoditelja = this;
                         DialogResult = DialogResult.Cancel;
+                        Close();
                         continue;
                     }
                     if (korak.Vrsta == "ok" || korak.Vrsta == "okstay")
