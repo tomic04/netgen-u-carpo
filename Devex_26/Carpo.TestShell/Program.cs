@@ -53,9 +53,16 @@ namespace Carpo.TestShell
             if (args != null && args.Length >= 3 && args[0] == "--sweep")
             {
                 string izvjestaj = args[2];
-                int sekundi = 12;
+                int sekundi = 6;
+                int shard = 0;
+                int dijelova = 6;
                 if (args.Length >= 4)
                     int.TryParse(args[3], out sekundi);
+                if (args.Length >= 6)
+                {
+                    int.TryParse(args[4], out shard);
+                    int.TryParse(args[5], out dijelova);
+                }
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
                 Application.ThreadException += delegate (object s, System.Threading.ThreadExceptionEventArgs e)
                 {
@@ -67,7 +74,7 @@ namespace Carpo.TestShell
                 {
                     main.BeginInvoke(new Action(delegate
                     {
-                        int kod = main.PokreniSweep(args[1], izvjestaj, sekundi);
+                        int kod = main.PokreniSweep(args[1], izvjestaj, sekundi, shard, dijelova);
                         Environment.Exit(kod);
                     }));
                 };

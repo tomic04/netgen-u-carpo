@@ -879,6 +879,11 @@ namespace Carpo.NetGen.Ui
 
         private DataTable Citaj(string sql)
         {
+            if (DateTime.UtcNow > RokUtc)
+            {
+                _sqlGreska = "sweep rok";
+                return null;
+            }
             if (string.IsNullOrWhiteSpace(sql))
                 return null;
             if (sql.IndexOf("cis.porezna-uprava.hr", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -917,6 +922,7 @@ namespace Carpo.NetGen.Ui
         }
 
         public static int TimeoutUpita = 30;
+        public static DateTime RokUtc = DateTime.MaxValue;
 
         /// <summary>
         /// Klik na podlozi. Upis ide samo na spin na sql-ai. Fiskalizacija ne ide na Poreznu.
@@ -1027,6 +1033,11 @@ namespace Carpo.NetGen.Ui
             gumbi.Sort(delegate (SimpleButton a, SimpleButton b) { return Redoslijed(a).CompareTo(Redoslijed(b)); });
             for (int i = 0; i < gumbi.Count; i++)
             {
+                if (DateTime.UtcNow > RokUtc)
+                {
+                    redovi.Add(Linija(granula, "gumb", "rok", "HANG", "isteklo vrijeme granule", "netgen/Form2.vb:3367"));
+                    break;
+                }
                 SimpleButton g = gumbi[i];
                 string naredba = g.Tag == null ? "" : g.Tag.ToString();
                 string natpis = (g.Text ?? "").Replace("\r\n", " ").Trim();

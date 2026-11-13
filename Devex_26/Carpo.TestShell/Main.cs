@@ -518,12 +518,32 @@ namespace Carpo.TestShell
         /// </summary>
         public int PokreniSweep(string korijen, string izvjestaj, int sekundi)
         {
-            if (sekundi < 5)
-                sekundi = 12;
-            Carpo.NetGen.Ui.Podloga.TimeoutUpita = Math.Min(8, sekundi);
+            return PokreniSweep(korijen, izvjestaj, sekundi, 0, 1);
+        }
+
+        /// <summary>
+        /// shard je 1..dijelova. 0 znači sve. Samo čitanje. Jedna granula ne smije prijeći sekundi.
+        /// </summary>
+        public int PokreniSweep(string korijen, string izvjestaj, int sekundi, int shard, int dijelova)
+        {
+            if (sekundi < 4)
+                sekundi = 6;
+            if (dijelova < 1)
+                dijelova = 1;
+            Carpo.NetGen.Ui.Podloga.TimeoutUpita = 3;
             _klikPregled = true;
             var xmlovi = Directory.GetFiles(korijen, "*.xml", SearchOption.AllDirectories);
             Array.Sort(xmlovi, StringComparer.OrdinalIgnoreCase);
+            if (shard >= 1 && shard <= dijelova)
+            {
+                var dio = new List<string>();
+                for (int i = 0; i < xmlovi.Length; i++)
+                {
+                    if ((i % dijelova) == (shard - 1))
+                        dio.Add(xmlovi[i]);
+                }
+                xmlovi = dio.ToArray();
+            }
             var sb = new StringBuilder();
             int cisto = 0, greska = 0, hang = 0, iznimka = 0, nije = 0;
             var grupe = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -541,6 +561,7 @@ namespace Carpo.TestShell
                 xml = put;
                 _zadnjaPodloga = null;
                 ZadnjaNit = "";
+                Carpo.NetGen.Ui.Podloga.RokUtc = DateTime.UtcNow.AddSeconds(sekundi);
                 string ishod = "CISTO";
                 string uzrok = "";
                 var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -565,9 +586,9 @@ namespace Carpo.TestShell
                         for (int i = 0; i < redovi.Count; i++)
                         {
                             string[] c = redovi[i].Split('\t');
-                            if (c.Length >= 4 && c[3] == "GRESKA")
+                            if (c.Length >= 4 && (c[3] == "GRESKA" || c[3] == "HANG"))
                             {
-                                ishod = "GRESKA";
+                                ishod = c[3] == "HANG" ? "HANG" : "GRESKA";
                                 uzrok = c.Length > 4 ? c[4] : redovi[i];
                                 break;
                             }
@@ -616,6 +637,7 @@ namespace Carpo.TestShell
             glava.AppendLine("nije-project=" + nije.ToString());
             glava.AppendLine("granula=" + (cisto + greska + hang + iznimka).ToString());
             glava.AppendLine("prag-s=" + sekundi.ToString());
+            glava.AppendLine("shard=" + shard.ToString() + "/" + dijelova.ToString());
             foreach (var par in grupe)
                 glava.AppendLine("grupa\t" + par.Key + "\t" + par.Value.ToString());
             glava.AppendLine("granula\tishod\tsekunde\tuzrok");
@@ -635,7 +657,8 @@ namespace Carpo.TestShell
                 return "nema-objekta";
             if (t.IndexOf("invalid column name", StringComparison.Ordinal) >= 0)
                 return "nema-stupca";
-            if (t.IndexOf("timeout", StringComparison.Ordinal) >= 0 || t.IndexOf("dulje od", StringComparison.Ordinal) >= 0)
+            if (t.IndexOf("timeout", StringComparison.Ordinal) >= 0 || t.IndexOf("dulje od", StringComparison.Ordinal) >= 0
+                || t.IndexOf("sweep rok", StringComparison.Ordinal) >= 0 || t.IndexOf("isteklo", StringComparison.Ordinal) >= 0)
                 return "hang";
             if (t.IndexOf("must declare", StringComparison.Ordinal) >= 0 || t.IndexOf("incorrect syntax", StringComparison.Ordinal) >= 0)
                 return "sql-sintaksa";

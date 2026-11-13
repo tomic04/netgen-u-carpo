@@ -34,7 +34,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Vrsta
+        id: vrsta
+        shell: powershell
+        run: |
+          $msg = git log -1 --format=%s
+          $sweep = "0"
+          $shard = "0"
+          if ($msg -match '\[sweep-([1-6])\]') {
+            $sweep = "1"
+            $shard = $Matches[1]
+          }
+          [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, "sweep=$sweep`nshard=$shard`n")
+          Write-Host "poruka=$msg sweep=$sweep shard=$shard event=$env:GITHUB_EVENT_NAME"
+
       - name: Spin stubovi i otvaranje
+        if: steps.vrsta.outputs.sweep != '1' || github.event_name == 'push'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -73,6 +88,9 @@ jobs:
           path: artifacts/spin/
 
       - name: Priprema referenci i build
+        if: steps.vrsta.outputs.sweep != '1' || github.event_name == 'push'
+        env:
+          SAMO_SWEEP: ${{ steps.vrsta.outputs.sweep }}
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -177,6 +195,19 @@ jobs:
             "Devex_26\Carpo.Designer\Carpo.Designer.csproj",
             "Devex_26\Carpo.TestShell\Carpo.TestShell.csproj"
           )
+          if ($env:SAMO_SWEEP -eq "1" -and $env:GITHUB_EVENT_NAME -eq "push") {
+            $projekti = @(
+              "Devex_26\Carpo.Structure\Carpo.Structure.csproj",
+              "Devex_26\Carpo.Common\Carpo.Common.csproj",
+              "Devex_26\Carpo.Data\Carpo.Data.csproj",
+              "Devex_26\Carpo.Core\Carpo.Core.csproj",
+              "Devex_26\Carpo.UI\Carpo.UI.csproj",
+              "Devex_26\Carpo.Gen\Carpo.csproj",
+              "Devex_26\Carpo.XmlGen\Carpo.XmlGen.csproj",
+              "Devex_26\Carpo.NetGen\Carpo.NetGen.csproj",
+              "Devex_26\Carpo.TestShell\Carpo.TestShell.csproj"
+            )
+          }
 
           foreach ($p in $projekti) {
             Write-Host "=== $p ==="
@@ -190,6 +221,7 @@ jobs:
           Write-Host "Build gotov: $out"
 
       - name: Smoke NetGen XML
+        if: steps.vrsta.outputs.sweep != '1'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -208,6 +240,7 @@ jobs:
           }
 
       - name: Grid testovi i defaulti
+        if: steps.vrsta.outputs.sweep != '1'
         shell: powershell
         env:
           CARPO_SPIN: "1"
@@ -246,6 +279,7 @@ jobs:
           Get-Content -LiteralPath $md -TotalCount 30
 
       - name: Klik pregled
+        if: steps.vrsta.outputs.sweep != '1'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -271,13 +305,15 @@ jobs:
           Get-Content -LiteralPath (Join-Path $snimke "klik-pregled.md")
 
       - name: Klik sweep
-        if: github.event_name == 'schedule' || github.event.inputs.klik == 'sweep'
+        if: steps.vrsta.outputs.sweep == '1' && github.event_name == 'push'
+        timeout-minutes: 12
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
           $exe = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin\Carpo.TestShell.exe"
-          $izv = Join-Path $env:GITHUB_WORKSPACE "artifacts\ui-smoke\sweep.txt"
-          & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSweep.ps1") -Exe $exe -XmlRoot (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Izvjestaj $izv -Sekundi 12
+          $shard = "${{ steps.vrsta.outputs.shard }}"
+          $izv = Join-Path $env:GITHUB_WORKSPACE "artifacts\ui-smoke\sweep-$shard.txt"
+          & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSweep.ps1") -Exe $exe -XmlRoot (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Izvjestaj $izv -Sekundi 6 -Shard ([int]$shard) -Dijelova 6
           if ($LASTEXITCODE -ne 0) { throw "Sweep nije zavrsio. Kod $LASTEXITCODE" }
 
       - name: Stabilni TestShell na sql-ai
