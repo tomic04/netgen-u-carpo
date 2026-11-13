@@ -52,7 +52,9 @@ create or alter procedure dbo.spPrnTroskoviGlaAzur
     @Action int = null,
     @Id int = null,
     @KlMasterRobaId int = null,
-    @RobaId int = null
+    @RobaId int = null,
+    @searchboxklmasterrobaid varchar(100) = null,
+    @searchboxrobaid varchar(100) = null
 as
 begin
     set nocount on;
@@ -104,7 +106,8 @@ create or alter procedure dbo.spPrnTroskoviDetAzur
     @PrnVrstaTroskaId int = null,
     @OrgShemaId int = null,
     @Formula varchar(100) = null,
-    @Vrijednost decimal(18, 4) = null
+    @Vrijednost decimal(18, 4) = null,
+    @searchboxOrgShemaid varchar(100) = null
 as
 begin
     set nocount on;
