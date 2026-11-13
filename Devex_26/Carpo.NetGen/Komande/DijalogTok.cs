@@ -468,6 +468,35 @@ namespace Carpo.NetGen.Komande
             return lista;
         }
 
+        /// <summary>
+        /// Form2.NovaGenerickaForma2 (4259-4479). Ispis (VRSTADOKID-, RSGEN, GG/, RS/, RS:, REPX:, REPX/,
+        /// .clsreport) i objekt (tocka bez @, ili ..) izadu prije forme, pa nema RefreshKontrola.
+        /// Za pravu formu RefreshKontrola ide kad se dijete zatvori (4443, 4478).
+        /// </summary>
+        public static bool OsvjezavaNakonDjeteta(string imeForme)
+        {
+            string ime = (imeForme ?? "").Trim();
+            if (ime.Length == 0)
+                return false;
+            string u = ime.ToUpperInvariant();
+            if (u.StartsWith("VRSTADOKID-", StringComparison.Ordinal) || u.StartsWith("RSGEN", StringComparison.Ordinal)
+                || u.StartsWith("GG/", StringComparison.Ordinal) || u.StartsWith("RS/", StringComparison.Ordinal)
+                || u.StartsWith("RS:", StringComparison.Ordinal) || u.StartsWith("REPX:", StringComparison.Ordinal)
+                || u.StartsWith("REPX/", StringComparison.Ordinal) || ime.ToLowerInvariant().Contains(".clsreport"))
+                return false;
+            if ((ime.Contains(".") && !ime.Contains("@")) || ime.Contains(".."))
+                return false;
+            return true;
+        }
+
+        /// <summary>Form2.SrediKontrolu 3056-3067: samo tocno "TRUE" upise kontrolu u Cdt.</summary>
+        public static bool RefreshAfterChild(NgControl k)
+        {
+            if (k == null || k.Atributi == null || !k.Atributi.Ima("REFRESHAFTERCHILD"))
+                return false;
+            return k.Atributi.Vrijednost("REFRESHAFTERCHILD") == "TRUE";
+        }
+
         public static bool PreskociGrid(NgControl k)
         {
             return Skip(k);

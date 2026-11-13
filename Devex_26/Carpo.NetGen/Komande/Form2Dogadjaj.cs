@@ -165,6 +165,31 @@ namespace Carpo.NetGen.Komande
             return (tag ?? "").Trim();
         }
 
+        /// <summary>
+        /// Form2.Glbl_CellEdited 8640-8665 (ParametriSaGrida): svi stupci reda (Janus stupac 1 je kvacica
+        /// bez natpisa, pa ostaju stupci podataka). Ime gubi zadnje 4 znamenke ako Val nije 0.
+        /// Vrijednost je ToString (kultura racunala) i zarez postaje tocka u svakoj vrijednosti,
+        /// pa tekst sa zarezom ne razbije niz parametara. DBNull nije Nothing: ide kao ''.
+        /// </summary>
+        public static string ParametriCelije(System.Data.DataRow red)
+        {
+            if (red == null || red.Table == null)
+                return "";
+            var sb = new StringBuilder();
+            for (int i = 0; i < red.Table.Columns.Count; i++)
+            {
+                object v = red[i];
+                if (v == null)
+                    continue;
+                string ime = (red.Table.Columns[i].ColumnName ?? "").Trim();
+                if (ime.Length >= 4 && VbVal(ime.Substring(ime.Length - 4, 4)) != 0)
+                    ime = ime.Substring(0, ime.Length - 4);
+                string tekst = v == DBNull.Value ? "" : (Convert.ToString(v, CultureInfo.CurrentCulture) ?? "");
+                sb.Append("@").Append(ime).Append("='").Append(tekst.Replace(",", ".")).Append("' , ");
+            }
+            return sb.ToString();
+        }
+
         /// <summary>Form2.Glbl_CellEdited 8680–8688. Greška vraća staru vrijednost.</summary>
         public static bool VratiStaru(string greska)
         {
