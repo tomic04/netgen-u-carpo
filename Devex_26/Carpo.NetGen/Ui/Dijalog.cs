@@ -1965,7 +1965,7 @@ namespace Carpo.NetGen.Ui
                 OsvjeziNakonDjeteta();
                 return IzvrsiDogadjaj(lost);
             }
-            if (!Ponasanje.PreskociTrazilicu(tekst, stari))
+            if (Form2Dogadjaj.TrazilicaKorak(tekst, stari) == "trazilica")
                 PretraziTrazilicu(c, def);
             OsvjeziNakonDjeteta();
             return IzvrsiDogadjaj(lost);
