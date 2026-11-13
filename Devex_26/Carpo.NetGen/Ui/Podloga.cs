@@ -830,6 +830,7 @@ namespace Carpo.NetGen.Ui
             DijalogTok.TekstUpisa = _imeUnosa;
             if (upis)
             {
+                try { System.IO.File.AppendAllText(Dijalog.TragPutanja ?? "", DateTime.Now.ToString("HH:mm:ss") + " klikovi\r\n"); } catch { }
                 Dijalog.NakonPrikaza = delegate (Dijalog d)
                 {
                     if (d == null || d.IsDisposed)
@@ -957,6 +958,7 @@ namespace Carpo.NetGen.Ui
                         if (vd != null && vd.Rows.Count > 0)
                             _master.Kontekst.Node = Convert.ToString(vd.Rows[0]["id"]);
                     }
+                    try { System.IO.File.AppendAllText(Dijalog.TragPutanja ?? "", DateTime.Now.ToString("HH:mm:ss") + " gumb " + natpis + "\r\n"); } catch { }
                     PokreniZatvaranje();
                     g.PerformClick();
                     Application.DoEvents();

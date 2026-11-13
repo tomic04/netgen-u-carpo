@@ -298,6 +298,8 @@ namespace Carpo.TestShell
             _uiVidjen = 0;
             _uiKlikGotov = false;
             _klikPregled = klik;
+            Carpo.NetGen.Ui.Dijalog.TragPutanja = snimka + ".faza.txt";
+            try { File.AppendAllText(snimka + ".faza.txt", DateTime.Now.ToString("HH:mm:ss") + " start klik=" + klik + "\r\n"); } catch { }
             var dir = Path.GetDirectoryName(snimka);
             if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);
@@ -319,7 +321,9 @@ namespace Carpo.TestShell
                     return 1;
                 }
                 Faza(snimka, "prije-klika");
+                try { File.AppendAllText(snimka + ".faza.txt", DateTime.Now.ToString("HH:mm:ss") + " prije-cmd\r\n"); } catch { }
                 cmdGen_Click(this, EventArgs.Empty);
+                try { File.AppendAllText(snimka + ".faza.txt", DateTime.Now.ToString("HH:mm:ss") + " poslije-cmd\r\n"); } catch { }
                 _uiKlikGotov = true;
                 Faza(snimka, "poslije-klika");
             }

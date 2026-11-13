@@ -31,6 +31,7 @@ namespace Carpo.NetGen.Ui
         private NgForm _forma;
         private static Dijalog _zatvoriRoditelja;
         public static Action<Dijalog> NakonPrikaza;
+        public static string TragPutanja;
         private bool _jupiter;
         private readonly Dictionary<string, string> _izUpita = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -171,6 +172,7 @@ namespace Carpo.NetGen.Ui
             }
 
             PrimijeniOnLoad();
+            Trag("prije-show " + (forma == null ? "" : forma.Ime) + " modal=" + modal);
             if (modal)
             {
                 // Form1.vb 5362: Form2.ShowDialog(Me). Ribbon kao vlasnik ne uđe u petlju.
@@ -182,6 +184,15 @@ namespace Carpo.NetGen.Ui
                 else
                     ShowDialog();
             }
+            Trag("poslije-show " + (forma == null ? "" : forma.Ime));
+        }
+
+        private static void Trag(string red)
+        {
+            if (string.IsNullOrEmpty(TragPutanja))
+                return;
+            try { System.IO.File.AppendAllText(TragPutanja, DateTime.Now.ToString("HH:mm:ss") + " " + red + "\r\n"); }
+            catch { }
         }
 
         private static Form VlasnikXtra(Form predlozen)

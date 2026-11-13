@@ -87,6 +87,8 @@ foreach ($rel in $granule) {
         Write-Host $tijelo
         throw "ThreadExceptionDialog $ime. $tijelo"
     }
+    $faza = $png + ".faza.txt"
+    if (Test-Path -LiteralPath $faza) { Write-Host (Get-Content -LiteralPath $faza -Raw) }
     if ($kod -eq -1) { throw "timeout $xml" }
     if ($kod -ne 0) { throw "UI smoke $ime kod $kod. $tekst" }
     if ($tekst -notlike "OK*") { throw "UI smoke $ime nema OK. $tekst" }
