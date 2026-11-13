@@ -265,6 +265,27 @@ namespace Carpo.NetGen.Komande
             string put = Nadji();
             if (put.Length == 0)
                 return null;
+            string mapa = Path.GetDirectoryName(put) ?? "";
+            AppDomain.CurrentDomain.AssemblyResolve += delegate (object s, ResolveEventArgs e)
+            {
+                string dat = new System.Reflection.AssemblyName(e.Name).Name + ".dll";
+                string[] korijen = new[]
+                {
+                    mapa,
+                    Path.GetDirectoryName(mapa) ?? "",
+                    @"C:\Users\ntomic\Desktop\Jupiter Client\Programs",
+                    @"C:\Users\ntomic\Desktop\Jupiter Client\Programs\SharedAssemblies"
+                };
+                for (int i = 0; i < korijen.Length; i++)
+                {
+                    if (korijen[i].Length == 0)
+                        continue;
+                    string kandidat = Path.Combine(korijen[i], dat);
+                    if (File.Exists(kandidat))
+                        return System.Reflection.Assembly.LoadFrom(kandidat);
+                }
+                return null;
+            };
             System.Reflection.Assembly a = System.Reflection.Assembly.LoadFrom(put);
             string klasa = vrsta == "pivot" ? PivotKlasa : vrsta == "chart" ? ChartKlasa : IspisKlasa;
             object o = null;
