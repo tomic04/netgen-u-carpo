@@ -2103,6 +2103,21 @@ namespace Carpo.NetGen.GridTest
             T("kript", Encoding.UTF8.GetString(OstaliModuli.Kljuc("tajna")) == "tajnaXXX"
                 && Encoding.UTF8.GetString(OstaliModuli.Kljuc("123456789")) == "12345678"
                 && nazad.IndexOf("kruh", StringComparison.Ordinal) >= 0, nazad);
+            var rs = new DataTable();
+            rs.Columns.Add("original", typeof(string));
+            rs.Columns.Add("translated", typeof(string));
+            rs.Rows.Add("Spremi", "Save");
+            T("prevod", OstaliModuli.PrevediStaro("Spremi", rs, "2", "eng", "") == "Save"
+                && OstaliModuli.PrevediStaro("Spremi robu", rs, "2", "eng", "") == "Save robu"
+                && OstaliModuli.PrevediStaro("Spremi", rs, "0", "eng", "") == "Spremi"
+                && !OstaliModuli.TrebaVanjskogPrevoditelja("hrv")
+                && OstaliModuli.TrebaVanjskogPrevoditelja("eng")
+                && OstaliModuli.UCirilicu("a") == "\u0430"
+                && OstaliModuli.UCirilicu("lj") == "\u0459", "");
+            bool easy;
+            string dll = OstaliModuli.RemoteDll("easyprintworkaround=true\r\nRemoteDllPath=\\\\pos\\dll\r\n", out easy);
+            T("server-put", OstaliModuli.IniPutanja(false, "x") == "C:\\JupiterClient\\JupiterClient.ini"
+                && dll == "\\\\pos\\dll" && easy, dll);
             T("zadnji-form", OstaliModuli.ZadnjiNamespace(new string[] { "A.NetGen", "B.Drugi", "C.NetGen.Forma" }, "NetGen") == "C.NetGen.Forma"
                 && OstaliModuli.ZadnjiNamespace(new string[] { "A.X" }, "NetGen") == null, "");
             T("dx-format", Class1Pravila.KljucKolone(0, "Iznos") == "Iznos" && Class1Pravila.KljucKolone(3, "Iznos") == "3"

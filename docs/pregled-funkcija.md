@@ -235,5 +235,8 @@ U Class1 bloku, 24 metode: 7 isto (`ExecSql`, `ExecSql2`, `SrediSQLPosljeNextFor
 | `JupiterLog.Sredi` 122, `SakrijVrijednost` 141 | `OstaliModuli.SrediLog`. `Assembly.Load("JupiterLogger")` se ne zove | nedostajalo-portano | `log-sredi` |
 | `Encrypt` / `Decrypt` / `KeyToBytes` | `OstaliModuli.Kriptiraj`, `Dekriptiraj`, `Kljuc` | nedostajalo-portano | `kript` |
 | `GetLast` 16 | `OstaliModuli.ZadnjiNamespace`. `MessageBox` se ne pali | nedostajalo-portano | `zadnji-form` |
+| `Translate_OLD` 293, `ToCiril2` 474 | `PrevediStaro`, `UCirilicu` | nedostajalo-portano | `prevod` |
+| `Translate` 266 | Tekst ostaje. `JupiterPrevoditelj` se ne učitava kad jezik nije `hrv` | razlika | `prevod` |
+| `GetServerPath` 214 | `IniPutanja`, `RemoteDll` | nedostajalo-portano | `server-put` |
 
-U ovom bloku: 5 nedostajalo-portano. `JupiterLogger.dll` ostaje van: redact ide u Carpo, učitavanje DLL-a nema.
+U ovom bloku: 7 nedostajalo-portano, 1 razlika (`Translate` bez `JupiterPrevoditelj`). `JupiterLogger.dll` ostaje van: redact ide u Carpo, učitavanje DLL-a nema.
