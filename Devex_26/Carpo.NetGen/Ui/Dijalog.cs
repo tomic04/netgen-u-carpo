@@ -584,6 +584,10 @@ namespace Carpo.NetGen.Ui
                     view.OptionsSelection.MultiSelectMode = Attr(k, "CHECKBOXVISIBLE").ToUpperInvariant() == "FALSE"
                         ? GridMultiSelectMode.RowSelect
                         : GridMultiSelectMode.CheckBoxRowSelect;
+                    // Form2.vb 1708: Janus ColumnHeaders = "2" (InheritableBoolean.False, 1713) skriva zaglavlja (3 grida, GRD-03).
+                    string zaglavlja = Attr(k, "COLUMNHEADERS").ToLowerInvariant();
+                    if (zaglavlja == "2" || zaglavlja == "false")
+                        view.OptionsView.ShowColumnHeaders = false;
                 }
             }
         }
