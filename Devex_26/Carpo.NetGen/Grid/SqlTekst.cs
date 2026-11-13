@@ -26,6 +26,11 @@ namespace Carpo.NetGen.Grid
         public string FocusedControl = "";
         public string SelectedFile = "";
         public string SelectedPath = "";
+        /// <summary>
+        /// Medjuspremnik podloge (SETDEFAULTS, Form1.vb 3945-4009). U NetGenu je cls1.CB globalan,
+        /// pa ga NadjiVrijednostuPrevParametrima vidi i u dijalogu i na gumbu (CB-01).
+        /// </summary>
+        public System.Collections.Generic.IDictionary<string, string> Clipboard;
     }
 
     public static class SqlTekst
@@ -68,7 +73,7 @@ namespace Carpo.NetGen.Grid
             // postao ''x'', datum je ostao 13.11.2026. 0:00:00, a token pred prijelomom
             // reda je progutao SQL do sljedeceg razmaka (SQL-04).
             if (!string.IsNullOrEmpty(k.ParametriSaGrida))
-                sql = Carpo.NetGen.Komande.SrediPoslije.Petlja(sql, k.ParametriSaGrida, null, false);
+                sql = Carpo.NetGen.Komande.SrediPoslije.Petlja(sql, k.ParametriSaGrida, k.Clipboard, false);
             return sql;
         }
 
@@ -117,7 +122,7 @@ namespace Carpo.NetGen.Grid
         {
             string s = Sredi(sql, k);
             if (s.IndexOf("@@", StringComparison.Ordinal) >= 0)
-                s = Carpo.NetGen.Komande.SrediPoslije.Petlja(s, k == null ? "" : k.ParametriSaGrida, null, false);
+                s = Carpo.NetGen.Komande.SrediPoslije.Petlja(s, k == null ? "" : k.ParametriSaGrida, k == null ? null : k.Clipboard, false);
             return s;
         }
 
@@ -206,6 +211,7 @@ namespace Carpo.NetGen.Grid
                 k.FocusedControl = izvor.FocusedControl;
                 k.SelectedFile = izvor.SelectedFile;
                 k.SelectedPath = izvor.SelectedPath;
+                k.Clipboard = izvor.Clipboard;
             }
             if (string.IsNullOrEmpty(k.Id))
                 k.Id = "0";

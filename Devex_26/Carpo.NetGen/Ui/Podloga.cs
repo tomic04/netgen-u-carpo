@@ -142,6 +142,8 @@ namespace Carpo.NetGen.Ui
             string zadano = _projekt.Atributi != null && _projekt.Atributi.Ima("SETDEFAULTS")
                 ? _projekt.Atributi.Vrijednost("SETDEFAULTS") : "";
             _master.Clipboard = Carpo.NetGen.Kontrole.ClipboardNg.IzSetDefaults(zadano, kontekst, Citaj);
+            // Isti CB vidi i dijalog (SqlTekst.ZaFormu) i gumb, kao cls1.CB u NetGenu (CB-01).
+            kontekst.Clipboard = _master.Clipboard;
             _master.Ucitaj(_projekt, null);
             NapuniGrid();
             NapuniGumbe();
