@@ -69,6 +69,16 @@ namespace Carpo.NetGen.Ui
             PodesiPogled(gvDet, false);
             gvGla.FocusedRowChanged += Pogled_FocusedRowChanged;
             gvGla.DoubleClick += Pogled_DoubleClick;
+            // Form1 3560 (POPUP/POPUPMASTER, 204 granule) i 3700 (POPUPDETAIL): desni klik (POP-01).
+            GridIzbornik.Vezi(gvGla, delegate { return _projekt == null ? "" : (_projekt.Popup ?? ""); }, IzvrsiIzbornik);
+            GridIzbornik.Vezi(gvDet, delegate { return AtributProjekta("POPUPDETAIL"); }, IzvrsiIzbornik);
+            // Form1.GridEX2_DoubleClick (7200): DETAILDBLCLICK otvara formu (DBL-02).
+            gvDet.DoubleClick += delegate
+            {
+                string f = AtributProjekta("DETAILDBLCLICK");
+                if (f.Length > 0)
+                    OtvoriFormu(f);
+            };
             CarpoIzgled.SlikeCvorova(trMain);
             trMain.OptionsView.ShowColumns = false;
             trMain.OptionsView.ShowIndicator = false;
@@ -284,6 +294,38 @@ namespace Carpo.NetGen.Ui
 
         private int _dubinaForme;
 
+        private string AtributProjekta(string ime)
+        {
+            if (_projekt == null || _projekt.Atributi == null || !_projekt.Atributi.Ima(ime))
+                return "";
+            return (_projekt.Atributi.Vrijednost(ime) ?? "").Trim();
+        }
+
+        /// <summary>
+        /// Form1.ToolStripMenuItem1_Click/2_Click Case Else (5740-5763): s '~' je lanac (':' + naredba,
+        /// '~' postaje '#'), inace NovaGenerickaForma.
+        /// </summary>
+        private void IzvrsiIzbornik(string naredba)
+        {
+            string lanac = GridIzbornik.Lanac(naredba, true);
+            if (lanac.Length > 0)
+                IzvrsiLanac(lanac);
+            else
+                OtvoriFormu(naredba);
+        }
+
+        /// <summary>Form1.GetDetID (5601-5615): "id" detail reda, inace prvi stupac podatka.</summary>
+        private string DetaljId()
+        {
+            if (gvDet == null || gvDet.FocusedRowHandle < 0 || gvDet.RowCount == 0)
+                return "0";
+            object v = gvDet.Columns.ColumnByFieldName("id") != null ? gvDet.GetFocusedRowCellValue("id") : null;
+            if ((v == null || v == DBNull.Value) && gvDet.Columns.Count > 0)
+                v = gvDet.GetFocusedRowCellValue(gvDet.Columns[0]);
+            string t = v == null || v == DBNull.Value ? "" : Convert.ToString(v).Trim();
+            return t.Length == 0 ? "0" : t;
+        }
+
         private void OtvoriFormu(string naredba)
         {
             if (string.IsNullOrWhiteSpace(naredba) || _projekt == null || _dubinaForme > 8)
@@ -347,6 +389,9 @@ namespace Carpo.NetGen.Ui
                         _master.Kontekst.ParametriSaGrida = ParametriModula.Dodaj(_master.Kontekst.ParametriSaGrida, dij.ParametriVise());
                     OtvoriFormu(imeDjeteta);
                 };
+                // Form1.NovaGenerickaForma 5295: Form2b.DetID = GetDetID() (@@DETID u dijalogu, DET-01).
+                if (_master.Kontekst != null)
+                    _master.Kontekst.DetId = DetaljId();
                 dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj, true, this);
                 string iz = dij.Vrijednost("izvjestaj");
                 if (!string.IsNullOrEmpty(iz))

@@ -996,6 +996,16 @@ namespace Carpo.NetGen.Ui
             return "";
         }
 
+        /// <summary>Form2.ToolStripMenuItem1_Click Case Else: s '~' je lanac, inace NovaGenerickaForma2.</summary>
+        private void IzvrsiIzbornik(string naredba)
+        {
+            string lanac = GridIzbornik.Lanac(naredba, false);
+            if (lanac.Length > 0)
+                IzvrsiDogadjaj(lanac);
+            else
+                NovaGenerickaForma(naredba);
+        }
+
         /// <summary>
         /// Form2.NovaGenerickaForma2 (4259-4479): ispis (VRSTADOKID-, RSGEN, GG/, RS/, RS:, REPX), objekt
         /// (tocka bez @) ili forma. Nakon forme RefreshKontrola. Ime moze imati (parametri) sa @@.
@@ -1954,6 +1964,9 @@ namespace Carpo.NetGen.Ui
                         finally { vracam = false; }
                     };
                 }
+                // Form2.Glbl_GridMouseUp: desni klik na svaki grid dijaloga (POPUP i stalne stavke) (POP-01).
+                if (view != null)
+                    GridIzbornik.Vezi(view, delegate { return popup; }, IzvrsiIzbornik);
                 if (view != null && popup.Length > 0)
                 {
                     view.MouseUp += delegate (object s, MouseEventArgs e)
