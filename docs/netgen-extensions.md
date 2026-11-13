@@ -12,8 +12,21 @@ Carpo radi isti `Assembly.Load("NetGenExtensions")`. Ako fusion ne nađe sklop, 
 
 Na sql-ai `NetGenExtensions.dll` jest u `C:\Users\ntomic\Desktop\Jupiter Client\Programs\SharedAssemblies\Spin\NetGenExtensions.dll`. `Janus.Windows.GridEX.v3.dll` jest u `...\SharedAssemblies\Janus\`.
 
-UI test na `tests/Ekstenzije.xml` zove sve tri metode. Ako su DLL-ovi na stroju, ishod je `OK` tek kad `ChartGRID`, `PivotGRID` i `PrintDocumentREPX` stvarno prođu.
+UI test na `tests/Ekstenzije.xml` zove sve tri metode. `OK` je samo kad `ChartGRID`, `PivotGRID` i `PrintDocumentREPX` stvarno prođu. Ako v12.1 datoteke nema na disku, ishod je `OPEN` (nije prolaz testa i nije pad grane).
 
-Ako pretraga (GAC `C:\Windows\Microsoft.NET\assembly`, sve mape `Jupiter Client`, `Program Files\DevExpress`, `SharedAssemblies`, backup mape, ostali diskovi) ne nađe v12.1 referencu, ishod je `OPEN`, ne `OK` i ne pad grane. Popis koji treba donijeti ispisuje se iz `GetReferencedAssemblies` (ime, verzija, public key token). DLL se ne kopira u repo i ništa se ne briše.
+Pretraga na sql-ai (GAC `C:\Windows\Microsoft.NET\assembly` i `C:\Windows\assembly`, sve mape `Jupiter Client`, `Program Files\DevExpress`, `SharedAssemblies`, backup mape, ostali diskovi osim `C:\Windows` koji je već prođen) obradila je 82933 mape. Ništa se ne kopira u repo i ništa se ne briše.
 
-Poznata rupa dok pretraga ne nađe datoteku: `DevExpress.Reports.v12.1.Designer`, verzija 12.1.6.0, `PublicKeyToken=b88d1754d700e49a`. Puni popis v12.1 referenci dolazi s `EXT-NEMA` u logu testa.
+`PrintDocumentREPX` prolazi. `PivotGRID` i `ChartGRID` ostaju otvoreni. Na stroju jesu `DevExpress.XtraReports.v12.1.dll`, `DevExpress.XtraReports.v12.1.Extensions.dll`, `Janus.Windows.GridEX.v3.dll` 3.5.131.0 `PublicKeyToken=21d5517571b185bf`, `Janus.Data.v3.dll` istog tokena i `JupiterTranslator.dll` 1.0.0.0 bez tokena.
+
+Treba donijeti ove datoteke uz `NetGenExtensions.dll` (`...\SharedAssemblies\Spin`). Sve su verzija **12.1.6.0**, `PublicKeyToken=b88d1754d700e49a`:
+
+| DLL | Verzija | PublicKeyToken |
+|---|---|---|
+| `DevExpress.Printing.v12.1.Core.dll` | 12.1.6.0 | b88d1754d700e49a |
+| `DevExpress.Data.v12.1.dll` | 12.1.6.0 | b88d1754d700e49a |
+| `DevExpress.Utils.v12.1.dll` | 12.1.6.0 | b88d1754d700e49a |
+| `DevExpress.XtraEditors.v12.1.dll` | 12.1.6.0 | b88d1754d700e49a |
+| `DevExpress.XtraPrinting.v12.1.dll` | 12.1.6.0 | b88d1754d700e49a |
+| `DevExpress.XtraBars.v12.1.dll` | 12.1.6.0 | b88d1754d700e49a |
+| `DevExpress.XtraGrid.v12.1.dll` | 12.1.6.0 | b88d1754d700e49a |
+| `DevExpress.Reports.v12.1.Designer.dll` | 12.1.6.0 | b88d1754d700e49a |
