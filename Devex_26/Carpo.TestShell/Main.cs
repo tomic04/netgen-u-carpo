@@ -391,7 +391,8 @@ namespace Carpo.TestShell
                     return;
                 }
                 try { dij.Update(); } catch { }
-                if (!SnimiProzor(dij.Handle, pod))
+                SnimiProzor(dij.Handle, pod);
+                if (!ImaSnimku(pod))
                     SnimiKontrolu(dij, pod);
                 odustao = true;
                 o.DialogResult = DialogResult.Cancel;
