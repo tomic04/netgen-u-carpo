@@ -52,6 +52,10 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 
 `FORMATMASK="#0"` (godina proizvodnje/baždarenja, 4 kontrole) nema grupiranje tisućica; Carpo je s maskom `n0` pokazivao `2.024`. Maska bez zareza sada je `f{DECIMALS}`, sa zarezom ostaje `n{DECIMALS}`.
 
+## Slika (PIC-01)
+
+`TYPE="picturebox"`: `LOCATION` (3 granule, UNC put do .jpg), vrijednost iz ONLOAD/ONLOAD2 (put ili http) i u rezultatu SQL-a `byte[]` u stupcu s imenom ili put u stupcu `<ime>location` (Form2 2710-2724, 4766-4795). Carpo je čitao samo `byte[]`; sada i put/URL (`PictureEdit.LoadAsync`).
+
 ## Otvoreno
 
 - `MULTILINE` (243 / 60 granula), `ENTERASTAB`, `PASSWORDCHAR` (4), `MAXLENGTH` (80 / 14): tekstualno polje je uvijek `TextEdit`.

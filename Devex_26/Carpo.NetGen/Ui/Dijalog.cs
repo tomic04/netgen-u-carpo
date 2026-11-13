@@ -1517,7 +1517,13 @@ namespace Carpo.NetGen.Ui
                     continue;
                 string ime = c.Name.Trim();
                 if (!Form2Rezultat.Ima(r, ime))
+                {
+                    // 4785-4793: PictureBox gleda i "<ime>location" kad stupca s imenom nema (PIC-01).
+                    var slika = c as PictureEdit;
+                    if (slika != null)
+                        UcitajSliku(slika, Form2Rezultat.Celija(r, ime + "location"));
                     continue;
+                }
                 object sirovo = r[ime];
                 string v = Form2Rezultat.Celija(r, ime);
                 PrimijeniNaKontrolu(c, r, v, sirovo);
@@ -1542,6 +1548,10 @@ namespace Carpo.NetGen.Ui
                     }
                     catch (Exception ex) { NgDnevnik.Greska("slika " + c.Name + ": " + ex.Message); }
                 }
+                // 4785-4793: stupac "<ime>location" je put ili URL slike (PIC-01).
+                string lok = Form2Rezultat.Celija(r, c.Name.Trim() + "location");
+                if (lok.Trim().Length > 0)
+                    UcitajSliku(slika, lok);
                 return;
             }
             DodatnoPostavi(c, v);
@@ -2721,6 +2731,13 @@ namespace Carpo.NetGen.Ui
         private static void PostaviTekst(Control c, NgControl k, Mjesto m)
         {
             string tekst = m.Tekst ?? "";
+            var slikaLok = c as PictureEdit;
+            if (slikaLok != null)
+            {
+                // Form2.vb 2710: ImageLocation = LOCATION.ToUpper (3 granule, UNC put do slike) (PIC-01).
+                UcitajSliku(slikaLok, Attr(k, "LOCATION").ToUpperInvariant());
+                return;
+            }
             var check = c as CheckEdit;
             if (check != null)
             {
@@ -2873,8 +2890,31 @@ namespace Carpo.NetGen.Ui
             }
         }
 
+        /// <summary>PictureBox.ImageLocation / Load: put na disku, UNC ili http, učitava se asinkrono.</summary>
+        private static void UcitajSliku(PictureEdit slika, string put)
+        {
+            string p = (put ?? "").Trim();
+            if (slika == null || p.Length == 0)
+                return;
+            try
+            {
+                slika.LoadAsync(p);
+            }
+            catch (Exception ex)
+            {
+                NgDnevnik.Greska("slika " + slika.Name + " " + p + ": " + ex.Message);
+            }
+        }
+
         private static void PostaviVrijednost(Control c, string v)
         {
+            var slika = c as PictureEdit;
+            if (slika != null)
+            {
+                // Form2.vb 2713-2724: ONLOAD/ONLOAD2 stupac s imenom slike je put (http ide kroz Load).
+                UcitajSliku(slika, v);
+                return;
+            }
             var vise = c as CheckedComboBoxEdit;
             if (vise != null)
             {
