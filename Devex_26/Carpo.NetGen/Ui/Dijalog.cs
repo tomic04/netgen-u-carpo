@@ -300,6 +300,14 @@ namespace Carpo.NetGen.Ui
                 look.Properties.DisplayMember = dt.Columns.Count > 1 ? dt.Columns[1].ColumnName : dt.Columns[0].ColumnName;
                 if (!prazan && ComboDijalog.OdabirAkoNista(dt, false) == "1")
                     look.EditValue = 1;
+                string odabrano;
+                string ostatak;
+                if (ComboDijalog.OdvojiHash(c.Tag as string, out odabrano, out ostatak))
+                {
+                    c.Tag = ostatak;
+                    if (odabrano.Length > 0)
+                        look.EditValue = odabrano;
+                }
                 return;
             }
             var grid = c as GridControl;

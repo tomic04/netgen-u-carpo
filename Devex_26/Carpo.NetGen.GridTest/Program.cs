@@ -1942,6 +1942,40 @@ namespace Carpo.NetGen.GridTest
                 && pg.IndexOf("@Naziv='A,B'", StringComparison.Ordinal) >= 0
                 && pg.IndexOf("@Cijena='12'", StringComparison.Ordinal) >= 0
                 && pg.IndexOf("0100", StringComparison.Ordinal) < 0, pg);
+            var hij = new DataTable();
+            hij.Columns.Add("id0100", typeof(string));
+            var kol = hij.Columns.Add("Cijena", typeof(string));
+            kol.Caption = "Cijena";
+            hij.Rows.Add("1234", "1,5");
+            string hp = DetailGrid.ParametriHijerarhije(hij.Rows[0]);
+            T("hijerarhija-grid", DetailGrid.IndeksKartice("t2") == 2 && DetailGrid.IndeksKartice("qwer") == 1
+                && hp.IndexOf("@id0100='1234'", StringComparison.Ordinal) >= 0
+                && hp.IndexOf("@Cijena='1.5'", StringComparison.Ordinal) >= 0, hp);
+            var zadano = new DataTable();
+            zadano.Columns.Add("tkosmomi", typeof(string));
+            zadano.Rows.Add("'Glavno'");
+            var cb2 = ClipboardNg.IzReda(zadano);
+            T("setdefaults-cb", cb2.ContainsKey("tkosmomi=") && cb2["tkosmomi="] == "Glavno"
+                && SrediPoslije.Zamijeni("@@tkosmomi", "", k, cb2, false) == "Glavno", cb2["tkosmomi="]);
+            int poziva = 0;
+            var cb3 = ClipboardNg.IzSetDefaults("select 1#select 2", k, delegate (string sql)
+            {
+                poziva++;
+                if (poziva == 1)
+                    return zadano;
+                return null;
+            });
+            T("setdefaults-prekida", poziva == 2 && cb3.ContainsKey("tkosmomi="), poziva.ToString());
+            string greska = GreskaSql.Poziv(5, "nema 'x'", "select 'a'");
+            string uhvaceno = "";
+            GreskaSql.Izvrsi = delegate (string sql) { uhvaceno = sql; throw new InvalidOperationException("guta"); };
+            GreskaSql.Zapisi(5, "nema 'x'", "select 'a'", "");
+            GreskaSql.Izvrsi = null;
+            T("execsql2-poziv", greska == "dbo.spNetGenErrorLog @errorNumber=5, @errorDescription='nema ''x'',@ngLog='select ''a'''"
+                && uhvaceno == greska && GreskaSql.TimeoutSekundi == 100, uhvaceno);
+            string odabrano;
+            string ostatak;
+            T("combo-hash", ComboDijalog.OdvojiHash("sql##7", out odabrano, out ostatak) && odabrano == "7" && ostatak == "sql", odabrano);
         }
 
         private static void FiskalUuidSpin()
@@ -2112,7 +2146,37 @@ namespace Carpo.NetGen.GridTest
                 return;
             ProvjeriSpin(ozn, "oznaka", 5);
             ProvjeriSpin(jez, "jezici", 1);
+            SpinGreska();
         }
+
+        private static void SpinGreska()
+        {
+            string spoj = SpinVeza.Spoj("localhost", "spin");
+            string tekst = GreskaSql.Poziv(4242, "test", "select 1");
+            try
+            {
+                using (var conn = new SqlConnection(spoj))
+                {
+                    conn.Open();
+                    using (var tx = conn.BeginTransaction())
+                    {
+                        using (var cmd = new SqlCommand(tekst, conn, tx))
+                        {
+                            cmd.CommandTimeout = GreskaSql.TimeoutSekundi;
+                            cmd.ExecuteNonQuery();
+                        }
+                        object n;
+                        using (var citaj = new SqlCommand("SELECT COUNT(*) FROM dbo.NetGenErrorLog WHERE errorNumber=4242", conn, tx))
+                            n = citaj.ExecuteScalar();
+                        tx.Rollback();
+                        T("execsql2-spin", Convert.ToInt32(n) == 1, Convert.ToString(n));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                T("execsql2-spin", false, ex.Message);
+            }
 
         private static void ProvjeriSpin(Carpo.NetGen.Model.NgProject p, string ime, int minKolona)
         {

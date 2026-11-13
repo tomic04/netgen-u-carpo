@@ -52,6 +52,20 @@ namespace Carpo.NetGen.Kontrole
             return "null";
         }
 
+        /// <summary>Form2.NapuniKontroleZaEdit 666–669. Iza ## je SelectedValue, ispred ostaje Tag.</summary>
+        public static bool OdvojiHash(string tag, out string odabrano, out string ostatak)
+        {
+            odabrano = "";
+            ostatak = tag ?? "";
+            string t = tag ?? "";
+            int i = t.IndexOf("##", StringComparison.Ordinal);
+            if (i < 0)
+                return false;
+            odabrano = t.Substring(i).Replace("##", "");
+            ostatak = t.Substring(0, i);
+            return true;
+        }
+
         public static string SqlZaSlanje(string sql, SqlKontekst kontekst)
         {
             return SrediPoslije.Petlja(SqlTekst.Sredi(sql ?? "", kontekst), "", null, false);

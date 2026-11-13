@@ -153,7 +153,10 @@ namespace Carpo.NetGen.Komande
             string cb = null;
             foreach (var par in clipboard)
             {
-                if (string.Equals(par.Key, ime, StringComparison.OrdinalIgnoreCase)
+                string kljuc = (par.Key ?? "").Trim();
+                if (kljuc.EndsWith("=", StringComparison.Ordinal))
+                    kljuc = kljuc.Substring(0, kljuc.Length - 1);
+                if (string.Equals(kljuc, ime, StringComparison.OrdinalIgnoreCase)
                     || string.Equals(par.Key, param, StringComparison.OrdinalIgnoreCase))
                 {
                     cb = par.Value ?? "";

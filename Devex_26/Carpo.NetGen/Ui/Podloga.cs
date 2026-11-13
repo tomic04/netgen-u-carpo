@@ -130,6 +130,9 @@ namespace Carpo.NetGen.Ui
             NapuniCombo();
             NapuniDrvo();
             _detail.Pripremi(_projekt);
+            string zadano = _projekt.Atributi != null && _projekt.Atributi.Ima("SETDEFAULTS")
+                ? _projekt.Atributi.Vrijednost("SETDEFAULTS") : "";
+            _master.Clipboard = Carpo.NetGen.Kontrole.ClipboardNg.IzSetDefaults(zadano, kontekst, Citaj);
             _master.Ucitaj(_projekt, null);
             NapuniGrid();
             NapuniGumbe();

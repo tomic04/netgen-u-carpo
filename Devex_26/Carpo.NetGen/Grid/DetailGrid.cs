@@ -173,6 +173,44 @@ namespace Carpo.NetGen.Grid
         }
 
         /// <summary>
+        /// Form1.PokupiParametreSaHijerarHijskogGrida 2615–2643.
+        /// qwer/t2/t3/t4 bira karticu. Ime je caption, od stupca 0, bez skidanja 4 znamenke.
+        /// </summary>
+        public static int IndeksKartice(string caption)
+        {
+            string t = (caption ?? "").Trim().ToLowerInvariant();
+            if (t == "t2")
+                return 2;
+            if (t == "t3")
+                return 3;
+            if (t == "t4")
+                return 4;
+            return 1;
+        }
+
+        public static string ParametriHijerarhije(DataRow red)
+        {
+            if (red == null)
+                return "";
+            var sb = new StringBuilder();
+            foreach (DataColumn c in red.Table.Columns)
+            {
+                string natpis = string.IsNullOrEmpty(c.Caption) ? c.ColumnName : c.Caption;
+                if (natpis == null || natpis.Length == 0)
+                    continue;
+                if (red[c] == null || red[c] == DBNull.Value)
+                    continue;
+                string v = (Convert.ToString(red[c]) ?? "").Trim();
+                string broj = v.Replace(",", ".");
+                double n;
+                if (double.TryParse(broj, NumberStyles.Any, CultureInfo.InvariantCulture, out n))
+                    v = broj;
+                sb.Append('@').Append(natpis).Append("='").Append(v).Append("' , ");
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
         /// Ključevi detaila koji ne ovise o retcima: selekcija ponovo zove DETAILGRID,
         /// stupci se slože jednom, DETCHECKBOXVISIBLE i CLEARCOLUMS, širina WIDTH/14.
         /// </summary>

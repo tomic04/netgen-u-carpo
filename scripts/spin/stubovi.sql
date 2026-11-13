@@ -3,6 +3,28 @@
 -- Prava tijela procedura treba dati korisnik; ovo je prazan rezultat ispravnog oblika.
 -- Ne pokretati na jupiter2019 ni jupiter2022.
 
+IF OBJECT_ID(N'dbo.NetGenErrorLog', N'U') IS NULL
+CREATE TABLE dbo.NetGenErrorLog (
+    NetGenErrorLogId int IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    errorNumber int NULL,
+    errorDescription nvarchar(max) NULL,
+    ngLog nvarchar(max) NULL,
+    Vrijeme datetime NOT NULL CONSTRAINT DF_NetGenErrorLog_Vrijeme DEFAULT (GETDATE())
+);
+GO
+
+CREATE OR ALTER PROCEDURE dbo.spNetGenErrorLog
+    @errorNumber int = NULL,
+    @errorDescription nvarchar(max) = NULL,
+    @ngLog nvarchar(max) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO dbo.NetGenErrorLog (errorNumber, errorDescription, ngLog)
+    VALUES (@errorNumber, @errorDescription, @ngLog);
+END
+GO
+
 IF OBJECT_ID(N'dbo.klmasterroba', N'U') IS NOT NULL
    AND COL_LENGTH(N'dbo.klmasterroba', N'oznaka2') IS NULL
     ALTER TABLE dbo.klmasterroba ADD oznaka2 varchar(50) NULL;

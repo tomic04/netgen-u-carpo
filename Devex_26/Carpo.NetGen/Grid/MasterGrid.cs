@@ -83,6 +83,7 @@ namespace Carpo.NetGen.Grid
         public const int FakPretvorbe = 14;
         public SqlKontekst Kontekst = new SqlKontekst();
         public GridStanje Stanje = new GridStanje();
+        public System.Collections.Generic.IDictionary<string, string> Clipboard;
         private NgProject _projekt;
 
         /// <summary>VB `/` je decimalno dijeljenje, pa se rezultat zaokruži na cijeli (CInt, bankarski).</summary>
@@ -118,7 +119,7 @@ namespace Carpo.NetGen.Grid
             Stanje.IzvorSql = efektivni;
             string prvi = SqlTekst.Sredi(efektivni, Kontekst);
             Stanje.ZadnjiSql = prvi;
-            string drugi = SrediPoslije.Petlja(prvi, "", null, false);
+            string drugi = SrediPoslije.Petlja(prvi, "", Clipboard, false);
             drugi = drugi.Replace("~~", ",");
             Stanje.SqlZaSlanje = drugi;
             Stanje.Odluka = SqlTekst.Odluka(drugi);
@@ -163,7 +164,7 @@ namespace Carpo.NetGen.Grid
         /// <summary>
         /// Class1.ExecSql. Uspjeh puni grid. Greška pokaže poruku i ne veže stupce
         /// (Catch vraća Nothing, CreateGridColumns na Nothing odmah izađe).
-        /// Ne zove spNetGenErrorLog. Greška ide u Carpo Logger (Ctrl+F11), ne u CBLog.
+        /// Greška ide u Carpo Logger (Ctrl+F11) i u spNetGenErrorLog preko ExecSql2 (timeout 100).
         /// </summary>
         public void IzvrsiCitanje(string connectionString)
         {
@@ -196,6 +197,11 @@ namespace Carpo.NetGen.Grid
             }
             catch (Exception ex)
             {
+                int broj = 0;
+                var sqlEx = ex as System.Data.SqlClient.SqlException;
+                if (sqlEx != null)
+                    broj = sqlEx.Number;
+                GreskaSql.Zapisi(broj, ex.Message, Stanje.SqlZaSlanje, connectionString);
                 if (TihaGreska(ex.Message))
                     ZabiljeziGresku(ex.Message, false);
                 else
@@ -242,7 +248,7 @@ namespace Carpo.NetGen.Grid
         public void Osvjezi(DataTable tablica)
         {
             Stanje.Redoslijed.Add("REFRESHMASTERGRID");
-            string drugi = SrediPoslije.Petlja(SqlTekst.Sredi(Stanje.ZadnjiSql ?? "", Kontekst), "", null, false).Replace("~~", ",");
+            string drugi = SrediPoslije.Petlja(SqlTekst.Sredi(Stanje.ZadnjiSql ?? "", Kontekst), "", Clipboard, false).Replace("~~", ",");
             Stanje.SqlZaSlanje = drugi;
             Stanje.Odluka = SqlTekst.Odluka(drugi);
             if (Stanje.Odluka == "salji" && !SqlTekst.JeZabranaPisanja(drugi))
