@@ -160,6 +160,10 @@ namespace Carpo.NetGen.Print
 
         public static bool Ispisi(string naredba, bool dijalog, string id, string operater, string konekcija, string login, string zadnjiSql, string parametriGrida, string parametriSvi, string lijevo, string centar, string desno, string naslov, object grid, string pageOrientation, DataTable tablica)
         {
+            // Class1.PrintRpt 443-461: vrstadokid-TABLICA (117 puta, 83 granule) ide u Spin.Printing s istim
+            // imenom; Spin.Printing sam nađe predložak po vrsti dokumenta (ISP-02).
+            if (IspisMotora.JeVrstaDok(naredba))
+                return Predlozak(naredba, konekcija, parametriSvi, id, false);
             if (JePredlozak(naredba) && Vrsta(naredba, dijalog).Length == 0)
                 return Predlozak(naredba, konekcija, parametriSvi, id);
             string vrsta = Vrsta(naredba, dijalog);
@@ -258,11 +262,25 @@ namespace Carpo.NetGen.Print
 
         public static bool Predlozak(string naredba, string konekcija, string parametri, string id)
         {
+            return Predlozak(naredba, konekcija, parametri, id, true);
+        }
+
+        /// <summary>
+        /// IspisiMePrekoSpinPrintinga (291-373). devRepx: bez Spin.Printinga repx ide u rptDevRepx (Form6);
+        /// vrstadokid- nema takvu zamjenu. Form1 5220-5230: broj u zagradi je id dokumenta (Val(tpP)).
+        /// </summary>
+        public static bool Predlozak(string naredba, string konekcija, string parametri, string id, bool devRepx)
+        {
             string unutra;
             string ime = BezZagrade(naredba, out unutra);
             ZadnjiIme = ImePredloska(ime);
             if (unutra != null)
+            {
                 parametri = unutra;
+                int broj;
+                if (int.TryParse(unutra.Trim(), out broj) && broj != 0)
+                    id = broj.ToString();
+            }
             var lista = ParametriIzvjestaja(string.IsNullOrEmpty(id) ? new string[0] : new[] { id }, parametri ?? "");
             ZadnjiParam = lista.Count == 0 ? "" : (ViseOdDva(lista.Count) ? string.Join("|", lista.ToArray()) : lista[0]);
             if (!string.IsNullOrEmpty(MapaIzvoza))
@@ -293,6 +311,11 @@ namespace Carpo.NetGen.Print
             }
             if (slozeno)
                 return true;
+            if (!devRepx)
+            {
+                NgDnevnik.Greska("Spin.Printing nije učitan, ispis " + ZadnjiIme + " nije poslan.");
+                return false;
+            }
             return DevRepx(naredba, konekcija, parametri, id);
         }
 

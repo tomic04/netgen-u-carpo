@@ -584,6 +584,20 @@ namespace Carpo.NetGen.Ui
                         continue;
                     }
                     string vrsta = PrintBridge.Vrsta(s, false);
+                    // NovaGenerickaForma2 5003-5054: ispis dokumenta (ne PRINTMASTER/PRINTDET, 4945-4962) ide
+                    // za svaki označeni red, kao forma (ISP-06).
+                    int[] oznaceni = vrsta.Length == 0 ? OznaceniRedovi() : new int[0];
+                    if (oznaceni.Length > 1)
+                    {
+                        for (int r = 0; r < oznaceni.Length && !IsDisposed; r++)
+                        {
+                            gvGla.FocusedRowHandle = oznaceni[r];
+                            SpojiId();
+                            PrintBridge.Ispisi(s, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "",
+                                "", "", "", Text, gcGla, "", null);
+                        }
+                        continue;
+                    }
                     object grid = vrsta == "detail" ? (object)gcDet : gcGla;
                     DataTable tab = null;
                     var gc = grid as GridControl;

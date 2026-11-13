@@ -2627,6 +2627,20 @@ namespace Carpo.NetGen.GridTest
             var dec = new DataTable();
             dec.Columns.Add("Iznos", typeof(decimal));
             T("tot01-decimal-sum", MasterGrid.IzPodatka(dec.Columns[0], "").Agregat == "2", "");
+            // ISP-02: vrstadokid- ide u Spin.Printing (ovdje PDF mapa testa) s istim imenom i @id=.
+            string mapaPrije = PrintBridge.MapaIzvoza;
+            try
+            {
+                PrintBridge.MapaIzvoza = Path.Combine(Path.GetTempPath(), "ngvrsta");
+                bool vrsta = PrintBridge.Ispisi(":vrstadokid-NabZahGla", false, "17", "7", "", "", "", "", "", "", "", "", "", null, "", null);
+                T("isp02-vrstadokid", vrsta && PrintBridge.ZadnjiIme == "vrstadokid-NabZahGla" && PrintBridge.ZadnjiParam == "@id=17,", PrintBridge.ZadnjiIme + " " + PrintBridge.ZadnjiParam);
+                PrintBridge.Ispisi(":vrstadokid-NabZahGla(25)", false, "17", "7", "", "", "", "", "", "", "", "", "", null, "", null);
+                T("isp02-zagrada-id", PrintBridge.ZadnjiParam == "@id=25,25", PrintBridge.ZadnjiParam);
+            }
+            finally
+            {
+                PrintBridge.MapaIzvoza = mapaPrije;
+            }
         }
 
         /// <summary>
