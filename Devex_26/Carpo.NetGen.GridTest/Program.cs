@@ -2075,6 +2075,16 @@ namespace Carpo.NetGen.GridTest
                 && Class1Pravila.DxId(true, "", false, "1") == "0"
                 && Class1Pravila.DxId(true, null, true, "9") == "9"
                 && Class1Pravila.DxId(true, "4", false, "1") == "4", "");
+            T("dx-grid", Class1Pravila.SakrijCaptionId("id") && Class1Pravila.SirinaNatpisa("Iznos0140") == 10
+                && Class1Pravila.NatpisBezSirine("Iznos0140") == "Iznos"
+                && !Class1Pravila.SmijeEdit("Naziv", "Naziv") && Class1Pravila.SmijeEdit("xNaziv", "Naziv")
+                && Class1Pravila.StupacOdaberi == "rcb555" && Class1Pravila.BojaEdita == "Azure", "");
+            T("dx-format", Class1Pravila.KljucKolone(0, "Iznos") == "Iznos" && Class1Pravila.KljucKolone(3, "Iznos") == "3"
+                && Class1Pravila.SirinaXml(140) == 10 && Class1Pravila.SirinaXml(0) == 0
+                && Class1Pravila.Natpis("a;b") == "a\r\nb" && Class1Pravila.SakrijSve("TRUE")
+                && Class1Pravila.IndeksVidljivosti(1, true) == 2
+                && Class1Pravila.Zbroj(true, true) && !Class1Pravila.Zbroj(true, false)
+                && Class1Pravila.FormatN2 == "{0:N2}", "");
             T("blagajna-enable", Class1Pravila.BlagajnaUpit("3").IndexOf("@mpkaseid = 3", StringComparison.Ordinal) >= 0
                 && Class1Pravila.BlagajnaAzur("3", false).IndexOf("indenable = 0", StringComparison.Ordinal) >= 0
                 && Class1Pravila.BlagajnaAzur("3", true).IndexOf("indenable = 1", StringComparison.Ordinal) >= 0, "");

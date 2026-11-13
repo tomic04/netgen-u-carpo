@@ -103,5 +103,90 @@ namespace Carpo.NetGen.Komande
         {
             return "update mpkase set indenable = " + (procitano ? "1" : "0") + " where mpkaseid = " + (id ?? "");
         }
+
+        /// <summary>Class1.NapuniDXGrid 1716. Caption koji završava na id se skriva, uključujući sam id.</summary>
+        public static bool SakrijCaptionId(string caption)
+        {
+            return (caption ?? "").Trim().ToLowerInvariant().EndsWith("id", StringComparison.Ordinal);
+        }
+
+        /// <summary>Class1.NapuniDXGrid 1720–1722. Zadnje 4 znamenke / 14, VB dijeljenje.</summary>
+        public static int SirinaNatpisa(string caption)
+        {
+            int broj;
+            if (!ZadnjeCetiri(caption, out broj))
+                return 0;
+            return (int)Math.Round(broj / 14.0, MidpointRounding.ToEven);
+        }
+
+        public static string NatpisBezSirine(string caption)
+        {
+            int broj;
+            string n = (caption ?? "").Trim();
+            if (!ZadnjeCetiri(n, out broj))
+                return n;
+            return n.Substring(0, n.Length - 4);
+        }
+
+        /// <summary>Class1.NapuniDXGrid 1735. IndexOf &gt; 0, pa pogodak na početku nije edit.</summary>
+        public static bool SmijeEdit(string editStupci, string caption)
+        {
+            return (editStupci ?? "").IndexOf(caption ?? "", StringComparison.Ordinal) > 0;
+        }
+
+        public const string StupacOdaberi = "rcb555";
+        public const string NatpisOdaberi = "Odaberi";
+        public const string BojaEdita = "Azure";
+        public const string MaskaN2 = "N2";
+
+        /// <summary>Class1.CustomFormatKolonaDX 1903–1921. Index 0 bira ime, inače index.</summary>
+        public static string KljucKolone(int index, string ime)
+        {
+            if (index == 0)
+                return ime ?? "";
+            return index.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        public static int SirinaXml(int width)
+        {
+            if (width <= 0)
+                return 0;
+            return (int)Math.Round(width / 14.0, MidpointRounding.ToEven);
+        }
+
+        public static string Natpis(string caption)
+        {
+            return (caption ?? "").Replace(";", "\r\n");
+        }
+
+        public static bool SakrijSve(string clearColumns)
+        {
+            return string.Equals((clearColumns ?? "").Trim(), "true", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Petlja diže iPosition, a CLEARCOLUMS ga diže još jednom. Prvi čvor dobije 2.</summary>
+        public static int IndeksVidljivosti(int redni, bool clear)
+        {
+            if (!clear || redni < 1)
+                return 0;
+            return redni * 2;
+        }
+
+        /// <summary>Class1.UkljuciSum 1937–1952. Samo decimalni stupac dobiva zbroj.</summary>
+        public static bool Zbroj(bool ukljuci, bool decimalni)
+        {
+            return ukljuci && decimalni;
+        }
+
+        public const string FormatN2 = "{0:N2}";
+
+        private static bool ZadnjeCetiri(string caption, out int broj)
+        {
+            broj = 0;
+            string n = (caption ?? "").Trim();
+            if (n.Length < 4)
+                return false;
+            return int.TryParse(n.Substring(n.Length - 4), out broj);
+        }
     }
 }

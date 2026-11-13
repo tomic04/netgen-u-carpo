@@ -217,8 +217,9 @@ Form3 pri promjeni teksta (`trazilica-dijalog`, `Form2.vb` 5820–5881), `KeyDow
 | `BlagajnaEnableZaMlinar` 1975 | `Class1Pravila.BlagajnaUpit` | nedostajalo-portano | `blagajna-enable` |
 | `UpaliProgres` / `UgasiProgres` 723 | `Form2Dogadjaj.Progres` | nedostajalo-portano | `progres` |
 | `NapuniCBLog` / `PokaziCBLog` | Carpo logger, ne CBLog | razlika | |
-| `PrintRpt` 379, `IspisiMe7` 284, `IspisiMePrekoSpinPrintinga` 291 | `PrintBridge`. `Spin.Printing.v23` se ne učitava | razlika | `ispis-zaglavlje` |
-| `NapuniDXGrid` 1699, `NapuniDXGridLATE` 1763, `CustomFormatKolonaDX` 1845, `UkljuciSum` 1937 | `MasterGrid` puni stupce. XML `AGREGATEFUNCTION` još nije isto pravilo | još nedostaje | |
+| `PrintRpt` 379, `IspisiMe7` 284, `IspisiMePrekoSpinPrintinga` 291 | `PrintBridge`. `Spin.Printing.v23` se ne učitava | razlika R112 | `ispis-zaglavlje` |
+| `NapuniDXGrid` 1699, `NapuniDXGridLATE` 1763 | `SakrijCaptionId`, `SirinaNatpisa`, `SmijeEdit`. `IndexOf` &gt; 0. Stupac `rcb555` | nedostajalo-portano | `dx-grid` |
+| `CustomFormatKolonaDX` 1845, `UkljuciSum` 1937 | `KljucKolone`, `SirinaXml`, `Natpis`, `Zbroj` | nedostajalo-portano | `dx-format` |
 | `New` 1433, `Finalize` 1429 | Nema | isto | |
 
-U Class1 bloku, 24 metode: 7 isto (`ExecSql`, `ExecSql2`, `SrediSQLPosljeNextForme`, `NadjiVrijednostuPrevParametrima`, `CreateGridColumns`, `New`, `Finalize`), 8 nedostajalo-portano, 5 razlika (`NapuniCBLog`, `PokaziCBLog`, `PrintRpt`, `IspisiMe7`, `IspisiMePrekoSpinPrintinga`), 4 još nedostaje (`NapuniDXGrid`, `NapuniDXGridLATE`, `CustomFormatKolonaDX`, `UkljuciSum`).
+U Class1 bloku, 24 metode: 7 isto (`ExecSql`, `ExecSql2`, `SrediSQLPosljeNextForme`, `NadjiVrijednostuPrevParametrima`, `CreateGridColumns`, `New`, `Finalize`), 12 nedostajalo-portano, 5 razlika (`NapuniCBLog` i `PokaziCBLog` idu u Carpo logger; `PrintRpt`, `IspisiMe7`, `IspisiMePrekoSpinPrintinga` su R112), 0 još nedostaje.
