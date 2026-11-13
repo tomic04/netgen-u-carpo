@@ -49,6 +49,7 @@ namespace Carpo.TestShell
         private int _uiIshod;
         private int _uiVidjen;
         private bool _uiKlikGotov;
+        private bool _extCuvaj;
 
         
         public Main()
@@ -282,6 +283,8 @@ namespace Carpo.TestShell
                 return 5;
             }
             var vidjeno = new List<string>();
+            Carpo.NetGen.Komande.EkstenzijaGrid.Greska = "";
+            Carpo.NetGen.Komande.EkstenzijaGrid.Poziv = "";
             Dijalog.NakonPrikaza = delegate (Dijalog d)
             {
                 string[] gumbi = new[] { "Pivot", "Graf", "Ispis" };
@@ -290,24 +293,88 @@ namespace Carpo.TestShell
                     SimpleButton gumb = NadjiGumb(d, gumbi[i]);
                     if (gumb != null)
                         gumb.PerformClick();
+                    string tip = Carpo.NetGen.Komande.EkstenzijaGrid.ZadnjiTip ?? "";
+                    if (tip.Length > 0)
+                        vidjeno.Add(tip);
                     Form f = Carpo.NetGen.Komande.EkstenzijaGrid.Zadnja;
                     if (f != null && !f.IsDisposed)
                     {
-                        vidjeno.Add(f.GetType().FullName ?? "");
                         try { f.Close(); } catch { }
                     }
                 }
                 try { d.Close(); } catch { }
             };
+            _extCuvaj = true;
+            int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+            var cuvar = new Thread(delegate () { CuvajEkstenziju(pid); });
+            cuvar.IsBackground = true;
+            cuvar.Start();
             var dij = new Dijalog();
             dij.Prikazi(forma, new Carpo.NetGen.Grid.SqlKontekst(), delegate (string sql) { return new DataTable(); }, true, this);
+            _extCuvaj = false;
             Dijalog.NakonPrikaza = null;
-            string dll = Carpo.NetGen.Komande.EkstenzijaGrid.Nadji();
-            string linija = dll.Length == 0
-                ? "FAIL ext nema NetGenExtensions.dll"
-                : "OK ext " + string.Join(",", vidjeno.ToArray()) + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Greska;
+            string poziv = Carpo.NetGen.Komande.EkstenzijaGrid.Poziv ?? "";
+            bool ok = poziv.IndexOf("ChartGRID=ok", StringComparison.Ordinal) >= 0
+                && poziv.IndexOf("PivotGRID=ok", StringComparison.Ordinal) >= 0
+                && poziv.IndexOf("PrintDocumentREPX=ok", StringComparison.Ordinal) >= 0;
+            string linija = ok
+                ? "OK ext " + string.Join(",", vidjeno.ToArray()) + " " + poziv
+                : "FAIL ext " + string.Join(",", vidjeno.ToArray()) + " " + poziv + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Greska
+                    + " janus=" + Carpo.NetGen.Komande.EkstenzijaGrid.PutDatoteke("Janus.Windows.GridEX.v3.dll");
             UpisiIshod(snimka, linija);
-            return dll.Length == 0 ? 5 : 0;
+            return ok ? 0 : 5;
+        }
+
+        private void CuvajEkstenziju(int pid)
+        {
+            int vidjen = 0;
+            while (_extCuvaj)
+            {
+                Thread.Sleep(400);
+                if (!_extCuvaj)
+                    return;
+                if (ImaTudjiProzor(pid))
+                    vidjen++;
+                else
+                    vidjen = 0;
+                if (vidjen >= 3)
+                    ZatvoriTudje(pid);
+            }
+        }
+
+        private static bool ImaTudjiProzor(int pid)
+        {
+            bool ima = false;
+            EnumWindows(delegate (IntPtr h, IntPtr l)
+            {
+                if (!TudjiProzor(h, pid))
+                    return true;
+                ima = true;
+                return false;
+            }, IntPtr.Zero);
+            return ima;
+        }
+
+        private static void ZatvoriTudje(int pid)
+        {
+            EnumWindows(delegate (IntPtr h, IntPtr l)
+            {
+                if (TudjiProzor(h, pid))
+                    PostMessage(h, 0x0010, IntPtr.Zero, IntPtr.Zero);
+                return true;
+            }, IntPtr.Zero);
+        }
+
+        private static bool TudjiProzor(IntPtr h, int pid)
+        {
+            uint wpid;
+            GetWindowThreadProcessId(h, out wpid);
+            if (wpid != (uint)pid || !IsWindowVisible(h))
+                return false;
+            string t = NaslovProzora(h);
+            if (t == "TestShell" || t == "Ekstenzije")
+                return false;
+            return true;
         }
 
         public int PokreniBoju(string xml, string snimka)

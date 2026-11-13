@@ -368,7 +368,15 @@ namespace Carpo.NetGen.Ui
                     {
                         Control[] cilj = Controls.Find(korak.Tekst, true);
                         if (cilj.Length > 0)
-                            cilj[0].Focus();
+                        {
+                            var gumb = cilj[0] as ButtonBase;
+                            if (gumb != null)
+                                gumb.PerformClick();
+                            else
+                                cilj[0].Focus();
+                        }
+                        if (IsDisposed)
+                            return;
                         continue;
                     }
                     if (korak.Vrsta == "forma")

@@ -6,7 +6,7 @@ Broj je pojavljivanje u `definitions/netgen` (XML). Status je što klik u Carpu 
 |---|---|---|---|
 | OK / OKSTAY / CLOSE / CANCEL / CLOSEPARENT | `Form2.vb` 6884–7037 | izvršava | lanac |
 | MSGBOX | `Form2.vb` 7165 | izvršava | lanac |
-| CLICK | `Form2.vb` 7151 | izvršava na dijalogu | lanac |
+| CLICK | `Form2.vb` 7151–7155 | izvršava, PerformClick tog gumba | lanac |
 | FOREACHROW / SELECTED / BLUEROW | `Form2.vb` 7040–7048, 8310–8394 | izvršava i na podlozi | 239 / 154 / 109 |
 | COLORPICKER | `Form2.vb` 7156–7162, `Form1.vb` 6813–6831 | izvršava, ColorDialog | 15 |
 | FISKALIZACIJA* | `Form1.vb` 454–520 | izvršava Raverus, samo testni CIS | fiskal granule |
@@ -18,7 +18,7 @@ Broj je pojavljivanje u `definitions/netgen` (XML). Status je što klik u Carpu 
 | RECALCGRID | `Form2.vb` 8219 | izvršava nad tablicom | 0 |
 | TOGGLEGRIDGROUP | `Form2.vb` 6970 | izvršava stanje 0/1 | 0 |
 | PREPAREMULTISELECTEDPRINT | `Form2.vb` 8404 | izvršava skup id-eva | 0 |
-| PIVOTGRID / CHARTGRID / PRINTREPXGRID | `Form2.vb` 9044, 9062, 9085 | izvršava, otvara NetGenExtensions formu | 0 |
+| PIVOTGRID / CHARTGRID / PRINTREPXGRID | `Form2.vb` 9044, 9062, 9085 | izvršava, Assembly.Load i zove PivotGRID / ChartGRID / PrintDocumentREPX | 0 |
 | POSALJIRACUNENASERVER / ZAKLJUCKE / PORUKE | `Form2.vb` 7759, 7936, 8008 | izvršava POST | 0 |
 | .VBS / .BAT | `Form2.vb` 7402–7417 | izvršava Process.Start | 0 |
 | CREATETEXTFILE* | `Form2.vb` 7170–7399 | izvršava, piše datoteku | 0 |

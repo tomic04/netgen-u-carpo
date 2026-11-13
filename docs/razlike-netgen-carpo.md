@@ -1,6 +1,6 @@
 # Razlike NetGen / Carpo
 
-Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Carpo citat je kod kontrole ili `docs/analiza/04-mapiranje-netgen-carpo.md` kad port tu kontrolu još ne crta. Port koji već prati NetGen nije ovdje ponovljen kao rupa. `REFRESHCONTROL`, `CREATETEXTFILE*`, `DOCK1`–`DOCK5`, `ISEMPTYORZERO*` i `BEEP` se izvršavaju na kliku (`docs/naredbe-stanje.md`). Jedina namjerna razlika fiskala: prazan CIS URL ne postaje produkcijski `cis.porezna-uprava.hr`.
+Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Carpo citat je kod kontrole ili `docs/analiza/04-mapiranje-netgen-carpo.md` kad port tu kontrolu još ne crta. Port koji već prati NetGen nije ovdje ponovljen kao rupa. `REFRESHCONTROL`, `CREATETEXTFILE*`, `DOCK1`–`DOCK5`, `ISEMPTYORZERO*`, `BEEP`, `CLICK`, `OKSTAY`, `CLOSEPARENT` i `REFRESHMASTER` se izvršavaju na kliku (`docs/naredbe-stanje.md`). `FOREACH*` na podlozi vrti tijelo iz `Form2.vb` 8310–8394; poziv u `Form1.vb` 6844–6850 je komentar. `BUTTONS` prepisuje iste slotove kao `Form1.vb` 3770–3796. Jedina namjerna razlika fiskala: prazan CIS URL ne postaje produkcijski `cis.porezna-uprava.hr`. Izgled (R59) ostaje.
 
 Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom (boja, stil gumba, gumbi na dnu, prazni retci, row header, visina zaglavlja, font, obrub). I dalje se strogo gleda natpis i redoslijed gumba, što gumb radi, širina i skriveni stupac, sort, edit, checkbox stupac, raspored kontrola na dijalogu, tab, enable/visible i fokus. XML se ne mijenja.
 
@@ -27,14 +27,6 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 - **Carpo:** `ShellLayout` vidi samo tekst atributa `TREE` i činjenicu da `COMBO` nije prazan (`ShellLayout.cs` 51–57). Ne čita odabranu vrijednost comboa kao SQL stabla.
 - **Posljedica:** stablo je „vidljivo“, a čvorova nema. Kostur koji gleda samo `TREE` granulu ostavi bez drveta.
 - **Test:** `PRI` checklista, `docs/granule/PrijemniList.md`
-
-## R04 `REFRESHMASTER` nije `REFRESHMASTERGRID`
-
-- **Element:** komanda na gumbu
-- **NetGen:** samo `REFRESHMASTERGRID` ponovi zadnji SQL mastera (`Form1.vb` 4570–4577). `REFRESHMASTER` traži formu tog imena. Ako forma ne postoji, 0 kontrola i `OKClick`, pa `PokaziUpit` zadnjeg SQL-a (`5519`). Osvježenje je nuspojava prazne forme (JeziciNG `Unesi#refreshmaster`).
-- **Carpo:** `control populate` nema ova dva imena. Port u `MasterGrid.cs` 243 bilježi samo `REFRESHMASTERGRID`.
-- **Posljedica:** preimenovanje u `REFRESHMASTERGRID` promijeni JeziciNG (radi i bez te riječi). Izostanak oba ostavi PrijemniList bez osvježenja.
-- **Test:** `JEZ-65`, `KUP-02`, `PRI` checklista
 
 ## R05 Naslov `v[verzija]` nije `root/@version`
 
@@ -171,22 +163,6 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 - **Carpo:** nema te tablice. Selekcija grida je drugi skup.
 - **Posljedica:** dva prozora istog operatera dijele retke. Plavi i čekirani nisu zamjena.
 - **Test:** `KUP-03`, `KUP-04`, `KUP-10`
-
-## R22 `FOREACH*` na podlozi ne vrti petlju
-
-- **Element:** `FOREACHROW` / `FOREACHSELECTED` / `FOREACHBLUEROW`
-- **NetGen:** na dijalogu petlja i pojede sljedeći `#` segment (`Form2.vb` 7040–7048, `8310–8394`). Na podlozi je tijelo komentar, ali `i = i + 1` i dalje pojede sljedeći segment (`Form1.vb` 6843–6850).
-- **Carpo:** i dijalog i podloga vrte sljedeći segment po retku (`ForeachNaredba`). `Form1.vb` 6844–6850 ima poziv zakomentiran; tijelo živi u `Form2` i Carpo ga zove i na podlozi.
-- **Posljedica:** gumb podloge s `FOREACHROW` izvrši petlju, ne samo pojede segment.
-- **Test:** `foreach-dijalog`, `foreach-podloga`, `foreach-podloga-petlja`, `KUP-12`
-
-## R23 `OKSTAY` i `CLOSEPARENT`
-
-- **Element:** gumbi dijaloga
-- **NetGen:** `OK` zatvara (`Form2.vb` 6888–6890). `OKSTAY` ne (`6884–6887`). `CANCEL` i `CLOSE` su `Button2` (`7031–7034`). `CLOSEPARENT` još stavi `bCloseParent` (`7035–7037`).
-- **Carpo:** `form close` je jedno. Nema `OKSTAY` ni zatvaranja roditelja iz djeteta.
-- **Posljedica:** Stay ostane otvoren. Close parent zatvori i granulu, ne samo dijalog.
-- **Test:** `KUP-16`, `KUP-17`
 
 ## R24 Datum `firstday*` nije `dateedit`, a `today` nije ključna riječ
 
@@ -444,14 +420,6 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 - **Posljedica:** `LVObracun` `INSERTLVGLA(@hrkadroviid = 0)` traži formu `INSERTLVGLA`, a `0` je parametar. Cijeli string kao ime forme ne postoji.
 - **Test:** `LVO-05`, `LVO-20`
 
-## R56 `BUTTONS` prepiše samo prvih N gumba
-
-- **Element:** `BUTTONS` i `CMDxCAPTION`
-- **NetGen:** `CMD` se složi prvi (`Form1.vb` 3319–3330). Ako `BUTTONS` nije prazan, segment `j` prepiše gumb `j+1` (`3770–3796`). Kasniji `CMD` ostaju. `Button6` iz `BUTTONS` je tek šesti segment (`j = 5`).
-- **Carpo:** `GumbiNiz.Slozi` radi isti raspored: `BUTTONS` prepiše slot `j+1`, `Button7` samo ako je CMD7 prazan, CMD iza kraćeg niza ostaje.
-- **Posljedica:** `KntKompVerizne` ima pet `BUTTONS` i još `CMD6`–`CMD8` `repx/`. Oba niza su na traci.
-- **Test:** `buttons-ostaju-cmd`, `buttons-sedmi-ne-brise-cmd7`
-
 ## R57 `enable` gleda natpis gumba
 
 - **Element:** `ONLOAD2` i rafalni `select` na podlozi
@@ -459,14 +427,6 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 - **Carpo:** `control enable` veže se na `name`.
 - **Posljedica:** `MPPonuda` `ONLOAD2` stupac `Dodaj` gasi gumb čiji je natpis Dodaj. Veza po `NAME` ne nađe stupac.
 - **Test:** `MPP-04`, `MPP-20`
-
-## R58 `CLICK(ime)` klikne tu kontrolu
-
-- **Element:** `CLICK(`
-- **NetGen:** `Rafalno` skine `CLICK(`, ostatak je ime, `Glbl_Click` na toj kontroli (`Form2.vb` 7151–7155). `KntBlaPromet` `ONLOADED="click(Ok)"` tako stisne gumb `ok`, čiji je `ONCLICK` `close#:REPX/@@template (@id=@@BLPrometGlaId)`.
-- **Carpo:** nema `CLICK(ime)`. Zatvaranje forme ne pokrene `ONCLICK` tog gumba.
-- **Posljedica:** ispis blagajne ostane na praznoj formi ako se `click(Ok)` preskoči. Ime izvještaja je vrijednost `@@template` iz `ONLOAD`.
-- **Test:** `KBP-04`, `KBP-20`
 
 ## R59 Izgled je Carpo, ponašanje je NetGen
 
@@ -869,13 +829,13 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 | Checklista | Što je tamo različito od Carpa | Stavke |
 |---|---|---|
 | `OznakaKL.md` | prazno stablo, `GetID`, `PERMISIO`, širina `/14`, label `TEXT`. Janus krom je R59 | R02, R06, R07, R34, R59 |
-| `JeziciNG.md` | dva G, `refreshmaster`, `TEXT` na gumbu nije natpis, širina 179, `PRINTREPXMASTER`. Font, obrub i HeaderLines su R59 | R04, R08, R07, R34, R41, R59 |
+| `JeziciNG.md` | dva G, `TEXT` na gumbu nije natpis, širina 179, `PRINTREPXMASTER`. Font, obrub i HeaderLines su R59 | R08, R07, R34, R41, R59 |
 | `Statusi.md` | adapter stabla, samo prvi korijen, id 0, prazna forma, detail kolone jednom, `v[` | R01, R05, R09, R19 |
 | `KntBlaZak.md` | susjed nije roditelj, tri korijena, ime stupca, `CLEARCOLUMS` jednom, agregat `"0"` | R10, R11, R09, R08 |
-| `PrijemniList.md` | combo umjesto `TREE`, `REFRESHMASTER`, `@robaid`, `SETDEFAULTS` po `#` | R03, R04, R13, R12 |
+| `PrijemniList.md` | combo umjesto `TREE`, `@robaid`, `SETDEFAULTS` po `#` | R03, R13, R12 |
 | `Kulture.md` | lijepljenje `sp`, `Cijena` text/number, tražilica, `spRaiserror` | R14, R15, R16, R17 |
 | `KarticaPartnera.md` | `:FILTERFORM`, `!!`, `+focus`, multidrop, `firstdayofyear` | R18, R14, R17, R28, R24 |
-| `KUPNG.md` | tilda, `REFRESHMASTER`, temp tablica, `FOREACH`, `OKSTAY`/`CLOSEPARENT`, Carpo `ONLOADED` | R20, R04, R21, R22, R23, R37, R38, R39 |
+| `KUPNG.md` | tilda, temp tablica, Carpo `ONLOADED` | R20, R21, R37, R38, R39 |
 | `KUPDostKN.md` | shell DMS, popup s tildom, dijalog `CarpoForm` | R38, R39, R40 |
 | `KUPDostKnNGBvg.md` | `clsCarpoKupUra`, gumb umjesto `ONLOADED`, `MULTISELECT_` ime | R37, R38, R44 |
 | `MPBlagajna.md` | `PRINTMASTER`, `vrstadokid-`, prazna forma | R41, R42, R43, R44 |
@@ -894,16 +854,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 | `Narudzbe.md` | TREETRANSLATE, ikona, NEXTFORM, grid | R49, R52, R53 |
 | `Prioritet.md` | 141 red `ssMeni`, rang stablo+detail | |
 | `LVObracun.md` | `onlytree`, `@@lvglaid`, `Ime(@a=)` | R54, R55 |
-| `JOPPD.md` | `onlytree`, `@@id` naspram `@@kodjoppdaid`, tilda | R54, R20, R04 |
-| `KntKompVerizne.md` | `sptree`, `BUTTONS` ne briše kasniji CMD, `repx/` | R56, R42 |
-| `KntBlaPromet.md` | `CLICK(Ok)`, `@@template`, `CLEARCOLUMS` | R58, R42, R08 |
+| `JOPPD.md` | `onlytree`, `@@id` naspram `@@kodjoppdaid`, tilda | R54, R20 |
+| `KntKompVerizne.md` | `sptree`, `repx/` | R42 |
+| `KntBlaPromet.md` | `@@template`, `CLEARCOLUMS` | R42, R08 |
 | `MPPonuda.md` | nema `ONLOAD`, natpis gumba, `vrstadokid-` | R57, R43 |
 | `MPPorKPNG.md` | `CMD` bez `:`, `TABINDEX` s razmakom, `VALUE` na datumu, prazan `FILLEXPLORER` | R18, R60, R61, R62, R63 |
 | `Intrastat.md` | `SETDEFAULTS` rezan na `#`, `COMMANDTIMEOUT` 300, detail `@@id`, repx s parametrom | R51, R11, R55, R65 |
-| `KntPDVObrasciEU.md` | `BUTTONS`, `ONENTERKEY`, `ASSEMBLYLOAD`, `repx/@@Template`, `PAGEORIENTATION` ne dira REPX | R41, R56, R35, R68 |
-| `MPKntNacinPlacAzur.md` | `TOTALROW` se ne čita, `ALLOWEMPTY="FOLSE"`, `BUTTONS`, `FOCUS` | R31, R56, R66 |
+| `KntPDVObrasciEU.md` | `ONENTERKEY`, `ASSEMBLYLOAD`, `repx/@@Template`, `PAGEORIENTATION` ne dira REPX | R41, R35, R68 |
+| `MPKntNacinPlacAzur.md` | `TOTALROW` se ne čita, `ALLOWEMPTY="FOLSE"`, `FOCUS` | R31, R66 |
 | `KntOPZ-STAT-1.md` | `Ime.Start`, `POSITION`, `FILLEXPLORER` na projektu, `CLEARCOLUMS` | R67, R69, R70, R08 |
-| `MPRACNEFISK.md` | `DETAILGRID` s razmakom, `REFRESHMASTER`, `FISKALIZACIJA(@@id)`, `.clsReport` | R04, R43, R55, R63 |
+| `MPRACNEFISK.md` | `DETAILGRID` s razmakom, `FISKALIZACIJA(@@id)`, `.clsReport` | R43, R55, R63 |
 | `MPFiskalPubVars.md` | ulaz je `:UPDATEFORM`, `TOTALROW` se ne čita | R18, R66 |
 | `Bilanca-GFI.md` | `ONLOAD` lanac, `.clsGFIPOD` nije ispis, timeout 120 | R71, R73, R65, R41 |
 | `MPPDV.md` | dvostruki klik `:MP_PDV`, `PERMISIO` | R18, R06 |
@@ -918,7 +878,7 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 | `SkladisteNG.md` | `ONLOAD` je SQL, `PRINTMASTER` | R41 |
 | `Poruke.md` | XML nije u repou | |
 | `VrCjenik.md` | `REFRESHAFTERCHILD` na formi, `DETCHECKBOXVISIBLE` | R82, R79, R05 |
-| `InstrumentiPlacanjaNG.md` | `HELPKOD`, `refreshmaster`, `PRINTREPXMASTER` | R81, R04, R41, R79 |
+| `InstrumentiPlacanjaNG.md` | `HELPKOD`, `PRINTREPXMASTER` | R81, R41, R79 |
 | `MatTem.md` | `:FILTERFORM`, `!!`, `LANDSCAPE` ne dira `PRINTMASTER` | R18, R14, R41, R65 |
 | `MPPSNG.md` | stablo bez `:`, `AUTOFITCOLUMNS`, `Lista`, `vrstadokid-` | R10, R80, R60, R43, R57 |
 | `MPStanje.md` | `INCLUDE`, `SKIPDEFAULTLOAD` | R78, R53, R65 |
@@ -927,8 +887,8 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 
 - **Element:** `ASSEMBLYLOAD` na dijalogu
 - **NetGen:** `Form2.vb` 3406–3486 skuplja check, radio, combo, search, grid i tekst u `strParametriSvi`. Taj niz ide dvaput u `totalgen` (`7424–7456`).
-- **Carpo:** `Dijalog.SviParametri` skuplja check, lookup, tekst (`'` → `¸¸`, `,` → `~~`), broj (prazno je `0`), datum (`yyyyMMdd` ili `null`), radio, search i grid. `EVAL` se reže na kontrolu i izraz, bez VB `CalcContext`.
-- **Posljedica:** peti argument `totalgen` dobije te tipove. Označeni redovi grida ostaju prazan niz dok nema bool stupca. `EVAL` ne računa izraz.
+- **Carpo:** `Dijalog.SviParametri` skuplja check, lookup, tekst (`'` → `¸¸`, `,` → `~~`), broj (prazno je `0`), datum (`yyyyMMdd` ili `null`), radio, search i grid. `EVAL` računa izraz (`Izraz`, isti ugovor kao `ILCalc` u `Form2.vb` 8286–8306).
+- **Posljedica:** peti argument `totalgen` dobije te tipove. Označeni redovi grida ostaju prazan niz dok nema bool stupca.
 - **Test:** `param-radio`, `param-search`, `param-grid`, `param-tekst`, `param-broj`, `param-datum`, `rafal-eval`
 
 ## R110 `PrintLink` nema NetGen zaglavlje ni `lodani`

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 
@@ -214,32 +215,32 @@ namespace Carpo.NetGen.Komande
         public const string PivotKlasa = "NetGenExtensions.Form1";
         public const string ChartMetoda = "ChartGRID";
         public const string PivotMetoda = "PivotGRID";
+        public const string IspisMetoda = "PrintDocumentREPX";
         public const string IspisKlasa = "NetGenExtensions.frmGridExPrintingREPX";
         public static Form Zadnja;
+        public static string ZadnjiTip = "";
         public static string Greska = "";
+        public static string Poziv = "";
+        private static Dictionary<string, string> _datoteke;
+        private static readonly HashSet<string> _uTijeku = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static bool _kuka;
 
         /// <summary>
         /// Form1.vb 5988 i Form2.vb 9044, 9065, 9088: Assembly.Load("NetGenExtensions").
-        /// Traži DLL uz exe, u SharedAssemblies i u NetGen mapi. Prazan string ako ga nema.
+        /// Prazan string ako DLL nije uz exe ni u Jupiter Clientu.
         /// </summary>
         public static string Nadji()
         {
-            string[] imena = new[] { "NetGenExtensions.dll" };
-            var mape = new List<string>();
-            mape.Add(AppDomain.CurrentDomain.BaseDirectory ?? "");
-            string env = Environment.GetEnvironmentVariable("SharedAssembliesDir");
-            if (!string.IsNullOrEmpty(env))
-                mape.Add(Path.Combine(env, "Spin"));
-            mape.Add(@"C:\Users\ntomic\Desktop\Jupiter Client\Programs\SharedAssemblies\Spin");
-            mape.Add(@"C:\Users\ntomic\Desktop\Jupiter Client\Programs\SharedAssemblies");
-            for (int i = 0; i < mape.Count; i++)
-            {
-                if (string.IsNullOrEmpty(mape[i]))
-                    continue;
-                string put = Path.Combine(mape[i], imena[0]);
-                if (File.Exists(put))
-                    return put;
-            }
+            Indeks();
+            return PutDatoteke(Sklop + ".dll");
+        }
+
+        public static string PutDatoteke(string ime)
+        {
+            Indeks();
+            string put;
+            if (_datoteke != null && _datoteke.TryGetValue(ime, out put))
+                return put;
             return "";
         }
 
@@ -250,7 +251,8 @@ namespace Carpo.NetGen.Komande
                 return "";
             try
             {
-                System.Reflection.Assembly.LoadFrom(put);
+                Kuka();
+                Assembly.Load(Sklop);
                 return put;
             }
             catch (Exception ex)
@@ -259,57 +261,277 @@ namespace Carpo.NetGen.Komande
             }
         }
 
-        /// <summary>Isti Assembly.LoadFrom kao NetGen Assembly.Load("NetGenExtensions"). Vraća otvorenu formu.</summary>
+        /// <summary>
+        /// Assembly.Load kao NetGen, pa CreateInstance tipa koji ima metodu i poziv te metode.
+        /// Form2.vb 9048–9102.
+        /// </summary>
         public static Form Prikazi(string vrsta)
         {
-            string put = Nadji();
-            if (put.Length == 0)
+            string metoda = vrsta == "pivot" ? PivotMetoda : vrsta == "chart" ? ChartMetoda : IspisMetoda;
+            Zadnja = null;
+            ZadnjiTip = "";
+            Assembly a = UcitajSklop();
+            if (a == null)
                 return null;
-            string mapa = Path.GetDirectoryName(put) ?? "";
-            AppDomain.CurrentDomain.AssemblyResolve += delegate (object s, ResolveEventArgs e)
+            Type t = TipSMetodom(a, metoda);
+            if (t == null)
             {
-                string dat = new System.Reflection.AssemblyName(e.Name).Name + ".dll";
-                string[] korijen = new[]
-                {
-                    mapa,
-                    Path.GetDirectoryName(mapa) ?? "",
-                    @"C:\Users\ntomic\Desktop\Jupiter Client\Programs",
-                    @"C:\Users\ntomic\Desktop\Jupiter Client\Programs\SharedAssemblies"
-                };
-                for (int i = 0; i < korijen.Length; i++)
-                {
-                    if (korijen[i].Length == 0)
-                        continue;
-                    string kandidat = Path.Combine(korijen[i], dat);
-                    if (File.Exists(kandidat))
-                        return System.Reflection.Assembly.LoadFrom(kandidat);
-                }
+                Greska = (Greska + " | nema " + metoda + " janus=" + PutDatoteke("Janus.Windows.GridEX.v3.dll")).Trim();
                 return null;
-            };
-            System.Reflection.Assembly a = System.Reflection.Assembly.LoadFrom(put);
-            string klasa = vrsta == "pivot" ? PivotKlasa : vrsta == "chart" ? ChartKlasa : IspisKlasa;
-            object o = null;
+            }
+            object o;
             try
             {
-                o = a.CreateInstance(klasa);
+                o = Activator.CreateInstance(t);
             }
             catch (Exception ex)
             {
-                Exception unutra = ex;
-                while (unutra.InnerException != null)
-                    unutra = unutra.InnerException;
-                Greska = (Greska + " | " + klasa + " " + unutra.GetType().Name + " " + unutra.Message).Trim();
-                Zadnja = null;
+                Greska = (Greska + " | " + t.FullName + " " + Unutra(ex).GetType().Name + " " + Unutra(ex).Message).Trim();
                 return null;
             }
-            var f = o as Form;
-            Zadnja = f;
-            if (f == null)
+            ZadnjiTip = t.FullName ?? "";
+            Zadnja = o as Form;
+            Pozovi(o, metoda);
+            return Zadnja;
+        }
+
+        private static Assembly UcitajSklop()
+        {
+            Indeks();
+            Kuka();
+            try
             {
-                Greska = o == null ? "null " + klasa : o.GetType().FullName;
-                return null;
+                return Assembly.Load(Sklop);
             }
-            return f;
+            catch (Exception ex)
+            {
+                string put = PutDatoteke(Sklop + ".dll");
+                if (put.Length == 0)
+                {
+                    Greska = (Greska + " | " + ex.Message).Trim();
+                    return null;
+                }
+                try
+                {
+                    return Assembly.LoadFrom(put);
+                }
+                catch (Exception ex2)
+                {
+                    Greska = (Greska + " | " + ex2.Message).Trim();
+                    return null;
+                }
+            }
+        }
+
+        private static void Kuka()
+        {
+            if (_kuka)
+                return;
+            _kuka = true;
+            AppDomain.CurrentDomain.AssemblyResolve += delegate (object s, ResolveEventArgs e)
+            {
+                string ime = new AssemblyName(e.Name).Name;
+                if (ime == null || _uTijeku.Contains(ime))
+                    return null;
+                string put = PutDatoteke(ime + ".dll");
+                if (put.Length == 0)
+                    return null;
+                _uTijeku.Add(ime);
+                try
+                {
+                    return Assembly.LoadFrom(put);
+                }
+                catch
+                {
+                    return null;
+                }
+                finally
+                {
+                    _uTijeku.Remove(ime);
+                }
+            };
+        }
+
+        private static Type TipSMetodom(Assembly a, string metoda)
+        {
+            Type[] tipovi;
+            try
+            {
+                tipovi = a.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                tipovi = ex.Types ?? new Type[0];
+                if (ex.LoaderExceptions != null)
+                {
+                    for (int i = 0; i < ex.LoaderExceptions.Length; i++)
+                    {
+                        if (ex.LoaderExceptions[i] != null)
+                            Greska = (Greska + " | " + ex.LoaderExceptions[i].Message).Trim();
+                    }
+                }
+            }
+            for (int i = 0; i < tipovi.Length; i++)
+            {
+                Type t = tipovi[i];
+                if (t == null)
+                    continue;
+                try
+                {
+                    if (t.GetMethod(metoda) != null)
+                        return t;
+                }
+                catch (Exception ex)
+                {
+                    Greska = (Greska + " | " + t.FullName + " " + ex.Message).Trim();
+                }
+            }
+            return null;
+        }
+
+        private static void Pozovi(object o, string metoda)
+        {
+            MethodInfo m;
+            try
+            {
+                m = o.GetType().GetMethod(metoda);
+            }
+            catch (Exception ex)
+            {
+                Poziv = (Poziv + " " + metoda + "=err " + ex.Message).Trim();
+                return;
+            }
+            if (m == null)
+            {
+                Poziv = (Poziv + " " + metoda + "=nema").Trim();
+                return;
+            }
+            ParameterInfo[] p = m.GetParameters();
+            object[] args = new object[p.Length];
+            var tablica = new DataTable();
+            tablica.Columns.Add("id", typeof(int));
+            tablica.Columns.Add("naziv", typeof(string));
+            tablica.Rows.Add(1, "a");
+            for (int i = 0; i < p.Length; i++)
+            {
+                Type pt = p[i].ParameterType;
+                if (pt == typeof(string))
+                    args[i] = i == 0 ? "lodani" : "";
+                else if (pt == typeof(DataTable))
+                    args[i] = tablica;
+                else if (pt == typeof(int))
+                    args[i] = 0;
+                else if (pt == typeof(bool))
+                    args[i] = false;
+                else
+                    args[i] = null;
+            }
+            try
+            {
+                m.Invoke(o, args);
+                Poziv = (Poziv + " " + metoda + "=ok").Trim();
+            }
+            catch (Exception ex)
+            {
+                Exception u = Unutra(ex);
+                Poziv = (Poziv + " " + metoda + "=err " + u.GetType().Name + " " + u.Message).Trim();
+                Greska = (Greska + " | " + metoda + " " + u.Message).Trim();
+            }
+        }
+
+        private static Exception Unutra(Exception ex)
+        {
+            Exception u = ex;
+            while (u.InnerException != null)
+                u = u.InnerException;
+            return u;
+        }
+
+        private static void Indeks()
+        {
+            if (_datoteke != null)
+                return;
+            _datoteke = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var mape = new List<string>();
+            mape.Add(AppDomain.CurrentDomain.BaseDirectory ?? "");
+            string env = Environment.GetEnvironmentVariable("SharedAssembliesDir");
+            if (!string.IsNullOrEmpty(env))
+            {
+                mape.Add(env);
+                mape.Add(Path.Combine(env, "Spin"));
+            }
+            mape.Add(@"C:\Users\ntomic\Desktop\Jupiter Client");
+            for (int i = 0; i < mape.Count; i++)
+            {
+                if (mape[i].Length == 0 || !Directory.Exists(mape[i]))
+                    continue;
+                if (mape[i].IndexOf("Jupiter Client", StringComparison.OrdinalIgnoreCase) >= 0)
+                    Obidi(mape[i], 0);
+                else
+                    DodajMapu(mape[i]);
+            }
+            string[] gac = new[]
+            {
+                @"C:\Windows\Microsoft.NET\assembly\GAC_MSIL",
+                @"C:\Windows\Microsoft.NET\assembly\GAC_32",
+                @"C:\Windows\Microsoft.NET\assembly\GAC_64",
+                @"C:\Windows\assembly\GAC_MSIL",
+                @"C:\Windows\assembly\GAC_32",
+                @"C:\Windows\assembly\GAC_64"
+            };
+            for (int i = 0; i < gac.Length; i++)
+            {
+                if (!Directory.Exists(gac[i]))
+                    continue;
+                string[] janus;
+                try
+                {
+                    janus = Directory.GetDirectories(gac[i], "Janus*", SearchOption.AllDirectories);
+                }
+                catch
+                {
+                    continue;
+                }
+                for (int j = 0; j < janus.Length; j++)
+                    DodajMapu(janus[j]);
+            }
+        }
+
+        private static void DodajMapu(string mapa)
+        {
+            string[] datoteke;
+            try
+            {
+                datoteke = Directory.GetFiles(mapa, "*.dll");
+            }
+            catch
+            {
+                return;
+            }
+            for (int i = 0; i < datoteke.Length; i++)
+            {
+                string ime = Path.GetFileName(datoteke[i]);
+                if (!_datoteke.ContainsKey(ime))
+                    _datoteke[ime] = datoteke[i];
+            }
+        }
+
+        private static void Obidi(string mapa, int dubina)
+        {
+            if (dubina > 7 || _datoteke.Count > 20000)
+                return;
+            DodajMapu(mapa);
+            string[] mape;
+            try
+            {
+                mape = Directory.GetDirectories(mapa);
+            }
+            catch
+            {
+                return;
+            }
+            for (int i = 0; i < mape.Length; i++)
+                Obidi(mape[i], dubina + 1);
         }
     }
 }
