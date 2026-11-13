@@ -960,6 +960,8 @@ namespace Carpo.NetGen.Ui
             if (sql.Length == 0)
                 sql = PoslanoKoje("spStatusiAzur");
             if (sql.Length == 0)
+                sql = PoslanoKoje("spZupanijeAzur");
+            if (sql.Length == 0)
                 sql = _zadnjiSql ?? "";
             if (sql.Length == 0)
                 return "";
