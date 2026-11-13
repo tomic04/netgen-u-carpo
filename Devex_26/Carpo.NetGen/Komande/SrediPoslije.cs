@@ -41,7 +41,10 @@ namespace Carpo.NetGen.Komande
         {
             string s = sql ?? "";
             int zastita = 0;
-            while (s.IndexOf("@@", StringComparison.Ordinal) >= 0 && zastita < 80)
+            // Class1.vb 764 nema ograničenje. spMPKase ima više od 80 različitih tokena,
+            // pa je stara granica 80 ostavljala @@ i ExecSql nije slao upis (SQL-05).
+            // Zaštita od beskonačne petlje je provjera ispod (vrijednost sadrži token).
+            while (s.IndexOf("@@", StringComparison.Ordinal) >= 0 && zastita < 100000)
             {
                 zastita++;
                 int poc = s.IndexOf("@@", StringComparison.Ordinal);
@@ -109,11 +112,19 @@ namespace Carpo.NetGen.Komande
                 vrijednost = dio.Substring(eq + 1);
                 if (param.ToLowerInvariant().IndexOf("ajdijeva", StringComparison.Ordinal) >= 0)
                     vrijednost = vrijednost.Replace("~", ",");
-                if (param.Length >= 4 && param.Substring(0, 4).ToUpperInvariant().StartsWith("@DAT", StringComparison.Ordinal) && vrijednost.IndexOf('.') >= 0 && !datumZaIspis)
+                // Class1.vb 876: Param.Substring(0, 4) baci iznimku za ime kraće od 4 znaka
+                // (@kg, @r1). On Error Resume Next tada uđe u tijelo If-a, pa se i takav
+                // param tretira kao datum (SQL-02).
+                if ((param.Length < 4 || param.Substring(0, 4).ToUpperInvariant().StartsWith("@DAT", StringComparison.Ordinal)) && vrijednost.IndexOf('.') >= 0 && !datumZaIspis)
                     vrijednost = SpakujDatum(vrijednost);
                 break;
             }
-            bool datum = (param.Length >= 4 && param.Substring(0, 4).ToUpperInvariant() == "@DAT")
+            // Class1.vb 888: ista iznimka za kratko ime vodi u granu za datum (navodnici).
+            bool datum = param.Length < 4
+                || param.Substring(0, 4).ToUpperInvariant() == "@DAT"
+                || (param.ToUpperInvariant().IndexOf("GRID", StringComparison.Ordinal) >= 0 && param.ToUpperInvariant().IndexOf("DAT", StringComparison.Ordinal) >= 0);
+            // Class1.vb 940: međuspremnik koristi StartsWith, koji ne baca, pa kratko ime tu nije datum.
+            bool datumCb = param.Trim().ToUpperInvariant().StartsWith("@DAT", StringComparison.Ordinal)
                 || (param.ToUpperInvariant().IndexOf("GRID", StringComparison.Ordinal) >= 0 && param.ToUpperInvariant().IndexOf("DAT", StringComparison.Ordinal) >= 0);
             if (datum)
             {
@@ -141,7 +152,7 @@ namespace Carpo.NetGen.Komande
                 return "";
 
             if (vrijednost == "null" || vrijednost.Length == 0)
-                vrijednost = IzClipboarda(param, clipboard, datum, datumZaIspis, vrijednost);
+                vrijednost = IzClipboarda(param, clipboard, datumCb, datumZaIspis, vrijednost);
             return vrijednost;
         }
 
@@ -149,33 +160,39 @@ namespace Carpo.NetGen.Komande
         {
             if (clipboard == null)
                 return trenutno;
-            string ime = param.TrimStart('@');
+            // Class1.vb 937-938: "@" + UCase(CB(j,0)) = IIf(CB počinje s "@", "@", "") + UCase(Param) + "=".
+            // Ključ u CB nosi "=" na kraju. Petlja ne prekida, pa vrijedi zadnji pogodak.
+            // @@@ime postane @@ime i ne nađe se, kao u NetGenu.
             string cb = null;
+            string p = param.ToUpperInvariant();
             foreach (var par in clipboard)
             {
-                string kljuc = (par.Key ?? "").Trim();
-                if (kljuc.EndsWith("=", StringComparison.Ordinal))
-                    kljuc = kljuc.Substring(0, kljuc.Length - 1);
-                if (string.Equals(kljuc, ime, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(par.Key, param, StringComparison.OrdinalIgnoreCase))
-                {
+                string kljuc = (par.Key ?? "").ToUpperInvariant();
+                string desno = (kljuc.StartsWith("@", StringComparison.Ordinal) ? "@" : "") + p + "=";
+                if ("@" + kljuc == desno)
                     cb = par.Value ?? "";
-                    break;
-                }
             }
             if (cb == null)
                 return trenutno;
             if (datum)
             {
+                // Class1.vb 941-958. Vrijednost u međuspremniku nema vodeći navodnik,
+                // pa su pomaci 6/3/0 (dd.MM.yyyy) i 6/4/0 (yyyyMMdd), ne 7/4/1 kao za
+                // param iz niza (SQL-03). Prekratak tekst: naredba padne, vrijednost ostaje.
                 if (cb.IndexOf('.') >= 0)
                 {
                     if (datumZaIspis)
                         return cb.Replace(" 0:00:00", "");
-                    string spak = SpakujDatum(cb);
-                    return spak == cb ? cb : "'" + spak.Replace("'", "") + "'";
+                    if (cb.Length < 10)
+                        return trenutno;
+                    return "'" + cb.Substring(6, 4) + cb.Substring(3, 2) + cb.Substring(0, 2) + "'";
                 }
                 if (datumZaIspis)
-                    return DatumZaIspis(cb);
+                {
+                    if (cb.Length < 8)
+                        return cb;
+                    return cb.Substring(6, 2) + "." + cb.Substring(4, 2) + "." + cb.Substring(0, 4);
+                }
                 if (cb == "null")
                     return cb;
                 return "'" + cb + "'";

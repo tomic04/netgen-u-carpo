@@ -161,7 +161,7 @@ namespace Carpo.NetGen.Granule
                 ? Qa.Z("GridRed", "BOJ-01", "COLORPICKER stavi HTML u @@selectedcolor i select as boja", "netgen/Form2.vb:7156-7163; netgen/Form1.vb:6813-6831")
                 : Qa.P("GridRed", "BOJ-01", "@@selectedcolor", "netgen/Form2.vb:7160", bojaSql));
 
-            string akcija = DetailGrid.ZamijeniOstatak("select @@akcijeid as akcijeid", "");
+            string akcija = SrediPoslije.Petlja("select @@akcijeid as akcijeid", "", null, false);
             bool akc = akcija.IndexOf("@@", StringComparison.Ordinal) < 0
                 && akcija.IndexOf("null", StringComparison.Ordinal) >= 0;
             l.Add(akc

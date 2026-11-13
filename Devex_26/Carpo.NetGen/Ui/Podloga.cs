@@ -891,7 +891,7 @@ namespace Carpo.NetGen.Ui
             }
             _brojUpita++;
             if (sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
-                sql = DetailGrid.ZamijeniOstatak(sql, "");
+                sql = SrediPoslije.Petlja(sql, "", null, false);
             if (sql.IndexOf("cis.porezna-uprava.hr", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 _sqlGreska = "nije poslano na produkcijski URL Porezne";

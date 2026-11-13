@@ -701,7 +701,7 @@ namespace Carpo.NetGen.Ui
             if (_kontekst != null)
                 s = SqlTekst.ZaGumb(s, _kontekst);
             else if (s.IndexOf("@@", StringComparison.Ordinal) >= 0)
-                s = DetailGrid.ZamijeniOstatak(s, "");
+                s = SrediPoslije.Petlja(s, "", null, false);
             return s;
         }
 
