@@ -1746,6 +1746,10 @@ namespace Carpo.NetGen.GridTest
             trazenje.Columns.Add("naziv", typeof(string));
             trazenje.Rows.Add(1, "a", "prvi");
             trazenje.Rows.Add(2, "b", "kava");
+            var otvori = Carpo.NetGen.Komande.DijalogTok.Koraci("OPENFORM(FILTERFORM)#BLAGAJNAENABLE(4)#PRINTGRID(stavke)");
+            T("open-blagajna-ispis", otvori.Count == 3 && otvori[0].Vrsta == "forma" && otvori[0].Tekst == "FILTERFORM"
+                && otvori[1].Vrsta == "blagajna" && otvori[2].Vrsta == "ispis"
+                && Carpo.NetGen.Komande.BlagajnaNaredba.Upit("4").IndexOf("4", StringComparison.Ordinal) >= 0, otvori[0].Tekst);
             T("grid-vrijednost", Carpo.NetGen.Komande.RafalNaredba.NadjiVrijednost(trazenje, "naziv", "kava") == 1
                 && Carpo.NetGen.Komande.RafalNaredba.RedStupca2(trazenje, "kava") == 1
                 && Carpo.NetGen.Komande.RafalNaredba.PrazniCvorovi(new[] { "a", "", "b" }) == 1

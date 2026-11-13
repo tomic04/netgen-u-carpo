@@ -278,6 +278,15 @@ namespace Carpo.NetGen.Komande
                     k.Vrsta = "priprema";
                 else if (u.IndexOf("PRINTREPXGRID(", StringComparison.Ordinal) >= 0)
                     k.Vrsta = "ispisext";
+                else if (u.IndexOf("PRINTGRID(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "ispis";
+                else if (u.IndexOf("OPENFORM(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "forma";
+                    k.Tekst = OtvoriNaredba.Ime(t);
+                }
+                else if (u.IndexOf("BLAGAJNAENABLE(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "blagajna";
                 else if (u.IndexOf("PIVOTGRID(", StringComparison.Ordinal) >= 0)
                     k.Vrsta = "pivot";
                 else if (u.IndexOf("CHARTGRID(", StringComparison.Ordinal) >= 0)

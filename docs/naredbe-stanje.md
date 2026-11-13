@@ -26,7 +26,10 @@ Broj je pojavljivanje u `definitions/netgen` (XML). Status je što klik u Carpu 
 | ISEMPTY / ISEMPTYORZERO* | `Form2.vb` 6941–6946, 7053–7088, 7114–7147 | izvršava, preskok ili pitanje | lanac |
 | SLOPP | `Form2.vb` 7494 | prazno, kao komentar u NetGenu | 0 |
 | POSLOVNIPROSTOR / BLAGAJNAENABLE / UNCHECK | `Form1.vb` 4626–4801 | izvršava broj poziva / upit | rijetko |
-| OPENFORM | `Form1.vb` 6582 | izvršava | lanac |
+| OPENFORM | `Form2.vb` 6836–6840, `Form1.vb` 6582–6585 | izvršava, otvara formu | lanac |
+| PRINTGRID | `Form2.vb` 6950–6957 živo, `Form1.vb` 6777 komentirano | izvršava na dijalogu Spin ispis | često |
+| HIDECOLUMNS / SHOWCOLUMNS | `Form1.vb` 6730–6766 | izvršava vidljivost stupca | često |
+| UNCHECKMASTERGRID | `Form1.vb` 4626–4633 | izvršava, gasi kvačice | rijetko |
 | GRID_COLUMN_VALUE | `Form2.vb` 7007–7029 živo, `Form1.vb` 6785 komentirano | izvršava na dijalogu, traži red | 0 |
 | BEEP | `Form2.vb` 6825–6827, `Form1.vb` 6579–6581 | izvršava Beep i 300 ms na dijalogu i na podlozi | 0 |
 | STARTSEARCH | `Form2.vb` 6873–6881 živo, `Form1.vb` 6592 komentar | izvršava na dijalogu | 0 |
