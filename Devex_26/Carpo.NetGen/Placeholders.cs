@@ -62,6 +62,7 @@ namespace Carpo.NetGen.Print
         public const string Klasa = "Spin.Printing.Start";
 
         public static object Stroj;
+        public static string[] ZadnjeZaglavlje;
         public static object Repx;
         public static string PutanjaDll = "";
 
@@ -170,10 +171,7 @@ namespace Carpo.NetGen.Print
             int op = 0;
             int.TryParse(operater ?? "", out op);
             var zaglavlje = Zaglavlje(lijevo, centar, desno, naslov, dijalog || vrsta == "lodani");
-            string[] tri = TriZaglavlja(lijevo, centar, desno, naslov);
-            zaglavlje["header"] = tri[0];
-            zaglavlje["caption"] = tri[1];
-            zaglavlje["subHeader"] = tri[2];
+            ZadnjeZaglavlje = TriZaglavlja(lijevo, centar, desno, naslov);
             var combo = new DataTable();
             var ds = new DataSet();
             if (tablica != null)
