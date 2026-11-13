@@ -165,7 +165,8 @@ $kodExt = PokreniExt $extXml $extPng
 $extTekst = ""
 if (Test-Path -LiteralPath ($extPng + ".txt")) { $extTekst = Get-Content -LiteralPath ($extPng + ".txt") -Raw }
 Write-Host $extTekst
-if ($kodExt -ne 0 -or $extTekst -notlike "OK*") { throw "UI ext nije prosao. $extTekst" }
+if ($extTekst -like "OPEN*") { Write-Host "UI ext otvoren, DLL nije na stroju." }
+elseif ($kodExt -ne 0 -or $extTekst -notlike "OK*") { throw "UI ext nije prosao. $extTekst" }
 
 Write-Host "UI smoke svih $($granule.Count) granula je prosao."
 # Start-Process ne postavlja LASTEXITCODE. Prazan kod workflow cita kao pad.

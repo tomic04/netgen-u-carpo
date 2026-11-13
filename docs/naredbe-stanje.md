@@ -28,5 +28,5 @@ Broj je pojavljivanje u `definitions/netgen` (XML). Status je što klik u Carpu 
 | POSLOVNIPROSTOR / BLAGAJNAENABLE / UNCHECK | `Form1.vb` 4626–4801 | izvršava broj poziva / upit | rijetko |
 | OPENFORM | `Form1.vb` 6582 | izvršava | lanac |
 | GRID_COLUMN_VALUE | `Form1.vb` 6785 komentirano, `Form2.vb` 7007 živo | ne izvršava, kao podloga | 0 |
-| BEEP | `Form2.vb` 6825–6827, `Form1.vb` 6579–6581 | izvršava Beep i 300 ms | 0 |
+| BEEP | `Form2.vb` 6825–6827, `Form1.vb` 6579–6581 | izvršava Beep i 300 ms na dijalogu i na podlozi | 0 |
 | STARTSEARCH | `Form1.vb` 6592 | nema; i u NetGenu je komentar | 0 |

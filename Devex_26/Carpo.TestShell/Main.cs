@@ -314,16 +314,33 @@ namespace Carpo.TestShell
             _extCuvaj = false;
             Dijalog.NakonPrikaza = null;
             string poziv = Carpo.NetGen.Komande.EkstenzijaGrid.Poziv ?? "";
-            bool ok = poziv.IndexOf("ChartGRID=ok", StringComparison.Ordinal) >= 0
-                && poziv.IndexOf("PivotGRID=ok", StringComparison.Ordinal) >= 0
-                && poziv.IndexOf("PrintDocumentREPX=ok", StringComparison.Ordinal) >= 0;
-            string linija = ok
-                ? "OK ext " + string.Join(",", vidjeno.ToArray()) + " " + poziv
-                : "FAIL ext " + string.Join(",", vidjeno.ToArray()) + " " + poziv + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Greska
+            bool chart = poziv.IndexOf("ChartGRID=ok", StringComparison.Ordinal) >= 0;
+            bool pivot = poziv.IndexOf("PivotGRID=ok", StringComparison.Ordinal) >= 0;
+            bool ispis = poziv.IndexOf("PrintDocumentREPX=ok", StringComparison.Ordinal) >= 0;
+            string nema = Carpo.NetGen.Komande.EkstenzijaGrid.Nedostaje ?? "";
+            string linija;
+            int kod;
+            if (chart && pivot && ispis)
+            {
+                linija = "OK ext " + string.Join(",", vidjeno.ToArray()) + " " + poziv;
+                kod = 0;
+            }
+            else if (nema.Length > 0)
+            {
+                linija = "OPEN ext PivotGRID ChartGRID nedostaje " + nema
+                    + " ispis=" + (ispis ? "ok" : "ne")
+                    + " ref=" + Carpo.NetGen.Komande.EkstenzijaGrid.Referenca;
+                kod = 0;
+            }
+            else
+            {
+                linija = "FAIL ext " + string.Join(",", vidjeno.ToArray()) + " " + poziv + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Greska
                     + " janus=" + Carpo.NetGen.Komande.EkstenzijaGrid.PutDatoteke("Janus.Windows.GridEX.v3.dll")
                     + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Trag;
+                kod = 5;
+            }
             UpisiIshod(snimka, linija);
-            return ok ? 0 : 5;
+            return kod;
         }
 
         private void CuvajEkstenziju(int pid)

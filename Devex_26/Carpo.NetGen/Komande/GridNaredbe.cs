@@ -222,6 +222,8 @@ namespace Carpo.NetGen.Komande
         public static string Greska = "";
         public static string Poziv = "";
         public static string Trag = "";
+        public static string Referenca = "";
+        public static string Nedostaje = "";
         private static Dictionary<string, string> _datoteke;
         private static readonly HashSet<string> _uTijeku = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private static bool _kuka;
@@ -517,14 +519,341 @@ namespace Carpo.NetGen.Komande
                 for (int j = 0; j < dx.Length; j++)
                     Obidi(dx[j], 0);
             }
-            Dopuni();
-            string pogodak = "";
-            foreach (KeyValuePair<string, string> kv in _datoteke)
+            PretraziStroj();
+        }
+
+        /// <summary>
+        /// Čita reference NetGenExtensions i traži v12.1 DLL po GAC-u, svim Jupiter Client mapama,
+        /// Program Files\DevExpress, SharedAssemblies i backup mapama. Samo čita. Ništa ne briše i ne kopira u repo.
+        /// </summary>
+        private static void PretraziStroj()
+        {
+            if (UcitajPredmemoriju())
+                return;
+            var zelim = new List<AssemblyName>();
+            string dll = "";
+            if (_datoteke.TryGetValue(Sklop + ".dll", out dll) && dll.Length > 0)
             {
-                if (kv.Key.IndexOf("Reports.v12", StringComparison.OrdinalIgnoreCase) >= 0)
-                    pogodak = pogodak + " " + kv.Value;
+                try
+                {
+                    AssemblyName[] refs = Assembly.LoadFrom(dll).GetReferencedAssemblies();
+                    var sb = new StringBuilder();
+                    for (int i = 0; i < refs.Length; i++)
+                    {
+                        string tok = Token(refs[i]);
+                        sb.Append(refs[i].Name).Append(" Version=").Append(refs[i].Version)
+                            .Append(" PublicKeyToken=").Append(tok.Length == 0 ? "null" : tok).Append("; ");
+                        string ime = refs[i].Name ?? "";
+                        bool v12 = refs[i].Version != null && refs[i].Version.Major == 12 && refs[i].Version.Minor == 1;
+                        if (v12 || ime.IndexOf("DevExpress", StringComparison.OrdinalIgnoreCase) >= 0
+                            || ime.IndexOf("Janus", StringComparison.OrdinalIgnoreCase) >= 0)
+                            zelim.Add(refs[i]);
+                    }
+                    Referenca = sb.ToString().Trim();
+                }
+                catch (Exception ex)
+                {
+                    Referenca = "ref-greska " + ex.Message;
+                }
             }
-            Trag = (Trag + " reports=" + pogodak.Trim()).Trim();
+            var imena = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            imena.Add("DevExpress.Reports.v12.1.Designer.dll");
+            imena.Add("NetGen.exe");
+            for (int i = 0; i < zelim.Count; i++)
+                imena.Add((zelim[i].Name ?? "") + ".dll");
+            var prioritet = new List<string>();
+            prioritet.Add(@"C:\Windows\Microsoft.NET\assembly");
+            prioritet.Add(@"C:\Windows\assembly");
+            prioritet.Add(@"C:\Users\ntomic\Desktop\Jupiter Client");
+            prioritet.Add(@"C:\Program Files\DevExpress 12.1");
+            prioritet.Add(@"C:\Program Files (x86)\DevExpress 12.1");
+            prioritet.Add(@"C:\Program Files\DevExpress");
+            prioritet.Add(@"C:\Program Files (x86)\DevExpress");
+            DodajPoImenu(prioritet, @"C:\Users", "Jupiter Client", 8);
+            DodajPoImenu(prioritet, @"C:\", "Jupiter Client", 3);
+            DodajPoImenu(prioritet, @"D:\", "Jupiter Client", 4);
+            DodajPoImenu(prioritet, @"C:\Users", "backup", 6);
+            DodajPoImenu(prioritet, @"C:\", "Backup", 3);
+            DodajPoImenu(prioritet, @"D:\", "Backup", 4);
+            DodajPoImenu(prioritet, @"C:\Users", "SharedAssemblies", 8);
+            int mape = 0;
+            for (int i = 0; i < prioritet.Count; i++)
+                mape += Hodaj(prioritet[i], imena, 30000);
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                DriveInfo[] diskovi = DriveInfo.GetDrives();
+                for (int i = 0; i < diskovi.Length && sw.Elapsed.TotalSeconds < 150; i++)
+                {
+                    if (!diskovi[i].IsReady)
+                        continue;
+                    mape += HodajDo(diskovi[i].RootDirectory.FullName, imena, sw, 150);
+                }
+            }
+            catch
+            {
+            }
+            Trag = ("mape=" + mape.ToString() + " sek=" + ((int)sw.Elapsed.TotalSeconds).ToString() + " " + Trag).Trim();
+            if (_datoteke.ContainsKey("NetGen.exe"))
+            {
+                string exe;
+                if (_datoteke.TryGetValue("NetGen.exe", out exe))
+                    Konfig(exe + ".config", Path.GetDirectoryName(exe) ?? "");
+            }
+            var ned = new StringBuilder();
+            for (int i = 0; i < zelim.Count; i++)
+            {
+                string dat = (zelim[i].Name ?? "") + ".dll";
+                string put;
+                if (_datoteke.TryGetValue(dat, out put) && put.Length > 0)
+                    continue;
+                string tok = Token(zelim[i]);
+                ned.Append(zelim[i].Name).Append(".dll Version=").Append(zelim[i].Version)
+                    .Append(" PublicKeyToken=").Append(tok.Length == 0 ? "null" : tok).Append("; ");
+            }
+            Nedostaje = ned.ToString().Trim();
+            ZapisiPredmemoriju();
+            Console.WriteLine("EXT-REF " + Referenca);
+            Console.WriteLine("EXT-NEMA " + Nedostaje);
+            Console.WriteLine("EXT-TRAG " + Trag);
+        }
+
+        private static string Token(AssemblyName n)
+        {
+            if (n == null)
+                return "";
+            byte[] tok = n.GetPublicKeyToken();
+            if (tok == null || tok.Length == 0)
+                return "";
+            var sb = new StringBuilder();
+            for (int i = 0; i < tok.Length; i++)
+                sb.Append(tok[i].ToString("x2"));
+            return sb.ToString();
+        }
+
+        private struct Cvor
+        {
+            public string Putanja;
+            public int Dubina;
+        }
+
+        private static void DodajPoImenu(List<string> cilj, string korijen, string dio, int maxDubina)
+        {
+            if (korijen.Length == 0 || !Directory.Exists(korijen))
+                return;
+            var red = new Queue<Cvor>();
+            var prvi = new Cvor();
+            prvi.Putanja = korijen;
+            prvi.Dubina = 0;
+            red.Enqueue(prvi);
+            int n = 0;
+            while (red.Count > 0 && n < 20000)
+            {
+                Cvor c = red.Dequeue();
+                n++;
+                string[] pod;
+                try
+                {
+                    pod = Directory.GetDirectories(c.Putanja);
+                }
+                catch
+                {
+                    continue;
+                }
+                for (int i = 0; i < pod.Length; i++)
+                {
+                    string ime = Path.GetFileName(pod[i]);
+                    if (ime.IndexOf(dio, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        bool ima = false;
+                        for (int j = 0; j < cilj.Count; j++)
+                        {
+                            if (string.Equals(cilj[j], pod[i], StringComparison.OrdinalIgnoreCase))
+                                ima = true;
+                        }
+                        if (!ima)
+                            cilj.Add(pod[i]);
+                    }
+                    if (c.Dubina < maxDubina && !PreskociMapu(ime))
+                    {
+                        var d = new Cvor();
+                        d.Putanja = pod[i];
+                        d.Dubina = c.Dubina + 1;
+                        red.Enqueue(d);
+                    }
+                }
+            }
+        }
+
+        private static bool PreskociMapu(string ime)
+        {
+            if (ime.Length == 0)
+                return true;
+            if (string.Equals(ime, "WinSxS", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (string.Equals(ime, "Installer", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (string.Equals(ime, "servicing", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (string.Equals(ime, "SoftwareDistribution", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (string.Equals(ime, "System Volume Information", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (string.Equals(ime, "$Recycle.Bin", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (string.Equals(ime, "node_modules", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (string.Equals(ime, ".git", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (ime.StartsWith("NativeImages", StringComparison.OrdinalIgnoreCase))
+                return true;
+            return false;
+        }
+
+        private static bool SveNadjeno(HashSet<string> imena)
+        {
+            foreach (string ime in imena)
+            {
+                if (!ime.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (!_datoteke.ContainsKey(ime))
+                    return false;
+            }
+            return true;
+        }
+
+        private static int Hodaj(string korijen, HashSet<string> imena, int maxDir)
+        {
+            return HodajDo(korijen, imena, null, 0, maxDir, false);
+        }
+
+        private static int HodajDo(string korijen, HashSet<string> imena, Stopwatch sw, int maxSek)
+        {
+            return HodajDo(korijen, imena, sw, maxSek, 80000, true);
+        }
+
+        private static int HodajDo(string korijen, HashSet<string> imena, Stopwatch sw, int maxSek, int maxDir, bool preskociWindows)
+        {
+            if (korijen.Length == 0 || !Directory.Exists(korijen))
+                return 0;
+            int n = 0;
+            var red = new Queue<string>();
+            red.Enqueue(korijen);
+            while (red.Count > 0 && n < maxDir && !SveNadjeno(imena))
+            {
+                if (sw != null && sw.Elapsed.TotalSeconds >= maxSek)
+                    break;
+                string mapa = red.Dequeue();
+                n++;
+                string[] datoteke;
+                try
+                {
+                    datoteke = Directory.GetFiles(mapa);
+                }
+                catch
+                {
+                    continue;
+                }
+                for (int i = 0; i < datoteke.Length; i++)
+                {
+                    string ime = Path.GetFileName(datoteke[i]);
+                    bool zeljen = imena.Contains(ime);
+                    bool susjed = ime.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
+                        && (ime.StartsWith("DevExpress", StringComparison.OrdinalIgnoreCase)
+                            || ime.StartsWith("Janus", StringComparison.OrdinalIgnoreCase));
+                    if ((zeljen || susjed) && !_datoteke.ContainsKey(ime))
+                        _datoteke[ime] = datoteke[i];
+                }
+                string[] pod;
+                try
+                {
+                    pod = Directory.GetDirectories(mapa);
+                }
+                catch
+                {
+                    continue;
+                }
+                for (int i = 0; i < pod.Length; i++)
+                {
+                    if (preskociWindows && pod[i].StartsWith(@"C:\Windows", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    if (!PreskociMapu(Path.GetFileName(pod[i])))
+                        red.Enqueue(pod[i]);
+                }
+            }
+            return n;
+        }
+
+        private static string Predmemorija()
+        {
+            return @"C:\NetGenCarpo\ext-trazi.txt";
+        }
+
+        private static bool UcitajPredmemoriju()
+        {
+            string put = Predmemorija();
+            if (!File.Exists(put))
+                return false;
+            try
+            {
+                if ((DateTime.UtcNow - File.GetLastWriteTimeUtc(put)).TotalMinutes > 10)
+                    return false;
+                string[] linije = File.ReadAllLines(put);
+                if (linije.Length == 0 || linije[0] != "GOTOVO")
+                    return false;
+                for (int i = 1; i < linije.Length; i++)
+                {
+                    if (linije[i].StartsWith("REF ", StringComparison.Ordinal))
+                        Referenca = linije[i].Substring(4);
+                    else if (linije[i].StartsWith("NEMA ", StringComparison.Ordinal))
+                        Nedostaje = linije[i].Substring(5);
+                    else if (linije[i].StartsWith("TRAG ", StringComparison.Ordinal))
+                        Trag = linije[i].Substring(5);
+                    else if (linije[i].StartsWith("DLL ", StringComparison.Ordinal))
+                    {
+                        int z = linije[i].IndexOf('|');
+                        if (z > 4)
+                        {
+                            string ime = linije[i].Substring(4, z - 4);
+                            string dat = linije[i].Substring(z + 1);
+                            if (ime.Length > 0 && dat.Length > 0 && !_datoteke.ContainsKey(ime))
+                                _datoteke[ime] = dat;
+                        }
+                    }
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static void ZapisiPredmemoriju()
+        {
+            try
+            {
+                string dir = Path.GetDirectoryName(Predmemorija());
+                if (!Directory.Exists(dir))
+                    return;
+                var linije = new List<string>();
+                linije.Add("GOTOVO");
+                linije.Add("REF " + Referenca);
+                linije.Add("NEMA " + Nedostaje);
+                linije.Add("TRAG " + Trag);
+                foreach (KeyValuePair<string, string> kv in _datoteke)
+                {
+                    if (kv.Key.IndexOf("DevExpress", StringComparison.OrdinalIgnoreCase) >= 0
+                        || kv.Key.IndexOf("Janus", StringComparison.OrdinalIgnoreCase) >= 0
+                        || string.Equals(kv.Key, Sklop + ".dll", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(kv.Key, "NetGen.exe", StringComparison.OrdinalIgnoreCase))
+                        linije.Add("DLL " + kv.Key + "|" + kv.Value);
+                }
+                File.WriteAllLines(Predmemorija(), linije.ToArray());
+            }
+            catch
+            {
+            }
         }
 
         /// <summary>
