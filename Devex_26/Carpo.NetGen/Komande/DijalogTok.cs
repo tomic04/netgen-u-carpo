@@ -224,6 +224,22 @@ namespace Carpo.NetGen.Komande
             return s;
         }
 
+        /// <summary>
+        /// Form2.vb 1195 izvršava ONLOAD bez obzira počinje li sa select.
+        /// spStatusiQuery @action=2 puni @@vrstadokid iz rezultata, ne iz kontrole.
+        /// </summary>
+        public static bool OnLoadJeUpit(string on)
+        {
+            string t = (on ?? "").TrimStart();
+            if (t.Length == 0 || t.StartsWith(":", StringComparison.Ordinal))
+                return false;
+            if (t.StartsWith("select", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (t.StartsWith("exec", StringComparison.OrdinalIgnoreCase))
+                return true;
+            return t.StartsWith("sp", StringComparison.OrdinalIgnoreCase);
+        }
+
         public static bool SmijePoslati(string sql)
         {
             if (string.IsNullOrWhiteSpace(sql))

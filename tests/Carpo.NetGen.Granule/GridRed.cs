@@ -4,7 +4,6 @@ using System.Data;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Model;
-using Carpo.NetGen.Ui;
 
 namespace Carpo.NetGen.Granule
 {
@@ -39,9 +38,9 @@ namespace Carpo.NetGen.Granule
                 ? Qa.Z("GridRed", "GRD-02", "@@Naziv iz kontrole uđe u storu kao 'klik-proba'", "netgen/Form2.vb:3367,3406,3655")
                 : Qa.P("GridRed", "GRD-02", "@@Naziv iz kontrole", "netgen/Form2.vb:3367,3406,3655", unos));
 
-            bool onload = Dijalog.OnLoadJeUpit("spStatusiQuery @action=2, @ID=@@statusiid")
-                && Dijalog.OnLoadJeUpit("select @@node as vrstadokid")
-                && !Dijalog.OnLoadJeUpit(":FILTERFORM");
+            bool onload = DijalogTok.OnLoadJeUpit("spStatusiQuery @action=2, @ID=@@statusiid")
+                && DijalogTok.OnLoadJeUpit("select @@node as vrstadokid")
+                && !DijalogTok.OnLoadJeUpit(":FILTERFORM");
             l.Add(onload
                 ? Qa.Z("GridRed", "STA-01", "ONLOAD procedure se izvršava, ne samo select", "netgen/Form2.vb:1195-1205")
                 : Qa.P("GridRed", "STA-01", "ONLOAD procedure", "netgen/Form2.vb:1195-1205", "sp nije upit"));

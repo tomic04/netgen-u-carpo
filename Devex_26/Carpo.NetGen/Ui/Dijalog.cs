@@ -161,7 +161,7 @@ namespace Carpo.NetGen.Ui
             }
 
             string on = forma.OnLoad ?? "";
-            if (OnLoadJeUpit(on) && citaj != null)
+            if (DijalogTok.OnLoadJeUpit(on) && citaj != null)
                 NapuniIzOnLoad(on, kontekst, citaj);
             ShowDialog();
         }
@@ -510,22 +510,6 @@ namespace Carpo.NetGen.Ui
                 string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col], CultureInfo.InvariantCulture);
                 PostaviVrijednost(n[0], v);
             }
-        }
-
-        /// <summary>
-        /// Form2.vb 1195 izvršava ONLOAD bez obzira počinje li sa select.
-        /// spStatusiQuery @action=2 puni @@vrstadokid iz rezultata, ne iz kontrole.
-        /// </summary>
-        public static bool OnLoadJeUpit(string on)
-        {
-            string t = (on ?? "").TrimStart();
-            if (t.Length == 0 || t.StartsWith(":", StringComparison.Ordinal))
-                return false;
-            if (t.StartsWith("select", StringComparison.OrdinalIgnoreCase))
-                return true;
-            if (t.StartsWith("exec", StringComparison.OrdinalIgnoreCase))
-                return true;
-            return t.StartsWith("sp", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void PostaviVrijednost(Control c, string v)
