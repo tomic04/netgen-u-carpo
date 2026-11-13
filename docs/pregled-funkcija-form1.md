@@ -122,6 +122,8 @@ Zeleni run bloka 1: `3ad0d66`, https://github.com/tomic04/netgen-u-carpo/actions
 
 Broj u bloku: 50. nedostajalo-portano 9. isto 13. razlika 17. još nedostaje 11. Zbroj 50.
 
+Zeleni run bloka 2: `fbc3970`, https://github.com/tomic04/netgen-u-carpo/actions/runs/43367408210
+
 ## Blok 3, funkcije 101–150
 
 Prazno tijelo je isto. Portana su pravila koja su imala tijelo, a nisu bila u Carpu.
@@ -179,4 +181,59 @@ Prazno tijelo je isto. Portana su pravila koja su imala tijelo, a nisu bila u Ca
 | 149 | Form1_ResizeEnd | 7703 | prazno | isto | |
 | 150 | Form1_SizeChanged | 7709 | | još nedostaje | |
 
-Broj u bloku: 50. nedostajalo-portano 7. isto 8. razlika 0. još nedostaje 35. Zbroj 50. Zbroj 50.
+Broj u bloku: 50. nedostajalo-portano 7. isto 8. razlika 0. još nedostaje 35. Zbroj 50.
+
+## Blok 4, funkcije 151–194
+
+Zadnji blok. Ukupno funkcija u Form1.vb je 194.
+
+| # | Funkcija | Linija | Carpo | Status | Test |
+| --- | --- | --- | --- | --- | --- |
+| 151 | ComboBox1_Click | 7714 | prazno | isto | |
+| 152 | ComboBox1_SelectedIndexChanged | 7718 | prazno | isto | |
+| 153 | TabPage2_Click | 7722 | prazno | isto | |
+| 154 | TabPage2_Resize | 7726 | | još nedostaje | |
+| 155 | ComboBox1_SelectedValueChanged | 7730 | `Stablo` iz odabrane vrijednosti | isto | Stablo |
+| 156 | Rafalna_Priprema | 7737 | `IspisMotora.Zaglavlje`. Kraj ne zove `SrediSQL` | razlika R72 | IspisMotora |
+| 157 | ButtonHELP_Click | 7777 | zove `DajPokaziHelp` | nedostajalo-portano | F1-158 |
+| 158 | DajPokaziHelp | 7781 | `Form1Ulaz.ArgumentiPomoci`. `Str` ima vodeći razmak | nedostajalo-portano | F1-158 |
+| 159 | GridEX1_EditingCell | 7803 | `Form1Ulaz.VrijednostCelije` | nedostajalo-portano | F1-107 |
+| 160 | GridEX1_FormattingRow | 7875 | ikona i boja reda | još nedostaje | |
+| 161 | OriginalToolStripMenuItem_Click | 8006 | `Form1Ulaz.JezikIzbornika` jezik prazan, multilingual 0 | nedostajalo-portano | F1-158 |
+| 162 | MKToolStripMenuItem_Click | 8012 | jezik MK, multilingual 2 | nedostajalo-portano | F1-158 |
+| 163 | ENToolStripMenuItem_Click | 8019 | jezik EN, multilingual 2 | nedostajalo-portano | F1-158 |
+| 164 | GridEX2_FormattingRow | 8026 | ista boja kao master | još nedostaje | |
+| 165 | ContextMenuStrip2_Opening | 8098 | prazno | isto | |
+| 166 | ContextMenuStrip3_LocationChanged | 8102 | prazno | isto | |
+| 167 | ContextMenuStrip3_Opening | 8106 | prazno | isto | |
+| 168 | ContextMenuStrip1_Opening | 8110 | prazno | isto | |
+| 169 | Button11_Click | 8114 | | još nedostaje | |
+| 170 | GridEX1_KeyPress | 8120 | prazno | isto | |
+| 171 | TreeView2_DragDrop22 | 8126 | | još nedostaje | |
+| 172 | GridEX1_MouseDown | 8131 | prazno | isto | |
+| 173 | TreeView2_ItemDrag | 8135 | prazno | isto | |
+| 174 | TreeView2_DragDrop | 8140 | šalje `strTREEDragDrop` | još nedostaje | |
+| 175 | TreeView2_DragOver | 8180 | `Form1Ulaz.SmijeSpustiti` | nedostajalo-portano | F1-158 |
+| 176 | GridView1_CellValueChanged | 8223 | stupac rcb555 se preskače | još nedostaje | |
+| 177 | GridView1_FocusedRowChanged | 8306 | | još nedostaje | |
+| 178 | New | 8318 | `StoreAllOptions` i dock | još nedostaje | |
+| 179 | GridView1_KeyDown | 8338 | Enter ide na sljedeći stupac s tagom 1 | još nedostaje | |
+| 180 | GridView1_MouseUp | 8385 | | još nedostaje | |
+| 181 | GridView1_ShownEditor | 8412 | | još nedostaje | |
+| 182 | Timer2_Tick | 8424 | jednom `TimerOn`, pa se gasi | još nedostaje | |
+| 183 | GridEX3_MouseUp | 8429 | `Form1Ulaz.DmsIzbornik` | nedostajalo-portano | F1-158 |
+| 184 | DMS_odustani | 8464 | `Form1Ulaz.SqlDmsOdustani` | nedostajalo-portano | F1-158 |
+| 185 | DMS_preuzmizapotpis | 8484 | `DmsManagerV1` | još nedostaje | |
+| 186 | DMS_vratipotpisano | 8528 | `DmsManagerV1` | još nedostaje | |
+| 187 | DMS_Obrisi | 8574 | | još nedostaje | |
+| 188 | DMS_SpremiNaDisk | 8599 | | još nedostaje | |
+| 189 | DMS_Pogledaj | 8639 | | još nedostaje | |
+| 190 | TabControl1_DrawItem | 8678 | prazno | isto | |
+| 191 | GridEX3_RowDoubleClick | 8702 | | još nedostaje | |
+| 192 | ContextMenuStrip4_Opening | 8706 | prazno | isto | |
+| 193 | ParentV_Resize | 8710 | | još nedostaje | |
+| 194 | ParentForm_LocationChanged | 8719 | | još nedostaje | |
+
+Broj u bloku: 44. nedostajalo-portano 9. isto 13. razlika 1. još nedostaje 21. Zbroj 44.
+
+Ukupno Form1: 194. Portani blokovi 1–4. Ostaju funkcije označene „još nedostaje”: velika tijela (`PokaziUpit`, `ssPermissionProvjeri`, `CustomFormatKolona`, DMS sklop, spremanje Janus rasporeda) i prazni WinForms događaji koji samo zovu još neportanu rutinu. Zbroj 50.

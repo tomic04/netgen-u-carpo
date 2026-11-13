@@ -689,6 +689,70 @@ namespace Carpo.NetGen.Ulaz
             return !sadRastvoreno;
         }
 
+        /// <summary>Form1.vb 7781–7799. VB Str pozitivnog broja ima vodeći razmak.</summary>
+        public static string ArgumentiPomoci(string server, string baza, string help, int operater, string xml)
+        {
+            string p = xml ?? "";
+            int z = p.LastIndexOf('\\');
+            string ime = z < 0 ? p : p.Substring(z + 1);
+            return "-s " + (server ?? "") + " -d " + (baza ?? "") + " -h " + (help ?? "") + " -o " + VbStr(operater) + " -p " + ime;
+        }
+
+        /// <summary>Form1.vb 8006–8023. Original gasi jezik. MK i EN pale multilingual 2.</summary>
+        public static void JezikIzbornika(string koji, out string jezik, out string multilingual)
+        {
+            string k = (koji ?? "").Trim().ToUpperInvariant();
+            if (k == "MK" || k == "EN")
+            {
+                jezik = k;
+                multilingual = "2";
+                return;
+            }
+            jezik = "";
+            multilingual = "0";
+        }
+
+        /// <summary>Form1.vb 8468.</summary>
+        public static string SqlDmsOdustani(string dokId)
+        {
+            return "exec dms.spSetDocumentUndoCheckOutOperater @dokId='" + (dokId ?? "").Trim() + "'";
+        }
+
+        /// <summary>Form1.vb 8446–8458. Prazan CheckOutOperater pali samo preuzimanje.</summary>
+        public static void DmsIzbornik(bool checkoutPrazan, out bool preuzmi, out bool vrati, out bool odustani)
+        {
+            if (checkoutPrazan)
+            {
+                preuzmi = true;
+                vrati = false;
+                odustani = false;
+                return;
+            }
+            preuzmi = false;
+            vrati = true;
+            odustani = true;
+        }
+
+        /// <summary>Form1.vb 8207–8218. Spuštanje na sebe ili pretka je zabranjeno.</summary>
+        public static bool SmijeSpustiti(string izvor, string[] preci)
+        {
+            if (preci == null)
+                return true;
+            for (int i = 0; i < preci.Length; i++)
+            {
+                    if (string.Equals(izvor, preci[i], StringComparison.Ordinal))
+                    return false;
+            }
+            return true;
+        }
+
+        private static string VbStr(int n)
+        {
+            if (n >= 0)
+                return " " + n.ToString(CultureInfo.InvariantCulture);
+            return n.ToString(CultureInfo.InvariantCulture);
+        }
+
         private static double Val(string tekst)
         {
             string s = (tekst ?? "").Trim();

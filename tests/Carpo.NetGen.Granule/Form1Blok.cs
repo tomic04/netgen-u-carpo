@@ -21,6 +21,7 @@ namespace Carpo.NetGen.Granule
             l.Add(Format());
             l.Add(StabloMeni());
             l.Add(Rafal());
+            l.Add(Pomoc());
             return l;
         }
 
@@ -302,6 +303,43 @@ namespace Carpo.NetGen.Granule
             if (!Form1Ulaz.SljedeciRastvoreno(false) || Form1Ulaz.SljedeciRastvoreno(true))
                 return Qa.P(g, id, opis, izvor, "grupe");
             Console.WriteLine("[Z] Form1 F1-107 :select ostaje veliko, 12,5=12.5, timer=5");
+            return Qa.Z(g, id, opis, izvor);
+        }
+
+        private static Stavka Pomoc()
+        {
+            const string g = "Form1";
+            const string id = "F1-158";
+            const string opis = "pomoć ide u JupiterHelp, Str broja ima vodeći razmak";
+            const string izvor = "netgen/Form1.vb:7781-8023; netgen/Form1.vb:8446-8468";
+            string arg = Form1Ulaz.ArgumentiPomoci("localhost", "spin", "MER005", 7, @"C:\xml\JeziciNG.xml");
+            if (arg != "-s localhost -d spin -h MER005 -o  7 -p JeziciNG.xml")
+                return Qa.P(g, id, opis, izvor, arg);
+            string jezik;
+            string multi;
+            Form1Ulaz.JezikIzbornika("EN", out jezik, out multi);
+            if (jezik != "EN" || multi != "2")
+                return Qa.P(g, id, opis, izvor, jezik);
+            Form1Ulaz.JezikIzbornika("mk", out jezik, out multi);
+            if (jezik != "MK" || multi != "2")
+                return Qa.P(g, id, opis, izvor, "mk");
+            Form1Ulaz.JezikIzbornika("original", out jezik, out multi);
+            if (jezik != "" || multi != "0")
+                return Qa.P(g, id, opis, izvor, "original");
+            if (Form1Ulaz.SqlDmsOdustani(" 12 ") != "exec dms.spSetDocumentUndoCheckOutOperater @dokId='12'")
+                return Qa.P(g, id, opis, izvor, Form1Ulaz.SqlDmsOdustani(" 12 "));
+            bool preuzmi;
+            bool vrati;
+            bool odustani;
+            Form1Ulaz.DmsIzbornik(true, out preuzmi, out vrati, out odustani);
+            if (!preuzmi || vrati || odustani)
+                return Qa.P(g, id, opis, izvor, "prazan checkout");
+            Form1Ulaz.DmsIzbornik(false, out preuzmi, out vrati, out odustani);
+            if (preuzmi || !vrati || !odustani)
+                return Qa.P(g, id, opis, izvor, "checkout");
+            if (Form1Ulaz.SmijeSpustiti("a", new[] { "b", "a" }) || !Form1Ulaz.SmijeSpustiti("a", new[] { "b", "c" }))
+                return Qa.P(g, id, opis, izvor, "drop");
+            Console.WriteLine("[Z] Form1 F1-158 pomoc=-o  7 jezik=EN dms-odustani checkout-prazan-preuzmi");
             return Qa.Z(g, id, opis, izvor);
         }
     }
