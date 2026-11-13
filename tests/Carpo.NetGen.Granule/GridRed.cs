@@ -144,13 +144,13 @@ namespace Carpo.NetGen.Granule
             var prazno = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             prazno["RobaId"] = "";
             prazno["Naziv"] = "";
-            string prazan = DijalogTok.ZamijeniTokene("exec x @robaid=@@RobaId, @naziv='@@Naziv'", "0", prazno);
+            string prazanSearch = DijalogTok.ZamijeniTokene("exec x @robaid=@@RobaId, @naziv='@@Naziv'", "0", prazno);
             bool arkod = spremi == 1
-                && prazan.IndexOf("@robaid=null", StringComparison.Ordinal) >= 0
-                && prazan.IndexOf("@naziv=''", StringComparison.Ordinal) >= 0;
+                && prazanSearch.IndexOf("@robaid=null", StringComparison.Ordinal) >= 0
+                && prazanSearch.IndexOf("@naziv=''", StringComparison.Ordinal) >= 0;
             l.Add(arkod
                 ? Qa.Z("GridRed", "ARK-01", "Spremi ide prije :WEBBROWSER, prazan search id je null", "netgen/Form2.vb:3367,3616")
-                : Qa.P("GridRed", "ARK-01", "Spremi i prazan search", "netgen/Form2.vb:3367,3616", spremi.ToString() + " " + prazan));
+                : Qa.P("GridRed", "ARK-01", "Spremi i prazan search", "netgen/Form2.vb:3367,3616", spremi.ToString() + " " + prazanSearch));
             return l;
         }
     }
