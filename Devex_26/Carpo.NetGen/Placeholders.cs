@@ -121,14 +121,21 @@ namespace Carpo.NetGen.Print
         {
             string c = string.IsNullOrWhiteSpace(centar) ? (naslov ?? "") : centar;
             var h = new PageHeaderFooter();
-            h.Header.Content = new[] { SrediRed(lijevo), SrediRed(c), SrediRed(desno) };
+            while (h.Header.Content.Count < 3)
+                h.Header.Content.Add("");
+            h.Header.Content[0] = SrediRed(lijevo);
+            h.Header.Content[1] = SrediRed(c);
+            h.Header.Content[2] = SrediRed(desno);
             var link = new PrintableComponentLink(new PrintingSystem());
             link.PageHeaderFooter = h;
             var natrag = (PageHeaderFooter)link.PageHeaderFooter;
-            string[] gotovo = natrag.Header.Content;
-            if (gotovo == null || gotovo.Length < 3)
-                return new[] { "", "", "" };
-            return new[] { gotovo[0] ?? "", gotovo[1] ?? "", gotovo[2] ?? "" };
+            var gotovo = natrag.Header.Content;
+            return new[]
+            {
+                gotovo.Count > 0 ? gotovo[0] ?? "" : "",
+                gotovo.Count > 1 ? gotovo[1] ?? "" : "",
+                gotovo.Count > 2 ? gotovo[2] ?? "" : ""
+            };
         }
 
         private static string SrediRed(string s)
