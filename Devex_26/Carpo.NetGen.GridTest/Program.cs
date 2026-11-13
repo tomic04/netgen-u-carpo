@@ -2402,6 +2402,13 @@ namespace Carpo.NetGen.GridTest
             {
                 { "STYLE", "1" }, { "BACKCOLOR", "red" }, { "ANCHOR", "13" }, { "CAPTION", "Naslov" }
             }), true));
+            kontrole.Add(new NgControl("date", NgGrana.Date, "datumod", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Od" } }), true));
+            kontrole.Add(new NgControl("date", NgGrana.Date, "datumdo", new NgAttributeBag(new Dictionary<string, string> { { "SHOWCHECKBOX", "TRUE" } }), true));
+            kontrole.Add(new NgControl("date", NgGrana.Date, "pocetak", new NgAttributeBag(new Dictionary<string, string> { { "DEFAULT", "firstdayofyear" } }), true));
+            kontrole.Add(new NgControl("button", NgGrana.Button, "datumi", new NgAttributeBag(new Dictionary<string, string>
+            {
+                { "ONCLICK", "select '@@datumod' as a, @@datumdo as b" }, { "CAPTION", "D" }
+            }), true));
             var gumbi = new List<NgButton> { new NgButton(1, "Unesi", ""), new NgButton(3, "Stavke", "STAVKE") };
             var forma = new NgForm("T3", new NgAttributeBag(null), "", "", kontrole, gumbi, new List<string>());
             var sql = new List<string>();
@@ -2428,6 +2435,18 @@ namespace Carpo.NetGen.GridTest
                 d.ActiveControl = grid;
                 d.ProvediTipku(Keys.F2);
                 T("hot01-f2", Broji(sql, "select 'f2' as x") == 1, string.Join(" | ", sql.ToArray()));
+
+                // DAT-01: datum bez DEFAULT je danas, SHOWCHECKBOX bez CHECKED je null, DEFAULT firstdayofyear.
+                var od = (DevExpress.XtraEditors.DateEdit)d.Controls.Find("datumod", true)[0];
+                var dok = (DevExpress.XtraEditors.DateEdit)d.Controls.Find("datumdo", true)[0];
+                var poc = (DevExpress.XtraEditors.DateEdit)d.Controls.Find("pocetak", true)[0];
+                bool danas = od.EditValue is DateTime && ((DateTime)od.EditValue).Date == DateTime.Today;
+                bool prazno = dok.EditValue == null;
+                bool godina = poc.EditValue is DateTime && ((DateTime)poc.EditValue) == new DateTime(DateTime.Today.Year, 1, 1);
+                ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("datumi", true)[0]).PerformClick();
+                string ocekivano = "select '" + DateTime.Today.ToString("yyyyMMdd") + "' as a, null as b";
+                T("dat01-datumi", danas && prazno && godina && Broji(sql, ocekivano) == 1,
+                    "danas=" + danas + " prazno=" + prazno + " godina=" + godina + " sql=" + string.Join(" | ", sql.ToArray()));
             }
             finally
             {

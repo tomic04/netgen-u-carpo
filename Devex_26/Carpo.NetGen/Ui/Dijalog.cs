@@ -171,6 +171,9 @@ namespace Carpo.NetGen.Ui
                 if (m.ImaVidljivo)
                     c.Visible = m.Vidljivo;
                 PostaviTekst(c, k, m);
+                var datumKontrola = c as DateEdit;
+                if (datumKontrola != null)
+                    PripremiDatum(datumKontrola, k);
                 CarpoIzgled.Primijeni(c, k.Grana);
                 PrimijeniIzgled(c, k);
                 string roditelj = Attr(k, "PARENT");
@@ -357,6 +360,39 @@ namespace Carpo.NetGen.Ui
             if (_forma == null || _forma.Atributi == null || !_forma.Atributi.Ima(ime))
                 return "";
             return (_forma.Atributi.Vrijednost(ime) ?? "").Trim();
+        }
+
+        /// <summary>
+        /// DTPicker (Form2.vb 2238-2280): Value je Now ili DEFAULT; Checked je True, SHOWCHECKBOX ga ugasi,
+        /// CHECKED ga postavi. Neoznacen datum je parametar null (3561-3566), u Carpu EditValue null.
+        /// CUSTOMFORMAT je i prikaz i oblik parametra (HH:mm, MM.yyyy, dd.MM.yyyy HH:mm) (DAT-01).
+        /// </summary>
+        private static void PripremiDatum(DateEdit d, NgControl k)
+        {
+            bool kvacica = Ponasanje.AllowEmptyJeTrue(Attr(k, "SHOWCHECKBOX")) || Attr(k, "SHOWCHECKBOX") == "1";
+            bool oznacen = !kvacica;
+            bool? cek = Form2Rezultat.VbBool(Attr(k, "CHECKED"));
+            if (cek.HasValue)
+                oznacen = cek.Value;
+            if (kvacica)
+                d.Properties.AllowNullInput = DevExpress.Utils.DefaultBoolean.True;
+            if (!oznacen)
+            {
+                d.Properties.AllowNullInput = DevExpress.Utils.DefaultBoolean.True;
+                d.EditValue = null;
+            }
+            else if (!(d.EditValue is DateTime))
+                d.EditValue = DateTime.Now;
+            string oblik = Attr(k, "CUSTOMFORMAT");
+            if (oblik.Length > 0)
+            {
+                d.Properties.Mask.EditMask = oblik;
+                d.Properties.Mask.UseMaskAsDisplayFormat = true;
+                d.Properties.DisplayFormat.FormatString = oblik;
+                d.Properties.DisplayFormat.FormatType = DevExpress.Utils.FormatType.DateTime;
+                d.Properties.EditFormat.FormatString = oblik;
+                d.Properties.EditFormat.FormatType = DevExpress.Utils.FormatType.DateTime;
+            }
         }
 
         /// <summary>
@@ -1211,7 +1247,15 @@ namespace Carpo.NetGen.Ui
                     var kvacica = c as CheckEdit;
                     var look = c as LookUpEdit;
                     var edit = c as TextEdit;
-                    if (broj != null)
+                    var datum = c as DateEdit;
+                    if (datum != null)
+                    {
+                        // strParametriSvi daje datum kao 'yyyyMMdd' ili null (3522-3566), ne prikazani tekst.
+                        kontrole[c.Name] = datum.EditValue is DateTime
+                            ? ((DateTime)datum.EditValue).ToString("yyyyMMdd", CultureInfo.InvariantCulture)
+                            : "null";
+                    }
+                    else if (broj != null)
                         kontrole[c.Name] = Convert.ToString(broj.Value, CultureInfo.InvariantCulture);
                     else if (kvacica != null)
                         kontrole[c.Name] = kvacica.Checked ? "1" : "0";
@@ -2273,7 +2317,9 @@ namespace Carpo.NetGen.Ui
                             d = (DateTime)datum.EditValue;
                         else
                             d = DateTime.MinValue;
-                        sb.Append(ParametriSvi.Datum(c.Name, "", ima, ima ? (DateTime?)d : null));
+                        // 3522-3549: CUSTOMFORMAT odredi oblik (HH:mm, yyyyMM01, yyyyMMdd HH:mm).
+                        NgControl defDatuma = NadjiKontrolu(c.Name);
+                        sb.Append(ParametriSvi.Datum(c.Name, Attr(defDatuma, "CUSTOMFORMAT"), ima, ima ? (DateTime?)d : null));
                         continue;
                     }
                     sb.Append(ParametriSvi.Tekst(c.Name, txt.Text));
@@ -2535,8 +2581,9 @@ namespace Carpo.NetGen.Ui
                 string prikaz = tekst;
                 if (prikaz.StartsWith("firstday", StringComparison.OrdinalIgnoreCase))
                     prikaz = Ponasanje.DatumPocetni(prikaz, DateTime.Now.Year, DateTime.Now.Month) ?? "";
+                // DEFAULT ide u Value (VB CDate); CAPTION nije datum pa ne prode (Raspored daje CAPTION kad nema DEFAULT).
                 DateTime dt;
-                if (DateTime.TryParseExact(prikaz, "dd.M.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt))
+                if (k != null && k.Atributi != null && k.Atributi.Ima("DEFAULT") && ProcitajDatum(prikaz, out dt))
                     datum.DateTime = dt;
                 return;
             }
