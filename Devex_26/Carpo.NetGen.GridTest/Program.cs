@@ -2428,6 +2428,10 @@ namespace Carpo.NetGen.GridTest
             {
                 { "STYLE", "1" }, { "BACKCOLOR", "red" }, { "ANCHOR", "13" }, { "CAPTION", "Naslov" }
             }), true));
+            kontrole.Add(new NgControl("text", NgGrana.Text, "opis", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Opis" } }), true));
+            kontrole.Add(new NgControl("text", NgGrana.Text, "oznaka", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Oznaka" }, { "DEFAULT", "A_1" } }), true));
+            kontrole.Add(new NgControl("number", NgGrana.Number, "kom", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Kom" }, { "DEFAULT", "5" } }), true));
+            kontrole.Add(new NgControl("search", NgGrana.Search, "partner", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Partner" } }), true));
             kontrole.Add(new NgControl("date", NgGrana.Date, "datumod", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Od" } }), true));
             kontrole.Add(new NgControl("date", NgGrana.Date, "datumdo", new NgAttributeBag(new Dictionary<string, string> { { "SHOWCHECKBOX", "TRUE" } }), true));
             kontrole.Add(new NgControl("date", NgGrana.Date, "pocetak", new NgAttributeBag(new Dictionary<string, string> { { "DEFAULT", "firstdayofyear" } }), true));
@@ -2461,6 +2465,14 @@ namespace Carpo.NetGen.GridTest
                 d.ActiveControl = grid;
                 d.ProvediTipku(Keys.F2);
                 T("hot01-f2", Broji(sql, "select 'f2' as x") == 1, string.Join(" | ", sql.ToArray()));
+
+                // TXT-01: CAPTION nije tekst polja; DEFAULT je (bez SrediTekst); broj uzme DEFAULT.
+                string opis = d.Controls.Find("opis", true)[0].Text;
+                string oznaka = d.Controls.Find("oznaka", true)[0].Text;
+                decimal kom = ((DevExpress.XtraEditors.SpinEdit)d.Controls.Find("kom", true)[0]).Value;
+                string partner = d.Controls.Find("partner", true)[0].Text;
+                T("txt01-tekst", opis == "" && oznaka == "A_1" && kom == 5 && partner == "",
+                    "opis=" + opis + " oznaka=" + oznaka + " kom=" + kom + " partner=" + partner);
 
                 // DAT-01: datum bez DEFAULT je danas, SHOWCHECKBOX bez CHECKED je null, DEFAULT firstdayofyear.
                 var od = (DevExpress.XtraEditors.DateEdit)d.Controls.Find("datumod", true)[0];

@@ -2659,7 +2659,30 @@ namespace Carpo.NetGen.Ui
             }
             var edit = c as TextEdit;
             if (edit != null)
-                edit.Text = tekst;
+            {
+                // SrediKontrolu (2932) stavi CAPTION u Text, ali TeksT (2008), NumerBox (2084) i SearchBox (2144)
+                // ga odmah obrisu. Ostaje DEFAULT; broj ima 0, pa DEFAULT, pa VALUE; "null" je prazno (TXT-01).
+                string zadano = k != null && k.Atributi != null && k.Atributi.Ima("DEFAULT") ? (k.Atributi.Vrijednost("DEFAULT") ?? "") : null;
+                var spin = c as SpinEdit;
+                if (spin != null)
+                {
+                    string broj = k != null && k.Atributi != null && k.Atributi.Ima("VALUE") ? k.Atributi.Vrijednost("VALUE") : zadano;
+                    decimal d;
+                    if (broj != null && (decimal.TryParse(broj.Trim(), NumberStyles.Any, CultureInfo.CurrentCulture, out d)
+                        || decimal.TryParse(broj.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out d)))
+                        spin.Value = d;
+                    else
+                        spin.Value = 0;
+                    return;
+                }
+                if (c.GetType() == typeof(ButtonEdit) || c is LookUpEdit || c is CheckedComboBoxEdit || zadano == null)
+                {
+                    edit.Text = "";
+                    return;
+                }
+                zadano = zadano.Trim();
+                edit.Text = zadano.ToLowerInvariant() == "null" ? "" : zadano;
+            }
         }
 
         private void UcitajOnLoad(string on, SqlKontekst kontekst, Func<string, DataTable> citaj)
