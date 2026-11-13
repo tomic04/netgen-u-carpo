@@ -330,17 +330,19 @@ namespace Carpo.NetGen.Ui
                         PorukaNaredba.Pokazi("MSGBOX(" + korak.Tekst + ")");
                         continue;
                     }
-                    if (korak.Vrsta == "odustani")
+                    if (korak.Vrsta == "odustani" || korak.Vrsta == "roditelj")
                     {
+                        if (korak.Vrsta == "roditelj")
+                            _zatvoriRoditelja = this;
                         DialogResult = DialogResult.Cancel;
-                        Close();
-                        continue;
-                    }
-                    if (korak.Vrsta == "roditelj")
-                    {
-                        _zatvoriRoditelja = this;
-                        DialogResult = DialogResult.Cancel;
-                        Close();
+                        try
+                        {
+                            Close();
+                        }
+                        catch (Exception ex)
+                        {
+                            NgDnevnik.Greska(ex.ToString());
+                        }
                         continue;
                     }
                     if (korak.Vrsta == "ok" || korak.Vrsta == "okstay")

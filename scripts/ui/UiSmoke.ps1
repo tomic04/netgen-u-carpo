@@ -66,6 +66,8 @@ foreach ($rel in $granule) {
     if (Test-Path -LiteralPath $snimkaGreska) { Write-Host (Get-Content -LiteralPath $snimkaGreska -Raw) }
     $prozori = $png + ".prozori.txt"
     if (Test-Path -LiteralPath $prozori) { Write-Host (Get-Content -LiteralPath $prozori -Raw) }
+    $iznimka = $png + ".iznimka.txt"
+    if (Test-Path -LiteralPath $iznimka) { Write-Host (Get-Content -LiteralPath $iznimka -Raw) }
     if ($kod -eq -1) { throw "timeout $xml" }
     if ($kod -ne 0) { throw "UI smoke $ime kod $kod. $tekst" }
     if ($tekst -notlike "OK*") { throw "UI smoke $ime nema OK. $tekst" }

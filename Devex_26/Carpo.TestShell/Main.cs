@@ -395,10 +395,19 @@ namespace Carpo.TestShell
                 if (!ImaSnimku(pod))
                     SnimiKontrolu(dij, pod);
                 odustao = true;
-                o.DialogResult = DialogResult.Cancel;
-                o.PerformClick();
-                if (!dij.IsDisposed)
-                    dij.Close();
+                try
+                {
+                    o.DialogResult = DialogResult.Cancel;
+                    o.PerformClick();
+                    if (!dij.IsDisposed)
+                        dij.Close();
+                }
+                catch (Exception ex)
+                {
+                    razlog = ex.ToString();
+                    try { File.WriteAllText(snimka + ".iznimka.txt", ex.ToString()); } catch { }
+                    try { if (!dij.IsDisposed) dij.Close(); } catch { }
+                }
             };
             timer.Tick += delegate
             {
