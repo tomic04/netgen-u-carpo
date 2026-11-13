@@ -371,7 +371,7 @@ namespace Carpo.NetGen.TestHooks
             s["foreachSelected"] = fe.Foreach == "cekirani" ? "cekirani" : "";
             var red = Lanac.Izvrsi("FOREACHROW(x)#spAzur", true, null);
             var podloga = Lanac.Izvrsi("FOREACHROW(x)#spAzur", false, null);
-            s["foreachRowDijalog"] = red.Foreach == "svi" && podloga.Foreach.Length == 0 ? "zivo" : "";
+            s["foreachRowDijalog"] = red.Foreach == "svi" && podloga.Foreach == "svi" && podloga.Odigrano.Count == 1 ? "zivo" : "";
             var plavi = Lanac.Izvrsi("FOREACHBLUEROW(x)#spAzur", true, null);
             s["foreachBlue"] = plavi.Foreach == "plavi" ? "plavi" : "";
             s["radio"] = Lanac.Radio(true) + "-" + Lanac.Radio(false);

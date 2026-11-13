@@ -169,14 +169,76 @@ namespace Carpo.NetGen.Komande
                 i.Greska = "Nema XML napojnice.";
                 return i;
             }
-            return Carpo.NetGen.Poziv.FiskalPoziv.Posalji(
+            object fiskal = Carpo.NetGen.Poziv.FiskalPoziv.Cis;
+            if (fiskal == null)
+            {
+                Carpo.NetGen.Poziv.FiskalPoziv.Ishod ucitan = Carpo.NetGen.Poziv.FiskalPoziv.Ucitaj(url);
+                if (!ucitan.Ucitano)
+                    return ucitan;
+                fiskal = Carpo.NetGen.Poziv.FiskalPoziv.Cis;
+            }
+            string mapa = Polje(red, "PutanjaZaZahtjeveiOdgovoreOdPorezne");
+            Carpo.NetGen.Poziv.FiskalPoziv.Ishod racun = Carpo.NetGen.Poziv.FiskalPoziv.Racun(
+                fiskal,
                 tijelo,
                 pfx,
                 lozinka,
+                Polje(red, "oib"),
+                Polje(red, "datumivrijeme"),
+                Polje(red, "brojcanaOznakaRacuna"),
+                Polje(red, "oznakaPoslovnogProstora"),
+                Polje(red, "oznakaNaplatnogUredaja"),
+                Polje(red, "ukupniIznosRacuna"),
                 url,
                 Polje(red, "timeout"),
-                Polje(red, "PutanjaZaZahtjeveiOdgovoreOdPorezne"),
-                Polje(red, "PutanjaZaZahtjeveiOdgovoreOdPorezne"));
+                mapa);
+            return racun;
+        }
+
+        public static string SqlKod(int tablica, string id, string uuid, string zki)
+        {
+            return "update " + TablicaIme(tablica) + " set  UUID='" + Cisto(uuid) + "',KOD='" + Cisto(zki) + "' where " + Kljuc(tablica) + "=" + (id ?? "").Trim();
+        }
+
+        public static string SqlGreska(int tablica, string id)
+        {
+            return "update " + TablicaIme(tablica) + " set  sifragreske='55555' where " + Kljuc(tablica) + "=" + (id ?? "").Trim();
+        }
+
+        public static string SqlUspjeh(int tablica, string id, string uuid, string zki, string jir)
+        {
+            return "update " + TablicaIme(tablica) + " set sifragreske='OK',UUID='" + Cisto(uuid) + "',KOD='" + Cisto(zki) + "',JIR='" + Cisto(jir) + "' where " + Kljuc(tablica) + "=" + (id ?? "").Trim();
+        }
+
+        private static string Cisto(string v)
+        {
+            return (v ?? "").Replace("'", "''");
+        }
+
+        private static string TablicaIme(int tablica)
+        {
+            if (tablica == 2)
+                return "fakture";
+            if (tablica == 3)
+                return "BSRacuniGla";
+            if (tablica == 5)
+                return "ProPonGla";
+            if (tablica == 4)
+                return "MPPonudagla";
+            return "mpblagajnagla";
+        }
+
+        private static string Kljuc(int tablica)
+        {
+            if (tablica == 2)
+                return "faktureid";
+            if (tablica == 3)
+                return "BSRacuniGlaid";
+            if (tablica == 5)
+                return "ProPonGlaId";
+            if (tablica == 4)
+                return "MPPonudaglaid";
+            return "mpblagajnaglaid";
         }
 
         private static string Polje(DataRow red, string ime)

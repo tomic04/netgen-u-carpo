@@ -288,22 +288,15 @@ namespace Carpo.NetGen.Komande
                 }
                 if (u.Contains("FOREACHSELECTED") || u.Contains("FOREACHBLUEROW") || u.Contains("FOREACHROW"))
                 {
-                    if (dijalog)
-                    {
-                        if (u.Contains("FOREACHSELECTED"))
-                            ishod.Foreach = "cekirani";
-                        else if (u.Contains("FOREACHBLUEROW"))
-                            ishod.Foreach = "plavi";
-                        else
-                            ishod.Foreach = "svi";
-                        if (i + 1 < seg.Length)
-                        {
-                            ishod.Odigrano.Add(seg[i + 1]);
-                            i++;
-                        }
-                    }
+                    if (u.Contains("FOREACHSELECTED"))
+                        ishod.Foreach = "cekirani";
+                    else if (u.Contains("FOREACHBLUEROW"))
+                        ishod.Foreach = "plavi";
                     else
+                        ishod.Foreach = "svi";
+                    if (i + 1 < seg.Length)
                     {
+                        ishod.Odigrano.Add(seg[i + 1]);
                         i++;
                     }
                     continue;

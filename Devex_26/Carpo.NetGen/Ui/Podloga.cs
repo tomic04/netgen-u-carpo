@@ -400,7 +400,20 @@ namespace Carpo.NetGen.Ui
                     continue;
                 if (ForeachNaredba.Vrsta(s).Length > 0)
                 {
-                    i++;
+                    string tijelo = "";
+                    if (i + 1 < seg.Length)
+                    {
+                        tijelo = (seg[i + 1] ?? "").Trim();
+                        i++;
+                    }
+                    string[] sqlovi = ForeachNaredba.Ponovi(tijelo, IdjeviMaster(ForeachNaredba.Vrsta(s)));
+                    for (int k = 0; k < sqlovi.Length; k++)
+                    {
+                        if (ZastitaSql.Tekst(sqlovi[k]).Pise)
+                            continue;
+                        try { Citaj(sqlovi[k]); }
+                        catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sqlovi[k]); }
+                    }
                     continue;
                 }
                 if (s.StartsWith("select", StringComparison.OrdinalIgnoreCase))
@@ -701,6 +714,59 @@ namespace Carpo.NetGen.Ui
             else
                 bbiBrojSlogovaMasterGrid.Caption = tekst ?? "";
             bbiBrojSlogovaDetailsGrid.Caption = "detalj grid: <b>" + _redovaDetail.ToString() + "</b>";
+        }
+
+        private System.Collections.Generic.List<string> IdjeviMaster(string vrsta)
+        {
+            var svi = new System.Collections.Generic.List<string>();
+            var plavi = new System.Collections.Generic.List<string>();
+            var cek = new System.Collections.Generic.List<string>();
+            if (gvGla == null)
+                return svi;
+            DevExpress.XtraGrid.Columns.GridColumn kol = null;
+            for (int c = 0; c < gvGla.Columns.Count; c++)
+            {
+                if (gvGla.Columns[c].ColumnType == typeof(bool))
+                {
+                    kol = gvGla.Columns[c];
+                    break;
+                }
+            }
+            for (int r = 0; r < gvGla.DataRowCount; r++)
+            {
+                int h = gvGla.GetRowHandle(r);
+                string id = IdCelije(h);
+                svi.Add(id);
+                if (kol != null)
+                {
+                    object b = gvGla.GetRowCellValue(h, kol);
+                    if (b is bool && (bool)b)
+                        cek.Add(id);
+                }
+            }
+            int[] sel = gvGla.GetSelectedRows();
+            for (int i = 0; i < sel.Length; i++)
+            {
+                if (sel[i] >= 0)
+                    plavi.Add(IdCelije(sel[i]));
+            }
+            string[] iz = ForeachNaredba.Idjevi(vrsta, svi, plavi, cek);
+            return new System.Collections.Generic.List<string>(iz);
+        }
+
+        private string IdCelije(int red)
+        {
+            if (red < 0)
+                return "0";
+            object id = null;
+            if (gvGla.Columns.ColumnByFieldName("id") != null)
+                id = gvGla.GetRowCellValue(red, "id");
+            if (id == null || id == DBNull.Value)
+            {
+                if (gvGla.Columns.Count > 0)
+                    id = gvGla.GetRowCellValue(red, gvGla.Columns[0]);
+            }
+            return id == null || id == DBNull.Value ? "0" : Convert.ToString(id);
         }
 
         private DataTable Citaj(string sql)

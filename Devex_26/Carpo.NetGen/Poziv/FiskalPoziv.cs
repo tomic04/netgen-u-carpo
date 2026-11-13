@@ -42,6 +42,9 @@ namespace Carpo.NetGen.Poziv
             public string Jir = "";
             public string Sifra = "";
             public string Url = "";
+            public string Uuid = "";
+            public string Zki = "";
+            public string Xml = "";
         }
 
         public static bool JePravaPorezna(string url)
@@ -169,8 +172,49 @@ namespace Carpo.NetGen.Poziv
         }
 
         /// <summary>
-        /// Assembly.Load i CreateInstance. Ne postavlja CisUrl i ne zove nijednu metodu.
-        /// Form1.vb 341–354 (Slovenija) ili 360–368 (Raverus).
+        /// Isti Raverus API kao Form1.vb 454–520: GenerirajUuid, ZastitniKodIzracunCertifikatDatoteka
+        /// s 8 argumenata, zamjena ZZZZZZZZZZ i UUUUUUUUUU, pa PosaljiSoapPorukuCertifikatDatoteka i DohvatiJir.
+        /// </summary>
+        public static Ishod Racun(object fiskal, string xml, string pfx, string lozinka, string oib, string datum, string broj, string prostor, string uredaj, string iznos, string url, string timeout, string mapa)
+        {
+            var i = new Ishod();
+            i.Url = (url ?? "").Trim();
+            if (fiskal == null)
+            {
+                i.Greska = "Nema Raverus.FiskalizacijaDEV.COM.dll ni testnog CIS objekta.";
+                return i;
+            }
+            try
+            {
+                object uuid = fiskal.GetType().InvokeMember(GenerirajUuid, BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, fiskal, new object[0]);
+                i.Uuid = uuid == null ? "" : Convert.ToString(uuid);
+                object zki = fiskal.GetType().InvokeMember(
+                    ZastitniKod,
+                    BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance,
+                    null,
+                    fiskal,
+                    new object[] { pfx ?? "", (lozinka ?? "").Trim(), oib ?? "", datum ?? "", broj ?? "", prostor ?? "", uredaj ?? "", iznos ?? "" });
+                i.Zki = zki == null ? "" : Convert.ToString(zki);
+            }
+            catch (Exception ex)
+            {
+                i.Greska = "GREŠKA KOD IZRAČUNA ZAŠTITNOG KODA " + ex.Message;
+                NgDnevnik.Greska(i.Greska);
+                return i;
+            }
+            i.Xml = (xml ?? "").Replace("ZZZZZZZZZZ", i.Zki).Replace("UUUUUUUUUU", i.Uuid);
+            Ishod soap = Posalji(i.Xml, pfx, lozinka, i.Url, timeout, mapa, mapa);
+            i.Poslano = soap.Poslano;
+            i.Odgovor = soap.Odgovor;
+            i.Jir = soap.Jir;
+            i.Sifra = soap.Sifra;
+            i.Greska = soap.Greska;
+            i.Ucitano = soap.Ucitano;
+            return i;
+        }
+
+        /// <summary>
+        /// Assembly.Load i CreateInstance. Form1.vb 360–368.
         /// </summary>
         public static Ishod Ucitaj(string url)
         {

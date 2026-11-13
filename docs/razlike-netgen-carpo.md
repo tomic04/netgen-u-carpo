@@ -176,9 +176,9 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `FOREACHROW` / `FOREACHSELECTED` / `FOREACHBLUEROW`
 - **NetGen:** na dijalogu petlja i pojede sljedeći `#` segment (`Form2.vb` 7040–7048, `8310–8394`). Na podlozi je tijelo komentar, ali `i = i + 1` i dalje pojede sljedeći segment (`Form1.vb` 6843–6850).
-- **Carpo:** dijalog vrti sljedeći segment po retku (`ForeachNaredba`, `DijalogTok`). Podloga pojede sljedeći segment i ne vrti petlju (`Podloga.IzvrsiLanac`).
-- **Posljedica:** ista naredba na gumbu podloge ne izvrši petlju i ne ostavi sljedeći segment.
-- **Test:** `foreach-dijalog`, `KUP-11`, `KUP-12`, `KUP-13`
+- **Carpo:** i dijalog i podloga vrte sljedeći segment po retku (`ForeachNaredba`). `Form1.vb` 6844–6850 ima poziv zakomentiran; tijelo živi u `Form2` i Carpo ga zove i na podlozi.
+- **Posljedica:** gumb podloge s `FOREACHROW` izvrši petlju, ne samo pojede segment.
+- **Test:** `foreach-dijalog`, `foreach-podloga`, `foreach-podloga-petlja`, `KUP-12`
 
 ## R23 `OKSTAY` i `CLOSEPARENT`
 
@@ -943,6 +943,6 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 
 - **Element:** `FISKALIZACIJA`
 - **NetGen:** `Form1.vb` 493–548 postavi `CisUrl`, `TimeOut` i mape, pa `PosaljiSoapPorukuCertifikatDatoteka(xml, pfx, lozinka)`. Greška je šifra `55555` i `DohvatiGresku`. Inače `DohvatiJir`. Prazan URL postane `https://cis.porezna-uprava.hr:8449/FiskalizacijaService` (`377`).
-- **Carpo:** `FiskalTok.Izvrsi` čita iste upite. Prazan URL i `cis.porezna-uprava.hr` se ne zovu. SOAP ide samo na `https://cistest.apis-it.hr:8449/FiskalizacijaServiceTest`.
-- **Posljedica:** treba `Raverus.FiskalizacijaDEV.COM.dll`, PFX i lozinka iz `mpfiskalizacija`, i testni CIS. Produkcijski URL se ne šalje. `UPDATE` UUID/KOD ostaje iza zabrane pisanja.
-- **Test:** `fiskal-soap`, `fiskal-greska`, `fiskal-nema-porezne`, `fiskal-test-url`, `fiskal-izvrsi-prava`, `fiskal-izvrsi-test`
+- **Carpo:** `FiskalPoziv.Racun` zove isti Raverus API (`GenerirajUuid`, `ZastitniKodIzracunCertifikatDatoteka` s 8 argumenata, `PosaljiSoapPorukuCertifikatDatoteka`, `DohvatiJir`). Prazan URL se ne zamjenjuje produkcijskim. SOAP ide samo na testni CIS.
+- **Posljedica:** jedina namjerna razlika je što prazan URL ne postaje `https://cis.porezna-uprava.hr:8449/FiskalizacijaService`. `UPDATE` UUID/KOD je `FiskalTok.SqlKod` i na spinu se izvrši.
+- **Test:** `fiskal-soap`, `fiskal-izvrsi-test`, `fiskal-uuid-spin`

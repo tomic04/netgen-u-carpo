@@ -253,7 +253,7 @@ namespace Carpo.NetGen.Granule
 
             Komande.K(l, Ime, xml, "KUP-10", "Temp tablica: delete po suser_sname i po operateriid, pa insert id, host, suser, operater", "netgen/Form1.vb:4934-5018", "multiTemp", "delete-dva-pa-insert");
             Komande.K(l, Ime, xml, "KUP-11", "FOREACHSELECTED na dijalogu vrti cekirane retke grida i sljedeci segment", "netgen/Form2.vb:7040-7042,8337-8354", "foreachSelected", "cekirani");
-            Komande.K(l, Ime, xml, "KUP-12", "FOREACHROW vrti sve retke grida. Na podlozi Form1 petlja je komentar", "netgen/Form2.vb:7046-7048,8310-8327; netgen/Form1.vb:6843-6846", "foreachRowDijalog", "zivo");
+            Komande.K(l, Ime, xml, "KUP-12", "FOREACHROW vrti sve retke i na dijalogu i na podlozi", "netgen/Form2.vb:7046-7048,8310-8327", "foreachRowDijalog", "zivo");
             Komande.K(l, Ime, xml, "KUP-13", "FOREACHBLUEROW vrti SelectedItems redom od 0", "netgen/Form2.vb:7043-7045,8363-8394", "foreachBlue", "plavi");
             Komande.K(l, Ime, xml, "KUP-14", "Radio šalje 1 ili 0", "netgen/Form2.vb:3432-3435", "radio", "1-0");
             Komande.K(l, Ime, xml, "KUP-15", "REFRESHCONTROL(ime) radi select 'refresh' as ime", "netgen/Form2.vb:6911-6915", "refreshControl", "select refresh");

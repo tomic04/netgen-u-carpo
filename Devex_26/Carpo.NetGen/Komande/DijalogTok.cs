@@ -230,6 +230,22 @@ namespace Carpo.NetGen.Komande
                     k.Vrsta = "dock";
                     k.Tekst = RafalNaredba.Dock(t) + "|" + RafalNaredba.DockKontrola(t);
                 }
+                else if (u.IndexOf("RECALCGRID", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "recalc";
+                else if (u.IndexOf("TOGGLEGRIDGROUP(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "toggle";
+                else if (u.IndexOf("PREPAREMULTISELECTEDPRINT(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "priprema";
+                else if (u.IndexOf("PIVOTGRID(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "pivot";
+                else if (u.IndexOf("CHARTGRID(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "chart";
+                else if (u.IndexOf("COLORPICKER(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "boja";
+                else if (PosaljiServer.Vrsta(t).Length > 0)
+                    k.Vrsta = "posalji";
+                else if (Pokretanje.Je(t))
+                    k.Vrsta = "pokretanje";
                 else if (u.IndexOf("EVAL(", StringComparison.Ordinal) >= 0)
                 {
                     k.Vrsta = "eval";

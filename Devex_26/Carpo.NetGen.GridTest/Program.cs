@@ -359,7 +359,7 @@ namespace Carpo.NetGen.GridTest
                 postavke.Rows[0]["url"] = Carpo.NetGen.Komande.FiskalTok.TestUrl;
                 var xmlTab = new System.Data.DataTable();
                 xmlTab.Columns.Add("x");
-                xmlTab.Rows.Add("<Racun/>");
+                xmlTab.Rows.Add("<Racun zki=\"ZZZZZZZZZZ\" uuid=\"UUUUUUUUUU\"/>");
                 var jirTab = new System.Data.DataTable();
                 jirTab.Columns.Add("jir");
                 jirTab.Rows.Add("");
@@ -371,7 +371,10 @@ namespace Carpo.NetGen.GridTest
                         return jirTab;
                     return xmlTab;
                 });
-                T("fiskal-izvrsi-test", testni.Poslano && cis.CisUrl == Carpo.NetGen.Komande.FiskalTok.TestUrl && cis.Xml == "<Racun/>", testni.Greska + " " + cis.CisUrl);
+                T("fiskal-izvrsi-test", testni.Poslano && cis.CisUrl == Carpo.NetGen.Komande.FiskalTok.TestUrl
+                    && testni.Uuid == "UUID-TEST" && testni.Zki == "ZKI-TEST"
+                    && cis.Xml.IndexOf("ZKI-TEST", StringComparison.Ordinal) >= 0
+                    && cis.Xml.IndexOf("UUID-TEST", StringComparison.Ordinal) >= 0, testni.Greska + " " + cis.Xml);
             }
             finally
             {
@@ -397,6 +400,7 @@ namespace Carpo.NetGen.GridTest
                 && Carpo.NetGen.Komande.FiskalNaredba.Poziva(0) == 1
                 && Carpo.NetGen.Komande.FiskalNaredba.Poziva(3) == 3
                 && Carpo.NetGen.Komande.FiskalNaredba.Argument("FISKALIZACIJA(@@id)") == "@@ID", "");
+            FiskalUuidSpin();
             T("klik-podloga", Carpo.NetGen.Komande.KlikNaredba.NaPodlozi() == false
                 && Carpo.NetGen.Komande.KlikNaredba.Kontrola("CLICK(ok)") == "OK", "");
             string poruka = "";
@@ -431,6 +435,35 @@ namespace Carpo.NetGen.GridTest
             T("param-datum", Carpo.NetGen.Komande.ParametriSvi.Datum("datum", "", false, new DateTime(2026, 3, 1)) == "@datum=null,"
                 && Carpo.NetGen.Komande.ParametriSvi.Datum("datum", "MM.YYYY", true, new DateTime(2026, 3, 1)) == "@datum='20260301',", "");
             T("param-multi", Carpo.NetGen.Komande.ParametriSvi.Multi("str", "1, 2,3") == "@str='1~2~3',", "");
+            T("izraz-ilcalc", Carpo.NetGen.Komande.Izraz.Izracunaj("1+2*3") == "7"
+                && Carpo.NetGen.Komande.Izraz.Izracunaj("(1+2)*3") == "9"
+                && Carpo.NetGen.Komande.Izraz.Izracunaj("10/4") == "2.5"
+                && Carpo.NetGen.Komande.Izraz.Izracunaj("abs(-3)+1") == "4"
+                && Carpo.NetGen.Komande.Izraz.Izracunaj("2^3") == "8"
+                && Carpo.NetGen.Komande.Izraz.Izracunaj("min(1,4)") == "1"
+                && Carpo.NetGen.Komande.Izraz.Izracunaj("nije") == "", "");
+            var recalc = new System.Data.DataTable();
+            recalc.Columns.Add("kolicina");
+            recalc.Columns.Add("evalkolicina()");
+            recalc.Columns["evalkolicina()"].Caption = "evalkolicina()";
+            recalc.Rows.Add("0", "2*3");
+            T("recalc-grid", Carpo.NetGen.Komande.RecalcGrid.Izracunaj(recalc) == 1 && Convert.ToString(recalc.Rows[0]["kolicina"]) == "6", Convert.ToString(recalc.Rows[0]["kolicina"]));
+            int toggle = 0;
+            string t1 = Carpo.NetGen.Komande.ToggleGrid.Korak(ref toggle);
+            string t2 = Carpo.NetGen.Komande.ToggleGrid.Korak(ref toggle);
+            T("toggle-grid", t1 == "expand" && toggle == 1 && t2 == "collapse" && toggle == 0, t1 + t2);
+            T("multi-ispis", Carpo.NetGen.Komande.MultiIspis.Prvi(new[] { "8", "9" }) == "8"
+                && Carpo.NetGen.Komande.MultiIspis.Idjevi(new[] { "8", "9" }).Length == 2, "");
+            T("boja-html", Carpo.NetGen.Komande.BojaNaredba.Html(System.Drawing.Color.Red) == "#FF0000"
+                && Carpo.NetGen.Komande.BojaNaredba.Sql("COLORPICKER(update x set boja='@@boja')").StartsWith("update"), "");
+            T("posalji-url", Carpo.NetGen.Komande.PosaljiServer.UrlRacuna("http://localhost/ws/", "ab", "1", "2026", "5", "", "", "20260301").IndexOf("xmlrec.asp?a=1&v=1", StringComparison.Ordinal) >= 0
+                && Carpo.NetGen.Komande.PosaljiServer.Vrsta("POSALJIPORUKENASERVER(select 1)") == "poruka", "");
+            T("pokretanje", Carpo.NetGen.Komande.Pokretanje.Datoteka("C:\\a.bat~/q") == "C:\\a.bat"
+                && Carpo.NetGen.Komande.Pokretanje.Argument("C:\\a.bat~/q") == "/q"
+                && Carpo.NetGen.Komande.EkstenzijaGrid.ChartMetoda == "ChartGRID"
+                && Carpo.NetGen.Komande.EkstenzijaGrid.PivotKlasa == "NetGenExtensions.Form1", "");
+            T("foreach-podloga-petlja", Carpo.NetGen.Komande.ForeachNaredba.Ponovi("sp @id=@@id", new[] { "1", "2" }).Length == 2
+                && Carpo.NetGen.Komande.ForeachNaredba.Ponovi("sp @id=@@id", new[] { "1", "2" })[1] == "sp @id=2", "");
             T("rafal-eval", Carpo.NetGen.Komande.RafalNaredba.EvalLijevo("EVAL(kolicina=1+2)") == "kolicina"
                 && Carpo.NetGen.Komande.RafalNaredba.EvalDesno("EVAL(kolicina=1+2)") == "1+2"
                 && Carpo.NetGen.Komande.RafalNaredba.Dock("DOCK5(grid)") == "Fill"
@@ -1335,7 +1368,7 @@ namespace Carpo.NetGen.GridTest
             var fe = Lanac.Izvrsi("FOREACHSELECTED(x)#spAzur", true, null);
             var podloga = Lanac.Izvrsi("FOREACHROW(x)#spAzur", false, null);
             T("foreach-dijalog", fe.Foreach == "cekirani" && fe.Odigrano.Count == 1 && fe.Odigrano[0] == "spAzur", "");
-            T("foreach-podloga", podloga.Foreach.Length == 0 && podloga.Odigrano.Count == 0, "");
+            T("foreach-podloga", podloga.Foreach == "svi" && podloga.Odigrano.Count == 1 && podloga.Odigrano[0] == "spAzur", "");
             T("foreach-plavi", Lanac.Izvrsi("FOREACHBLUEROW(x)#spAzur", true, null).Foreach == "plavi", "");
             T("refresh-sql", Lanac.RefreshSql("ime") == "select 'refresh' as ime" && Lanac.RefreshControl() == "select refresh", "");
             KontroleTestovi();
@@ -1606,6 +1639,45 @@ namespace Carpo.NetGen.GridTest
                     return "idx " + i + " ocek [" + a[i] + "] dobiveno [" + b[i] + "]";
             }
             return "duljina " + a.Count + "/" + b.Count;
+        }
+
+        private static void FiskalUuidSpin()
+        {
+            string spoj = SpinVeza.Spoj("localhost", "spin");
+            try
+            {
+                using (var conn = new SqlConnection(spoj))
+                {
+                    conn.Open();
+                    using (var tx = conn.BeginTransaction())
+                    {
+                        object id;
+                        using (var nadji = new SqlCommand("SELECT TOP 1 mpblagajnaglaid FROM mpblagajnagla", conn, tx))
+                            id = nadji.ExecuteScalar();
+                        if (id == null || id == DBNull.Value)
+                        {
+                            T("fiskal-uuid-spin", false, "nema retka u mpblagajnagla");
+                            tx.Rollback();
+                            return;
+                        }
+                        string sql = Carpo.NetGen.Komande.FiskalTok.SqlKod(1, Convert.ToString(id), "UUID-NG", "ZKI-NG");
+                        using (var upis = new SqlCommand(sql, conn, tx))
+                            upis.ExecuteNonQuery();
+                        using (var citaj = new SqlCommand("SELECT UUID, KOD FROM mpblagajnagla WHERE mpblagajnaglaid=" + Convert.ToString(id), conn, tx))
+                        using (var r = citaj.ExecuteReader())
+                        {
+                            r.Read();
+                            bool ok = Convert.ToString(r[0]) == "UUID-NG" && Convert.ToString(r[1]) == "ZKI-NG";
+                            T("fiskal-uuid-spin", ok, Convert.ToString(r[0]) + " " + Convert.ToString(r[1]));
+                        }
+                        tx.Rollback();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                T("fiskal-uuid-spin", false, ex.Message);
+            }
         }
 
         private static DataTable FillAdapter(string spoj, string sql)
@@ -1909,6 +1981,16 @@ namespace Carpo.NetGen.GridTest
         public string Pfx;
         public int Poziva;
         public bool Baci;
+
+        public string GenerirajUuid()
+        {
+            return "UUID-TEST";
+        }
+
+        public string ZastitniKodIzracunCertifikatDatoteka(string put, string lozinka, string oib, string datum, string broj, string prostor, string uredaj, string iznos)
+        {
+            return "ZKI-TEST";
+        }
 
         public string PosaljiSoapPorukuCertifikatDatoteka(string xml, string pfx, string lozinka)
         {

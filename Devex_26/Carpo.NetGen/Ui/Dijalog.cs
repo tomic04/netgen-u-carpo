@@ -331,7 +331,8 @@ namespace Carpo.NetGen.Ui
                 string v = koraci[s].Vrsta;
                 if (v == "poruka" || v == "roditelj" || v == "odustani" || v == "ok" || v == "okstay" || v == "forma"
                     || v == "foreach" || v == "fiskal" || v == "datoteka" || v == "refresh" || v == "dock"
-                    || v == "eval" || v == "sljedeci" || v == "prethodni" || v == "naredba")
+                    || v == "eval" || v == "sljedeci" || v == "prethodni" || v == "naredba"
+                    || v == "recalc" || v == "toggle" || v == "priprema" || v == "pivot" || v == "chart" || v == "boja" || v == "posalji" || v == "pokretanje")
                     lanac = true;
             }
             if (lanac)
