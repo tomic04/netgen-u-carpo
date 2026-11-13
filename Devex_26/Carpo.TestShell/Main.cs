@@ -511,6 +511,51 @@ namespace Carpo.TestShell
         }
 
         public static string ZadnjaNit = "";
+        private bool _sweepRadi;
+
+        private void ZatvarajSweep()
+        {
+            while (_sweepRadi)
+            {
+                Thread.Sleep(200);
+                try
+                {
+                    BeginInvoke(new Action(delegate ()
+                    {
+                        Form[] otvorene;
+                        try
+                        {
+                            otvorene = new Form[Application.OpenForms.Count];
+                            for (int i = 0; i < otvorene.Length; i++)
+                                otvorene[i] = Application.OpenForms[i];
+                        }
+                        catch
+                        {
+                            return;
+                        }
+                        for (int i = 0; i < otvorene.Length; i++)
+                        {
+                            Form f = otvorene[i];
+                            if (f == null || f == this || f.IsDisposed)
+                                continue;
+                            if (!(f is Dijalog))
+                                continue;
+                            try
+                            {
+                                f.DialogResult = DialogResult.Cancel;
+                                f.Close();
+                            }
+                            catch
+                            {
+                            }
+                        }
+                    }));
+                }
+                catch
+                {
+                }
+            }
+        }
 
         /// <summary>
         /// Sve NetGen granule. Tab, stablo, podforma (Odustani) i gumbi koji ne pišu.
@@ -532,6 +577,10 @@ namespace Carpo.TestShell
                 dijelova = 1;
             Carpo.NetGen.Ui.Podloga.TimeoutUpita = 3;
             _klikPregled = true;
+            _sweepRadi = true;
+            var bdij = new Thread(ZatvarajSweep);
+            bdij.IsBackground = true;
+            bdij.Start();
             var xmlovi = Directory.GetFiles(korijen, "*.xml", SearchOption.AllDirectories);
             Array.Sort(xmlovi, StringComparer.OrdinalIgnoreCase);
             if (shard >= 1 && shard <= dijelova)
@@ -626,8 +675,11 @@ namespace Carpo.TestShell
                 string poruka = (uzrok ?? "").Replace("\t", " ").Replace("\r", " ").Replace("\n", " ");
                 if (poruka.Length > 240)
                     poruka = poruka.Substring(0, 240);
-                sb.AppendLine(rel + "\t" + ishod + "\t" + sec.ToString() + "\t" + poruka);
+                string linija = rel + "\t" + ishod + "\t" + sec.ToString() + "\t" + poruka;
+                sb.AppendLine(linija);
+                try { File.AppendAllText(izvjestaj + ".red", linija + "\r\n"); } catch { }
             }
+            _sweepRadi = false;
             var glava = new StringBuilder();
             glava.AppendLine("# Sweep");
             glava.AppendLine("cisto=" + cisto.ToString());
