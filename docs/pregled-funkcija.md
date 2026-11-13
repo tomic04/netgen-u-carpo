@@ -4,17 +4,20 @@ Prvi prolaz su funkcije koje obrađuju podatke: zamjena `@@`, `PokupiParametre`,
 
 Status: `isto` prati NetGen, `razlika` je R-broj koji ostaje, `nedostaje` još nema porta.
 
+QA glavnog agenta. Kriterij: kod na putu forme ili baze, test gleda učinak, ne povrat stuba.
+QA. Pregledano 25 redaka novog porta. Pravo 1: `ExecSql2` (`Class1.vb` 230), test `execsql2-spin` upiše `NetGenErrorLog` i povuče transakciju. Vraćeno 24 u `nedostaje`. Testovi `sredi2-temp`, `sredi-poslije-*`, `za-slanje-*`, `parametri-grida`, `hijerarhija-grid`, `kolone-grid`, `param-broj` i `sql-zamjena` uspoređuju povrat, ne formu ni bazu. `PokupiParametreSaGrida` krene od stupca 0; NetGen od 1 (`Form1.vb` 2557–2566). `GetID` (`Form1.vb` 5566) test ne otvara grid.
+
 ## Zamjena parametara
 
 | NetGen | Carpo | Status | Test |
 |---|---|---|---|
 | `Form1.SrediSQL` 2470–2503. `@@id` (tri veličine), `@@operateriid`, `@@detid`, `@@node`, `@@table`, `@@xmlname`, `@@jupitersrvpath`, `@@editedcolumn`, `@@lastvalue`, `@@selectedcolor` | `SqlTekst.Sredi` | isto | `sql-zamjena` |
-| `Form2.SrediSQL2` 2876–2920. Isto osim `@@Id` i `@@table`. Dodaje `@@tempstring`, `@@dblclickedcolumn`, `@@VERSION`, `@@OPISNIPARAMETRI`, `@@FOCUSEDCONTROL`, `@@selectedfile`, `@@selectedpath` | `SqlTekst.Sredi2` | isto | `sredi2-temp`, `sredi2-id-nije-Id` |
-| `@@GRIDROWCOUNT(` u `SrediSQL2` 2899–2905 je komentar. Živa petlja reže token na `(` i nepoznato postavi na `null` | `SrediPoslije.Zamijeni` | isto | `gridrowcount-komentar` |
-| `Class1.SrediSQLPosljeNextForme` 740–853. Prvo `SrediSQL2`. Token `@@` staje na razmak, navodnik, `%`, `#`, zarez, `)`, `*`, `/`, `\`, `+`, `-`, `.`, `(`, `=`. `¸¸` postaje `''` | `SrediPoslije.Zamijeni` i `Petlja`. Master šalje `Petlja` nakon `Sredi`. Combo ide istim putem. Dijalog na OK zove `ZaSlanje` | isto | `sredi-poslije-roba`, `sredi-poslije-navodnik`, `intrastat-ostao` |
-| `Class1.NadjiVrijednostuPrevParametrima` 856–977. Skine jedan `@`, prvi `@ime=` koji počinje tim prefiksom. `ajdijeva` mijenja `~` u zarez. Prazno je `null`. `@napomena` i `null` je prazan string. `@DAT` i grid-datum pakiraju datum. Inače se navodnici skidaju. Prazno ili `null` gleda clipboard | `SrediPoslije.Nadji` | isto | `sredi-poslije-roba`, `sredi-poslije-ajdijeva`, `sredi-poslije-datum`, `sredi-poslije-napomena`, `sredi-poslije-null`, `sredi-poslije-cb` |
-| `Form2.SrediSQLsaKolonamaizGrida` 8440–8456 i `NadjiVrijednostuGridu` 8459–8490. `@(grid..kolona)`. Datum iz `dd.MM.yyyy`, broj mijenja zarez u točku, prazno je `null` | `SrediPoslije.Kolone`. Vrijednost daje pozivatelj | isto | `kolone-grid` |
-| Ispis zaglavlja: `Form1` 6001 zove isti `SrediSQLPosljeNextForme` s `DatumjezaIspis`, pa `Rafalna_Priprema` i `Translate` | `IspisZaglavlje.Desno`. Petlja je ista granica tokena, clipboard je rječnik, `ISEMPTY` ide prije prijevoda | isto | `isempty-prazno`, `isempty-vrijednost`, `podnozje-isempty` |
+| `Form2.SrediSQL2` 2876–2920. Isto osim `@@Id` i `@@table`. Dodaje `@@tempstring`, `@@dblclickedcolumn`, `@@VERSION`, `@@OPISNIPARAMETRI`, `@@FOCUSEDCONTROL`, `@@selectedfile`, `@@selectedpath` | `SqlTekst.Sredi2` | nedostaje | `sredi2-temp`, `sredi2-id-nije-Id` |
+| `@@GRIDROWCOUNT(` u `SrediSQL2` 2899–2905 je komentar. Živa petlja reže token na `(` i nepoznato postavi na `null` | `SrediPoslije.Zamijeni` | nedostaje | `gridrowcount-komentar` |
+| `Class1.SrediSQLPosljeNextForme` 740–853. Prvo `SrediSQL2`. Token `@@` staje na razmak, navodnik, `%`, `#`, zarez, `)`, `*`, `/`, `\`, `+`, `-`, `.`, `(`, `=`. `¸¸` postaje `''` | `SrediPoslije.Zamijeni` i `Petlja`. Master šalje `Petlja` nakon `Sredi`. Combo ide istim putem. Dijalog na OK zove `ZaSlanje` | nedostaje | `sredi-poslije-roba`, `sredi-poslije-navodnik`, `intrastat-ostao` |
+| `Class1.NadjiVrijednostuPrevParametrima` 856–977. Skine jedan `@`, prvi `@ime=` koji počinje tim prefiksom. `ajdijeva` mijenja `~` u zarez. Prazno je `null`. `@napomena` i `null` je prazan string. `@DAT` i grid-datum pakiraju datum. Inače se navodnici skidaju. Prazno ili `null` gleda clipboard | `SrediPoslije.Nadji` | nedostaje | `sredi-poslije-roba`, `sredi-poslije-ajdijeva`, `sredi-poslije-datum`, `sredi-poslije-napomena`, `sredi-poslije-null`, `sredi-poslije-cb` |
+| `Form2.SrediSQLsaKolonamaizGrida` 8440–8456 i `NadjiVrijednostuGridu` 8459–8490. `@(grid..kolona)`. Datum iz `dd.MM.yyyy`, broj mijenja zarez u točku, prazno je `null` | `SrediPoslije.Kolone`. Vrijednost daje pozivatelj | nedostaje | `kolone-grid` |
+| Ispis zaglavlja: `Form1` 6001 zove isti `SrediSQLPosljeNextForme` s `DatumjezaIspis`, pa `Rafalna_Priprema` i `Translate` | `IspisZaglavlje.Desno`. Petlja je ista granica tokena, clipboard je rječnik, `ISEMPTY` ide prije prijevoda | nedostaje | `isempty-prazno`, `isempty-vrijednost`, `podnozje-isempty` |
 
 `SETDEFAULTS` na podlozi puni clipboard prije master SQL-a (`Form1.vb` 3862–3882 i `SetDefolte` 3945–4009). `Podloga` zove `ClipboardNg.IzSetDefaults`, a `MasterGrid` taj rječnik daje `SrediPoslije`. Ključ je `ime=`. Greška na segmentu prekida ostatak.
 
@@ -22,30 +25,30 @@ Status: `isto` prati NetGen, `razlika` je R-broj koji ostaje, `nedostaje` još n
 
 | NetGen | Carpo | Status | Test |
 |---|---|---|---|
-| `Form2.PokupiParametre` 3406–3906. Check je `CheckState`, radio 1/0, broj prazan je 0 i zarez je točka, tekst ima `¸¸` i `~~`, datum je `yyyyMMdd` ili `null`, search je id i `@searchbox`, grid je id, nizovi i `@rowcount` | `Dijalog.SviParametri` i `ParametriSvi` | isto | `param-radio`, `param-broj`, `param-search`, `FAK-07` |
-| `Form2.Button1_Click` 3377–3388. Prvih 6 slova u `INSERTDELETEUPDATESELECT` ugradi `@@` i obriše niz parametara. Inače se niz lijepi, osim uz `!!` | `SrediPoslije.ZaSlanje`. OK na dijalogu šalje taj tekst | isto | `za-slanje-dml`, `za-slanje-sp`, `za-slanje-uzvicnik`, `dml-ne-lijepi`, `uzvicnik-gasi-lijepljenje` |
-| `Form1.PokupiParametreSaGrida` 2544–2612. Stupac 0 na Janusu je ikona pa petlja kreće od 1. Zadnje 4 znamenke koje nisu 0 otpadaju. Razmak je `_`, `!` se briše. Broj mijenja zarez u točku. `DBNull` se preskače | `DetailGrid.ParametriIzReda`. `DataRow` nema ikonu, pa kreće od prvog stupca | isto | `parametri-grida` |
-| `Form1.PokupiParametreSaHijerarHijskogGrida` 2615–2643. `qwer`/`t2`/`t3`/`t4` bira karticu. Ime je caption, od stupca 0, bez skidanja 4 znamenke | `DetailGrid.ParametriHijerarhije`, `IndeksKartice` | isto | `hijerarhija-grid` |
-| `Form1.GetID` 5566 i `GetDetID` 5605. Prazan grid je `0` | `DetailGrid.IdReda` i `SqlTekst.ZaFormu` | isto | `sql-zamjena` |
-| `Form2.PokupiParametreIzTrazilice` 5926 | `ParametriSvi.Search` | isto | `param-search` |
+| `Form2.PokupiParametre` 3406–3906. Check je `CheckState`, radio 1/0, broj prazan je 0 i zarez je točka, tekst ima `¸¸` i `~~`, datum je `yyyyMMdd` ili `null`, search je id i `@searchbox`, grid je id, nizovi i `@rowcount` | `Dijalog.SviParametri` i `ParametriSvi` | nedostaje | `param-radio`, `param-broj`, `param-search`, `FAK-07` |
+| `Form2.Button1_Click` 3377–3388. Prvih 6 slova u `INSERTDELETEUPDATESELECT` ugradi `@@` i obriše niz parametara. Inače se niz lijepi, osim uz `!!` | `SrediPoslije.ZaSlanje`. OK na dijalogu šalje taj tekst | nedostaje | `za-slanje-dml`, `za-slanje-sp`, `za-slanje-uzvicnik`, `dml-ne-lijepi`, `uzvicnik-gasi-lijepljenje` |
+| `Form1.PokupiParametreSaGrida` 2544–2612. Stupac 0 na Janusu je ikona pa petlja kreće od 1. Zadnje 4 znamenke koje nisu 0 otpadaju. Razmak je `_`, `!` se briše. Broj mijenja zarez u točku. `DBNull` se preskače | `DetailGrid.ParametriIzReda`. `DataRow` nema ikonu, pa kreće od prvog stupca | nedostaje | `parametri-grida` |
+| `Form1.PokupiParametreSaHijerarHijskogGrida` 2615–2643. `qwer`/`t2`/`t3`/`t4` bira karticu. Ime je caption, od stupca 0, bez skidanja 4 znamenke | `DetailGrid.ParametriHijerarhije`, `IndeksKartice` | nedostaje | `hijerarhija-grid` |
+| `Form1.GetID` 5566 i `GetDetID` 5605. Prazan grid je `0` | `DetailGrid.IdReda` i `SqlTekst.ZaFormu` | nedostaje | `sql-zamjena` |
+| `Form2.PokupiParametreIzTrazilice` 5926 | `ParametriSvi.Search` | nedostaje | `param-search` |
 
 ## SQL i validacija
 
 | NetGen | Carpo | Status | Test |
 |---|---|---|---|
-| `Class1.ExecSql` 85–118. `~~` je zarez. Tekst koji počinje s `@` ili je prazan ili ima `@@` iza prvog znaka se ne šalje | `SqlTekst.Odluka`. Nakon `SrediPoslije` nepoznat `@@` više nije u tekstu, pa se šalje `null` | isto | `sql-prazno`, `sql-at`, `sql-atat-na-nuli-je-at`, `sql-atat-kasnije`, `sql-salji`, `intrastat-ostao` |
-| `Class1.ExecSql` Catch 158–205. `ssoperateri`, `totalgenlang`, `sspermission`, `netgendbfilter`, `netgendbclipboard` se gutaju. `#OK` / `+OK` brišu grešku. `#close` zatvara. `#FOCUS(` daje fokus | `Lanac.Izvrsi` i `MasterGrid.IzvrsiCitanje`. `spNetGenErrorLog` se ne zove; greška ide u Carpo logger | isto | `focusNeGuta` u `GranulaIzvrsenje`, `sql-greska-ne-puni` |
+| `Class1.ExecSql` 85–118. `~~` je zarez. Tekst koji počinje s `@` ili je prazan ili ima `@@` iza prvog znaka se ne šalje | `SqlTekst.Odluka`. Nakon `SrediPoslije` nepoznat `@@` više nije u tekstu, pa se šalje `null` | nedostaje | `sql-prazno`, `sql-at`, `sql-atat-na-nuli-je-at`, `sql-atat-kasnije`, `sql-salji`, `intrastat-ostao` |
+| `Class1.ExecSql` Catch 158–205. `ssoperateri`, `totalgenlang`, `sspermission`, `netgendbfilter`, `netgendbclipboard` se gutaju. `#OK` / `+OK` brišu grešku. `#close` zatvara. `#FOCUS(` daje fokus | `Lanac.Izvrsi` i `MasterGrid.IzvrsiCitanje`. `spNetGenErrorLog` se ne zove; greška ide u Carpo logger | nedostaje | `focusNeGuta` u `GranulaIzvrsenje`, `sql-greska-ne-puni` |
 | `Class1.ExecSql2` 252 i poziv 230. Timeout 100, Catch guta. `dbo.spNetGenErrorLog @errorNumber, @errorDescription, @ngLog` | `GreskaSql`. Na spinu tablica `NetGenErrorLog` i procedura koja ubacuje red (`scripts/spin/stubovi.sql`). Carpo logger i dalje prima istu grešku | isto | `execsql2-poziv`, `execsql2-spin` |
-| `SqlTekst.JeZabranaPisanja`. Prva riječ `insert/update/delete/drop/alter/truncate/merge/create`. `sp...` nije zabrana | isto to | isto | `zastita-prva-rijec`, `zastita-zakljucivanje` |
+| `SqlTekst.JeZabranaPisanja`. Prva riječ `insert/update/delete/drop/alter/truncate/merge/create`. `sp...` nije zabrana | isto to | nedostaje | `zastita-prva-rijec`, `zastita-zakljucivanje` |
 
 ## Broj i datum
 
 | NetGen | Carpo | Status | Test |
 |---|---|---|---|
-| Prazan broj je `0`, zarez je točka. `Form2` 3601 | `ParametriSvi.Broj`, `Lanac.PrazanBroj` | isto | `param-broj`, `prazan-broj` |
-| `firstdayofyear`, `firstdayoflastyear`, `firstdayofmonth`, `firstdayoflastmonth` | `Ponasanje.DatumPocetni` | isto | `KON-20` |
-| `SHOWCHECKBOX` bez `CHECKED` šalje `null`. Inače `yyyyMMdd` | `Ponasanje.DatumParametar`, `ParametriSvi.Datum` | isto | `DOB-02` |
-| Tekst: apostrof je `¸¸`, zarez je `~~`, u SQL-u `¸¸` postaje `''` | `ParametriSvi.Tekst`, `Lanac.USql`, `SrediPoslije` | isto | `sredi-poslije-navodnik` |
+| Prazan broj je `0`, zarez je točka. `Form2` 3601 | `ParametriSvi.Broj`, `Lanac.PrazanBroj` | nedostaje | `param-broj`, `prazan-broj` |
+| `firstdayofyear`, `firstdayoflastyear`, `firstdayofmonth`, `firstdayoflastmonth` | `Ponasanje.DatumPocetni` | nedostaje | `KON-20` |
+| `SHOWCHECKBOX` bez `CHECKED` šalje `null`. Inače `yyyyMMdd` | `Ponasanje.DatumParametar`, `ParametriSvi.Datum` | nedostaje | `DOB-02` |
+| Tekst: apostrof je `¸¸`, zarez je `~~`, u SQL-u `¸¸` postaje `''` | `ParametriSvi.Tekst`, `Lanac.USql`, `SrediPoslije` | nedostaje | `sredi-poslije-navodnik` |
 
 ## Form2, prvih 50
 
@@ -65,18 +68,18 @@ Redom iz `Form2.vb`. `nedostaje` znači da živo tijelo nema Carpo par. Komentir
 | 10 | `SetParent` 614 | Isto | nedostaje | |
 | 11 | `GetWindowRect` 618 | Isto | nedostaje | |
 | 12 | `SetWindowPos` 622 | Isto | nedostaje | |
-| 13 | `NapuniKontroleZaEdit` 659. Combo `Tag` iza `##` postaje `SelectedValue` | `ComboDijalog.OdvojiHash`, `Dijalog.NapuniKontrolu` | isto | `combo-hash` |
+| 13 | `NapuniKontroleZaEdit` 659. Combo `Tag` iza `##` postaje `SelectedValue` | `ComboDijalog.OdvojiHash`, `Dijalog.NapuniKontrolu` | nedostaje | `combo-hash` |
 | 14 | `ProcitajXML` 705 | `NetGenXmlReader` | isto | |
 | 15 | `DazovaIzStore` 2825. Stupci 0–3, id 0 se preskače | `Stablo` | isto | `sta-stablo` |
 | 16 | `AddNodes` 2856 | `Stablo.DodajDjecu` | isto | `sta-stablo` |
-| 17 | `SrediSQL2` 2876 | `SqlTekst.Sredi2` | isto | `sredi2-temp` |
+| 17 | `SrediSQL2` 2876 | `SqlTekst.Sredi2` | nedostaje | `sredi2-temp` |
 | 18 | `SrediKontrolu` 2924 | `Raspored` | isto | `MPK-21` |
 | 19 | `BF2` 3245. Lijepi HTML | Nema HTML obrasca | nedostaje | |
 | 20 | `BF` 3251. HTML forme, zove se iz loga 4182 | Nema | nedostaje | |
-| 21 | `Button1_Click` 3367 | `SrediPoslije.ZaSlanje` | isto | `za-slanje-dml` |
+| 21 | `Button1_Click` 3367 | `SrediPoslije.ZaSlanje` | nedostaje | `za-slanje-dml` |
 | 22 | `Button2_Click` 3400. `OKClick = False`, `Close` | `Dijalog` odustani | isto | `dijalog-ostaje` |
-| 23 | `PokupiParametre` 3406 | `Dijalog.SviParametri` | isto | `param-broj` |
-| 24 | `GetDXID` 3986. Prazan grid je `0`, inače stupac `id` ili prvi | `DetailGrid.IdReda` | isto | `det-id-prvi` |
+| 23 | `PokupiParametre` 3406 | `Dijalog.SviParametri` | nedostaje | `param-broj` |
+| 24 | `GetDXID` 3986. Prazan grid je `0`, inače stupac `id` ili prvi | `DetailGrid.IdReda` | nedostaje | `det-id-prvi` |
 | 25 | `SpremiuDBClipboard` 4000. Piše samo ako je `DBCLIPBOARD` `true` | `Rijetke.ClipboardPadStvaraTablicu` je false, pa se ne piše | isto | `MAIL-05` |
 | 26 | `Form2_Activated` 4025. `Rafalno(ONACTIVATED)`, jedan prijevod, `bCloseParent` | `Dijalog.OnActivated` radi samo `bCloseParent`. `ONACTIVATED` se ne vrti | nedostaje | |
 | 27 | `Form2_Deactivate` 4073. Tijelo je komentar | Nema | isto | |
@@ -104,8 +107,8 @@ Redom iz `Form2.vb`. `nedostaje` znači da živo tijelo nema Carpo par. Komentir
 | 49 | `Button5_Click` 5810 | Isto | isto | |
 | 50 | `Button6_Click` 5815 | Isto | isto | |
 
-U ovom bloku: 32 isto, 18 nedostaje, 0 razlika. Portano u bloku: `NapuniKontroleZaEdit` (`combo-hash`), uz hijerarhiju, `SETDEFAULTS` i `ExecSql2` iz prethodnog podatkovnog sloja.
+U ovom bloku QA je vratio `NapuniKontroleZaEdit`, `SrediSQL2`, `Button1_Click`, `PokupiParametre` i `GetDXID` jer test gleda povrat (`combo-hash`, `sredi2-temp`, `za-slanje-dml`, `param-broj`, `det-id-prvi`), ne dijalog na spinu.
 
 ## Što je portano
 
-`SrediSQL2`, `SrediSQLPosljeNextForme`, `NadjiVrijednostuPrevParametrima`, `SrediSQLsaKolonamaizGrida`, hijerarhijski parametri, `SETDEFAULTS` clipboard prije master SQL-a i `ExecSql2` / `spNetGenErrorLog`.
+Od novog porta QA drži samo `ExecSql2` / `spNetGenErrorLog` (`Class1.vb` 230, test `execsql2-spin`). Ostalo iz ovog popisa je vraćeno u `nedostaje`.
