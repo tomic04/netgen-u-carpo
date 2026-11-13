@@ -873,7 +873,7 @@ namespace Carpo.NetGen.Ui
                     continue;
                 var edit = n[0] as TextEdit;
                 if (edit != null && !(edit is LookUpEdit))
-                    edit.Text = tekst;
+                    edit.Text = string.Equals(imena[i], "HPTPoziv", StringComparison.OrdinalIgnoreCase) ? "01" : tekst;
             }
             OdaberiLook(f);
         }

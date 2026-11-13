@@ -85,6 +85,9 @@ namespace Carpo.NetGen.Ui
                 FormBorderStyle = FormBorderStyle.SizableToolWindow;
 
             NgDnevnik.Akcija("otvara formu " + forma.Ime + " node=" + (kontekst == null ? "" : kontekst.Node));
+            string on = forma.OnLoad ?? "";
+            if (DijalogTok.OnLoadJeUpit(on) && citaj != null)
+                UcitajOnLoad(on, kontekst, citaj);
             int zadnji = 0;
             bool imaGumb = forma.Gumbi != null && forma.Gumbi.Count > 0;
             for (int i = 0; i < forma.Kontrole.Count; i++)
@@ -160,9 +163,7 @@ namespace Carpo.NetGen.Ui
                 AcceptButton = ok;
             }
 
-            string on = forma.OnLoad ?? "";
-            if (DijalogTok.OnLoadJeUpit(on) && citaj != null)
-                NapuniIzOnLoad(on, kontekst, citaj);
+            PrimijeniOnLoad();
             ShowDialog();
         }
 
@@ -179,6 +180,8 @@ namespace Carpo.NetGen.Ui
             string sql = (k.Atributi.Vrijednost("SQL") ?? "").Trim();
             if (sql.Length == 0)
                 return;
+            if (_kontekst != null)
+                sql = SqlTekst.Sredi(sql, _kontekst);
             bool prazan = ComboDijalog.AllowEmpty(k);
             DataTable dt = null;
             try
@@ -480,7 +483,7 @@ namespace Carpo.NetGen.Ui
                 edit.Text = tekst;
         }
 
-        private void NapuniIzOnLoad(string on, SqlKontekst kontekst, Func<string, DataTable> citaj)
+        private void UcitajOnLoad(string on, SqlKontekst kontekst, Func<string, DataTable> citaj)
         {
             string sql = SqlTekst.Sredi(on, kontekst);
             NgDnevnik.Sql(sql);
@@ -497,18 +500,21 @@ namespace Carpo.NetGen.Ui
                 return;
             foreach (DataColumn col in dt.Columns)
             {
-                string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col]);
+                string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col], CultureInfo.InvariantCulture);
                 _izUpita[col.ColumnName] = v;
                 if (kontekst != null)
                     kontekst.ParametriSaGrida += "@" + col.ColumnName + "='" + v.Replace("'", "''") + "' , ";
             }
-            foreach (DataColumn col in dt.Columns)
+        }
+
+        private void PrimijeniOnLoad()
+        {
+            foreach (var par in _izUpita)
             {
-                Control[] n = Controls.Find(col.ColumnName, true);
+                Control[] n = Controls.Find(par.Key, true);
                 if (n.Length == 0)
                     continue;
-                string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col], CultureInfo.InvariantCulture);
-                PostaviVrijednost(n[0], v);
+                PostaviVrijednost(n[0], par.Value ?? "");
             }
         }
 
