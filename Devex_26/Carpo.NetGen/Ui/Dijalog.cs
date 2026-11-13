@@ -367,7 +367,7 @@ namespace Carpo.NetGen.Ui
                             DialogResult = DialogResult.OK;
                         if (klik.SaljeSql && _citaj != null && klik.MasterSql.Length > 0)
                         {
-                            string sqlOk = SqlZaGumb(klik.MasterSql);
+                            string sqlOk = Lanac.BezKrajnjegZareza(SqlZaGumb(klik.MasterSql));
                             try { _citaj(sqlOk); }
                             catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sqlOk); }
                         }
