@@ -723,19 +723,26 @@ namespace Carpo.NetGen.Ui
 
         private void IzvrsiSql(string tekst)
         {
+            IzvrsiSqlGreska(tekst);
+        }
+
+        private string IzvrsiSqlGreska(string tekst)
+        {
             if (_citaj == null || _jupiter)
-                return;
+                return "";
             string sql = SrediPoslije.Zamijeni(tekst ?? "", SviParametri(), _kontekst ?? new SqlKontekst(), null, false);
             if (ZastitaSql.Tekst(sql).Pise)
-                return;
+                return "";
             try
             {
                 DataTable dt = _citaj(sql);
                 PrimeniRed(dt);
+                return "";
             }
             catch (Exception ex)
             {
                 NgDnevnik.Greska(ex.Message + " | " + sql);
+                return ex.Message ?? "greska";
             }
         }
 
@@ -775,6 +782,10 @@ namespace Carpo.NetGen.Ui
         }
 
         private readonly System.Collections.Generic.Dictionary<Control, string> _stariTekst = new System.Collections.Generic.Dictionary<Control, string>();
+        private readonly Form2Dogadjaj.TimerFokusa _timerFokusa = new Form2Dogadjaj.TimerFokusa();
+        private readonly Form2Dogadjaj.IzlazTrazilice _izlazTrazilice = new Form2Dogadjaj.IzlazTrazilice();
+        public string ZadnjaTrazilica = "";
+        public string ZadnjiIzbornik = "";
 
         private static string Attr(NgControl k, string ime)
         {
@@ -796,14 +807,34 @@ namespace Carpo.NetGen.Ui
                 {
                     string stari;
                     _stariTekst.TryGetValue(c, out stari);
-                    if (Ponasanje.PreskociTrazilicu(c.Text, stari) && (c.Text ?? "").Trim().Length == 0)
+                    string korak = Form2Dogadjaj.TrazilicaKorak(c.Text, stari);
+                    if (korak == "preskoci" && (c.Text ?? "").Trim().Length == 0)
                         c.Tag = "0";
-                    if (lost.Length > 0)
+                    if (korak == "trazilica")
+                    {
+                        _timerFokusa.NakonTrazilice();
+                        ZadnjaTrazilica = c.Text ?? "";
+                    }
+                    if (lost.Length > 0 && _izlazTrazilice.Validated2Smije())
                         IzvrsiSql(lost);
                 };
             }
             else if (lost.Length > 0)
                 c.Leave += delegate { IzvrsiSql(lost); };
+            if (k.Grana == NgGrana.MultiDrop)
+            {
+                string err = Form2Dogadjaj.MultiDropNaredba(Attr(k, "ERRORTEXT"));
+                if (err.Length > 0)
+                    c.Leave += delegate { IzvrsiSql(err); };
+            }
+            if (k.Grana == NgGrana.Label || k.Grana == NgGrana.Check || k.Grana == NgGrana.Radio)
+            {
+                string tag = Attr(k, "ONCLICK");
+                if (tag.Length == 0)
+                    tag = Attr(k, "TAG");
+                if (tag.Length > 0)
+                    c.Click += delegate { IzvrsiSql(Form2Dogadjaj.KlikLabele(tag)); };
+            }
             if (k.Grana == NgGrana.Combo && klik.Length > 0)
             {
                 var look = c as LookUpEdit;
@@ -822,6 +853,82 @@ namespace Carpo.NetGen.Ui
                 if (tekst != null && !(tekst is LookUpEdit) && !(tekst is DateEdit))
                     tekst.TextChanged += delegate { IzvrsiSql(promjena); };
             }
+            string got = Attr(k, "GOTFOCUS");
+            if (got.Length > 0)
+                c.Enter += delegate { IzvrsiSql(got); };
+            string dbl = Attr(k, "ONDBLCLICK");
+            string popup = Attr(k, "POPUP");
+            if (k.Grana == NgGrana.Grid || k.Grana == NgGrana.DxGrid)
+            {
+                var gc = c as GridControl;
+                var view = gc == null ? null : gc.MainView as GridView;
+                if (view != null && dbl.Length > 0)
+                {
+                    view.DoubleClick += delegate
+                    {
+                        object celija = null;
+                        if (view.FocusedColumn != null && view.FocusedRowHandle >= 0)
+                            celija = view.GetFocusedRowCellValue(view.FocusedColumn);
+                        if (_kontekst != null)
+                            _kontekst.LastValue = Form2Dogadjaj.VrijednostDvoklika(celija == null ? "" : Convert.ToString(celija));
+                        IzvrsiSql(dbl);
+                    };
+                }
+                string celijaSql = Attr(k, "ONCELLEDITED");
+                if (view != null && celijaSql.Length > 0)
+                {
+                    string stara = "";
+                    bool vracam = false;
+                    view.ShowingEditor += delegate
+                    {
+                        object v = view.FocusedColumn == null ? null : view.GetFocusedRowCellValue(view.FocusedColumn);
+                        stara = Form2Dogadjaj.VrijednostDvoklika(v == null ? "" : Convert.ToString(v));
+                    };
+                    view.CellValueChanged += delegate
+                    {
+                        if (vracam)
+                            return;
+                        string greska = IzvrsiSqlGreska(celijaSql);
+                        if (!Form2Dogadjaj.VratiStaru(greska) || view.FocusedColumn == null)
+                            return;
+                        vracam = true;
+                        try { view.SetFocusedRowCellValue(view.FocusedColumn, stara); }
+                        finally { vracam = false; }
+                    };
+                }
+                if (view != null && popup.Length > 0)
+                {
+                    view.MouseUp += delegate (object s, MouseEventArgs e)
+                    {
+                        if (Form2Dogadjaj.DesniKlik(e.Button == MouseButtons.Right, (Control.ModifierKeys & Keys.Control) == Keys.Control) != "izbornik")
+                            return;
+                        var stavke = Form2Dogadjaj.Izbornik(popup);
+                        ZadnjiIzbornik = string.Join(";", stavke.ToArray());
+                    };
+                }
+            }
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            _izlazTrazilice.KeyDownPocinje();
+            int kod = (int)(keyData & Keys.KeyCode);
+            bool control = (keyData & Keys.Control) == Keys.Control;
+            bool trazilica = ActiveControl is ButtonEdit;
+            bool grid = ActiveControl is GridControl;
+            Form2Dogadjaj.Tipka t = Form2Dogadjaj.KeyDown(trazilica, grid, false, false, true, kod, control, "", "", "");
+            if (t.ValidirajTrazilicu && trazilica)
+            {
+                _izlazTrazilice.Validated();
+                _timerFokusa.NakonTrazilice();
+                ZadnjaTrazilica = ActiveControl.Text ?? "";
+            }
+            if (t.Sljedeca && ActiveControl != null)
+            {
+                SelectNextControl(ActiveControl, true, true, true, true);
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         private void PosaljiNaServer(string segment)
