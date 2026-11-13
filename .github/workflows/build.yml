@@ -35,17 +35,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Python za zastitu
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Zastita mrtvog koda i statusa portano
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
-          # "python" na runneru moze biti prečac iz Microsoft Storea (WindowsApps):
-          # Get-Command ga nadje, a pokretanje ispise "Python nije pronađen" i vrati 9009.
-          # Uzima se samo Python koji stvarno vrati verziju.
+          # "python" na sql-ai je precac iz Microsoft Storea (WindowsApps): Get-Command ga
+          # nadje, a pokretanje ispise "Python nije pronađen". actions/setup-python je
+          # visio jer instalacija trazi administratora. Zato prijenosni Python u stalnoj
+          # mapi izvan workspacea: bez instalacije, preuzme se jednom.
           $py = $null
           foreach ($c in @("python","python3","py")) {
             $cmd = Get-Command $c -All -ErrorAction SilentlyContinue |
@@ -55,8 +51,29 @@ jobs:
             & $cmd.Source --version *> $null
             if ($LASTEXITCODE -eq 0) { $py = $cmd.Source; break }
           }
-          if (-not $py) { throw "Nema pravog Pythona na runneru. Zastita treba python, python3 ili py." }
-          Write-Host "Python: $py"
+          if (-not $py) {
+            $ver = "3.12.7"
+            $dir = "C:\NetGenPython\$ver"
+            $exe = Join-Path $dir "python.exe"
+            if (-not (Test-Path -LiteralPath $exe)) {
+              New-Item -ItemType Directory -Force -Path $dir | Out-Null
+              $zip = Join-Path $env:RUNNER_TEMP "python-embed.zip"
+              [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+              Invoke-WebRequest -UseBasicParsing -Uri "https://www.python.org/ftp/python/$ver/python-$ver-embed-amd64.zip" -OutFile $zip
+              Expand-Archive -LiteralPath $zip -DestinationPath $dir -Force
+            }
+            $py = $exe
+          }
+          & $py --version
+          if ($LASTEXITCODE -ne 0) { throw "Python ne radi: $py" }
+          [System.IO.File]::AppendAllText($env:GITHUB_ENV, "NG_PYTHON=$py`n")
+
+      - name: Zastita mrtvog koda i statusa portano
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $py = $env:NG_PYTHON
+          if (-not $py) { throw "Nema NG_PYTHON iz koraka Python za zastitu." }
           & $py (Join-Path $env:GITHUB_WORKSPACE "scripts\ci\mrtve-metode.py")
           if ($LASTEXITCODE -ne 0) { throw "Mrtva javna metoda. Vidi MRTVO iznad. Iznimka ide u scripts/ci/mrtve-iznimke.txt s razlogom." }
           & $py (Join-Path $env:GITHUB_WORKSPACE "scripts\ci\portano-ui.py")
