@@ -2,18 +2,18 @@
 
 Brojke su prema CI implementacije [43269944426](https://github.com/tomic04/netgen-u-carpo/actions/runs/43269944426) (`ef710b9`) i [#74](https://github.com/tomic04/netgen-u-carpo/pull/74). Jupiter QA ne zove. Testovi nisu popušteni.
 
-Od 145 zatvorenih, **116 je pravilo** i **29 je spin podatak**. Devet je `OznakaKL` (`OKL-25`–`27`, `OKL-40`–`43`, `OKL-58`, `OKL-59`): 947 redova. Deseti je `JEZ-31`. Jedanaesti je `FAK-11`. Dvanaesti je `PL-32`. Trinaesti je `MPP-20`. Četrnaesti je `STA-12`: `Parent` `0701` vodi na `MeniID` 1611, `Loader.Run8` otvori `Statusi.xml`. Petnaesti je `JEZ-57`: desno zaglavlje je `naziv` iz `SETDEFAULTS`, ne `@@tkosmomi`. `Form1.vb` 6001, `Class1.vb` 966.
+Od 136 zatvorenih, **107 je pravilo** i **29 je spin podatak**. Devet je `OznakaKL` (`OKL-25`–`27`, `OKL-40`–`43`, `OKL-58`, `OKL-59`): 947 redova. Deseti je `JEZ-31`. Jedanaesti je `FAK-11`. Dvanaesti je `PL-32`. Trinaesti je `MPP-20`. Četrnaesti je `STA-12`: `Parent` `0701` vodi na `MeniID` 1611, `Loader.Run8` otvori `Statusi.xml`. Petnaesti je `JEZ-57`: desno zaglavlje je `naziv` iz `SETDEFAULTS`, ne `@@tkosmomi`. `Form1.vb` 6001, `Class1.vb` 966.
 
 | Element | Ukupno | Zatvoreno | Pravilo | Spin podaci | Otvoreno |
 |---|---:|---:|---:|---:|---:|
 | grid | 34 | 33 | 24 | 9 | 1 |
 | stablo | 20 | 20 | 19 | 1 | 0 |
-| combo | 5 | 2 | 2 | 0 | 3 |
-| gumbi/lanac | 38 | 37 | 35 | 2 | 1 |
+| combo | 5 | 1 | 1 | 0 | 4 |
+| gumbi/lanac | 38 | 29 | 27 | 2 | 9 |
 | dijalog | 28 | 20 | 20 | 0 | 8 |
 | ispis | 4 | 2 | 1 | 1 | 2 |
 | ostalo | 35 | 31 | 15 | 16 | 4 |
-| **sve** | **164** | **145** | **116** | **29** | **19** |
+| **sve** | **164** | **136** | **107** | **29** | **28** |
 
 [#66](https://github.com/tomic04/netgen-u-carpo/pull/66) zatvara pravilo, ne redove iz baze. `STA-33` je forma iza dvotočke (`Form1.vb` 7186–7187). `STA-35` puni stablo adapterom (`4441–4447`). `BLA-30` prazan tag `:` ide u `NovaGenerickaForma` (`4353–4355`, `7187`). `BLA-31` `SrediSQL` prije `Fill` (`4442`). `BLA-32` četiri korijena: natpis `Blagajne` plus tri store (`4344–4356`). `PL-30` i `PL-31` slijede `7730–7733` i izlaz dok je `TREE` prazan (`4310`). `PL-35` je `REFRESHMASTER` koji nije `REFRESHMASTERGRID` (`4570`).
 
@@ -76,7 +76,16 @@ Po stavci, [#74](https://github.com/tomic04/netgen-u-carpo/pull/74) `af3816f`:
 - `GRD-02` odbijen kao zatvaranje unosa. Isti run. Funkcija na rječniku stavi `@Naziv='klik-proba'` (`Form2.vb` 3655). `JeziciNG` `Unesi` je `GRESKA`: nema reda `Naziv=klik-proba-20261113000735`. `Statusi` `Unesi` pošalje INSERT, ali `VrstaDokId` i `StatusiId` ostanu NULL (`Form2.vb` 3377, 3406). `Izmijeni` na `JeziciNG` pošalje `select * from jezici where jeziciid=13`, ne `spJeziciAzur`. `Obriši` ne obriše testni red. Sažetak i dalje 164 / 145 / 19.
 - Zadnji run grane `cursor/netgen-treci-otvoreno-889d` je zelen, ali `GRESKA` na `Unesi` i `Izmjeni` ne ruši korak. Kratki klik ima dvije granule, ne treći tip forme. Sažetak i dalje 164 / 145 / 19.
 - `BUTTONS` potvrđen na podlozi. Zadnji zeleni run `cursor/netgen-brzi-ci-3266` je [43329105454](https://github.com/tomic04/netgen-u-carpo/actions/runs/43329105454) (`208645a`). `GumbiNiz` prepiše samo segmente s dvotočkom, a `Button7` ostane ako `CMD7` nije prazan (`Form1.vb` 3770–3824, 3799–3803). Na `KntKompVerizne` ostanu `OBRISI_FORM` i `repx/`. Druga i treća granula nisu učitane. Nije stavka od 164. Sažetak i dalje 164 / 145 / 19.
-- `Odustani` kao `Button2` odbijen. Isti zeleni run klikne `Odustani` na `OznakaKL` `Izmjena` i na ulaznom dijalogu `RealizacijaStavkeNG`, ali ne gleda `OKClick=false` ni izostanak SQL-a (`Form2.vb` 3400–3402). Noviji [43334848017](https://github.com/tomic04/netgen-u-carpo/actions/runs/43334848017) (`e20881f`) padne: `KntKompVerizne` `Obriši` ostavi dijalog `Brisanje`, tekst i dalje ima `@@broj`, a `KeyNotFound` otvori `ThreadExceptionDialog`. Timeout. `6146ef1` još nije zelen. `cursor/netgen-carpo-m0-3266` nema novi commit. Sažetak i dalje 164 / 145 / 19.
+- `Odustani` kao `Button2` odbijen. Isti zeleni run klikne `Odustani` na `OznakaKL` `Izmjena` i na ulaznom dijalogu `RealizacijaStavkeNG`, ali ne gleda `OKClick=false` ni izostanak SQL-a (`Form2.vb` 3400–3402). Noviji [43334848017](https://github.com/tomic04/netgen-u-carpo/actions/runs/43334848017) (`e20881f`) padne: `KntKompVerizne` `Obriši` ostavi dijalog `Brisanje`, tekst i dalje ima `@@broj`, a `KeyNotFound` otvori `ThreadExceptionDialog`. Timeout.
+- `KUP-02` vraćen u otvoreno. Test gleda tildu i riječ `REFRESHMASTERGRID` u `CMD2`. Ne pretvara tildu u `#` i ne osvježi zadnji SQL. `Form1.vb` 4558, 4570–4577.
+- `KUP-03` vraćen u otvoreno. Test gleda da naredba počinje s `MULTISELECT`. Temp tablica se ne puni. `Form1.vb` 4932–5018.
+- `KUP-04` vraćen u otvoreno. Test gleda da naredba počinje s `MULTIBLUE`. `SelectedItems` se ne čita. `Form1.vb` 5022–5032.
+- `KUP-10` vraćen u otvoreno. `MultiTemp()` uvijek vrati `delete-dva-pa-insert`. Nema dva brisanja ni inserta. `Form1.vb` 4934–5018.
+- `KUP-11` vraćen u otvoreno. Kuka stavi `cekirani` čim tekst sadrži `FOREACHSELECTED`. Retci se ne vrte. `Form2.vb` 7040–7042, 8337–8354.
+- `KUP-12` vraćen u otvoreno. Kuka stavi `zivo` čim tekst sadrži `FOREACHROW`. Petlja po retku se ne izvrši, ni komentar na podlozi. `Form2.vb` 7046–7048, `Form1.vb` 6843–6846.
+- `KUP-13` vraćen u otvoreno. Kuka stavi `plavi` čim tekst sadrži `FOREACHBLUEROW`. `SelectedItems` od 0 se ne vrti. `Form2.vb` 7043–7045, 8363–8394.
+- `KUP-15` vraćen u otvoreno. Očekivanje je konstanta `select refresh`. NetGen radi `select 'refresh' as ime`. `Form2.vb` 6911–6915.
+- `DOS-20` vraćen u otvoreno. `TEXT1-upper` prođe čim `StatusTekst` vrati velika slova. `@@rowcount` se ne traži. `Form2.vb` 1258, `Class1.vb` 865. Sažetak 164 / 136 / 28.
 - `MPK-30` potvrđen. `FILTERFORM` ima `FILLEXPLORER=TRUE` i `ONSUBMIT` `spMPPoravnajKP`. `Form1.vb` 5445–5452 zamijeni master tim SQL-om. Test nije konstanta: kriva klasa ili procedura bez tog imena pada. Sažetak 164 / 139 / 25.
 - `MPK-31` potvrđen. `DODAJIZNOS` ima prazan `FILLEXPLORER`. To nije grana `true`. `Form1.vb` 5509–5519 izvrši `ONSUBMIT` pa ponovi zadnji master. Gumb je `Dodaj:DODAJIZNOS`. Sažetak 164 / 140 / 24.
 - `STA-34` potvrđen. `POPUNI_FORM` nema kontrola pa se dijalog ne otvara (`Form1.vb` 5369–5370, `OKClick=True`). `FILLEXPLORER=TRUE` stavi master na `spStatusiQuery @action=0, @node=@@node` (`5445–5452`). Test traži taj tekst, nije konstanta. Sažetak 164 / 141 / 23.
@@ -100,9 +109,11 @@ Po stavci, [#74](https://github.com/tomic04/netgen-u-carpo/pull/74) `af3816f`:
 
 [#72](https://github.com/tomic04/netgen-u-carpo/pull/72) stavlja klijentski XML izvan `definitions/netgen`. `TRZ-01`, `POR-01`, `RFA-00` i `REA-00` ostaju otvoreni. [#71](https://github.com/tomic04/netgen-u-carpo/pull/71) ispravno ne šalje `@@godina` (`Class1.vb` 113). To nije zatvorena stavka.
 
-Ostaje otvoreno: `TRZ-01`, `POR-01`, `RFA-00`, `REA-00` i 15 pečata (`JEZ-69`, `KAR-24`, `DOS-23`, `INV-22`, `FAK-21`, `INV-21`, `NAR-20`, `NAR-21`, `DOB-21`, `RIJ-40`, `RIJ-41`, `RIJ-42`, `OKL-77`, `MPB-20`, `KAR-40`).
+Ostaje otvoreno 28: XML `TRZ-01`, `POR-01`, `RFA-00`, `REA-00`; pečati `JEZ-69`, `KAR-24`, `DOS-23`, `INV-22`, `FAK-21`, `INV-21`, `NAR-20`, `NAR-21`, `DOB-21`, `RIJ-40`, `RIJ-41`, `RIJ-42`, `OKL-77`, `MPB-20`, `KAR-40`, `DOS-20`; gumbi bez izvršenja `KUP-02`, `KUP-03`, `KUP-04`, `KUP-10`, `KUP-11`, `KUP-12`, `KUP-13`, `KUP-15`.
 
-Uzorak po tipu: samo-grid `OznakaKL` (spin). Šifrarnik `JeziciNG`: `JEZ-56` pravilo, `JEZ-31` spin. Manager `KntBlaZak` i `PrijemniList`: čvor je pravilo, `PL-32` je spin. Stablo-master `Statusi`: `STA-33` i `STA-35` su pravilo. Rijetke `RIJ-40`–`42` su `[Z]` na istom CI-ju, i dalje pravilo kuke, ne red iz baze.
+Uzorak po tipu: samo-grid `OznakaKL` (spin). Šifrarnik `JeziciNG`: `JEZ-56` pravilo, `JEZ-31` spin. Manager `KntBlaZak` i `PrijemniList`: čvor je pravilo, `PL-32` je spin. Stablo-master `Statusi`: `STA-33` i `STA-35` su pravilo. `RIJ-40`–`42` su otvoreni pečati.
+
+Klik kroz granule, podforme i gumbe, za implementaciju: upis (`insert`/`update`/`delete`) smije samo baza `spin` na `sql-ai`. Fiskalizacija smije samo testni URL, ne `cis.porezna-uprava.hr`. `GRESKA` mora srušiti korak. Trenutno: `JeziciNG` `Unesi` ne ostavi red; `Statusi` `Unesi` šalje NULL `VrstaDokId`; `Izmjeni` ostavi `@@statusiid`; `KntKompVerizne` `Obriši` ostavi `@@broj` i `ThreadExceptionDialog` (`KeyNotFound`) pa `ShowDialog` ne izađe. `Odustani` nije `Button2` (`Form2.vb` 3400–3402). Zadnji zeleni brzi run je [43343354817](https://github.com/tomic04/netgen-u-carpo/actions/runs/43343354817) (`efb27aa`), to nije ovaj klik. CI ove QA grane nije zelen: zadnji izvršeni run [43303275147](https://github.com/tomic04/netgen-u-carpo/actions/runs/43303275147) je crven, kasniji zapisi ne pokreću CI da ne zauzmu jedini `sql-ai`.
 
 `PL-25` ostaje zatvoren kao pravilo. Bez `ONLOAD` master ostaje prazan: `strStartupStora` krene kao `""` (`Form1.vb` 3124), `ONLOAD` koji ne postoji ne prepiše ga (`3368`, `On Error Resume Next` od `3065`), a `PokaziUpit` na prazan SQL izađe (`1830`). `SETDEFAULTS` se ipak izvrši prije toga (`3862–3866`, `SetDefolte` šalje SQL na `3958–3962`). Zato trag na ovoj grani ima tekst `SETDEFAULTS`, pa ` || `, pa prazan master. [#66](https://github.com/tomic04/netgen-u-carpo/pull/66) prazni `sqlTrag` kad nema `ONLOAD`. To gasi master, ali briše dokaz da je `SetDefolte` poslan. Test i dalje traži oba dijela.
 
