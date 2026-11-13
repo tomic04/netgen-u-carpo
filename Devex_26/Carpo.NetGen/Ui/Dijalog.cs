@@ -59,6 +59,37 @@ namespace Carpo.NetGen.Ui
 
         public void Prikazi(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj, bool modal = true, Form vlasnik = null)
         {
+            Slozi(forma, kontekst, citaj);
+            if (!modal || forma == null)
+                return;
+            Form nosac = VlasnikXtra(vlasnik);
+            Form skriven = null;
+            if (nosac == null)
+            {
+                var x = new XtraForm();
+                x.ShowInTaskbar = false;
+                x.FormBorderStyle = FormBorderStyle.None;
+                x.StartPosition = FormStartPosition.Manual;
+                x.Location = new System.Drawing.Point(-32000, -32000);
+                x.Size = new System.Drawing.Size(1, 1);
+                x.Show();
+                skriven = x;
+                nosac = x;
+            }
+            try
+            {
+                ShowDialog(nosac);
+            }
+            finally
+            {
+                if (skriven != null)
+                    skriven.Close();
+            }
+        }
+
+        /// <summary>Isti raspored kao Prikazi, bez ShowDialog. Test gleda kontrolu.</summary>
+        public void Slozi(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj)
+        {
             if (forma == null)
                 return;
             _citaj = citaj;
@@ -171,36 +202,12 @@ namespace Carpo.NetGen.Ui
             string on = forma.OnLoad ?? "";
             if (on.TrimStart().StartsWith("select", StringComparison.OrdinalIgnoreCase) && citaj != null)
                 NapuniIzOnLoad(on, kontekst, citaj);
-            if (modal)
-            {
-                // Form1.vb 5362: Form2.ShowDialog(Me). Form1 je običan Form, nije RibbonForm.
-                // ShowDialog(RibbonForm) iz klika ne uđe u petlju. Običan Form kao vlasnik
-                // XtraFormu baci KeyNotFound u skinu i otvori ThreadExceptionDialog, koji
-                // onda drži ShowDialog. Vlasnik mora biti XtraForm, a ne ribbon.
-                Form nosac = VlasnikXtra(vlasnik);
-                Form skriven = null;
-                if (nosac == null)
-                {
-                    var x = new XtraForm();
-                    x.ShowInTaskbar = false;
-                    x.FormBorderStyle = FormBorderStyle.None;
-                    x.StartPosition = FormStartPosition.Manual;
-                    x.Location = new System.Drawing.Point(-32000, -32000);
-                    x.Size = new System.Drawing.Size(1, 1);
-                    x.Show();
-                    skriven = x;
-                    nosac = x;
-                }
-                try
-                {
-                    ShowDialog(nosac);
-                }
-                finally
-                {
-                    if (skriven != null)
-                        skriven.Close();
-                }
-            }
+        }
+
+        public bool ProvediTipku(Keys keyData)
+        {
+            Message m = Message.Create(Handle, 0x100, (IntPtr)keyData, IntPtr.Zero);
+            return ProcessCmdKey(ref m, keyData);
         }
 
         private static Form VlasnikXtra(Form predlozen)
@@ -782,7 +789,6 @@ namespace Carpo.NetGen.Ui
         }
 
         private readonly System.Collections.Generic.Dictionary<Control, string> _stariTekst = new System.Collections.Generic.Dictionary<Control, string>();
-        private readonly Form2Dogadjaj.TimerFokusa _timerFokusa = new Form2Dogadjaj.TimerFokusa();
         private readonly Form2Dogadjaj.IzlazTrazilice _izlazTrazilice = new Form2Dogadjaj.IzlazTrazilice();
         public string ZadnjaTrazilica = "";
         public string ZadnjiIzbornik = "";
@@ -811,10 +817,7 @@ namespace Carpo.NetGen.Ui
                     if (korak == "preskoci" && (c.Text ?? "").Trim().Length == 0)
                         c.Tag = "0";
                     if (korak == "trazilica")
-                    {
-                        _timerFokusa.NakonTrazilice();
                         ZadnjaTrazilica = c.Text ?? "";
-                    }
                     if (lost.Length > 0 && _izlazTrazilice.Validated2Smije())
                         IzvrsiSql(lost);
                     var zuta = c as TextEdit;
@@ -932,7 +935,6 @@ namespace Carpo.NetGen.Ui
             if (t.ValidirajTrazilicu && trazilica)
             {
                 _izlazTrazilice.Validated();
-                _timerFokusa.NakonTrazilice();
                 ZadnjaTrazilica = ActiveControl.Text ?? "";
             }
             if (t.Sljedeca && ActiveControl != null)
