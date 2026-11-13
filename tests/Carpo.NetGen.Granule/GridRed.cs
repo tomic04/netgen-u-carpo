@@ -152,6 +152,13 @@ namespace Carpo.NetGen.Granule
                 ? Qa.Z("GridRed", "TRO-03", "ONSUBMIT koji završava zarezom ne šalje zadnji zarez", "netgen/Form2.vb:3884,3898; netgen/Form1.vb:5452")
                 : Qa.P("GridRed", "TRO-03", "zadnji zarez", "netgen/Form2.vb:3884,3898", bezZareza));
 
+            bool trazilica = ParametriSvi.SearchId(null) == "null"
+                && ParametriSvi.SearchId("0") == "null"
+                && ParametriSvi.SearchId("5") == "5";
+            l.Add(trazilica
+                ? Qa.Z("GridRed", "TRO-04", "prazan search šalje null, ne natpis kontrole", "netgen/Form2.vb:3627-3632")
+                : Qa.P("GridRed", "TRO-04", "search id", "netgen/Form2.vb:3627-3632", ParametriSvi.SearchId("0")));
+
             int spremi = PotvrdaGumba.Indeks(
                 new string[] { "ButtonNG142", "Spremi", "Odustani" },
                 new string[] { ":WEBBROWSER", "spRatArkod_Azur @action='insert'", "CLOSE" });

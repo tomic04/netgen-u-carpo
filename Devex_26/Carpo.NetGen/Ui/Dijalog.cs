@@ -526,6 +526,8 @@ namespace Carpo.NetGen.Ui
                             ? "null"
                             : Convert.ToString(ev, CultureInfo.InvariantCulture);
                     }
+                    else if (c.GetType() == typeof(ButtonEdit))
+                        kontrole[c.Name] = ParametriSvi.SearchId(c.Tag);
                     else if (edit != null)
                         kontrole[c.Name] = edit.Text ?? "";
                 }
