@@ -2177,6 +2177,7 @@ namespace Carpo.NetGen.GridTest
             {
                 T("execsql2-spin", false, ex.Message);
             }
+        }
 
         private static void ProvjeriSpin(Carpo.NetGen.Model.NgProject p, string ime, int minKolona)
         {
