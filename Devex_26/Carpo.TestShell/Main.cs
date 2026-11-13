@@ -188,12 +188,15 @@ namespace Carpo.TestShell
                     if (Carpo.NetGen.Xml.NetGenXmlReader.JeNetGenProjekt(xml))
                     {
                         var loader = new Carpo.NetGen.Loader();
+                        Carpo.Core.Logger dnevnik = null;
                         try
                         {
-                            var dnevnik = new Carpo.Core.Logger(Carpo.Core.Log.LogLevel.Info);
+                            // Starter.Run 81–84: Logger u DependencyContainer prije forme.
+                            dnevnik = new Carpo.Core.Logger(Carpo.Core.Log.LogLevel.Debug);
                             dnevnik.GranuleName = Path.GetFileNameWithoutExtension(xml);
                             dnevnik.ServerName = server;
                             dnevnik.DatabaseName = database;
+                            Carpo.Core.Log.DependencyContainer.Add(dnevnik);
                             Carpo.NetGen.Log.NgDnevnik.Spoji(dnevnik);
                         }
                         catch
@@ -212,7 +215,13 @@ namespace Carpo.TestShell
                             if (forma == null || !string.IsNullOrEmpty(greska))
                                 MessageBox.Show(string.IsNullOrEmpty(greska) ? "Granula se nije otvorila." : greska, "Carpo.NetGen");
                             if (forma != null)
+                            {
+                                // RegisterForm zove InitLogger prije prikaza. Shown cita isti Logger.
+                                var jupiter = forma as Carpo.UI.Forms.Jupiter.Base;
+                                if (jupiter != null && dnevnik != null)
+                                    jupiter.InitLogger(dnevnik);
                                 forma.Show(this);
+                            }
                         }
                     }
                     else

@@ -15,10 +15,7 @@ namespace Carpo.Core.Log
         }
         public static T Get<T>()where T: class
         {
-            object nadjen;
-            if (!services.TryGetValue(typeof(T), out nadjen))
-                return null;
-            return (T)nadjen;
+            return (T)services[typeof(T)];
         }
     }
 }

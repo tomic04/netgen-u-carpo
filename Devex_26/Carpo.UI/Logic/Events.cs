@@ -106,8 +106,7 @@ namespace Carpo.UI.Logic
                     SetNotification(e);
             }
             var log = Carpo.Core.Log.DependencyContainer.Get<Logger>();
-            if (log != null)
-                log.InfoTest("CreateEvents", "dodavanje eventova na formu", startTime);
+            log.InfoTest("CreateEvents", "dodavanje eventova na formu", startTime);
 
         }
 

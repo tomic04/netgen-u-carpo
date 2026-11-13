@@ -381,7 +381,7 @@ namespace Carpo.NetGen.GridTest
             string kljucTekst = "";
             try
             {
-                kljuc = Carpo.NetGen.Log.Spremnik.LoggerNijeObavezan();
+                kljuc = Carpo.NetGen.Log.Spremnik.RegistracijaKaoCarpo();
             }
             catch (System.Exception ex)
             {
