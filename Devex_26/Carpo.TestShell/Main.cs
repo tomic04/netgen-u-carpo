@@ -306,7 +306,7 @@ namespace Carpo.TestShell
                 && vidjeno[0].IndexOf("Form1", StringComparison.Ordinal) >= 0
                 && vidjeno[1].IndexOf("Form2", StringComparison.Ordinal) >= 0
                 && vidjeno[2].IndexOf("frmGridExPrintingREPX", StringComparison.Ordinal) >= 0;
-            string linija = ok ? "OK ext=" + string.Join(",", vidjeno.ToArray()) : "FAIL ext=" + string.Join(",", vidjeno.ToArray());
+            string linija = ok ? "OK ext=" + string.Join(",", vidjeno.ToArray()) : "FAIL ext=" + string.Join(",", vidjeno.ToArray()) + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Greska;
             UpisiIshod(snimka, linija);
             return ok ? 0 : 5;
         }
