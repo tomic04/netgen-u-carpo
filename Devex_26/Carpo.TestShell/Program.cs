@@ -59,7 +59,7 @@ namespace Carpo.TestShell
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
                 Application.ThreadException += delegate (object s, System.Threading.ThreadExceptionEventArgs e)
                 {
-                    Main.ZadnjaNit = e.Exception == null ? "ThreadException" : e.Exception.GetType().Name + ": " + e.Exception.Message;
+                    global::Carpo.TestShell.Main.ZadnjaNit = e.Exception == null ? "ThreadException" : e.Exception.GetType().Name + ": " + e.Exception.Message;
                     try { File.AppendAllText(izvjestaj + ".iznimka.txt", (e.Exception == null ? "" : e.Exception.ToString()) + "\r\n"); } catch { }
                 };
                 var main = new Main("localhost", "spin", args[1], 7, "", "", true);
