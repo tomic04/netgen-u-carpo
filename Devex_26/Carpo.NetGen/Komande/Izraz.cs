@@ -181,11 +181,11 @@ namespace Carpo.NetGen.Komande
         private static double Broj(string s, ref int i)
         {
             int a = i;
-            while (i < s.Length && (char.IsDigit(s[i]) || s[i] == '.' || (s[i] == ',' && i + 1 < s.Length && char.IsDigit(s[i + 1]))))
+            while (i < s.Length && (char.IsDigit(s[i]) || s[i] == '.'))
                 i++;
             if (a == i)
                 throw new FormatException();
-            string t = s.Substring(a, i - a).Replace(',', '.');
+            string t = s.Substring(a, i - a);
             return double.Parse(t, CultureInfo.InvariantCulture);
         }
 

@@ -435,13 +435,15 @@ namespace Carpo.NetGen.GridTest
             T("param-datum", Carpo.NetGen.Komande.ParametriSvi.Datum("datum", "", false, new DateTime(2026, 3, 1)) == "@datum=null,"
                 && Carpo.NetGen.Komande.ParametriSvi.Datum("datum", "MM.YYYY", true, new DateTime(2026, 3, 1)) == "@datum='20260301',", "");
             T("param-multi", Carpo.NetGen.Komande.ParametriSvi.Multi("str", "1, 2,3") == "@str='1~2~3',", "");
-            T("izraz-ilcalc", Carpo.NetGen.Komande.Izraz.Izracunaj("1+2*3") == "7"
-                && Carpo.NetGen.Komande.Izraz.Izracunaj("(1+2)*3") == "9"
-                && Carpo.NetGen.Komande.Izraz.Izracunaj("10/4") == "2.5"
-                && Carpo.NetGen.Komande.Izraz.Izracunaj("abs(-3)+1") == "4"
-                && Carpo.NetGen.Komande.Izraz.Izracunaj("2^3") == "8"
-                && Carpo.NetGen.Komande.Izraz.Izracunaj("min(1,4)") == "1"
-                && Carpo.NetGen.Komande.Izraz.Izracunaj("nije") == "", "");
+            string iz1 = Carpo.NetGen.Komande.Izraz.Izracunaj("1+2*3");
+            string iz2 = Carpo.NetGen.Komande.Izraz.Izracunaj("(1+2)*3");
+            string iz3 = Carpo.NetGen.Komande.Izraz.Izracunaj("10/4");
+            string iz4 = Carpo.NetGen.Komande.Izraz.Izracunaj("abs(-3)+1");
+            string iz5 = Carpo.NetGen.Komande.Izraz.Izracunaj("2^3");
+            string iz6 = Carpo.NetGen.Komande.Izraz.Izracunaj("min(1,4)");
+            string iz7 = Carpo.NetGen.Komande.Izraz.Izracunaj("nije");
+            T("izraz-ilcalc", iz1 == "7" && iz2 == "9" && iz3 == "2.5" && iz4 == "4" && iz5 == "8" && iz6 == "1" && iz7 == "",
+                iz1 + "|" + iz2 + "|" + iz3 + "|" + iz4 + "|" + iz5 + "|" + iz6 + "|" + iz7);
             var recalc = new System.Data.DataTable();
             recalc.Columns.Add("kolicina");
             recalc.Columns.Add("evalkolicina()");
@@ -450,11 +452,13 @@ namespace Carpo.NetGen.GridTest
             T("recalc-grid", Carpo.NetGen.Komande.RecalcGrid.Izracunaj(recalc) == 1 && Convert.ToString(recalc.Rows[0]["kolicina"]) == "6", Convert.ToString(recalc.Rows[0]["kolicina"]));
             int toggle = 0;
             string t1 = Carpo.NetGen.Komande.ToggleGrid.Korak(ref toggle);
+            int nakonSirenja = toggle;
             string t2 = Carpo.NetGen.Komande.ToggleGrid.Korak(ref toggle);
-            T("toggle-grid", t1 == "expand" && toggle == 1 && t2 == "collapse" && toggle == 0, t1 + t2);
+            T("toggle-grid", t1 == "expand" && nakonSirenja == 1 && t2 == "collapse" && toggle == 0, t1 + " " + t2 + " " + nakonSirenja + " " + toggle);
             T("multi-ispis", Carpo.NetGen.Komande.MultiIspis.Prvi(new[] { "8", "9" }) == "8"
                 && Carpo.NetGen.Komande.MultiIspis.Idjevi(new[] { "8", "9" }).Length == 2, "");
-            T("boja-html", Carpo.NetGen.Komande.BojaNaredba.Html(System.Drawing.Color.Red) == "#FF0000"
+            T("boja-html", Carpo.NetGen.Komande.BojaNaredba.Html(System.Drawing.Color.Red) == "Red"
+                && Carpo.NetGen.Komande.BojaNaredba.Html(System.Drawing.Color.FromArgb(1, 2, 3)) == "#010203"
                 && Carpo.NetGen.Komande.BojaNaredba.Sql("COLORPICKER(update x set boja='@@boja')").StartsWith("update"), "");
             T("posalji-url", Carpo.NetGen.Komande.PosaljiServer.UrlRacuna("http://localhost/ws/", "ab", "1", "2026", "5", "", "", "20260301").IndexOf("xmlrec.asp?a=1&v=1", StringComparison.Ordinal) >= 0
                 && Carpo.NetGen.Komande.PosaljiServer.Vrsta("POSALJIPORUKENASERVER(select 1)") == "poruka", "");
