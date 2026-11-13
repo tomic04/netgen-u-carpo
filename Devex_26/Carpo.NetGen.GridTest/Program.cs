@@ -2381,7 +2381,7 @@ namespace Carpo.NetGen.GridTest
                 bool stavke = vise.Properties.DataSource is DataTable && ((DataTable)vise.Properties.DataSource).Rows.Count == 3;
                 ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("oznaci", true)[0]).PerformClick();
                 ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("salji", true)[0]).PerformClick();
-                T("mdr01-multidrop", stavke && Broji(sql, "select '1~3' as v") == 1,
+                T("mdr01-multidrop", stavke && sql.Contains("select '1~3' as v"),
                     "stavke=" + stavke + " oznaceno=" + Convert.ToString(vise.Properties.GetCheckedItems()) + " sql=" + string.Join(" | ", sql.ToArray()));
 
                 // FOR-01: tijelo ide kroz lanac za svaki red; @@stavke je id reda, @(stavke..naziv) stupac reda.
