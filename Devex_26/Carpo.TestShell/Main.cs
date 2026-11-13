@@ -1,6 +1,7 @@
 using SpinDMSUtil;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -50,6 +51,7 @@ namespace Carpo.TestShell
         private bool _uiKlikGotov;
         private bool _klikPregled;
         private Carpo.NetGen.Ui.Podloga _zadnjaPodloga;
+        private bool _extCuvaj;
 
         
         public Main()
@@ -287,6 +289,391 @@ namespace Carpo.TestShell
         /// <summary>
         /// Isti klik na Start kao korisnik. Ne spaja GranulaSesija.
         /// </summary>
+        public int PokreniEkstenzije(string xml, string snimka)
+        {
+            var r = Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(xml);
+            Carpo.NetGen.Model.NgForm forma = null;
+            if (r.Projekt != null && r.Projekt.Forme != null)
+            {
+                for (int i = 0; i < r.Projekt.Forme.Count; i++)
+                {
+                    if (string.Equals(r.Projekt.Forme[i].Ime, "EXT_FORM", StringComparison.OrdinalIgnoreCase))
+                        forma = r.Projekt.Forme[i];
+                }
+            }
+            if (forma == null)
+            {
+                UpisiIshod(snimka, "FAIL nema EXT_FORM");
+                return 5;
+            }
+            var vidjeno = new List<string>();
+            Carpo.NetGen.Komande.EkstenzijaGrid.Greska = "";
+            Carpo.NetGen.Komande.EkstenzijaGrid.Poziv = "";
+            Dijalog.NakonPrikaza = delegate (Dijalog d)
+            {
+                string[] gumbi = new[] { "Pivot", "Graf", "Ispis" };
+                for (int i = 0; i < gumbi.Length; i++)
+                {
+                    SimpleButton gumb = NadjiGumb(d, gumbi[i]);
+                    if (gumb != null)
+                        gumb.PerformClick();
+                    string tip = Carpo.NetGen.Komande.EkstenzijaGrid.ZadnjiTip ?? "";
+                    if (tip.Length > 0)
+                        vidjeno.Add(tip);
+                    Form f = Carpo.NetGen.Komande.EkstenzijaGrid.Zadnja;
+                    if (f != null && !f.IsDisposed)
+                    {
+                        try { f.Close(); } catch { }
+                    }
+                }
+                try { d.Close(); } catch { }
+            };
+            _extCuvaj = true;
+            int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+            var cuvar = new Thread(delegate () { CuvajEkstenziju(pid); });
+            cuvar.IsBackground = true;
+            cuvar.Start();
+            var dij = new Dijalog();
+            dij.Prikazi(forma, new Carpo.NetGen.Grid.SqlKontekst(), delegate (string sql) { return new DataTable(); }, true, this);
+            _extCuvaj = false;
+            Dijalog.NakonPrikaza = null;
+            string poziv = Carpo.NetGen.Komande.EkstenzijaGrid.Poziv ?? "";
+            bool chart = poziv.IndexOf("ChartGRID=ok", StringComparison.Ordinal) >= 0;
+            bool pivot = poziv.IndexOf("PivotGRID=ok", StringComparison.Ordinal) >= 0;
+            bool ispis = poziv.IndexOf("PrintDocumentREPX=ok", StringComparison.Ordinal) >= 0;
+            string nema = Carpo.NetGen.Komande.EkstenzijaGrid.Nedostaje ?? "";
+            string linija;
+            int kod;
+            if (chart && pivot && ispis)
+            {
+                linija = "OK ext " + string.Join(",", vidjeno.ToArray()) + " " + poziv;
+                kod = 0;
+            }
+            else if (nema.Length > 0)
+            {
+                linija = "OPEN ext PivotGRID ChartGRID nedostaje " + nema
+                    + " ispis=" + (ispis ? "ok" : "ne")
+                    + " ref=" + Carpo.NetGen.Komande.EkstenzijaGrid.Referenca;
+                kod = 0;
+            }
+            else
+            {
+                linija = "FAIL ext " + string.Join(",", vidjeno.ToArray()) + " " + poziv + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Greska
+                    + " janus=" + Carpo.NetGen.Komande.EkstenzijaGrid.PutDatoteke("Janus.Windows.GridEX.v3.dll")
+                    + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Trag;
+                kod = 5;
+            }
+            UpisiIshod(snimka, linija);
+            return kod;
+        }
+
+        private void CuvajEkstenziju(int pid)
+        {
+            int vidjen = 0;
+            while (_extCuvaj)
+            {
+                Thread.Sleep(400);
+                if (!_extCuvaj)
+                    return;
+                if (ImaTudjiProzor(pid))
+                    vidjen++;
+                else
+                    vidjen = 0;
+                if (vidjen >= 3)
+                    ZatvoriTudje(pid);
+            }
+        }
+
+        private static bool ImaTudjiProzor(int pid)
+        {
+            bool ima = false;
+            EnumWindows(delegate (IntPtr h, IntPtr l)
+            {
+                if (!TudjiProzor(h, pid))
+                    return true;
+                ima = true;
+                return false;
+            }, IntPtr.Zero);
+            return ima;
+        }
+
+        private static void ZatvoriTudje(int pid)
+        {
+            EnumWindows(delegate (IntPtr h, IntPtr l)
+            {
+                if (TudjiProzor(h, pid))
+                    PostMessage(h, 0x0010, IntPtr.Zero, IntPtr.Zero);
+                return true;
+            }, IntPtr.Zero);
+        }
+
+        private static bool TudjiProzor(IntPtr h, int pid)
+        {
+            uint wpid;
+            GetWindowThreadProcessId(h, out wpid);
+            if (wpid != (uint)pid || !IsWindowVisible(h))
+                return false;
+            string t = NaslovProzora(h);
+            if (t == "TestShell" || t == "Ekstenzije")
+                return false;
+            return true;
+        }
+
+        public int PokreniBoju(string xml, string snimka)
+        {
+            var r = Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(xml);
+            Carpo.NetGen.Model.NgForm forma = null;
+            if (r.Projekt != null && r.Projekt.Forme != null)
+            {
+                for (int i = 0; i < r.Projekt.Forme.Count; i++)
+                {
+                    if (string.Equals(r.Projekt.Forme[i].Ime, "GRUPEDODAJ_FORM", StringComparison.OrdinalIgnoreCase))
+                        forma = r.Projekt.Forme[i];
+                }
+            }
+            if (forma == null)
+            {
+                UpisiIshod(snimka, "FAIL nema GRUPEDODAJ_FORM");
+                return 5;
+            }
+            bool vidjen = false;
+            var nit = new Thread(delegate ()
+            {
+                for (int i = 0; i < 50; i++)
+                {
+                    Thread.Sleep(200);
+                    if (ZatvoriDijalogBoje())
+                    {
+                        vidjen = true;
+                        return;
+                    }
+                }
+            });
+            nit.IsBackground = true;
+            nit.SetApartmentState(ApartmentState.STA);
+            nit.Start();
+            var kontekst = new Carpo.NetGen.Grid.SqlKontekst();
+            kontekst.OperaterId = operateriId.ToString();
+            string ishod = "FAIL boja";
+            Dijalog.NakonPrikaza = delegate (Dijalog d)
+            {
+                SimpleButton gumb = NadjiGumb(d, "Odaberi boju");
+                if (gumb != null)
+                    gumb.PerformClick();
+                string tekst = "";
+                Control[] n = d.Controls.Find("boja", true);
+                if (n.Length > 0)
+                    tekst = n[0].Text ?? "";
+                bool ok = vidjen && tekst.Length > 0 && tekst == Carpo.NetGen.Komande.BojaNaredba.Odabrana;
+                ishod = ok ? "OK boja=" + tekst : "FAIL boja vidjen=" + vidjen + " tekst=" + tekst + " odabrana=" + Carpo.NetGen.Komande.BojaNaredba.Odabrana;
+                try { d.Close(); } catch { }
+            };
+            var dij = new Dijalog();
+            dij.Prikazi(forma, kontekst, CitajBoju, true, this);
+            Dijalog.NakonPrikaza = null;
+            UpisiIshod(snimka, ishod);
+            return ishod.StartsWith("OK", StringComparison.Ordinal) ? 0 : 5;
+        }
+
+        private static DataTable CitajBoju(string sql)
+        {
+            var dt = new DataTable();
+            using (var conn = new System.Data.SqlClient.SqlConnection(Carpo.NetGen.Grid.SpinVeza.Spoj("localhost", "spin")))
+            using (var cmd = new System.Data.SqlClient.SqlCommand(sql, conn))
+            using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
+            {
+                cmd.CommandTimeout = 30;
+                conn.Open();
+                da.Fill(dt);
+            }
+            return dt;
+        }
+
+        private static bool ZatvoriDijalogBoje()
+        {
+            bool nasao = false;
+            int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+            EnumWindows(delegate (IntPtr h, IntPtr l)
+            {
+                uint wpid;
+                GetWindowThreadProcessId(h, out wpid);
+                if (wpid != (uint)pid || !IsWindowVisible(h))
+                    return true;
+                var klasa = new StringBuilder(256);
+                GetClassName(h, klasa, klasa.Capacity);
+                if (klasa.ToString().IndexOf("32770", StringComparison.Ordinal) < 0)
+                    return true;
+                nasao = true;
+                PostMessage(h, 0x0111, (IntPtr)1, IntPtr.Zero);
+                return false;
+            }, IntPtr.Zero);
+            return nasao;
+        }
+
+        public static string ZadnjaNit = "";
+
+        /// <summary>
+        /// Sve NetGen granule. Tab, stablo, podforma (Odustani) i gumbi koji ne pišu.
+        /// Hang je dulje od zadanih sekundi. Ne upisuje.
+        /// </summary>
+        public int PokreniSweep(string korijen, string izvjestaj, int sekundi)
+        {
+            if (sekundi < 5)
+                sekundi = 12;
+            Carpo.NetGen.Ui.Podloga.TimeoutUpita = Math.Min(8, sekundi);
+            _klikPregled = true;
+            var xmlovi = Directory.GetFiles(korijen, "*.xml", SearchOption.AllDirectories);
+            Array.Sort(xmlovi, StringComparer.OrdinalIgnoreCase);
+            var sb = new StringBuilder();
+            int cisto = 0, greska = 0, hang = 0, iznimka = 0, nije = 0;
+            var grupe = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (string put in xmlovi)
+            {
+                string rel = put.StartsWith(korijen, StringComparison.OrdinalIgnoreCase)
+                    ? put.Substring(korijen.Length).TrimStart('\\', '/')
+                    : put;
+                if (!Carpo.NetGen.Xml.NetGenXmlReader.JeNetGenProjekt(put))
+                {
+                    nije++;
+                    sb.AppendLine(rel + "\tNIJE\t0\tnije PROJECT");
+                    continue;
+                }
+                xml = put;
+                _zadnjaPodloga = null;
+                ZadnjaNit = "";
+                string ishod = "CISTO";
+                string uzrok = "";
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                try
+                {
+                    cmdGen.Enabled = true;
+                    cmdGen_Click(cmdGen, EventArgs.Empty);
+                    Application.DoEvents();
+                    if (!string.IsNullOrEmpty(ZadnjaNit))
+                    {
+                        ishod = "IZNIMKA";
+                        uzrok = ZadnjaNit;
+                    }
+                    else if (_zadnjaPodloga == null)
+                    {
+                        ishod = "GRESKA";
+                        uzrok = "forma se nije otvorila";
+                    }
+                    else
+                    {
+                        var redovi = _zadnjaPodloga.ProvediKlikove(true);
+                        for (int i = 0; i < redovi.Count; i++)
+                        {
+                            string[] c = redovi[i].Split('\t');
+                            if (c.Length >= 4 && c[3] == "GRESKA")
+                            {
+                                ishod = "GRESKA";
+                                uzrok = c.Length > 4 ? c[4] : redovi[i];
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ishod = "IZNIMKA";
+                    uzrok = ex.GetType().Name + ": " + ex.Message;
+                }
+                sw.Stop();
+                int sec = (int)sw.Elapsed.TotalSeconds;
+                if (sec > sekundi)
+                {
+                    if (ishod == "CISTO")
+                        ishod = "HANG";
+                    if (uzrok.Length == 0)
+                        uzrok = "dulje od " + sekundi.ToString() + " s";
+                    else
+                        uzrok = uzrok + " | " + sec.ToString() + "s";
+                }
+                ZatvoriTudje();
+                if (ishod == "CISTO") cisto++;
+                else if (ishod == "HANG") hang++;
+                else if (ishod == "IZNIMKA") iznimka++;
+                else greska++;
+                string grupa = GrupaUzroka(uzrok);
+                if (ishod != "CISTO")
+                {
+                    int n;
+                    grupe.TryGetValue(grupa, out n);
+                    grupe[grupa] = n + 1;
+                }
+                string poruka = (uzrok ?? "").Replace("\t", " ").Replace("\r", " ").Replace("\n", " ");
+                if (poruka.Length > 240)
+                    poruka = poruka.Substring(0, 240);
+                sb.AppendLine(rel + "\t" + ishod + "\t" + sec.ToString() + "\t" + poruka);
+            }
+            var glava = new StringBuilder();
+            glava.AppendLine("# Sweep");
+            glava.AppendLine("cisto=" + cisto.ToString());
+            glava.AppendLine("greska=" + greska.ToString());
+            glava.AppendLine("hang=" + hang.ToString());
+            glava.AppendLine("iznimka=" + iznimka.ToString());
+            glava.AppendLine("nije-project=" + nije.ToString());
+            glava.AppendLine("granula=" + (cisto + greska + hang + iznimka).ToString());
+            glava.AppendLine("prag-s=" + sekundi.ToString());
+            foreach (var par in grupe)
+                glava.AppendLine("grupa\t" + par.Key + "\t" + par.Value.ToString());
+            glava.AppendLine("granula\tishod\tsekunde\tuzrok");
+            glava.Append(sb.ToString());
+            File.WriteAllText(izvjestaj, glava.ToString());
+            return 0;
+        }
+
+        private static string GrupaUzroka(string uzrok)
+        {
+            string t = (uzrok ?? "").ToLowerInvariant();
+            if (t.Length == 0)
+                return "bez-poruke";
+            if (t.IndexOf("threaddialog", StringComparison.Ordinal) >= 0 || t.IndexOf("threadexception", StringComparison.Ordinal) >= 0)
+                return "ThreadException";
+            if (t.IndexOf("could not find stored procedure", StringComparison.Ordinal) >= 0 || t.IndexOf("invalid object name", StringComparison.Ordinal) >= 0)
+                return "nema-objekta";
+            if (t.IndexOf("invalid column name", StringComparison.Ordinal) >= 0)
+                return "nema-stupca";
+            if (t.IndexOf("timeout", StringComparison.Ordinal) >= 0 || t.IndexOf("dulje od", StringComparison.Ordinal) >= 0)
+                return "hang";
+            if (t.IndexOf("must declare", StringComparison.Ordinal) >= 0 || t.IndexOf("incorrect syntax", StringComparison.Ordinal) >= 0)
+                return "sql-sintaksa";
+            if (t.IndexOf("forma se nije", StringComparison.Ordinal) >= 0)
+                return "nije-otvorena";
+            return "ostalo";
+        }
+
+        private void ZatvoriTudje()
+        {
+            Form[] otvorene;
+            try
+            {
+                otvorene = new Form[Application.OpenForms.Count];
+                for (int i = 0; i < Application.OpenForms.Count; i++)
+                    otvorene[i] = Application.OpenForms[i];
+            }
+            catch
+            {
+                return;
+            }
+            for (int i = 0; i < otvorene.Length; i++)
+            {
+                Form f = otvorene[i];
+                if (f == null || f == this || f.IsDisposed)
+                    continue;
+                try
+                {
+                    f.Close();
+                    f.Dispose();
+                }
+                catch
+                {
+                }
+            }
+            Application.DoEvents();
+        }
+
         public int PokreniUiSmoke(string snimka)
         {
             return PokreniUiSmoke(snimka, false);

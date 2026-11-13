@@ -11,11 +11,12 @@ on:
   workflow_dispatch:
     inputs:
       klik:
-        description: kratko je 3 granule, puno je noćni popis
+        description: kratko je push, puno je popis, sweep je sve granule bez upisa
         type: choice
         options:
           - kratko
           - puno
+          - sweep
         default: kratko
   schedule:
     # Noćni puni klik-pregled. GitHub ga pali s default grane.
@@ -248,6 +249,7 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
+          if ("${{ github.event.inputs.klik }}" -eq "sweep") { Write-Host "Klik pregled preskocen, sweep je zaseban korak."; exit 0 }
           $exe = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin\Carpo.TestShell.exe"
           if (-not (Test-Path -LiteralPath $exe)) { throw "Nema $exe" }
           $puni = $env:GITHUB_EVENT_NAME -eq "schedule" -or "${{ github.event.inputs.klik }}" -eq "puno"
@@ -267,6 +269,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "klik-ciscenje.sql nakon pregleda nije prosao" }
           if ($klikKod -ne 0) { throw "Klik pregled nije prosao. Kod $klikKod" }
           Get-Content -LiteralPath (Join-Path $snimke "klik-pregled.md")
+
+      - name: Klik sweep
+        if: github.event_name == 'schedule' || github.event.inputs.klik == 'sweep'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $exe = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin\Carpo.TestShell.exe"
+          $izv = Join-Path $env:GITHUB_WORKSPACE "artifacts\ui-smoke\sweep.txt"
+          & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSweep.ps1") -Exe $exe -XmlRoot (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Izvjestaj $izv -Sekundi 12
+          if ($LASTEXITCODE -ne 0) { throw "Sweep nije zavrsio. Kod $LASTEXITCODE" }
 
       - name: Stabilni TestShell na sql-ai
         # Ova grana ne pise C:\NetGenCarpo\zadnji.txt i ne vodi UI smoke.

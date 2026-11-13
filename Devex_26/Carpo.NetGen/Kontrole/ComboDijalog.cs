@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using Carpo.NetGen.Grid;
+using Carpo.NetGen.Komande;
 using Carpo.NetGen.Model;
 
 namespace Carpo.NetGen.Kontrole
@@ -62,7 +63,7 @@ namespace Carpo.NetGen.Kontrole
 
         public static string SqlZaSlanje(string sql, SqlKontekst kontekst)
         {
-            return SqlTekst.Sredi(sql ?? "", kontekst);
+            return SrediPoslije.Petlja(SqlTekst.Sredi(sql ?? "", kontekst), "", null, false);
         }
 
         /// <summary>select 'refresh' as ime ponovo puni ime, ne kontrolu koja je kliknuta.</summary>

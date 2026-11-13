@@ -23,6 +23,68 @@ if (-not [string]::IsNullOrWhiteSpace($Popis)) {
     $granule = @(Get-Content -LiteralPath $Popis | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and -not $_.StartsWith("#") })
 }
 
+function PokreniExt([string]$xml, [string]$png) {
+    $sid = (Get-Process -Id $PID).SessionId
+    $izlaz = $png + ".txt"
+    $kodDat = $png + ".exit"
+    if (Test-Path -LiteralPath $izlaz) { Remove-Item -LiteralPath $izlaz -Force }
+    if (Test-Path -LiteralPath $kodDat) { Remove-Item -LiteralPath $kodDat -Force }
+    $rad = Split-Path -Parent $Exe
+    if ($sid -ne 0) {
+        $linija = "--ui-ext `"$xml`" `"$png`""
+        $p = Start-Process -FilePath $Exe -ArgumentList $linija -WorkingDirectory $rad -PassThru
+        if (-not $p.WaitForExit(75000)) {
+            try { $p.Kill() } catch { }
+            return -1
+        }
+        return $p.ExitCode
+    }
+    $cmd = Join-Path $Shots "pokreni-ext.cmd"
+    $bat = "@echo off`r`ncd /d `"$rad`"`r`n`"$Exe`" --ui-ext `"$xml`" `"$png`"`r`necho %ERRORLEVEL%> `"$kodDat`"`r`n"
+    [IO.File]::WriteAllText($cmd, $bat)
+    $tn = "NetGenUiExt"
+    schtasks /Delete /TN $tn /F 2>$null | Out-Null
+    schtasks /Create /TN $tn /TR "`"$cmd`"" /SC ONCE /ST 00:00 /RU ntomic /IT /F
+    if ($LASTEXITCODE -ne 0) { throw "schtasks nije dobio interaktivnu sesiju ntomic. Kod $LASTEXITCODE" }
+    schtasks /Run /TN $tn | Out-Null
+    $rok = (Get-Date).AddSeconds(80)
+    while ((Get-Date) -lt $rok -and -not (Test-Path -LiteralPath $kodDat)) { Start-Sleep -Seconds 1 }
+    schtasks /Delete /TN $tn /F 2>$null | Out-Null
+    if (-not (Test-Path -LiteralPath $kodDat)) { throw "timeout ext" }
+    return [int]((Get-Content -LiteralPath $kodDat -Raw).Trim())
+}
+
+function PokreniBoja([string]$xml, [string]$png) {
+    $sid = (Get-Process -Id $PID).SessionId
+    $izlaz = $png + ".txt"
+    $kodDat = $png + ".exit"
+    if (Test-Path -LiteralPath $izlaz) { Remove-Item -LiteralPath $izlaz -Force }
+    if (Test-Path -LiteralPath $kodDat) { Remove-Item -LiteralPath $kodDat -Force }
+    $rad = Split-Path -Parent $Exe
+    if ($sid -ne 0) {
+        $linija = "--ui-boja `"$xml`" `"$png`""
+        $p = Start-Process -FilePath $Exe -ArgumentList $linija -WorkingDirectory $rad -PassThru
+        if (-not $p.WaitForExit(75000)) {
+            try { $p.Kill() } catch { }
+            return -1
+        }
+        return $p.ExitCode
+    }
+    $cmd = Join-Path $Shots "pokreni-boja.cmd"
+    $bat = "@echo off`r`ncd /d `"$rad`"`r`n`"$Exe`" --ui-boja `"$xml`" `"$png`"`r`necho %ERRORLEVEL%> `"$kodDat`"`r`n"
+    [IO.File]::WriteAllText($cmd, $bat)
+    $tn = "NetGenUiBoja"
+    schtasks /Delete /TN $tn /F 2>$null | Out-Null
+    schtasks /Create /TN $tn /TR "`"$cmd`"" /SC ONCE /ST 00:00 /RU ntomic /IT /F
+    if ($LASTEXITCODE -ne 0) { throw "schtasks nije dobio interaktivnu sesiju ntomic. Kod $LASTEXITCODE" }
+    schtasks /Run /TN $tn | Out-Null
+    $rok = (Get-Date).AddSeconds(80)
+    while ((Get-Date) -lt $rok -and -not (Test-Path -LiteralPath $kodDat)) { Start-Sleep -Seconds 1 }
+    schtasks /Delete /TN $tn /F 2>$null | Out-Null
+    if (-not (Test-Path -LiteralPath $kodDat)) { throw "timeout boja" }
+    return [int]((Get-Content -LiteralPath $kodDat -Raw).Trim())
+}
+
 function Pokreni([string]$xml, [string]$png) {
     $sid = (Get-Process -Id $PID).SessionId
     $izlaz = $png + ".txt"
@@ -127,6 +189,26 @@ if ($Klik) {
     [IO.File]::WriteAllText($izv, $sb.ToString())
     Write-Host "Klik pregled: $izv"
 }
+$bojaXml = Join-Path $XmlRoot "BIOVEGA\MPGrupeRobeTest.xml"
+$bojaPng = Join-Path $Shots "boja.png"
+Write-Host "UI boja $bojaXml"
+$kodBoja = PokreniBoja $bojaXml $bojaPng
+$bojaTekst = ""
+if (Test-Path -LiteralPath ($bojaPng + ".txt")) { $bojaTekst = Get-Content -LiteralPath ($bojaPng + ".txt") -Raw }
+Write-Host $bojaTekst
+if ($kodBoja -ne 0 -or $bojaTekst -notlike "OK*") { throw "UI boja nije prosla. $bojaTekst" }
+
+$extXml = Join-Path $env:GITHUB_WORKSPACE "tests\Ekstenzije.xml"
+if (-not (Test-Path -LiteralPath $extXml)) { $extXml = Join-Path (Get-Location) "tests\Ekstenzije.xml" }
+$extPng = Join-Path $Shots "ext.png"
+Write-Host "UI ext $extXml"
+$kodExt = PokreniExt $extXml $extPng
+$extTekst = ""
+if (Test-Path -LiteralPath ($extPng + ".txt")) { $extTekst = Get-Content -LiteralPath ($extPng + ".txt") -Raw }
+Write-Host $extTekst
+if ($extTekst -like "OPEN*") { Write-Host "UI ext otvoren, DLL nije na stroju." }
+elseif ($kodExt -ne 0 -or $extTekst -notlike "OK*") { throw "UI ext nije prosao. $extTekst" }
+
 Write-Host "UI smoke svih $($granule.Count) granula je prosao."
 # Start-Process ne postavlja LASTEXITCODE. Prazan kod workflow cita kao pad.
 $global:LASTEXITCODE = 0

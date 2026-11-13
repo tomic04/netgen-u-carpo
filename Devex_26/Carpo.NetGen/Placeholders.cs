@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Shell;
+using DevExpress.XtraPrinting;
 
 namespace Carpo.NetGen.Layout
 {
@@ -53,7 +54,7 @@ namespace Carpo.NetGen.Print
     /// Grid (PRINTMASTER, PRINTREPXMASTER, PRINTGRID, PRINTREPXGRID) ide u PrintLink,
     /// kao ComponentGrid.PrintControl. Predložak :repx/ ide u Print, kao PrintDialog.
     /// NetGen bira koji je grid i složi zaglavlje (Form1.vb 4945–6001, Form2.vb 9041–9056).
-    /// PrintLink nema riječi master/detail/lodani ni PageHeaderLeft/Center/Right.
+    /// PageHeaderFooter.Content je Left, Center, Right. Form2.vb 9049–9056.
     /// </summary>
     public static class PrintBridge
     {
@@ -61,6 +62,7 @@ namespace Carpo.NetGen.Print
         public const string Klasa = "Spin.Printing.Start";
 
         public static object Stroj;
+        public static string[] ZadnjeZaglavlje;
         public static object Repx;
         public static string PutanjaDll = "";
 
@@ -115,6 +117,33 @@ namespace Carpo.NetGen.Print
             return t;
         }
 
+        /// <summary>Form2.vb 9049–9056. Prazan centar je naslov forme. ## i !! su novi red.</summary>
+        public static string[] TriZaglavlja(string lijevo, string centar, string desno, string naslov)
+        {
+            string c = string.IsNullOrWhiteSpace(centar) ? (naslov ?? "") : centar;
+            var h = new PageHeaderFooter();
+            while (h.Header.Content.Count < 3)
+                h.Header.Content.Add("");
+            h.Header.Content[0] = SrediRed(lijevo);
+            h.Header.Content[1] = SrediRed(c);
+            h.Header.Content[2] = SrediRed(desno);
+            var link = new PrintableComponentLink(new PrintingSystem());
+            link.PageHeaderFooter = h;
+            var natrag = (PageHeaderFooter)link.PageHeaderFooter;
+            var gotovo = natrag.Header.Content;
+            return new[]
+            {
+                gotovo.Count > 0 ? gotovo[0] ?? "" : "",
+                gotovo.Count > 1 ? gotovo[1] ?? "" : "",
+                gotovo.Count > 2 ? gotovo[2] ?? "" : ""
+            };
+        }
+
+        private static string SrediRed(string s)
+        {
+            return (s ?? "").Replace("##", "\r\n").Replace("!!", "\r\n");
+        }
+
         public static Dictionary<string, string> Zaglavlje(string lijevo, string centar, string desno, string naslov, bool dijalog)
         {
             var d = new Dictionary<string, string>();
@@ -142,6 +171,7 @@ namespace Carpo.NetGen.Print
             int op = 0;
             int.TryParse(operater ?? "", out op);
             var zaglavlje = Zaglavlje(lijevo, centar, desno, naslov, dijalog || vrsta == "lodani");
+            ZadnjeZaglavlje = TriZaglavlja(lijevo, centar, desno, naslov);
             var combo = new DataTable();
             var ds = new DataSet();
             if (tablica != null)

@@ -69,6 +69,7 @@ namespace Carpo.NetGen.Ui
             PodesiPogled(gvDet, false);
             gvGla.FocusedRowChanged += Pogled_FocusedRowChanged;
             gvGla.DoubleClick += Pogled_DoubleClick;
+            CarpoIzgled.SlikeCvorova(trMain);
             trMain.OptionsView.ShowColumns = false;
             trMain.OptionsView.ShowIndicator = false;
             trMain.OptionsBehavior.Editable = false;
@@ -99,8 +100,7 @@ namespace Carpo.NetGen.Ui
             pogled.OptionsSelection.EnableAppearanceFocusedCell = false;
             pogled.FocusRectStyle = DevExpress.XtraGrid.Views.Grid.DrawFocusRectStyle.RowFocus;
             pogled.OptionsSelection.MultiSelectMode = GridMultiSelectMode.RowSelect;
-            if (master)
-                pogled.OptionsView.ShowIndicator = true;
+            CarpoIzgled.RedniStupac(pogled);
             CarpoIzgled.Pogled(pogled);
         }
 
@@ -508,6 +508,17 @@ namespace Carpo.NetGen.Ui
                         ? _projekt.Atributi.Vrijednost("PAGEORIENTATION") : "";
                     PrintBridge.Ispisi(s, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "", "", "", "", Text, grid, orij, tab);
                 }
+                else if (s.ToUpperInvariant().IndexOf("BEEP()", StringComparison.Ordinal) >= 0)
+                    RafalNaredba.Beep();
+                else if (s.StartsWith("==", StringComparison.Ordinal))
+                {
+                    try { Citaj(s.Substring(2)); }
+                    catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + s); }
+                }
+                else if (s.IndexOf("findnode", StringComparison.OrdinalIgnoreCase) >= 0)
+                    OznaciPrazneCvorove();
+                else if (s.IndexOf("refreshmovetoid", StringComparison.OrdinalIgnoreCase) >= 0)
+                    PomakniNaId(s);
                 else if (s.ToUpperInvariant().IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0)
                 {
                     var poziv = AssemblyPoziv.Pozovi(s, "shell", _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "");
@@ -694,15 +705,19 @@ namespace Carpo.NetGen.Ui
             if (_projekt == null)
                 return;
             var slozeni = GumbiNiz.Slozi(_projekt.Gumbi, _projekt.Buttons);
-            for (int i = slozeni.Count - 1; i >= 0; i--)
+            pnlButtons.Dock = DockStyle.Bottom;
+            pnlButtons.Height = 36;
+            for (int i = 0; i < slozeni.Count; i++)
             {
                 NgButton b = slozeni[i];
                 var gumb = new SimpleButton();
                 gumb.Text = (b.Natpis ?? "").Replace("!!", "\r\n");
                 gumb.Tag = b.Naredba;
-                gumb.Dock = DockStyle.Left;
-                gumb.Width = Math.Max(90, gumb.Text.Replace("\r\n", "").Length * 8);
+                gumb.Dock = DockStyle.None;
                 CarpoIzgled.Gumb(gumb);
+                gumb.Width = CarpoIzgled.SirinaGumba;
+                gumb.Left = CarpoIzgled.LijevoGumba(i);
+                gumb.Top = 4;
                 gumb.Click += Gumb_Click;
                 pnlButtons.Controls.Add(gumb);
             }
@@ -801,6 +816,52 @@ namespace Carpo.NetGen.Ui
             return new System.Collections.Generic.List<string>(iz);
         }
 
+        private void OznaciPrazneCvorove()
+        {
+            if (trMain == null)
+                return;
+            var prazni = new System.Collections.Generic.List<DevExpress.XtraTreeList.Nodes.TreeListNode>();
+            SkupiPrazne(trMain.Nodes, prazni);
+            for (int i = 0; i < prazni.Count; i++)
+                prazni[i].Expanded = true;
+            if (prazni.Count > 0)
+                trMain.FocusedNode = prazni[0];
+        }
+
+        private static void SkupiPrazne(DevExpress.XtraTreeList.Nodes.TreeListNodes cvorovi, System.Collections.Generic.List<DevExpress.XtraTreeList.Nodes.TreeListNode> prazni)
+        {
+            if (cvorovi == null)
+                return;
+            for (int i = 0; i < cvorovi.Count; i++)
+            {
+                DevExpress.XtraTreeList.Nodes.TreeListNode n = cvorovi[i];
+                string ime = n.GetDisplayText(0) ?? "";
+                if (ime.Length == 0)
+                    prazni.Add(n);
+                SkupiPrazne(n.Nodes, prazni);
+            }
+        }
+
+        private void PomakniNaId(string naredba)
+        {
+            string ostatak = (naredba ?? "").ToLowerInvariant().Replace("refreshmovetoid", "").Trim();
+            if (_master != null && _master.Stanje != null && (_master.Stanje.ZadnjiSql ?? "").Length > 0)
+            {
+                try { Citaj(_master.Stanje.ZadnjiSql); }
+                catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + _master.Stanje.ZadnjiSql); }
+            }
+            var tablica = gcGla == null ? null : gcGla.DataSource as DataTable;
+            int red = RafalNaredba.RedStupca2(tablica, ostatak);
+            if (red < 0 || gvGla == null)
+                return;
+            int h = gvGla.GetRowHandle(red);
+            if (h >= 0)
+            {
+                gvGla.FocusedRowHandle = h;
+                gvGla.MakeRowVisible(h);
+            }
+        }
+
         private string IdCelije(int red)
         {
             if (red < 0)
@@ -838,7 +899,7 @@ namespace Carpo.NetGen.Ui
                 using (var cmd = new System.Data.SqlClient.SqlCommand(sql, conn))
                 using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
                 {
-                    cmd.CommandTimeout = 30;
+                    cmd.CommandTimeout = TimeoutUpita;
                     conn.Open();
                     da.Fill(dt);
                 }
@@ -855,13 +916,21 @@ namespace Carpo.NetGen.Ui
             }
         }
 
+        public static int TimeoutUpita = 30;
+
         /// <summary>
         /// Klik na podlozi. Upis ide samo na spin na sql-ai. Fiskalizacija ne ide na Poreznu.
+        /// samoCitanje preskače Unesi/Izmjeni/Obriši. Podforma se zatvara Odustani.
         /// </summary>
         public List<string> ProvediKlikove()
         {
+            return ProvediKlikove(false);
+        }
+
+        public List<string> ProvediKlikove(bool samoCitanje)
+        {
             var redovi = new List<string>();
-            bool upis = DijalogTok.UpisNaSpinu(_server, _baza);
+            bool upis = !samoCitanje && DijalogTok.UpisNaSpinu(_server, _baza);
             DijalogTok.DozvoliUpis = upis;
             _imeUnosa = "kp" + DateTime.Now.ToString("HHmmss");
             DijalogTok.TekstUpisa = _imeUnosa;

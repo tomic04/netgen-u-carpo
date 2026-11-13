@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Text;
+using Carpo.NetGen.Komande;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
 
@@ -72,14 +73,15 @@ namespace Carpo.NetGen.Grid
             Kontekst.Id = Stanje.IdMaster;
             Stanje.Parametri = ParametriIzReda(red);
             string sql = SqlTekst.Sredi(Stanje.Predlozak, Kontekst);
-            sql = ZamijeniOstatak(sql, Stanje.Parametri);
+            // Class1.NadjiVrijednostuPrevParametrima skida navodnike. Zarez unutar vrijednosti ostaje u ZamijeniOstatak.
+            sql = SrediPoslije.Petlja(sql, Stanje.Parametri, null, false);
             sql = sql.Replace("~~", ",");
             Stanje.SqlZaSlanje = sql;
             Stanje.DodatniSql.Clear();
             for (int i = 0; i < Stanje.DodatniPredlosci.Count; i++)
             {
                 string d = SqlTekst.Sredi(Stanje.DodatniPredlosci[i], Kontekst);
-                Stanje.DodatniSql.Add(ZamijeniOstatak(d, Stanje.Parametri).Replace("~~", ","));
+                Stanje.DodatniSql.Add(SrediPoslije.Petlja(d, Stanje.Parametri, null, false).Replace("~~", ","));
             }
             return sql;
         }

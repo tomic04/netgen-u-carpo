@@ -19,6 +19,13 @@ namespace Carpo.NetGen.Grid
         public string LastValue = "";
         public string SelectedColor = "";
         public string ParametriSaGrida = "";
+        public string TempString = "";
+        public string DblClickedColumn = "";
+        public string Version = "";
+        public string OpisniParametri = "";
+        public string FocusedControl = "";
+        public string SelectedFile = "";
+        public string SelectedPath = "";
     }
 
     public static class SqlTekst
@@ -105,6 +112,49 @@ namespace Carpo.NetGen.Grid
         }
 
         /// <summary>
+        /// Form2.SrediSQL2 (2876–2920). Nema @@Id ni @@table. @@GRIDROWCOUNT( je zakomentiran (2899–2905).
+        /// </summary>
+        public static string Sredi2(string sql, SqlKontekst k)
+        {
+            if (sql == null)
+                return "";
+            if (k == null)
+                k = new SqlKontekst();
+            sql = Zamijeni(sql, "@@ID", k.Id);
+            sql = Zamijeni(sql, "@@id", k.Id);
+            sql = Zamijeni(sql, "@@operateriid", k.OperaterId);
+            sql = Zamijeni(sql, "@@OPERATERIID", k.OperaterId);
+            sql = Zamijeni(sql, "@@DETID", k.DetId);
+            sql = Zamijeni(sql, "@@detid", k.DetId);
+            sql = Zamijeni(sql, "@@DetId", k.DetId);
+            sql = Zamijeni(sql, "@@node", k.Node);
+            sql = Zamijeni(sql, "@@NODE", k.Node);
+            sql = Zamijeni(sql, "@@tempstring", k.TempString);
+            sql = Zamijeni(sql, "@@TEMPSTRING", k.TempString);
+            sql = Zamijeni(sql, "@@editedcolumn", k.EditedColumn);
+            sql = Zamijeni(sql, "@@EDITEDCOLUMN", k.EditedColumn);
+            sql = Zamijeni(sql, "@@lastvalue", k.LastValue);
+            sql = Zamijeni(sql, "@@LASTVALUE", k.LastValue);
+            sql = Zamijeni(sql, "@@dblclickedcolumn", k.DblClickedColumn);
+            sql = Zamijeni(sql, "@@DBLCLICKEDCOLUMN", k.DblClickedColumn);
+            sql = Zamijeni(sql, "@@VERSION", k.Version);
+            sql = Zamijeni(sql, "@@OPISNIPARAMETRI", k.OpisniParametri);
+            sql = Zamijeni(sql, "@@FOCUSEDCONTROL", k.FocusedControl);
+            sql = Zamijeni(sql, "@@selectedfile", k.SelectedFile);
+            sql = Zamijeni(sql, "@@selectedpath", k.SelectedPath);
+            if (sql.IndexOf("@@xmlname", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                sql = Zamijeni(sql, "@@xmlname", k.XmlName);
+                sql = Zamijeni(sql, "@@XMLNAME", k.XmlName);
+            }
+            if (sql.IndexOf("@@jupitersrvpath", StringComparison.OrdinalIgnoreCase) >= 0)
+                sql = Zamijeni(sql, "@@jupitersrvpath", k.JupiterSrvPath);
+            sql = Zamijeni(sql, "@@selectedcolor", k.SelectedColor);
+            sql = Zamijeni(sql, "@@SELECTEDCOLOR", k.SelectedColor);
+            return sql;
+        }
+
+        /// <summary>
         /// Nakon zamjene ~~ u zarez. "prazno" | "pocinje-s-@" | "ostao-@@" | "salji".
         /// </summary>
         public static string Odluka(string sql)
@@ -139,6 +189,13 @@ namespace Carpo.NetGen.Grid
                 k.LastValue = izvor.LastValue;
                 k.SelectedColor = izvor.SelectedColor;
                 k.ParametriSaGrida = izvor.ParametriSaGrida;
+                k.TempString = izvor.TempString;
+                k.DblClickedColumn = izvor.DblClickedColumn;
+                k.Version = izvor.Version;
+                k.OpisniParametri = izvor.OpisniParametri;
+                k.FocusedControl = izvor.FocusedControl;
+                k.SelectedFile = izvor.SelectedFile;
+                k.SelectedPath = izvor.SelectedPath;
             }
             if (string.IsNullOrEmpty(k.Id))
                 k.Id = "0";

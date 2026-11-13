@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
+using Carpo.NetGen.Komande;
 using Carpo.NetGen.Model;
 using Carpo.NetGen.Shell;
 using Carpo.NetGen.Xml;
@@ -32,9 +33,16 @@ namespace Carpo.NetGen.Ui
             string ulaz = OdabirForme.Ulaz(r.Projekt);
             if (ulaz.StartsWith(":", StringComparison.Ordinal))
             {
+                NgForm ulazna = NadjiFormu(r.Projekt, ulaz);
+                if (!DijalogTok.OtvaraProzor(ulazna))
+                {
+                    if (ulazna == null)
+                        greska = "Nema forme " + ImeUlaza(ulaz);
+                    return null;
+                }
                 Form dijalog = DijalogUlaza(r.Projekt, ulaz, server, baza, operater, xml);
                 if (dijalog == null)
-                    greska = "Nema forme " + ulaz.Substring(1);
+                    greska = "Nema forme " + ImeUlaza(ulaz);
                 return dijalog;
             }
             var forma = new ObicnaForma();
@@ -43,25 +51,34 @@ namespace Carpo.NetGen.Ui
             return forma;
         }
 
-        private static Form DijalogUlaza(NgProject projekt, string ulaz, string server, string baza, int operater, string xml)
+        private static string ImeUlaza(string ulaz)
         {
-            string ime = ulaz.Substring(1).Trim();
+            string ime = (ulaz ?? "").Trim();
+            if (ime.StartsWith(":", StringComparison.Ordinal))
+                ime = ime.Substring(1).Trim();
             int hash = ime.IndexOf('#');
             if (hash >= 0)
                 ime = ime.Substring(0, hash).Trim();
-            NgForm trazena = null;
-            if (projekt.Forme != null)
+            return ime;
+        }
+
+        private static NgForm NadjiFormu(NgProject projekt, string ulaz)
+        {
+            string ime = ImeUlaza(ulaz);
+            if (projekt == null || projekt.Forme == null)
+                return null;
+            for (int i = 0; i < projekt.Forme.Count; i++)
             {
-                for (int i = 0; i < projekt.Forme.Count; i++)
-                {
-                    if (string.Equals(projekt.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
-                    {
-                        trazena = projekt.Forme[i];
-                        break;
-                    }
-                }
+                if (string.Equals(projekt.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
+                    return projekt.Forme[i];
             }
-            if (trazena == null)
+            return null;
+        }
+
+        private static Form DijalogUlaza(NgProject projekt, string ulaz, string server, string baza, int operater, string xml)
+        {
+            NgForm trazena = NadjiFormu(projekt, ulaz);
+            if (trazena == null || !DijalogTok.OtvaraProzor(trazena))
                 return null;
             var d = new Dijalog();
             var kontekst = new SqlKontekst();

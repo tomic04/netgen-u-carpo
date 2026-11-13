@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Threading;
 using System.Text;
 using System.Data.SqlClient;
 using System.IO;
@@ -31,6 +32,9 @@ namespace Carpo.NetGen.GridTest
             Pregled();
             AssemblyLoad();
             Fiskal();
+            BatIPost();
+            RazlikeImenom();
+            Podaci();
             Include();
             Ispis();
             Zamjene();
@@ -587,8 +591,8 @@ namespace Carpo.NetGen.GridTest
             if (p != null)
                 g.Ucitaj(p, null);
             string sql = g.Stanje == null ? "" : (g.Stanje.SqlZaSlanje ?? "");
-            bool preskok = p != null && g.Stanje.Odluka == "ostao-@@" && sql.IndexOf("@@godina", StringComparison.Ordinal) > 0 && g.Stanje.Tablica == null;
-            T("intrastat-ostao", preskok, g.Stanje == null ? "" : g.Stanje.Odluka);
+            bool ugradeno = p != null && g.Stanje.Odluka == "salji" && sql.IndexOf("@@godina", StringComparison.Ordinal) < 0 && sql.IndexOf("@godina = null", StringComparison.Ordinal) >= 0 && g.Stanje.Tablica == null;
+            T("intrastat-ostao", ugradeno, sql);
         }
 
         private static void ZastitaTestovi()
@@ -790,9 +794,9 @@ namespace Carpo.NetGen.GridTest
             T("combo-3-refresh", osvjezi.Count == 2 && osvjezi[0] == "skladisteid" && osvjezi[1] == "osobeid" && !ComboDijalog.OnClickSeSalje(true), osvjezi.Count.ToString());
             NgControl osobe = Kontrol(inv, "osobeid");
             string sql4 = ComboDijalog.SqlZaSlanje(osobe.Atributi.Vrijednost("SQL"), k);
-            T("combo-4-ostao", SqlTekst.Odluka(sql4) == "ostao-@@", sql4);
-            string poslije = sql4.Replace("@@trgovinaid", "5");
-            T("combo-4-poslije", SqlTekst.Odluka(poslije) == "salji" && poslije.IndexOf("= 5", StringComparison.Ordinal) >= 0, poslije);
+            T("combo-4-ostao", sql4.IndexOf("@@", StringComparison.Ordinal) < 0 && SqlTekst.Odluka(sql4) == "salji" && sql4.IndexOf("null", StringComparison.Ordinal) >= 0, sql4);
+            string poslije = SrediPoslije.Petlja(SqlTekst.Sredi(osobe.Atributi.Vrijednost("SQL"), k), "@trgovinaid=5,", null, false);
+            T("combo-4-poslije", SqlTekst.Odluka(poslije) == "salji" && poslije.IndexOf("5", StringComparison.Ordinal) >= 0 && poslije.IndexOf("@@trgovinaid", StringComparison.Ordinal) < 0, poslije);
 
             NgForm nacin = Forma(Ucitaj("MPKntNacinPlacAzur.xml"), "FILTERFORM");
             if (nacin == null)
@@ -1439,7 +1443,7 @@ namespace Carpo.NetGen.GridTest
             redovi.Rows.Add(3, "Mlijeko");
             string detSql = det.Slozi(redovi.Rows[0]);
             T("det-id-prvi", det.Stanje.IdMaster == "9", det.Stanje.IdMaster);
-            T("det-zamjena", detSql.IndexOf("@id=9", StringComparison.Ordinal) >= 0 && detSql.IndexOf("@naziv='Kruh'", StringComparison.Ordinal) >= 0, detSql);
+            T("det-zamjena", detSql.IndexOf("@id=9", StringComparison.Ordinal) >= 0 && detSql.IndexOf("@naziv=Kruh", StringComparison.Ordinal) >= 0 && detSql.IndexOf("@naziv='Kruh'", StringComparison.Ordinal) < 0, detSql);
             T("det-checkbox-skriven", !det.Stanje.CheckboxVidljiv, "");
             string sql2 = det.Slozi(redovi.Rows[1]);
             T("det-refresh-predlozak", sql2.IndexOf("@id=3", StringComparison.Ordinal) >= 0 && sql2.IndexOf("Mlijeko", StringComparison.Ordinal) >= 0, sql2);
@@ -1643,6 +1647,301 @@ namespace Carpo.NetGen.GridTest
                     return "idx " + i + " ocek [" + a[i] + "] dobiveno [" + b[i] + "]";
             }
             return "duljina " + a.Count + "/" + b.Count;
+        }
+
+        private static void BatIPost()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "ng-bat-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                string izlaz = Path.Combine(dir, "out.txt");
+                string bat = Path.Combine(dir, "pisi.bat");
+                File.WriteAllText(bat, "@echo off\r\necho ok> \"" + izlaz + "\"\r\n");
+                int kod = Carpo.NetGen.Komande.Pokretanje.Pokreni(bat);
+                string tijelo = "";
+                for (int i = 0; i < 20 && !File.Exists(izlaz); i++)
+                    Thread.Sleep(100);
+                if (File.Exists(izlaz))
+                    tijelo = File.ReadAllText(izlaz).Trim();
+                T("bat-pokretanje", kod == 0 && tijelo == "ok", kod + " " + tijelo);
+            }
+            finally
+            {
+                try { Directory.Delete(dir, true); } catch { }
+            }
+            var slusac = new System.Net.HttpListener();
+            string dobiveno = "";
+            try
+            {
+                slusac.Prefixes.Add("http://127.0.0.1:8765/");
+                slusac.Start();
+                var nit = new Thread(delegate ()
+                {
+                    var ctx = slusac.GetContext();
+                    using (var sr = new StreamReader(ctx.Request.InputStream, System.Text.Encoding.ASCII))
+                        dobiveno = sr.ReadToEnd();
+                    byte[] b = System.Text.Encoding.ASCII.GetBytes("1");
+                    ctx.Response.OutputStream.Write(b, 0, b.Length);
+                    ctx.Response.Close();
+                });
+                nit.IsBackground = true;
+                nit.Start();
+                string odg = Carpo.NetGen.Komande.PosaljiServer.Post("http://127.0.0.1:8765/", "<poruka>test</poruka>");
+                nit.Join(4000);
+                T("posalji-post", odg == "1" && dobiveno.IndexOf("<poruka>test</poruka>", StringComparison.Ordinal) >= 0, odg + " " + dobiveno);
+            }
+            catch (Exception ex)
+            {
+                T("posalji-post", false, ex.Message);
+            }
+            finally
+            {
+                try { slusac.Close(); } catch { }
+            }
+            string dll = Carpo.NetGen.Komande.EkstenzijaGrid.Nadji();
+            Console.WriteLine(dll.Length == 0
+                ? "NETGEN-EXTENSIONS nije na stroju. Treba donijeti NetGenExtensions.dll (NetGenExtensions.frmGridExPrintingREPX, Form1.PivotGRID, Form2.ChartGRID) u Jupiter SharedAssemblies."
+                : "NETGEN-EXTENSIONS " + dll);
+            int prijeBeep = Carpo.NetGen.Komande.RafalNaredba.BeepPoziva;
+            Carpo.NetGen.Komande.RafalNaredba.Beep();
+            T("beep", Carpo.NetGen.Komande.RafalNaredba.BeepPoziva == prijeBeep + 1, "");
+            var roditelj = new System.Windows.Forms.Control();
+            roditelj.Controls.Add(new System.Windows.Forms.Control());
+            roditelj.Controls.Add(new System.Windows.Forms.Control());
+            int ugaseno = Carpo.NetGen.Komande.RafalNaredba.SveKontrole(roditelj, false);
+            T("sve-kontrole", ugaseno == 2 && roditelj.Controls[0].Enabled == false && roditelj.Controls[1].Enabled == false, ugaseno.ToString());
+            Carpo.NetGen.Komande.RafalNaredba.SveKontrole(roditelj, true);
+            string pokrenuto = "";
+            Carpo.NetGen.Komande.RafalNaredba.PokreniProces = delegate (string p) { pokrenuto = p; return 0; };
+            int kodProces = Carpo.NetGen.Komande.RafalNaredba.ProcessStart("PROCESSSTART(notepad.exe)");
+            Carpo.NetGen.Komande.RafalNaredba.PokreniProces = null;
+            T("process-start", kodProces == 0 && pokrenuto == "notepad.exe", pokrenuto);
+            Carpo.NetGen.Komande.RafalNaredba.MapaDijalog = delegate () { return "C:\\temp"; };
+            Carpo.NetGen.Komande.RafalNaredba.DatotekaDijalog = delegate () { return "C:\\temp\\a.txt"; };
+            T("dijalog-mapa", Carpo.NetGen.Komande.RafalNaredba.OdaberiMapu() == "C:\\temp"
+                && Carpo.NetGen.Komande.RafalNaredba.OdaberiDatoteku() == "C:\\temp\\a.txt", "");
+            Carpo.NetGen.Komande.RafalNaredba.MapaDijalog = null;
+            Carpo.NetGen.Komande.RafalNaredba.DatotekaDijalog = null;
+            int interval = Carpo.NetGen.Komande.RafalNaredba.TimerOn("TIMERON(250)");
+            Carpo.NetGen.Komande.RafalNaredba.TimerOff();
+            Carpo.NetGen.Komande.RafalNaredba.Progres(true);
+            bool progres = Carpo.NetGen.Komande.RafalNaredba.ProgresUpaljen;
+            Carpo.NetGen.Komande.RafalNaredba.Progres(false);
+            T("timer-progres", interval == 250 && Carpo.NetGen.Komande.RafalNaredba.TimerUpaljen == false && progres && Carpo.NetGen.Komande.RafalNaredba.ProgresUpaljen == false, interval.ToString());
+            string[] trazi = Carpo.NetGen.Komande.RafalNaredba.StartSearch("STARTSEARCH(roba,kava)");
+            var koraciOstalo = Carpo.NetGen.Komande.DijalogTok.Koraci("DISABLEALLCONTROLS()#RECALCGRIDROW(g)#GRID_COLUMN_VALUE(g,naziv,kava)#CREATEOBJECT(pero)#STARTSEARCH(roba,kava)");
+            T("start-search", trazi.Length == 2 && trazi[0] == "ROBA" && trazi[1] == "KAVA"
+                && koraciOstalo.Count == 5 && koraciOstalo[0].Vrsta == "svekontrole" && koraciOstalo[1].Vrsta == "recalcred"
+                && koraciOstalo[2].Vrsta == "stupac" && koraciOstalo[3].Vrsta == "objekt" && koraciOstalo[4].Vrsta == "trazi", trazi[0]);
+            var recalc = new System.Data.DataTable();
+            recalc.Columns.Add("evalx()", typeof(string));
+            recalc.Columns.Add("x", typeof(string));
+            recalc.Columns[0].Caption = "evalx()";
+            recalc.Rows.Add("1+2", "");
+            recalc.Rows.Add("3+4", "");
+            int jedan = Carpo.NetGen.Komande.RecalcGrid.IzracunajRed(recalc, 1);
+            T("recalc-red", jedan == 1 && Convert.ToString(recalc.Rows[1]["x"]) == "7" && Convert.ToString(recalc.Rows[0]["x"]) == "", Convert.ToString(recalc.Rows[1]["x"]));
+            var trazenje = new System.Data.DataTable();
+            trazenje.Columns.Add("id", typeof(int));
+            trazenje.Columns.Add("sifra", typeof(string));
+            trazenje.Columns.Add("naziv", typeof(string));
+            trazenje.Rows.Add(1, "a", "prvi");
+            trazenje.Rows.Add(2, "b", "kava");
+            var otvori = Carpo.NetGen.Komande.DijalogTok.Koraci("OPENFORM(FILTERFORM)#BLAGAJNAENABLE(4)#PRINTGRID(stavke)");
+            string[] zag = Carpo.NetGen.Print.PrintBridge.TriZaglavlja("Lijevo", "", "Desno!!x", "Naslov");
+            T("ispis-zaglavlje", zag.Length == 3 && zag[0] == "Lijevo" && zag[1] == "Naslov" && zag[2] == "Desno\r\nx"
+                && Carpo.NetGen.Print.PrintBridge.Vrsta("PRINTREPXGRID(g)", true) == "lodani", zag[1] + "|" + zag[2]);
+            T("redni-stupac", Carpo.NetGen.Ui.CarpoIzgled.RedniStupacVidljiv()
+                && Carpo.NetGen.Ui.CarpoIzgled.SirinaGumba == 79
+                && Carpo.NetGen.Ui.CarpoIzgled.LijevoGumba(1) == 87
+                && Carpo.NetGen.Ui.CarpoIzgled.CvorNaSliciNula(), "");
+            T("open-blagajna-ispis", otvori.Count == 3 && otvori[0].Vrsta == "forma" && otvori[0].Tekst == "FILTERFORM"
+                && otvori[1].Vrsta == "blagajna" && otvori[2].Vrsta == "ispis"
+                && Carpo.NetGen.Komande.BlagajnaNaredba.Upit("4").IndexOf("4", StringComparison.Ordinal) >= 0, otvori[0].Tekst);
+            T("grid-vrijednost", Carpo.NetGen.Komande.RafalNaredba.NadjiVrijednost(trazenje, "naziv", "kava") == 1
+                && Carpo.NetGen.Komande.RafalNaredba.RedStupca2(trazenje, "kava") == 1
+                && Carpo.NetGen.Komande.RafalNaredba.PrazniCvorovi(new[] { "a", "", "b" }) == 1
+                && Carpo.NetGen.Komande.RafalNaredba.CreateObject("CREATEOBJECT(pero)") == "PERO", "");
+            var dock = new System.Windows.Forms.Control();
+            Carpo.NetGen.Komande.RafalNaredba.PostaviDock(dock, "Fill");
+            Carpo.NetGen.Komande.RafalNaredba.PostaviDock(dock, "Top");
+            T("dock-klik", dock.Dock == System.Windows.Forms.DockStyle.Top, dock.Dock.ToString());
+            string dat = Path.Combine(Path.GetTempPath(), "ng-txt-" + Guid.NewGuid().ToString("N") + ".txt");
+            try
+            {
+                Carpo.NetGen.Komande.RafalNaredba.ZapisiDatoteku(dat, 1, new[] { new[] { "A", "B" } });
+                byte[] bajt = File.ReadAllBytes(dat);
+                T("datoteka-klik", bajt.Length > 0 && bajt[bajt.Length - 1] == 26, bajt.Length.ToString());
+            }
+            finally
+            {
+                try { File.Delete(dat); } catch { }
+            }
+            bool pitao = false;
+            Carpo.NetGen.Komande.RafalNaredba.Pitaj = delegate (string p) { pitao = p == "Nema"; return false; };
+            bool dalje = Carpo.NetGen.Komande.RafalNaredba.AlertNastavi("0", "Nema");
+            Carpo.NetGen.Komande.RafalNaredba.Pitaj = null;
+            string up = "";
+            Carpo.NetGen.Komande.RafalNaredba.Upozori = delegate (string p) { up = p; };
+            bool stani = Carpo.NetGen.Komande.RafalNaredba.CancelBoxStani("", "Stoj");
+            Carpo.NetGen.Komande.RafalNaredba.Upozori = null;
+            var lanac = Carpo.NetGen.Komande.DijalogTok.Koraci("REFRESHCONTROL(mjesta)#BEEP()#ISEMPTYORZEROALERT(@a;Nema)");
+            T("prazan-alert", !dalje && pitao && stani && up == "Stoj" && lanac.Count == 3 && lanac[0].Vrsta == "refresh" && lanac[1].Vrsta == "beep" && lanac[2].Vrsta == "naredba", lanac.Count.ToString());
+            T("netgen-extensions", Carpo.NetGen.Komande.EkstenzijaGrid.Sklop == "NetGenExtensions"
+                && Carpo.NetGen.Komande.EkstenzijaGrid.IspisKlasa == "NetGenExtensions.frmGridExPrintingREPX", dll);
+        }
+
+        private static NgForm FormaIme(NgProject p, string ime)
+        {
+            if (p == null || p.Forme == null)
+                return null;
+            for (int i = 0; i < p.Forme.Count; i++)
+            {
+                if (string.Equals(p.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
+                    return p.Forme[i];
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Imena iz docs/razlike-netgen-carpo.md koja do sada nisu bila test.
+        /// Svaka provjera je NetGen pravilo, ne prilagodba da prođe.
+        /// </summary>
+        private static void RazlikeImenom()
+        {
+            string[] on = Lanac.OnLoadLanac(":a#b");
+            T("GFI-03", on.Length == 2 && on[0] == "a" && on[1] == "b" && Lanac.OnLoadLanac("select 1#select 2").Length == 0, on.Length.ToString());
+            T("GFI-05", !IspisMotora.JeIspisImena("bilanca.clsGFIPOD") && IspisMotora.JeIspisImena("x.clsReport"), "");
+            T("KNP-03", !PrintBridge.JeLandscape("PORTAL") && PrintBridge.JeLandscape("LANDSCAPE") && !PrintBridge.JeLandscape(""), "");
+            T("REA-05", IspisMotora.Zaglavlje("#ISEMPTY()# #Od 1. do 2.") == ""
+                && IspisMotora.Zaglavlje("#ISEMPTY(1)# #Od 1. do 2.") == "Od 1. do 2.", IspisMotora.Zaglavlje("#ISEMPTY(1)# #Od 1. do 2."));
+            string gumb = Lanac.GumbIzCase("select case when '1'='1' then 'enable' else 'disable' end as Spremi", "");
+            T("MPP-04", gumb == "Spremi=enable" && OnLoad2.Akcija("enable") == "enable", gumb);
+            var lvo = DijalogTok.Koraci("IZMJENA(@a=@@x)");
+            T("LVO-05", lvo.Count == 1 && lvo[0].Vrsta == "sql" && Lanac.OnLoadLanac("IZMJENA(@a=@@x)").Length == 0, lvo.Count == 0 ? "" : lvo[0].Vrsta);
+            string pri = SqlTekst.Sredi("select @robaid", new SqlKontekst());
+            T("PRI", pri.IndexOf("@robaid", StringComparison.Ordinal) >= 0 && pri.IndexOf("@@", StringComparison.Ordinal) < 0 && SqlTekst.Odluka(pri) == "salji", pri);
+
+            string dir = Path.Combine(Path.GetTempPath(), "ng-razlike-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            string xml = Path.Combine(dir, "R.xml");
+            File.WriteAllText(xml,
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                + "<PROJECT NAME=\"R\" ONLOAD=\"select 1\" COMMANDTIMEOUT=\"300\" TOTALROW=\"FALSE\" AUTOFITCOLUMNS=\"TRUE\" HELPKOD=\"ABC\" DETAILDBLCLICK=\":DET\" PAGEORIENTATION=\"PORTAL\" REFRESHAFTERCHILD=\"TRUE\" FILLEXPLORER=\"TRUE\" ONENTERKEY=\":X\" CMD6CAPTION=\"Lista\" DETCHECKBOXVISIBLE=\"FALSE\">"
+                + "<MASTERCOLUMNS><COLUMN NAME=\"Id\" POSITION=\"2\" /></MASTERCOLUMNS>"
+                + "<UNESI FILLEXPLORER=\"TRUE\" ONSUBMIT=\"select 1\" />"
+                + "<STABLO FILLEXPLORER=\"onlytree\" />"
+                + "<PRAZAN FILLEXPLORER=\"\" />"
+                + "<BEZ />"
+                + "<DIJETE REFRESHAFTERCHILD=\"TRUE\">"
+                + "<INPUT TYPE=\"text\" NAME=\"prvi\" TABINDEX=\"5 \" />"
+                + "<INPUT TYPE=\"text\" NAME=\"drugi\" />"
+                + "<INPUT TYPE=\"date\" NAME=\"d\" VALUE=\"firstdayofmonth\" CAPTION=\"Datum\" />"
+                + "</DIJETE></PROJECT>");
+            try
+            {
+                var ucitano = NetGenXmlReader.Ucitaj(xml);
+                NgProject p = ucitano.Projekt;
+                T("INS-04", ucitano.Uspjeh && p != null && p.Atributi.Vrijednost("HELPKOD") == "ABC" && !IspisMotora.JeIspisImena("ABC"), ucitano.Greska ?? "");
+                if (p == null)
+                    throw new InvalidOperationException(ucitano.Greska ?? "XML");
+                var tablica = new DataTable();
+                tablica.Columns.Add("Id", typeof(int));
+                var grid = new MasterGrid();
+                grid.Ucitaj(p, tablica);
+                int? pozicija = null;
+                bool auto = true;
+                for (int i = 0; i < grid.Stanje.Kolone.Count; i++)
+                {
+                    if (string.Equals(grid.Stanje.Kolone[i].Podatak, "Id", StringComparison.OrdinalIgnoreCase))
+                    {
+                        pozicija = grid.Stanje.Kolone[i].Pozicija;
+                        auto = grid.Stanje.Kolone[i].AutoSirina;
+                    }
+                }
+                T("INT-08", grid.Stanje.TimeoutSekundi == 300, grid.Stanje.TimeoutSekundi.ToString());
+                T("NPL-04", grid.Stanje.TotalRed, "");
+                T("PDV-05", grid.Stanje.EnterTipka == "None", grid.Stanje.EnterTipka ?? "");
+                T("OPZ-07", pozicija == 2, pozicija.HasValue ? pozicija.Value.ToString() : "");
+                T("MPSNG-05", auto == false && (p.Atributi.Vrijednost("AUTOFITCOLUMNS") ?? "") == "TRUE", "");
+                T("KAS-04", (p.MasterDblClick ?? "") == "" && p.Atributi.Vrijednost("DETAILDBLCLICK") == ":DET", p.MasterDblClick ?? "");
+                T("KOD-05", p.Atributi.Vrijednost("REFRESHAFTERCHILD") == "TRUE" && !Lanac.OsvjezavaZadnjiSql("REFRESHAFTERCHILD"), "");
+                T("MPK-06", p.PreskoceniGumbi != null && p.PreskoceniGumbi.Contains("CMD6CAPTION"), "");
+                var det = new DetailGrid();
+                det.Pripremi(p);
+                T("STA-38", det.Stanje.CheckboxVidljiv == false && grid.Stanje.CheckboxVidljiv, "");
+                NgForm unesi = FormaIme(p, "UNESI");
+                NgForm stablo = FormaIme(p, "STABLO");
+                NgForm prazan = FormaIme(p, "PRAZAN");
+                NgForm bez = FormaIme(p, "BEZ");
+                NgForm dijete = FormaIme(p, "DIJETE");
+                T("STA-08", unesi != null && unesi.Kontrole.Count == 0 && !DijalogTok.OtvaraProzor(unesi) && DijalogTok.SqlNakonOk(unesi) == "select 1", DijalogTok.SqlNakonOk(unesi));
+                T("LVO-04", stablo != null && DijalogTok.OsvjeziStablo(stablo) && !DijalogTok.PuniExplorer(stablo) && DijalogTok.SqlNakonOk(stablo) == "", "");
+                T("MPK-30", prazan != null && !DijalogTok.PuniExplorer(prazan) && DijalogTok.SqlNakonOk(prazan) == "", "");
+                T("OPZ-04", bez != null && !DijalogTok.PuniExplorer(bez) && (p.Atributi.Vrijednost("FILLEXPLORER") ?? "") == "TRUE", "");
+                var vrc = DijalogTok.Koraci("REFRESHAFTERCHILD");
+                T("VRC-05", dijete != null && dijete.Atributi.Vrijednost("REFRESHAFTERCHILD") == "TRUE" && !Lanac.OsvjezavaSegment("REFRESHAFTERCHILD") && vrc.Count == 1 && vrc[0].Vrsta == "sql", vrc.Count == 0 ? "" : vrc[0].Vrsta);
+                T("MPK-21", dijete != null && Raspored.TabRed(dijete) == "drugi,d,prvi", dijete == null ? "" : Raspored.TabRed(dijete));
+                string datum = "";
+                if (dijete != null)
+                {
+                    for (int i = 0; i < dijete.Kontrole.Count; i++)
+                    {
+                        if (dijete.Kontrole[i].Name != "d")
+                            continue;
+                        int z = 0;
+                        datum = Raspored.Izracunaj(dijete.Kontrole[i].Grana, dijete.Kontrole[i].Atributi, ref z).Tekst ?? "";
+                    }
+                }
+                T("MPK-22", datum == "Datum", datum);
+            }
+            finally
+            {
+                try { Directory.Delete(dir, true); } catch { }
+            }
+        }
+
+        private static void Podaci()
+        {
+            var k = new SqlKontekst();
+            k.Id = "5";
+            k.TempString = "abc";
+            k.Version = "NetGen v1.2.3";
+            k.FocusedControl = "naziv";
+            T("sredi2-temp", SqlTekst.Sredi2("@@tempstring @@VERSION @@FOCUSEDCONTROL", k) == "abc NetGen v1.2.3 naziv", SqlTekst.Sredi2("@@tempstring @@VERSION @@FOCUSEDCONTROL", k));
+            T("sredi2-id-nije-Id", SqlTekst.Sredi2("@@Id", k) == "@@Id" && SqlTekst.Sredi2("@@id", k) == "5", SqlTekst.Sredi2("@@Id", k));
+            T("sredi-poslije-roba", SrediPoslije.Zamijeni("select @@robaid", "@robaid=5,", k, null, false) == "select 5", SrediPoslije.Zamijeni("select @@robaid", "@robaid=5,", k, null, false));
+            T("sredi-poslije-navodnik", SrediPoslije.Zamijeni("update t set n='@@naziv'", "@naziv='a¸¸b',", k, null, false) == "update t set n='a''b'", SrediPoslije.Zamijeni("update t set n='@@naziv'", "@naziv='a¸¸b',", k, null, false));
+            T("sredi-poslije-null", SrediPoslije.Zamijeni("select @@nema", "", k, null, false) == "select null", SrediPoslije.Zamijeni("select @@nema", "", k, null, false));
+            T("sredi-poslije-napomena", SrediPoslije.Zamijeni("select '@@napomena'", "", k, null, false) == "select ''", SrediPoslije.Zamijeni("select '@@napomena'", "", k, null, false));
+            string niz = SrediPoslije.Zamijeni("select @@nizplavihajdijevaX", "@nizplavihajdijevaX='~1~2~',", k, null, false);
+            T("sredi-poslije-ajdijeva", niz.IndexOf("1,2", StringComparison.Ordinal) >= 0 && niz.IndexOf("~", StringComparison.Ordinal) < 0, niz);
+            T("sredi-poslije-datum", SrediPoslije.Zamijeni("select @@datumod", "@datumod='20240201',", k, null, false) == "select '20240201'", SrediPoslije.Zamijeni("select @@datumod", "@datumod='20240201',", k, null, false));
+            var cb = new Dictionary<string, string>();
+            cb["tkosmomi"] = "Glavno";
+            cb["kolicina"] = "1,5";
+            T("sredi-poslije-cb", SrediPoslije.Zamijeni("@@tkosmomi", "", k, cb, false) == "Glavno"
+                && SrediPoslije.Zamijeni("@@kolicina", "", k, cb, false) == "1.5", SrediPoslije.Zamijeni("@@kolicina", "", k, cb, false));
+            T("gridrowcount-komentar", SrediPoslije.Zamijeni("@@GRIDROWCOUNT(g)", "", k, null, false) == "null(g)", SrediPoslije.Zamijeni("@@GRIDROWCOUNT(g)", "", k, null, false));
+            string dml = SrediPoslije.ZaSlanje("update t set a=@@naziv", "@naziv='K',", k, null);
+            T("za-slanje-dml", dml == "update t set a=K" && dml.IndexOf("@naziv=", StringComparison.Ordinal) < 0, dml);
+            string sp = SrediPoslije.ZaSlanje("spX", "@a=1,", k, null);
+            T("za-slanje-sp", sp.IndexOf("@a=1", StringComparison.Ordinal) >= 0, sp);
+            string gas = SrediPoslije.ZaSlanje("spX !!", "@a=1,", k, null);
+            T("za-slanje-uzvicnik", gas.IndexOf("@a", StringComparison.Ordinal) < 0 && gas.IndexOf("!!", StringComparison.Ordinal) < 0, gas);
+            string kol = SrediPoslije.Kolone("select @(stavke..naziv)", delegate (string g, string c) { return g == "stavke" && c == "naziv" ? "Kava" : "null"; });
+            T("kolone-grid", kol == "select Kava", kol);
+            var red = new DataTable();
+            red.Columns.Add("id", typeof(int));
+            red.Columns.Add("Naziv  ", typeof(string));
+            red.Columns.Add("Cijena0100", typeof(string));
+            red.Rows.Add(3, "A,B", "12");
+            string pg = DetailGrid.ParametriIzReda(red.Rows[0]);
+            T("parametri-grida", pg.IndexOf("@id='3'", StringComparison.Ordinal) >= 0
+                && pg.IndexOf("@Naziv='A,B'", StringComparison.Ordinal) >= 0
+                && pg.IndexOf("@Cijena='12'", StringComparison.Ordinal) >= 0
+                && pg.IndexOf("0100", StringComparison.Ordinal) < 0, pg);
         }
 
         private static void FiskalUuidSpin()

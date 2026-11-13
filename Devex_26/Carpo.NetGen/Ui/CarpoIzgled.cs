@@ -6,14 +6,61 @@ using DevExpress.XtraEditors;
 using DevExpress.XtraEditors.Controls;
 using DevExpress.XtraEditors.Mask;
 using DevExpress.XtraGrid.Views.Grid;
+using DevExpress.XtraTreeList;
 
 namespace Carpo.NetGen.Ui
 {
     /// <summary>
     /// Vizualni defaulti kao Carpo komponente. Ne mijenja vrijednost ni SQL.
     /// </summary>
-    static class CarpoIzgled
+    public static class CarpoIzgled
     {
+        /// <summary>Form1.vb 3312 i 3839. Širina 79, razmak 8.</summary>
+        public const int SirinaGumba = 79;
+        public const int RazmakGumba = 8;
+
+        public static int LijevoGumba(int i)
+        {
+            return i * (SirinaGumba + RazmakGumba);
+        }
+
+        /// <summary>Form1.designer.vb 640 i 655. RowHeaders i HideSelection.Highlight.</summary>
+        public static void RedniStupac(GridView pogled)
+        {
+            if (pogled == null)
+                return;
+            pogled.OptionsView.ShowIndicator = true;
+            pogled.OptionsSelection.EnableAppearanceHideSelection = false;
+        }
+
+        public static bool RedniStupacVidljiv()
+        {
+            var v = new GridView();
+            RedniStupac(v);
+            return v.OptionsView.ShowIndicator && v.OptionsSelection.EnableAppearanceHideSelection == false;
+        }
+
+        /// <summary>Form1.designer.vb 575–579. ImageList indeks 0.</summary>
+        public static void SlikeCvorova(TreeList stablo)
+        {
+            if (stablo == null || stablo.SelectImageList != null)
+                return;
+            var slike = new ImageList();
+            slike.ImageSize = new Size(16, 16);
+            slike.Images.Add(new Bitmap(16, 16));
+            stablo.SelectImageList = slike;
+        }
+
+        public static bool CvorNaSliciNula()
+        {
+            var t = new TreeList();
+            SlikeCvorova(t);
+            var n = t.AppendNode(new object[] { "a" }, null);
+            n.ImageIndex = 0;
+            n.SelectImageIndex = 0;
+            return t.SelectImageList != null && n.ImageIndex == 0 && n.SelectImageIndex == 0;
+        }
+
         public static void Primijeni(Control kontrola, NgGrana grana)
         {
             var tekst = kontrola as TextEdit;

@@ -120,6 +120,21 @@ namespace Carpo.NetGen.Komande
             return string.Equals((forma.Atributi.Vrijednost("FILLEXPLORER") ?? "").Trim(), "true", StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Forma bez kontrola i bez gumba ne otvara prozor. OKClick i dalje ima PokaziUpit.
+        /// Form1.vb 5369–5370, 5519.
+        /// </summary>
+        public static bool OtvaraProzor(NgForm forma)
+        {
+            if (forma == null)
+                return false;
+            if (forma.Kontrole != null && forma.Kontrole.Count > 0)
+                return true;
+            if (forma.Gumbi != null && forma.Gumbi.Count > 0)
+                return true;
+            return false;
+        }
+
         public static List<Punjenje> PriOtvori(NgForm forma)
         {
             var lista = new List<Punjenje>();
@@ -317,6 +332,8 @@ namespace Carpo.NetGen.Komande
                     k.Vrsta = "foreach";
                     k.Tekst = ForeachNaredba.Vrsta(t) + "|" + ForeachNaredba.Grid(t) + "|" + tijelo;
                 }
+                else if (u.IndexOf("BEEP()", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "beep";
                 else if (u.IndexOf("MSGBOX(", StringComparison.Ordinal) >= 0)
                 {
                     k.Vrsta = "poruka";
@@ -336,12 +353,61 @@ namespace Carpo.NetGen.Komande
                     k.Vrsta = "dock";
                     k.Tekst = RafalNaredba.Dock(t) + "|" + RafalNaredba.DockKontrola(t);
                 }
-                else if (u.IndexOf("RECALCGRID", StringComparison.Ordinal) >= 0)
+                else if (u.IndexOf("RECALCGRIDROW(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "recalcred";
+                else if (u.IndexOf("RECALCGRID(", StringComparison.Ordinal) >= 0)
                     k.Vrsta = "recalc";
+                else if (u.IndexOf("DISABLEALLCONTROLS(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "svekontrole";
+                    k.Tekst = "0";
+                }
+                else if (u.IndexOf("ENABLEALLCONTROLS(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "svekontrole";
+                    k.Tekst = "1";
+                }
+                else if (u.IndexOf("PROCESSSTART(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "proces";
+                else if (u.IndexOf("SHOWFOLDERBROWSERDIALOG(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "mapa";
+                else if (u.IndexOf("SHOWOPENFILEDIALOG(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "datotekadlg";
+                else if (u.IndexOf("TIMERON(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "timer";
+                else if (u.IndexOf("TIMEROFF(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "timeroff";
+                else if (u.IndexOf("PROGRESSON(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "progres";
+                    k.Tekst = "1";
+                }
+                else if (u.IndexOf("PROGRESSOFF(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "progres";
+                    k.Tekst = "0";
+                }
+                else if (u.IndexOf("STARTSEARCH(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "trazi";
+                else if (u.IndexOf("GRID_COLUMN_VALUE(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "stupac";
+                else if (u.IndexOf("CREATEOBJECT(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "objekt";
                 else if (u.IndexOf("TOGGLEGRIDGROUP(", StringComparison.Ordinal) >= 0)
                     k.Vrsta = "toggle";
                 else if (u.IndexOf("PREPAREMULTISELECTEDPRINT(", StringComparison.Ordinal) >= 0)
                     k.Vrsta = "priprema";
+                else if (u.IndexOf("PRINTREPXGRID(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "ispisext";
+                else if (u.IndexOf("PRINTGRID(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "ispis";
+                else if (u.IndexOf("OPENFORM(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "forma";
+                    k.Tekst = OtvoriNaredba.Ime(t);
+                }
+                else if (u.IndexOf("BLAGAJNAENABLE(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "blagajna";
                 else if (u.IndexOf("PIVOTGRID(", StringComparison.Ordinal) >= 0)
                     k.Vrsta = "pivot";
                 else if (u.IndexOf("CHARTGRID(", StringComparison.Ordinal) >= 0)
