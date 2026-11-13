@@ -43,6 +43,10 @@ Carpo je imao samo prvi (`IzvrsiLanac`), pa su desni klik s `~` i događaji ćel
 | **HLP-01** | HELPKOD 16 | F1 i gumb "?" pokreću `JupiterHelp.exe -s -d -h -o -p` | ignorirano | isto (bez exe-a samo dnevnik, kao On Error Resume Next) |
 | **MSG-02** | svaki SQL u dijalogu | `ExecSql` pokaže grešku, `GreskaKodIzvrsavanjaSQLa` prekida lanac (Form2 7511), "#OK" ne | `Podloga.Citaj` je gutao grešku: lanac dijaloga je išao dalje (i OK zatvarao formu), poruka se nije vidjela (EVT-03 je radio samo s čitačem koji baca) | `Dijalog.Omotaj`: poruka kao ExecSql, "#OK"/tiha greška vraća null, ostale se bace pa lanac stane. Podloga i ObicnaForma daju dijalogu čitač koji baca |
 | **ONL-02** | ONLOAD forme | `ProcitajXML` 1199: greška na ONLOAD → `Exit Sub`, Form1 5352 ne otvara formu | forma se otvarala s praznim poljima | forma se ne otvara (`Dijalog.GreskaOnLoad`) |
+| **TOT-01** | TOTALROWVISIBLE/DETTOTALROWVISIBLE (ukupni red u ~236 granula), AGREGATEFUNCTION 642 stupca | ukupni red; decimalni stupac zbraja (`#,##0.00`), COLUMN AGREGATEFUNCTION 0 None, 1 Count, 2 Sum, 3 Average, 4 Min, 5 Max | MasterGrid je računao `TotalRed`, ali podloga nije imala footer ni zbrojeve | footer i sažeci (`Grid/GridAgregat`, `Ui/PodlogaGrid`); značenje brojeva potvrđeno na korpusu (2 su količine i vrijednosti, 3 cijene i "pros.") |
+| **SRT-01** | AUTOMATICSORT=false 7 | `GridEX1.AutomaticSort = False` | izračunato, nije primijenjeno | `AllowSort=false` |
+| **FRZ-01** | FROZENCOLUMNS 5/8/13 u 12 granula | `GridEX1.FrozenColumns` (broji ikonu i kvačicu) | izračunato, nije primijenjeno | toliko podatkovnih stupaca lijevo `Fixed` |
+| **MSG-03** | poruka s `#close`/`+close` | `ZelimIzaciIzForme` zatvara formu (Form2 7512) | nije postojalo | greška SQL-a u lancu dijaloga s `#close` zatvori dijalog |
 
 ## Otvoreno
 

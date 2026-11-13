@@ -313,6 +313,8 @@ namespace Carpo.NetGen.Grid
                 k.Sirina = 44;
                 k.Format = "#,##0.00";
                 k.Poravnanje = "Far";
+                // Class1.vb 1171: AggregateFunction.Sum (Janus 2) u ukupnom retku (TOT-01).
+                k.Agregat = "2";
             }
             else if (tip.IndexOf("date", StringComparison.Ordinal) >= 0)
             {

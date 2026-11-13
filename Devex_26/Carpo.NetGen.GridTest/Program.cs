@@ -2625,6 +2625,14 @@ namespace Carpo.NetGen.GridTest
                 NgPoruka.Zapis = null;
             }
             T("msg-msgbox-zadano", poruka == "SPREMLJENO", poruka);
+            T("tot01-agregat", GridAgregat.Vrsta("2") == "Sum" && GridAgregat.Vrsta("3") == "Average" && GridAgregat.Vrsta("0") == "" && GridAgregat.Vrsta("SUM") == "Sum"
+                && GridAgregat.Vrsta("4") == "Min" && GridAgregat.Vrsta("5") == "Max" && GridAgregat.Vrsta("") == "", "");
+            T("tot01-format", GridAgregat.Format("Sum", typeof(decimal), "#,##0.000") == "{0:#,##0.00}" && GridAgregat.Format("Sum", typeof(int), "##0") == "{0:##0}"
+                && GridAgregat.Format("Count", typeof(decimal), "") == "{0}", "");
+            T("tot01-zamrznuti", GridAgregat.ZamrznutiPodaci(5, true) == 3 && GridAgregat.ZamrznutiPodaci(5, false) == 4 && GridAgregat.ZamrznutiPodaci(0, true) == 0 && GridAgregat.ZamrznutiPodaci(null, false) == 0, "");
+            var dec = new DataTable();
+            dec.Columns.Add("Iznos", typeof(decimal));
+            T("tot01-decimal-sum", MasterGrid.IzPodatka(dec.Columns[0], "").Agregat == "2", "");
         }
 
         /// <summary>

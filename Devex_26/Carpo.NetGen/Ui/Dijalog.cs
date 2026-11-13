@@ -862,6 +862,13 @@ namespace Carpo.NetGen.Ui
                         // Form2.vb 7510-7516: RefreshControls postavi GreskaKodIzvrsavanjaSQLa
                         // i Exit For. Ostatak lanca (ispis, OK, nova forma) se ne izvrsi (EVT-03).
                         NgDnevnik.Greska(ex.Message + " | " + dio);
+                        // 7512-7514 i Class1.ExecSql 190-193: poruka s "#close"/"+close" zatvara formu (MSG-03).
+                        string m = (ex.Message ?? "").ToLowerInvariant();
+                        if (m.Contains("#close") || m.Contains("+close"))
+                        {
+                            DialogResult = DialogResult.Cancel;
+                            Close();
+                        }
                         return string.IsNullOrEmpty(ex.Message) ? "greska" : ex.Message;
                     }
                     PrimeniRed(rez);

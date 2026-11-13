@@ -829,6 +829,7 @@ namespace Carpo.NetGen.Ui
                     c.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Near;
             }
             PodesiUredjivanje(pogled, kolone);
+            PrimijeniUkupno(pogled, tablica, kolone);
             if (pogled.RowCount > 0)
                 pogled.FocusedRowHandle = 0;
         }
