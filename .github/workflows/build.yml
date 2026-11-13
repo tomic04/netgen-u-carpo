@@ -22,6 +22,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Zastita mrtvog koda i statusa portano
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $py = $null
+          foreach ($c in @("python","python3","py")) {
+            if (Get-Command $c -ErrorAction SilentlyContinue) { $py = $c; break }
+          }
+          if (-not $py) { throw "Nema Pythona. Zastita treba python, python3 ili py." }
+          & $py (Join-Path $env:GITHUB_WORKSPACE "scripts\ci\mrtve-metode.py")
+          if ($LASTEXITCODE -ne 0) { throw "Mrtva javna metoda. Vidi MRTVO iznad. Iznimka ide u scripts/ci/mrtve-iznimke.txt s razlogom." }
+          & $py (Join-Path $env:GITHUB_WORKSPACE "scripts\ci\portano-ui.py")
+          if ($LASTEXITCODE -ne 0) { throw "Status portano nema UI test granule. Vidi tests/ui/katalog.txt." }
+
       - name: Spin stubovi i otvaranje
         shell: powershell
         run: |
