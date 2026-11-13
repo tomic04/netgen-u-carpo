@@ -102,9 +102,9 @@ begin
     set nocount on;
     if @action = 'SVA'
     begin
-        select r.RobaId as id, r.Naziv
+        select top 5 r.RobaId as id, r.Naziv
         from dbo.Roba r
-        where r.Naziv like N'kp-web-roba%';
+        order by r.RobaId;
         return;
     end
     if @action = 'U_KLASI'
@@ -117,10 +117,9 @@ begin
     end
     if @action = 'NE_U_KLASI'
     begin
-        select r.RobaId as id, r.Naziv
+        select top 5 r.RobaId as id, r.Naziv
         from dbo.Roba r
-        where r.Naziv like N'kp-web-roba%'
-          and not exists (
+        where not exists (
               select 1 from dbo.LnRobaWebKlase l
               where l.RobaId = r.RobaId and l.KlRobaWebKlaseId = @klrobawebklaseid);
     end

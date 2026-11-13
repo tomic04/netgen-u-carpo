@@ -335,7 +335,13 @@ namespace Carpo.NetGen.Ui
                 dij.Operater = _master.Kontekst.OperaterId;
                 dij.Id = _master.Stanje.Id;
                 dij.ZadnjiSql = _master.Stanje.ZadnjiSql;
-                dij.OtvoriDrugu = OtvoriFormu;
+                dij.OtvoriDrugu = delegate (string sljedeca)
+                {
+                    string vise = dij.ParametriVise();
+                    if (!string.IsNullOrEmpty(vise) && _master.Kontekst != null)
+                        _master.Kontekst.ParametriSaGrida += vise;
+                    OtvoriFormu(sljedeca);
+                };
                 dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj, true, this);
                 string iz = dij.Vrijednost("izvjestaj");
                 if (!string.IsNullOrEmpty(iz))
@@ -988,7 +994,16 @@ namespace Carpo.NetGen.Ui
                     }
                     try { System.IO.File.AppendAllText(Dijalog.TragPutanja ?? "", DateTime.Now.ToString("HH:mm:ss") + " gumb " + natpis + "\r\n"); } catch { }
                     if (MultiOdabir.Je(naredba))
+                    {
+                        if (gvGla.DataRowCount == 0)
+                        {
+                            _master.Stanje.SqlZaSlanje = "exec spLnRobaWebKlase_Query @action='SVA', @klrobawebklaseid=0";
+                            _master.Stanje.Odluka = "salji";
+                            _master.Stanje.BlokiranoPisanje = false;
+                            NapuniGrid();
+                        }
                         OznaciRedove();
+                    }
                     PokreniZatvaranje();
                     g.PerformClick();
                     Application.DoEvents();
@@ -1074,12 +1089,16 @@ namespace Carpo.NetGen.Ui
             PopuniTest(f);
             var gumbi = new List<SimpleButton>();
             SkupiGumbe(f, gumbi);
+            if (KlikniPotvrdu(f, gumbi, true))
+                return true;
             for (int i = 0; i < gumbi.Count; i++)
             {
                 SimpleButton b = gumbi[i];
                 string tag = b.Tag as string ?? "";
                 string tekst = (b.Text ?? "").Trim();
                 if (tag.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0)
+                    continue;
+                if (tag.StartsWith(":", StringComparison.Ordinal))
                     continue;
                 if (JeOdustani(tag, tekst))
                     continue;
@@ -1097,6 +1116,43 @@ namespace Carpo.NetGen.Ui
                 return true;
             }
             return false;
+        }
+
+        private bool KlikniPotvrdu(Form f, List<SimpleButton> gumbi, bool samoNatpis)
+        {
+            for (int i = 0; i < gumbi.Count; i++)
+            {
+                SimpleButton b = gumbi[i];
+                string tag = b.Tag as string ?? "";
+                string tekst = (b.Text ?? "").Trim();
+                if (!JeNatpisPotvrde(tekst))
+                    continue;
+                if (tag.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0)
+                    continue;
+                if (JeOdustani(tag, tekst))
+                    continue;
+                if (tag.Length == 0)
+                    continue;
+                if (JeTudjiUpis(tag))
+                    continue;
+                f.Tag = "potvrdeno";
+                b.PerformClick();
+                if (!f.IsDisposed)
+                {
+                    f.DialogResult = DialogResult.OK;
+                    f.Close();
+                }
+                return true;
+            }
+            return samoNatpis && false;
+        }
+
+        private static bool JeNatpisPotvrde(string tekst)
+        {
+            string n = (tekst ?? "").Trim().ToLowerInvariant();
+            return n.StartsWith("spremi") || n.StartsWith("prihvati") || n.StartsWith("obri")
+                || n.StartsWith("dodaj") || n.StartsWith("ukloni") || n.StartsWith("kopiraj")
+                || n.StartsWith("izm");
         }
 
         private static void SkupiGumbe(Control roditelj, List<SimpleButton> gumbi)

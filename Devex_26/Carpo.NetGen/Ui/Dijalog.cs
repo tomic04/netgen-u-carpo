@@ -41,6 +41,11 @@ namespace Carpo.NetGen.Ui
         public string Operater = "";
         public string Id = "0";
         public string ZadnjiSql = "";
+
+        public string ParametriVise()
+        {
+            return _kontekst == null ? "" : (_kontekst.ParametriSaGrida ?? "");
+        }
         public Action<string> OtvoriDrugu;
 
         public void JupiterNeSaljeGumb(bool jupiter)
