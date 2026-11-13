@@ -879,13 +879,16 @@ namespace Carpo.NetGen.Ui
 
         private DataTable Citaj(string sql)
         {
-            if (DateTime.UtcNow > RokUtc)
+            if (string.IsNullOrWhiteSpace(sql))
+                return null;
+            if (DateTime.UtcNow > RokUtc || _brojUpita >= MaxUpita)
             {
                 _sqlGreska = "sweep rok";
                 return null;
             }
-            if (string.IsNullOrWhiteSpace(sql))
-                return null;
+            _brojUpita++;
+            if (sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                sql = DetailGrid.ZamijeniOstatak(sql, "");
             if (sql.IndexOf("cis.porezna-uprava.hr", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 _sqlGreska = "nije poslano na produkcijski URL Porezne";
@@ -922,7 +925,9 @@ namespace Carpo.NetGen.Ui
         }
 
         public static int TimeoutUpita = 30;
+        public static int MaxUpita = int.MaxValue;
         public static DateTime RokUtc = DateTime.MaxValue;
+        private int _brojUpita;
 
         /// <summary>
         /// Klik na podlozi. Upis ide samo na spin na sql-ai. Fiskalizacija ne ide na Poreznu.

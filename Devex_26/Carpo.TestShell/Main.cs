@@ -518,6 +518,7 @@ namespace Carpo.TestShell
             while (_sweepRadi)
             {
                 Thread.Sleep(200);
+                try { ZatvoriDijalogBoje(); } catch { }
                 try
                 {
                     BeginInvoke(new Action(delegate ()
@@ -575,7 +576,8 @@ namespace Carpo.TestShell
                 sekundi = 6;
             if (dijelova < 1)
                 dijelova = 1;
-            Carpo.NetGen.Ui.Podloga.TimeoutUpita = 3;
+            Carpo.NetGen.Ui.Podloga.TimeoutUpita = 1;
+            Carpo.NetGen.Ui.Podloga.MaxUpita = 5;
             _klikPregled = true;
             _sweepRadi = true;
             var bdij = new Thread(ZatvarajSweep);
@@ -740,7 +742,6 @@ namespace Carpo.TestShell
                 try
                 {
                     f.Close();
-                    f.Dispose();
                 }
                 catch
                 {
