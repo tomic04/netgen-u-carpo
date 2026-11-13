@@ -221,6 +221,7 @@ namespace Carpo.NetGen.Komande
         public static string ZadnjiTip = "";
         public static string Greska = "";
         public static string Poziv = "";
+        public static string Trag = "";
         private static Dictionary<string, string> _datoteke;
         private static readonly HashSet<string> _uTijeku = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private static bool _kuka;
@@ -494,6 +495,139 @@ namespace Carpo.NetGen.Komande
                 }
                 for (int j = 0; j < janus.Length; j++)
                     DodajMapu(janus[j]);
+            }
+            Dopuni();
+        }
+
+        /// <summary>
+        /// NetGen.exe.config privatePath i codebase. Form2.vb 9044 radi Assembly.Load u procesu NetGena,
+        /// pa ovisnosti (DevExpress 12.1) stoje uz exe, ne uz Carpo.
+        /// </summary>
+        private static void Dopuni()
+        {
+            if (_datoteke.ContainsKey("DevExpress.Reports.v12.1.Designer.dll"))
+                return;
+            string exe = "";
+            string dizajner = "";
+            string[] korijeni = new[]
+            {
+                @"C:\Users\ntomic\Desktop",
+                @"C:\Program Files (x86)\DevExpress 12.1",
+                @"C:\Program Files (x86)\DevExpress",
+                @"C:\Program Files\DevExpress 12.1"
+            };
+            for (int k = 0; k < korijeni.Length && (exe.Length == 0 || dizajner.Length == 0); k++)
+            {
+                if (!Directory.Exists(korijeni[k]))
+                    continue;
+                var red = new Queue<string>();
+                red.Enqueue(korijeni[k]);
+                int n = 0;
+                while (red.Count > 0 && n < 8000 && (exe.Length == 0 || dizajner.Length == 0))
+                {
+                    string mapa = red.Dequeue();
+                    n++;
+                    string[] datoteke;
+                    try
+                    {
+                        datoteke = Directory.GetFiles(mapa);
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                    for (int i = 0; i < datoteke.Length; i++)
+                    {
+                        string ime = Path.GetFileName(datoteke[i]);
+                        if (exe.Length == 0 && string.Equals(ime, "NetGen.exe", StringComparison.OrdinalIgnoreCase))
+                            exe = datoteke[i];
+                        if (dizajner.Length == 0 && string.Equals(ime, "DevExpress.Reports.v12.1.Designer.dll", StringComparison.OrdinalIgnoreCase))
+                            dizajner = datoteke[i];
+                    }
+                    string[] pod;
+                    try
+                    {
+                        pod = Directory.GetDirectories(mapa);
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                    for (int i = 0; i < pod.Length; i++)
+                    {
+                        string ime = Path.GetFileName(pod[i]);
+                        if (string.Equals(ime, "Jupiter Client", StringComparison.OrdinalIgnoreCase))
+                            continue;
+                        if (string.Equals(ime, "node_modules", StringComparison.OrdinalIgnoreCase) || ime.StartsWith(".", StringComparison.Ordinal))
+                            continue;
+                        red.Enqueue(pod[i]);
+                    }
+                }
+            }
+            if (exe.Length > 0)
+            {
+                string mapaExe = Path.GetDirectoryName(exe) ?? "";
+                Obidi(mapaExe, 0);
+                Konfig(exe + ".config", mapaExe);
+            }
+            if (dizajner.Length > 0)
+                DodajMapu(Path.GetDirectoryName(dizajner) ?? "");
+            Trag = "exe=" + exe + " designer=" + dizajner;
+        }
+
+        private static void Konfig(string put, string mapaExe)
+        {
+            if (!File.Exists(put))
+                return;
+            string t;
+            try
+            {
+                t = File.ReadAllText(put);
+            }
+            catch
+            {
+                return;
+            }
+            int i = 0;
+            while (true)
+            {
+                int a = t.IndexOf("privatePath", i, StringComparison.OrdinalIgnoreCase);
+                if (a < 0)
+                    break;
+                int q1 = t.IndexOf('"', a);
+                int q2 = q1 < 0 ? -1 : t.IndexOf('"', q1 + 1);
+                if (q1 < 0 || q2 < 0)
+                    break;
+                string[] dijelovi = t.Substring(q1 + 1, q2 - q1 - 1).Split(';');
+                for (int d = 0; d < dijelovi.Length; d++)
+                {
+                    string rel = dijelovi[d].Trim();
+                    if (rel.Length == 0)
+                        continue;
+                    string aps = Path.IsPathRooted(rel) ? rel : Path.Combine(mapaExe, rel);
+                    if (Directory.Exists(aps))
+                        Obidi(aps, 0);
+                }
+                i = q2 + 1;
+            }
+            int h = 0;
+            while (true)
+            {
+                int a = t.IndexOf("file:///", h, StringComparison.OrdinalIgnoreCase);
+                if (a < 0)
+                    break;
+                int z = t.IndexOf('"', a);
+                if (z < 0)
+                    break;
+                string dat = t.Substring(a + "file:///".Length, z - a - "file:///".Length).Replace('/', '\\');
+                if (File.Exists(dat))
+                {
+                    string ime = Path.GetFileName(dat);
+                    if (!_datoteke.ContainsKey(ime))
+                        _datoteke[ime] = dat;
+                    DodajMapu(Path.GetDirectoryName(dat) ?? "");
+                }
+                h = z + 1;
             }
         }
 

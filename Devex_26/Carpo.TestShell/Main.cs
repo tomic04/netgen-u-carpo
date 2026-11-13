@@ -320,7 +320,8 @@ namespace Carpo.TestShell
             string linija = ok
                 ? "OK ext " + string.Join(",", vidjeno.ToArray()) + " " + poziv
                 : "FAIL ext " + string.Join(",", vidjeno.ToArray()) + " " + poziv + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Greska
-                    + " janus=" + Carpo.NetGen.Komande.EkstenzijaGrid.PutDatoteke("Janus.Windows.GridEX.v3.dll");
+                    + " janus=" + Carpo.NetGen.Komande.EkstenzijaGrid.PutDatoteke("Janus.Windows.GridEX.v3.dll")
+                    + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Trag;
             UpisiIshod(snimka, linija);
             return ok ? 0 : 5;
         }
