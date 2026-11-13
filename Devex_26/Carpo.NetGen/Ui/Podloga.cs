@@ -948,6 +948,7 @@ namespace Carpo.NetGen.Ui
             DijalogTok.DozvoliUpis = upis;
             _imeUnosa = "kp" + DateTime.Now.ToString("HHmmss");
             DijalogTok.TekstUpisa = _imeUnosa;
+            _korisceno.Clear();
             if (upis)
             {
                 try { System.IO.File.AppendAllText(Dijalog.TragPutanja ?? "", DateTime.Now.ToString("HH:mm:ss") + " klikovi\r\n"); } catch { }
@@ -1289,6 +1290,8 @@ namespace Carpo.NetGen.Ui
             OdaberiLook(f);
         }
 
+        private static readonly System.Collections.Generic.HashSet<string> _korisceno = new System.Collections.Generic.HashSet<string>();
+
         private static void OdaberiLook(Control roditelj)
         {
             if (roditelj == null)
@@ -1301,6 +1304,12 @@ namespace Carpo.NetGen.Ui
                     var dt = look.Properties.DataSource as DataTable;
                     if (dt != null && dt.Columns.Count > 0)
                     {
+                        // Isti combo u istom klik pregledu dobije vrijednost koju jos nije imao. Izmjena
+                        // PrnTroskovi (ADDITEMS -> ADDITEM) dodaje stavku istom zaglavlju; ista vrsta kao kod
+                        // Unesi granula sama odbije ("Postoji vec takva vrsta troska"), kao i NetGen.
+                        string kljuc = (look.Name ?? "").ToLowerInvariant();
+                        object prva = null;
+                        object nova = null;
                         for (int r = 0; r < dt.Rows.Count; r++)
                         {
                             object v = dt.Rows[r][0];
@@ -1309,8 +1318,19 @@ namespace Carpo.NetGen.Ui
                             string s = Convert.ToString(v);
                             if (s.Length == 0 || s == "null")
                                 continue;
-                            look.EditValue = v;
-                            break;
+                            if (prva == null)
+                                prva = v;
+                            if (!_korisceno.Contains(kljuc + "=" + s))
+                            {
+                                nova = v;
+                                break;
+                            }
+                        }
+                        object izbor = nova ?? prva;
+                        if (izbor != null)
+                        {
+                            look.EditValue = izbor;
+                            _korisceno.Add(kljuc + "=" + Convert.ToString(izbor));
                         }
                     }
                 }
