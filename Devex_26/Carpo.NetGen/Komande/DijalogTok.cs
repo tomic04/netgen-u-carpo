@@ -38,6 +38,8 @@ namespace Carpo.NetGen.Komande
         {
             public string Vrsta = "";
             public string Tekst = "";
+            /// <summary>Segment kakav je u XML-u. Form2.vb 6812: @@ se zamijeni prije prepoznavanja.</summary>
+            public string Izvor = "";
         }
 
         public static bool JeJupiter(string server)
@@ -183,7 +185,7 @@ namespace Carpo.NetGen.Komande
                 k.SaljeSql = !jupiter && k.MasterSql.Length > 0 && SmijePoslati(k.MasterSql);
                 return k;
             }
-            string[] seg = Lanac.Segmenti(naredba);
+            string[] seg = Lanac.SegmentiDijaloga(naredba);
             for (int i = 0; i < seg.Length; i++)
             {
                 string t = (seg[i] ?? "").Trim();
@@ -312,7 +314,7 @@ namespace Carpo.NetGen.Komande
         public static List<Korak> Koraci(string onClick)
         {
             var lista = new List<Korak>();
-            string[] seg = Lanac.Segmenti(onClick ?? "");
+            string[] seg = Lanac.SegmentiDijaloga(onClick ?? "");
             for (int i = 0; i < seg.Length; i++)
             {
                 string t = (seg[i] ?? "").Trim();
@@ -320,6 +322,7 @@ namespace Carpo.NetGen.Komande
                     continue;
                 var k = new Korak();
                 k.Tekst = t;
+                k.Izvor = t;
                 string u = t.ToUpperInvariant();
                 if (ForeachNaredba.Vrsta(t).Length > 0)
                 {
@@ -393,6 +396,12 @@ namespace Carpo.NetGen.Komande
                     k.Vrsta = "stupac";
                 else if (u.IndexOf("CREATEOBJECT(", StringComparison.Ordinal) >= 0)
                     k.Vrsta = "objekt";
+                // Form2.vb 7424 i 7489: ASSEMBLYLOAD i POSLOVNIPROSTOR su naredbe i u lancu,
+                // ne SQL (LAN-01, LAN-02).
+                else if (u.IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "assembly";
+                else if (ProstorNaredba.Je(t))
+                    k.Vrsta = "prostor";
                 else if (u.IndexOf("TOGGLEGRIDGROUP(", StringComparison.Ordinal) >= 0)
                     k.Vrsta = "toggle";
                 else if (u.IndexOf("PREPAREMULTISELECTEDPRINT(", StringComparison.Ordinal) >= 0)
@@ -438,7 +447,9 @@ namespace Carpo.NetGen.Komande
                     k.Vrsta = "ok";
                 else if (u == "OKSTAY")
                     k.Vrsta = "okstay";
-                else if (Carpo.NetGen.Print.PrintBridge.JePredlozak(t))
+                // Form2.vb 6882: predlozak je segment koji pocinje s ':' (NovaGenerickaForma2 -> REPX/).
+                // SQL koji u tekstu vraca ':REPX/...' ostaje SQL.
+                else if (t.StartsWith(":", StringComparison.Ordinal) && Carpo.NetGen.Print.PrintBridge.JePredlozak(t))
                     k.Vrsta = "predlozak";
                 else if (t.StartsWith(":", StringComparison.Ordinal))
                 {
@@ -455,6 +466,35 @@ namespace Carpo.NetGen.Komande
                 lista.Add(k);
             }
             return lista;
+        }
+
+        /// <summary>
+        /// Form2.NovaGenerickaForma2 (4259-4479). Ispis (VRSTADOKID-, RSGEN, GG/, RS/, RS:, REPX:, REPX/,
+        /// .clsreport) i objekt (tocka bez @, ili ..) izadu prije forme, pa nema RefreshKontrola.
+        /// Za pravu formu RefreshKontrola ide kad se dijete zatvori (4443, 4478).
+        /// </summary>
+        public static bool OsvjezavaNakonDjeteta(string imeForme)
+        {
+            string ime = (imeForme ?? "").Trim();
+            if (ime.Length == 0)
+                return false;
+            string u = ime.ToUpperInvariant();
+            if (u.StartsWith("VRSTADOKID-", StringComparison.Ordinal) || u.StartsWith("RSGEN", StringComparison.Ordinal)
+                || u.StartsWith("GG/", StringComparison.Ordinal) || u.StartsWith("RS/", StringComparison.Ordinal)
+                || u.StartsWith("RS:", StringComparison.Ordinal) || u.StartsWith("REPX:", StringComparison.Ordinal)
+                || u.StartsWith("REPX/", StringComparison.Ordinal) || ime.ToLowerInvariant().Contains(".clsreport"))
+                return false;
+            if ((ime.Contains(".") && !ime.Contains("@")) || ime.Contains(".."))
+                return false;
+            return true;
+        }
+
+        /// <summary>Form2.SrediKontrolu 3056-3067: samo tocno "TRUE" upise kontrolu u Cdt.</summary>
+        public static bool RefreshAfterChild(NgControl k)
+        {
+            if (k == null || k.Atributi == null || !k.Atributi.Ima("REFRESHAFTERCHILD"))
+                return false;
+            return k.Atributi.Vrijednost("REFRESHAFTERCHILD") == "TRUE";
         }
 
         public static bool PreskociGrid(NgControl k)

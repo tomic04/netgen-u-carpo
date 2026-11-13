@@ -240,9 +240,29 @@ namespace Carpo.NetGen.Print
             return put;
         }
 
+        /// <summary>
+        /// Form2.NovaGenerickaForma2 4277-4288: "ime(parametri)" se rastavi. Ime je do zagrade, a ono u
+        /// zagradi (vec sredjeno) ide izvjestaju umjesto svih parametara (PrintRpt(ImeForme, tpP)) (ISP-04).
+        /// </summary>
+        public static string BezZagrade(string naredba, out string unutra)
+        {
+            string s = (naredba ?? "").Trim();
+            unutra = null;
+            int z = s.IndexOf('(');
+            if (z <= 0)
+                return s;
+            int kraj = s.EndsWith(")", StringComparison.Ordinal) ? s.Length - 1 : s.Length;
+            unutra = kraj > z + 1 ? s.Substring(z + 1, kraj - z - 1) : "";
+            return s.Substring(0, z).Trim();
+        }
+
         public static bool Predlozak(string naredba, string konekcija, string parametri, string id)
         {
-            ZadnjiIme = ImePredloska(naredba);
+            string unutra;
+            string ime = BezZagrade(naredba, out unutra);
+            ZadnjiIme = ImePredloska(ime);
+            if (unutra != null)
+                parametri = unutra;
             var lista = ParametriIzvjestaja(string.IsNullOrEmpty(id) ? new string[0] : new[] { id }, parametri ?? "");
             ZadnjiParam = lista.Count == 0 ? "" : (ViseOdDva(lista.Count) ? string.Join("|", lista.ToArray()) : lista[0]);
             if (!string.IsNullOrEmpty(MapaIzvoza))

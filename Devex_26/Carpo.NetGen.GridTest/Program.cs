@@ -1987,6 +1987,10 @@ namespace Carpo.NetGen.GridTest
             DijalogUcinak();
             SqlSlojNetGen();
             BrojNaDijalogu();
+            LanacNakonZamjene();
+            DogadjajiPravila();
+            DogadjajiDijaloga();
+            RasporedDijaloga();
             IspisUcinak();
             PokaziUpitUcinak();
             var traz = new DataTable();
@@ -1994,7 +1998,8 @@ namespace Carpo.NetGen.GridTest
             traz.Columns.Add("Naziv0100", typeof(string));
             traz.Rows.Add(4, "1,5");
             string search = ParametriSvi.IzTrazilice(traz.Rows[0]);
-            T("trazilica-search", search.IndexOf("@SEARCHid", StringComparison.Ordinal) < 0 && search.IndexOf("@SEARCHNaziv='1.5'", StringComparison.Ordinal) >= 0, search);
+            // TRZ-02: Janus stupac 1 je kvacica, pa je prvi stupac podatka (id) i parametar.
+            T("trazilica-search", search.IndexOf("@SEARCHid='4'", StringComparison.Ordinal) >= 0 && search.IndexOf("@SEARCHNaziv='1.5'", StringComparison.Ordinal) >= 0, search);
         }
 
         private static void DijalogUcinak()
@@ -2025,6 +2030,8 @@ namespace Carpo.NetGen.GridTest
                 onLeave.Invoke(trazi, new object[] { EventArgs.Empty });
                 bool zuta = trazi.BackColor.ToArgb() == Color.LightYellow.ToArgb();
                 bool tag0 = Convert.ToString(trazi.Tag) == "0";
+                // Form2.Glbl_Leave 9441-9447: prazna trazilica na izlazu salje ONLOSTFOCUS.
+                int prazniLost = Broji(sql, "lostsearch");
                 Control natpis = d.Controls.Find("natpis", true)[0];
                 typeof(Control).GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(natpis, new object[] { EventArgs.Empty });
                 bool klik = false;
@@ -2038,17 +2045,14 @@ namespace Carpo.NetGen.GridTest
                 // Runner nema aktivni prozor, pa Focus() ne postavi ActiveControl.
                 // ProcessCmdKey gleda ActiveControl (Form2.vb KeyDown na tražilici).
                 d.ActiveControl = trazi;
-                int prije = sql.Count;
+                int prije = Broji(sql, "lostsearch");
                 d.ProvediTipku(Keys.Enter);
                 onLeave.Invoke(trazi, new object[] { EventArgs.Empty });
-                bool preskocio = true;
-                for (int i = prije; i < sql.Count; i++)
-                {
-                    if ((sql[i] ?? "").IndexOf("lostsearch", StringComparison.Ordinal) >= 0)
-                        preskocio = false;
-                }
-                T("dijalog-ucinak", zelena && sel == 3 && zuta && tag0 && klik && preskocio, naziv.BackColor.Name + " sel=" + sel + " tag=" + trazi.Tag
-                    + " zelena=" + zelena + " zuta=" + zuta + " (" + trazi.BackColor.Name + ") klik=" + klik + " preskocio=" + preskocio + " sql=" + string.Join(" | ", sql.ToArray()));
+                // Enter u trazilici (Glbl_Validated) salje ONLOSTFOCUS jednom; izlaz nakon toga ne salje opet (EVT-02).
+                int nakonEntera = Broji(sql, "lostsearch") - prije;
+                bool jednom = prazniLost == 1 && nakonEntera == 1;
+                T("dijalog-ucinak", zelena && sel == 3 && zuta && tag0 && klik && jednom, naziv.BackColor.Name + " sel=" + sel + " tag=" + trazi.Tag
+                    + " zelena=" + zelena + " zuta=" + zuta + " (" + trazi.BackColor.Name + ") klik=" + klik + " prazniLost=" + prazniLost + " nakonEntera=" + nakonEntera + " sql=" + string.Join(" | ", sql.ToArray()));
             }
             finally
             {
@@ -2151,20 +2155,412 @@ namespace Carpo.NetGen.GridTest
             }
         }
 
+        /// <summary>
+        /// LAN-01, LAN-03, CB-01 (docs/pregled/C2-lanac.md). Form2.vb 6812-6819: segment se zamijeni
+        /// pa tek onda prepozna. @@ime iz medjuspremnika podloge (cls1.CB) vrijedi i u dijalogu.
+        /// ASSEMBLYLOAD u lancu je naredba (Form2.vb 7424), ne SQL.
+        /// </summary>
+        private static int Broji(List<string> sql, string dio)
+        {
+            int n = 0;
+            for (int i = 0; i < sql.Count; i++)
+            {
+                if ((sql[i] ?? "").IndexOf(dio, StringComparison.Ordinal) >= 0)
+                    n++;
+            }
+            return n;
+        }
+
+        /// <summary>Faza C2 (docs/pregled/C2-lanac.md, EVT/RES/TRZ): ciste odluke bez prozora.</summary>
+        private static void DogadjajiPravila()
+        {
+            T("res01-akcija", Form2Rezultat.Akcija(" Disable ") == "disable" && Form2Rezultat.Akcija("") == ""
+                && Form2Rezultat.Akcija("refreshmovelast") == "ostalo" && Form2Rezultat.Akcija("tabnotstoped") == "tabnotstoped", "");
+            T("res01-stanje", Form2Rezultat.JeStanje("invisible") && !Form2Rezultat.JeStanje("refresh") && Form2Rezultat.BrojDobivaVrijednost("12,5")
+                && !Form2Rezultat.BrojDobivaVrijednost("refresh"), "");
+            T("res01-vbbool", Form2Rezultat.VbBool("1") == true && Form2Rezultat.VbBool("False") == false && Form2Rezultat.VbBool("0") == false
+                && Form2Rezultat.VbBool("disable") == null, "");
+            T("res01-radio-beep", Form2Rezultat.RadioUkljuci("true") && !Form2Rezultat.RadioUkljuci("0") && Form2Rezultat.Beep("45") == 30 && Form2Rezultat.Beep("x") == 0, "");
+            T("res01-combo-grid", Form2Rezultat.ComboOsvjezi("refresh") && !Form2Rezultat.ComboOsvjezi(" refresh") && Form2Rezultat.GridOsvjezi("refreshmovelast")
+                && !Form2Rezultat.ComboDobivaVrijednost("enable") && Form2Rezultat.ComboDobivaVrijednost("5"), "");
+            var red = new DataTable();
+            red.Columns.Add("id", typeof(int));
+            red.Columns.Add("sifra", typeof(string));
+            red.Columns.Add("naziv0300", typeof(string));
+            red.Columns.Add("napomena", typeof(string));
+            red.Rows.Add(7, "S7", "Zagreb, Ilica", DBNull.Value);
+            T("trz01-id-naziv", TrazilicaTok.Id(red.Rows[0]) == "7" && TrazilicaTok.Naziv(red.Rows[0]) == "Zagreb, Ilica", TrazilicaTok.Naziv(red.Rows[0]));
+            var bezId = new DataTable();
+            bezId.Columns.Add("partneriid", typeof(int));
+            bezId.Columns.Add("opis", typeof(string));
+            bezId.Rows.Add(9, "Opis 9");
+            T("trz01-bez-id", TrazilicaTok.Id(bezId.Rows[0]) == "9" && TrazilicaTok.Naziv(bezId.Rows[0]) == "Opis 9", "");
+            T("trz01-stupci", TrazilicaTok.Natpis("Sifra,Naziv", 1) == "Sifra" && TrazilicaTok.Natpis("Sifra,Naziv", 3) == null
+                && TrazilicaTok.Sirina("40,0", 2) == 0 && TrazilicaTok.Natpis("Sifra", 0) == null, "");
+            string celija = Form2Dogadjaj.ParametriCelije(red.Rows[0]);
+            T("cel01-parametri", celija == "@id='7' , @sifra='S7' , @naziv='Zagreb. Ilica' , @napomena='' , ", celija);
+            T("rac01-djeca", DijalogTok.OsvjezavaNakonDjeteta("UNOSSTAVKE") && DijalogTok.OsvjezavaNakonDjeteta("FORMA(@x=@@id)")
+                && !DijalogTok.OsvjezavaNakonDjeteta("REPX:/racun") && !DijalogTok.OsvjezavaNakonDjeteta("rsgen5")
+                && !DijalogTok.OsvjezavaNakonDjeteta("Biblioteka.Klasa") && !DijalogTok.OsvjezavaNakonDjeteta("x..y"), "");
+            var rac = new NgControl("grid", NgGrana.Grid, "g", new NgAttributeBag(new Dictionary<string, string> { { "REFRESHAFTERCHILD", "TRUE" } }), true);
+            var racMalo = new NgControl("grid", NgGrana.Grid, "g", new NgAttributeBag(new Dictionary<string, string> { { "REFRESHAFTERCHILD", "true" } }), true);
+            T("rac01-atribut", DijalogTok.RefreshAfterChild(rac) && !DijalogTok.RefreshAfterChild(racMalo), "");
+            var cb = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            cb["NAZIV="] = "staro";
+            ClipboardNg.UpisiParametre(cb, "@searchboxpartner='Pero',@comboboxvrsta='A',@naziv='novo',@partner=7,");
+            T("cmb01-cb", cb["NAZIV="] == "novo" && cb.Count == 4 && cb["searchboxpartner="] == "Pero" && cb["comboboxvrsta="] == "A" && cb["partner="] == "7",
+                string.Join(";", new List<string>(cb.Keys).ToArray()));
+        }
+
+        /// <summary>
+        /// Faza C2: dogadjaji dijaloga idu kroz lanac (EVT-01), rezultat SQL-a postavlja kontrole (RES-01),
+        /// trazilica trazi (TRZ-01), REFRESHAFTERCHILD, AFTERREFRESH, ONCELLEDITED, ONENTERKEY, ONLOADED, ONESCKEY.
+        /// </summary>
+        private static void DogadjajiDijaloga()
+        {
+            var kontrole = new List<NgControl>();
+            kontrole.Add(new NgControl("text", NgGrana.Text, "naziv", new NgAttributeBag(new Dictionary<string, string>
+            {
+                { "ONLOSTFOCUS", "select 'disable' as kolicina, 'x1' as napomena#select 'refresh' as stavke" }
+            }), true));
+            kontrole.Add(new NgControl("number", NgGrana.Number, "kolicina", new NgAttributeBag(new Dictionary<string, string>()), true));
+            kontrole.Add(new NgControl("text", NgGrana.Text, "napomena", new NgAttributeBag(new Dictionary<string, string>()), true));
+            kontrole.Add(new NgControl("label", NgGrana.Label, "status", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "s" } }), true));
+            kontrole.Add(new NgControl("search", NgGrana.Search, "partner", new NgAttributeBag(new Dictionary<string, string>
+            {
+                { "SQL", "spTrazi '@@searchboxpartner'" }, { "CAPTION", "Partner" }, { "ONLOSTFOCUS", "select 'trazeno' as status" }
+            }), true));
+            kontrole.Add(new NgControl("grid", NgGrana.Grid, "stavke", new NgAttributeBag(new Dictionary<string, string>
+            {
+                { "SQL", "select stavkaid, naziv from stavke where p=@@partner" }, { "REFRESHAFTERCHILD", "TRUE" },
+                { "AFTERREFRESH", "select 'poslije' as status" }, { "ONCELLEDITED", "update s set naziv='@@naziv' where id=@@stavkaid" },
+                { "EDITCOLUMNS", "naziv" }, { "ONENTERKEY", "select 'enter' as status" }
+            }), true));
+            kontrole.Add(new NgControl("button", NgGrana.Button, "dodaj", new NgAttributeBag(new Dictionary<string, string> { { "ONCLICK", ":DIJETE" } }), true));
+            kontrole.Add(new NgControl("button", NgGrana.Button, "svi", new NgAttributeBag(new Dictionary<string, string>
+            {
+                { "ONCLICK", "FOREACHROW(stavke)#update x set k='@(stavke..naziv)' where id=@@stavke" }
+            }), true));
+            kontrole.Add(new NgControl("multidrop", NgGrana.MultiDrop, "vrste", new NgAttributeBag(new Dictionary<string, string> { { "SQL", "select vrstaid, naziv from vrste" } }), true));
+            kontrole.Add(new NgControl("button", NgGrana.Button, "oznaci", new NgAttributeBag(new Dictionary<string, string> { { "ONCLICK", "select '1~3' as vrste" } }), true));
+            kontrole.Add(new NgControl("button", NgGrana.Button, "salji", new NgAttributeBag(new Dictionary<string, string> { { "ONCLICK", "select '@@vrste' as v" } }), true));
+            var atributi = new NgAttributeBag(new Dictionary<string, string>
+            {
+                { "ONLOADED", "select 'ucitano' as status" }, { "ONESCKEY", "select 'esc' as status" }
+            });
+            var forma = new NgForm("T2", atributi, "", "", kontrole, new List<NgButton>(), new List<string>());
+            var sql = new List<string>();
+            Func<string, DataTable> baza = delegate (string s)
+            {
+                sql.Add(s ?? "");
+                string t = s ?? "";
+                var dt = new DataTable();
+                if (t.IndexOf("'disable' as kolicina", StringComparison.Ordinal) >= 0)
+                {
+                    dt.Columns.Add("kolicina");
+                    dt.Columns.Add("napomena");
+                    dt.Rows.Add("disable", "x1");
+                    return dt;
+                }
+                if (t.IndexOf("from vrste", StringComparison.Ordinal) >= 0)
+                {
+                    dt.Columns.Add("vrstaid", typeof(int));
+                    dt.Columns.Add("naziv", typeof(string));
+                    dt.Rows.Add(1, "A");
+                    dt.Rows.Add(2, "B");
+                    dt.Rows.Add(3, "C");
+                    return dt;
+                }
+                if (t.IndexOf("select '1~3' as vrste", StringComparison.Ordinal) >= 0)
+                {
+                    dt.Columns.Add("vrste");
+                    dt.Rows.Add("1~3");
+                    return dt;
+                }
+                if (t.IndexOf("'refresh' as stavke", StringComparison.Ordinal) >= 0)
+                {
+                    dt.Columns.Add("stavke");
+                    dt.Rows.Add("refresh");
+                    return dt;
+                }
+                if (t.IndexOf("from stavke", StringComparison.Ordinal) >= 0)
+                {
+                    dt.Columns.Add("stavkaid", typeof(int));
+                    dt.Columns.Add("naziv", typeof(string));
+                    dt.Rows.Add(1, "prvi");
+                    dt.Rows.Add(2, "drugi");
+                    return dt;
+                }
+                if (t.IndexOf("spTrazi", StringComparison.Ordinal) >= 0)
+                {
+                    dt.Columns.Add("id", typeof(int));
+                    dt.Columns.Add("naziv", typeof(string));
+                    if (t.IndexOf("'jedan'", StringComparison.Ordinal) >= 0)
+                        dt.Rows.Add(7, "Partner Jedan");
+                    else if (t.IndexOf("'vise'", StringComparison.Ordinal) >= 0)
+                    {
+                        dt.Rows.Add(8, "Partner Osam");
+                        dt.Rows.Add(9, "Partner Devet");
+                    }
+                    return dt;
+                }
+                if (t.IndexOf("update s set", StringComparison.Ordinal) >= 0)
+                {
+                    if (t.IndexOf("greska", StringComparison.Ordinal) >= 0)
+                        throw new InvalidOperationException("greska u bazi");
+                    return null;
+                }
+                int a = t.IndexOf("select '", StringComparison.Ordinal);
+                int b = t.IndexOf("' as status", StringComparison.Ordinal);
+                if (a >= 0 && b > a)
+                {
+                    dt.Columns.Add("status");
+                    dt.Rows.Add(t.Substring(a + 8, b - a - 8));
+                    return dt;
+                }
+                return null;
+            };
+            var kontekst = new SqlKontekst();
+            kontekst.Clipboard = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var d = new Dijalog();
+            string dijete = "";
+            d.OtvoriDrugu = delegate (string ime) { dijete = ime; };
+            // Upis (update, ONCELLEDITED) ide samo uz DozvoliUpis, kao u klik pregledu na spinu.
+            DijalogTok.DozvoliUpis = true;
+            try
+            {
+                d.Slozi(forma, kontekst, baza);
+                d.ShowInTaskbar = false;
+                d.StartPosition = FormStartPosition.Manual;
+                d.Location = new Point(-32000, -32000);
+                d.Show();
+                Control status = d.Controls.Find("status", true)[0];
+                T("frm01-onloaded", status.Text == "ucitano", status.Text + " | " + string.Join(" | ", sql.ToArray()));
+
+                var onLeave = typeof(Control).GetMethod("OnLeave", BindingFlags.Instance | BindingFlags.NonPublic);
+                Control naziv = d.Controls.Find("naziv", true)[0];
+                Control kolicina = d.Controls.Find("kolicina", true)[0];
+                Control napomena = d.Controls.Find("napomena", true)[0];
+                int gridPrije = Broji(sql, "from stavke");
+                onLeave.Invoke(naziv, new object[] { EventArgs.Empty });
+                bool osvjezen = Broji(sql, "from stavke") == gridPrije + 1;
+                T("evt01-lanac-rezultat", !kolicina.Enabled && napomena.Text == "x1" && osvjezen && status.Text == "poslije" && Broji(sql, "'poslije'") == 1,
+                    "kolicina=" + kolicina.Enabled + " napomena=" + napomena.Text + " osvjezen=" + osvjezen + " status=" + status.Text);
+
+                var partner = (DevExpress.XtraEditors.ButtonEdit)d.Controls.Find("partner", true)[0];
+                // Korisnik udje u trazilicu pa upise (OldSearchString je tekst pri ulasku).
+                d.ActiveControl = partner;
+                partner.Text = "jedan";
+                d.ProvediTipku(Keys.Enter);
+                bool trazeno = Broji(sql, "spTrazi 'jedan'") == 1;
+                bool rac = Broji(sql, "where p=7") == 1;
+                T("trz01-jedan-red", Convert.ToString(partner.Tag) == "7" && partner.Text == "Partner Jedan" && trazeno && rac && status.Text == "trazeno",
+                    "tag=" + partner.Tag + " text=" + partner.Text + " trazeno=" + trazeno + " rac=" + rac + " status=" + status.Text);
+                T("cmb01-cb-dijalog", kontekst.Clipboard.ContainsKey("searchboxpartner=") && kontekst.Clipboard.ContainsKey("partner=")
+                    && kontekst.Clipboard["partner="] == "7", string.Join(";", new List<string>(kontekst.Clipboard.Keys).ToArray()));
+
+                TrazilicaProzor.OdabirZaTest = delegate (DataTable dt) { return dt.Rows.Count - 1; };
+                try
+                {
+                    partner.Text = "vise";
+                    d.ActiveControl = partner;
+                    d.ProvediTipku(Keys.Enter);
+                }
+                finally
+                {
+                    TrazilicaProzor.OdabirZaTest = null;
+                }
+                T("trz01-prozor", Convert.ToString(partner.Tag) == "9" && partner.Text == "Partner Devet", "tag=" + partner.Tag + " text=" + partner.Text);
+
+                int prijeDjeteta = Broji(sql, "from stavke");
+                ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("dodaj", true)[0]).PerformClick();
+                T("rac01-nakon-djeteta", dijete == "DIJETE" && Broji(sql, "from stavke") == prijeDjeteta + 1, "dijete=" + dijete);
+
+                // MDR-01: MULTIDROP ima stavke iz SQL-a, rezultat "1~3" ih oznaci, a @@vrste je '1~3'.
+                var vise = (DevExpress.XtraEditors.CheckedComboBoxEdit)d.Controls.Find("vrste", true)[0];
+                bool stavke = vise.Properties.DataSource is DataTable && ((DataTable)vise.Properties.DataSource).Rows.Count == 3;
+                ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("oznaci", true)[0]).PerformClick();
+                ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("salji", true)[0]).PerformClick();
+                T("mdr01-multidrop", stavke && sql.Contains("select '1~3' as v"),
+                    "stavke=" + stavke + " oznaceno=" + Convert.ToString(vise.Properties.GetCheckedItems()) + " sql=" + string.Join(" | ", sql.ToArray()));
+
+                // FOR-01: tijelo ide kroz lanac za svaki red; @@stavke je id reda, @(stavke..naziv) stupac reda.
+                ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("svi", true)[0]).PerformClick();
+                bool red1 = Broji(sql, "update x set k='prvi' where id=1") == 1;
+                bool red2 = Broji(sql, "update x set k='drugi' where id=2") == 1;
+                T("for01-foreachrow", red1 && red2, "red1=" + red1 + " red2=" + red2 + " sql=" + string.Join(" | ", sql.ToArray()));
+
+                var grid = (DevExpress.XtraGrid.GridControl)d.Controls.Find("stavke", true)[0];
+                var view = (DevExpress.XtraGrid.Views.Grid.GridView)grid.MainView;
+                bool uredi = view.OptionsBehavior.Editable && view.Columns["naziv"].OptionsColumn.AllowEdit && !view.Columns["stavkaid"].Visible;
+                view.FocusedRowHandle = 0;
+                view.SetRowCellValue(0, "naziv", "novo");
+                // @@id bi SrediSQL2 zamijenio ID-om forme (kao u VB-u), pa stupac reda ima drugo ime.
+                bool celija = Broji(sql, "update s set naziv='novo' where id=1") == 1;
+                T("cel01-grid-red", uredi && celija, "uredi=" + uredi + " sql=" + string.Join(" | ", sql.ToArray()));
+
+                d.ActiveControl = grid;
+                d.ProvediTipku(Keys.Enter);
+                T("ent01-grid-enter", status.Text == "enter", status.Text);
+
+                d.ActiveControl = naziv;
+                d.ProvediTipku(Keys.Escape);
+                T("esc01-onesckey", status.Text == "esc" && !d.IsDisposed && d.Visible, status.Text);
+            }
+            finally
+            {
+                DijalogTok.DozvoliUpis = false;
+                d.Close();
+                d.Dispose();
+            }
+        }
+
+        /// <summary>Faza C4 (LAY-01, HOT-01): PARENT, DOCK, ANCHOR, STYLE, ploca s gumbima i HOTKEY.</summary>
+        private static void RasporedDijaloga()
+        {
+            var kontrole = new List<NgControl>();
+            kontrole.Add(new NgControl("group", NgGrana.Group, "GROUP2", new NgAttributeBag(new Dictionary<string, string> { { "DOCK", "2" }, { "HEIGHT", "700" } }), true));
+            kontrole.Add(new NgControl("button", NgGrana.Button, "spremi", new NgAttributeBag(new Dictionary<string, string>
+            {
+                { "PARENT", "GROUP2" }, { "LEFT", "140" }, { "TOP", "140" }, { "CAPTION", "Spremi" }, { "HOTKEY", "F2" }, { "ONCLICK", "select 'f2' as x" }
+            }), true));
+            kontrole.Add(new NgControl("grid", NgGrana.Grid, "stavke", new NgAttributeBag(new Dictionary<string, string> { { "DOCK", "5" } }), true));
+            kontrole.Add(new NgControl("label", NgGrana.Label, "naslov", new NgAttributeBag(new Dictionary<string, string>
+            {
+                { "STYLE", "1" }, { "BACKCOLOR", "red" }, { "ANCHOR", "13" }, { "CAPTION", "Naslov" }
+            }), true));
+            kontrole.Add(new NgControl("text", NgGrana.Text, "opis", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Opis" } }), true));
+            kontrole.Add(new NgControl("text", NgGrana.Text, "oznaka", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Oznaka" }, { "DEFAULT", "A_1" } }), true));
+            kontrole.Add(new NgControl("number", NgGrana.Number, "kom", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Kom" }, { "DEFAULT", "5" } }), true));
+            kontrole.Add(new NgControl("search", NgGrana.Search, "partner", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Partner" } }), true));
+            kontrole.Add(new NgControl("date", NgGrana.Date, "datumod", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Od" } }), true));
+            kontrole.Add(new NgControl("date", NgGrana.Date, "datumdo", new NgAttributeBag(new Dictionary<string, string> { { "SHOWCHECKBOX", "TRUE" } }), true));
+            kontrole.Add(new NgControl("date", NgGrana.Date, "pocetak", new NgAttributeBag(new Dictionary<string, string> { { "DEFAULT", "firstdayofyear" } }), true));
+            kontrole.Add(new NgControl("button", NgGrana.Button, "datumi", new NgAttributeBag(new Dictionary<string, string>
+            {
+                { "ONCLICK", "select '@@datumod' as a, @@datumdo as b" }, { "CAPTION", "D" }
+            }), true));
+            var gumbi = new List<NgButton> { new NgButton(1, "Unesi", ""), new NgButton(3, "Stavke", "STAVKE") };
+            var forma = new NgForm("T3", new NgAttributeBag(null), "", "", kontrole, gumbi, new List<string>());
+            var sql = new List<string>();
+            var d = new Dijalog();
+            try
+            {
+                d.Slozi(forma, new SqlKontekst(), delegate (string s) { sql.Add(s ?? ""); return null; });
+                d.ShowInTaskbar = false;
+                d.StartPosition = FormStartPosition.Manual;
+                d.Location = new Point(-32000, -32000);
+                d.Show();
+                Control grupa = d.Controls.Find("GROUP2", true)[0];
+                Control spremi = d.Controls.Find("spremi", true)[0];
+                Control grid = d.Controls.Find("stavke", true)[0];
+                Control naslov = d.Controls.Find("naslov", true)[0];
+                Control[] ploca = d.Controls.Find("pnlGumbi", true);
+                Control cmd3 = d.Controls.Find("cmd3", true)[0];
+                bool okvir = spremi.Parent == grupa && grupa.Dock == DockStyle.Bottom;
+                bool fill = grid.Dock == DockStyle.Fill && grid.Bottom <= (grupa.Top + 1);
+                bool stil = naslov.Font.Bold && naslov.BackColor.ToArgb() == Color.Yellow.ToArgb()
+                    && naslov.Anchor == (AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right);
+                bool panel = ploca.Length == 1 && ploca[0].Dock == DockStyle.Bottom && cmd3.Parent == ploca[0] && cmd3.Left == 174;
+                T("lay01-raspored", okvir && fill && stil && panel, "okvir=" + okvir + " fill=" + fill + " (grid " + grid.Bounds + ", grupa " + grupa.Bounds + ") stil=" + stil + " panel=" + panel);
+                d.ActiveControl = grid;
+                d.ProvediTipku(Keys.F2);
+                T("hot01-f2", Broji(sql, "select 'f2' as x") == 1, string.Join(" | ", sql.ToArray()));
+
+                // TXT-01: CAPTION nije tekst polja; DEFAULT je (bez SrediTekst); broj uzme DEFAULT.
+                string opis = d.Controls.Find("opis", true)[0].Text;
+                string oznaka = d.Controls.Find("oznaka", true)[0].Text;
+                decimal kom = ((DevExpress.XtraEditors.SpinEdit)d.Controls.Find("kom", true)[0]).Value;
+                string partner = d.Controls.Find("partner", true)[0].Text;
+                T("txt01-tekst", opis == "" && oznaka == "A_1" && kom == 5 && partner == "",
+                    "opis=" + opis + " oznaka=" + oznaka + " kom=" + kom + " partner=" + partner);
+
+                // DAT-01: datum bez DEFAULT je danas, SHOWCHECKBOX bez CHECKED je null, DEFAULT firstdayofyear.
+                var od = (DevExpress.XtraEditors.DateEdit)d.Controls.Find("datumod", true)[0];
+                var dok = (DevExpress.XtraEditors.DateEdit)d.Controls.Find("datumdo", true)[0];
+                var poc = (DevExpress.XtraEditors.DateEdit)d.Controls.Find("pocetak", true)[0];
+                bool danas = od.EditValue is DateTime && ((DateTime)od.EditValue).Date == DateTime.Today;
+                bool prazno = dok.EditValue == null;
+                bool godina = poc.EditValue is DateTime && ((DateTime)poc.EditValue) == new DateTime(DateTime.Today.Year, 1, 1);
+                ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("datumi", true)[0]).PerformClick();
+                string ocekivano = "select '" + DateTime.Today.ToString("yyyyMMdd") + "' as a, null as b";
+                T("dat01-datumi", danas && prazno && godina && Broji(sql, ocekivano) == 1,
+                    "danas=" + danas + " prazno=" + prazno + " godina=" + godina + " sql=" + string.Join(" | ", sql.ToArray()));
+            }
+            finally
+            {
+                d.Close();
+                d.Dispose();
+            }
+        }
+
+        private static void LanacNakonZamjene()
+        {
+            string mapa = Path.Combine(Path.GetTempPath(), "ng-lanac-" + Guid.NewGuid().ToString("N"));
+            PrintBridge.MapaIzvoza = mapa;
+            PrintBridge.ZadnjiPdf = "";
+            PrintBridge.ZadnjiIme = "";
+            var gumbi = new List<NgButton>();
+            gumbi.Add(new NgButton(1, "Ispis", ":@@imereporta1(@id=5)#CLOSE"));
+            gumbi.Add(new NgButton(2, "Dms", "select 1 as x#ASSEMBLYLOAD(NePostojiNetGen.clsX)#OK"));
+            var forma = new NgForm("T", new NgAttributeBag(null), "", "", new List<NgControl>(), gumbi, new List<string>());
+            var k = new SqlKontekst();
+            var cb = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            cb["imereporta1="] = "repx/rptX";
+            k.Clipboard = cb;
+            var sql = new List<string>();
+            var d = new Dijalog();
+            try
+            {
+                d.Id = "5";
+                d.Slozi(forma, k, delegate (string s) { sql.Add(s ?? ""); return null; });
+                var klik = typeof(Control).GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic);
+                Control[] g2 = d.Controls.Find("cmd2", true);
+                if (g2.Length > 0)
+                    klik.Invoke(g2[0], new object[] { EventArgs.Empty });
+                bool bezAsm = true;
+                for (int i = 0; i < sql.Count; i++)
+                {
+                    if (sql[i].IndexOf("ASSEMBLYLOAD", StringComparison.OrdinalIgnoreCase) >= 0)
+                        bezAsm = false;
+                }
+                T("lan01-assembly-nije-sql", g2.Length > 0 && bezAsm, string.Join(" | ", sql.ToArray()));
+                Control[] g1 = d.Controls.Find("cmd1", true);
+                if (g1.Length > 0)
+                    klik.Invoke(g1[0], new object[] { EventArgs.Empty });
+                bool bezRepx = true;
+                for (int i = 0; i < sql.Count; i++)
+                {
+                    if (sql[i].IndexOf("repx", StringComparison.OrdinalIgnoreCase) >= 0 || sql[i].IndexOf("imereporta", StringComparison.OrdinalIgnoreCase) >= 0)
+                        bezRepx = false;
+                }
+                T("lan03-token-u-ispis", g1.Length > 0 && bezRepx && PrintBridge.ZadnjiIme == "rptX",
+                    "ime=" + PrintBridge.ZadnjiIme + " sql=" + string.Join(" | ", sql.ToArray()));
+            }
+            finally
+            {
+                PrintBridge.MapaIzvoza = null;
+                try { d.Close(); d.Dispose(); } catch { }
+                try { Directory.Delete(mapa, true); } catch { }
+            }
+        }
+
         private static void IspisUcinak()
         {
             string mapa = Path.Combine(Path.GetTempPath(), "ng-pdf-" + Guid.NewGuid().ToString("N"));
             PrintBridge.MapaIzvoza = mapa;
             PrintBridge.ZadnjiPdf = "";
+            PrintBridge.ZadnjiIme = "";
             var gumbi = new List<NgButton>();
-            gumbi.Add(new NgButton(1, "Ispis", "repx/rptX"));
+            // CMD1 je u Form2 uvijek OK (Button1_Click). Ispis s gumba je CMD3-CMD6: NovaGenerickaForma2(Tag).
+            gumbi.Add(new NgButton(3, "Ispis", "repx/rptX"));
             var forma = new NgForm("T", new NgAttributeBag(null), "", "", new List<NgControl>(), gumbi, new List<string>());
             var d = new Dijalog();
             try
             {
                 d.Id = "5";
                 d.Slozi(forma, new SqlKontekst(), delegate (string s) { return null; });
-                Control[] g = d.Controls.Find("cmd1", true);
+                Control[] g = d.Controls.Find("cmd3", true);
                 if (g.Length == 0)
                 {
                     T("ispis-pdf", false, "nema gumba");

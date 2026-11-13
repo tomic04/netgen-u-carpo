@@ -48,13 +48,17 @@ namespace Carpo.NetGen.Komande
                 + "@rowcount" + n + "=" + redova.ToString() + ",";
         }
 
-        /// <summary>Form2.PokupiParametreIzTrazilice 5926–5953. Stupac 0 se preskače. Ime dobije SEARCH. Zadnje 4 znamenke koje nisu 0 otpadaju.</summary>
+        /// <summary>
+        /// Form2.PokupiParametreIzTrazilice 5926–5953 i Form3.Trazilica 226-246 (jedan red). Petlja ide od
+        /// Janus stupca 1, a to je kvacica bez natpisa; stupci podatka pocinju na Janus 2, pa je i prvi
+        /// stupac DataTable-a (id) parametar: @SEARCHid (TRZ-02). Ime dobije SEARCH. Zadnje 4 znamenke koje nisu 0 otpadaju.
+        /// </summary>
         public static string IzTrazilice(System.Data.DataRow red)
         {
             if (red == null)
                 return "";
             var sb = new StringBuilder();
-            for (int i = 1; i < red.Table.Columns.Count; i++)
+            for (int i = 0; i < red.Table.Columns.Count; i++)
             {
                 System.Data.DataColumn c = red.Table.Columns[i];
                 string natpis = string.IsNullOrEmpty(c.Caption) ? c.ColumnName : c.Caption;
