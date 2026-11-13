@@ -20,6 +20,14 @@ NetGen podloga ima dva različita izvršitelja lanca `a#b#c`:
 
 Carpo je imao samo prvi (`IzvrsiLanac`), pa su desni klik s `~` i događaji ćelija išli kao otvaranje forme.
 
+## Ulaz granule (RUT-01)
+
+NetGen ima jednu podlogu (Form1) za svaku granulu. Bez stabla i detalja ti se paneli sakriju; ONLOAD `:Forma` (Form1.vb 3879) otvori dijalog modalno nad podlogom, a FILLEXPLORER dijaloga puni master grid (5445-5453).
+
+Carpo je imao tri ulaza: Podloga samo za granule sa stablom, detaljem i gumbima (132), skraćenu `ObicnaForma` (235 granula: bez izbornika, lanaca, uređivanja, dozvola, zbrojeva, DMS-a…) i samostalan dijalog za `:Forma` (230 granula; 228 ulaznih formi ima FILLEXPLORER, pa rezultat filtra nije imao gdje). Klik-pregled je već sve otvarao u Podlozi.
+
+Sada `Prozor.Otvori` svaku granulu otvara u Podlozi; `ObicnaForma` i `OdabirForme` su uklonjeni. Ako se želi Carpo izgled bez Manager okvira za jednostavne granule, to je odluka izgleda, ne funkcionalnosti.
+
 ## Nalazi
 
 | ID | Korpus | NetGen | Carpo prije | Sada |

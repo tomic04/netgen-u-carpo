@@ -29,8 +29,8 @@ using DevExpress.XtraTreeList.Nodes;
 namespace Carpo.NetGen.Ui
 {
     /// <summary>
-    /// Samo granule čiji NetGen raspored jest stablo lijevo, master-detail i gumbi dolje.
-    /// Ostale idu u ObicnaForma ili u Dijalog. Odabir je OdabirForme.JeManager.
+    /// Form1: podloga svake granule (Prozor, RUT-01). Stablo lijevo i detalj se sakriju kad ih nema
+    /// (OnShown), a ONLOAD ":Forma" otvori dijalog nad podlogom.
     /// </summary>
     public sealed partial class Podloga : Carpo.UI.Forms.Master.Manager
     {

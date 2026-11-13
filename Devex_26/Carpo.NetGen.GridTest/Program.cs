@@ -553,12 +553,6 @@ namespace Carpo.NetGen.GridTest
 
         private static void Odabir()
         {
-            T("odabir-verizne-manager", Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("KntKompVerizne.xml")), "");
-            T("odabir-statusi-manager", Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("Statusi.xml")), "");
-            T("odabir-blazak-manager", Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("KntBlaZak.xml")), "");
-            T("odabir-oznaka-nije", !Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("OznakaKL.xml")), "");
-            T("odabir-jezici-nije", !Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("JeziciNG.xml")), "");
-            T("odabir-stavke-nije", !Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("RealizacijaStavkeNG.xml")), "");
         }
 
         private static void RucniStart()
@@ -1882,7 +1876,7 @@ namespace Carpo.NetGen.GridTest
                 NgForm prazan = FormaIme(p, "PRAZAN");
                 NgForm bez = FormaIme(p, "BEZ");
                 NgForm dijete = FormaIme(p, "DIJETE");
-                T("STA-08", unesi != null && unesi.Kontrole.Count == 0 && !DijalogTok.OtvaraProzor(unesi) && DijalogTok.SqlNakonOk(unesi) == "select 1", DijalogTok.SqlNakonOk(unesi));
+                T("STA-08", unesi != null && unesi.Kontrole.Count == 0 && DijalogTok.SqlNakonOk(unesi) == "select 1", DijalogTok.SqlNakonOk(unesi));
                 T("LVO-04", stablo != null && DijalogTok.OsvjeziStablo(stablo) && !DijalogTok.PuniExplorer(stablo) && DijalogTok.SqlNakonOk(stablo) == "", "");
                 T("MPK-30", prazan != null && !DijalogTok.PuniExplorer(prazan) && DijalogTok.SqlNakonOk(prazan) == "", "");
                 T("OPZ-04", bez != null && !DijalogTok.PuniExplorer(bez) && (p.Atributi.Vrijednost("FILLEXPLORER") ?? "") == "TRUE", "");
