@@ -49,4 +49,6 @@ To nisu prava poslovna tijela. Da test bude vjerodostojan, korisnik treba dati:
 
 `PrijemniList` na projektu nema `ONLOAD`. Master dolazi s klika na stablo, ne s otvaranja.
 
-XML kojih nema u repou (`TecRazOTV`, `MER\RealizacijaFakture`, `MER\RealizacijaStavkeNG`, `Poruke`) se ne dodaje.
+Klijentske kopije `Poruke`, `RealizacijaFakture`, `RealizacijaStavkeNG` i `TecRazOTV` stoje u `xml/klijenti/`, ne u `definitions/netgen`. Referentne su `Poruke.v1`, `RealizacijaFakture.v1`, `RealizacijaStavkeNG.v4` (šest kopija) i `TecRazOTV.v2` (četiri kopije). Ulaz je forma, osim `Poruke` koja nema `ONLOAD`. Test koji traži datoteku u `definitions/netgen` nije prepravljen i ostaje otvoren.
+
+Procedure s klijenata, verzija A (najviše baza), primjenjuje `scripts/spin/PrimijeniKlijente.ps1`: `spBLZakljucakQueryNG`, `spFakPartneriUvjetiQuery`, `spKultureNGQuery`, `spKUPPrometQueryN`, `spStatusiQuery`. `klmasterroba` se ne kreira iznova. `oznaka2` se doda kao `varchar(30) NULL` samo ako stupca nema, jer ga imaju verzije C, H i K, a A nema. Ako procedura zove tablicu koje nema, stupci se čitaju s Jupitera (`sys.columns`) ili ostane stub `id int NULL`. Izvještaj je `artifacts/spin/klijenti.md`.

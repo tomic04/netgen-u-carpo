@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT  
+ CMD1CAPTION="Parametri:FILTERFORM" 
+ CMD2CAPTION="Proknjiži:MULTISELECTPROKNJIZIFORM " 
+ CMD3CAPTION="Ispis:PRINTMASTER"  
+ ONLOAD=":FILTERFORM" 
+ GROUPBYBOXVISIBLE="TRUE" 
+ COMMANDTIMEOUT="300"
+ FROZENCOLUMNS="0" 
+ MASTERDBLCLICK="" 
+ CHECKBOXVISIBLE="TRUE"
+ PAGEORIENTATION="LANDSCAPE"
+ PAGEHEADERCENTER="Tečajne razlike na otvorene stavke" 
+ PAGEHEADERLEFT="Tečajne razlike na otvorene stavke"
+ PAGEHEADERRIGHT="@@Vrijeme" 
+ PAGEFOOTERLEFT="@@TKOSMOMI" 
+ PAGEFOOTERRIGHT="Jupiter software by Spin">
+
+
+
+ <NAME>Tečajne razlike na otvorene stavke</NAME>
+ <CAPTION>Tečajne razlike na otvorene stavke</CAPTION>
+
+
+
+  <MASTERCOLUMNS>
+
+	   
+  </MASTERCOLUMNS>   
+
+
+<FILTERFORM 
+					
+                 WIDTH="8000" 
+                 ONLOAD="select @@partneriid as partneriid,@@devvaluteid as devvaluteid,@@vrstadokid as vrstadokid,@@kntplanaid as kntplanaid,dbo.fnTecaj ('20120213',@@devvaluteid) as tecaj, (select  rtrim(p.naziv)+''+rtrim(m.naziv)+','+rtrim(s.adresa)
+					from Partneri p
+					inner join ParStru s on p.PartneriId = s.PartneriId
+					inner join Mjesta m on s.MjestaId = m.MjestaId
+				where
+					p.PartneriId = convert(integer,(select VarSet from PubVars where VarIme = 'NasId'))
+					and s.Hqind = '*') as tkosmomi, getdate() as Vrijeme"
+		 ONLOADED="if @@devvaluteid is null begin
+                             select top 1 valuteid as devvaluteid from valute where oznaka='EUR'
+                           end
+                           else begin
+                             select @@devvaluteid as devvaluteid
+                           end"
+                 ONSUBMIT="exec spKntTecajneRazlikeNG @Action=1,@Datum=@@Datum,@operaterid=@@operaterid,@vrstadokid=@@vrstadokid,@Ind='',@broj='',@tecaj=@@tecaj,@devvaluteid=@@devvaluteid,@kntplanaid=@@kntplanaid,@partneriid=@@partneriid !!"                                               
+                 HEIGHT="6000" 
+                 CAPTION="Parametri"  
+		 FILLEXPLORER="TRUE"
+  		 >
+
+			
+  	        
+		<INPUT TYPE="label" NAME="lbldatum"  TOP="220" LEFT="220" WIDTH="1000" CAPTION="Datum knjiženja:"/>       
+		<INPUT TYPE="date" NAME="datum"  TOP="200" LEFT="2000" WIDTH="1500"  CAPTION="Datum knjiženja:" ONLOSTFOCUS="select 'vrstadokid' as focus " TABINDEX="1" />
+	        
+		<INPUT TYPE="label" NAME="lblvrstadok"  TOP="820" LEFT="220" WIDTH="1000" CAPTION="Vrsta dok.:"/>	   
+		<INPUT TYPE="combo"  NAME="vrstadokid"    TOP="820" LEFT="2000" WIDTH="4000" ALLOWEMPTY="FALSE" 
+			   SQL="select vd.VrstaDokId,vd.Opis
+					   from VrstaDok vd
+					   inner join VrstaProm vp on vd.VrstaPromId = vp.VrstaPromId
+					   where vp.VrstaPromId in (select VrstaPromId from VrstaProm where Projekt = 'K')
+					   and vp.Sifra in ('57')
+					   order by vd.Opis " TABINDEX="2"/> 
+		
+		<INPUT TYPE="label" NAME="lbldevvaluteid"  TOP="1420" LEFT="220" WIDTH="1000" CAPTION="Valuta.:"/>	   
+		<INPUT TYPE="combo"  NAME="devvaluteid"    TOP="1420" LEFT="2000" WIDTH="2000" ALLOWEMPTY="FALSE" ONCLICK="select dbo.fnTecaj (@@datum,@@devvaluteid) as tecaj"
+			   SQL="select ValuteId,Oznaka	from Valute where teclistaind='1' order by Oznaka" TABINDEX="3"/>
+                           
+		
+		<INPUT TYPE="label" NAME="lbltecaj"  TOP="2020" LEFT="220" WIDTH="1000" CAPTION="Tečaj:"/>
+		<INPUT TYPE="number" NAME="tecaj" TOP="2020" LEFT="2000" WIDTH="2000" CAPTION="Tečaj:" DECIMALS="6" TABINDEX="4"/>
+
+		<INPUT TYPE="label" NAME="lblkonta"  TOP="2620" LEFT="220" WIDTH="1000" CAPTION="Konto:"/>
+		<INPUT TYPE="search" NAME="kntplanaid" TOP="2620" LEFT="2000" WIDTH="4000" CAPTION="Konto" TABINDEX="5"
+			   COLUMNCAPTION="Konto,Naziv" COLUMNWIDTH="1500,5000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" 
+			   SQL="spKntPlanAQuery @action=2,@konto='@@searchboxkntplanaid',@id=0" 
+			   ONLOSTFOCUS="select '@@searchboxkntplanaid' as lblkonto"	   />	
+
+		<INPUT TYPE="label" NAME="lblpartneri"  TOP="3200" LEFT="220" WIDTH="1000" CAPTION="Partneri:"/>	
+		<INPUT TYPE="search" NAME="partneriid"   TOP="3200"
+			   LEFT="2000" WIDTH="4000" SQL="viPartneri#partneriid#%Naziv%#!Sifra#!Adresa#!Telefon1#!Telefon2#!Fax#!MatBroj#!MjestaNaziv" ALLOWEMPTY="FALSE" 
+			   CAPTION="partner" ONLOSTFOCUS="" TABINDEX="6"/> 
+
+		<INPUT TYPE="button" CAPTION="Izvrši" NAME="ok" TOP="4200" LEFT="500" WIDTH="1200" HEIGHT="320" 
+           	ONCLICK="OK" TABINDEX="7"/>
+    		<INPUT TYPE="button" CAPTION="Odustani" NAME="cancel" TOP="4200" LEFT="2500" WIDTH="1200" HEIGHT="320" ONCLICK="CLOSE" TABINDEX="8"/>
+
+
+
+</FILTERFORM>
+
+	
+
+
+  <MULTISELECTPROKNJIZIFORM  FILLEXPLORER="TRUE" 
+                  ONLOAD="" 
+                  ONSUBMIT="exec spKntTecajneRazlikeNG @Action=2,@Datum=@@Datum,@operaterid=@@operaterid,@vrstadokid=@@vrstadokid,@Ind='',@broj='',@tecaj=@@tecaj,@devvaluteid=@@devvaluteid,@kntplanaid=@@kntplanaid,@partneriid=@@partneriid"
+		  ONLOADED=""
+	          CMD1CAPTION="Da" 
+                  CMD2CAPTION="Ne" >
+
+ 	        <INPUT TYPE="label"   NAME="lblpitanje" TOP="300" LEFT="250" WIDTH="400" CAPTION="Jeste li sigurni da želite proknjižiti prikazane dokumente?"/>	
+
+	
+</MULTISELECTPROKNJIZIFORM > 
+
+</PROJECT>
