@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Windows.Forms;
 
 namespace Carpo.TestShell
@@ -15,9 +16,14 @@ namespace Carpo.TestShell
             Application.SetCompatibleTextRenderingDefault(false);
             if (args != null && args.Length >= 3 && args[0] == "--ui-smoke")
             {
-                var main = new Main("localhost", "spin", args[1], 7, "", "", true);
                 string snimka = args[2];
                 bool klik = args.Length >= 4 && args[3] == "--klik";
+                Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+                Application.ThreadException += delegate (object s, System.Threading.ThreadExceptionEventArgs e)
+                {
+                    try { File.AppendAllText(snimka + ".iznimka.txt", e.Exception.ToString() + "\r\n"); } catch { }
+                };
+                var main = new Main("localhost", "spin", args[1], 7, "", "", true);
                 main.Shown += delegate
                 {
                     main.BeginInvoke(new Action(delegate

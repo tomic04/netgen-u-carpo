@@ -11,7 +11,7 @@ Lanac je `Carpo.NetGen.Komande.Lanac`. Tilda u tekstu gumba ostaje tilda u parse
 | `CLOSEPARENT` | `bCloseParent` pa `Button2` (`7035`) | |
 | `REFRESHMASTERGRID` | ponovi zadnji master SQL (`Form1.vb` 4570) | isto |
 | `REFRESHMASTER` | nije ta riječ, grid se ne osvježava | isto |
-| `FOREACHSELECTED` | vrti čekirane i pojede sljedeći segment (`7040`) | poziv je komentar, `i = i + 1` je živ (`6843`) |
+| `FOREACHSELECTED` | vrti čekirane i pojede sljedeći segment (`7040`) | poziv je komentar, `i = i + 1` je živ (`6843`). Carpo: `ForeachNaredba` |
 | `FOREACHBLUEROW` | plavi redovi (`7043`) | isto, petlja se ne vrti |
 | `FOREACHROW` | svi redovi (`7046`) | isto |
 | SQL | `ExecSql`. Poruka bez `#OK` i `+OK` prekida `Exit For` (`7511`, `Class1.vb` 187) | |

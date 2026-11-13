@@ -31,6 +31,15 @@ namespace Carpo.NetGen.Komande
             public readonly List<string> Naredbe = new List<string>();
         }
 
+        /// <summary>
+        /// Jedan segment Rafalna. Form2.vb 7031–7169 ne izlazi iz petlje na MSGBOX ni na CLOSEPARENT.
+        /// </summary>
+        public sealed class Korak
+        {
+            public string Vrsta = "";
+            public string Tekst = "";
+        }
+
         public static bool JeJupiter(string server)
         {
             if (string.IsNullOrEmpty(server))
@@ -72,6 +81,36 @@ namespace Carpo.NetGen.Komande
             if (forma == null || forma.Atributi == null || !forma.Atributi.Ima("NEXTFORM"))
                 return "";
             return (forma.Atributi.Vrijednost("NEXTFORM") ?? "").Trim();
+        }
+
+        /// <summary>FILLEXPLORER=onlytree samo NapuniDrvoVrijeme. Form1.vb 5475–5476.</summary>
+        public static bool OsvjeziStablo(NgForm forma)
+        {
+            return string.Equals(FillExplorer(forma), "onlytree", StringComparison.Ordinal);
+        }
+
+        /// <summary>FILLEXPLORER=ONLYDET ne dira master. Osvježi detail. Form1.vb 5470–5473.</summary>
+        public static bool OsvjeziDetalj(NgForm forma)
+        {
+            return string.Equals(FillExplorer(forma), "onlydet", StringComparison.Ordinal);
+        }
+
+        private static string FillExplorer(NgForm forma)
+        {
+            if (forma == null || forma.Atributi == null || !forma.Atributi.Ima("FILLEXPLORER"))
+                return "";
+            return (forma.Atributi.Vrijednost("FILLEXPLORER") ?? "").Trim().ToLowerInvariant();
+        }
+
+        /// <summary>FILLEXPLORER=TRUE zamijeni master sa ONSUBMIT. Form1.vb 5445–5453.</summary>
+        public static string SqlNakonOk(NgForm forma)
+        {
+            if (!PuniExplorer(forma))
+                return "";
+            string stora = forma == null ? "" : (forma.OnSubmit ?? "").Trim();
+            if (stora.Length == 0)
+                return "";
+            return Lanac.Lijepi(stora, "");
         }
 
         public static bool PuniExplorer(NgForm forma)
@@ -249,6 +288,105 @@ namespace Carpo.NetGen.Komande
             if (!ZastitaSql.Tekst(sql).Pise)
                 return true;
             return DozvoliUpis;
+        }
+
+        /// <summary>
+        /// Redoslijed je cijeli ONCLICK. MSGBOX ne prekida (7165–7169).
+        /// CLOSEPARENT postavi zastavicu i ide u Button2, petlja ide dalje (7035–7037).
+        /// </summary>
+        public static List<Korak> Koraci(string onClick)
+        {
+            var lista = new List<Korak>();
+            string[] seg = Lanac.Segmenti(onClick ?? "");
+            for (int i = 0; i < seg.Length; i++)
+            {
+                string t = (seg[i] ?? "").Trim();
+                if (t.Length == 0)
+                    continue;
+                var k = new Korak();
+                k.Tekst = t;
+                string u = t.ToUpperInvariant();
+                if (ForeachNaredba.Vrsta(t).Length > 0)
+                {
+                    string tijelo = "";
+                    if (i + 1 < seg.Length)
+                    {
+                        tijelo = (seg[i + 1] ?? "").Trim();
+                        i++;
+                    }
+                    k.Vrsta = "foreach";
+                    k.Tekst = ForeachNaredba.Vrsta(t) + "|" + ForeachNaredba.Grid(t) + "|" + tijelo;
+                }
+                else if (u.IndexOf("MSGBOX(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "poruka";
+                    k.Tekst = PorukaNaredba.Tekst(t);
+                }
+                else if (FiskalNaredba.Tablica(t) != 0)
+                    k.Vrsta = "fiskal";
+                else if (RafalNaredba.Datoteka(t) != 0)
+                    k.Vrsta = "datoteka";
+                else if (RafalNaredba.RefreshKontrola(t).Length > 0)
+                {
+                    k.Vrsta = "refresh";
+                    k.Tekst = RafalNaredba.RefreshKontrola(t);
+                }
+                else if (RafalNaredba.Dock(t).Length > 0)
+                {
+                    k.Vrsta = "dock";
+                    k.Tekst = RafalNaredba.Dock(t) + "|" + RafalNaredba.DockKontrola(t);
+                }
+                else if (u.IndexOf("RECALCGRID", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "recalc";
+                else if (u.IndexOf("TOGGLEGRIDGROUP(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "toggle";
+                else if (u.IndexOf("PREPAREMULTISELECTEDPRINT(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "priprema";
+                else if (u.IndexOf("PIVOTGRID(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "pivot";
+                else if (u.IndexOf("CHARTGRID(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "chart";
+                else if (u.IndexOf("COLORPICKER(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "boja";
+                else if (PosaljiServer.Vrsta(t).Length > 0)
+                    k.Vrsta = "posalji";
+                else if (Pokretanje.Je(t))
+                    k.Vrsta = "pokretanje";
+                else if (u.IndexOf("EVAL(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "eval";
+                    k.Tekst = RafalNaredba.EvalLijevo(t) + "=" + RafalNaredba.EvalDesno(t);
+                }
+                else if (RafalNaredba.MasterSljedeci(t))
+                    k.Vrsta = "sljedeci";
+                else if (RafalNaredba.MasterPrethodni(t))
+                    k.Vrsta = "prethodni";
+                else if (RafalNaredba.Slopp(t) || u.IndexOf("CREATEOBJECT(", StringComparison.Ordinal) >= 0
+                    || u.IndexOf("ISEMPTYORZERO", StringComparison.Ordinal) >= 0 || PraznoNaredba.Je(t))
+                    k.Vrsta = "naredba";
+                else if (u == "CLOSE" || u == "CANCEL")
+                    k.Vrsta = "odustani";
+                else if (u == "CLOSEPARENT")
+                    k.Vrsta = "roditelj";
+                else if (u == "OK")
+                    k.Vrsta = "ok";
+                else if (u == "OKSTAY")
+                    k.Vrsta = "okstay";
+                else if (t.StartsWith(":", StringComparison.Ordinal))
+                {
+                    k.Vrsta = "forma";
+                    k.Tekst = t.Substring(1).Trim();
+                }
+                else if (KlikNaredba.Kontrola(t).Length > 0)
+                {
+                    k.Vrsta = "klik";
+                    k.Tekst = KlikNaredba.Kontrola(t);
+                }
+                else
+                    k.Vrsta = "sql";
+                lista.Add(k);
+            }
+            return lista;
         }
 
         public static bool PreskociGrid(NgControl k)

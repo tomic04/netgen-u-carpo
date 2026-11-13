@@ -7,6 +7,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Carpo.NetGen.Ui;
+using DevExpress.XtraEditors;
 using System.Xml.Linq;
 using Gen = Carpo.Gen;
 
@@ -44,6 +46,7 @@ namespace Carpo.TestShell
         private string paramList = "";
         private bool _autoMode = false;
         private int _uiIshod;
+        private int _uiVidjen;
         private bool _uiKlikGotov;
         private bool _klikPregled;
         private Carpo.NetGen.Ui.Podloga _zadnjaPodloga;
@@ -187,12 +190,15 @@ namespace Carpo.TestShell
                     if (Carpo.NetGen.Xml.NetGenXmlReader.JeNetGenProjekt(xml))
                     {
                         var loader = new Carpo.NetGen.Loader();
+                        Carpo.Core.Logger dnevnik = null;
                         try
                         {
-                            var dnevnik = new Carpo.Core.Logger(Carpo.Core.Log.LogLevel.Info);
+                            // Starter.Run 81–84: Logger u DependencyContainer prije forme.
+                            dnevnik = new Carpo.Core.Logger(Carpo.Core.Log.LogLevel.Debug);
                             dnevnik.GranuleName = Path.GetFileNameWithoutExtension(xml);
                             dnevnik.ServerName = server;
                             dnevnik.DatabaseName = database;
+                            Carpo.Core.Log.DependencyContainer.Add(dnevnik);
                             Carpo.NetGen.Log.NgDnevnik.Spoji(dnevnik);
                         }
                         catch
@@ -206,12 +212,30 @@ namespace Carpo.TestShell
                             MessageBox.Show(loader.ZadnjaGreska, "Carpo.NetGen");
                         else
                         {
-                            var forma = new Carpo.NetGen.Ui.Podloga();
-                            _zadnjaPodloga = forma;
-                            if (!forma.Prikazi(xml, server, database, operateriId))
-                                MessageBox.Show(forma.Text, "Carpo.NetGen");
+                            Form forma;
+                            if (_klikPregled)
+                            {
+                                var podloga = new Carpo.NetGen.Ui.Podloga();
+                                _zadnjaPodloga = podloga;
+                                forma = podloga;
+                                if (!podloga.Prikazi(xml, server, database, operateriId))
+                                    MessageBox.Show(podloga.Text, "Carpo.NetGen");
+                            }
                             else
                             {
+                                string greska;
+                                forma = Carpo.NetGen.Ui.Prozor.Otvori(xml, server, database, operateriId, out greska);
+                                var podloga = forma as Carpo.NetGen.Ui.Podloga;
+                                if (podloga != null)
+                                    _zadnjaPodloga = podloga;
+                                if (forma == null || !string.IsNullOrEmpty(greska))
+                                    MessageBox.Show(string.IsNullOrEmpty(greska) ? "Granula se nije otvorila." : greska, "Carpo.NetGen");
+                            }
+                            if (forma != null)
+                            {
+                                var jupiter = forma as Carpo.UI.Forms.Jupiter.Base;
+                                if (jupiter != null && dnevnik != null)
+                                    jupiter.InitLogger(dnevnik);
                                 try
                                 {
                                     forma.Show(this);
@@ -271,6 +295,7 @@ namespace Carpo.TestShell
         public int PokreniUiSmoke(string snimka, bool klik)
         {
             _uiIshod = 0;
+            _uiVidjen = 0;
             _uiKlikGotov = false;
             _klikPregled = klik;
             var dir = Path.GetDirectoryName(snimka);
@@ -293,8 +318,10 @@ namespace Carpo.TestShell
                     UpisiIshod(snimka, "FAIL bind " + ex);
                     return 1;
                 }
+                Faza(snimka, "prije-klika");
                 cmdGen_Click(this, EventArgs.Empty);
                 _uiKlikGotov = true;
+                Faza(snimka, "poslije-klika");
             }
             catch (Exception ex)
             {
@@ -321,35 +348,17 @@ namespace Carpo.TestShell
                 UpisiIshod(snimka, "FAIL nema prozora granule");
                 return 2;
             }
-            if (granula != null && !granula.IsDisposed)
+            if (!ImaSnimku(snimka) && granula != null && !granula.IsDisposed)
             {
-                var rok = DateTime.UtcNow.AddSeconds(4);
-                while (DateTime.UtcNow < rok && !ImaSnimku(snimka))
-                {
-                    try
-                    {
-                        granula.Activate();
-                        granula.Refresh();
-                        Application.DoEvents();
-                    }
-                    catch
-                    {
-                    }
-                    SnimiProzor(granula.Handle, snimka);
-                    if (!ImaSnimku(snimka))
-                        SnimiFormu(granula, snimka);
-                    if (ImaSnimku(snimka))
-                        break;
-                    Application.DoEvents();
-                    Thread.Sleep(250);
-                }
+                try { granula.Update(); } catch { }
+                SnimiProzor(granula.Handle, snimka);
             }
             if (!ImaSnimku(snimka) && !_klikPregled)
             {
-                SnimiEkran(snimka + ".ekran.png");
                 UpisiIshod(snimka, "FAIL nema screenshota " + TekstSnimke(snimka));
                 return 4;
             }
+            string klikTrag = "";
             if (klik && granula != null && !granula.IsDisposed)
             {
                 var podloga = granula as Carpo.NetGen.Ui.Podloga;
@@ -368,11 +377,19 @@ namespace Carpo.TestShell
                     }
                 }
             }
+            else if (granula != null && !granula.IsDisposed)
+            {
+                int k = Klikni(granula, snimka, out klikTrag);
+                if (k != 0)
+                    return k;
+            }
             try
             {
+                Faza(snimka, "prije-zatvaranja");
                 if (granula != null && !granula.IsDisposed)
                     granula.Close();
                 Close();
+                Faza(snimka, "poslije-zatvaranja");
             }
             catch (Exception ex)
             {
@@ -380,8 +397,295 @@ namespace Carpo.TestShell
                 UpisiIshod(snimka, "FAIL zatvaranje " + ex);
                 return 3;
             }
-            UpisiIshod(snimka, "OK " + xml);
+            UpisiIshod(snimka, "OK " + xml + (klikTrag.Length == 0 ? "" : " " + klikTrag));
             return 0;
+        }
+
+        /// <summary>
+        /// Tri tipa: obična forma (Izmjena), Manager (Unesi), ulazni dijalog (Odustani).
+        /// Odustani je CLOSE i ne šalje SQL (OznakaKL FRMEDIT CMD2, Statusi INSERTFORM ONCLICK close).
+        /// </summary>
+        private int Klikni(Form granula, string snimka, out string trag)
+        {
+            trag = "";
+            string ime = Path.GetFileName(xml ?? "");
+            if (ime.Equals("RealizacijaStavkeNG.xml", StringComparison.OrdinalIgnoreCase))
+            {
+                var o = NadjiGumb(granula, "Odustani");
+                if (o == null)
+                {
+                    UpisiIshod(snimka, "FAIL nema gumba Odustani");
+                    return 5;
+                }
+                o.PerformClick();
+                trag = "klik=Odustani";
+                return 0;
+            }
+            string otvori = null;
+            string tag = null;
+            if (ime.Equals("OznakaKL.xml", StringComparison.OrdinalIgnoreCase))
+                otvori = "Izmjena";
+            else if (ime.Equals("KntKompVerizne.xml", StringComparison.OrdinalIgnoreCase))
+                tag = "OBRISI_FORM";
+            else if (ime.Equals("Statusi.xml", StringComparison.OrdinalIgnoreCase))
+                otvori = "Unesi";
+            if (otvori == null && tag == null)
+                return 0;
+            var gumb = tag != null ? NadjiPoTag(granula, tag) : NadjiGumb(granula, otvori);
+            if (otvori == null)
+                otvori = tag;
+            if (gumb == null)
+            {
+                UpisiIshod(snimka, "FAIL nema gumba " + otvori);
+                return 5;
+            }
+            string pod = snimka + ".podforma.png";
+            bool odustao = false;
+            bool klikGotov = false;
+            string razlog = "";
+            int pokusaj = 0;
+            var timer = new System.Windows.Forms.Timer();
+            timer.Interval = 400;
+            Dijalog.NakonPrikaza = delegate (Dijalog dij)
+            {
+                if (odustao || dij == null || dij.IsDisposed)
+                    return;
+                var o = NadjiGumb(dij, "Odustani");
+                if (o == null)
+                {
+                    razlog = dij.Text + " " + TekstGumba(dij);
+                    try { dij.Close(); } catch { }
+                    return;
+                }
+                try { dij.Update(); } catch { }
+                SnimiProzor(dij.Handle, pod);
+                if (!ImaSnimku(pod))
+                    SnimiKontrolu(dij, pod);
+                odustao = true;
+                try
+                {
+                    o.DialogResult = DialogResult.Cancel;
+                    o.PerformClick();
+                    if (!dij.IsDisposed)
+                        dij.Close();
+                }
+                catch (Exception ex)
+                {
+                    razlog = ex.ToString();
+                    try { File.WriteAllText(snimka + ".iznimka.txt", ex.ToString()); } catch { }
+                    try { if (!dij.IsDisposed) dij.Close(); } catch { }
+                }
+            };
+            timer.Tick += delegate
+            {
+                if (odustao)
+                {
+                    timer.Stop();
+                    return;
+                }
+                pokusaj++;
+                Form dij = null;
+                foreach (Form f in Application.OpenForms)
+                {
+                    if (f == null || f.IsDisposed || !f.Visible || f == this || f == granula)
+                        continue;
+                    dij = f;
+                    break;
+                }
+                if (dij == null)
+                {
+                    if (pokusaj > 30)
+                    {
+                        timer.Stop();
+                        razlog = "nema podforme";
+                    }
+                    return;
+                }
+                var o = NadjiGumb(dij, "Odustani");
+                if (o == null)
+                {
+                    if (pokusaj > 30)
+                    {
+                        timer.Stop();
+                        razlog = dij.Text + " " + TekstGumba(dij);
+                        try { dij.Close(); } catch { }
+                    }
+                    return;
+                }
+                timer.Stop();
+                try { dij.Update(); } catch { }
+                SnimiProzor(dij.Handle, pod);
+                odustao = true;
+                o.PerformClick();
+            };
+            Application.ThreadException += delegate (object s, System.Threading.ThreadExceptionEventArgs e)
+            {
+                try { File.AppendAllText(snimka + ".iznimka.txt", e.Exception.ToString() + "\r\n"); } catch { }
+            };
+            timer.Start();
+            var cekaj = new Thread(delegate () { SnimiZastoj(snimka, granula, delegate () { return klikGotov; }); });
+            cekaj.IsBackground = true;
+            cekaj.Start();
+            try
+            {
+                gumb.PerformClick();
+                klikGotov = true;
+            }
+            catch (Exception ex)
+            {
+                klikGotov = true;
+                timer.Stop();
+                timer.Dispose();
+                Dijalog.NakonPrikaza = null;
+                UpisiIshod(snimka, "FAIL klik " + ex.Message);
+                return 5;
+            }
+            timer.Stop();
+            timer.Dispose();
+            Dijalog.NakonPrikaza = null;
+            if (!odustao || !ImaSnimku(pod))
+            {
+                UpisiIshod(snimka, "FAIL podforma " + otvori + " " + razlog);
+                return 5;
+            }
+            trag = "podforma=" + otvori;
+            return 0;
+        }
+
+        private static void SnimiKontrolu(Control c, string put)
+        {
+            try
+            {
+                if (c == null || c.Width < 50 || c.Height < 50)
+                    return;
+                using (var bmp = new System.Drawing.Bitmap(c.Width, c.Height))
+                {
+                    c.DrawToBitmap(bmp, new System.Drawing.Rectangle(0, 0, c.Width, c.Height));
+                    bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private void SnimiZastoj(string snimka, Form granula, Func<bool> gotovo)
+        {
+            Thread.Sleep(20000);
+            if (gotovo())
+                return;
+            var sb = new StringBuilder();
+            sb.AppendLine("20s prozori");
+            int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+            EnumWindows(delegate (IntPtr h, IntPtr l)
+            {
+                uint wpid;
+                GetWindowThreadProcessId(h, out wpid);
+                if (wpid != (uint)pid)
+                    return true;
+                var klasa = new StringBuilder(256);
+                GetClassName(h, klasa, klasa.Capacity);
+                sb.Append(IsWindowVisible(h) ? "vidljiv " : "skriven ");
+                sb.Append(klasa).Append(" | ").Append(NaslovProzora(h));
+                sb.AppendLine();
+                EnumChildWindows(h, delegate (IntPtr c, IntPtr p)
+                {
+                    var ck = new StringBuilder(256);
+                    GetClassName(c, ck, ck.Capacity);
+                    string t = NaslovProzora(c);
+                    if (t.Length == 0 && ck.ToString().IndexOf("32770", StringComparison.Ordinal) < 0)
+                        return true;
+                    sb.Append("  dijete ").Append(ck).Append(" | ").Append(t).AppendLine();
+                    return true;
+                }, IntPtr.Zero);
+                return true;
+            }, IntPtr.Zero);
+            string stack = "";
+            var ev = new ManualResetEvent(false);
+            try
+            {
+                BeginInvoke(new Action(delegate ()
+                {
+                    stack = Environment.StackTrace;
+                    ev.Set();
+                }));
+            }
+            catch (Exception ex)
+            {
+                stack = ex.Message;
+                ev.Set();
+            }
+            if (!ev.WaitOne(3000))
+                stack = "UI nit ne crta: BeginInvoke nije odrađen za 3 s. ShowDialog nije u petlji poruka.";
+            sb.AppendLine(stack);
+            try
+            {
+                foreach (Form f in Application.OpenForms)
+                    sb.Append("OpenForm ").Append(f.GetType().Name).Append(" ").Append(f.Text).Append(" visible=").Append(f.Visible).AppendLine();
+            }
+            catch (Exception ex)
+            {
+                sb.AppendLine("OpenForms " + ex.Message);
+            }
+            if (granula != null)
+                sb.Append("granula ").Append(granula.GetType().FullName).AppendLine();
+            try { File.WriteAllText(snimka + ".prozori.txt", sb.ToString()); } catch { }
+        }
+
+        private static string TekstGumba(Control korijen)
+        {
+            var sb = new StringBuilder();
+            SkupiGumbe(korijen, sb);
+            return sb.ToString();
+        }
+
+        private static void SkupiGumbe(Control korijen, StringBuilder sb)
+        {
+            if (korijen == null)
+                return;
+            foreach (Control c in korijen.Controls)
+            {
+                var b = c as SimpleButton;
+                if (b != null)
+                    sb.Append("[").Append(b.Text).Append("]");
+                SkupiGumbe(c, sb);
+            }
+        }
+
+        private static SimpleButton NadjiPoTag(Control korijen, string tag)
+        {
+            if (korijen == null)
+                return null;
+            foreach (Control c in korijen.Controls)
+            {
+                var b = c as SimpleButton;
+                if (b != null && b.Tag != null && string.Equals(b.Tag.ToString(), tag, StringComparison.OrdinalIgnoreCase))
+                    return b;
+                var dublje = NadjiPoTag(c, tag);
+                if (dublje != null)
+                    return dublje;
+            }
+            return null;
+        }
+
+        private static SimpleButton NadjiGumb(Control korijen, string natpis)
+        {
+            if (korijen == null)
+                return null;
+            foreach (Control c in korijen.Controls)
+            {
+                var b = c as SimpleButton;
+                if (b != null)
+                {
+                    string t = (b.Text ?? "").Replace("\r", "").Replace("\n", "");
+                    if (t.IndexOf(natpis, StringComparison.OrdinalIgnoreCase) >= 0)
+                        return b;
+                }
+                var dublje = NadjiGumb(c, natpis);
+                if (dublje != null)
+                    return dublje;
+            }
+            return null;
         }
 
         private Form NadjiGranulu()
@@ -404,7 +708,11 @@ namespace Carpo.TestShell
             for (int i = 0; i < krugova; i++)
             {
                 Thread.Sleep(500);
+                if (_uiKlikGotov)
+                    continue;
                 string naslov = ZatvoriProzorGreske(pid);
+                if (naslov == null)
+                    naslov = ProzorGreske(pid);
                 if (naslov != null)
                 {
                     SnimiEkran(snimka);
@@ -417,16 +725,18 @@ namespace Carpo.TestShell
                 if (prozor != IntPtr.Zero)
                 {
                     _uiIshod = 2;
+                    _uiVidjen++;
                     if (!_klikPregled && !_uiKlikGotov && !ImaSnimku(snimka))
                     {
                         Thread.Sleep(800);
                         SnimiProzor(prozor, snimka);
-                        if (ImaSnimku(snimka))
-                            PostMessage(prozor, 0x0010, IntPtr.Zero, IntPtr.Zero);
                     }
+                    // WM_CLOSE usred klika zatvara granulu. Zatvori samo smoke koji nije upis.
+                    if (!_klikPregled && _uiVidjen >= 6 && ImaSnimku(snimka))
+                        PostMessage(prozor, 0x0010, IntPtr.Zero, IntPtr.Zero);
                 }
             }
-            if (_klikPregled)
+            if (_klikPregled || _uiKlikGotov)
                 return;
             if (_uiIshod == 0)
             {
@@ -473,9 +783,7 @@ namespace Carpo.TestShell
                 GetWindowThreadProcessId(h, out wpid);
                 if (wpid != (uint)pid || !IsWindowVisible(h))
                     return true;
-                var sb = new StringBuilder(512);
-                GetWindowText(h, sb, sb.Capacity);
-                string t = sb.ToString();
+                string t = NaslovProzora(h);
                 if (t == "Start Error" || t == "Carpo.NetGen" || t == "Greška" || t == "StartXmlGen()")
                 {
                     nadjen = t + TekstDijaloga(h);
@@ -491,8 +799,7 @@ namespace Carpo.TestShell
             var sb = new StringBuilder();
             EnumChildWindows(hwnd, delegate (IntPtr h, IntPtr l)
             {
-                var t = new StringBuilder(2000);
-                GetWindowText(h, t, t.Capacity);
+                string t = NaslovProzora(h);
                 if (t.Length > 0)
                     sb.Append(" | ").Append(t);
                 return true;
@@ -509,9 +816,7 @@ namespace Carpo.TestShell
                 GetWindowThreadProcessId(h, out wpid);
                 if (wpid != (uint)pid || !IsWindowVisible(h))
                     return true;
-                var sb = new StringBuilder(512);
-                GetWindowText(h, sb, sb.Capacity);
-                string t = sb.ToString();
+                string t = NaslovProzora(h);
                 if (t.Length == 0 || t == "TestShell")
                     return true;
                 if (t == "Start Error" || t == "Carpo.NetGen" || t == "Greška")
@@ -572,52 +877,60 @@ namespace Carpo.TestShell
             }
             if (SnimiPikselima(r.Left, r.Top, w, h, put))
                 return;
+            if (!SnimiBitBlt(hwnd, w, h, put))
+                ZapisiSnimku(put, "ekran bez sadrzaja " + w + "x" + h);
+        }
+
+        private static void Faza(string snimka, string tekst)
+        {
+            try { File.WriteAllText(snimka + ".faza.txt", tekst); } catch { }
+        }
+
+        private static string NaslovProzora(IntPtr hwnd)
+        {
+            var sb = new StringBuilder(512);
+            IntPtr rezultat;
+            IntPtr odg = SendMessageTimeout(hwnd, 0x000D, (IntPtr)sb.Capacity, sb, 0x0002, 200, out rezultat);
+            if (odg == IntPtr.Zero)
+                return "";
+            return sb.ToString();
+        }
+
+        private static bool SnimiBitBlt(IntPtr hwnd, int w, int h, string put)
+        {
             try
             {
                 using (var bmp = new System.Drawing.Bitmap(w, h))
                 using (var g = System.Drawing.Graphics.FromImage(bmp))
                 {
-                    IntPtr hdc = g.GetHdc();
-                    bool tisak = false;
+                    IntPtr src = GetWindowDC(hwnd);
                     try
                     {
-                        tisak = PrintWindow(hwnd, hdc, 2) || PrintWindow(hwnd, hdc, 0);
-                    }
-                    finally
-                    {
-                        g.ReleaseHdc(hdc);
-                    }
-                    if (!tisak)
-                    {
-                        IntPtr src = GetWindowDC(hwnd);
+                        IntPtr hdc = g.GetHdc();
+                        bool ok;
                         try
                         {
-                            IntPtr hdc2 = g.GetHdc();
-                            try
-                            {
-                                tisak = BitBlt(hdc2, 0, 0, w, h, src, 0, 0, 0x00CC0020);
-                            }
-                            finally
-                            {
-                                g.ReleaseHdc(hdc2);
-                            }
+                            ok = BitBlt(hdc, 0, 0, w, h, src, 0, 0, 0x00CC0020);
                         }
                         finally
                         {
-                            ReleaseDC(hwnd, src);
+                            g.ReleaseHdc(hdc);
                         }
+                        if (!ok || !JeSadrzaj(bmp))
+                            return false;
                     }
-                    if (!tisak || !JeSadrzaj(bmp))
+                    finally
                     {
-                        ZapisiSnimku(put, "snimka prazna " + w + "x" + h);
-                        return;
+                        ReleaseDC(hwnd, src);
                     }
                     bmp.Save(put, System.Drawing.Imaging.ImageFormat.Png);
+                    return true;
                 }
             }
             catch (Exception ex)
             {
                 ZapisiSnimku(put, ex.ToString());
+                return false;
             }
         }
 
@@ -757,6 +1070,12 @@ namespace Carpo.TestShell
 
         [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
         private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint msg, IntPtr wParam, StringBuilder lParam, uint flags, uint timeout, out IntPtr result);
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);

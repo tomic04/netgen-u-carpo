@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Text;
 using System.Globalization;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
@@ -28,11 +29,17 @@ namespace Carpo.NetGen.Ui
         private Func<string, DataTable> _citaj;
         private SqlKontekst _kontekst;
         private NgForm _forma;
+        private static Dijalog _zatvoriRoditelja;
+        public static Action<Dijalog> NakonPrikaza;
         private bool _jupiter;
         private readonly Dictionary<string, string> _izUpita = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         public string OtvorenaForma = "";
         public string MasterSql = "";
+        public string Konekcija = "";
+        public string Operater = "";
+        public string Id = "0";
+        public string ZadnjiSql = "";
         public Action<string> OtvoriDrugu;
 
         public void JupiterNeSaljeGumb(bool jupiter)
@@ -50,7 +57,7 @@ namespace Carpo.NetGen.Ui
             KeyPreview = true;
         }
 
-        public void Prikazi(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj)
+        public void Prikazi(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj, bool modal = true, Form vlasnik = null)
         {
             if (forma == null)
                 return;
@@ -164,7 +171,95 @@ namespace Carpo.NetGen.Ui
             }
 
             PrimijeniOnLoad();
-            ShowDialog();
+            if (modal)
+            {
+                // Form1.vb 5362: Form2.ShowDialog(Me). Form1 je običan Form, nije RibbonForm.
+                // ShowDialog(RibbonForm) iz klika ne uđe u petlju. Običan Form kao vlasnik
+                // XtraFormu baci KeyNotFound u skinu i otvori ThreadExceptionDialog, koji
+                // onda drži ShowDialog. Vlasnik mora biti XtraForm, a ne ribbon.
+                Form nosac = VlasnikXtra(vlasnik);
+                Form skriven = null;
+                if (nosac == null)
+                {
+                    var x = new XtraForm();
+                    x.ShowInTaskbar = false;
+                    x.FormBorderStyle = FormBorderStyle.None;
+                    x.StartPosition = FormStartPosition.Manual;
+                    x.Location = new System.Drawing.Point(-32000, -32000);
+                    x.Size = new System.Drawing.Size(1, 1);
+                    x.Show();
+                    skriven = x;
+                    nosac = x;
+                }
+                try
+                {
+                    ShowDialog(nosac);
+                }
+                finally
+                {
+                    if (skriven != null)
+                        skriven.Close();
+                }
+            }
+        }
+
+        private static Form VlasnikXtra(Form predlozen)
+        {
+            if (predlozen != null && !predlozen.IsDisposed && JeXtra(predlozen) && !JeRibbon(predlozen))
+                return predlozen;
+            foreach (Form f in Application.OpenForms)
+            {
+                if (f == null || f.IsDisposed || !f.IsHandleCreated || !JeXtra(f) || JeRibbon(f))
+                    continue;
+                return f;
+            }
+            return null;
+        }
+
+        private static bool JeXtra(Control f)
+        {
+            for (Type t = f.GetType(); t != null && t != typeof(object); t = t.BaseType)
+            {
+                if (t.Name == "XtraForm")
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool JeRibbon(Control f)
+        {
+            for (Type t = f.GetType(); t != null && t != typeof(object); t = t.BaseType)
+            {
+                string n = t.FullName ?? "";
+                if (n.IndexOf("RibbonForm", StringComparison.Ordinal) >= 0
+                    || n.IndexOf("RibbonBase", StringComparison.Ordinal) >= 0)
+                    return true;
+            }
+            return false;
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            Action<Dijalog> h = NakonPrikaza;
+            if (h == null)
+                return;
+            BeginInvoke(new Action(delegate ()
+            {
+                if (!IsDisposed)
+                    h(this);
+            }));
+        }
+
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            if (_zatvoriRoditelja != null && _zatvoriRoditelja != this)
+            {
+                _zatvoriRoditelja = null;
+                DialogResult = DialogResult.Cancel;
+                Close();
+            }
         }
 
         private void NapuniKontrolu(Control c, NgControl k)
@@ -231,21 +326,115 @@ namespace Carpo.NetGen.Ui
             DijalogTok.Klik klik = DijalogTok.Gumb(_forma, redni, naredba, _jupiter);
             if (!string.IsNullOrEmpty(klik.MasterSql))
                 klik.MasterSql = Pripremi(klik.MasterSql);
-            if (klik.OtvaraFormu.Length > 0)
+            var koraci = DijalogTok.Koraci(naredba);
+            bool lanac = koraci.Count > 1;
+            for (int s = 0; s < koraci.Count; s++)
             {
-                OtvorenaForma = klik.OtvaraFormu;
-                if (b != null)
-                    b.DialogResult = DialogResult.None;
-                if (OtvoriDrugu != null)
-                    OtvoriDrugu(klik.OtvaraFormu);
+                string v = koraci[s].Vrsta;
+                if (v == "poruka" || v == "roditelj" || v == "odustani" || v == "ok" || v == "okstay" || v == "forma"
+                    || v == "foreach" || v == "fiskal" || v == "datoteka" || v == "refresh" || v == "dock"
+                    || v == "eval" || v == "sljedeci" || v == "prethodni" || v == "naredba"
+                    || v == "recalc" || v == "toggle" || v == "priprema" || v == "pivot" || v == "chart" || v == "boja" || v == "posalji" || v == "pokretanje")
+                    lanac = true;
+            }
+            if (lanac)
+            {
+                for (int i = 0; i < koraci.Count; i++)
+                {
+                    DijalogTok.Korak korak = koraci[i];
+                    if (korak.Vrsta == "poruka")
+                    {
+                        PorukaNaredba.Pokazi("MSGBOX(" + korak.Tekst + ")");
+                        continue;
+                    }
+                    if (korak.Vrsta == "odustani" || korak.Vrsta == "roditelj")
+                    {
+                        if (korak.Vrsta == "roditelj")
+                            _zatvoriRoditelja = this;
+                        DialogResult = DialogResult.Cancel;
+                        Close();
+                        continue;
+                    }
+                    if (korak.Vrsta == "ok" || korak.Vrsta == "okstay")
+                    {
+                        if (korak.Vrsta == "ok")
+                            DialogResult = DialogResult.OK;
+                        if (klik.SaljeSql && _citaj != null && klik.MasterSql.Length > 0)
+                        {
+                            try { _citaj(klik.MasterSql); }
+                            catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + klik.MasterSql); }
+                        }
+                        continue;
+                    }
+                    if (korak.Vrsta == "klik")
+                    {
+                        Control[] cilj = Controls.Find(korak.Tekst, true);
+                        if (cilj.Length > 0)
+                            cilj[0].Focus();
+                        continue;
+                    }
+                    if (korak.Vrsta == "forma")
+                    {
+                        OtvorenaForma = korak.Tekst;
+                        if (OtvoriDrugu != null)
+                            OtvoriDrugu(korak.Tekst);
+                        continue;
+                    }
+                    if (korak.Vrsta == "foreach")
+                    {
+                        IzvrsiForeach(korak.Tekst);
+                        continue;
+                    }
+                    if (korak.Vrsta == "fiskal")
+                    {
+                        FiskalTok.Izvrsi(FiskalNaredba.Tablica(korak.Tekst), FiskalNaredba.Argument(korak.Tekst), _citaj);
+                        continue;
+                    }
+                    if (korak.Vrsta == "sql" && _citaj != null && !_jupiter)
+                    {
+                        string dio = Pripremi(korak.Tekst);
+                        if (!DijalogTok.SmijePoslati(dio))
+                            continue;
+                        NgDnevnik.Sql(dio);
+                        try { _citaj(dio); }
+                        catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + dio); }
+                    }
+                }
                 return;
             }
-            if (klik.Odustani)
+            if (KlikNaredba.Kontrola(naredba).Length > 0)
             {
-                DialogResult = DialogResult.Cancel;
+                string ime = KlikNaredba.Kontrola(naredba);
+                Control[] cilj = Controls.Find(ime, true);
+                if (cilj.Length > 0)
+                    cilj[0].Focus();
                 return;
             }
             MasterSql = _jupiter ? "" : klik.MasterSql;
+            if (Carpo.NetGen.Print.PrintBridge.Vrsta(naredba, true).Length > 0)
+            {
+                DevExpress.XtraGrid.GridControl grid = null;
+                foreach (Control c in Controls)
+                {
+                    grid = c as DevExpress.XtraGrid.GridControl;
+                    if (grid != null)
+                        break;
+                }
+                string orij = _forma != null && _forma.Atributi != null && _forma.Atributi.Ima("PAGEORIENTATION")
+                    ? _forma.Atributi.Vrijednost("PAGEORIENTATION") : "";
+                DataTable tab = grid == null ? null : grid.DataSource as DataTable;
+                Carpo.NetGen.Print.PrintBridge.Ispisi(naredba, true, Id, Operater, Konekcija, "", ZadnjiSql, "", SviParametri(), "", "", "", Text, grid, orij, tab);
+            }
+            for (int i = 0; i < klik.Naredbe.Count; i++)
+            {
+                string n = klik.Naredbe[i] ?? "";
+                if (n.IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) < 0)
+                    continue;
+                string svi = SviParametri();
+                var poziv = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(n, "dijalog", Id, Operater, Konekcija, ZadnjiSql, "", svi);
+                if (poziv.Prekinuto)
+                    return;
+            }
             if (_citaj != null)
             {
                 for (int i = 0; i < klik.Naredbe.Count; i++)
@@ -338,6 +527,172 @@ namespace Carpo.NetGen.Ui
                 }
                 SkupiTekst(c, kontrole);
             }
+        }
+
+        private void IzvrsiForeach(string opis)
+        {
+            string opisTekst = opis ?? "";
+            int crta1 = opisTekst.IndexOf('|');
+            int crta2 = crta1 < 0 ? -1 : opisTekst.IndexOf('|', crta1 + 1);
+            if (crta1 < 0 || crta2 < 0)
+                return;
+            string vrsta = opisTekst.Substring(0, crta1);
+            string gridIme = opisTekst.Substring(crta1 + 1, crta2 - crta1 - 1);
+            string tijelo = opisTekst.Substring(crta2 + 1);
+            GridControl grid = null;
+            foreach (Control c in Controls)
+            {
+                var g = c as GridControl;
+                if (g != null && string.Equals(g.Name, gridIme, StringComparison.OrdinalIgnoreCase))
+                {
+                    grid = g;
+                    break;
+                }
+            }
+            var pogled = grid == null ? null : grid.MainView as GridView;
+            var svi = new System.Collections.Generic.List<string>();
+            var plavi = new System.Collections.Generic.List<string>();
+            var cek = new System.Collections.Generic.List<string>();
+            if (pogled != null)
+            {
+                for (int r = 0; r < pogled.DataRowCount; r++)
+                    svi.Add(Celija(pogled, pogled.GetRowHandle(r)));
+                int[] sel = pogled.GetSelectedRows();
+                for (int i = 0; i < sel.Length; i++)
+                {
+                    if (sel[i] >= 0)
+                        plavi.Add(Celija(pogled, sel[i]));
+                }
+                DevExpress.XtraGrid.Columns.GridColumn kol = null;
+                for (int c = 0; c < pogled.Columns.Count; c++)
+                {
+                    if (pogled.Columns[c].ColumnType == typeof(bool))
+                    {
+                        kol = pogled.Columns[c];
+                        break;
+                    }
+                }
+                if (kol != null)
+                {
+                    for (int r = 0; r < pogled.DataRowCount; r++)
+                    {
+                        int h = pogled.GetRowHandle(r);
+                        object kvaka = pogled.GetRowCellValue(h, kol);
+                        if (kvaka is bool && (bool)kvaka)
+                            cek.Add(Celija(pogled, h));
+                    }
+                }
+            }
+            string[] sqlovi = ForeachNaredba.Ponovi(tijelo, ForeachNaredba.Idjevi(vrsta, svi, plavi, cek));
+            for (int i = 0; i < sqlovi.Length; i++)
+            {
+                if (_citaj == null || _jupiter || !DijalogTok.SmijePoslati(sqlovi[i]))
+                    continue;
+                try { _citaj(sqlovi[i]); }
+                catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sqlovi[i]); }
+            }
+        }
+
+        private string SviParametri()
+        {
+            var sb = new StringBuilder();
+            foreach (Control c in Controls)
+            {
+                if (string.IsNullOrEmpty(c.Name))
+                    continue;
+                var chk = c as CheckEdit;
+                if (chk != null && chk.Properties.CheckStyle == CheckStyles.Radio)
+                {
+                    sb.Append(ParametriSvi.Radio(c.Name, chk.Checked));
+                    continue;
+                }
+                if (chk != null)
+                {
+                    sb.Append("@").Append(c.Name.Trim()).Append("=").Append((int)chk.CheckState).Append(",");
+                    continue;
+                }
+                var grid = c as GridControl;
+                if (grid != null)
+                {
+                    sb.Append(GridParametar(grid));
+                    continue;
+                }
+                var look = c as LookUpEdit;
+                if (look != null)
+                {
+                    object v = look.EditValue;
+                    string t = v == null || v == DBNull.Value || Convert.ToString(v).Length == 0 ? "null" : Convert.ToString(v);
+                    sb.Append("@").Append(c.Name.Trim()).Append("=").Append(t).Append(",");
+                    continue;
+                }
+                if (c.GetType() == typeof(ButtonEdit))
+                {
+                    var trazi = (ButtonEdit)c;
+                    sb.Append(ParametriSvi.Search(c.Name, c.Tag as string, trazi.Text));
+                    continue;
+                }
+                var txt = c as TextEdit;
+                if (txt != null)
+                {
+                    var spin = txt as SpinEdit;
+                    if (spin != null)
+                    {
+                        sb.Append(ParametriSvi.Broj(c.Name, txt.Text));
+                        continue;
+                    }
+                    var datum = txt as DateEdit;
+                    if (datum != null)
+                    {
+                        DateTime d;
+                        bool ima = datum.EditValue is DateTime;
+                        if (ima)
+                            d = (DateTime)datum.EditValue;
+                        else
+                            d = DateTime.MinValue;
+                        sb.Append(ParametriSvi.Datum(c.Name, "", ima, ima ? (DateTime?)d : null));
+                        continue;
+                    }
+                    sb.Append(ParametriSvi.Tekst(c.Name, txt.Text));
+                }
+            }
+            return sb.ToString();
+        }
+
+        private static string GridParametar(GridControl grid)
+        {
+            var pogled = grid.MainView as GridView;
+            int redova = pogled == null ? 0 : pogled.RowCount;
+            string id = "0";
+            var plavi = new StringBuilder();
+            if (pogled != null && redova > 0)
+            {
+                id = Celija(pogled, pogled.FocusedRowHandle);
+                int[] sel = pogled.GetSelectedRows();
+                for (int i = 0; i < sel.Length; i++)
+                {
+                    if (sel[i] < 0)
+                        continue;
+                    plavi.Append(Celija(pogled, sel[i]));
+                    if (i < sel.Length - 1)
+                        plavi.Append("~");
+                }
+            }
+            return ParametriSvi.Grid(grid.Name, id, plavi.ToString(), "", redova);
+        }
+
+        private static string Celija(GridView pogled, int red)
+        {
+            if (red < 0)
+                return "0";
+            object id = pogled.GetRowCellValue(red, "id");
+            if (id == null || id == DBNull.Value)
+            {
+                if (pogled.Columns.Count == 0)
+                    return "0";
+                id = pogled.GetRowCellValue(red, pogled.Columns[0]);
+            }
+            string t = id == null || id == DBNull.Value ? "" : Convert.ToString(id);
+            return t.Length == 0 ? "0" : t;
         }
 
         public string Vrijednost(string ime)

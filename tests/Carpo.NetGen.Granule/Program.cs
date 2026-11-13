@@ -12,6 +12,7 @@ namespace Carpo.NetGen.Granule
             string root = null;
             string izvjestaj = null;
             string ssmeni = null;
+            string uzorak = null;
             string jupiter = null;
             for (int i = 0; i < args.Length; i++)
             {
@@ -23,6 +24,11 @@ namespace Carpo.NetGen.Granule
                 if (args[i] == "--ssmeni" && i + 1 < args.Length)
                 {
                     ssmeni = args[++i];
+                    continue;
+                }
+                if (args[i] == "--uzorak" && i + 1 < args.Length)
+                {
+                    uzorak = args[++i];
                     continue;
                 }
                 if (args[i] == "--jupiter" && i + 1 < args.Length)
@@ -40,6 +46,8 @@ namespace Carpo.NetGen.Granule
             }
             if (jupiter != null)
                 return JupiterSmoke.Pokreni(root, jupiter);
+            if (uzorak != null)
+                return SmokeMeni.Uzorak(root, uzorak);
             if (ssmeni != null)
                 return SmokeMeni.Pokreni(root, ssmeni);
 

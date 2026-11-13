@@ -7,10 +7,12 @@ using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
+using Carpo.NetGen.Poziv;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
 using Carpo.NetGen.Print;
+using Carpo.NetGen.Shell;
 using Carpo.NetGen.Xml;
 using DevExpress.Skins;
 using DevExpress.UserSkins;
@@ -27,9 +29,8 @@ using DevExpress.XtraTreeList.Nodes;
 namespace Carpo.NetGen.Ui
 {
     /// <summary>
-    /// NetGen podloga na gotovom rasporedu Carpo Managera (Manager ponuda):
-    /// RibbonBase preko JupiterManager, lijevo combo i stablo, desno traka i master,
-    /// ispod detail, dolje flat gumbi, status Broj slogova.
+    /// Samo granule čiji NetGen raspored jest stablo lijevo, master-detail i gumbi dolje.
+    /// Ostale idu u ObicnaForma ili u Dijalog. Odabir je OdabirForme.JeManager.
     /// </summary>
     public sealed class Podloga : Carpo.UI.Forms.Master.Manager
     {
@@ -141,6 +142,7 @@ namespace Carpo.NetGen.Ui
             _master.Ucitaj(_projekt, null);
             NapuniGrid();
             NapuniGumbe();
+            PrimijeniOnLoad2();
             return true;
         }
 
@@ -311,13 +313,40 @@ namespace Carpo.NetGen.Ui
             {
                 var dij = new Dijalog();
                 dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server));
+                dij.Konekcija = _spoj;
+                dij.Operater = _master.Kontekst.OperaterId;
+                dij.Id = _master.Stanje.Id;
+                dij.ZadnjiSql = _master.Stanje.ZadnjiSql;
                 dij.OtvoriDrugu = OtvoriFormu;
-                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj);
+                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj, true, this);
                 string iz = dij.Vrijednost("izvjestaj");
                 if (!string.IsNullOrEmpty(iz))
                     _polja["izvjestaj"] = iz;
                 if (dij.DialogResult != DialogResult.OK)
                     return;
+                string explorer = DijalogTok.SqlNakonOk(forma);
+                if (explorer.Length > 0)
+                {
+                    string sql = SqlTekst.Sredi(explorer, _master.Kontekst).Replace("~~", ",");
+                    _master.Stanje.IzvorSql = explorer;
+                    _master.Stanje.ZadnjiSql = sql;
+                    _master.Stanje.SqlZaSlanje = sql;
+                    _master.Stanje.Odluka = SqlTekst.Odluka(sql);
+                    if (_master.Stanje.Odluka == "salji" && !SqlTekst.JeZabranaPisanja(sql))
+                        NapuniGrid();
+                    return;
+                }
+                if (DijalogTok.OsvjeziDetalj(forma))
+                {
+                    OsvjeziDetail();
+                    return;
+                }
+                if (DijalogTok.OsvjeziStablo(forma))
+                {
+                    _stablo.Ucitaj(_projekt, Citaj);
+                    NapuniDrvo();
+                    return;
+                }
                 string sljedeca = DijalogTok.NextForm(forma);
                 if (sljedeca.Length > 0)
                     OtvoriFormu(sljedeca);
@@ -327,6 +356,29 @@ namespace Carpo.NetGen.Ui
             finally
             {
                 _dubinaForme--;
+            }
+        }
+
+        private void PrimijeniStupce(string naredba)
+        {
+            var mapa = StupciNaredba.Primijeni(naredba);
+            foreach (var par in mapa)
+            {
+                var c = gvGla.Columns.ColumnByFieldName(par.Key);
+                if (c == null)
+                {
+                    for (int i = 0; i < gvGla.Columns.Count; i++)
+                    {
+                        if (string.Equals(gvGla.Columns[i].Caption, par.Key, StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(gvGla.Columns[i].FieldName, par.Key, StringComparison.OrdinalIgnoreCase))
+                        {
+                            c = gvGla.Columns[i];
+                            break;
+                        }
+                    }
+                }
+                if (c != null)
+                    c.Visible = par.Value;
             }
         }
 
@@ -348,6 +400,31 @@ namespace Carpo.NetGen.Ui
                     s = s.Substring(1).Trim();
                 if (s.Length == 0)
                     continue;
+                if (PraznoNaredba.PreskociSljedeci(s))
+                {
+                    i++;
+                    continue;
+                }
+                if (PraznoNaredba.Je(s) || StupacVrijednost.Je(s))
+                    continue;
+                if (ForeachNaredba.Vrsta(s).Length > 0)
+                {
+                    string tijelo = "";
+                    if (i + 1 < seg.Length)
+                    {
+                        tijelo = (seg[i + 1] ?? "").Trim();
+                        i++;
+                    }
+                    string[] sqlovi = ForeachNaredba.Ponovi(tijelo, IdjeviMaster(ForeachNaredba.Vrsta(s)));
+                    for (int k = 0; k < sqlovi.Length; k++)
+                    {
+                        if (ZastitaSql.Tekst(sqlovi[k]).Pise)
+                            continue;
+                        try { Citaj(sqlovi[k]); }
+                        catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sqlovi[k]); }
+                    }
+                    continue;
+                }
                 if (s.StartsWith("select", StringComparison.OrdinalIgnoreCase))
                 {
                     string stanje = Lanac.GumbIzCase(s, Polje("izvjestaj"));
@@ -355,10 +432,51 @@ namespace Carpo.NetGen.Ui
                     if (jednako > 0)
                         PostaviGumb(stanje.Substring(0, jednako), stanje.Substring(jednako + 1) != "disable");
                 }
+                else if (GumbTok.Akcija(_projekt, s) == "fiskal")
+                {
+                    NgDnevnik.Akcija("fiskal tablica=" + FiskalNaredba.Tablica(s));
+                    FiskalTok.Izvrsi(FiskalNaredba.Tablica(s), FiskalNaredba.Argument(s), Citaj);
+                }
+                else if (GumbTok.Akcija(_projekt, s) == "prostor")
+                    NgDnevnik.Akcija("prostor " + ProstorNaredba.Argument(s));
+                else if (GumbTok.Akcija(_projekt, s) == "blagajna")
+                    NgDnevnik.Akcija(BlagajnaNaredba.Upit(BlagajnaNaredba.Id(s)));
+                else if (GumbTok.Akcija(_projekt, s) == "odznaci")
+                    NgDnevnik.Akcija("uncheck");
+                else if (GumbTok.Akcija(_projekt, s) == "roditelj")
+                {
+                    Close();
+                    return;
+                }
+                else if (GumbTok.Akcija(_projekt, s) == "poruka")
+                    PorukaNaredba.Pokazi(s);
+                else if (GumbTok.Akcija(_projekt, s) == "openform")
+                    OtvoriFormu(OtvoriNaredba.Ime(s));
+                else if (GumbTok.Akcija(_projekt, s) == "stupci")
+                    PrimijeniStupce(s);
+                else if (GumbTok.Akcija(_projekt, s) == "word")
+                {
+                    if (!WordDot.Otvori(s, _spoj, new[] { _master.Stanje.Id }))
+                        return;
+                }
                 else if (IspisMotora.JeIspisImena(s) || s.StartsWith("PRINT", StringComparison.OrdinalIgnoreCase))
-                    NgDnevnik.Akcija("ispis " + s);
+                {
+                    string vrsta = PrintBridge.Vrsta(s, false);
+                    object grid = vrsta == "detail" ? (object)gcDet : gcGla;
+                    DataTable tab = null;
+                    var gc = grid as GridControl;
+                    if (gc != null)
+                        tab = gc.DataSource as DataTable;
+                    string orij = _projekt != null && _projekt.Atributi != null && _projekt.Atributi.Ima("PAGEORIENTATION")
+                        ? _projekt.Atributi.Vrijednost("PAGEORIENTATION") : "";
+                    PrintBridge.Ispisi(s, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "", "", "", "", Text, grid, orij, tab);
+                }
                 else if (s.ToUpperInvariant().IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0)
-                    NgDnevnik.Akcija("assembly " + s);
+                {
+                    var poziv = AssemblyPoziv.Pozovi(s, "shell", _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "");
+                    if (poziv.Prekinuto)
+                        return;
+                }
                 else
                     OtvoriFormu(s);
             }
@@ -538,9 +656,10 @@ namespace Carpo.NetGen.Ui
             pnlButtons.Controls.Clear();
             if (_projekt == null)
                 return;
-            for (int i = _projekt.Gumbi.Count - 1; i >= 0; i--)
+            var slozeni = GumbiNiz.Slozi(_projekt.Gumbi, _projekt.Buttons);
+            for (int i = slozeni.Count - 1; i >= 0; i--)
             {
-                NgButton b = _projekt.Gumbi[i];
+                NgButton b = slozeni[i];
                 var gumb = new SimpleButton();
                 gumb.Text = (b.Natpis ?? "").Replace("!!", "\r\n");
                 gumb.Tag = b.Naredba;
@@ -560,6 +679,43 @@ namespace Carpo.NetGen.Ui
             IzvrsiLanac(naredba);
         }
 
+        private void PrimijeniOnLoad2()
+        {
+            if (_projekt == null || _projekt.Atributi == null || !_projekt.Atributi.Ima("ONLOAD2"))
+                return;
+            string raw = (_projekt.Atributi.Vrijednost("ONLOAD2") ?? "").Trim();
+            if (raw.Length == 0)
+                return;
+            string sql = SqlTekst.Sredi(raw, _master.Kontekst).Replace("~~", ",");
+            if (SqlTekst.Odluka(sql) != "salji" || SqlTekst.JeZabranaPisanja(sql))
+                return;
+            DataTable t = Citaj(sql);
+            if (t == null || t.Rows.Count == 0)
+                return;
+            DataRow row = t.Rows[0];
+            for (int i = 0; i < pnlButtons.Controls.Count; i++)
+            {
+                var gumb = pnlButtons.Controls[i] as SimpleButton;
+                if (gumb == null)
+                    continue;
+                string natpis = (gumb.Text ?? "").Replace("\r\n", "").Trim();
+                if (!row.Table.Columns.Contains(natpis))
+                    continue;
+                string v = row[natpis] == DBNull.Value ? "" : Convert.ToString(row[natpis]);
+                string akcija = OnLoad2.Akcija(v);
+                if (akcija == "visible")
+                    gumb.Visible = true;
+                else if (akcija == "invisible")
+                    gumb.Visible = false;
+                else if (akcija == "enable")
+                    gumb.Enabled = true;
+                else if (akcija == "disable")
+                    gumb.Enabled = false;
+                else if (akcija == "natpis")
+                    gumb.Text = v;
+            }
+        }
+
         private void PostaviStatus(string tekst)
         {
             int n;
@@ -568,6 +724,59 @@ namespace Carpo.NetGen.Ui
             else
                 bbiBrojSlogovaMasterGrid.Caption = tekst ?? "";
             bbiBrojSlogovaDetailsGrid.Caption = "detalj grid: <b>" + _redovaDetail.ToString() + "</b>";
+        }
+
+        private System.Collections.Generic.List<string> IdjeviMaster(string vrsta)
+        {
+            var svi = new System.Collections.Generic.List<string>();
+            var plavi = new System.Collections.Generic.List<string>();
+            var cek = new System.Collections.Generic.List<string>();
+            if (gvGla == null)
+                return svi;
+            DevExpress.XtraGrid.Columns.GridColumn kol = null;
+            for (int c = 0; c < gvGla.Columns.Count; c++)
+            {
+                if (gvGla.Columns[c].ColumnType == typeof(bool))
+                {
+                    kol = gvGla.Columns[c];
+                    break;
+                }
+            }
+            for (int r = 0; r < gvGla.DataRowCount; r++)
+            {
+                int h = gvGla.GetRowHandle(r);
+                string id = IdCelije(h);
+                svi.Add(id);
+                if (kol != null)
+                {
+                    object b = gvGla.GetRowCellValue(h, kol);
+                    if (b is bool && (bool)b)
+                        cek.Add(id);
+                }
+            }
+            int[] sel = gvGla.GetSelectedRows();
+            for (int i = 0; i < sel.Length; i++)
+            {
+                if (sel[i] >= 0)
+                    plavi.Add(IdCelije(sel[i]));
+            }
+            string[] iz = ForeachNaredba.Idjevi(vrsta, svi, plavi, cek);
+            return new System.Collections.Generic.List<string>(iz);
+        }
+
+        private string IdCelije(int red)
+        {
+            if (red < 0)
+                return "0";
+            object id = null;
+            if (gvGla.Columns.ColumnByFieldName("id") != null)
+                id = gvGla.GetRowCellValue(red, "id");
+            if (id == null || id == DBNull.Value)
+            {
+                if (gvGla.Columns.Count > 0)
+                    id = gvGla.GetRowCellValue(red, gvGla.Columns[0]);
+            }
+            return id == null || id == DBNull.Value ? "0" : Convert.ToString(id);
         }
 
         private DataTable Citaj(string sql)

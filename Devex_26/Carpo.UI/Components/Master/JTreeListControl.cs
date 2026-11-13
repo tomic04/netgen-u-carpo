@@ -90,7 +90,9 @@ namespace Carpo.UI.Components
 
             if (!DesignMode)
             {
-                if (ComponentExt == null)
+                // NetGen podloga pokazuje isto stablo bez JTree definicije.
+                // Carpo i dalje puni ComponentTree kad definicija postoji, ili kasnije iz SetControl.
+                if (Definition != null && ComponentExt == null)
                     ComponentExt = new Base.ComponentTree(this, Definition);
 
                 ImgCollection = new ImageCollection();

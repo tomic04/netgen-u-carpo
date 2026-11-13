@@ -66,7 +66,7 @@ String stupac koji nije naveden u `COLUMN` dobije širinu **100** u `CreateGridC
 | ID | Ključ | NetGen |
 |---|---|---|
 | JEZ-56 | `ispis=PRINTREPXMASTER` | `Form1.vb:4945` |
-| JEZ-57 | `pageHeaderRight=@@tkosmomi` | `Form1.vb:6001` |
+| JEZ-57 | `pageHeaderRight` je vrijednost `tkosmomi` iz SETDEFAULTS, ili riječ `null` ako CB nema vrijednost | `Form1.vb:6001`, `Class1.vb:916,966` |
 
 ## Dijalozi
 

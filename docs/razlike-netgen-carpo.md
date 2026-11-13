@@ -176,9 +176,9 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `FOREACHROW` / `FOREACHSELECTED` / `FOREACHBLUEROW`
 - **NetGen:** na dijalogu petlja i pojede sljedeći `#` segment (`Form2.vb` 7040–7048, `8310–8394`). Na podlozi je tijelo komentar, ali `i = i + 1` i dalje pojede sljedeći segment (`Form1.vb` 6843–6850).
-- **Carpo:** `control foreachrow` vrti. Nema „prepoznaj i preskoči“.
-- **Posljedica:** ista naredba na gumbu podloge ne smije izvršiti petlju, a ne smije ni ostaviti sljedeći segment.
-- **Test:** `KUP-11`, `KUP-12`, `KUP-13`
+- **Carpo:** i dijalog i podloga vrte sljedeći segment po retku (`ForeachNaredba`). `Form1.vb` 6844–6850 ima poziv zakomentiran; tijelo živi u `Form2` i Carpo ga zove i na podlozi.
+- **Posljedica:** gumb podloge s `FOREACHROW` izvrši petlju, ne samo pojede segment.
+- **Test:** `foreach-dijalog`, `foreach-podloga`, `foreach-podloga-petlja`, `KUP-12`
 
 ## R23 `OKSTAY` i `CLOSEPARENT`
 
@@ -328,15 +328,15 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `PRINTMASTER` / `PRINTREPXMASTER` / `PRINTGRID`
 - **NetGen:** oba prefiksa na podlozi zovu `IspisGRIDREPX` i izađu (`Form1.vb` 4945–4955). `Button7_Click` (Janus, tu je `PAGEORIENTATION`, `6039–6043`) se ne zove. REPX master (`5984–6003`) puni zaglavlje, `##` i `!!` su novi red, prazan centar reže naslov do `v[`. Konekcija je `strGlobalSQLSERVERlogin`. Detail (`6067–6085`) koristi `Conn` i prefiks `Driver={SQL Server};`. Na dijalogu `PRINTGRID(` i `PRINTREPXGRID(` zovu istu `IspisGRIDREPX` (`6950–6957`, `6985–6991`) s argumentom `"lodani"` i zaglavljem grida (`9041–9056`). Prazan centar dijaloga je cijeli `Me.Text`, ne rez do `v[`.
-- **Carpo:** `print` čije ime počinje s `repx` ide u REPX (`docs/analiza/01-carpo-arhitektura.md`). Nema dva potpisa master/detail ni `lodani`. `PrintBridge` još ne zove pisač (`Placeholders.cs` 46–52).
-- **Posljedica:** `PAGEORIENTATION="LANDSCAPE"` na Kartici ne okrene ispis liste. `PRINTGRID` i `PRINTREPXGRID` nisu dva ispisa.
+- **Carpo:** `PrintBridge` zove `Spin.Printing.Start.PrintLink` (`ComponentGrid.PrintControl`). Koji je grid (master, detail, dijalog) bira NetGen pravilo. `PAGEORIENTATION=LANDSCAPE` ide u `isLandscape`.
+- **Posljedica:** `PrintLink` nema `PageHeaderLeft/Center/Right` ni argument `lodani`. Centar, lijevo i desno idu u `caption`, `header` i `subHeader`. Prazan `DataTable` predložaka nije `printDialogComboTemplates`.
 - **Test:** `KAR-30`, `KAR-31`, `JEP-02`, `MPB-02`
 
 ## R42 `:repx/` ide u Spin.Printing, pa u `rptDevRepx`
 
 - **Element:** `repx/` / `repx:`
 - **NetGen:** shell zamijeni `repx/` i `REPX/` s `repx:` (`Form1.vb` 5238–5239). Dijalog zamijeni s `repx:/` odnosno `REPX:/` (`Form2.vb` 4296–4297). `PrintRpt` (`Class1.vb` 594–632) prvo `IspisiMePrekoSpinPrintinga`: `Assembly.Load("Spin.Printing.v23")`, u catch `v9.1`, klasa `Spin.Printing.Start` (`297–304`). `Print` ili `PrintMulti`. Ako parametar već ima `@id=`, ne dodaje se drugi (`320–327`). Pad s hwnd pokuša bez hwnd (`362–369`). Ako Spin padne, `Form6` učita `rptDevRepx.clsReport`, `isnetgen = 1`, `DoPrint2` ili `DoPrintDB` za `FROMDB-` (`Form6.vb` 134–161). Putanja predloška je `SharedDLLs\repx`.
-- **Carpo:** odluka je `Spin.Printing` v26 i `rptDevRepx`, v23 i v9.1 se ne zovu (`docs/analiza/00-sazetak.md`). `PrintBridge` to još ne radi (`Placeholders.cs` 46–52). Nije provjereno da je klasa i dalje `Spin.Printing.Start`.
+- **Carpo:** `PrintBridge.Predlozak` učita `Spin.Printing.v26` i zove `Print`. Ako `Print` baci ili sklopa nema, `rptDevRepx.clsReport` dobije `isnetgen = 1` i `DoPrint2` (`Form6.vb` 134–161). v23 i v9.1 se ne učitavaju.
 - **Posljedica:** učitati v23 „da bude kao VB“ krši odluku. Učitati samo v26 s drugim imenom metode ne ispiše. `repx:/` i `repx:` moraju oba skinuti prefiks prije imena izvještaja.
 - **Test:** `KAR-32`, `KAR-33`, `ISP-01`
 
@@ -448,9 +448,9 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `BUTTONS` i `CMDxCAPTION`
 - **NetGen:** `CMD` se složi prvi (`Form1.vb` 3319–3330). Ako `BUTTONS` nije prazan, segment `j` prepiše gumb `j+1` (`3770–3796`). Kasniji `CMD` ostaju. `Button6` iz `BUTTONS` je tek šesti segment (`j = 5`).
-- **Carpo:** jedan niz gumba. Nema ostatka `CMD` iza kraćeg `BUTTONS`.
-- **Posljedica:** `KntKompVerizne` ima pet `BUTTONS` i još `CMD6`–`CMD8` `repx/`. Repx gumbi se vide. Brisati ih jer „BUTTONS zamjenjuje CMD“ makne ispis.
-- **Test:** `KOV-04`, `KOV-05`
+- **Carpo:** `GumbiNiz.Slozi` radi isti raspored: `BUTTONS` prepiše slot `j+1`, `Button7` samo ako je CMD7 prazan, CMD iza kraćeg niza ostaje.
+- **Posljedica:** `KntKompVerizne` ima pet `BUTTONS` i još `CMD6`–`CMD8` `repx/`. Oba niza su na traci.
+- **Test:** `buttons-ostaju-cmd`, `buttons-sedmi-ne-brise-cmd7`
 
 ## R57 `enable` gleda natpis gumba
 
@@ -620,9 +620,9 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 
 - **Element:** `INCLUDE` na formi
 - **NetGen:** ako je globalni include prazan, čita se s forme (`Form2.vb` 844–849). Vrijednost se cijepa po `#` (`863`). Ime datoteke zamijeni zadnji segment putanje (`869`). Prvo `SpinDMSUtil.NetGenFinder.GetFile`, pa `XmlDocument.Load` (`905–908`). Djeca `/PROJECT` se uvezu (`916–934`). `On Error Resume Next` je na ulazu u `ProcitajXML` (`706`). Datoteka koja ne postoji ostavi formu kakva je napisana (`913`).
-- **Carpo:** atribut se spremi (`NetGenXmlReader.cs` 118). Drugi XML se ne učitava i kontrole se ne dodaju.
-- **Posljedica:** `MPStanje` `MAINFORM` traži `MPKarticaRobe.xml` u istom folderu. Te datoteke nema. Kad stigne, njeni čvorovi moraju ući u dokument prije crtanja `MAINFORM`.
-- **Test:** `MPS-04`
+- **Carpo:** `Ucitaj` ne uvozi tuđi XML. `SpojiFormu` čita INCLUDE forme samo ako je globalni prazan, zamijeni zadnji segment putanje i preskoči datoteku koje nema.
+- **Posljedica:** brojač parsera ostaje jednak sirovom XML-u. `BSUgovori_INC.xml` se ne ulijeva u svaku granulu pri učitavanju.
+- **Test:** `include-dijete`, `include-nema`, `include-finder`
 
 ## R79 `DETCHECKBOXVISIBLE` nije kvačica mastera
 
@@ -855,6 +855,16 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `JEZ-31`
 - **PR:** treci-otvoreno
 
+## R105 Manager samo kad raspored odgovara
+
+- **Element:** odabir prozora granule
+- **NetGen:** `Form1` je ljuska sa stablom, masterom, detailom i gumbima dolje. Prazan `TREE` i prazan `COMBO` sakriju lijevo (`Form1.vb` 4310–4316). Dijalog je `Form2`, raspored `TOP/LEFT/WIDTH/HEIGHT / 14`.
+- **Carpo:** `Podloga : Manager` vrijedi samo kad ima stablo, `DETAILGRID` koji nije `:forma`, i barem jedan gumb (`OdabirForme.JeManager`). Inače je `ObicnaForma` (grid i gumbi, bez ribbona) ili, kad ulaz počinje s `:`, sam `Dijalog`.
+- **Posljedica:** `KntKompVerizne`, `Statusi` i `KntBlaZak` ostaju Manager. `OznakaKL` i `JeziciNG` su obična forma. `RealizacijaStavkeNG` otvara dijalog `Parametri`.
+- **Odluka:** dogovor. Manager se ne stavlja na svaku granulu.
+- **Test:** `odabir-verizne-manager`, `odabir-jezici-nije`, `odabir-stavke-nije`. UI smoke snima `JeziciNG` i `RealizacijaStavkeNG`.
+- **PR:** odabir-forme
+
 ## R103 `WIDTH` prepisuje širinu koju je SQL već složio
 
 - **Element:** `MASTERCOLUMNS` `WIDTH`
@@ -910,7 +920,7 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 | `KntR2racuni1.md` | `PRINTMASTER` ne gleda `LANDSCAPE` | R41 |
 | `TecRazOTV.md` | XML nije u repou | |
 | `RealizacijaStavkeNG.md` | `#ISEMPTY`, timeout 180, `PRINTREPXMASTER` | R72, R65, R41 |
-| `Izgled-Carpo-checklista.md` | Manager ponuda, ne Office ribbon | R74 |
+| `Izgled-Carpo-checklista.md` | Manager ponuda, ne Office ribbon | R74, R104 |
 | `MPKaseOperNG.md` | `DETAILDBLCLICK`, `Lista` bez `:`, detail `@@id` | R75, R60, R11 |
 | `KOD_RSPostavke.md` | stablo store, `IZMJENA(@…)`, `REFRESHAFTERCHILD` | R55, R54, R77, R65 |
 | `RealizacijaFakture.md` | `#ISEMPTY`, timeout 180 | R72, R65 |
@@ -922,3 +932,27 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 | `MatTem.md` | `:FILTERFORM`, `!!`, `LANDSCAPE` ne dira `PRINTMASTER` | R18, R14, R41, R65 |
 | `MPPSNG.md` | stablo bez `:`, `AUTOFITCOLUMNS`, `Lista`, `vrstadokid-` | R10, R80, R60, R43, R57 |
 | `MPStanje.md` | `INCLUDE`, `SKIPDEFAULTLOAD` | R78, R53, R65 |
+
+## R108 Dijalog `strParametriSvi` nije cijeli `PokupiParametre`
+
+- **Element:** `ASSEMBLYLOAD` na dijalogu
+- **NetGen:** `Form2.vb` 3406–3486 skuplja check, radio, combo, search, grid i tekst u `strParametriSvi`. Taj niz ide dvaput u `totalgen` (`7424–7456`).
+- **Carpo:** `Dijalog.SviParametri` skuplja check, lookup, tekst (`'` → `¸¸`, `,` → `~~`), broj (prazno je `0`), datum (`yyyyMMdd` ili `null`), radio, search i grid. `EVAL` se reže na kontrolu i izraz, bez VB `CalcContext`.
+- **Posljedica:** peti argument `totalgen` dobije te tipove. Označeni redovi grida ostaju prazan niz dok nema bool stupca. `EVAL` ne računa izraz.
+- **Test:** `param-radio`, `param-search`, `param-grid`, `param-tekst`, `param-broj`, `param-datum`, `rafal-eval`
+
+## R110 `PrintLink` nema NetGen zaglavlje ni `lodani`
+
+- **Element:** `PRINTMASTER` / `PRINTGRID` na `Spin.Printing.Start.PrintLink`
+- **NetGen:** `IspisGRIDREPX` šalje `"master"`, `"detail"` ili `"lodani"` i `PageHeaderLeft/Center/Right` (`Form1.vb` 5995–6003, `6085`, `Form2.vb` 9056).
+- **Carpo:** `PrintLink` (`ComponentGrid.PrintControl`) prima kontrolu grida, rječnik `caption`/`header`/`subHeader` i `bool isLandscape`. Nema te tri riječi ni tri PageHeader svojstva. Centar ide u `caption`, lijevo u `header`, desno u `subHeader`. `LANDSCAPE` je `true`. Tablica predložaka je prazna; Carpo je inače puni iz `printDialogComboTemplates`.
+- **Posljedica:** ispis liste ide kroz Spin, ali raspored zaglavlja je onaj koji `PrintLink` zna, ne Janus tri stupca.
+- **Test:** `print-master`, `print-lodani`, `print-do2`
+
+## R109 Fiskalizacija ne ide na pravu poreznu
+
+- **Element:** `FISKALIZACIJA`
+- **NetGen:** `Form1.vb` 493–548 postavi `CisUrl`, `TimeOut` i mape, pa `PosaljiSoapPorukuCertifikatDatoteka(xml, pfx, lozinka)`. Greška je šifra `55555` i `DohvatiGresku`. Inače `DohvatiJir`. Prazan URL postane `https://cis.porezna-uprava.hr:8449/FiskalizacijaService` (`377`).
+- **Carpo:** `FiskalPoziv.Racun` zove isti Raverus API (`GenerirajUuid`, `ZastitniKodIzracunCertifikatDatoteka` s 8 argumenata, `PosaljiSoapPorukuCertifikatDatoteka`, `DohvatiJir`). Prazan URL se ne zamjenjuje produkcijskim. SOAP ide samo na testni CIS.
+- **Posljedica:** jedina namjerna razlika je što prazan URL ne postaje `https://cis.porezna-uprava.hr:8449/FiskalizacijaService`. `UPDATE` UUID/KOD je `FiskalTok.SqlKod` i na spinu se izvrši.
+- **Test:** `fiskal-soap`, `fiskal-izvrsi-test`, `fiskal-uuid-spin`

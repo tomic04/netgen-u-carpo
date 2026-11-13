@@ -30,13 +30,17 @@ namespace Carpo.NetGen.Kontrole
                 return;
             DataRow red = tablica.NewRow();
             // Form2.vb 2408 je pod On Error Resume Next. String primi "null".
-            // Int stupac iz procedure to ne primi i ostane prazan.
-            try { red[0] = "null"; }
-            catch (Exception) { red[0] = DBNull.Value; }
+            // Int stupac iz procedure to ne primi i ostane prazan (DBNull), ne 0.
+            if (tablica.Columns[0].DataType == typeof(string))
+                red[0] = "null";
+            else
+                red[0] = DBNull.Value;
             if (tablica.Columns.Count > 1)
             {
-                try { red[1] = ""; }
-                catch (Exception) { red[1] = DBNull.Value; }
+                if (tablica.Columns[1].DataType == typeof(string))
+                    red[1] = "";
+                else
+                    red[1] = DBNull.Value;
             }
             tablica.Rows.InsertAt(red, 0);
         }
