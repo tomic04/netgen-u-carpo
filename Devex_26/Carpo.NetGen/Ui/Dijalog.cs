@@ -321,6 +321,8 @@ namespace Carpo.NetGen.Ui
                 if (crta >= 0)
                     naredba = tag.Substring(crta + 1);
             }
+            // Lanac ide slijeva nadesno. @@selectedcolor postoji tek nakon COLORPICKER (Form2.vb 7156).
+            string sirovo = naredba;
             naredba = Pripremi(naredba);
             DijalogTok.Klik klik = DijalogTok.Gumb(_forma, redni, naredba, _jupiter);
             if (!string.IsNullOrEmpty(klik.MasterSql))
@@ -330,7 +332,7 @@ namespace Carpo.NetGen.Ui
                 if (klik.MasterSql.TrimEnd().EndsWith(",", StringComparison.Ordinal))
                     klik.MasterSql = Lanac.BezKrajnjegZareza(Lanac.Lijepi(klik.MasterSql, SviParametri()));
             }
-            var koraci = DijalogTok.Koraci(naredba);
+            var koraci = DijalogTok.Koraci(sirovo);
             bool lanac = koraci.Count > 1;
             for (int s = 0; s < koraci.Count; s++)
             {
