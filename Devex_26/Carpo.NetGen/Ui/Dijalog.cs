@@ -420,9 +420,9 @@ namespace Carpo.NetGen.Ui
                     }
                     if (korak.Vrsta == "dock")
                     {
-                        int crta = korak.Tekst.IndexOf('|');
-                        string stil = crta < 0 ? korak.Tekst : korak.Tekst.Substring(0, crta);
-                        string ime = crta < 0 ? "" : korak.Tekst.Substring(crta + 1);
+                        int uspravno = korak.Tekst.IndexOf('|');
+                        string stil = uspravno < 0 ? korak.Tekst : korak.Tekst.Substring(0, uspravno);
+                        string ime = uspravno < 0 ? "" : korak.Tekst.Substring(uspravno + 1);
                         Control[] ciljDock = Controls.Find(ime, true);
                         if (ciljDock.Length > 0)
                             RafalNaredba.PostaviDock(ciljDock[0], stil);
