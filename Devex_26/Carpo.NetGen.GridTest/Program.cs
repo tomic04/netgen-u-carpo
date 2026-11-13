@@ -1996,6 +1996,7 @@ namespace Carpo.NetGen.GridTest
             RafalnoPravila();
             PodlogaRafalno();
             GreskeDijaloga();
+            DbClipboardDijalog();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -2701,6 +2702,70 @@ namespace Carpo.NetGen.GridTest
             }
         }
 
+        /// <summary>NetGenDBClipboard (DBC-01): filter forma čita spremljene vrijednosti i sprema promjenu.</summary>
+        private static void DbClipboardDijalog()
+        {
+            T("dbc-ukljucen", DbClipboard.Ukljucen("FILTER_FORM", "") && DbClipboard.Ukljucen("UNOS", "TRUE") && !DbClipboard.Ukljucen("FilterX", "false") && !DbClipboard.Ukljucen("UNOS", ""), "");
+            T("dbc-sql", DbClipboard.CitajSql("7") == "select * from NetGenDBClipboard where operaterid='7'"
+                && DbClipboard.UbaciSql("7", "Test.xml", "naziv", " x ") == "inseRt into NetGenDBClipboard (operaterid,[key],[value]) values(7,'Test.xml/naziv','x')", "");
+            var sql = new List<string>();
+            Func<string, DataTable> baza = delegate (string s)
+            {
+                sql.Add(s ?? "");
+                var dt = new DataTable();
+                if ((s ?? "").StartsWith("select * from NetGenDBClipboard", StringComparison.Ordinal))
+                {
+                    dt.Columns.Add("key");
+                    dt.Columns.Add("value");
+                    dt.Rows.Add("test.xml/naziv", "abc");
+                    dt.Rows.Add("TEST.xml/aktivan ", "Checked");
+                    return dt;
+                }
+                if ((s ?? "").StartsWith("select count(*)", StringComparison.Ordinal))
+                {
+                    dt.Columns.Add("n", typeof(int));
+                    dt.Rows.Add(1);
+                    return dt;
+                }
+                return dt;
+            };
+            bool bilo = DijalogTok.DozvoliUpis;
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("text", NgGrana.Text, "naziv", new NgAttributeBag(new Dictionary<string, string>()), true));
+                kontrole.Add(new NgControl("check", NgGrana.Check, "aktivan", new NgAttributeBag(new Dictionary<string, string>()), true));
+                var forma = new NgForm("FILTER1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                var k = new SqlKontekst();
+                k.XmlName = "Test.xml";
+                k.OperaterId = "7";
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, k, baza);
+                    var naziv = d.Controls.Find("naziv", true);
+                    var aktivan = d.Controls.Find("aktivan", true);
+                    bool procitano = naziv.Length > 0 && naziv[0].Text == "abc" && aktivan.Length > 0 && ((DevExpress.XtraEditors.CheckEdit)aktivan[0]).Checked;
+                    T("dbc01-cita", procitano, naziv.Length > 0 ? naziv[0].Text : "nema");
+                    DijalogTok.DozvoliUpis = true;
+                    sql.Clear();
+                    if (naziv.Length > 0)
+                        naziv[0].Text = "xyz";
+                    Zovi(d, "PokupiParametre");
+                    bool izmjena = sql.Exists(delegate (string x) { return x == "update NetGenDBClipboard set [value]='xyz' where operaterid=7 and [key]='Test.xml/naziv'"; });
+                    bool bezKvacice = !sql.Exists(delegate (string x) { return x.IndexOf("aktivan", StringComparison.Ordinal) >= 0 && x.StartsWith("update", StringComparison.Ordinal); });
+                    T("dbc01-sprema", izmjena && bezKvacice, string.Join(" ; ", sql.ToArray()));
+                }
+            }
+            catch (Exception ex)
+            {
+                T("dbc01", false, ex.ToString());
+            }
+            finally
+            {
+                DijalogTok.DozvoliUpis = bilo;
+            }
+        }
+
         private static object Polje(object o, string ime)
         {
             for (Type t = o.GetType(); t != null; t = t.BaseType)
@@ -2809,7 +2874,6 @@ namespace Carpo.NetGen.GridTest
                 Zovi(forma, "OnKeyDown", new KeyEventArgs(Keys.Down));
                 T("key01-tipka", true, "");
                 Zovi(forma, "OnKeyDown", new KeyEventArgs(Keys.Escape));
-                Application.DoEvents();
                 T("key01-escape", forma.IsDisposed || !forma.Visible, "visible=" + (!forma.IsDisposed && forma.Visible));
             }
             catch (Exception ex)

@@ -25,7 +25,7 @@ namespace Carpo.NetGen.Ui
     /// Raspored je SrediKontrolu (TOP/LEFT/WIDTH/HEIGHT / 14). WebBrowser ostaje
     /// WinForms jer DevExpress nema preglednik.
     /// </summary>
-    public sealed class Dijalog : XtraForm
+    public sealed partial class Dijalog : XtraForm
     {
         private Func<string, DataTable> _citaj;
         private SqlKontekst _kontekst;
@@ -314,6 +314,8 @@ namespace Carpo.NetGen.Ui
             }
 
             PrimijeniOnLoad();
+            // Form2.vb 1170-1182 i čitanje po kontroli: NetGenDBClipboard nadjača ONLOAD i ONLOAD2 (DBC-01).
+            UcitajDbClipboard(forma);
         }
 
         public bool ProvediTipku(Keys keyData)
@@ -2269,6 +2271,9 @@ namespace Carpo.NetGen.Ui
                 }
                 ClipboardNg.UpisiParametre(cb, natpisi.ToString() + svi);
             }
+            // 3429-3662: PokupiParametre sprema vrijednosti u NetGenDBClipboard (DBC-01).
+            if (_dbCb && !_slazem)
+                SpremiDbClipboard();
             return svi;
         }
 

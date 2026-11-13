@@ -35,12 +35,20 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 | GRD-02 | `TOTALROW` (zbroj decimalnih stupaca) i `CHECKBOXVISIBLE` (kvačica reda) | footer sa zbrojem; `CheckBoxRowSelect` osim kad je `CHECKBOXVISIBLE="FALSE"`; uređen red postane označen (8624) |
 | FOR-01 | `FOREACH*` pomakne grid i izvrši lanac po retku | isto; `@(grid..stupac)` iz trenutnog reda (`SrediSQLsaKolonamaizGrida`) |
 
+## NetGenDBClipboard (DBC-01)
+
+| Što | NetGen | Carpo |
+|---|---|---|
+| Kada | `DBCLIPBOARD="true"` (32 forme), ili svaka forma s `filter` u imenu osim `DBCLIPBOARD="false"` (Form2 1099-1104) | isto (`Komande/DbClipboard`) |
+| Čitanje | `select * from NetGenDBClipboard where operaterid=…`; greška (nema tablice) gasi pamćenje; vrijednost nadjača ONLOAD i ONLOAD2; ključ `ime.xml/kontrola` bez obzira na velika slova | isto, nakon `PrimijeniOnLoad` (`Ui/DijalogDbClipboard`) |
+| Po tipu | kvačica `Checked`, tekst (`null` → prazno), broj, datum, combo (id), tražilica (id + `…caption`), multidrop samo bez ONLOAD vrijednosti | isto; `¸¸` se vrati u `'` (VB ga ostavlja u polju) |
+| Pisanje | `PokupiParametre` na svaki događaj: `select count(*)` pa `insert` ili `update` za svaku kontrolu | piše se samo vrijednost koja se razlikuje od one u tablici (isti krajnji sadržaj, bez upita na svaki događaj); upis prolazi `DijalogTok.SmijePoslati` |
+
 ## Otvoreno
 
 - `MULTILINE` (243 / 60 granula), `ENTERASTAB`, `PASSWORDCHAR` (4), `MAXLENGTH` (80 / 14): tekstualno polje je uvijek `TextEdit`.
 - `VALUE="DATE"` na datumu (133): u VB kodu za `DTPicker` nije pronađeno čitanje; provjeriti gdje se koristi.
 - Tab stranice (`TYPE="tab"`), `STATUSSTRIP` tekstovi s `@@` (2741–2743), `TIMERSQL` (1 granula).
-- `RSDBClipboard` (spremanje vrijednosti dijaloga među pokretanjima, `SpremiuDBClipboard`).
 - Grid dijaloga: `COLUMNCAPTION`/`COLUMNWIDTH` za grid (nije tražilica), `FROZENCOLUMNS`, `AUTOMATICSORT`, layout datoteke.
 
 ## Testovi
