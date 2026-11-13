@@ -557,6 +557,122 @@ namespace Carpo.NetGen.Ulaz
             }
         }
 
+        public sealed class CvorMeni
+        {
+            public string Natpis = "";
+            public string Tag = "";
+            public readonly List<CvorMeni> Djeca = new List<CvorMeni>();
+        }
+
+        /// <summary>Form1.vb 4227–4231. http ide kroz kosu crtu, disk kroz obrnutu.</summary>
+        public static string PutMeniXml(string put)
+        {
+            string p = put ?? "";
+            if (p.Trim().ToLowerInvariant().IndexOf("http", StringComparison.Ordinal) >= 0)
+                return p + "/menu.xml";
+            return p + "\\menu.xml";
+        }
+
+        /// <summary>Form1.vb 4236–4282. Natpis je caption. Tag je put plus xml.</summary>
+        public static CvorMeni MeniIzXml(string xml, string put)
+        {
+            var korijen = new CvorMeni();
+            if (string.IsNullOrEmpty(xml))
+                return null;
+            var d = new XmlDocument();
+            d.LoadXml(xml);
+            if (d.DocumentElement == null || d.DocumentElement.Attributes["caption"] == null)
+                return null;
+            korijen.Natpis = d.DocumentElement.Attributes["caption"].Value ?? "";
+            if (!DodajCvorove(d.DocumentElement, korijen, put))
+                return null;
+            return korijen;
+        }
+
+        /// <summary>Form1.vb 5544–5563. Usporedba je trim i mala slova.</summary>
+        public static int NadjiPoTekstu(string trazeno, string[] tekstovi)
+        {
+            string t = (trazeno ?? "").Trim().ToLowerInvariant();
+            if (tekstovi == null)
+                return -1;
+            for (int i = 0; i < tekstovi.Length; i++)
+            {
+                if (t == (tekstovi[i] ?? "").Trim().ToLowerInvariant())
+                    return i;
+            }
+            return -1;
+        }
+
+        /// <summary>Form1.vb 5556–5661. Lijevo od prve dvotočke je čvor, desno forma.</summary>
+        public static void RastaviTag(string tag, out string cvor, out string forma)
+        {
+            cvor = "";
+            forma = "";
+            string t = tag ?? "";
+            int z = t.IndexOf(':');
+            if (z < 0)
+                return;
+            cvor = t.Substring(0, z);
+            forma = t.Substring(z + 1);
+        }
+
+        /// <summary>Form1.vb 5566–5582. Bez reda je 0. Bez stupca id ide stupac 2. Prazan tekst ostaje.</summary>
+        public static string Id(bool imaRedova, bool idGreska, string idCelija, string stupac2)
+        {
+            if (!imaRedova)
+                return "0";
+            if (!idGreska)
+                return (idCelija ?? "").Trim();
+            return (stupac2 ?? "").Trim();
+        }
+
+        /// <summary>Form1.vb 5588–5599. Prazan ili null id padne na stupac 0, pa na 0.</summary>
+        public static string DxId(bool imaRedova, bool idLose, string idCelija, string stupac0)
+        {
+            if (!imaRedova)
+                return "0";
+            string v = idLose ? (stupac0 ?? "") : (idCelija ?? "");
+            if (v.Length == 0)
+                return "0";
+            return v;
+        }
+
+        /// <summary>Form1.vb 6250–6267. Prefiks je GridMaster. DX sprema xml, Janus gxl.</summary>
+        public static string DatotekaRasporeda(string xmlPut, string posebno, bool viseFormi, string aktivna, string jezik, bool dx)
+        {
+            string p = xmlPut ?? "";
+            int z = p.LastIndexOf('\\');
+            string ime = z < 0 ? p : p.Substring(z);
+            ime = ime.Replace("\\", "").Trim().Replace(".xml", "").Trim();
+            if ((posebno ?? "").Length > 0)
+                ime = posebno;
+            string forma = viseFormi ? (aktivna ?? "") : "";
+            string ext = dx ? ".xml" : ".gxl";
+            return "GridMaster" + ime + forma + "-" + (jezik ?? "") + ext;
+        }
+
+        private static bool DodajCvorove(XmlNode cvor, CvorMeni roditelj, string put)
+        {
+            if (cvor == null || !cvor.HasChildNodes)
+                return true;
+            string sep = (put ?? "").Trim().ToLowerInvariant().IndexOf("http", StringComparison.Ordinal) >= 0 ? "/" : "\\";
+            for (int i = 0; i < cvor.ChildNodes.Count; i++)
+            {
+                XmlNode x = cvor.ChildNodes[i];
+                if (x.NodeType != XmlNodeType.Element)
+                    continue;
+                if (x.Attributes == null || x.Attributes["caption"] == null || x.Attributes["xml"] == null)
+                    return false;
+                var t = new CvorMeni();
+                t.Natpis = x.Attributes["caption"].Value ?? "";
+                t.Tag = (put ?? "") + sep + (x.Attributes["xml"].Value ?? "");
+                roditelj.Djeca.Add(t);
+                if (!DodajCvorove(x, t, put))
+                    return false;
+            }
+            return true;
+        }
+
         private static string Polje(DataRow red, string ime)
         {
             if (red == null || red.Table == null || !red.Table.Columns.Contains(ime) || red[ime] == DBNull.Value || red[ime] == null)

@@ -19,6 +19,7 @@ namespace Carpo.NetGen.Granule
             l.Add(Prostor());
             l.Add(Stavke());
             l.Add(Format());
+            l.Add(StabloMeni());
             return l;
         }
 
@@ -234,6 +235,44 @@ namespace Carpo.NetGen.Granule
             if (!Form1Ulaz.MapaRasporeda().EndsWith("\\SPIN Informatica\\Jupiter Software\\Grid Settings\\", StringComparison.Ordinal))
                 return Qa.P(g, id, opis, izvor, Form1Ulaz.MapaRasporeda());
             Console.WriteLine("[Z] Form1 F1-32 sirina=100 id-sakriven izbornik=Jezici");
+            return Qa.Z(g, id, opis, izvor);
+        }
+
+        private static Stavka StabloMeni()
+        {
+            const string g = "Form1";
+            const string id = "F1-51";
+            const string opis = "menu.xml slaže tag put\\xml, id bez stupca ide na stupac 2";
+            const string izvor = "netgen/Form1.vb:4217-4282; netgen/Form1.vb:5566-5599";
+            if (Form1Ulaz.PutMeniXml(@"C:\xml") != @"C:\xml\menu.xml")
+                return Qa.P(g, id, opis, izvor, "disk");
+            if (Form1Ulaz.PutMeniXml("http://host/xml") != "http://host/xml/menu.xml")
+                return Qa.P(g, id, opis, izvor, "http");
+            Form1Ulaz.CvorMeni c = Form1Ulaz.MeniIzXml("<menu caption=\"Aplikacije\"><item caption=\"Jezici\" xml=\"JeziciNG.xml\"/></menu>", @"C:\xml");
+            if (c == null || c.Djeca.Count != 1 || c.Djeca[0].Tag != @"C:\xml\JeziciNG.xml" || c.Djeca[0].Natpis != "Jezici")
+                return Qa.P(g, id, opis, izvor, "cvor");
+            if (Form1Ulaz.MeniIzXml("<menu caption=\"A\"><item xml=\"x.xml\"/></menu>", @"C:\xml") != null)
+                return Qa.P(g, id, opis, izvor, "bez caption je prošao");
+            if (Form1Ulaz.NadjiPoTekstu("  Jezici ", new[] { "Ostalo", "JEZICI" }) != 1)
+                return Qa.P(g, id, opis, izvor, "trazi");
+            string cvor;
+            string forma;
+            Form1Ulaz.RastaviTag("0:INSERT", out cvor, out forma);
+            if (cvor != "0" || forma != "INSERT")
+                return Qa.P(g, id, opis, izvor, cvor + "/" + forma);
+            if (Form1Ulaz.Id(false, false, "5", "9") != "0")
+                return Qa.P(g, id, opis, izvor, "prazan red");
+            if (Form1Ulaz.Id(true, true, "", "9") != "9")
+                return Qa.P(g, id, opis, izvor, "stupac2");
+            if (Form1Ulaz.Id(true, false, "", "9") != "")
+                return Qa.P(g, id, opis, izvor, "prazan id");
+            if (Form1Ulaz.DxId(true, true, null, "") != "0")
+                return Qa.P(g, id, opis, izvor, "dx");
+            if (Form1Ulaz.DatotekaRasporeda(@"C:\a\JeziciNG.xml", "", false, "", "hrv", false) != "GridMasterJeziciNG-hrv.gxl")
+                return Qa.P(g, id, opis, izvor, Form1Ulaz.DatotekaRasporeda(@"C:\a\JeziciNG.xml", "", false, "", "hrv", false));
+            if (Form1Ulaz.DatotekaRasporeda(@"C:\a\JeziciNG.xml", "Posebno", true, "FILTER", "en", true) != "GridMasterPosebnoFILTER-en.xml")
+                return Qa.P(g, id, opis, izvor, "dx layout");
+            Console.WriteLine("[Z] Form1 F1-51 tag=C:\\xml\\JeziciNG.xml id-stupac2=9 raspored=GridMasterJeziciNG-hrv.gxl");
             return Qa.Z(g, id, opis, izvor);
         }
     }

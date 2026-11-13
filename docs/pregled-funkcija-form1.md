@@ -61,4 +61,63 @@ Port je `Devex_26/Carpo.NetGen/Ulaz/Form1Ulaz.cs`. Test je `tests/Carpo.NetGen.G
 | 49 | NapuniMenuBaza | 4088 | `Form1Ulaz.IzbornikBaza`, `SqlIzbornika`. Treća razina | još nedostaje | F1-32 |
 | 50 | NapuniDrvo | 4127 | `Form1Ulaz.PrvoStablo`. Hod po folderu | još nedostaje | F1-31 |
 
-Broj u bloku: 50. nedostajalo-portano 28. isto 7. razlika 5. još nedostaje 10. Zbroj 50.
+Broj u bloku: 50. nedostajalo-portano 28. isto 7. razlika 5. još nedostaje 10.
+
+Zeleni run bloka 1: `3ad0d66`, https://github.com/tomic04/netgen-u-carpo/actions/runs/43366476116
+
+## Blok 2, funkcije 51–100
+
+| # | Funkcija | Linija | Carpo | Status | Test |
+| --- | --- | --- | --- | --- | --- |
+| 51 | NapuniDrvoIzXMLA | 4217 | `Form1Ulaz.PutMeniXml`, `MeniIzXml` | nedostajalo-portano | F1-51 |
+| 52 | AddNode | 4259 | `Form1Ulaz.MeniIzXml` | nedostajalo-portano | F1-51 |
+| 53 | NapuniDrvoVrijeme | 4296 | `Stablo.IzTeksta` | razlika R01, R10, R100 | Stablo |
+| 54 | DazovaIzStore | 4435 | `Stablo.IzStore` | isto | Stablo |
+| 55 | AddNodes | 4492 | `Stablo.DodajDjecu`, id `0` se preskače | isto | Stablo |
+| 56 | DazovaVremenska | 4527 | `Stablo.GodinaMjesec` 2005–2009 | isto | Stablo |
+| 57 | NovaGenerickaForma | 4543 | `GumbTok`, `Podloga.IzvrsiLanac` | razlika R20, R22, R35 | GumbTok |
+| 58 | NovaGenerickaForma2 | 4925 | `Dijalog` | razlika R19 | Dijalog |
+| 59 | NovaGenerickaForma1 | 5062 | `Podloga`, `Dijalog` | razlika R19, R54 | DijalogTok |
+| 60 | GetAllChildren | 5544 | `Form1Ulaz.NadjiPoTekstu` | nedostajalo-portano | F1-51 |
+| 61 | TraziNoduDrvetupoTagu | 5555 | `Form1Ulaz.NadjiPoTekstu` | nedostajalo-portano | F1-51 |
+| 62 | GetID | 5566 | `Form1Ulaz.Id`. `MasterGrid.Fokus` i dalje uzima stupac 0 | razlika R07 | F1-51 |
+| 63 | GetDXID | 5588 | `Form1Ulaz.DxId` | nedostajalo-portano | F1-51 |
+| 64 | GetDetID | 5605 | `Form1Ulaz.Id` | nedostajalo-portano | F1-51 |
+| 65 | GetDetDXID | 5625 | `Form1Ulaz.DxId` | nedostajalo-portano | F1-51 |
+| 66 | NovaApplikacija | 5638 | ponovno čitanje XML-a | još nedostaje | |
+| 67 | TreeView1_AfterSelect | 5647 | zove `NovaApplikacija(Tag)` | još nedostaje | |
+| 68 | TreeView2_DoubleClick | 5656 | `Form1Ulaz.RastaviTag` | nedostajalo-portano | F1-51 |
+| 69 | Button1_Click | 5664 | `GumbTok` | isto | GumbTok |
+| 70 | DataGridView1_DoubleClick | 5670 | `Podloga` `MasterDblClick` | isto | GranulaIzvrsenje |
+| 71 | DataGridView1_MouseUp | 5674 | desni klik otvara izbornik | razlika R59 | |
+| 72 | ToolStripMenuItem1_Click | 5680 | izbornik mastera | još nedostaje | |
+| 73 | ToolStripMenuItem2_Click | 5768 | izbornik detaila | još nedostaje | |
+| 74 | Button2_Click | 5862 | `GumbTok` | isto | GumbTok |
+| 75 | Button3_Click | 5868 | `GumbTok` | isto | GumbTok |
+| 76 | Button4_Click | 5873 | `GumbTok` | isto | GumbTok |
+| 77 | Button5_Click | 5878 | `GumbTok` | isto | GumbTok |
+| 78 | Button6_Click | 5883 | `GumbTok` | isto | GumbTok |
+| 79 | TreeView1_KeyDown | 5888 | Ctrl+F11, isto kao `Form1Ulaz.Tipka` | isto | F1-25 |
+| 80 | TreeView2_KeyDown | 5900 | Ctrl+F11 | isto | F1-25 |
+| 81 | IspisNovi | 5910 | stari Janus ispis, u kodu iza DX grane | razlika R41 | |
+| 82 | IspisNoviDet | 5953 | isto, detail | razlika R41 | |
+| 83 | IspisGRIDREPX | 5984 | `PrintBridge` master | razlika R41, R42 | F1 ispis |
+| 84 | Button7_Click | 6009 | zaglavlje ispisa | razlika R41 | IspisZaglavlje |
+| 85 | IspisGRIDREPXdet | 6067 | `PrintBridge` detail | razlika R41 | |
+| 86 | Button77_Click | 6091 | detail ispis | razlika R41 | |
+| 87 | Button10_Click | 6140 | prazan poziv | isto | |
+| 88 | ApperianceDialogToolStripMenuItem_Click | 6146 | Janus AppearanceDialog | razlika R07 | |
+| 89 | FormatStylesToolStripMenuItem_Click | 6154 | Janus FormatStyles | razlika R07 | |
+| 90 | TableViewToolStripMenuItem_Click | 6161 | Janus View.TableView | razlika R07 | |
+| 91 | CardViewToolStripMenuItem_Click | 6169 | Janus CardView | razlika R07 | |
+| 92 | SingleCardViewToolStripMenuItem_Click | 6177 | Janus SingleCardView | razlika R07 | |
+| 93 | SaveGridToolStripMenuItem_Click | 6186 | zove `SaveGridLayout` | nedostajalo-portano | F1-51 |
+| 94 | LoadLayout | 6192 | čitanje .gxl | još nedostaje | |
+| 95 | LoadLayout2 | 6228 | čitanje .xml rasporeda | još nedostaje | |
+| 96 | SaveGridLayout | 6246 | `Form1Ulaz.DatotekaRasporeda`. Upis Janus/DX datoteke | još nedostaje | F1-51 |
+| 97 | LoadLayoutTEMPORARNI | 6312 | privremeni .gxl | još nedostaje | |
+| 98 | SaveGridLayoutTEMPORARNI | 6328 | privremeni .gxl | još nedostaje | |
+| 99 | DeleteGridLayout | 6344 | brisanje rasporeda | još nedostaje | |
+| 100 | SaveGridLayoutDet | 6386 | detail raspored | još nedostaje | |
+
+Broj u bloku: 50. nedostajalo-portano 9. isto 13. razlika 17. još nedostaje 11. Zbroj 50. Zbroj 50.
