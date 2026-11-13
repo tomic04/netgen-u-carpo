@@ -2011,6 +2011,76 @@ namespace Carpo.NetGen.GridTest
             T("jir-test", jirUrl.IndexOf("a=2", StringComparison.Ordinal) >= 0 && jirUrl.IndexOf("vrijemejir=null", StringComparison.Ordinal) >= 0
                 && jirUrl.IndexOf("jir='ABC'", StringComparison.Ordinal) >= 0 && Form2Dogadjaj.JirTijelo == "<doc></doc>"
                 && Form2Dogadjaj.UrlJir("https://cis.porezna-uprava.hr/x", "1", "1", "2026", "1", "", "", "") == "", jirUrl);
+            var izlaz = new Form2Dogadjaj.IzlazTrazilice();
+            izlaz.KeyDownPocinje();
+            bool prije = izlaz.Validated2Smije();
+            izlaz.Validated();
+            T("keydown-izlaz", prije && !izlaz.Validated2Smije(), "");
+            T("multidrop-error", Form2Dogadjaj.MultiDropNaredba("select 1") == "select 1" && Form2Dogadjaj.MultiDropNaredba("  ") == "", "");
+            T("boja-cvora", Form2Dogadjaj.BojaCvoraPrije() == "White", "");
+            T("klik-labela", Form2Dogadjaj.KlikLabele(" :FILTER ") == ":FILTER", "");
+            T("help-arg", Form2Dogadjaj.HelpArgumenti("localhost", "spin", "ABC", "7", "JeziciNG.xml").IndexOf("-h ABC", StringComparison.Ordinal) >= 0
+                && Form2Dogadjaj.HelpArgumenti("localhost", "spin", "ABC", "7", "JeziciNG.xml").IndexOf("-o  7", StringComparison.Ordinal) >= 0
+                && Form2Dogadjaj.HelpArgumenti("localhost", "spin", "ABC", "7", "JeziciNG.xml").IndexOf("-p JeziciNG.xml", StringComparison.Ordinal) >= 0, "");
+            var prog = new Form2Dogadjaj.Progres();
+            prog.Upali();
+            bool marquee = prog.Stil == "marquee" && prog.Vrijednost == 20 && prog.Brzina == 40;
+            prog.Ugasi();
+            T("progres", marquee && prog.Stil == "blocks" && prog.Brzina == 0, prog.Stil);
+            T("prostor-com", Form2Dogadjaj.ProstorGrana(false, "", "", "") == "nema"
+                && Form2Dogadjaj.ProstorGrana(true, "https://fu.gov.si/x", "a", "b") == "slo"
+                && Form2Dogadjaj.ProstorGrana(true, "", "a", "b") == "nema-com"
+                && Form2Dogadjaj.ProstorGrana(true, "https://cis.porezna-uprava.hr/x", "a", "b") == "nema-com"
+                && Form2Dogadjaj.ProstorGrana(true, "https://cistest.apis-it.hr/x", "", "b") == "nema-pfx", "");
+            Form2Dogadjaj.Probe = delegate (string u) { return u.IndexOf("localhost", StringComparison.Ordinal) >= 0; };
+            T("dostupnost", Form2Dogadjaj.Dostupan("http://localhost/a") && !Form2Dogadjaj.Dostupan("http://drugdje/a"), "");
+            Form2Dogadjaj.Probe = null;
+            var izmj = new DataTable();
+            izmj.Columns.Add("id", typeof(int));
+            izmj.Columns.Add("Iznos0100", typeof(string));
+            izmj.Rows.Add(1, "2,5");
+            T("izmjena-celije", Form2Dogadjaj.ParametriIzmjene(izmj.Rows[0]).IndexOf("@Iznos='2.5'", StringComparison.Ordinal) >= 0
+                && Form2Dogadjaj.VratiStaru("greska") && !Form2Dogadjaj.VratiStaru(""), "");
+            string rasp = Form2Dogadjaj.ImeRasporeda("Jezici", "JeziciNG.xml", "FILTER", "grid", "hrv");
+            string mapaR = Path.Combine(Path.GetTempPath(), "ng-gxl-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                Form2Dogadjaj.SpremiRaspored(mapaR, rasp, new byte[] { 1, 2 });
+                T("raspored-grid", rasp == "GridLodani-Jezici-JeziciNG-FILTER-grid-hrv.gxl"
+                    && File.Exists(Path.Combine(mapaR, rasp))
+                    && Form2Dogadjaj.BrisiRasporedSql("grid") == "select 'refresh' as grid"
+                    && Form2Dogadjaj.MapaRasporeda().IndexOf("Grid Settings", StringComparison.Ordinal) >= 0, rasp);
+            }
+            finally
+            {
+                try { Directory.Delete(mapaR, true); } catch { }
+            }
+            string[] combo = new string[] { "  Kava", "Mlijeko" };
+            T("autocomplete", Form2Dogadjaj.PreskociTipku(8) && !Form2Dogadjaj.PreskociTipku(65)
+                && Form2Dogadjaj.NadjiStavku(combo, "Kava") == 0
+                && Form2Dogadjaj.Dopuna("Ka", "Kava") == "va"
+                && Form2Dogadjaj.IndeksNakonIzlaza(combo, "Mlijeko") == 1
+                && Form2Dogadjaj.IndeksNakonIzlaza(combo, "nema") == 0, "");
+            var port = new Form2Dogadjaj.LazniPort();
+            Form2Dogadjaj.PostimajPort(port);
+            string pisano = Form2Dogadjaj.PisiPort(port);
+            T("serijski-port", port.Brzina == 19200 && port.Bitovi == 8 && port.Paritet == "None" && pisano == "aaaaa\r" && !port.Otvoren, pisano);
+            T("format-grid", Class1Pravila.SakrijId("RobaId") && !Class1Pravila.SakrijId("id") && !Class1Pravila.SakrijId("naziv")
+                && Class1Pravila.Sirina("Naziv0140") == 10 && Class1Pravila.ImeBezSirine("Naziv0140") == "Naziv", "");
+            T("format-uvjet", Class1Pravila.FormatUvjeta("bold red") == "bold red" && Class1Pravila.FormatUvjeta("x") == "", "");
+            T("install-vec", Class1Pravila.InstallVecIma("http://a", "spin") && !Class1Pravila.InstallVecIma("", "spin")
+                && Class1Pravila.InstallSql() == "select * from Install ", "");
+            T("glipi", Class1Pravila.Glipi("ČćŠđ") == "YYYcccSSSddd", "");
+            T("dx-id", Class1Pravila.DxId(false, "5", false, "1") == "0"
+                && Class1Pravila.DxId(true, "", false, "1") == "0"
+                && Class1Pravila.DxId(true, null, true, "9") == "9"
+                && Class1Pravila.DxId(true, "4", false, "1") == "4", "");
+            T("blagajna-enable", Class1Pravila.BlagajnaUpit("3").IndexOf("@mpkaseid = 3", StringComparison.Ordinal) >= 0
+                && Class1Pravila.BlagajnaAzur("3", false).IndexOf("indenable = 0", StringComparison.Ordinal) >= 0
+                && Class1Pravila.BlagajnaAzur("3", true).IndexOf("indenable = 1", StringComparison.Ordinal) >= 0, "");
+            T("timer2-3", Form2Dogadjaj.Timer2ImaSql("select 1") && !Form2Dogadjaj.Timer2ImaSql("  ")
+                && Form2Dogadjaj.Maksimiziraj("2") && !Form2Dogadjaj.Maksimiziraj("0")
+                && Form2Dogadjaj.CekiranId("1~4", "4") && !Form2Dogadjaj.CekiranId("1~4", "9"), "");
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));

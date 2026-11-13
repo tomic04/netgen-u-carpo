@@ -723,19 +723,26 @@ namespace Carpo.NetGen.Ui
 
         private void IzvrsiSql(string tekst)
         {
+            IzvrsiSqlGreska(tekst);
+        }
+
+        private string IzvrsiSqlGreska(string tekst)
+        {
             if (_citaj == null || _jupiter)
-                return;
+                return "";
             string sql = SrediPoslije.Zamijeni(tekst ?? "", SviParametri(), _kontekst ?? new SqlKontekst(), null, false);
             if (ZastitaSql.Tekst(sql).Pise)
-                return;
+                return "";
             try
             {
                 DataTable dt = _citaj(sql);
                 PrimeniRed(dt);
+                return "";
             }
             catch (Exception ex)
             {
                 NgDnevnik.Greska(ex.Message + " | " + sql);
+                return ex.Message ?? "greska";
             }
         }
 
@@ -776,6 +783,7 @@ namespace Carpo.NetGen.Ui
 
         private readonly System.Collections.Generic.Dictionary<Control, string> _stariTekst = new System.Collections.Generic.Dictionary<Control, string>();
         private readonly Form2Dogadjaj.TimerFokusa _timerFokusa = new Form2Dogadjaj.TimerFokusa();
+        private readonly Form2Dogadjaj.IzlazTrazilice _izlazTrazilice = new Form2Dogadjaj.IzlazTrazilice();
         public string ZadnjaTrazilica = "";
         public string ZadnjiIzbornik = "";
 
@@ -807,12 +815,26 @@ namespace Carpo.NetGen.Ui
                         _timerFokusa.NakonTrazilice();
                         ZadnjaTrazilica = c.Text ?? "";
                     }
-                    if (lost.Length > 0)
+                    if (lost.Length > 0 && _izlazTrazilice.Validated2Smije())
                         IzvrsiSql(lost);
                 };
             }
             else if (lost.Length > 0)
                 c.Leave += delegate { IzvrsiSql(lost); };
+            if (k.Grana == NgGrana.MultiDrop)
+            {
+                string err = Form2Dogadjaj.MultiDropNaredba(Attr(k, "ERRORTEXT"));
+                if (err.Length > 0)
+                    c.Leave += delegate { IzvrsiSql(err); };
+            }
+            if (k.Grana == NgGrana.Label || k.Grana == NgGrana.Check || k.Grana == NgGrana.Radio)
+            {
+                string tag = Attr(k, "ONCLICK");
+                if (tag.Length == 0)
+                    tag = Attr(k, "TAG");
+                if (tag.Length > 0)
+                    c.Click += delegate { IzvrsiSql(Form2Dogadjaj.KlikLabele(tag)); };
+            }
             if (k.Grana == NgGrana.Combo && klik.Length > 0)
             {
                 var look = c as LookUpEdit;
@@ -852,6 +874,28 @@ namespace Carpo.NetGen.Ui
                         IzvrsiSql(dbl);
                     };
                 }
+                string celijaSql = Attr(k, "ONCELLEDITED");
+                if (view != null && celijaSql.Length > 0)
+                {
+                    string stara = "";
+                    bool vracam = false;
+                    view.ShowingEditor += delegate
+                    {
+                        object v = view.FocusedColumn == null ? null : view.GetFocusedRowCellValue(view.FocusedColumn);
+                        stara = Form2Dogadjaj.VrijednostDvoklika(v == null ? "" : Convert.ToString(v));
+                    };
+                    view.CellValueChanged += delegate
+                    {
+                        if (vracam)
+                            return;
+                        string greska = IzvrsiSqlGreska(celijaSql);
+                        if (!Form2Dogadjaj.VratiStaru(greska) || view.FocusedColumn == null)
+                            return;
+                        vracam = true;
+                        try { view.SetFocusedRowCellValue(view.FocusedColumn, stara); }
+                        finally { vracam = false; }
+                    };
+                }
                 if (view != null && popup.Length > 0)
                 {
                     view.MouseUp += delegate (object s, MouseEventArgs e)
@@ -867,6 +911,7 @@ namespace Carpo.NetGen.Ui
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
+            _izlazTrazilice.KeyDownPocinje();
             int kod = (int)(keyData & Keys.KeyCode);
             bool control = (keyData & Keys.Control) == Keys.Control;
             bool trazilica = ActiveControl is ButtonEdit;
@@ -874,6 +919,7 @@ namespace Carpo.NetGen.Ui
             Form2Dogadjaj.Tipka t = Form2Dogadjaj.KeyDown(trazilica, grid, false, false, true, kod, control, "", "", "");
             if (t.ValidirajTrazilicu && trazilica)
             {
+                _izlazTrazilice.Validated();
                 _timerFokusa.NakonTrazilice();
                 ZadnjaTrazilica = ActiveControl.Text ?? "";
             }

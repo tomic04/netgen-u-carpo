@@ -36,6 +36,12 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 - **Zašto ostaje:** smoke na `jupiter2019` i `jupiter2022` ne pokreće proceduru čije tijelo piše. XML i Jupiter se ne diraju.
 - **Test:** `zastita-zakljucivanje`
 
+### R111 COM fiskalizacija prostora
+
+- **NetGen:** `PoslovniProstor_COM` (`Form2.vb` 6671–6759) učitava `Raverus.FiskalizacijaDEV.COM` ili `SLOFISKAL`. Prazan URL postane produkcijski CIS (6689).
+- **Zašto ostaje:** te dvije biblioteke nisu na stroju. Prazan URL i `cis.porezna-uprava.hr` se ne šalju. Grana odluke (nema red, Slovenija, nema PFX, test URL) jest portana.
+- **Test:** `prostor-com`
+
 ### R101 i R102 Spin nema prava tijela
 
 - **NetGen:** zove proceduru iz XML-a. Ako je nema, padne.

@@ -195,5 +195,266 @@ namespace Carpo.NetGen.Komande
                 + "&kasa=" + (kasa ?? "") + "&godina=" + (godina ?? "") + "&brojdok=" + (broj ?? "")
                 + "&vrijemejir=" + v + "&jir=" + j + "&datumdok=" + (datum ?? "");
         }
+
+        /// <summary>Form2.Glbl_Validated2 5916. KeyDown na početku gasi zastavicu (6020). Validated je pali.</summary>
+        public sealed class IzlazTrazilice
+        {
+            public bool OdradioNaKeydown;
+
+            public void KeyDownPocinje()
+            {
+                OdradioNaKeydown = false;
+            }
+
+            public void Validated()
+            {
+                OdradioNaKeydown = true;
+            }
+
+            public bool Validated2Smije()
+            {
+                return !OdradioNaKeydown;
+            }
+        }
+
+        /// <summary>Form2.Glbl_ValidatedMultiDrop 5968–5971. Naredba je ErrorText.</summary>
+        public static string MultiDropNaredba(string errorText)
+        {
+            return (errorText ?? "").Trim();
+        }
+
+        /// <summary>Form2.Glbl_TREE_BeforeSelect 6103–6105.</summary>
+        public static string BojaCvoraPrije()
+        {
+            return "White";
+        }
+
+        /// <summary>Form2.Glbl_Click 6149–6151. Label šalje Tag.</summary>
+        public static string KlikLabele(string tag)
+        {
+            return (tag ?? "").Trim();
+        }
+
+        /// <summary>Form2.DajPokaziHelp 9551–9552. Ne pokreće proces u testu.</summary>
+        public static string HelpArgumenti(string server, string baza, string help, string operater, string xml)
+        {
+            string o = operater ?? "";
+            if (o.Length > 0 && o[0] != ' ')
+                o = " " + o;
+            return "-s " + (server ?? "") + " -d " + (baza ?? "") + " -h " + (help ?? "") + " -o " + o + " -p " + (xml ?? "");
+        }
+
+        /// <summary>Form2.UpaliProgres 6234–6242.</summary>
+        public sealed class Progres
+        {
+            public int Vrijednost;
+            public string Stil = "blocks";
+            public int Brzina;
+
+            public void Upali()
+            {
+                Vrijednost = 20;
+                Stil = "marquee";
+                Brzina = 40;
+            }
+
+            public void Ugasi()
+            {
+                Stil = "blocks";
+                Brzina = 0;
+            }
+        }
+
+        /// <summary>
+        /// Form2.PoslovniProstor_COM 6618–6694. Prazan URL ne postaje produkcija (R109).
+        /// COM Raverus.FiskalizacijaDEV.COM i SLOFISKAL se ne učitavaju (R111).
+        /// </summary>
+        public static string ProstorGrana(bool imaRed, string url, string pfx, string lozinka)
+        {
+            if (!imaRed)
+                return "nema";
+            if ((url ?? "").ToLowerInvariant().IndexOf("fu.gov.si", StringComparison.Ordinal) >= 0)
+                return "slo";
+            if (string.IsNullOrWhiteSpace(pfx))
+                return "nema-pfx";
+            if (string.IsNullOrWhiteSpace(lozinka))
+                return "nema-lozinka";
+            if (string.IsNullOrWhiteSpace(url) || CisProdukcija(url))
+                return "nema-com";
+            return "test-url";
+        }
+
+        /// <summary>Form2.ProvjeraDostupnosti 7919–7932. Test daje Probe, ne ide na mrežu.</summary>
+        public static Func<string, bool> Probe;
+
+        public static bool Dostupan(string url)
+        {
+            if (Probe != null)
+                return Probe(url ?? "");
+            return false;
+        }
+
+        /// <summary>Form2.Glbl_CellEdited 8646–8661. Stupac 0 se preskače. Zarez postaje točka.</summary>
+        public static string ParametriIzmjene(System.Data.DataRow red)
+        {
+            if (red == null)
+                return "";
+            var sb = new StringBuilder();
+            for (int i = 1; i < red.Table.Columns.Count; i++)
+            {
+                System.Data.DataColumn c = red.Table.Columns[i];
+                if (string.IsNullOrEmpty(c.Caption) && string.IsNullOrEmpty(c.ColumnName))
+                    continue;
+                if (red[c] == null || red[c] == System.DBNull.Value)
+                    continue;
+                string ime = (c.ColumnName ?? "").Trim();
+                if (ime.Length >= 4)
+                {
+                    int n;
+                    if (int.TryParse(ime.Substring(ime.Length - 4), NumberStyles.Integer, CultureInfo.InvariantCulture, out n) && n != 0)
+                        ime = ime.Substring(0, ime.Length - 4);
+                }
+                string v = (System.Convert.ToString(red[c]) ?? "").Replace(",", ".");
+                sb.Append('@').Append(ime).Append("='").Append(v).Append("' , ");
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>Form2.Glbl_CellEdited 8680–8688. Greška vraća staru vrijednost.</summary>
+        public static bool VratiStaru(string greska)
+        {
+            return !string.IsNullOrEmpty(greska);
+        }
+
+        /// <summary>Form2.GetLayoutDirectory 9260–9269 i SaveGridLayout 9210–9213.</summary>
+        public static string MapaRasporeda()
+        {
+            return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
+                + "\\SPIN Informatica\\Jupiter Software\\Grid Settings\\";
+        }
+
+        public static string ImeRasporeda(string projekt, string xml, string forma, string grid, string jezik)
+        {
+            string ime = (xml ?? "").Trim();
+            if (ime.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                ime = ime.Substring(0, ime.Length - 4);
+            return "GridLodani-" + (projekt ?? "") + "-" + ime + "-" + (forma ?? "") + "-" + (grid ?? "") + "-" + (jezik ?? "") + ".gxl";
+        }
+
+        public static void SpremiRaspored(string mapa, string ime, byte[] sadrzaj)
+        {
+            Directory.CreateDirectory(mapa ?? "");
+            File.WriteAllBytes(Path.Combine(mapa ?? "", ime ?? "grid.gxl"), sadrzaj ?? new byte[0]);
+        }
+
+        public static string BrisiRasporedSql(string grid)
+        {
+            return "select 'refresh' as " + (grid ?? "").Trim();
+        }
+
+        /// <summary>Form2.AutoCompleteCombo_KeyUp 9285–9320. Back, strelice, Delete ne traže.</summary>
+        public static bool PreskociTipku(int tipka)
+        {
+            return tipka == 8 || tipka == 37 || tipka == 39 || tipka == 38 || tipka == 46 || tipka == 40;
+        }
+
+        public static int NadjiStavku(string[] stavke, string tekst)
+        {
+            if (stavke == null)
+                return -1;
+            string upis = tekst ?? "";
+            for (int razmak = 0; razmak <= 9; razmak++)
+            {
+                string trazeno = new string(' ', razmak) + upis;
+                for (int i = 0; i < stavke.Length; i++)
+                {
+                    string s = stavke[i] ?? "";
+                    if (s.StartsWith(trazeno, StringComparison.OrdinalIgnoreCase))
+                        return i;
+                }
+            }
+            return -1;
+        }
+
+        public static string Dopuna(string upisano, string nadjeno)
+        {
+            string a = upisano ?? "";
+            string b = nadjeno ?? "";
+            if (b.Length < a.Length)
+                return "";
+            return b.Substring(a.Length);
+        }
+
+        /// <summary>Form2.AutoCompleteCombo_Leave 9412–9420. Točan tekst ostaje, inače prva stavka.</summary>
+        public static int IndeksNakonIzlaza(string[] stavke, string tekst)
+        {
+            if (stavke == null || stavke.Length == 0)
+                return -1;
+            string t = tekst ?? "";
+            for (int i = 0; i < stavke.Length; i++)
+            {
+                if (string.Equals(stavke[i] ?? "", t, StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+            return 0;
+        }
+
+        /// <summary>Form2.SerialPort1_Postimaj 9585–9591 i Pisi 9594–9600. Test koristi lažni port.</summary>
+        public sealed class LazniPort
+        {
+            public string Ime = "";
+            public int Brzina;
+            public string Paritet = "None";
+            public string Stop = "One";
+            public int Bitovi;
+            public bool Otvoren;
+            public string Zapis = "";
+
+            public void Write(string s)
+            {
+                Zapis = s ?? "";
+            }
+        }
+
+        public static void PostimajPort(LazniPort p)
+        {
+            if (p == null)
+                return;
+            p.Ime = "";
+            p.Brzina = 19200;
+            p.Paritet = "None";
+            p.Stop = "One";
+            p.Bitovi = 8;
+        }
+
+        public static string PisiPort(LazniPort p)
+        {
+            if (p == null)
+                return "";
+            if (!p.Otvoren)
+                p.Otvoren = true;
+            p.Write("aaaaa\r");
+            string s = p.Zapis;
+            if (p.Otvoren)
+                p.Otvoren = false;
+            return s;
+        }
+
+        /// <summary>Form2.Timer2_Tick 9687. Form2.Timer3_Tick 9698–9737.</summary>
+        public static bool Timer2ImaSql(string sql)
+        {
+            return !string.IsNullOrWhiteSpace(sql);
+        }
+
+        public static bool Maksimiziraj(string windowState)
+        {
+            return (windowState ?? "").Trim() == "2";
+        }
+
+        public static bool CekiranId(string tag, string vrijednost)
+        {
+            string niz = ",,," + (tag ?? "").Replace("~", ",") + ",";
+            return niz.IndexOf("," + (vrijednost ?? "").Trim() + ",", StringComparison.Ordinal) > 0;
+        }
     }
 }
