@@ -278,6 +278,44 @@ namespace Carpo.NetGen.Ulaz
             return SqlTekst.Sredi(IspisMotora.Zaglavlje(tekst), kontekst);
         }
 
+        public sealed class Pogled
+        {
+            public string Kontrola = "";
+            public bool Ikona;
+            public bool Navigator;
+            public bool ProsiriKartice;
+            public string NoviRed = "";
+        }
+
+        /// <summary>Form1.vb 6161–6184. TableView je GridView, CardView je CardView, SingleCard je LayoutView.</summary>
+        public static Pogled PogledIz(string janus)
+        {
+            var p = new Pogled();
+            string u = (janus ?? "").Trim();
+            if (string.Equals(u, "CardView", StringComparison.OrdinalIgnoreCase))
+            {
+                p.Kontrola = "CardView";
+                p.Ikona = false;
+                p.ProsiriKartice = true;
+                p.Navigator = false;
+                return p;
+            }
+            if (string.Equals(u, "SingleCard", StringComparison.OrdinalIgnoreCase))
+            {
+                p.Kontrola = "LayoutView";
+                p.Ikona = false;
+                p.ProsiriKartice = false;
+                p.Navigator = true;
+                p.NoviRed = "Bottom";
+                return p;
+            }
+            p.Kontrola = "GridView";
+            p.Ikona = true;
+            p.Navigator = false;
+            p.NoviRed = "Top";
+            return p;
+        }
+
         public static bool DxPreskaceJanus(bool dx)
         {
             return dx;

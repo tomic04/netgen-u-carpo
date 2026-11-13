@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Model;
+using Carpo.NetGen.Ulaz;
 
 namespace Carpo.NetGen
 {
@@ -27,6 +28,10 @@ namespace Carpo.NetGen
         public string ZadnjaGreska;
         public int ZadnjiResizeW;
         public int ZadnjiResizeH;
+        public bool PrevoditeljUcitano;
+        public string PrevoditeljPoruka = "";
+        public string PrevoditeljVerzija = "";
+        public string PrevoditeljTip = "";
 
         private const uint SWP_NOZORDER = 0x0004;
         private const uint SWP_NOACTIVATE = 0x0010;
@@ -76,6 +81,11 @@ namespace Carpo.NetGen
 
         private object Izvrsi(string server, string remoteDllPath, int operater)
         {
+            Prevoditelj.Ishod prevod = Prevoditelj.Ucitaj();
+            PrevoditeljUcitano = prevod.Ucitano;
+            PrevoditeljPoruka = prevod.Poruka;
+            PrevoditeljVerzija = prevod.Verzija;
+            PrevoditeljTip = prevod.Tip;
             if (!string.IsNullOrEmpty(server) && server.IndexOf("jupiter2022", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 ZadnjaGreska = "jupiter2022 se ne koristi.";

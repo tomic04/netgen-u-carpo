@@ -42,17 +42,11 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 - **Zašto ostaje:** te dvije biblioteke nisu na stroju. Prazan URL i `cis.porezna-uprava.hr` se ne šalju. Grana odluke (nema red, Slovenija, nema PFX, test URL) jest portana.
 - **Test:** `prostor-com`
 
-### R113 Janus dizajner grida
+### R113 Janus dizajner bez XML-a
 
-- **NetGen:** `ApperianceDialog`, `FormatStyles`, `TableView`, `CardView` i `SingleCardView` (`Form1.vb` 6146–6185) otvaraju Janus dijaloze i mijenjaju `GridEX.View`.
-- **Zašto ostaje:** ti tipovi su Janus.Windows.GridEX. Carpo grid je DevExpress. Isti poziv nema kamo otići, a izgled ostaje Carpo.
-- **Test:** nema poziva tih dijaloga.
-
-### R114 `Run` ne učitava JupiterTranslator
-
-- **NetGen:** `Run` (`Form1.vb` 1106–1115) radi `Assembly.Load("JupiterTranslator10")`. `Run8` zove `Run`.
-- **Zašto ostaje:** Jupiter se ne dira. `Loader.Run8` i dalje puni projekt i vraća null dok nema prozora.
-- **Test:** `Loader`
+- **NetGen:** `ApperianceDialog` i `FormatStyles` (`Form1.vb` 6146–6159) samo otvore Janus dijalog i vežu ga na grid. Nema atributa u XML-u koji to traži.
+- **Zašto ostaje:** DevExpress ima `FormatConditions` i poglede, i to je portano (`TableView`→`GridView`, `CardView`→`CardView`, `SingleCard`→`LayoutView`, `NEGATIVERED`/`NOTZERORED`). Sam `Show()` dizajnera nema ekvivalent koji XML može uključiti.
+- **Test:** `F1-114` pokriva poglede. Dizajner se ne otvara.
 
 ### R112 Spin.Printing.v23
 
@@ -169,3 +163,4 @@ Svaka uklonjena stavka ima test koji provjerava NetGen linije. R59 i R110 su por
 | R104 Manager samo kad treba | `odabir-verizne-manager` |
 | R108 parametri dijaloga | `param-radio` |
 | R110 Left/Center/Right i `lodani` | `ispis-zaglavlje` |
+| R114 `JupiterTranslator10` u `Run` | `F1-114` |

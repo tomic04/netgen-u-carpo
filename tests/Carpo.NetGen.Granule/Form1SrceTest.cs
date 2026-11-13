@@ -15,6 +15,7 @@ namespace Carpo.NetGen.Granule
             l.Add(Dozvola());
             l.Add(FormatIRaspored());
             l.Add(DmsIOstalo());
+            l.Add(PrevodIPogled());
             return l;
         }
 
@@ -166,6 +167,40 @@ namespace Carpo.NetGen.Granule
             if (Form1Srce.TekstPovlacenja("cvor") != "cvor" || Form1Srce.NoviProzor() != "store-all,dock-fill,row-headers-off")
                 return Qa.P(g, id, opis, izvor, "novi");
             Console.WriteLine("[Z] Form1 F1-185 dms=DmsManagerV1 nema-sklopa checkout=DocumentCheckOut brisi=spNetGenDMSAzur");
+            return Qa.Z(g, id, opis, izvor);
+        }
+
+        private static Stavka PrevodIPogled()
+        {
+            const string g = "Form1";
+            const string id = "F1-114";
+            const string opis = "Run učita JupiterTranslator10, pogledi idu na GridView CardView LayoutView";
+            const string izvor = "netgen/Form1.vb:1106-1115; netgen/Form1.vb:6161-6184";
+            Form1Srce.Pogled tablica = Form1Srce.PogledIz("TableView");
+            Form1Srce.Pogled kartica = Form1Srce.PogledIz("CardView");
+            Form1Srce.Pogled jedna = Form1Srce.PogledIz("SingleCard");
+            if (tablica.Kontrola != "GridView" || !tablica.Ikona || tablica.Navigator || tablica.NoviRed != "Top")
+                return Qa.P(g, id, opis, izvor, "table");
+            if (kartica.Kontrola != "CardView" || kartica.Ikona || !kartica.ProsiriKartice || kartica.Navigator)
+                return Qa.P(g, id, opis, izvor, "card");
+            if (jedna.Kontrola != "LayoutView" || jedna.Ikona || jedna.ProsiriKartice || !jedna.Navigator || jedna.NoviRed != "Bottom")
+                return Qa.P(g, id, opis, izvor, "single");
+            Prevoditelj.Ishod t = Prevoditelj.Ucitaj();
+            if (t.Ucitano)
+            {
+                if (t.Tip != Prevoditelj.Tip || t.Ime != Prevoditelj.Sklop)
+                    return Qa.P(g, id, opis, izvor, t.Ime + " " + t.Tip + " " + t.Verzija);
+                Console.WriteLine("[Z] Form1 F1-114 JupiterTranslator10 " + t.Verzija + " tip=" + t.Tip + " put=" + t.Putanja);
+            }
+            else
+            {
+                Console.WriteLine("[Z] Form1 F1-114 nema JupiterTranslator10.dll Assembly.Load(\"JupiterTranslator10\") tip=JupiterTranslator.Translator susjed=" + t.Susjed + " poruka=" + t.Poruka);
+            }
+            var loader = new Carpo.NetGen.Loader();
+            loader.TestXmlPath = "";
+            loader.Run("localhost", "spin", "", "", 1, 0, 0, 0, "");
+            if (loader.PrevoditeljUcitano != t.Ucitano)
+                return Qa.P(g, id, opis, izvor, "run");
             return Qa.Z(g, id, opis, izvor);
         }
     }

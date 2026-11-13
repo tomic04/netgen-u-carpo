@@ -28,8 +28,8 @@ Port je `Devex_26/Carpo.NetGen/Ulaz/Form1Ulaz.cs`. Test je `tests/Carpo.NetGen.G
 | 16 | DajParametre | 1066 | `Form1Ulaz.DajParametre` | nedostajalo-portano | F1-25 |
 | 17 | MYExnHandler | 1077 | `Form1Ulaz.TekstIznimke` | nedostajalo-portano | F1-25 |
 | 18 | MYThreadHandler | 1083 | `Form1Ulaz.TekstIznimke` | nedostajalo-portano | F1-25 |
-| 19 | Run8 | 1087 | `Loader.Run8` ne učitava JupiterTranslator | razlika R114 | Loader |
-| 20 | Run | 1098 | `Loader.Run` ne učitava JupiterTranslator | razlika R114 | Loader |
+| 19 | Run8 | 1087 | `Loader.Run8` zove `Prevoditelj.Ucitaj` | nedostajalo-portano | F1-114 |
+| 20 | Run | 1098 | `Prevoditelj.Ucitaj` `JupiterTranslator10` | nedostajalo-portano | F1-114 |
 | 21 | Form1_FormClosed | 1298 | `Form1Ulaz.Zatvoreno` vraća ONCLOSED | nedostajalo-portano | F1-25 |
 | 22 | Form1_FormClosing | 1314 | poruka 0x7D0 | nedostajalo-portano | F1-06 |
 | 23 | Form1_GotFocus | 1340 | `Form1Ulaz.TimerUpaljen` | nedostajalo-portano | F1-107 |
@@ -108,9 +108,9 @@ Zeleni run bloka 1: `3ad0d66`, https://github.com/tomic04/netgen-u-carpo/actions
 | 87 | Button10_Click | 6140 | prazan poziv | isto | |
 | 88 | ApperianceDialogToolStripMenuItem_Click | 6146 | Janus AppearanceDialog | razlika R113 | |
 | 89 | FormatStylesToolStripMenuItem_Click | 6154 | Janus FormatStyles | razlika R113 | |
-| 90 | TableViewToolStripMenuItem_Click | 6161 | Janus View.TableView | razlika R113 | |
-| 91 | CardViewToolStripMenuItem_Click | 6169 | Janus CardView | razlika R113 | |
-| 92 | SingleCardViewToolStripMenuItem_Click | 6177 | Janus SingleCardView | razlika R113 | |
+| 90 | TableViewToolStripMenuItem_Click | 6161 | `Form1Srce.PogledIz` GridView | nedostajalo-portano | F1-114 |
+| 91 | CardViewToolStripMenuItem_Click | 6169 | `Form1Srce.PogledIz` CardView | nedostajalo-portano | F1-114 |
+| 92 | SingleCardViewToolStripMenuItem_Click | 6177 | `Form1Srce.PogledIz` LayoutView | nedostajalo-portano | F1-114 |
 | 93 | SaveGridToolStripMenuItem_Click | 6186 | zove `SaveGridLayout` | nedostajalo-portano | F1-51 |
 | 94 | LoadLayout | 6192 | `Form1Srce.Ucitaj` | nedostajalo-portano | F1-140 |
 | 95 | LoadLayout2 | 6228 | `Form1Srce.Ucitaj` | nedostajalo-portano | F1-140 |
@@ -238,4 +238,4 @@ Broj u bloku: 44. još nedostaje 0.
 
 Ukupno Form1: 194. još nedostaje 0. nedostajalo-portano 129. isto 56. razlika 9.
 
-Razlike koje se ne mogu izjednačiti: R109 fiskalni SOAP ostaje na testnom CIS-u (10, 11). R114 `Run`/`Run8` ne učitavaju `JupiterTranslator10` jer se Jupiter ne dira (19, 20). R113 Janus `AppearanceDialog`, `FormatStyles`, `TableView`, `CardView` i `SingleCardView` nemaju DevExpress tip (88–92). Poslovni prostor i dalje ne šalje produkcijski CIS (R109, R111).
+Razlike koje se ne mogu izjednačiti: R109 i R111, SOAP ostaje na testnom CIS-u. R113 ostaje samo za `ApperianceDialog.Show` i `FormatStyles.Show` (`Form1.vb` 6146–6159): XML to ne traži, a DevExpress nema taj dizajnerski dijalog. `TableView`, `CardView` i `SingleCard` idu na `GridView`, `CardView` i `LayoutView`. `Run` učitava `JupiterTranslator10`.
