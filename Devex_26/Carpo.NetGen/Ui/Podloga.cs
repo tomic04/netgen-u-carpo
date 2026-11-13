@@ -294,6 +294,15 @@ namespace Carpo.NetGen.Ui
 
         private int _dubinaForme;
 
+        private string ZaglavljeIspisa(string atribut)
+        {
+            string sirovo = AtributProjekta(atribut);
+            if (sirovo.Length == 0 || _master.Kontekst == null)
+                return "";
+            string t = SqlTekst.Sredi(sirovo, _master.Kontekst);
+            return SrediPoslije.Petlja(t, _master.Kontekst.ParametriSaGrida, _master.Kontekst.Clipboard, true);
+        }
+
         private string AtributProjekta(string ime)
         {
             if (_projekt == null || _projekt.Atributi == null || !_projekt.Atributi.Ima(ime))
@@ -556,7 +565,10 @@ namespace Carpo.NetGen.Ui
                         tab = gc.DataSource as DataTable;
                     string orij = _projekt != null && _projekt.Atributi != null && _projekt.Atributi.Ima("PAGEORIENTATION")
                         ? _projekt.Atributi.Vrijednost("PAGEORIENTATION") : "";
-                    PrintBridge.Ispisi(s, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "", "", "", "", Text, grid, orij, tab);
+                    // Form1.vb 5934-5938, 6001: PAGEHEADERLEFT/CENTER/RIGHT kroz SrediSQL i SrediSQLPosljeNextForme
+                    // s ParametriSaGrida i datumom za ispis; prazan centar je naslov (PRN-01).
+                    PrintBridge.Ispisi(s, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "",
+                        ZaglavljeIspisa("PAGEHEADERLEFT"), ZaglavljeIspisa("PAGEHEADERCENTER"), ZaglavljeIspisa("PAGEHEADERRIGHT"), Text, grid, orij, tab);
                 }
                 else if (s.ToUpperInvariant().IndexOf("BEEP()", StringComparison.Ordinal) >= 0)
                     RafalNaredba.Beep();
