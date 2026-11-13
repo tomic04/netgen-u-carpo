@@ -254,6 +254,13 @@ namespace Carpo.NetGen.Ui
                 Controls.Add(ok);
                 AcceptButton = ok;
             }
+            PrimijeniOnLoad2(forma, kontekst, citaj);
+            // Form2.vb 1031: MAXIMIZEBOX (CBool), 991 + Timer3 9702: WINDOWSTATE "2" je maksimizirano (FRM-02).
+            bool? maks = Form2Rezultat.VbBool(AtributForme("MAXIMIZEBOX"));
+            if (maks.HasValue)
+                MaximizeBox = maks.Value;
+            if (AtributForme("WINDOWSTATE") == "2")
+                WindowState = FormWindowState.Maximized;
             // Dock: kontrola straga se slaze prva. Ploca s gumbima ide na dno prva, a Fill (grid, DOCK=5)
             // zadnji, pa popuni ostatak (VB: grid i okvir BringToFront nakon Controls.Add).
             Control[] gumbi = Controls.Find("pnlGumbi", false);
@@ -312,6 +319,10 @@ namespace Carpo.NetGen.Ui
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
+            // FOCUS forme (1053, Timer1 8510): nakon ucitavanja kontrola dobije fokus.
+            string fokus = AtributForme("FOCUS");
+            if (fokus.Length > 0)
+                Fokusiraj(fokus);
             Action<Dijalog> h = NakonPrikaza;
             if (h == null)
                 return;
@@ -2537,7 +2548,28 @@ namespace Carpo.NetGen.Ui
         {
             NgGrana g = k.Grana;
             if (g == NgGrana.Text)
-                return new TextEdit();
+            {
+                // TeksT (Form2.vb 2045-2050): MULTILINE, PASSWORDCHAR, SCROLLBARS, WORDWRAP, MAXLENGTH (TXT-02).
+                bool? vise = Form2Rezultat.VbBool(Attr(k, "MULTILINE"));
+                TextEdit t = vise == true ? new MemoEdit() : new TextEdit();
+                string lozinka = Attr(k, "PASSWORDCHAR");
+                if (lozinka.Length > 0)
+                    t.Properties.PasswordChar = lozinka[0];
+                int duljina;
+                if (int.TryParse(Attr(k, "MAXLENGTH"), NumberStyles.Integer, CultureInfo.InvariantCulture, out duljina) && duljina > 0)
+                    t.Properties.MaxLength = duljina;
+                var memo = t as MemoEdit;
+                if (memo != null)
+                {
+                    int trake;
+                    if (int.TryParse(Attr(k, "SCROLLBARS"), NumberStyles.Integer, CultureInfo.InvariantCulture, out trake) && trake >= 0 && trake <= 3)
+                        memo.Properties.ScrollBars = (ScrollBars)trake;
+                    bool? prelom = Form2Rezultat.VbBool(Attr(k, "WORDWRAP"));
+                    if (prelom.HasValue)
+                        memo.Properties.WordWrap = prelom.Value;
+                }
+                return t;
+            }
             if (g == NgGrana.Number)
             {
                 // Form2.vb 2085-2086: NumericEditBox dobije FORMATMASK i DECIMALS.
@@ -2700,6 +2732,43 @@ namespace Carpo.NetGen.Ui
                 }
                 zadano = zadano.Trim();
                 edit.Text = zadano.ToLowerInvariant() == "null" ? "" : zadano;
+            }
+        }
+
+        /// <summary>
+        /// ONLOAD2 (Form2.vb 1047, 1147, 1188-1193): drugi upit pri ucitavanju; za svaku kontrolu ciji stupac
+        /// postoji DodatnoPostimajKontrolu (enable/disable/visible...), a datum dobije i vrijednost (2297-2315).
+        /// 319 formi u 107 granula (FRM-02).
+        /// </summary>
+        private void PrimijeniOnLoad2(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj)
+        {
+            string on2 = forma == null || forma.Atributi == null ? "" : (forma.Atributi.Vrijednost("ONLOAD2") ?? "").Trim();
+            if (on2.Length == 0 || citaj == null)
+                return;
+            string sql = SqlTekst.Sredi(on2, kontekst ?? new SqlKontekst());
+            DataTable dt = null;
+            NgDnevnik.Sql(sql);
+            try { dt = citaj(sql); }
+            catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sql); return; }
+            if (dt == null || dt.Rows.Count == 0)
+                return;
+            DataRow r = dt.Rows[0];
+            foreach (Control c in SveKontrole())
+            {
+                if (string.IsNullOrEmpty(c.Name) || !Form2Rezultat.Ima(r, c.Name.Trim()))
+                    continue;
+                string v = Form2Rezultat.Celija(r, c.Name.Trim());
+                DodatnoPostavi(c, v);
+                var datum = c as DateEdit;
+                DateTime d;
+                if (datum != null && !Form2Rezultat.JeStanje(v))
+                {
+                    object sirovo = r[c.Name.Trim()];
+                    if (sirovo is DateTime)
+                        datum.EditValue = (DateTime)sirovo;
+                    else if (ProcitajDatum(v, out d))
+                        datum.EditValue = d;
+                }
             }
         }
 
