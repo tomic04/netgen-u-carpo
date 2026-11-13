@@ -1152,7 +1152,7 @@ namespace Carpo.NetGen.Ui
         private static bool JeOdustani(string tag, string tekst)
         {
             string u = (tag ?? "").Trim().ToUpperInvariant();
-            if (u == "OK" || u == "CLOSE" || u == "CANCEL" || u.EndsWith("|CLOSE") || u.EndsWith("|CANCEL"))
+            if (u == "CLOSE" || u == "CANCEL" || u.EndsWith("|CLOSE") || u.EndsWith("|CANCEL"))
                 return true;
             string n = (tekst ?? "").ToLowerInvariant();
             return n.StartsWith("odustani") || n.StartsWith("cancel");
