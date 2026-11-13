@@ -120,9 +120,11 @@ namespace Carpo.NetGen.Komande
             }
             if (naredba.Length == 0 && redni == 1)
             {
+                // Form2.vb 3377: CMD1 bez dvotočke je OK. ONSUBMIT se šalje i kad
+                // FILLEXPLORER nije postavljen. DELETEFORM Obriši je takav gumb.
                 k.Zatvara = true;
                 k.FillExplorer = PuniExplorer(forma);
-                if (k.FillExplorer && forma != null)
+                if (forma != null)
                     k.MasterSql = Lanac.Lijepi((forma.OnSubmit ?? "").Trim(), "");
                 k.SaljeSql = !jupiter && k.MasterSql.Length > 0 && SmijePoslati(k.MasterSql);
                 return k;
@@ -211,7 +213,10 @@ namespace Carpo.NetGen.Komande
                 while ((p = s.IndexOf(token, p, StringComparison.OrdinalIgnoreCase)) >= 0)
                 {
                     bool uNavodniku = p > 0 && s[p - 1] == '\'';
-                    string ubaci = uNavodniku ? (vrijednost ?? "").Replace("'", "''") : "'" + (vrijednost ?? "").Replace("'", "''") + "'";
+                    bool jeNull = string.Equals(vrijednost, "null", StringComparison.OrdinalIgnoreCase);
+                    string ubaci = jeNull && !uNavodniku
+                        ? "null"
+                        : (uNavodniku ? (vrijednost ?? "").Replace("'", "''") : "'" + (vrijednost ?? "").Replace("'", "''") + "'");
                     s = s.Substring(0, p) + ubaci + s.Substring(p + token.Length);
                     p += ubaci.Length;
                 }

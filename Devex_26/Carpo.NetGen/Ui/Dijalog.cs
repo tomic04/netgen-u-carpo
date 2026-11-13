@@ -161,7 +161,7 @@ namespace Carpo.NetGen.Ui
             }
 
             string on = forma.OnLoad ?? "";
-            if (on.TrimStart().StartsWith("select", StringComparison.OrdinalIgnoreCase) && citaj != null)
+            if (OnLoadJeUpit(on) && citaj != null)
                 NapuniIzOnLoad(on, kontekst, citaj);
             ShowDialog();
         }
@@ -224,10 +224,10 @@ namespace Carpo.NetGen.Ui
                 if (crta >= 0)
                     naredba = tag.Substring(crta + 1);
             }
-            naredba = ZamijeniIzKontrola(naredba);
-            if (_kontekst != null)
-                naredba = SqlTekst.Sredi(naredba, _kontekst);
+            naredba = Pripremi(naredba);
             DijalogTok.Klik klik = DijalogTok.Gumb(_forma, redni, naredba, _jupiter);
+            if (!string.IsNullOrEmpty(klik.MasterSql))
+                klik.MasterSql = Pripremi(klik.MasterSql);
             if (klik.OtvaraFormu.Length > 0)
             {
                 OtvorenaForma = klik.OtvaraFormu;
@@ -286,6 +286,14 @@ namespace Carpo.NetGen.Ui
                 b.DialogResult = DialogResult.None;
         }
 
+        private string Pripremi(string naredba)
+        {
+            string s = ZamijeniIzKontrola(naredba);
+            if (_kontekst != null)
+                s = SqlTekst.Sredi(s, _kontekst);
+            return s;
+        }
+
         private string ZamijeniIzKontrola(string naredba)
         {
             if (string.IsNullOrEmpty(naredba))
@@ -309,12 +317,20 @@ namespace Carpo.NetGen.Ui
                 {
                     var broj = c as SpinEdit;
                     var kvacica = c as CheckEdit;
+                    var look = c as LookUpEdit;
                     var edit = c as TextEdit;
                     if (broj != null)
                         kontrole[c.Name] = Convert.ToString(broj.Value, CultureInfo.InvariantCulture);
                     else if (kvacica != null)
                         kontrole[c.Name] = kvacica.Checked ? "1" : "0";
-                    else if (edit != null && !(edit is LookUpEdit))
+                    else if (look != null)
+                    {
+                        object ev = look.EditValue;
+                        kontrole[c.Name] = ev == null || ev == DBNull.Value
+                            ? "null"
+                            : Convert.ToString(ev, CultureInfo.InvariantCulture);
+                    }
+                    else if (edit != null)
                         kontrole[c.Name] = edit.Text ?? "";
                 }
                 SkupiTekst(c, kontrole);
@@ -491,17 +507,62 @@ namespace Carpo.NetGen.Ui
                 Control[] n = Controls.Find(col.ColumnName, true);
                 if (n.Length == 0)
                     continue;
-                string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col]);
-                var edit = n[0] as TextEdit;
-                if (edit != null && !(edit is LookUpEdit))
-                    edit.Text = v;
-                var look = n[0] as LookUpEdit;
-                if (look != null)
-                    look.EditValue = v;
-                var label = n[0] as LabelControl;
-                if (label != null && n[0].Name == col.ColumnName)
-                    label.Text = label.Dock == DockStyle.Bottom ? Ponasanje.StatusTekst(v) : v;
+                string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col], CultureInfo.InvariantCulture);
+                PostaviVrijednost(n[0], v);
             }
+        }
+
+        /// <summary>
+        /// Form2.vb 1195 izvršava ONLOAD bez obzira počinje li sa select.
+        /// spStatusiQuery @action=2 puni @@vrstadokid iz rezultata, ne iz kontrole.
+        /// </summary>
+        public static bool OnLoadJeUpit(string on)
+        {
+            string t = (on ?? "").TrimStart();
+            if (t.Length == 0 || t.StartsWith(":", StringComparison.Ordinal))
+                return false;
+            if (t.StartsWith("select", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (t.StartsWith("exec", StringComparison.OrdinalIgnoreCase))
+                return true;
+            return t.StartsWith("sp", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void PostaviVrijednost(Control c, string v)
+        {
+            var broj = c as SpinEdit;
+            if (broj != null)
+            {
+                decimal d;
+                if (decimal.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out d))
+                    broj.Value = d;
+                return;
+            }
+            var kvacica = c as CheckEdit;
+            if (kvacica != null)
+            {
+                kvacica.Checked = v == "1" || string.Equals(v, "true", StringComparison.OrdinalIgnoreCase);
+                return;
+            }
+            var look = c as LookUpEdit;
+            if (look != null)
+            {
+                int brojId;
+                if (int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out brojId))
+                    look.EditValue = brojId;
+                else if (!string.IsNullOrEmpty(v))
+                    look.EditValue = v;
+                return;
+            }
+            var edit = c as TextEdit;
+            if (edit != null)
+            {
+                edit.Text = v;
+                return;
+            }
+            var label = c as LabelControl;
+            if (label != null)
+                label.Text = label.Dock == DockStyle.Bottom ? Ponasanje.StatusTekst(v) : v;
         }
 
         private static bool Odustajanje(string tekst)

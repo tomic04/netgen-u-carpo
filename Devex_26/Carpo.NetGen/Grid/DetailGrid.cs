@@ -248,6 +248,10 @@ namespace Carpo.NetGen.Grid
                     break;
                 string token = sql.Substring(poc, kraj - poc);
                 string vrijednost = Nadji(token, parametri);
+                // Class1.vb 915: prazan token je null, ne prazan tekst. Prazan tekst
+                // ispred zareza da "@ime=," i SQL "Incorrect syntax near ','".
+                if (vrijednost.Length == 0)
+                    vrijednost = "null";
                 sql = sql.Substring(0, poc) + vrijednost + sql.Substring(kraj);
             }
             return sql;
@@ -260,7 +264,7 @@ namespace Carpo.NetGen.Grid
                 kljuc = "@" + kljuc.Substring(2);
             if (string.IsNullOrEmpty(parametri) || kljuc.Length == 0)
                 return "";
-            string[] dijelovi = parametri.Split(',');
+            string[] dijelovi = Dijelovi(parametri);
             for (int i = 0; i < dijelovi.Length; i++)
             {
                 string dio = dijelovi[i].Trim();
@@ -274,6 +278,37 @@ namespace Carpo.NetGen.Grid
                 return dio.Substring(eq + 1).Trim();
             }
             return "";
+        }
+
+        /// <summary>
+        /// Zarez unutar navodnika nije kraj parametra. Inače @Next='a, b' raskine
+        /// sljedeći @vrstadokid i token ostane prazan.
+        /// </summary>
+        private static string[] Dijelovi(string parametri)
+        {
+            var lista = new System.Collections.Generic.List<string>();
+            var sb = new System.Text.StringBuilder();
+            bool navodnik = false;
+            for (int i = 0; i < parametri.Length; i++)
+            {
+                char c = parametri[i];
+                if (c == '\'')
+                {
+                    navodnik = !navodnik;
+                    sb.Append(c);
+                    continue;
+                }
+                if (c == ',' && !navodnik)
+                {
+                    lista.Add(sb.ToString());
+                    sb.Length = 0;
+                    continue;
+                }
+                sb.Append(c);
+            }
+            if (sb.Length > 0)
+                lista.Add(sb.ToString());
+            return lista.ToArray();
         }
 
         private void Dodaj(string sql)

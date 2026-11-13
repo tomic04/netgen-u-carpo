@@ -601,7 +601,7 @@ namespace Carpo.NetGen.Ui
             catch (Exception ex)
             {
                 if (!filter)
-                    _sqlGreska = ex.Message;
+                    _sqlGreska = ex.Message + " | " + sql;
                 NgDnevnik.Greska(ex.Message + " | " + sql);
                 if (!filter)
                     PostaviStatus(ex.Message);
@@ -865,15 +865,45 @@ namespace Carpo.NetGen.Ui
             string tekst = DijalogTok.TekstUpisa ?? "";
             if (tekst.Length == 0)
                 return;
-            string[] imena = new string[] { "Naziv", "Korak" };
+            string[] imena = new string[] { "Naziv", "Korak", "Sifra", "Oznaka", "HPTPoziv" };
             for (int i = 0; i < imena.Length; i++)
             {
                 Control[] n = f.Controls.Find(imena[i], true);
                 if (n.Length == 0)
                     continue;
                 var edit = n[0] as TextEdit;
-                if (edit != null)
+                if (edit != null && !(edit is LookUpEdit))
                     edit.Text = tekst;
+            }
+            OdaberiLook(f);
+        }
+
+        private static void OdaberiLook(Control roditelj)
+        {
+            if (roditelj == null)
+                return;
+            for (int i = 0; i < roditelj.Controls.Count; i++)
+            {
+                var look = roditelj.Controls[i] as LookUpEdit;
+                if (look != null && (look.EditValue == null || look.EditValue == DBNull.Value))
+                {
+                    var dt = look.Properties.DataSource as DataTable;
+                    if (dt != null && dt.Columns.Count > 0)
+                    {
+                        for (int r = 0; r < dt.Rows.Count; r++)
+                        {
+                            object v = dt.Rows[r][0];
+                            if (v == null || v == DBNull.Value)
+                                continue;
+                            string s = Convert.ToString(v);
+                            if (s.Length == 0 || s == "null")
+                                continue;
+                            look.EditValue = v;
+                            break;
+                        }
+                    }
+                }
+                OdaberiLook(roditelj.Controls[i]);
             }
         }
 
@@ -966,7 +996,7 @@ namespace Carpo.NetGen.Ui
                 return "testni jezik obrisan";
             }
             if (sql.IndexOf("spStatusiAzur", StringComparison.OrdinalIgnoreCase) >= 0
-                && (sql.IndexOf("@Action=0", StringComparison.OrdinalIgnoreCase) >= 0 || sql.IndexOf("@action=0", StringComparison.OrdinalIgnoreCase) >= 0))
+                && Akcija(sql, "0"))
             {
                 DataTable t = Citaj("select top 1 cast(statusiid as varchar(20)) as id from statusi where Korak = N'" + tekst + "'");
                 if (t == null || t.Rows.Count == 0)
@@ -976,16 +1006,80 @@ namespace Carpo.NetGen.Ui
                 return "statusi.Korak=" + DijalogTok.TekstUpisa + " id=" + _testId;
             }
             if (sql.IndexOf("spStatusiAzur", StringComparison.OrdinalIgnoreCase) >= 0
-                && sql.IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) >= 0)
+                && Akcija(sql, "1"))
             {
-                DataTable t = Citaj("select count(*) as n from statusi where Korak like N'klik-proba%'");
+                string id = _testId.Length == 0 ? "0" : _testId;
+                DataTable t = Citaj("select Korak from statusi where statusiid = " + id);
+                string korak = t == null || t.Rows.Count == 0 ? "" : Convert.ToString(t.Rows[0]["Korak"]);
+                if (korak != DijalogTok.TekstUpisa)
+                    return "GRESKA statusi.Korak je '" + korak + "', očekivano " + DijalogTok.TekstUpisa + " sql=" + sql;
+                return "statusi id=" + id + " Korak=" + korak;
+            }
+            if (sql.IndexOf("spStatusiAzur", StringComparison.OrdinalIgnoreCase) >= 0
+                && Akcija(sql, "2"))
+            {
+                string id = _testId.Length == 0 ? "0" : _testId;
+                DataTable t = Citaj("select count(*) as n from statusi where statusiid = " + id);
                 int n = t == null || t.Rows.Count == 0 ? -1 : Convert.ToInt32(t.Rows[0]["n"]);
                 if (n != 0)
-                    return "GRESKA brisanje statusa ostavilo " + n.ToString();
+                    return "GRESKA brisanje statusa ostavilo " + n.ToString() + " sql=" + sql;
                 _testId = "";
                 return "testni status obrisan";
             }
+            if (sql.IndexOf("spZupanijeAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "0"))
+                return ProvjeriNaziv("Zupanije", "ZupanijeId", tekst, true);
+            if (sql.IndexOf("spZupanijeAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "1"))
+                return ProvjeriNaziv("Zupanije", "ZupanijeId", tekst, false);
+            if (sql.IndexOf("spZupanijeAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "2"))
+                return ProvjeriObrisano("Zupanije", "ZupanijeId");
+            if (sql.IndexOf("spPrnVrstaTroskaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "0"))
+                return ProvjeriNaziv("PrnVrstaTroska", "PrnVrstaTroskaId", tekst, true);
+            if (sql.IndexOf("spPrnVrstaTroskaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "1"))
+                return ProvjeriNaziv("PrnVrstaTroska", "PrnVrstaTroskaId", tekst, false);
+            if (sql.IndexOf("spPrnVrstaTroskaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "2"))
+                return ProvjeriObrisano("PrnVrstaTroska", "PrnVrstaTroskaId");
             return "poslano: " + sql;
+        }
+
+        private static bool Akcija(string sql, string broj)
+        {
+            int p = sql.IndexOf("@action=" + broj, StringComparison.OrdinalIgnoreCase);
+            if (p < 0)
+                return false;
+            int kraj = p + "@action=".Length + broj.Length;
+            if (kraj < sql.Length && char.IsDigit(sql[kraj]))
+                return false;
+            return true;
+        }
+
+        private string ProvjeriNaziv(string tablica, string kljuc, string tekst, bool novi)
+        {
+            if (novi)
+            {
+                DataTable t = Citaj("select top 1 cast(" + kljuc + " as varchar(20)) as id from " + tablica + " where Naziv = N'" + tekst + "'");
+                if (t == null || t.Rows.Count == 0)
+                    return "GRESKA nema reda u " + tablica + ".Naziv=" + DijalogTok.TekstUpisa;
+                _testId = Convert.ToString(t.Rows[0]["id"]);
+                _master.Kontekst.Id = _testId;
+                return tablica + ".Naziv=" + DijalogTok.TekstUpisa + " id=" + _testId;
+            }
+            string id = _testId.Length == 0 ? "0" : _testId;
+            DataTable red = Citaj("select Naziv from " + tablica + " where " + kljuc + " = " + id);
+            string naziv = red == null || red.Rows.Count == 0 ? "" : Convert.ToString(red.Rows[0]["Naziv"]);
+            if (naziv != DijalogTok.TekstUpisa)
+                return "GRESKA " + tablica + ".Naziv je '" + naziv + "', očekivano " + DijalogTok.TekstUpisa;
+            return tablica + " id=" + id + " Naziv=" + naziv;
+        }
+
+        private string ProvjeriObrisano(string tablica, string kljuc)
+        {
+            string id = _testId.Length == 0 ? "0" : _testId;
+            DataTable t = Citaj("select count(*) as n from " + tablica + " where " + kljuc + " = " + id);
+            int n = t == null || t.Rows.Count == 0 ? -1 : Convert.ToInt32(t.Rows[0]["n"]);
+            if (n != 0)
+                return "GRESKA brisanje " + tablica + " ostavilo " + n.ToString();
+            _testId = "";
+            return "testni red u " + tablica + " obrisan";
         }
 
         private void OcistiTest()
@@ -994,6 +1088,8 @@ namespace Carpo.NetGen.Ui
             {
                 Citaj("delete from jezici where Naziv like N'kp[0-9]%' or Naziv like N'klik-proba%'");
                 Citaj("delete from statusi where Korak like N'kp[0-9]%' or Korak like N'klik-proba%'");
+                Citaj("delete from Zupanije where Naziv like N'kp[0-9]%' or Naziv like N'klik-proba%'");
+                Citaj("delete from PrnVrstaTroska where Naziv like N'kp[0-9]%' or Naziv like N'klik-proba%'");
             }
             catch
             {

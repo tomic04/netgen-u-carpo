@@ -2,6 +2,11 @@
 set nocount on;
 delete from dbo.jezici where Naziv like N'klik-proba%' or Naziv like N'kp[0-9]%';
 
+if object_id(N'dbo.Zupanije', N'U') is not null and col_length(N'dbo.Zupanije', N'Naziv') is not null
+    exec(N'begin try delete from dbo.Zupanije where Naziv like N''kp[0-9]%'' or Naziv like N''klik-proba%''; end try begin catch print ''ciscenje zupanije: '' + error_message(); end catch');
+if object_id(N'dbo.PrnVrstaTroska', N'U') is not null and col_length(N'dbo.PrnVrstaTroska', N'Naziv') is not null
+    exec(N'begin try delete from dbo.PrnVrstaTroska where Naziv like N''kp[0-9]%'' or Naziv like N''klik-proba%''; end try begin catch print ''ciscenje troska: '' + error_message(); end catch');
+
 if object_id(N'dbo.VrstaDok', N'U') is null or col_length(N'dbo.VrstaDok', N'Opis') is null
     return;
 
