@@ -177,10 +177,10 @@ begin
         if col_length(N'dbo.RatArkod', N'Oznaka') is not null select @c += N',[Oznaka]', @v += N',@oznaka';
         if col_length(N'dbo.RatArkod', N'Naziv') is not null select @c += N',[Naziv]', @v += N',@naziv';
         if col_length(N'dbo.RatArkod', N'Povrsina') is not null select @c += N',[Povrsina]', @v += N',@povrsina';
-        if col_length(N'dbo.RatArkod', N'OrgShemaId') is not null select @c += N',[OrgShemaId]', @v += N',@orgshemaid';
+        if col_length(N'dbo.RatArkod', N'OrgShemaId') is not null select @c += N',[OrgShemaId]', @v += N',isnull(@orgshemaid, (select top 1 OrgShemaId from dbo.OrgShema))';
         if col_length(N'dbo.RatArkod', N'TablaId') is not null select @c += N',[TablaId]', @v += N',@tablaid';
         if col_length(N'dbo.RatArkod', N'Godina') is not null select @c += N',[Godina]', @v += N',@godina';
-        if col_length(N'dbo.RatArkod', N'MjestaId') is not null select @c += N',[MjestaId]', @v += N',@mjestaid';
+        if col_length(N'dbo.RatArkod', N'MjestaId') is not null select @c += N',[MjestaId]', @v += N',isnull(@mjestaid, (select top 1 MjestaId from dbo.Mjesta))';
         if col_length(N'dbo.RatArkod', N'RatVrstaUporabeId') is not null select @c += N',[RatVrstaUporabeId]', @v += N',@ratvrstauporabeid';
         if col_length(N'dbo.RatArkod', N'RatVrstaTlaId') is not null select @c += N',[RatVrstaTlaId]', @v += N',@ratvrstatlaid';
         if col_length(N'dbo.RatArkod', N'RatVrstaProizvodnjeId') is not null select @c += N',[RatVrstaProizvodnjeId]', @v += N',@ratvrstaproizvodnjeid';
