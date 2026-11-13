@@ -600,7 +600,8 @@ namespace Carpo.UI.Forms.Base
                 }
             }
             ApplyCaptionAppearance();
-            Logger.InfoTest("SetCaption", "Postavljanje naziva forme", startTime);
+            if (Logger != null)
+                Logger.InfoTest("SetCaption", "Postavljanje naziva forme", startTime);
         }
 
         // Vlastiti controller samo za forme koje u XML-u traže drugačiji izgled naslova;
