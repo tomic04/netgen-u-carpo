@@ -2654,7 +2654,7 @@ namespace Carpo.NetGen.GridTest
                 + "<PROJECT CMD1CAPTION=\"Dodaj:frmNema\" CMD2CAPTION=\"Stanje:select &apos;disable&apos; as Dodaj\""
                 + " ONLOAD=\"select 1 as id, &apos;abc&apos; as Naziv union all select 2, &apos;def&apos;\""
                 + " EDITCOLUMNS=\"Naziv\" CHECKBOXVISIBLE=\"TRUE\""
-                + " ONCELLEDITED=\"select &apos;@@Naziv|@@EDITEDCOLUMN|@@LASTVALUE|@@id&apos; as setcolorforcolorpicker\""
+                + " ONCELLEDITED=\"select &apos;@@Naziv,@@EDITEDCOLUMN,@@LASTVALUE,@@id&apos; as setcolorforcolorpicker\""
                 + " ONCLOSED=\"select &apos;zatvoreno&apos; as setcolorforcolorpicker\">\r\n"
                 + "<NAME>Projekt</NAME>\r\n<CAPTION>Rafalno test</CAPTION>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
             string greska = null;
@@ -2681,9 +2681,10 @@ namespace Carpo.NetGen.GridTest
                 T("edt01-uredjiv", gv.OptionsBehavior.Editable && naziv != null && naziv.OptionsColumn.AllowEdit && id != null && !id.OptionsColumn.AllowEdit,
                     "editable=" + gv.OptionsBehavior.Editable + " rows=" + gv.DataRowCount);
                 gv.FocusedRowHandle = 0;
+                // '|' nije granica tokena u SrediSQLPosljeNextForme (Class1 766-820), zato zarez.
                 gv.SetRowCellValue(0, naziv, "xyz");
                 string boja = master.Kontekst.SelectedColor ?? "";
-                T("edt02-oncelledited", boja == "xyz|Naziv|xyz|1" && gv.IsRowSelected(0), boja + " sel=" + gv.IsRowSelected(0));
+                T("edt02-oncelledited", boja == "xyz,Naziv,xyz,1" && gv.IsRowSelected(0), boja + " sel=" + gv.IsRowSelected(0));
 
                 FieldInfo projektPolje = typeof(Podloga).GetField("_projekt", BindingFlags.Instance | BindingFlags.NonPublic);
                 var projekt = projektPolje.GetValue(forma) as NgProject;
