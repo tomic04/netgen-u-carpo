@@ -274,7 +274,10 @@ namespace Carpo.NetGen.Komande
             }
             catch (Exception ex)
             {
-                Greska = ex.GetType().Name + " " + ex.Message;
+                Exception unutra = ex;
+                while (unutra.InnerException != null)
+                    unutra = unutra.InnerException;
+                Greska = (Greska + " | " + klasa + " " + unutra.GetType().Name + " " + unutra.Message).Trim();
                 Zadnja = null;
                 return null;
             }
