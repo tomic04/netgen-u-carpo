@@ -173,11 +173,6 @@ namespace Carpo.NetGen.Komande
             return (segment ?? "").ToUpperInvariant().IndexOf("SLOPP(", StringComparison.Ordinal) >= 0;
         }
 
-        public static string CreateObject(string segment)
-        {
-            return Unutar(segment, "CREATEOBJECT(");
-        }
-
         /// <summary>1 ASCII i znak 26, 2 ASCII, 3 zadano kodiranje, 8 UTF-8. Form2.vb 7170–7399.</summary>
         public static int Datoteka(string segment)
         {
