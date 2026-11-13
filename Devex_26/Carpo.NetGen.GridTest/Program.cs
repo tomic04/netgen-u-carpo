@@ -1944,8 +1944,8 @@ namespace Carpo.NetGen.GridTest
                 && pg.IndexOf("0100", StringComparison.Ordinal) < 0, pg);
             var hij = new DataTable();
             hij.Columns.Add("id0100", typeof(string));
-            var kol = hij.Columns.Add("Cijena", typeof(string));
-            kol.Caption = "Cijena";
+            var stupac = hij.Columns.Add("Cijena", typeof(string));
+            stupac.Caption = "Cijena";
             hij.Rows.Add("1234", "1,5");
             string hp = DetailGrid.ParametriHijerarhije(hij.Rows[0]);
             T("hijerarhija-grid", DetailGrid.IndeksKartice("t2") == 2 && DetailGrid.IndeksKartice("qwer") == 1
