@@ -41,13 +41,34 @@ def datoteke_cs(korijen):
     return izlaz
 
 
+TOKENI = re.compile(
+    r'@"(?:""|[^"])*"'          # verbatim string
+    r'|"(?:\\.|[^"\\\n])*"'     # obican string
+    r"|'(?:\\.|[^'\\\n])+'"     # char
+    r"|//[^\n]*"                # komentar do kraja reda
+    r"|/\*.*?\*/",             # blok komentar
+    re.S,
+)
+
+
 def ocisti(tekst):
-    tekst = re.sub(r"/\*.*?\*/", " ", tekst, flags=re.S)
-    tekst = re.sub(r"//.*?$", " ", tekst, flags=re.M)
-    tekst = re.sub(r"@\"(?:\"\"|[^\"])*\"", "\"\"", tekst)
-    tekst = re.sub(r"\"(?:\\.|[^\"\\])*\"", "\"\"", tekst)
-    tekst = re.sub(r"'(?:\\.|[^'\\])'", "''", tekst)
-    return tekst
+    """Stringovi i komentari u jednom prolazu, redom kako se pojave.
+
+    Prije su se prvo brisali komentari pa stringovi. Tada "https://x" u stringu
+    izgleda kao komentar, navodnik ostane bez para i sljedeci string proguta
+    stotine redova koda (Podloga.cs: 1747 redova postane 1057).
+    Broj redova ostaje isti da linije u ispisu MRTVO budu tocne.
+    """
+    def zamjena(m):
+        t = m.group(0)
+        n = t.count("\n")
+        if t.startswith("//") or t.startswith("/*"):
+            return " " + "\n" * n
+        if t.startswith("'"):
+            return "''"
+        return '""' + "\n" * n
+
+    return TOKENI.sub(zamjena, tekst)
 
 
 METODA = re.compile(
