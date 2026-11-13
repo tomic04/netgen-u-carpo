@@ -363,8 +363,9 @@ namespace Carpo.NetGen.Ui
                             DialogResult = DialogResult.OK;
                         if (klik.SaljeSql && _citaj != null && klik.MasterSql.Length > 0)
                         {
-                            try { _citaj(klik.MasterSql); }
-                            catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + klik.MasterSql); }
+                            string sqlOk = SqlZaGumb(klik.MasterSql);
+                            try { _citaj(sqlOk); }
+                            catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sqlOk); }
                         }
                         continue;
                     }
@@ -613,15 +614,15 @@ namespace Carpo.NetGen.Ui
             }
             if (klik.SaljeSql && _citaj != null)
             {
-                MasterSql = klik.MasterSql;
-                NgDnevnik.Sql(klik.MasterSql);
+                MasterSql = SqlZaGumb(klik.MasterSql);
+                NgDnevnik.Sql(MasterSql);
                 try
                 {
-                    _citaj(klik.MasterSql);
+                    _citaj(MasterSql);
                 }
                 catch (Exception ex)
                 {
-                    NgDnevnik.Greska(ex.Message + " | " + klik.MasterSql);
+                    NgDnevnik.Greska(ex.Message + " | " + MasterSql);
                 }
             }
             else
@@ -703,13 +704,19 @@ namespace Carpo.NetGen.Ui
             catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + put); }
         }
 
+        private string SqlZaGumb(string master)
+        {
+            string izvor = master ?? "";
+            if (_forma != null && !string.IsNullOrEmpty(_forma.OnSubmit))
+                izvor = _forma.OnSubmit;
+            return SrediPoslije.ZaSlanje(izvor, SviParametri(), _kontekst ?? new SqlKontekst(), null);
+        }
+
         private void IzvrsiSql(string tekst)
         {
             if (_citaj == null || _jupiter)
                 return;
-            string sql = tekst ?? "";
-            if (sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
-                sql = SqlTekst.Sredi(sql, _kontekst ?? new SqlKontekst());
+            string sql = SrediPoslije.Zamijeni(tekst ?? "", SviParametri(), _kontekst ?? new SqlKontekst(), null, false);
             if (ZastitaSql.Tekst(sql).Pise)
                 return;
             try

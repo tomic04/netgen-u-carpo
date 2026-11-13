@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
+using Carpo.NetGen.Komande;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
 
@@ -117,7 +118,7 @@ namespace Carpo.NetGen.Grid
             Stanje.IzvorSql = efektivni;
             string prvi = SqlTekst.Sredi(efektivni, Kontekst);
             Stanje.ZadnjiSql = prvi;
-            string drugi = SqlTekst.Sredi(prvi, Kontekst);
+            string drugi = SrediPoslije.Petlja(prvi, "", null, false);
             drugi = drugi.Replace("~~", ",");
             Stanje.SqlZaSlanje = drugi;
             Stanje.Odluka = SqlTekst.Odluka(drugi);
@@ -241,7 +242,7 @@ namespace Carpo.NetGen.Grid
         public void Osvjezi(DataTable tablica)
         {
             Stanje.Redoslijed.Add("REFRESHMASTERGRID");
-            string drugi = SqlTekst.Sredi(Stanje.ZadnjiSql ?? "", Kontekst).Replace("~~", ",");
+            string drugi = SrediPoslije.Petlja(SqlTekst.Sredi(Stanje.ZadnjiSql ?? "", Kontekst), "", null, false).Replace("~~", ",");
             Stanje.SqlZaSlanje = drugi;
             Stanje.Odluka = SqlTekst.Odluka(drugi);
             if (Stanje.Odluka == "salji" && !SqlTekst.JeZabranaPisanja(drugi))

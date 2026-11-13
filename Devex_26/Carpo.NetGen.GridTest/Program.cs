@@ -34,6 +34,7 @@ namespace Carpo.NetGen.GridTest
             Fiskal();
             BatIPost();
             RazlikeImenom();
+            Podaci();
             Include();
             Ispis();
             Zamjene();
@@ -590,8 +591,8 @@ namespace Carpo.NetGen.GridTest
             if (p != null)
                 g.Ucitaj(p, null);
             string sql = g.Stanje == null ? "" : (g.Stanje.SqlZaSlanje ?? "");
-            bool preskok = p != null && g.Stanje.Odluka == "ostao-@@" && sql.IndexOf("@@godina", StringComparison.Ordinal) > 0 && g.Stanje.Tablica == null;
-            T("intrastat-ostao", preskok, g.Stanje == null ? "" : g.Stanje.Odluka);
+            bool ugradeno = p != null && g.Stanje.Odluka == "salji" && sql.IndexOf("@@godina", StringComparison.Ordinal) < 0 && sql.IndexOf("@godina = null", StringComparison.Ordinal) >= 0 && g.Stanje.Tablica == null;
+            T("intrastat-ostao", ugradeno, sql);
         }
 
         private static void ZastitaTestovi()
@@ -793,9 +794,9 @@ namespace Carpo.NetGen.GridTest
             T("combo-3-refresh", osvjezi.Count == 2 && osvjezi[0] == "skladisteid" && osvjezi[1] == "osobeid" && !ComboDijalog.OnClickSeSalje(true), osvjezi.Count.ToString());
             NgControl osobe = Kontrol(inv, "osobeid");
             string sql4 = ComboDijalog.SqlZaSlanje(osobe.Atributi.Vrijednost("SQL"), k);
-            T("combo-4-ostao", SqlTekst.Odluka(sql4) == "ostao-@@", sql4);
-            string poslije = sql4.Replace("@@trgovinaid", "5");
-            T("combo-4-poslije", SqlTekst.Odluka(poslije) == "salji" && poslije.IndexOf("= 5", StringComparison.Ordinal) >= 0, poslije);
+            T("combo-4-ostao", sql4.IndexOf("@@", StringComparison.Ordinal) < 0 && SqlTekst.Odluka(sql4) == "salji" && sql4.IndexOf("null", StringComparison.Ordinal) >= 0, sql4);
+            string poslije = SrediPoslije.Petlja(SqlTekst.Sredi(osobe.Atributi.Vrijednost("SQL"), k), "@trgovinaid=5,", null, false);
+            T("combo-4-poslije", SqlTekst.Odluka(poslije) == "salji" && poslije.IndexOf("5", StringComparison.Ordinal) >= 0 && poslije.IndexOf("@@trgovinaid", StringComparison.Ordinal) < 0, poslije);
 
             NgForm nacin = Forma(Ucitaj("MPKntNacinPlacAzur.xml"), "FILTERFORM");
             if (nacin == null)
@@ -1899,6 +1900,48 @@ namespace Carpo.NetGen.GridTest
             {
                 try { Directory.Delete(dir, true); } catch { }
             }
+        }
+
+        private static void Podaci()
+        {
+            var k = new SqlKontekst();
+            k.Id = "5";
+            k.TempString = "abc";
+            k.Version = "NetGen v1.2.3";
+            k.FocusedControl = "naziv";
+            T("sredi2-temp", SqlTekst.Sredi2("@@tempstring @@VERSION @@FOCUSEDCONTROL", k) == "abc NetGen v1.2.3 naziv", SqlTekst.Sredi2("@@tempstring @@VERSION @@FOCUSEDCONTROL", k));
+            T("sredi2-id-nije-Id", SqlTekst.Sredi2("@@Id", k) == "@@Id" && SqlTekst.Sredi2("@@id", k) == "5", SqlTekst.Sredi2("@@Id", k));
+            T("sredi-poslije-roba", SrediPoslije.Zamijeni("select @@robaid", "@robaid=5,", k, null, false) == "select 5", SrediPoslije.Zamijeni("select @@robaid", "@robaid=5,", k, null, false));
+            T("sredi-poslije-navodnik", SrediPoslije.Zamijeni("update t set n='@@naziv'", "@naziv='a¸¸b',", k, null, false) == "update t set n='a''b'", SrediPoslije.Zamijeni("update t set n='@@naziv'", "@naziv='a¸¸b',", k, null, false));
+            T("sredi-poslije-null", SrediPoslije.Zamijeni("select @@nema", "", k, null, false) == "select null", SrediPoslije.Zamijeni("select @@nema", "", k, null, false));
+            T("sredi-poslije-napomena", SrediPoslije.Zamijeni("select '@@napomena'", "", k, null, false) == "select ''", SrediPoslije.Zamijeni("select '@@napomena'", "", k, null, false));
+            string niz = SrediPoslije.Zamijeni("select @@nizplavihajdijevaX", "@nizplavihajdijevaX='~1~2~',", k, null, false);
+            T("sredi-poslije-ajdijeva", niz.IndexOf("1,2", StringComparison.Ordinal) >= 0 && niz.IndexOf("~", StringComparison.Ordinal) < 0, niz);
+            T("sredi-poslije-datum", SrediPoslije.Zamijeni("select @@datumod", "@datumod='20240201',", k, null, false) == "select '20240201'", SrediPoslije.Zamijeni("select @@datumod", "@datumod='20240201',", k, null, false));
+            var cb = new Dictionary<string, string>();
+            cb["tkosmomi"] = "Glavno";
+            cb["kolicina"] = "1,5";
+            T("sredi-poslije-cb", SrediPoslije.Zamijeni("@@tkosmomi", "", k, cb, false) == "Glavno"
+                && SrediPoslije.Zamijeni("@@kolicina", "", k, cb, false) == "1.5", SrediPoslije.Zamijeni("@@kolicina", "", k, cb, false));
+            T("gridrowcount-komentar", SrediPoslije.Zamijeni("@@GRIDROWCOUNT(g)", "", k, null, false) == "null(g)", SrediPoslije.Zamijeni("@@GRIDROWCOUNT(g)", "", k, null, false));
+            string dml = SrediPoslije.ZaSlanje("update t set a=@@naziv", "@naziv='K',", k, null);
+            T("za-slanje-dml", dml == "update t set a=K" && dml.IndexOf("@naziv=", StringComparison.Ordinal) < 0, dml);
+            string sp = SrediPoslije.ZaSlanje("spX", "@a=1,", k, null);
+            T("za-slanje-sp", sp.IndexOf("@a=1", StringComparison.Ordinal) >= 0, sp);
+            string gas = SrediPoslije.ZaSlanje("spX !!", "@a=1,", k, null);
+            T("za-slanje-uzvicnik", gas.IndexOf("@a", StringComparison.Ordinal) < 0 && gas.IndexOf("!!", StringComparison.Ordinal) < 0, gas);
+            string kol = SrediPoslije.Kolone("select @(stavke..naziv)", delegate (string g, string c) { return g == "stavke" && c == "naziv" ? "Kava" : "null"; });
+            T("kolone-grid", kol == "select Kava", kol);
+            var red = new DataTable();
+            red.Columns.Add("id", typeof(int));
+            red.Columns.Add("Naziv  ", typeof(string));
+            red.Columns.Add("Cijena0100", typeof(string));
+            red.Rows.Add(3, "A,B", "12");
+            string pg = DetailGrid.ParametriIzReda(red.Rows[0]);
+            T("parametri-grida", pg.IndexOf("@id='3'", StringComparison.Ordinal) >= 0
+                && pg.IndexOf("@Naziv='A,B'", StringComparison.Ordinal) >= 0
+                && pg.IndexOf("@Cijena='12'", StringComparison.Ordinal) >= 0
+                && pg.IndexOf("0100", StringComparison.Ordinal) < 0, pg);
         }
 
         private static void FiskalUuidSpin()

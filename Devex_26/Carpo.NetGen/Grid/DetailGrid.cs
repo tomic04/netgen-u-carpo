@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Text;
+using Carpo.NetGen.Komande;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
 
@@ -228,52 +229,7 @@ namespace Carpo.NetGen.Grid
 
         public static string ZamijeniOstatak(string sql, string parametri)
         {
-            if (sql == null)
-                return "";
-            int guard = 0;
-            while (sql.IndexOf("@@", StringComparison.Ordinal) >= 0 && guard < 40)
-            {
-                guard++;
-                int poc = sql.IndexOf("@@", StringComparison.Ordinal);
-                int kraj = sql.Length;
-                string ostatak = sql.Substring(poc);
-                char[] rez = { ' ', '\'', '%', '#', ',', ')', '*', '/', '\\', '+', '-', '.', '(', '=' };
-                for (int i = 0; i < rez.Length; i++)
-                {
-                    int p = ostatak.IndexOf(rez[i]);
-                    if (p >= 0 && poc + p < kraj)
-                        kraj = poc + p;
-                }
-                if (kraj <= poc)
-                    break;
-                string token = sql.Substring(poc, kraj - poc);
-                string vrijednost = Nadji(token, parametri);
-                sql = sql.Substring(0, poc) + vrijednost + sql.Substring(kraj);
-            }
-            return sql;
-        }
-
-        private static string Nadji(string token, string parametri)
-        {
-            string kljuc = (token ?? "").Trim();
-            if (kljuc.StartsWith("@@", StringComparison.Ordinal))
-                kljuc = "@" + kljuc.Substring(2);
-            if (string.IsNullOrEmpty(parametri) || kljuc.Length == 0)
-                return "";
-            string[] dijelovi = parametri.Split(',');
-            for (int i = 0; i < dijelovi.Length; i++)
-            {
-                string dio = dijelovi[i].Trim();
-                if (dio.Length < kljuc.Length)
-                    continue;
-                if (!dio.Substring(0, kljuc.Length).Equals(kljuc, StringComparison.OrdinalIgnoreCase))
-                    continue;
-                int eq = dio.IndexOf('=');
-                if (eq < 0)
-                    continue;
-                return dio.Substring(eq + 1).Trim();
-            }
-            return "";
+            return SrediPoslije.Petlja(sql, parametri, null, false);
         }
 
         private void Dodaj(string sql)
