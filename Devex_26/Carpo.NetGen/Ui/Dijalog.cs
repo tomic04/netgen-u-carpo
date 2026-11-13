@@ -122,6 +122,7 @@ namespace Carpo.NetGen.Ui
                     dugme.Tag = k.Atributi == null ? "" : (k.Atributi.Vrijednost("ONCLICK") ?? "");
                     dugme.Click += GumbKlik;
                 }
+                VeziDogadjaj(c, k);
                 if (m.Natpis)
                 {
                     var l = new LabelControl();
@@ -748,9 +749,78 @@ namespace Carpo.NetGen.Ui
                 if (n.Length == 0)
                     continue;
                 string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col]);
+                if (string.Equals((v ?? "").Trim(), "refresh", StringComparison.OrdinalIgnoreCase))
+                {
+                    NgControl def = NadjiKontrolu(col.ColumnName);
+                    if (def != null)
+                        NapuniKontrolu(n[0], def);
+                    continue;
+                }
                 var edit = n[0] as TextEdit;
                 if (edit != null && !(edit is LookUpEdit))
                     edit.Text = v;
+            }
+        }
+
+        private NgControl NadjiKontrolu(string ime)
+        {
+            if (_forma == null || _forma.Kontrole == null)
+                return null;
+            for (int i = 0; i < _forma.Kontrole.Count; i++)
+            {
+                if (string.Equals(_forma.Kontrole[i].Name, ime, StringComparison.OrdinalIgnoreCase))
+                    return _forma.Kontrole[i];
+            }
+            return null;
+        }
+
+        private readonly System.Collections.Generic.Dictionary<Control, string> _stariTekst = new System.Collections.Generic.Dictionary<Control, string>();
+
+        private static string Attr(NgControl k, string ime)
+        {
+            if (k == null || k.Atributi == null || !k.Atributi.Ima(ime))
+                return "";
+            return (k.Atributi.Vrijednost(ime) ?? "").Trim();
+        }
+
+        private void VeziDogadjaj(Control c, NgControl k)
+        {
+            string lost = Attr(k, "ONLOSTFOCUS");
+            string promjena = Attr(k, "ONCHANGE");
+            string vrijednost = Attr(k, "ONVALUECHANGED");
+            string klik = Attr(k, "ONCLICK");
+            if (k.Grana == NgGrana.Search)
+            {
+                c.Enter += delegate { _stariTekst[c] = c.Text ?? ""; };
+                c.Leave += delegate
+                {
+                    string stari;
+                    _stariTekst.TryGetValue(c, out stari);
+                    if (Ponasanje.PreskociTrazilicu(c.Text, stari) && (c.Text ?? "").Trim().Length == 0)
+                        c.Tag = "0";
+                    if (lost.Length > 0)
+                        IzvrsiSql(lost);
+                };
+            }
+            else if (lost.Length > 0)
+                c.Leave += delegate { IzvrsiSql(lost); };
+            if (k.Grana == NgGrana.Combo && klik.Length > 0)
+            {
+                var look = c as LookUpEdit;
+                if (look != null)
+                    look.EditValueChanged += delegate { IzvrsiSql(klik); };
+            }
+            if (k.Grana == NgGrana.Date && vrijednost.Length > 0)
+            {
+                var datum = c as DateEdit;
+                if (datum != null)
+                    datum.EditValueChanged += delegate { IzvrsiSql(vrijednost); };
+            }
+            if (promjena.Length > 0)
+            {
+                var tekst = c as TextEdit;
+                if (tekst != null && !(tekst is LookUpEdit) && !(tekst is DateEdit))
+                    tekst.TextChanged += delegate { IzvrsiSql(promjena); };
             }
         }
 

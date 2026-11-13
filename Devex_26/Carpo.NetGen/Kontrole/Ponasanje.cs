@@ -135,6 +135,17 @@ namespace Carpo.NetGen.Kontrole
             return "refresh";
         }
 
+        /// <summary>Form2.Glbl_Validated 5825–5841. Prazan tekst ili isti tekst koji nije * ne otvara Form3.</summary>
+        public static bool PreskociTrazilicu(string tekst, string stari)
+        {
+            string t = tekst ?? "";
+            if (t.Trim().Length == 0)
+                return true;
+            if (t == (stari ?? "") && t.Trim() != "*")
+                return true;
+            return false;
+        }
+
         public static string TrazilicaOblik(string sql)
         {
             if (string.IsNullOrWhiteSpace(sql))

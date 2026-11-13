@@ -1976,6 +1976,13 @@ namespace Carpo.NetGen.GridTest
             string odabrano;
             string ostatak;
             T("combo-hash", ComboDijalog.OdvojiHash("sql##7", out odabrano, out ostatak) && odabrano == "7" && ostatak == "sql", odabrano);
+            T("trazilica-preskok", Ponasanje.PreskociTrazilicu("", "x") && Ponasanje.PreskociTrazilicu("Kava", "Kava") && !Ponasanje.PreskociTrazilicu("*", "*") && !Ponasanje.PreskociTrazilicu("nova", "stara"), "");
+            var traz = new DataTable();
+            traz.Columns.Add("id", typeof(int));
+            traz.Columns.Add("Naziv0100", typeof(string));
+            traz.Rows.Add(4, "1,5");
+            string search = ParametriSvi.IzTrazilice(traz.Rows[0]);
+            T("trazilica-search", search.IndexOf("@SEARCHid", StringComparison.Ordinal) < 0 && search.IndexOf("@SEARCHNaziv='1.5'", StringComparison.Ordinal) >= 0, search);
         }
 
         private static void FiskalUuidSpin()

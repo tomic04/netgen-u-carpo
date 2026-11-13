@@ -39,6 +39,38 @@ namespace Carpo.NetGen.Komande
                 + "@rowcount" + n + "=" + redova.ToString() + ",";
         }
 
+        /// <summary>Form2.PokupiParametreIzTrazilice 5926–5953. Stupac 0 se preskače. Ime dobije SEARCH. Zadnje 4 znamenke koje nisu 0 otpadaju.</summary>
+        public static string IzTrazilice(System.Data.DataRow red)
+        {
+            if (red == null)
+                return "";
+            var sb = new StringBuilder();
+            for (int i = 1; i < red.Table.Columns.Count; i++)
+            {
+                System.Data.DataColumn c = red.Table.Columns[i];
+                string natpis = string.IsNullOrEmpty(c.Caption) ? c.ColumnName : c.Caption;
+                if (natpis.Length == 0)
+                    continue;
+                if (red[c] == null || red[c] == System.DBNull.Value)
+                    continue;
+                string ime = (c.ColumnName ?? "").Trim();
+                if (ime.Length >= 4)
+                {
+                    int n;
+                    if (int.TryParse(ime.Substring(ime.Length - 4), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out n) && n != 0)
+                        ime = ime.Substring(0, ime.Length - 4);
+                }
+                ime = ime.Replace(" ", "_");
+                string v = System.Convert.ToString(red[c]) ?? "";
+                string broj = v.Replace(",", ".");
+                double d;
+                if (double.TryParse(broj, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out d))
+                    v = broj;
+                sb.Append("@SEARCH").Append(ime).Append("='").Append(v).Append("' , ");
+            }
+            return sb.ToString();
+        }
+
         /// <summary>Tekst. Apostrof je ¸¸, zarez je ~~. Form2.vb 3656.</summary>
         public static string Tekst(string ime, string tekst)
         {

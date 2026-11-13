@@ -106,6 +106,63 @@ Redom iz `Form2.vb`. `nedostaje` znači da živo tijelo nema Carpo par. Komentir
 
 U ovom bloku: 32 isto, 18 nedostaje, 0 razlika. Portano u bloku: `NapuniKontroleZaEdit` (`combo-hash`), uz hijerarhiju, `SETDEFAULTS` i `ExecSql2` iz prethodnog podatkovnog sloja.
 
+## Form2, 51–100
+
+| # | NetGen | Carpo | Status | Test |
+|---|---|---|---|---|
+| 51 | `Glbl_Validated` 5820. Prazan tekst stavlja tag `0` i ne otvara Form3. Isti tekst koji nije `*` isto. Inače `Form3.Trazilica` | Prazan i isti tekst su `Ponasanje.PreskociTrazilicu`, `ONLOSTFOCUS` ide na `Leave`. Dijalog Form3 kad se tekst promijeni nema | nedostaje | `trazilica-preskok` |
+| 52 | `Glbl_Validated2` 5912. `ONLOSTFOCUS` samo ako keydown nije već odradio izlaz | `Leave` uvijek pokrene `ONLOSTFOCUS`. Zastavica keydowna nema | nedostaje | |
+| 53 | `PokupiParametreIzTrazilice` 5926. Od stupca 1, `@SEARCH` + ime, zadnje 4 znamenke | `ParametriSvi.IzTrazilice` | isto | `trazilica-search` |
+| 54 | `Glbl_TextChanged` 5958. `ONCHANGE` | `TextChanged` | isto | |
+| 55 | `Glbl_ValidatedCombo` 5962. `ONLOSTFOCUS` | `Leave` | isto | `DOS-05` |
+| 56 | `Glbl_ValidatedMultiDrop` 5968. Vodi `ErrorText`, ne `ONLOSTFOCUS` | `Leave` čita `ONLOSTFOCUS` | nedostaje | |
+| 57 | `GlblNumber_Validated` 5977. `ONLOSTFOCUS` | `Leave` | isto | |
+| 58 | `Glbl_Gotfocus` 5985. Pamti stari tekst i zove `Glbl_Gotfocus2` | `Enter` pamti tekst. `Gotfocus2` nije ovdje | nedostaje | `trazilica-preskok` |
+| 59 | `Glbl_popup` 5992. Tijelo je komentar | Nema | isto | |
+| 60 | `Glbl_KeyDown` 6016. Enter i tipke tražilice | Nema | nedostaje | |
+| 61 | `Glbl_TREE_BeforeSelect` 6103. Boja čvora u bijelo | Stablo ne boji čvor prije odabira | nedostaje | |
+| 62 | `Glbl_Click` 6108. `ONCLICK` kontrole, label i grid | Gumb i combo `ONCLICK` da. Label i grid klik ne | nedostaje | |
+| 63 | `GlblCHECK_Click` 6182. `Rafalno(Tag)` | Check nema klik na tag | nedostaje | |
+| 64 | `Glbl_DoubleClick` 6188. `ONDBLCLICK`, vrijednost u `TrenutnaVrijednost` | Nema na gridu dijaloga | nedostaje | |
+| 65 | `Glbl_ClickButton` 6221. Prazan tag ili `help` otvara help, inače `Rafalno(tag)` | Gumb ide u `GumbKlik`. Help nema | nedostaje | |
+| 66 | `UpaliProgres` 6234. Marquee | Nema trake napretka na dijalogu | nedostaje | |
+| 67 | `UgasiProgres` 6240 | Isto | nedostaje | |
+| 68 | `Fiskalizacija` 6247 | `FiskalTok`, samo testni CIS | isto | `fiskal-izvrsi-test` |
+| 69 | `PoslovniProstor` 6578. Zove COM inačicu, stari Raverus blok je komentar | `ProstorNaredba` prepoznaje naredbu | isto | |
+| 70 | `PoslovniProstor_COM` 6618 | Nema COM objekta | nedostaje | |
+| 71 | `Rafalno` 6789 | `DijalogTok` i `GumbKlik` | isto | `dijalog-ostaje` |
+| 72 | `FiskalizacijaNapojnica` 7527 | `FiskalTok` bira `spMPXMLGetNapojnicaZahtijev` | isto | |
+| 73 | `PosaljiZPorukeEEEEEnaServer` 7727 | `PosaljiServer` vrsta poruka | isto | |
+| 74 | `PosaljiPorukunaServer` 7750. POST text/xml, timeout 3000 | `PosaljiServer.Post` | isto | |
+| 75 | `PosaljiZakljuckEEEEEnaServer` 7804 | `PosaljiServer` vrsta zakljucak | isto | |
+| 76 | `PosaljiZakljucaknaServer` 7845 | Isti POST | isto | |
+| 77 | `SpremiResponse` 7900. Piše `PosaljiZakljucaknaServerResponse.txt` | Nema datoteke odgovora | nedostaje | |
+| 78 | `SpremiRacunResponse` 7909. Piše `PosaljiRacunnaServerResponse.txt` | Nema | nedostaje | |
+| 79 | `ProvjeraDostupnosti` 7919. `WebClient` na authority | Nema probe prije slanja | nedostaje | |
+| 80 | `PosaljiRacunEEEEEnaServer` 7936 | `PosaljiServer` vrsta racun | isto | |
+| 81 | `PosaljiRacunnaServer` 7974 | `PosaljiServer.UrlRacuna` i POST | isto | |
+| 82 | `PosaljiSamoJIRServer` 8097. `spmpDajRacuneWS @action=2` i POST `<doc></doc>` | Nema posebnog JIR slanja | nedostaje | |
+| 83 | `RecalcGrid` 8219 | `RecalcGrid.Izracunaj` | isto | `recalc-red` |
+| 84 | `RecalcGridRow` 8264 | `RecalcGrid.IzracunajRed` | isto | `recalc-red` |
+| 85 | `EvaluateSTR` 8286 | `Izraz` | isto | `izraz-ilcalc` |
+| 86 | `ForEachRow` 8310 | `ForeachNaredba` | isto | `foreach-podloga` |
+| 87 | `ForEachSelected` 8337 | Isto | isto | |
+| 88 | `ForEachBlueRow` 8363 | Isto | isto | |
+| 89 | `MultiSelectedPrintPriprema` 8404 | `DijalogTok` vrsta `priprema` | isto | |
+| 90 | `SrediSQLsaKolonamaizGrida` 8440 | `SrediPoslije.Kolone` | isto | `kolone-grid` |
+| 91 | `NadjiVrijednostuGridu` 8459 | Isti poziv, vrijednost daje pozivatelj | isto | `kolone-grid` |
+| 92 | `Glbl_ComboClick` 8497. `ONCLICK` | `LookUpEdit.EditValueChanged` | isto | |
+| 93 | `Timer1_Tick` 8510. Vrati fokus i ugasi timer | Nema | nedostaje | |
+| 94 | `Glbl_DateTime_ValueChanged` 8518. `ONVALUECHANGED` | `DateEdit.EditValueChanged` | isto | |
+| 95 | `Glbl_EditingCell` 8532. Pamti staru vrijednost prije editiranja | Nema | nedostaje | |
+| 96 | `Glbl_CellEdited` 8616. SQL nakon izmjene ćelije | Nema na dijalog gridu | nedostaje | |
+| 97 | `Glbl_GridMouseUp` 8695. Desni klik, izbornik | Nema | nedostaje | |
+| 98 | `Glbl_TreeMouseUp` 8859. Desni klik stabla | Nema | nedostaje | |
+| 99 | `ToolStripMenuItem1_Click` 8897 | Nema izbornika | nedostaje | |
+| 100 | `IspisNovi` 9006. Janus `GridExPrinting`, ne PrintLink | Ispis ide kroz `PageHeaderFooter` | razlika | `ispis-zaglavlje` |
+
+U ovom bloku: 26 isto, 23 nedostaje, 1 razlika (`IspisNovi` ostaje na DevExpress ispisu, Janus `GridExPrinting` se ne vraća). Portano: preskok tražilice, `@SEARCH` parametri, `ONLOSTFOCUS` / `ONCHANGE` / `ONVALUECHANGED` / combo `ONCLICK`, i riječ `refresh` ponovo čita SQL kontrole.
+
 ## Što je portano
 
 `SrediSQL2`, `SrediSQLPosljeNextForme`, `NadjiVrijednostuPrevParametrima`, `SrediSQLsaKolonamaizGrida`, hijerarhijski parametri, `SETDEFAULTS` clipboard prije master SQL-a i `ExecSql2` / `spNetGenErrorLog`.
