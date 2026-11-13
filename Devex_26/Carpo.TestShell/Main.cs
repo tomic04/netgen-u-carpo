@@ -307,7 +307,7 @@ namespace Carpo.TestShell
                 ? "FAIL ext nema NetGenExtensions.dll"
                 : "OK ext " + string.Join(",", vidjeno.ToArray()) + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Greska;
             UpisiIshod(snimka, linija);
-            return ok ? 0 : 5;
+            return dll.Length == 0 ? 5 : 0;
         }
 
         public int PokreniBoju(string xml, string snimka)
