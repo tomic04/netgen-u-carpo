@@ -937,6 +937,7 @@ namespace Carpo.NetGen.Ui
                     if (upis && _testId.Length > 0)
                     {
                         _master.Kontekst.Id = _testId;
+                        _master.Kontekst.Node = _testId;
                         if (_master.Kontekst.ParametriSaGrida.IndexOf("@statusiid=", StringComparison.OrdinalIgnoreCase) < 0)
                             _master.Kontekst.ParametriSaGrida += "@statusiid='" + _testId + "' , ";
                     }
@@ -1171,6 +1172,10 @@ namespace Carpo.NetGen.Ui
             if (sql.Length == 0)
                 sql = PoslanoKoje("spZupanijeAzur");
             if (sql.Length == 0)
+                sql = PoslanoKoje("spPrnVrstaTroskaAzur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spKlRobaWebKlase_Azur");
+            if (sql.Length == 0)
                 sql = _zadnjiSql ?? "";
             if (sql.Length == 0)
                 return "";
@@ -1249,6 +1254,15 @@ namespace Carpo.NetGen.Ui
                 return ProvjeriNaziv("PrnVrstaTroska", "PrnVrstaTroskaId", tekst, false);
             if (sql.IndexOf("spPrnVrstaTroskaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "2"))
                 return ProvjeriObrisano("PrnVrstaTroska", "PrnVrstaTroskaId");
+            if (sql.IndexOf("spKlRobaWebKlase_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("'INSERT'", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriNaziv("KlRobaWebKlase", "KlRobaWebKlaseId", tekst, true);
+            if (sql.IndexOf("spKlRobaWebKlase_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("'UPDATE'", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriNaziv("KlRobaWebKlase", "KlRobaWebKlaseId", tekst, false);
+            if (sql.IndexOf("spKlRobaWebKlase_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("'DELETE'", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriObrisano("KlRobaWebKlase", "KlRobaWebKlaseId");
             return "poslano: " + sql;
         }
 
