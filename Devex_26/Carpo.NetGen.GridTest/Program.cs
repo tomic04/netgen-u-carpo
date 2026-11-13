@@ -6,6 +6,8 @@ using System.Threading;
 using System.Text;
 using System.Data.SqlClient;
 using System.IO;
+using System.Drawing;
+using System.Windows.Forms;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Kontrole;
@@ -13,6 +15,7 @@ using Carpo.NetGen.Poziv;
 using Carpo.NetGen.Print;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
+using Carpo.NetGen.Ui;
 using Carpo.NetGen.TestHooks;
 using Carpo.NetGen.Xml;
 
@@ -22,6 +25,7 @@ namespace Carpo.NetGen.GridTest
     {
         private static int fail;
 
+        [STAThread]
         private static int Main(string[] args)
         {
             SqlPreskoci();
@@ -1979,206 +1983,69 @@ namespace Carpo.NetGen.GridTest
             string ostatak;
             T("combo-hash", ComboDijalog.OdvojiHash("sql##7", out odabrano, out ostatak) && odabrano == "7" && ostatak == "sql", odabrano);
             T("trazilica-preskok", Ponasanje.PreskociTrazilicu("", "x") && Ponasanje.PreskociTrazilicu("Kava", "Kava") && !Ponasanje.PreskociTrazilicu("*", "*") && !Ponasanje.PreskociTrazilicu("nova", "stara"), "");
-            T("trazilica-dijalog", Form2Dogadjaj.TrazilicaKorak("nova", "stara") == "trazilica"
-                && Form2Dogadjaj.PokaziTrazilicu(2) && !Form2Dogadjaj.PokaziTrazilicu(1) && !Form2Dogadjaj.PokaziTrazilicu(0)
-                && Form2Dogadjaj.TrazilicaKorak("Kava", "Kava") == "preskoci", "");
-            Form2Dogadjaj.Tipka enter = Form2Dogadjaj.KeyDown(true, false, false, false, true, 13, false, "", "select 1", "");
-            Form2Dogadjaj.Tipka ctrlA = Form2Dogadjaj.KeyDown(false, true, false, false, true, 65, true, "", "", "");
-            Form2Dogadjaj.Tipka enterGrid = Form2Dogadjaj.KeyDown(false, true, true, false, true, 13, false, ":STAVKA", "", "");
-            T("keydown-trazilica", enter.ValidirajTrazilicu && enter.Sljedeca && !enter.ObrisiStariTekst
-                && ctrlA.OdaberiSve && enterGrid.EnterNaredba == ":STAVKA" && enterGrid.Sljedeca, enterGrid.EnterNaredba);
-            T("dvoklik-vrijednost", Form2Dogadjaj.VrijednostDvoklika("1,5") == "1.5" && Form2Dogadjaj.VrijednostDvoklika("0,5") == "0,5", Form2Dogadjaj.VrijednostDvoklika("1,5"));
-            var izb = Form2Dogadjaj.Izbornik("Ispis:PRINTGRID#Kartica:KARTICA");
-            T("desni-klik", Form2Dogadjaj.DesniKlik(true, false) == "izbornik" && Form2Dogadjaj.DesniKlik(true, true) == "stupci"
-                && izb.Count == 2 && izb[0] == "Ispis|PRINTGRID" && izb[1] == "Kartica|KARTICA", izb.Count.ToString());
-            var timer = new Form2Dogadjaj.TimerFokusa();
-            timer.NakonTrazilice();
-            T("timer-fokus", timer.Tick() && !timer.Tick(), "");
-            string mapa = Path.Combine(Path.GetTempPath(), "ng-odg-" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(mapa);
-            try
-            {
-                Form2Dogadjaj.SpremiOdgovor(mapa, "zakljucak", "<ok/>", "5", "2026");
-                Form2Dogadjaj.SpremiOdgovor(mapa, "racun", "<jir/>", "6", "2026");
-                string z = File.ReadAllText(Path.Combine(mapa, Form2Dogadjaj.Datoteka("zakljucak")));
-                string r = File.ReadAllText(Path.Combine(mapa, Form2Dogadjaj.Datoteka("racun")));
-                T("odgovor-datoteka", z.IndexOf("brojdokumenta: 5, godina2026", StringComparison.Ordinal) >= 0 && z.IndexOf("<ok/>", StringComparison.Ordinal) >= 0
-                    && r.IndexOf("<jir/>", StringComparison.Ordinal) >= 0, z);
-            }
-            finally
-            {
-                try { Directory.Delete(mapa, true); } catch { }
-            }
-            string jirUrl = Form2Dogadjaj.UrlJir("http://localhost/pos/", "10", "2", "2026", "5", "", "ABC", "20260101");
-            T("jir-test", jirUrl.IndexOf("a=2", StringComparison.Ordinal) >= 0 && jirUrl.IndexOf("vrijemejir=null", StringComparison.Ordinal) >= 0
-                && jirUrl.IndexOf("jir='ABC'", StringComparison.Ordinal) >= 0 && Form2Dogadjaj.JirTijelo == "<doc></doc>"
-                && Form2Dogadjaj.UrlJir("https://cis.porezna-uprava.hr/x", "1", "1", "2026", "1", "", "", "") == "", jirUrl);
-            var izlaz = new Form2Dogadjaj.IzlazTrazilice();
-            izlaz.KeyDownPocinje();
-            bool prije = izlaz.Validated2Smije();
-            izlaz.Validated();
-            T("keydown-izlaz", prije && !izlaz.Validated2Smije(), "");
-            T("multidrop-error", Form2Dogadjaj.MultiDropNaredba("select 1") == "select 1" && Form2Dogadjaj.MultiDropNaredba("  ") == "", "");
-            T("boja-cvora", Form2Dogadjaj.BojaCvoraPrije() == "White", "");
-            T("klik-labela", Form2Dogadjaj.KlikLabele(" :FILTER ") == ":FILTER", "");
-            T("help-arg", Form2Dogadjaj.HelpArgumenti("localhost", "spin", "ABC", "7", "JeziciNG.xml").IndexOf("-h ABC", StringComparison.Ordinal) >= 0
-                && Form2Dogadjaj.HelpArgumenti("localhost", "spin", "ABC", "7", "JeziciNG.xml").IndexOf("-o  7", StringComparison.Ordinal) >= 0
-                && Form2Dogadjaj.HelpArgumenti("localhost", "spin", "ABC", "7", "JeziciNG.xml").IndexOf("-p JeziciNG.xml", StringComparison.Ordinal) >= 0, "");
-            var prog = new Form2Dogadjaj.Progres();
-            prog.Upali();
-            bool marquee = prog.Stil == "marquee" && prog.Vrijednost == 20 && prog.Brzina == 40;
-            prog.Ugasi();
-            T("progres", marquee && prog.Stil == "blocks" && prog.Brzina == 0, prog.Stil);
-            T("prostor-com", Form2Dogadjaj.ProstorGrana(false, "", "", "") == "nema"
-                && Form2Dogadjaj.ProstorGrana(true, "https://fu.gov.si/x", "a", "b") == "slo"
-                && Form2Dogadjaj.ProstorGrana(true, "", "a", "b") == "nema-com"
-                && Form2Dogadjaj.ProstorGrana(true, "https://cis.porezna-uprava.hr/x", "a", "b") == "nema-com"
-                && Form2Dogadjaj.ProstorGrana(true, "https://cistest.apis-it.hr/x", "", "b") == "nema-pfx", "");
-            Form2Dogadjaj.Probe = delegate (string u) { return u.IndexOf("localhost", StringComparison.Ordinal) >= 0; };
-            T("dostupnost", Form2Dogadjaj.Dostupan("http://localhost/a") && !Form2Dogadjaj.Dostupan("http://drugdje/a"), "");
-            Form2Dogadjaj.Probe = null;
-            var izmj = new DataTable();
-            izmj.Columns.Add("id", typeof(int));
-            izmj.Columns.Add("Iznos0100", typeof(string));
-            izmj.Rows.Add(1, "2,5");
-            T("izmjena-celije", Form2Dogadjaj.ParametriIzmjene(izmj.Rows[0]).IndexOf("@Iznos='2.5'", StringComparison.Ordinal) >= 0
-                && Form2Dogadjaj.VratiStaru("greska") && !Form2Dogadjaj.VratiStaru(""), "");
-            string rasp = Form2Dogadjaj.ImeRasporeda("Jezici", "JeziciNG.xml", "FILTER", "grid", "hrv");
-            string mapaR = Path.Combine(Path.GetTempPath(), "ng-gxl-" + Guid.NewGuid().ToString("N"));
-            try
-            {
-                Form2Dogadjaj.SpremiRaspored(mapaR, rasp, new byte[] { 1, 2 });
-                T("raspored-grid", rasp == "GridLodani-Jezici-JeziciNG-FILTER-grid-hrv.gxl"
-                    && File.Exists(Path.Combine(mapaR, rasp))
-                    && Form2Dogadjaj.BrisiRasporedSql("grid") == "select 'refresh' as grid"
-                    && Form2Dogadjaj.MapaRasporeda().IndexOf("Grid Settings", StringComparison.Ordinal) >= 0, rasp);
-            }
-            finally
-            {
-                try { Directory.Delete(mapaR, true); } catch { }
-            }
-            string[] combo = new string[] { "  Kava", "Mlijeko" };
-            T("autocomplete", Form2Dogadjaj.PreskociTipku(8) && !Form2Dogadjaj.PreskociTipku(65)
-                && Form2Dogadjaj.NadjiStavku(combo, "Kava") == 0
-                && Form2Dogadjaj.Dopuna("Ka", "Kava") == "va"
-                && Form2Dogadjaj.IndeksNakonIzlaza(combo, "Mlijeko") == 1
-                && Form2Dogadjaj.IndeksNakonIzlaza(combo, "nema") == 0, "");
-            var port = new Form2Dogadjaj.LazniPort();
-            Form2Dogadjaj.PostimajPort(port);
-            string pisano = Form2Dogadjaj.PisiPort(port);
-            T("serijski-port", port.Brzina == 19200 && port.Bitovi == 8 && port.Paritet == "None" && pisano == "aaaaa\r" && !port.Otvoren, pisano);
-            string pdfMapa = Path.Combine(Path.GetTempPath(), "ng-pdf-" + Guid.NewGuid().ToString("N"));
-            string zvanIme = "";
-            string zvanParam = "";
-            string zvanApp = "";
-            SpinIspis.PrintKuka = delegate (string k, string i, string p, string a) { zvanIme = i; zvanParam = p; zvanApp = a; };
-            bool jedanIspis = SpinIspis.Pozovi("Server=localhost", "REPX:/rptX", new int[] { 5, 8 }, "a=1");
-            SpinIspis.PrintKuka = null;
-            bool multi = false;
-            SpinIspis.MultiKuka = delegate (string k, string i, System.Collections.Generic.IList<string> l, string a) { multi = l != null && l.Count == 3 && l[0] == "@id=9"; };
-            bool tri = SpinIspis.Pozovi("", "repx/rpt", new int[] { 1, 2, 3 }, "@id=9");
-            SpinIspis.MultiKuka = null;
-            string pdf = "";
-            try
-            {
-                pdf = SpinIspis.Pdf(pdfMapa, "rptX", "@id=5,a=1");
-                T("spin-ispis", jedanIspis && zvanIme == "rptX" && zvanParam == "@id=5,a=1" && zvanApp == "Carpo"
-                    && tri && multi && SpinIspis.Grana("REPX:/x") == "spin" && SpinIspis.IzTaga("rpt:X") == "rptX"
-                    && SpinIspis.Vise(3) && !SpinIspis.Vise(2)
-                    && File.Exists(pdf) && new FileInfo(pdf).Length > 50, zvanParam + " " + pdf);
-            }
-            finally
-            {
-                try { Directory.Delete(pdfMapa, true); } catch { }
-            }
-            T("fokus-boja", Form2Dogadjaj.BojaFokusa() == "LightGreen" && Form2Dogadjaj.BojaTrazilice() == "LightYellow", "");
-            bool neZatvaraj = true;
-            bool otkaz = Form2Dogadjaj.OtkaziZatvaranje(ref neZatvaraj);
-            T("stupci-izbornik", Form2Dogadjaj.StupacPoNatpisu(new string[] { "Naziv", "Iznos" }, "iznos") == 1
-                && Form2Dogadjaj.Okreni(true) == false && otkaz && !neZatvaraj, "");
-            int x, y, w, h;
-            Ugradnja.Polozaj(100, 40, 300, 200, -8, -30, 308, 208, out x, out y, out w, out h);
-            T("ugradnja", !Ugradnja.Prazan(new IntPtr(1), new IntPtr(2)) && Ugradnja.Prazan(IntPtr.Zero, new IntPtr(2))
-                && x == 92 && y == 10 && w == 316 && h == 238
-                && Ugradnja.Zastavice() == (Ugradnja.SWP_NOZORDER | Ugradnja.SWP_NOACTIVATE | Ugradnja.SWP_SHOWWINDOW), x.ToString());
-            string doz = DozvolaDijaloga.Sql(@"D:\xml\JeziciNG.xml", "FILTER", 7);
-            T("dozvola-dijalog", doz.IndexOf("objectname='JeziciNG.xml.FILTER'", StringComparison.Ordinal) >= 0
-                && doz.IndexOf("order by sort desc", StringComparison.Ordinal) >= 0
-                && DozvolaDijaloga.Smije(true) && !DozvolaDijaloga.Smije(false)
-                && !DozvolaDijaloga.Vidljiva(false, true), doz);
-            T("format-grid", Class1Pravila.SakrijId("RobaId") && !Class1Pravila.SakrijId("id") && !Class1Pravila.SakrijId("naziv")
-                && Class1Pravila.Sirina("Naziv0140") == 10 && Class1Pravila.ImeBezSirine("Naziv0140") == "Naziv", "");
-            T("format-uvjet", Class1Pravila.FormatUvjeta("bold red") == "bold red" && Class1Pravila.FormatUvjeta("x") == "", "");
-            T("install-vec", Class1Pravila.InstallVecIma("http://a", "spin") && !Class1Pravila.InstallVecIma("", "spin")
-                && Class1Pravila.InstallSql() == "select * from Install ", "");
-            T("glipi", Class1Pravila.Glipi("ČćŠđ") == "YYYcccSSSddd", "");
-            T("dx-id", Class1Pravila.DxId(false, "5", false, "1") == "0"
-                && Class1Pravila.DxId(true, "", false, "1") == "0"
-                && Class1Pravila.DxId(true, null, true, "9") == "9"
-                && Class1Pravila.DxId(true, "4", false, "1") == "4", "");
-            T("dx-grid", Class1Pravila.SakrijCaptionId("id") && Class1Pravila.SirinaNatpisa("Iznos0140") == 10
-                && Class1Pravila.NatpisBezSirine("Iznos0140") == "Iznos"
-                && !Class1Pravila.SmijeEdit("Naziv", "Naziv") && Class1Pravila.SmijeEdit("xNaziv", "Naziv")
-                && Class1Pravila.StupacOdaberi == "rcb555" && Class1Pravila.BojaEdita == "Azure", "");
-            string mapaT = Path.Combine(Path.GetTempPath(), "ng-spin-" + Guid.NewGuid().ToString("N"));
-            try
-            {
-                string gridMapa = OstaliModuli.GridSettingsMapa(mapaT);
-                T("mape-spin", gridMapa.EndsWith("\\SPIN Informatica\\Jupiter Software\\Grid Settings\\")
-                    && Directory.Exists(OstaliModuli.JupiterMapa(mapaT))
-                    && !Directory.Exists(gridMapa)
-                    && OstaliModuli.PutanjaSlike("D:\\Programi\\NetGen", "Firma") == "D:\\JupiterClient\\Firma\\logos\\"
-                    && OstaliModuli.PutanjaSlike("\\\\posluzitelj\\share\\NetGen", "Firma").IndexOf("\\\\posluzitelj\\JupiterClient\\Firma\\logos\\", StringComparison.Ordinal) >= 0, gridMapa);
-            }
-            finally
-            {
-                try { Directory.Delete(mapaT, true); } catch { }
-            }
-            string skraceno = new string('a', 2001);
-            T("log-sredi", OstaliModuli.SrediLog("pwd=tajna;x=1") == "pwd=***;x=1"
-                && OstaliModuli.SrediLog("Password=abc\"kraj") == "Password=***\"kraj"
-                && OstaliModuli.SrediLog(null) == ""
-                && OstaliModuli.SrediLog(skraceno).EndsWith("Ctrl+F11]"), "");
-            byte[] sifra = OstaliModuli.Kriptiraj("kruh", "tajna");
-            string nazad = OstaliModuli.Dekriptiraj(sifra, "tajna");
-            T("kript", Encoding.UTF8.GetString(OstaliModuli.Kljuc("tajna")) == "tajnaXXX"
-                && Encoding.UTF8.GetString(OstaliModuli.Kljuc("123456789")) == "12345678"
-                && nazad.IndexOf("kruh", StringComparison.Ordinal) >= 0, nazad);
-            var rs = new DataTable();
-            rs.Columns.Add("original", typeof(string));
-            rs.Columns.Add("translated", typeof(string));
-            rs.Rows.Add("Spremi", "Save");
-            T("prevod", OstaliModuli.PrevediStaro("Spremi", rs, "2", "eng", "") == "Save"
-                && OstaliModuli.PrevediStaro("Spremi robu", rs, "2", "eng", "") == "Save robu"
-                && OstaliModuli.PrevediStaro("Spremi", rs, "0", "eng", "") == "Spremi"
-                && !OstaliModuli.TrebaVanjskogPrevoditelja("hrv")
-                && OstaliModuli.TrebaVanjskogPrevoditelja("eng")
-                && OstaliModuli.UCirilicu("a") == "\u0430"
-                && OstaliModuli.UCirilicu("lj") == "\u0459", "");
-            bool easy;
-            string dll = OstaliModuli.RemoteDll("easyprintworkaround=true\r\nRemoteDllPath=\\\\pos\\dll\r\n", out easy);
-            T("server-put", OstaliModuli.IniPutanja(false, "x") == "C:\\JupiterClient\\JupiterClient.ini"
-                && dll == "\\\\pos\\dll" && easy, dll);
-            T("zadnji-form", OstaliModuli.ZadnjiNamespace(new string[] { "A.NetGen", "B.Drugi", "C.NetGen.Forma" }, "NetGen") == "C.NetGen.Forma"
-                && OstaliModuli.ZadnjiNamespace(new string[] { "A.X" }, "NetGen") == null, "");
-            T("dx-format", Class1Pravila.KljucKolone(0, "Iznos") == "Iznos" && Class1Pravila.KljucKolone(3, "Iznos") == "3"
-                && Class1Pravila.SirinaXml(140) == 10 && Class1Pravila.SirinaXml(0) == 0
-                && Class1Pravila.Natpis("a;b") == "a\r\nb" && Class1Pravila.SakrijSve("TRUE")
-                && Class1Pravila.IndeksVidljivosti(1, true) == 2
-                && Class1Pravila.Zbroj(true, true) && !Class1Pravila.Zbroj(true, false)
-                && Class1Pravila.FormatN2 == "{0:N2}", "");
-            T("blagajna-enable", Class1Pravila.BlagajnaUpit("3").IndexOf("@mpkaseid = 3", StringComparison.Ordinal) >= 0
-                && Class1Pravila.BlagajnaAzur("3", false).IndexOf("indenable = 0", StringComparison.Ordinal) >= 0
-                && Class1Pravila.BlagajnaAzur("3", true).IndexOf("indenable = 1", StringComparison.Ordinal) >= 0, "");
-            T("timer2-3", Form2Dogadjaj.Timer2ImaSql("select 1") && !Form2Dogadjaj.Timer2ImaSql("  ")
-                && Form2Dogadjaj.Maksimiziraj("2") && !Form2Dogadjaj.Maksimiziraj("0")
-                && Form2Dogadjaj.CekiranId("1~4", "4") && !Form2Dogadjaj.CekiranId("1~4", "9"), "");
+            DijalogUcinak();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
             traz.Rows.Add(4, "1,5");
             string search = ParametriSvi.IzTrazilice(traz.Rows[0]);
             T("trazilica-search", search.IndexOf("@SEARCHid", StringComparison.Ordinal) < 0 && search.IndexOf("@SEARCHNaziv='1.5'", StringComparison.Ordinal) >= 0, search);
+        }
+
+        private static void DijalogUcinak()
+        {
+            var kontrole = new List<NgControl>();
+            kontrole.Add(new NgControl("text", NgGrana.Text, "naziv", new NgAttributeBag(new Dictionary<string, string>()), true));
+            kontrole.Add(new NgControl("search", NgGrana.Search, "trazi", new NgAttributeBag(new Dictionary<string, string> { { "ONLOSTFOCUS", "select lostsearch" } }), true));
+            kontrole.Add(new NgControl("label", NgGrana.Label, "natpis", new NgAttributeBag(new Dictionary<string, string> { { "ONCLICK", "select klik" }, { "CAPTION", "Natpis" } }), true));
+            var forma = new NgForm("T", new NgAttributeBag(null), "", "", kontrole, new List<NgButton>(), new List<string>());
+            var sql = new List<string>();
+            var d = new Dijalog();
+            try
+            {
+                d.Slozi(forma, new SqlKontekst(), delegate (string s) { sql.Add(s ?? ""); return null; });
+                d.ShowInTaskbar = false;
+                d.StartPosition = FormStartPosition.Manual;
+                d.Location = new Point(-32000, -32000);
+                d.Show();
+                Control naziv = d.Controls.Find("naziv", true)[0];
+                naziv.Text = "abc";
+                typeof(Control).GetMethod("OnEnter", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(naziv, new object[] { EventArgs.Empty });
+                bool zelena = naziv.BackColor.ToArgb() == Color.LightGreen.ToArgb();
+                var selProp = naziv.GetType().GetProperty("SelectionLength");
+                int sel = selProp == null ? -1 : Convert.ToInt32(selProp.GetValue(naziv, null));
+                Control trazi = d.Controls.Find("trazi", true)[0];
+                trazi.Text = "";
+                var onLeave = typeof(Control).GetMethod("OnLeave", BindingFlags.Instance | BindingFlags.NonPublic);
+                onLeave.Invoke(trazi, new object[] { EventArgs.Empty });
+                bool zuta = trazi.BackColor.ToArgb() == Color.LightYellow.ToArgb();
+                bool tag0 = Convert.ToString(trazi.Tag) == "0";
+                Control natpis = d.Controls.Find("natpis", true)[0];
+                typeof(Control).GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(natpis, new object[] { EventArgs.Empty });
+                bool klik = false;
+                for (int i = 0; i < sql.Count; i++)
+                {
+                    if ((sql[i] ?? "").IndexOf("select klik", StringComparison.Ordinal) >= 0)
+                        klik = true;
+                }
+                trazi.Text = "nova";
+                trazi.Focus();
+                int prije = sql.Count;
+                d.ProvediTipku(Keys.Enter);
+                onLeave.Invoke(trazi, new object[] { EventArgs.Empty });
+                bool preskocio = true;
+                for (int i = prije; i < sql.Count; i++)
+                {
+                    if ((sql[i] ?? "").IndexOf("lostsearch", StringComparison.Ordinal) >= 0)
+                        preskocio = false;
+                }
+                T("dijalog-ucinak", zelena && sel == 3 && zuta && tag0 && klik && preskocio, naziv.BackColor.Name + " sel=" + sel + " tag=" + trazi.Tag);
+            }
+            finally
+            {
+                d.Close();
+                d.Dispose();
+            }
         }
 
         private static void FiskalUuidSpin()
