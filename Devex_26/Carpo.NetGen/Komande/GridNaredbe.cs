@@ -215,6 +215,7 @@ namespace Carpo.NetGen.Komande
         public const string ChartMetoda = "ChartGRID";
         public const string PivotMetoda = "PivotGRID";
         public const string IspisKlasa = "NetGenExtensions.frmGridExPrintingREPX";
+        public static Form Zadnja;
 
         /// <summary>
         /// Form1.vb 5988 i Form2.vb 9044, 9065, 9088: Assembly.Load("NetGenExtensions").
@@ -255,6 +256,23 @@ namespace Carpo.NetGen.Komande
             {
                 return "greska " + ex.Message;
             }
+        }
+
+        /// <summary>Isti Assembly.LoadFrom kao NetGen Assembly.Load("NetGenExtensions"). Vraća otvorenu formu.</summary>
+        public static Form Prikazi(string vrsta)
+        {
+            string put = Nadji();
+            if (put.Length == 0)
+                return null;
+            System.Reflection.Assembly a = System.Reflection.Assembly.LoadFrom(put);
+            string klasa = vrsta == "pivot" ? PivotKlasa : vrsta == "chart" ? ChartKlasa : IspisKlasa;
+            object o = a.CreateInstance(klasa);
+            var f = o as Form;
+            Zadnja = f;
+            if (f == null)
+                return null;
+            f.Show();
+            return f;
         }
     }
 }

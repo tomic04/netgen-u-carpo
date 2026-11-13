@@ -211,6 +211,8 @@ namespace Carpo.NetGen.Komande
                     k.Vrsta = "foreach";
                     k.Tekst = ForeachNaredba.Vrsta(t) + "|" + ForeachNaredba.Grid(t) + "|" + tijelo;
                 }
+                else if (u.IndexOf("BEEP()", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "beep";
                 else if (u.IndexOf("MSGBOX(", StringComparison.Ordinal) >= 0)
                 {
                     k.Vrsta = "poruka";
@@ -236,6 +238,8 @@ namespace Carpo.NetGen.Komande
                     k.Vrsta = "toggle";
                 else if (u.IndexOf("PREPAREMULTISELECTEDPRINT(", StringComparison.Ordinal) >= 0)
                     k.Vrsta = "priprema";
+                else if (u.IndexOf("PRINTREPXGRID(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "ispisext";
                 else if (u.IndexOf("PIVOTGRID(", StringComparison.Ordinal) >= 0)
                     k.Vrsta = "pivot";
                 else if (u.IndexOf("CHARTGRID(", StringComparison.Ordinal) >= 0)

@@ -264,6 +264,53 @@ namespace Carpo.TestShell
         /// <summary>
         /// Isti klik na Start kao korisnik. Ne spaja GranulaSesija.
         /// </summary>
+        public int PokreniEkstenzije(string xml, string snimka)
+        {
+            var r = Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(xml);
+            Carpo.NetGen.Model.NgForm forma = null;
+            if (r.Projekt != null && r.Projekt.Forme != null)
+            {
+                for (int i = 0; i < r.Projekt.Forme.Count; i++)
+                {
+                    if (string.Equals(r.Projekt.Forme[i].Ime, "EXT_FORM", StringComparison.OrdinalIgnoreCase))
+                        forma = r.Projekt.Forme[i];
+                }
+            }
+            if (forma == null)
+            {
+                UpisiIshod(snimka, "FAIL nema EXT_FORM");
+                return 5;
+            }
+            var vidjeno = new List<string>();
+            Dijalog.NakonPrikaza = delegate (Dijalog d)
+            {
+                string[] gumbi = new[] { "Pivot", "Graf", "Ispis" };
+                for (int i = 0; i < gumbi.Length; i++)
+                {
+                    SimpleButton gumb = NadjiGumb(d, gumbi[i]);
+                    if (gumb != null)
+                        gumb.PerformClick();
+                    Form f = Carpo.NetGen.Komande.EkstenzijaGrid.Zadnja;
+                    if (f != null && !f.IsDisposed)
+                    {
+                        vidjeno.Add(f.GetType().FullName ?? "");
+                        try { f.Close(); } catch { }
+                    }
+                }
+                try { d.Close(); } catch { }
+            };
+            var dij = new Dijalog();
+            dij.Prikazi(forma, new Carpo.NetGen.Grid.SqlKontekst(), delegate (string sql) { return new DataTable(); }, true, this);
+            Dijalog.NakonPrikaza = null;
+            bool ok = vidjeno.Count == 3
+                && vidjeno[0].IndexOf("Form1", StringComparison.Ordinal) >= 0
+                && vidjeno[1].IndexOf("Form2", StringComparison.Ordinal) >= 0
+                && vidjeno[2].IndexOf("frmGridExPrintingREPX", StringComparison.Ordinal) >= 0;
+            string linija = ok ? "OK ext=" + string.Join(",", vidjeno.ToArray()) : "FAIL ext=" + string.Join(",", vidjeno.ToArray());
+            UpisiIshod(snimka, linija);
+            return ok ? 0 : 5;
+        }
+
         public int PokreniBoju(string xml, string snimka)
         {
             var r = Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(xml);

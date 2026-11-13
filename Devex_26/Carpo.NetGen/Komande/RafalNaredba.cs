@@ -1,6 +1,8 @@
 using System;
 using System.Globalization;
+using System.IO;
 using System.Text;
+using System.Windows.Forms;
 
 namespace Carpo.NetGen.Komande
 {
@@ -9,6 +11,63 @@ namespace Carpo.NetGen.Komande
     /// </summary>
     public static class RafalNaredba
     {
+        public static int BeepPoziva;
+
+        /// <summary>Form2.vb 6825–6827 i Form1.vb 6579–6581. Beep pa 300 ms.</summary>
+        public static void Beep()
+        {
+            BeepPoziva++;
+            try { Console.Beep(); } catch { }
+            System.Threading.Thread.Sleep(300);
+        }
+
+        public static void PostaviDock(Control c, string stil)
+        {
+            if (c == null)
+                return;
+            if (stil == "Fill")
+                c.Dock = DockStyle.Fill;
+            else if (stil == "Left")
+                c.Dock = DockStyle.Left;
+            else if (stil == "Right")
+                c.Dock = DockStyle.Right;
+            else if (stil == "Top")
+                c.Dock = DockStyle.Top;
+            else if (stil == "Bottom")
+                c.Dock = DockStyle.Bottom;
+        }
+
+        public static void ZapisiDatoteku(string put, int vrsta, string[][] redovi)
+        {
+            string tekst = DatotekaTekst(vrsta, redovi);
+            File.WriteAllBytes(put, DatotekaKod(vrsta).GetBytes(tekst));
+        }
+
+        public static Func<string, bool> Pitaj;
+        public static Action<string> Upozori;
+
+        /// <summary>ISEMPTYORZEROALERT: prazno ili 0 pita OK/Cancel. Cancel prekida. Form2.vb 7083–7088.</summary>
+        public static bool AlertNastavi(string vrijednost, string poruka)
+        {
+            if (!PrazanIliNula(vrijednost))
+                return true;
+            if (Pitaj != null)
+                return Pitaj(poruka ?? "");
+            return MessageBox.Show(poruka ?? "", "Pitanje", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK;
+        }
+
+        /// <summary>ISEMPTYORZEROCANCELBOX: prazno ili 0 je upozorenje i fokus. Form2.vb 7144–7147.</summary>
+        public static bool CancelBoxStani(string vrijednost, string poruka)
+        {
+            if (!PrazanIliNula(vrijednost))
+                return false;
+            if (Upozori != null)
+                Upozori(poruka ?? "");
+            else
+                MessageBox.Show(poruka ?? "", "Upozorenje", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return true;
+        }
+
         public static string RefreshKontrola(string segment)
         {
             return Unutar(segment, "REFRESHCONTROL(");

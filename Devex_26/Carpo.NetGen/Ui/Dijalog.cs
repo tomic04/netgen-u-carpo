@@ -332,7 +332,7 @@ namespace Carpo.NetGen.Ui
                 if (v == "poruka" || v == "roditelj" || v == "odustani" || v == "ok" || v == "okstay" || v == "forma"
                     || v == "foreach" || v == "fiskal" || v == "datoteka" || v == "refresh" || v == "dock"
                     || v == "eval" || v == "sljedeci" || v == "prethodni" || v == "naredba"
-                    || v == "recalc" || v == "toggle" || v == "priprema" || v == "pivot" || v == "chart" || v == "boja" || v == "posalji" || v == "pokretanje")
+                    || v == "recalc" || v == "toggle" || v == "priprema" || v == "pivot" || v == "chart" || v == "boja" || v == "posalji" || v == "pokretanje" || v == "beep" || v == "ispisext")
                     lanac = true;
             }
             if (lanac)
@@ -408,6 +408,60 @@ namespace Carpo.NetGen.Ui
                         PosaljiNaServer(korak.Tekst);
                         continue;
                     }
+                    if (korak.Vrsta == "beep")
+                    {
+                        RafalNaredba.Beep();
+                        continue;
+                    }
+                    if (korak.Vrsta == "refresh")
+                    {
+                        OsvjeziKontrolu(korak.Tekst);
+                        continue;
+                    }
+                    if (korak.Vrsta == "dock")
+                    {
+                        int crta = korak.Tekst.IndexOf('|');
+                        string stil = crta < 0 ? korak.Tekst : korak.Tekst.Substring(0, crta);
+                        string ime = crta < 0 ? "" : korak.Tekst.Substring(crta + 1);
+                        Control[] ciljDock = Controls.Find(ime, true);
+                        if (ciljDock.Length > 0)
+                            RafalNaredba.PostaviDock(ciljDock[0], stil);
+                        continue;
+                    }
+                    if (korak.Vrsta == "datoteka")
+                    {
+                        ZapisiDatoteku(korak.Tekst);
+                        continue;
+                    }
+                    if (korak.Vrsta == "naredba")
+                    {
+                        if (PraznoNaredba.PreskociSljedeci(korak.Tekst))
+                            i++;
+                        else if (korak.Tekst.ToUpperInvariant().IndexOf("ISEMPTYORZEROALERT(", StringComparison.Ordinal) >= 0)
+                        {
+                            if (!RafalNaredba.AlertNastavi(RafalNaredba.UpozorenjeParam(korak.Tekst), RafalNaredba.UpozorenjeTekst(korak.Tekst)))
+                                return;
+                        }
+                        else if (korak.Tekst.ToUpperInvariant().IndexOf("ISEMPTYORZEROCANCELBOX(", StringComparison.Ordinal) >= 0)
+                        {
+                            if (!RafalNaredba.OtkazImaPoruku(korak.Tekst))
+                                return;
+                            if (RafalNaredba.CancelBoxStani(RafalNaredba.OtkazParam(korak.Tekst), RafalNaredba.OtkazTekst(korak.Tekst)))
+                            {
+                                string ime = RafalNaredba.OtkazParam(korak.Tekst).TrimStart('@');
+                                Control[] f = Controls.Find(ime, true);
+                                if (f.Length > 0)
+                                    f[0].Focus();
+                                return;
+                            }
+                        }
+                        continue;
+                    }
+                    if (korak.Vrsta == "pivot" || korak.Vrsta == "chart" || korak.Vrsta == "ispisext")
+                    {
+                        EkstenzijaGrid.Prikazi(korak.Vrsta == "ispisext" ? "ispis" : korak.Vrsta);
+                        continue;
+                    }
                     if (korak.Vrsta == "sql")
                         IzvrsiSql(korak.Tekst);
                 }
@@ -471,6 +525,70 @@ namespace Carpo.NetGen.Ui
                 DialogResult = DialogResult.OK;
             else if (b != null)
                 b.DialogResult = DialogResult.None;
+        }
+
+        private void OsvjeziKontrolu(string ime)
+        {
+            if (_forma == null || _forma.Kontrole == null || _citaj == null)
+                return;
+            for (int i = 0; i < _forma.Kontrole.Count; i++)
+            {
+                NgControl k = _forma.Kontrole[i];
+                if (k == null || !string.Equals(k.Name, ime, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (k.Atributi == null || !k.Atributi.Ima("SQL"))
+                    return;
+                string sql = SqlTekst.Sredi(k.Atributi.Vrijednost("SQL") ?? "", _kontekst ?? new SqlKontekst());
+                if (ZastitaSql.Tekst(sql).Pise)
+                    return;
+                DataTable dt = null;
+                try { dt = _citaj(sql); }
+                catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sql); return; }
+                Control[] n = Controls.Find(k.Name, true);
+                if (n.Length == 0 || dt == null)
+                    return;
+                var look = n[0] as LookUpEdit;
+                if (look == null || dt.Columns.Count == 0)
+                    return;
+                look.Properties.DataSource = dt;
+                look.Properties.ValueMember = dt.Columns[0].ColumnName;
+                look.Properties.DisplayMember = dt.Columns.Count > 1 ? dt.Columns[1].ColumnName : dt.Columns[0].ColumnName;
+                return;
+            }
+        }
+
+        private void ZapisiDatoteku(string segment)
+        {
+            int vrsta = RafalNaredba.Datoteka(segment);
+            string put = RafalNaredba.DatotekaPut(segment);
+            string sql = RafalNaredba.DatotekaSql(segment);
+            if (vrsta == 0 || put.Length == 0)
+                return;
+            var redovi = new System.Collections.Generic.List<string[]>();
+            if (_citaj != null && sql.Length > 0 && !ZastitaSql.Tekst(sql).Pise)
+            {
+                try
+                {
+                    DataTable dt = _citaj(sql);
+                    if (dt != null)
+                    {
+                        for (int r = 0; r < dt.Rows.Count; r++)
+                        {
+                            var kol = new string[dt.Columns.Count];
+                            for (int c = 0; c < dt.Columns.Count; c++)
+                                kol[c] = dt.Rows[r][c] == DBNull.Value ? "" : Convert.ToString(dt.Rows[r][c]);
+                            redovi.Add(kol);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    NgDnevnik.Greska(ex.Message + " | " + sql);
+                    return;
+                }
+            }
+            try { RafalNaredba.ZapisiDatoteku(put, vrsta, redovi.ToArray()); }
+            catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + put); }
         }
 
         private void IzvrsiSql(string tekst)

@@ -1701,6 +1701,34 @@ namespace Carpo.NetGen.GridTest
             Console.WriteLine(dll.Length == 0
                 ? "NETGEN-EXTENSIONS nije na stroju. Treba donijeti NetGenExtensions.dll (NetGenExtensions.frmGridExPrintingREPX, Form1.PivotGRID, Form2.ChartGRID) u Jupiter SharedAssemblies."
                 : "NETGEN-EXTENSIONS " + dll);
+            int prijeBeep = Carpo.NetGen.Komande.RafalNaredba.BeepPoziva;
+            Carpo.NetGen.Komande.RafalNaredba.Beep();
+            T("beep", Carpo.NetGen.Komande.RafalNaredba.BeepPoziva == prijeBeep + 1, "");
+            var dock = new System.Windows.Forms.Control();
+            Carpo.NetGen.Komande.RafalNaredba.PostaviDock(dock, "Fill");
+            Carpo.NetGen.Komande.RafalNaredba.PostaviDock(dock, "Top");
+            T("dock-klik", dock.Dock == System.Windows.Forms.DockStyle.Top, dock.Dock.ToString());
+            string dat = Path.Combine(Path.GetTempPath(), "ng-txt-" + Guid.NewGuid().ToString("N") + ".txt");
+            try
+            {
+                Carpo.NetGen.Komande.RafalNaredba.ZapisiDatoteku(dat, 1, new[] { new[] { "A", "B" } });
+                byte[] bajt = File.ReadAllBytes(dat);
+                T("datoteka-klik", bajt.Length > 0 && bajt[bajt.Length - 1] == 26, bajt.Length.ToString());
+            }
+            finally
+            {
+                try { File.Delete(dat); } catch { }
+            }
+            bool pitao = false;
+            Carpo.NetGen.Komande.RafalNaredba.Pitaj = delegate (string p) { pitao = p == "Nema"; return false; };
+            bool dalje = Carpo.NetGen.Komande.RafalNaredba.AlertNastavi("0", "Nema");
+            Carpo.NetGen.Komande.RafalNaredba.Pitaj = null;
+            string up = "";
+            Carpo.NetGen.Komande.RafalNaredba.Upozori = delegate (string p) { up = p; };
+            bool stani = Carpo.NetGen.Komande.RafalNaredba.CancelBoxStani("", "Stoj");
+            Carpo.NetGen.Komande.RafalNaredba.Upozori = null;
+            var lanac = Carpo.NetGen.Komande.DijalogTok.Koraci("REFRESHCONTROL(mjesta)#BEEP()#ISEMPTYORZEROALERT(@a;Nema)");
+            T("prazan-alert", !dalje && pitao && stani && up == "Stoj" && lanac.Count == 3 && lanac[0].Vrsta == "refresh" && lanac[1].Vrsta == "beep" && lanac[2].Vrsta == "naredba", lanac.Count.ToString());
             T("netgen-extensions", Carpo.NetGen.Komande.EkstenzijaGrid.Sklop == "NetGenExtensions"
                 && Carpo.NetGen.Komande.EkstenzijaGrid.IspisKlasa == "NetGenExtensions.frmGridExPrintingREPX", dll);
         }

@@ -1,6 +1,6 @@
 # Razlike NetGen / Carpo
 
-Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Carpo citat je kod kontrole ili `docs/analiza/04-mapiranje-netgen-carpo.md` kad port tu kontrolu još ne crta. Port koji već prati NetGen nije ovdje ponovljen kao rupa.
+Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači isto ponašanje. Izvor istine za NetGen je `netgen/*.vb` i XML. Carpo citat je kod kontrole ili `docs/analiza/04-mapiranje-netgen-carpo.md` kad port tu kontrolu još ne crta. Port koji već prati NetGen nije ovdje ponovljen kao rupa. `REFRESHCONTROL`, `CREATETEXTFILE*`, `DOCK1`–`DOCK5`, `ISEMPTYORZERO*` i `BEEP` se izvršavaju na kliku (`docs/naredbe-stanje.md`). Jedina namjerna razlika fiskala: prazan CIS URL ne postaje produkcijski `cis.porezna-uprava.hr`.
 
 Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom (boja, stil gumba, gumbi na dnu, prazni retci, row header, visina zaglavlja, font, obrub). I dalje se strogo gleda natpis i redoslijed gumba, što gumb radi, širina i skriveni stupac, sort, edit, checkbox stupac, raspored kontrola na dijalogu, tab, enable/visible i fokus. XML se ne mijenja.
 
@@ -216,7 +216,7 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `ONCLICK` / `ONLOSTFOCUS` comba
 - **NetGen:** klik ide u `Rafalno` (`8497–8506`). SQL koji nije komanda ide u `RefreshControls` (`7510`). Vrijednost `refresh` u koloni čije je ime kontrola ponovo izvrši njen SQL (`5158–5182`), uz `ALLOWEMPTY` red (`5165–5176`). `REFRESHCONTROL(ime)` je kratica za `select 'refresh' as ime` (`6911–6915`).
-- **Carpo:** `datavaluechanged` + `control populate` veže se po imenu polja. Nema vrijednosti `refresh` kao naredbe.
+- **Carpo:** `REFRESHCONTROL(ime)` ponovo čita SQL te kontrole (`Form2.vb` 6911–6915). Vrijednost `refresh` u tuđoj koloni i dalje nije naredba.
 - **Posljedica:** `zupanijeid` → `mjestaid` (`@@zupanijeid`), `trgovinaid` → `osobeid`, `mpregijeId` → multidrop `str`.
 - **Test:** `DOS-05`, `DOS-21`, `INV-05`, `INV-09`, `MAIL-06`
 
