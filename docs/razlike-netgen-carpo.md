@@ -42,6 +42,18 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 - **Zašto ostaje:** te dvije biblioteke nisu na stroju. Prazan URL i `cis.porezna-uprava.hr` se ne šalju. Grana odluke (nema red, Slovenija, nema PFX, test URL) jest portana.
 - **Test:** `prostor-com`
 
+### R113 Janus dizajner grida
+
+- **NetGen:** `ApperianceDialog`, `FormatStyles`, `TableView`, `CardView` i `SingleCardView` (`Form1.vb` 6146–6185) otvaraju Janus dijaloze i mijenjaju `GridEX.View`.
+- **Zašto ostaje:** ti tipovi su Janus.Windows.GridEX. Carpo grid je DevExpress. Isti poziv nema kamo otići, a izgled ostaje Carpo.
+- **Test:** nema poziva tih dijaloga.
+
+### R114 `Run` ne učitava JupiterTranslator
+
+- **NetGen:** `Run` (`Form1.vb` 1106–1115) radi `Assembly.Load("JupiterTranslator10")`. `Run8` zove `Run`.
+- **Zašto ostaje:** Jupiter se ne dira. `Loader.Run8` i dalje puni projekt i vraća null dok nema prozora.
+- **Test:** `Loader`
+
 ### R112 Spin.Printing.v23
 
 - **NetGen:** `IspisiMePrekoSpinPrintinga` (`Class1.vb` 297) radi `Assembly.Load("Spin.Printing.v23")` i `CreateInstance("Spin.Printing.Start")`. `IspisiMe7` i `PrintRpt` idu tim putem.

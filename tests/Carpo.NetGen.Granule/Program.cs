@@ -73,6 +73,7 @@ namespace Carpo.NetGen.Granule
             sve.AddRange(JeziciIspis.Provjeri(root));
             sve.AddRange(RijetkeKontrole.Provjeri(root));
             sve.AddRange(Form1Blok.Provjeri());
+            sve.AddRange(Form1SrceTest.Provjeri());
 
             string tekst = Qa.Tekst(sve);
             Console.WriteLine(tekst);
