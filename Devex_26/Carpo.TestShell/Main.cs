@@ -208,7 +208,7 @@ namespace Carpo.TestShell
                         loader.moduleId = Path.GetFileName(xml);
                         loader.mainHandle = (int)pnlShell.Handle;
                         loader.Run8(server, database, username, password, operateriId, (int)pnlShell.Handle, 0, 0, "");
-                        if (!string.IsNullOrEmpty(loader.ZadnjaGreska))
+                        if (!string.IsNullOrEmpty(loader.ZadnjaGreska) && !_klikPregled)
                             MessageBox.Show(loader.ZadnjaGreska, "Carpo.NetGen");
                         else
                         {
@@ -218,7 +218,7 @@ namespace Carpo.TestShell
                                 var podloga = new Carpo.NetGen.Ui.Podloga();
                                 _zadnjaPodloga = podloga;
                                 forma = podloga;
-                                if (!podloga.Prikazi(xml, server, database, operateriId))
+                                if (!podloga.Prikazi(xml, server, database, operateriId) && !_klikPregled)
                                     MessageBox.Show(podloga.Text, "Carpo.NetGen");
                             }
                             else
@@ -228,7 +228,7 @@ namespace Carpo.TestShell
                                 var podloga = forma as Carpo.NetGen.Ui.Podloga;
                                 if (podloga != null)
                                     _zadnjaPodloga = podloga;
-                                if (forma == null || !string.IsNullOrEmpty(greska))
+                                if ((forma == null || !string.IsNullOrEmpty(greska)) && !_klikPregled)
                                     MessageBox.Show(string.IsNullOrEmpty(greska) ? "Granula se nije otvorila." : greska, "Carpo.NetGen");
                             }
                             if (forma != null)

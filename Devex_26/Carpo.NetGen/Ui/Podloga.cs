@@ -828,6 +828,15 @@ namespace Carpo.NetGen.Ui
             DijalogTok.DozvoliUpis = upis;
             _imeUnosa = "kp" + DateTime.Now.ToString("HHmmss");
             DijalogTok.TekstUpisa = _imeUnosa;
+            if (upis)
+            {
+                Dijalog.NakonPrikaza = delegate (Dijalog d)
+                {
+                    if (d == null || d.IsDisposed)
+                        return;
+                    PotvrdiUpis(d);
+                };
+            }
             try
             {
             return ProvediKlikoveUnutra(redovi, upis);
@@ -836,6 +845,7 @@ namespace Carpo.NetGen.Ui
             {
                 if (upis)
                     OcistiTest();
+                Dijalog.NakonPrikaza = null;
                 DijalogTok.DozvoliUpis = false;
                 ZaustaviZatvaranje();
             }
