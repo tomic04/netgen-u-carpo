@@ -34,15 +34,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Python za zastitu
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Zastita mrtvog koda i statusa portano
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
+          # "python" na runneru moze biti prečac iz Microsoft Storea (WindowsApps):
+          # Get-Command ga nadje, a pokretanje ispise "Python nije pronađen" i vrati 9009.
+          # Uzima se samo Python koji stvarno vrati verziju.
           $py = $null
           foreach ($c in @("python","python3","py")) {
-            if (Get-Command $c -ErrorAction SilentlyContinue) { $py = $c; break }
+            $cmd = Get-Command $c -All -ErrorAction SilentlyContinue |
+              Where-Object { $_.CommandType -eq "Application" -and $_.Source -notlike "*\WindowsApps\*" } |
+              Select-Object -First 1
+            if (-not $cmd) { continue }
+            & $cmd.Source --version *> $null
+            if ($LASTEXITCODE -eq 0) { $py = $cmd.Source; break }
           }
-          if (-not $py) { throw "Nema Pythona. Zastita treba python, python3 ili py." }
+          if (-not $py) { throw "Nema pravog Pythona na runneru. Zastita treba python, python3 ili py." }
+          Write-Host "Python: $py"
           & $py (Join-Path $env:GITHUB_WORKSPACE "scripts\ci\mrtve-metode.py")
           if ($LASTEXITCODE -ne 0) { throw "Mrtva javna metoda. Vidi MRTVO iznad. Iznimka ide u scripts/ci/mrtve-iznimke.txt s razlogom." }
           & $py (Join-Path $env:GITHUB_WORKSPACE "scripts\ci\portano-ui.py")
