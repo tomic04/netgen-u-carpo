@@ -496,7 +496,35 @@ namespace Carpo.NetGen.Komande
                 for (int j = 0; j < janus.Length; j++)
                     DodajMapu(janus[j]);
             }
+            string[] gacDx = new[]
+            {
+                @"C:\Windows\Microsoft.NET\assembly\GAC_MSIL",
+                @"C:\Windows\assembly\GAC_MSIL"
+            };
+            for (int i = 0; i < gacDx.Length; i++)
+            {
+                if (!Directory.Exists(gacDx[i]))
+                    continue;
+                string[] dx;
+                try
+                {
+                    dx = Directory.GetDirectories(gacDx[i], "DevExpress.Reports.v12*", SearchOption.TopDirectoryOnly);
+                }
+                catch
+                {
+                    continue;
+                }
+                for (int j = 0; j < dx.Length; j++)
+                    Obidi(dx[j], 0);
+            }
             Dopuni();
+            string pogodak = "";
+            foreach (KeyValuePair<string, string> kv in _datoteke)
+            {
+                if (kv.Key.IndexOf("Reports.v12", StringComparison.OrdinalIgnoreCase) >= 0)
+                    pogodak = pogodak + " " + kv.Value;
+            }
+            Trag = (Trag + " reports=" + pogodak.Trim()).Trim();
         }
 
         /// <summary>
@@ -511,6 +539,7 @@ namespace Carpo.NetGen.Komande
             string dizajner = "";
             string[] korijeni = new[]
             {
+                @"C:\Users\ntomic\Desktop\Jupiter Client",
                 @"C:\Users\ntomic\Desktop",
                 @"C:\Program Files (x86)\DevExpress 12.1",
                 @"C:\Program Files (x86)\DevExpress",
@@ -539,7 +568,9 @@ namespace Carpo.NetGen.Komande
                     for (int i = 0; i < datoteke.Length; i++)
                     {
                         string ime = Path.GetFileName(datoteke[i]);
-                        if (exe.Length == 0 && string.Equals(ime, "NetGen.exe", StringComparison.OrdinalIgnoreCase))
+                        if (exe.Length == 0 && ime.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                            && ime.StartsWith("NetGen", StringComparison.OrdinalIgnoreCase)
+                            && ime.IndexOf("Extensions", StringComparison.OrdinalIgnoreCase) < 0)
                             exe = datoteke[i];
                         if (dizajner.Length == 0 && string.Equals(ime, "DevExpress.Reports.v12.1.Designer.dll", StringComparison.OrdinalIgnoreCase))
                             dizajner = datoteke[i];
@@ -556,8 +587,6 @@ namespace Carpo.NetGen.Komande
                     for (int i = 0; i < pod.Length; i++)
                     {
                         string ime = Path.GetFileName(pod[i]);
-                        if (string.Equals(ime, "Jupiter Client", StringComparison.OrdinalIgnoreCase))
-                            continue;
                         if (string.Equals(ime, "node_modules", StringComparison.OrdinalIgnoreCase) || ime.StartsWith(".", StringComparison.Ordinal))
                             continue;
                         red.Enqueue(pod[i]);
