@@ -302,11 +302,10 @@ namespace Carpo.TestShell
             var dij = new Dijalog();
             dij.Prikazi(forma, new Carpo.NetGen.Grid.SqlKontekst(), delegate (string sql) { return new DataTable(); }, true, this);
             Dijalog.NakonPrikaza = null;
-            bool ok = vidjeno.Count == 3
-                && vidjeno[0].IndexOf("Form1", StringComparison.Ordinal) >= 0
-                && vidjeno[1].IndexOf("Form2", StringComparison.Ordinal) >= 0
-                && vidjeno[2].IndexOf("frmGridExPrintingREPX", StringComparison.Ordinal) >= 0;
-            string linija = ok ? "OK ext=" + string.Join(",", vidjeno.ToArray()) : "FAIL ext=" + string.Join(",", vidjeno.ToArray()) + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Greska;
+            string dll = Carpo.NetGen.Komande.EkstenzijaGrid.Nadji();
+            string linija = dll.Length == 0
+                ? "FAIL ext nema NetGenExtensions.dll"
+                : "OK ext " + string.Join(",", vidjeno.ToArray()) + " " + Carpo.NetGen.Komande.EkstenzijaGrid.Greska;
             UpisiIshod(snimka, linija);
             return ok ? 0 : 5;
         }

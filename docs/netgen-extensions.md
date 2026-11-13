@@ -8,4 +8,6 @@ NetGen ga učitava s `Assembly.Load("NetGenExtensions")`.
 | `Form2.vb` 9065 | `NetGenExtensions.Form2` | `ChartGRID` |
 | `Form2.vb` 9088 | `NetGenExtensions.Form1` | `PivotGRID` |
 
-Carpo traži `NetGenExtensions.dll` uz exe i u `Jupiter Client\Programs\SharedAssemblies` (`EkstenzijaGrid.Nadji`). Ako ga na sql-ai nema, CI ispiše `NETGEN-EXTENSIONS nije na stroju`. Treba donijeti taj DLL s te tri klase. Ne izmišlja se zamjena.
+Na sql-ai DLL jest u `C:\Users\ntomic\Desktop\Jupiter Client\Programs\SharedAssemblies\Spin\NetGenExtensions.dll`.
+
+`CreateInstance` za `frmGridExPrintingREPX` traži `Janus.Windows.GridEX.v3, Version=3.5.131.0, PublicKeyToken=21d5517571b185bf`. Te datoteke nema uz `NetGenExtensions.dll` ni u `SharedAssemblies`. Treba je donijeti u tu mapu da se ispis, pivot i chart mogu konstruirati. DLL se ne commita.
