@@ -2659,6 +2659,7 @@ namespace Carpo.NetGen.GridTest
                 + "<NAME>Projekt</NAME>\r\n<CAPTION>Rafalno test</CAPTION>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
             string greska = null;
             NgPoruka.Zapis = delegate (string x) { greska = x; };
+            // Bez Application.DoEvents: Shown baznog Managera bez DI (Logger) u GridTestu baci iznimku i otvori modalni ThreadExceptionDialog.
             var forma = new Podloga();
             MasterGrid master = null;
             try
@@ -2681,7 +2682,6 @@ namespace Carpo.NetGen.GridTest
                     "editable=" + gv.OptionsBehavior.Editable + " rows=" + gv.DataRowCount);
                 gv.FocusedRowHandle = 0;
                 gv.SetRowCellValue(0, naziv, "xyz");
-                Application.DoEvents();
                 string boja = master.Kontekst.SelectedColor ?? "";
                 T("edt02-oncelledited", boja == "xyz|Naziv|xyz|1" && gv.IsRowSelected(0), boja + " sel=" + gv.IsRowSelected(0));
 
@@ -2701,7 +2701,6 @@ namespace Carpo.NetGen.GridTest
                 }
                 else
                     gv.SetRowCellValue(0, naziv, "pogresno");
-                Application.DoEvents();
                 string vraceno = Convert.ToString(gv.GetRowCellValue(0, naziv));
                 T("edt03-greska-vraca", (vraceno == "xyz" || vraceno == "abc") && (greska ?? "").Length > 0,
                     Convert.ToString(gv.GetRowCellValue(0, naziv)) + " | " + greska);
@@ -2727,7 +2726,6 @@ namespace Carpo.NetGen.GridTest
                 master.Stanje.SqlZaSlanje = "select 9 as id, 'z' as Naziv";
                 master.Stanje.Odluka = "salji";
                 Zovi(forma, "IzvrsiRafalno", "REFRESHMASTERGRID");
-                Application.DoEvents();
                 T("ref01-zadnji-sql", gv.DataRowCount == 1 && Convert.ToString(gv.GetRowCellValue(0, "id")) == "9", "redova=" + gv.DataRowCount);
             }
             catch (Exception ex)
