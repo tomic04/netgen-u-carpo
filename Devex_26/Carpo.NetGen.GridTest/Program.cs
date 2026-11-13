@@ -1924,9 +1924,10 @@ namespace Carpo.NetGen.GridTest
             string niz = SrediPoslije.Zamijeni("select @@nizplavihajdijevaX", "@nizplavihajdijevaX='~1~2~',", k, null, false);
             T("sredi-poslije-ajdijeva", niz.IndexOf("1,2", StringComparison.Ordinal) >= 0 && niz.IndexOf("~", StringComparison.Ordinal) < 0, niz);
             T("sredi-poslije-datum", SrediPoslije.Zamijeni("select @@datumod", "@datumod='20240201',", k, null, false) == "select '20240201'", SrediPoslije.Zamijeni("select @@datumod", "@datumod='20240201',", k, null, false));
+            // Kljuc u CB je ime stupca plus '=' (Form1.vb 3980, 3076), Class1.vb 938 ga tako trazi.
             var cb = new Dictionary<string, string>();
-            cb["tkosmomi"] = "Glavno";
-            cb["kolicina"] = "1,5";
+            cb["tkosmomi="] = "Glavno";
+            cb["kolicina="] = "1,5";
             T("sredi-poslije-cb", SrediPoslije.Zamijeni("@@tkosmomi", "", k, cb, false) == "Glavno"
                 && SrediPoslije.Zamijeni("@@kolicina", "", k, cb, false) == "1.5", SrediPoslije.Zamijeni("@@kolicina", "", k, cb, false));
             T("gridrowcount-komentar", SrediPoslije.Zamijeni("@@GRIDROWCOUNT(g)", "", k, null, false) == "null(g)", SrediPoslije.Zamijeni("@@GRIDROWCOUNT(g)", "", k, null, false));
@@ -1984,6 +1985,8 @@ namespace Carpo.NetGen.GridTest
             T("combo-hash", ComboDijalog.OdvojiHash("sql##7", out odabrano, out ostatak) && odabrano == "7" && ostatak == "sql", odabrano);
             T("trazilica-preskok", Ponasanje.PreskociTrazilicu("", "x") && Ponasanje.PreskociTrazilicu("Kava", "Kava") && !Ponasanje.PreskociTrazilicu("*", "*") && !Ponasanje.PreskociTrazilicu("nova", "stara"), "");
             DijalogUcinak();
+            SqlSlojNetGen();
+            BrojNaDijalogu();
             IspisUcinak();
             PokaziUpitUcinak();
             var traz = new DataTable();
@@ -2050,6 +2053,100 @@ namespace Carpo.NetGen.GridTest
             finally
             {
                 d.Close();
+                d.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Faza C1 (docs/pregled/C1-sql.md). Ocekivanja su iz doslovnog VB modela tools/diff/vb_oracle.py,
+        /// koji je usporeden s Class1.vb 740-977 nad 13 746 SQL tekstova korpusa.
+        /// </summary>
+        private static void SqlSlojNetGen()
+        {
+            // SQL-02: ime krace od 4 znaka (@kg) VB tretira kao datum (Substring(0,4) baci, Resume Next).
+            string kg = SrediPoslije.Nadji("@@kg", "@kg='abc',", null, false);
+            T("sql02-kratko-ime", kg == "'abc'", kg);
+            // SQL-03: datum iz medjuspremnika dd.MM.yyyy postane 'yyyyMMdd' (pomaci 6/3/0).
+            var cb = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            cb["datumod="] = "13.11.2026. 0:00:00";
+            string dat = SrediPoslije.Nadji("@@datumod", "", cb, false);
+            T("sql03-cb-datum", dat == "'20261113'", dat);
+            string ispis = SrediPoslije.Nadji("@@datumod", "", cb, true);
+            T("sql03-cb-datum-ispis", ispis == "13.11.2026.", ispis);
+            // @@@ime u CB se ne nadje (Class1.vb 938).
+            var cb3 = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            cb3["chk="] = "1";
+            string tri = SrediPoslije.Nadji("@@@chk", "", cb3, false);
+            T("sql03-cb-tri-at", tri == "null", tri);
+            // SQL-05: vise od 80 razlicitih tokena (spMPKase) se sve zamijeni.
+            var sb = new StringBuilder("spMPKase @action=5");
+            for (int i = 0; i < 95; i++)
+                sb.Append(", @p").Append(i).Append("='@@tok").Append(i).Append("'");
+            string puno = SrediPoslije.Petlja(sb.ToString(), "", null, false);
+            T("sql05-vise-od-80", puno.IndexOf("@@", StringComparison.Ordinal) < 0, puno.Length.ToString());
+            // SQL-04: @@ iz retka grida ide po pravilima NadjiVrijednostuPrevParametrima.
+            var k = new SqlKontekst();
+            k.ParametriSaGrida = "@Naziv='abc' , @DatumOd='13.11.2026. 0:00:00' , @RobaId='15' , ";
+            string det = SqlTekst.Sredi("spX @n='@@Naziv', @d=@@DatumOd, @r=@@RobaId\n end", k);
+            // Prijelom reda nije granica tokena ni u VB-u (Class1.vb 765-848): "@@RobaId\n" se zamijeni zajedno s \n.
+            T("sql04-grid-pravila", det == "spX @n='abc', @d='20261113', @r=15 end", det);
+            // SQL-04: redak grida formatira datum u kulturi racunala, kao VB Value.ToString.
+            var staro = System.Threading.Thread.CurrentThread.CurrentCulture;
+            try
+            {
+                System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("hr-HR");
+                var t = new DataTable();
+                t.Columns.Add("DatumOd", typeof(DateTime));
+                t.Columns.Add("Iznos", typeof(decimal));
+                t.Rows.Add(new DateTime(2026, 11, 13), 1234.5m);
+                string red = SqlTekst.IzReda(t.Rows[0]);
+                var k2 = new SqlKontekst();
+                k2.ParametriSaGrida = red;
+                string s2 = SqlTekst.Sredi("spY @d=@@DatumOd, @i=@@Iznos", k2);
+                T("sql04-redak-hr", s2 == "spY @d='20261113', @i=1234.5", red + " => " + s2);
+            }
+            finally
+            {
+                System.Threading.Thread.CurrentThread.CurrentCulture = staro;
+            }
+        }
+
+        /// <summary>
+        /// NUM-01. Form2.vb 2072-2086 i 3601: brojčano polje šalje Value s točkom, prazno je 0.
+        /// DECIMALS određuje broj decimala unosa. Carpo je slao prikazani tekst SpinEdita.
+        /// </summary>
+        private static void BrojNaDijalogu()
+        {
+            var kontrole = new List<NgControl>();
+            kontrole.Add(new NgControl("number", NgGrana.Number, "iznos", new NgAttributeBag(new Dictionary<string, string> { { "DECIMALS", "2" } }), true));
+            kontrole.Add(new NgControl("number", NgGrana.Number, "kolicina", new NgAttributeBag(new Dictionary<string, string>()), true));
+            kontrole.Add(new NgControl("number", NgGrana.Number, "prazno", new NgAttributeBag(new Dictionary<string, string> { { "DECIMALS", "0" } }), true));
+            var forma = new NgForm("T", new NgAttributeBag(null), "", "", kontrole, new List<NgButton>(), new List<string>());
+            var staraKultura = Thread.CurrentThread.CurrentCulture;
+            var d = new Dijalog();
+            try
+            {
+                Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("hr-HR");
+                d.Slozi(forma, new SqlKontekst(), delegate (string s) { return null; });
+                var iznos = (DevExpress.XtraEditors.SpinEdit)d.Controls.Find("iznos", true)[0];
+                var kolicina = (DevExpress.XtraEditors.SpinEdit)d.Controls.Find("kolicina", true)[0];
+                var prazno = (DevExpress.XtraEditors.SpinEdit)d.Controls.Find("prazno", true)[0];
+                iznos.Value = 1234.5m;
+                kolicina.Value = 2500m;
+                prazno.Text = "";
+                string sql = Convert.ToString(typeof(Dijalog).GetMethod("SviParametri", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(d, null));
+                bool dobro = sql.IndexOf("@iznos=1234.5,", StringComparison.Ordinal) >= 0
+                    && sql.IndexOf("@kolicina=2500,", StringComparison.Ordinal) >= 0
+                    && sql.IndexOf("@prazno=0,", StringComparison.Ordinal) >= 0;
+                T("broj-vrijednost-hr", dobro, sql + " | tekst=" + iznos.Text + " / " + kolicina.Text);
+                T("broj-decimals", iznos.Properties.IsFloatValue && iznos.Properties.Mask.EditMask == "n2"
+                    && kolicina.Properties.IsFloatValue
+                    && !prazno.Properties.IsFloatValue && prazno.Properties.Mask.EditMask == "n0",
+                    iznos.Properties.Mask.EditMask + " / " + kolicina.Properties.Mask.EditMask + " / " + prazno.Properties.Mask.EditMask);
+            }
+            finally
+            {
+                Thread.CurrentThread.CurrentCulture = staraKultura;
                 d.Dispose();
             }
         }

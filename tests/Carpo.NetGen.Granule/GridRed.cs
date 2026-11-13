@@ -22,11 +22,14 @@ namespace Carpo.NetGen.Granule
             var k = new SqlKontekst();
             k.ParametriSaGrida = parametri;
             string sql = SqlTekst.Sredi("spStatusiQuery @action=2, @ID=@@statusiid", k);
+            // Class1.vb 862-915 (NadjiVrijednostuPrevParametrima): vrijednost koja nije datum gubi
+            // navodnike, pa je @ID=5, ne @ID='5' (C1, tools/diff/vb_oracle.py).
             bool ima = sql.IndexOf("@@statusiid", System.StringComparison.OrdinalIgnoreCase) < 0
-                && sql.IndexOf("@ID='5'", System.StringComparison.Ordinal) >= 0
+                && sql.IndexOf("@ID=5", System.StringComparison.Ordinal) >= 0
+                && sql.IndexOf("@ID='5'", System.StringComparison.Ordinal) < 0
                 && parametri.IndexOf("@statusiid='5'", System.StringComparison.Ordinal) >= 0;
             l.Add(ima
-                ? Qa.Z("GridRed", "GRD-01", "@@statusiid je stupac retka, vrijednost je '5'", "netgen/Form1.vb:2556-2576; netgen/Class1.vb:765-849")
+                ? Qa.Z("GridRed", "GRD-01", "@@statusiid je stupac retka, vrijednost je 5 (bez navodnika)", "netgen/Form1.vb:2556-2576; netgen/Class1.vb:765-849")
                 : Qa.P("GridRed", "GRD-01", "@@statusiid iz grida", "netgen/Form1.vb:2556-2576; netgen/Class1.vb:765-849", sql + " | " + parametri));
 
             var kontrole = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -83,7 +86,7 @@ namespace Carpo.NetGen.Granule
             var ctxRed = new SqlKontekst();
             ctxRed.ParametriSaGrida = "@Next='a, b' , @vrstadokid='249' , ";
             string izReda = SqlTekst.Sredi("@vrstadokid=@@vrstadokid,", ctxRed);
-            bool redOk = izReda.IndexOf("@vrstadokid='249'", StringComparison.Ordinal) >= 0
+            bool redOk = izReda.IndexOf("@vrstadokid=249,", StringComparison.Ordinal) >= 0
                 && izReda.IndexOf("=,", StringComparison.Ordinal) < 0;
             l.Add(redOk
                 ? Qa.Z("GridRed", "STA-04", "zarez unutar vrijednosti ne guta sljedeći parametar", "netgen/Form1.vb:2556-2576; netgen/Class1.vb:862")
@@ -132,7 +135,7 @@ namespace Carpo.NetGen.Granule
             dijete.ParametriSaGrida = spojeno;
             string stavka = SqlTekst.Sredi("spPrnTroskoviDetAzur @Action=0, @PrnTroskoviGlaId=@@PrnTroskoviGlaId,", dijete);
             bool tro = stavka.IndexOf("@@", StringComparison.Ordinal) < 0
-                && stavka.IndexOf("'8'", StringComparison.Ordinal) >= 0
+                && stavka.IndexOf("@PrnTroskoviGlaId=8,", StringComparison.Ordinal) >= 0
                 && spojeno.StartsWith("@PrnTroskoviGlaId='8'", StringComparison.Ordinal);
             l.Add(tro
                 ? Qa.Z("GridRed", "TRO-01", "Podforma stavke vidi @@PrnTroskoviGlaId iz ONLOAD-a roditelja", "netgen/Form2.vb:3906; netgen/Class1.vb:765-849")
@@ -161,7 +164,7 @@ namespace Carpo.NetGen.Granule
                 ? Qa.Z("GridRed", "BOJ-01", "COLORPICKER stavi HTML u @@selectedcolor i select as boja", "netgen/Form2.vb:7156-7163; netgen/Form1.vb:6813-6831")
                 : Qa.P("GridRed", "BOJ-01", "@@selectedcolor", "netgen/Form2.vb:7160", bojaSql));
 
-            string akcija = DetailGrid.ZamijeniOstatak("select @@akcijeid as akcijeid", "");
+            string akcija = SrediPoslije.Petlja("select @@akcijeid as akcijeid", "", null, false);
             bool akc = akcija.IndexOf("@@", StringComparison.Ordinal) < 0
                 && akcija.IndexOf("null", StringComparison.Ordinal) >= 0;
             l.Add(akc

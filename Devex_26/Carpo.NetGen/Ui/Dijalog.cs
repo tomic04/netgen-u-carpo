@@ -701,7 +701,7 @@ namespace Carpo.NetGen.Ui
             if (_kontekst != null)
                 s = SqlTekst.ZaGumb(s, _kontekst);
             else if (s.IndexOf("@@", StringComparison.Ordinal) >= 0)
-                s = DetailGrid.ZamijeniOstatak(s, "");
+                s = SrediPoslije.Petlja(s, "", null, false);
             return s;
         }
 
@@ -1192,7 +1192,13 @@ namespace Carpo.NetGen.Ui
                     var spin = txt as SpinEdit;
                     if (spin != null)
                     {
-                        sb.Append(ParametriSvi.Broj(c.Name, txt.Text));
+                        // Form2.vb 3601: IIf(Text = "", 0, Value.ToString.Replace(",", ".")).
+                        // Salje se vrijednost, ne prikazani tekst: SpinEdit u hr-HR prikaze
+                        // 1234,5 kao "1.234,5", a tekst bi u SQL otisao kao 1.234.5 (NUM-01).
+                        string broj = string.IsNullOrWhiteSpace(txt.Text)
+                            ? ""
+                            : Convert.ToString(spin.Value, CultureInfo.InvariantCulture);
+                        sb.Append(ParametriSvi.Broj(c.Name, broj));
                         continue;
                     }
                     var datum = txt as DateEdit;
@@ -1349,7 +1355,22 @@ namespace Carpo.NetGen.Ui
             if (g == NgGrana.Text)
                 return new TextEdit();
             if (g == NgGrana.Number)
-                return new SpinEdit();
+            {
+                // Form2.vb 2085-2086: NumericEditBox dobije FORMATMASK i DECIMALS.
+                // DevExpress SpinEdit bez maske dopusti samo cijeli broj (N00), pa se
+                // DECIMALS mora prenijeti da unos decimala radi kao u NetGenu.
+                var spin = new SpinEdit();
+                spin.Properties.IsFloatValue = true;
+                int dec;
+                string decimale = k.Atributi == null ? null : k.Atributi.Vrijednost("DECIMALS");
+                if (int.TryParse((decimale ?? "").Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out dec) && dec >= 0 && dec <= 10)
+                {
+                    spin.Properties.IsFloatValue = dec > 0;
+                    spin.Properties.Mask.EditMask = "n" + dec.ToString(CultureInfo.InvariantCulture);
+                    spin.Properties.Mask.UseMaskAsDisplayFormat = true;
+                }
+                return spin;
+            }
             if (g == NgGrana.Search)
             {
                 var b = new ButtonEdit();

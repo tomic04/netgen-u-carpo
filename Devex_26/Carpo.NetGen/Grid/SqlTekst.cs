@@ -62,8 +62,13 @@ namespace Carpo.NetGen.Grid
             sql = Zamijeni(sql, "@@LASTVALUE", k.LastValue);
             sql = Zamijeni(sql, "@@selectedcolor", k.SelectedColor);
             sql = Zamijeni(sql, "@@SELECTEDCOLOR", k.SelectedColor);
+            // Form1.vb 2304 i Class1.vb 740-853: @@ iz retka grida rjesava ista petlja kao
+            // nakon forme (NadjiVrijednostuPrevParametrima skida navodnike, slaze datum).
+            // Prije je ovdje bila DetailGrid.ZamijeniOstatak s drugim pravilima: '@@x' je
+            // postao ''x'', datum je ostao 13.11.2026. 0:00:00, a token pred prijelomom
+            // reda je progutao SQL do sljedeceg razmaka (SQL-04).
             if (!string.IsNullOrEmpty(k.ParametriSaGrida))
-                sql = DetailGrid.ZamijeniOstatak(sql, k.ParametriSaGrida);
+                sql = Carpo.NetGen.Komande.SrediPoslije.Petlja(sql, k.ParametriSaGrida, null, false);
             return sql;
         }
 
@@ -91,8 +96,13 @@ namespace Carpo.NetGen.Grid
                         ime = ime.Substring(0, ime.Length - 4);
                 }
                 ime = ime.Replace(" ", "_").Replace("!", "");
-                string tekst = Convert.ToString(v, System.Globalization.CultureInfo.InvariantCulture) ?? "";
-                if (v is IFormattable && !(v is string))
+                // Form1.vb 2567-2571: Value.ToString u kulturi racunala (datum 13.11.2026. 0:00:00,
+                // koji NadjiVrijednostuPrevParametrima slozi u '20261113'), a broj dobije tocku.
+                // Invarijantna kultura je davala 11/13/2026 00:00:00 (SQL-04).
+                string tekst = Convert.ToString(v, System.Globalization.CultureInfo.CurrentCulture) ?? "";
+                double broj;
+                if ((v is IFormattable && !(v is string) && !(v is DateTime))
+                    || (v is string && double.TryParse(tekst, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, out broj)))
                     tekst = tekst.Replace(",", ".");
                 sb.Append("@").Append(ime).Append("='").Append(tekst.Replace("'", "''")).Append("' , ");
             }
@@ -107,7 +117,7 @@ namespace Carpo.NetGen.Grid
         {
             string s = Sredi(sql, k);
             if (s.IndexOf("@@", StringComparison.Ordinal) >= 0)
-                s = DetailGrid.ZamijeniOstatak(s, k == null ? "" : k.ParametriSaGrida);
+                s = Carpo.NetGen.Komande.SrediPoslije.Petlja(s, k == null ? "" : k.ParametriSaGrida, null, false);
             return s;
         }
 
@@ -235,7 +245,7 @@ namespace Carpo.NetGen.Grid
 
     /// <summary>
     /// Form2.vb 3906 strSviParametriuModulu. Dijete vidi ONLOAD stupce roditelja.
-    /// Novija vrijednost ide prva jer DetailGrid.Nadji uzima prvi pogodak.
+    /// Novija vrijednost ide prva jer SrediPoslije.Nadji uzima prvi pogodak (Class1.vb 863-884).
     /// </summary>
     public static class ParametriModula
     {
