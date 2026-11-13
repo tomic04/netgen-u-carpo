@@ -334,7 +334,7 @@ namespace Carpo.NetGen.Ui
                 dij.Id = IdReda();
                 dij.ZadnjiSql = _master.Stanje.ZadnjiSql;
                 dij.OtvoriDrugu = Otvori;
-                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj, true, this);
+                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), CitajZaDijalog, true, this);
                 if (dij.DialogResult != DialogResult.OK)
                     return;
                 string explorer = DijalogTok.SqlNakonOk(forma);
@@ -363,6 +363,19 @@ namespace Carpo.NetGen.Ui
 
         private DataTable Citaj(string sql)
         {
+            try
+            {
+                return CitajZaDijalog(sql);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>Dijalog mora vidjeti grešku SQL-a (poruka i prekid lanca, MSG-01); tiha greška je null.</summary>
+        private DataTable CitajZaDijalog(string sql)
+        {
             if (string.IsNullOrWhiteSpace(sql) || SqlTekst.JeZabranaPisanja(sql))
                 return null;
             try
@@ -381,7 +394,9 @@ namespace Carpo.NetGen.Ui
             catch (Exception ex)
             {
                 NgDnevnik.Greska(ex.Message + " | " + sql);
-                return null;
+                if (SqlPoruka.Tiha(ex.Message))
+                    return null;
+                throw;
             }
         }
     }

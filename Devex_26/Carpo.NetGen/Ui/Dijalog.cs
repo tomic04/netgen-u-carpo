@@ -67,11 +67,22 @@ namespace Carpo.NetGen.Ui
             KeyPreview = true;
         }
 
+        /// <summary>
+        /// Form2.ProcitajXML 1197-1199 i Form1 5352: greška na ONLOAD forme (ExecSql je pokazao poruku)
+        /// znači da se forma ne otvara. "#OK" nije greška (ONL-02).
+        /// </summary>
+        public string GreskaOnLoad { get; private set; }
+
         public void Prikazi(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj, bool modal = true, Form vlasnik = null)
         {
             Slozi(forma, kontekst, citaj);
             if (forma == null)
                 return;
+            if (!string.IsNullOrEmpty(GreskaOnLoad))
+            {
+                Trag("onload greska, forma se ne otvara " + forma.Ime);
+                return;
+            }
             Trag("prije-show " + forma.Ime + " modal=" + modal);
             if (modal)
             {
@@ -85,6 +96,33 @@ namespace Carpo.NetGen.Ui
                     ShowDialog();
             }
             Trag("poslije-show " + forma.Ime);
+        }
+
+        /// <summary>
+        /// Class1.ExecSql Catch (157-200): greška SQL-a se pokaže korisniku (MsgBox); "#OK"/"+OK" i tihe
+        /// greške (ssoperateri, sspermission, NetGenDBFilter...) nisu greška pa lanac ide dalje (MSG-01).
+        /// Ostale se bace dalje, pa lanac stane kao na GreskaKodIzvrsavanjaSQLa.
+        /// </summary>
+        private Func<string, DataTable> Omotaj(Func<string, DataTable> citaj)
+        {
+            if (citaj == null)
+                return null;
+            return delegate (string sql)
+            {
+                try
+                {
+                    return citaj(sql);
+                }
+                catch (Exception ex)
+                {
+                    SqlPoruka.Ishod ish = SqlPoruka.IzIznimke(ex.Message);
+                    if (ish.Prikazi)
+                        NgPoruka.Info(this, "\r\n" + ish.Tekst + "\r\n\r\n", "Poruka");
+                    if (string.IsNullOrEmpty(ish.Greska))
+                        return null;
+                    throw;
+                }
+            };
         }
 
         private static void Trag(string red)
@@ -114,6 +152,8 @@ namespace Carpo.NetGen.Ui
         private void SloziTijelo(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj)
         {
             _nakonDjeteta.Clear();
+            GreskaOnLoad = "";
+            citaj = Omotaj(citaj);
             _citaj = citaj;
             _kontekst = kontekst;
             _forma = forma;
@@ -2798,6 +2838,7 @@ namespace Carpo.NetGen.Ui
             catch (Exception ex)
             {
                 NgDnevnik.Greska(ex.Message + " | " + sql);
+                GreskaOnLoad = string.IsNullOrEmpty(ex.Message) ? "greska" : ex.Message;
             }
             if (dt == null || dt.Rows.Count == 0)
                 return;

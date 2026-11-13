@@ -1995,6 +1995,7 @@ namespace Carpo.NetGen.GridTest
             PokaziUpitUcinak();
             RafalnoPravila();
             PodlogaRafalno();
+            GreskeDijaloga();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -2622,6 +2623,82 @@ namespace Carpo.NetGen.GridTest
                 NgPoruka.Zapis = null;
             }
             T("msg-msgbox-zadano", poruka == "SPREMLJENO", poruka);
+        }
+
+        /// <summary>
+        /// Class1.ExecSql u dijalogu (MSG-01): greška se pokaže i prekine lanac, "#OK" pokaže i ide dalje.
+        /// ONLOAD s greškom ne otvara formu (Form2.vb 1199, Form1.vb 5352, ONL-02).
+        /// </summary>
+        private static void GreskeDijaloga()
+        {
+            var poruke = new List<string>();
+            NgPoruka.Zapis = delegate (string x) { poruke.Add(x ?? ""); };
+            var sql = new List<string>();
+            Func<string, DataTable> baza = delegate (string s)
+            {
+                sql.Add(s ?? "");
+                if ((s ?? "").IndexOf("provjera", StringComparison.Ordinal) >= 0)
+                    throw new InvalidOperationException("Dokument je zaključen #OK");
+                if ((s ?? "").IndexOf("pada", StringComparison.Ordinal) >= 0)
+                    throw new InvalidOperationException("Zadani konto ne postoji");
+                var dt = new DataTable();
+                dt.Columns.Add("status");
+                dt.Rows.Add("dalje");
+                return dt;
+            };
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("label", NgGrana.Label, "status", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "s" } }), true));
+                kontrole.Add(new NgControl("button", NgGrana.Button, "ok", new NgAttributeBag(new Dictionary<string, string>
+                {
+                    { "ONCLICK", "exec spProvjera 1#select 'dalje' as status" }
+                }), true));
+                kontrole.Add(new NgControl("button", NgGrana.Button, "pad", new NgAttributeBag(new Dictionary<string, string>
+                {
+                    { "ONCLICK", "exec spPada 1#select 'nakon' as status" }
+                }), true));
+                var forma = new NgForm("G1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), baza);
+                    var ok = d.Controls.Find("ok", true);
+                    var pad = d.Controls.Find("pad", true);
+                    sql.Clear();
+                    poruke.Clear();
+                    if (ok.Length > 0)
+                        ((DevExpress.XtraEditors.SimpleButton)ok[0]).PerformClick();
+                    bool dalje = sql.Exists(delegate (string x) { return x.IndexOf("'dalje'", StringComparison.Ordinal) >= 0; });
+                    T("msg01-ok-nastavlja", dalje && poruke.Count == 1 && poruke[0].Contains("Dokument je zaključen") && !poruke[0].Contains("#"),
+                        string.Join(" / ", poruke.ToArray()) + " | " + string.Join(" ; ", sql.ToArray()));
+                    sql.Clear();
+                    poruke.Clear();
+                    if (pad.Length > 0)
+                        ((DevExpress.XtraEditors.SimpleButton)pad[0]).PerformClick();
+                    bool nakon = sql.Exists(delegate (string x) { return x.IndexOf("'nakon'", StringComparison.Ordinal) >= 0; });
+                    T("msg01-greska-prekida", !nakon && poruke.Count == 1 && poruke[0].Contains("Zadani konto ne postoji"),
+                        string.Join(" / ", poruke.ToArray()) + " | " + string.Join(" ; ", sql.ToArray()));
+                }
+                var onload = new NgForm("G2", new NgAttributeBag(new Dictionary<string, string>()), "", "exec spPada @id=1", new List<NgControl>(), new List<NgButton>(), new List<string>());
+                using (var d2 = new Dijalog())
+                {
+                    poruke.Clear();
+                    d2.Slozi(onload, new SqlKontekst(), baza);
+                    bool greska = !string.IsNullOrEmpty(d2.GreskaOnLoad);
+                    // Prikazi samo kad je greška zapamćena: tada se vraća bez ShowDialog (inače bi test stao).
+                    if (greska)
+                        d2.Prikazi(onload, new SqlKontekst(), baza, true, null);
+                    T("onl02-onload-greska", greska && !d2.Visible && d2.DialogResult != DialogResult.OK && poruke.Count >= 1, d2.GreskaOnLoad);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("greske-dijaloga", false, ex.ToString());
+            }
+            finally
+            {
+                NgPoruka.Zapis = null;
+            }
         }
 
         private static object Polje(object o, string ime)

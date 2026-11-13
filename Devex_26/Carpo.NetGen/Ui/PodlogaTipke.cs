@@ -78,6 +78,9 @@ namespace Carpo.NetGen.Ui
             string str = int.TryParse(op, NumberStyles.Integer, CultureInfo.InvariantCulture, out broj) && broj >= 0 ? " " + broj.ToString(CultureInfo.InvariantCulture) : op;
             string argumenti = "-s " + _server + " -d " + _baza + " -h " + kod + " -o " + str + " -p " + xml;
             NgDnevnik.Akcija("JupiterHelp.exe " + argumenti);
+            // Klik-pregled ne pokreće vanjske programe.
+            if (NgPoruka.Tiho)
+                return;
             try
             {
                 var p = new Process();

@@ -133,6 +133,23 @@ namespace Carpo.NetGen.Ui
             return "";
         }
 
+        /// <summary>
+        /// Dijalog mora vidjeti grešku SQL-a (Dijalog.Omotaj pokaže poruku i prekine lanac, MSG-01).
+        /// Citaj je guta; tiha greška (ssPermission, NetGenDBFilter...) ostaje null kao u ExecSql.
+        /// </summary>
+        private DataTable CitajZaDijalog(string sql)
+        {
+            _zadnjaPoruka = null;
+            DataTable t = Citaj(sql);
+            if (t == null && !string.IsNullOrEmpty(_zadnjaPoruka) && !SqlPoruka.Tiha(_zadnjaPoruka))
+            {
+                string poruka = _zadnjaPoruka;
+                _zadnjaPoruka = null;
+                throw new InvalidOperationException(poruka);
+            }
+            return t;
+        }
+
         /// <summary>6813-6835: ColorDialog, @@SELECTEDCOLOR je HTML boja, pa SQL iz originalnog segmenta.</summary>
         private void IzaberiBoju(string original)
         {

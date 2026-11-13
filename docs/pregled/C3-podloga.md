@@ -41,6 +41,8 @@ Carpo je imao samo prvi (`IzvrsiLanac`), pa su desni klik s `~` i događaji ćel
 | **ENT-02** | ONENTERKEY 2 | `GridEX1_KeyDown` Enter → `NovaGenerickaForma(ONENTERKEY)` | ignorirano (čitao ga je samo dijalog) | isto, osim dok se ćelija uređuje |
 | **KEY-01** | sve granule | `Form1_KeyDown`: Escape zatvara podlogu | Carpo `JupiterShared_KeyDown` čita `DefinitionForm` koji podloga nema: uz KeyPreview svaka tipka baca NullReferenceException | podloga sama obrađuje tipke (`OnKeyDown`), Escape zatvara osim dok se uređuje ćelija ili filter red |
 | **HLP-01** | HELPKOD 16 | F1 i gumb "?" pokreću `JupiterHelp.exe -s -d -h -o -p` | ignorirano | isto (bez exe-a samo dnevnik, kao On Error Resume Next) |
+| **MSG-02** | svaki SQL u dijalogu | `ExecSql` pokaže grešku, `GreskaKodIzvrsavanjaSQLa` prekida lanac (Form2 7511), "#OK" ne | `Podloga.Citaj` je gutao grešku: lanac dijaloga je išao dalje (i OK zatvarao formu), poruka se nije vidjela (EVT-03 je radio samo s čitačem koji baca) | `Dijalog.Omotaj`: poruka kao ExecSql, "#OK"/tiha greška vraća null, ostale se bace pa lanac stane. Podloga i ObicnaForma daju dijalogu čitač koji baca |
+| **ONL-02** | ONLOAD forme | `ProcitajXML` 1199: greška na ONLOAD → `Exit Sub`, Form1 5352 ne otvara formu | forma se otvarala s praznim poljima | forma se ne otvara (`Dijalog.GreskaOnLoad`) |
 
 ## Otvoreno
 

@@ -412,7 +412,7 @@ namespace Carpo.NetGen.Ui
                 // Form1.NovaGenerickaForma 5295: Form2b.DetID = GetDetID() (@@DETID u dijalogu, DET-01).
                 if (_master.Kontekst != null)
                     _master.Kontekst.DetId = DetaljId();
-                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj, true, this);
+                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), CitajZaDijalog, true, this);
                 string iz = dij.Vrijednost("izvjestaj");
                 if (!string.IsNullOrEmpty(iz))
                     _polja["izvjestaj"] = iz;
