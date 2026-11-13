@@ -19,6 +19,15 @@ namespace Carpo.NetGen.Ui
     {
         public static void Vezi(GridView pogled, Func<string> popup, Action<string> naredba)
         {
+            Vezi(pogled, popup, naredba, null);
+        }
+
+        /// <summary>
+        /// dozvola(natpis, stalna): Form1 3577-3610 za stavke iz POPUP-a i ssPermissionProvjeriRafalnuKomandu
+        /// (3627-3672) za stalne stavke. Null ne mijenja ništa (DOZ-01).
+        /// </summary>
+        public static void Vezi(GridView pogled, Func<string> popup, Action<string> naredba, Func<string, bool, Dozvole.Stanje> dozvola)
+        {
             if (pogled == null)
                 return;
             bool grupe = false;
@@ -39,12 +48,14 @@ namespace Carpo.NetGen.Ui
                         if (naredba != null)
                             naredba(cilj);
                     });
+                    Primijeni(stavka, dozvola, dio[0], false);
                     e.Menu.Items.Add(stavka);
                 }
                 var export = new DXMenuItem("Export grid", delegate { Izvezi(pogled.GridControl); });
                 export.BeginGroup = stavke.Count > 0;
+                Primijeni(export, dozvola, "Export grid", true);
                 e.Menu.Items.Add(export);
-                e.Menu.Items.Add(new DXMenuItem("Grupiraj / razgrupiraj", delegate
+                var grupiraj = new DXMenuItem("Grupiraj / razgrupiraj", delegate
                 {
                     // ToolStripMenuItem1_Click "groupungropu": izmjenicno ExpandGroups / CollapseGroups.
                     if (grupe)
@@ -52,15 +63,32 @@ namespace Carpo.NetGen.Ui
                     else
                         pogled.ExpandAllGroups();
                     grupe = !grupe;
-                }));
-                e.Menu.Items.Add(new DXMenuItem("Ispis", delegate
+                });
+                Primijeni(grupiraj, dozvola, "Grupiraj / razgrupiraj", true);
+                e.Menu.Items.Add(grupiraj);
+                var ispis = new DXMenuItem("Ispis", delegate
                 {
                     var g = pogled.GridControl;
                     if (g != null && g.IsPrintingAvailable)
                         g.ShowPrintPreview();
-                }));
+                });
+                Primijeni(ispis, dozvola, "Ispis", true);
+                e.Menu.Items.Add(ispis);
                 e.Allow = true;
             };
+        }
+
+        private static void Primijeni(DXMenuItem stavka, Func<string, bool, Dozvole.Stanje> dozvola, string natpis, bool stalna)
+        {
+            if (dozvola == null || stavka == null)
+                return;
+            Dozvole.Stanje st = dozvola(natpis, stalna);
+            if (st == null)
+                return;
+            if (st.Omogucen.HasValue)
+                stavka.Enabled = st.Omogucen.Value;
+            if (st.Vidljiv.HasValue)
+                stavka.Visible = st.Vidljiv.Value;
         }
 
         /// <summary>"exportgrid": spremi pa otvori (NetGen .xls; DevExpress .xlsx).</summary>

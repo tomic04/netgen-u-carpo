@@ -32,7 +32,7 @@ namespace Carpo.NetGen.Ui
     /// Samo granule čiji NetGen raspored jest stablo lijevo, master-detail i gumbi dolje.
     /// Ostale idu u ObicnaForma ili u Dijalog. Odabir je OdabirForme.JeManager.
     /// </summary>
-    public sealed class Podloga : Carpo.UI.Forms.Master.Manager
+    public sealed partial class Podloga : Carpo.UI.Forms.Master.Manager
     {
         private readonly Stablo _stablo = new Stablo();
         private readonly MasterGrid _master = new MasterGrid();
@@ -53,6 +53,7 @@ namespace Carpo.NetGen.Ui
 
         public Podloga()
         {
+            NgPoruka.Pripremi();
             BonusSkins.Register();
             SkinManager.EnableFormSkins();
             Text = "NetGen";
@@ -70,15 +71,17 @@ namespace Carpo.NetGen.Ui
             gvGla.FocusedRowChanged += Pogled_FocusedRowChanged;
             gvGla.DoubleClick += Pogled_DoubleClick;
             // Form1 3560 (POPUP/POPUPMASTER, 204 granule) i 3700 (POPUPDETAIL): desni klik (POP-01).
-            GridIzbornik.Vezi(gvGla, delegate { return _projekt == null ? "" : (_projekt.Popup ?? ""); }, IzvrsiIzbornik);
-            GridIzbornik.Vezi(gvDet, delegate { return AtributProjekta("POPUPDETAIL"); }, IzvrsiIzbornik);
-            // Form1.GridEX2_DoubleClick (7200): DETAILDBLCLICK otvara formu (DBL-02).
+            // Form1 3577-3610 i 3627-3672: s PERMISIO stavke i stalne stavke slijede ssPermission (DOZ-01).
+            GridIzbornik.Vezi(gvGla, delegate { return _projekt == null ? "" : (_projekt.Popup ?? ""); }, IzvrsiIzbornik, DozvolaStavke);
+            GridIzbornik.Vezi(gvDet, delegate { return AtributProjekta("POPUPDETAIL"); }, IzvrsiIzbornik, DozvolaStavke);
+            // Form1.GridEX2_DoubleClick (7200): NovaGenerickaForma(strDBlClickDetForm), lanac kao gumb (DBL-02).
             gvDet.DoubleClick += delegate
             {
                 string f = AtributProjekta("DETAILDBLCLICK");
                 if (f.Length > 0)
-                    OtvoriFormu(f);
+                    IzvrsiLanac(f);
             };
+            VeziUredjivanje();
             CarpoIzgled.SlikeCvorova(trMain);
             trMain.OptionsView.ShowColumns = false;
             trMain.OptionsView.ShowIndicator = false;
@@ -154,9 +157,13 @@ namespace Carpo.NetGen.Ui
             _master.Clipboard = Carpo.NetGen.Kontrole.ClipboardNg.IzSetDefaults(zadano, kontekst, Citaj);
             // Isti CB vidi i dijalog (SqlTekst.ZaFormu) i gumb, kao cls1.CB u NetGenu (CB-01).
             kontekst.Clipboard = _master.Clipboard;
+            UcitajDozvole();
+            UcitajEditStupce();
             _master.Ucitaj(_projekt, null);
             NapuniGrid();
             NapuniGumbe();
+            // Form1.vb 3873 ssPermissionProvjeri prije ONLOAD2 (3906).
+            PrimijeniDozvoleGumba();
             PrimijeniOnLoad2();
             return true;
         }
@@ -316,11 +323,12 @@ namespace Carpo.NetGen.Ui
         /// </summary>
         private void IzvrsiIzbornik(string naredba)
         {
+            // Form1 5757: lanac s '~' ide u Rafalno (izvršava SQL), ne u NovaGenerickaForma (RAF-01).
             string lanac = GridIzbornik.Lanac(naredba, true);
             if (lanac.Length > 0)
-                IzvrsiLanac(lanac);
+                IzvrsiRafalno(lanac);
             else
-                OtvoriFormu(naredba);
+                IzvrsiLanac(naredba);
         }
 
         /// <summary>Form1.GetDetID (5601-5615): "id" detail reda, inace prvi stupac podatka.</summary>
@@ -436,7 +444,7 @@ namespace Carpo.NetGen.Ui
                 string sljedeca = DijalogTok.NextForm(forma);
                 if (sljedeca.Length > 0)
                     OtvoriFormu(sljedeca);
-                else
+                else if (_zadnjiRed)
                     OsvjeziMaster();
             }
             finally
@@ -468,10 +476,20 @@ namespace Carpo.NetGen.Ui
             }
         }
 
+        /// <summary>
+        /// Form1.PokaziUpit(strZadnjiSQLsakojimjepunjenGrid) (4577, 5409, 5519, 6675): zadnji SQL kojim je
+        /// grid napunjen, s filtrom forme, a ne ONLOAD ispočetka (REF-01). Bez zadnjeg SQL-a ONLOAD.
+        /// </summary>
         private void OsvjeziMaster()
         {
             if (DijalogTok.JeJupiter(_server) || _projekt == null)
                 return;
+            if (_master.Stanje != null && _master.Stanje.Odluka == "salji" && !_master.Stanje.BlokiranoPisanje
+                && !string.IsNullOrEmpty(_master.Stanje.SqlZaSlanje))
+            {
+                NapuniGrid();
+                return;
+            }
             _master.Ucitaj(_projekt, null);
             NapuniGrid();
         }
@@ -513,10 +531,14 @@ namespace Carpo.NetGen.Ui
                 }
                 if (s.StartsWith("select", StringComparison.OrdinalIgnoreCase))
                 {
-                    string stanje = Lanac.GumbIzCase(s, Polje("izvjestaj"));
-                    int jednako = stanje.IndexOf('=');
-                    if (jednako > 0)
-                        PostaviGumb(stanje.Substring(0, jednako), stanje.Substring(jednako + 1) != "disable");
+                    // Form1.vb 4875-4899: izvrši SQL, prvi red po natpisu gumba (DodatnoPostimajKontrolu, BTN-03).
+                    if (!IzvrsiGumbSelect(s))
+                    {
+                        string stanje = Lanac.GumbIzCase(s, Polje("izvjestaj"));
+                        int jednako = stanje.IndexOf('=');
+                        if (jednako > 0)
+                            PostaviGumb(stanje.Substring(0, jednako), stanje.Substring(jednako + 1) != "disable");
+                    }
                 }
                 else if (GumbTok.Akcija(_projekt, s) == "fiskal")
                 {
@@ -540,7 +562,7 @@ namespace Carpo.NetGen.Ui
                         PorukaNaredba.Pokazi(s);
                 }
                 else if (GumbTok.Akcija(_projekt, s) == "openform")
-                    OtvoriFormu(OtvoriNaredba.Ime(s));
+                    OtvoriZaRedove(OtvoriNaredba.Ime(s));
                 else if (GumbTok.Akcija(_projekt, s) == "stupci")
                     PrimijeniStupce(s);
                 else if (GumbTok.Akcija(_projekt, s) == "word")
@@ -588,7 +610,7 @@ namespace Carpo.NetGen.Ui
                         return;
                 }
                 else
-                    OtvoriFormu(s);
+                    OtvoriZaRedove(s);
             }
         }
 
@@ -650,12 +672,55 @@ namespace Carpo.NetGen.Ui
 
         private void NapuniGrid()
         {
+            // Form1.PokaziUpit 1837-1839: tID = GetID() prije punjenja.
+            string staro = gvGla.FocusedRowHandle >= 0 && gvGla.DataRowCount > 0 ? IdCelije(gvGla.FocusedRowHandle) : "";
             _punim = true;
             _master.IzvrsiCitanje(_spoj);
             VeziGrid(gvGla, gcGla, _master.Stanje.Tablica, _master.Stanje.Kolone, _master.Stanje.Poruka, _master.Stanje.CheckboxVidljiv, _master.Stanje.GroupByBox, _master.Stanje.FilterRed || _master.Stanje.FilterNamjernoOdstupanje || !_master.Stanje.FilterIzXml);
+            PozicionirajMaster(staro);
             SpojiId();
             _punim = false;
             OsvjeziDetail();
+        }
+
+        /// <summary>
+        /// Form1.PokaziUpit 2016-2047: red s istim prvim stupcem kao prije (Find na Columns(2)), pa movetoid
+        /// trenutnog reda u stupcu id, pa MASTERMOVELAST (FOK-01).
+        /// </summary>
+        private void PozicionirajMaster(string staro)
+        {
+            DataTable t = _master.Stanje.Tablica;
+            if (t == null || t.Columns.Count == 0 || gvGla.DataRowCount == 0)
+                return;
+            string prvi = t.Columns[0].ColumnName;
+            if (!string.IsNullOrEmpty(staro) && staro != "0")
+            {
+                int h = NadjiRed(prvi, staro);
+                if (h >= 0)
+                    gvGla.FocusedRowHandle = h;
+            }
+            if (t.Columns.Contains("id") && t.Columns.Contains("movetoid") && gvGla.FocusedRowHandle >= 0)
+            {
+                object m = gvGla.GetRowCellValue(gvGla.FocusedRowHandle, "movetoid");
+                string cilj = m == null || m == DBNull.Value ? "" : Convert.ToString(m).Trim();
+                int h = cilj.Length == 0 ? -1 : NadjiRed("id", cilj);
+                if (h >= 0)
+                    gvGla.FocusedRowHandle = h;
+            }
+            if (_master.Stanje.FocusRazlog == "MASTERMOVELAST")
+                gvGla.MoveLast();
+        }
+
+        private int NadjiRed(string stupac, string vrijednost)
+        {
+            for (int r = 0; r < gvGla.DataRowCount; r++)
+            {
+                int h = gvGla.GetRowHandle(r);
+                object v = gvGla.GetRowCellValue(h, stupac);
+                if (v != null && v != DBNull.Value && Convert.ToString(v).Trim() == vrijednost)
+                    return h;
+            }
+            return -1;
         }
 
         private void IzvrsiSql(string sql)
@@ -757,6 +822,7 @@ namespace Carpo.NetGen.Ui
                     || string.Equals(k.PoravnanjeZaglavlja, "Left", System.StringComparison.OrdinalIgnoreCase))
                     c.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Near;
             }
+            PodesiUredjivanje(pogled, kolone);
             if (pogled.RowCount > 0)
                 pogled.FocusedRowHandle = 0;
         }
@@ -806,14 +872,21 @@ namespace Carpo.NetGen.Ui
             DataTable t = Citaj(sql);
             if (t == null || t.Rows.Count == 0)
                 return;
-            DataRow row = t.Rows[0];
+            PrimijeniStanjeGumba(t.Rows[0]);
+        }
+
+        /// <summary>Form1.DodatnoPostimajKontrolu (4013) za Button1..10 po natpisu: stupac s imenom gumba.</summary>
+        private void PrimijeniStanjeGumba(DataRow row)
+        {
+            if (row == null)
+                return;
             for (int i = 0; i < pnlButtons.Controls.Count; i++)
             {
                 var gumb = pnlButtons.Controls[i] as SimpleButton;
                 if (gumb == null)
                     continue;
                 string natpis = (gumb.Text ?? "").Replace("\r\n", "").Trim();
-                if (!row.Table.Columns.Contains(natpis))
+                if (natpis.Length == 0 || !row.Table.Columns.Contains(natpis))
                     continue;
                 string v = row[natpis] == DBNull.Value ? "" : Convert.ToString(row[natpis]);
                 string akcija = OnLoad2.Akcija(v);
@@ -977,10 +1050,13 @@ namespace Carpo.NetGen.Ui
             }
             catch (Exception ex)
             {
-                if (!filter)
+                _zadnjaPoruka = ex.Message ?? "";
+                // Class1.ExecSql 157-166: greška o ssoperateri, sspermission, NetGenDBFilter... je tiha.
+                bool tiho = filter || SqlPoruka.Tiha(ex.Message);
+                if (!tiho)
                     _sqlGreska = ex.Message + " | " + sql;
                 NgDnevnik.Greska(ex.Message + " | " + sql);
-                if (!filter)
+                if (!tiho)
                     PostaviStatus(ex.Message);
                 return null;
             }
@@ -1005,6 +1081,7 @@ namespace Carpo.NetGen.Ui
             var redovi = new List<string>();
             bool upis = !samoCitanje && DijalogTok.UpisNaSpinu(_server, _baza);
             DijalogTok.DozvoliUpis = upis;
+            NgPoruka.Tiho = true;
             _imeUnosa = "kp" + DateTime.Now.ToString("HHmmss");
             DijalogTok.TekstUpisa = _imeUnosa;
             _korisceno.Clear();
@@ -1028,6 +1105,7 @@ namespace Carpo.NetGen.Ui
                     OcistiTest();
                 Dijalog.NakonPrikaza = null;
                 DijalogTok.DozvoliUpis = false;
+                NgPoruka.Tiho = false;
                 ZaustaviZatvaranje();
             }
         }
@@ -1160,6 +1238,12 @@ namespace Carpo.NetGen.Ui
                             NapuniGrid();
                         }
                         OznaciRedove();
+                    }
+                    else if (gvGla.OptionsSelection.MultiSelectMode == GridMultiSelectMode.CheckBoxRowSelect)
+                    {
+                        // NovaGenerickaForma2 otvara formu za svaki označeni red (OtvoriZaRedove). Klik-pregled
+                        // ne smije naslijediti kvačice prethodnog MULTISELECT gumba.
+                        gvGla.ClearSelection();
                     }
                     PokreniZatvaranje();
                     g.PerformClick();
@@ -1436,6 +1520,13 @@ namespace Carpo.NetGen.Ui
                 if (sel[i] < 0)
                     continue;
                 string id = IdCelije(sel[i]);
+                if (id.Length > 0 && id != "0")
+                    ids.Add(id);
+            }
+            // Form1.vb 5003-5006: MULTISELECT bez kvačica (0 ili 1) ubaci GetID() trenutnog reda.
+            if (ids.Count == 0 && !MultiOdabir.Plavi(ime) && gvGla.FocusedRowHandle >= 0)
+            {
+                string id = IdCelije(gvGla.FocusedRowHandle);
                 if (id.Length > 0 && id != "0")
                     ids.Add(id);
             }

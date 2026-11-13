@@ -18,6 +18,8 @@ namespace Carpo.NetGen.Grid
         public bool CheckboxVidljiv = true;
         public bool TotalRed = true;
         public bool FokusZadnji;
+        /// <summary>EDITCOLUMNSDET (Form1.vb 3477, 2331): CreateGridColumns(Trs, GridEX2, strEditColumnsDET).</summary>
+        public string EditStupci = "";
         public string IdMaster = "0";
         public string Parametri = "";
         public DataTable Tablica;
@@ -49,6 +51,7 @@ namespace Carpo.NetGen.Grid
             if (total != null)
                 Stanje.TotalRed = total.Trim().ToUpperInvariant() != "FALSE";
             Stanje.FokusZadnji = string.Equals((Atr(projekt, "DETMOVELAST") ?? "").Trim(), "true", StringComparison.OrdinalIgnoreCase);
+            Stanje.EditStupci = Atr(projekt, "EDITCOLUMNSDET") ?? "";
             Dodaj(Atr(projekt, "SQL2"));
             Dodaj(Atr(projekt, "SQL3"));
             Dodaj(Atr(projekt, "SQL4"));
@@ -97,7 +100,7 @@ namespace Carpo.NetGen.Grid
             var sel = new GridKolona { Podatak = "Selector", Sirina = 22, Selektor = true, Vidljiva = Stanje.CheckboxVidljiv, EditTip = "CheckBox" };
             Stanje.Kolone.Add(sel);
             foreach (DataColumn c in tablica.Columns)
-                Stanje.Kolone.Add(MasterGrid.IzPodatka(c, ""));
+                Stanje.Kolone.Add(MasterGrid.IzPodatka(c, Stanje.EditStupci));
             if (definicija == null)
                 return;
             bool clear = definicija.ClearColums != null && definicija.ClearColums.Trim().ToLowerInvariant() == "true";

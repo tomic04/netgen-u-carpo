@@ -7,6 +7,9 @@ namespace Carpo.NetGen.Komande
     {
         public static Action<string> Prikazi;
 
+        /// <summary>Kad test nije postavio Prikazi: Ui.NgPoruka (XtraMessageBox, tiho na CI-u). MSG-01.</summary>
+        public static Action<string> Zadano;
+
         public static string Tekst(string naredba)
         {
             string u = (naredba ?? "").Trim().ToUpperInvariant();
@@ -25,6 +28,8 @@ namespace Carpo.NetGen.Komande
             string t = Tekst(naredba);
             if (Prikazi != null)
                 Prikazi(t);
+            else if (Zadano != null)
+                Zadano(t);
         }
     }
 }
