@@ -45,8 +45,7 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 ### R113 Janus dizajner bez XML-a
 
 - **NetGen:** `ApperianceDialog` i `FormatStyles` (`Form1.vb` 6146–6159) samo otvore Janus dijalog i vežu ga na grid. Nema atributa u XML-u koji to traži.
-- **Zašto ostaje:** DevExpress ima `FormatConditions` i poglede, i to je portano (`TableView`→`GridView`, `CardView`→`CardView`, `SingleCard`→`LayoutView`, `NEGATIVERED`/`NOTZERORED`). Sam `Show()` dizajnera nema ekvivalent koji XML može uključiti.
-- **Test:** `F1-114` pokriva poglede. Dizajner se ne otvara.
+- **Zašto ostaje:** XML ne traži te dijaloge. `Show()` nema put u Carpo formi.
 
 ### R101 i R102 Spin nema prava tijela
 
@@ -157,4 +156,3 @@ Svaka uklonjena stavka ima test koji provjerava NetGen linije. R59 i R110 su por
 | R104 Manager samo kad treba | `odabir-verizne-manager` |
 | R108 parametri dijaloga | `param-radio` |
 | R110 Left/Center/Right i `lodani` | `ispis-zaglavlje` |
-| R114 `JupiterTranslator10` u `Run` | `F1-114` |

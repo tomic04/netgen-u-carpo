@@ -1984,6 +1984,7 @@ namespace Carpo.NetGen.GridTest
             T("combo-hash", ComboDijalog.OdvojiHash("sql##7", out odabrano, out ostatak) && odabrano == "7" && ostatak == "sql", odabrano);
             T("trazilica-preskok", Ponasanje.PreskociTrazilicu("", "x") && Ponasanje.PreskociTrazilicu("Kava", "Kava") && !Ponasanje.PreskociTrazilicu("*", "*") && !Ponasanje.PreskociTrazilicu("nova", "stara"), "");
             DijalogUcinak();
+            PokaziUpitUcinak();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -2045,6 +2046,48 @@ namespace Carpo.NetGen.GridTest
             {
                 d.Close();
                 d.Dispose();
+            }
+        }
+
+        private static void PokaziUpitUcinak()
+        {
+            string root = Environment.GetEnvironmentVariable("GITHUB_WORKSPACE");
+            if (string.IsNullOrEmpty(root))
+                root = Directory.GetCurrentDirectory();
+            string xml = Path.Combine(root, "definitions", "netgen", "BIOVEGA", "JeziciNG.xml");
+            if (!File.Exists(xml))
+            {
+                T("pokazi-upit", false, "nema " + xml);
+                return;
+            }
+            var forma = new Podloga();
+            try
+            {
+                forma.ShowInTaskbar = false;
+                forma.StartPosition = FormStartPosition.Manual;
+                forma.Location = new Point(-32000, -32000);
+                forma.Show();
+                bool otvoren = forma.Prikazi(xml, "localhost", "spin", 7);
+                FieldInfo gvPolje = typeof(Podloga).GetField("gvGla", BindingFlags.Instance | BindingFlags.NonPublic);
+                object gv = gvPolje == null ? null : gvPolje.GetValue(forma);
+                int redova = -1;
+                if (gv != null)
+                {
+                    PropertyInfo broj = gv.GetType().GetProperty("DataRowCount");
+                    if (broj != null)
+                        redova = Convert.ToInt32(broj.GetValue(gv, null));
+                }
+                FieldInfo masterPolje = typeof(Podloga).GetField("_master", BindingFlags.Instance | BindingFlags.NonPublic);
+                MasterGrid master = masterPolje == null ? null : masterPolje.GetValue(forma) as MasterGrid;
+                string greska = master == null || master.Stanje == null ? "" : (master.Stanje.SqlGreska ?? "");
+                string sql = master == null || master.Stanje == null ? "" : (master.Stanje.SqlZaSlanje ?? "");
+                T("pokazi-upit", otvoren && redova > 0 && greska.Length == 0 && sql.IndexOf("spJeziciQuery", StringComparison.Ordinal) >= 0,
+                    "redovi=" + redova.ToString() + " " + greska + " " + sql);
+            }
+            finally
+            {
+                forma.Close();
+                forma.Dispose();
             }
         }
 
