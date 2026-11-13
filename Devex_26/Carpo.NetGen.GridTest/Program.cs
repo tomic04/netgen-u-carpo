@@ -33,6 +33,7 @@ namespace Carpo.NetGen.GridTest
             AssemblyLoad();
             Fiskal();
             BatIPost();
+            RazlikeImenom();
             Include();
             Ispis();
             Zamjene();
@@ -1788,6 +1789,116 @@ namespace Carpo.NetGen.GridTest
             T("prazan-alert", !dalje && pitao && stani && up == "Stoj" && lanac.Count == 3 && lanac[0].Vrsta == "refresh" && lanac[1].Vrsta == "beep" && lanac[2].Vrsta == "naredba", lanac.Count.ToString());
             T("netgen-extensions", Carpo.NetGen.Komande.EkstenzijaGrid.Sklop == "NetGenExtensions"
                 && Carpo.NetGen.Komande.EkstenzijaGrid.IspisKlasa == "NetGenExtensions.frmGridExPrintingREPX", dll);
+        }
+
+        private static NgForm FormaIme(NgProject p, string ime)
+        {
+            if (p == null || p.Forme == null)
+                return null;
+            for (int i = 0; i < p.Forme.Count; i++)
+            {
+                if (string.Equals(p.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
+                    return p.Forme[i];
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Imena iz docs/razlike-netgen-carpo.md koja do sada nisu bila test.
+        /// Svaka provjera je NetGen pravilo, ne prilagodba da prođe.
+        /// </summary>
+        private static void RazlikeImenom()
+        {
+            string[] on = Lanac.OnLoadLanac(":a#b");
+            T("GFI-03", on.Length == 2 && on[0] == "a" && on[1] == "b" && Lanac.OnLoadLanac("select 1#select 2").Length == 0, on.Length.ToString());
+            T("GFI-05", !IspisMotora.JeIspisImena("bilanca.clsGFIPOD") && IspisMotora.JeIspisImena("x.clsReport"), "");
+            T("KNP-03", !PrintBridge.JeLandscape("PORTAL") && PrintBridge.JeLandscape("LANDSCAPE") && !PrintBridge.JeLandscape(""), "");
+            T("REA-05", IspisMotora.Zaglavlje("#ISEMPTY()# #Od 1. do 2.") == ""
+                && IspisMotora.Zaglavlje("#ISEMPTY(1)# #Od 1. do 2.") == "Od 1. do 2.", IspisMotora.Zaglavlje("#ISEMPTY(1)# #Od 1. do 2."));
+            string gumb = Lanac.GumbIzCase("select case when '1'='1' then 'enable' else 'disable' end as Spremi", "");
+            T("MPP-04", gumb == "Spremi=enable" && OnLoad2.Akcija("enable") == "enable", gumb);
+            var lvo = DijalogTok.Koraci("IZMJENA(@a=@@x)");
+            T("LVO-05", lvo.Count == 1 && lvo[0].Vrsta == "sql" && Lanac.OnLoadLanac("IZMJENA(@a=@@x)").Length == 0, lvo.Count == 0 ? "" : lvo[0].Vrsta);
+            string pri = SqlTekst.Sredi("select @robaid", new SqlKontekst());
+            T("PRI", pri.IndexOf("@robaid", StringComparison.Ordinal) >= 0 && pri.IndexOf("@@", StringComparison.Ordinal) < 0 && SqlTekst.Odluka(pri) == "salji", pri);
+
+            string dir = Path.Combine(Path.GetTempPath(), "ng-razlike-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            string xml = Path.Combine(dir, "R.xml");
+            File.WriteAllText(xml,
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                + "<PROJECT NAME=\"R\" ONLOAD=\"select 1\" COMMANDTIMEOUT=\"300\" TOTALROW=\"FALSE\" AUTOFITCOLUMNS=\"TRUE\" HELPKOD=\"ABC\" DETAILDBLCLICK=\":DET\" PAGEORIENTATION=\"PORTAL\" REFRESHAFTERCHILD=\"TRUE\" FILLEXPLORER=\"TRUE\" ONENTERKEY=\":X\" CMD6CAPTION=\"Lista\" DETCHECKBOXVISIBLE=\"FALSE\">"
+                + "<MASTERCOLUMNS><COLUMN NAME=\"Id\" POSITION=\"2\" /></MASTERCOLUMNS>"
+                + "<UNESI FILLEXPLORER=\"TRUE\" ONSUBMIT=\"select 1\" />"
+                + "<STABLO FILLEXPLORER=\"onlytree\" />"
+                + "<PRAZAN FILLEXPLORER=\"\" />"
+                + "<BEZ />"
+                + "<DIJETE REFRESHAFTERCHILD=\"TRUE\">"
+                + "<INPUT TYPE=\"text\" NAME=\"prvi\" TABINDEX=\"5 \" />"
+                + "<INPUT TYPE=\"text\" NAME=\"drugi\" />"
+                + "<INPUT TYPE=\"date\" NAME=\"d\" VALUE=\"firstdayofmonth\" CAPTION=\"Datum\" />"
+                + "</DIJETE></PROJECT>");
+            try
+            {
+                var ucitano = NetGenXmlReader.Ucitaj(xml);
+                NgProject p = ucitano.Projekt;
+                T("INS-04", ucitano.Uspjeh && p != null && p.Atributi.Vrijednost("HELPKOD") == "ABC" && !IspisMotora.JeIspisImena("ABC"), ucitano.Greska ?? "");
+                if (p == null)
+                    throw new InvalidOperationException(ucitano.Greska ?? "XML");
+                var tablica = new DataTable();
+                tablica.Columns.Add("Id", typeof(int));
+                var grid = new MasterGrid();
+                grid.Ucitaj(p, tablica);
+                int? pozicija = null;
+                bool auto = true;
+                for (int i = 0; i < grid.Stanje.Kolone.Count; i++)
+                {
+                    if (string.Equals(grid.Stanje.Kolone[i].Podatak, "Id", StringComparison.OrdinalIgnoreCase))
+                    {
+                        pozicija = grid.Stanje.Kolone[i].Pozicija;
+                        auto = grid.Stanje.Kolone[i].AutoSirina;
+                    }
+                }
+                T("INT-08", grid.Stanje.TimeoutSekundi == 300, grid.Stanje.TimeoutSekundi.ToString());
+                T("NPL-04", grid.Stanje.TotalRed, "");
+                T("PDV-05", grid.Stanje.EnterTipka == "None", grid.Stanje.EnterTipka ?? "");
+                T("OPZ-07", pozicija == 2, pozicija.HasValue ? pozicija.Value.ToString() : "");
+                T("MPSNG-05", auto == false && (p.Atributi.Vrijednost("AUTOFITCOLUMNS") ?? "") == "TRUE", "");
+                T("KAS-04", (p.MasterDblClick ?? "") == "" && p.Atributi.Vrijednost("DETAILDBLCLICK") == ":DET", p.MasterDblClick ?? "");
+                T("KOD-05", p.Atributi.Vrijednost("REFRESHAFTERCHILD") == "TRUE" && !Lanac.OsvjezavaZadnjiSql("REFRESHAFTERCHILD"), "");
+                T("MPK-06", p.PreskoceniGumbi != null && p.PreskoceniGumbi.Contains("CMD6CAPTION"), "");
+                var det = new DetailGrid();
+                det.Pripremi(p);
+                T("STA-38", det.Stanje.CheckboxVidljiv == false && grid.Stanje.CheckboxVidljiv, "");
+                NgForm unesi = FormaIme(p, "UNESI");
+                NgForm stablo = FormaIme(p, "STABLO");
+                NgForm prazan = FormaIme(p, "PRAZAN");
+                NgForm bez = FormaIme(p, "BEZ");
+                NgForm dijete = FormaIme(p, "DIJETE");
+                T("STA-08", unesi != null && unesi.Kontrole.Count == 0 && !DijalogTok.OtvaraProzor(unesi) && DijalogTok.SqlNakonOk(unesi) == "select 1", DijalogTok.SqlNakonOk(unesi));
+                T("LVO-04", stablo != null && DijalogTok.OsvjeziStablo(stablo) && !DijalogTok.PuniExplorer(stablo) && DijalogTok.SqlNakonOk(stablo) == "", "");
+                T("MPK-30", prazan != null && !DijalogTok.PuniExplorer(prazan) && DijalogTok.SqlNakonOk(prazan) == "", "");
+                T("OPZ-04", bez != null && !DijalogTok.PuniExplorer(bez) && (p.Atributi.Vrijednost("FILLEXPLORER") ?? "") == "TRUE", "");
+                var vrc = DijalogTok.Koraci("REFRESHAFTERCHILD");
+                T("VRC-05", dijete != null && dijete.Atributi.Vrijednost("REFRESHAFTERCHILD") == "TRUE" && !Lanac.OsvjezavaSegment("REFRESHAFTERCHILD") && vrc.Count == 1 && vrc[0].Vrsta == "sql", vrc.Count == 0 ? "" : vrc[0].Vrsta);
+                T("MPK-21", dijete != null && Raspored.TabRed(dijete) == "drugi,d,prvi", dijete == null ? "" : Raspored.TabRed(dijete));
+                string datum = "";
+                if (dijete != null)
+                {
+                    for (int i = 0; i < dijete.Kontrole.Count; i++)
+                    {
+                        if (dijete.Kontrole[i].Name != "d")
+                            continue;
+                        int z = 0;
+                        datum = Raspored.Izracunaj(dijete.Kontrole[i].Grana, dijete.Kontrole[i].Atributi, ref z).Tekst ?? "";
+                    }
+                }
+                T("MPK-22", datum == "Datum", datum);
+            }
+            finally
+            {
+                try { Directory.Delete(dir, true); } catch { }
+            }
         }
 
         private static void FiskalUuidSpin()

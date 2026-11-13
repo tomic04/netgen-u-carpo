@@ -59,7 +59,7 @@ Svaka uklonjena stavka ima test koji provjerava NetGen linije. R59 i R110 su por
 | R10 statički čvor je susjed | `sta-stablo` |
 | R11 detail parametar je ime stupca | `bla-sirina` |
 | R12 `SETDEFAULTS` na `#` | `RIJ-26` |
-| R13 `@robaid` nije `@@robaid` | `PRI` u `GranulaIzvrsenje` |
+| R13 `@robaid` nije `@@robaid` | `PRI` |
 | R14 `ONSUBMIT` koji počinje sa `sp` | `KUL-04` |
 | R15 prazan broj je `0` | `FAK-03` |
 | R16 tražilica | `KUL-07` |

@@ -92,6 +92,21 @@ namespace Carpo.NetGen.Komande
             return string.Equals((forma.Atributi.Vrijednost("FILLEXPLORER") ?? "").Trim(), "true", StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Forma bez kontrola i bez gumba ne otvara prozor. OKClick i dalje ima PokaziUpit.
+        /// Form1.vb 5369–5370, 5519.
+        /// </summary>
+        public static bool OtvaraProzor(NgForm forma)
+        {
+            if (forma == null)
+                return false;
+            if (forma.Kontrole != null && forma.Kontrole.Count > 0)
+                return true;
+            if (forma.Gumbi != null && forma.Gumbi.Count > 0)
+                return true;
+            return false;
+        }
+
         public static List<Punjenje> PriOtvori(NgForm forma)
         {
             var lista = new List<Punjenje>();
