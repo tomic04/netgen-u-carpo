@@ -465,6 +465,10 @@ namespace Carpo.TestShell
                 odustao = true;
                 o.PerformClick();
             };
+            Application.ThreadException += delegate (object s, System.Threading.ThreadExceptionEventArgs e)
+            {
+                try { File.AppendAllText(snimka + ".iznimka.txt", e.Exception.ToString() + "\r\n"); } catch { }
+            };
             timer.Start();
             var cekaj = new Thread(delegate () { SnimiZastoj(snimka, granula, delegate () { return klikGotov; }); });
             cekaj.IsBackground = true;
