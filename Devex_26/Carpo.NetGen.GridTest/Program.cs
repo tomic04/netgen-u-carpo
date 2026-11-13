@@ -2236,6 +2236,10 @@ namespace Carpo.NetGen.GridTest
                 { "EDITCOLUMNS", "naziv" }, { "ONENTERKEY", "select 'enter' as status" }
             }), true));
             kontrole.Add(new NgControl("button", NgGrana.Button, "dodaj", new NgAttributeBag(new Dictionary<string, string> { { "ONCLICK", ":DIJETE" } }), true));
+            kontrole.Add(new NgControl("button", NgGrana.Button, "svi", new NgAttributeBag(new Dictionary<string, string>
+            {
+                { "ONCLICK", "FOREACHROW(stavke)#update x set k='@(stavke..naziv)' where id=@@stavke" }
+            }), true));
             var atributi = new NgAttributeBag(new Dictionary<string, string>
             {
                 { "ONLOADED", "select 'ucitano' as status" }, { "ONESCKEY", "select 'esc' as status" }
@@ -2302,6 +2306,8 @@ namespace Carpo.NetGen.GridTest
             var d = new Dijalog();
             string dijete = "";
             d.OtvoriDrugu = delegate (string ime) { dijete = ime; };
+            // Upis (update, ONCELLEDITED) ide samo uz DozvoliUpis, kao u klik pregledu na spinu.
+            DijalogTok.DozvoliUpis = true;
             try
             {
                 d.Slozi(forma, kontekst, baza);
@@ -2350,6 +2356,12 @@ namespace Carpo.NetGen.GridTest
                 ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("dodaj", true)[0]).PerformClick();
                 T("rac01-nakon-djeteta", dijete == "DIJETE" && Broji(sql, "from stavke") == prijeDjeteta + 1, "dijete=" + dijete);
 
+                // FOR-01: tijelo ide kroz lanac za svaki red; @@stavke je id reda, @(stavke..naziv) stupac reda.
+                ((DevExpress.XtraEditors.SimpleButton)d.Controls.Find("svi", true)[0]).PerformClick();
+                bool red1 = Broji(sql, "update x set k='prvi' where id=1") == 1;
+                bool red2 = Broji(sql, "update x set k='drugi' where id=2") == 1;
+                T("for01-foreachrow", red1 && red2, "red1=" + red1 + " red2=" + red2 + " sql=" + string.Join(" | ", sql.ToArray()));
+
                 var grid = (DevExpress.XtraGrid.GridControl)d.Controls.Find("stavke", true)[0];
                 var view = (DevExpress.XtraGrid.Views.Grid.GridView)grid.MainView;
                 bool uredi = view.OptionsBehavior.Editable && view.Columns["naziv"].OptionsColumn.AllowEdit && !view.Columns["stavkaid"].Visible;
@@ -2369,6 +2381,7 @@ namespace Carpo.NetGen.GridTest
             }
             finally
             {
+                DijalogTok.DozvoliUpis = false;
                 d.Close();
                 d.Dispose();
             }

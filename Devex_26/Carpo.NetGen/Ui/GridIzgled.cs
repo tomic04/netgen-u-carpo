@@ -18,6 +18,15 @@ namespace Carpo.NetGen.Ui
         /// </summary>
         public static void Primijeni(GridView pogled, DataTable tablica, string editColumns)
         {
+            Primijeni(pogled, tablica, editColumns, false);
+        }
+
+        /// <summary>
+        /// ukupno: TotalRow (Form2.vb 1739-1746, TOTALROW nije "FALSE"). Class1.CreateGridColumns 1160-1172:
+        /// decimalni stupac ima AggregateFunction.Sum i "#,##0.00".
+        /// </summary>
+        public static void Primijeni(GridView pogled, DataTable tablica, string editColumns, bool ukupno)
+        {
             if (pogled == null || tablica == null)
                 return;
             if (!IstiStupci(pogled, tablica))
@@ -46,7 +55,11 @@ namespace Carpo.NetGen.Ui
                 }
                 if (string.Equals(k.Poravnanje, "Far", StringComparison.OrdinalIgnoreCase))
                     c.AppearanceCell.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
+                c.Summary.Clear();
+                if (ukupno && k.Format == "#,##0.00")
+                    c.Summary.Add(DevExpress.Data.SummaryItemType.Sum, dc.ColumnName, "{0:#,##0.00}");
             }
+            pogled.OptionsView.ShowFooter = ukupno;
             pogled.OptionsBehavior.Editable = uredjuje;
         }
 

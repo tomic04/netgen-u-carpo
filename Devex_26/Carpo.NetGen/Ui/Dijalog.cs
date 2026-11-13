@@ -396,7 +396,14 @@ namespace Carpo.NetGen.Ui
                 // svi stupci vidljivi pod sirovim imenom, a ONCELLEDITED ne moze nikad okinuti.
                 var view = grid.MainView as GridView;
                 if (view != null)
-                    GridIzgled.Primijeni(view, dt, EditStupci(c, k));
+                {
+                    // Form2.vb 1739-1755: TOTALROW i CHECKBOXVISIBLE (ToUpper, samo "FALSE" gasi).
+                    bool ukupno = Attr(k, "TOTALROW").ToUpperInvariant() != "FALSE";
+                    GridIzgled.Primijeni(view, dt, EditStupci(c, k), ukupno);
+                    view.OptionsSelection.MultiSelectMode = Attr(k, "CHECKBOXVISIBLE").ToUpperInvariant() == "FALSE"
+                        ? GridMultiSelectMode.RowSelect
+                        : GridMultiSelectMode.CheckBoxRowSelect;
+                }
             }
         }
 
@@ -456,7 +463,8 @@ namespace Carpo.NetGen.Ui
         private string SqlDijaloga(NgControl k)
         {
             string sirovo = k == null || k.Atributi == null ? "" : (k.Atributi.Vrijednost("SQL") ?? "");
-            return SrediPoslije.Zamijeni(sirovo, PokupiParametre(), _kontekst ?? new SqlKontekst(), _kontekst == null ? null : _kontekst.Clipboard, false);
+            string sql = SrediPoslije.Zamijeni(sirovo, PokupiParametre(), _kontekst ?? new SqlKontekst(), _kontekst == null ? null : _kontekst.Clipboard, false);
+            return SrediPoslije.Kolone(sql, VrijednostIzGrida);
         }
 
         /// <summary>
@@ -1065,7 +1073,42 @@ namespace Carpo.NetGen.Ui
                 s = SqlTekst.ZaGumb(s, _kontekst);
             else if (s.IndexOf("@@", StringComparison.Ordinal) >= 0)
                 s = SrediPoslije.Petlja(s, "", null, false);
-            return s;
+            return SrediPoslije.Kolone(s, VrijednostIzGrida);
+        }
+
+        /// <summary>
+        /// Form2.NadjiVrijednostuGridu (8457-8487): @(grid..stupac) iz trenutnog reda grida. Nema grida: "".
+        /// Nema reda, stupca ili vrijednosti: "null". Datum yyyyMMdd, broj s tockom, tekst Trim.
+        /// </summary>
+        private string VrijednostIzGrida(string gridIme, string kolona)
+        {
+            GridControl grid = null;
+            foreach (Control c in Controls)
+            {
+                var g = c as GridControl;
+                if (g != null && string.Equals((g.Name ?? "").Trim(), (gridIme ?? "").Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    grid = g;
+                    break;
+                }
+            }
+            if (grid == null)
+                return "";
+            var view = grid.MainView as GridView;
+            var dt = grid.DataSource as DataTable;
+            if (view == null || dt == null || view.FocusedRowHandle < 0 || !dt.Columns.Contains(kolona ?? ""))
+                return "null";
+            object v = view.GetRowCellValue(view.FocusedRowHandle, dt.Columns[kolona].ColumnName);
+            if (v == null || v == DBNull.Value)
+                return "null";
+            if (v is DateTime)
+                return ((DateTime)v).ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+            string tekst = Convert.ToString(v, CultureInfo.CurrentCulture) ?? "";
+            double broj;
+            if (!(v is string) && v is IFormattable
+                || double.TryParse(tekst, NumberStyles.Any, CultureInfo.CurrentCulture, out broj))
+                return tekst.Replace(",", ".");
+            return tekst.Trim();
         }
 
         private string ZamijeniIzKontrola(string naredba)
@@ -1188,6 +1231,7 @@ namespace Carpo.NetGen.Ui
             if (t.IndexOf("@SEARCH", StringComparison.OrdinalIgnoreCase) >= 0)
                 svi = svi + _parametriIzTrazilice;
             string sql = SrediPoslije.Zamijeni(t, svi, _kontekst ?? new SqlKontekst(), _kontekst == null ? null : _kontekst.Clipboard, false);
+            sql = SrediPoslije.Kolone(sql, VrijednostIzGrida);
             if (ZastitaSql.Tekst(sql).Pise && !DijalogTok.DozvoliUpis)
                 return "";
             try
@@ -1715,6 +1759,9 @@ namespace Carpo.NetGen.Ui
                         // Form2.Glbl_CellEdited (8616-8688): stupci reda postanu parametri
                         // (ParametriSaGrida), SQL se sredi s njima, pa ide kroz Rafalno.
                         // Greska vrati staru vrijednost celije (CEL-01).
+                        // 8624: uredjen red postane oznacen (CheckState = Checked), pa ga FOREACHSELECTED vidi.
+                        if (view.FocusedRowHandle >= 0)
+                            view.SelectRow(view.FocusedRowHandle);
                         DataRow red = view.GetFocusedDataRow();
                         string redParam = Form2Dogadjaj.ParametriCelije(red);
                         string sredjen = SrediPoslije.Zamijeni(celijaSql, redParam, _kontekst ?? new SqlKontekst(), _kontekst == null ? null : _kontekst.Clipboard, false);
@@ -1846,6 +1893,12 @@ namespace Carpo.NetGen.Ui
             }
         }
 
+        /// <summary>
+        /// FOREACHROW / FOREACHSELECTED / FOREACHBLUEROW (Form2.vb 7040-7048, 8309-8400): za svaki red grida
+        /// pomakni grid na taj red i izvrsi sljedeci segment kroz Rafalno. Tijelo vidi red kao @@grid (id reda),
+        /// @(grid..stupac) i ostale parametre dijaloga; moze biti i naredba (:FORMA). Greska jednog reda ne
+        /// prekida ostale (Rafalno po retku). FOREACHROW ne okida ONCLICK grida (UsaouforeachROW) (FOR-01).
+        /// </summary>
         private void IzvrsiForeach(string opis)
         {
             string opisTekst = opis ?? "";
@@ -1867,46 +1920,57 @@ namespace Carpo.NetGen.Ui
                 }
             }
             var pogled = grid == null ? null : grid.MainView as GridView;
-            var svi = new System.Collections.Generic.List<string>();
-            var plavi = new System.Collections.Generic.List<string>();
-            var cek = new System.Collections.Generic.List<string>();
-            if (pogled != null)
+            if (pogled == null || tijelo.Trim().Length == 0)
+                return;
+            var redovi = new List<DataRow>();
+            var plavi = new HashSet<int>(pogled.GetSelectedRows());
+            DevExpress.XtraGrid.Columns.GridColumn kvacica = null;
+            for (int c = 0; c < pogled.Columns.Count; c++)
             {
-                for (int r = 0; r < pogled.DataRowCount; r++)
-                    svi.Add(Celija(pogled, pogled.GetRowHandle(r)));
-                int[] sel = pogled.GetSelectedRows();
-                for (int i = 0; i < sel.Length; i++)
+                if (pogled.Columns[c].ColumnType == typeof(bool))
                 {
-                    if (sel[i] >= 0)
-                        plavi.Add(Celija(pogled, sel[i]));
-                }
-                DevExpress.XtraGrid.Columns.GridColumn kol = null;
-                for (int c = 0; c < pogled.Columns.Count; c++)
-                {
-                    if (pogled.Columns[c].ColumnType == typeof(bool))
-                    {
-                        kol = pogled.Columns[c];
-                        break;
-                    }
-                }
-                if (kol != null)
-                {
-                    for (int r = 0; r < pogled.DataRowCount; r++)
-                    {
-                        int h = pogled.GetRowHandle(r);
-                        object kvaka = pogled.GetRowCellValue(h, kol);
-                        if (kvaka is bool && (bool)kvaka)
-                            cek.Add(Celija(pogled, h));
-                    }
+                    kvacica = pogled.Columns[c];
+                    break;
                 }
             }
-            string[] sqlovi = ForeachNaredba.Ponovi(tijelo, ForeachNaredba.Idjevi(vrsta, svi, plavi, cek));
-            for (int i = 0; i < sqlovi.Length; i++)
+            for (int r = 0; r < pogled.DataRowCount; r++)
             {
-                if (_citaj == null || _jupiter || !DijalogTok.SmijePoslati(sqlovi[i]))
+                int h = pogled.GetRowHandle(r);
+                bool uzmi;
+                if (vrsta == "svi")
+                    uzmi = true;
+                else if (vrsta == "plavi")
+                    uzmi = plavi.Contains(h);
+                else
+                {
+                    // GetCheckedRows: kvacica selektora (u Carpu oznaceni red) ili uredjen red (8624).
+                    object k = kvacica == null ? null : pogled.GetRowCellValue(h, kvacica);
+                    uzmi = plavi.Contains(h) || (k is bool && (bool)k);
+                }
+                DataRow red = pogled.GetDataRow(h);
+                if (uzmi && red != null)
+                    redovi.Add(red);
+            }
+            var dt = grid.DataSource as DataTable;
+            for (int i = 0; i < redovi.Count; i++)
+            {
+                if (IsDisposed)
+                    return;
+                DataRow red = redovi[i];
+                if (red.RowState == DataRowState.Detached || dt == null)
                     continue;
-                try { _citaj(sqlovi[i]); }
-                catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sqlovi[i]); }
+                int h = pogled.GetRowHandle(dt.Rows.IndexOf(red));
+                if (h < 0)
+                    continue;
+                if (vrsta == "svi")
+                    _tihoGrid++;
+                try { pogled.FocusedRowHandle = h; }
+                finally
+                {
+                    if (vrsta == "svi")
+                        _tihoGrid--;
+                }
+                IzvrsiDogadjaj(tijelo);
             }
         }
 
