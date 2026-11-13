@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Data;
+using Carpo.NetGen.Kontrole;
 using Carpo.NetGen.Model;
 using Carpo.NetGen.Xml;
 
@@ -220,14 +222,59 @@ namespace Carpo.NetGen.Granule
             l.Add(datum != null && datum.Grana == NgGrana.Date && Kontrole.A(datum, "DEFAULT") == null && Kontrole.A(datum, "SHOWCHECKBOX") == null
                 ? Qa.Z(Ime, "DOS-09", "datum bez DEFAULT i bez SHOWCHECKBOX. Nije today", "netgen/Form2.vb:2252,2275,3531")
                 : Qa.P(Ime, "DOS-09", "datum", "netgen/Form2.vb:2252", ""));
-            l.Add(Stablo.Meni(Ime, "DOS-10", "KntDospjeleStavke.xml"));
-            l.Add(Kontrole.Objekti(Ime, "DOS-11", "spKntPopuniKontroleNG", "spOrgShemaQuery", "spKntOtvStavkeQueryNG"));
-
+            l.Add(Stablo.Otvori(Ime, "DOS-10", "KntDospjeleStavke.xml", root));
+            l.Add(DospjeleNaSpinu());
             Kontrole.K(l, Ime, xml, "DOS-20", "statusstrip TEXT1 u tag velikim slovima, @@rowcount i dalje se nadje", "netgen/Form2.vb:1258; netgen/Class1.vb:865; netgen/Form2.vb:3818", "status.s1", "TEXT1-upper");
             Kontrole.K(l, Ime, xml, "DOS-21", "zupanijeid refresh ponovo puni mjestaid i vrati ALLOWEMPTY red", "netgen/Form2.vb:5158-5176", "combo.refresh.mjestaid", "refresh+allowempty");
             Kontrole.K(l, Ime, xml, "DOS-22", "prazan iznos ide kao 0", "netgen/Form2.vb:3601", "number.iznos", "0");
             Kontrole.K(l, Ime, xml, "DOS-23", "multidrop kntplanaid je id1~id2 bez razmaka", "netgen/Form2.vb:3446", "multidrop.kntplanaid", "tilde");
             return l;
+        }
+
+        private static Stavka DospjeleNaSpinu()
+        {
+            const string izvor = "netgen/Form2.vb:2430-2431,2503-2504";
+            string[] problemi = new string[4];
+            problemi[0] = Stupci("dbo.spKntPopuniKontroleNG @Action = 'konto'", false, "1", "1000");
+            problemi[1] = Stupci("dbo.spKntPopuniKontroleNG @Action = 'klpartneri'", true, "", "");
+            problemi[2] = Stupci("spOrgShemaQuery @action=0", false, "1", "Test shema");
+            string[] greska = new string[1];
+            DataTable grid = ComboDijalog.Ucitaj("dbo.spKntOtvStavkeQueryNG", false, delegate(string s)
+            {
+                string e;
+                DataTable t = Citanje.Tablica(s, out e);
+                greska[0] = e;
+                return t;
+            });
+            if (grid == null || grid.Rows.Count == 0)
+                problemi[3] = greska[0] ?? "grid nije vratio red";
+            else
+                problemi[3] = null;
+            for (int i = 0; i < problemi.Length; i++)
+            {
+                if (problemi[i] != null)
+                    return Qa.P(Ime, "DOS-11", "Carpo veze stupac 0 i 1 kao NetGen i pozove procedure", izvor, problemi[i]);
+            }
+            return Qa.Z(Ime, "DOS-11", "konto 1/1000, prazan red na klasi, shema 1/Test shema, grid ima red", izvor);
+        }
+
+        private static string Stupci(string sql, bool prazan, string ocek0, string ocek1)
+        {
+            string[] g = new string[1];
+            DataTable dt = ComboDijalog.Ucitaj(sql, prazan, delegate(string s)
+            {
+                string e;
+                DataTable t = Citanje.Tablica(s, out e);
+                g[0] = e;
+                return t;
+            });
+            if (dt == null || dt.Rows.Count == 0 || dt.Columns.Count < 2)
+                return sql + " " + (g[0] ?? "nema stupca 1");
+            string a = Convert.ToString(dt.Rows[0][0]);
+            string b = Convert.ToString(dt.Rows[0][1]);
+            if (a != ocek0 || b != ocek1)
+                return sql + " stupac0=[" + a + "] stupac1=[" + b + "]";
+            return null;
         }
 
         private static NgProject Ucitaj(List<Stavka> l, string id, string xml)
@@ -399,7 +446,7 @@ namespace Carpo.NetGen.Granule
             l.Add(sea != null && sea.Grana == NgGrana.Search && Kontrole.OblikTrazilice(ssql) == "hash" && ssql.IndexOf("sifra%", StringComparison.Ordinal) >= 0 && !Kontrole.AllowTrue(Kontrole.A(sea, "ALLOWEMPTY"))
                 ? Qa.Z(Ime, "FAK-09", "SEARCH hash. ALLOWEMPTY na searchu se ne cita", "netgen/Form2.vb:2140; netgen/Form3.vb:102")
                 : Qa.P(Ime, "FAK-09", "search", "netgen/Form3.vb:102", ssql));
-            l.Add(Stablo.Meni(Ime, "FAK-10", "FakPar.xml"));
+            l.Add(Stablo.Otvori(Ime, "FAK-10", "FakPar.xml", root));
             l.Add(Kontrole.Objekti(Ime, "FAK-11", "spFakPartneriUvjetiQuery"));
             Kontrole.K(l, Ime, xml, "FAK-20", "CurMEdit prazan ide kao 0, ne kao tekst", "netgen/Form2.vb:2071,3601", "number.Rabat", "0");
             Kontrole.K(l, Ime, xml, "FAK-21", "checkbox PoSkladistu salje CheckState", "netgen/Form2.vb:3424-3427", "check.PoSkladistu", "checkstate");
@@ -466,7 +513,7 @@ namespace Carpo.NetGen.Granule
             l.Add(md != null && md.Grana == NgGrana.MultiDrop && Kontrole.A(md, "ALLOWEMPTY") == "FALSE"
                 ? Qa.Z(Ime, "NAR-08", "ALLOWEMPTY na multidropu se procita i ne ubaci red", "netgen/Form2.vb:2499-2504")
                 : Qa.P(Ime, "NAR-08", "multidrop ALLOWEMPTY", "netgen/Form2.vb:2500", ""));
-            l.Add(Stablo.Meni(Ime, "NAR-09", "MPNarIzdSkl.xml"));
+            l.Add(Stablo.Otvori(Ime, "NAR-09", "MPNarIzdSkl.xml", root));
             Kontrole.K(l, Ime, xml, "NAR-20", "datetiem se crta kao datum", "netgen/Form2.vb:2232", "date.datum", "date");
             Kontrole.K(l, Ime, xml, "NAR-21", "WUDTH se ignorira", "netgen/Form2.vb:2949", "width.pakovanje", "nema");
             return l;
@@ -585,7 +632,7 @@ namespace Carpo.NetGen.Granule
                 && Kontrole.OblikTrazilice(Kontrole.A(sea, "SQL") ?? "") == "hash"
                 ? Qa.Z(Ime, "MAIL-06", "filter: zavisni combo i search vipartneri#", "netgen/Form2.vb:7510,5158; netgen/Form3.vb:102")
                 : Qa.P(Ime, "MAIL-06", "filter kontrole", "netgen/Form2.vb:5158", ""));
-            l.Add(Stablo.Meni(Ime, "MAIL-07", "MPNGPregDokMAIL.xml"));
+            l.Add(Stablo.Otvori(Ime, "MAIL-07", "MPNGPregDokMAIL.xml", root));
             Kontrole.K(l, Ime, xml, "MAIL-20", "totalgen(id, operater, konekcija, zadnji SQL mastera, parametri grida). Povrat se ne cita", "netgen/Form1.vb:4599-4623", "assemblyload.args", "shell-pet");
             Kontrole.K(l, Ime, xml, "MAIL-21", "Load ili CreateInstance padne: CB log i Exit Sub", "netgen/Form1.vb:4600-4611", "assemblyload.greska", "prekini");
             return l;

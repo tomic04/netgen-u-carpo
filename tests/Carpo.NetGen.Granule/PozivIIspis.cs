@@ -118,7 +118,7 @@ namespace Carpo.NetGen.Granule
             l.Add(pop.IndexOf("ADAPTER_FORM~REFRESHMASTERGRID", StringComparison.Ordinal) >= 0
                 ? Qa.Z(Ime, "KUC-06", "Popup s tildom ide u Rafalno, ne u NovaGenerickaForma", "netgen/Form1.vb:5743-5757")
                 : Qa.P(Ime, "KUC-06", "popup", "netgen/Form1.vb:5743", ""));
-            l.Add(Stablo.Meni(Ime, "KUC-07", "KUPNG.xml"));
+            l.Add(Stablo.Otvori(Ime, "KUC-07", "KUPNG.xml", root));
             Ispis.K(l, Ime, xml, "KUC-20", "Dijalog totalgen: id, operater, konekcija, strParametriSvi, strParametriSvi", "netgen/Form2.vb:7424-7456", "totalgen.dijalog", "parametri-dva");
             Ispis.K(l, Ime, xml, "KUC-21", "Shell bez tildu: zadnji SQL mastera i ParametriSaGrida. Povrat se ne cita", "netgen/Form1.vb:4623,5275-5278", "totalgen.shell", "master-sql");
             return l;
@@ -159,7 +159,7 @@ namespace Carpo.NetGen.Granule
             l.Add(carpo != null && (Ispis.Atr(ad, "ONLOADED") ?? "").IndexOf("clsCarpoKnjigaUra", StringComparison.Ordinal) >= 0
                 ? Qa.Z(Ime, "KND-05", "CarpoForm i ONLOADED su dijalog potpis, ne shell", "netgen/Form2.vb:5796,7424-7456")
                 : Qa.P(Ime, "KND-05", "adapter", "netgen/Form2.vb:7456", ""));
-            l.Add(Stablo.Meni(Ime, "KND-06", "KUPDostKN.xml"));
+            l.Add(Stablo.Otvori(Ime, "KND-06", "KUPDostKN.xml", root));
             return l;
         }
     }
@@ -206,7 +206,7 @@ namespace Carpo.NetGen.Granule
                 && Kontrole.A(Kontrole.Nadji(odo, "CarpoForm"), "DEFAULT") == "KUP_Odobravanje.xml"
                 ? Qa.Z(Ime, "BVG-06", "Odobravanje: assembly je na gumbu, ONLOADED je SQL i +close", "netgen/Form2.vb:7424; netgen/Class1.vb:187-204")
                 : Qa.P(Ime, "BVG-06", "gumb", "netgen/Form2.vb:7424", klik));
-            l.Add(Stablo.Meni(Ime, "BVG-07", "KUPDostKnNGBvg.xml"));
+            l.Add(Stablo.Otvori(Ime, "BVG-07", "KUPDostKnNGBvg.xml", root));
             Ispis.K(l, Ime, xml, "BVG-20", "clsCarpoKupUra i clsCarpoKnjigaUra dijele totalgen, razlikuje se CarpoForm", "netgen/Form2.vb:7456", "carpoform.kup", "KnjigaUra.frmKnjigaUraKupEdit.xml");
             return l;
         }

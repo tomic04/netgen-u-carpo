@@ -18,6 +18,7 @@ namespace Carpo.NetGen.Grid
         public string EditedColumn = "";
         public string LastValue = "";
         public string SelectedColor = "";
+        public string ParametriSaGrida = "";
         public string TempString = "";
         public string DblClickedColumn = "";
         public string Version = "";
@@ -61,7 +62,53 @@ namespace Carpo.NetGen.Grid
             sql = Zamijeni(sql, "@@LASTVALUE", k.LastValue);
             sql = Zamijeni(sql, "@@selectedcolor", k.SelectedColor);
             sql = Zamijeni(sql, "@@SELECTEDCOLOR", k.SelectedColor);
+            if (!string.IsNullOrEmpty(k.ParametriSaGrida))
+                sql = DetailGrid.ZamijeniOstatak(sql, k.ParametriSaGrida);
             return sql;
+        }
+
+        /// <summary>
+        /// Form1.vb 2556-2576: stupci od drugog, zadnje 4 znamenke se skidaju ako nisu 0.
+        /// Broj i tekst idu u navodnike. Zarez u broju postaje točka.
+        /// </summary>
+        public static string IzReda(System.Data.DataRow red)
+        {
+            if (red == null || red.Table == null)
+                return "";
+            var sb = new System.Text.StringBuilder();
+            // Janus ima stupac 0 koji nije podatak, pa Form1.vb 2557 krene od 1.
+            // DataTable nema taj stupac: prvi podatak je indeks 0, i to je statusiid.
+            for (int i = 0; i < red.Table.Columns.Count; i++)
+            {
+                object v = red[i];
+                if (v == null || v == System.DBNull.Value)
+                    continue;
+                string ime = red.Table.Columns[i].ColumnName.Trim();
+                if (ime.Length >= 4)
+                {
+                    int n;
+                    if (int.TryParse(ime.Substring(ime.Length - 4), out n) && n != 0)
+                        ime = ime.Substring(0, ime.Length - 4);
+                }
+                ime = ime.Replace(" ", "_").Replace("!", "");
+                string tekst = Convert.ToString(v, System.Globalization.CultureInfo.InvariantCulture) ?? "";
+                if (v is IFormattable && !(v is string))
+                    tekst = tekst.Replace(",", ".");
+                sb.Append("@").Append(ime).Append("='").Append(tekst.Replace("'", "''")).Append("' , ");
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Gumb šalje SQL. Class1.vb 915: token kojeg nema ni u kontroli ni u međuspremniku je null.
+        /// Combo SQL ostaje na Sredi da @@trgovinaid pričeka odabir.
+        /// </summary>
+        public static string ZaGumb(string sql, SqlKontekst k)
+        {
+            string s = Sredi(sql, k);
+            if (s.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                s = DetailGrid.ZamijeniOstatak(s, k == null ? "" : k.ParametriSaGrida);
+            return s;
         }
 
         /// <summary>
@@ -141,6 +188,7 @@ namespace Carpo.NetGen.Grid
                 k.EditedColumn = izvor.EditedColumn;
                 k.LastValue = izvor.LastValue;
                 k.SelectedColor = izvor.SelectedColor;
+                k.ParametriSaGrida = izvor.ParametriSaGrida;
                 k.TempString = izvor.TempString;
                 k.DblClickedColumn = izvor.DblClickedColumn;
                 k.Version = izvor.Version;
@@ -182,6 +230,24 @@ namespace Carpo.NetGen.Grid
             if (vrijednost == null)
                 vrijednost = "";
             return sql.Replace(token, vrijednost);
+        }
+    }
+
+    /// <summary>
+    /// Form2.vb 3906 strSviParametriuModulu. Dijete vidi ONLOAD stupce roditelja.
+    /// Novija vrijednost ide prva jer DetailGrid.Nadji uzima prvi pogodak.
+    /// </summary>
+    public static class ParametriModula
+    {
+        public static string Dodaj(string roditelj, string dijete)
+        {
+            if (string.IsNullOrEmpty(dijete))
+                return roditelj ?? "";
+            if (string.IsNullOrEmpty(roditelj))
+                return dijete;
+            if (roditelj.IndexOf(dijete, StringComparison.Ordinal) >= 0)
+                return roditelj;
+            return dijete + roditelj;
         }
     }
 

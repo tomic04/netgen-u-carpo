@@ -116,7 +116,7 @@ namespace Carpo.NetGen.Granule
             l.Add(dklik.IndexOf("as focus", StringComparison.OrdinalIgnoreCase) >= 0 && dklik.IndexOf("as Naziv", StringComparison.Ordinal) >= 0
                 ? Qa.Z(Ime, "KUL-11", "Dodaj parametra: focus kolona i refresh kontrole Naziv i stavke", "netgen/Form2.vb:4627-4632,4974-4998")
                 : Qa.P(Ime, "KUL-11", "focus/refresh", "netgen/Form2.vb:4629", dklik));
-            l.Add(Stablo.Meni(Ime, "KUL-12", "Kulture.xml"));
+            l.Add(Stablo.Otvori(Ime, "KUL-12", "Kulture.xml", root));
 
             Komande.K(l, Ime, xml, "KUL-20", "Prazan number ide kao 0, prazan text kao navodnici", "netgen/Form2.vb:3601,3655", "prazanBroj", "0");
             Komande.K(l, Ime, xml, "KUL-21", "Tražilica šalje Tag (id), ne tekst. Prazan tag je null", "netgen/Form2.vb:3626-3632", "searchParam", "tag");
@@ -249,7 +249,7 @@ namespace Carpo.NetGen.Granule
             l.Add(cmd6 != null && cmd6.Naredba.StartsWith("MULTIBLUE", StringComparison.OrdinalIgnoreCase)
                 ? Qa.Z(Ime, "KUP-04", "MULTIBLUE uzima plave (SelectedItems), ne cekirane", "netgen/Form1.vb:5022-5032")
                 : Qa.P(Ime, "KUP-04", "MULTIBLUE", "netgen/Form1.vb:5022", cmd6 == null ? "" : cmd6.Naredba));
-            l.Add(Stablo.Meni(Ime, "KUP-05", "KUPNG.xml"));
+            l.Add(Stablo.Otvori(Ime, "KUP-05", "KUPNG.xml", root));
 
             Komande.K(l, Ime, xml, "KUP-10", "Temp tablica: delete po suser_sname i po operateriid, pa insert id, host, suser, operater", "netgen/Form1.vb:4934-5018", "multiTemp", "delete-dva-pa-insert");
             Komande.K(l, Ime, xml, "KUP-11", "FOREACHSELECTED na dijalogu vrti cekirane retke grida i sljedeci segment", "netgen/Form2.vb:7040-7042,8337-8354", "foreachSelected", "cekirani");

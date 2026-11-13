@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Text;
 using System.Globalization;
@@ -30,7 +31,9 @@ namespace Carpo.NetGen.Ui
         private NgForm _forma;
         private static Dijalog _zatvoriRoditelja;
         public static Action<Dijalog> NakonPrikaza;
+        public static string TragPutanja;
         private bool _jupiter;
+        private readonly Dictionary<string, string> _izUpita = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private int _grupe;
         private string _priprema = "";
 
@@ -40,6 +43,11 @@ namespace Carpo.NetGen.Ui
         public string Operater = "";
         public string Id = "0";
         public string ZadnjiSql = "";
+
+        public string ParametriVise()
+        {
+            return _kontekst == null ? "" : (_kontekst.ParametriSaGrida ?? "");
+        }
         public Action<string> OtvoriDrugu;
 
         public void JupiterNeSaljeGumb(bool jupiter)
@@ -60,31 +68,29 @@ namespace Carpo.NetGen.Ui
         public void Prikazi(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj, bool modal = true, Form vlasnik = null)
         {
             Slozi(forma, kontekst, citaj);
-            if (!modal || forma == null)
+            if (forma == null)
                 return;
-            Form nosac = VlasnikXtra(vlasnik);
-            Form skriven = null;
-            if (nosac == null)
+            Trag("prije-show " + forma.Ime + " modal=" + modal);
+            if (modal)
             {
-                var x = new XtraForm();
-                x.ShowInTaskbar = false;
-                x.FormBorderStyle = FormBorderStyle.None;
-                x.StartPosition = FormStartPosition.Manual;
-                x.Location = new System.Drawing.Point(-32000, -32000);
-                x.Size = new System.Drawing.Size(1, 1);
-                x.Show();
-                skriven = x;
-                nosac = x;
+                // Form1.vb 5362: Form2.ShowDialog(Me). Ribbon kao vlasnik ne uđe u petlju.
+                // Običan Form kao vlasnik XtraFormu baci KeyNotFound. Skriveni vlasnik
+                // iz klika na podlozi ne vrati Show (df927a0). Bez takvog vlasnika ostaje ShowDialog().
+                Form nosac = VlasnikXtra(vlasnik);
+                if (nosac != null)
+                    ShowDialog(nosac);
+                else
+                    ShowDialog();
             }
-            try
-            {
-                ShowDialog(nosac);
-            }
-            finally
-            {
-                if (skriven != null)
-                    skriven.Close();
-            }
+            Trag("poslije-show " + forma.Ime);
+        }
+
+        private static void Trag(string red)
+        {
+            if (string.IsNullOrEmpty(TragPutanja))
+                return;
+            try { System.IO.File.AppendAllText(TragPutanja, DateTime.Now.ToString("HH:mm:ss") + " " + red + "\r\n"); }
+            catch { }
         }
 
         /// <summary>Isti raspored kao Prikazi, bez ShowDialog. Test gleda kontrolu.</summary>
@@ -123,6 +129,9 @@ namespace Carpo.NetGen.Ui
                 FormBorderStyle = FormBorderStyle.SizableToolWindow;
 
             NgDnevnik.Akcija("otvara formu " + forma.Ime + " node=" + (kontekst == null ? "" : kontekst.Node));
+            string on = forma.OnLoad ?? "";
+            if (DijalogTok.OnLoadJeUpit(on) && citaj != null)
+                UcitajOnLoad(on, kontekst, citaj);
             int zadnji = 0;
             bool imaGumb = forma.Gumbi != null && forma.Gumbi.Count > 0;
             for (int i = 0; i < forma.Kontrole.Count; i++)
@@ -199,9 +208,7 @@ namespace Carpo.NetGen.Ui
                 AcceptButton = ok;
             }
 
-            string on = forma.OnLoad ?? "";
-            if (on.TrimStart().StartsWith("select", StringComparison.OrdinalIgnoreCase) && citaj != null)
-                NapuniIzOnLoad(on, kontekst, citaj);
+            PrimijeniOnLoad();
         }
 
         public bool ProvediTipku(Keys keyData)
@@ -282,14 +289,13 @@ namespace Carpo.NetGen.Ui
             string sql = (k.Atributi.Vrijednost("SQL") ?? "").Trim();
             if (sql.Length == 0)
                 return;
-            SqlZastita z = ZastitaSql.Tekst(sql);
-            if (z.Pise || z.Procedure.Count > 0)
-                return;
-            sql = ComboDijalog.SqlZaSlanje(sql, _kontekst);
+            if (_kontekst != null)
+                sql = SqlTekst.Sredi(sql, _kontekst);
+            bool prazan = ComboDijalog.AllowEmpty(k);
             DataTable dt = null;
             try
             {
-                dt = _citaj(sql);
+                dt = ComboDijalog.Ucitaj(sql, prazan, _citaj);
             }
             catch (Exception ex)
             {
@@ -300,9 +306,6 @@ namespace Carpo.NetGen.Ui
             var look = c as LookUpEdit;
             if (look != null)
             {
-                bool prazan = ComboDijalog.AllowEmpty(k);
-                if (prazan)
-                    ComboDijalog.UbaciPrazan(dt);
                 look.Properties.DataSource = dt;
                 look.Properties.ValueMember = dt.Columns[0].ColumnName;
                 look.Properties.DisplayMember = dt.Columns.Count > 1 ? dt.Columns[1].ColumnName : dt.Columns[0].ColumnName;
@@ -341,8 +344,18 @@ namespace Carpo.NetGen.Ui
                 if (crta >= 0)
                     naredba = tag.Substring(crta + 1);
             }
+            // Lanac ide slijeva nadesno. @@selectedcolor postoji tek nakon COLORPICKER (Form2.vb 7156).
+            string sirovo = naredba;
+            naredba = Pripremi(naredba);
             DijalogTok.Klik klik = DijalogTok.Gumb(_forma, redni, naredba, _jupiter);
-            var koraci = DijalogTok.Koraci(naredba);
+            if (!string.IsNullOrEmpty(klik.MasterSql))
+            {
+                klik.MasterSql = Pripremi(klik.MasterSql);
+                // Form1.vb 5452: ONSUBMIT koji završava zarezom dobije strParametri.
+                if (klik.MasterSql.TrimEnd().EndsWith(",", StringComparison.Ordinal))
+                    klik.MasterSql = Lanac.BezKrajnjegZareza(Lanac.Lijepi(klik.MasterSql, SviParametri()));
+            }
+            var koraci = DijalogTok.Koraci(sirovo);
             bool lanac = koraci.Count > 1;
             for (int s = 0; s < koraci.Count; s++)
             {
@@ -379,7 +392,7 @@ namespace Carpo.NetGen.Ui
                             DialogResult = DialogResult.OK;
                         if (klik.SaljeSql && _citaj != null && klik.MasterSql.Length > 0)
                         {
-                            string sqlOk = SqlZaGumb(klik.MasterSql);
+                            string sqlOk = Lanac.BezKrajnjegZareza(SqlZaGumb(klik.MasterSql));
                             try { _citaj(sqlOk); }
                             catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sqlOk); }
                         }
@@ -418,6 +431,16 @@ namespace Carpo.NetGen.Ui
                     if (korak.Vrsta == "fiskal")
                     {
                         FiskalTok.Izvrsi(FiskalNaredba.Tablica(korak.Tekst), FiskalNaredba.Argument(korak.Tekst), _citaj);
+                        continue;
+                    }
+                    if (korak.Vrsta == "sql" && _citaj != null && !_jupiter)
+                    {
+                        string dio = Pripremi(korak.Tekst);
+                        if (!DijalogTok.SmijePoslati(dio))
+                            continue;
+                        NgDnevnik.Sql(dio);
+                        try { PrimeniRed(_citaj(dio)); }
+                        catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + dio); }
                         continue;
                     }
                     if (korak.Vrsta == "boja")
@@ -604,7 +627,8 @@ namespace Carpo.NetGen.Ui
                     cilj[0].Focus();
                 return;
             }
-            if (Carpo.NetGen.Print.PrintBridge.Vrsta(naredba, true).Length > 0)
+            MasterSql = _jupiter ? "" : klik.MasterSql;
+            if (!DijalogTok.DozvoliUpis && Carpo.NetGen.Print.PrintBridge.Vrsta(naredba, true).Length > 0)
             {
                 DevExpress.XtraGrid.GridControl grid = null;
                 foreach (Control c in Controls)
@@ -628,21 +652,36 @@ namespace Carpo.NetGen.Ui
                 if (poziv.Prekinuto)
                     return;
             }
-            if (klik.SaljeSql && _citaj != null)
+            if (_citaj != null)
             {
-                MasterSql = SqlZaGumb(klik.MasterSql);
-                NgDnevnik.Sql(MasterSql);
-                try
+                for (int i = 0; i < klik.Naredbe.Count; i++)
                 {
-                    _citaj(MasterSql);
+                    string dio = klik.Naredbe[i];
+                    if (!DijalogTok.SmijePoslati(dio))
+                        continue;
+                    NgDnevnik.Sql(dio);
+                    try
+                    {
+                        _citaj(dio);
+                    }
+                    catch (Exception ex)
+                    {
+                        NgDnevnik.Greska(ex.Message + " | " + dio);
+                    }
                 }
-                catch (Exception ex)
+                if (klik.SaljeSql && !string.IsNullOrEmpty(klik.MasterSql) && DijalogTok.SmijePoslati(klik.MasterSql))
                 {
-                    NgDnevnik.Greska(ex.Message + " | " + MasterSql);
+                    NgDnevnik.Sql(klik.MasterSql);
+                    try
+                    {
+                        _citaj(klik.MasterSql);
+                    }
+                    catch (Exception ex)
+                    {
+                        NgDnevnik.Greska(ex.Message + " | " + klik.MasterSql);
+                    }
                 }
             }
-            else
-                MasterSql = _jupiter ? "" : klik.MasterSql;
             string fokus = DijalogKlik.Fokus(naredba);
             if (fokus.Length > 0)
             {
@@ -654,6 +693,61 @@ namespace Carpo.NetGen.Ui
                 DialogResult = DialogResult.OK;
             else if (b != null)
                 b.DialogResult = DialogResult.None;
+        }
+
+        private string Pripremi(string naredba)
+        {
+            string s = ZamijeniIzKontrola(naredba);
+            if (_kontekst != null)
+                s = SqlTekst.ZaGumb(s, _kontekst);
+            else if (s.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                s = DetailGrid.ZamijeniOstatak(s, "");
+            return s;
+        }
+
+        private string ZamijeniIzKontrola(string naredba)
+        {
+            if (string.IsNullOrEmpty(naredba))
+                return "";
+            var kontrole = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var par in _izUpita)
+                kontrole[par.Key] = par.Value;
+            SkupiTekst(this, kontrole);
+            string id = _kontekst == null ? "" : _kontekst.Id;
+            return DijalogTok.ZamijeniTokene(naredba, id, kontrole);
+        }
+
+        private static void SkupiTekst(Control roditelj, Dictionary<string, string> kontrole)
+        {
+            if (roditelj == null)
+                return;
+            for (int i = 0; i < roditelj.Controls.Count; i++)
+            {
+                Control c = roditelj.Controls[i];
+                if (!string.IsNullOrEmpty(c.Name))
+                {
+                    var broj = c as SpinEdit;
+                    var kvacica = c as CheckEdit;
+                    var look = c as LookUpEdit;
+                    var edit = c as TextEdit;
+                    if (broj != null)
+                        kontrole[c.Name] = Convert.ToString(broj.Value, CultureInfo.InvariantCulture);
+                    else if (kvacica != null)
+                        kontrole[c.Name] = kvacica.Checked ? "1" : "0";
+                    else if (look != null)
+                    {
+                        object ev = look.EditValue;
+                        kontrole[c.Name] = ev == null || ev == DBNull.Value
+                            ? "null"
+                            : Convert.ToString(ev, CultureInfo.InvariantCulture);
+                    }
+                    else if (c.GetType() == typeof(ButtonEdit))
+                        kontrole[c.Name] = ParametriSvi.SearchId(c.Tag);
+                    else if (edit != null)
+                        kontrole[c.Name] = edit.Text ?? "";
+                }
+                SkupiTekst(c, kontrole);
+            }
         }
 
         private void OsvjeziKontrolu(string ime)
@@ -738,7 +832,7 @@ namespace Carpo.NetGen.Ui
             if (_citaj == null || _jupiter)
                 return "";
             string sql = SrediPoslije.Zamijeni(tekst ?? "", SviParametri(), _kontekst ?? new SqlKontekst(), null, false);
-            if (ZastitaSql.Tekst(sql).Pise)
+            if (ZastitaSql.Tekst(sql).Pise && !DijalogTok.DozvoliUpis)
                 return "";
             try
             {
@@ -1039,7 +1133,7 @@ namespace Carpo.NetGen.Ui
             string[] sqlovi = ForeachNaredba.Ponovi(tijelo, ForeachNaredba.Idjevi(vrsta, svi, plavi, cek));
             for (int i = 0; i < sqlovi.Length; i++)
             {
-                if (_citaj == null || _jupiter || ZastitaSql.Tekst(sqlovi[i]).Pise)
+                if (_citaj == null || _jupiter || !DijalogTok.SmijePoslati(sqlovi[i]))
                     continue;
                 try { _citaj(sqlovi[i]); }
                 catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sqlovi[i]); }
@@ -1368,7 +1462,7 @@ namespace Carpo.NetGen.Ui
                 edit.Text = tekst;
         }
 
-        private void NapuniIzOnLoad(string on, SqlKontekst kontekst, Func<string, DataTable> citaj)
+        private void UcitajOnLoad(string on, SqlKontekst kontekst, Func<string, DataTable> citaj)
         {
             string sql = SqlTekst.Sredi(on, kontekst);
             NgDnevnik.Sql(sql);
@@ -1385,20 +1479,59 @@ namespace Carpo.NetGen.Ui
                 return;
             foreach (DataColumn col in dt.Columns)
             {
-                Control[] n = Controls.Find(col.ColumnName, true);
+                string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col], CultureInfo.InvariantCulture);
+                _izUpita[col.ColumnName] = v;
+                if (kontekst != null)
+                    kontekst.ParametriSaGrida += "@" + col.ColumnName + "='" + v.Replace("'", "''") + "' , ";
+            }
+        }
+
+        private void PrimijeniOnLoad()
+        {
+            foreach (var par in _izUpita)
+            {
+                Control[] n = Controls.Find(par.Key, true);
                 if (n.Length == 0)
                     continue;
-                string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col]);
-                var edit = n[0] as TextEdit;
-                if (edit != null && !(edit is LookUpEdit))
-                    edit.Text = v;
-                var look = n[0] as LookUpEdit;
-                if (look != null)
-                    look.EditValue = v;
-                var label = n[0] as LabelControl;
-                if (label != null && n[0].Name == col.ColumnName)
-                    label.Text = label.Dock == DockStyle.Bottom ? Ponasanje.StatusTekst(v) : v;
+                PostaviVrijednost(n[0], par.Value ?? "");
             }
+        }
+
+        private static void PostaviVrijednost(Control c, string v)
+        {
+            var broj = c as SpinEdit;
+            if (broj != null)
+            {
+                decimal d;
+                if (decimal.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out d))
+                    broj.Value = d;
+                return;
+            }
+            var kvacica = c as CheckEdit;
+            if (kvacica != null)
+            {
+                kvacica.Checked = v == "1" || string.Equals(v, "true", StringComparison.OrdinalIgnoreCase);
+                return;
+            }
+            var look = c as LookUpEdit;
+            if (look != null)
+            {
+                int brojId;
+                if (int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out brojId))
+                    look.EditValue = brojId;
+                else if (!string.IsNullOrEmpty(v))
+                    look.EditValue = v;
+                return;
+            }
+            var edit = c as TextEdit;
+            if (edit != null)
+            {
+                edit.Text = v;
+                return;
+            }
+            var label = c as LabelControl;
+            if (label != null)
+                label.Text = label.Dock == DockStyle.Bottom ? Ponasanje.StatusTekst(v) : v;
         }
 
         private static bool Odustajanje(string tekst)

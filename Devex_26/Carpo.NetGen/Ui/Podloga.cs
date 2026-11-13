@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Poziv;
@@ -38,6 +40,12 @@ namespace Carpo.NetGen.Ui
         private NgProject _projekt;
         private string _spoj = "";
         private string _server = "";
+        private string _baza = "";
+        private string _sqlGreska = "";
+        private string _zadnjiSql = "";
+        private string _testId = "";
+        private string _imeUnosa = "";
+        private readonly List<string> _poslano = new List<string>();
         private bool _punim;
         private int _redovaDetail;
         private DataTable _comboRedovi;
@@ -106,6 +114,7 @@ namespace Carpo.NetGen.Ui
             }
             _projekt = r.Projekt;
             _server = server ?? "";
+            _baza = baza ?? "";
             Text = string.IsNullOrEmpty(_projekt.Naslov) ? "NetGen" : _projekt.Naslov;
             bbiVerzija.Caption = (server ?? "") + " · " + (baza ?? "") + " · " + operater.ToString();
             var kontekst = new SqlKontekst();
@@ -302,6 +311,24 @@ namespace Carpo.NetGen.Ui
                 OsvjeziMaster();
                 return;
             }
+            if (MultiOdabir.Je(ime))
+                NapuniOdabir(ime);
+            if (forma.Kontrole == null || forma.Kontrole.Count == 0)
+            {
+                // Form1.vb 5369: nema kontrola, OKClick je true i dijalog se ne otvara.
+                string prazna = DijalogTok.SqlNakonOk(forma);
+                if (prazna.Length > 0)
+                {
+                    string sqlPrazna = SqlTekst.Sredi(prazna, _master.Kontekst);
+                    _master.Stanje.IzvorSql = prazna;
+                    _master.Stanje.SqlZaSlanje = sqlPrazna;
+                    _master.Stanje.ZadnjiSql = sqlPrazna;
+                    _master.Stanje.Odluka = SqlTekst.Odluka(sqlPrazna);
+                    _master.Stanje.BlokiranoPisanje = SqlTekst.JeZabranaPisanja(sqlPrazna);
+                    NapuniGrid();
+                    return;
+                }
+            }
             _dubinaForme++;
             try
             {
@@ -311,13 +338,22 @@ namespace Carpo.NetGen.Ui
                 dij.Operater = _master.Kontekst.OperaterId;
                 dij.Id = _master.Stanje.Id;
                 dij.ZadnjiSql = _master.Stanje.ZadnjiSql;
-                dij.OtvoriDrugu = OtvoriFormu;
+                dij.OtvoriDrugu = delegate (string imeDjeteta)
+                {
+                    // Form2.vb 3906: strSviParametriuModulu vrijedi i u djetetu.
+                    if (_master.Kontekst != null)
+                        _master.Kontekst.ParametriSaGrida = ParametriModula.Dodaj(_master.Kontekst.ParametriSaGrida, dij.ParametriVise());
+                    OtvoriFormu(imeDjeteta);
+                };
                 dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj, true, this);
                 string iz = dij.Vrijednost("izvjestaj");
                 if (!string.IsNullOrEmpty(iz))
                     _polja["izvjestaj"] = iz;
                 if (dij.DialogResult != DialogResult.OK)
                     return;
+                if (_master.Kontekst != null)
+                    _master.Kontekst.ParametriSaGrida = ParametriModula.Dodaj(_master.Kontekst.ParametriSaGrida, dij.ParametriVise());
+                ZapamtiNoviTrosak();
                 string explorer = DijalogTok.SqlNakonOk(forma);
                 if (explorer.Length > 0)
                 {
@@ -443,18 +479,28 @@ namespace Carpo.NetGen.Ui
                     return;
                 }
                 else if (GumbTok.Akcija(_projekt, s) == "poruka")
-                    PorukaNaredba.Pokazi(s);
+                {
+                    if (!DijalogTok.DozvoliUpis)
+                        PorukaNaredba.Pokazi(s);
+                }
                 else if (GumbTok.Akcija(_projekt, s) == "openform")
                     OtvoriFormu(OtvoriNaredba.Ime(s));
                 else if (GumbTok.Akcija(_projekt, s) == "stupci")
                     PrimijeniStupce(s);
                 else if (GumbTok.Akcija(_projekt, s) == "word")
                 {
+                    if (DijalogTok.DozvoliUpis)
+                        continue;
                     if (!WordDot.Otvori(s, _spoj, new[] { _master.Stanje.Id }))
                         return;
                 }
                 else if (IspisMotora.JeIspisImena(s) || s.StartsWith("PRINT", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (DijalogTok.DozvoliUpis)
+                    {
+                        NgDnevnik.Akcija("ispis preskocen " + s);
+                        continue;
+                    }
                     string vrsta = PrintBridge.Vrsta(s, false);
                     object grid = vrsta == "detail" ? (object)gcDet : gcGla;
                     DataTable tab = null;
@@ -540,6 +586,7 @@ namespace Carpo.NetGen.Ui
                 id = _master.Stanje.Id;
             _master.Stanje.Id = id;
             _master.Kontekst.Id = id;
+            _master.Kontekst.ParametriSaGrida = SqlTekst.IzReda(row);
         }
 
         private void NapuniGrid()
@@ -835,8 +882,27 @@ namespace Carpo.NetGen.Ui
 
         private DataTable Citaj(string sql)
         {
-            if (string.IsNullOrWhiteSpace(sql) || SqlTekst.JeZabranaPisanja(sql))
+            if (string.IsNullOrWhiteSpace(sql))
                 return null;
+            if (DateTime.UtcNow > RokUtc || _brojUpita >= MaxUpita)
+            {
+                _sqlGreska = "sweep rok";
+                return null;
+            }
+            _brojUpita++;
+            if (sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                sql = DetailGrid.ZamijeniOstatak(sql, "");
+            if (sql.IndexOf("cis.porezna-uprava.hr", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                _sqlGreska = "nije poslano na produkcijski URL Porezne";
+                return null;
+            }
+            if (SqlTekst.JeZabranaPisanja(sql) && !DijalogTok.DozvoliUpis)
+                return null;
+            bool filter = sql.IndexOf("NetGenDBFilter", StringComparison.OrdinalIgnoreCase) >= 0;
+            _zadnjiSql = sql;
+            if (!filter)
+                _poslano.Add(sql);
             try
             {
                 var dt = new DataTable();
@@ -844,7 +910,7 @@ namespace Carpo.NetGen.Ui
                 using (var cmd = new System.Data.SqlClient.SqlCommand(sql, conn))
                 using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
                 {
-                    cmd.CommandTimeout = 30;
+                    cmd.CommandTimeout = TimeoutUpita;
                     conn.Open();
                     da.Fill(dt);
                 }
@@ -852,10 +918,801 @@ namespace Carpo.NetGen.Ui
             }
             catch (Exception ex)
             {
+                if (!filter)
+                    _sqlGreska = ex.Message + " | " + sql;
                 NgDnevnik.Greska(ex.Message + " | " + sql);
-                PostaviStatus(ex.Message);
+                if (!filter)
+                    PostaviStatus(ex.Message);
                 return null;
             }
+        }
+
+        public static int TimeoutUpita = 30;
+        public static int MaxUpita = int.MaxValue;
+        public static DateTime RokUtc = DateTime.MaxValue;
+        private int _brojUpita;
+
+        /// <summary>
+        /// Klik na podlozi. Upis ide samo na spin na sql-ai. Fiskalizacija ne ide na Poreznu.
+        /// samoCitanje preskače Unesi/Izmjeni/Obriši. Podforma se zatvara Odustani.
+        /// </summary>
+        public List<string> ProvediKlikove()
+        {
+            return ProvediKlikove(false);
+        }
+
+        public List<string> ProvediKlikove(bool samoCitanje)
+        {
+            var redovi = new List<string>();
+            bool upis = !samoCitanje && DijalogTok.UpisNaSpinu(_server, _baza);
+            DijalogTok.DozvoliUpis = upis;
+            _imeUnosa = "kp" + DateTime.Now.ToString("HHmmss");
+            DijalogTok.TekstUpisa = _imeUnosa;
+            if (upis)
+            {
+                try { System.IO.File.AppendAllText(Dijalog.TragPutanja ?? "", DateTime.Now.ToString("HH:mm:ss") + " klikovi\r\n"); } catch { }
+                Dijalog.NakonPrikaza = delegate (Dijalog d)
+                {
+                    if (d == null || d.IsDisposed)
+                        return;
+                    PotvrdiUpis(d);
+                };
+            }
+            try
+            {
+            return ProvediKlikoveUnutra(redovi, upis);
+            }
+            finally
+            {
+                if (upis)
+                    OcistiTest();
+                Dijalog.NakonPrikaza = null;
+                DijalogTok.DozvoliUpis = false;
+                ZaustaviZatvaranje();
+            }
+        }
+
+        private List<string> ProvediKlikoveUnutra(List<string> redovi, bool upis)
+        {
+            string granula = _projekt == null ? Text : (_projekt.Naslov ?? Text);
+            int master = _master.Stanje.Tablica == null ? 0 : _master.Stanje.Tablica.Rows.Count;
+            bool sqlMaster = MasterPuni();
+            if (!string.IsNullOrEmpty(_sqlGreska))
+                redovi.Add(Linija(granula, "master", "grid", "GRESKA", _sqlGreska, "netgen/Form1.vb:3882"));
+            else if (sqlMaster && master == 0)
+                redovi.Add(Linija(granula, "master", "grid", "PRAZAN", "NetGen puni master, grid je prazan", "netgen/Form1.vb:3882"));
+            else
+                redovi.Add(Linija(granula, "master", "grid", "OK", master.ToString() + " redova", "netgen/Form1.vb:3882"));
+
+            if (!_detail.Stanje.Nema && !_detail.Stanje.OtvaraFormu)
+            {
+                int det = _detail.Stanje.Tablica == null ? 0 : _detail.Stanje.Tablica.Rows.Count;
+                if (!string.IsNullOrEmpty(_sqlGreska) && det == 0)
+                    redovi.Add(Linija(granula, "detail", "grid", "GRESKA", _sqlGreska, "netgen/Form1.vb:2258"));
+                else if (master > 0 && det == 0)
+                    redovi.Add(Linija(granula, "detail", "grid", "PRAZAN", "master ima red, detail je prazan", "netgen/Form1.vb:2258"));
+                else
+                    redovi.Add(Linija(granula, "detail", "grid", "OK", det.ToString() + " redova", "netgen/Form1.vb:2258"));
+            }
+
+            var tab = NadjiTab();
+            if (tab != null)
+            {
+                for (int i = 0; i < tab.TabPages.Count; i++)
+                {
+                    try
+                    {
+                        tab.SelectedTabPageIndex = i;
+                        redovi.Add(Linija(granula, "tab", tab.TabPages[i].Text, "OK", "", "netgen/Form1.vb:2258"));
+                    }
+                    catch (Exception ex)
+                    {
+                        redovi.Add(Linija(granula, "tab", tab.TabPages[i].Text, "GRESKA", ex.Message, "netgen/Form1.vb:2258"));
+                    }
+                }
+            }
+
+            if (trMain.Nodes.Count > 0)
+            {
+                _sqlGreska = "";
+                try
+                {
+                    PokreniZatvaranje();
+                    trMain.FocusedNode = trMain.Nodes[0];
+                    Application.DoEvents();
+                    if (!string.IsNullOrEmpty(_sqlGreska))
+                        redovi.Add(Linija(granula, "stablo", "cvor", "GRESKA", _sqlGreska, "netgen/Form1.vb:7426"));
+                    else
+                        redovi.Add(Linija(granula, "stablo", "cvor", "OK", "prvi cvor", "netgen/Form1.vb:7426"));
+                }
+                catch (Exception ex)
+                {
+                    redovi.Add(Linija(granula, "stablo", "cvor", "GRESKA", ex.Message, "netgen/Form1.vb:7426"));
+                }
+            }
+
+            var gumbi = new List<SimpleButton>();
+            for (int i = 0; i < pnlButtons.Controls.Count; i++)
+            {
+                var g = pnlButtons.Controls[i] as SimpleButton;
+                if (g != null)
+                    gumbi.Add(g);
+            }
+            gumbi.Sort(delegate (SimpleButton a, SimpleButton b) { return Redoslijed(a).CompareTo(Redoslijed(b)); });
+            for (int i = 0; i < gumbi.Count; i++)
+            {
+                if (DateTime.UtcNow > RokUtc)
+                {
+                    redovi.Add(Linija(granula, "gumb", "rok", "HANG", "isteklo vrijeme granule", "netgen/Form2.vb:3367"));
+                    break;
+                }
+                SimpleButton g = gumbi[i];
+                string naredba = g.Tag == null ? "" : g.Tag.ToString();
+                string natpis = (g.Text ?? "").Replace("\r\n", " ").Trim();
+                if (naredba.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0
+                    || natpis.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", "nije poslano na https://cis.porezna-uprava.hr:8449/FiskalizacijaService ; test URL je https://cistest.apis-it.hr:8449/FiskalizacijaServiceTest", "netgen/Form2.vb:6342"));
+                    continue;
+                }
+                if (upis && (naredba.IndexOf("WEBBROWSER", StringComparison.OrdinalIgnoreCase) >= 0
+                    || natpis.Equals("Web", StringComparison.OrdinalIgnoreCase)))
+                {
+                    redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", "preglednik nije dio upisa", "netgen/Form2.vb:3367"));
+                    continue;
+                }
+                if (!upis && Destruktivan(naredba, natpis))
+                {
+                    redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", naredba, "netgen/Form2.vb:3367"));
+                    continue;
+                }
+                _sqlGreska = "";
+                _zadnjiSql = "";
+                _poslano.Clear();
+                try
+                {
+                    if (upis && (naredba.IndexOf("Izm", StringComparison.OrdinalIgnoreCase) >= 0
+                        || naredba.IndexOf("UPDATE", StringComparison.OrdinalIgnoreCase) >= 0))
+                        DijalogTok.TekstUpisa = _imeUnosa + "-izmjena";
+                    else if (upis)
+                        DijalogTok.TekstUpisa = _imeUnosa;
+                    if (upis && _testId.Length > 0)
+                    {
+                        _master.Kontekst.Id = _testId;
+                        _master.Kontekst.Node = _testId;
+                        if (_master.Kontekst.ParametriSaGrida.IndexOf("@statusiid=", StringComparison.OrdinalIgnoreCase) < 0)
+                            _master.Kontekst.ParametriSaGrida += "@statusiid='" + _testId + "' , ";
+                    }
+                    if (upis && naredba.IndexOf("INSERTFORM", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        DataTable vd = Citaj("select top 1 cast(VrstaDokId as varchar(20)) as id from VrstaDok where Opis = N'klik-proba'");
+                        if (vd != null && vd.Rows.Count > 0)
+                            _master.Kontekst.Node = Convert.ToString(vd.Rows[0]["id"]);
+                    }
+                    try { System.IO.File.AppendAllText(Dijalog.TragPutanja ?? "", DateTime.Now.ToString("HH:mm:ss") + " gumb " + natpis + "\r\n"); } catch { }
+                    if (MultiOdabir.Je(naredba))
+                    {
+                        if (gvGla.DataRowCount == 0)
+                        {
+                            _master.Stanje.SqlZaSlanje = "exec spLnRobaWebKlase_Query @action='SVA', @klrobawebklaseid=0";
+                            _master.Stanje.Odluka = "salji";
+                            _master.Stanje.BlokiranoPisanje = false;
+                            NapuniGrid();
+                        }
+                        OznaciRedove();
+                    }
+                    PokreniZatvaranje();
+                    g.PerformClick();
+                    Application.DoEvents();
+                    string provjera = upis ? ProvjeriUpis(naredba) : "";
+                    if (!string.IsNullOrEmpty(_sqlGreska))
+                        redovi.Add(Linija(granula, "gumb", natpis, "GRESKA", _sqlGreska, "netgen/Form2.vb:3377"));
+                    else if (provjera.StartsWith("GRESKA", StringComparison.Ordinal))
+                        redovi.Add(Linija(granula, "gumb", natpis, "GRESKA", provjera.Substring(6).Trim(), "netgen/Form2.vb:3406"));
+                    else if (provjera.Length > 0)
+                        redovi.Add(Linija(granula, "gumb", natpis, "OK", provjera, "netgen/Form2.vb:3367"));
+                    else
+                        redovi.Add(Linija(granula, "gumb", natpis, "OK", naredba, "netgen/Form1.vb:5664"));
+                }
+                catch (Exception ex)
+                {
+                    redovi.Add(Linija(granula, "gumb", natpis, "GRESKA", ex.Message, "netgen/Form2.vb:3367"));
+                }
+            }
+            return redovi;
+        }
+
+        private bool _zatvaraj;
+
+        private void PokreniZatvaranje()
+        {
+            if (_zatvaraj)
+                return;
+            _zatvaraj = true;
+            var nit = new Thread(ZatvarajDijaloge);
+            nit.IsBackground = true;
+            nit.Start();
+        }
+
+        private void ZaustaviZatvaranje()
+        {
+            _zatvaraj = false;
+        }
+
+        private void ZatvarajDijaloge()
+        {
+            while (_zatvaraj)
+            {
+                Thread.Sleep(200);
+                Form[] otvorene;
+                try
+                {
+                    otvorene = new Form[Application.OpenForms.Count];
+                    for (int i = 0; i < Application.OpenForms.Count; i++)
+                        otvorene[i] = Application.OpenForms[i];
+                }
+                catch
+                {
+                    continue;
+                }
+                for (int i = 0; i < otvorene.Length; i++)
+                {
+                    Form f = otvorene[i];
+                    if (f == null || f == this || f.IsDisposed || !(f is Dijalog))
+                        continue;
+                    try
+                    {
+                        f.BeginInvoke(new Action(delegate ()
+                        {
+                            if (f.IsDisposed)
+                                return;
+                            if (DijalogTok.DozvoliUpis && PotvrdiUpis(f))
+                                return;
+                            f.DialogResult = DialogResult.Cancel;
+                            f.Close();
+                        }));
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+        }
+
+        private bool PotvrdiUpis(Form f)
+        {
+            if (f.Tag as string == "potvrdeno")
+                return true;
+            PopuniTest(f);
+            var gumbi = new List<SimpleButton>();
+            SkupiGumbe(f, gumbi);
+            if (KlikniPotvrdu(f, gumbi, true))
+                return true;
+            for (int i = 0; i < gumbi.Count; i++)
+            {
+                SimpleButton b = gumbi[i];
+                string tag = b.Tag as string ?? "";
+                string tekst = (b.Text ?? "").Trim();
+                if (tag.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0)
+                    continue;
+                if (tag.StartsWith(":", StringComparison.Ordinal))
+                    continue;
+                if (JeOdustani(tag, tekst))
+                    continue;
+                if (tag.Length == 0)
+                    continue;
+                if (JeTudjiUpis(tag))
+                    continue;
+                f.Tag = "potvrdeno";
+                b.PerformClick();
+                if (!f.IsDisposed)
+                {
+                    f.DialogResult = DialogResult.OK;
+                    f.Close();
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private bool KlikniPotvrdu(Form f, List<SimpleButton> gumbi, bool samoNatpis)
+        {
+            for (int i = 0; i < gumbi.Count; i++)
+            {
+                SimpleButton b = gumbi[i];
+                string tag = b.Tag as string ?? "";
+                string tekst = (b.Text ?? "").Trim();
+                if (!PotvrdaGumba.JeNatpis(tekst))
+                    continue;
+                if (tag.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0)
+                    continue;
+                if (JeOdustani(tag, tekst))
+                    continue;
+                if (tag.Length == 0)
+                    continue;
+                if (JeTudjiUpis(tag))
+                    continue;
+                f.Tag = "potvrdeno";
+                b.PerformClick();
+                if (!f.IsDisposed)
+                {
+                    f.DialogResult = DialogResult.OK;
+                    f.Close();
+                }
+                return true;
+            }
+            return samoNatpis ? false : false;
+        }
+
+        private void ZapamtiNoviTrosak()
+        {
+            string sql = PoslanoKoje("spPrnTroskoviGlaAzur");
+            if (sql.Length == 0 || !Akcija(sql, "0") || _master.Kontekst == null)
+                return;
+            DataTable t = Citaj("select top 1 cast(PrnTroskoviGlaId as varchar(20)) as id from PrnTroskoviGla where KlMasterRobaId is null and RobaId is null order by PrnTroskoviGlaId desc");
+            if (t == null || t.Rows.Count == 0)
+                return;
+            _testId = Convert.ToString(t.Rows[0]["id"]);
+            _master.Kontekst.Id = _testId;
+            _master.Stanje.Id = _testId;
+            _master.Kontekst.ParametriSaGrida = ParametriModula.Dodaj(_master.Kontekst.ParametriSaGrida, "@PrnTroskoviGlaId='" + _testId + "' , ");
+        }
+
+        private static void SkupiGumbe(Control roditelj, List<SimpleButton> gumbi)
+        {
+            if (roditelj == null)
+                return;
+            for (int i = 0; i < roditelj.Controls.Count; i++)
+            {
+                var b = roditelj.Controls[i] as SimpleButton;
+                if (b != null)
+                    gumbi.Add(b);
+                SkupiGumbe(roditelj.Controls[i], gumbi);
+            }
+        }
+
+        private static void PopuniTest(Form f)
+        {
+            string tekst = DijalogTok.TekstUpisa ?? "";
+            if (tekst.Length == 0)
+                return;
+            string[] imena = new string[] { "Naziv", "Korak", "Sifra", "Oznaka", "HPTPoziv" };
+            for (int i = 0; i < imena.Length; i++)
+            {
+                Control[] n = f.Controls.Find(imena[i], true);
+                if (n.Length == 0)
+                    continue;
+                var edit = n[0] as TextEdit;
+                if (edit != null && !(edit is LookUpEdit))
+                    edit.Text = string.Equals(imena[i], "HPTPoziv", StringComparison.OrdinalIgnoreCase) ? "01" : tekst;
+            }
+            OdaberiLook(f);
+        }
+
+        private static void OdaberiLook(Control roditelj)
+        {
+            if (roditelj == null)
+                return;
+            for (int i = 0; i < roditelj.Controls.Count; i++)
+            {
+                var look = roditelj.Controls[i] as LookUpEdit;
+                if (look != null && (look.EditValue == null || look.EditValue == DBNull.Value))
+                {
+                    var dt = look.Properties.DataSource as DataTable;
+                    if (dt != null && dt.Columns.Count > 0)
+                    {
+                        for (int r = 0; r < dt.Rows.Count; r++)
+                        {
+                            object v = dt.Rows[r][0];
+                            if (v == null || v == DBNull.Value)
+                                continue;
+                            string s = Convert.ToString(v);
+                            if (s.Length == 0 || s == "null")
+                                continue;
+                            look.EditValue = v;
+                            break;
+                        }
+                    }
+                }
+                OdaberiLook(roditelj.Controls[i]);
+            }
+        }
+
+        private bool JeTudjiUpis(string tag)
+        {
+            string t = tag.ToLowerInvariant();
+            bool brise = t.Contains("@action=2") || t.Contains("@action = 2") || ImaRijec(t, "delete");
+            bool mijenja = t.Contains("@action=1") || t.Contains("@action = 1") || ImaRijec(t, "update");
+            if ((brise || mijenja) && _testId.Length == 0)
+                return true;
+            return false;
+        }
+
+        private static bool JeOdustani(string tag, string tekst)
+        {
+            string u = (tag ?? "").Trim().ToUpperInvariant();
+            if (u == "CLOSE" || u == "CANCEL" || u.EndsWith("|CLOSE") || u.EndsWith("|CANCEL"))
+                return true;
+            string n = (tekst ?? "").ToLowerInvariant();
+            return n.StartsWith("odustani") || n.StartsWith("cancel");
+        }
+
+        private void OznaciRedove()
+        {
+            gvGla.ClearSelection();
+            for (int r = 0; r < gvGla.DataRowCount; r++)
+                gvGla.SelectRow(gvGla.GetRowHandle(r));
+        }
+
+        private void NapuniOdabir(string ime)
+        {
+            if (!MultiOdabir.Je(ime))
+                return;
+            string op = _master.Kontekst == null ? "0" : _master.Kontekst.OperaterId;
+            Citaj(MultiOdabir.Obrisi(op));
+            var ids = new System.Collections.Generic.List<string>();
+            int[] sel = gvGla.GetSelectedRows();
+            for (int i = 0; i < sel.Length; i++)
+            {
+                if (sel[i] < 0)
+                    continue;
+                string id = IdCelije(sel[i]);
+                if (id.Length > 0 && id != "0")
+                    ids.Add(id);
+            }
+            for (int i = 0; i < ids.Count; i++)
+                Citaj(MultiOdabir.Ubaci(ids[i], op));
+        }
+
+        private static int Redoslijed(SimpleButton g)
+        {
+            string n = ((g.Tag as string) ?? "") + " " + (g.Text ?? "");
+            if (n.IndexOf("Unesi", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("INSERT", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("@action=0", StringComparison.OrdinalIgnoreCase) >= 0)
+                return 0;
+            if (n.IndexOf("Izm", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("UPDATE", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("@action=1", StringComparison.OrdinalIgnoreCase) >= 0)
+                return 1;
+            if (n.IndexOf("MULTIBLUE_ADD", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("MULTI_INSERT", StringComparison.OrdinalIgnoreCase) >= 0)
+                return 2;
+            if (n.IndexOf("MULTIBLUE_DELETE", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("MULTI_DELETE", StringComparison.OrdinalIgnoreCase) >= 0)
+                return 3;
+            if (n.IndexOf("Obri", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("DELETE", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) >= 0)
+                return 4;
+            return 5;
+        }
+
+        private string PoslanoKoje(string dio)
+        {
+            for (int i = 0; i < _poslano.Count; i++)
+            {
+                if (_poslano[i].IndexOf(dio, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return _poslano[i];
+            }
+            return "";
+        }
+
+        private string ProvjeriUpis(string naredba)
+        {
+            string sql = PoslanoKoje("spJeziciAzur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spStatusiAzur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spZupanijeAzur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spPrnVrstaTroskaAzur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spKlRobaWebKlase_Azur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spLnRobaWebKlase_Azur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spRatArkod_Azur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spPrnTroskoviDetAzur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spPrnTroskoviGlaAzur");
+            if (sql.Length == 0)
+                sql = _zadnjiSql ?? "";
+            if (sql.Length == 0)
+                return "";
+            if (sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                return "GRESKA Form2.vb:3406 zamijeni @@ iz kontrole, poslano je " + sql;
+            string tekst = (DijalogTok.TekstUpisa ?? "").Replace("'", "''");
+            if (sql.IndexOf("spJeziciAzur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("@action=0", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                DataTable t = Citaj("select top 1 cast(JeziciId as varchar(20)) as id from jezici where Naziv = N'" + tekst + "'");
+                if (t == null || t.Rows.Count == 0)
+                    return "GRESKA nema reda u jezici.Naziv=" + DijalogTok.TekstUpisa + " sql=" + sql;
+                _testId = Convert.ToString(t.Rows[0]["id"]);
+                _master.Kontekst.Id = _testId;
+                return "jezici.Naziv=" + DijalogTok.TekstUpisa + " id=" + _testId;
+            }
+            if (sql.IndexOf("spJeziciAzur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("@action=1", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                DataTable t = Citaj("select Naziv from jezici where JeziciId = " + (_testId.Length == 0 ? "0" : _testId));
+                string naziv = t == null || t.Rows.Count == 0 ? "" : Convert.ToString(t.Rows[0]["Naziv"]);
+                if (naziv != DijalogTok.TekstUpisa)
+                    return "GRESKA jezici.Naziv je '" + naziv + "', očekivano " + DijalogTok.TekstUpisa;
+                return "jezici id=" + _testId + " Naziv=" + naziv;
+            }
+            if (sql.IndexOf("spJeziciAzur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                DataTable t = Citaj("select count(*) as n from jezici where Naziv like N'klik-proba%'");
+                int n = t == null || t.Rows.Count == 0 ? -1 : Convert.ToInt32(t.Rows[0]["n"]);
+                if (n != 0)
+                    return "GRESKA brisanje je ostavilo " + n.ToString() + " testnih redova";
+                _testId = "";
+                return "testni jezik obrisan";
+            }
+            if (sql.IndexOf("spStatusiAzur", StringComparison.OrdinalIgnoreCase) >= 0
+                && Akcija(sql, "0"))
+            {
+                DataTable t = Citaj("select top 1 cast(statusiid as varchar(20)) as id from statusi where Korak = N'" + tekst + "'");
+                if (t == null || t.Rows.Count == 0)
+                    return "GRESKA nema reda u statusi.Korak=" + DijalogTok.TekstUpisa;
+                _testId = Convert.ToString(t.Rows[0]["id"]);
+                _master.Kontekst.Id = _testId;
+                return "statusi.Korak=" + DijalogTok.TekstUpisa + " id=" + _testId;
+            }
+            if (sql.IndexOf("spStatusiAzur", StringComparison.OrdinalIgnoreCase) >= 0
+                && Akcija(sql, "1"))
+            {
+                string id = _testId.Length == 0 ? "0" : _testId;
+                DataTable t = Citaj("select Korak from statusi where statusiid = " + id);
+                string korak = t == null || t.Rows.Count == 0 ? "" : Convert.ToString(t.Rows[0]["Korak"]);
+                if (korak != DijalogTok.TekstUpisa)
+                    return "GRESKA statusi.Korak je '" + korak + "', očekivano " + DijalogTok.TekstUpisa + " sql=" + sql;
+                return "statusi id=" + id + " Korak=" + korak;
+            }
+            if (sql.IndexOf("spStatusiAzur", StringComparison.OrdinalIgnoreCase) >= 0
+                && Akcija(sql, "2"))
+            {
+                string id = _testId.Length == 0 ? "0" : _testId;
+                DataTable t = Citaj("select count(*) as n from statusi where statusiid = " + id);
+                int n = t == null || t.Rows.Count == 0 ? -1 : Convert.ToInt32(t.Rows[0]["n"]);
+                if (n != 0)
+                    return "GRESKA brisanje statusa ostavilo " + n.ToString() + " sql=" + sql;
+                _testId = "";
+                return "testni status obrisan";
+            }
+            if (sql.IndexOf("spZupanijeAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "0"))
+                return ProvjeriNaziv("Zupanije", "ZupanijeId", tekst, true);
+            if (sql.IndexOf("spZupanijeAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "1"))
+                return ProvjeriNaziv("Zupanije", "ZupanijeId", tekst, false);
+            if (sql.IndexOf("spZupanijeAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "2"))
+                return ProvjeriObrisano("Zupanije", "ZupanijeId");
+            if (sql.IndexOf("spPrnVrstaTroskaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "0"))
+                return ProvjeriNaziv("PrnVrstaTroska", "PrnVrstaTroskaId", tekst, true);
+            if (sql.IndexOf("spPrnVrstaTroskaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "1"))
+                return ProvjeriNaziv("PrnVrstaTroska", "PrnVrstaTroskaId", tekst, false);
+            if (sql.IndexOf("spPrnVrstaTroskaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "2"))
+                return ProvjeriObrisano("PrnVrstaTroska", "PrnVrstaTroskaId");
+            if (sql.IndexOf("spKlRobaWebKlase_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("'INSERT'", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriNaziv("KlRobaWebKlase", "KlRobaWebKlaseId", tekst, true);
+            if (sql.IndexOf("spKlRobaWebKlase_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("'UPDATE'", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriNaziv("KlRobaWebKlase", "KlRobaWebKlaseId", tekst, false);
+            if (sql.IndexOf("spKlRobaWebKlase_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("'DELETE'", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriObrisano("KlRobaWebKlase", "KlRobaWebKlaseId");
+            if (sql.IndexOf("spLnRobaWebKlase_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("MULTI_INSERT", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriVeze(true);
+            if (sql.IndexOf("spLnRobaWebKlase_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("MULTI_DELETE", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriVeze(false);
+            if (sql.IndexOf("spRatArkod_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("'insert'", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriArkod(true);
+            if (sql.IndexOf("spRatArkod_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("'update'", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriNaziv("RatArkod", "RatArkodId", tekst, false);
+            if (sql.IndexOf("spRatArkod_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("'delete'", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriObrisano("RatArkod", "RatArkodId");
+            if (sql.IndexOf("spPrnTroskoviGlaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "0"))
+                return ProvjeriTrosak(true);
+            if (sql.IndexOf("spPrnTroskoviDetAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "0"))
+            {
+                if (_testId.Length == 0)
+                    ProvjeriTrosak(true);
+                return ProvjeriStavku();
+            }
+            if (sql.IndexOf("spPrnTroskoviGlaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "2"))
+                return ProvjeriObrisano("PrnTroskoviGla", "PrnTroskoviGlaId");
+            return "poslano: " + sql;
+        }
+
+        private static bool Akcija(string sql, string broj)
+        {
+            int p = sql.IndexOf("@action=" + broj, StringComparison.OrdinalIgnoreCase);
+            if (p < 0)
+                return false;
+            int kraj = p + "@action=".Length + broj.Length;
+            if (kraj < sql.Length && char.IsDigit(sql[kraj]))
+                return false;
+            return true;
+        }
+
+        private string ProvjeriNaziv(string tablica, string kljuc, string tekst, bool novi)
+        {
+            if (novi)
+            {
+                DataTable t = Citaj("select top 1 cast(" + kljuc + " as varchar(20)) as id from " + tablica + " where Naziv = N'" + tekst + "'");
+                if (t == null || t.Rows.Count == 0)
+                    return "GRESKA nema reda u " + tablica + ".Naziv=" + DijalogTok.TekstUpisa;
+                _testId = Convert.ToString(t.Rows[0]["id"]);
+                _master.Kontekst.Id = _testId;
+                return tablica + ".Naziv=" + DijalogTok.TekstUpisa + " id=" + _testId;
+            }
+            string id = _testId.Length == 0 ? "0" : _testId;
+            DataTable red = Citaj("select Naziv from " + tablica + " where " + kljuc + " = " + id);
+            string naziv = red == null || red.Rows.Count == 0 ? "" : (Convert.ToString(red.Rows[0]["Naziv"]) ?? "").TrimEnd();
+            if (naziv != (DijalogTok.TekstUpisa ?? "").TrimEnd())
+                return "GRESKA " + tablica + ".Naziv je '" + naziv + "', očekivano " + DijalogTok.TekstUpisa;
+            return tablica + " id=" + id + " Naziv=" + naziv;
+        }
+
+        private string ProvjeriVeze(bool dodane)
+        {
+            string id = _testId.Length == 0 ? "0" : _testId;
+            DataTable t = Citaj("select count(*) as n from LnRobaWebKlase where KlRobaWebKlaseId = " + id);
+            int n = t == null || t.Rows.Count == 0 ? 0 : Convert.ToInt32(t.Rows[0]["n"]);
+            if (dodane && n == 0)
+                return "GRESKA multiselect nije ubacio robu u klasu " + id;
+            if (!dodane && n != 0)
+                return "GRESKA uklanjanje je ostavilo " + n.ToString() + " veza";
+            return (dodane ? "dodano " : "uklonjeno ") + "veza=" + n.ToString() + " klasa=" + id;
+        }
+
+        private string ProvjeriArkod(bool novi)
+        {
+            string tekst = (DijalogTok.TekstUpisa ?? "").Replace("'", "''");
+            DataTable t = Citaj("select top 1 cast(RatArkodId as varchar(20)) as id from RatArkod where Naziv = N'" + tekst + "'");
+            if (t == null || t.Rows.Count == 0)
+                return "GRESKA nema reda u RatArkod.Naziv=" + DijalogTok.TekstUpisa;
+            _testId = Convert.ToString(t.Rows[0]["id"]);
+            _master.Kontekst.Id = _testId;
+            DataTable k = Citaj("select count(*) as n from RatArkodKat where RatArkodId = " + _testId);
+            int n = k == null || k.Rows.Count == 0 ? 0 : Convert.ToInt32(k.Rows[0]["n"]);
+            if (novi && n == 0)
+                return "GRESKA arkod " + _testId + " nema katastarsku česticu";
+            return "RatArkod.Naziv=" + DijalogTok.TekstUpisa + " id=" + _testId + " cestice=" + n.ToString();
+        }
+
+        private string ProvjeriTrosak(bool novi)
+        {
+            DataTable t = Citaj("select top 1 cast(PrnTroskoviGlaId as varchar(20)) as id from PrnTroskoviGla where KlMasterRobaId is null and RobaId is null order by PrnTroskoviGlaId desc");
+            if (t == null || t.Rows.Count == 0)
+                return "GRESKA nema zaglavlja troška";
+            if (novi)
+            {
+                _testId = Convert.ToString(t.Rows[0]["id"]);
+                _master.Kontekst.Id = _testId;
+            }
+            return "PrnTroskoviGla id=" + Convert.ToString(t.Rows[0]["id"]);
+        }
+
+        private string ProvjeriStavku()
+        {
+            string id = _testId.Length == 0 ? "0" : _testId;
+            DataTable t = Citaj("select count(*) as n from PrnTroskoviDet where PrnTroskoviGlaId = " + id);
+            int n = t == null || t.Rows.Count == 0 ? 0 : Convert.ToInt32(t.Rows[0]["n"]);
+            if (n == 0)
+                return "GRESKA podforma nije ubacila stavku za gla " + id;
+            return "PrnTroskoviDet gla=" + id + " stavki=" + n.ToString();
+        }
+
+        private string ProvjeriObrisano(string tablica, string kljuc)
+        {
+            string id = _testId.Length == 0 ? "0" : _testId;
+            DataTable t = Citaj("select count(*) as n from " + tablica + " where " + kljuc + " = " + id);
+            int n = t == null || t.Rows.Count == 0 ? -1 : Convert.ToInt32(t.Rows[0]["n"]);
+            if (n != 0)
+                return "GRESKA brisanje " + tablica + " ostavilo " + n.ToString();
+            _testId = "";
+            return "testni red u " + tablica + " obrisan";
+        }
+
+        private void OcistiTest()
+        {
+            try
+            {
+                Citaj("delete from jezici where Naziv like N'kp[0-9]%' or Naziv like N'klik-proba%'");
+                Citaj("delete from statusi where Korak like N'kp[0-9]%' or Korak like N'klik-proba%'");
+                Citaj("delete from Zupanije where Naziv like N'kp[0-9]%' or Naziv like N'klik-proba%'");
+                Citaj("delete from PrnVrstaTroska where Naziv like N'kp[0-9]%' or Naziv like N'klik-proba%'");
+            }
+            catch
+            {
+            }
+        }
+
+        private bool MasterPuni()
+        {
+            if (_projekt == null)
+                return false;
+            string on = (_projekt.OnLoad ?? "").Trim();
+            if (on.Length > 0 && !on.StartsWith(":", StringComparison.Ordinal))
+                return true;
+            return !string.IsNullOrWhiteSpace(_master.Stanje.IzvorSql);
+        }
+
+        private bool Destruktivan(string naredba, string natpis)
+        {
+            if (Pise(naredba) || Pise(natpis))
+                return true;
+            if (naredba != null && naredba.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            if (_projekt == null || string.IsNullOrEmpty(naredba))
+                return false;
+            string ime = naredba.Trim();
+            int hash = ime.IndexOf('#');
+            if (hash >= 0)
+                ime = ime.Substring(0, hash);
+            if (ime.StartsWith(":", StringComparison.Ordinal))
+                ime = ime.Substring(1);
+            for (int i = 0; i < _projekt.Forme.Count; i++)
+            {
+                if (!string.Equals(_projekt.Forme[i].Ime, ime.Trim(), StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (Pise(_projekt.Forme[i].OnSubmit) || Pise(_projekt.Forme[i].OnLoad))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool Pise(string tekst)
+        {
+            if (string.IsNullOrEmpty(tekst))
+                return false;
+            return ImaRijec(tekst, "insert") || ImaRijec(tekst, "update") || ImaRijec(tekst, "delete")
+                || tekst.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool ImaRijec(string tekst, string rijec)
+        {
+            string t = tekst.ToLowerInvariant();
+            int i = 0;
+            while (i <= t.Length - rijec.Length)
+            {
+                int n = t.IndexOf(rijec, i, StringComparison.Ordinal);
+                if (n < 0)
+                    return false;
+                bool lijevo = n == 0 || !char.IsLetter(t[n - 1]);
+                int kraj = n + rijec.Length;
+                bool desno = kraj >= t.Length || !char.IsLetter(t[kraj]);
+                if (lijevo && desno)
+                    return true;
+                i = n + 1;
+            }
+            return false;
+        }
+
+        private XtraTabControl NadjiTab()
+        {
+            for (int i = 0; i < splitGrid.Panel2.Controls.Count; i++)
+            {
+                var t = splitGrid.Panel2.Controls[i] as XtraTabControl;
+                if (t != null)
+                    return t;
+            }
+            return null;
+        }
+
+        private static string Linija(string granula, string dio, string ime, string ishod, string poruka, string izvor)
+        {
+            return granula + "\t" + dio + "\t" + ime + "\t" + ishod + "\t" + (poruka ?? "").Replace("\t", " ").Replace("\r", " ").Replace("\n", " ") + "\t" + izvor;
         }
 
         private void OtvoriCarpoLog()

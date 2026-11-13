@@ -200,9 +200,9 @@ namespace Carpo.NetGen.Granule
             }
 
             l.Add(Stablo.Meni(Ime, "RIJ-30", "AOPNovi.xml"));
-            l.Add(Stablo.Meni(Ime, "RIJ-31", "RatArkod.xml"));
+            l.Add(Stablo.Otvori(Ime, "RIJ-31", "RatArkod.xml", root));
             l.Add(Stablo.Meni(Ime, "RIJ-32", "Narudzbe.xml"));
-            l.Add(Stablo.Meni(Ime, "RIJ-33", "RobaWebKlase.xml"));
+            l.Add(Stablo.Otvori(Ime, "RIJ-33", "RobaWebKlase.xml", root));
 
             if (pa != null)
                 Rijetke.K(l, Ime, aop, "RIJ-40", "Dijalog stablo: tag je stupac 3, bez :forma. yearmonth na dijalogu ne crta", "netgen/Form2.vb:2576-2577,2842,2864", "tree.dijalog.tag", "stupac3");

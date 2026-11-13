@@ -73,14 +73,15 @@ namespace Carpo.NetGen.Grid
             Kontekst.Id = Stanje.IdMaster;
             Stanje.Parametri = ParametriIzReda(red);
             string sql = SqlTekst.Sredi(Stanje.Predlozak, Kontekst);
-            sql = ZamijeniOstatak(sql, Stanje.Parametri);
+            // Class1.NadjiVrijednostuPrevParametrima skida navodnike. Zarez unutar vrijednosti ostaje u ZamijeniOstatak.
+            sql = SrediPoslije.Petlja(sql, Stanje.Parametri, null, false);
             sql = sql.Replace("~~", ",");
             Stanje.SqlZaSlanje = sql;
             Stanje.DodatniSql.Clear();
             for (int i = 0; i < Stanje.DodatniPredlosci.Count; i++)
             {
                 string d = SqlTekst.Sredi(Stanje.DodatniPredlosci[i], Kontekst);
-                Stanje.DodatniSql.Add(ZamijeniOstatak(d, Stanje.Parametri).Replace("~~", ","));
+                Stanje.DodatniSql.Add(SrediPoslije.Petlja(d, Stanje.Parametri, null, false).Replace("~~", ","));
             }
             return sql;
         }
@@ -267,7 +268,87 @@ namespace Carpo.NetGen.Grid
 
         public static string ZamijeniOstatak(string sql, string parametri)
         {
-            return SrediPoslije.Petlja(sql, parametri, null, false);
+            if (sql == null)
+                return "";
+            int guard = 0;
+            while (sql.IndexOf("@@", StringComparison.Ordinal) >= 0 && guard < 40)
+            {
+                guard++;
+                int poc = sql.IndexOf("@@", StringComparison.Ordinal);
+                int kraj = sql.Length;
+                string ostatak = sql.Substring(poc);
+                char[] rez = { ' ', '\'', '%', '#', ',', ')', '*', '/', '\\', '+', '-', '.', '(', '=' };
+                for (int i = 0; i < rez.Length; i++)
+                {
+                    int p = ostatak.IndexOf(rez[i]);
+                    if (p >= 0 && poc + p < kraj)
+                        kraj = poc + p;
+                }
+                if (kraj <= poc)
+                    break;
+                string token = sql.Substring(poc, kraj - poc);
+                string vrijednost = Nadji(token, parametri);
+                // Class1.vb 915: prazan token je null, ne prazan tekst. Prazan tekst
+                // ispred zareza da "@ime=," i SQL "Incorrect syntax near ','".
+                if (vrijednost.Length == 0)
+                    vrijednost = "null";
+                sql = sql.Substring(0, poc) + vrijednost + sql.Substring(kraj);
+            }
+            return sql;
+        }
+
+        private static string Nadji(string token, string parametri)
+        {
+            string kljuc = (token ?? "").Trim();
+            if (kljuc.StartsWith("@@", StringComparison.Ordinal))
+                kljuc = "@" + kljuc.Substring(2);
+            if (string.IsNullOrEmpty(parametri) || kljuc.Length == 0)
+                return "";
+            string[] dijelovi = Dijelovi(parametri);
+            for (int i = 0; i < dijelovi.Length; i++)
+            {
+                string dio = dijelovi[i].Trim();
+                if (dio.Length < kljuc.Length)
+                    continue;
+                if (!dio.Substring(0, kljuc.Length).Equals(kljuc, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                int eq = dio.IndexOf('=');
+                if (eq < 0)
+                    continue;
+                return dio.Substring(eq + 1).Trim();
+            }
+            return "";
+        }
+
+        /// <summary>
+        /// Zarez unutar navodnika nije kraj parametra. Inače @Next='a, b' raskine
+        /// sljedeći @vrstadokid i token ostane prazan.
+        /// </summary>
+        private static string[] Dijelovi(string parametri)
+        {
+            var lista = new System.Collections.Generic.List<string>();
+            var sb = new System.Text.StringBuilder();
+            bool navodnik = false;
+            for (int i = 0; i < parametri.Length; i++)
+            {
+                char c = parametri[i];
+                if (c == '\'')
+                {
+                    navodnik = !navodnik;
+                    sb.Append(c);
+                    continue;
+                }
+                if (c == ',' && !navodnik)
+                {
+                    lista.Add(sb.ToString());
+                    sb.Length = 0;
+                    continue;
+                }
+                sb.Append(c);
+            }
+            if (sb.Length > 0)
+                lista.Add(sb.ToString());
+            return lista.ToArray();
         }
 
         private void Dodaj(string sql)

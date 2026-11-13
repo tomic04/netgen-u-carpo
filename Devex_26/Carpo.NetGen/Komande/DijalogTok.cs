@@ -48,6 +48,34 @@ namespace Carpo.NetGen.Komande
                 || server.IndexOf("jupiter2022", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
+        /// <summary>
+        /// Upis smije samo klik-pregled na bazi spin, server localhost na sql-ai.
+        /// jupiter2019, jupiter2022 i svaka druga baza ostaju zatvorene.
+        /// </summary>
+        public static bool UpisNaSpinu(string server, string baza)
+        {
+            if (!string.Equals((baza ?? "").Trim(), "spin", StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (JeJupiter(server))
+                return false;
+            string s = (server ?? "").Trim();
+            bool lokal = s.Length == 0
+                || string.Equals(s, "localhost", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(s, ".", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(s, "(local)", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(s, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+                || s.IndexOf("sql-ai", StringComparison.OrdinalIgnoreCase) >= 0;
+            if (!lokal)
+                return false;
+            string akcija = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") ?? "";
+            string stroj = Environment.MachineName ?? "";
+            return string.Equals(akcija, "true", StringComparison.OrdinalIgnoreCase)
+                || stroj.IndexOf("sql-ai", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        public static bool DozvoliUpis;
+        public static string TekstUpisa = "";
+
         public static string NextForm(NgForm forma)
         {
             if (forma == null || forma.Atributi == null || !forma.Atributi.Ima("NEXTFORM"))
@@ -146,11 +174,13 @@ namespace Carpo.NetGen.Komande
             }
             if (naredba.Length == 0 && redni == 1)
             {
+                // Form2.vb 3377: CMD1 bez dvotočke je OK. ONSUBMIT se šalje i kad
+                // FILLEXPLORER nije postavljen. DELETEFORM Obriši je takav gumb.
                 k.Zatvara = true;
                 k.FillExplorer = PuniExplorer(forma);
-                if (k.FillExplorer && forma != null)
+                if (forma != null)
                     k.MasterSql = Lanac.Lijepi((forma.OnSubmit ?? "").Trim(), "");
-                k.SaljeSql = !jupiter && k.MasterSql.Length > 0 && !ZastitaSql.Tekst(k.MasterSql).Pise;
+                k.SaljeSql = !jupiter && k.MasterSql.Length > 0 && SmijePoslati(k.MasterSql);
                 return k;
             }
             string[] seg = Lanac.Segmenti(naredba);
@@ -179,7 +209,7 @@ namespace Carpo.NetGen.Komande
                     k.Zatvara = true;
                     if (forma != null)
                         k.MasterSql = Lanac.Lijepi((forma.OnSubmit ?? "").Trim(), "");
-                    if (!jupiter && k.MasterSql.Length > 0 && !ZastitaSql.Tekst(k.MasterSql).Pise)
+                    if (!jupiter && k.MasterSql.Length > 0 && SmijePoslati(k.MasterSql))
                         k.SaljeSql = true;
                 }
                 else if (u == "OKSTAY")
@@ -190,13 +220,89 @@ namespace Carpo.NetGen.Komande
                 {
                     string svedeno = Lanac.Lijepi(t, "");
                     k.Naredbe.Add(svedeno);
-                    if (!jupiter && !ZastitaSql.Tekst(svedeno).Pise)
+                    if (!jupiter && SmijePoslati(svedeno))
                         k.SaljeSql = true;
                 }
             }
             if (jupiter)
                 k.SaljeSql = false;
             return k;
+        }
+
+        /// <summary>
+        /// Form2.vb 3655 stavi tekst kontrole kao @Ime='vrijednost'.
+        /// Class1.vb 765-868 zamijeni @@Ime tom vrijednošću. XML već ima navodnike
+        /// oko @@Naziv, pa se u taj par stavlja sirovi tekst kontrole.
+        /// </summary>
+        public static string ZamijeniTokene(string sql, string id, IDictionary<string, string> kontrole)
+        {
+            if (string.IsNullOrEmpty(sql))
+                return "";
+            string s = sql;
+            s = s.Replace("@@id", id ?? "");
+            s = s.Replace("@@ID", id ?? "");
+            s = s.Replace("@@Id", id ?? "");
+            if (kontrole != null)
+            {
+                foreach (var par in kontrole)
+                {
+                    if (string.IsNullOrEmpty(par.Key))
+                        continue;
+                    s = ZamijeniIme(s, par.Key, par.Value ?? "");
+                }
+            }
+            // Form2.vb 3818: grid bez kvačica da prazan niz. Inače @@ ostane u navodniku i stora ga dobije kao tekst.
+            s = ZamijeniIme(s, "nizoznacenihajdijevaslijedeci", "");
+            return s;
+        }
+
+        private static string ZamijeniIme(string sql, string ime, string vrijednost)
+        {
+            string[] tokeni = new string[] { "@@" + ime, "@@" + ime.ToUpperInvariant(), "@@" + ime.ToLowerInvariant() };
+            string s = sql;
+            for (int i = 0; i < tokeni.Length; i++)
+            {
+                string token = tokeni[i];
+                int p = 0;
+                while ((p = s.IndexOf(token, p, StringComparison.OrdinalIgnoreCase)) >= 0)
+                {
+                    bool uNavodniku = p > 0 && s[p - 1] == '\'';
+                    bool jeNull = string.Equals(vrijednost, "null", StringComparison.OrdinalIgnoreCase);
+                    bool prazan = string.IsNullOrEmpty(vrijednost);
+                    // Form2.vb 3616: prazan search id ide kao null, ne kao ''.
+                    string ubaci = (jeNull || prazan) && !uNavodniku
+                        ? "null"
+                        : (uNavodniku ? (vrijednost ?? "").Replace("'", "''") : "'" + (vrijednost ?? "").Replace("'", "''") + "'");
+                    s = s.Substring(0, p) + ubaci + s.Substring(p + token.Length);
+                    p += ubaci.Length;
+                }
+            }
+            return s;
+        }
+
+        /// <summary>
+        /// Form2.vb 1195 izvršava ONLOAD bez obzira počinje li sa select.
+        /// spStatusiQuery @action=2 puni @@vrstadokid iz rezultata, ne iz kontrole.
+        /// </summary>
+        public static bool OnLoadJeUpit(string on)
+        {
+            string t = (on ?? "").TrimStart();
+            if (t.Length == 0 || t.StartsWith(":", StringComparison.Ordinal))
+                return false;
+            // Ime forme nema razmak (INSERT_KLASA). SQL ga ima, i kad počinje sa if.
+            // Form2.vb 1195 izvršava ONLOAD, Form1 ne otvara formu iz tog teksta.
+            return t.IndexOf(' ') >= 0 || t.IndexOf('\n') >= 0 || t.IndexOf('\r') >= 0;
+        }
+
+        public static bool SmijePoslati(string sql)
+        {
+            if (string.IsNullOrWhiteSpace(sql))
+                return false;
+            if (sql.IndexOf("cis.porezna-uprava.hr", StringComparison.OrdinalIgnoreCase) >= 0)
+                return false;
+            if (!ZastitaSql.Tekst(sql).Pise)
+                return true;
+            return DozvoliUpis;
         }
 
         /// <summary>

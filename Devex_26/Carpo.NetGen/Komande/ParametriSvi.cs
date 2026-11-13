@@ -13,6 +13,15 @@ namespace Carpo.NetGen.Komande
             return "@" + (ime ?? "").Trim() + "=" + (ukljucen ? "1" : "0") + ",";
         }
 
+        /// <summary>Form2.vb 3627–3632: search šalje Tag, prazan ili 0 je null. Natpis nije id.</summary>
+        public static string SearchId(object tag)
+        {
+            string id = (tag as string ?? "").Trim();
+            if (id.Length == 0 || id == "0")
+                return "null";
+            return id;
+        }
+
         public static string Search(string ime, string oznaka, string tekst)
         {
             string n = (ime ?? "").Trim();

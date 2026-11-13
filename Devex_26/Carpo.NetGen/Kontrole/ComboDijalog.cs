@@ -30,10 +30,19 @@ namespace Carpo.NetGen.Kontrole
             if (tablica == null || tablica.Columns.Count == 0)
                 return;
             DataRow red = tablica.NewRow();
+            // Form2.vb 2408 je pod On Error Resume Next. String primi "null".
+            // Int stupac iz procedure to ne primi i ostane prazan (DBNull), ne 0.
             if (tablica.Columns[0].DataType == typeof(string))
                 red[0] = "null";
-            if (tablica.Columns.Count > 1 && tablica.Columns[1].DataType == typeof(string))
-                red[1] = "";
+            else
+                red[0] = DBNull.Value;
+            if (tablica.Columns.Count > 1)
+            {
+                if (tablica.Columns[1].DataType == typeof(string))
+                    red[1] = "";
+                else
+                    red[1] = DBNull.Value;
+            }
             tablica.Rows.InsertAt(red, 0);
         }
 
@@ -99,6 +108,25 @@ namespace Carpo.NetGen.Kontrole
         public static bool OnClickSeSalje(bool jupiter)
         {
             return !jupiter;
+        }
+
+        /// <summary>
+        /// Form2.vb 2396–2431 i 2503–2504. Procedura ide kao i ostali SQL.
+        /// Upis ne ide. Stupac 0 je vrijednost, stupac 1 je natpis.
+        /// ALLOWEMPTY ubaci red 0 = null i red 1 = prazan tekst.
+        /// </summary>
+        public static DataTable Ucitaj(string sql, bool allowEmpty, Func<string, DataTable> citaj)
+        {
+            if (citaj == null || string.IsNullOrWhiteSpace(sql))
+                return null;
+            if (ZastitaSql.Tekst(sql).Pise)
+                return null;
+            DataTable dt = citaj(SqlZaSlanje(sql, new SqlKontekst()));
+            if (dt == null || dt.Columns.Count == 0)
+                return dt;
+            if (allowEmpty)
+                UbaciPrazan(dt);
+            return dt;
         }
     }
 }

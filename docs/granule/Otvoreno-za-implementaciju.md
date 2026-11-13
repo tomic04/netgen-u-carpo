@@ -1,8 +1,29 @@
 # Otvoreno za implementaciju
 
-Izvor je CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31), commit `b7d8989`, izvještaj `SVE ukupno=571 zeleno=411 otvoreno=160 pad=0`.
+Tekući broj je CI [43305196144](https://github.com/tomic04/netgen-u-carpo/actions/runs/43305196144), commit `1f1a837`: `SVE ukupno=354 zeleno=348 otvoreno=6 pad=0`.
 
-Svih 160 stavki je otvoreno. Nijedna nije pad. Grupe su po elementu NetGena i poredane po broju granula. Uz svaku stavku je linija izvora i razlog zašto je ostala otvorena.
+`JEZ-31` je prava procedura na spinu (15 redova, `JeziciId,Naziv`). `DOS-11` zove testne procedure i provjerava stupac 0/1. Jedanaest stavki `ssMeni` otvara granulu iz `Parametar` preko loadera. Redovi su testni, ne klijentski. Donji odjeljci su snimak CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31).
+
+## Tekuće otvoreno (6)
+
+Red u `ssMeni` postoji. Test ne zatvara stavku dok loader ne otvori XML, isto kao `Form1.vb` 1139.
+
+| Stavka | Očekivano | Izvor | Zašto je otvoreno |
+|---|---|---|---|
+| KarticaPartnera `KAR-12` | loader otvori `KarticaPartnera.xml` | `netgen/Form1.vb:1139` | red nije otvaranje granule |
+| MPInventura `INV-13` | loader otvori `MPInventura.xml` | `netgen/Form1.vb:1139` | red nije otvaranje granule |
+| DobUgovori `DOB-08` | loader otvori `DobUgovori.xml` | `netgen/Form1.vb:1139` | red nije otvaranje granule |
+| MPBlagajna `MPB-07` | loader otvori `MPBlagajna.xml` | `netgen/Form1.vb:1139` | red nije otvaranje granule |
+| Rijetke `RIJ-30` | loader otvori `AOPNovi.xml` | `netgen/Form1.vb:1139` | red nije otvaranje granule |
+| Rijetke `RIJ-32` | loader otvori `Narudzbe.xml` | `netgen/Form1.vb:1139` | red nije otvaranje granule |
+
+`JEZ-31` NetGen šalje: `PokaziUpit` (`Form1.vb` 3882), a `ExecSql` preskače samo prazan tekst, tekst koji počinje s `@` i tekst u kojem je `@@` (`Class1.vb` 105–118). U pozivu nema `@@`. Port i dalje ne šalje tijelo koje nakon komentara, zaglavlja `CREATE/ALTER PROC` i `WITH EXECUTE AS` ima upis ili `exec`/`into`.
+
+## Snimak CI #31
+
+Izvor snimka je CI [#31](https://github.com/tomic04/netgen-u-carpo/pull/31), commit `b7d8989`, izvještaj `SVE ukupno=571 zeleno=411 otvoreno=160 pad=0`.
+
+Svih 160 stavki je u tom snimku otvoreno. Nijedna nije pad. Grupe su po elementu NetGena i poredane po broju granula. Uz svaku stavku je linija izvora i razlog zašto je tada ostala otvorena.
 
 | # | Element | Granula | Stavki |
 |---|---|---:|---:|

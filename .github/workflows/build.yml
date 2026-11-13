@@ -9,6 +9,18 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      klik:
+        description: kratko je push, puno je popis, sweep je sve granule bez upisa
+        type: choice
+        options:
+          - kratko
+          - puno
+          - sweep
+        default: kratko
+  schedule:
+    # Noćni puni klik-pregled. GitHub ga pali s default grane.
+    - cron: "30 1 * * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -36,15 +48,49 @@ jobs:
           & $py (Join-Path $env:GITHUB_WORKSPACE "scripts\ci\portano-ui.py")
           if ($LASTEXITCODE -ne 0) { throw "Status portano nema UI test granule. Vidi tests/ui/katalog.txt." }
 
+      - name: Vrsta
+        id: vrsta
+        shell: powershell
+        run: |
+          $msg = git log -1 --format=%s
+          $sweep = "0"
+          $shard = "0"
+          if ($msg -match '\[sweep-([1-6])\]') {
+            $sweep = "1"
+            $shard = $Matches[1]
+          }
+          [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, "sweep=$sweep`nshard=$shard`n")
+          Write-Host "poruka=$msg sweep=$sweep shard=$shard event=$env:GITHUB_EVENT_NAME"
+
       - name: Spin stubovi i otvaranje
+        if: steps.vrsta.outputs.sweep != '1' || github.event_name == 'push'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
           $sql = Join-Path $env:GITHUB_WORKSPACE "scripts\spin\stubovi.sql"
           sqlcmd -S localhost -d spin -E -C -b -i $sql
           if ($LASTEXITCODE -ne 0) { throw "stubovi.sql nije prosao" }
-          & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Prenesi.ps1")
-          & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Retci.ps1")
+          $grana = "cursor/netgen-treci-otvoreno-889d"
+          if ($env:GITHUB_REF_NAME -eq $grana -or $env:GITHUB_HEAD_REF -eq $grana) {
+            Write-Host "Preskocen Prenesi i Retci: ova grana ne cita jupiter2019 ni jupiter2022."
+          } else {
+            & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Prenesi.ps1")
+            & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Retci.ps1")
+          }
+          & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Tijelo.ps1")
+          sqlcmd -S localhost -d spin -E -C -b -i (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\dospjele.sql")
+          if ($LASTEXITCODE -ne 0) { throw "dospjele.sql nije prosao" }
+          sqlcmd -S localhost -d spin -E -C -b -i (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\filter.sql")
+          if ($LASTEXITCODE -ne 0) { throw "filter.sql nije prosao" }
+          sqlcmd -S localhost -d spin -E -C -b -i (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\prn-vrsta-troska.sql")
+          if ($LASTEXITCODE -ne 0) { throw "prn-vrsta-troska.sql nije prosao" }
+          sqlcmd -S localhost -d spin -E -C -b -i (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\roba-web-klase.sql")
+          if ($LASTEXITCODE -ne 0) { throw "roba-web-klase.sql nije prosao" }
+          sqlcmd -S localhost -d spin -E -C -b -i (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\rat-arkod.sql")
+          if ($LASTEXITCODE -ne 0) { throw "rat-arkod.sql nije prosao" }
+          sqlcmd -S localhost -d spin -E -C -b -i (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\prn-troskovi.sql")
+          if ($LASTEXITCODE -ne 0) { throw "prn-troskovi.sql nije prosao" }
+          & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Meni.ps1")
           & (Join-Path $env:GITHUB_WORKSPACE "scripts\spin\Otvori.ps1")
 
       - name: Artifact spin otvaranje
@@ -56,6 +102,9 @@ jobs:
           path: artifacts/spin/
 
       - name: Priprema referenci i build
+        if: steps.vrsta.outputs.sweep != '1' || github.event_name == 'push'
+        env:
+          SAMO_SWEEP: ${{ steps.vrsta.outputs.sweep }}
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -160,6 +209,19 @@ jobs:
             "Devex_26\Carpo.Designer\Carpo.Designer.csproj",
             "Devex_26\Carpo.TestShell\Carpo.TestShell.csproj"
           )
+          if ($env:SAMO_SWEEP -eq "1" -and $env:GITHUB_EVENT_NAME -eq "push") {
+            $projekti = @(
+              "Devex_26\Carpo.Structure\Carpo.Structure.csproj",
+              "Devex_26\Carpo.Common\Carpo.Common.csproj",
+              "Devex_26\Carpo.Data\Carpo.Data.csproj",
+              "Devex_26\Carpo.Core\Carpo.Core.csproj",
+              "Devex_26\Carpo.UI\Carpo.UI.csproj",
+              "Devex_26\Carpo.Gen\Carpo.csproj",
+              "Devex_26\Carpo.XmlGen\Carpo.XmlGen.csproj",
+              "Devex_26\Carpo.NetGen\Carpo.NetGen.csproj",
+              "Devex_26\Carpo.TestShell\Carpo.TestShell.csproj"
+            )
+          }
 
           foreach ($p in $projekti) {
             Write-Host "=== $p ==="
@@ -173,6 +235,7 @@ jobs:
           Write-Host "Build gotov: $out"
 
       - name: Smoke NetGen XML
+        if: steps.vrsta.outputs.sweep != '1'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -191,6 +254,7 @@ jobs:
           }
 
       - name: Grid testovi i defaulti
+        if: steps.vrsta.outputs.sweep != '1'
         shell: powershell
         env:
           CARPO_SPIN: "1"
@@ -228,7 +292,47 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Jupiter smoke nije zavrsio. Kod $LASTEXITCODE" }
           Get-Content -LiteralPath $md -TotalCount 30
 
+      - name: Klik pregled
+        if: steps.vrsta.outputs.sweep != '1'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          if ("${{ github.event.inputs.klik }}" -eq "sweep") { Write-Host "Klik pregled preskocen, sweep je zaseban korak."; exit 0 }
+          $exe = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin\Carpo.TestShell.exe"
+          if (-not (Test-Path -LiteralPath $exe)) { throw "Nema $exe" }
+          $puni = $env:GITHUB_EVENT_NAME -eq "schedule" -or "${{ github.event.inputs.klik }}" -eq "puno"
+          $popis = Join-Path $env:GITHUB_WORKSPACE "scripts\ui\klik-kratko.txt"
+          if ($puni) { $popis = Join-Path $env:GITHUB_WORKSPACE "scripts\ui\klik-puno.txt" }
+          $snimke = Join-Path $env:GITHUB_WORKSPACE "artifacts\ui-smoke"
+          Write-Host "Klik pregled $popis"
+          $ciscenje = Join-Path $env:GITHUB_WORKSPACE "scripts\spin\klik-ciscenje.sql"
+          $podaci = Join-Path $env:GITHUB_WORKSPACE "scripts\spin\klik-podaci.sql"
+          sqlcmd -S localhost -d spin -E -C -b -i $ciscenje
+          if ($LASTEXITCODE -ne 0) { throw "klik-ciscenje.sql nije prosao" }
+          sqlcmd -S localhost -d spin -E -C -b -i $podaci
+          if ($LASTEXITCODE -ne 0) { throw "klik-podaci.sql nije prosao" }
+          & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSmoke.ps1") -Exe $exe -XmlRoot (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Shots $snimke -Popis $popis -Klik
+          $klikKod = $LASTEXITCODE
+          sqlcmd -S localhost -d spin -E -C -b -i $ciscenje
+          if ($LASTEXITCODE -ne 0) { throw "klik-ciscenje.sql nakon pregleda nije prosao" }
+          if ($klikKod -ne 0) { throw "Klik pregled nije prosao. Kod $klikKod" }
+          Get-Content -LiteralPath (Join-Path $snimke "klik-pregled.md")
+
+      - name: Klik sweep
+        if: steps.vrsta.outputs.sweep == '1' && github.event_name == 'push'
+        timeout-minutes: 14
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $exe = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin\Carpo.TestShell.exe"
+          $shard = "${{ steps.vrsta.outputs.shard }}"
+          $izv = Join-Path $env:GITHUB_WORKSPACE "artifacts\ui-smoke\sweep-$shard.txt"
+          & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSweep.ps1") -Exe $exe -XmlRoot (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Izvjestaj $izv -Sekundi 4 -Shard ([int]$shard) -Dijelova 6
+          if ($LASTEXITCODE -ne 0) { throw "Sweep nije zavrsio. Kod $LASTEXITCODE" }
+
       - name: Stabilni TestShell na sql-ai
+        # Ova grana ne pise C:\NetGenCarpo\zadnji.txt i ne vodi UI smoke.
+        if: github.head_ref != 'cursor/netgen-treci-otvoreno-889d' && github.ref_name != 'cursor/netgen-treci-otvoreno-889d'
         shell: powershell
         env:
           NETGEN_GRANA: ${{ github.head_ref || github.ref_name }}
