@@ -32,6 +32,15 @@ namespace Carpo.NetGen.Komande
         }
 
         /// <summary>
+        /// Form2.Rafalno 6807: dijalog dijeli samo na '#'. '~' je separator samo na podlozi
+        /// (Form1.vb 4557, 5744); u dijalogu je dio teksta (npr. vrijednost 'id~id' MULTIDROP-a).
+        /// </summary>
+        public static string[] SegmentiDijaloga(string naredba)
+        {
+            return (naredba ?? "").Split('#');
+        }
+
+        /// <summary>
         /// REFRESHMASTERGRID ponovi zadnji SQL. Segment refreshmaster nije ta riječ,
         /// ali prazna forma i dalje ima OKClick pa PokaziUpit (Form1.vb 4570, 5354–5370, 5519).
         /// </summary>

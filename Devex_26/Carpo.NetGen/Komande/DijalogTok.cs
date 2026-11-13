@@ -185,7 +185,7 @@ namespace Carpo.NetGen.Komande
                 k.SaljeSql = !jupiter && k.MasterSql.Length > 0 && SmijePoslati(k.MasterSql);
                 return k;
             }
-            string[] seg = Lanac.Segmenti(naredba);
+            string[] seg = Lanac.SegmentiDijaloga(naredba);
             for (int i = 0; i < seg.Length; i++)
             {
                 string t = (seg[i] ?? "").Trim();
@@ -314,7 +314,7 @@ namespace Carpo.NetGen.Komande
         public static List<Korak> Koraci(string onClick)
         {
             var lista = new List<Korak>();
-            string[] seg = Lanac.Segmenti(onClick ?? "");
+            string[] seg = Lanac.SegmentiDijaloga(onClick ?? "");
             for (int i = 0; i < seg.Length; i++)
             {
                 string t = (seg[i] ?? "").Trim();

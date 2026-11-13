@@ -2348,8 +2348,9 @@ namespace Carpo.NetGen.GridTest
                     "kolicina=" + kolicina.Enabled + " napomena=" + napomena.Text + " osvjezen=" + osvjezen + " status=" + status.Text);
 
                 var partner = (DevExpress.XtraEditors.ButtonEdit)d.Controls.Find("partner", true)[0];
-                partner.Text = "jedan";
+                // Korisnik udje u trazilicu pa upise (OldSearchString je tekst pri ulasku).
                 d.ActiveControl = partner;
+                partner.Text = "jedan";
                 d.ProvediTipku(Keys.Enter);
                 bool trazeno = Broji(sql, "spTrazi 'jedan'") == 1;
                 bool rac = Broji(sql, "where p=7") == 1;

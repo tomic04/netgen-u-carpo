@@ -1780,6 +1780,19 @@ namespace Carpo.NetGen.Ui
             {
                 // Form2.Glbl_Gotfocus (5990): OldSearchString je tekst pri ulasku.
                 c.Enter += delegate { _stariTekst[c] = c.Text ?? ""; };
+                // Gumb tražilice (DevExpress ButtonEdit) radi isto što i Enter (Glbl_Validated).
+                var gumbTrazi = c as ButtonEdit;
+                if (gumbTrazi != null)
+                {
+                    gumbTrazi.ButtonClick += delegate
+                    {
+                        if (_slazem)
+                            return;
+                        _izlazTrazilice.Validated();
+                        ZadnjaTrazilica = c.Text ?? "";
+                        PotvrdiTrazilicu(c, k, lost);
+                    };
+                }
                 string onLeave = Attr(k, "ONLEAVE");
                 c.Leave += delegate
                 {
@@ -2287,7 +2300,10 @@ namespace Carpo.NetGen.Ui
         /// <summary>PokupiParametre 3443-3447: GetCheckedItems, zarez postane ~, bez razmaka.</summary>
         private static string Oznaceni(CheckedComboBoxEdit c)
         {
-            object o = c.Properties.GetCheckedItems();
+            // EditValue je popis oznacenih vrijednosti odvojen zarezom (i prije nego se popis otvori).
+            object o = c.EditValue;
+            if (o == null || o == DBNull.Value)
+                return "";
             return (Convert.ToString(o, CultureInfo.InvariantCulture) ?? "").Replace(",", "~").Replace(" ", "");
         }
 
@@ -2543,6 +2559,8 @@ namespace Carpo.NetGen.Ui
             {
                 var b = new ButtonEdit();
                 b.Properties.TextEditStyle = TextEditStyles.Standard;
+                // Form2.vb 2145: Tag = "0" (nema odabranog id-a).
+                b.Tag = "0";
                 return b;
             }
             if (g == NgGrana.Date)
