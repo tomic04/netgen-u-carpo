@@ -23,6 +23,15 @@ if object_id(N'dbo.PrnVrstaTroska', N'U') is null
 
 go
 
+-- Dvije stalne vrste za klik pregled. PrnTroskovi Izmjeni dodaje drugu stavku istom zaglavlju;
+-- s jednom vrstom granula sama odbije duplikat ("Postoji vec takva vrsta troska"), kao i NetGen.
+-- Imena nisu kp% ni klik-proba%, pa ih klik-ciscenje.sql ne brise.
+if not exists (select 1 from dbo.PrnVrstaTroska where Naziv = N'Test vrsta A')
+    insert into dbo.PrnVrstaTroska (Naziv, Sifra, PrnTipObr) values (N'Test vrsta A', N'TA', N'T1');
+if not exists (select 1 from dbo.PrnVrstaTroska where Naziv = N'Test vrsta B')
+    insert into dbo.PrnVrstaTroska (Naziv, Sifra, PrnTipObr) values (N'Test vrsta B', N'TB', N'T1');
+go
+
 create or alter procedure dbo.spPrnVrstaTroskaQuery
     @Action int = null,
     @Id int = null
