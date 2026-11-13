@@ -200,11 +200,48 @@ namespace Carpo.NetGen.Komande
                 var k = new Korak();
                 k.Tekst = t;
                 string u = t.ToUpperInvariant();
-                if (u.IndexOf("MSGBOX(", StringComparison.Ordinal) >= 0)
+                if (ForeachNaredba.Vrsta(t).Length > 0)
+                {
+                    string tijelo = "";
+                    if (i + 1 < seg.Length)
+                    {
+                        tijelo = (seg[i + 1] ?? "").Trim();
+                        i++;
+                    }
+                    k.Vrsta = "foreach";
+                    k.Tekst = ForeachNaredba.Vrsta(t) + "|" + ForeachNaredba.Grid(t) + "|" + tijelo;
+                }
+                else if (u.IndexOf("MSGBOX(", StringComparison.Ordinal) >= 0)
                 {
                     k.Vrsta = "poruka";
                     k.Tekst = PorukaNaredba.Tekst(t);
                 }
+                else if (FiskalNaredba.Tablica(t) != 0)
+                    k.Vrsta = "fiskal";
+                else if (RafalNaredba.Datoteka(t) != 0)
+                    k.Vrsta = "datoteka";
+                else if (RafalNaredba.RefreshKontrola(t).Length > 0)
+                {
+                    k.Vrsta = "refresh";
+                    k.Tekst = RafalNaredba.RefreshKontrola(t);
+                }
+                else if (RafalNaredba.Dock(t).Length > 0)
+                {
+                    k.Vrsta = "dock";
+                    k.Tekst = RafalNaredba.Dock(t) + "|" + RafalNaredba.DockKontrola(t);
+                }
+                else if (u.IndexOf("EVAL(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "eval";
+                    k.Tekst = RafalNaredba.EvalLijevo(t) + "=" + RafalNaredba.EvalDesno(t);
+                }
+                else if (RafalNaredba.MasterSljedeci(t))
+                    k.Vrsta = "sljedeci";
+                else if (RafalNaredba.MasterPrethodni(t))
+                    k.Vrsta = "prethodni";
+                else if (RafalNaredba.Slopp(t) || u.IndexOf("CREATEOBJECT(", StringComparison.Ordinal) >= 0
+                    || u.IndexOf("ISEMPTYORZERO", StringComparison.Ordinal) >= 0 || PraznoNaredba.Je(t))
+                    k.Vrsta = "naredba";
                 else if (u == "CLOSE" || u == "CANCEL")
                     k.Vrsta = "odustani";
                 else if (u == "CLOSEPARENT")

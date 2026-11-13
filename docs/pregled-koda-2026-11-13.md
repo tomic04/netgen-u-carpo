@@ -149,7 +149,7 @@ Stanje je `radi` kad se naredba izvrši, `nije` kad se samo preskoči ili zabilj
 | INCLUDE | `Form2.vb` 844–934 | `IncludeXml.SpojiFormu`, ne u `Ucitaj` | radi |
 | select na podlozi | `Form1.vb` 4875–4898 | `ObicnaForma.PrimijeniSelect` | radi |
 | HIDECOLUMNS / SHOWCOLUMNS | `Form1.vb` 6730–6766 | `StupciNaredba` | radi |
-| FISKALIZACIJA* | `Form1.vb` 4643–4781 | `FiskalNaredba` bira tablicu i broj poziva, SOAP je `FiskalPoziv.Posalji` | radi, bez porezne |
+| FISKALIZACIJA* | `Form1.vb` 286–434 i 4643–4781, `Form2.vb` 7459 | `FiskalTok` samo `cistest.apis-it.hr` | radi, bez prave porezne |
 | CLICK( | `Form2.vb` 7151; podloga `Form1.vb` 6856 komentirano | `KlikNaredba` | radi na dijalogu, podloga ne |
 | MSGBOX( | `Form2.vb` 7165–7169 | `PorukaNaredba` | radi |
 | OPENFORM( | `Form1.vb` 6582–6585 | `OtvoriNaredba` | radi |
@@ -159,7 +159,8 @@ Stanje je `radi` kad se naredba izvrši, `nije` kad se samo preskoči ili zabilj
 | CLOSEPARENT | `Form1.vb` 6838–6840 | `RoditeljNaredba` | radi |
 | ISEMPTY u lancu | `Form1.vb` 6768–6776 | `PraznoNaredba` | radi |
 | GRID_COLUMN_VALUE( | `Form1.vb` 6785–6807 komentirano | `StupacVrijednost` ne izvršava | radi, kao NetGen |
-| FOREACHSELECTED / FOREACHROW / FOREACHBLUEROW | `Form1.vb` 6843–6850 tijelo komentirano; `Form2` izvršava | `Lanac` samo zabilježi | nije |
+| FOREACHSELECTED / FOREACHROW / FOREACHBLUEROW | `Form1.vb` 6843–6850 tijelo komentirano; `Form2` 7040–7048 izvršava | `ForeachNaredba` na dijalogu, podloga pojede sljedeći | radi |
+| REFRESHCONTROL / DOCK1–5 / EVAL / ISEMPTYORZERO* / CREATETEXTFILE* / SLOPP | `Form2.vb` 6911–7399, 7494 | `RafalNaredba` | radi, EVAL bez CalcContext |
 | BEEP() | `Form1.vb` 6579 | nema | nije |
 | STARTSEARCH( | `Form1.vb` 6592 | komentirano i u NetGenu | nije |
 | CLICK na podlozi | `Form1.vb` 6852 | komentirano i u NetGenu | nije |

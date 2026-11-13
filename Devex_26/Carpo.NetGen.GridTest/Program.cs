@@ -345,6 +345,33 @@ namespace Carpo.NetGen.GridTest
                 int prije = cis.Poziva;
                 var blok = Carpo.NetGen.Poziv.FiskalPoziv.Posalji("<Racun/>", "C:\\cert\\test.pfx", "tajna", "https://cis.porezna-uprava.hr:8449/FiskalizacijaService", "", "", "");
                 T("fiskal-nema-porezne", !blok.Poslano && cis.Poziva == prije, blok.Greska);
+                cis.Baci = false;
+                var postavke = new System.Data.DataTable();
+                postavke.Columns.Add("url");
+                postavke.Columns.Add("pfx");
+                postavke.Columns.Add("lozinkazapfx");
+                postavke.Columns.Add("timeout");
+                postavke.Columns.Add("datum", typeof(DateTime));
+                postavke.Rows.Add(Carpo.NetGen.Komande.FiskalTok.PravaUrl, "a.pfx", "tajna", "1000", DateTime.Now.AddDays(-1));
+                int prijePrave = cis.Poziva;
+                var prava = Carpo.NetGen.Komande.FiskalTok.Izvrsi(1, "9", delegate(string sql) { return postavke; });
+                T("fiskal-izvrsi-prava", !prava.Poslano && cis.Poziva == prijePrave, prava.Greska);
+                postavke.Rows[0]["url"] = Carpo.NetGen.Komande.FiskalTok.TestUrl;
+                var xmlTab = new System.Data.DataTable();
+                xmlTab.Columns.Add("x");
+                xmlTab.Rows.Add("<Racun/>");
+                var jirTab = new System.Data.DataTable();
+                jirTab.Columns.Add("jir");
+                jirTab.Rows.Add("");
+                var testni = Carpo.NetGen.Komande.FiskalTok.Izvrsi(1, "9", delegate(string sql)
+                {
+                    if (sql.StartsWith("select * from mpfiskalizacija", StringComparison.Ordinal))
+                        return postavke;
+                    if (sql.StartsWith("select isnull(jir", StringComparison.Ordinal))
+                        return jirTab;
+                    return xmlTab;
+                });
+                T("fiskal-izvrsi-test", testni.Poslano && cis.CisUrl == Carpo.NetGen.Komande.FiskalTok.TestUrl && cis.Xml == "<Racun/>", testni.Greska + " " + cis.CisUrl);
             }
             finally
             {
@@ -389,9 +416,36 @@ namespace Carpo.NetGen.GridTest
             }
             T("dijalog-kljuc", kljuc && kljucTekst.Length == 0, kljucTekst);
             var msg = Carpo.NetGen.Komande.DijalogTok.Koraci("CREATETEXTFILE3(c:\\a.txt)#msgbox(Pozor)#OK");
-            T("dijalog-msgbox-lanac", msg.Count == 3 && msg[0].Vrsta == "sql" && msg[1].Vrsta == "poruka" && msg[1].Tekst == "POZOR" && msg[2].Vrsta == "ok", msg.Count.ToString());
+            T("dijalog-msgbox-lanac", msg.Count == 3 && msg[0].Vrsta == "datoteka" && msg[1].Vrsta == "poruka" && msg[1].Tekst == "POZOR" && msg[2].Vrsta == "ok", msg.Count.ToString());
             var rod = Carpo.NetGen.Komande.DijalogTok.Koraci("spMPIzdatnicaSKLMP @action=1#CLOSEPARENT");
             T("dijalog-closeparent-lanac", rod.Count == 2 && rod[0].Vrsta == "sql" && rod[0].Tekst.StartsWith("spMPIzdatnicaSKLMP") && rod[1].Vrsta == "roditelj", rod.Count.ToString());
+            var fe = Carpo.NetGen.Komande.DijalogTok.Koraci("FOREACHSELECTED(gridOsobe)#spAzur @id=@@id#OK");
+            string[] petlja = Carpo.NetGen.Komande.ForeachNaredba.Ponovi("spAzur @id=@@id", new[] { "4", "9" });
+            T("foreach-dijalog", fe.Count == 2 && fe[0].Vrsta == "foreach" && fe[0].Tekst.StartsWith("cekirani|GRIDOSOBE|")
+                && petlja.Length == 2 && petlja[0] == "spAzur @id=4" && petlja[1] == "spAzur @id=9"
+                && Carpo.NetGen.Komande.ForeachNaredba.Idjevi("plavi", new[] { "1" }, new[] { "8", "3" }, new string[0]).Length == 2
+                && Carpo.NetGen.Komande.ForeachNaredba.Ponovi("sp", new string[0]).Length == 0, fe[0].Tekst);
+            T("param-tekst", Carpo.NetGen.Komande.ParametriSvi.Tekst("naziv", "O'Brien, d.o.o.") == "@naziv='O¸¸Brien~~ d.o.o.',", "");
+            T("param-broj", Carpo.NetGen.Komande.ParametriSvi.Broj("kolicina", "") == "@kolicina=0,"
+                && Carpo.NetGen.Komande.ParametriSvi.Broj("kolicina", "1,5") == "@kolicina=1.5,", "");
+            T("param-datum", Carpo.NetGen.Komande.ParametriSvi.Datum("datum", "", false, new DateTime(2026, 3, 1)) == "@datum=null,"
+                && Carpo.NetGen.Komande.ParametriSvi.Datum("datum", "MM.YYYY", true, new DateTime(2026, 3, 1)) == "@datum='20260301',", "");
+            T("param-multi", Carpo.NetGen.Komande.ParametriSvi.Multi("str", "1, 2,3") == "@str='1~2~3',", "");
+            T("rafal-eval", Carpo.NetGen.Komande.RafalNaredba.EvalLijevo("EVAL(kolicina=1+2)") == "kolicina"
+                && Carpo.NetGen.Komande.RafalNaredba.EvalDesno("EVAL(kolicina=1+2)") == "1+2"
+                && Carpo.NetGen.Komande.RafalNaredba.Dock("DOCK5(grid)") == "Fill"
+                && Carpo.NetGen.Komande.RafalNaredba.RefreshKontrola("REFRESHCONTROL(mjestaid)") == "mjestaid"
+                && Carpo.NetGen.Komande.RafalNaredba.PrazanIliNula("0")
+                && !Carpo.NetGen.Komande.RafalNaredba.OtkazImaPoruku("ISEMPTYORZEROCANCELBOX(@kolicina)")
+                && Carpo.NetGen.Komande.RafalNaredba.UpozorenjeTekst("ISEMPTYORZEROALERT(@k;Nema)") == "Nema"
+                && Carpo.NetGen.Komande.RafalNaredba.Slopp("SLOPP(1)")
+                && Carpo.NetGen.Komande.RafalNaredba.Datoteka("CREATETEXTFILE1(c:\\a.txt;select 1)") == 1
+                && Carpo.NetGen.Komande.RafalNaredba.DatotekaTekst(1, new[] { new[] { "A", "B" } }).EndsWith("\u001a"), "");
+            T("fiskal-test-url", Carpo.NetGen.Komande.FiskalTok.UrlZaSlanje("") == ""
+                && Carpo.NetGen.Komande.FiskalTok.UrlZaSlanje(Carpo.NetGen.Komande.FiskalTok.PravaUrl) == ""
+                && Carpo.NetGen.Komande.FiskalTok.UrlZaSlanje(Carpo.NetGen.Komande.FiskalTok.TestUrl) == Carpo.NetGen.Komande.FiskalTok.TestUrl
+                && Carpo.NetGen.Komande.FiskalTok.SqlXml(2, "15").StartsWith("spFaktureXMLGetRacunZahtijev")
+                && Carpo.NetGen.Komande.FiskalTok.SqlXml(-1, "4").StartsWith("spMPXMLGetNapojnicaZahtijev"), "");
             T("openform", Carpo.NetGen.Komande.OtvoriNaredba.Ime("OPENFORM(Unesi)") == "UNESI", "");
             T("prostor", Carpo.NetGen.Komande.ProstorNaredba.Je("POSLOVNIPROSTOR(5)")
                 && Carpo.NetGen.Komande.ProstorNaredba.Argument("POSLOVNIPROSTOR(5)") == "5"

@@ -398,6 +398,11 @@ namespace Carpo.NetGen.Ui
                 }
                 if (PraznoNaredba.Je(s) || StupacVrijednost.Je(s))
                     continue;
+                if (ForeachNaredba.Vrsta(s).Length > 0)
+                {
+                    i++;
+                    continue;
+                }
                 if (s.StartsWith("select", StringComparison.OrdinalIgnoreCase))
                 {
                     string stanje = Lanac.GumbIzCase(s, Polje("izvjestaj"));
@@ -408,7 +413,7 @@ namespace Carpo.NetGen.Ui
                 else if (GumbTok.Akcija(_projekt, s) == "fiskal")
                 {
                     NgDnevnik.Akcija("fiskal tablica=" + FiskalNaredba.Tablica(s));
-                    Carpo.NetGen.Poziv.FiskalPoziv.Posalji(FiskalNaredba.Argument(s), "", "", "", "", "", "");
+                    FiskalTok.Izvrsi(FiskalNaredba.Tablica(s), FiskalNaredba.Argument(s), Citaj);
                 }
                 else if (GumbTok.Akcija(_projekt, s) == "prostor")
                     NgDnevnik.Akcija("prostor " + ProstorNaredba.Argument(s));

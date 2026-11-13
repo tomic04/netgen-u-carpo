@@ -176,9 +176,9 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 - **Element:** `FOREACHROW` / `FOREACHSELECTED` / `FOREACHBLUEROW`
 - **NetGen:** na dijalogu petlja i pojede sljedeći `#` segment (`Form2.vb` 7040–7048, `8310–8394`). Na podlozi je tijelo komentar, ali `i = i + 1` i dalje pojede sljedeći segment (`Form1.vb` 6843–6850).
-- **Carpo:** `control foreachrow` vrti. Nema „prepoznaj i preskoči“.
-- **Posljedica:** ista naredba na gumbu podloge ne smije izvršiti petlju, a ne smije ni ostaviti sljedeći segment.
-- **Test:** `KUP-11`, `KUP-12`, `KUP-13`
+- **Carpo:** dijalog vrti sljedeći segment po retku (`ForeachNaredba`, `DijalogTok`). Podloga pojede sljedeći segment i ne vrti petlju (`Podloga.IzvrsiLanac`).
+- **Posljedica:** ista naredba na gumbu podloge ne izvrši petlju i ne ostavi sljedeći segment.
+- **Test:** `foreach-dijalog`, `KUP-11`, `KUP-12`, `KUP-13`
 
 ## R23 `OKSTAY` i `CLOSEPARENT`
 
@@ -927,9 +927,9 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 
 - **Element:** `ASSEMBLYLOAD` na dijalogu
 - **NetGen:** `Form2.vb` 3406–3486 skuplja check, radio, combo, search, grid i tekst u `strParametriSvi`. Taj niz ide dvaput u `totalgen` (`7424–7456`).
-- **Carpo:** `Dijalog.SviParametri` skuplja check, lookup, tekst, radio (`@ime=1` ili `0`), search (`@ime=` tag ili `null`, plus `@searchboxime`) i grid (`@ime`, `@arrayofblueids`, `@nizplavihajdijeva`, `@nizoznacenihajdijeva`, `@rowcount`).
-- **Posljedica:** peti argument `totalgen` na dijalogu dobije ta tri tipa. Označeni redovi grida ostaju prazan niz dok kontrola nema kvačice.
-- **Test:** `param-radio`, `param-search`, `param-grid`
+- **Carpo:** `Dijalog.SviParametri` skuplja check, lookup, tekst (`'` → `¸¸`, `,` → `~~`), broj (prazno je `0`), datum (`yyyyMMdd` ili `null`), radio, search i grid. `EVAL` se reže na kontrolu i izraz, bez VB `CalcContext`.
+- **Posljedica:** peti argument `totalgen` dobije te tipove. Označeni redovi grida ostaju prazan niz dok nema bool stupca. `EVAL` ne računa izraz.
+- **Test:** `param-radio`, `param-search`, `param-grid`, `param-tekst`, `param-broj`, `param-datum`, `rafal-eval`
 
 ## R110 `PrintLink` nema NetGen zaglavlje ni `lodani`
 
@@ -943,6 +943,6 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 
 - **Element:** `FISKALIZACIJA`
 - **NetGen:** `Form1.vb` 493–548 postavi `CisUrl`, `TimeOut` i mape, pa `PosaljiSoapPorukuCertifikatDatoteka(xml, pfx, lozinka)`. Greška je šifra `55555` i `DohvatiGresku`. Inače `DohvatiJir`. Prazan URL postane `https://cis.porezna-uprava.hr:8449/FiskalizacijaService` (`377`).
-- **Carpo:** isti poziv i ista obrada (`FiskalPoziv.Posalji`). URL koji sadrži `porezna-uprava.hr` se ne zove. Prazan URL se ne zamjenjuje produkcijskim.
-- **Posljedica:** treba `Raverus.FiskalizacijaDEV.COM.dll`, PFX i lozinka iz `mpfiskalizacija`, i CIS URL koji nije produkcijski. Toga nema u repou.
-- **Test:** `fiskal-soap`, `fiskal-greska`, `fiskal-nema-porezne`
+- **Carpo:** `FiskalTok.Izvrsi` čita iste upite. Prazan URL i `cis.porezna-uprava.hr` se ne zovu. SOAP ide samo na `https://cistest.apis-it.hr:8449/FiskalizacijaServiceTest`.
+- **Posljedica:** treba `Raverus.FiskalizacijaDEV.COM.dll`, PFX i lozinka iz `mpfiskalizacija`, i testni CIS. Produkcijski URL se ne šalje. `UPDATE` UUID/KOD ostaje iza zabrane pisanja.
+- **Test:** `fiskal-soap`, `fiskal-greska`, `fiskal-nema-porezne`, `fiskal-test-url`, `fiskal-izvrsi-prava`, `fiskal-izvrsi-test`

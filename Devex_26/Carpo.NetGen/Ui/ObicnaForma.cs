@@ -215,7 +215,7 @@ namespace Carpo.NetGen.Ui
             if (vrsta == "fiskal")
             {
                 NgDnevnik.Akcija("fiskal tablica=" + FiskalNaredba.Tablica(s) + " poziva=" + FiskalNaredba.Poziva(0));
-                Carpo.NetGen.Poziv.FiskalPoziv.Posalji(FiskalNaredba.Argument(s), "", "", "", "", "", "");
+                FiskalTok.Izvrsi(FiskalNaredba.Tablica(s), FiskalNaredba.Argument(s), Citaj);
             }
             else if (vrsta == "prostor")
                 NgDnevnik.Akcija("prostor " + ProstorNaredba.Argument(s) + " poziva=" + ProstorNaredba.Poziva(0));
