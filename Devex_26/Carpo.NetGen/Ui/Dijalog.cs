@@ -369,9 +369,12 @@ namespace Carpo.NetGen.Ui
                         Control[] cilj = Controls.Find(korak.Tekst, true);
                         if (cilj.Length > 0)
                         {
-                            var gumb = cilj[0] as ButtonBase;
-                            if (gumb != null)
-                                gumb.PerformClick();
+                            var dx = cilj[0] as SimpleButton;
+                            var wb = cilj[0] as Button;
+                            if (dx != null)
+                                dx.PerformClick();
+                            else if (wb != null)
+                                wb.PerformClick();
                             else
                                 cilj[0].Focus();
                         }
