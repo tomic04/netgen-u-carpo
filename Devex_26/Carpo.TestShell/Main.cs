@@ -544,8 +544,13 @@ namespace Carpo.TestShell
                                 continue;
                             try
                             {
-                                f.DialogResult = DialogResult.Cancel;
-                                f.Close();
+                                if (f is Dijalog)
+                                {
+                                    f.DialogResult = DialogResult.Cancel;
+                                    f.Close();
+                                }
+                                else
+                                    f.Hide();
                             }
                             catch
                             {
@@ -742,13 +747,12 @@ namespace Carpo.TestShell
                     continue;
                 try
                 {
-                    f.Close();
+                    f.Hide();
                 }
                 catch
                 {
                 }
             }
-            Application.DoEvents();
         }
 
         public int PokreniUiSmoke(string snimka)
