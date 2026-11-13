@@ -1067,8 +1067,8 @@ namespace Carpo.NetGen.Ui
             }
             string id = _testId.Length == 0 ? "0" : _testId;
             DataTable red = Citaj("select Naziv from " + tablica + " where " + kljuc + " = " + id);
-            string naziv = red == null || red.Rows.Count == 0 ? "" : Convert.ToString(red.Rows[0]["Naziv"]);
-            if (naziv != DijalogTok.TekstUpisa)
+            string naziv = red == null || red.Rows.Count == 0 ? "" : (Convert.ToString(red.Rows[0]["Naziv"]) ?? "").TrimEnd();
+            if (naziv != (DijalogTok.TekstUpisa ?? "").TrimEnd())
                 return "GRESKA " + tablica + ".Naziv je '" + naziv + "', očekivano " + DijalogTok.TekstUpisa;
             return tablica + " id=" + id + " Naziv=" + naziv;
         }
