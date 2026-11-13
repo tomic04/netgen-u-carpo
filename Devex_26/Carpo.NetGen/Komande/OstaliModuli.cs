@@ -133,6 +133,106 @@ namespace Carpo.NetGen.Komande
         }
 
         /// <summary>FormCollectionExtensions.GetLast 16–30. Zadnji namespace koji sadrži ime. Bez MessageBox.</summary>
+        /// <summary>Module1.Translate 266–282. hrv i prazan jezik ostaju. Tuđi jezik ide u vanjski prevoditelj kojeg nema, pa tekst ostaje.</summary>
+        public static string Prevedi(string tekst, string jezik)
+        {
+            return tekst ?? "";
+        }
+
+        public static bool TrebaVanjskogPrevoditelja(string jezik)
+        {
+            string j = (jezik ?? "").Trim().ToLowerInvariant();
+            return j.Length > 0 && j != "hrv";
+        }
+
+        /// <summary>Module1.Translate_OLD 293–344.</summary>
+        public static string PrevediStaro(string tekst, System.Data.DataTable jezik, string visejezicno, string language, string pismo)
+        {
+            string izvor = tekst ?? "";
+            if (visejezicno == "0" || visejezicno == "1")
+                return izvor;
+            if (string.IsNullOrWhiteSpace(language) || jezik == null || jezik.Rows.Count == 0)
+                return izvor;
+            foreach (System.Data.DataRow r in jezik.Rows)
+            {
+                string o = r["original"] == System.DBNull.Value ? "" : Convert.ToString(r["original"]);
+                if (string.Equals((o ?? "").Trim(), izvor.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    string t = r["translated"] == System.DBNull.Value ? "" : Convert.ToString(r["translated"]);
+                    return pismo == "cir" ? UCirilicu(t) : t;
+                }
+            }
+            if (izvor.IndexOf(' ') >= 0)
+            {
+                string[] rijeci = izvor.Split(' ');
+                var sb = new StringBuilder();
+                for (int i = 0; i < rijeci.Length; i++)
+                {
+                    string tstr2 = rijeci[i];
+                    foreach (System.Data.DataRow r in jezik.Rows)
+                    {
+                        string o = r["original"] == System.DBNull.Value ? "" : Convert.ToString(r["original"]);
+                        if (string.Equals((o ?? "").Trim(), (rijeci[i] ?? "").Trim(), StringComparison.OrdinalIgnoreCase))
+                            tstr2 = r["translated"] == System.DBNull.Value ? "" : Convert.ToString(r["translated"]);
+                    }
+                    sb.Append(' ').Append(tstr2);
+                }
+                if (sb.ToString().Trim().Length > 0)
+                    izvor = sb.ToString().Trim();
+            }
+            if (pismo == "cir")
+                return UCirilicu(izvor);
+            return izvor;
+        }
+
+        /// <summary>Module1.ToCiril2 474–505. LJ, NJ i Dž idu prvi.</summary>
+        public static string UCirilicu(string tekst)
+        {
+            const string latinica = "abcdefghijklmnoprstuvzABCDEFGHIJKLMNOPRSTUVZ\u0161\u0107\u0111\u017e\u010d\u0160\u0106\u0110\u017d\u010c";
+            const string cirilica = "\u0430\u0431\u0446\u0434\u0435\u0444\u0433\u0445\u0438\u0458\u043a\u043b\u043c\u043d\u043e\u043f\u0440\u0441\u0442\u0443\u0432\u0437\u0410\u0411\u0426\u0414\u0415\u0424\u0413\u0425\u0418\u0408\u041a\u041b\u041c\u041d\u041e\u041f\u0420\u0421\u0422\u0423\u0412\u0417\u0448\u045b\u0452\u0436\u0447\u0428\u040b\u0402\u0416\u0427";
+            string[] lat = { "LJ", "Lj", "lj", "NJ", "Nj", "nj", "D\u017d", "D\u017e", "d\u017e" };
+            string[] cir = { "\u0409", "\u0409", "\u0459", "\u040a", "\u040a", "\u045a", "\u040f", "\u040f", "\u045f" };
+            string c = tekst ?? "";
+            for (int i = 0; i < lat.Length; i++)
+                c = c.Replace(lat[i], cir[i]);
+            var sb = new StringBuilder(c.Length);
+            for (int i = 0; i < c.Length; i++)
+            {
+                int k = latinica.IndexOf(c[i]);
+                sb.Append(k >= 0 ? cirilica[k] : c[i]);
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>Form6.GetServerPath 239–254. Nema ini u AppData, čita se C:\JupiterClient\JupiterClient.ini. RemoteDllPath se reže od 14.</summary>
+        public static string IniPutanja(bool postojiUAppData, string appData)
+        {
+            if (postojiUAppData)
+                return (appData ?? "") + "JupiterClient.ini";
+            return "C:\\JupiterClient\\JupiterClient.ini";
+        }
+
+        public static string RemoteDll(string ini, out bool easyPrint)
+        {
+            easyPrint = false;
+            string tekst = ini ?? "";
+            int pocetak = 0;
+            while (pocetak <= tekst.Length)
+            {
+                int kraj = tekst.IndexOf('\n', pocetak);
+                string linija = kraj < 0 ? tekst.Substring(pocetak) : tekst.Substring(pocetak, kraj - pocetak);
+                linija = linija.TrimEnd('\r');
+                if (linija.IndexOf("RemoteDllPath", StringComparison.Ordinal) >= 0)
+                    return linija.Length > 14 ? linija.Substring(14) : "";
+                if (string.Equals(linija.Trim().ToLowerInvariant(), "easyprintworkaround=true", StringComparison.Ordinal))
+                    easyPrint = true;
+                if (kraj < 0)
+                    break;
+                pocetak = kraj + 1;
+            }
+            return "";
+        }
+
         public static string ZadnjiNamespace(string[] novi, string ime)
         {
             string zadnji = null;
