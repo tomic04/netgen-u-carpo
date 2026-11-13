@@ -48,11 +48,17 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 
 `TEXT1..3` (23 kontrole, 9 granula: `@@version`, `Broj stavki:`, `@@gridstavke`, `Gornji prikaz sadrži @@rowcountgridrob redova`) se u NetGenu spreme velikim slovima i na svakom `RefreshControls` (4753) prođu kroz `SrediSQL2`, `SrediSQLPosljeNextForme` i stupce grida. Carpo je pokazivao samo `TEXT1` doslovno (`@@VERSION`). Sada `Ui/DijalogStatus` radi isto, poslije ONLOAD-a i poslije svakog rezultata SQL-a, a `@@VERSION` je `NetGen v` + verzija sklopa.
 
+## Broj s FORMATMASK (NUM-02)
+
+`FORMATMASK="#0"` (godina proizvodnje/baždarenja, 4 kontrole) nema grupiranje tisućica; Carpo je s maskom `n0` pokazivao `2.024`. Maska bez zareza sada je `f{DECIMALS}`, sa zarezom ostaje `n{DECIMALS}`.
+
 ## Otvoreno
 
 - `MULTILINE` (243 / 60 granula), `ENTERASTAB`, `PASSWORDCHAR` (4), `MAXLENGTH` (80 / 14): tekstualno polje je uvijek `TextEdit`.
 - `VALUE="DATE"` na datumu (133): u VB kodu za `DTPicker` nije pronađeno čitanje; provjeriti gdje se koristi.
-- Tab stranice (`TYPE="tab"`), `TIMERSQL` (1 granula).
+- Tab stranice (`TYPE="tab"`).
+- `TIMERSQL` (4 forme, 1 granula): Timer2 je u NetGenu ugašen dok ga `TIMERON(n)` ne upali, a `TIMERON` nema nigdje u korpusu, pa se ni u NetGenu ne izvršava.
+- `IMAGEINDEX` (30 gumba, 9 granula) i automatske ikone po natpisu (dodaj, obriši, izmjeni…): Carpo gumbi imaju svoj izgled (50-50 → Carpo).
 - Grid dijaloga: `COLUMNCAPTION`/`COLUMNWIDTH` za grid (nije tražilica), `FROZENCOLUMNS`, `AUTOMATICSORT`, layout datoteke.
 
 ## Testovi

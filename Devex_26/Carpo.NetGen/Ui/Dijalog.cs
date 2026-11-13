@@ -2644,7 +2644,10 @@ namespace Carpo.NetGen.Ui
                 if (int.TryParse((decimale ?? "").Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out dec) && dec >= 0 && dec <= 10)
                 {
                     spin.Properties.IsFloatValue = dec > 0;
-                    spin.Properties.Mask.EditMask = "n" + dec.ToString(CultureInfo.InvariantCulture);
+                    // FORMATMASK bez ',' (npr. "#0" za godinu, 4 granule) nema grupiranje tisućica: 2024, ne 2.024 (NUM-02).
+                    string maska = k.Atributi == null ? null : k.Atributi.Vrijednost("FORMATMASK");
+                    bool bezGrupa = !string.IsNullOrEmpty(maska) && maska.Trim().Length > 0 && maska.IndexOf(',') < 0;
+                    spin.Properties.Mask.EditMask = (bezGrupa ? "f" : "n") + dec.ToString(CultureInfo.InvariantCulture);
                     spin.Properties.Mask.UseMaskAsDisplayFormat = true;
                 }
                 return spin;
