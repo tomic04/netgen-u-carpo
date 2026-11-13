@@ -1985,6 +1985,7 @@ namespace Carpo.NetGen.GridTest
             T("trazilica-preskok", Ponasanje.PreskociTrazilicu("", "x") && Ponasanje.PreskociTrazilicu("Kava", "Kava") && !Ponasanje.PreskociTrazilicu("*", "*") && !Ponasanje.PreskociTrazilicu("nova", "stara"), "");
             DijalogUcinak();
             SqlSlojNetGen();
+            BrojNaDijalogu();
             IspisUcinak();
             PokaziUpitUcinak();
             var traz = new DataTable();
@@ -2106,6 +2107,46 @@ namespace Carpo.NetGen.GridTest
             finally
             {
                 System.Threading.Thread.CurrentThread.CurrentCulture = staro;
+            }
+        }
+
+        /// <summary>
+        /// NUM-01. Form2.vb 2072-2086 i 3601: brojčano polje šalje Value s točkom, prazno je 0.
+        /// DECIMALS određuje broj decimala unosa. Carpo je slao prikazani tekst SpinEdita.
+        /// </summary>
+        private static void BrojNaDijalogu()
+        {
+            var kontrole = new List<NgControl>();
+            kontrole.Add(new NgControl("number", NgGrana.Number, "iznos", new NgAttributeBag(new Dictionary<string, string> { { "DECIMALS", "2" } }), true));
+            kontrole.Add(new NgControl("number", NgGrana.Number, "kolicina", new NgAttributeBag(new Dictionary<string, string>()), true));
+            kontrole.Add(new NgControl("number", NgGrana.Number, "prazno", new NgAttributeBag(new Dictionary<string, string> { { "DECIMALS", "0" } }), true));
+            var forma = new NgForm("T", new NgAttributeBag(null), "", "", kontrole, new List<NgButton>(), new List<string>());
+            var staraKultura = Thread.CurrentThread.CurrentCulture;
+            var d = new Dijalog();
+            try
+            {
+                Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("hr-HR");
+                d.Slozi(forma, new SqlKontekst(), delegate (string s) { return null; });
+                var iznos = (DevExpress.XtraEditors.SpinEdit)d.Controls.Find("iznos", true)[0];
+                var kolicina = (DevExpress.XtraEditors.SpinEdit)d.Controls.Find("kolicina", true)[0];
+                var prazno = (DevExpress.XtraEditors.SpinEdit)d.Controls.Find("prazno", true)[0];
+                iznos.Value = 1234.5m;
+                kolicina.Value = 2500m;
+                prazno.Text = "";
+                string sql = Convert.ToString(typeof(Dijalog).GetMethod("SviParametri", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(d, null));
+                bool dobro = sql.IndexOf("@iznos=1234.5,", StringComparison.Ordinal) >= 0
+                    && sql.IndexOf("@kolicina=2500,", StringComparison.Ordinal) >= 0
+                    && sql.IndexOf("@prazno=0,", StringComparison.Ordinal) >= 0;
+                T("broj-vrijednost-hr", dobro, sql + " | tekst=" + iznos.Text + " / " + kolicina.Text);
+                T("broj-decimals", iznos.Properties.IsFloatValue && iznos.Properties.Mask.EditMask == "n2"
+                    && kolicina.Properties.IsFloatValue
+                    && !prazno.Properties.IsFloatValue && prazno.Properties.Mask.EditMask == "n0",
+                    iznos.Properties.Mask.EditMask + " / " + kolicina.Properties.Mask.EditMask + " / " + prazno.Properties.Mask.EditMask);
+            }
+            finally
+            {
+                Thread.CurrentThread.CurrentCulture = staraKultura;
+                d.Dispose();
             }
         }
 
