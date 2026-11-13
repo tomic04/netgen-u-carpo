@@ -45,6 +45,22 @@ namespace Carpo.NetGen.Komande
             }
             return n;
         }
+
+        /// <summary>RECALCGRIDROW Form2.vb 8264–8282. Samo tekući red.</summary>
+        public static int IzracunajRed(DataTable tablica, int red)
+        {
+            if (tablica == null || red < 0 || red >= tablica.Rows.Count)
+                return 0;
+            var jedan = tablica.Clone();
+            jedan.ImportRow(tablica.Rows[red]);
+            int n = Izracunaj(jedan);
+            if (n > 0)
+            {
+                for (int c = 0; c < tablica.Columns.Count; c++)
+                    tablica.Rows[red][c] = jedan.Rows[0][c];
+            }
+            return n;
+        }
     }
 
     /// <summary>TOGGLEGRIDGROUP Form2.vb 6970–6983. c=0 širi, inače sklapa.</summary>

@@ -31,6 +31,7 @@ namespace Carpo.NetGen.Ui
         private static Dijalog _zatvoriRoditelja;
         public static Action<Dijalog> NakonPrikaza;
         private bool _jupiter;
+        private int _grupe;
 
         public string OtvorenaForma = "";
         public string MasterSql = "";
@@ -332,7 +333,9 @@ namespace Carpo.NetGen.Ui
                 if (v == "poruka" || v == "roditelj" || v == "odustani" || v == "ok" || v == "okstay" || v == "forma"
                     || v == "foreach" || v == "fiskal" || v == "datoteka" || v == "refresh" || v == "dock"
                     || v == "eval" || v == "sljedeci" || v == "prethodni" || v == "naredba"
-                    || v == "recalc" || v == "toggle" || v == "priprema" || v == "pivot" || v == "chart" || v == "boja" || v == "posalji" || v == "pokretanje" || v == "beep" || v == "ispisext")
+                    || v == "recalc" || v == "recalcred" || v == "toggle" || v == "priprema" || v == "pivot" || v == "chart" || v == "boja" || v == "posalji" || v == "pokretanje" || v == "beep" || v == "ispisext"
+                    || v == "eval" || v == "sljedeci" || v == "prethodni" || v == "svekontrole" || v == "proces" || v == "mapa" || v == "datotekadlg"
+                    || v == "timer" || v == "timeroff" || v == "progres" || v == "trazi" || v == "stupac" || v == "objekt")
                     lanac = true;
             }
             if (lanac)
@@ -466,6 +469,93 @@ namespace Carpo.NetGen.Ui
                                 return;
                             }
                         }
+                        continue;
+                    }
+                    if (korak.Vrsta == "eval")
+                    {
+                        int jednako = (korak.Tekst ?? "").IndexOf('=');
+                        string ime = jednako < 0 ? (korak.Tekst ?? "") : korak.Tekst.Substring(0, jednako);
+                        string izraz = jednako < 0 ? "" : korak.Tekst.Substring(jednako + 1);
+                        string v = Izraz.Izracunaj(izraz);
+                        Control[] ciljEval = Controls.Find(ime.Trim(), true);
+                        if (ciljEval.Length > 0)
+                            ciljEval[0].Text = v;
+                        continue;
+                    }
+                    if (korak.Vrsta == "svekontrole")
+                    {
+                        RafalNaredba.SveKontrole(this, korak.Tekst == "1");
+                        continue;
+                    }
+                    if (korak.Vrsta == "proces")
+                    {
+                        RafalNaredba.ProcessStart(korak.Tekst);
+                        continue;
+                    }
+                    if (korak.Vrsta == "mapa")
+                    {
+                        RafalNaredba.OdaberiMapu();
+                        continue;
+                    }
+                    if (korak.Vrsta == "datotekadlg")
+                    {
+                        RafalNaredba.OdaberiDatoteku();
+                        continue;
+                    }
+                    if (korak.Vrsta == "timer")
+                    {
+                        RafalNaredba.TimerOn(korak.Tekst);
+                        continue;
+                    }
+                    if (korak.Vrsta == "timeroff")
+                    {
+                        RafalNaredba.TimerOff();
+                        continue;
+                    }
+                    if (korak.Vrsta == "progres")
+                    {
+                        RafalNaredba.Progres(korak.Tekst == "1");
+                        continue;
+                    }
+                    if (korak.Vrsta == "trazi")
+                    {
+                        string[] dio = RafalNaredba.StartSearch(korak.Tekst);
+                        Control[] ciljT = Controls.Find(dio[0], true);
+                        if (ciljT.Length > 0)
+                        {
+                            ciljT[0].Focus();
+                            ciljT[0].Text = dio.Length > 1 ? dio[1] : "";
+                        }
+                        continue;
+                    }
+                    if (korak.Vrsta == "stupac")
+                    {
+                        PomakniNaVrijednost(korak.Tekst);
+                        continue;
+                    }
+                    if (korak.Vrsta == "objekt")
+                    {
+                        PorukaNaredba.Pokazi("MSGBOX(" + RafalNaredba.CreateObject(korak.Tekst) + ")");
+                        continue;
+                    }
+                    if (korak.Vrsta == "recalc" || korak.Vrsta == "recalcred")
+                    {
+                        PreracunajGrid(korak.Vrsta == "recalcred");
+                        continue;
+                    }
+                    if (korak.Vrsta == "toggle")
+                    {
+                        ToggleGrid.Korak(ref _grupe);
+                        continue;
+                    }
+                    if (korak.Vrsta == "priprema")
+                    {
+                        _priprema = string.Join(",", MultiIspis.Idjevi(OznaceniId()));
+                        continue;
+                    }
+                    if (korak.Vrsta == "sljedeci" || korak.Vrsta == "prethodni")
+                    {
+                        PomakniRed(korak.Vrsta == "sljedeci");
                         continue;
                     }
                     if (korak.Vrsta == "pivot" || korak.Vrsta == "chart" || korak.Vrsta == "ispisext")
@@ -839,6 +929,83 @@ namespace Carpo.NetGen.Ui
             }
             string t = id == null || id == DBNull.Value ? "" : Convert.ToString(id);
             return t.Length == 0 ? "0" : t;
+        }
+
+        private GridView Pogled()
+        {
+            foreach (Control c in Controls)
+            {
+                var grid = c as GridControl;
+                if (grid != null)
+                    return grid.MainView as GridView;
+            }
+            return null;
+        }
+
+        private void PreracunajGrid(bool samoRed)
+        {
+            GridView pogled = Pogled();
+            if (pogled == null)
+                return;
+            var tablica = pogled.GridControl.DataSource as DataTable;
+            if (tablica == null)
+                return;
+            if (samoRed)
+                RecalcGrid.IzracunajRed(tablica, pogled.GetDataSourceRowIndex(pogled.FocusedRowHandle));
+            else
+                RecalcGrid.Izracunaj(tablica);
+            pogled.RefreshData();
+        }
+
+        private void PomakniRed(bool naprijed)
+        {
+            GridView pogled = Pogled();
+            if (pogled == null)
+                return;
+            int h = pogled.FocusedRowHandle;
+            int sljedeci = naprijed ? pogled.GetNextVisibleRow(h) : pogled.GetPrevVisibleRow(h);
+            if (sljedeci >= 0)
+                pogled.FocusedRowHandle = sljedeci;
+        }
+
+        private void PomakniNaVrijednost(string segment)
+        {
+            string unutra = (segment ?? "").Trim();
+            int a = unutra.IndexOf('(');
+            int z = unutra.LastIndexOf(')');
+            if (a >= 0 && z > a)
+                unutra = unutra.Substring(a + 1, z - a - 1);
+            string[] dio = unutra.Split(',');
+            if (dio.Length < 3)
+                return;
+            GridView pogled = Pogled();
+            if (pogled == null)
+                return;
+            var tablica = pogled.GridControl.DataSource as DataTable;
+            int red = RafalNaredba.NadjiVrijednost(tablica, dio[1], dio[2]);
+            if (red < 0)
+                return;
+            int h = pogled.GetRowHandle(red);
+            if (h >= 0)
+            {
+                pogled.FocusedRowHandle = h;
+                pogled.MakeRowVisible(h);
+            }
+        }
+
+        private System.Collections.Generic.List<string> OznaceniId()
+        {
+            var l = new System.Collections.Generic.List<string>();
+            GridView pogled = Pogled();
+            if (pogled == null)
+                return l;
+            int[] sel = pogled.GetSelectedRows();
+            for (int i = 0; i < sel.Length; i++)
+            {
+                if (sel[i] >= 0)
+                    l.Add(Celija(pogled, sel[i]));
+            }
+            return l;
         }
 
         public string Vrijednost(string ime)

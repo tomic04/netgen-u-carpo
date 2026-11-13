@@ -4,30 +4,6 @@ Registar za implementaciju. QA dopisuje stavku čim vidi da isto ime ne znači i
 
 Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom (boja, stil gumba, gumbi na dnu, prazni retci, row header, visina zaglavlja, font, obrub). I dalje se strogo gleda natpis i redoslijed gumba, što gumb radi, širina i skriveni stupac, sort, edit, checkbox stupac, raspored kontrola na dijalogu, tab, enable/visible i fokus. XML se ne mijenja.
 
-## R01 Stablo iz SQL-a nije Carpo `tree`
-
-- **Element:** `TREE` / `TreeView2` naspram `JTree`
-- **NetGen:** `SqlDataAdapter.Fill`, ne `ExecSql`, pa `@@` koji preživi zamjenu ipak ode na server (`Form1.vb` 4442–4447, `Class1.vb` 113–118). Relacija je stupac 0 → stupac 1, natpis stupac 2, tag stupac 3 (`4450`, `4461–4478`). Imena kolona se ne gledaju. Korijen je samo prvi red (`4455`, `4480`). Dijete s id `"0"` se ne crta (`4498`). Tag bez dvotočke postane `vrijednost:ImeForme` (`4474–4477`).
-- **Carpo:** `JTree` traži `key` / `parentfield` / `valuefield` po imenu kolone (`Devex_26/Carpo.Structure/Models/Core/DataControls.cs` 8–16, `ComponentTree.cs` 770–793). Nema pravila „samo prvi red“ ni „preskoči id 0“.
-- **Posljedica:** isti SELECT nacrtan kao Carpo tree dobije druge čvorove, ili upozorenje da key/parent ne postoje, iako u NetGenu radi.
-- **Test:** `STA-30`, `STA-31`, `STA-32`, `STA-35`
-
-## R02 Prazno stablo se skloni, ne ostane prazan panel
-
-- **Element:** lijevi splitter
-- **NetGen:** prazan `TREE` i prazan combo sakriju `TreeView2` i lijevi splitter stave na 0 (`Form1.vb` 4310–4316).
-- **Carpo:** `tree` je kontrola u layoutu. Port to prati u `ShellLayout.Iz` (`Devex_26/Carpo.NetGen/Shell/ShellLayout.cs` 56–61). Carpo manager i dalje drži drvo kao stupac, ne kao WinForms splitter na 0.
-- **Posljedica:** granule bez stabla (OznakaKL) ne smiju pokazati prazno drvo.
-- **Test:** `OKL-31`, `ShellLayout`
-
-## R03 Combo puni stablo, atribut `TREE` ne mora postojati
-
-- **Element:** `COMBO` na projektu (PrijemniList)
-- **NetGen:** prvi prolaz vidi prazan `TREE`, ali combo nije prazan pa stablo ne gasi (`4310–4320`). Kasnije `SelectedValue` prepiše `strTreeNodes` i zove `NapuniDrvoVrijeme` (`7730–7733`).
-- **Carpo:** `ShellLayout` vidi samo tekst atributa `TREE` i činjenicu da `COMBO` nije prazan (`ShellLayout.cs` 51–57). Ne čita odabranu vrijednost comboa kao SQL stabla.
-- **Posljedica:** stablo je „vidljivo“, a čvorova nema. Kostur koji gleda samo `TREE` granulu ostavi bez drveta.
-- **Test:** `PRI` checklista, `docs/granule/PrijemniList.md`
-
 ## R05 Naslov `v[verzija]` nije `root/@version`
 
 - **Element:** `VERSION` + `CAPTION`
@@ -163,14 +139,6 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 - **Carpo:** nema te tablice. Selekcija grida je drugi skup.
 - **Posljedica:** dva prozora istog operatera dijele retke. Plavi i čekirani nisu zamjena.
 - **Test:** `KUP-03`, `KUP-04`, `KUP-10`
-
-## R24 Datum `firstday*` nije `dateedit`, a `today` nije ključna riječ
-
-- **Element:** `date` / `dtpicker` / `datetime` / `datetiem`
-- **NetGen:** nakon `ToLower` samo `firstdayofyear`, `firstdayoflastyear`, `firstdayofmonth`, `firstdayoflastmonth` (`Form2.vb` 2253–2265`). Mjesec bez vodeće nule. U siječnju `firstdayoflastmonth` da `01.0.godina` (`2263–2264`). `TODAY` postane literal `today` i ide u `Value` (`2267`). `DEFALUT` se ne čita (`2252`). `datetiem` i `datetime` sadrže `date` pa nastanu (`2232`). Parametar je `'yyyyMMdd'` ako je kvačica upaljena (`3531`), inače `null` (`3566`). `CUSTOMFORMAT` `HH:MM`, `MM.YYYY`, `DD.MM.YYYY HH:MM` mijenjaju format (`3535–3544`).
-- **Carpo:** `JDateEdit` nema te tokene (`ComponentDateEdit.cs` 34–96). `allownull` je gumb i readonly izgled (`156–171`), ne kvačica `DateTimePicker`. Dokument 04, red tipfelera, kaže da se `datetiem` ne crta.
-- **Posljedica:** MPInventura `datumod` mora biti 1. ovog mjeseca. `datumdo` s `DEFALUT="today"` ostaje običan datum. `datumact` `DEFAULT="TODAY"` ne smije dobiti novu ključnu riječ. `KOPIRAJ.datum` (`datetiem`) se crta. Siječanjski prošli mjesec ostaje `01.0.…` dok NetGen tako radi.
-- **Test:** `KON-20`–`KON-23`, `INV-02`, `INV-03`, `INV-04`, `INV-20`, `NAR-02`, `NAR-03`, `KAR` `firstdayofyear`
 
 ## R25 `SHOWCHECKBOX` nije `allownull`
 
@@ -340,14 +308,6 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 - **Posljedica:** `RobaWebKlase` `@@klrobawebklasaid` dobije sirovi stupac 3. Isti SQL na podlozi dobije sufiks `:PUNI` i pokvari `int`.
 - **Test:** `RIJ-11`, `RIJ-13`, `RIJ-40`
 
-## R46 `yearmonth` na dijalog stablu ne crta godine
-
-- **Element:** segment `yearmonth:` u `INPUT TYPE="tree"`
-- **NetGen:** na dijalogu grana je prazna (`Form2.vb` 2576–2577). Na podlozi zove `DazovaVremenska` (`Form1.vb` 4348–4349), godine 2005–2009.
-- **Carpo:** nema te riječi. Prazan segment i godine 2005–2009 nisu isto.
-- **Posljedica:** prepis podložnog `yearmonth` na kontrolu dijaloga nacrta godine kojih u NetGenu nema.
-- **Test:** `RIJ-40`
-
 ## R47 WebBrowser `URL` je velika slova
 
 - **Element:** `TYPE="webbrowser"`
@@ -430,7 +390,7 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 
 ## R59 Izgled je Carpo, ponašanje je NetGen
 
-- **Element:** podloga, gumbi, kontrole, skin. Namjerno odstupanje.
+- **Element:** podloga, gumbi, kontrole, skin. **Neizbježno:** kontrole su DevExpress, ne Janus ni WinForms krom (`Form1.vb` 1906–1908, `Form1.designer.vb` 640–655).
 - **NetGen:** podloga je WinForms `Form1`. Gumbi `Button1`–`Button8` stoje na dnu, širina 79, razmak 8 (`Form1.vb` 3312, 3827–3848). Dijalog drži Prihvati/Odustani u panelu (`Form2.vb` 2750–2757). Master je Janus `GridEX` kad `DXGRID` nije true (`Form1.vb` 1906–1908): `HeaderLines=3`, `EmptyRows`, `RowHeaders`, `HideSelection=Highlight` (`Class1.vb` 1000, 1364, `Form1.designer.vb` 640, 655). `BORDERSTYLE` se na formi ne čita, ostaje WinForms `Sizable`. `SIZE` mijenja font (`Form2.vb` 3077–3081). Čvor stabla crta `ImageList2` indeks 0 (`Form1.designer.vb` 575–579).
 - **Carpo:** podloga nasljeđuje Carpo `RibbonBase` (`Devex_26/Carpo.UI/Forms/Jupiter/Base.cs`). Gumbi podloge idu u ribbon. Sve kontrole, uključujući dijalog i editore, su DevExpress. Skin i komponente su Carpo gdje postoje. XML se ne mijenja i ne prevodi se u Carpo XML.
 - **Posljedica:** QA ne traži boju, stil gumba, položaj gumba dolje, prazne retke, row header, broj redova zaglavlja, highlight bez fokusa, font, obrub ni sliku čvora. Pad nije ako to ne izgleda kao Janus. I dalje se gleda natpis i redoslijed gumba, naredba gumba, širina i skriveni stupac, sort, editabilnost, checkbox stupac, raspored kontrola na dijalogu, tab, enable/visible i fokus.
@@ -443,14 +403,6 @@ Izgled je namjerno Carpo (R59). Checklist odsad ne traži Janus ni WinForms krom
 - **Carpo:** parser takav zapis stavi u `PreskoceniGumbi` (`NetGenXmlReader.cs` 276–280) i ne napravi gumb. Ljuska koja od cijelog teksta napravi natpis bez naredbe pokaže `Lista` i `Print dok.`
 - **Posljedica:** ta dva gumba se ne vide i ništa ne pokreću. Popup ih nema.
 - **Test:** `MPK-06`, `MPK-07`
-
-## R61 `TABINDEX` s razmakom i dalje je taj broj
-
-- **Element:** `TABINDEX` na `INPUT`
-- **NetGen:** u fajlu je `1` i tab. `XmlDocument` tab u atributu pretvori u razmak, vrijednost je `"1 "`. Dodjela u `Integer` (`Form2.vb` 3027–3030) razmak proguta, indeks je 1, `TabStop=True`. Grana za nedostajući indeks (`3038–3041`) se ne pali. `Enabled=False` gasi `TabStop` (`3046`).
-- **Carpo:** `int.Parse` bez trima na `"1 "` baci. Forma padne ili kontrola ostane bez taba.
-- **Posljedica:** `datumdok` i `napomena` dijele indeks 1. Redoslijed među jednakim indeksima je red dodavanja: prvo datum, zatim napomena, pa 2, 3 i 4.
-- **Test:** `MPK-21`, `MPK-40`
 
 ## R62 `VALUE` na datumu nije početna vrijednost
 
@@ -828,27 +780,27 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 
 | Checklista | Što je tamo različito od Carpa | Stavke |
 |---|---|---|
-| `OznakaKL.md` | prazno stablo, `GetID`, `PERMISIO`, širina `/14`, label `TEXT`. Janus krom je R59 | R02, R06, R07, R34, R59 |
+| `OznakaKL.md` | `GetID`, `PERMISIO`, širina `/14`, label `TEXT`. Janus krom je R59 | R06, R07, R34, R59 |
 | `JeziciNG.md` | dva G, `TEXT` na gumbu nije natpis, širina 179, `PRINTREPXMASTER`. Font, obrub i HeaderLines su R59 | R08, R07, R34, R41, R59 |
-| `Statusi.md` | adapter stabla, samo prvi korijen, id 0, prazna forma, detail kolone jednom, `v[` | R01, R05, R09, R19 |
+| `Statusi.md` | prazna forma, detail kolone jednom, `v[` | R05, R09, R19 |
 | `KntBlaZak.md` | susjed nije roditelj, tri korijena, ime stupca, `CLEARCOLUMS` jednom, agregat `"0"` | R10, R11, R09, R08 |
-| `PrijemniList.md` | combo umjesto `TREE`, `@robaid`, `SETDEFAULTS` po `#` | R03, R13, R12 |
+| `PrijemniList.md` | `@robaid`, `SETDEFAULTS` po `#` | R13, R12 |
 | `Kulture.md` | lijepljenje `sp`, `Cijena` text/number, tražilica, `spRaiserror` | R14, R15, R16, R17 |
-| `KarticaPartnera.md` | `:FILTERFORM`, `!!`, `+focus`, multidrop, `firstdayofyear` | R18, R14, R17, R28, R24 |
+| `KarticaPartnera.md` | `:FILTERFORM`, `!!`, `+focus`, multidrop | R18, R14, R17, R28 |
 | `KUPNG.md` | tilda, temp tablica, Carpo `ONLOADED` | R20, R21, R37, R38, R39 |
 | `KUPDostKN.md` | shell DMS, popup s tildom, dijalog `CarpoForm` | R38, R39, R40 |
 | `KUPDostKnNGBvg.md` | `clsCarpoKupUra`, gumb umjesto `ONLOADED`, `MULTISELECT_` ime | R37, R38, R44 |
 | `MPBlagajna.md` | `PRINTMASTER`, `vrstadokid-`, prazna forma | R41, R42, R43, R44 |
-| `KarticaPartnera.md` | `:repx/`, `PRINTMASTER`, orijentacija, v23 naspram v26 | R14, R17, R18, R24, R28, R41, R42 |
+| `KarticaPartnera.md` | `:repx/`, `PRINTMASTER`, orijentacija, v23 naspram v26 | R14, R17, R18, R28, R41, R42 |
 | `KntDospjeleStavke.md` | nema `DATAFIELD`, refresh kolona, hash search, multidrop, broj `0`, statusstrip | R26, R27, R16, R28, R15, R32 |
-| `MPInventura.md` | `firstdayofmonth`, `DEFALUT`, `TODAY`, `SelectedValue=1`, radio, hash i `sp` search | R24, R31, R26, R29, R16 |
+| `MPInventura.md` | `DEFALUT`, `TODAY`, `SelectedValue=1`, radio, hash i `sp` search | R31, R26, R29, R16 |
 | `FakPar.md` | `cur` u tipu, prazan `ALLOWEMPTY`, `checkbox`, `VB.textbox`, `GRUOPBYBOXVISIBLE` | R15, R26, R29, R30, R31 |
-| `MPNarIzdSkl.md` | `datetiem`, panel, `WUDTH`, multidrop `ALLOWEMPTY` | R24, R30, R33, R31, R28 |
+| `MPNarIzdSkl.md` | panel, `WUDTH`, multidrop `ALLOWEMPTY` | R30, R33, R31, R28 |
 | `DobUgovori.md` | `SHOWCHECKBOX`, `TRANSLATE`, `sp` search, group, status bez `TEXT2` | R25, R26, R16, R33, R32 |
 | `MPNGPregDokMAIL.md` | nije Carpo subforma, `TREE33`, clipboard `false` | R35, R31, R18, R36 |
-| `Kontrole-matrica.md` | InStr red i atributi iz tablice | R24–R34 |
+| `Kontrole-matrica.md` | InStr red i atributi iz tablice | R25–R34 |
 | `RijetkeKontrole.md` | katalog 11/3/5 i pravila | R45–R53 |
-| `AOPNovi.md` / `RobaWebKlase` | dijalog stablo, tag, yearmonth | R45, R46 |
+| `AOPNovi.md` / `RobaWebKlase` | dijalog stablo, tag | R45 |
 | `RatArkod.md` | webbrowser | R47 |
 | `RobaAtributiUredi.md` | picturebox | R48 |
 | `Narudzbe.md` | TREETRANSLATE, ikona, NEXTFORM, grid | R49, R52, R53 |
@@ -858,7 +810,7 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 | `KntKompVerizne.md` | `sptree`, `repx/` | R42 |
 | `KntBlaPromet.md` | `@@template`, `CLEARCOLUMS` | R42, R08 |
 | `MPPonuda.md` | nema `ONLOAD`, natpis gumba, `vrstadokid-` | R57, R43 |
-| `MPPorKPNG.md` | `CMD` bez `:`, `TABINDEX` s razmakom, `VALUE` na datumu, prazan `FILLEXPLORER` | R18, R60, R61, R62, R63 |
+| `MPPorKPNG.md` | `CMD` bez `:`, `VALUE` na datumu, prazan `FILLEXPLORER` | R18, R60, R62, R63 |
 | `Intrastat.md` | `SETDEFAULTS` rezan na `#`, `COMMANDTIMEOUT` 300, detail `@@id`, repx s parametrom | R51, R11, R55, R65 |
 | `KntPDVObrasciEU.md` | `ONENTERKEY`, `ASSEMBLYLOAD`, `repx/@@Template`, `PAGEORIENTATION` ne dira REPX | R41, R35, R68 |
 | `MPKntNacinPlacAzur.md` | `TOTALROW` se ne čita, `ALLOWEMPTY="FOLSE"`, `FOCUS` | R31, R66 |
@@ -900,6 +852,8 @@ Implementacija `cursor/netgen-gfi-ispis-3266` (`be99aa7`) završava s R74. QA od
 - **Test:** `print-master`, `print-lodani`, `print-do2`
 
 ## R109 Fiskalizacija ne ide na pravu poreznu
+
+**Neizbježno:** prazan CIS URL u NetGenu postane produkcija (`Form1.vb` 377). Carpo taj URL ne šalje.
 
 - **Element:** `FISKALIZACIJA`
 - **NetGen:** `Form1.vb` 493–548 postavi `CisUrl`, `TimeOut` i mape, pa `PosaljiSoapPorukuCertifikatDatoteka(xml, pfx, lozinka)`. Greška je šifra `55555` i `DohvatiGresku`. Inače `DohvatiJir`. Prazan URL postane `https://cis.porezna-uprava.hr:8449/FiskalizacijaService` (`377`).

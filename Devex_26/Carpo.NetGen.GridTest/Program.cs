@@ -1704,6 +1704,52 @@ namespace Carpo.NetGen.GridTest
             int prijeBeep = Carpo.NetGen.Komande.RafalNaredba.BeepPoziva;
             Carpo.NetGen.Komande.RafalNaredba.Beep();
             T("beep", Carpo.NetGen.Komande.RafalNaredba.BeepPoziva == prijeBeep + 1, "");
+            var roditelj = new System.Windows.Forms.Control();
+            roditelj.Controls.Add(new System.Windows.Forms.Control());
+            roditelj.Controls.Add(new System.Windows.Forms.Control());
+            int ugaseno = Carpo.NetGen.Komande.RafalNaredba.SveKontrole(roditelj, false);
+            T("sve-kontrole", ugaseno == 2 && roditelj.Controls[0].Enabled == false && roditelj.Controls[1].Enabled == false, ugaseno.ToString());
+            Carpo.NetGen.Komande.RafalNaredba.SveKontrole(roditelj, true);
+            string pokrenuto = "";
+            Carpo.NetGen.Komande.RafalNaredba.PokreniProces = delegate (string p) { pokrenuto = p; return 0; };
+            int kodProces = Carpo.NetGen.Komande.RafalNaredba.ProcessStart("PROCESSSTART(notepad.exe)");
+            Carpo.NetGen.Komande.RafalNaredba.PokreniProces = null;
+            T("process-start", kodProces == 0 && pokrenuto == "notepad.exe", pokrenuto);
+            Carpo.NetGen.Komande.RafalNaredba.MapaDijalog = delegate () { return "C:\\temp"; };
+            Carpo.NetGen.Komande.RafalNaredba.DatotekaDijalog = delegate () { return "C:\\temp\\a.txt"; };
+            T("dijalog-mapa", Carpo.NetGen.Komande.RafalNaredba.OdaberiMapu() == "C:\\temp"
+                && Carpo.NetGen.Komande.RafalNaredba.OdaberiDatoteku() == "C:\\temp\\a.txt", "");
+            Carpo.NetGen.Komande.RafalNaredba.MapaDijalog = null;
+            Carpo.NetGen.Komande.RafalNaredba.DatotekaDijalog = null;
+            int interval = Carpo.NetGen.Komande.RafalNaredba.TimerOn("TIMERON(250)");
+            Carpo.NetGen.Komande.RafalNaredba.TimerOff();
+            Carpo.NetGen.Komande.RafalNaredba.Progres(true);
+            bool progres = Carpo.NetGen.Komande.RafalNaredba.ProgresUpaljen;
+            Carpo.NetGen.Komande.RafalNaredba.Progres(false);
+            T("timer-progres", interval == 250 && Carpo.NetGen.Komande.RafalNaredba.TimerUpaljen == false && progres && Carpo.NetGen.Komande.RafalNaredba.ProgresUpaljen == false, interval.ToString());
+            string[] trazi = Carpo.NetGen.Komande.RafalNaredba.StartSearch("STARTSEARCH(roba,kava)");
+            var koraciOstalo = Carpo.NetGen.Komande.DijalogTok.Koraci("DISABLEALLCONTROLS()#RECALCGRIDROW(g)#GRID_COLUMN_VALUE(g,naziv,kava)#CREATEOBJECT(pero)#STARTSEARCH(roba,kava)");
+            T("start-search", trazi.Length == 2 && trazi[0] == "ROBA" && trazi[1] == "KAVA"
+                && koraciOstalo.Count == 5 && koraciOstalo[0].Vrsta == "svekontrole" && koraciOstalo[1].Vrsta == "recalcred"
+                && koraciOstalo[2].Vrsta == "stupac" && koraciOstalo[3].Vrsta == "objekt" && koraciOstalo[4].Vrsta == "trazi", trazi[0]);
+            var recalc = new System.Data.DataTable();
+            recalc.Columns.Add("evalx()", typeof(string));
+            recalc.Columns.Add("x", typeof(string));
+            recalc.Columns[0].Caption = "evalx()";
+            recalc.Rows.Add("1+2", "");
+            recalc.Rows.Add("3+4", "");
+            int jedan = Carpo.NetGen.Komande.RecalcGrid.IzracunajRed(recalc, 1);
+            T("recalc-red", jedan == 1 && Convert.ToString(recalc.Rows[1]["x"]) == "7" && Convert.ToString(recalc.Rows[0]["x"]) == "", Convert.ToString(recalc.Rows[1]["x"]));
+            var trazenje = new System.Data.DataTable();
+            trazenje.Columns.Add("id", typeof(int));
+            trazenje.Columns.Add("sifra", typeof(string));
+            trazenje.Columns.Add("naziv", typeof(string));
+            trazenje.Rows.Add(1, "a", "prvi");
+            trazenje.Rows.Add(2, "b", "kava");
+            T("grid-vrijednost", Carpo.NetGen.Komande.RafalNaredba.NadjiVrijednost(trazenje, "naziv", "kava") == 1
+                && Carpo.NetGen.Komande.RafalNaredba.RedStupca2(trazenje, "kava") == 1
+                && Carpo.NetGen.Komande.RafalNaredba.PrazniCvorovi(new[] { "a", "", "b" }) == 1
+                && Carpo.NetGen.Komande.RafalNaredba.CreateObject("CREATEOBJECT(pero)") == "PERO", "");
             var dock = new System.Windows.Forms.Control();
             Carpo.NetGen.Komande.RafalNaredba.PostaviDock(dock, "Fill");
             Carpo.NetGen.Komande.RafalNaredba.PostaviDock(dock, "Top");

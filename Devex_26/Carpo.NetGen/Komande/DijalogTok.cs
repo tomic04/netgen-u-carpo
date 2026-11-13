@@ -232,8 +232,46 @@ namespace Carpo.NetGen.Komande
                     k.Vrsta = "dock";
                     k.Tekst = RafalNaredba.Dock(t) + "|" + RafalNaredba.DockKontrola(t);
                 }
-                else if (u.IndexOf("RECALCGRID", StringComparison.Ordinal) >= 0)
+                else if (u.IndexOf("RECALCGRIDROW(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "recalcred";
+                else if (u.IndexOf("RECALCGRID(", StringComparison.Ordinal) >= 0)
                     k.Vrsta = "recalc";
+                else if (u.IndexOf("DISABLEALLCONTROLS(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "svekontrole";
+                    k.Tekst = "0";
+                }
+                else if (u.IndexOf("ENABLEALLCONTROLS(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "svekontrole";
+                    k.Tekst = "1";
+                }
+                else if (u.IndexOf("PROCESSSTART(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "proces";
+                else if (u.IndexOf("SHOWFOLDERBROWSERDIALOG(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "mapa";
+                else if (u.IndexOf("SHOWOPENFILEDIALOG(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "datotekadlg";
+                else if (u.IndexOf("TIMERON(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "timer";
+                else if (u.IndexOf("TIMEROFF(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "timeroff";
+                else if (u.IndexOf("PROGRESSON(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "progres";
+                    k.Tekst = "1";
+                }
+                else if (u.IndexOf("PROGRESSOFF(", StringComparison.Ordinal) >= 0)
+                {
+                    k.Vrsta = "progres";
+                    k.Tekst = "0";
+                }
+                else if (u.IndexOf("STARTSEARCH(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "trazi";
+                else if (u.IndexOf("GRID_COLUMN_VALUE(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "stupac";
+                else if (u.IndexOf("CREATEOBJECT(", StringComparison.Ordinal) >= 0)
+                    k.Vrsta = "objekt";
                 else if (u.IndexOf("TOGGLEGRIDGROUP(", StringComparison.Ordinal) >= 0)
                     k.Vrsta = "toggle";
                 else if (u.IndexOf("PREPAREMULTISELECTEDPRINT(", StringComparison.Ordinal) >= 0)

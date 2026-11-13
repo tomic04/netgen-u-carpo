@@ -464,6 +464,15 @@ namespace Carpo.NetGen.Ui
                 }
                 else if (s.ToUpperInvariant().IndexOf("BEEP()", StringComparison.Ordinal) >= 0)
                     RafalNaredba.Beep();
+                else if (s.StartsWith("==", StringComparison.Ordinal))
+                {
+                    try { Citaj(s.Substring(2)); }
+                    catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + s); }
+                }
+                else if (s.IndexOf("findnode", StringComparison.OrdinalIgnoreCase) >= 0)
+                    OznaciPrazneCvorove();
+                else if (s.IndexOf("refreshmovetoid", StringComparison.OrdinalIgnoreCase) >= 0)
+                    PomakniNaId(s);
                 else if (s.ToUpperInvariant().IndexOf("ASSEMBLYLOAD(", StringComparison.Ordinal) >= 0)
                 {
                     var poziv = AssemblyPoziv.Pozovi(s, "shell", _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "");
@@ -754,6 +763,52 @@ namespace Carpo.NetGen.Ui
             }
             string[] iz = ForeachNaredba.Idjevi(vrsta, svi, plavi, cek);
             return new System.Collections.Generic.List<string>(iz);
+        }
+
+        private void OznaciPrazneCvorove()
+        {
+            if (trMain == null)
+                return;
+            var prazni = new System.Collections.Generic.List<DevExpress.XtraTreeList.Nodes.TreeListNode>();
+            SkupiPrazne(trMain.Nodes, prazni);
+            for (int i = 0; i < prazni.Count; i++)
+                prazni[i].Expanded = true;
+            if (prazni.Count > 0)
+                trMain.FocusedNode = prazni[0];
+        }
+
+        private static void SkupiPrazne(DevExpress.XtraTreeList.Nodes.TreeListNodes cvorovi, System.Collections.Generic.List<DevExpress.XtraTreeList.Nodes.TreeListNode> prazni)
+        {
+            if (cvorovi == null)
+                return;
+            for (int i = 0; i < cvorovi.Count; i++)
+            {
+                DevExpress.XtraTreeList.Nodes.TreeListNode n = cvorovi[i];
+                string ime = n.GetDisplayText(0) ?? "";
+                if (ime.Length == 0)
+                    prazni.Add(n);
+                SkupiPrazne(n.Nodes, prazni);
+            }
+        }
+
+        private void PomakniNaId(string naredba)
+        {
+            string ostatak = (naredba ?? "").ToLowerInvariant().Replace("refreshmovetoid", "").Trim();
+            if (_master != null && _master.Stanje != null && (_master.Stanje.ZadnjiSql ?? "").Length > 0)
+            {
+                try { Citaj(_master.Stanje.ZadnjiSql); }
+                catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + _master.Stanje.ZadnjiSql); }
+            }
+            var tablica = gcGla == null ? null : gcGla.DataSource as DataTable;
+            int red = RafalNaredba.RedStupca2(tablica, ostatak);
+            if (red < 0 || gvGla == null)
+                return;
+            int h = gvGla.GetRowHandle(red);
+            if (h >= 0)
+            {
+                gvGla.FocusedRowHandle = h;
+                gvGla.MakeRowVisible(h);
+            }
         }
 
         private string IdCelije(int red)
