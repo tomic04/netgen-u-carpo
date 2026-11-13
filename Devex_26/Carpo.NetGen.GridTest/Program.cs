@@ -1924,9 +1924,10 @@ namespace Carpo.NetGen.GridTest
             string niz = SrediPoslije.Zamijeni("select @@nizplavihajdijevaX", "@nizplavihajdijevaX='~1~2~',", k, null, false);
             T("sredi-poslije-ajdijeva", niz.IndexOf("1,2", StringComparison.Ordinal) >= 0 && niz.IndexOf("~", StringComparison.Ordinal) < 0, niz);
             T("sredi-poslije-datum", SrediPoslije.Zamijeni("select @@datumod", "@datumod='20240201',", k, null, false) == "select '20240201'", SrediPoslije.Zamijeni("select @@datumod", "@datumod='20240201',", k, null, false));
+            // Kljuc u CB je ime stupca plus '=' (Form1.vb 3980, 3076), Class1.vb 938 ga tako trazi.
             var cb = new Dictionary<string, string>();
-            cb["tkosmomi"] = "Glavno";
-            cb["kolicina"] = "1,5";
+            cb["tkosmomi="] = "Glavno";
+            cb["kolicina="] = "1,5";
             T("sredi-poslije-cb", SrediPoslije.Zamijeni("@@tkosmomi", "", k, cb, false) == "Glavno"
                 && SrediPoslije.Zamijeni("@@kolicina", "", k, cb, false) == "1.5", SrediPoslije.Zamijeni("@@kolicina", "", k, cb, false));
             T("gridrowcount-komentar", SrediPoslije.Zamijeni("@@GRIDROWCOUNT(g)", "", k, null, false) == "null(g)", SrediPoslije.Zamijeni("@@GRIDROWCOUNT(g)", "", k, null, false));
