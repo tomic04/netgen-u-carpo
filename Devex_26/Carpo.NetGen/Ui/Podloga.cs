@@ -335,12 +335,12 @@ namespace Carpo.NetGen.Ui
                 dij.Operater = _master.Kontekst.OperaterId;
                 dij.Id = _master.Stanje.Id;
                 dij.ZadnjiSql = _master.Stanje.ZadnjiSql;
-                dij.OtvoriDrugu = delegate (string sljedeca)
+                dij.OtvoriDrugu = delegate (string imeDjeteta)
                 {
-                    string vise = dij.ParametriVise();
-                    if (!string.IsNullOrEmpty(vise) && _master.Kontekst != null)
-                        _master.Kontekst.ParametriSaGrida += vise;
-                    OtvoriFormu(sljedeca);
+                    // Form2.vb 3906: strSviParametriuModulu vrijedi i u djetetu.
+                    if (_master.Kontekst != null)
+                        _master.Kontekst.ParametriSaGrida = ParametriModula.Dodaj(_master.Kontekst.ParametriSaGrida, dij.ParametriVise());
+                    OtvoriFormu(imeDjeteta);
                 };
                 dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj, true, this);
                 string iz = dij.Vrijednost("izvjestaj");
@@ -348,6 +348,9 @@ namespace Carpo.NetGen.Ui
                     _polja["izvjestaj"] = iz;
                 if (dij.DialogResult != DialogResult.OK)
                     return;
+                if (_master.Kontekst != null)
+                    _master.Kontekst.ParametriSaGrida = ParametriModula.Dodaj(_master.Kontekst.ParametriSaGrida, dij.ParametriVise());
+                ZapamtiNoviTrosak();
                 string explorer = DijalogTok.SqlNakonOk(forma);
                 if (explorer.Length > 0)
                 {
@@ -964,6 +967,12 @@ namespace Carpo.NetGen.Ui
                     redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", "nije poslano na https://cis.porezna-uprava.hr:8449/FiskalizacijaService ; test URL je https://cistest.apis-it.hr:8449/FiskalizacijaServiceTest", "netgen/Form2.vb:6342"));
                     continue;
                 }
+                if (upis && (naredba.IndexOf("WEBBROWSER", StringComparison.OrdinalIgnoreCase) >= 0
+                    || natpis.Equals("Web", StringComparison.OrdinalIgnoreCase)))
+                {
+                    redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", "preglednik nije dio upisa", "netgen/Form2.vb:3367"));
+                    continue;
+                }
                 if (!upis && Destruktivan(naredba, natpis))
                 {
                     redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", naredba, "netgen/Form2.vb:3367"));
@@ -1125,7 +1134,7 @@ namespace Carpo.NetGen.Ui
                 SimpleButton b = gumbi[i];
                 string tag = b.Tag as string ?? "";
                 string tekst = (b.Text ?? "").Trim();
-                if (!JeNatpisPotvrde(tekst))
+                if (!PotvrdaGumba.JeNatpis(tekst))
                     continue;
                 if (tag.IndexOf("fiskal", StringComparison.OrdinalIgnoreCase) >= 0)
                     continue;
@@ -1144,15 +1153,21 @@ namespace Carpo.NetGen.Ui
                 }
                 return true;
             }
-            return samoNatpis && false;
+            return samoNatpis ? false : false;
         }
 
-        private static bool JeNatpisPotvrde(string tekst)
+        private void ZapamtiNoviTrosak()
         {
-            string n = (tekst ?? "").Trim().ToLowerInvariant();
-            return n.StartsWith("spremi") || n.StartsWith("prihvati") || n.StartsWith("obri")
-                || n.StartsWith("dodaj") || n.StartsWith("ukloni") || n.StartsWith("kopiraj")
-                || n.StartsWith("izm");
+            string sql = PoslanoKoje("spPrnTroskoviGlaAzur");
+            if (sql.Length == 0 || !Akcija(sql, "0") || _master.Kontekst == null)
+                return;
+            DataTable t = Citaj("select top 1 cast(PrnTroskoviGlaId as varchar(20)) as id from PrnTroskoviGla where KlMasterRobaId is null and RobaId is null order by PrnTroskoviGlaId desc");
+            if (t == null || t.Rows.Count == 0)
+                return;
+            _testId = Convert.ToString(t.Rows[0]["id"]);
+            _master.Kontekst.Id = _testId;
+            _master.Stanje.Id = _testId;
+            _master.Kontekst.ParametriSaGrida = ParametriModula.Dodaj(_master.Kontekst.ParametriSaGrida, "@PrnTroskoviGlaId='" + _testId + "' , ");
         }
 
         private static void SkupiGumbe(Control roditelj, List<SimpleButton> gumbi)
@@ -1420,7 +1435,11 @@ namespace Carpo.NetGen.Ui
             if (sql.IndexOf("spPrnTroskoviGlaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "0"))
                 return ProvjeriTrosak(true);
             if (sql.IndexOf("spPrnTroskoviDetAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "0"))
+            {
+                if (_testId.Length == 0)
+                    ProvjeriTrosak(true);
                 return ProvjeriStavku();
+            }
             if (sql.IndexOf("spPrnTroskoviGlaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "2"))
                 return ProvjeriObrisano("PrnTroskoviGla", "PrnTroskoviGlaId");
             return "poslano: " + sql;

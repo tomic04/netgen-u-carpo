@@ -102,7 +102,12 @@ foreach ($rel in $granule) {
     }
     $klikDat = $png + ".klik.txt"
     if ($Klik -and (Test-Path -LiteralPath $klikDat)) {
-        Get-Content -LiteralPath $klikDat | ForEach-Object { Write-Host $_ }
+        $klikLinije = @(Get-Content -LiteralPath $klikDat)
+        $klikLinije | ForEach-Object { Write-Host $_ }
+        foreach ($lin in $klikLinije) {
+            $kol = $lin.Split("`t")
+            if ($kol.Count -ge 4 -and $kol[3] -eq "GRESKA") { throw "Klik $ime ima GRESKA. $lin" }
+        }
     }
 }
 if ($Klik) {

@@ -41,4 +41,35 @@ namespace Carpo.NetGen.Komande
             return n.ToString();
         }
     }
+
+    /// <summary>
+    /// Form2.vb 3367 šalje ONCLICK gumba koji je kliknut.
+    /// Gumb :WEBBROWSER nema natpis Spremi i ne smije pojesti potvrdu.
+    /// </summary>
+    public static class PotvrdaGumba
+    {
+        public static bool JeNatpis(string tekst)
+        {
+            string n = (tekst ?? "").Trim().ToLowerInvariant();
+            return n.StartsWith("spremi") || n.StartsWith("prihvati") || n.StartsWith("obri")
+                || n.StartsWith("dodaj") || n.StartsWith("ukloni") || n.StartsWith("kopiraj")
+                || n.StartsWith("izm");
+        }
+
+        public static int Indeks(string[] natpisi, string[] tagovi)
+        {
+            if (natpisi == null)
+                return -1;
+            for (int i = 0; i < natpisi.Length; i++)
+            {
+                if (!JeNatpis(natpisi[i]))
+                    continue;
+                string tag = tagovi != null && i < tagovi.Length ? (tagovi[i] ?? "") : "";
+                if (tag.Length == 0 || tag.StartsWith(":", StringComparison.Ordinal))
+                    continue;
+                return i;
+            }
+            return -1;
+        }
+    }
 }

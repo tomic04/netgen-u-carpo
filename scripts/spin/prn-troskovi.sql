@@ -38,6 +38,7 @@ begin
         if @Id is null or @Id = 0
             select top 1 PrnTroskoviGlaId, KlMasterRobaId, RobaId
             from dbo.PrnTroskoviGla
+            where KlMasterRobaId is null and RobaId is null
             order by PrnTroskoviGlaId desc;
         else
             select PrnTroskoviGlaId, KlMasterRobaId, RobaId

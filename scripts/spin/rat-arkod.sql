@@ -166,32 +166,106 @@ create or alter procedure dbo.spRatArkod_Azur
 as
 begin
     set nocount on;
+    -- Postojeća RatArkod ima stupce kojih XML ne nabraja. Piše se samo ono što postoji,
+    -- a obavezni stupac bez defaulta dobije praznu vrijednost da Unesi prođe.
+    declare @c nvarchar(max) = N'';
+    declare @v nvarchar(max) = N'';
+    declare @sql nvarchar(max);
+    declare @novi int;
     if @action = 'insert'
     begin
-        insert into dbo.RatArkod (
-            Oznaka, Naziv, Povrsina, OrgShemaId, TablaId, Godina, MjestaId,
-            RatVrstaUporabeId, RatVrstaTlaId, RatVrstaProizvodnjeId,
-            IsTUG, IsNavodnjavanje, IsRazminirano, Aktivan, Napomena, Url)
-        values (
-            @oznaka, @naziv, @povrsina, @orgshemaid, @tablaid, @godina, @mjestaid,
-            @ratvrstauporabeid, @ratvrstatlaid, @ratvrstaproizvodnjeid,
-            @istug, @isnavodnjavanje, @israzminirano, @aktivan, @napomena,
-            N'preglednik.arkod.hr/' + isnull(@oznaka, N''));
-        declare @novi int = scope_identity();
-        insert into dbo.RatArkodKat (RatArkodId, Broj, Povrsina, PovrsinaArkod)
-        values (@novi, N'1', 0.10, 0.10);
+        if col_length(N'dbo.RatArkod', N'Oznaka') is not null select @c += N',[Oznaka]', @v += N',@oznaka';
+        if col_length(N'dbo.RatArkod', N'Naziv') is not null select @c += N',[Naziv]', @v += N',@naziv';
+        if col_length(N'dbo.RatArkod', N'Povrsina') is not null select @c += N',[Povrsina]', @v += N',@povrsina';
+        if col_length(N'dbo.RatArkod', N'OrgShemaId') is not null select @c += N',[OrgShemaId]', @v += N',@orgshemaid';
+        if col_length(N'dbo.RatArkod', N'TablaId') is not null select @c += N',[TablaId]', @v += N',@tablaid';
+        if col_length(N'dbo.RatArkod', N'Godina') is not null select @c += N',[Godina]', @v += N',@godina';
+        if col_length(N'dbo.RatArkod', N'MjestaId') is not null select @c += N',[MjestaId]', @v += N',@mjestaid';
+        if col_length(N'dbo.RatArkod', N'RatVrstaUporabeId') is not null select @c += N',[RatVrstaUporabeId]', @v += N',@ratvrstauporabeid';
+        if col_length(N'dbo.RatArkod', N'RatVrstaTlaId') is not null select @c += N',[RatVrstaTlaId]', @v += N',@ratvrstatlaid';
+        if col_length(N'dbo.RatArkod', N'RatVrstaProizvodnjeId') is not null select @c += N',[RatVrstaProizvodnjeId]', @v += N',@ratvrstaproizvodnjeid';
+        if col_length(N'dbo.RatArkod', N'IsTUG') is not null select @c += N',[IsTUG]', @v += N',@istug';
+        if col_length(N'dbo.RatArkod', N'IsNavodnjavanje') is not null select @c += N',[IsNavodnjavanje]', @v += N',@isnavodnjavanje';
+        if col_length(N'dbo.RatArkod', N'IsRazminirano') is not null select @c += N',[IsRazminirano]', @v += N',@israzminirano';
+        if col_length(N'dbo.RatArkod', N'Aktivan') is not null select @c += N',[Aktivan]', @v += N',@aktivan';
+        if col_length(N'dbo.RatArkod', N'Napomena') is not null select @c += N',[Napomena]', @v += N',@napomena';
+        if col_length(N'dbo.RatArkod', N'Url') is not null select @c += N',[Url]', @v += N',N''preglednik.arkod.hr/'' + isnull(@oznaka, N'''')';
+        select @c += N',[' + c.name + N']',
+            @v += N',' + case
+                when ty.name in (N'bit', N'int', N'smallint', N'tinyint', N'bigint', N'decimal', N'numeric', N'money', N'smallmoney', N'float', N'real') then N'0'
+                when ty.name in (N'datetime', N'datetime2', N'smalldatetime', N'date', N'datetimeoffset') then N'getdate()'
+                when ty.name = N'uniqueidentifier' then N'newid()'
+                when ty.name in (N'binary', N'varbinary', N'image') then N'0x'
+                else N'N'''''
+            end
+        from sys.columns c
+        inner join sys.types ty on ty.user_type_id = c.user_type_id
+        where c.object_id = object_id(N'dbo.RatArkod')
+          and c.is_identity = 0 and c.is_computed = 0 and c.is_nullable = 0
+          and c.default_object_id = 0
+          and ty.name not in (N'timestamp', N'rowversion')
+          and charindex(N'[' + c.name + N']', @c) = 0;
+        if len(@c) > 1
+        begin
+            set @sql = N'insert into dbo.RatArkod (' + substring(@c, 2, len(@c)) + N') values (' + substring(@v, 2, len(@v)) + N'); set @out = scope_identity();';
+            exec sp_executesql @sql,
+                N'@oznaka varchar(30), @naziv varchar(100), @povrsina decimal(12,2), @orgshemaid int, @tablaid int, @godina int, @mjestaid int, @ratvrstauporabeid int, @ratvrstatlaid int, @ratvrstaproizvodnjeid int, @istug int, @isnavodnjavanje int, @israzminirano int, @aktivan int, @napomena varchar(200), @out int output',
+                @oznaka, @naziv, @povrsina, @orgshemaid, @tablaid, @godina, @mjestaid, @ratvrstauporabeid, @ratvrstatlaid, @ratvrstaproizvodnjeid, @istug, @isnavodnjavanje, @israzminirano, @aktivan, @napomena, @novi output;
+        end
+        if @novi is not null and object_id(N'dbo.RatArkodKat', N'U') is not null and col_length(N'dbo.RatArkodKat', N'RatArkodId') is not null
+        begin
+            declare @kc nvarchar(max) = N',[RatArkodId]';
+            declare @kv nvarchar(max) = N',@novi';
+            if col_length(N'dbo.RatArkodKat', N'Broj') is not null select @kc += N',[Broj]', @kv += N',N''1''';
+            if col_length(N'dbo.RatArkodKat', N'Povrsina') is not null select @kc += N',[Povrsina]', @kv += N',0.10';
+            if col_length(N'dbo.RatArkodKat', N'PovrsinaArkod') is not null select @kc += N',[PovrsinaArkod]', @kv += N',0.10';
+            select @kc += N',[' + c.name + N']',
+                @kv += N',' + case
+                    when ty.name in (N'bit', N'int', N'smallint', N'tinyint', N'bigint', N'decimal', N'numeric', N'money', N'smallmoney', N'float', N'real') then N'0'
+                    when ty.name in (N'datetime', N'datetime2', N'smalldatetime', N'date', N'datetimeoffset') then N'getdate()'
+                    else N'N'''''
+                end
+            from sys.columns c
+            inner join sys.types ty on ty.user_type_id = c.user_type_id
+            where c.object_id = object_id(N'dbo.RatArkodKat')
+              and c.is_identity = 0 and c.is_computed = 0 and c.is_nullable = 0
+              and c.default_object_id = 0
+              and ty.name not in (N'timestamp', N'rowversion')
+              and charindex(N'[' + c.name + N']', @kc) = 0;
+            set @sql = N'insert into dbo.RatArkodKat (' + substring(@kc, 2, len(@kc)) + N') values (' + substring(@kv, 2, len(@kv)) + N')';
+            exec sp_executesql @sql, N'@novi int', @novi;
+        end
         return;
     end
     if @action = 'update'
     begin
-        update dbo.RatArkod
-        set Oznaka = @oznaka, Naziv = @naziv, Povrsina = @povrsina, Godina = @godina, Napomena = @napomena
-        where RatArkodId = @id;
+        set @c = N'';
+        if col_length(N'dbo.RatArkod', N'Oznaka') is not null set @c += N',Oznaka=@oznaka';
+        if col_length(N'dbo.RatArkod', N'Naziv') is not null set @c += N',Naziv=@naziv';
+        if col_length(N'dbo.RatArkod', N'Povrsina') is not null set @c += N',Povrsina=@povrsina';
+        if col_length(N'dbo.RatArkod', N'Godina') is not null set @c += N',Godina=@godina';
+        if col_length(N'dbo.RatArkod', N'Napomena') is not null set @c += N',Napomena=@napomena';
+        if len(@c) > 1
+        begin
+            set @sql = N'update dbo.RatArkod set ' + substring(@c, 2, len(@c)) + N' where RatArkodId=@id';
+            exec sp_executesql @sql,
+                N'@id int, @oznaka varchar(30), @naziv varchar(100), @povrsina decimal(12,2), @godina int, @napomena varchar(200)',
+                @id, @oznaka, @naziv, @povrsina, @godina, @napomena;
+        end
         return;
     end
     if @action = 'delete'
     begin
-        delete from dbo.RatArkodKat where RatArkodId = @id;
+        select @sql = coalesce(@sql, N'') + N'delete from ' + quotename(isnull(object_schema_name(fk.parent_object_id), N'dbo')) + N'.' + quotename(object_name(fk.parent_object_id))
+            + N' where ' + quotename(pc.name) + N' = @id; '
+        from sys.foreign_keys fk
+        inner join sys.foreign_key_columns fkc on fkc.constraint_object_id = fk.object_id
+        inner join sys.columns pc on pc.object_id = fkc.parent_object_id and pc.column_id = fkc.parent_column_id
+        where fk.referenced_object_id = object_id(N'dbo.RatArkod');
+        if @sql is not null
+            exec sp_executesql @sql, N'@id int', @id;
+        if object_id(N'dbo.RatArkodKat', N'U') is not null and col_length(N'dbo.RatArkodKat', N'RatArkodId') is not null
+            delete from dbo.RatArkodKat where RatArkodId = @id;
         delete from dbo.RatArkod where RatArkodId = @id;
     end
 end

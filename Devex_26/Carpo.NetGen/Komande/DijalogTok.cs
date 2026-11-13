@@ -253,7 +253,9 @@ namespace Carpo.NetGen.Komande
                 {
                     bool uNavodniku = p > 0 && s[p - 1] == '\'';
                     bool jeNull = string.Equals(vrijednost, "null", StringComparison.OrdinalIgnoreCase);
-                    string ubaci = jeNull && !uNavodniku
+                    bool prazan = string.IsNullOrEmpty(vrijednost);
+                    // Form2.vb 3616: prazan search id ide kao null, ne kao ''.
+                    string ubaci = (jeNull || prazan) && !uNavodniku
                         ? "null"
                         : (uNavodniku ? (vrijednost ?? "").Replace("'", "''") : "'" + (vrijednost ?? "").Replace("'", "''") + "'");
                     s = s.Substring(0, p) + ubaci + s.Substring(p + token.Length);

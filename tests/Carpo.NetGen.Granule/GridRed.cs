@@ -125,6 +125,32 @@ namespace Carpo.NetGen.Granule
             l.Add(buttons
                 ? Qa.Z("GridRed", "BTN-01", "BUTTONS prepiše natpis i naredbu gumba", "netgen/Form1.vb:3770-3824")
                 : Qa.P("GridRed", "BTN-01", "BUTTONS", "netgen/Form1.vb:3770-3824", gumbi.Count.ToString()));
+
+            string spojeno = ParametriModula.Dodaj("@Id='0' , ", "@PrnTroskoviGlaId='8' , ");
+            var dijete = new SqlKontekst();
+            dijete.Id = "0";
+            dijete.ParametriSaGrida = spojeno;
+            string stavka = SqlTekst.Sredi("spPrnTroskoviDetAzur @Action=0, @PrnTroskoviGlaId=@@PrnTroskoviGlaId,", dijete);
+            bool tro = stavka.IndexOf("@@", StringComparison.Ordinal) < 0
+                && stavka.IndexOf("'8'", StringComparison.Ordinal) >= 0
+                && spojeno.StartsWith("@PrnTroskoviGlaId='8'", StringComparison.Ordinal);
+            l.Add(tro
+                ? Qa.Z("GridRed", "TRO-01", "Podforma stavke vidi @@PrnTroskoviGlaId iz ONLOAD-a roditelja", "netgen/Form2.vb:3906; netgen/Class1.vb:765-849")
+                : Qa.P("GridRed", "TRO-01", "@@PrnTroskoviGlaId iz roditelja", "netgen/Form2.vb:3906; netgen/Class1.vb:765-849", stavka));
+
+            int spremi = PotvrdaGumba.Indeks(
+                new string[] { "ButtonNG142", "Spremi", "Odustani" },
+                new string[] { ":WEBBROWSER", "spRatArkod_Azur @action='insert'", "CLOSE" });
+            var prazno = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            prazno["RobaId"] = "";
+            prazno["Naziv"] = "";
+            string prazan = DijalogTok.ZamijeniTokene("exec x @robaid=@@RobaId, @naziv='@@Naziv'", "0", prazno);
+            bool arkod = spremi == 1
+                && prazan.IndexOf("@robaid=null", StringComparison.Ordinal) >= 0
+                && prazan.IndexOf("@naziv=''", StringComparison.Ordinal) >= 0;
+            l.Add(arkod
+                ? Qa.Z("GridRed", "ARK-01", "Spremi ide prije :WEBBROWSER, prazan search id je null", "netgen/Form2.vb:3367,3616")
+                : Qa.P("GridRed", "ARK-01", "Spremi i prazan search", "netgen/Form2.vb:3367,3616", spremi.ToString() + " " + prazan));
             return l;
         }
     }

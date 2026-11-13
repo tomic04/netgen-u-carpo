@@ -164,6 +164,24 @@ namespace Carpo.NetGen.Grid
         }
     }
 
+    /// <summary>
+    /// Form2.vb 3906 strSviParametriuModulu. Dijete vidi ONLOAD stupce roditelja.
+    /// Novija vrijednost ide prva jer DetailGrid.Nadji uzima prvi pogodak.
+    /// </summary>
+    public static class ParametriModula
+    {
+        public static string Dodaj(string roditelj, string dijete)
+        {
+            if (string.IsNullOrEmpty(dijete))
+                return roditelj ?? "";
+            if (string.IsNullOrEmpty(roditelj))
+                return dijete;
+            if (roditelj.IndexOf(dijete, StringComparison.Ordinal) >= 0)
+                return roditelj;
+            return dijete + roditelj;
+        }
+    }
+
     public static class SpinVeza
     {
         public static string Spoj(string server, string baza)
