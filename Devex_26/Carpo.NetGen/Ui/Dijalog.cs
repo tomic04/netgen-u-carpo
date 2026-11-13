@@ -32,6 +32,7 @@ namespace Carpo.NetGen.Ui
         public static Action<Dijalog> NakonPrikaza;
         private bool _jupiter;
         private int _grupe;
+        private string _priprema = "";
 
         public string OtvorenaForma = "";
         public string MasterSql = "";
