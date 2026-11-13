@@ -1443,7 +1443,7 @@ namespace Carpo.NetGen.GridTest
             redovi.Rows.Add(3, "Mlijeko");
             string detSql = det.Slozi(redovi.Rows[0]);
             T("det-id-prvi", det.Stanje.IdMaster == "9", det.Stanje.IdMaster);
-            T("det-zamjena", detSql.IndexOf("@id=9", StringComparison.Ordinal) >= 0 && detSql.IndexOf("@naziv='Kruh'", StringComparison.Ordinal) >= 0, detSql);
+            T("det-zamjena", detSql.IndexOf("@id=9", StringComparison.Ordinal) >= 0 && detSql.IndexOf("@naziv=Kruh", StringComparison.Ordinal) >= 0 && detSql.IndexOf("@naziv='Kruh'", StringComparison.Ordinal) < 0, detSql);
             T("det-checkbox-skriven", !det.Stanje.CheckboxVidljiv, "");
             string sql2 = det.Slozi(redovi.Rows[1]);
             T("det-refresh-predlozak", sql2.IndexOf("@id=3", StringComparison.Ordinal) >= 0 && sql2.IndexOf("Mlijeko", StringComparison.Ordinal) >= 0, sql2);
