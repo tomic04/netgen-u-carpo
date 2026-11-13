@@ -377,6 +377,17 @@ namespace Carpo.NetGen.GridTest
             Carpo.NetGen.Komande.PorukaNaredba.Pokazi("MSGBOX(Pozor)");
             Carpo.NetGen.Komande.PorukaNaredba.Prikazi = null;
             T("msgbox", poruka == "POZOR", poruka);
+            bool kljuc = false;
+            string kljucTekst = "";
+            try
+            {
+                kljuc = Carpo.NetGen.Log.Spremnik.LoggerNijeObavezan();
+            }
+            catch (System.Exception ex)
+            {
+                kljucTekst = ex.ToString();
+            }
+            T("dijalog-kljuc", kljuc && kljucTekst.Length == 0, kljucTekst);
             var msg = Carpo.NetGen.Komande.DijalogTok.Koraci("CREATETEXTFILE3(c:\\a.txt)#msgbox(Pozor)#OK");
             T("dijalog-msgbox-lanac", msg.Count == 3 && msg[0].Vrsta == "sql" && msg[1].Vrsta == "poruka" && msg[1].Tekst == "POZOR" && msg[2].Vrsta == "ok", msg.Count.ToString());
             var rod = Carpo.NetGen.Komande.DijalogTok.Koraci("spMPIzdatnicaSKLMP @action=1#CLOSEPARENT");

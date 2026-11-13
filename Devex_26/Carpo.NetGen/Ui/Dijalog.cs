@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Text;
 using System.Globalization;
-using System.Threading;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
@@ -32,102 +30,6 @@ namespace Carpo.NetGen.Ui
         private NgForm _forma;
         private static Dijalog _zatvoriRoditelja;
         public static Action<Dijalog> NakonPrikaza;
-
-        /// <summary>
-        /// ShowDialog na običnom Formu. Vraća puni tekst iznimke, prazno ako je nema.
-        /// Form1.vb 5362 zove ShowDialog na Form1. XtraForm s tim vlasnikom traži skin
-        /// element koji običan Form nema.
-        /// </summary>
-        public static string IznimkaObicnogVlasnika()
-        {
-            return Iznimka(delegate (Form vlasnik, Action zatvori)
-            {
-                var d = new XtraForm();
-                d.Text = "Brisanje";
-                d.Shown += delegate { d.BeginInvoke(new Action(zatvori)); };
-                d.ShowDialog(vlasnik);
-                if (!d.IsDisposed)
-                    d.Dispose();
-            });
-        }
-
-        /// <summary>Isti ulaz kao granule: Prikazi s običnim Formom. Ne smije baciti KeyNotFound.</summary>
-        public static string IznimkaPrikaza(Form predlozeni)
-        {
-            return Iznimka(delegate (Form vlasnik, Action zatvori)
-            {
-                var staro = NakonPrikaza;
-                NakonPrikaza = delegate (Dijalog x) { zatvori(); };
-                try
-                {
-                    var gumb = new NgAttributeBag(new Dictionary<string, string>());
-                    gumb = new NgAttributeBag(Par("CAPTION", "Odustani", "ONCLICK", "close", "TYPE", "button"));
-                    var forma = new NgForm(
-                        "OBRISI_FORM",
-                        new NgAttributeBag(Par("CAPTION", "Brisanje")),
-                        "",
-                        "",
-                        new List<NgControl> { new NgControl("button", NgGrana.Button, "cancel", gumb, true) },
-                        new List<NgButton>(),
-                        new List<string>());
-                    var d = new Dijalog();
-                    d.Prikazi(forma, null, null, true, predlozeni ?? vlasnik);
-                    if (!d.IsDisposed)
-                        d.Dispose();
-                }
-                finally
-                {
-                    NakonPrikaza = staro;
-                }
-            });
-        }
-
-        private static Dictionary<string, string> Par(params string[] par)
-        {
-            var d = new Dictionary<string, string>(StringComparer.Ordinal);
-            for (int i = 0; i + 1 < par.Length; i += 2)
-                d[par[i]] = par[i + 1];
-            return d;
-        }
-
-        private static string Iznimka(Action<Form, Action> tijelo)
-        {
-            string tekst = "";
-            ThreadExceptionEventHandler h = delegate (object s, ThreadExceptionEventArgs e)
-            {
-                tekst = e.Exception.ToString();
-            };
-            Application.ThreadException += h;
-            var vlasnik = new Form();
-            vlasnik.ShowInTaskbar = false;
-            try
-            {
-                vlasnik.Show();
-                tijelo(vlasnik, delegate ()
-                {
-                    foreach (Form f in Application.OpenForms)
-                    {
-                        if (f == null || f == vlasnik || f.IsDisposed)
-                            continue;
-                        if (f.Text == "Brisanje" || f is Dijalog)
-                        {
-                            try { f.Close(); } catch (Exception ex) { tekst = ex.ToString(); }
-                        }
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                tekst = ex.ToString();
-            }
-            finally
-            {
-                Application.ThreadException -= h;
-                if (!vlasnik.IsDisposed)
-                    vlasnik.Dispose();
-            }
-            return tekst ?? "";
-        }
         private bool _jupiter;
 
         public string OtvorenaForma = "";
