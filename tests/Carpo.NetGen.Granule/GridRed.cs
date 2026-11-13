@@ -146,6 +146,12 @@ namespace Carpo.NetGen.Granule
                 ? Qa.Z("GridRed", "TRO-02", "prazan međuspremnik pretvori @@PrnTroskoviGlaId u null", "netgen/Class1.vb:915")
                 : Qa.P("GridRed", "TRO-02", "prazan međuspremnik", "netgen/Class1.vb:915", bezMedjuspremnika));
 
+            string bezZareza = Lanac.BezKrajnjegZareza("spPrnTroskoviDetAzur @Action=0, @PrnTroskoviGlaId=null, @Vrijednost=0,");
+            bool zarez = bezZareza.EndsWith("0", StringComparison.Ordinal) && !bezZareza.EndsWith(",", StringComparison.Ordinal);
+            l.Add(zarez
+                ? Qa.Z("GridRed", "TRO-03", "ONSUBMIT koji završava zarezom ne šalje zadnji zarez", "netgen/Form2.vb:3884,3898; netgen/Form1.vb:5452")
+                : Qa.P("GridRed", "TRO-03", "zadnji zarez", "netgen/Form2.vb:3884,3898", bezZareza));
+
             int spremi = PotvrdaGumba.Indeks(
                 new string[] { "ButtonNG142", "Spremi", "Odustani" },
                 new string[] { ":WEBBROWSER", "spRatArkod_Azur @action='insert'", "CLOSE" });

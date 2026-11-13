@@ -326,7 +326,7 @@ namespace Carpo.NetGen.Ui
                 klik.MasterSql = Pripremi(klik.MasterSql);
                 // Form1.vb 5452: ONSUBMIT koji završava zarezom dobije strParametri.
                 if (klik.MasterSql.TrimEnd().EndsWith(",", StringComparison.Ordinal))
-                    klik.MasterSql = Lanac.Lijepi(klik.MasterSql, SviParametri());
+                    klik.MasterSql = Lanac.BezKrajnjegZareza(Lanac.Lijepi(klik.MasterSql, SviParametri()));
             }
             var koraci = DijalogTok.Koraci(naredba);
             bool lanac = koraci.Count > 1;

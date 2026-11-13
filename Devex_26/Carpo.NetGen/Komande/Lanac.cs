@@ -140,6 +140,17 @@ namespace Carpo.NetGen.Komande
             return sql + " " + parametri.Trim();
         }
 
+        /// <summary>Form2.vb 3884 i 3898 skidaju zadnji zarez sa strParametri.</summary>
+        public static string BezKrajnjegZareza(string sql)
+        {
+            if (string.IsNullOrEmpty(sql))
+                return "";
+            string t = sql.TrimEnd();
+            if (t.EndsWith(",", StringComparison.Ordinal))
+                return t.Substring(0, t.Length - 1);
+            return sql;
+        }
+
         public static string Caption(string tekst)
         {
             return (tekst ?? "").Replace("!!", "\r\n");
