@@ -8,7 +8,7 @@ namespace Carpo.NetGen.Log
     {
         public static bool LoggerNijeObavezan()
         {
-            return Carpo.Core.Log.DependencyContainer.Get<Carpo.Core.Log.Logger>() == null;
+            return Carpo.Core.Log.DependencyContainer.Get<Carpo.Core.Logger>() == null;
         }
     }
 }
