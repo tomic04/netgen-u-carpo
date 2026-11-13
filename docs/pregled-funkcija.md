@@ -2,7 +2,7 @@
 
 Prvi prolaz su funkcije koje obrađuju podatke: zamjena `@@`, `PokupiParametre`, SQL, validacija i format broja i datuma. Izvor je `netgen/`. U `netgen/*.vb` (bez designer datoteka) ima 476 `Sub`/`Function`. Ovaj dokument pokriva podatkovni sloj. Ostali moduli nisu u ovom prolazu.
 
-Status: `isto` prati NetGen, `razlika` je R-broj koji ostaje, `nedostaje` još nema porta.
+Status: `isto` prati NetGen, `razlika` je R-broj koji ostaje, `nedostaje` još nema porta. `portano` i `nedostajalo-portano` smiju stajati samo uz test iz `tests/ui/katalog.txt`: kategorija UI, ime granule, otvaranje kroz TestShell. Isto pravilo vrijedi za `docs/pregled-funkcija-form1.md`.
 
 ## Zamjena parametara
 
@@ -111,17 +111,17 @@ U ovom bloku: 32 isto, 18 nedostaje, 0 razlika. Portano u bloku: `NapuniKontrole
 | # | NetGen | Carpo | Status | Test |
 |---|---|---|---|---|
 | 51 | `Glbl_Validated` 5820. Prazan tekst stavlja tag `0`. Promjena teksta ide u Form3. `ShowDialog` samo kad redova nije 0 ni 1 (5875–5881) | `Form2Dogadjaj.TrazilicaKorak` i `PokaziTrazilicu` | još nedostaje | `trazilica-dijalog` |
-| 52 | `Glbl_Validated2` 5912. `ONLOSTFOCUS` samo ako keydown nije već odradio izlaz | `Dijalog` Leave preskače SQL nakon Enter | nedostajalo-portano | `dijalog-ucinak` |
+| 52 | `Glbl_Validated2` 5912. `ONLOSTFOCUS` samo ako keydown nije već odradio izlaz | `Dijalog` Leave preskače SQL nakon Enter. `dijalog-ucinak` ne otvara XML granulu | još nedostaje | |
 | 53 | `PokupiParametreIzTrazilice` 5926. Od stupca 1, `@SEARCH` + ime, zadnje 4 znamenke | `ParametriSvi.IzTrazilice` | isto | `trazilica-search` |
 | 54 | `Glbl_TextChanged` 5958. `ONCHANGE` | `TextChanged` | isto | |
 | 55 | `Glbl_ValidatedCombo` 5962. `ONLOSTFOCUS` | `Leave` | isto | `DOS-05` |
 | 56 | `Glbl_ValidatedMultiDrop` 5968. Vodi `ErrorText`, ne `ONLOSTFOCUS` | `Form2Dogadjaj.MultiDropNaredba`, `Leave` šalje `ERRORTEXT` | još nedostaje | `multidrop-error` |
 | 57 | `GlblNumber_Validated` 5977. `ONLOSTFOCUS` | `Leave` | isto | |
-| 58 | `Glbl_Gotfocus` 5985. Pamti stari tekst i zove `Glbl_Gotfocus2` | `Enter` na TextEdit: LightGreen i SelectAll | nedostajalo-portano | `dijalog-ucinak` |
+| 58 | `Glbl_Gotfocus` 5985. Pamti stari tekst i zove `Glbl_Gotfocus2` | `Enter` na TextEdit: LightGreen i SelectAll. Nema TestShell granule | još nedostaje | |
 | 59 | `Glbl_popup` 5992. Tijelo je komentar | Nema | isto | |
 | 60 | `Glbl_KeyDown` 6016–6100. Enter na tražilici validira pa ide dalje, osim ako SQL ili greška ima `focus`. Ctrl+A i Ctrl+C na gridu | `ProcessCmdKey` zove `KeyDown`. Test ne mjeri Ctrl+A ni Ctrl+C na gridu | još nedostaje | |
 | 61 | `Glbl_TREE_BeforeSelect` 6103. Boja čvora u bijelo | `Form2Dogadjaj.BojaCvoraPrije` vraća `White` | još nedostaje | `boja-cvora` |
-| 62 | `Glbl_Click` 6108. `ONCLICK` kontrole, label i grid | Label `Click` šalje SQL. Grid klik nije | nedostajalo-portano | `dijalog-ucinak` |
+| 62 | `Glbl_Click` 6108. `ONCLICK` kontrole, label i grid | Label `Click` šalje SQL. Grid klik nije. Nema TestShell granule | još nedostaje | |
 | 63 | `GlblCHECK_Click` 6182. `Rafalno(Tag)` | Check i radio `Click` šalju `ONCLICK` ili `TAG` | još nedostaje | `klik-labela` |
 | 64 | `Glbl_DoubleClick` 6188–6208. `Val` različit od 0 mijenja zarez u točku, zatim `ONDBLCLICK` | `Form2Dogadjaj.VrijednostDvoklika`, `GridView.DoubleClick` | još nedostaje | `dvoklik-vrijednost` |
 | 65 | `Glbl_ClickButton` 6221. Prazan tag ili `help` otvara help, inače `Rafalno(tag)` | `Form2Dogadjaj.HelpArgumenti`. Proces se ne pali u testu | još nedostaje | `help-arg` |
@@ -161,7 +161,7 @@ U ovom bloku: 32 isto, 18 nedostaje, 0 razlika. Portano u bloku: `NapuniKontrole
 | 99 | `ToolStripMenuItem1_Click` 8897. Tag stavke je naredba iza dvotočke | `Izbornik` vraća `natpis\|naredba` | još nedostaje | `desni-klik` |
 | 100 | `IspisNovi` 9006. Janus `GridExPrinting`, ne PrintLink | Ispis ide kroz `PageHeaderFooter` | razlika | `ispis-zaglavlje` |
 
-Revizija: portano je samo ono što `Dijalog` radi i što `dijalog-ucinak` vidi na kontroli (zelena i SelectAll, žuta tražilica i tag 0, SQL na klik labela, Enter pa izlaz ne šalje `ONLOSTFOCUS`). U ovom bloku: 26 isto, 3 nedostajalo-portano (`dijalog-ucinak`), 19 još nedostaje, 2 razlike (`IspisNovi`, R111).
+Status `portano` i `nedostajalo-portano` smije stajati samo uz test iz `tests/ui/katalog.txt` (kategorija UI, ime granule, TestShell). `dijalog-ucinak` slaže prazan dijalog i zato se ne računa. U ovom bloku: 26 isto, 0 portano, 22 još nedostaje, 2 razlike (`IspisNovi`, R111).
 
 ### Nedostajalo, sada portano
 
@@ -177,9 +177,9 @@ Form3 pri promjeni teksta (`trazilica-dijalog`, `Form2.vb` 5820–5881), `KeyDow
 
 | NetGen | Carpo | Status |
 |---|---|---|
-| `Glbl_Gotfocus2` 9458. Zelena pozadina, `strGotFocus`, `SelectAll`. NFC timer je komentar | `Enter`: LightGreen i SelectAll. `GOTFOCUS` SQL nije u ovom testu | nedostajalo-portano |
+| `Glbl_Gotfocus2` 9458. Zelena pozadina, `strGotFocus`, `SelectAll`. NFC timer je komentar | `Enter`: LightGreen i SelectAll. Nema TestShell granule | još nedostaje |
 | `Glbl_Leave` 9433. Prazna tražilica tag `0` i `ONLOSTFOCUS` | Već u `Leave` tražilice | isto |
-| `Glbl_LeaveTrazilica` 9454. Žuta pozadina | `Leave` tražilice stavlja LightYellow i prazan tag `0` | nedostajalo-portano |
+| `Glbl_LeaveTrazilica` 9454. Žuta pozadina | `Leave` tražilice stavlja LightYellow i prazan tag `0`. Nema TestShell granule | još nedostaje |
 | `Rafalna_Priprema` 9168. `#ISEMPTY` | `IspisMotora.Zaglavlje` | isto |
 | `IspisGRIDREPX` 9041, `ChartGRID` 9062, `PivotGRID` 9085 | `EkstenzijaGrid`. `PrintDocumentREPX` radi. Chart i pivot su OPEN dok nema v12.1 DLL-ova | isto |
 | `Ispis` 9108 | `PrintBridge` | isto |

@@ -195,20 +195,75 @@ namespace Carpo.NetGen.Print
             }
         }
 
+        /// <summary>Prazno: Print otvara Spin.Printing. Postavljeno: isti predložak ide u PDF, bez dijaloga pisača.</summary>
+        public static string MapaIzvoza;
+        public static string ZadnjiPdf;
+        public static string ZadnjiIme;
+        public static string ZadnjiParam;
+
+        /// <summary>Class1.IspisiMePrekoSpinPrintinga 320–328. @id= u parametru se ne prepisuje. Više od dva id-a ide u PrintMulti.</summary>
+        public static System.Collections.Generic.List<string> ParametriIzvjestaja(string[] id, string param)
+        {
+            var lista = new System.Collections.Generic.List<string>();
+            string p = param ?? "";
+            string nize = p.ToLowerInvariant();
+            bool ima = nize.IndexOf("@id=", StringComparison.Ordinal) >= 0 || nize.IndexOf("@id =", StringComparison.Ordinal) >= 0;
+            if (id == null || id.Length == 0)
+            {
+                lista.Add(p);
+                return lista;
+            }
+            for (int i = 0; i < id.Length; i++)
+                lista.Add(ima ? p : "@id=" + (id[i] ?? "") + "," + p);
+            return lista;
+        }
+
+        public static bool ViseOdDva(int broj)
+        {
+            return broj > 2;
+        }
+
+        public static string Pdf(string mapa, string ime, string parametri)
+        {
+            Directory.CreateDirectory(mapa ?? "");
+            string put = Path.Combine(mapa ?? "", "ispis.pdf");
+            var ps = new PrintingSystem();
+            var link = new Link(ps);
+            string tijelo = (ime ?? "") + "\r\n" + (parametri ?? "");
+            link.CreateDetailArea += delegate (object sender, CreateAreaEventArgs e)
+            {
+                e.Graph.DrawString(tijelo, System.Drawing.Color.Black, new System.Drawing.RectangleF(0, 0, 480, 40), BorderSide.None);
+            };
+            link.CreateDocument();
+            ps.ExportToPdf(put);
+            ps.Dispose();
+            return put;
+        }
+
         public static bool Predlozak(string naredba, string konekcija, string parametri, string id)
         {
+            ZadnjiIme = ImePredloska(naredba);
+            var lista = ParametriIzvjestaja(string.IsNullOrEmpty(id) ? new string[0] : new[] { id }, parametri ?? "");
+            ZadnjiParam = lista.Count == 0 ? "" : (ViseOdDva(lista.Count) ? string.Join("|", lista.ToArray()) : lista[0]);
+            if (!string.IsNullOrEmpty(MapaIzvoza))
+            {
+                ZadnjiPdf = Pdf(MapaIzvoza, ZadnjiIme, ZadnjiParam);
+                return File.Exists(ZadnjiPdf);
+            }
             object o = Ucitaj();
             bool slozeno = false;
             if (o != null)
             {
                 try
                 {
+                    string metoda = ViseOdDva(lista.Count) ? "PrintMulti" : "Print";
+                    object tijelo = ViseOdDva(lista.Count) ? (object)lista : ZadnjiParam;
                     o.GetType().InvokeMember(
-                        "Print",
+                        metoda,
                         BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance,
                         null,
                         o,
-                        new object[] { konekcija ?? "", ImePredloska(naredba), parametri ?? "", "Carpo" });
+                        new object[] { konekcija ?? "", ZadnjiIme, tijelo, "Carpo" });
                     slozeno = true;
                 }
                 catch (Exception ex)

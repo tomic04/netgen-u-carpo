@@ -1984,6 +1984,7 @@ namespace Carpo.NetGen.GridTest
             T("combo-hash", ComboDijalog.OdvojiHash("sql##7", out odabrano, out ostatak) && odabrano == "7" && ostatak == "sql", odabrano);
             T("trazilica-preskok", Ponasanje.PreskociTrazilicu("", "x") && Ponasanje.PreskociTrazilicu("Kava", "Kava") && !Ponasanje.PreskociTrazilicu("*", "*") && !Ponasanje.PreskociTrazilicu("nova", "stara"), "");
             DijalogUcinak();
+            IspisUcinak();
             PokaziUpitUcinak();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
@@ -2046,6 +2047,39 @@ namespace Carpo.NetGen.GridTest
             {
                 d.Close();
                 d.Dispose();
+            }
+        }
+
+        private static void IspisUcinak()
+        {
+            string mapa = Path.Combine(Path.GetTempPath(), "ng-pdf-" + Guid.NewGuid().ToString("N"));
+            PrintBridge.MapaIzvoza = mapa;
+            PrintBridge.ZadnjiPdf = "";
+            var gumbi = new List<NgButton>();
+            gumbi.Add(new NgButton(1, "Ispis", "repx/rptX"));
+            var forma = new NgForm("T", new NgAttributeBag(null), "", "", new List<NgControl>(), gumbi, new List<string>());
+            var d = new Dijalog();
+            try
+            {
+                d.Id = "5";
+                d.Slozi(forma, new SqlKontekst(), delegate (string s) { return null; });
+                Control[] g = d.Controls.Find("cmd1", true);
+                if (g.Length == 0)
+                {
+                    T("ispis-pdf", false, "nema gumba");
+                    return;
+                }
+                typeof(Control).GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(g[0], new object[] { EventArgs.Empty });
+                bool dat = File.Exists(PrintBridge.ZadnjiPdf);
+                byte[] b = dat ? File.ReadAllBytes(PrintBridge.ZadnjiPdf) : new byte[0];
+                bool pdf = b.Length > 200 && b[0] == (byte)'%' && b[1] == (byte)'P' && b[2] == (byte)'D' && b[3] == (byte)'F';
+                T("ispis-pdf", pdf && PrintBridge.ZadnjiIme == "rptX" && PrintBridge.ZadnjiParam.IndexOf("@id=5,", StringComparison.Ordinal) >= 0, PrintBridge.ZadnjiIme + " " + PrintBridge.ZadnjiParam + " " + b.Length);
+            }
+            finally
+            {
+                PrintBridge.MapaIzvoza = null;
+                try { d.Close(); d.Dispose(); } catch { }
+                try { Directory.Delete(mapa, true); } catch { }
             }
         }
 
