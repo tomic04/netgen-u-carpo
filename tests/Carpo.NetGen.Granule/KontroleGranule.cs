@@ -5,6 +5,7 @@ using System.Text;
 using System.Data;
 using Carpo.NetGen.Kontrole;
 using Carpo.NetGen.Model;
+using Carpo.NetGen.TestHooks;
 using Carpo.NetGen.Xml;
 
 namespace Carpo.NetGen.Granule
@@ -108,6 +109,129 @@ namespace Carpo.NetGen.Granule
             if (redovi.Count < imena.Length)
                 return Qa.O(granula, id, "nisu svi objekti na spin", "sys.objects", string.Join(",", redovi.ToArray()));
             return Qa.Z(granula, id, "objekti postoje: " + string.Join(",", redovi.ToArray()), "sys.objects");
+        }
+
+        /// <summary>
+        /// FAK-11: ime u sys.objects nije dovoljno. Stub WHERE 1=0 nije klijentsko tijelo.
+        /// Verzija A je samo SELECT (action 1 i 2). NetGen je salje jer nema @@.
+        /// </summary>
+        public static Stavka TijeloFakPar(string granula, string id)
+        {
+            string greska;
+            string def = Citanje.PrviTekst(
+                "select object_definition(object_id(N'dbo.spFakPartneriUvjetiQuery'))",
+                out greska);
+            if (greska != null)
+                return Qa.O(granula, id, "object_definition spFakPartneriUvjetiQuery", "spin", greska);
+            if (string.IsNullOrWhiteSpace(def))
+                return Qa.O(granula, id, "spFakPartneriUvjetiQuery nema tijelo", "sys.sql_modules", "prazno");
+            if (def.IndexOf("WHERE 1 = 0", StringComparison.OrdinalIgnoreCase) >= 0
+                || def.IndexOf("WHERE 1=0", StringComparison.OrdinalIgnoreCase) >= 0)
+                return Qa.O(granula, id, "tijelo je stub, nije klijentska verzija A", "scripts/spin/stubovi.sql", "WHERE 1=0");
+            if (def.IndexOf("from FakPartneriUvjeti", StringComparison.OrdinalIgnoreCase) < 0)
+                return Qa.O(granula, id, "tijelo ne cita FakPartneriUvjeti", "scripts/spin/klijenti/spFakPartneriUvjetiQuery.A.sql", "nema from FakPartneriUvjeti");
+            if (def.IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) < 0)
+                return Qa.O(granula, id, "nema @action=2 iz UPDATEFORM ONLOAD", "definitions/netgen/BIOVEGA/FakPar.xml", "nema @action=2");
+            string low = " " + def.ToLowerInvariant() + " ";
+            if (low.Contains(" insert ") || low.Contains(" update ") || low.Contains(" delete ") || low.Contains(" merge "))
+                return Qa.O(granula, id, "tijelo nije samo citanje", "netgen/Class1.vb:113-118", "upis");
+            return Qa.Z(granula, id, "klijentska verzija A je samo select. ONLOAD ide jer nema @@", "netgen/Form1.vb:3882; netgen/Class1.vb:113-118");
+        }
+
+        /// <summary>
+        /// FAK-11: load path (akcija otvori) mora proci bez Invalid object name.
+        /// Master stupci su rezultat action 1, ne polja forme. *id je skriven (Class1 1124).
+        /// PoSkladistu je checkbox forme i nije u tom SELECT-u.
+        /// </summary>
+        public static Stavka OtvoriFakPar(string granula, string id, string xml)
+        {
+            Stavka tijelo = TijeloFakPar(granula, id);
+            if (tijelo.Ishod != Ishod.Zeleno)
+                return Qa.P(granula, id, "ONLOAD spFakPartneriUvjetiQuery se otvori", "netgen/Form1.vb:3882", tijelo.Detalj ?? tijelo.Opis);
+
+            if (GranulaSesija.Izvrsi == null)
+                return Qa.O(granula, id, "load path FakPar", "netgen/Form1.vb:3882", Qa.GranulaNijeIzvedena);
+
+            Pogled pogled;
+            try
+            {
+                pogled = GranulaSesija.Izvrsi(new Zahtjev
+                {
+                    XmlPutanja = xml,
+                    Akcija = "otvori",
+                    Cilj = "",
+                    MasterId = "0",
+                    Vrijednosti = ""
+                });
+            }
+            catch (Exception ex)
+            {
+                return Qa.P(granula, id, "load path FakPar", "netgen/Form1.vb:3882", ex.GetType().Name + ": " + ex.Message);
+            }
+            if (pogled == null || !pogled.Izvedeno)
+            {
+                string razlog = pogled == null ? "Izvrsi je vratio null" : (pogled.Napomena ?? "Izvedeno=false");
+                return Qa.P(granula, id, "load path FakPar", "netgen/Form1.vb:3882", razlog);
+            }
+            string nap = pogled.Napomena ?? "";
+            if (nap.IndexOf("Invalid object name", StringComparison.OrdinalIgnoreCase) >= 0
+                || nap.IndexOf("NetGen Catch", StringComparison.Ordinal) >= 0)
+                return Qa.P(granula, id, "FakPar ONLOAD bez greske objekta", "netgen/Form1.vb:3882; netgen/Class1.vb:113-118", nap);
+
+            string krivo = Stupac(pogled, "FakPartneriUvjetiid", "false", "34", "##0");
+            if (krivo != null)
+                return Qa.P(granula, id, "FakPartneriUvjetiid je skriven jer zavrsava na ID", "netgen/Class1.vb:1124-1126", krivo);
+            krivo = Stupac(pogled, "parziroid", "false", "34", "##0");
+            if (krivo != null)
+                return Qa.P(granula, id, "parziroid je skriven jer zavrsava na ID", "netgen/Class1.vb:1124-1126", krivo);
+            if (pogled.Stavke != null && pogled.Stavke.ContainsKey("kolona.PoSkladistu.natpis"))
+                return Qa.P(granula, id, "PoSkladistu nije u master SELECT-u", "scripts/spin/klijenti/spFakPartneriUvjetiQuery.A.sql", "kolona.PoSkladistu");
+
+            string[] tekst = { "Šifra partnera", "Partner", "Grupiranje", "Žiro račun", "Ugovor" };
+            for (int i = 0; i < tekst.Length; i++)
+            {
+                krivo = Stupac(pogled, tekst[i], "true", "100", "");
+                if (krivo != null)
+                    return Qa.P(granula, id, "string stupac mastera je alias iz SQL-a, sirina 100", "netgen/Class1.vb:1037,1201-1204", krivo);
+            }
+            krivo = Stupac(pogled, "Učestalost", "true", "34", "##0");
+            if (krivo != null)
+                return Qa.P(granula, id, "Ucestalost je int", "netgen/Class1.vb:1087-1092", krivo);
+            krivo = Stupac(pogled, "Valuta", "true", "34", "##0");
+            if (krivo != null)
+                return Qa.P(granula, id, "Valuta je int", "netgen/Class1.vb:1087-1092", krivo);
+            krivo = Stupac(pogled, "Rabat", "true", "44", "#,##0.00");
+            if (krivo != null)
+                return Qa.P(granula, id, "Rabat je decimal", "netgen/Class1.vb:1146", krivo);
+            krivo = Stupac(pogled, "Povrat", "true", "44", "#,##0.00");
+            if (krivo != null)
+                return Qa.P(granula, id, "Povrat je decimal", "netgen/Class1.vb:1146", krivo);
+
+            string fokus = Vrijednost(pogled, "fokus");
+            if (fokus != "grid")
+                return Qa.P(granula, id, "ima redova pa je fokus na gridu", "netgen/Form1.vb:2059-2072", "fokus=" + fokus);
+            string trag = Vrijednost(pogled, "sqlTrag");
+            if (trag.IndexOf("spFakPartneriUvjetiQuery", StringComparison.OrdinalIgnoreCase) < 0)
+                return Qa.P(granula, id, "ONLOAD je poslan", "netgen/Form1.vb:3882", trag);
+            return Qa.Z(granula, id, "FakPar se otvorio, stupci mastera su rezultat action 1", "netgen/Form1.vb:3882; netgen/Class1.vb:1037,1124-1126,1201-1204");
+        }
+
+        private static string Vrijednost(Pogled pogled, string kljuc)
+        {
+            if (pogled.Stavke == null || !pogled.Stavke.ContainsKey(kljuc))
+                return "";
+            return pogled.Stavke[kljuc] ?? "";
+        }
+
+        private static string Stupac(Pogled pogled, string ime, string vidljiva, string sirina, string format)
+        {
+            string v = Vrijednost(pogled, "kolona." + ime + ".vidljiva");
+            string s = Vrijednost(pogled, "kolona." + ime + ".sirina");
+            string f = Vrijednost(pogled, "kolona." + ime + ".format");
+            string n = Vrijednost(pogled, "kolona." + ime + ".natpis");
+            if (v == vidljiva && s == sirina && f == format && n == ime)
+                return null;
+            return ime + " vidljiva=" + v + " sirina=" + s + " format=" + f + " natpis=" + n;
         }
     }
 
@@ -447,7 +571,7 @@ namespace Carpo.NetGen.Granule
                 ? Qa.Z(Ime, "FAK-09", "SEARCH hash. ALLOWEMPTY na searchu se ne cita", "netgen/Form2.vb:2140; netgen/Form3.vb:102")
                 : Qa.P(Ime, "FAK-09", "search", "netgen/Form3.vb:102", ssql));
             l.Add(Stablo.Otvori(Ime, "FAK-10", "FakPar.xml", root));
-            l.Add(Kontrole.Objekti(Ime, "FAK-11", "spFakPartneriUvjetiQuery"));
+            l.Add(Kontrole.OtvoriFakPar(Ime, "FAK-11", xml));
             Kontrole.K(l, Ime, xml, "FAK-20", "CurMEdit prazan ide kao 0, ne kao tekst", "netgen/Form2.vb:2071,3601", "number.Rabat", "0");
             Kontrole.K(l, Ime, xml, "FAK-21", "checkbox PoSkladistu salje CheckState", "netgen/Form2.vb:3424-3427", "check.PoSkladistu", "checkstate");
             return l;

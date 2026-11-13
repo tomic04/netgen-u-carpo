@@ -35,7 +35,7 @@ To nisu prava poslovna tijela. Da test bude vjerodostojan, korisnik treba dati:
 |---|---|---|---|
 | `dbo.klmasterroba.oznaka2` | `OznakaKL` SELECT pada s `Invalid column name 'oznaka2'` | `varchar(50) NULL` ako stupca nema | stupac kakav je u produkcijskoj shemi (tip i duljina) |
 | `dbo.spKultureNGQuery` | `Could not find stored procedure` | prazan SELECT `KultureId, Naziv, Ozn, Cijena` | tijelo za `@Action=1` (master) i `@Action=2, @KultureId` |
-| `dbo.spFakPartneriUvjetiQuery` | ista poruka na `FakPar` | prazan SELECT `FakPartneriUvjetiId, partneriid, Naziv` | tijelo bez parametara (master) i `@action=2, @FakPartneriUvjetiId` |
+| `dbo.spFakPartneriUvjetiQuery` | `FakPar` ONLOAD | `scripts/spin/FakParTijelo.ps1` stavi klijentsku verziju A. `scripts/spin/FakPartneriUvjeti.sql` složi tablicu i tri testna reda. Jupiter se ne cita. | retci nisu klijentski izvod, oznaka `NG-FAK-` |
 
 ## Namjerno ostaje greška
 
