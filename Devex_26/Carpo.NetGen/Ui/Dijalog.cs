@@ -414,7 +414,7 @@ namespace Carpo.NetGen.Ui
                         if (!DijalogTok.SmijePoslati(dio))
                             continue;
                         NgDnevnik.Sql(dio);
-                        try { _citaj(dio); }
+                        try { PrimeniRed(_citaj(dio)); }
                         catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + dio); }
                         continue;
                     }

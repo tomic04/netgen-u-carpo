@@ -152,6 +152,15 @@ namespace Carpo.NetGen.Granule
                 ? Qa.Z("GridRed", "TRO-03", "ONSUBMIT koji završava zarezom ne šalje zadnji zarez", "netgen/Form2.vb:3884,3898; netgen/Form1.vb:5452")
                 : Qa.P("GridRed", "TRO-03", "zadnji zarez", "netgen/Form2.vb:3884,3898", bezZareza));
 
+            var bojaK = new SqlKontekst();
+            bojaK.SelectedColor = "Black";
+            string bojaSql = SqlTekst.Sredi("select '@@selectedcolor' as boja", bojaK);
+            bool boja = bojaSql.IndexOf("@@", StringComparison.Ordinal) < 0
+                && bojaSql.IndexOf("Black", StringComparison.Ordinal) >= 0;
+            l.Add(boja
+                ? Qa.Z("GridRed", "BOJ-01", "COLORPICKER stavi HTML u @@selectedcolor i select as boja", "netgen/Form2.vb:7156-7163; netgen/Form1.vb:6813-6831")
+                : Qa.P("GridRed", "BOJ-01", "@@selectedcolor", "netgen/Form2.vb:7160", bojaSql));
+
             bool trazilica = ParametriSvi.SearchId(null) == "null"
                 && ParametriSvi.SearchId("0") == "null"
                 && ParametriSvi.SearchId("5") == "5";
