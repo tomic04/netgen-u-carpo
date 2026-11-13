@@ -365,7 +365,7 @@ namespace Carpo.NetGen.Ui
                     || v == "eval" || v == "sljedeci" || v == "prethodni" || v == "naredba"
                     || v == "recalc" || v == "recalcred" || v == "toggle" || v == "priprema" || v == "pivot" || v == "chart" || v == "boja" || v == "posalji" || v == "pokretanje" || v == "beep" || v == "ispisext"
                     || v == "eval" || v == "sljedeci" || v == "prethodni" || v == "svekontrole" || v == "proces" || v == "mapa" || v == "datotekadlg" || v == "ispis" || v == "blagajna"
-                    || v == "timer" || v == "timeroff" || v == "progres" || v == "trazi" || v == "stupac" || v == "objekt" || v == "predlozak")
+                    || v == "timer" || v == "timeroff" || v == "progres" || v == "trazi" || v == "stupac" || v == "objekt" || v == "predlozak" || v == "prostor")
                     lanac = true;
             }
             if (lanac)
@@ -373,6 +373,29 @@ namespace Carpo.NetGen.Ui
                 for (int i = 0; i < koraci.Count; i++)
                 {
                     DijalogTok.Korak korak = koraci[i];
+                    // Form2.vb 6812-6819: segment s @@ se prvo zamijeni (PokupiParametre,
+                    // SrediSQLPosljeNextForme), pa se tek onda prepozna. Tako :@@imereporta1(...)
+                    // postane ispis, a @@izvjestaj(...) naredba iz upita (LAN-03).
+                    if (korak.Vrsta != "foreach" && (korak.Izvor ?? "").IndexOf("@@", StringComparison.Ordinal) >= 0)
+                    {
+                        var nakonZamjene = DijalogTok.Koraci(Pripremi(korak.Izvor));
+                        if (nakonZamjene.Count > 0)
+                            korak = nakonZamjene[0];
+                    }
+                    if (korak.Vrsta == "assembly")
+                    {
+                        // Form2.vb 7424-7456: potpis dijaloga. Pad Load/CreateInstance prekida lanac.
+                        var poziv = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(korak.Tekst, "dijalog", Id, Operater, Konekcija, ZadnjiSql, "", SviParametri());
+                        if (poziv.Prekinuto)
+                            return;
+                        continue;
+                    }
+                    if (korak.Vrsta == "prostor")
+                    {
+                        // Form2.vb 7489: PoslovniProstor. Kao na podlozi: fiskalni dio se biljezi (R109/R111).
+                        NgDnevnik.Akcija("prostor " + ProstorNaredba.Argument(korak.Tekst) + " poziva=" + ProstorNaredba.Poziva(0));
+                        continue;
+                    }
                     if (korak.Vrsta == "poruka")
                     {
                         PorukaNaredba.Pokazi("MSGBOX(" + korak.Tekst + ")");

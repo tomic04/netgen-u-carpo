@@ -1987,6 +1987,7 @@ namespace Carpo.NetGen.GridTest
             DijalogUcinak();
             SqlSlojNetGen();
             BrojNaDijalogu();
+            LanacNakonZamjene();
             IspisUcinak();
             PokaziUpitUcinak();
             var traz = new DataTable();
@@ -2148,6 +2149,62 @@ namespace Carpo.NetGen.GridTest
             {
                 Thread.CurrentThread.CurrentCulture = staraKultura;
                 d.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// LAN-01, LAN-03, CB-01 (docs/pregled/C2-lanac.md). Form2.vb 6812-6819: segment se zamijeni
+        /// pa tek onda prepozna. @@ime iz medjuspremnika podloge (cls1.CB) vrijedi i u dijalogu.
+        /// ASSEMBLYLOAD u lancu je naredba (Form2.vb 7424), ne SQL.
+        /// </summary>
+        private static void LanacNakonZamjene()
+        {
+            string mapa = Path.Combine(Path.GetTempPath(), "ng-lanac-" + Guid.NewGuid().ToString("N"));
+            PrintBridge.MapaIzvoza = mapa;
+            PrintBridge.ZadnjiPdf = "";
+            PrintBridge.ZadnjiIme = "";
+            var gumbi = new List<NgButton>();
+            gumbi.Add(new NgButton(1, "Ispis", ":@@imereporta1(@id=5)#CLOSE"));
+            gumbi.Add(new NgButton(2, "Dms", "select 1 as x#ASSEMBLYLOAD(NePostojiNetGen.clsX)#OK"));
+            var forma = new NgForm("T", new NgAttributeBag(null), "", "", new List<NgControl>(), gumbi, new List<string>());
+            var k = new SqlKontekst();
+            var cb = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            cb["imereporta1="] = "repx/rptX";
+            k.Clipboard = cb;
+            var sql = new List<string>();
+            var d = new Dijalog();
+            try
+            {
+                d.Id = "5";
+                d.Slozi(forma, k, delegate (string s) { sql.Add(s ?? ""); return null; });
+                var klik = typeof(Control).GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic);
+                Control[] g2 = d.Controls.Find("cmd2", true);
+                if (g2.Length > 0)
+                    klik.Invoke(g2[0], new object[] { EventArgs.Empty });
+                bool bezAsm = true;
+                for (int i = 0; i < sql.Count; i++)
+                {
+                    if (sql[i].IndexOf("ASSEMBLYLOAD", StringComparison.OrdinalIgnoreCase) >= 0)
+                        bezAsm = false;
+                }
+                T("lan01-assembly-nije-sql", g2.Length > 0 && bezAsm, string.Join(" | ", sql.ToArray()));
+                Control[] g1 = d.Controls.Find("cmd1", true);
+                if (g1.Length > 0)
+                    klik.Invoke(g1[0], new object[] { EventArgs.Empty });
+                bool bezRepx = true;
+                for (int i = 0; i < sql.Count; i++)
+                {
+                    if (sql[i].IndexOf("repx", StringComparison.OrdinalIgnoreCase) >= 0 || sql[i].IndexOf("imereporta", StringComparison.OrdinalIgnoreCase) >= 0)
+                        bezRepx = false;
+                }
+                T("lan03-token-u-ispis", g1.Length > 0 && bezRepx && PrintBridge.ZadnjiIme == "rptX",
+                    "ime=" + PrintBridge.ZadnjiIme + " sql=" + string.Join(" | ", sql.ToArray()));
+            }
+            finally
+            {
+                PrintBridge.MapaIzvoza = null;
+                try { d.Close(); d.Dispose(); } catch { }
+                try { Directory.Delete(mapa, true); } catch { }
             }
         }
 
