@@ -871,11 +871,11 @@
 
         #endregion
 
-        private DevExpress.XtraEditors.SplitContainerControl splitMain;
+        protected DevExpress.XtraEditors.SplitContainerControl splitMain;
         private DevExpress.XtraTreeList.Columns.TreeListColumn treeListColumn1;
         private DevExpress.XtraBars.StandaloneBarDockControl standaloneBarDockControl1;
-        private DevExpress.XtraGrid.Views.Grid.GridView gvGla;
-        private DevExpress.XtraGrid.Views.Grid.GridView gvDet;
+        protected DevExpress.XtraGrid.Views.Grid.GridView gvGla;
+        protected DevExpress.XtraGrid.Views.Grid.GridView gvDet;
         private DevExpress.XtraBars.StandaloneBarDockControl standaloneBarDockControl2;
         private DevExpress.XtraBars.Bar bar1;
         private DevExpress.XtraBars.Bar bar2;
@@ -885,9 +885,9 @@
         private DevExpress.XtraBars.BarDockControl barDockControlRight;
         private DevExpress.XtraBars.BarSubItem barSubItem1;
         private DevExpress.XtraBars.BarButtonItem bbiGridReset1;
-        private Components.JPanelButtonsControl pnlButtons;
-        private Components.JPanelButtonsControl pnlButtonsTree;
-        private DevExpress.XtraEditors.PanelControl pnlTree;
+        protected Components.JPanelButtonsControl pnlButtons;
+        protected Components.JPanelButtonsControl pnlButtonsTree;
+        protected DevExpress.XtraEditors.PanelControl pnlTree;
         private DevExpress.XtraBars.BarEditItem barEditFake;
         private DevExpress.XtraEditors.Repository.RepositoryItemTextEdit repositoryItemTextEdit2;
         private DevExpress.XtraEditors.Repository.RepositoryItemTextEdit repositoryItemTextEdit4;
@@ -897,16 +897,16 @@
         private DevExpress.XtraTreeList.Columns.TreeListColumn treeListColumn2;
         public DevExpress.XtraBars.BarEditItem bbiLookUpFilter;
         private DevExpress.XtraEditors.Repository.RepositoryItemLookUpEdit repositoryItemLookUpEdit2;
-        private Components.JRepositoryLookUpControl cmbComboEditFilter;
+        protected Components.JRepositoryLookUpControl cmbComboEditFilter;
         private DevExpress.XtraEditors.Repository.RepositoryItemBreadCrumbEdit repBreadCrumb;
         private DevExpress.XtraBars.BarEditItem barEditIFakeRight;
         private DevExpress.XtraEditors.Repository.RepositoryItemTextEdit repFakeRight;
         private DevExpress.XtraBars.BarButtonItem bbiSideBar;
         private DevExpress.XtraBars.BarStaticItem barStaticItem1;
         private DevExpress.XtraBars.BarStaticItem bbiTreeCaption;
-        internal Components.JTreeListControl trMain;
-        internal Components.JGridControl gcGla;
-        internal Components.JGridControl gcDet;
+        protected internal Components.JTreeListControl trMain;
+        protected internal Components.JGridControl gcGla;
+        protected internal Components.JGridControl gcDet;
         protected internal DevExpress.XtraBars.BarManager barManager1;
         private DevExpress.XtraBars.BarSubItem bbiGridExport;
         private DevExpress.XtraBars.BarButtonItem bbiExportXlsx;
