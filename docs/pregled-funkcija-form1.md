@@ -120,4 +120,63 @@ Zeleni run bloka 1: `3ad0d66`, https://github.com/tomic04/netgen-u-carpo/actions
 | 99 | DeleteGridLayout | 6344 | brisanje rasporeda | još nedostaje | |
 | 100 | SaveGridLayoutDet | 6386 | detail raspored | još nedostaje | |
 
-Broj u bloku: 50. nedostajalo-portano 9. isto 13. razlika 17. još nedostaje 11. Zbroj 50. Zbroj 50.
+Broj u bloku: 50. nedostajalo-portano 9. isto 13. razlika 17. još nedostaje 11. Zbroj 50.
+
+## Blok 3, funkcije 101–150
+
+Prazno tijelo je isto. Portana su pravila koja su imala tijelo, a nisu bila u Carpu.
+
+| # | Funkcija | Linija | Carpo | Status | Test |
+| --- | --- | --- | --- | --- | --- |
+| 101 | DeleteGridLayoutDet | 6410 | | još nedostaje | |
+| 102 | Button8_Click | 6432 | `Form1Ulaz.SljedeciRastvoreno` | nedostajalo-portano | F1-107 |
+| 103 | ResetGridLayoutToolStripMenuItem_Click | 6444 | | još nedostaje | |
+| 104 | GridExportToolStripMenuItem_Click | 6453 | | još nedostaje | |
+| 105 | GridEX1_CellEdited | 6466 | prazno | isto | |
+| 106 | GridEX1_CellUpdated | 6471 | `Form1Ulaz.VrijednostCelije`. Petlja parametara je `PokupiParametreSaGrida` | nedostajalo-portano | F1-107 |
+| 107 | Rafalno | 6546 | `Form1Ulaz.SegmentRafala` i `Lanac` | nedostajalo-portano | F1-107 |
+| 108 | GridEX1_Click | 6912 | | još nedostaje | |
+| 109 | GridEX1_DoubleClick | 6935 | `Podloga` dvostruki klik | isto | |
+| 110 | GridEX1_GroupsChanged | 6941 | | još nedostaje | |
+| 111 | ContextMenuStrip3_Click | 6952 | prazno | isto | |
+| 112 | GridEX1_MouseUp | 6978 | | još nedostaje | |
+| 113 | GridEX1_KeyDown | 7015 | | još nedostaje | |
+| 114 | GridEX2_CellUpdated | 7063 | ista vrijednost ćelije | nedostajalo-portano | F1-107 |
+| 115 | GridEX2_Click | 7130 | | još nedostaje | |
+| 116 | GridEX2_KeyDown | 7145 | | još nedostaje | |
+| 117 | GridEX1_RecordUpdated | 7176 | | još nedostaje | |
+| 118 | TreeView2_AfterSelect | 7182 | `Form1Ulaz.RastaviTag`, zatim `NovaGenerickaForma` | nedostajalo-portano | F1-51 |
+| 119 | TreeView2_NodeMouseClick | 7191 | prazno | isto | |
+| 120 | GridEX2_DoubleClick | 7201 | | još nedostaje | |
+| 121 | GridEX2_MouseUp | 7206 | | još nedostaje | |
+| 122 | ContextMenuStrip3_Closed | 7229 | prazno | isto | |
+| 123 | ContextMenuStrip3_Closing | 7233 | | još nedostaje | |
+| 124 | ContextMenuStrip3_ItemClicked | 7241 | | još nedostaje | |
+| 125 | ContextMenuStrip4_Closing | 7277 | | još nedostaje | |
+| 126 | ContextMenuStrip4_ItemClicked | 7284 | | još nedostaje | |
+| 127 | MenuStrip1_ItemClicked | 7321 | | još nedostaje | |
+| 128 | Timer1_Disposed | 7332 | prazno | isto | |
+| 129 | Timer1_Tick | 7336 | | još nedostaje | |
+| 130 | ToolStripStatusLabel3_Click | 7340 | | još nedostaje | |
+| 131 | TimerOff | 7348 | `Form1Ulaz.TimerUpaljen` prazan | nedostajalo-portano | F1-107 |
+| 132 | TimerOn | 7355 | `Form1Ulaz.TimerUpaljen` | nedostajalo-portano | F1-107 |
+| 133 | Button9_Click | 7396 | zove `DeleteGridLayout` | još nedostaje | |
+| 134 | TreeView2_BeforeSelect | 7401 | | još nedostaje | |
+| 135 | TreeView2_LostFocus | 7407 | | još nedostaje | |
+| 136 | GridEX1_SelectionChanged | 7413 | zove `PokaziUpitDetalj` | još nedostaje | |
+| 137 | GridEXPrintDocument1_PrintPage | 7420 | | još nedostaje | |
+| 138 | ButtonZaDrvo_Click_1 | 7426 | | još nedostaje | |
+| 139 | TreeView2_KeyDown1 | 7440 | | još nedostaje | |
+| 140 | CustomFormatKolona | 7451 | | još nedostaje | |
+| 141 | Button7_Click_1 | 7650 | | još nedostaje | |
+| 142 | Button8_Click_1 | 7655 | | još nedostaje | |
+| 143 | Button9_Click_1 | 7660 | | još nedostaje | |
+| 144 | Button10_Click_1 | 7665 | | još nedostaje | |
+| 145 | butonzarazgrupiranje_Click | 7670 | | još nedostaje | |
+| 146 | Form1_LocationChanged | 7684 | prazno | isto | |
+| 147 | Form1_LostFocus | 7688 | | još nedostaje | |
+| 148 | Form1_Resize | 7692 | | još nedostaje | |
+| 149 | Form1_ResizeEnd | 7703 | prazno | isto | |
+| 150 | Form1_SizeChanged | 7709 | | još nedostaje | |
+
+Broj u bloku: 50. nedostajalo-portano 7. isto 8. razlika 0. još nedostaje 35. Zbroj 50. Zbroj 50.

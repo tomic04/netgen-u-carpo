@@ -651,6 +651,67 @@ namespace Carpo.NetGen.Ulaz
             return "GridMaster" + ime + forma + "-" + (jezik ?? "") + ext;
         }
 
+        /// <summary>Form1.vb 6559–6562. Zamjena :select je osjetljiva na velika slova.</summary>
+        public static string SegmentRafala(string segment)
+        {
+            string s = segment ?? "";
+            s = s.Replace(":HIDECOLUMNS", "HIDECOLUMNS");
+            if (s.Trim().ToLowerInvariant().StartsWith(":select", StringComparison.Ordinal))
+                s = s.Replace(":select", "select");
+            return s;
+        }
+
+        /// <summary>Form1.vb 6491–6495. Val različit od nule mijenja zarez u točku. Val staje na zarezu.</summary>
+        public static string VrijednostCelije(string vrijednost)
+        {
+            string v = vrijednost ?? "";
+            if (Val(v) != 0)
+                return v.Replace(",", ".");
+            return v;
+        }
+
+        /// <summary>Form1.vb 7348–7362. Prazan strTimer ne pali tajmer.</summary>
+        public static bool TimerUpaljen(string strTimer, out int interval, out string natpis)
+        {
+            interval = 0;
+            natpis = "Timer OFF";
+            int n;
+            if (string.IsNullOrEmpty(strTimer) || !int.TryParse(strTimer.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out n))
+                return false;
+            interval = n;
+            natpis = "Timer ON " + (n / 1000).ToString(CultureInfo.InvariantCulture);
+            return true;
+        }
+
+        /// <summary>Form1.vb 6432–6440. Prvi klik širi, drugi sklapa.</summary>
+        public static bool SljedeciRastvoreno(bool sadRastvoreno)
+        {
+            return !sadRastvoreno;
+        }
+
+        private static double Val(string tekst)
+        {
+            string s = (tekst ?? "").Trim();
+            int i = 0;
+            if (s.Length > 0 && (s[0] == '+' || s[0] == '-'))
+                i = 1;
+            int start = i;
+            while (i < s.Length && char.IsDigit(s[i]))
+                i++;
+            if (i < s.Length && s[i] == '.')
+            {
+                i++;
+                while (i < s.Length && char.IsDigit(s[i]))
+                    i++;
+            }
+            if (i == start)
+                return 0;
+            double n;
+            if (!double.TryParse(s.Substring(0, i), NumberStyles.Float, CultureInfo.InvariantCulture, out n))
+                return 0;
+            return n;
+        }
+
         private static bool DodajCvorove(XmlNode cvor, CvorMeni roditelj, string put)
         {
             if (cvor == null || !cvor.HasChildNodes)

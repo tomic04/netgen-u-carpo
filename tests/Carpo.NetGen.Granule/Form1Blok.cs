@@ -20,6 +20,7 @@ namespace Carpo.NetGen.Granule
             l.Add(Stavke());
             l.Add(Format());
             l.Add(StabloMeni());
+            l.Add(Rafal());
             return l;
         }
 
@@ -273,6 +274,34 @@ namespace Carpo.NetGen.Granule
             if (Form1Ulaz.DatotekaRasporeda(@"C:\a\JeziciNG.xml", "Posebno", true, "FILTER", "en", true) != "GridMasterPosebnoFILTER-en.xml")
                 return Qa.P(g, id, opis, izvor, "dx layout");
             Console.WriteLine("[Z] Form1 F1-51 tag=C:\\xml\\JeziciNG.xml id-stupac2=9 raspored=GridMasterJeziciNG-hrv.gxl");
+            return Qa.Z(g, id, opis, izvor);
+        }
+
+        private static Stavka Rafal()
+        {
+            const string g = "Form1";
+            const string id = "F1-107";
+            const string opis = ":select male zamijeni, :SELECT ostaje, Val staje na zarezu";
+            const string izvor = "netgen/Form1.vb:6559-6562; netgen/Form1.vb:6491-6495; netgen/Form1.vb:7348-7362";
+            if (Form1Ulaz.SegmentRafala(":HIDECOLUMNS(mastergrid,a)") != "HIDECOLUMNS(mastergrid,a)")
+                return Qa.P(g, id, opis, izvor, "hide");
+            if (Form1Ulaz.SegmentRafala(":select 1") != "select 1")
+                return Qa.P(g, id, opis, izvor, "select");
+            if (Form1Ulaz.SegmentRafala(":SELECT 1") != ":SELECT 1")
+                return Qa.P(g, id, opis, izvor, "SELECT");
+            if (Form1Ulaz.VrijednostCelije("12,5") != "12.5")
+                return Qa.P(g, id, opis, izvor, Form1Ulaz.VrijednostCelije("12,5"));
+            if (Form1Ulaz.VrijednostCelije("0,5") != "0,5")
+                return Qa.P(g, id, opis, izvor, Form1Ulaz.VrijednostCelije("0,5"));
+            int interval;
+            string natpis;
+            if (!Form1Ulaz.TimerUpaljen("5000", out interval, out natpis) || interval != 5000 || natpis != "Timer ON 5")
+                return Qa.P(g, id, opis, izvor, natpis);
+            if (Form1Ulaz.TimerUpaljen("", out interval, out natpis) || natpis != "Timer OFF")
+                return Qa.P(g, id, opis, izvor, "prazan timer");
+            if (!Form1Ulaz.SljedeciRastvoreno(false) || Form1Ulaz.SljedeciRastvoreno(true))
+                return Qa.P(g, id, opis, izvor, "grupe");
+            Console.WriteLine("[Z] Form1 F1-107 :select ostaje veliko, 12,5=12.5, timer=5");
             return Qa.Z(g, id, opis, izvor);
         }
     }
