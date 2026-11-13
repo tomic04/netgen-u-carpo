@@ -2639,9 +2639,9 @@ namespace Carpo.NetGen.GridTest
             Func<string, DataTable> baza = delegate (string s)
             {
                 sql.Add(s ?? "");
-                if ((s ?? "").IndexOf("provjera", StringComparison.Ordinal) >= 0)
+                if ((s ?? "").IndexOf("provjera", StringComparison.OrdinalIgnoreCase) >= 0)
                     throw new InvalidOperationException("Dokument je zaključen #OK");
-                if ((s ?? "").IndexOf("pada", StringComparison.Ordinal) >= 0)
+                if ((s ?? "").IndexOf("pada", StringComparison.OrdinalIgnoreCase) >= 0)
                     throw new InvalidOperationException("Zadani konto ne postoji");
                 var dt = new DataTable();
                 dt.Columns.Add("status");
@@ -2664,6 +2664,11 @@ namespace Carpo.NetGen.GridTest
                 using (var d = new Dijalog())
                 {
                     d.Slozi(forma, new SqlKontekst(), baza);
+                    // PerformClick radi samo na prikazanoj formi (kao DogadjajiDijaloga).
+                    d.ShowInTaskbar = false;
+                    d.StartPosition = FormStartPosition.Manual;
+                    d.Location = new Point(-32000, -32000);
+                    d.Show();
                     var ok = d.Controls.Find("ok", true);
                     var pad = d.Controls.Find("pad", true);
                     sql.Clear();
