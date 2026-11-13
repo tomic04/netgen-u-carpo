@@ -44,6 +44,9 @@ if object_id(N'dbo.RatVrstaProizvodnje', N'U') is null
     );
 exec(N'begin try if not exists (select 1 from dbo.RatVrstaProizvodnje where Naziv = N''kp-proizvodnja'') insert into dbo.RatVrstaProizvodnje (Naziv) values (N''kp-proizvodnja''); end try begin catch print ''proizvodnja: '' + error_message(); end catch');
 
+if object_id(N'dbo.RatArkod', N'U') is not null and col_length(N'dbo.RatArkod', N'Url') is null
+    alter table dbo.RatArkod add Url varchar(200) null;
+
 if object_id(N'dbo.RatArkod', N'U') is null
     create table dbo.RatArkod (
         RatArkodId int identity(1, 1) not null constraint PK_RatArkod primary key,
