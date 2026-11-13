@@ -456,5 +456,45 @@ namespace Carpo.NetGen.Komande
             string niz = ",,," + (tag ?? "").Replace("~", ",") + ",";
             return niz.IndexOf("," + (vrijednost ?? "").Trim() + ",", StringComparison.Ordinal) > 0;
         }
+
+        /// <summary>Form2.Glbl_Gotfocus2 9459. Svijetlo zelena i SelectAll.</summary>
+        public static string BojaFokusa()
+        {
+            return "LightGreen";
+        }
+
+        /// <summary>Form2.Glbl_LeaveTrazilica 9455.</summary>
+        public static string BojaTrazilice()
+        {
+            return "LightYellow";
+        }
+
+        /// <summary>Form2.ContextMenuStrip7_ItemClicked 9516–9533. Prvi natpis, mala slova. Vidljivost i kvačica se okreću.</summary>
+        public static int StupacPoNatpisu(string[] natpisi, string klik)
+        {
+            string t = (klik ?? "").Trim().ToLowerInvariant();
+            if (natpisi == null)
+                return 0;
+            for (int i = 0; i < natpisi.Length; i++)
+            {
+                if (string.Equals((natpisi[i] ?? "").Trim().ToLowerInvariant(), t, StringComparison.Ordinal))
+                    return i;
+            }
+            return 0;
+        }
+
+        public static bool Okreni(bool vrijednost)
+        {
+            return !vrijednost;
+        }
+
+        /// <summary>Form2.ContextMenuStrip7_Closing 9495. dontclose otkazuje zatvaranje i gasi se.</summary>
+        public static bool OtkaziZatvaranje(ref bool neZatvaraj)
+        {
+            if (!neZatvaraj)
+                return false;
+            neZatvaraj = false;
+            return true;
+        }
     }
 }

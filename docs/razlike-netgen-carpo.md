@@ -42,12 +42,6 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 - **Zašto ostaje:** te dvije biblioteke nisu na stroju. Prazan URL i `cis.porezna-uprava.hr` se ne šalju. Grana odluke (nema red, Slovenija, nema PFX, test URL) jest portana.
 - **Test:** `prostor-com`
 
-### R112 Spin.Printing.v23
-
-- **NetGen:** `IspisiMePrekoSpinPrintinga` (`Class1.vb` 297) radi `Assembly.Load("Spin.Printing.v23")` i `CreateInstance("Spin.Printing.Start")`. `IspisiMe7` i `PrintRpt` idu tim putem.
-- **Zašto ostaje:** ta biblioteka nije referenca Carpa. Ispis koji jest portan ide kroz `PrintBridge` i `PageHeaderFooter`.
-- **Test:** `ispis-zaglavlje` pokriva zaglavlje. Učitavanje `Spin.Printing.v23` se ne izvodi.
-
 ### R101 i R102 Spin nema prava tijela
 
 - **NetGen:** zove proceduru iz XML-a. Ako je nema, padne.

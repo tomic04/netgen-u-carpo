@@ -117,7 +117,7 @@ U ovom bloku: 32 isto, 18 nedostaje, 0 razlika. Portano u bloku: `NapuniKontrole
 | 55 | `Glbl_ValidatedCombo` 5962. `ONLOSTFOCUS` | `Leave` | isto | `DOS-05` |
 | 56 | `Glbl_ValidatedMultiDrop` 5968. Vodi `ErrorText`, ne `ONLOSTFOCUS` | `Form2Dogadjaj.MultiDropNaredba`, `Leave` šalje `ERRORTEXT` | nedostajalo-portano | `multidrop-error` |
 | 57 | `GlblNumber_Validated` 5977. `ONLOSTFOCUS` | `Leave` | isto | |
-| 58 | `Glbl_Gotfocus` 5985. Pamti stari tekst i zove `Glbl_Gotfocus2` | `Enter` pamti tekst. `Gotfocus2` nije ovdje | nedostaje | `trazilica-preskok` |
+| 58 | `Glbl_Gotfocus` 5985. Pamti stari tekst i zove `Glbl_Gotfocus2` | `Enter` boja LightGreen i `SelectAll` | nedostajalo-portano | `fokus-boja` |
 | 59 | `Glbl_popup` 5992. Tijelo je komentar | Nema | isto | |
 | 60 | `Glbl_KeyDown` 6016–6100. Enter na tražilici validira pa ide dalje, osim ako SQL ili greška ima `focus`. Ctrl+A i Ctrl+C na gridu | `Form2Dogadjaj.KeyDown`, `Dijalog.ProcessCmdKey` | nedostajalo-portano | `keydown-trazilica` |
 | 61 | `Glbl_TREE_BeforeSelect` 6103. Boja čvora u bijelo | `Form2Dogadjaj.BojaCvoraPrije` vraća `White` | nedostajalo-portano | `boja-cvora` |
@@ -161,15 +161,15 @@ U ovom bloku: 32 isto, 18 nedostaje, 0 razlika. Portano u bloku: `NapuniKontrole
 | 99 | `ToolStripMenuItem1_Click` 8897. Tag stavke je naredba iza dvotočke | `Izbornik` vraća `natpis\|naredba` | nedostajalo-portano | `desni-klik` |
 | 100 | `IspisNovi` 9006. Janus `GridExPrinting`, ne PrintLink | Ispis ide kroz `PageHeaderFooter` | razlika | `ispis-zaglavlje` |
 
-U ovom bloku nakon dopune: 26 isto, 1 još nedostaje (`Glbl_Gotfocus` boja), 21 nedostajalo-portano, 2 razlike (`IspisNovi`, `PoslovniProstor_COM` / R111).
+U ovom bloku nakon dopune: 26 isto, 0 još nedostaje, 22 nedostajalo-portano, 2 razlike (`IspisNovi`, `PoslovniProstor_COM` / R111).
 
 ### Nedostajalo, sada portano
 
 Form3 pri promjeni teksta (`trazilica-dijalog`, `Form2.vb` 5820–5881), `KeyDown` (`keydown-trazilica`, 6016–6100), dvoklik (`dvoklik-vrijednost`, 6198–6204), desni klik (`desni-klik`, 8704–8731 i 8897), timer fokusa (`timer-fokus`, 8510–8514), datoteke odgovora (`odgovor-datoteka`, 7900–7915), `PosaljiSamoJIRServer` samo ako URL nije produkcijski CIS (`jir-test`, 8097–8167).
 
-### Još nedostaje
+### Ostalo u ovom bloku
 
-`Glbl_Gotfocus` 5985 još ne boji kontrolu u zeleno i ne radi `SelectAll`. `Glbl_Gotfocus2` 9471–9474 šalje `GOTFOCUS` na `Enter`. `IspisNovi` ostaje razlika: Janus `GridExPrinting` se ne vraća. `PoslovniProstor_COM` slanje je R111.
+`Glbl_Gotfocus2` šalje `GOTFOCUS` na `Enter`, boja je LightGreen i radi se `SelectAll`. `IspisNovi` ostaje razlika: Janus `GridExPrinting` se ne vraća. `PoslovniProstor_COM` slanje ostaje R111 dok `dll-traga` na sql-ai ne nađe `Raverus.FiskalizacijaDEV.COM.dll` ili `SLOFISKAL.dll`. Popis za donijeti ispisuje taj test.
 
 ## Form2 od `Glbl_Gotfocus2` do kraja
 
@@ -177,15 +177,15 @@ Form3 pri promjeni teksta (`trazilica-dijalog`, `Form2.vb` 5820–5881), `KeyDow
 
 | NetGen | Carpo | Status |
 |---|---|---|
-| `Glbl_Gotfocus2` 9458. Zelena pozadina, `strGotFocus`, `SelectAll`. NFC timer je komentar | `Enter` šalje `GOTFOCUS` | nedostajalo-portano |
+| `Glbl_Gotfocus2` 9458. Zelena pozadina, `strGotFocus`, `SelectAll`. NFC timer je komentar | `Enter` šalje `GOTFOCUS`, LightGreen i `SelectAll` | nedostajalo-portano |
 | `Glbl_Leave` 9433. Prazna tražilica tag `0` i `ONLOSTFOCUS` | Već u `Leave` tražilice | isto |
-| `Glbl_LeaveTrazilica` 9454. Žuta pozadina | Nema boje | još nedostaje |
+| `Glbl_LeaveTrazilica` 9454. Žuta pozadina | `Leave` tražilice stavlja LightYellow | nedostajalo-portano |
 | `Rafalna_Priprema` 9168. `#ISEMPTY` | `IspisMotora.Zaglavlje` | isto |
 | `IspisGRIDREPX` 9041, `ChartGRID` 9062, `PivotGRID` 9085 | `EkstenzijaGrid`. `PrintDocumentREPX` radi. Chart i pivot su OPEN dok nema v12.1 DLL-ova | isto |
 | `Ispis` 9108 | `PrintBridge` | isto |
 | `SaveGridLayout` 9205, `DeleteGridLayout` 9232, `LoadLayout` 9245, `GetLayoutDirectory` 9260 | `ImeRasporeda`, `MapaRasporeda`, `SpremiRaspored`. Janus `.gxl` binarni format nije isti | nedostajalo-portano |
 | `AutoCompleteCombo_KeyUp` 9276 i `Leave` 9397 | `PreskociTipku`, `NadjiStavku`, `Dopuna` | nedostajalo-portano |
-| `ContextMenuStrip7_*` 9494–9539 i 9683 | Desni klik uz Ctrl je vrsta `stupci`, stavke se ne pale | još nedostaje |
+| `ContextMenuStrip7_*` 9494–9539 | `StupacPoNatpisu`, `Okreni`, `OtkaziZatvaranje` | nedostajalo-portano |
 | `DajPokaziHelp` 9539 | `HelpArgumenti`. `JupiterHelp.exe` se ne pokreće u testu | nedostajalo-portano |
 | `SerialPort1_*` 9577–9611 | `LazniPort`, `PostimajPort`, `PisiPort`. Test ne otvara hardver | nedostajalo-portano |
 | `glblGRID_FormattingRow` 9611 | Format stupca je u `MasterGrid` | isto |
@@ -217,12 +217,12 @@ Form3 pri promjeni teksta (`trazilica-dijalog`, `Form2.vb` 5820–5881), `KeyDow
 | `BlagajnaEnableZaMlinar` 1975 | `Class1Pravila.BlagajnaUpit` | nedostajalo-portano | `blagajna-enable` |
 | `UpaliProgres` / `UgasiProgres` 723 | `Form2Dogadjaj.Progres` | nedostajalo-portano | `progres` |
 | `NapuniCBLog` / `PokaziCBLog` | Carpo logger, ne CBLog | razlika | |
-| `PrintRpt` 379, `IspisiMe7` 284, `IspisiMePrekoSpinPrintinga` 291 | `PrintBridge`. `Spin.Printing.v23` se ne učitava | razlika R112 | `ispis-zaglavlje` |
+| `PrintRpt` 379, `IspisiMe7` 284, `IspisiMePrekoSpinPrintinga` 291 | `SpinIspis` zove `Spin.Printing.v26` `Print`/`PrintMulti` kao `Carpo.UI.PrintDialog`. Test piše PDF, ne zove dijalog | nedostajalo-portano | `spin-ispis` |
 | `NapuniDXGrid` 1699, `NapuniDXGridLATE` 1763 | `SakrijCaptionId`, `SirinaNatpisa`, `SmijeEdit`. `IndexOf` &gt; 0. Stupac `rcb555` | nedostajalo-portano | `dx-grid` |
 | `CustomFormatKolonaDX` 1845, `UkljuciSum` 1937 | `KljucKolone`, `SirinaXml`, `Natpis`, `Zbroj` | nedostajalo-portano | `dx-format` |
 | `New` 1433, `Finalize` 1429 | Nema | isto | |
 
-U Class1 bloku, 24 metode: 7 isto (`ExecSql`, `ExecSql2`, `SrediSQLPosljeNextForme`, `NadjiVrijednostuPrevParametrima`, `CreateGridColumns`, `New`, `Finalize`), 12 nedostajalo-portano, 5 razlika (`NapuniCBLog` i `PokaziCBLog` idu u Carpo logger; `PrintRpt`, `IspisiMe7`, `IspisiMePrekoSpinPrintinga` su R112), 0 još nedostaje.
+U Class1 bloku, 24 metode: 7 isto (`ExecSql`, `ExecSql2`, `SrediSQLPosljeNextForme`, `NadjiVrijednostuPrevParametrima`, `CreateGridColumns`, `New`, `Finalize`), 15 nedostajalo-portano, 2 razlike (`NapuniCBLog` i `PokaziCBLog` idu u Carpo logger), 0 još nedostaje. Ispis je `Spin.Printing.v26`.
 
 ## Ostali moduli, prvi blok
 
