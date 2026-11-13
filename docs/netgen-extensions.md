@@ -12,4 +12,6 @@ Carpo radi isti `Assembly.Load("NetGenExtensions")`. Ako fusion ne nađe sklop, 
 
 Na sql-ai `NetGenExtensions.dll` jest u `C:\Users\ntomic\Desktop\Jupiter Client\Programs\SharedAssemblies\Spin\NetGenExtensions.dll`. `Janus.Windows.GridEX.v3.dll` jest u `...\SharedAssemblies\Janus\`.
 
-`PrintDocumentREPX` se s tim pozove. `Form1.PivotGRID` i `Form2.ChartGRID` traže još `DevExpress.Reports.v12.1.Designer, Version=12.1.6.0, PublicKeyToken=b88d1754d700e49a`. Carpo tu datoteku traži uz `NetGen.exe` i u `DevExpress 12.1` mapama. Ako je nema, treba je staviti uz `NetGenExtensions.dll`. DLL se ne commita.
+UI test na `tests/Ekstenzije.xml` zove sve tri metode. `PrintDocumentREPX` na `frmGridExPrintingREPX` prolazi.
+
+`Form1.PivotGRID` i `Form2.ChartGRID` ne uđu u tip: sklop traži `DevExpress.Reports.v12.1.Designer, Version=12.1.6.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a`. Te datoteke nema u Jupiter Clientu, nema je u GAC-u, i na stroju nema `NetGen.exe`. Treba je staviti uz `NetGenExtensions.dll`. DLL se ne commita.
