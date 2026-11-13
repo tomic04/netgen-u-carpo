@@ -2728,6 +2728,12 @@ namespace Carpo.NetGen.GridTest
                 master.Stanje.Odluka = "salji";
                 Zovi(forma, "IzvrsiRafalno", "REFRESHMASTERGRID");
                 T("ref01-zadnji-sql", gv.DataRowCount == 1 && Convert.ToString(gv.GetRowCellValue(0, "id")) == "9", "redova=" + gv.DataRowCount);
+                // KEY-01: JupiterShared_KeyDown bez DefinitionForm bacao bi NRE na svaku tipku; Escape zatvara (Form1_KeyDown).
+                Zovi(forma, "OnKeyDown", new KeyEventArgs(Keys.Down));
+                T("key01-tipka", true, "");
+                Zovi(forma, "OnKeyDown", new KeyEventArgs(Keys.Escape));
+                Application.DoEvents();
+                T("key01-escape", forma.IsDisposed || !forma.Visible, "visible=" + (!forma.IsDisposed && forma.Visible));
             }
             catch (Exception ex)
             {

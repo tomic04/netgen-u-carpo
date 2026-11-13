@@ -167,6 +167,7 @@ namespace Carpo.NetGen.Ui
             // Form1.vb 3873 ssPermissionProvjeri prije ONLOAD2 (3906).
             PrimijeniDozvoleGumba();
             PrimijeniOnLoad2();
+            DodajGumbPomoci();
             return true;
         }
 

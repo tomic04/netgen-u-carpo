@@ -39,6 +39,8 @@ Carpo je imao samo prvi (`IzvrsiLanac`), pa su desni klik s `~` i događaji ćel
 | **ONC-01** | ONCLOSED 4 | `Form1_FormClosed`: `Rafalno(strONClosed)` | ignorirano | isto |
 | **DMS-01** | DMSDET 9 | kartica "DMS (n)" uz stavke (GridEX3), puni se nakon detalja; desni klik Pogledaj / Spremi na disk / Obriši / Preuzmi za potpis / Vrati potpisano / Odustani; dvoklik Pogledaj (DmsManagerV1 kasnim vezanjem) | nije postojalo | `Ui/PodlogaDms` + `Poziv/DmsPoziv`, iste metode i SQL; argumenti se pretvore u tipove parametara kao VB late binding |
 | **ENT-02** | ONENTERKEY 2 | `GridEX1_KeyDown` Enter → `NovaGenerickaForma(ONENTERKEY)` | ignorirano (čitao ga je samo dijalog) | isto, osim dok se ćelija uređuje |
+| **KEY-01** | sve granule | `Form1_KeyDown`: Escape zatvara podlogu | Carpo `JupiterShared_KeyDown` čita `DefinitionForm` koji podloga nema: uz KeyPreview svaka tipka baca NullReferenceException | podloga sama obrađuje tipke (`OnKeyDown`), Escape zatvara osim dok se uređuje ćelija ili filter red |
+| **HLP-01** | HELPKOD 16 | F1 i gumb "?" pokreću `JupiterHelp.exe -s -d -h -o -p` | ignorirano | isto (bez exe-a samo dnevnik, kao On Error Resume Next) |
 
 ## Otvoreno
 
