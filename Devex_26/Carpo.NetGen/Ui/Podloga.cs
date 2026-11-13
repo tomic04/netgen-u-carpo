@@ -1187,47 +1187,22 @@ namespace Carpo.NetGen.Ui
 
         private void NapuniOdabir(string ime)
         {
+            if (!MultiOdabir.Je(ime))
+                return;
             string op = _master.Kontekst == null ? "0" : _master.Kontekst.OperaterId;
             Citaj(MultiOdabir.Obrisi(op));
             var ids = new System.Collections.Generic.List<string>();
-            if (MultiOdabir.Plavi(ime))
+            int[] sel = gvGla.GetSelectedRows();
+            for (int i = 0; i < sel.Length; i++)
             {
-                int[] sel = gvGla.GetSelectedRows();
-                for (int i = 0; i < sel.Length; i++)
-                {
-                    if (sel[i] < 0)
-                        continue;
-                    string id = IdCelije(sel[i]);
-                    if (id.Length > 0)
-                        ids.Add(id);
-                }
-            }
-            else
-            {
-                int[] sel = gvGla.GetSelectedRows();
-                for (int i = 0; i < sel.Length; i++)
-                {
-                    if (sel[i] < 0)
-                        continue;
-                    string id = IdCelije(sel[i]);
-                    if (id.Length > 0)
-                        ids.Add(id);
-                }
+                if (sel[i] < 0)
+                    continue;
+                string id = IdCelije(sel[i]);
+                if (id.Length > 0 && id != "0")
+                    ids.Add(id);
             }
             for (int i = 0; i < ids.Count; i++)
                 Citaj(MultiOdabir.Ubaci(ids[i], op));
-        }
-
-        private string IdCelije(int red)
-        {
-            DataRow row = gvGla.GetDataRow(red);
-            if (row == null)
-                return "";
-            if (row.Table.Columns.Contains("id") && row["id"] != DBNull.Value)
-                return Convert.ToString(row["id"]);
-            if (row.Table.Columns.Count == 0 || row[0] == DBNull.Value)
-                return "";
-            return Convert.ToString(row[0]);
         }
 
         private static int Redoslijed(SimpleButton g)
