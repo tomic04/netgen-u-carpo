@@ -170,21 +170,23 @@ namespace Carpo.NetGen.Ui
                 NapuniIzOnLoad(on, kontekst, citaj);
             if (modal)
             {
-                // Form1.vb 5362: Form2.ShowDialog(Me). Form1 je običan Form.
-                // Podloga je RibbonForm. ShowDialog(RibbonForm) iz klika ne uđe u petlju
-                // i OnShown se ne dogodi, pa Odustani nema tko stisnuti.
-                Form nosac = VlasnikKojiNijeRibbon(vlasnik);
+                // Form1.vb 5362: Form2.ShowDialog(Me). Form1 je običan Form, nije RibbonForm.
+                // ShowDialog(RibbonForm) iz klika ne uđe u petlju. Običan Form kao vlasnik
+                // XtraFormu baci KeyNotFound u skinu i otvori ThreadExceptionDialog, koji
+                // onda drži ShowDialog. Vlasnik mora biti XtraForm, a ne ribbon.
+                Form nosac = VlasnikXtra(vlasnik);
                 Form skriven = null;
                 if (nosac == null)
                 {
-                    skriven = new Form();
-                    skriven.ShowInTaskbar = false;
-                    skriven.FormBorderStyle = FormBorderStyle.None;
-                    skriven.StartPosition = FormStartPosition.Manual;
-                    skriven.Location = new System.Drawing.Point(-32000, -32000);
-                    skriven.Size = new System.Drawing.Size(1, 1);
-                    skriven.Show();
-                    nosac = skriven;
+                    var x = new XtraForm();
+                    x.ShowInTaskbar = false;
+                    x.FormBorderStyle = FormBorderStyle.None;
+                    x.StartPosition = FormStartPosition.Manual;
+                    x.Location = new System.Drawing.Point(-32000, -32000);
+                    x.Size = new System.Drawing.Size(1, 1);
+                    x.Show();
+                    skriven = x;
+                    nosac = x;
                 }
                 try
                 {
@@ -198,17 +200,27 @@ namespace Carpo.NetGen.Ui
             }
         }
 
-        private static Form VlasnikKojiNijeRibbon(Form predlozen)
+        private static Form VlasnikXtra(Form predlozen)
         {
-            if (predlozen != null && !predlozen.IsDisposed && !JeRibbon(predlozen))
+            if (predlozen != null && !predlozen.IsDisposed && JeXtra(predlozen) && !JeRibbon(predlozen))
                 return predlozen;
             foreach (Form f in Application.OpenForms)
             {
-                if (f == null || f.IsDisposed || !f.IsHandleCreated || JeRibbon(f))
+                if (f == null || f.IsDisposed || !f.IsHandleCreated || !JeXtra(f) || JeRibbon(f))
                     continue;
                 return f;
             }
             return null;
+        }
+
+        private static bool JeXtra(Control f)
+        {
+            for (Type t = f.GetType(); t != null && t != typeof(object); t = t.BaseType)
+            {
+                if (t.Name == "XtraForm")
+                    return true;
+            }
+            return false;
         }
 
         private static bool JeRibbon(Control f)
