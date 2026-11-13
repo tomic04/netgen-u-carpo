@@ -65,8 +65,6 @@ namespace Carpo.NetGen.Granule
                 return Qa.P(g, id, opis, izvor, "param");
             if (Form1Ulaz.DajSql(new[] { "a", "b" }) != "a\r\n\r\nb\r\n\r\n")
                 return Qa.P(g, id, opis, izvor, "dajsql");
-            if (Form1Ulaz.TekstIznimke("trag") != "trag")
-                return Qa.P(g, id, opis, izvor, "iznimka");
             Console.WriteLine("[Z] Form1 F1-25 escape zatvara, F1 uz HELPKOD, F11 parametri");
             return Qa.Z(g, id, opis, izvor);
         }

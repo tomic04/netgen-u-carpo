@@ -321,11 +321,6 @@ namespace Carpo.NetGen.Ulaz
             return "PARAMATERISAMASTERIDETAILGRIDA=" + (parametri ?? "");
         }
 
-        public static string TekstIznimke(string trag)
-        {
-            return trag ?? "";
-        }
-
         public sealed class ProstorIshod
         {
             public bool Izlaz;

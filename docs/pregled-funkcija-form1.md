@@ -26,8 +26,8 @@ Port je `Devex_26/Carpo.NetGen/Ulaz/Form1Ulaz.cs`. Test je `tests/Carpo.NetGen.G
 | 14 | DajCB | 1016 | `Form1Ulaz.DajCb` | nedostajalo-portano | F1-35 |
 | 15 | DajSQL | 1057 | `Form1Ulaz.DajSql` | nedostajalo-portano | F1-25 |
 | 16 | DajParametre | 1066 | `Form1Ulaz.DajParametre` | nedostajalo-portano | F1-25 |
-| 17 | MYExnHandler | 1077 | `Form1Ulaz.TekstIznimke` | nedostajalo-portano | F1-25 |
-| 18 | MYThreadHandler | 1083 | `Form1Ulaz.TekstIznimke` | nedostajalo-portano | F1-25 |
+| 17 | MYExnHandler | 1077 | MYExnHandler samo vraća predani trag. Nije na formi. | još nedostaje | |
+| 18 | MYThreadHandler | 1083 | MYThreadHandler samo vraća predani trag. Nije na formi. | još nedostaje | |
 | 19 | Run8 | 1087 | `Loader.Run8` zove `Prevoditelj.Ucitaj` | nedostajalo-portano | F1-114 |
 | 20 | Run | 1098 | `Prevoditelj.Ucitaj` `JupiterTranslator10` | nedostajalo-portano | F1-114 |
 | 21 | Form1_FormClosed | 1298 | `Form1Ulaz.Zatvoreno` vraća ONCLOSED | nedostajalo-portano | F1-25 |
@@ -38,22 +38,22 @@ Port je `Devex_26/Carpo.NetGen/Ulaz/Form1Ulaz.cs`. Test je `tests/Carpo.NetGen.G
 | 26 | NapuniRSLang | 1398 | `Form1Ulaz.JezikIz`. `Return` prije TotalGenLang | nedostajalo-portano | F1-31 |
 | 27 | Jezici | 1484 | `Form1Ulaz.SqlMultilingual`, `SqlPismo` | nedostajalo-portano | F1-31 |
 | 28 | Form1_Leave | 1497 | `Form1Ulaz.TimerUpaljen` prazan | nedostajalo-portano | F1-107 |
-| 29 | Form1_Load | 1500 | `Form1Srce.RedoslijedUcitavanja` | nedostajalo-portano | F1-185 |
+| 29 | Form1_Load | 1500 | Form1_Load nije izvršni put. Stalni redoslijed je maknut. | još nedostaje | |
 | 30 | PronadjiOperatera | 1694 | `Form1Ulaz.SqlOperatera` | nedostajalo-portano | F1-42 |
 | 31 | PokupiUlazneparametre | 1707 | `Form1Ulaz.Ulaz` | nedostajalo-portano | F1-31 |
 | 32 | DodatnoFormatirajGridnakonRetriveStructure | 1777 | `Form1Ulaz.FormatStupca` | nedostajalo-portano | F1-32 |
-| 33 | PokaziUpit | 1825 | `Form1Srce.Pokazi` | nedostajalo-portano | F1-33 |
+| 33 | PokaziUpit | 1825 | MasterGrid.IzvrsiCitanje zna poslati SQL. Timer, novi id, grupe i DX izlaz iz PokaziUpit nisu u tom putu. | još nedostaje | |
 | 34 | PrevediSadrzajGrida2 | 2189 | `Form1Ulaz.PrevediStupce` | nedostajalo-portano | F1-35 |
 | 35 | PokaziBrojStavki | 2232 | `Form1Ulaz.BrojStavki` | nedostajalo-portano | F1-35 |
-| 36 | PokaziUpitDetalj | 2258 | `Form1Srce.Detalj` | nedostajalo-portano | F1-33 |
+| 36 | PokaziUpitDetalj | 2258 | PokaziUpitDetalj ne izlazi dok se puni master i ne puni detail grid. | još nedostaje | |
 | 37 | DMS_pOkazi_Upit | 2447 | `Form1Ulaz.DmsNaslov`, stupac 1 se skriva | nedostajalo-portano | F1-35 |
 | 38 | SrediSQL | 2470 | `Grid/SqlTekst.cs` | isto | SqlTekst |
 | 39 | GetLayoutDirectory | 2509 | `Form1Ulaz.MapaRasporeda` | nedostajalo-portano | F1-32 |
-| 40 | PokupiParametreSaGrida | 2544 | `Form1Srce.SpojiParametre` | nedostajalo-portano | F1-185 |
+| 40 | PokupiParametreSaGrida | 2544 | PokupiParametreSaGrida ne čita stupce retka. Spajanje stringova je maknuto. | još nedostaje | |
 | 41 | PokupiParametreSaHijerarHijskogGrida | 2615 | `DetailGrid` | isto | DetailGrid |
 | 42 | ssPermissionProvjeriRafalnuKomandu | 2665 | `Form1Ulaz.DozvolaKomande` | nedostajalo-portano | F1-42 |
 | 43 | ssPermissionProcitaj | 2694 | `Form1Ulaz.SqlDozvole` | nedostajalo-portano | F1-42 |
-| 44 | ssPermissionProvjeri | 2714 | `Form1Srce.Dozvola` | nedostajalo-portano | F1-44 |
+| 44 | ssPermissionProvjeri | 2714 | ssPermissionProvjeri ne čita trsPermisio ni Button.Text. | još nedostaje | |
 | 45 | ProcitajXMLzaPodlogu | 3028 | `NetGenXmlReader`, `Podloga` | isto | postojeći |
 | 46 | SetDefolte | 3945 | `ClipboardNg` | isto | ClipboardNg |
 | 47 | DodatnoPostimajKontrolu | 4013 | `OnLoad2` | isto | OnLoad2 |
@@ -61,7 +61,7 @@ Port je `Devex_26/Carpo.NetGen/Ulaz/Form1Ulaz.cs`. Test je `tests/Carpo.NetGen.G
 | 49 | NapuniMenuBaza | 4088 | `Form1Srce.TreciNivo` | nedostajalo-portano | F1-185 |
 | 50 | NapuniDrvo | 4127 | `Form1Ulaz.PrvoStablo`, `IzbornikMape` | nedostajalo-portano | F1-31 |
 
-Broj u bloku: 50. nakon poravnanja: još nedostaje 0.
+Broj u bloku 1: lažni portovi su vraćeni u još nedostaje.
 
 Zeleni run bloka 1: `3ad0d66`, https://github.com/tomic04/netgen-u-carpo/actions/runs/43366476116
 
@@ -89,8 +89,8 @@ Zeleni run bloka 1: `3ad0d66`, https://github.com/tomic04/netgen-u-carpo/actions
 | 68 | TreeView2_DoubleClick | 5656 | `Form1Ulaz.RastaviTag` | nedostajalo-portano | F1-51 |
 | 69 | Button1_Click | 5664 | `GumbTok` | isto | GumbTok |
 | 70 | DataGridView1_DoubleClick | 5670 | `Podloga` `MasterDblClick` | isto | GranulaIzvrsenje |
-| 71 | DataGridView1_MouseUp | 5674 | `Form1Srce.DesniKlik` | nedostajalo-portano | F1-185 |
-| 72 | ToolStripMenuItem1_Click | 5680 | `Form1Srce.IzvozIme` master | nedostajalo-portano | F1-185 |
+| 71 | DataGridView1_MouseUp | 5674 | Desni klik ne otvara izbornik na formi. | još nedostaje | |
+| 72 | ToolStripMenuItem1_Click | 5680 | Izbornik mastera ne sprema niti izvozi. | još nedostaje | |
 | 73 | ToolStripMenuItem2_Click | 5768 | isti izbornik na detailu | nedostajalo-portano | F1-185 |
 | 74 | Button2_Click | 5862 | `GumbTok` | isto | GumbTok |
 | 75 | Button3_Click | 5868 | `GumbTok` | isto | GumbTok |
@@ -99,8 +99,8 @@ Zeleni run bloka 1: `3ad0d66`, https://github.com/tomic04/netgen-u-carpo/actions
 | 78 | Button6_Click | 5883 | `GumbTok` | isto | GumbTok |
 | 79 | TreeView1_KeyDown | 5888 | Ctrl+F11, isto kao `Form1Ulaz.Tipka` | isto | F1-25 |
 | 80 | TreeView2_KeyDown | 5900 | Ctrl+F11 | isto | F1-25 |
-| 81 | IspisNovi | 5910 | `Form1Srce.DxPreskaceJanus` | nedostajalo-portano | F1-185 |
-| 82 | IspisNoviDet | 5953 | `Form1Srce.DxPreskaceJanus` | nedostajalo-portano | F1-185 |
+| 81 | IspisNovi | 5910 | IspisNovi ne ispisuje. return dx je maknuto. | još nedostaje | |
+| 82 | IspisNoviDet | 5953 | IspisNoviDet ne ispisuje. | još nedostaje | |
 | 83 | IspisGRIDREPX | 5984 | `PrintBridge` master | isto | print-master |
 | 84 | Button7_Click | 6009 | `IspisZaglavlje` | isto | ispis-zaglavlje |
 | 85 | IspisGRIDREPXdet | 6067 | `PrintBridge` detail | isto | print-master |
@@ -120,7 +120,7 @@ Zeleni run bloka 1: `3ad0d66`, https://github.com/tomic04/netgen-u-carpo/actions
 | 99 | DeleteGridLayout | 6344 | `Form1Srce.Obrisi` | nedostajalo-portano | F1-140 |
 | 100 | SaveGridLayoutDet | 6386 | `Form1Srce.Datoteka` detail | nedostajalo-portano | F1-140 |
 
-Broj u bloku: 50. Sedamnaest prijašnjih razlika je svedeno na isto ili port, osim Janus dizajnera (R113). još nedostaje 0.
+Broj u bloku 2: lažni portovi su vraćeni u još nedostaje.
 
 Zeleni run bloka 2: `fbc3970`, https://github.com/tomic04/netgen-u-carpo/actions/runs/43367408210
 
@@ -133,15 +133,15 @@ Prazno tijelo je isto. Portana su pravila koja su imala tijelo, a nisu bila u Ca
 | 101 | DeleteGridLayoutDet | 6410 | `Form1Srce.Obrisi` | nedostajalo-portano | F1-140 |
 | 102 | Button8_Click | 6432 | `Form1Ulaz.SljedeciRastvoreno` | nedostajalo-portano | F1-107 |
 | 103 | ResetGridLayoutToolStripMenuItem_Click | 6444 | `Form1Srce.Ucitaj` uz reset | nedostajalo-portano | F1-140 |
-| 104 | GridExportToolStripMenuItem_Click | 6453 | `Form1Srce.IzvozIme` | nedostajalo-portano | F1-185 |
+| 104 | GridExportToolStripMenuItem_Click | 6453 | GridExport ne piše datoteku. | još nedostaje | |
 | 105 | GridEX1_CellEdited | 6466 | prazno | isto | |
 | 106 | GridEX1_CellUpdated | 6471 | `Form1Ulaz.VrijednostCelije`. Petlja parametara je `PokupiParametreSaGrida` | nedostajalo-portano | F1-107 |
 | 107 | Rafalno | 6546 | `Form1Ulaz.SegmentRafala` i `Lanac` | nedostajalo-portano | F1-107 |
-| 108 | GridEX1_Click | 6912 | `Form1Srce.SearchJeStupac` | nedostajalo-portano | F1-185 |
+| 108 | GridEX1_Click | 6912 | Klik grida ne postavlja SearchColumn. | još nedostaje | |
 | 109 | GridEX1_DoubleClick | 6935 | `Podloga` dvostruki klik | isto | |
-| 110 | GridEX1_GroupsChanged | 6941 | `Form1Srce.GrupeSeSklope` | nedostajalo-portano | F1-185 |
+| 110 | GridEX1_GroupsChanged | 6941 | GroupsChanged ne sklapa grupe na gridu. | još nedostaje | |
 | 111 | ContextMenuStrip3_Click | 6952 | prazno | isto | |
-| 112 | GridEX1_MouseUp | 6978 | `Form1Srce.DesniKlik` | nedostajalo-portano | F1-185 |
+| 112 | GridEX1_MouseUp | 6978 | Desni klik mastera ne otvara izbornik. | još nedostaje | |
 | 113 | GridEX1_KeyDown | 7015 | `Form1Srce.EnterForma` | nedostajalo-portano | F1-185 |
 | 114 | GridEX2_CellUpdated | 7063 | ista vrijednost ćelije | nedostajalo-portano | F1-107 |
 | 115 | GridEX2_Click | 7130 | `Form1Srce.SearchJeStupac` | nedostajalo-portano | F1-185 |
@@ -150,7 +150,7 @@ Prazno tijelo je isto. Portana su pravila koja su imala tijelo, a nisu bila u Ca
 | 118 | TreeView2_AfterSelect | 7182 | `Form1Ulaz.RastaviTag`, zatim `NovaGenerickaForma` | nedostajalo-portano | F1-51 |
 | 119 | TreeView2_NodeMouseClick | 7191 | prazno | isto | |
 | 120 | GridEX2_DoubleClick | 7201 | `Form1Srce.AplikacijaIzTaga` detail | nedostajalo-portano | F1-185 |
-| 121 | GridEX2_MouseUp | 7206 | `Form1Srce.DesniKlik` | nedostajalo-portano | F1-185 |
+| 121 | GridEX2_MouseUp | 7206 | Desni klik detaila ne otvara izbornik. | još nedostaje | |
 | 122 | ContextMenuStrip3_Closed | 7229 | prazno | isto | |
 | 123 | ContextMenuStrip3_Closing | 7233 | `Form1Srce.ZatvaranjeOtkazano` | nedostajalo-portano | F1-185 |
 | 124 | ContextMenuStrip3_ItemClicked | 7241 | `Form1Srce.StupacNakonKlika` | nedostajalo-portano | F1-185 |
@@ -158,7 +158,7 @@ Prazno tijelo je isto. Portana su pravila koja su imala tijelo, a nisu bila u Ca
 | 126 | ContextMenuStrip4_ItemClicked | 7284 | `Form1Srce.StupacNakonKlika` | nedostajalo-portano | F1-185 |
 | 127 | MenuStrip1_ItemClicked | 7321 | `Form1Srce.AplikacijaIzTaga` | nedostajalo-portano | F1-185 |
 | 128 | Timer1_Disposed | 7332 | prazno | isto | |
-| 129 | Timer1_Tick | 7336 | `Form1Srce.Pokazi` zadnji SQL | nedostajalo-portano | F1-33 |
+| 129 | Timer1_Tick | 7336 | Timer1_Tick ne zove punjenje mastera. | još nedostaje | |
 | 130 | ToolStripStatusLabel3_Click | 7340 | `Form1Srce.TimerKlik` | nedostajalo-portano | F1-185 |
 | 131 | TimerOff | 7348 | `Form1Ulaz.TimerUpaljen` prazan | nedostajalo-portano | F1-107 |
 | 132 | TimerOn | 7355 | `Form1Ulaz.TimerUpaljen` | nedostajalo-portano | F1-107 |
@@ -181,7 +181,7 @@ Prazno tijelo je isto. Portana su pravila koja su imala tijelo, a nisu bila u Ca
 | 149 | Form1_ResizeEnd | 7703 | prazno | isto | |
 | 150 | Form1_SizeChanged | 7709 | nema tijela osim On Error | isto |  |
 
-Broj u bloku: 50. još nedostaje 0.
+Broj u bloku 3: lažni portovi su vraćeni u još nedostaje.
 
 ## Blok 4, funkcije 151–194
 
@@ -216,26 +216,26 @@ Zadnji blok. Ukupno funkcija u Form1.vb je 194.
 | 175 | TreeView2_DragOver | 8180 | `Form1Ulaz.SmijeSpustiti` | nedostajalo-portano | F1-158 |
 | 176 | GridView1_CellValueChanged | 8223 | stupac rcb555 se preskače, vrijednost je `VrijednostCelije` | nedostajalo-portano | F1-107 |
 | 177 | GridView1_FocusedRowChanged | 8306 | `Form1Srce.Detalj` | nedostajalo-portano | F1-33 |
-| 178 | New | 8318 | `Form1Srce.NoviProzor` | nedostajalo-portano | F1-185 |
+| 178 | New | 8318 | New ne postavlja StoreAllOptions ni dock. | još nedostaje | |
 | 179 | GridView1_KeyDown | 8338 | Enter na stupac s tagom 1 | nedostajalo-portano | F1-185 |
-| 180 | GridView1_MouseUp | 8385 | `Form1Srce.DesniKlik` | nedostajalo-portano | F1-185 |
+| 180 | GridView1_MouseUp | 8385 | Desni klik DX grida ne otvara izbornik. | još nedostaje | |
 | 181 | GridView1_ShownEditor | 8412 | editor označi sav tekst | nedostajalo-portano | F1-185 |
 | 182 | Timer2_Tick | 8424 | jednom timer, pa se gasi | nedostajalo-portano | F1-107 |
 | 183 | GridEX3_MouseUp | 8429 | `Form1Ulaz.DmsIzbornik` | nedostajalo-portano | F1-158 |
 | 184 | DMS_odustani | 8464 | `Form1Ulaz.SqlDmsOdustani` | nedostajalo-portano | F1-158 |
-| 185 | DMS_preuzmizapotpis | 8484 | `Form1Srce.UcitajDms`, `DocumentCheckOut` | nedostajalo-portano | F1-185 |
-| 186 | DMS_vratipotpisano | 8528 | `DocumentCheckIn` | nedostajalo-portano | F1-185 |
-| 187 | DMS_Obrisi | 8574 | `Form1Srce.SqlDmsBrisi` | nedostajalo-portano | F1-185 |
-| 188 | DMS_SpremiNaDisk | 8599 | `SaveDocuments` | nedostajalo-portano | F1-185 |
-| 189 | DMS_Pogledaj | 8639 | `OpenDocument` | nedostajalo-portano | F1-185 |
+| 185 | DMS_preuzmizapotpis | 8484 | Nema CreateInstance ni DocumentCheckOut. | još nedostaje | |
+| 186 | DMS_vratipotpisano | 8528 | Nema DocumentCheckIn. | još nedostaje | |
+| 187 | DMS_Obrisi | 8574 | SQL brisanja se ne šalje. | još nedostaje | |
+| 188 | DMS_SpremiNaDisk | 8599 | Nema SaveDocuments. | još nedostaje | |
+| 189 | DMS_Pogledaj | 8639 | Nema OpenDocument. | još nedostaje | |
 | 190 | TabControl1_DrawItem | 8678 | prazno | isto | |
-| 191 | GridEX3_RowDoubleClick | 8702 | zove `DMS_Pogledaj` | nedostajalo-portano | F1-185 |
+| 191 | GridEX3_RowDoubleClick | 8702 | Dvostruki klik ne zove pogled. | još nedostaje | |
 | 192 | ContextMenuStrip4_Opening | 8706 | prazno | isto | |
-| 193 | ParentV_Resize | 8710 | `Form1Srce.Roditelj` | nedostajalo-portano | F1-185 |
-| 194 | ParentForm_LocationChanged | 8719 | `Form1Srce.Roditelj` | nedostajalo-portano | F1-185 |
+| 193 | ParentV_Resize | 8710 | Prozor se ne miče na (0,0). | još nedostaje | |
+| 194 | ParentForm_LocationChanged | 8719 | Prozor se ne miče na (0,0). | još nedostaje | |
 
-Broj u bloku: 44. još nedostaje 0.
+QA uzorak na `7275629` vratio je 27 lažnih portova. Pomoćne funkcije koje samo vrate tekst, `true` ili predani argument su maknute. One nisu port.
 
-Ukupno Form1: 194. još nedostaje 0. nedostajalo-portano 129. isto 56. razlika 9.
+Portano znači kod na izvršnom putu `Carpo.NetGen` i test učinka na formi, gridu ili spinu (redovi, red u bazi, vidljivost, položaj). Vraćena vrijednost pomoćne funkcije nije port.
 
-Razlike koje se ne mogu izjednačiti: R109 i R111, SOAP ostaje na testnom CIS-u. R113 ostaje samo za `ApperianceDialog.Show` i `FormatStyles.Show` (`Form1.vb` 6146–6159): XML to ne traži, a DevExpress nema taj dizajnerski dijalog. `TableView`, `CardView` i `SingleCard` idu na `GridView`, `CardView` i `LayoutView`. `Run` učitava `JupiterTranslator10`.
+Trenutno je još nedostaje 27 od onih 129. Ostali `nedostajalo-portano` retci su pravila u pomoćnim funkcijama bez testa učinka i idu na istu reviziju. `PokaziUpit` i dalje nije port: `MasterGrid.IzvrsiCitanje` zna poslati SQL, ali timer, novi id, grupe i DX izlaz nisu u tom putu.
