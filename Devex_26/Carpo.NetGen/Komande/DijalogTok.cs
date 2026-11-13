@@ -272,11 +272,9 @@ namespace Carpo.NetGen.Komande
             string t = (on ?? "").TrimStart();
             if (t.Length == 0 || t.StartsWith(":", StringComparison.Ordinal))
                 return false;
-            if (t.StartsWith("select", StringComparison.OrdinalIgnoreCase))
-                return true;
-            if (t.StartsWith("exec", StringComparison.OrdinalIgnoreCase))
-                return true;
-            return t.StartsWith("sp", StringComparison.OrdinalIgnoreCase);
+            // Ime forme nema razmak (INSERT_KLASA). SQL ga ima, i kad počinje sa if.
+            // Form2.vb 1195 izvršava ONLOAD, Form1 ne otvara formu iz tog teksta.
+            return t.IndexOf(' ') >= 0 || t.IndexOf('\n') >= 0 || t.IndexOf('\r') >= 0;
         }
 
         public static bool SmijePoslati(string sql)

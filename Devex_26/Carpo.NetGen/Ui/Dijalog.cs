@@ -317,7 +317,12 @@ namespace Carpo.NetGen.Ui
             naredba = Pripremi(naredba);
             DijalogTok.Klik klik = DijalogTok.Gumb(_forma, redni, naredba, _jupiter);
             if (!string.IsNullOrEmpty(klik.MasterSql))
+            {
                 klik.MasterSql = Pripremi(klik.MasterSql);
+                // Form1.vb 5452: ONSUBMIT koji završava zarezom dobije strParametri.
+                if (klik.MasterSql.TrimEnd().EndsWith(",", StringComparison.Ordinal))
+                    klik.MasterSql = Lanac.Lijepi(klik.MasterSql, SviParametri());
+            }
             var koraci = DijalogTok.Koraci(naredba);
             bool lanac = koraci.Count > 1;
             for (int s = 0; s < koraci.Count; s++)

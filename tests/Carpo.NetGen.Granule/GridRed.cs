@@ -4,6 +4,7 @@ using System.Data;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Model;
+using Carpo.NetGen.Shell;
 
 namespace Carpo.NetGen.Granule
 {
@@ -40,7 +41,9 @@ namespace Carpo.NetGen.Granule
 
             bool onload = DijalogTok.OnLoadJeUpit("spStatusiQuery @action=2, @ID=@@statusiid")
                 && DijalogTok.OnLoadJeUpit("select @@node as vrstadokid")
-                && !DijalogTok.OnLoadJeUpit(":FILTERFORM");
+                && DijalogTok.OnLoadJeUpit("if @@id=0 raiserror ('n', 16, 1) else exec spRatArkod_Query @action='id', @id=@@id")
+                && !DijalogTok.OnLoadJeUpit(":FILTERFORM")
+                && !DijalogTok.OnLoadJeUpit("INSERT_KLASA");
             l.Add(onload
                 ? Qa.Z("GridRed", "STA-01", "ONLOAD procedure se izvršava, ne samo select", "netgen/Form2.vb:1195-1205")
                 : Qa.P("GridRed", "STA-01", "ONLOAD procedure", "netgen/Form2.vb:1195-1205", "sp nije upit"));
@@ -105,6 +108,23 @@ namespace Carpo.NetGen.Granule
             l.Add(brisiOk
                 ? Qa.Z("GridRed", "STA-05", "Obriši šalje ONSUBMIT spStatusiAzur @action=2", "netgen/Form2.vb:3377-3388")
                 : Qa.P("GridRed", "STA-05", "Obriši ONSUBMIT", "netgen/Form2.vb:3377-3388", (brisi.SaljeSql ? "salje " : "ne salje ") + obrisano));
+
+            bool plavo = MultiOdabir.Je("MULTIBLUE_ADD")
+                && !MultiOdabir.Je("INSERT_KLASA")
+                && MultiOdabir.Ubaci("12", "7").IndexOf("TotalGenMultiSelectTemp", StringComparison.Ordinal) >= 0
+                && MultiOdabir.Ubaci("12", "7").IndexOf("select 12,", StringComparison.Ordinal) >= 0
+                && MultiOdabir.Obrisi("7").IndexOf("operateriid=7", StringComparison.Ordinal) >= 0;
+            l.Add(plavo
+                ? Qa.Z("GridRed", "WEB-01", "MULTIBLUE puni TotalGenMultiSelectTemp s GetID", "netgen/Form1.vb:4932-5032")
+                : Qa.P("GridRed", "WEB-01", "MULTIBLUE temp", "netgen/Form1.vb:4932-5032", MultiOdabir.Ubaci("12", "7")));
+
+            var gumbi = GumbiNiz.Slozi(null, "Dodaj:INSERT#Izmjeni:UPDATE#Obriši:DELETE");
+            bool buttons = gumbi.Count == 3
+                && gumbi[0].Natpis == "Dodaj" && gumbi[0].Naredba == "INSERT"
+                && gumbi[2].Naredba == "DELETE";
+            l.Add(buttons
+                ? Qa.Z("GridRed", "BTN-01", "BUTTONS prepiše natpis i naredbu gumba", "netgen/Form1.vb:3770-3824")
+                : Qa.P("GridRed", "BTN-01", "BUTTONS", "netgen/Form1.vb:3770-3824", gumbi.Count.ToString()));
             return l;
         }
     }

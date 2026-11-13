@@ -308,6 +308,24 @@ namespace Carpo.NetGen.Ui
                 OsvjeziMaster();
                 return;
             }
+            if (MultiOdabir.Je(ime))
+                NapuniOdabir(ime);
+            if (forma.Kontrole == null || forma.Kontrole.Count == 0)
+            {
+                // Form1.vb 5369: nema kontrola, OKClick je true i dijalog se ne otvara.
+                string prazna = DijalogTok.SqlNakonOk(forma);
+                if (prazna.Length > 0)
+                {
+                    string sqlPrazna = SqlTekst.Sredi(prazna, _master.Kontekst);
+                    _master.Stanje.IzvorSql = prazna;
+                    _master.Stanje.SqlZaSlanje = sqlPrazna;
+                    _master.Stanje.ZadnjiSql = sqlPrazna;
+                    _master.Stanje.Odluka = SqlTekst.Odluka(sqlPrazna);
+                    _master.Stanje.BlokiranoPisanje = SqlTekst.JeZabranaPisanja(sqlPrazna);
+                    NapuniGrid();
+                    return;
+                }
+            }
             _dubinaForme++;
             try
             {
@@ -969,6 +987,8 @@ namespace Carpo.NetGen.Ui
                             _master.Kontekst.Node = Convert.ToString(vd.Rows[0]["id"]);
                     }
                     try { System.IO.File.AppendAllText(Dijalog.TragPutanja ?? "", DateTime.Now.ToString("HH:mm:ss") + " gumb " + natpis + "\r\n"); } catch { }
+                    if (MultiOdabir.Je(naredba))
+                        OznaciRedove();
                     PokreniZatvaranje();
                     g.PerformClick();
                     Application.DoEvents();
@@ -1158,6 +1178,58 @@ namespace Carpo.NetGen.Ui
             return n.StartsWith("odustani") || n.StartsWith("cancel");
         }
 
+        private void OznaciRedove()
+        {
+            gvGla.ClearSelection();
+            for (int r = 0; r < gvGla.DataRowCount; r++)
+                gvGla.SelectRow(gvGla.GetRowHandle(r));
+        }
+
+        private void NapuniOdabir(string ime)
+        {
+            string op = _master.Kontekst == null ? "0" : _master.Kontekst.OperaterId;
+            Citaj(MultiOdabir.Obrisi(op));
+            var ids = new System.Collections.Generic.List<string>();
+            if (MultiOdabir.Plavi(ime))
+            {
+                int[] sel = gvGla.GetSelectedRows();
+                for (int i = 0; i < sel.Length; i++)
+                {
+                    if (sel[i] < 0)
+                        continue;
+                    string id = IdCelije(sel[i]);
+                    if (id.Length > 0)
+                        ids.Add(id);
+                }
+            }
+            else
+            {
+                int[] sel = gvGla.GetSelectedRows();
+                for (int i = 0; i < sel.Length; i++)
+                {
+                    if (sel[i] < 0)
+                        continue;
+                    string id = IdCelije(sel[i]);
+                    if (id.Length > 0)
+                        ids.Add(id);
+                }
+            }
+            for (int i = 0; i < ids.Count; i++)
+                Citaj(MultiOdabir.Ubaci(ids[i], op));
+        }
+
+        private string IdCelije(int red)
+        {
+            DataRow row = gvGla.GetDataRow(red);
+            if (row == null)
+                return "";
+            if (row.Table.Columns.Contains("id") && row["id"] != DBNull.Value)
+                return Convert.ToString(row["id"]);
+            if (row.Table.Columns.Count == 0 || row[0] == DBNull.Value)
+                return "";
+            return Convert.ToString(row[0]);
+        }
+
         private static int Redoslijed(SimpleButton g)
         {
             string n = ((g.Tag as string) ?? "") + " " + (g.Text ?? "");
@@ -1169,11 +1241,17 @@ namespace Carpo.NetGen.Ui
                 || n.IndexOf("UPDATE", StringComparison.OrdinalIgnoreCase) >= 0
                 || n.IndexOf("@action=1", StringComparison.OrdinalIgnoreCase) >= 0)
                 return 1;
+            if (n.IndexOf("MULTIBLUE_ADD", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("MULTI_INSERT", StringComparison.OrdinalIgnoreCase) >= 0)
+                return 2;
+            if (n.IndexOf("MULTIBLUE_DELETE", StringComparison.OrdinalIgnoreCase) >= 0
+                || n.IndexOf("MULTI_DELETE", StringComparison.OrdinalIgnoreCase) >= 0)
+                return 3;
             if (n.IndexOf("Obri", StringComparison.OrdinalIgnoreCase) >= 0
                 || n.IndexOf("DELETE", StringComparison.OrdinalIgnoreCase) >= 0
                 || n.IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) >= 0)
-                return 2;
-            return 3;
+                return 4;
+            return 5;
         }
 
         private string PoslanoKoje(string dio)
@@ -1197,6 +1275,14 @@ namespace Carpo.NetGen.Ui
                 sql = PoslanoKoje("spPrnVrstaTroskaAzur");
             if (sql.Length == 0)
                 sql = PoslanoKoje("spKlRobaWebKlase_Azur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spLnRobaWebKlase_Azur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spRatArkod_Azur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spPrnTroskoviDetAzur");
+            if (sql.Length == 0)
+                sql = PoslanoKoje("spPrnTroskoviGlaAzur");
             if (sql.Length == 0)
                 sql = _zadnjiSql ?? "";
             if (sql.Length == 0)
@@ -1285,6 +1371,27 @@ namespace Carpo.NetGen.Ui
             if (sql.IndexOf("spKlRobaWebKlase_Azur", StringComparison.OrdinalIgnoreCase) >= 0
                 && sql.IndexOf("'DELETE'", StringComparison.OrdinalIgnoreCase) >= 0)
                 return ProvjeriObrisano("KlRobaWebKlase", "KlRobaWebKlaseId");
+            if (sql.IndexOf("spLnRobaWebKlase_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("MULTI_INSERT", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriVeze(true);
+            if (sql.IndexOf("spLnRobaWebKlase_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("MULTI_DELETE", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriVeze(false);
+            if (sql.IndexOf("spRatArkod_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("'insert'", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriArkod(true);
+            if (sql.IndexOf("spRatArkod_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("'update'", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriNaziv("RatArkod", "RatArkodId", tekst, false);
+            if (sql.IndexOf("spRatArkod_Azur", StringComparison.OrdinalIgnoreCase) >= 0
+                && sql.IndexOf("'delete'", StringComparison.OrdinalIgnoreCase) >= 0)
+                return ProvjeriObrisano("RatArkod", "RatArkodId");
+            if (sql.IndexOf("spPrnTroskoviGlaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "0"))
+                return ProvjeriTrosak(true);
+            if (sql.IndexOf("spPrnTroskoviDetAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "0"))
+                return ProvjeriStavku();
+            if (sql.IndexOf("spPrnTroskoviGlaAzur", StringComparison.OrdinalIgnoreCase) >= 0 && Akcija(sql, "2"))
+                return ProvjeriObrisano("PrnTroskoviGla", "PrnTroskoviGlaId");
             return "poslano: " + sql;
         }
 
@@ -1316,6 +1423,56 @@ namespace Carpo.NetGen.Ui
             if (naziv != (DijalogTok.TekstUpisa ?? "").TrimEnd())
                 return "GRESKA " + tablica + ".Naziv je '" + naziv + "', očekivano " + DijalogTok.TekstUpisa;
             return tablica + " id=" + id + " Naziv=" + naziv;
+        }
+
+        private string ProvjeriVeze(bool dodane)
+        {
+            string id = _testId.Length == 0 ? "0" : _testId;
+            DataTable t = Citaj("select count(*) as n from LnRobaWebKlase where KlRobaWebKlaseId = " + id);
+            int n = t == null || t.Rows.Count == 0 ? 0 : Convert.ToInt32(t.Rows[0]["n"]);
+            if (dodane && n == 0)
+                return "GRESKA multiselect nije ubacio robu u klasu " + id;
+            if (!dodane && n != 0)
+                return "GRESKA uklanjanje je ostavilo " + n.ToString() + " veza";
+            return (dodane ? "dodano " : "uklonjeno ") + "veza=" + n.ToString() + " klasa=" + id;
+        }
+
+        private string ProvjeriArkod(bool novi)
+        {
+            string tekst = (DijalogTok.TekstUpisa ?? "").Replace("'", "''");
+            DataTable t = Citaj("select top 1 cast(RatArkodId as varchar(20)) as id from RatArkod where Naziv = N'" + tekst + "'");
+            if (t == null || t.Rows.Count == 0)
+                return "GRESKA nema reda u RatArkod.Naziv=" + DijalogTok.TekstUpisa;
+            _testId = Convert.ToString(t.Rows[0]["id"]);
+            _master.Kontekst.Id = _testId;
+            DataTable k = Citaj("select count(*) as n from RatArkodKat where RatArkodId = " + _testId);
+            int n = k == null || k.Rows.Count == 0 ? 0 : Convert.ToInt32(k.Rows[0]["n"]);
+            if (novi && n == 0)
+                return "GRESKA arkod " + _testId + " nema katastarsku česticu";
+            return "RatArkod.Naziv=" + DijalogTok.TekstUpisa + " id=" + _testId + " cestice=" + n.ToString();
+        }
+
+        private string ProvjeriTrosak(bool novi)
+        {
+            DataTable t = Citaj("select top 1 cast(PrnTroskoviGlaId as varchar(20)) as id from PrnTroskoviGla where KlMasterRobaId is null and RobaId is null order by PrnTroskoviGlaId desc");
+            if (t == null || t.Rows.Count == 0)
+                return "GRESKA nema zaglavlja troška";
+            if (novi)
+            {
+                _testId = Convert.ToString(t.Rows[0]["id"]);
+                _master.Kontekst.Id = _testId;
+            }
+            return "PrnTroskoviGla id=" + Convert.ToString(t.Rows[0]["id"]);
+        }
+
+        private string ProvjeriStavku()
+        {
+            string id = _testId.Length == 0 ? "0" : _testId;
+            DataTable t = Citaj("select count(*) as n from PrnTroskoviDet where PrnTroskoviGlaId = " + id);
+            int n = t == null || t.Rows.Count == 0 ? 0 : Convert.ToInt32(t.Rows[0]["n"]);
+            if (n == 0)
+                return "GRESKA podforma nije ubacila stavku za gla " + id;
+            return "PrnTroskoviDet gla=" + id + " stavki=" + n.ToString();
         }
 
         private string ProvjeriObrisano(string tablica, string kljuc)
