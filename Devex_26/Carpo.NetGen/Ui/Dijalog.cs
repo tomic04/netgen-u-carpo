@@ -173,33 +173,14 @@ namespace Carpo.NetGen.Ui
             PrimijeniOnLoad();
             if (modal)
             {
-                // Form1.vb 5362: Form2.ShowDialog(Me). Form1 je običan Form, nije RibbonForm.
-                // ShowDialog(RibbonForm) iz klika ne uđe u petlju. Običan Form kao vlasnik
-                // XtraFormu baci KeyNotFound u skinu i otvori ThreadExceptionDialog, koji
-                // onda drži ShowDialog. Vlasnik mora biti XtraForm, a ne ribbon.
+                // Form1.vb 5362: Form2.ShowDialog(Me). Ribbon kao vlasnik ne uđe u petlju.
+                // Običan Form kao vlasnik XtraFormu baci KeyNotFound. Skriveni vlasnik
+                // iz klika na podlozi ne vrati Show. Bez takvog vlasnika ostaje ShowDialog().
                 Form nosac = VlasnikXtra(vlasnik);
-                Form skriven = null;
-                if (nosac == null)
-                {
-                    var x = new XtraForm();
-                    x.ShowInTaskbar = false;
-                    x.FormBorderStyle = FormBorderStyle.None;
-                    x.StartPosition = FormStartPosition.Manual;
-                    x.Location = new System.Drawing.Point(-32000, -32000);
-                    x.Size = new System.Drawing.Size(1, 1);
-                    x.Show();
-                    skriven = x;
-                    nosac = x;
-                }
-                try
-                {
+                if (nosac != null)
                     ShowDialog(nosac);
-                }
-                finally
-                {
-                    if (skriven != null)
-                        skriven.Close();
-                }
+                else
+                    ShowDialog();
             }
         }
 
