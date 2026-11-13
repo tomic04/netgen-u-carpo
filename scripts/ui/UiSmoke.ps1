@@ -62,6 +62,8 @@ foreach ($rel in $granule) {
     $tekst = ""
     if (Test-Path -LiteralPath ($png + ".txt")) { $tekst = Get-Content -LiteralPath ($png + ".txt") -Raw }
     Write-Host $tekst
+    $kljuc = $png + ".kljuc.txt"
+    if (Test-Path -LiteralPath $kljuc) { Write-Host (Get-Content -LiteralPath $kljuc -Raw) }
     $snimkaGreska = $png + ".snimka.txt"
     if (Test-Path -LiteralPath $snimkaGreska) { Write-Host (Get-Content -LiteralPath $snimkaGreska -Raw) }
     $prozori = $png + ".prozori.txt"
