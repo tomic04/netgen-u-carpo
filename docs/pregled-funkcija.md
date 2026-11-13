@@ -223,3 +223,17 @@ Form3 pri promjeni teksta (`trazilica-dijalog`, `Form2.vb` 5820–5881), `KeyDow
 | `New` 1433, `Finalize` 1429 | Nema | isto | |
 
 U Class1 bloku, 24 metode: 7 isto (`ExecSql`, `ExecSql2`, `SrediSQLPosljeNextForme`, `NadjiVrijednostuPrevParametrima`, `CreateGridColumns`, `New`, `Finalize`), 12 nedostajalo-portano, 5 razlika (`NapuniCBLog` i `PokaziCBLog` idu u Carpo logger; `PrintRpt`, `IspisiMe7`, `IspisiMePrekoSpinPrintinga` su R112), 0 još nedostaje.
+
+## Ostali moduli, prvi blok
+
+`Form1` se ne dira. `Form3.Trazilica` SQL je već `Ponasanje.TrazilicaSql` (`trazilica` test).
+
+| NetGen | Carpo | Status | Test |
+|---|---|---|---|
+| `SpinAppDataFolderDotNet` 48, `JupiterAppDataFolderDotNet` 59, `JupiterGridSettingsFolderDotNet` 70 | `OstaliModuli.SpinMapa`, `JupiterMapa`, `GridSettingsMapa`. Stvara se roditelj, ne mapa Grid Settings | nedostajalo-portano | `mape-spin` |
+| `PutanjaSlike` 136 | `OstaliModuli.PutanjaSlike` | nedostajalo-portano | `mape-spin` |
+| `JupiterLog.Sredi` 122, `SakrijVrijednost` 141 | `OstaliModuli.SrediLog`. `Assembly.Load("JupiterLogger")` se ne zove | nedostajalo-portano | `log-sredi` |
+| `Encrypt` / `Decrypt` / `KeyToBytes` | `OstaliModuli.Kriptiraj`, `Dekriptiraj`, `Kljuc` | nedostajalo-portano | `kript` |
+| `GetLast` 16 | `OstaliModuli.ZadnjiNamespace`. `MessageBox` se ne pali | nedostajalo-portano | `zadnji-form` |
+
+U ovom bloku: 5 nedostajalo-portano. `JupiterLogger.dll` ostaje van: redact ide u Carpo, učitavanje DLL-a nema.

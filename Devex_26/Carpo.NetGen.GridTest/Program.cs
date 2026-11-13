@@ -2079,6 +2079,32 @@ namespace Carpo.NetGen.GridTest
                 && Class1Pravila.NatpisBezSirine("Iznos0140") == "Iznos"
                 && !Class1Pravila.SmijeEdit("Naziv", "Naziv") && Class1Pravila.SmijeEdit("xNaziv", "Naziv")
                 && Class1Pravila.StupacOdaberi == "rcb555" && Class1Pravila.BojaEdita == "Azure", "");
+            string mapaT = Path.Combine(Path.GetTempPath(), "ng-spin-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                string gridMapa = OstaliModuli.GridSettingsMapa(mapaT);
+                T("mape-spin", gridMapa.EndsWith("\\SPIN Informatica\\Jupiter Software\\Grid Settings\\")
+                    && Directory.Exists(OstaliModuli.JupiterMapa(mapaT))
+                    && !Directory.Exists(gridMapa)
+                    && OstaliModuli.PutanjaSlike("D:\\Programi\\NetGen", "Firma") == "D:\\JupiterClient\\Firma\\logos\\"
+                    && OstaliModuli.PutanjaSlike("\\\\posluzitelj\\share\\NetGen", "Firma").IndexOf("\\\\posluzitelj\\JupiterClient\\Firma\\logos\\", StringComparison.Ordinal) >= 0, gridMapa);
+            }
+            finally
+            {
+                try { Directory.Delete(mapaT, true); } catch { }
+            }
+            string skraceno = new string('a', 2001);
+            T("log-sredi", OstaliModuli.SrediLog("pwd=tajna;x=1") == "pwd=***;x=1"
+                && OstaliModuli.SrediLog("Password=abc\"kraj") == "Password=***\"kraj"
+                && OstaliModuli.SrediLog(null) == ""
+                && OstaliModuli.SrediLog(skraceno).EndsWith("Ctrl+F11]"), "");
+            byte[] sifra = OstaliModuli.Kriptiraj("kruh", "tajna");
+            string nazad = OstaliModuli.Dekriptiraj(sifra, "tajna");
+            T("kript", Encoding.UTF8.GetString(OstaliModuli.Kljuc("tajna")) == "tajnaXXX"
+                && Encoding.UTF8.GetString(OstaliModuli.Kljuc("123456789")) == "12345678"
+                && nazad.IndexOf("kruh", StringComparison.Ordinal) >= 0, nazad);
+            T("zadnji-form", OstaliModuli.ZadnjiNamespace(new string[] { "A.NetGen", "B.Drugi", "C.NetGen.Forma" }, "NetGen") == "C.NetGen.Forma"
+                && OstaliModuli.ZadnjiNamespace(new string[] { "A.X" }, "NetGen") == null, "");
             T("dx-format", Class1Pravila.KljucKolone(0, "Iznos") == "Iznos" && Class1Pravila.KljucKolone(3, "Iznos") == "3"
                 && Class1Pravila.SirinaXml(140) == 10 && Class1Pravila.SirinaXml(0) == 0
                 && Class1Pravila.Natpis("a;b") == "a\r\nb" && Class1Pravila.SakrijSve("TRUE")
