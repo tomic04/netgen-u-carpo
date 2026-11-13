@@ -352,7 +352,7 @@ namespace Carpo.NetGen.Ui
                     || v == "eval" || v == "sljedeci" || v == "prethodni" || v == "naredba"
                     || v == "recalc" || v == "recalcred" || v == "toggle" || v == "priprema" || v == "pivot" || v == "chart" || v == "boja" || v == "posalji" || v == "pokretanje" || v == "beep" || v == "ispisext"
                     || v == "eval" || v == "sljedeci" || v == "prethodni" || v == "svekontrole" || v == "proces" || v == "mapa" || v == "datotekadlg" || v == "ispis" || v == "blagajna"
-                    || v == "timer" || v == "timeroff" || v == "progres" || v == "trazi" || v == "stupac" || v == "objekt")
+                    || v == "timer" || v == "timeroff" || v == "progres" || v == "trazi" || v == "stupac" || v == "objekt" || v == "predlozak")
                     lanac = true;
             }
             if (lanac)
@@ -581,7 +581,7 @@ namespace Carpo.NetGen.Ui
                         NgDnevnik.Akcija(BlagajnaNaredba.Upit(BlagajnaNaredba.Id(korak.Tekst)));
                         continue;
                     }
-                    if (korak.Vrsta == "ispis")
+                    if (korak.Vrsta == "ispis" || korak.Vrsta == "predlozak")
                     {
                         Carpo.NetGen.Print.PrintBridge.Ispisi(korak.Tekst, true, Id, Operater, Konekcija, "", ZadnjiSql, "", SviParametri(), "", "", "", Text, null, "", null);
                         continue;

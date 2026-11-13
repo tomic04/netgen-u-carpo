@@ -332,6 +332,8 @@ namespace Carpo.NetGen.Komande
                     k.Vrsta = "ok";
                 else if (u == "OKSTAY")
                     k.Vrsta = "okstay";
+                else if (Carpo.NetGen.Print.PrintBridge.JePredlozak(t))
+                    k.Vrsta = "predlozak";
                 else if (t.StartsWith(":", StringComparison.Ordinal))
                 {
                     k.Vrsta = "forma";
