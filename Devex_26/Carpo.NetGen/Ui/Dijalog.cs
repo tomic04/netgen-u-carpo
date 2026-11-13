@@ -458,13 +458,13 @@ namespace Carpo.NetGen.Ui
         private void IzvrsiForeach(string opis)
         {
             string opisTekst = opis ?? "";
-            int a = opisTekst.IndexOf('|');
-            int b = a < 0 ? -1 : opisTekst.IndexOf('|', a + 1);
-            if (a < 0 || b < 0)
+            int crta1 = opisTekst.IndexOf('|');
+            int crta2 = crta1 < 0 ? -1 : opisTekst.IndexOf('|', crta1 + 1);
+            if (crta1 < 0 || crta2 < 0)
                 return;
-            string vrsta = opisTekst.Substring(0, a);
-            string gridIme = opisTekst.Substring(a + 1, b - a - 1);
-            string tijelo = opisTekst.Substring(b + 1);
+            string vrsta = opisTekst.Substring(0, crta1);
+            string gridIme = opisTekst.Substring(crta1 + 1, crta2 - crta1 - 1);
+            string tijelo = opisTekst.Substring(crta2 + 1);
             GridControl grid = null;
             foreach (Control c in Controls)
             {
@@ -503,8 +503,8 @@ namespace Carpo.NetGen.Ui
                     for (int r = 0; r < pogled.DataRowCount; r++)
                     {
                         int h = pogled.GetRowHandle(r);
-                        object b = pogled.GetRowCellValue(h, kol);
-                        if (b is bool && (bool)b)
+                        object kvaka = pogled.GetRowCellValue(h, kol);
+                        if (kvaka is bool && (bool)kvaka)
                             cek.Add(Celija(pogled, h));
                     }
                 }
