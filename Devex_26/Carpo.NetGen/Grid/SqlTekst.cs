@@ -286,5 +286,34 @@ namespace Carpo.NetGen.Grid
                 throw new InvalidOperationException("jupiter2022 se ne koristi.");
             return "Server=" + server + ";Database=" + baza + ";Integrated Security=true;TrustServerCertificate=True;";
         }
+
+        /// <summary>
+        /// Ime aplikacije u SQL Profileru i sp_who (APP-01). NetGen: "NetGenDLL-" + ime XML-a (Form1 1176-1177,
+        /// 1564). Carpo granula: ime sklopa + "." + modul (Starter 109). Port: "Carpo.NetGen." + ime XML-a bez nastavka.
+        /// </summary>
+        public static string SaAplikacijom(string spoj, string xmlPut)
+        {
+            string ime = "";
+            try
+            {
+                ime = System.IO.Path.GetFileNameWithoutExtension((xmlPut ?? "").Trim()) ?? "";
+            }
+            catch (ArgumentException)
+            {
+                ime = "";
+            }
+            var sb = new System.Text.StringBuilder("Carpo.NetGen");
+            if (ime.Length > 0)
+                sb.Append('.');
+            for (int i = 0; i < ime.Length && sb.Length < 120; i++)
+            {
+                char c = ime[i];
+                sb.Append(c == ';' || c == '=' || c == '\'' || c == '"' ? '_' : c);
+            }
+            string s = spoj ?? "";
+            if (s.Length > 0 && !s.EndsWith(";", StringComparison.Ordinal))
+                s += ";";
+            return s + "Application Name=" + sb.ToString() + ";";
+        }
     }
 }
