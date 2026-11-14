@@ -427,15 +427,8 @@ namespace Carpo.NetGen.Ui
                 OsvjeziMaster();
                 return;
             }
-            NgForm forma = null;
-            for (int i = 0; i < _projekt.Forme.Count; i++)
-            {
-                if (string.Equals(_projekt.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
-                {
-                    forma = _projekt.Forme[i];
-                    break;
-                }
-            }
+            // Glavni XML, pa INCLUDE (Form2.ProcitajXML 840-934, XML-02).
+            NgForm forma = IncludeForme.Nadji(_projekt, ime);
             if (forma == null)
             {
                 NgDnevnik.Akcija("nema forme " + ime);
@@ -1882,14 +1875,8 @@ namespace Carpo.NetGen.Ui
                 ime = ime.Substring(0, hash);
             if (ime.StartsWith(":", StringComparison.Ordinal))
                 ime = ime.Substring(1);
-            for (int i = 0; i < _projekt.Forme.Count; i++)
-            {
-                if (!string.Equals(_projekt.Forme[i].Ime, ime.Trim(), StringComparison.OrdinalIgnoreCase))
-                    continue;
-                if (Pise(_projekt.Forme[i].OnSubmit) || Pise(_projekt.Forme[i].OnLoad))
-                    return true;
-            }
-            return false;
+            NgForm f = IncludeForme.Nadji(_projekt, ime.Trim());
+            return f != null && (Pise(f.OnSubmit) || Pise(f.OnLoad));
         }
 
         private static bool Pise(string tekst)

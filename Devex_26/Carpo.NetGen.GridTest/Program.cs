@@ -1995,6 +1995,7 @@ namespace Carpo.NetGen.GridTest
             StatusDijaloga();
             GridDijalogaStupci();
             LozinkaULogu();
+            IncludeFormi();
             DozvoleDijaloga();
             IspisGridaDijaloga();
             BojeIzUpita();
@@ -2832,6 +2833,48 @@ namespace Carpo.NetGen.GridTest
         /// Faza C4 (DGR-01, DGR-02): grid dijaloga s COLUMN djecom i CLEARCOLUMS (Form2.vb 1798-1957),
         /// GROUPBYBOXVISIBLE, FROZENCOLUMNS, FILTERMODE, TOTALROW s AGREGATEFUNCTION; osvjezavanje ne dira stupce.
         /// </summary>
+        /// <summary>XML-02: forma iz INCLUDE datoteke (Form2.ProcitajXML 840-934), glavni XML ima prednost.</summary>
+        private static void IncludeFormi()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "nginc" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                string glavni = Path.Combine(dir, "Glavni.xml");
+                File.WriteAllText(glavni, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT INCLUDE=\"Inc.xml#Nema.xml\">\r\n<NAME>G</NAME>\r\n"
+                    + "<A CAPTION=\"iz glavnog\"><INPUT TYPE=\"text\" NAME=\"t\" /></A>\r\n"
+                    + "<C INCLUDE=\"Inc2.xml\" CAPTION=\"c\"><INPUT TYPE=\"text\" NAME=\"t\" /></C>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+                File.WriteAllText(Path.Combine(dir, "Inc.xml"), "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT INCLUDE=\"Inc3.xml\">\r\n<NAME>I</NAME>\r\n"
+                    + "<A CAPTION=\"iz includea\"><INPUT TYPE=\"text\" NAME=\"t\" /></A>\r\n"
+                    + "<B_INC CAPTION=\"b\"><INPUT TYPE=\"text\" NAME=\"u\" /></B_INC>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+                File.WriteAllText(Path.Combine(dir, "Inc2.xml"), "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT>\r\n<NAME>I2</NAME>\r\n"
+                    + "<D CAPTION=\"d\"><INPUT TYPE=\"text\" NAME=\"v\" /></D>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+                File.WriteAllText(Path.Combine(dir, "Inc3.xml"), "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT>\r\n<NAME>I3</NAME>\r\n"
+                    + "<E CAPTION=\"e\"><INPUT TYPE=\"text\" NAME=\"w\" /></E>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+                var r = Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(glavni);
+                NgProject p = r.Projekt;
+                NgForm a = Carpo.NetGen.Xml.IncludeForme.Nadji(p, "a");
+                NgForm b = Carpo.NetGen.Xml.IncludeForme.Nadji(p, "B_INC");
+                NgForm d = Carpo.NetGen.Xml.IncludeForme.Nadji(p, "D");
+                NgForm e = Carpo.NetGen.Xml.IncludeForme.Nadji(p, "E");
+                T("inc01-glavni-prvi", a != null && a.Atributi.Vrijednost("CAPTION") == "iz glavnog", a == null ? "nema" : a.Atributi.Vrijednost("CAPTION"));
+                T("inc01-ukljucen", b != null && b.Kontrole.Count == 1 && b.Kontrole[0].Name == "u", "");
+                T("inc01-include-forme", d != null, "");
+                // VB uvozi samo djecu uključenog PROJECT-a; njegov INCLUDE se ne slijedi.
+                T("inc01-ne-slijedi", e == null && Carpo.NetGen.Xml.IncludeForme.Nadji(p, "NEPOSTOJI") == null, "");
+                T("inc01-gumb", Carpo.NetGen.Komande.GumbTok.Akcija(p, ":B_INC") == "forma" && Carpo.NetGen.Komande.GumbTok.Akcija(p, ":NEPOSTOJI") == "osvjezi",
+                    Carpo.NetGen.Komande.GumbTok.Akcija(p, ":B_INC"));
+            }
+            catch (Exception ex)
+            {
+                T("inc01", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }
+
         private static string ZadnjiZapis()
         {
             return NgDnevnik.Zapisi.Count == 0 ? "" : NgDnevnik.Zapisi[NgDnevnik.Zapisi.Count - 1].Tekst;

@@ -62,14 +62,8 @@ namespace Carpo.NetGen.Komande
 
         private static bool ImaFormu(NgProject projekt, string ime)
         {
-            if (projekt == null || projekt.Forme == null || ime.Length == 0)
-                return false;
-            for (int i = 0; i < projekt.Forme.Count; i++)
-            {
-                if (string.Equals(projekt.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
+            // Forma može biti u INCLUDE datoteci (XML-02).
+            return Carpo.NetGen.Xml.IncludeForme.Nadji(projekt, ime) != null;
         }
     }
 }
