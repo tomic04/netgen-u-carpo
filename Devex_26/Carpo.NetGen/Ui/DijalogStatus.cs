@@ -87,6 +87,36 @@ namespace Carpo.NetGen.Ui
             }
         }
 
+        /// <summary>VEL-01: ključ kao Form2 (strXML-strImeForme-Version1-Version2). Bez puta XML-a nema pamćenja.</summary>
+        private string KljucVelicine()
+        {
+            if (_kontekst == null || string.IsNullOrEmpty(_kontekst.XmlPut) || _forma == null)
+                return "";
+            return VelicinaDijaloga.Kljuc(_kontekst.XmlPut, _forma.Ime, _kontekst.ProjektVerzija, AtributForme("VERSION"));
+        }
+
+        private void VratiVelicinu()
+        {
+            string kljuc = KljucVelicine();
+            int visina;
+            int sirina;
+            // Bez korisnika (CI, klik pregled) veličina iz registra bi mijenjala slike i testove.
+            if (kljuc.Length == 0 || NgPoruka.BezKorisnika() || !VelicinaDijaloga.Procitaj(kljuc, out visina, out sirina))
+                return;
+            Height = visina;
+            Width = sirina;
+        }
+
+        private void SpremiVelicinu()
+        {
+            string kljuc = KljucVelicine();
+            if (kljuc.Length == 0 || NgPoruka.BezKorisnika())
+                return;
+            // VB sprema i maksimiziranu veličinu; Carpo sprema normalnu (RestoreBounds), da se ne vrati golema.
+            System.Drawing.Size s = WindowState == FormWindowState.Normal ? Size : RestoreBounds.Size;
+            VelicinaDijaloga.Spremi(kljuc, s.Height, s.Width);
+        }
+
         private string StatusDio(string predlozak)
         {
             string t = Ponasanje.StatusTekst(predlozak);

@@ -1995,6 +1995,8 @@ namespace Carpo.NetGen.GridTest
             StatusDijaloga();
             GridDijalogaStupci();
             LozinkaULogu();
+            RokUpita();
+            VelicinaUZapisu();
             NaslovDijaloga();
             IncludeFormi();
             IzvorXmla();
@@ -2966,6 +2968,55 @@ namespace Carpo.NetGen.GridTest
             catch (Exception ex)
             {
                 T("cap01", false, ex.GetType().Name + ": " + ex.Message);
+            }
+        }
+
+        /// <summary>VEL-01: SaveSetting/GetSetting("Jupiter", "FormHeight"/"FormWidth", strXML-forma-Version1-Version2).</summary>
+        private static void VelicinaUZapisu()
+        {
+            string stari = Carpo.NetGen.Ui.VelicinaDijaloga.Korijen;
+            string test = @"Software\CarpoNetGenTest" + Guid.NewGuid().ToString("N").Substring(0, 6);
+            try
+            {
+                Carpo.NetGen.Ui.VelicinaDijaloga.Korijen = test + @"\Jupiter";
+                string k = Carpo.NetGen.Ui.VelicinaDijaloga.Kljuc(@"\\srv\Jupiter\SharedDLLs\xml\JOPPD.xml", "IZMJENA", "3", "");
+                T("vel01-kljuc", k == @"\\srv\Jupiter\SharedDLLs\xml\JOPPD.xml-IZMJENA-3-", k);
+                int v, w;
+                bool prije = Carpo.NetGen.Ui.VelicinaDijaloga.Procitaj(k, out v, out w);
+                Carpo.NetGen.Ui.VelicinaDijaloga.Spremi(k, 321, 654);
+                bool poslije = Carpo.NetGen.Ui.VelicinaDijaloga.Procitaj(k, out v, out w);
+                T("vel01-registar", !prije && poslije && v == 321 && w == 654, v + "x" + w);
+            }
+            catch (Exception ex)
+            {
+                T("vel01", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                Carpo.NetGen.Ui.VelicinaDijaloga.Korijen = stari;
+                try { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(test, false); } catch (Exception) { }
+            }
+        }
+
+        /// <summary>TMO-01: COMMANDTIMEOUT projekta i forme (Form1 3463, Form2 1035, Class1 99).</summary>
+        private static void RokUpita()
+        {
+            int stari = Carpo.NetGen.Komande.VrijemeUpita.Najvise;
+            try
+            {
+                var sa = new NgAttributeBag(new Dictionary<string, string> { { "COMMANDTIMEOUT", "600" } });
+                var krivo = new NgAttributeBag(new Dictionary<string, string> { { "COMMANDTIMEOUT", "abc" } });
+                var bez = new NgAttributeBag(new Dictionary<string, string>());
+                T("tmo01-atribut", Carpo.NetGen.Komande.VrijemeUpita.Iz(sa, 30) == 600 && Carpo.NetGen.Komande.VrijemeUpita.Iz(krivo, 300) == 300
+                    && Carpo.NetGen.Komande.VrijemeUpita.Iz(bez, 120) == 120, "");
+                Carpo.NetGen.Komande.VrijemeUpita.Najvise = 0;
+                bool slobodno = Carpo.NetGen.Komande.VrijemeUpita.Stvarno(600) == 600;
+                Carpo.NetGen.Ui.Podloga.TimeoutUpita = 1;
+                T("tmo01-granica", slobodno && Carpo.NetGen.Komande.VrijemeUpita.Stvarno(600) == 1 && Carpo.NetGen.Komande.VrijemeUpita.Stvarno(0) == 1, "");
+            }
+            finally
+            {
+                Carpo.NetGen.Komande.VrijemeUpita.Najvise = stari;
             }
         }
 

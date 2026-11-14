@@ -30,6 +30,9 @@ namespace Carpo.NetGen.Grid
         public string ProjektNaslov = "";
         /// <summary>strHelpKod (HELPKOD projekta, velikim slovima): dijalog bez svog HELPKOD-a koristi njega (Form2.vb 1050).</summary>
         public string HelpKod = "";
+        /// <summary>strXML (put XML-a, remotedllpath\SharedDLLs\xml\Mid) i Version1 (VERSION projekta): ključ veličine dijaloga (VEL-01).</summary>
+        public string XmlPut = "";
+        public string ProjektVerzija = "";
         /// <summary>
         /// Medjuspremnik podloge (SETDEFAULTS, Form1.vb 3945-4009). U NetGenu je cls1.CB globalan,
         /// pa ga NadjiVrijednostuPrevParametrima vidi i u dijalogu i na gumbu (CB-01).
@@ -217,6 +220,8 @@ namespace Carpo.NetGen.Grid
                 k.SelectedPath = izvor.SelectedPath;
                 k.ProjektNaslov = izvor.ProjektNaslov;
                 k.HelpKod = izvor.HelpKod;
+                k.XmlPut = izvor.XmlPut;
+                k.ProjektVerzija = izvor.ProjektVerzija;
                 k.Clipboard = izvor.Clipboard;
             }
             if (string.IsNullOrEmpty(k.Id))

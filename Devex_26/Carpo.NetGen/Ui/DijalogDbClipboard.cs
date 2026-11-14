@@ -34,6 +34,8 @@ namespace Carpo.NetGen.Ui
                 catch (Exception ex) { NgDnevnik.Greska("FormClosing: " + ex.Message); }
                 finally { _zatvaram = false; }
             }
+            // Form2.vb 4108-4109: SaveSetting FormHeight/FormWidth (VEL-01).
+            SpremiVelicinu();
             base.OnFormClosing(e);
         }
         private readonly Dictionary<string, string> _dbCbZapisano = new Dictionary<string, string>(StringComparer.Ordinal);

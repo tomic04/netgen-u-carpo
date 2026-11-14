@@ -85,6 +85,10 @@ Zatvaranje (DBC-02): `Form2_FormClosing` 4095-4099 uz RSDBCLIPBOARD još jednom 
 
 Isto vrijedi za tekst labele, okvira i panela (1324, 1369, 1399; LBL-01): 64 labele i 2 okvira u korpusu imaju `@@` (`Želite li obrisati tablu @@Šifra ?`). Labela koja postane `null` je prazna. Test `lbl01-natpis`.
 
+## Veličina dijaloga (VEL-01)
+
+`Form2_FormClosing` 4108-4109 sprema visinu i širinu kroz VB `SaveSetting("Jupiter", "FormHeight"/"FormWidth", ključ)`, a `ProcitajXML` 2785-2790 ih vraća kad forma nije WINDOWSTATE 2 i ima MaximizeBox. Ključ je `strXML-strImeForme-Version1-Version2`: put XML-a (`remotedllpath\SharedDLLs\xml\ime.xml`), ime forme, VERSION projekta i VERSION forme. Carpo nije pamtio veličinu. Sada `VelicinaDijaloga` čita i piše isti ključ u `HKCU\Software\VB and VBA Program Settings\Jupiter`, pa vrati veličinu koju je korisnik namjestio još u NetGenu. Bez korisnika (CI, klik pregled) se ne čita ni ne piše. Maksimiziran dijalog sprema normalnu veličinu (R121). Test `vel01-*`.
+
 ## Otvoreno
 
 - `TIMERSQL` (4 forme, 1 granula): Timer2 je u NetGenu ugašen dok ga `TIMERON(n)` ne upali, a `TIMERON` nema nigdje u korpusu, pa se ni u NetGenu ne izvršava.

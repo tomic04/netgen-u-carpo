@@ -152,6 +152,10 @@ namespace Carpo.NetGen.Ui
             kontekst.XmlName = Path.GetFileName(xml ?? "");
             kontekst.ProjektNaslov = Text;
             kontekst.HelpKod = AtributProjekta("HELPKOD").ToUpperInvariant();
+            // Form1 3463: COMMANDTIMEOUT projekta vrijedi za svaki SQL (TMO-01).
+            _vrijemeUpita = VrijemeUpita.Iz(_projekt.Atributi, VrijemeUpita.Zadano);
+            kontekst.XmlPut = xml ?? "";
+            kontekst.ProjektVerzija = AtributProjekta("VERSION");
             kontekst.Version = NgVerzija.Tekst();
             kontekst.Node = "null";
             _stablo.Kontekst = kontekst;
@@ -434,6 +438,13 @@ namespace Carpo.NetGen.Ui
                 NgDnevnik.Akcija("nema forme " + ime);
                 OsvjeziMaster();
                 return;
+            }
+            // Form2 1035: COMMANDTIMEOUT forme zamijeni strCommandTimeout i ostane (TMO-01).
+            int rok = VrijemeUpita.Iz(forma.Atributi, _vrijemeUpita);
+            if (rok != _vrijemeUpita)
+            {
+                _vrijemeUpita = rok;
+                _master.Stanje.TimeoutSekundi = rok;
             }
             if (MultiOdabir.Je(ime))
                 NapuniOdabir(ime);
@@ -1084,7 +1095,7 @@ namespace Carpo.NetGen.Ui
                 using (var cmd = new System.Data.SqlClient.SqlCommand(sql, conn))
                 using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
                 {
-                    cmd.CommandTimeout = TimeoutUpita;
+                    cmd.CommandTimeout = VrijemeUpita.Stvarno(_vrijemeUpita);
                     conn.Open();
                     da.Fill(dt);
                 }
@@ -1104,7 +1115,15 @@ namespace Carpo.NetGen.Ui
             }
         }
 
-        public static int TimeoutUpita = 30;
+        /// <summary>Gornja granica roka za sweep (TestShell); 0 je bez granice. COMMANDTIMEOUT je TMO-01.</summary>
+        public static int TimeoutUpita
+        {
+            get { return VrijemeUpita.Najvise; }
+            set { VrijemeUpita.Najvise = value; }
+        }
+
+        /// <summary>strCommandTimeout ove podloge: PROJECT COMMANDTIMEOUT, pa zadnja forma koja ga ima (TMO-01).</summary>
+        private int _vrijemeUpita = VrijemeUpita.Zadano;
         public static int MaxUpita = int.MaxValue;
         public static DateTime RokUtc = DateTime.MaxValue;
         private int _brojUpita;

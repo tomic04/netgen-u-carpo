@@ -92,6 +92,12 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 - **Zašto ostaje:** plan, faza G. `NgDnevnik` umjesto `@ime='…'` polja s lozinkom piše `'***'`. Upisana vrijednost (3 znaka i više) skriva se i bez imena. Lista zapisa drži zadnjih 1000; cijeli log je u Carpo Loggeru. Ctrl+F11 na dijalogu i podlozi upiše parametre u Carpo log i otvori njegov prozor (LOG-01).
 - **Test:** `log01-ime`, `log01-vrijednost`, `log01-kratka`, `log01-granica`, `log01-dijalog`
 
+### R121 Maksimiziran dijalog pamti normalnu veličinu
+
+- **NetGen:** `SaveSetting` sprema `Me.Height`/`Me.Width` i kad je dijalog maksimiziran, pa se idući put otvori golem, ali ne maksimiziran.
+- **Zašto ostaje:** Carpo sprema `RestoreBounds` (normalnu veličinu) kad dijalog nije Normal (VEL-01). Ključ i mjesto u registru su isti kao u NetGenu.
+- **Test:** `vel01-registar`
+
 ## Uklonjeno
 
 Svaka uklonjena stavka ima test koji provjerava NetGen linije. R59 i R110 su portani: redni stupac grida, gumbi 79/8 na dnu, slika čvora 0, `PageHeaderFooter` Left/Center/Right.
