@@ -2639,7 +2639,7 @@ namespace Carpo.NetGen.Ui
 
         private string SviParametri()
         {
-            return SviParametri(false);
+            return Parametri(false);
         }
 
         /// <summary>
@@ -2654,7 +2654,7 @@ namespace Carpo.NetGen.Ui
         /// </summary>
         private string ParametriZaOnSubmit()
         {
-            string p = SviParametri(true);
+            string p = Parametri(true);
             if (p.EndsWith(",", StringComparison.Ordinal))
                 p = p.Substring(0, p.Length - 1);
             if (DijalogTok.NextForm(_forma).Length == 0 && p.Trim().Length > 0 && p.IndexOf("@grid", StringComparison.Ordinal) >= 0)
@@ -2678,7 +2678,7 @@ namespace Carpo.NetGen.Ui
             return tag.StartsWith("_", StringComparison.Ordinal);
         }
 
-        private string SviParametri(bool zaOnSubmit)
+        private string Parametri(bool zaOnSubmit)
         {
             var sb = new StringBuilder();
             foreach (Control c in SveKontrole())
