@@ -69,5 +69,5 @@ Sada `Prozor.Otvori` svaku granulu otvara u Podlozi; `ObicnaForma` i `OdabirForm
 |---|---|---|
 | FOR-02 | FOREACH* na podlozi: NetGen ne vrti petlju (Rafalno preskoči tijelo, NovaGenerickaForma ga otvori kao formu); Carpo `IzvrsiLanac` vrti čitanja | treba odluka: VB ponašanje je praktički "ne radi ništa" |
 | TREE-SQL | čvor stabla s `select`/`sp`/`exec`: Carpo puni grid, NetGen `NovaGenerickaForma` (forma ili gumbi) | u korpusu čvorovi nose imena formi; provjeriti s novih 500-600 granula |
-| TRANSLATECOLUMNS | 2 | `Translate` vrijednosti ćelija; bez jezika (hrv) ne mijenja ništa, Carpo nema prevoditelja za podlogu |
+| PRV-01 (TRANSLATECOLUMNS, TREETRANSLATE, `Translate` natpisa) | jezik iz `jupitersystem..loginimages` / `MPKase` (Form1 1418-1440), pa `JupiterTranslator.Translator.TranslateString(tekst, "NetGen")` za natpise forme, gumbe, izbornike, stablo i ćelije iz TRANSLATECOLUMNS (2) | `Prevod`/`Prevoditelj` postoje, ali jezik i prevoditelj nisu spojeni, pa je sve na izvornom jeziku (za hrv i prazan jezik isto kao NetGen). Carpo ima `Carpo.Common.Translator` (isti JupiterTranslator, Init sa serverom iz Jupiter ini-ja); spojiti kad se zna da neki klijent radi na drugom jeziku |
 | SQL-01, B-JUP | upis na jupiter2019/2022 | čeka korisnika |
