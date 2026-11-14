@@ -395,8 +395,10 @@ namespace Carpo.NetGen.GridTest
                 Carpo.NetGen.Poziv.FiskalPoziv.Cis = null;
             }
             T("param-radio", Carpo.NetGen.Komande.ParametriSvi.Radio("r1", true) == "@r1=1,", "");
-            T("param-search", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "0", "Kava, mljevena") == "@roba=null,@searchboxroba='Kava  mljevena',", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "0", "Kava, mljevena"));
-            T("param-search-id", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "15", "Kava") == "@roba=15,@searchboxroba='Kava',", "");
+            // PAR-02: @searchboxIME ne ide u parametre ONSUBMIT-a (KntKompVerizne: "is not a parameter"), samo u CB.
+            T("param-search", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "0", "Kava, mljevena") == "@roba=null,", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "0", "Kava, mljevena"));
+            T("param-search-id", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "15", "Kava") == "@roba=15,", "");
+            T("param-search-natpis", Carpo.NetGen.Komande.ParametriSvi.SearchNatpis("roba", "Kava, mljevena") == "@searchboxroba='Kava  mljevena',", "");
             T("param-grid", Carpo.NetGen.Komande.ParametriSvi.Grid("stavke", "8", "8~9", "", 2) == "@stavke=8,@arrayofblueidsstavke='~8~9~',@nizplavihajdijevastavke='~8~9~',@nizoznacenihajdijevastavke='',@rowcountstavke=2,", Carpo.NetGen.Komande.ParametriSvi.Grid("stavke", "8", "8~9", "", 2));
             var sakrij = Carpo.NetGen.Komande.StupciNaredba.Primijeni("HIDECOLUMNS(mastergrid,oznaka)");
             bool oznaka = true;
