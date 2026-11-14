@@ -83,6 +83,7 @@ namespace Carpo.NetGen
                 ZadnjaGreska = "nema forme " + ime;
                 return;
             }
+            Action otpusti = null;
             try
             {
                 string spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj(server, database), putanja);
@@ -103,6 +104,17 @@ namespace Carpo.NetGen
                 d.Operater = k.OperaterId;
                 d.Id = k.Id;
                 var citac = new Carpo.NetGen.Ulaz.FrmCitac(spoj);
+                // SES-01: veza živi dok je dijalog otvoren, kao Conn u Form2.Run.
+                NgVeza.Prijavi(spoj);
+                bool otpustena = false;
+                otpusti = delegate
+                {
+                    if (otpustena)
+                        return;
+                    otpustena = true;
+                    NgVeza.Otpusti(spoj);
+                };
+                d.FormClosed += delegate { otpusti(); };
                 citac.Rok = Carpo.NetGen.Komande.VrijemeUpita.Iz(forma.Atributi, citac.Rok);
                 // ULZ-05: bez podloge dijalog sam otvara djecu (Form2.NovaGenerickaForma2).
                 d.OtvoriDrugu = delegate (string imeDjeteta) { OtvoriDijete(d, imeDjeteta, k, spoj, citac, 1); };
@@ -111,6 +123,7 @@ namespace Carpo.NetGen
                 if (!string.IsNullOrEmpty(d.GreskaOnLoad))
                 {
                     ZadnjaGreska = d.GreskaOnLoad;
+                    otpusti();
                     d.Dispose();
                     return;
                 }
@@ -125,6 +138,8 @@ namespace Carpo.NetGen
             {
                 ZadnjaGreska = ex.Message;
                 Carpo.NetGen.Log.NgDnevnik.Greska("frm.Run8: " + ex.Message);
+                if (otpusti != null && (Forma == null || Forma.IsDisposed))
+                    otpusti();
             }
         }
 
