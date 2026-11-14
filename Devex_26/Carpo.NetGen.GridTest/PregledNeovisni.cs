@@ -605,7 +605,7 @@ namespace Carpo.NetGen.GridTest
                     new NgControl("text", NgGrana.Text, "natpis", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "100" }, { "LEFT", "100" }, { "WIDTH", "2000" }, { "HEIGHT", "300" } }), true)
                 };
                 var pise = new NgForm("PISE", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Pise" } }), "", "dbo.spPregledNeovisni @k='jup'", kontrole, new List<NgButton>(), new List<string>());
-                var cita = new NgForm("CITA", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Cita" } }), "", "dbo.spPregledNeovisniTree", kontrole, new List<NgButton>(), new List<string>());
+                var cita = new NgForm("CITA", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Cita" } }), "", "select 'Korijen' as natpis", kontrole, new List<NgButton>(), new List<string>());
                 string natpis;
                 using (var d = new Dijalog())
                 {
