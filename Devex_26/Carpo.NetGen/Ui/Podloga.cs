@@ -182,6 +182,14 @@ namespace Carpo.NetGen.Ui
             _master.Clipboard = Carpo.NetGen.Kontrole.ClipboardNg.IzSetDefaults(zadano, kontekst, Citaj);
             // Isti CB vidi i dijalog (SqlTekst.ZaFormu) i gumb, kao cls1.CB u NetGenu (CB-01).
             kontekst.Clipboard = _master.Clipboard;
+            // Form1.vb 3964-3968: stupac formcaption iz SETDEFAULTS je naslov podloge (KntIzv306090).
+            string naslovIzZadanog;
+            if (_master.Clipboard != null && _master.Clipboard.TryGetValue("formcaption=", out naslovIzZadanog)
+                && !string.IsNullOrEmpty(naslovIzZadanog) && naslovIzZadanog != "null")
+            {
+                // strProjectCaption (Form1 3530, ime izgleda grida dijaloga) ostaje CAPTION projekta.
+                Text = naslovIzZadanog;
+            }
             UcitajDozvole();
             UcitajEditStupce();
             _master.Ucitaj(_projekt, null);

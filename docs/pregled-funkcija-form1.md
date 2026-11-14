@@ -4,6 +4,13 @@ Izvor je `netgen/Form1.vb`. Designer se ne broji. Status: isto, razlika, još ne
 
 Baza je `6a77c47`. Blokovi idu po pedeset funkcija.
 
+**Stanje 14. 11. 2026.** Tablica ispod je iz prolaza prije nego što je napravljena `Podloga`, pa većina redova s „nije na izvršnom putu” više ne vrijedi. Stvarni put podloge je u `docs/pregled/C3-podloga.md` (stupci, lanac, ispis, izbornici, DMS, dozvole, izgled grida, Jupiter ulaz ULZ-01..06, INCLUDE XML-02, DMS/baza XML-01, COMMANDTIMEOUT TMO-01, `formatid` FMT-01). Provjereno ponovo prema VB pozivima, bez Carpo para su ostale samo ove funkcije:
+- `NapuniMenuFolder`, `NapuniMenuBaza` (MENU, 0 u korpusu), `TimerOn`/`TimerOff`/`Timer1_Tick` (TIMER, 0 u korpusu), `TreeView2_DragDrop`/`DragOver` (TREEDRAGDROP, 0 u korpusu);
+- `Table/Card/SingleCardViewToolStripMenuItem_Click` (Janus prikaz kartica): Carpo izgled;
+- `OriginalToolStripMenuItem`, `MKToolStripMenuItem`, `ENToolStripMenuItem`, `NapuniRSLang`, `Jezici`, `PrevediSadrzajGrida2` (prijevod): PRV-01, čeka odluku;
+- `ClientToolbarGetButtons`/`ClientToolbarButtonClick`: zove ih samo stari `Loader.Run` (vraća Form1); `Run8` vraća `Nothing`, pa ih Jupiter nema na čemu zvati;
+- `WndProc` (WM_DISPLAYCHANGE/WM_DPICHANGED ponovo poravna prozor u panel): u Jupiteru 10 to radi praćenje panela (ULZ-06).
+
 ## Blok 1, funkcije 1–50
 
 | # | Funkcija | Linija | Carpo | Status | Test |

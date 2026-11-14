@@ -98,6 +98,11 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 - **Zašto ostaje:** Carpo sprema `RestoreBounds` (normalnu veličinu) kad dijalog nije Normal (VEL-01). Ključ i mjesto u registru su isti kao u NetGenu.
 - **Test:** `vel01-registar`
 
+### R122 Combo na izlazu ne ponavlja ONCLICK i ne skače na prvu stavku
+
+- **NetGen:** `AutoCompleteCombo_Leave` (Form2 9397-9409) na svakom izlasku iz comboa traži točan tekst. Ako ga ne nađe, postavi prvu stavku (`SelectedIndex = 0`), a zatim zove `Glbl_ComboClick`, pa se ONCLICK combo (223 u korpusu, 164 su `select` koji puni druga polja) izvrši još jednom, i bez promjene vrijednosti.
+- **Zašto ostaje:** Carpo `LookUpEdit` sam dopunjuje upisani tekst, a nepoznat tekst vrati na prošlu vrijednost. ONCLICK ide samo na promjenu vrijednosti (`EditValueChanged`), pa povratak u combo i izlazak bez promjene ne prepiše ručno ispravljena polja (50-50 → Carpo).
+
 ## Uklonjeno
 
 Svaka uklonjena stavka ima test koji provjerava NetGen linije. R59 i R110 su portani: redni stupac grida, gumbi 79/8 na dnu, slika čvora 0, `PageHeaderFooter` Left/Center/Right.

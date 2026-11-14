@@ -82,7 +82,7 @@ Korpus (584 granule): ONLOSTFOCUS 2 700+ (NUMBER 1 253, SEARCH 555, COMBO 515…
 Otvoreno iz ovog pregleda (stanje nakon C4):
 
 - ~~**FOR-01**~~: ispravljeno u C4 (`FOREACH*` vrti cijeli lanac po retku, test `for01-foreachrow`).
-- **SQL-07** (P2): lanac dijaloga sređuje SQL kroz `Pripremi` (`ZamijeniTokene` + `ZaGumb`), a jedan SQL događaja kroz `SrediPoslije.Zamijeni` s `strParametriSvi`, kao `RefreshControls`. Usporediti s `vb_oracle` na korpusu.
+- ~~**SQL-07**~~: provjereno 14. 11. 2026. `tools/diff/sql_diff.py` (vb_oracle naspram C#): put dijaloga ima 13 746 slučajeva i 0 razlika. `lanac_diff.py`: 5 885 segmenata, 2 poznate razlike (`:printgrid`, `:FISKALIZACIJA`).
 - ~~**MDR-01**~~: ispravljeno u C4 (stavke, `@ime='id~id'`, test `mdr01-multidrop`).
 - **ISP-05** (P2): `rs:/…`, `rsgen` i `.clsReport` traže stari PrintDlg COM; čeka odluku ostaje li on na računalima.
 - ~~`TIMERSQL`, `MULTILINE`/`ENTERASTAB`, `STYLE`, `HOTKEY`~~: obrađeno u C4 (TXT-02, HOT-01, LAY-01; TIMERSQL se ni u NetGenu ne izvršava).
