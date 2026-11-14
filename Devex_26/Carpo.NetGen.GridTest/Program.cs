@@ -65,6 +65,7 @@ namespace Carpo.NetGen.GridTest
                 SpinDetalj();
                 SpinStabloFill();
                 TragaNaStroju();
+                LoaderOtvara();
             }
             else
                 Console.WriteLine("PRESKOCENO spin (nema CARPO_SPIN=1)");
@@ -3490,6 +3491,66 @@ namespace Carpo.NetGen.GridTest
             ProvjeriSpin(ozn, "oznaka", 5);
             ProvjeriSpin(jez, "jezici", 1);
             SpinGreska();
+        }
+
+        /// <summary>
+        /// M1: Jupiter ulaz Loader.Run8 otvori istu Podlogu kao TestShell (Form1.Run: SetParent na clientHandle,
+        /// Show, hWnd). Zadnji test: forma registrira Logger u DependencyContainer.
+        /// </summary>
+        private static void LoaderOtvara()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "ngm1" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            Directory.CreateDirectory(dir);
+            string xml = Path.Combine(dir, "LoaderTest.xml");
+            File.WriteAllText(xml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT ONLOAD=\"select 1 as id, &apos;a&apos; as Naziv\">\r\n"
+                + "<NAME>L</NAME>\r\n<CAPTION>Loader test</CAPTION>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+            Form forma = null;
+            try
+            {
+                var loader = new Carpo.NetGen.Loader();
+                loader.TestXmlPath = xml;
+                loader.moduleId = "LoaderTest.xml";
+                loader.Run8("localhost", "spin", "", "", 7, 0, 0, 0, "");
+                forma = loader.Forma;
+                T("m1-run8-podloga", forma is Podloga && loader.hWnd != 0 && loader.WCaption == "Loader test" && string.IsNullOrEmpty(loader.ZadnjaGreska),
+                    "forma=" + (forma == null ? "null" : forma.GetType().Name) + " hWnd=" + loader.hWnd + " caption=" + loader.WCaption + " greska=" + loader.ZadnjaGreska);
+                // ULZ-02: ulaz frm otvara dijalog ulaznaForma (inace MAINFORM) s ID-om ulazniID (Form2.Run 55-65).
+                string dijXml = Path.Combine(dir, "FrmTest.xml");
+                File.WriteAllText(dijXml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT>\r\n<NAME>F</NAME>\r\n<CAPTION>Frm test</CAPTION>\r\n"
+                    + "<MAINFORM CAPTION=\"Glavna\"><INPUT TYPE=\"label\" NAME=\"lbl\" CAPTION=\"x\" /></MAINFORM>\r\n"
+                    + "<DRUGA CAPTION=\"Druga @@id\"><INPUT TYPE=\"text\" NAME=\"t\" /></DRUGA>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+                var f = new Carpo.NetGen.frm();
+                f.TestXmlPath = dijXml;
+                f.moduleId = "FrmTest.xml";
+                f.ulaznaForma = "DRUGA";
+                f.ulazniID = "42";
+                f.Run8("localhost", "spin", "", "", 7, 0, 0, 0, "");
+                var dij = f.Forma as Dijalog;
+                T("m1-frm-dijalog", dij != null && dij.Visible && f.hWnd != 0 && dij.Id == "42" && dij.Controls.Find("t", true).Length == 1,
+                    "forma=" + (f.Forma == null ? "null" : f.Forma.GetType().Name) + " id=" + (dij == null ? "" : dij.Id) + " greska=" + f.ZadnjaGreska);
+                if (dij != null)
+                {
+                    dij.Close();
+                    dij.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                T("m1-run8", false, ex.ToString());
+            }
+            finally
+            {
+                try
+                {
+                    if (forma != null && !forma.IsDisposed)
+                    {
+                        forma.Close();
+                        forma.Dispose();
+                    }
+                }
+                catch (Exception ex) { Console.WriteLine("m1 zatvaranje: " + ex.Message); }
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
         }
 
         private static void TragaNaStroju()

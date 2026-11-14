@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using Carpo.NetGen.Grid;
 using Carpo.NetGen.Model;
 
 namespace Carpo.NetGen
@@ -7,7 +11,9 @@ namespace Carpo.NetGen
     /// Ista polja kao netgen/frm.vb. Zivi je Run8 (New Form2). Stari Run u VB-u
     /// ne radi New, ali potpis postoji pa ga host i dalje moze pozvati.
     /// Nema strNGParams ni ShellResize. Ima ulazniID i ulaznaForma (Form2.vb 489, 503).
-    /// M0 ne otvara dijalog.
+    /// Run8 (ULZ-02) otvara dijalog kao Form2.Run: forma ulaznaForma ili MAINFORM, ID = ulazniID,
+    /// ProcitajXML, greška ONLOAD-a ne otvara formu, pa Show (bez SetParent; VB ne puni hWnd ni WCaption,
+    /// ovdje su hWnd i naslov dijaloga).
     /// Ime klase je frm, malim slovom, kao u VB-u i u Parametar retku.
     /// </summary>
     public class frm
@@ -23,29 +29,94 @@ namespace Carpo.NetGen
         public string TestXmlPath;
         public string ZadnjaGreska;
 
+        /// <summary>Provjera puta bez prozora (test). Jupiter ovo ne postavlja.</summary>
+        public bool BezProzora;
+
+        /// <summary>Dijalog koji je Run8 otvorio.</summary>
+        public System.Windows.Forms.Form Forma { get; private set; }
+
         public NgProject Projekt { get; private set; }
 
         public object Run(string server, string database, string userId, string password,
             int operater, int clientHandle, short top, short left, string remoteDllPath)
         {
-            return Izvrsi(remoteDllPath);
+            // Form2.vb: stari Run ne napravi New Form2, pa ne otvara ništa.
+            return Izvrsi(server, database, remoteDllPath, operater, false);
         }
 
         public object Run8(string server, string database, string userId, string password,
             int operater, int clientHandle, short top, short left, string remoteDllPath)
         {
-            // ulazniID i ulaznaForma se primjenjuju na dijalog u kasnijoj fazi, ne u M0.
-            return Izvrsi(remoteDllPath);
+            return Izvrsi(server, database, remoteDllPath, operater, !BezProzora);
         }
 
-        private object Izvrsi(string remoteDllPath)
+        private object Izvrsi(string server, string database, string remoteDllPath, int operater, bool otvori)
         {
             var o = NgUlaz.Pokreni(TestXmlPath, moduleId, remoteDllPath);
             if (o.Ucitano && o.Greska == null)
                 WCaption = o.WCaption;
             ZadnjaGreska = o.Greska;
             Projekt = o.Projekt;
+            if (otvori && Projekt != null && o.Greska == null)
+                OtvoriDijalog(o.Putanja, server, database, operater);
             return null;
+        }
+
+        private void OtvoriDijalog(string putanja, string server, string database, int operater)
+        {
+            // Form2.vb Run 64-65: strImeForme = "MAINFORM", ulaznaForma ima prednost.
+            string ime = string.IsNullOrWhiteSpace(ulaznaForma) ? "MAINFORM" : ulaznaForma.Trim();
+            NgForm forma = null;
+            for (int i = 0; i < Projekt.Forme.Count; i++)
+            {
+                if (string.Equals(Projekt.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
+                {
+                    forma = Projekt.Forme[i];
+                    break;
+                }
+            }
+            if (forma == null)
+            {
+                ZadnjaGreska = "nema forme " + ime;
+                return;
+            }
+            try
+            {
+                string spoj = SpinVeza.Spoj(server, database);
+                var k = new SqlKontekst();
+                k.OperaterId = operater.ToString(CultureInfo.InvariantCulture);
+                // 55: If ulazniID <> "" Then ID = ulazniID (inače 0).
+                k.Id = string.IsNullOrWhiteSpace(ulazniID) ? "0" : ulazniID.Trim();
+                k.XmlName = System.IO.Path.GetFileName(putanja ?? "");
+                k.Version = Carpo.NetGen.Ui.NgVerzija.Tekst();
+                k.Node = "null";
+                k.ProjektNaslov = Projekt.Naslov ?? "";
+                k.HelpKod = (Projekt.Atributi == null ? "" : (Projekt.Atributi.Vrijednost("HELPKOD") ?? "")).Trim().ToUpperInvariant();
+                k.Clipboard = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                var d = new Carpo.NetGen.Ui.Dijalog();
+                d.Konekcija = spoj;
+                d.Operater = k.OperaterId;
+                d.Id = k.Id;
+                var citac = new Carpo.NetGen.Ulaz.FrmCitac(spoj);
+                d.Prikazi(forma, k, citac.Citaj, false, null);
+                // Form2.Run 70: greška ONLOAD-a, forma se ne otvara.
+                if (!string.IsNullOrEmpty(d.GreskaOnLoad))
+                {
+                    ZadnjaGreska = d.GreskaOnLoad;
+                    d.Dispose();
+                    return;
+                }
+                d.Show();
+                Forma = d;
+                hWnd = (int)d.Handle;
+                if (!string.IsNullOrEmpty(d.Text))
+                    WCaption = d.Text;
+            }
+            catch (Exception ex)
+            {
+                ZadnjaGreska = ex.Message;
+                Carpo.NetGen.Log.NgDnevnik.Greska("frm.Run8: " + ex.Message);
+            }
         }
     }
 }

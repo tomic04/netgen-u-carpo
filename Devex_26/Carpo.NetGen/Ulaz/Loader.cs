@@ -8,8 +8,8 @@ namespace Carpo.NetGen
 {
     /// <summary>
     /// Jupiter ssMeni: asm:Carpo.NetGen.Loader:&lt;isti xml&gt;, ukljucujuci podfolder.
-    /// Ista polja i Run8 kao NetGenDLL.Loader. Run8 vraca null i puni WCaption.
-    /// hWnd ostaje 0 dok M1 ne otvori prozor. AppDomain ostaje ugasen (22.04.2024).
+    /// Ista polja i Run8 kao NetGenDLL.Loader. Run8 vraca null, puni WCaption i (M1) otvara Podlogu u
+    /// Jupiterovom panelu (clientHandle); hWnd je njen prozor. AppDomain ostaje ugasen (22.04.2024).
     /// Polja su polja, ne svojstva, jer ih host postavlja po imenu.
     /// </summary>
     public class Loader
@@ -24,6 +24,14 @@ namespace Carpo.NetGen
 
         /// <summary>TestShell. Jupiter ovo ne postavlja; on daje moduleId i remoteDllPath.</summary>
         public string TestXmlPath;
+
+        /// <summary>
+        /// TestShell sam otvara prozor (i klik-pregled), pa Run8 samo učita model. Jupiter ovo ne postavlja.
+        /// </summary>
+        public bool BezProzora;
+
+        /// <summary>Podloga koju je Run8 otvorio u Jupiterovom panelu (M1).</summary>
+        public System.Windows.Forms.Form Forma { get; private set; }
 
         public string ZadnjaGreska;
         public int ZadnjiResizeW;
@@ -55,18 +63,18 @@ namespace Carpo.NetGen
             }
         }
 
-        /// <summary>Stari Run je vracao formu. M0 nema formu, vraca null. Zivi ulaz je Run8.</summary>
+        /// <summary>Stari Run je vracao formu; ovdje vraca null kao Run8. Zivi ulaz je Run8.</summary>
         public object Run(string server, string database, string userId, string password,
             int operater, int clientHandle, short top, short left, string remoteDllPath)
         {
-            return Izvrsi(server, remoteDllPath, operater);
+            return Izvrsi(server, database, remoteDllPath, operater, clientHandle);
         }
 
         public object Run8(string server, string database, string userId, string password,
             int operater, int clientHandle, short top, short left, string remoteDllPath)
         {
-            // strNGParams ide u isti router kao klik gumba tek u M1. Ovdje se ne izvrsava.
-            return Izvrsi(server, remoteDllPath, operater);
+            // strNGParams ide u isti router kao klik gumba, kad se Podloga pokaze (Form1_Load 1682, ULZ-03).
+            return Izvrsi(server, database, remoteDllPath, operater, clientHandle);
         }
 
         /// <summary>Loader.vb 22-26. Bez hWnd ne dira prozor (M0 jos nema formu).</summary>
@@ -79,7 +87,7 @@ namespace Carpo.NetGen
             SetWindowPos(new IntPtr(hWnd), new IntPtr(-1), 0, 0, w, h, SWP_NOACTIVATE | SWP_NOZORDER);
         }
 
-        private object Izvrsi(string server, string remoteDllPath, int operater)
+        private object Izvrsi(string server, string database, string remoteDllPath, int operater, int clientHandle)
         {
             Prevoditelj.Ishod prevod = Prevoditelj.Ucitaj();
             PrevoditeljUcitano = prevod.Ucitano;
@@ -103,7 +111,62 @@ namespace Carpo.NetGen
                 Grid.Kontekst.XmlName = moduleId ?? "";
                 Grid.Ucitaj(Projekt, null);
             }
+            if (!BezProzora && Projekt != null && o.Greska == null)
+                OtvoriPodlogu(o.Putanja, server, database, operater, clientHandle);
             return null;
+        }
+
+        /// <summary>
+        /// M1 (docs/analiza/08): Run8 otvara istu Podlogu kao TestShell. Form1.Run (Form1.vb Run): SetParent na
+        /// clientHandle pa Show; hWnd je prozor granule. Kao Carpo Starter.RegisterForm: Logger u
+        /// DependencyContainer prije forme, InitLogger, MainHandle/ParentHandle, pa Base.Start() (SetParent + Show).
+        /// </summary>
+        private void OtvoriPodlogu(string putanja, string server, string database, int operater, int clientHandle)
+        {
+            Carpo.Core.Logger dnevnik = null;
+            try
+            {
+                dnevnik = new Carpo.Core.Logger(Carpo.Core.Log.LogLevel.Debug);
+                dnevnik.GranuleName = System.IO.Path.GetFileNameWithoutExtension(putanja ?? "");
+                dnevnik.ServerName = server;
+                dnevnik.DatabaseName = database;
+                Carpo.Core.Log.DependencyContainer.Add(dnevnik);
+                Carpo.NetGen.Log.NgDnevnik.Spoji(dnevnik);
+            }
+            catch (Exception ex)
+            {
+                Carpo.NetGen.Log.NgDnevnik.Greska("Logger: " + ex.Message);
+            }
+            string greska;
+            System.Windows.Forms.Form forma = Carpo.NetGen.Ui.Prozor.Otvori(putanja, server, database, operater, out greska);
+            if (!string.IsNullOrEmpty(greska))
+                ZadnjaGreska = greska;
+            if (forma == null)
+                return;
+            Forma = forma;
+            var podloga = forma as Carpo.NetGen.Ui.Podloga;
+            if (podloga != null)
+                podloga.NgParametri = strNGParams;
+            var baza = forma as Carpo.UI.Forms.Jupiter.Base;
+            try
+            {
+                if (baza != null)
+                {
+                    baza.InitLogger(dnevnik);
+                    baza.ModuleId = moduleId;
+                    baza.MainHandle = mainHandle;
+                    baza.ParentHandle = clientHandle;
+                    baza.Start();
+                }
+                else
+                    forma.Show();
+                hWnd = (int)forma.Handle;
+            }
+            catch (Exception ex)
+            {
+                ZadnjaGreska = ex.Message;
+                Carpo.NetGen.Log.NgDnevnik.Greska("Run8: " + ex.Message);
+            }
         }
 
         [DllImport("user32.dll", SetLastError = true)]
