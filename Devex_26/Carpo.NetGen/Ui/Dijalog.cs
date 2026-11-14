@@ -125,7 +125,7 @@ namespace Carpo.NetGen.Ui
             };
         }
 
-        internal static void Trag(string red)
+        public static void Trag(string red)
         {
             if (string.IsNullOrEmpty(TragPutanja))
                 return;
