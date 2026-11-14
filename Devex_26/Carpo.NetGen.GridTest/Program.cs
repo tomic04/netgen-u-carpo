@@ -3141,6 +3141,20 @@ namespace Carpo.NetGen.GridTest
                     int io = d.Controls.GetChildIndex(okvir), it = d.Controls.GetChildIndex(tekst), il = d.Controls.GetChildIndex(natpis), ip = d.Controls.GetChildIndex(ploca);
                     T("lay02-okvir-straga", io > it && io > il && ip > it && ip > il, "okvir=" + io + " tekst=" + it + " natpis=" + il + " panel=" + ip);
                 }
+                // RobaDeklaracijeNG INSERT: GroupMain s DOCK=5 je i dalje iza polja (RAS-01).
+                var kontrole2 = new List<NgControl>
+                {
+                    new NgControl("group", NgGrana.Group, "GroupMain", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "72" }, { "LEFT", "72" }, { "HEIGHT", "8496" }, { "WIDTH", "13176" }, { "DOCK", "5" } }), true),
+                    new NgControl("text", NgGrana.Text, "Naziv", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "432" }, { "LEFT", "1440" }, { "HEIGHT", "288" }, { "WIDTH", "2160" } }), true)
+                };
+                var forma2 = new NgForm("INSERT", new NgAttributeBag(null), "", "", kontrole2, new List<NgButton>(), new List<string>());
+                using (var d2 = new Dijalog())
+                {
+                    d2.Slozi(forma2, new SqlKontekst(), delegate (string x) { return new DataTable(); });
+                    Control g = d2.Controls.Find("GroupMain", false)[0];
+                    Control n = d2.Controls.Find("Naziv", false)[0];
+                    T("lay02-okvir-fill", g.Dock == DockStyle.Fill && d2.Controls.GetChildIndex(g) > d2.Controls.GetChildIndex(n), "dock=" + g.Dock + " g=" + d2.Controls.GetChildIndex(g) + " n=" + d2.Controls.GetChildIndex(n));
+                }
             }
             catch (Exception ex)
             {

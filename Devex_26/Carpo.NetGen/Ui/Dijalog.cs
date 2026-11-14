@@ -319,7 +319,8 @@ namespace Carpo.NetGen.Ui
                 gumbi[0].SendToBack();
             foreach (Control c in SveKontrole())
             {
-                if (c.Dock == DockStyle.Fill)
+                // Okvir i panel s DOCK=5 VB i dalje šalje SendToBack (1373-1379), inače pokriju polja (RAS-01).
+                if (c.Dock == DockStyle.Fill && !(c is PanelControl))
                     c.BringToFront();
             }
 
