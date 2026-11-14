@@ -164,7 +164,7 @@ namespace Carpo.NetGen.Ui
             _detail.Kontekst = kontekst;
             try
             {
-                _spoj = SpinVeza.Spoj(server, baza);
+                _spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj(server, baza), xml);
             }
             catch (Exception ex)
             {

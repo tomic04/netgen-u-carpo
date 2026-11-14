@@ -1981,6 +1981,7 @@ namespace Carpo.NetGen.GridTest
             T("trazilica-preskok", Ponasanje.PreskociTrazilicu("", "x") && Ponasanje.PreskociTrazilicu("Kava", "Kava") && !Ponasanje.PreskociTrazilicu("*", "*") && !Ponasanje.PreskociTrazilicu("nova", "stara"), "");
             DijalogUcinak();
             SqlSlojNetGen();
+            ImeAplikacije();
             BrojNaDijalogu();
             LanacNakonZamjene();
             DogadjajiPravila();
@@ -3053,6 +3054,18 @@ namespace Carpo.NetGen.GridTest
         }
 
         /// <summary>Plan, faza G: lozinka iz polja s PASSWORDCHAR ne ide u log; log ne raste bez kraja.</summary>
+        /// <summary>APP-01: Application Name veze je "Carpo.NetGen." + ime XML-a (NetGen "NetGenDLL-" + XML, Form1 1176).</summary>
+        private static void ImeAplikacije()
+        {
+            string spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj("localhost", "spin"), @"C:\xml\Agronom granule\MPKase.xml");
+            var b = new SqlConnectionStringBuilder(spoj);
+            T("app01-ime", b.ApplicationName == "Carpo.NetGen.MPKase" && b.InitialCatalog == "spin" && b.IntegratedSecurity, b.ApplicationName);
+            string cudno = SpinVeza.SaAplikacijom("Server=a;Database=b", "x;y=z'.xml");
+            var c = new SqlConnectionStringBuilder(cudno);
+            T("app01-znakovi", c.ApplicationName == "Carpo.NetGen.x_y_z_" && c.InitialCatalog == "b", cudno);
+            T("app01-prazno", new SqlConnectionStringBuilder(SpinVeza.SaAplikacijom("Server=a;", null)).ApplicationName == "Carpo.NetGen", "");
+        }
+
         private static void LozinkaULogu()
         {
             try
