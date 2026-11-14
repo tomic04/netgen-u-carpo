@@ -653,7 +653,7 @@ namespace Carpo.NetGen.Ui
         /// Timer2_Tick 9687: Rafalno(strTimerSQL). VB tikne i dok prethodni TIMERSQL jos radi (poruka ili
         /// upit); ovdje se tik preskoci dok prethodni ne zavrsi (TMR-01).
         /// </summary>
-        internal void Tajmer_Tick(object sender, EventArgs e)
+        private void Tajmer_Tick(object sender, EventArgs e)
         {
             if (_tajmerRadi || IsDisposed)
                 return;
