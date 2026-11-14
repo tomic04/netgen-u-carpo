@@ -98,6 +98,8 @@ namespace Carpo.NetGen
                 d.Operater = k.OperaterId;
                 d.Id = k.Id;
                 var citac = new Carpo.NetGen.Ulaz.FrmCitac(spoj);
+                // ULZ-05: bez podloge dijalog sam otvara djecu (Form2.NovaGenerickaForma2).
+                d.OtvoriDrugu = delegate (string imeDjeteta) { OtvoriDijete(d, imeDjeteta, k, spoj, citac, 1); };
                 d.Prikazi(forma, k, citac.Citaj, false, null);
                 // Form2.Run 70: greška ONLOAD-a, forma se ne otvara.
                 if (!string.IsNullOrEmpty(d.GreskaOnLoad))
@@ -118,6 +120,50 @@ namespace Carpo.NetGen
                 ZadnjaGreska = ex.Message;
                 Carpo.NetGen.Log.NgDnevnik.Greska("frm.Run8: " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// ULZ-05. Form2.NovaGenerickaForma2 4259-4479 za ulaz frm, gdje nema podloge: dijete je modalni dijalog
+        /// nad roditeljem, s istim spojem, operaterom, ID-om i CB-om (parametri roditelja su u CB-u, kao
+        /// strPrevParametri 4392). ONSUBMIT djeteta šalje sam dijalog na OK; nakon OK s NEXTFORM otvara se
+        /// sljedeća (4440-4466). Roditelj poslije osvježi kontrole s REFRESHAFTERCHILD. Ime može imati
+        /// (parametre); forma se traži bez njih, kao na podlozi.
+        /// </summary>
+        private void OtvoriDijete(Carpo.NetGen.Ui.Dijalog roditelj, string naredba, SqlKontekst k, string spoj,
+            Carpo.NetGen.Ulaz.FrmCitac citac, int dubina)
+        {
+            if (dubina > 8 || roditelj == null || roditelj.IsDisposed)
+                return;
+            string ime = (naredba ?? "").Trim();
+            if (ime.StartsWith(":", StringComparison.Ordinal))
+                ime = ime.Substring(1).Trim();
+            int z = ime.IndexOf('(');
+            if (z > 0)
+                ime = ime.Substring(0, z).Trim();
+            if (ime.Length == 0)
+                return;
+            NgForm forma = Carpo.NetGen.Xml.IncludeForme.Nadji(Projekt, ime);
+            if (forma == null)
+            {
+                Carpo.NetGen.Log.NgDnevnik.Akcija("nema forme " + ime);
+                return;
+            }
+            SqlKontekst kd = SqlTekst.ZaFormu(k);
+            kd.Id = roditelj.Id;
+            string sljedeca = "";
+            using (var dij = new Carpo.NetGen.Ui.Dijalog())
+            {
+                dij.Konekcija = spoj;
+                dij.Operater = k.OperaterId;
+                dij.Id = roditelj.Id;
+                dij.ZadnjiSql = roditelj.ZadnjiSql;
+                dij.OtvoriDrugu = delegate (string imeDjeteta) { OtvoriDijete(dij, imeDjeteta, kd, spoj, citac, dubina + 1); };
+                dij.Prikazi(forma, kd, citac.Citaj, true, roditelj);
+                if (dij.DialogResult == DialogResult.OK)
+                    sljedeca = Carpo.NetGen.Komande.DijalogTok.NextForm(forma);
+            }
+            if (sljedeca.Length > 0)
+                OtvoriDijete(roditelj, sljedeca, k, spoj, citac, dubina + 1);
         }
 
         /// <summary>

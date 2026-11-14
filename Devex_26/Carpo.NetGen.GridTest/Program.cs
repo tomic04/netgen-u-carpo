@@ -2872,6 +2872,10 @@ namespace Carpo.NetGen.GridTest
             }
             finally
             {
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }
+
         /// <summary>Kao KriptirajDekriptiraj.Encrypt (DES, Key = IV, StreamWriter.WriteLine): tijelo reda netgenxml.</summary>
         private static byte[] KriptirajKaoNetGen(string tekst)
         {
@@ -3762,7 +3766,9 @@ namespace Carpo.NetGen.GridTest
                 string dijXml = Path.Combine(dir, "FrmTest.xml");
                 File.WriteAllText(dijXml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT>\r\n<NAME>F</NAME>\r\n<CAPTION>Frm test</CAPTION>\r\n"
                     + "<MAINFORM CAPTION=\"Glavna\"><INPUT TYPE=\"label\" NAME=\"lbl\" CAPTION=\"x\" /></MAINFORM>\r\n"
-                    + "<DRUGA CAPTION=\"Druga @@id\"><INPUT TYPE=\"text\" NAME=\"t\" /></DRUGA>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+                    + "<DRUGA CAPTION=\"Druga @@id\"><INPUT TYPE=\"text\" NAME=\"t\" /></DRUGA>\r\n"
+                    + "<TRECA CAPTION=\"Treca\" NEXTFORM=\"CETVRTA\"><INPUT TYPE=\"text\" NAME=\"x\" /></TRECA>\r\n"
+                    + "<CETVRTA CAPTION=\"Cetvrta\"><INPUT TYPE=\"text\" NAME=\"y\" /></CETVRTA>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
                 var f = new Carpo.NetGen.frm();
                 f.TestXmlPath = dijXml;
                 f.moduleId = "FrmTest.xml";
@@ -3772,6 +3778,23 @@ namespace Carpo.NetGen.GridTest
                 var dij = f.Forma as Dijalog;
                 T("m1-frm-dijalog", dij != null && dij.Visible && f.hWnd != 0 && dij.Id == "42" && dij.Controls.Find("t", true).Length == 1,
                     "forma=" + (f.Forma == null ? "null" : f.Forma.GetType().Name) + " id=" + (dij == null ? "" : dij.Id) + " greska=" + f.ZadnjaGreska);
+                // ULZ-05: dijalog ulaza frm sam otvara dijete (Form2.NovaGenerickaForma2), a nakon OK i NEXTFORM.
+                var otvoreni = new List<string>();
+                Dijalog.NakonPrikaza = delegate (Dijalog d)
+                {
+                    otvoreni.Add(d.Text + "/" + d.Id);
+                    d.DialogResult = DialogResult.OK;
+                };
+                try
+                {
+                    if (dij != null && dij.OtvoriDrugu != null)
+                        dij.OtvoriDrugu(":TRECA(@a=1)");
+                }
+                finally
+                {
+                    Dijalog.NakonPrikaza = null;
+                }
+                T("ulz05-frm-dijete", string.Join(",", otvoreni.ToArray()) == "Treca/42,Cetvrta/42", string.Join(",", otvoreni.ToArray()));
                 if (dij != null)
                 {
                     dij.Close();
