@@ -79,13 +79,13 @@ Korpus (584 granule): ONLOSTFOCUS 2 700+ (NUMBER 1 253, SEARCH 555, COMBO 515…
 | ISP-04 | P1 | `ispis(parametri)` | `NovaGenerickaForma2` rastavi ime i `tpP` (4277–4288) | `rptX(@id=5)` kao ime predloška | **ispravljeno**: `PrintBridge.BezZagrade` |
 | **ISP-07** | P1 | `PRINTGRID(ime)` u lancu/gumbu dijaloga (karticagrid, 3 granule) i „Ispis” u izborniku grida (podloga i dijalog) | `TempGrid = Controls(ime)`; `IspisGRIDREPX`/`IspisNovi` (Form2 9015-9056, Form1 isto): PAGEHEADERLEFT/CENTER/RIGHT grida kroz SrediSQL2 i SrediSQLPosljeNextForme s datumom za ispis, prazan centar je naslov, PAGEORIENTATION grida (LANDSCAPE u 344 grida) | lanac je zvao ispis bez grida, gumb prvi grid bez zaglavlja i s orijentacijom forme; „Ispis” u izborniku je bio goli pregled grida | **ispravljeno**: `Dijalog.IspisiGrid` i `Podloga.IspisiGrid` preko Spin.Printing PrintLink s tim zaglavljima i orijentacijom; jedna stavka „Ispis” (VB ima i „Ispis REPX”, isti ispis drugim motorom) |
 
-Otvoreno iz ovog pregleda:
+Otvoreno iz ovog pregleda (stanje nakon C4):
 
-- **FOR-01** (P1): `FOREACH*` u VB-u za svaki red pomakne grid i izvrši cijeli lanac (`ForEachRow/Selected/BlueRow`, 8309–8395). Carpo zamjenjuje id-eve u tekstu i šalje samo SQL.
+- ~~**FOR-01**~~: ispravljeno u C4 (`FOREACH*` vrti cijeli lanac po retku, test `for01-foreachrow`).
 - **SQL-07** (P2): lanac dijaloga sređuje SQL kroz `Pripremi` (`ZamijeniTokene` + `ZaGumb`), a jedan SQL događaja kroz `SrediPoslije.Zamijeni` s `strParametriSvi`, kao `RefreshControls`. Usporediti s `vb_oracle` na korpusu.
-- **MDR-01** (P2): MULTIDROP (CheckedComboBoxEdit) nema stavki ni `@ime='id~id'` u parametrima.
-- **ISP-05** (P2): `rs:/…` i `rsgen` izvještaji (SSRS) na CMD3+ i u lancu.
-- `TIMERSQL` (4 puta, 1 granula), `MULTILINE`/`ENTERASTAB`, `STYLE`, `HOTKEY` → faza C4.
+- ~~**MDR-01**~~: ispravljeno u C4 (stavke, `@ime='id~id'`, test `mdr01-multidrop`).
+- **ISP-05** (P2): `rs:/…`, `rsgen` i `.clsReport` traže stari PrintDlg COM; čeka odluku ostaje li on na računalima.
+- ~~`TIMERSQL`, `MULTILINE`/`ENTERASTAB`, `STYLE`, `HOTKEY`~~: obrađeno u C4 (TXT-02, HOT-01, LAY-01; TIMERSQL se ni u NetGenu ne izvršava).
 
 ## Testovi (događaji)
 

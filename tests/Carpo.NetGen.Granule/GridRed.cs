@@ -116,9 +116,10 @@ namespace Carpo.NetGen.Granule
                 && !MultiOdabir.Je("INSERT_KLASA")
                 && MultiOdabir.Ubaci("12", "7").IndexOf("TotalGenMultiSelectTemp", StringComparison.Ordinal) >= 0
                 && MultiOdabir.Ubaci("12", "7").IndexOf("select 12,", StringComparison.Ordinal) >= 0
-                && MultiOdabir.Obrisi("7").IndexOf("operateriid=7", StringComparison.Ordinal) >= 0;
+                && MultiOdabir.Obrisi("7").IndexOf("operateriid=7", StringComparison.Ordinal) >= 0
+                && MultiOdabir.ObrisiKorisnika().IndexOf("susersname= suser_sname()", StringComparison.Ordinal) >= 0;
             l.Add(plavo
-                ? Qa.Z("GridRed", "WEB-01", "MULTIBLUE puni TotalGenMultiSelectTemp s GetID", "netgen/Form1.vb:4932-5032")
+                ? Qa.Z("GridRed", "WEB-01", "MULTIBLUE puni TotalGenMultiSelectTemp s GetID", "netgen/Form1.vb:4931-5032")
                 : Qa.P("GridRed", "WEB-01", "MULTIBLUE temp", "netgen/Form1.vb:4932-5032", MultiOdabir.Ubaci("12", "7")));
 
             var gumbi = GumbiNiz.Slozi(null, "Dodaj:INSERT#Izmjeni:UPDATE#Obriši:DELETE");
