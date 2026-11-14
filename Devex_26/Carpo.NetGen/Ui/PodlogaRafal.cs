@@ -486,5 +486,16 @@ namespace Carpo.NetGen.Ui
                 NgVeza.Otpusti(_spoj);
             }
         }
+
+        /// <summary>SES-01: podloga uništena bez zatvaranja (Jupiter, sweep) također otpusti vezu granule.</summary>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && _vezaPrijavljena)
+            {
+                _vezaPrijavljena = false;
+                NgVeza.Otpusti(_spoj);
+            }
+            base.Dispose(disposing);
+        }
     }
 }

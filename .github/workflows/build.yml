@@ -87,6 +87,9 @@ jobs:
           $sweep = "0"
           $shard = "0"
           $ct = ""
+          $klServer = ""
+          $klBaza = ""
+          $klMapa = ""
           if ($msg -match '\[sweep-([1-6])\]') {
             $sweep = "1"
             $shard = $Matches[1]
@@ -96,8 +99,21 @@ jobs:
             $sweep = "1"
             $shard = $Matches[1]
             $ct = $Matches[2]
+            $klServer = "jupiter2019"
+            $klBaza = $Matches[2]
+            $klMapa = "Centar tehnike"
           }
-          [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, "sweep=$sweep`nshard=$shard`nct=$ct`n")
+          # SWP-06: sweep granula klijenta nad bilo kojom bazom (npr. trening baza preko VPN-a):
+          # [kl-sweep:Server:Baza:Mapa] cijela mapa definitions\netgen\Mapa, [kl-sweep-N:...] šestina N.
+          if ($msg -match '\[kl-sweep(?:-([1-6]))?:([A-Za-z0-9_.\\-]+):([A-Za-z0-9_.-]+):([^\]:]+)\]') {
+            $sweep = "1"
+            $shard = if ($Matches[1]) { $Matches[1] } else { "0" }
+            $ct = $Matches[3]
+            $klServer = $Matches[2]
+            $klBaza = $Matches[3]
+            $klMapa = $Matches[4].Trim()
+          }
+          [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, "sweep=$sweep`nshard=$shard`nct=$ct`nkl_server=$klServer`nkl_baza=$klBaza`nkl_mapa=$klMapa`n")
           Write-Host "poruka=$msg sweep=$sweep shard=$shard event=$env:GITHUB_EVENT_NAME"
 
       - name: Spin stubovi i otvaranje
@@ -373,7 +389,7 @@ jobs:
 
       - name: Klik sweep
         if: steps.vrsta.outputs.sweep == '1' && github.event_name == 'push'
-        timeout-minutes: 40
+        timeout-minutes: 60
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -381,13 +397,32 @@ jobs:
           $shard = "${{ steps.vrsta.outputs.shard }}"
           $izv = Join-Path $env:GITHUB_WORKSPACE "artifacts\ui-smoke\sweep-$shard.txt"
           $env:NETGEN_SWEEP_PRESKOCI = Join-Path $env:GITHUB_WORKSPACE "scripts\ui\sweep-preskoci.txt"
-          $ct = "${{ steps.vrsta.outputs.ct }}"
-          if ($ct -ne "") {
-            # Samo čitanje: popis baza na jupiter2019 koje liče na traženu, pa sweep XML-ova Centra tehnike.
-            $q = "set nocount on; select name, convert(varchar(19), create_date, 120) from sys.databases where name like '%entar%' or name like '%" + $ct + "%' order by name"
-            sqlcmd -S jupiter2019 -d master -E -C -l 15 -W -h -1 -Q $q
-            $root = Join-Path $env:GITHUB_WORKSPACE "definitions\netgen\Centar tehnike"
-            & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSweep.ps1") -Exe $exe -XmlRoot $root -Izvjestaj $izv -Sekundi 4 -Shard ([int]$shard) -Dijelova 6 -Server "jupiter2019" -Baza $ct
+          $klServer = "${{ steps.vrsta.outputs.kl_server }}"
+          $klBaza = "${{ steps.vrsta.outputs.kl_baza }}"
+          $klMapa = "${{ steps.vrsta.outputs.kl_mapa }}"
+          if ($klServer -ne "") {
+            # SWP-06: granule klijenta (mapa u definitions\netgen) nad njegovom bazom. Na bazi koja nije spin
+            # gumbi šalju samo SQL koji otvara formu (SWP-02). Prije sweepa samo čitanje: postoji li baza.
+            $korijenXml = [System.IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE "definitions\netgen"))
+            $root = [System.IO.Path]::GetFullPath((Join-Path $korijenXml $klMapa))
+            if (-not $root.StartsWith($korijenXml + "\", [System.StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path -LiteralPath $root)) {
+              throw "Mapa granula nije u definitions\netgen: $klMapa"
+            }
+            $q = "set nocount on; select name, convert(varchar(19), create_date, 120) from sys.databases where name = '" + $klBaza + "'"
+            $ima = @(sqlcmd -S $klServer -d master -E -C -l 15 -W -h -1 -Q $q)
+            $ima | ForEach-Object { Write-Host $_ }
+            if ($LASTEXITCODE -ne 0) { throw "sqlcmd na $klServer nije uspio (VPN? prava?). Kod $LASTEXITCODE" }
+            if (($ima -join "").Trim().Length -eq 0) {
+              Write-Host "Baze $klBaza nema na $klServer. Slične:"
+              sqlcmd -S $klServer -d master -E -C -l 15 -W -h -1 -Q ("set nocount on; select name from sys.databases where name like '%" + $klBaza.Substring(0, [Math]::Min(5, $klBaza.Length)) + "%' order by name")
+              throw "Nema baze $klBaza na $klServer"
+            }
+            $n = @(Get-ChildItem -LiteralPath $root -Recurse -File -Include *.xml).Count
+            Write-Host "sweep klijenta: $klServer/$klBaza, mapa $klMapa ($n XML-ova), sestina $shard (0 = sve)"
+            # SWP-08: granula klijenta ide dublje nego sweep korpusa: 20 upita, 5 s po upitu, 12 s po granuli.
+            $env:NETGEN_SWEEP_UPITA = "20"
+            $env:NETGEN_SWEEP_TIMEOUT = "5"
+            & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSweep.ps1") -Exe $exe -XmlRoot $root -Izvjestaj $izv -Sekundi 12 -Shard ([int]$shard) -Dijelova 6 -Server $klServer -Baza $klBaza
           } else {
             & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSweep.ps1") -Exe $exe -XmlRoot (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Izvjestaj $izv -Sekundi 4 -Shard ([int]$shard) -Dijelova 6
           }

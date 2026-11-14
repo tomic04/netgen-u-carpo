@@ -626,8 +626,9 @@ namespace Carpo.TestShell
                 sekundi = 6;
             if (dijelova < 1)
                 dijelova = 1;
-            Carpo.NetGen.Ui.Podloga.TimeoutUpita = 1;
-            Carpo.NetGen.Ui.Podloga.MaxUpita = 5;
+            // SWP-08: sweep klijenta smije dublje (NETGEN_SWEEP_UPITA, NETGEN_SWEEP_TIMEOUT); zadano 5 upita po 1 s.
+            Carpo.NetGen.Ui.Podloga.TimeoutUpita = BrojIzOkoline("NETGEN_SWEEP_TIMEOUT", 1, 1, 60);
+            Carpo.NetGen.Ui.Podloga.MaxUpita = BrojIzOkoline("NETGEN_SWEEP_UPITA", 5, 1, 200);
             // Sweep nema korisnika: ispis ide u PDF bez dijaloga pisača (Spin.Printing bi otvorio svoj prozor),
             // a SHOWOPENFILEDIALOG/SHOWFOLDERBROWSERDIALOG vrate prazno umjesto modalnog Windows dijaloga (SWP-01).
             Carpo.NetGen.Print.PrintBridge.MapaIzvoza = Path.Combine(Path.GetTempPath(), "netgen-sweep-ispis");
@@ -828,6 +829,15 @@ namespace Carpo.TestShell
             return 0;
         }
 
+        private static int BrojIzOkoline(string ime, int zadano, int najmanje, int najvise)
+        {
+            int n;
+            string v = Environment.GetEnvironmentVariable(ime);
+            if (string.IsNullOrWhiteSpace(v) || !int.TryParse(v.Trim(), out n) || n < najmanje || n > najvise)
+                return zadano;
+            return n;
+        }
+
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern uint GetGuiResources(IntPtr hProcess, uint uiFlags);
 
@@ -954,6 +964,17 @@ namespace Carpo.TestShell
                 try
                 {
                     f.Hide();
+                }
+                catch
+                {
+                }
+                // SWP-07: skrivena forma drži prozore (USER objekte). Cijeli Centar tehnike (411) u jednom procesu
+                // stigao je do granice od 10 000 ("Error creating window handle") oko 200. granule, pa je sve
+                // iza toga bila IZNIMKA. Dispose bez Close: ne čeka ONCLOSED ni DoEvents (5e66957), a otpusti
+                // prozore i vezu granule (Podloga.Dispose, SES-01).
+                try
+                {
+                    f.Dispose();
                 }
                 catch
                 {
