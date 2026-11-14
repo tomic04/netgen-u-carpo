@@ -266,8 +266,8 @@ Pravila za svaki ispravak:
 
 ## 8. Faza G: kontrola prije produkcije
 
-- [ ] `JeZabranaPisanja` je konfiguracija i na produkciji je isključena.
-- [ ] Zaštita od `jupiter2022` je maknuta ili je konfiguracija, a ne tvrdo kodirano ime (odluka 9.3).
+- [x] `JeZabranaPisanja` je konfiguracija i na produkciji je isključena: `DijalogTok.Produkcija` pali samo pravi Jupiter ulaz (B-JUP).
+- [x] Zaštita od `jupiter2022` vrijedi samo izvan pravog Jupiter ulaza (B-JUP, odluka 9.3). Jupiter smoke i preskok `Prenesi`/`Retci` u `build.yml` su i dalje kako su bili.
 - [ ] QA kuka (`TestHooks/GranulaSesija`) nije dostupna iz produkcijskog `Loader`.
 - [ ] Nijedan placeholder koji baca `NotSupportedException` nije na putu.
 - [ ] Shim `NetGenDLL` s istim `Loader.Run8` i `ShellResize`, testiran u pravom Jupiteru (`Jupiter.exe` 10.5.26.0+).

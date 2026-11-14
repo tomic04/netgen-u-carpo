@@ -469,7 +469,7 @@ namespace Carpo.NetGen.Ui
             try
             {
                 var dij = new Dijalog();
-                dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server));
+                dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server) && !DijalogTok.Produkcija);
                 dij.Konekcija = _spoj;
                 dij.Operater = _master.Kontekst.OperaterId;
                 dij.Id = _master.Stanje.Id;
@@ -558,7 +558,7 @@ namespace Carpo.NetGen.Ui
         /// </summary>
         private void OsvjeziMaster()
         {
-            if (DijalogTok.JeJupiter(_server) || _projekt == null)
+            if ((DijalogTok.JeJupiter(_server) && !DijalogTok.Produkcija) || _projekt == null)
                 return;
             if (_master.Stanje != null && _master.Stanje.Odluka == "salji" && !_master.Stanje.BlokiranoPisanje
                 && !string.IsNullOrEmpty(_master.Stanje.SqlZaSlanje))

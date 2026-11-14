@@ -59,6 +59,9 @@ namespace Carpo.NetGen
             // M5 (XML-01): Jupiter traži XML u DMS-u i bazi JupiterXML prije diska; test ide s diska.
             if (string.IsNullOrWhiteSpace(TestXmlPath))
                 Carpo.NetGen.Xml.XmlIzvor.Ukljuci(server);
+            // B-JUP: pravi Jupiter ulaz radi kao NetGen (upis, i jupiter2022).
+            if (string.IsNullOrWhiteSpace(TestXmlPath) && !BezProzora)
+                Carpo.NetGen.Komande.DijalogTok.Produkcija = true;
             var o = NgUlaz.Pokreni(TestXmlPath, moduleId, remoteDllPath);
             if (o.Ucitano && o.Greska == null)
                 WCaption = o.WCaption;
