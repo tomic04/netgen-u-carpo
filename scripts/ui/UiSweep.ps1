@@ -35,7 +35,7 @@ function Pokazi-Djelomicno {
     $faza = $Izvjestaj + ".faza.txt"
     if (Test-Path -LiteralPath $faza) {
         Write-Host "---- kraj traga (.faza.txt) ----"
-        Get-Content -LiteralPath $faza -Tail 15 | ForEach-Object { Write-Host $_ }
+        Get-Content -LiteralPath $faza -Tail 70 | ForEach-Object { Write-Host $_ }
     }
 }
 if ($sid -ne 0) {

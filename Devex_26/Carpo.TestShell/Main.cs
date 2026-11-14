@@ -599,6 +599,7 @@ namespace Carpo.TestShell
             // Granule iz scripts\ui\sweep-preskoci.txt (poznati HANG) se preskaču.
             _sweepIzvjestaj = izvjestaj;
             _sweepPocetak = DateTime.UtcNow;
+            _sweepUi = Thread.CurrentThread;
             var cuvar = new Thread(CuvarSweepa);
             cuvar.IsBackground = true;
             cuvar.Start();
@@ -789,6 +790,42 @@ namespace Carpo.TestShell
                 + " gdi=" + gdi.ToString() + " user=" + user.ToString() + " " + DateTime.Now.ToString("HH:mm:ss");
         }
 
+        private static Thread _sweepUi;
+
+        private static string StogUi()
+        {
+            Thread ui = _sweepUi;
+            if (ui == null)
+                return "(nema UI niti)";
+#pragma warning disable 618
+            try
+            {
+                ui.Suspend();
+                try
+                {
+                    var st = new System.Diagnostics.StackTrace(ui, false);
+                    var sb = new StringBuilder();
+                    int n = Math.Min(st.FrameCount, 45);
+                    for (int i = 0; i < n; i++)
+                    {
+                        var m = st.GetFrame(i).GetMethod();
+                        if (m != null)
+                            sb.Append("  ").Append(m.DeclaringType == null ? "?" : m.DeclaringType.FullName).Append('.').Append(m.Name).Append("\r\n");
+                    }
+                    return sb.ToString();
+                }
+                finally
+                {
+                    ui.Resume();
+                }
+            }
+            catch (Exception ex)
+            {
+                return "(stog nije dohvaćen: " + ex.GetType().Name + ": " + ex.Message + ")";
+            }
+#pragma warning restore 618
+        }
+
         private static string _sweepIzvjestaj;
         private static volatile string _sweepGranula = "";
         private static DateTime _sweepPocetak = DateTime.UtcNow;
@@ -811,6 +848,8 @@ namespace Carpo.TestShell
                 }
                 catch { }
                 try { File.AppendAllText(_sweepIzvjestaj + ".red", _sweepGranula + "\tHANG\t90\tčuvar: granula drži UI dulje od 90 s; zadnji trag: " + zadnja + "\r\n"); } catch { }
+                // Stog UI niti u trenutku zastoja: točno mjesto gdje granula stoji.
+                try { File.AppendAllText(_sweepIzvjestaj + ".faza.txt", "STOG UI NITI:\r\n" + StogUi() + "\r\n"); } catch { }
                 Environment.Exit(3);
             }
         }
