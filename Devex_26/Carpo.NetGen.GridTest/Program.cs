@@ -642,6 +642,14 @@ namespace Carpo.NetGen.GridTest
 
         private static void ZastitaTestovi()
         {
+            // PN-15: dvije točke ("tempdb..#t", "konikom..roba", "@(grfil..orgshemaid)", "@@x...") su u Tokeni/ProcitajIme
+            // vrtjele petlju bez pomaka do OutOfMemory (MPPonudaWEB, MPEIzvod na Centru tehnike; 776 tekstova korpusa).
+            var sat = System.Diagnostics.Stopwatch.StartNew();
+            SqlZastita tocke = ZastitaSql.Tekst("select * from tempdb..#t where a=@(grfil..orgshemaid) and b=@@parametar2...");
+            SqlZastita konikom = ZastitaSql.Tekst("insert into konikom..roba (a) values (1)");
+            sat.Stop();
+            T("zastita-dvije-tocke", !tocke.Pise && konikom.Pise && konikom.Razlog.IndexOf("konikom..roba", StringComparison.Ordinal) >= 0 && sat.ElapsedMilliseconds < 2000,
+                "pise=" + tocke.Pise + " konikom=" + konikom.Razlog + " ms=" + sat.ElapsedMilliseconds);
             T("zastita-prva-rijec", !SqlTekst.JeZabranaPisanja("spKntZakljucivanjeTem @action=1"), "");
             SqlZastita z = ZastitaSql.Tekst("spKntZakljucivanjeTem @action=1,@datumod='20200101',@datumdo='20200131',@vrstadokid=1");
             T("zastita-zakljucivanje", !z.Pise && z.Procedure.Count == 1 && z.Procedure[0] == "spKntZakljucivanjeTem",
