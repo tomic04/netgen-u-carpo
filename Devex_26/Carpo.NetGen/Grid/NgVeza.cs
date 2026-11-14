@@ -26,10 +26,43 @@ namespace Carpo.NetGen.Grid
         }
 
         private static readonly object _brava = new object();
+
+        /// <summary>
+        /// Sweep (TestShell) ovdje dobije upite dulje od <see cref="SporoMs"/> i upite koji puknu, s trajanjem.
+        /// Izvan sweepa je null.
+        /// </summary>
+        public static Action<string> SporiUpit;
+
+        public static int SporoMs = 300;
         private static readonly Dictionary<string, Stavka> _veze = new Dictionary<string, Stavka>(StringComparer.Ordinal);
 
         /// <summary>Izvrši upit kao Class1.ExecSql: kroz otvorenu vezu granule.</summary>
         public static DataTable Citaj(string spoj, string sql, int timeoutSekundi)
+        {
+            if (SporiUpit == null)
+                return CitajBezMjere(spoj, sql, timeoutSekundi);
+            var sat = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                DataTable dt = CitajBezMjere(spoj, sql, timeoutSekundi);
+                if (sat.ElapsedMilliseconds >= SporoMs)
+                    SporiUpit("spor upit " + sat.ElapsedMilliseconds.ToString() + " ms: " + Skrati(sql));
+                return dt;
+            }
+            catch (Exception ex)
+            {
+                SporiUpit("upit pukao " + sat.ElapsedMilliseconds.ToString() + " ms (" + ex.GetType().Name + " " + Skrati(ex.Message) + "): " + Skrati(sql));
+                throw;
+            }
+        }
+
+        private static string Skrati(string t)
+        {
+            t = (t ?? "").Replace("\r", " ").Replace("\n", " ").Replace("\t", " ");
+            return t.Length > 160 ? t.Substring(0, 160) : t;
+        }
+
+        private static DataTable CitajBezMjere(string spoj, string sql, int timeoutSekundi)
         {
             Stavka s = Uzmi(spoj);
             if (s == null)

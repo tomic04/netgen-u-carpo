@@ -45,6 +45,7 @@ namespace Carpo.NetGen.GridTest
             Podaci();
             Include();
             Ispis();
+            IspisGridaUPdf();
             Zamjene();
             OznakaBezBaze();
             JeziciBezBaze();
@@ -137,6 +138,44 @@ namespace Carpo.NetGen.GridTest
             finally
             {
                 Carpo.NetGen.Print.Prevod.Vanjski = null;
+            }
+        }
+
+        /// <summary>
+        /// SWP-10: s MapaIzvoza (sweep) grid ne ide u PrintLink, nego ravno u PDF; LazniSpin se ne zove.
+        /// </summary>
+        private static void IspisGridaUPdf()
+        {
+            string mapaPrije = Carpo.NetGen.Print.PrintBridge.MapaIzvoza;
+            object strojPrije = Carpo.NetGen.Print.PrintBridge.Stroj;
+            var stroj = new LazniSpin();
+            LazniSpin.Metoda = null;
+            var t = new DataTable();
+            t.Columns.Add("Naziv", typeof(string));
+            t.Rows.Add("Hrvatska");
+            t.Rows.Add("Slovenija");
+            var gc = new DevExpress.XtraGrid.GridControl();
+            var forma = new Form();
+            try
+            {
+                forma.Controls.Add(gc);
+                gc.DataSource = t;
+                gc.ForceInitialize();
+                Carpo.NetGen.Print.PrintBridge.Stroj = stroj;
+                Carpo.NetGen.Print.PrintBridge.MapaIzvoza = Path.Combine(Path.GetTempPath(), "ngswp10");
+                string put = Path.Combine(Carpo.NetGen.Print.PrintBridge.MapaIzvoza, "grid.pdf");
+                if (File.Exists(put))
+                    File.Delete(put);
+                bool ok = Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTMASTER", false, "7", "3", "conn", "login", "select 1", "", "", "", "", "", "Drzave", gc, "", t);
+                long duljina = File.Exists(put) ? new FileInfo(put).Length : 0;
+                T("swp10-grid-pdf", ok && LazniSpin.Metoda == null && duljina > 0 && Carpo.NetGen.Print.PrintBridge.ZadnjiPdf == put,
+                    "ok=" + ok.ToString() + " spin=" + (LazniSpin.Metoda ?? "") + " pdf=" + duljina.ToString());
+            }
+            finally
+            {
+                Carpo.NetGen.Print.PrintBridge.MapaIzvoza = mapaPrije;
+                Carpo.NetGen.Print.PrintBridge.Stroj = strojPrije;
+                forma.Dispose();
             }
         }
 
