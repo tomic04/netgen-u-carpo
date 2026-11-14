@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
@@ -33,25 +34,95 @@ namespace Carpo.NetGen.GridTest
             _t(id, ok, detalj);
         }
 
+        private static volatile bool _cuvar;
+        private static volatile string _korak = "";
+
         public static void Izvrsi(Action<string, bool, string> t)
         {
             _t = t;
-            LijepiExec();
-            VezaNakonGreske();
+            // Podloga u GridTestu nema Carpo Logger, pa JupiterShared_Shown (Events.CreateEvents) baci iznimku na UI
+            // niti; bez ovoga bi ThreadExceptionDialog zaustavio test (vidi i PodlogaRafalno).
+            ThreadExceptionEventHandler iznimka = delegate (object s, ThreadExceptionEventArgs e)
+            {
+                Console.WriteLine("pn: iznimka na UI niti u koraku " + _korak + ": " + e.Exception.GetType().Name + " " + e.Exception.Message);
+            };
+            Application.ThreadException += iznimka;
+            _cuvar = true;
+            var cuvar = new Thread(Cuvar);
+            cuvar.IsBackground = true;
+            cuvar.Start();
             try
             {
-                PripremiSpin();
+                Korak("lijepi-exec", LijepiExec);
+                Korak("veza-nakon-greske", VezaNakonGreske);
+                try
+                {
+                    PripremiSpin();
+                }
+                catch (Exception ex)
+                {
+                    T("pn-spin-priprema", false, ex.Message);
+                    return;
+                }
+                Korak("onsubmit-jednom", OnSubmitJednom);
+                Korak("fillexplorer-parametri", FillExplorerParametri);
+                Korak("nextform-id", NextFormId);
+                Korak("manager-alati", ManagerAlati);
+                Korak("klik-master-greska", KlikMasterGreska);
             }
-            catch (Exception ex)
+            finally
             {
-                T("pn-spin-priprema", false, ex.Message);
-                return;
+                _cuvar = false;
+                Application.ThreadException -= iznimka;
             }
-            OnSubmitJednom();
-            FillExplorerParametri();
-            NextFormId();
-            ManagerAlati();
-            KlikMasterGreska();
+        }
+
+        private static void Korak(string ime, Action radnja)
+        {
+            _korak = ime;
+            Console.WriteLine("pn: " + ime);
+            radnja();
+        }
+
+        /// <summary>Ako korak stoji dulje od 90 s, ispiše otvorene forme i zatvori dijaloge, da CI ne visi.</summary>
+        private static void Cuvar()
+        {
+            string zadnji = _korak;
+            int sekundi = 0;
+            while (_cuvar)
+            {
+                Thread.Sleep(1000);
+                if (_korak != zadnji)
+                {
+                    zadnji = _korak;
+                    sekundi = 0;
+                    continue;
+                }
+                sekundi++;
+                if (sekundi < 90)
+                    continue;
+                sekundi = 0;
+                Console.WriteLine("pn: korak " + _korak + " stoji 90 s, otvorene forme:");
+                try
+                {
+                    var forme = new List<Form>();
+                    foreach (Form f in Application.OpenForms)
+                        forme.Add(f);
+                    foreach (Form f in forme)
+                    {
+                        Console.WriteLine("pn:   " + f.GetType().Name + " '" + f.Text + "' modal=" + f.Modal);
+                        if (f is Dijalog && !f.IsDisposed)
+                        {
+                            Form z = f;
+                            z.BeginInvoke(new Action(delegate () { z.DialogResult = DialogResult.Cancel; z.Close(); }));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("pn:   " + ex.Message);
+                }
+            }
         }
 
         private static string Spoj()
@@ -160,6 +231,8 @@ namespace Carpo.NetGen.GridTest
             forma.Location = new Point(-32000, -32000);
             forma.Show();
             otvoren = forma.Prikazi(xml, "localhost", "spin", 7);
+            // Shown Managera (bez Carpo Loggera baci iznimku, uhvaćenu gore) prođe prije samog testa.
+            Application.DoEvents();
             return forma;
         }
 
