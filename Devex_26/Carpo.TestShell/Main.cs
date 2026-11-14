@@ -888,12 +888,12 @@ namespace Carpo.TestShell
                 var o = NadjiGumb(granula, "Odustani");
                 if (o == null)
                 {
-                    int pokusaj = 0;
+                    int tik = 0;
                     var t = new System.Windows.Forms.Timer();
                     t.Interval = 200;
                     t.Tick += delegate
                     {
-                        pokusaj++;
+                        tik++;
                         foreach (Form f in Application.OpenForms)
                         {
                             var dij = f as Dijalog;
@@ -907,7 +907,7 @@ namespace Carpo.TestShell
                             g.PerformClick();
                             return;
                         }
-                        if (pokusaj > 50)
+                        if (tik > 50)
                             t.Stop();
                     };
                     t.Start();
