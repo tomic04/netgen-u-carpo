@@ -349,6 +349,11 @@ namespace Carpo.NetGen.Ui
         private string DatotekaIzgleda(bool detail)
         {
             string xml = GridRaspored.ImeXml(_master.Kontekst == null ? "" : _master.Kontekst.XmlName);
+            // Form1.vb 6198-6201, 5688: MASTERGRIDLAYOUTFILE (3 granule) je ime datoteke mastera, sređeno
+            // SrediSQL + SrediSQLPosljeNextForme s parametrima reda.
+            string vlastito = detail ? "" : AtributProjekta("MASTERGRIDLAYOUTFILE");
+            if (vlastito.Length > 0 && _master.Kontekst != null)
+                xml = SrediPoslije.Petlja(SqlTekst.Sredi(vlastito, _master.Kontekst), AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), _master.Kontekst.Clipboard, false).Trim();
             bool vise = AtributProjekta("MULTIGRIDLAYOUT").ToLowerInvariant() == "true";
             string forma = !detail && vise ? _aktivnaFormaMastera : "";
             return GridRaspored.Datoteka((detail ? "GridDet" : "GridMaster") + xml + forma + "-");
