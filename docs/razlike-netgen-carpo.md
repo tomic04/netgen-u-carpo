@@ -103,6 +103,18 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 - **NetGen:** `AutoCompleteCombo_Leave` (Form2 9397-9409) na svakom izlasku iz comboa traži točan tekst. Ako ga ne nađe, postavi prvu stavku (`SelectedIndex = 0`), a zatim zove `Glbl_ComboClick`, pa se ONCLICK combo (223 u korpusu, 164 su `select` koji puni druga polja) izvrši još jednom, i bez promjene vrijednosti.
 - **Zašto ostaje:** Carpo `LookUpEdit` sam dopunjuje upisani tekst, a nepoznat tekst vrati na prošlu vrijednost. ONCLICK ide samo na promjenu vrijednosti (`EditValueChanged`), pa povratak u combo i izlazak bez promjene ne prepiše ručno ispravljena polja (50-50 → Carpo).
 
+### R123 Stari VB6 ispis je ukinut
+
+- **NetGen:** `.clsReport` ide u VB6 COM `PrintDlg.clsPrintDlg` (`Class1.PrintRpt` 379-420), a `rs:`/`rs/`, `rsgen` i `gg/` u Form6/PrintDlg (92 poziva u ~26 granula).
+- **Zašto ostaje:** odluka korisnika 14. 11. 2026.: stari VB6 ispis se ukida. Carpo ga ne zove; `PrintBridge.JeStariVb6` zapiše grešku u Carpo log s imenom ispisa, umjesto da klik tiho ne napravi ništa. `vrstadokid-` i `repx` idu u Spin.Printing kao i dosad (ISP-05).
+- **Test:** `isp05-prepoznaje`, `isp05-ukinut`
+
+### R124 Nakon SQL timeouta granula dobije novu sesiju
+
+- **NetGen:** svi upiti granule idu kroz jednu otvorenu vezu (`Conn`, Form1 1607). Timeout prekine batch usred procedure; ako je procedura otvorila transakciju, ona ostaje otvorena na toj vezi, a sljedeći upiti rade unutar nje i drže zaključavanja.
+- **Zašto ostaje:** Carpo (SES-01) također drži jednu vezu po granuli, ali je nakon timeouta zatvori, pa server napravi rollback. Prije toga je Carpo svaki upit slao kroz novu vezu iz poola, koja otvorenu transakciju poništi pri sljedećoj upotrebi (50-50 → Carpo). Privremene tablice sesije nakon timeouta nestanu.
+- **Test:** `ses01-ista-sesija`, `ses01-otpusti-zatvori`
+
 ## Uklonjeno
 
 Svaka uklonjena stavka ima test koji provjerava NetGen linije. R59 i R110 su portani: redni stupac grida, gumbi 79/8 na dnu, slika čvora 0, `PageHeaderFooter` Left/Center/Right.

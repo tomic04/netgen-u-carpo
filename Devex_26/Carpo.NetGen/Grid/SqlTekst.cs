@@ -281,12 +281,52 @@ namespace Carpo.NetGen.Grid
 
     public static class SpinVeza
     {
+        private static string _korisnik = "";
+        private static string _lozinka = "";
+
+        /// <summary>
+        /// ULZ-07: korisnik i lozinka iz Run/Run8 (Jupiter). Form1 1142 i 1563-1568: s korisnikom NetGen spaja
+        /// SQL prijavom (UID/PWD), bez njega Windows prijavom; isto Carpo Starter (Constructor.SetConnectionString).
+        /// Lozinka se nigdje ne zapisuje (NgDnevnik skriva pwd= i password=).
+        /// </summary>
+        public static void Prijava(string korisnik, string lozinka)
+        {
+            _korisnik = korisnik ?? "";
+            _lozinka = lozinka ?? "";
+        }
+
+        /// <summary>Ima li SQL prijave (korisnik iz Run8).</summary>
+        public static bool ImaSqlPrijavu
+        {
+            get { return _korisnik.Length > 0; }
+        }
+
+        /// <summary>Isti način prijave za drugi spoj (JupiterXML, tstr6 u Form1 1564-1568).</summary>
+        public static void PostaviPrijavu(System.Data.SqlClient.SqlConnectionStringBuilder b)
+        {
+            if (_korisnik.Length == 0)
+            {
+                b.IntegratedSecurity = true;
+                return;
+            }
+            b.IntegratedSecurity = false;
+            b.UserID = _korisnik;
+            b.Password = _lozinka;
+        }
+
         public static string Spoj(string server, string baza)
         {
             if (!Carpo.NetGen.Komande.DijalogTok.Produkcija && !string.IsNullOrEmpty(server)
                 && server.IndexOf("jupiter2022", StringComparison.OrdinalIgnoreCase) >= 0)
                 throw new InvalidOperationException("jupiter2022 se ne koristi.");
-            return "Server=" + server + ";Database=" + baza + ";Integrated Security=true;TrustServerCertificate=True;";
+            if (_korisnik.Length == 0)
+                return "Server=" + server + ";Database=" + baza + ";Integrated Security=true;TrustServerCertificate=True;";
+            var b = new System.Data.SqlClient.SqlConnectionStringBuilder();
+            b.DataSource = server ?? "";
+            b.InitialCatalog = baza ?? "";
+            PostaviPrijavu(b);
+            b.TrustServerCertificate = true;
+            return b.ConnectionString + ";";
         }
 
         /// <summary>

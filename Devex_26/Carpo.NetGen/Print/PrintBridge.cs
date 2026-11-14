@@ -117,8 +117,29 @@ namespace Carpo.NetGen.Print
             return d;
         }
 
+        /// <summary>
+        /// Class1.PrintRpt 379-420 i zadnja grana: ".clsReport" ide u VB6 COM PrintDlg.clsPrintDlg, a "rs:"/"rs/",
+        /// "rsgen" i "gg/" u Form6/PrintDlg. Odluka korisnika 14. 11. 2026.: stari VB6 ispis se ukida, pa se ne
+        /// porta (ISP-05). U korpusu je 92 poziva u ~26 granula.
+        /// </summary>
+        public static bool JeStariVb6(string naredba)
+        {
+            string s = (naredba ?? "").Trim();
+            if (s.StartsWith(":", StringComparison.Ordinal))
+                s = s.Substring(1).Trim();
+            string g = s.ToUpperInvariant();
+            return g.StartsWith("RS:", StringComparison.Ordinal) || g.StartsWith("RS/", StringComparison.Ordinal)
+                || g.StartsWith("RSGEN", StringComparison.Ordinal) || g.StartsWith("GG/", StringComparison.Ordinal)
+                || g.IndexOf(".CLSREPORT", StringComparison.Ordinal) >= 0;
+        }
+
         public static bool Ispisi(string naredba, bool dijalog, string id, string operater, string konekcija, string login, string zadnjiSql, string parametriGrida, string parametriSvi, string lijevo, string centar, string desno, string naslov, object grid, string pageOrientation, DataTable tablica)
         {
+            if (JeStariVb6(naredba))
+            {
+                NgDnevnik.Greska("Stari VB6 ispis je ukinut, ne šalje se (ISP-05): " + (naredba ?? "").Trim());
+                return false;
+            }
             // Class1.PrintRpt 443-461: vrstadokid-TABLICA (117 puta, 83 granule) ide u Spin.Printing s istim
             // imenom; Spin.Printing sam nađe predložak po vrsti dokumenta (ISP-02).
             if (IspisMotora.JeVrstaDok(naredba))
@@ -128,6 +149,13 @@ namespace Carpo.NetGen.Print
             string vrsta = Vrsta(naredba, dijalog);
             if (vrsta.Length == 0)
                 return false;
+            // SWP-10: sweep nema korisnika. PrintLink otvara pregled Spin.Printinga, koji je sweep zatvarao tek
+            // na roku granule (DrzaveNG, JeziciNG: 4 s od kojih su klikovi trajali 0,5 s). Grid ide ravno u PDF.
+            if (!string.IsNullOrEmpty(MapaIzvoza))
+            {
+                ZadnjiPdf = GridPdf(MapaIzvoza, grid);
+                return ZadnjiPdf != null;
+            }
             object o = Ucitaj();
             if (o == null)
                 return false;
@@ -184,6 +212,24 @@ namespace Carpo.NetGen.Print
         public static bool ViseOdDva(int broj)
         {
             return broj > 2;
+        }
+
+        /// <summary>SWP-10: grid (IPrintable) u PDF bez pregleda; null ako grid nije za ispis.</summary>
+        public static string GridPdf(string mapa, object grid)
+        {
+            var ispisiv = grid as IPrintable;
+            if (ispisiv == null)
+                return null;
+            Directory.CreateDirectory(mapa ?? "");
+            string put = Path.Combine(mapa ?? "", "grid.pdf");
+            using (var ps = new PrintingSystem())
+            {
+                var link = new PrintableComponentLink(ps);
+                link.Component = ispisiv;
+                link.CreateDocument();
+                ps.ExportToPdf(put);
+            }
+            return put;
         }
 
         public static string Pdf(string mapa, string ime, string parametri)

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT 
+		 DETAILGRID = "spMPQueryGlaIDetNG @action=2,@operateriid=@@operateriid,@id=@@id, @nenc = 0"
+		 MASTERDBLCLICK="UPDATE_FORM"
+		 CMD1CAPTION="Parametri:FILTERFORM" 
+		 CMD2CAPTION=""
+		 CMD3CAPTION="" 
+		 CMD4CAPTION="Zaključi:ZAKLJUCI" 
+		 CMD5CAPTION="" 		
+		 CMD6CAPTION="Print dok.:vrstadokid-MaloprodajaGla"
+		 CMD7CAPTION="Lista" 
+		 CMD8CAPTION="Multi ispis:MULTISELECTPRINT" 
+		 SETDEFAULTS="spMPPermissionNG @action = 0 , @operateriid = @@operateriid, @object = '@@xmlname' , @sifradok = '104',  @mpizdatnicaZakljuci = 1" 
+		 ONLOAD2="select 'Dodaj' = case when @@dodaj=1 then 'enable' else 'disable' end , 'Izmjeni' = case when @@izmjeni=1 then 'enable' else 'disable' end ,
+				'Zaključi' = case when @@zakljuci=1 then 'enable' else 'disable' end, 'Obrisi' = case when @@Obrisi=1 then 'enable' else 'disable' end , 'Storno' = case when @@storno=1 then 'enable' else 'disable' end , 'otkljucaj' = case when @@otkljucaj=1 then 'enable' else 'disable' end " 
+		 POPUPMASTER="Filter:FILTERFORM#Izmjeni:UPDATEFORM#Zaključi:ZAKLJUCI#Otključaj:OTKLJUCAJ" 
+		 TREE="Danas:DANAS_FORM#Jučer:JUCER_FORM#spMPTreeNG @action=1:TEKUCIMJESEC_FORM#Prošli mjesec:PROSLIMJESEC_FORM#spMPTreeNG @action=2:FILTERODDO_FORM#spMPTreeNG @action=3:FILTERODDO_FORM#spMPTreeNG @action=4:FILTEROPERATERIFORM"
+		 GROUPBYBOXVISIBLE="TRUE" 
+		 ONLOAD="" 
+		 FROZENCOLUMNS="0" 
+		 AUTOFITCOLUMNS="False"
+		 CHECKBOXVISIBLE="TRUE"
+		 TOTALROWVISIBLE="FALSE"
+		 DETTOTALROWVISIBLE="FALSE"
+		 REPORT="">
+
+
+
+	<NAME>Zaprimanje robe u MP sa skladišta </NAME>
+	<CAPTION>Zaprimanje robe u MP sa skladišta </CAPTION>
+
+
+<DANAS_FORM         FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=1,@operateriid=@@operateriid,@node='danas', @sifradok = '104', @nenc = 1 , @vrstadokid = @@vrstadokid, @veceodstatusa = 0" />
+<JUCER_FORM         FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=1,@operateriid=@@operateriid,@node='jucer', @sifradok = '104', @nenc = 1, @vrstadokid = @@vrstadokid, @veceodstatusa = 0" />
+<TEKUCIMJESEC_FORM  FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=1,@operateriid=@@operateriid,@node='ovajmj', @sifradok = '104', @nenc = 1, @vrstadokid = @@vrstadokid, @veceodstatusa = 0" />
+<PROSLIMJESEC_FORM  FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=1,@operateriid=@@operateriid,@node='proslimj',@sifradok = '104', @nenc = 1, @vrstadokid = @@vrstadokid, @veceodstatusa = 0" />
+<FILTERODDO_FORM    FILLEXPLORER="TRUE" ONSUBMIT="spMPQueryGlaIDetNG @action=1,@operateriid=@@operateriid,@node='@@node', @sifradok = '104', @nenc = 1, @vrstadokid = @@vrstadokid, @veceodstatusa = 0" />
+
+
+
+
+
+<FILTERFORM NAME="FILTERFORM" HEIGHT="3254" WIDTH="6710" 
+		 CAPTION="Upišite uvjete prikaza " 
+		 ONSUBMIT="spMPQueryGlaIDetNG @action = 1,  @sifradok = '104', @operateriid= @@operateriid, "
+		 ONLOAD="" 
+		 FILLEXPLORER="TRUE" 
+		 NEXTFORM=""
+		 CMD1CAPTION="Pokaži" 
+		 CMD2CAPTION="Odustani" 
+		 >
+			<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od" />
+			<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do" />
+			<INPUT TYPE="combo" NAME="trgovinaid" ALLOWEMPTY="TRUE" CAPTION="Trgovina" ONLOSTFOCUS="select 'refresh' as skladisteid" SQL="spMPDajTrgovina @operateriid = @@operateriid " />
+			<INPUT TYPE="combo" NAME="skladisteid" ALLOWEMPTY="TRUE" CAPTION="Skladište" SQL="spmpDajSkladiste @trgovinaid = @@trgovinaid , @operateriid = @@operateriid" />
+			<INPUT TYPE="combo" NAME="status" ALLOWEMPTY="true" CAPTION="Status" SQL="select 0 as status,&apos;Otvoren&apos; as naziv  union all select 1 as status,&apos;Naloženo &apos; as naziv union all select 2 as status,&apos;Zaprimljeno &apos; as naziv" />
+</FILTERFORM>
+
+
+
+<ZAKLJUCI NAME="ZAKLJUCI" HEIGHT="3197" WIDTH="5501" 
+		CAPTION="Zaključiti dokument ?" 
+		ONSUBMIT="spmpzakljucidokNG @id=@@id"
+		ONLOAD="if (select status from maloprodajagla where maloprodajaglaid= @@ID ) =  1 and (select dbo.fnMPDajSktId(1,@@id)) is not null  begin 
+                        exec spMPQueryGlaIDetNG @action=3,@ID=@@ID
+						end
+						else begin
+                                exec spRaiserror 69001, 'Dokument nije u statusu isporučen da bi se mogao zaključivati !' 
+					end" 
+		 FILLEXPLORER="" 	
+		 CMD1CAPTION="Zaključi" 
+		 CMD2CAPTION="Odustani" 
+		>
+			<INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="2304" HEIGHT="317" WIDTH="2794" CAPTION="_broj" TABINDEX="1" ENABLED="FALSE"/>
+			<INPUT TYPE="label" NAME="Label55" TOP="360" LEFT="288"	 HEIGHT="288" WIDTH="1728" CAPTION="Broj isporuke:" />
+			<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite zaključiti dokument  ? " />
+</ZAKLJUCI>
+
+
+
+<OTKLJUCAJ 
+		 NAME="OTKLJUCAJ" HEIGHT="3197" WIDTH="5501" 
+		 CAPTION="Otključavanje dokumenta  ?" 
+		 ONSUBMIT="spMPOdkljucajDokNG @id=@@id, @operateriid = @@operateriid,"
+		 ONLOAD="if (select status from maloprodajagla where maloprodajaglaid= @@ID ) &lt;&gt; 2 begin 
+                        exec spRaiserror 69001, 'Dokument nije zaključen. Ne može se otključavati!' 
+						end
+						else begin
+                        exec spMPQueryGlaIDetNG @action=3,@ID=@@ID
+					end"
+		 FILLEXPLORER="" 
+		 CMD1CAPTION="Otključaj" CMD2CAPTION="Odustani"
+		>
+		<INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="2304" HEIGHT="317" WIDTH="2779"  ENABLED="FALSE"/>
+		<INPUT TYPE="label" NAME="Label57" TOP="360" LEFT="288" HEIGHT="288" WIDTH="1728" BOLD="FALSE" CAPTION="Broj narudžbe:" />
+		<INPUT TYPE="label" NAME="stat" TOP="1267" LEFT="374" HEIGHT="418" WIDTH="4003"  BOLD="TRUE" CAPTION="Jeste li sigurni da želite otključati dokument  ? " />
+</OTKLJUCAJ>
+
+  <MULTISELECTPRINT
+    NAME="MULTISELECTPRINT"
+    FILLEXPLORER=""
+    CAPTION="Ispis dokumenata"
+    WIDTH="8000"
+    HEIGHT="2600"
+	ONLOADED=""
+    ONSUBMIT=""
+    CMD1CAPTION=""
+    CMD2CAPTION="" >
+
+		<INPUT TYPE="button" NAME="" CAPTION="Izdatnica" TOP="500" LEFT="200" WIDTH="2500" HEIGHT="406" ONCLICK=":repx/rptMPDokKratkiMULTI#close"  />
+		<INPUT TYPE="button" NAME="" CAPTION="Izdatnica-kalkulacija" TOP="500" LEFT="2800" WIDTH="2500" HEIGHT="406" ONCLICK=":repx/rptMPDokDugiMULTI#close"  />
+
+  </MULTISELECTPRINT>
+
+
+
+
+
+</PROJECT>

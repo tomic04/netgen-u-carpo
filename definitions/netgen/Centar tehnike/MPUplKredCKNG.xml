@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+<PROJECT  
+	ONLOAD=":FORM1"  		
+	CMD1CAPTION="Filter:FORM1" 
+	CMD2CAPTION="Dodaj:DODAJFORM"    
+   	CMD3CAPTION="Izmjeni:IZMJENIFORM" 
+   	CMD4CAPTION="Kartica:KARTICA"
+   	CMD5CAPTION="Uplatnica:RS:/Konikom/MPDokumenti/rptMPUplataKredita(@@id)"
+   	CMD6CAPTION="Ispis:PRINTMASTER"
+	MASTERDBLCLICK=""
+	POPUPMASTER=""> 
+ 
+ 	<NAME>Uplate kredita - pojedinačno </NAME>
+	<CAPTION>Uplate kredita - pojedinačno </CAPTION>
+  
+  	<FORM1
+		FILLEXPLORER="TRUE" 
+		WIDTH="10000" 
+		ONSUBMIT="spMPUplataKreditaCKNG @action=111, " 
+		ONLOAD="" 
+		HEIGHT="3500" 
+		CAPTION="Parametri" 
+		BORDERSTYLE="3" 
+		CMD1CAPTION="Pokaži" 
+		CMD2CAPTION="Odustani" 
+		CMD3CAPTION="" 
+		CHILDFORM="">
+
+		<INPUT TYPE="date" 
+			NAME="datumod" 
+				CAPTION="Datum od" 
+				VALUE="DATE1" 
+				HEIGHT="320" 
+				WIDTH="1500" 
+				TABINDEX="1" 
+				CHECKBOX="FALSE"/>
+
+		<INPUT TYPE="date" 
+  			NAME="datumdo" 
+                        CAPTION="Datum do" 
+                        VALUE="DATE2" 
+                        HEIGHT="320" 
+                        WIDTH="1500" 
+                        TABINDEX="2" 
+                        CHECKBOX="FALSE"/>
+		<INPUT TYPE="TRAZILICA" 
+					CAPTION="Osoba" 
+					NAME="PkOsobeId" 
+					SQL="viPKOsobe#pkosobeid#%Naziv%#[JMBG]%#[Broj OI]%#!Partner" 
+					TEXT=""
+					TABINDEX="3" 
+					WIDTH="5000" 
+					HEIGHT="320"/>
+		<INPUT TYPE="combo" 
+				NAME="trgovinaid" 
+				CAPTION="Za trgovinu:" 
+				WIDTH="5000" 
+			HEIGHT="320" 
+				TABINDEX="4" 
+			ALLOWEMPTY="TRUE" 
+			SQL="spMPDajTrgovina @operateriid = @@operateriid " />
+
+
+		<INPUT TYPE="combo" NAME="statusId" 
+						  HEIGHT="288" WIDTH="3440" VISIBLE="TRUE" TEXT="" SQL="select 1 as statusid, 'Uneseno' as Naziv union all select 2 , 'Proknjiženo'" ALLOWEMPTY="TRUE"  
+						  CAPTION="Satus: " TABINDEX="5" ENABLED="TRUE"/>
+
+
+	</FORM1>
+
+	<DODAJFORM
+		WIDTH="9000"
+        ONSUBMIT="spMPUplataKreditaCKNG @action=2, @operateriid = @@operateriid,"
+		ONLOAD="if coalesce(@@id,0) != 0 begin
+		select u.pkosobeid as pkosobeid , rtrim(pko.prezime)+' ' +pko.ime as Osoba, 'Uplata rate' as napomena
+		from uplateKredita u inner join pkosobe pko on u.pkosobeid = pko.pkosobeid where uplatekreditaid = @@id
+		end
+		else begin
+		select @@pkosobeid as pkosobeid, @@id as id,
+		(select top 1 rtrim(prezime)+' ' +ime
+		from pkosobe where pkosobeid= @@pkosobeid) as Osoba , 'Uplata rate' as napomena
+		end"
+		HEIGHT="5500"
+		CAPTION="Nova uplata"
+		CMD1CAPTION="Spremi"
+		CMD2CAPTION="Odustani"
+		FILLEXPLORER="" >
+
+		<INPUT TYPE="combo"
+             	NAME="trgovinaid"
+            	CAPTION="Za trgovinu:"
+            	WIDTH="5000"
+           	HEIGHT="320"
+             	TABINDEX="1"
+           	ALLOWEMPTY="FALSE"
+         	SQL="spMPDajTrgovina @operateriid = @@operateriid " />
+
+		<INPUT TYPE="date"
+			NAME="datum"
+			CAPTION="Datum uplate:"
+			VALUE="DATE"
+			HEIGHT="320"
+			WIDTH="1500"
+			TABINDEX="2"
+			CHECKBOX="FALSE" />
+
+		<INPUT TYPE="TRAZILICA"
+					CAPTION="Osoba"
+					NAME="PkOsobeId"
+					SQL="viPKOsobe#pkosobeid#%Naziv%#[JMBG]%#[Broj OI]%#!Partner"
+					ONLOSTFOCUS="if exists(select * from pktuzbe t inner join pkosobekrediti k on t.pkosobekreditiid=k.pkosobekreditiid 
+								where k.pkosobeid=@@pkosobeid)  begin 
+									exec spRaiserror 69001, &apos;Osoba je tužena. Molim provjeru !&apos;
+								end"
+					TEXT=""
+					TABINDEX="3"
+					WIDTH="5000"
+					HEIGHT="320"/>
+
+		<INPUT TYPE="combo"
+			NAME="pkosobekreditiid"
+                        CAPTION="Kredit"
+                        WIDTH="5500"
+                        HEIGHT="320"
+                        TABINDEX="4"
+                        ALLOWEMPTY="FALSE"
+						REFRESHAFTERCHILD="TRUE"
+						ONLOSTFOCUS="if exists(select * from pktuzbe where pkosobekreditiid=@@pkosobekreditiid)  begin 
+									exec spRaiserror 69001, &apos;Kredit je tužen. Molim provjeru !&apos;
+								end
+								if exists(select * from pktuzbe t inner join pkosobekrediti k on t.pkosobekreditiid=k.pkosobekreditiid 
+								where k.pkosobeid=@@pkosobeid)  begin 
+									exec spRaiserror 69001, &apos;Osoba je tužena. Molim provjeru !&apos;
+								end"
+						SQL="spMPUplataKreditaCKNG @action = 8, @uplatekreditaid = @@id, @pkosobeid = @@pkosobeid"/>
+		<INPUT TYPE="text"
+				NAME="Napomena"
+				CAPTION="Napomena: "
+				TEXT=""
+				WIDTH="2500"
+				HEIGHT="320"
+				TABINDEX="5"
+				ENABLED="TRUE" />
+
+		<INPUT TYPE="number"
+                CAPTION="Uplaćeni iznos:"
+				NAME="iznos"
+				TABINDEX="6"
+				TEXT=""
+				DECIMALS="2"
+				WIDTH="1500"
+				HEIGHT="320"/>
+
+
+	</DODAJFORM>
+
+	<IZMJENIFORM
+		WIDTH="9000" 
+        ONSUBMIT="spMPUplataKreditaCKNG @action=3,@operateriid = @@operateriid," 
+		ONLOAD="spMPUplataKreditaCKNG @action=4,@uplatekreditaid = @@id,@operateriid = @@operateriid" 
+		HEIGHT="5500" 
+		CAPTION="Izmjena uplate"  
+                CMD1CAPTION="Spremi" 
+		CMD2CAPTION="Odustani" 
+		FILLEXPLORER="" >
+
+
+		<INPUT TYPE="date" 
+			NAME="datum" 
+			CAPTION="Datum uplate:" 
+			VALUE="DATE" 
+			HEIGHT="320" 
+			WIDTH="1500" 
+			TABINDEX="1" 
+			CHECKBOX="FALSE" />
+
+		<INPUT TYPE="combo" 
+                             	NAME="trgovinaid" 
+                                	CAPTION="Trgovina:" 
+                                    	WIDTH="5000" 
+                                   	HEIGHT="320" 
+                                     	TABINDEX="2" 
+                                   	ALLOWEMPTY="FALSE" 
+                                 	SQL="spMPDajTrgovina @operateriid = @@operateriid " />
+
+		<INPUT TYPE="combo" 
+                             	NAME="orgshemaid" 
+                                	CAPTION="Mjesto uplate: " 
+                                    	WIDTH="5000" 
+                                   	HEIGHT="320" 
+                                     	TABINDEX="3" 
+                                   	ALLOWEMPTY="FALSE" 
+                                 	SQL="select Orgshemaid, naziv from OrgShema" />
+
+		<INPUT TYPE="TRAZILICA" 
+					CAPTION="Osoba" 
+					NAME="PkOsobeId" 
+					SQL="viPKOsobe#pkosobeid#%Naziv%#[JMBG]%#[Broj OI]%#!Partner" 
+					ONLOSTFOCUS="if exists(select * from pktuzbe t inner join pkosobekrediti k on t.pkosobekreditiid=k.pkosobekreditiid 
+								where k.pkosobeid=@@pkosobeid)  begin 
+									exec spRaiserror 69001, &apos;Osoba je tužena. Molim provjeru !&apos;
+								end"
+					TEXT=""
+					TABINDEX="4" 
+					WIDTH="5000" 
+					HEIGHT="320"/>
+
+		<INPUT TYPE="combo" 
+			NAME="pkosobekreditiid" 
+                        CAPTION="Kredit" 
+                        WIDTH="5500" 
+                        HEIGHT="320" 
+                        TABINDEX="5" 
+						ENABLE = "TRUE"
+                        ALLOWEMPTY="FALSE" 
+						ONLOSTFOCUS="if exists(select * from pktuzbe where pkosobekreditiid=@@pkosobekreditiid)  begin 
+									exec spRaiserror 69001, &apos;Kredit je tužen. Molim provjeru !&apos;
+								end
+								if exists(select * from pktuzbe t inner join pkosobekrediti k on t.pkosobekreditiid=k.pkosobekreditiid 
+								where k.pkosobeid=@@pkosobeid)  begin 
+									exec spRaiserror 69001, &apos;Osoba je tužena. Molim provjeru !&apos;
+								end"
+						
+			REFRESHAFTERCHILD="TRUE"
+            SQL="spMPUplataKreditaCKNG @action = 8, @uplatekreditaid = @@id , @pkosobeid = @@pkosobeid"/>
+		<INPUT TYPE="text" 
+				NAME="Napomena" 
+				CAPTION="Napomena: " 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="6" 
+				ENABLED="TRUE" />
+
+		<INPUT TYPE="number" 
+                CAPTION="Uplaćeni iznos:" 
+				NAME="iznos" 
+				TABINDEX="7" 
+				TEXT="" 
+				DECIMALS="2" 
+				WIDTH="1500" 
+			ENABLE = "FALSE"
+				HEIGHT="320"/>
+
+			<INPUT TOP="6000" TYPE="number" NAME="UplateKreditaid" CAPTION="UplateKreditaid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+
+
+	</IZMJENIFORM>
+
+  <BRISIFORM
+		WIDTH="9000" 
+                ONSUBMIT="spMPUplataKreditaCKNG @action=6," 
+		ONLOAD="spMPUplataKreditaCKNG @action=5,@uplatekreditaid = @@id" 
+		HEIGHT="5500" 
+		CAPTION="Brisanje uplate"  
+                CMD1CAPTION="Obriši" 
+		CMD2CAPTION="Odustani" 
+		FILLEXPLORER="" >
+		<INPUT TYPE="date" 
+			NAME="datum" 
+			CAPTION="Datum uplate:" 
+			VALUE="DATE" 
+			HEIGHT="320" 
+			WIDTH="1500" 
+			TABINDEX="1" 
+			ENABLE="FALSE"
+			CHECKBOX="FALSE" />
+                         
+		<INPUT TYPE="TRAZILICA" 
+			CAPTION="Partner" 
+			NAME="partneriid" 
+			SQL="Partneri#partneriid#Naziv%#[matbroj]%" 
+			TABINDEX="2" 
+			TEXT="" 
+			WIDTH="7500" 
+			ENABLE="FALSE"
+			HEIGHT="320"/> 
+
+		<INPUT TYPE="combo" 
+			NAME="faktureid" 
+                        CAPTION="Kredit" 
+                        WIDTH="5500" 
+                        HEIGHT="320" 
+                        TABINDEX="3" 
+                        ALLOWEMPTY="TRUE" 
+			ENABLE="FALSE"
+			REFRESHAFTERCHILD="TRUE"
+ 	                SQL="select zakljucakid as faktureid, partija as Naziv from MaloprodajaGla where partneriid=@@partneriid"/>
+
+			<INPUT TYPE="number" 
+                CAPTION="Uplaćeni iznos:" 
+				NAME="iznos" 
+				TABINDEX="4" 
+				TEXT="" 
+				ENABLE="FALSE"
+				DECIMALS="2" 
+				WIDTH="1500" 
+				HEIGHT="320"/>
+
+			<INPUT TOP="6000" TYPE="number" NAME="UplateKreditaid" CAPTION="UplateKreditaid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+  </BRISIFORM>
+
+  
+
+
+	<KARTICA
+		WIDTH="14000" 
+		HEIGHT="9000" 
+        ONSUBMIT="" 
+		ONLOAD="select @@pkosobeid as pkosobeid, (select top 1 naziv from viPKosobe where pkosobeid = @@pkosobeid) as Partner" 
+		CAPTION="Kartica"  
+                CMD1CAPTION="" 
+		CMD2CAPTION="Kraj" 
+		FILLEXPLORER="" >
+			<INPUT TYPE="grid" NAME="grid1" REFRESHAFTERCHILD="TRUE" TOP="200" LEFT = "200" WIDTH="14500" HEIGHT="7500" TABINDEX="2" 
+                         SQL="spPKKarticaKredita @action=2, @UplateKreditaid = @@id, @pkosobeid = @@pkosobeid, @partneriid = @@partneriid" /> 
+
+
+		</KARTICA>
+
+
+	<KNJIZENJE
+	WIDTH="9000" 
+			ONSUBMIT="spMPUplataKreditaCKNG @action=10,@operateriid = @@operateriid," 
+	ONLOAD="spMPUplataKreditaCKNG @action=4,@uplatekreditaid = @@id,@operateriid = @@operateriid," 
+	HEIGHT="4500" 
+	CAPTION="Knjiženje uplate"  
+			CMD1CAPTION="Proknjiži" 
+	CMD2CAPTION="Odustani" 
+	FILLEXPLORER="" >
+
+
+		<INPUT TYPE="date" 
+			NAME="datum" 
+			CAPTION="Datum uplate:" 
+			VALUE="DATE" 
+			HEIGHT="320" 
+			WIDTH="1500" 
+			TABINDEX="1" 
+			ENABLE="FALSE" 
+			CHECKBOX="FALSE" />
+
+		<INPUT TYPE="combo" 
+                             	NAME="trgovinaid" 
+                                	CAPTION="Trgovina:" 
+                                    	WIDTH="5000" 
+                                   	HEIGHT="320" 
+                                     	TABINDEX="2" 
+                                   	ALLOWEMPTY="FALSE" 
+									ENABLED="FALSE" 
+                                 	SQL="spMPDajTrgovina @operateriid = @@operateriid " />
+
+		<INPUT TYPE="TRAZILICA" 
+					CAPTION="Osoba" 
+					NAME="PkOsobeId" 
+					SQL="ViPKosobe#pkosobeid#Naziv%#Mjesto#ADRESA#JMBG#[Broj OI]" 
+					TEXT=""
+					TABINDEX="3" 
+					WIDTH="5000" 
+					ENABLED="FALSE" 
+					HEIGHT="320"/>
+
+		<INPUT TYPE="text" 
+					NAME="partija" 
+                        CAPTION="Kredit" 
+                        WIDTH="5500" 
+                        HEIGHT="320" 
+                        TABINDEX="4" 
+						ENABLE = "FALSE"
+                        ALLOWEMPTY="FALSE" />
+						
+
+		<INPUT TYPE="number" 
+			CAPTION="Uplaćeni iznos:" 
+			NAME="iznos" 
+			TABINDEX="5" 
+			TEXT="" 
+			DECIMALS="2" 
+			WIDTH="1500" 
+			ENABLE = "FALSE"
+			HEIGHT="320"/>
+
+		<INPUT TOP="6000" TYPE="number" NAME="UplateKreditaid" CAPTION="UplateKreditaid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+
+
+	</KNJIZENJE>
+
+
+
+
+</PROJECT> 

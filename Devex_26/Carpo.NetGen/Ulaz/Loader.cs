@@ -67,6 +67,7 @@ namespace Carpo.NetGen
         public object Run(string server, string database, string userId, string password,
             int operater, int clientHandle, short top, short left, string remoteDllPath)
         {
+            Carpo.NetGen.Grid.SpinVeza.Prijava(userId, password);
             return Izvrsi(server, database, remoteDllPath, operater, clientHandle);
         }
 
@@ -74,6 +75,8 @@ namespace Carpo.NetGen
             int operater, int clientHandle, short top, short left, string remoteDllPath)
         {
             // strNGParams ide u isti router kao klik gumba, kad se Podloga pokaze (Form1_Load 1682, ULZ-03).
+            // Form1 1142: s korisnikom iz Jupitera SQL prijava, bez njega Windows (ULZ-07).
+            Carpo.NetGen.Grid.SpinVeza.Prijava(userId, password);
             return Izvrsi(server, database, remoteDllPath, operater, clientHandle);
         }
 

@@ -463,7 +463,10 @@ namespace Carpo.NetGen.Ui
 
         // ---------------------------------------------------------------- zatvaranje
 
-        /// <summary>Form1_FormClosed 1298-1306: Rafalno(strONClosed) bez SrediSQL (radi ga Rafalno za @@).</summary>
+        /// <summary>
+        /// Form1_FormClosed 1298-1306: Rafalno(strONClosed) bez SrediSQL (radi ga Rafalno za @@).
+        /// Pa Form1 1322 Conn.Close: zadnja podloga granule zatvori zajedničku vezu (SES-01).
+        /// </summary>
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             try
@@ -477,6 +480,22 @@ namespace Carpo.NetGen.Ui
                 NgDnevnik.Greska("ONCLOSED: " + ex.Message);
             }
             base.OnFormClosed(e);
+            if (_vezaPrijavljena)
+            {
+                _vezaPrijavljena = false;
+                NgVeza.Otpusti(_spoj);
+            }
+        }
+
+        /// <summary>SES-01: podloga uništena bez zatvaranja (Jupiter, sweep) također otpusti vezu granule.</summary>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && _vezaPrijavljena)
+            {
+                _vezaPrijavljena = false;
+                NgVeza.Otpusti(_spoj);
+            }
+            base.Dispose(disposing);
         }
     }
 }

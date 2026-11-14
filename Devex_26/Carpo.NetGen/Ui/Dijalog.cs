@@ -125,11 +125,11 @@ namespace Carpo.NetGen.Ui
             };
         }
 
-        private static void Trag(string red)
+        public static void Trag(string red)
         {
             if (string.IsNullOrEmpty(TragPutanja))
                 return;
-            try { System.IO.File.AppendAllText(TragPutanja, DateTime.Now.ToString("HH:mm:ss") + " " + red + "\r\n"); }
+            try { System.IO.File.AppendAllText(TragPutanja, DateTime.Now.ToString("HH:mm:ss.fff") + " " + red + "\r\n"); }
             catch { }
         }
 
@@ -260,6 +260,12 @@ namespace Carpo.NetGen.Ui
                     okviri[0].Controls.Add(natpis[0]);
             }
 
+            // Form2.vb 1373-1379 i 1403-1409: okvir (frame/group) i panel idu SendToBack, a ostale kontrole
+            // BringToFront (1348, 1498, ...). Bez toga okvir koji je u XML-u prije kontrola leži preko njih i
+            // forma izgleda prazno (1217 formi u 299 granula, npr. RobaWebKlase INSERT_KLASA) (LAY-02).
+            // Kasnija kontrola je ispred ranije (i za Dock), kao u VB-u (LAY-03).
+            SloziRedoslijed(forma);
+
             if (forma.Gumbi != null && forma.Gumbi.Count > 0)
             {
                 // Form2.designer: Panel1 dno (33) s Button1..6 na stalnim mjestima; prazan natpis skrije gumb
@@ -313,7 +319,8 @@ namespace Carpo.NetGen.Ui
                 gumbi[0].SendToBack();
             foreach (Control c in SveKontrole())
             {
-                if (c.Dock == DockStyle.Fill)
+                // Okvir i panel s DOCK=5 VB i dalje šalje SendToBack (1373-1379), inače pokriju polja (RAS-01).
+                if (c.Dock == DockStyle.Fill && !(c is PanelControl))
                     c.BringToFront();
             }
 
@@ -324,6 +331,35 @@ namespace Carpo.NetGen.Ui
             UcitajDbClipboard(forma);
             SrediNaslov();
             OsvjeziStatus();
+        }
+
+        /// <summary>
+        /// VB slaže kontrole redom iz XML-a: okvir i panel SendToBack, sve ostalo BringToFront nakon
+        /// Controls.Add. Controls.Add sam stavlja novu kontrolu iza starih, pa bez ovoga i preklopljene
+        /// kontrole i Dock idu obrnuto od NetGena (LAY-02, LAY-03). Natpis "lbl"+ime ide uz svoju kontrolu.
+        /// </summary>
+        private void SloziRedoslijed(NgForm forma)
+        {
+            if (forma == null || forma.Kontrole == null)
+                return;
+            for (int i = 0; i < forma.Kontrole.Count; i++)
+            {
+                NgControl k = forma.Kontrole[i];
+                if (string.IsNullOrEmpty(k.Name))
+                    continue;
+                Control[] nadjeno = Controls.Find(k.Name, true);
+                if (nadjeno.Length == 0)
+                    continue;
+                if (k.Grana == NgGrana.Group || k.Grana == NgGrana.Panel)
+                {
+                    nadjeno[0].SendToBack();
+                    continue;
+                }
+                nadjeno[0].BringToFront();
+                Control[] natpis = Controls.Find("lbl" + k.Name, true);
+                if (natpis.Length > 0)
+                    natpis[0].BringToFront();
+            }
         }
 
         public bool ProvediTipku(Keys keyData)
@@ -1484,7 +1520,7 @@ namespace Carpo.NetGen.Ui
             string izvor = master ?? "";
             if (_forma != null && !string.IsNullOrEmpty(_forma.OnSubmit))
                 izvor = _forma.OnSubmit;
-            return SrediPoslije.ZaSlanje(izvor, SviParametri(), _kontekst ?? new SqlKontekst(), null);
+            return SrediPoslije.ZaSlanje(izvor, SviParametri(), _kontekst ?? new SqlKontekst(), _kontekst == null ? null : _kontekst.Clipboard);
         }
 
         private void IzvrsiSql(string tekst)
@@ -2412,14 +2448,21 @@ namespace Carpo.NetGen.Ui
             var cb = _kontekst == null ? null : _kontekst.Clipboard;
             if (cb != null)
             {
+                // 3936: Split(SearchBoxCaptioni & ComboBoxCaptioni & strParametriSvi): natpisi tražilica i
+                // comboa idu samo u CB, ne i u parametre koji se lijepe na ONSUBMIT (PAR-02).
+                var trazilice = new StringBuilder();
                 var natpisi = new StringBuilder();
                 foreach (Control c in SveKontrole())
                 {
+                    if (string.IsNullOrEmpty(c.Name))
+                        continue;
+                    if (c.GetType() == typeof(ButtonEdit))
+                        trazilice.Append(ParametriSvi.SearchNatpis(c.Name, ((ButtonEdit)c).Text));
                     var look = c as LookUpEdit;
-                    if (look != null && !string.IsNullOrEmpty(c.Name))
+                    if (look != null)
                         natpisi.Append("@combobox").Append(c.Name.Trim()).Append("='").Append((look.Text ?? "").Replace(",", " ")).Append("',");
                 }
-                ClipboardNg.UpisiParametre(cb, natpisi.ToString() + svi);
+                ClipboardNg.UpisiParametre(cb, trazilice.ToString() + natpisi.ToString() + svi);
             }
             // 3429-3662: PokupiParametre sprema vrijednosti u NetGenDBClipboard (DBC-01).
             if (_dbCb && !_slazem && !_zatvaram)

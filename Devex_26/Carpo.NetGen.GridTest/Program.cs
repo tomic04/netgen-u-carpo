@@ -28,6 +28,9 @@ namespace Carpo.NetGen.GridTest
         [STAThread]
         private static int Main(string[] args)
         {
+            // RAS-01: provjera izgleda svih formi korpusa (zaseban korak u build.yml).
+            if (args != null && args.Length >= 2 && args[0] == "--raspored")
+                return RasporedFormi.Provjeri(args[1], args.Length > 2 ? args[2] : null);
             SqlPreskoci();
             IntrastatPreskok();
             RucniStart();
@@ -42,6 +45,7 @@ namespace Carpo.NetGen.GridTest
             Podaci();
             Include();
             Ispis();
+            IspisGridaUPdf();
             Zamjene();
             OznakaBezBaze();
             JeziciBezBaze();
@@ -134,6 +138,44 @@ namespace Carpo.NetGen.GridTest
             finally
             {
                 Carpo.NetGen.Print.Prevod.Vanjski = null;
+            }
+        }
+
+        /// <summary>
+        /// SWP-10: s MapaIzvoza (sweep) grid ne ide u PrintLink, nego ravno u PDF; LazniSpin se ne zove.
+        /// </summary>
+        private static void IspisGridaUPdf()
+        {
+            string mapaPrije = Carpo.NetGen.Print.PrintBridge.MapaIzvoza;
+            object strojPrije = Carpo.NetGen.Print.PrintBridge.Stroj;
+            var stroj = new LazniSpin();
+            LazniSpin.Metoda = null;
+            var t = new DataTable();
+            t.Columns.Add("Naziv", typeof(string));
+            t.Rows.Add("Hrvatska");
+            t.Rows.Add("Slovenija");
+            var gc = new DevExpress.XtraGrid.GridControl();
+            var forma = new Form();
+            try
+            {
+                forma.Controls.Add(gc);
+                gc.DataSource = t;
+                gc.ForceInitialize();
+                Carpo.NetGen.Print.PrintBridge.Stroj = stroj;
+                Carpo.NetGen.Print.PrintBridge.MapaIzvoza = Path.Combine(Path.GetTempPath(), "ngswp10");
+                string put = Path.Combine(Carpo.NetGen.Print.PrintBridge.MapaIzvoza, "grid.pdf");
+                if (File.Exists(put))
+                    File.Delete(put);
+                bool ok = Carpo.NetGen.Print.PrintBridge.Ispisi("PRINTMASTER", false, "7", "3", "conn", "login", "select 1", "", "", "", "", "", "Drzave", gc, "", t);
+                long duljina = File.Exists(put) ? new FileInfo(put).Length : 0;
+                T("swp10-grid-pdf", ok && LazniSpin.Metoda == null && duljina > 0 && Carpo.NetGen.Print.PrintBridge.ZadnjiPdf == put,
+                    "ok=" + ok.ToString() + " spin=" + (LazniSpin.Metoda ?? "") + " pdf=" + duljina.ToString());
+            }
+            finally
+            {
+                Carpo.NetGen.Print.PrintBridge.MapaIzvoza = mapaPrije;
+                Carpo.NetGen.Print.PrintBridge.Stroj = strojPrije;
+                forma.Dispose();
             }
         }
 
@@ -392,8 +434,10 @@ namespace Carpo.NetGen.GridTest
                 Carpo.NetGen.Poziv.FiskalPoziv.Cis = null;
             }
             T("param-radio", Carpo.NetGen.Komande.ParametriSvi.Radio("r1", true) == "@r1=1,", "");
-            T("param-search", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "0", "Kava, mljevena") == "@roba=null,@searchboxroba='Kava  mljevena',", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "0", "Kava, mljevena"));
-            T("param-search-id", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "15", "Kava") == "@roba=15,@searchboxroba='Kava',", "");
+            // PAR-02: @searchboxIME ne ide u parametre ONSUBMIT-a (KntKompVerizne: "is not a parameter"), samo u CB.
+            T("param-search", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "0", "Kava, mljevena") == "@roba=null,", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "0", "Kava, mljevena"));
+            T("param-search-id", Carpo.NetGen.Komande.ParametriSvi.Search("roba", "15", "Kava") == "@roba=15,", "");
+            T("param-search-natpis", Carpo.NetGen.Komande.ParametriSvi.SearchNatpis("roba", "Kava, mljevena") == "@searchboxroba='Kava  mljevena',", "");
             T("param-grid", Carpo.NetGen.Komande.ParametriSvi.Grid("stavke", "8", "8~9", "", 2) == "@stavke=8,@arrayofblueidsstavke='~8~9~',@nizplavihajdijevastavke='~8~9~',@nizoznacenihajdijevastavke='',@rowcountstavke=2,", Carpo.NetGen.Komande.ParametriSvi.Grid("stavke", "8", "8~9", "", 2));
             var sakrij = Carpo.NetGen.Komande.StupciNaredba.Primijeni("HIDECOLUMNS(mastergrid,oznaka)");
             bool oznaka = true;
@@ -1982,6 +2026,9 @@ namespace Carpo.NetGen.GridTest
             DijalogUcinak();
             SqlSlojNetGen();
             ImeAplikacije();
+            StariIspisUkinut();
+            OkvirStraga();
+            RedoslijedKaoVb();
             BrojNaDijalogu();
             LanacNakonZamjene();
             DogadjajiPravila();
@@ -1989,6 +2036,9 @@ namespace Carpo.NetGen.GridTest
             RasporedDijaloga();
             IspisUcinak();
             PokaziUpitUcinak();
+            ComboPodloge();
+            SesijaVeze();
+            SqlPrijava();
             RafalnoPravila();
             PodlogaRafalno();
             GreskeDijaloga();
@@ -3121,7 +3171,88 @@ namespace Carpo.NetGen.GridTest
             return NgDnevnik.Zapisi.Count == 0 ? "" : NgDnevnik.Zapisi[NgDnevnik.Zapisi.Count - 1].Tekst;
         }
 
-        /// <summary>Plan, faza G: lozinka iz polja s PASSWORDCHAR ne ide u log; log ne raste bez kraja.</summary>
+        /// <summary>ISP-05: stari VB6 ispis (rs:, rsgen, gg/, .clsReport) je ukinut; Spin.Printing put ostaje.</summary>
+        private static void StariIspisUkinut()
+        {
+            bool prepoznaje = PrintBridge.JeStariVb6("rs:/Racun") && PrintBridge.JeStariVb6(":RS/Racun") && PrintBridge.JeStariVb6("rsgenPonuda")
+                && PrintBridge.JeStariVb6("Ponuda.clsReport") && PrintBridge.JeStariVb6("gg/x");
+            bool ostaje = !PrintBridge.JeStariVb6("vrstadokid-NabPriGla") && !PrintBridge.JeStariVb6("repx:/Ponuda") && !PrintBridge.JeStariVb6("PRINTMASTER");
+            T("isp05-prepoznaje", prepoznaje && ostaje, "");
+            bool poslano = PrintBridge.Ispisi("rs:/Racun", true, "1", "7", "", "", "", "", "", "", "", "", "N", null, "", null);
+            string zapis = ZadnjiZapis();
+            T("isp05-ukinut", !poslano && zapis.IndexOf("ISP-05", StringComparison.Ordinal) >= 0 && zapis.IndexOf("rs:/Racun", StringComparison.Ordinal) >= 0, zapis);
+        }
+
+        /// <summary>LAY-02: okvir prije kontrola (RobaWebKlase INSERT_KLASA) ide iza njih, kao VB SendToBack.</summary>
+        private static void OkvirStraga()
+        {
+            try
+            {
+                var kontrole = new List<NgControl>
+                {
+                    new NgControl("frame", NgGrana.Group, "FrameNG0", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "72" }, { "LEFT", "72" }, { "HEIGHT", "2160" }, { "WIDTH", "6048" } }), true),
+                    new NgControl("text", NgGrana.Text, "naziv", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "432" }, { "LEFT", "1440" }, { "HEIGHT", "288" }, { "WIDTH", "2160" } }), true),
+                    new NgControl("label", NgGrana.Label, "Label13", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "432" }, { "LEFT", "432" }, { "CAPTION", "Naziv:" } }), true),
+                    new NgControl("panel", NgGrana.Panel, "Panel1", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "2300" }, { "LEFT", "72" } }), true)
+                };
+                var forma = new NgForm("INSERT_KLASA", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Dodavanje klase" } }),
+                    "", "", kontrole, new List<NgButton>(), new List<string>());
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), delegate (string x) { return new DataTable(); });
+                    Control okvir = d.Controls.Find("FrameNG0", false)[0];
+                    Control tekst = d.Controls.Find("naziv", false)[0];
+                    Control natpis = d.Controls.Find("Label13", false)[0];
+                    Control ploca = d.Controls.Find("Panel1", false)[0];
+                    int io = d.Controls.GetChildIndex(okvir), it = d.Controls.GetChildIndex(tekst), il = d.Controls.GetChildIndex(natpis), ip = d.Controls.GetChildIndex(ploca);
+                    T("lay02-okvir-straga", io > it && io > il && ip > it && ip > il, "okvir=" + io + " tekst=" + it + " natpis=" + il + " panel=" + ip);
+                }
+                // RobaDeklaracijeNG INSERT: GroupMain s DOCK=5 je i dalje iza polja (RAS-01).
+                var kontrole2 = new List<NgControl>
+                {
+                    new NgControl("group", NgGrana.Group, "GroupMain", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "72" }, { "LEFT", "72" }, { "HEIGHT", "8496" }, { "WIDTH", "13176" }, { "DOCK", "5" } }), true),
+                    new NgControl("text", NgGrana.Text, "Naziv", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "432" }, { "LEFT", "1440" }, { "HEIGHT", "288" }, { "WIDTH", "2160" } }), true)
+                };
+                var forma2 = new NgForm("INSERT", new NgAttributeBag(null), "", "", kontrole2, new List<NgButton>(), new List<string>());
+                using (var d2 = new Dijalog())
+                {
+                    d2.Slozi(forma2, new SqlKontekst(), delegate (string x) { return new DataTable(); });
+                    Control g = d2.Controls.Find("GroupMain", false)[0];
+                    Control n = d2.Controls.Find("Naziv", false)[0];
+                    T("lay02-okvir-fill", g.Dock == DockStyle.Fill && d2.Controls.GetChildIndex(g) > d2.Controls.GetChildIndex(n), "dock=" + g.Dock + " g=" + d2.Controls.GetChildIndex(g) + " n=" + d2.Controls.GetChildIndex(n));
+                }
+            }
+            catch (Exception ex)
+            {
+                T("lay02", false, ex.GetType().Name + ": " + ex.Message);
+            }
+        }
+
+        /// <summary>LAY-03: kasnija kontrola u XML-u je ispred ranije (VB BringToFront), i za Dock.</summary>
+        private static void RedoslijedKaoVb()
+        {
+            try
+            {
+                var kontrole = new List<NgControl>
+                {
+                    new NgControl("text", NgGrana.Text, "prvo", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "100" }, { "LEFT", "100" }, { "HEIGHT", "288" }, { "WIDTH", "2000" } }), true),
+                    new NgControl("text", NgGrana.Text, "drugo", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "100" }, { "LEFT", "100" }, { "HEIGHT", "288" }, { "WIDTH", "2000" } }), true)
+                };
+                var forma = new NgForm("RED", new NgAttributeBag(null), "", "", kontrole, new List<NgButton>(), new List<string>());
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), delegate (string x) { return new DataTable(); });
+                    int i1 = d.Controls.GetChildIndex(d.Controls.Find("prvo", false)[0]);
+                    int i2 = d.Controls.GetChildIndex(d.Controls.Find("drugo", false)[0]);
+                    T("lay03-kasnija-ispred", i2 < i1, "prvo=" + i1 + " drugo=" + i2);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("lay03", false, ex.GetType().Name + ": " + ex.Message);
+            }
+        }
+
         /// <summary>APP-01: Application Name veze je "Carpo.NetGen." + ime XML-a (NetGen "NetGenDLL-" + XML, Form1 1176).</summary>
         private static void ImeAplikacije()
         {
@@ -3134,6 +3265,7 @@ namespace Carpo.NetGen.GridTest
             T("app01-prazno", new SqlConnectionStringBuilder(SpinVeza.SaAplikacijom("Server=a;", null)).ApplicationName == "Carpo.NetGen", "");
         }
 
+        /// <summary>Plan, faza G: lozinka iz polja s PASSWORDCHAR ne ide u log; log ne raste bez kraja.</summary>
         private static void LozinkaULogu()
         {
             try
@@ -3755,6 +3887,137 @@ namespace Carpo.NetGen.GridTest
             {
                 forma.Close();
                 forma.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// CMB-02: granula s COMBO atributom (Narudžbe) se otvara. Postavljanje bbiLookUpFilter.EditValue
+        /// zvalo je i Carpo rukovatelj u Manageru, koji je bez JSettings bacio NullReference iz Prikazi.
+        /// </summary>
+        private static void ComboPodloge()
+        {
+            string root = Environment.GetEnvironmentVariable("GITHUB_WORKSPACE");
+            if (string.IsNullOrEmpty(root))
+                root = Directory.GetCurrentDirectory();
+            string xml = Path.Combine(root, "definitions", "netgen", "BIOVEGA", "Narudzbe.xml");
+            if (!File.Exists(xml))
+            {
+                T("cmb02-combo-podloga", false, "nema " + xml);
+                return;
+            }
+            var forma = new Podloga();
+            try
+            {
+                forma.ShowInTaskbar = false;
+                forma.StartPosition = FormStartPosition.Manual;
+                forma.Location = new Point(-32000, -32000);
+                forma.Show();
+                string greska = "";
+                bool otvoren = false;
+                try { otvoren = forma.Prikazi(xml, "localhost", "spin", 7); }
+                catch (Exception ex) { greska = ex.GetType().Name + ": " + ex.Message; }
+                var combo = forma.bbiLookUpFilter;
+                string vrijednost = combo == null ? "" : Convert.ToString(combo.EditValue);
+                T("cmb02-combo-podloga", greska.Length == 0 && otvoren && vrijednost == "Vremenska podjela",
+                    "otvoren=" + otvoren.ToString() + " combo=" + vrijednost + " " + greska);
+            }
+            finally
+            {
+                forma.Close();
+                forma.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// SES-01: upiti granule idu kroz jednu SQL sesiju kao NetGen Conn. Tablica ## koju napuni jedan upit
+        /// vidi se u sljedećem (MPStanjeTrg ##temp50, MPPonudaNEW ##tponudanaplata), a # isto.
+        /// Kontrola pokazuje staro ponašanje: dvije veze iz poola (sp_reset_connection).
+        /// </summary>
+        private static void SesijaVeze()
+        {
+            string spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj("localhost", "spin"), "ses01.xml");
+            string ime = "##ses01_" + System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+            // Kontrola (staro): punjenje i čitanje kroz zasebne veze iz poola.
+            string kontrola;
+            try
+            {
+                string k = SpinVeza.SaAplikacijom(SpinVeza.Spoj("localhost", "spin"), "ses01k.xml");
+                using (var c1 = new SqlConnection(k))
+                {
+                    c1.Open();
+                    using (var cmd = new SqlCommand("select 1 as a into " + ime + "k", c1))
+                        cmd.ExecuteNonQuery();
+                }
+                using (var c2 = new SqlConnection(k))
+                {
+                    c2.Open();
+                    using (var cmd = new SqlCommand("select count(*) from " + ime + "k", c2))
+                        kontrola = "vidi " + Convert.ToString(cmd.ExecuteScalar());
+                }
+            }
+            catch (Exception ex)
+            {
+                kontrola = ex.Message;
+            }
+            Console.WriteLine("INFO ses01-kontrola (dvije veze iz poola) | " + kontrola);
+            try
+            {
+                NgVeza.Prijavi(spoj);
+                DataTable spid1 = NgVeza.Citaj(spoj, "select @@spid as s", 30);
+                NgVeza.Citaj(spoj, "if object_id('tempdb.." + ime + "') is not null drop table " + ime + "; select 1 as a into " + ime, 30);
+                NgVeza.Citaj(spoj, "if object_id('tempdb..#ses01l') is not null drop table #ses01l; select 2 as a into #ses01l", 30);
+                DataTable globalna = NgVeza.Citaj(spoj, "select a from " + ime, 30);
+                DataTable lokalna = NgVeza.Citaj(spoj, "select a from #ses01l", 30);
+                DataTable spid2 = NgVeza.Citaj(spoj, "select @@spid as s", 30);
+                T("ses01-ista-sesija", Convert.ToString(spid1.Rows[0][0]) == Convert.ToString(spid2.Rows[0][0])
+                    && globalna.Rows.Count == 1 && lokalna.Rows.Count == 1,
+                    "spid " + Convert.ToString(spid1.Rows[0][0]) + "/" + Convert.ToString(spid2.Rows[0][0])
+                    + " ##=" + globalna.Rows.Count.ToString() + " #=" + lokalna.Rows.Count.ToString());
+                // Zadnja podloga zatvori vezu: ## tablica sesije nestane, kao na kraju NetGen procesa.
+                NgVeza.Otpusti(spoj);
+                object postoji;
+                using (var c = new SqlConnection(SpinVeza.Spoj("localhost", "spin")))
+                {
+                    c.Open();
+                    using (var cmd = new SqlCommand("select object_id('tempdb.." + ime + "')", c))
+                        postoji = cmd.ExecuteScalar();
+                }
+                T("ses01-otpusti-zatvori", postoji == null || postoji == DBNull.Value, "object_id=" + Convert.ToString(postoji));
+            }
+            catch (Exception ex)
+            {
+                T("ses01-ista-sesija", false, ex.GetType().Name + ": " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// ULZ-07: Run8 s korisnikom spaja SQL prijavom (Form1 1563-1568), i bazu granule i JupiterXML;
+        /// bez korisnika Windows prijavom. Lozinka s ; i navodnikom ostaje cijela.
+        /// </summary>
+        private static void SqlPrijava()
+        {
+            string izvorPrije = XmlIzvor.SpojBaze;
+            bool ukljucenPrije = XmlIzvor.Ukljucen;
+            try
+            {
+                SpinVeza.Prijava("ngtest", "a;b\"c");
+                var b = new SqlConnectionStringBuilder(SpinVeza.SaAplikacijom(SpinVeza.Spoj("srv", "baza"), "X.xml"));
+                XmlIzvor.Ukljuci("srv");
+                var x = new SqlConnectionStringBuilder(XmlIzvor.SpojBaze);
+                T("ulz07-sql-prijava", !b.IntegratedSecurity && b.UserID == "ngtest" && b.Password == "a;b\"c"
+                    && b.InitialCatalog == "baza" && b.ApplicationName == "Carpo.NetGen.X"
+                    && !x.IntegratedSecurity && x.UserID == "ngtest" && x.InitialCatalog == "JupiterXML",
+                    "baza: user=" + b.UserID + " integrated=" + b.IntegratedSecurity.ToString()
+                    + "; JupiterXML: user=" + x.UserID + " integrated=" + x.IntegratedSecurity.ToString());
+                SpinVeza.Prijava("", "");
+                var w = new SqlConnectionStringBuilder(SpinVeza.Spoj("srv", "baza"));
+                T("ulz07-windows-prijava", w.IntegratedSecurity && w.UserID.Length == 0, w.ConnectionString);
+            }
+            finally
+            {
+                SpinVeza.Prijava("", "");
+                XmlIzvor.SpojBaze = izvorPrije;
+                XmlIzvor.Ukljucen = ukljucenPrije;
             }
         }
 
