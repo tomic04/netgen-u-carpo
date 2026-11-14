@@ -50,6 +50,19 @@ namespace Carpo.NetGen.Ui
         {
             get { return _sqlPoruka ? "PORUKA" : "GRESKA"; }
         }
+
+        /// <summary>Greška master grida koju bi NetGen pokazao (MasterGrid.IzvrsiCitanje kroz NgVeza; tiha greška je bez Poruke).</summary>
+        private string MasterGreska()
+        {
+            if (_master == null || _master.Stanje == null || string.IsNullOrEmpty(_master.Stanje.SqlGreska) || _master.Stanje.Poruka == null)
+                return "";
+            return _master.Stanje.SqlGreska + " | " + (_master.Stanje.SqlZaSlanje ?? "");
+        }
+
+        private string StatusMasterGreske
+        {
+            get { return _master.Stanje.SqlGreskaBroj >= 50000 ? "PORUKA" : "GRESKA"; }
+        }
         private string _zadnjiSql = "";
         private string _testId = "";
         private string _imeUnosa = "";
@@ -1222,8 +1235,12 @@ namespace Carpo.NetGen.Ui
             string granula = _projekt == null ? Text : (_projekt.Naslov ?? Text);
             int master = _master.Stanje.Tablica == null ? 0 : _master.Stanje.Tablica.Rows.Count;
             bool sqlMaster = MasterPuni();
+            string masterGreska = MasterGreska();
             if (!string.IsNullOrEmpty(_sqlGreska))
                 redovi.Add(Linija(granula, "master", "grid", StatusSqlGreske, _sqlGreska, "netgen/Form1.vb:3882"));
+            else if (masterGreska.Length > 0)
+                // PN-08: greška master grida ide kroz NgVeza u _master.Stanje, ne u _sqlGreska; prije je bila PRAZAN (= CISTO u sweepu).
+                redovi.Add(Linija(granula, "master", "grid", StatusMasterGreske, masterGreska, "netgen/Form1.vb:3882"));
             else if (sqlMaster && master == 0)
                 redovi.Add(Linija(granula, "master", "grid", "PRAZAN", "NetGen puni master, grid je prazan", "netgen/Form1.vb:3882"));
             else
@@ -1364,11 +1381,16 @@ namespace Carpo.NetGen.Ui
                         gvGla.ClearSelection();
                     }
                     PokreniZatvaranje();
+                    string masterPrije = MasterGreska();
                     g.PerformClick();
                     Application.DoEvents();
                     string provjera = upis ? ProvjeriUpis(naredba) : "";
+                    string masterPoslije = MasterGreska();
                     if (!string.IsNullOrEmpty(_sqlGreska))
                         redovi.Add(Linija(granula, "gumb", natpis, StatusSqlGreske, _sqlGreska, "netgen/Form2.vb:3377"));
+                    else if (masterPoslije.Length > 0 && masterPoslije != masterPrije)
+                        // PN-08: master napunjen nakon dijaloga (FILLEXPLORER, REFRESHMASTER) s greškom.
+                        redovi.Add(Linija(granula, "gumb", natpis, StatusMasterGreske, masterPoslije, "netgen/Form1.vb:5450"));
                     else if (provjera.StartsWith("GRESKA", StringComparison.Ordinal))
                         redovi.Add(Linija(granula, "gumb", natpis, "GRESKA", provjera.Substring(6).Trim(), "netgen/Form2.vb:3406"));
                     else if (provjera.Length > 0)
