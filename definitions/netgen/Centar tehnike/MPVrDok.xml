@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+<PROJECT  
+   STARTUPSTORA="spMPAzurVrstaDok @action=1" 
+   CMD1CAPTION="Dodaj:DODAJFORM"    
+   CMD2CAPTION="Obriši:DELETEFORM" 
+   CMD3CAPTION="Izmjeni:UPDATEFORM"
+   CMD4CAPTION="Dokumenti:DAJVRSTADOK"
+   CMD5CAPTION="Ostali:OSTALI"
+   CMD6CAPTION=""
+   POPUP=""
+   DBLCLICKFORM="DAJVRSTADOK">
+ 
+  <NAME>Ažuriranje vrstaprometa i vrsta dokumenata u MP </NAME>
+  <CAPTION>Ažuriranje vrstaprometa i vrsta dokumenata u MP </CAPTION>
+ 
+  <KOMENTAR> </KOMENTAR>
+  <AUTOR>KK 12.06.2007  </AUTOR>
+
+  <DODAJFORM 
+                         WIDTH="11000" 
+                         STORA="select 1" 
+                         STARTUPSTORA="select getdate()+1 as datumdok" 
+                         HEIGHT="5500" 
+                         CAPTION="Nova nivelacija"  
+                         CMD1CAPTION="Gotovo" 
+                         CMD2CAPTION="" 
+						CMD4CAPTION="Izmjeni cij.:IZMJENIFORM" 
+						CMD5CAPTION="Dodaj:DODAJROBUUCJENIKFORM" 
+						FILLEXPLORER="" >
+
+                        <KONTROLA TYPE="MSComCtl2.DTPicker" NAME="datumdok" CAPTION="Datum dokumenta:" VALUE="DATE" HEIGHT="320" WIDTH="1500" TABINDEX="-1" CHECKBOX="FALSE" />
+                         
+	  	        <KONTROLA TYPE="TRAZILICA" CAPTION="Roba:" NAME="robaid" SQL="roba#RobaId#Naziv%#Userid#Robakod" TABINDEX="0"  WIDTH="4500" HEIGHT="320" />        
+
+
+			<KONTROLA TYPE="GridEX20.GridEX" NAME="grid1" REFRESHAFTERCHILD="TRUE" CAPTION="Cijene po cijenicima" WIDTH="7500" HEIGHT="3000" TABINDEX="2" 
+                         SQL="spMPnivelacijaTotalGen @action=2,@robaid=@@robaid, @datumdok = @@datumdok" /> 
+
+								 
+  </DODAJFORM>
+  
+
+  <UPDATEFORM 
+                         WIDTH="11000" 
+                         STORA="spMPnivelacijaTotalGen @action=5,@TempPromMPCid=@@id , " 
+                         STARTUPSTORA="select datum as datumdok,robaid,[Roba]=(select naziv from roba where robaid=TempPromMPC.robaid) from TempPromMPC where TempPromMPCId=@@id" 
+                         HEIGHT="5500" 
+                         CAPTION="Izmjena nivelacije"  
+                         CMD1CAPTION="Gotovo" 
+                         CMD2CAPTION="" 
+			 CMD4CAPTION="Izmjeni cij.:IZMJENIFORM" 
+			 CMD5CAPTION="Dodaj:DODAJROBUUCJENIKFORM" 
+			 FILLEXPLORER="" >
+
+                        <KONTROLA TYPE="MSComCtl2.DTPicker" NAME="datumdok" CAPTION="Datum nivelacije:" VALUE="DATE" HEIGHT="320" WIDTH="1500" TABINDEX="-1" CHECKBOX="FALSE" />
+                         
+	  	        <KONTROLA TYPE="TRAZILICA" CAPTION="Roba" NAME="robaid" SQL="roba#RobaId#Naziv%#Userid#Robakod" TABINDEX="0" WIDTH="4500" HEIGHT="320" ENABLED="FALSE" />        
+
+			<KONTROLA TYPE="GridEX20.GridEX" NAME="grid1" REFRESHAFTERCHILD="TRUE" CAPTION="Cijene po cijenicima" WIDTH="7500" HEIGHT="3000" TABINDEX="2" 
+                         SQL="spMPnivelacijaTotalGen @action=2,@robaid=0,@TempPromMPCid=@@id"  /> 
+
+								 
+  </UPDATEFORM>
+
+
+  <DELETEFORM
+		WIDTH="5500" 
+		STORA="spMPnivelacijaTotalGen @action = 11 , @TempPromMPCid=@@id, " 
+		STARTUPSTORA="select 1 as jedanart, 0 as sviart, (select rtrim(cast(userid as varchar)) + ' ' +naziv as Naziv from roba where robaid = (select robaid from TempPromMPC where TempPromMPCid=@@id)) as pitanje"	
+		HEIGHT="3000" 
+		CAPTION="Obrisati ?" 
+		CMD1CAPTION="Obriši"
+		CMD2CAPTION="Odustani" 
+		FILLEXPLORER=""> 
+	
+					<KONTROLA TYPE="VB.Label" NAME="pitanje" TOP="200" LEFT="200" WIDTH="3500" CAPTION=""/>
+					
+					<KONTROLA TYPE="VB.checkbox" 
+									TOP = "700"
+									LEFT="200"
+                                   	NAME="jedanart" 
+                               		WIDTH="3500" 
+                                   	HEIGHT="320" 
+                               		CAPTION="Obrisati odabrani artikal ? (DA/NE) "/>
+									
+					<KONTROLA TYPE="VB.checkbox" 
+									TOP = "1300"
+									LEFT="200"
+                                   	NAME="sviart" 
+                               		WIDTH="3500" 
+                                   	HEIGHT="320" 
+                               		CAPTION="Obrisati sve artikle ? (DA/NE) "/>
+	
+  </DELETEFORM> 
+
+
+  <PROKNJIZIFORM
+		WIDTH="5500" 
+		STORA="spMPnivelacijaTotalGen @action=4,@operateriid=@@operateriid" 
+		STARTUPSTORA=""	
+		HEIGHT="2500" 
+		CAPTION="Proknjižiti ?" 
+		CMD1CAPTION="Proknjiži"
+		CMD2CAPTION="Odustani" 
+		FILLEXPLORER=""> 
+	
+   			<KONTROLA TYPE="VB.Label" NAME="stat" TOP="500" LEFT="200" WIDTH="3500" CAPTION="Jeste li sigurni da želite proknjižiti nivelaciju ? " />
+	
+  </PROKNJIZIFORM> 
+  
+
+  <IZMJENIFORM
+		WIDTH="5500" 
+		STORA="spMPnivelacijaTotalGen @action=1, " 
+		STARTUPSTORA="if left('@@grid1',1) = 'T' begin select substring('@@grid1',2,10) as TempPromMPCid,vrcjenikid as cjenikid,@@datumdok as datumdok,@@robaid as robaid,novacijena as cijena from TempPromMPC where robaid=@@robaid and TempPromMPCid=substring('@@grid1',2,10) end else begin select substring('@@grid1',2,10) as vrcjenikid,@@datumdok as datumdok,@@robaid as robaid,mpcijena as  cijena from cjenik where robaid=@@robaid and vrcjenikid=(select vrcjenikid from cjenik where cjenikid=substring('@@grid1',2,10)) end "
+		HEIGHT="2500" 
+		CAPTION="Izmjeni cijenu" 
+		CMD1CAPTION="Spremi"         
+		CMD2CAPTION="Odustani" 
+		FILLEXPLORER=""> 
+
+			<KONTROLA TYPE="CM6.curMEdit6" NAME="cijena" CAPTION="Cijena" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" />
+
+			<KONTROLA TOP="5000" TYPE="CM6.curMEdit6" NAME="cjenikid" CAPTION="cjenikid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+			<KONTROLA TOP="5000" TYPE="MSComCtl2.DTPicker" NAME="datumdok" CAPTION="Datum dokumenta:" VALUE="DATE" HEIGHT="320" WIDTH="1500" TABINDEX="-1" CHECKBOX="FALSE" />
+			<KONTROLA TOP="5000" TYPE="CM6.curMEdit6" NAME="robaid" CAPTION="robaid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+			<KONTROLA TOP="5000" TYPE="CM6.curMEdit6" NAME="TempPromMPCid" CAPTION="TempPromMPCid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+			<KONTROLA TOP="5000" TYPE="CM6.curMEdit6" NAME="vrcjenikid" CAPTION="vrcjenikid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+
+  </IZMJENIFORM> 
+
+
+  <DODAJROBUUCJENIKFORM
+		WIDTH="6500" 
+		STORA="spMPnivelacijaTotalGen @action=0,@operateriid=@@operateriid," 
+		STARTUPSTORA="select @@datumdok as datumdok,@@robaid as robaid"		
+		HEIGHT="2500" 
+		CAPTION="Dodaj robu u cijenik" 
+		CMD1CAPTION="Spremi"         
+		CMD2CAPTION="Odustani" 
+		FILLEXPLORER=""> 
+
+			<KONTROLA TYPE="CbEx3.ComboBoxEx3" 
+                                     	NAME="vrcjenikid" 
+                                    	CAPTION="Vrsta cjenika" 
+                                    	WIDTH="3500" 
+                                   	HEIGHT="320" 
+                                     	TABINDEX="0" 
+                                   	ALLOWEMPTY="FALSE" 
+                                 	SQL="select distinct t.vrcjenikid , v.opis as naziv from trgovina t inner join vrcjenik v on t.vrcjenikid = v.vrcjenikid"/>
+
+			<KONTROLA TYPE="CM6.curMEdit6" NAME="cijena" CAPTION="MP Cijena" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="1" DECIMALS="2" />
+			<KONTROLA TYPE="CM6.curMEdit6" NAME="nabcijena" CAPTION="Nabavna cijena" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="2" DECIMALS="2" />
+
+			<KONTROLA TOP="5000" TYPE="CM6.curMEdit6" NAME="cjenikid" CAPTION="cjenikid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+			<KONTROLA TOP="5000" TYPE="MSComCtl2.DTPicker" NAME="datumdok" CAPTION="Datum dokumenta:" VALUE="DATE" HEIGHT="320" WIDTH="1500" TABINDEX="-1" CHECKBOX="FALSE" />
+			<KONTROLA TOP="5000" TYPE="CM6.curMEdit6" NAME="robaid" CAPTION="robaid" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="-1" DECIMALS="2" />
+
+  </DODAJROBUUCJENIKFORM> 
+
+
+  <DAJVRSTADOK
+  
+                         WIDTH="14000" 
+                         STORA="" 
+						 LEFT="100"
+                         STARTUPSTORA="" 
+                         HEIGHT="6500" 
+                         CAPTION="Vrste dokumenata"  
+                         CMD2CAPTION="Gotovo" 
+                         CMD3CAPTION="Izmjeni:IZMJENIDOK" 
+						CMD4CAPTION="Dodaj:DODAJDOK" 
+						FILLEXPLORER="" >
+
+						
+			<KONTROLA TYPE="GridEX20.GridEX" 
+			NAME="vrdokgrid" 
+			REFRESHAFTERCHILD="TRUE" 
+			CAPTION="" 
+			LEFT="100"
+			WIDTH="13500" 
+			HEIGHT="4000" 
+			TABINDEX="2" 
+            SQL="spMPAzurVrstaDok @action = 2, @vrstapromid = @@id"/>
+
+								 
+  </DAJVRSTADOK>
+  
+  <IZMJENIDOK
+  
+                         WIDTH="7000" 
+                         STORA="spMPAzurVrstaDok @action = 3, @vrstadokid = @@vrdokgrid," 
+                         STARTUPSTORA="" 
+                         HEIGHT="7000" 
+                         CAPTION="Donos robe sa cjenika za nivelaciju "  
+                         CMD1CAPTION="Donesi" 
+                         CMD2CAPTION="Odustani" 
+						CMD4CAPTION="" 
+						FILLEXPLORER="" >
+
+			<KONTROLA TYPE="TMEdit2VB6.TextMEdit2" 
+				NAME="opis" 
+				CAPTION="Opis" 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="1" 
+				DECIMALS="" />
+
+			<KONTROLA TYPE="TMEdit2VB6.TextMEdit2" 
+				NAME="prefix" 
+				CAPTION="Prefix" 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="2" 
+				DECIMALS="" />
+			<KONTROLA TYPE="TMEdit2VB6.TextMEdit2" 
+				NAME="sufix" 
+				CAPTION="Sufix" 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="3" 
+				DECIMALS="" />
+			<KONTROLA TYPE="TMEdit2VB6.TextMEdit2" 
+				NAME="nexvrd" 
+				CAPTION="NextVrd" 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="3" 
+				DECIMALS="" />
+			<KONTROLA TYPE="TMEdit2VB6.TextMEdit2" 
+				NAME="template" 
+				CAPTION="Template" 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="4" 
+				DECIMALS="" />
+			<KONTROLA TYPE="TMEdit2VB6.TextMEdit2" 
+				NAME="aktivni" 
+				CAPTION="Aktivni" 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="5" 
+				DECIMALS="" />
+			<KONTROLA TYPE="CM6.curMEdit6" 
+				NAME="DanaVaute" 
+				CAPTION="Dana valute" 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="6" 
+				DECIMALS="" />
+			<KONTROLA TYPE="CM6.curMEdit6" 
+				NAME="dodatnidanivalute" 
+				CAPTION="Dodatni dani valute " 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="7" 
+				DECIMALS="" />
+			<KONTROLA TYPE="TMEdit2VB6.TextMEdit2" 
+				NAME="kp" 
+				CAPTION="Knjiga popisa (0-Ne/1-Da)" 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="8" 
+				DECIMALS="" />
+			<KONTROLA TYPE="CM6.curMEdit6" 
+				NAME="trosakpostotak" 
+				CAPTION="% provizije" 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="9" 
+				DECIMALS="2" />
+
+			<KONTROLA TYPE="CM6.curMEdit6" 
+				NAME="MPPredznak" 
+				CAPTION="Predznak" 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="10" 
+				DECIMALS="" />
+
+			<KONTROLA TYPE="TMEdit2VB6.TextMEdit2" 
+				NAME="MPIndZak" 
+				CAPTION="Zaključuje se dokument kod otpremnica(1-Da/0-Ne)" 
+				TEXT="" 
+				WIDTH="2500" 
+				HEIGHT="320" 
+				TABINDEX="10" 
+				DECIMALS="" />
+
+				
+				
+</IZMJENIDOK>
+  <OSTALI
+  
+                         WIDTH="14000" 
+                         STORA="" 
+						 LEFT="100"
+                         STARTUPSTORA="" 
+                         HEIGHT="6500" 
+                         CAPTION="Vrste dokumenata"  
+                         CMD2CAPTION="Gotovo" 
+                         CMD3CAPTION="Izmjeni:IZMJENIDOK" 
+						CMD4CAPTION="Dodaj:DODAJDOK" 
+						FILLEXPLORER="" >
+
+						
+			<KONTROLA TYPE="GridEX20.GridEX" 
+			NAME="ostali" 
+			REFRESHAFTERCHILD="TRUE" 
+			CAPTION="" 
+			LEFT="100"
+			WIDTH="13500" 
+			HEIGHT="4000" 
+			TABINDEX="2" 
+            SQL="spMPAzurVrstaDok @action = 0"/>
+
+								 
+  </OSTALI>
+
+</PROJECT>
+ 
