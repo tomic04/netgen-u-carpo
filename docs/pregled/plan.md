@@ -39,7 +39,7 @@ Datum: 2026-11-13. Izvor: GitHub `tomic04/netgen-u-carpo` (svih 80 grana i PR-ov
 3. **`SqlTekst.JeZabranaPisanja`.** Na spinu se nijedan `insert`, `update`, `delete`, `merge` ni `create` ne šalje. Spremanje podataka zato nikad nije stvarno izvedeno.
 4. **`scripts/spin/stubovi.sql` stvara prazne procedure.** Zelen CI ne znači da je SQL logika točna.
 5. **Dirani su zajednički Carpo projekti.** Promijenjeni su `Manager.cs`, `Manager.Designer.cs`, `JTreeListControl.cs`, `ComponentTree.cs`, `JupitetShared.Designer.cs`, HintPathovi u 10 csproj datoteka te `Directory.Build.props` i `.targets`. To može pokvariti postojeće Carpo granule kod klijenata.
-6. **`Placeholders.cs`** još ima `LayoutEngine.Crtaj`, `CommandRunner.Pokreni` i `SqlBridge.Exec`, koji bacaju `NotSupportedException`.
+6. ~~**`Placeholders.cs`** još ima `LayoutEngine.Crtaj`, `CommandRunner.Pokreni` i `SqlBridge.Exec`, koji bacaju `NotSupportedException`.~~ Maknuto: nitko ih nije zvao. `PrintBridge` je sada u `Print/PrintBridge.cs`.
 
 ---
 
@@ -268,8 +268,8 @@ Pravila za svaki ispravak:
 
 - [x] `JeZabranaPisanja` je konfiguracija i na produkciji je isključena: `DijalogTok.Produkcija` pali samo pravi Jupiter ulaz (B-JUP).
 - [x] Zaštita od `jupiter2022` vrijedi samo izvan pravog Jupiter ulaza (B-JUP, odluka 9.3). Jupiter smoke i preskok `Prenesi`/`Retci` u `build.yml` su i dalje kako su bili.
-- [ ] QA kuka (`TestHooks/GranulaSesija`) nije dostupna iz produkcijskog `Loader`.
-- [ ] Nijedan placeholder koji baca `NotSupportedException` nije na putu.
+- [x] QA kuka (`TestHooks/GranulaSesija`) nije dostupna iz produkcijskog `Loader`. Nijedna datoteka izvan `TestHooks/` je ne spominje, a `scripts/ci/mrtve-metode.py` ruši build ako se to promijeni (PRD-03).
+- [x] Nijedan placeholder koji baca `NotSupportedException` nije na putu. Tri M0 klase su maknute, a `NotImplementedException` u `Carpo.UI` su Carpo kod, ne NetGen.
 - [ ] Shim `NetGenDLL` s istim `Loader.Run8` i `ShellResize`, testiran u pravom Jupiteru (`Jupiter.exe` 10.5.26.0+).
 - [x] Lozinke se ne upisuju u log (NetGen CBLog ih sadrži). `NgDnevnik` skriva polja s `PASSWORDCHAR` (R120, LOG-01).
 - [ ] Fiskalizacija: SOAP uključen tek kad je `Raverus.FiskalizacijaDEV.COM.dll` na stroju i testiran na `cistest`.

@@ -29,7 +29,7 @@ namespace Carpo.NetGen.Granule
     public static class Qa
     {
         public const string GranulaNijeIzvedena =
-            "Carpo.NetGen.TestHooks.GranulaSesija.Izvrsi je null (Placeholders ne izvode granulu). Stavka je poznato-otvorena.";
+            "Carpo.NetGen.TestHooks.GranulaSesija.Izvrsi je null (QA kuka nije postavljena). Stavka je poznato-otvorena.";
 
         public static int VbCijeli(double d)
         {

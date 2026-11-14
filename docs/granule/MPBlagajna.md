@@ -25,7 +25,7 @@ Forma nema `INPUT`. `BrojKontrola = 0`, pa `ONLOADED` ide odmah (`Form2.vb` 2798
 
 `IspisiMePrekoSpinPrintinga` (`297–304`) učita v23, u `Catch` v9.1. Klasa je `Spin.Printing.Start`. Ako parametar već ima `@id=`, ne dodaje drugi (`320–327`). Inače pred svaki id doda `@id=<vrijednost>,`. Više od jednog id-a zove `PrintMulti`, inače `Print`, s hwnd. Pad s hwnd pokuša ponovo bez hwnd (`362–369`).
 
-Port: `Carpo.NetGen.Print.PrintBridge` je v26 i `rptDevRepx` (`Placeholders.cs` 46–52). v23 i v9.1 se ne zovu (`docs/analiza/00-sazetak.md`).
+Port: `Carpo.NetGen.Print.PrintBridge` je v26 i `rptDevRepx` (`Print/PrintBridge.cs` 20–21). v23 i v9.1 se ne zovu (`docs/analiza/00-sazetak.md`).
 
 ## Rupe
 

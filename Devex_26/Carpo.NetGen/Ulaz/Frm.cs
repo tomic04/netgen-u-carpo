@@ -85,7 +85,7 @@ namespace Carpo.NetGen
             }
             try
             {
-                string spoj = SpinVeza.Spoj(server, database);
+                string spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj(server, database), putanja);
                 var k = new SqlKontekst();
                 k.OperaterId = operater.ToString(CultureInfo.InvariantCulture);
                 // 55: If ulazniID <> "" Then ID = ulazniID (inače 0).

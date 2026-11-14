@@ -1981,6 +1981,7 @@ namespace Carpo.NetGen.GridTest
             T("trazilica-preskok", Ponasanje.PreskociTrazilicu("", "x") && Ponasanje.PreskociTrazilicu("Kava", "Kava") && !Ponasanje.PreskociTrazilicu("*", "*") && !Ponasanje.PreskociTrazilicu("nova", "stara"), "");
             DijalogUcinak();
             SqlSlojNetGen();
+            ImeAplikacije();
             BrojNaDijalogu();
             LanacNakonZamjene();
             DogadjajiPravila();
@@ -1999,6 +2000,7 @@ namespace Carpo.NetGen.GridTest
             RokUpita();
             VelicinaUZapisu();
             NaslovDijaloga();
+            TajmerDijaloga();
             IncludeFormi();
             IzvorXmla();
             DozvoleDijaloga();
@@ -2968,6 +2970,49 @@ namespace Carpo.NetGen.GridTest
             }
         }
 
+        /// <summary>TMR-01: Form2 Timer2. TIMERON(ms) upali, Tick izvrsi TIMERSQL, TIMEROFF() ugasi, zatvaranje pocisti.</summary>
+        private static void TajmerDijaloga()
+        {
+            var kontrole = new List<NgControl>
+            {
+                new NgControl("label", NgGrana.Label, "stop", new NgAttributeBag(new Dictionary<string, string> { { "ONCLICK", "TIMEROFF()" }, { "CAPTION", "Stop" } }), true)
+            };
+            var forma = new NgForm("Tmr", new NgAttributeBag(new Dictionary<string, string> { { "ONLOADED", "TIMERON(40)" }, { "TIMERSQL", "select tajmer" } }),
+                "", "", kontrole, new List<NgButton>(), new List<string>());
+            var sql = new List<string>();
+            var d = new Dijalog();
+            try
+            {
+                d.Slozi(forma, new SqlKontekst(), delegate (string s) { sql.Add(s ?? ""); return null; });
+                d.ShowInTaskbar = false;
+                d.StartPosition = FormStartPosition.Manual;
+                d.Location = new Point(-32000, -32000);
+                d.Show();
+                var svojstvo = typeof(Dijalog).GetProperty("Tajmer", BindingFlags.Instance | BindingFlags.NonPublic);
+                var tajmer = (System.Windows.Forms.Timer)svojstvo.GetValue(d, null);
+                T("tmr01-upaljen", tajmer != null && tajmer.Enabled && tajmer.Interval == 40, tajmer == null ? "null" : tajmer.Enabled + "/" + tajmer.Interval);
+                tajmer.Enabled = false;
+                int prije = Broji(sql, "select tajmer");
+                typeof(Dijalog).GetMethod("Tajmer_Tick", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(d, new object[] { null, EventArgs.Empty });
+                T("tmr01-tik", Broji(sql, "select tajmer") == prije + 1, (Broji(sql, "select tajmer") - prije).ToString());
+                tajmer.Enabled = true;
+                Control stop = d.Controls.Find("stop", true)[0];
+                typeof(Control).GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(stop, new object[] { EventArgs.Empty });
+                T("tmr01-stop", !tajmer.Enabled, tajmer.Enabled.ToString());
+                d.Close();
+                T("tmr01-zatvori", svojstvo.GetValue(d, null) == null, "");
+            }
+            catch (Exception ex)
+            {
+                T("tmr01", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                if (!d.IsDisposed)
+                    d.Dispose();
+            }
+        }
+
         /// <summary>CAP-01: Form2.ProcitajXML 1240, @@ u naslovu forme.</summary>
         private static void NaslovDijaloga()
         {
@@ -3077,6 +3122,18 @@ namespace Carpo.NetGen.GridTest
         }
 
         /// <summary>Plan, faza G: lozinka iz polja s PASSWORDCHAR ne ide u log; log ne raste bez kraja.</summary>
+        /// <summary>APP-01: Application Name veze je "Carpo.NetGen." + ime XML-a (NetGen "NetGenDLL-" + XML, Form1 1176).</summary>
+        private static void ImeAplikacije()
+        {
+            string spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj("localhost", "spin"), @"C:\xml\Agronom granule\MPKase.xml");
+            var b = new SqlConnectionStringBuilder(spoj);
+            T("app01-ime", b.ApplicationName == "Carpo.NetGen.MPKase" && b.InitialCatalog == "spin" && b.IntegratedSecurity, b.ApplicationName);
+            string cudno = SpinVeza.SaAplikacijom("Server=a;Database=b", "x;y=z'.xml");
+            var c = new SqlConnectionStringBuilder(cudno);
+            T("app01-znakovi", c.ApplicationName == "Carpo.NetGen.x_y_z_" && c.InitialCatalog == "b", cudno);
+            T("app01-prazno", new SqlConnectionStringBuilder(SpinVeza.SaAplikacijom("Server=a;", null)).ApplicationName == "Carpo.NetGen", "");
+        }
+
         private static void LozinkaULogu()
         {
             try

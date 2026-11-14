@@ -23,7 +23,10 @@ namespace Carpo.NetGen.Ui
         private readonly DataTable _tablica;
         private DataRow _odabran;
 
-        public static DataRow Odaberi(IWin32Window vlasnik, DataTable tablica, string trazeno, string columnCaption, string columnWidth, string autoResize)
+        /// <summary>
+        /// imeIzgleda: "GridTrazilica-xml-forma" (Form3 spremipostavke 38-48). Prazno znači bez pamćenja izgleda.
+        /// </summary>
+        public static DataRow Odaberi(IWin32Window vlasnik, DataTable tablica, string trazeno, string columnCaption, string columnWidth, string autoResize, string imeIzgleda)
         {
             if (tablica == null || tablica.Rows.Count == 0)
                 return null;
@@ -32,7 +35,7 @@ namespace Carpo.NetGen.Ui
                 int i = OdabirZaTest(tablica);
                 return i >= 0 && i < tablica.Rows.Count ? tablica.Rows[i] : null;
             }
-            using (var p = new TrazilicaProzor(tablica, trazeno, columnCaption, columnWidth, autoResize))
+            using (var p = new TrazilicaProzor(tablica, trazeno, columnCaption, columnWidth, autoResize, imeIzgleda))
             {
                 if (vlasnik != null)
                     p.ShowDialog(vlasnik);
@@ -42,7 +45,7 @@ namespace Carpo.NetGen.Ui
             }
         }
 
-        private TrazilicaProzor(DataTable tablica, string trazeno, string columnCaption, string columnWidth, string autoResize)
+        private TrazilicaProzor(DataTable tablica, string trazeno, string columnCaption, string columnWidth, string autoResize, string imeIzgleda)
         {
             _tablica = tablica;
             // Form3.Trazilica 105: naslov je trazeni tekst.
@@ -62,6 +65,11 @@ namespace Carpo.NetGen.Ui
             _pogled.OptionsView.ShowGroupPanel = false;
             _pogled.OptionsSelection.EnableAppearanceFocusedCell = false;
             CarpoIzgled.RedniStupac(_pogled);
+            // TRZ-02, Form3.Trazilica 84-94: spremljeni izgled (GridTrazilica-xml-forma) se učita prije
+            // COLUMNCAPTION i COLUMNWIDTH, koji ga nadjačaju. Janus .gxl se ne čita; Carpo piše .xml (R115).
+            string datoteka = string.IsNullOrEmpty(imeIzgleda) ? "" : GridRaspored.Datoteka(imeIzgleda);
+            if (datoteka.Length > 0)
+                GridRaspored.Ucitaj(_pogled, datoteka, false);
             for (int i = 1; i < tablica.Columns.Count; i++)
             {
                 var c = _pogled.Columns.ColumnByFieldName(tablica.Columns[i].ColumnName);
@@ -82,6 +90,20 @@ namespace Carpo.NetGen.Ui
             // Form3 160-166: COLUMNAUTORESIZE="false" ostavlja sirine, inace se stupci rasire na grid.
             _pogled.OptionsView.ColumnAutoWidth = !string.Equals((autoResize ?? "").Trim(), "false", StringComparison.OrdinalIgnoreCase);
             _pogled.DoubleClick += delegate { Uzmi(); };
+            // Form3 butonzarazgrupiranje (spremipostavke) i Button11 (DeleteGridLayout, pa Close).
+            if (datoteka.Length > 0)
+            {
+                GridIzbornik.Vezi(_pogled, null, null, null, new GridRadnje
+                {
+                    Spremi = delegate { GridRaspored.Spremi(_pogled, datoteka); },
+                    Reset = delegate
+                    {
+                        GridRaspored.Obrisi(datoteka);
+                        _odabran = null;
+                        Close();
+                    }
+                });
+            }
             _pogled.KeyDown += delegate (object s, KeyEventArgs e)
             {
                 if (e.KeyCode == Keys.Enter)
