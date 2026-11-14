@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+<PROJECT  
+	ONLOAD=":FILTERFORM" 
+	TREE=""
+   MASTERDBLCLICK=""
+   CMD2CAPTION="Terminal:DONOSTERMINAL"    
+   CMD3CAPTION="Dodaj:DONOSIZROBE" 
+   CMD4CAPTION="Obriši:DELETEFORM"
+   CMD1CAPTION="Filter:FILTERFORM"
+   CMD5CAPTION="Etikete:ETIKETE"
+   CMD6CAPTION=""
+	FILLEXPLORER="" 
+   CHECKBOXVISIBLE="FALSE"
+   TOTALROWVISIBLE="FALSE"
+   POPUPMASTER=""
+   TOTALROW="FALSE"
+   DETCHECKBOXVISIBLE="FALSE"
+   DETTOTALROWVISIBLE="FALSE"
+   REFRESHAFTERCHILD="TRUE"
+	>
+ 
+  <NAME>Pojedinačno štampanje etiketa s cijenama</NAME>
+  <CAPTION>Pojedinačno štampanje etiketa s cijenama</CAPTION>
+ 
+  <KOMENTAR> </KOMENTAR>
+  <AUTOR> MT 02.06.2009.  </AUTOR>
+
+
+	<FILTERFORM NAME="FILTERFORM" HEIGHT="3254" WIDTH="6710" 
+			 CAPTION="Upišite uvjete prikaza " 
+			 ONSUBMIT="spMPEtiketeTerminalNG @action = 1, @operateriid = @@operateriid ,  "
+			 ONLOAD="" 
+			 FILLEXPLORER="TRUE" 
+			 NEXTFORM=""
+			 CMD1CAPTION="Pokaži" 
+			 CMD2CAPTION="Kraj" 
+		 >
+		<INPUT TYPE="combo" NAME="trgovinaid" ALLOWEMPTY="FALSE" CAPTION="Trgovina" ONLOSTFOCUS="" SQL="spMPDajTrgovina @operateriid = @@operateriid " />
+	</FILTERFORM>
+
+
+
+
+	<DELETEFORM
+		  WIDTH="5500" 
+		  ONSUBMIT="spMPEtiketeTerminalNG @action = 4 , @id=@@id, @operateriid = @@operateriid , @trgovinaid = @@trgovinaid, " 
+		  ONLOAD="if coalesce(@@id,0) = 0 begin 
+						exec	spraiserror 69001, &apos;Nema podataka za brisanje !&apos;
+				end
+				else begin 
+				select 1 as jedanart, 0 as sviart, (select rtrim(cast(userid as varchar)) + ' ' +naziv as Naziv from roba where robaid = (select robaid from MPetikete where MPetiketeid=@@id)) as pitanje
+				end "	
+		  HEIGHT="3000" 
+		  CAPTION="Obrisati ?" 
+		  CMD1CAPTION="Obriši"
+		  CMD2CAPTION="Kraj" 
+		  FILLEXPLORER=""
+		>
+		<INPUT TYPE="label" NAME="pitanje" TOP="200" LEFT="200" WIDTH="3500" CAPTION=""/>
+		<INPUT TYPE="VB.checkbox" TOP = "700" LEFT="200" NAME="jedanart" WIDTH="3500" HEIGHT="320" CAPTION="Obrisati odabrani artikal ? (DA/NE) "/>
+		<INPUT TYPE="VB.checkbox" TOP = "1300" LEFT="200" NAME="sviart" WIDTH="3500" HEIGHT="320" CAPTION="Obrisati sve artikle ? (DA/NE) "/>
+	</DELETEFORM>
+
+	<DONOSTERMINAL 
+		FILLEXPLORER="" 
+		WIDTH="11500" 
+      		ONSUBMIT=""
+		ONLOAD="spMPPrijenosTerminalNG @action=11, @operateriid = @@operateriid, @trgovinaid=@@trgovinaid, @trgovinacijena = @@trgovinaid,  @datumod=@@datumdok" 		
+		HEIGHT="10000" 
+		CAPTION="Donos robe sa ručnog terminala" 
+		COMMANDTIMEOUT="180"
+		>
+		<INPUT TYPE="grid" 
+				NAME="donost" 
+				TOP="700" 
+				LEFT="200" 
+				WIDTH="11000"
+	CHECKBOXVISIBLE="FALSE" 
+	EDITCOLUMNS="[Cijena0800]"
+	TOTALROWVISIBLE="FALSE"
+	GROUPBYBOXVISIBLE="FALSE"		
+				HEIGHT="8000" 
+				CAPTION="_Stavke za donos sa ručnog terminala"
+		REFRESHAFTERCHILD="TRUE"
+		SQL="spMPPrijenosTerminalNG @action=33, @operateriid = @@operateriid, @trgovinaid=@@trgovinaid, @trgovinacijena = @@trgovinaid,  @datumod=@@datumdok" />
+
+		<INPUT TYPE="button" NAME="ok"      CAPTION="Prebaci"  TOP="9000" LEFT="456" WIDTH="1106" HEIGHT="322" ONCLICK="FOREACHROW(donost)#spMPEtiketeTerminalNG @action = 2, @robaid = @(donost..robaid), @trgovinaid = @@trgovinaid, @operateriid = @@operateriid,  @kolicina = @(donost..količina0800), @mpcijena = @(donost..Cijena0800) #Ok"  HOTKEY="F2" />
+		<INPUT TYPE="button" NAME="cancel"  CAPTION="Kraj" TOP="9000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+		<INPUT TYPE="button" NAME="izmjeni" CAPTION="Izmjeni"  TOP="9000" LEFT="3000" WIDTH="1106" HEIGHT="322" ONCLICK=":IZMJENISTAVKUTERM"  HOTKEY="F2" />
+		<INPUT TYPE="button" NAME="brisi"   CAPTION="Briši" TOP="9000" LEFT="4300" WIDTH="1106" HEIGHT="322" ONCLICK=":BRISISTAVKUTERM"  />
+
+
+	</DONOSTERMINAL>
+	<DONOSIZROBE 
+			FILLEXPLORER="" 
+			WIDTH="14800" 
+			ONSUBMIT="select 1"
+			ONLOAD="select '' as trazilica, null as klasaid, 0 as podklase" 		
+			HEIGHT="10000" 
+			CAPTION="Donos iz tražilice robe " 
+			VERSION="1.2"
+		>
+
+		<INPUT TYPE="combo"    NAME="klasaid"   ALLOWEMPTY="TRUE" CAPTION="Klasa Robe*" TOP="200" LEFT="1500" SQL="select KlMasterRobaId, naziv,sortkey from KlMasterRoba order by sortkey"  />
+		<INPUT TYPE="checkbox" NAME="podklase"  CAPTION="Pokaži i podklase" TOP="200" LEFT="6000"    />
+		<INPUT TYPE="text"     NAME="trazilica" CAPTION="Tražilica*"  TOP="600" LEFT="1500" SQL=""  />
+		<INPUT TYPE="checkbox" NAME="stanje"  CAPTION="Pokaži samo sa stanjem " TOP="600" LEFT="6000"    />
+		<INPUT TYPE="button"   NAME="pokazi"    CAPTION="Pokaži" TOP="600" LEFT="8000"  SQL="" ONCLICK="select 'refresh' as donosr#select 'visible' as donosr" />
+
+		<INPUT TYPE="grid" 
+		NAME="donosr" 
+		TOP="1700" 
+		LEFT="200" 
+		WIDTH="14300"
+		HEIGHT="7000" 
+		FILLEXPLORER="" 
+		CHECKBOXVISIBLE="TRUE" 
+		TOTALROWVISIBLE="FALSE"
+        EDITCOLUMNS="[Nar.količina1000], [MPC1000], [Kom.etiketa1200]"
+		GROUPBYBOXVISIBLE="FALSE"		
+		CAPTION="_Stavke za štampanje etiketa"
+		REFRESHAFTERCHILD="TRUE"
+		VISIBLE="FALSE"
+		SQL="spMPDonosNaIzdatnicuNG @trgovinaid=@@trgovinaid, @skladisteid = @@skladisteid, @klasaid = @@klasaid, @trazilica = '@@trazilica', @stanje = @@stanje, @kol=1 , @podklase=@@podklase" />
+
+		<INPUT TYPE="button" NAME="ok"     CAPTION="Prebaci"  TOP="9000" LEFT="456" WIDTH="1106" HEIGHT="322" ONCLICK="FOREACHSELECTED(donosr)#spMPEtiketeTerminalNG @action = 2, @robaid = @@donosr, @trgovinaid = @@trgovinaid, @operateriid = @@operateriid , @kolicina = @(donosr..Nar.količina1000), @mpcijena = @(donosr..MPC1000),@kom=@(donosr..Kom.etiketa1200)#Ok" HOTKEY="F2" />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Kraj" TOP="9000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="spMPEtiketeTerminalNG @action = 1, @operateriid = @@operateriid , @trgovinaid = @@trgovinaid#close"  />
+	</DONOSIZROBE>
+
+
+
+
+	<ETIKETE	FILLEXPLORER="TRUE" 
+	   WIDTH="6000" 
+	   ONSUBMIT="" 
+	   ONLOAD="" 
+	   HEIGHT="2000" 
+	   CAPTION="Štampanje etiketa " 
+	   BORDERSTYLE="3" 
+	   CMD3CAPTION="" 
+	   NEXTFORM=""
+	   REFRESHAFTERCHILD="TRUE">
+
+	<INPUT TYPE="combo" NAME="template" CAPTION="Vrsta ispisa*" TOP="240" LEFT="1500" WIDTH="4000" HEIGHT="294"
+           SQL="select template as templateid, opis from MPEtiketeTemplates where oznaka = '#MPEtiketeTerminalCT' and status = 1" ENABLED="TRUE" />
+		
+	   <INPUT TYPE="text"     NAME="napomena" CAPTION="Napomena*"  TOP="600" LEFT="1500" SQL="" MULTILINE="TRUE" WIDTH="4000" HEIGHT="500" />
+	
+		<INPUT TYPE="button" NAME="" CAPTION="Ispis iz jupitera" TOP="1500" LEFT="224" WIDTH="1386" HEIGHT="406" 
+		ONCLICK=":@@template(@trgovinaid=@@trgovinaid, @operateriid=@@operateriid, @nacin=3, @jupiter=1, @napomena = '@@napomena')"  />
+		<INPUT TYPE="button" NAME="" CAPTION="Ispis iz WInLabel" TOP="1500" LEFT="2224" WIDTH="1386" HEIGHT="406" ONCLICK="spMPPripremaNaljepnicaNG @trgovinaid=@@trgovinaid, @action = 1, @id =null, @nacin = 99, @winlabel = 1 , @operateriid=@@operateriid" VISIBLE="FALSE" />
+		<INPUT TYPE="button" NAME="" CAPTION="Izlaz"			 TOP="1500" LEFT="4224" WIDTH="1386" HEIGHT="406" ONCLICK="CLOSE"  />
+
+
+
+	</ETIKETE>
+
+
+
+</PROJECT>
+ 

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+
+<PROJECT  
+	ONLOAD=":FORM1"  		
+	REPORT=""
+	BUTTONSnekoristiti="Parametri:FORM1#Obriši odabranu izmjenu MPC:DELETEFORM#Izmjeni MPC:IZMJENIFORM#Pregled neproknjiženih izmjena MPC:ZAPOCETO#Promijeni datum važenja MPC za odabranu robu:DATUMAKCIJEFORM"
+  BUTTONS="Parametri:FORM1#Obriši odabranu izmjenu MPC:DELETEFORM#Izmjeni MPC:IZMJENIFORM#Pregled neproknjiženih izmjena MPC:ZAPOCETO#Promijeni datum važenja MPC za odabranu robu:MULTISELECTDATUMAKCIJEFORM"
+	TOTALROWVISIBLE="FALSE"
+	CHECKBOXVISIBLE="TRUE"
+	GROUPBYBOXVISIBLE="TRUE"
+	COMMANDTIMEOUT="1000"
+	EDITCOLUMNS=""
+	ONCELLEDITED="spMPCijenaPrometQueryNG @action = 4, @MPCijenaPrometid = @@MPCijenaPrometid"
+	SETDEFAULTS="spmpPermissionNG @action = 0, @operateriid = @@operateriid, @object = '@@xmlname', @trazi = '%roba%' ">
+
+ 
+  <NAME>Pregled promjene MPC u MP cjeniku</NAME>
+  <CAPTION>Pregled promjene MPC u MP cjeniku</CAPTION>
+  
+
+<FORM1 	
+  FILLEXPLORER="TRUE" 
+	WIDTH="9000" 
+	ONSUBMIT="spMPCijenaPrometQueryNG @action=1, " 
+	ONLOAD="" 
+	HEIGHT="5500" 
+	CAPTION="Parametri" 
+	BORDERSTYLE="3" 
+	CMD1CAPTION="Pokaži" 
+	CMD2CAPTION="Odustani"> 
+		
+	<INPUT TYPE="combo" NAME="vrcjenikid" CAPTION="Vrsta cjenika:*" TOP="500" LEFT="1200" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="TRUE" SQL="spmpDajMPCjenik @operateriid = @@operateriid"/>
+	<INPUT TYPE="search" CAPTION="Roba:*" NAME="robaid" SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid'" 
+		   ONLOSTFOCUSne="exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid" ALLOWEMPTY="FALSE" TOP="900" LEFT="1200" WIDTH="5500" HEIGHT="320"/> 
+	<INPUT TYPE="text" CAPTION="Traženje pojma:*" NAME="search" TOP="1300" LEFT="1200" WIDTH="5500" HEIGHT="320"/>
+	<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od:*" TOP="1700" LEFT="1200" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" DEFAULT="firstdayofmonth"/>
+	<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do:*" TOP="2100" LEFT="1200" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" DEFAULT="lastdayofmonth"/>
+	<INPUT TYPE="combo" NAME="Ind" CAPTION="Status:*" TOP="2500" LEFT="1200" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="TRUE" 
+		   SQL="select 0 as ind, 'U najavi' as naziv union all select 1 as ind, 'Promijenjen cjenik' union all select 2 as ind, 'Proknjiženo' "/>
+
+</FORM1>
+
+
+<DELETEFORM
+	WIDTH="5500" 
+	ONSUBMIT="spMPCijenaPrometQueryNG @action=2, @MPCijenaPrometid=@@id " 
+	ONLOAD="if coalesce(@@id,0) = 0 begin exec spRaiserror 69001, &apos;Nema podataka za brisanje !&apos; end"	
+	HEIGHT="3500" 
+	CAPTION="Obrisati ?" 
+	CMD1CAPTION="Obriši"
+	CMD2CAPTION="Odustani" 
+	FILLEXPLORER=""> 
+	
+	<INPUT TYPE="label" NAME="stat" TOP="500" LEFT="200" WIDTH="3500" HEIGHT="1200" 
+		   CAPTION="Jeste li sigurni da želite obrisati odabrani artikal ? Stavke koje pripadaju vezanom cjeniku bit će automatski obrisane brisanjem izmjene mp cijene na glavnom cjeniku . Stavkama koje su akcijske bit će automatski obrisan kraj akcije ." />
+	
+</DELETEFORM>
+
+  
+<IZMJENIFORM
+	WIDTH="5500" 
+	ONSUBMIT="spMPCijenaPrometQueryNG @action=5, @MPCijenaPrometid=@@id, " 
+	ONLOAD="if coalesce(@@id,0) = 0 begin exec spRaiserror 69001, &apos;Nema podataka za izmjenu !&apos; end"	
+	HEIGHT="3500" 
+	CAPTION="Obrisati ?" 
+	CMD1CAPTION="Izmjeni"
+	CMD2CAPTION="Odustani" 
+	FILLEXPLORER=""> 
+	
+	<INPUT TYPE="label" NAME="stat" TOP="500" LEFT="200" WIDTH="3500" HEIGHT="1200"
+		   CAPTION="Jeste li sigurni da želite promijeniti MPC za odabrani artikal ?" />
+	<INPUT TYPE="number" NAME="novaMPC" CAPTION="Nova cijena:*" TOP="1800" LEFT="1900" HEIGHT="320" WIDTH="1500" />
+	
+</IZMJENIFORM>
+
+
+<ZAPOCETO
+	WIDTH="15000"
+	ONSUBMIT=""
+	ONLOAD=""
+	HEIGHT="8000"
+	CAPTION="Pregled započetih, ali neproknjiženih promjena MPC"
+	FILLEXPLORER="">
+
+	<INPUT TYPE="grid" NAME="grid1" CAPTION="Započete promjene MPC " TOP="500" LEFT="500" WIDTH="14000" HEIGHT="6000" 
+		   SQL="spMPNIvelacijaNG @action=23" CHECKBOXVISIBLE="FALSE" GROUPBYBOXVISIBLE="FALSE" TOTALROW="FALSE" REFRESHAFTERCHILD="TRUE" />
+
+	<INPUT TYPE="button" NAME="ok" CAPTION="Obriši stavku" TOP="7000" LEFT="500" WIDTH="1500" HEIGHT="322" ONCLICK=":DELETEFORM1"  />
+	<INPUT TYPE="button" NAME="ok" CAPTION="Obriši sve" TOP="7000" LEFT="2500" WIDTH="1106" HEIGHT="322" ONCLICK=":DELETEFORM2"  />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="7000" LEFT="4500" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	
+</ZAPOCETO>
+
+
+<DELETEFORM1
+	 WIDTH="6500"
+	 ONSUBMIT=""
+	 ONLOAD="if (select vezanicjenikid from TempPromMPC where TempPromMPCId=@@grid1) is not null begin 
+		exec spRaiserror 69001, &apos;Ne možete brisati promjenu mp cijene na vezanom cjeniku ! Odaberite glavni cjenik !&apos;
+		end
+		else begin 
+		if coalesce(@@grid1,0) = 0 begin 
+					exec spRaiserror 69001, &apos;Nema podataka za brisanje !&apos;
+		end
+		else begin 
+		exec spMPNIvelacijaNG @action=12,@datumdok=@@datumdok,@robaid=@@robaid,@TempPromMPCid = @@grid1
+		end end "
+	 HEIGHT="3500"
+	 CAPTION="Brisanje neproknjižene promjene mpc na glavnom cjeniku"
+	 FILLEXPLORER="">
+
+	<INPUT TYPE="text" CAPTION="Roba:*" NAME="roba" TOP="500" LEFT="1000" SQL="" WIDTH="5000" HEIGHT="320" ENABLED="FALSE" />
+
+	<INPUT TYPE="button" NAME="ok" CAPTION="Obriši " TOP="2500" LEFT="196" WIDTH="1106" HEIGHT="322" ONCLICK="spMPNIvelacijaNG @action = 11, @TempPromMPCid=@@grid1,@jedanart=1,++#Ok"  />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2500" LEFT="1456" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+</DELETEFORM1>
+
+	
+<DELETEFORM2
+	 WIDTH="9500"
+	 ONSUBMIT=""
+	 ONLOAD=""
+	 HEIGHT="3000"
+	 CAPTION="Brisanje svih neproknjiženih promjena mpc"
+	 FILLEXPLORER="">
+
+	<INPUT TYPE="label" NAME="lblporuka" CAPTION="Jeste li sigurni da želite obrisati sve neproknjižene promjene mpc (bez obzira na glavni ili vezani cjenik) ?" TOP="500" LEFT="200" SQL="" WIDTH="9000" HEIGHT="320" ENABLED="FALSE" />
+
+	<INPUT TYPE="button" NAME="ok" CAPTION="Obriši sve" TOP="2000" LEFT="196" WIDTH="1106" HEIGHT="322" ONCLICK="delete from TempPromMPC#Ok"  />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2000" LEFT="1456" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+
+</DELETEFORM2>
+	
+
+<DATUMAKCIJEFORM
+	HEIGHT="3500" WIDTH="5500"
+	ONSUBMIT="spMPCijenaPrometQueryNG @action=3, @MPCijenaPrometid=@@id, "
+	ONLOAD="if coalesce(@@id,0) = 0 begin 
+            exec spRaiserror 69001, &apos;Nema podataka za izmjenu !&apos; end
+		      else begin
+		      if (select akcija from MPCijenaPromet where MPCijenaPrometid=@@id) = 1 begin 
+		        exec spRaiserror 69001, &apos;Izabrana promjena cijene NIJE kraj akcije i ne može joj se mijenjati datum !&apos; 
+          end end"
+	ONLOADED="select datum+1 as novidatum from MPCijenaPromet where MPCijenaPrometid=@@id"
+	CAPTION="Promijeniti datum kraja akcije ?"
+	CMD1CAPTION="Promijeni datum"
+	CMD2CAPTION="Odustani"
+	FILLEXPLORER="">
+
+	<INPUT TYPE="label" NAME="stat" TOP="500" LEFT="200" WIDTH="3500" HEIGHT="1200"
+		   CAPTION="Jeste li sigurni da želite promijeniti datum kraja akcije za odabrani artikal ? Stavkama koje pripadaju vezanom cjeniku bit će automatski promijenjen datum kraja akcije mijenjanjem datuma kraja akcije robe na glavnom cjeniku ." />
+	<INPUT TYPE="date" NAME="novidatum" CAPTION="Novi datum kraja akcije:*" TOP="1800" LEFT="1900" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" DEFAULT="today"/>
+
+</DATUMAKCIJEFORM>
+
+
+
+<MULTISELECTDATUMAKCIJEFORM
+  HEIGHT="9500" WIDTH="15000"
+  CAPTION="Promjena datuma promjene mp cijene?"
+  VERSION="1.2" 
+  ONLOAD="if (select count(*) from MPCijenaPromet where MPCijenaPrometid in (select id from totalgenmultiselecttemp where operateriid=@@operateriid)
+              and ind>0) > 0 begin 
+            exec spRaiserror 69001, &apos;Izabrana je PROKNJIŽENA promjena mp cijene kojoj se NE SMIJE mijenjati datum! Maknite kvačicu sa te promjene mpc !&apos; 
+          end else begin
+          if (select count(*) from MPCijenaPromet where MPCijenaPrometid in (select id from totalgenmultiselecttemp where operateriid=@@operateriid)
+              and akcija=1) > 0 begin 
+            exec spRaiserror 69001, &apos;Izabrana je promjena mp cijene koja je ujedno i POČETAK akcije ! Početku akcije se ne može mijenjati datum - možete samo obrisati cijelu akciju! Maknite kvačicu sa te promjene mpc !&apos; 
+          end end"
+  FILLEXPLORER="">
+
+  <INPUT TYPE="label" NAME="stat" TOP="500" LEFT="450" WIDTH="13500" HEIGHT="800"
+       CAPTION="Jeste li sigurni da želite promijeniti datum promjene mp cijene za odabrane artikle ? Stavkama koje pripadaju vezanom cjeniku bit će automatski promijenjen datum kraja akcije mijenjanjem datuma kraja akcije robe na glavnom cjeniku ." />
+  <INPUT TYPE="date" NAME="novidatum" CAPTION="Novi datum:*" TOP="1200" LEFT="1350" HEIGHT="320" WIDTH="1500" CHECKBOX="FALSE" DEFAULT="tomorrow"/>
+
+  <INPUT TYPE="grid" 
+         NAME="mpc" 
+         CAPTION="Odabrane promjene MPC " 
+         TOP="2000" LEFT="1500" WIDTH="12500" HEIGHT="6000"
+         SQL="spMPCijenaPrometQueryNG @action=11, @operateriid=@@operateriid" 
+         CHECKBOXVISIBLE="FALSE" 
+         GROUPBYBOXVISIBLE="FALSE" 
+         TOTALROW="FALSE" 
+         REFRESHAFTERCHILD="TRUE" />
+  
+  <INPUT TYPE="button" NAME="" CAPTION="Ukloni promjenu mpc iz liste odabranih promjena" TOP="2500" LEFT="140" WIDTH="1050" HEIGHT="1200"
+             ONCLICK="delete from totalgenmultiselecttemp where id=@@mpc and operateriid=@@operateriid#select 'refresh' as mpc"  />
+  
+  <INPUT TYPE="button" NAME="ok" CAPTION="Promijeni datum" TOP="8200" LEFT="500" WIDTH="1500" HEIGHT="322" 
+         ONCLICK="FOREACHROW(mpc)#spMPCijenaPrometQueryNG @action=3, @MPCijenaPrometid = @@gridmpcMPCijenaPrometid, @novidatum='@@novidatum'#Ok"  />
+  <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="8200" LEFT="2500" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+  
+</MULTISELECTDATUMAKCIJEFORM>
+  
+  
+</PROJECT> 

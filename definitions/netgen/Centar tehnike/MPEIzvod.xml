@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+
+<PROJECT  
+		ONLOAD=":FORM1"  		
+		REPORT="" 	
+		BUTTONS="Parametri:FORM1#Poveži:POVEZI#Likvidiraj:LIKVIDIRAJ#Poništi:BRISISTAVKU#Proknjiži:PROKNJIZI" 
+		MASTERDBLCLICK=""
+	    POPUPMASTER=""
+		CHECKBOXVISIBLE="FALSE"
+		PAGEHEADERRIGHT=""  
+        PAGEHEADERCENTER="Lista dokumenata za naljepnice"
+        PAGEHEADERLEFT="Od @@datumod do @@datumdo ##Trgovina : @@trgovina"
+        PAGEFOOTERCENTER=""
+        PAGEFOOTERLEFT=""
+        PAGEFOOTERRIGHT=""
+        PAGEORIENTATION="LANDSCAPE"
+
+		DETAILGRID=""
+		DETCHECKBOXVISIBLE="FALSE"
+        DETTOTALROWVISIBLE="FALSE">
+
+
+	<NAME>Knjiženje E-Izvoda za MP  </NAME>
+	<CAPTION>Knjiženje E-Izvoda za MP </CAPTION>
+
+
+<FORM1 	FILLEXPLORER="TRUE" 
+		  WIDTH="8500" 
+		  ONSUBMIT="spMPEIzvod @action=1, @operateriid = @@operateriid, @puni = 1, " 
+		  ONLOAD="select @@datumod as datumod, @@datumdo as datumdo , @@kntplanaid as kntpkanaid" 
+		  HEIGHT="2800" 
+		  CAPTION="Parametri" 
+		  BORDERSTYLE="3" 
+		  CMD1CAPTION="Pokaži" 
+		  CMD2CAPTION="Odustani" 
+		  CMD3CAPTION="" 
+		  CHILDFORM="">
+
+
+
+		<INPUT TYPE="date" 
+			NAME="datumod" 
+			CAPTION="Datum od" 
+			VALUE="DATE2" 
+			HEIGHT="320" 
+			WIDTH="1500" 
+			TABINDEX="2" 
+			CHECKBOX="FALSE"/>
+
+		<INPUT TYPE="date" 
+			NAME="datumdo" 
+			CAPTION="Datum do" 
+			VALUE="DATE" 
+			HEIGHT="320" 
+			WIDTH="1500" 
+			TABINDEX="3" 
+			CHECKBOX="FALSE"/>
+
+		<INPUT TYPE="combo" 
+			CAPTION="Vrsta prometa" 
+			NAME="kntplanaid" 
+			ALLOWEMPTY="FALSE" 
+			ONLOSTFOCUS=""
+			SQL="spMPEIzvod @action = 0" 
+			TEXT=""
+			TABINDEX="5" 
+			WIDTH="5000" 
+			HEIGHT="320"/>
+
+	<INPUT TYPE="check"
+		CAPTION="Obrisi postavljene veze "
+		NAME="brisi"
+		ALLOWEMPTY="TRUE"
+		ONLOSTFOCUS=""
+		SQL=""
+		TEXT=""
+		TABINDEX="5"
+		WIDTH="5000"
+		HEIGHT="320"/>
+
+
+
+</FORM1>
+
+
+<MULTISELECTETIKETE	FILLEXPLORER="TRUE" 
+	   WIDTH="7000" 
+	   ONSUBMIT="" 
+	   ONLOAD="" 
+	   HEIGHT="5000" 
+	   CAPTION="Štampanje etiketa " 
+	   BORDERSTYLE="3" 
+	   CMD3CAPTION="" 
+	   NEXTFORM=""
+	   REFRESHAFTERCHILD="TRUE">
+		
+			
+<INPUT TYPE="combo" NAME="nacin" CAPTION="Vrsta dokumenta*" TOP="140" LEFT="1960" WIDTH="2996" HEIGHT="294" SQL="select 2 as nacinid, 'Zbirne     '  as naziv union all select '1' as nacinid, 'Pojedinačne ' as Naziv "  />
+<INPUT TYPE="grid" NAME="stavke" CAPTION="Štampanje iz Jupitera" TOP="546" LEFT="1400" WIDTH="5250" HEIGHT="2968" SQL="select g.maloprodajaglaid,g.datumdok,g.broj, v.opis from totalgenmultiselecttemp t inner join maloprodajagla g on t.id=g.maloprodajaglaid inner join vrstadok v on g.vrstadokid=v.vrstadokid where t.operateriid=@@operateriid"  
+		PAGEHEADERRIGHT=""  
+        PAGEHEADERCENTER="Lista dokumenata za naljepnice"
+        PAGEHEADERLEFT="Od @@datumod do @@datumdo ##Trgovina : @@trgovina"
+        PAGEFOOTERCENTER=""
+        PAGEFOOTERLEFT=""
+        PAGEFOOTERRIGHT=""
+        PAGEORIENTATION="LANDSCAPE"
+		CHECKBOXVISIBLE="FALSE"
+ />
+<INPUT TYPE="button" NAME="" CAPTION="Ukloni dokument" TOP="980" LEFT="140" WIDTH="1050" HEIGHT="322" ONCLICK="delete from totalgenmultiselecttemp where id=@@stavke and operateriid=@@operateriid#select 'refresh' as stavke"  />
+<INPUT TYPE="button" NAME="" CAPTION="Ispis iz jupitera" TOP="3640" LEFT="224" WIDTH="1386" HEIGHT="406" ONCLICK="FOREACHROW(stavke)#:rs:/Radioton/MP/rptRadiotonMPNaljepnice(@stavke=@@stavke, @trgovinaid=@@trgovinaid, @operateriid=@@operateriid, @nacin=@@nacin, @jupiter=1)"  />
+	<INPUT TYPE="button" NAME="" CAPTION="Ispis iz WInLabel" TOP="3640" LEFT="2224" WIDTH="1386" HEIGHT="406" ONCLICK="spMPPripremaNaljepnica @trgovinaid=@@trgovinaid, @action = 1, @id =@@stavke, @nacin = 2, @winlabel = 1 , @operateriid=@@operateriid"  />
+	<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="3696" LEFT="5236" WIDTH="1050" HEIGHT="322" ONCLICK="CLOSE#delete from totalgenmultiselecttemp where operateriid =  @@operateriid"  />
+
+			
+			
+</MULTISELECTETIKETE>
+
+	<BRISISTAVKU NAME="BRISISTAVKU"
+			FILLEXPLORER="TRUE"
+		  ONSUBMIT="spMPEIzvod @action=1, @operateriid = @@operateriid, @puni = 0 , @datumod = @@datumod, @datumdo = @@datumdo, @kntplanaid = @@kntplanaid" 			
+				 HEIGHT="4902" WIDTH="7502"
+			CAPTION="Poništavanje veze"
+			ONLOAD="if (select pkosobekreditiid from tmpMPEizvod where tmpMPEizvodid = @@id ) is null begin exec spRaiserror 69001, 'Slog nije povezan . Ne može se poništiti veza !' 
+						end
+						else begin
+						exec spMPEIzvod @action = 2,  @id= @@id
+						end "
+		>
+		<INPUT TYPE="text"   NAME="konto"       CAPTION="_Konto"      HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="date"   NAME="datdok"         CAPTION="_Datum " HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="number" NAME="iznos" CAPTION="_Iznos"   HEIGHT="302" WIDTH="1206"  DECIMALS="4" TABINDEX="1" ENABLED="FALSE" />
+		<INPUT TYPE="text"   NAME="pozivnabroj"       CAPTION="_Poziv na broj "      HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="text"   NAME="opis"       CAPTION="_Opis"      HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="text"   NAME="kredit"       CAPTION="_Partija"      HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="text"   NAME="osoba"       CAPTION="_Osoba"      HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="number" NAME="iznosrate" CAPTION="_Iznos rate "   HEIGHT="302" WIDTH="1206"  DECIMALS="4" TABINDEX="1" ENABLED="FALSE" />
+		<INPUT TYPE="button" NAME="ok"           CAPTION="Obriši"   TOP="4000" LEFT="456" WIDTH="1106" HEIGHT="322" ONCLICK="spMPEIzvod @action = 3,  @id= @@id #Ok"  HOTKEY="F2" />
+		<INPUT TYPE="button" NAME="cancel"       CAPTION="Odustani" TOP="4000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	</BRISISTAVKU>
+
+	<LIKVIDIRAJ NAME="LIKVIDIRAJ"
+			FILLEXPLORER="TRUE"
+		  ONSUBMIT="spMPEIzvod @action=1, @operateriid = @@operateriid, @puni = 0 , @datumod = @@datumod, @datumdo = @@datumdo, @kntplanaid = @@kntplanaid"
+				 HEIGHT="4902" WIDTH="7502"
+			CAPTION="Likvidiranje stavke "
+			ONLOAD="exec spMPEIzvod @action = 2,  @id= @@id"
+		>
+		<INPUT TYPE="text"   NAME="konto"       CAPTION="_Konto"      HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="date"   NAME="datdok"         CAPTION="_Datum " HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="number" NAME="iznos" CAPTION="_Iznos"   HEIGHT="302" WIDTH="1206"  DECIMALS="4" TABINDEX="1" ENABLED="FALSE" />
+		<INPUT TYPE="text"   NAME="pozivnabroj"       CAPTION="_Poziv na broj "      HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="text"   NAME="opis"       CAPTION="_Opis"      HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="text"   NAME="kredit"       CAPTION="_Partija"      HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="text"   NAME="osoba"       CAPTION="_Osoba"      HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="number" NAME="iznosrate" CAPTION="_Iznos rate "   HEIGHT="302" WIDTH="1206"  DECIMALS="4" TABINDEX="1" ENABLED="FALSE" />
+		<INPUT TYPE="button" NAME="ok"           CAPTION="Obriši"   TOP="4000" LEFT="456" WIDTH="1106" HEIGHT="322" ONCLICK="spMPEIzvod @action = 4,  @id= @@id #Ok"  HOTKEY="F2" />
+		<INPUT TYPE="button" NAME="cancel"       CAPTION="Odustani" TOP="4000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	</LIKVIDIRAJ>
+
+	<POVEZI NAME="POVEZI"
+			FILLEXPLORER="TRUE"
+			FOCUS="pkosobeid"
+		  ONSUBMIT="spMPEIzvod @action=1, @operateriid = @@operateriid, @puni = 0 , @datumod = @@datumod, @datumdo = @@datumdo, @kntplanaid = @@kntplanaid,"
+				 HEIGHT="4902" WIDTH="7502"
+			CAPTION="Povezivanje "
+			ONLOAD="if (select pkosobekreditiid from tmpMPEizvod where tmpMPEizvodid = @@id ) is not null begin exec spRaiserror 69001, 'Slog je već  povezan . Poništite prvo vezu !' 
+						end
+						else begin
+						exec spMPEIzvod @action = 2,  @id= @@id
+						end "
+			ONLOAD2="select null as pkosobeid, 0 as iznosrate"
+		>
+		<INPUT TYPE="text"   NAME="konto"       CAPTION="_Konto"      HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="date"   NAME="datdok"         CAPTION="_Datum " HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="number" NAME="iznos" CAPTION="_Iznos"   HEIGHT="302" WIDTH="1206"  DECIMALS="4" TABINDEX="77" ENABLED="FALSE" />
+		<INPUT TYPE="text" NAME="partnerizvod" CAPTION="_Partner na izvodu"   HEIGHT="302" WIDTH="3206"  DECIMALS="4" TABINDEX="77" ENABLED="FALSE" />
+		<INPUT TYPE="text"   NAME="pozivnabroj"       CAPTION="_Poziv na broj "      HEIGHT="317" WIDTH="3000"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="text"   NAME="opis"       CAPTION="_Opis"      HEIGHT="317" WIDTH="3200"  TABINDEX="77" ENABLED="FALSE"/>
+		<INPUT TYPE="TRAZILICA"   NAME="pkosobeid"       CAPTION="Osoba"      HEIGHT="317" WIDTH="4997"  SQL="ViPKosobeNG#pkosobeid#Naziv%#Mjesto#ADRESA#JMBG#[Broj OI]#partner#!Saldo"  ONLOSTFOCUS="select 'refresh' as pkosobekreditiid"/>
+		<INPUT TYPE="combo"   NAME="pkosobekreditiid"       CAPTION="Partija"      HEIGHT="317" WIDTH="4997"  SQL="spmpEizvod @action = 8, @pkosobeid = @@pkosobeid" ONCLICK="select iznosrate2 as iznosrate from pkosobekrediti where pkosobekreditiid= @@pkosobekreditiid"/>
+		<INPUT TYPE="number" NAME="iznosrate" CAPTION="_Iznos rate "   HEIGHT="302" WIDTH="1206"  DECIMALS="4" TABINDEX="77" ENABLED="FALSE" SQL=""/>
+		<INPUT TYPE="button" NAME="ok"           CAPTION="Poveži"   TOP="4000" LEFT="456" WIDTH="1106" HEIGHT="322" ONCLICK="spMPEIzvod @action = 5,  @id= @@id, @pkosobekreditiid= @@pkosobekreditiid#select null as pkosobekreditiid, null as pkosobeid#Ok"  HOTKEY="F2" />
+		<INPUT TYPE="button" NAME="cancel"       CAPTION="Odustani" TOP="4000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	</POVEZI>
+
+	<PROKNJIZI
+		  WIDTH="5500"
+		  ONSUBMIT="spMPEIzvod @action = 6, @operateriid = @@operateriid , @id = @@id, @kntplanaid= @@kntplanaid, "
+		  ONLOAD="if (select count(*) from tmpMPEizvod where pkosobekreditiid is not null ) = 0 begin 
+							exec spRaiserror 69001, &apos;Nema povezanih iplata za knjiženje !&apos;
+				end
+				else begin 
+				select 0 as jedan , 1 as svi , ' Odaberite !' as pitanje 
+				end "
+		  HEIGHT="3000"
+		  CAPTION="Proknjižiti ?"
+		  CMD1CAPTION="Proknjiži"
+		  CMD2CAPTION="Odustani"
+		  FILLEXPLORER=""
+		>
+		<INPUT TYPE="label" NAME="pitanje" TOP="200" LEFT="200" WIDTH="3500" CAPTION=""/>
+		<INPUT TYPE="VB.checkbox" TOP = "700" LEFT="200" NAME="jedan" WIDTH="3500" HEIGHT="320" CAPTION="Proknjižiti odabranu uplatu ? (DA/NE) "/>
+		<INPUT TYPE="VB.checkbox" TOP = "1300" LEFT="200" NAME="svi" WIDTH="3500" HEIGHT="320" CAPTION="Proknjižiti sve povezane uplate ? (DA/NE) "/>
+	</PROKNJIZI>
+
+
+</PROJECT>
