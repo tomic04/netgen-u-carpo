@@ -2040,6 +2040,7 @@ namespace Carpo.NetGen.GridTest
             IspisUcinak();
             PokaziUpitUcinak();
             ComboPodloge();
+            AlatiPodloge();
             SesijaVeze();
             SqlPrijava();
             RafalnoPravila();
@@ -3888,6 +3889,54 @@ namespace Carpo.NetGen.GridTest
             }
             finally
             {
+                forma.Close();
+                forma.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// PN-06: traka alata Managera iznad master grida (bar2: grupe, reset, Postavke → sume, izvoz) ostaje u Podlozi,
+        /// a gcGla.ComponentExt je null (JGridControl ga stvara samo uz Carpo Definition), pa je klik bacao
+        /// NullReferenceException na UI niti. Sada Manager.AlatBezDefinicije preda radnju Podlozi.
+        /// </summary>
+        private static void AlatiPodloge()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "ngalat" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            Directory.CreateDirectory(dir);
+            string xml = Path.Combine(dir, "AlatTest.xml");
+            File.WriteAllText(xml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT ONLOAD=\"select 1 as id, &apos;a&apos; as Naziv\">\r\n"
+                + "<NAME>Alat</NAME>\r\n<CAPTION>Alati test</CAPTION>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+            var iznimke = new List<string>();
+            ThreadExceptionEventHandler h = delegate (object o, ThreadExceptionEventArgs e) { iznimke.Add(e.Exception.GetType().Name + ": " + e.Exception.Message); };
+            var forma = new Podloga();
+            try
+            {
+                forma.ShowInTaskbar = false;
+                forma.StartPosition = FormStartPosition.Manual;
+                forma.Location = new Point(-32000, -32000);
+                forma.Show();
+                bool otvoren = forma.Prikazi(xml, "localhost", "spin", 7);
+                Application.ThreadException += h;
+                // Shown Managera bez Carpo Loggera baci svoju iznimku; ona nije predmet testa.
+                Application.DoEvents();
+                iznimke.Clear();
+                var gv = Polje(forma, "gvGla") as DevExpress.XtraGrid.Views.Grid.GridView;
+                var gc = Polje(forma, "gcGla") as DevExpress.XtraGrid.GridControl;
+                object ext = gc == null ? null : gc.GetType().GetProperty("ComponentExt").GetValue(gc, null);
+                bool footerPrije = gv != null && gv.OptionsView.ShowFooter;
+                forma.bbiOptionSum.Checked = !forma.bbiOptionSum.Checked;
+                Application.DoEvents();
+                bool footerPoslije = gv != null && gv.OptionsView.ShowFooter;
+                var prosiri = Polje(forma, "bbiGridExpand") as DevExpress.XtraBars.BarItem;
+                if (prosiri != null)
+                    prosiri.PerformClick();
+                Application.DoEvents();
+                T("pn06-alati-podloge", otvoren && ext == null && footerPrije != footerPoslije && iznimke.Count == 0,
+                    "ComponentExt=" + (ext == null ? "null" : "ima") + " footer " + footerPrije + "->" + footerPoslije + " iznimke=" + string.Join("; ", iznimke.ToArray()));
+            }
+            finally
+            {
+                Application.ThreadException -= h;
                 forma.Close();
                 forma.Dispose();
             }

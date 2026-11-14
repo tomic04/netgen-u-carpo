@@ -1038,8 +1038,27 @@ namespace Carpo.UI.Forms.Master
 
         #endregion SaveLayoutToXml
 
+        /// <summary>
+        /// NetGen Podloga (Carpo.NetGen) nasljeđuje Manager bez Carpo definicije, pa je gcGla.ComponentExt null.
+        /// Traka alata iznad master grida (bar2: grupe, reset, sume, izvoz) tada zove ovo umjesto ComponentExt;
+        /// Podloga ga nadjača. Carpo granule uvijek imaju ComponentExt i ovo ne dosegnu.
+        /// </summary>
+        protected virtual void AlatBezDefinicije(string alat, string argument)
+        {
+        }
+
+        private bool BezDefinicije(string alat, string argument)
+        {
+            if (gcGla != null && gcGla.ComponentExt != null)
+                return false;
+            AlatBezDefinicije(alat, argument);
+            return true;
+        }
+
         private void bbiGridRefresh_ItemClick(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
+            if (BezDefinicije("grupe", null))
+                return;
             gcGla.ComponentExt.GridExpand();
         }
 
@@ -1176,16 +1195,22 @@ namespace Carpo.UI.Forms.Master
 
         private void bbiOptionSum_CheckedChanged(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
+            if (BezDefinicije("suma", null))
+                return;
             gcGla.ComponentExt.GridOptionSum();
         }
 
         public void bbiOptionGroupSumInline_CheckedChanged(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
+            if (BezDefinicije("suma-u-redu", null))
+                return;
             gcGla.ComponentExt.GridGroupSumsInline();
         }
 
         public void bbiOptionGroupSumUnder_CheckedChanged(object sender, DevExpress.XtraBars.ItemClickEventArgs e)
         {
+            if (BezDefinicije("suma-ispod", null))
+                return;
             gcGla.ComponentExt.GridGroupSumsUnder();
         }
 
@@ -1202,6 +1227,8 @@ namespace Carpo.UI.Forms.Master
             if (e.Item.Tag != null)
             {
                 string ext = e.Item.Tag as string;
+                if (BezDefinicije("izvoz", ext))
+                    return;
                 gcGla.ComponentExt.GridExport(ext);
             }
         }
@@ -1451,6 +1478,8 @@ namespace Carpo.UI.Forms.Master
 
         private void bbiGridReset_ItemClick(object sender, ItemClickEventArgs e)
         {
+            if (BezDefinicije("reset", null))
+                return;
             gcGla.ComponentExt.GridReset();
         }
 
