@@ -606,7 +606,9 @@ namespace Carpo.NetGen.Ui
                     string[] sqlovi = ForeachNaredba.Ponovi(tijelo, IdjeviMaster(ForeachNaredba.Vrsta(s)));
                     for (int k = 0; k < sqlovi.Length; k++)
                     {
-                        if (ZastitaSql.Tekst(sqlovi[k]).Pise && !DijalogTok.Produkcija)
+                        // FOR-02: NetGen na podlozi ne vrti FOREACH (tijelo se preskoči), pa Carpo ni u
+                        // Produkcija ne šalje upis iz petlje dok se o FOR-02 ne odluči.
+                        if (ZastitaSql.Tekst(sqlovi[k]).Pise)
                             continue;
                         try { Citaj(sqlovi[k]); }
                         catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sqlovi[k]); }
