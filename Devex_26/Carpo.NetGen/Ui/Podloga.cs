@@ -46,17 +46,6 @@ namespace Carpo.NetGen.Ui
         private bool _sqlPoruka;
         private bool _vezaPrijavljena;
 
-        protected override void OnFormClosed(FormClosedEventArgs e)
-        {
-            base.OnFormClosed(e);
-            // SES-01: zadnja podloga granule zatvori vezu, kao kraj NetGen procesa.
-            if (_vezaPrijavljena)
-            {
-                _vezaPrijavljena = false;
-                NgVeza.Otpusti(_spoj);
-            }
-        }
-
         private string StatusSqlGreske
         {
             get { return _sqlPoruka ? "PORUKA" : "GRESKA"; }
