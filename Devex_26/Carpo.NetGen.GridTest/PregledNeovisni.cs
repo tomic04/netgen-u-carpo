@@ -10,6 +10,7 @@ using System.Threading;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
+using Carpo.NetGen.Model;
 using Carpo.NetGen.Ui;
 using DevExpress.XtraEditors;
 using DevExpress.XtraGrid.Views.Grid;
@@ -67,6 +68,7 @@ namespace Carpo.NetGen.GridTest
                 Korak("stablo-nakon-dijaloga", StabloNakonDijaloga);
                 Korak("forma-parametri", FormaParametri);
                 Korak("onload-jedna-rijec", OnLoadJednaRijec);
+                Korak("onload-jupiter-pise", OnLoadJupiterPise);
             }
             finally
             {
@@ -581,6 +583,51 @@ namespace Carpo.NetGen.GridTest
             finally
             {
                 Zatvori(forma);
+            }
+        }
+        // ------------------------------------------------------------------ PN-09
+
+        /// <summary>
+        /// Sweep nad jupiter2019/2022 (JupiterNeSaljeGumb) otvara forme, a ONLOAD forme može biti procedura koja piše
+        /// (MatTem PROKNJIZIFORM: spKntMatKnjizenje @Action=2). Takav ONLOAD se tamo ne šalje (tijelo iz
+        /// object_definition kroz ZastitaSql.Tijelo); ONLOAD koji samo čita i dalje ide.
+        /// </summary>
+        private static void OnLoadJupiterPise()
+        {
+            string spoj = SpinVeza.SaAplikacijom(Spoj(), "pn-jup.xml");
+            NgVeza.Prijavi(spoj);
+            try
+            {
+                Func<string, DataTable> citaj = delegate (string sql) { return NgVeza.Citaj(spoj, sql, 30); };
+                var kontrole = new List<NgControl>
+                {
+                    new NgControl("text", NgGrana.Text, "natpis", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "100" }, { "LEFT", "100" }, { "WIDTH", "2000" }, { "HEIGHT", "300" } }), true)
+                };
+                var pise = new NgForm("PISE", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Pise" } }), "", "dbo.spPregledNeovisni @k='jup'", kontrole, new List<NgButton>(), new List<string>());
+                var cita = new NgForm("CITA", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Cita" } }), "", "dbo.spPregledNeovisniTree", kontrole, new List<NgButton>(), new List<string>());
+                string natpis;
+                using (var d = new Dijalog())
+                {
+                    d.JupiterNeSaljeGumb(true);
+                    d.Slozi(pise, new SqlKontekst(), citaj);
+                }
+                int upisa = Zapisi("jup").Rows.Count;
+                using (var d2 = new Dijalog())
+                {
+                    d2.JupiterNeSaljeGumb(true);
+                    d2.Slozi(cita, new SqlKontekst(), citaj);
+                    Control[] c = d2.Controls.Find("natpis", true);
+                    natpis = c.Length > 0 ? c[0].Text : "nema";
+                }
+                T("pn-onload-jupiter-pise", upisa == 0 && natpis == "Korijen", "ONLOAD koji piše izvršen " + upisa.ToString() + "x (treba 0), ONLOAD koji čita natpis='" + natpis + "'");
+            }
+            catch (Exception ex)
+            {
+                T("pn-onload-jupiter-pise", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                NgVeza.Otpusti(spoj);
             }
         }
     }
