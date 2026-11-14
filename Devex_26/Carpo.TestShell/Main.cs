@@ -268,7 +268,14 @@ namespace Carpo.TestShell
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("cmdGen_Click exception: " + ex.ToString());
-                MessageBox.Show(ex.ToString(), "Start Error");
+                if (_klikPregled)
+                {
+                    // SWP-03: u sweepu i klik pregledu nema korisnika; MessageBox bi držao UI do čuvara.
+                    ZadnjaNit = ex.GetType().Name + ": " + ex.Message;
+                    Carpo.NetGen.Ui.Dijalog.Trag("IZNIMKA pri otvaranju: " + ex.ToString().Replace("\r\n", " | "));
+                }
+                else
+                    MessageBox.Show(ex.ToString(), "Start Error");
             }
             finally
             {
