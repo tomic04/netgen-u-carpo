@@ -56,7 +56,13 @@ if ($sid -ne 0) {
         Pokazi-Djelomicno
         throw "sweep timeout"
     }
-    if ($p.ExitCode -ne 0) { Pokazi-Djelomicno; throw "sweep kod $($p.ExitCode) (3 = cuvar: granula je drzala UI dulje od 90 s)" }
+    if ($p.ExitCode -ne 0) {
+        # SWP-05: s "#kraj" u .red sweep je prošao sve granule, a proces je pao pri izlazu. To je nalaz
+        # (stog je u .iznimka.txt), ali izvještaj vrijedi i ispisuje se.
+        $kraj = (Test-Path -LiteralPath $redovi) -and (@(Get-Content -LiteralPath $redovi -Encoding UTF8) | Where-Object { $_ -like "#kraj*" }).Count -gt 0
+        if (-not $kraj) { Pokazi-Djelomicno; throw "sweep kod $($p.ExitCode) (3 = cuvar: granula je drzala UI dulje od 90 s)" }
+        Write-Host "::warning::Sweep je gotov, ali proces je pao pri izlazu (kod $($p.ExitCode)); stog je u .iznimka.txt."
+    }
 } else {
     $cmd = $Izvjestaj + ".cmd"
     $dodatak = ""

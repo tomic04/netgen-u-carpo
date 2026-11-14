@@ -823,6 +823,8 @@ namespace Carpo.TestShell
             glava.AppendLine("granula\tishod\tsekunde\tuzrok");
             glava.Append(sb.ToString());
             File.WriteAllText(izvjestaj, glava.ToString());
+            // SWP-05: oznaka da je sweep gotov; pad nakon nje je pad pri izlazu procesa, ne granule.
+            try { File.AppendAllText(izvjestaj + ".red", "#kraj\t" + DateTime.Now.ToString("HH:mm:ss") + "\r\n"); } catch { }
             return 0;
         }
 
