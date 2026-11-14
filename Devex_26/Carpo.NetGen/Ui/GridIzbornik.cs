@@ -33,6 +33,16 @@ namespace Carpo.NetGen.Ui
             {
                 if (e.MenuType != GridMenuType.Row && e.MenuType != GridMenuType.User)
                     return;
+                // Form1 6984-6998 i Form2.Glbl_GridMouseUp 8704-8716: Ctrl + desni klik je izbor stupaca
+                // (kvačica je vidljivost stupca). Carpo za to ima svoj izbornik stupaca (ComponentGrid
+                // SetAttributeColumnChooser), pa se otvori on umjesto popisa.
+                if (Form2Dogadjaj.DesniKlik(true, (Control.ModifierKeys & Keys.Control) == Keys.Control) == "stupci")
+                {
+                    e.Allow = false;
+                    pogled.OptionsCustomization.CustomizationFormSearchBoxVisible = true;
+                    pogled.ShowCustomization();
+                    return;
+                }
                 if (e.Menu == null)
                     e.Menu = new GridViewMenu(pogled);
                 var stavke = Form2Dogadjaj.Izbornik(popup == null ? "" : popup());

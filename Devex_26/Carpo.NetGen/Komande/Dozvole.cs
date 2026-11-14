@@ -14,6 +14,9 @@ namespace Carpo.NetGen.Komande
         {
             public bool? Omogucen;
             public bool? Vidljiv;
+
+            /// <summary>Natpis "lbl"+ime na dijalogu (DOZ-02).</summary>
+            public bool? Natpis;
         }
 
         public static bool Ukljucene(string permisio)
@@ -30,6 +33,94 @@ namespace Carpo.NetGen.Komande
                 + ") or (GrupeID = (select top 1 GrupeId from ssOperateri where OperateriId = " + op
                 + ") )) union select *,2 as sort from ssPermission where objectname='" + x
                 + "' and OperateriID = 0 and grupeid=0 order by sort ,isgrupa desc,grupeid,operateriid";
+        }
+
+        /// <summary>Form2.ssPermissionProcitaj 5660-5662: ime xml-a, točka, ime forme.</summary>
+        public static string Objekt(string imeXml, string imeForme)
+        {
+            return (imeXml ?? "").Trim() + "." + (imeForme ?? "");
+        }
+
+        /// <summary>
+        /// Form2.ssPermissionProcitaj 5667: objekt je xml.forma, a redoslijed ostaje "sort desc"
+        /// (Form1 je od 18.10.2021. bez desc).
+        /// </summary>
+        public static string SqlForme(string imeXml, string imeForme, string operaterId)
+        {
+            string x = Objekt(imeXml, imeForme);
+            string op = operaterId ?? "";
+            return "select *,1 as sort from ssPermission \twhere objectname='" + x + "' and ((OperateriID = " + op
+                + ") or (GrupeID = (select top 1 GrupeId from ssOperateri where OperateriId = " + op
+                + ") )) union select *,2 as sort from ssPermission where objectname='" + x
+                + "' and OperateriID = 0 and grupeid=0 order by sort desc,isgrupa desc,grupeid,operateriid";
+        }
+
+        /// <summary>
+        /// Form2.ssPermissionProvjeri 5683-5716 za jednu kontrolu: objekt i ime kontrole. Vidljivost false
+        /// skrije kontrolu i natpis, true ih pokaže (DBNull ili bez stupca ne mijenja ništa: Err.Number).
+        /// smije false zabrani; smije true (i DBNull, On Error Resume Next) dopusti, pokaže natpis i izađe.
+        /// </summary>
+        public static Stanje Kontrola(DataTable t, string objekt, string ime)
+        {
+            var st = new Stanje();
+            if (t == null || t.Rows.Count == 0 || !t.Columns.Contains("functionname"))
+                return st;
+            string o = (objekt ?? "").Trim().ToLowerInvariant();
+            string n = (ime ?? "").Trim().ToLowerInvariant();
+            foreach (DataRow r in t.Rows)
+            {
+                if (Tekst(r, "objectname").Trim().ToLowerInvariant() != o || Tekst(r, "functionname").Trim().ToLowerInvariant() != n)
+                    continue;
+                bool? v = t.Columns.Contains("Vidljivost") ? Bool(r, "Vidljivost") : null;
+                if (v.HasValue)
+                {
+                    st.Vidljiv = v.Value;
+                    st.Natpis = v.Value;
+                }
+                bool? s = Bool(r, "smije");
+                if (s != true)
+                    st.Omogucen = false;
+                if (s != false)
+                {
+                    st.Omogucen = true;
+                    st.Natpis = true;
+                    break;
+                }
+            }
+            return st;
+        }
+
+        /// <summary>
+        /// Form2.ssPermissionProvjeriKontrolu 5723-5758 (nakon visible/enable): samo ime funkcije. smije true
+        /// (i DBNull) dopusti, pokaže kontrolu i natpis i izađe; false zabrani, a Vidljivost false skrije.
+        /// </summary>
+        public static Stanje KontrolaNaknadno(DataTable t, string ime)
+        {
+            var st = new Stanje();
+            if (t == null || t.Rows.Count == 0 || !t.Columns.Contains("functionname"))
+                return st;
+            string n = (ime ?? "").Trim().ToLowerInvariant();
+            foreach (DataRow r in t.Rows)
+            {
+                if (Tekst(r, "functionname").Trim().ToLowerInvariant() != n)
+                    continue;
+                bool? s = Bool(r, "smije");
+                if (s != false)
+                {
+                    st.Omogucen = true;
+                    st.Vidljiv = true;
+                    st.Natpis = true;
+                    break;
+                }
+                st.Omogucen = false;
+                bool? v = t.Columns.Contains("Vidljivost") ? Bool(r, "Vidljivost") : null;
+                if (v == false)
+                {
+                    st.Vidljiv = false;
+                    st.Natpis = false;
+                }
+            }
+            return st;
         }
 
         /// <summary>

@@ -1995,6 +1995,7 @@ namespace Carpo.NetGen.GridTest
             StatusDijaloga();
             GridDijalogaStupci();
             LozinkaULogu();
+            DozvoleDijaloga();
             IspisGridaDijaloga();
             BojeIzUpita();
             StabloDijaloga();
@@ -2874,6 +2875,84 @@ namespace Carpo.NetGen.GridTest
             }
         }
 
+        private static bool Postavljeno(Control c)
+        {
+            // Control.Visible na neprikazanoj formi je uvijek false; STATE_VISIBLE (2) je ono što je postavljeno.
+            return (bool)typeof(Control).GetMethod("GetState", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(c, new object[] { 2 });
+        }
+
+        /// <summary>DOZ-02: PERMISIO="true" na formi dijaloga (Form2 ssPermission 5657-5781).</summary>
+        private static void DozvoleDijaloga()
+        {
+            try
+            {
+                string sql = Dozvole.SqlForme("Obrazac ", "F1", "7");
+                T("doz02-sql", sql.IndexOf("objectname='Obrazac.F1'", StringComparison.Ordinal) > 0 && sql.EndsWith("order by sort desc,isgrupa desc,grupeid,operateriid", StringComparison.Ordinal)
+                    && sql.IndexOf("OperateriId = 7)", StringComparison.Ordinal) > 0, sql);
+                var t = new DataTable();
+                t.Columns.Add("objectname", typeof(string));
+                t.Columns.Add("functionname", typeof(string));
+                t.Columns.Add("smije", typeof(bool));
+                t.Columns.Add("Vidljivost", typeof(bool));
+                t.Rows.Add("Obrazac.F1", "iznos", false, false);
+                t.Rows.Add("obrazac.f1", "Datum", DBNull.Value, DBNull.Value);
+                t.Rows.Add("Obrazac.F1", "ZABRANJENA", false, DBNull.Value);
+                t.Rows.Add("Obrazac.F1", "Export grid", false, DBNull.Value);
+                t.Rows.Add("Obrazac.F1", "skriven", true, false);
+                Dozvole.Stanje a = Dozvole.Kontrola(t, "Obrazac.F1", "iznos");
+                Dozvole.Stanje b = Dozvole.Kontrola(t, "Obrazac.F1", "datum");
+                Dozvole.Stanje c = Dozvole.Kontrola(t, "Obrazac.F1", "skriven");
+                T("doz02-kontrola", a.Omogucen == false && a.Vidljiv == false && a.Natpis == false
+                    && b.Omogucen == true && !b.Vidljiv.HasValue && b.Natpis == true
+                    && c.Omogucen == true && c.Vidljiv == false && c.Natpis == true, "");
+                Dozvole.Stanje n = Dozvole.KontrolaNaknadno(t, "iznos");
+                Dozvole.Stanje m = Dozvole.KontrolaNaknadno(t, "datum");
+                T("doz02-naknadno", n.Omogucen == false && n.Vidljiv == false && m.Omogucen == true && m.Vidljiv == true, "");
+
+                var kontrole = new List<NgControl>
+                {
+                    new NgControl("text", NgGrana.Text, "iznos", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Iznos" } }), true),
+                    new NgControl("text", NgGrana.Text, "datum", new NgAttributeBag(new Dictionary<string, string>()), true),
+                    new NgControl("text", NgGrana.Text, "slobodan", new NgAttributeBag(new Dictionary<string, string>()), true)
+                };
+                var forma = new NgForm("F1", new NgAttributeBag(new Dictionary<string, string> { { "PERMISIO", "true" } }), "", "", kontrole, new List<NgButton>(), new List<string>());
+                var poslano = new List<string>();
+                using (var d = new Dijalog())
+                {
+                    d.Operater = "7";
+                    d.Slozi(forma, new SqlKontekst { XmlName = "Obrazac" }, delegate (string x)
+                    {
+                        poslano.Add(x ?? "");
+                        return (x ?? "").IndexOf("ssPermission", StringComparison.Ordinal) >= 0 ? t : new DataTable();
+                    });
+                    T("doz02-citanje", poslano.Exists(delegate (string x) { return x.IndexOf("objectname='Obrazac.F1'", StringComparison.Ordinal) > 0; }), string.Join(" | ", poslano.ToArray()));
+                    typeof(Dijalog).GetMethod("PrimijeniDozvole", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(d, null);
+                    Control iznos = d.Controls.Find("iznos", true)[0];
+                    Control[] lbl = d.Controls.Find("lbliznos", true);
+                    Control slobodan = d.Controls.Find("slobodan", true)[0];
+                    T("doz02-dijalog", !iznos.Enabled && !Postavljeno(iznos) && lbl.Length == 1 && !Postavljeno(lbl[0])
+                        && slobodan.Enabled && Postavljeno(slobodan), "iznos=" + iznos.Enabled + "/" + Postavljeno(iznos) + " lbl=" + lbl.Length);
+                    var smije = typeof(Dijalog).GetMethod("SmijeOtvoriti", BindingFlags.Instance | BindingFlags.NonPublic);
+                    T("doz02-forma", !(bool)smije.Invoke(d, new object[] { ":ZABRANJENA(@a=@@id)" }) && (bool)smije.Invoke(d, new object[] { "DRUGA" }), "");
+                    var stavka = (Dozvole.Stanje)typeof(Dijalog).GetMethod("DozvolaStavkeGrida", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(d, new object[] { "Export grid", true });
+                    T("doz02-izbornik", stavka != null && stavka.Omogucen == false, "");
+                }
+                using (var d = new Dijalog())
+                {
+                    var bez = new NgForm("F1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                    poslano.Clear();
+                    d.Slozi(bez, new SqlKontekst { XmlName = "Obrazac" }, delegate (string x) { poslano.Add(x ?? ""); return t; });
+                    T("doz02-bez-permisio", !poslano.Exists(delegate (string x) { return x.IndexOf("ssPermission", StringComparison.Ordinal) >= 0; }), "");
+                }
+            }
+            catch (Exception ex)
+            {
+                Exception u = ex is TargetInvocationException && ex.InnerException != null ? ex.InnerException : ex;
+                T("doz02", false, u.GetType().Name + ": " + u.Message);
+            }
+        }
+
         private static void GridDijalogaStupci()
         {
             try
@@ -3541,6 +3620,9 @@ namespace Carpo.NetGen.GridTest
         /// M1: Jupiter ulaz Loader.Run8 otvori istu Podlogu kao TestShell (Form1.Run: SetParent na clientHandle,
         /// Show, hWnd). Zadnji test: forma registrira Logger u DependencyContainer.
         /// </summary>
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr GetParent(IntPtr hWnd);
+
         private static void LoaderOtvara()
         {
             string dir = Path.Combine(Path.GetTempPath(), "ngm1" + Guid.NewGuid().ToString("N").Substring(0, 6));
@@ -3576,6 +3658,33 @@ namespace Carpo.NetGen.GridTest
                 {
                     dij.Close();
                     dij.Dispose();
+                }
+                // ULZ-04: Form2 PrvaForma 993-1028 (SetParent na clientHandle; Koler Jup10 bez ruba i veličine
+                // roditelja) i FormClosing 4112-4113 (SendMessage main_handle 0x7D0).
+                using (var domacin = new PrimateljPoruka())
+                {
+                    var ploca = new Panel();
+                    domacin.Controls.Add(ploca);
+                    IntPtr hDomacin = domacin.Handle;
+                    IntPtr hPloca = ploca.Handle;
+                    var f2 = new Carpo.NetGen.frm();
+                    f2.TestXmlPath = dijXml;
+                    f2.moduleId = "FrmTest.xml";
+                    f2.mainHandle = (int)hDomacin;
+                    f2.Koler = "Jup10";
+                    f2.Run8("localhost", "spin", "", "", 7, (int)hPloca, 0, 0, "");
+                    var d2 = f2.Forma as Dijalog;
+                    bool ugradjen = d2 != null && GetParent(d2.Handle) == hPloca && d2.FormBorderStyle == FormBorderStyle.None;
+                    ploca.Size = new Size(321, 123);
+                    bool prati = d2 != null && d2.Size == new Size(321, 123) && d2.Location == Point.Empty;
+                    IntPtr hDijaloga = d2 == null ? IntPtr.Zero : d2.Handle;
+                    if (d2 != null)
+                    {
+                        d2.Close();
+                        d2.Dispose();
+                    }
+                    T("ulz04-frm-jupiter", ugradjen && prati && domacin.Zatvoren == hDijaloga && hDijaloga != IntPtr.Zero,
+                        "ugradjen=" + ugradjen + " prati=" + prati + " poruka=" + domacin.Zatvoren + " greska=" + f2.ZadnjaGreska);
                 }
             }
             catch (Exception ex)
@@ -3813,6 +3922,19 @@ namespace Carpo.NetGen.GridTest
                 return null;
             }
             return null;
+        }
+    }
+
+    /// <summary>Jupiter glavni prozor u testu: pamti wParam poruke 0x7D0 (zatvoren prozor granule).</summary>
+    public sealed class PrimateljPoruka : Form
+    {
+        public IntPtr Zatvoren = IntPtr.Zero;
+
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == 0x7D0)
+                Zatvoren = m.WParam;
+            base.WndProc(ref m);
         }
     }
 

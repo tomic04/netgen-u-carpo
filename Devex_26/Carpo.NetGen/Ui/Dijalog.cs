@@ -314,6 +314,8 @@ namespace Carpo.NetGen.Ui
                     c.BringToFront();
             }
 
+            // Form2.vb 2801-2804: s kontrolama i PERMISIO="true" na formi čita se ssPermission (DOZ-02).
+            UcitajDozvole(forma, citaj);
             PrimijeniOnLoad();
             // Form2.vb 1170-1182 i čitanje po kontroli: NetGenDBClipboard nadjača ONLOAD i ONLOAD2 (DBC-01).
             UcitajDbClipboard(forma);
@@ -397,6 +399,8 @@ namespace Carpo.NetGen.Ui
         {
             base.OnLoad(e);
             IzvrsiDogadjaj(AtributForme("ONLOADED"));
+            // Form2_Load 5797: ssPermissionProvjeri poslije ONLOADED (DOZ-02).
+            PrimijeniDozvole();
         }
 
         /// <summary>Form2_FormClosed 4079-4083: Rafalno(strONClosed).</summary>
@@ -821,6 +825,8 @@ namespace Carpo.NetGen.Ui
                 }
                 if (korak.Vrsta == "forma")
                 {
+                    if (!SmijeOtvoriti(korak.Tekst))
+                        continue;
                     OtvorenaForma = korak.Tekst;
                     if (OtvoriDrugu != null)
                         OtvoriDrugu(korak.Tekst);
@@ -1083,6 +1089,8 @@ namespace Carpo.NetGen.Ui
                 Carpo.NetGen.Print.PrintBridge.Ispisi(ime, true, Id, Operater, Konekcija, "", ZadnjiSql, "", SviParametri(), "", "", "", Text, null, "", null);
                 return;
             }
+            if (!SmijeOtvoriti(ime))
+                return;
             OtvorenaForma = ime;
             if (OtvoriDrugu != null)
                 OtvoriDrugu(ime);
@@ -1480,7 +1488,7 @@ namespace Carpo.NetGen.Ui
             for (int i = 0; i < beep; i++)
                 RafalNaredba.Beep();
             string dijete = Form2Rezultat.Celija(r, "form");
-            if (dijete.Length > 0)
+            if (dijete.Length > 0 && SmijeOtvoriti(dijete))
             {
                 OtvorenaForma = dijete;
                 if (OtvoriDrugu != null)
@@ -1713,6 +1721,9 @@ namespace Carpo.NetGen.Ui
                 Control[] natpis = Controls.Find("lbl" + c.Name, true);
                 if (natpis.Length > 0)
                     natpis[0].Visible = vidi;
+                // 4489: visible ponovo pita ssPermission (DOZ-02).
+                if (vidi)
+                    DozvolaKontrole(c);
                 return;
             }
             if (akcija == "tabstoped" || akcija == "tabnotstoped")
@@ -1728,6 +1739,9 @@ namespace Carpo.NetGen.Ui
                     view.OptionsBehavior.Editable = da;
                 else
                     c.Enabled = da;
+                // 4513: enable ponovo pita ssPermission (DOZ-02).
+                if (da)
+                    DozvolaKontrole(c);
                 return;
             }
             if (akcija == "refresh")
@@ -1996,6 +2010,9 @@ namespace Carpo.NetGen.Ui
                         if (_slazem || _tihoGrid > 0)
                             return;
                         zanemariKlik = true;
+                        // 5634-5638: dok je Ctrl pritisnut (ControlClicked, odabir više redova) ONCLICK se ne šalje.
+                        if ((Control.ModifierKeys & Keys.Control) == Keys.Control)
+                            return;
                         IzvrsiDogadjaj(klik);
                     };
                     view.Click += delegate
@@ -2064,7 +2081,7 @@ namespace Carpo.NetGen.Ui
                 }
                 // Form2.Glbl_GridMouseUp: desni klik na svaki grid dijaloga (POPUP i stalne stavke) (POP-01).
                 if (view != null)
-                    GridIzbornik.Vezi(view, delegate { return popup; }, IzvrsiIzbornik, null, new GridRadnje
+                    GridIzbornik.Vezi(view, delegate { return popup; }, IzvrsiIzbornik, DozvolaStavkeGrida, new GridRadnje
                     {
                         Ispis = delegate { IspisiGrid("PRINTGRID(" + c.Name + ")", gc); },
                         Spremi = delegate { GridRaspored.Spremi(view, DatotekaIzgleda(c)); },
