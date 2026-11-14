@@ -89,6 +89,13 @@ namespace Carpo.NetGen.Ui
             trMain.OptionsView.ShowIndicator = false;
             trMain.OptionsBehavior.Editable = false;
             trMain.FocusedNodeChanged += Drvo_FocusedNodeChanged;
+            // Form1.TreeView2_DoubleClick 5656-5662: dvoklik ponovi radnju odabranog čvora (forma ili upit),
+            // pa ponovni klik na isti čvor osvježi (TRE-02).
+            trMain.DoubleClick += delegate
+            {
+                if (trMain.FocusedNode != null)
+                    IzvrsiCvor(trMain.FocusedNode.Tag as Cvor);
+            };
             var stavke = new XtraTabPage();
             stavke.Text = "Stavke";
             splitGrid.Panel2.Controls.Remove(gcDet);
@@ -280,7 +287,11 @@ namespace Carpo.NetGen.Ui
 
         private void Drvo_FocusedNodeChanged(object sender, FocusedNodeChangedEventArgs e)
         {
-            var cvor = e.Node == null ? null : e.Node.Tag as Cvor;
+            IzvrsiCvor(e.Node == null ? null : e.Node.Tag as Cvor);
+        }
+
+        private void IzvrsiCvor(Cvor cvor)
+        {
             if (cvor == null)
                 return;
             _stablo.Odaberi(cvor);
