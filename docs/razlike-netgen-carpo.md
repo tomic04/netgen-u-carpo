@@ -86,6 +86,12 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 - **NetGen:** `BuiltInTexts(GroupByBoxInfo) = ""` (prazna ploča).
 - **Zašto ostaje:** izgled je Carpov (pravilo 50-50); vidljivost ploče prati GROUPBYBOXVISIBLE (DGR-02).
 
+### R120 Lozinka nije u logu, log ima granicu
+
+- **NetGen:** `NapuniCBLog` piše SQL kakav ide u bazu, s vrijednošću polja s `PASSWORDCHAR` (MPKase: `ServerPass`, `PassAdmin`). Ctrl+F11 na dijalogu pokaže te parametre u Form5.
+- **Zašto ostaje:** plan, faza G. `NgDnevnik` umjesto `@ime='…'` polja s lozinkom piše `'***'`. Upisana vrijednost (3 znaka i više) skriva se i bez imena. Lista zapisa drži zadnjih 1000; cijeli log je u Carpo Loggeru. Ctrl+F11 na dijalogu i podlozi upiše parametre u Carpo log i otvori njegov prozor (LOG-01).
+- **Test:** `log01-ime`, `log01-vrijednost`, `log01-kratka`, `log01-granica`, `log01-dijalog`
+
 ## Uklonjeno
 
 Svaka uklonjena stavka ima test koji provjerava NetGen linije. R59 i R110 su portani: redni stupac grida, gumbi 79/8 na dnu, slika čvora 0, `PageHeaderFooter` Left/Center/Right.

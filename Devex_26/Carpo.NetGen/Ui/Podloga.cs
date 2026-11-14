@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.IO;
-using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using Carpo.NetGen.Grid;
@@ -1936,33 +1935,13 @@ namespace Carpo.NetGen.Ui
             return granula + "\t" + dio + "\t" + ime + "\t" + ishod + "\t" + (poruka ?? "").Replace("\t", " ").Replace("\r", " ").Replace("\n", " ") + "\t" + izvor;
         }
 
+        /// <summary>Form1_KeyDown 1375-1378: PokupiParametreSaGrida, pa CBLog s PARAMATERISAMASTERIDETAILGRIDA.</summary>
         private void OtvoriCarpoLog()
         {
-            object logger = NgDnevnik.CarpoLogger;
-            if (logger == null)
-            {
-                PostaviStatus("Carpo logger nije spojen.");
-                return;
-            }
-            try
-            {
-                Type tip = logger.GetType().Assembly.GetType("Carpo.Core.Log.Log");
-                if (tip == null)
-                {
-                    PostaviStatus("Carpo.Core.Log.Log nije pronađen.");
-                    return;
-                }
-                object frm = Activator.CreateInstance(tip, logger);
-                MethodInfo show = tip.GetMethod("ShowDialog", new[] { typeof(IWin32Window) });
-                if (show != null)
-                    show.Invoke(frm, new object[] { this });
-                else
-                    tip.GetMethod("ShowDialog", Type.EmptyTypes).Invoke(frm, null);
-            }
-            catch (Exception ex)
-            {
-                PostaviStatus("Ctrl+F11: " + ex.Message);
-            }
+            string grid = _master == null || _master.Kontekst == null ? "" : (_master.Kontekst.ParametriSaGrida ?? "");
+            string greska = CarpoLogProzor.Pokazi(this, "PARAMATERISAMASTERIDETAILGRIDA=" + grid);
+            if (greska != null)
+                PostaviStatus(greska);
         }
     }
 }

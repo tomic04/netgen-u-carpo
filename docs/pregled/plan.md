@@ -271,7 +271,7 @@ Pravila za svaki ispravak:
 - [ ] QA kuka (`TestHooks/GranulaSesija`) nije dostupna iz produkcijskog `Loader`.
 - [ ] Nijedan placeholder koji baca `NotSupportedException` nije na putu.
 - [ ] Shim `NetGenDLL` s istim `Loader.Run8` i `ShellResize`, testiran u pravom Jupiteru (`Jupiter.exe` 10.5.26.0+).
-- [ ] Lozinke se ne upisuju u log (NetGen CBLog ih sadrži; Carpo mora raditi redact).
+- [x] Lozinke se ne upisuju u log (NetGen CBLog ih sadrži). `NgDnevnik` skriva polja s `PASSWORDCHAR` (R120, LOG-01).
 - [ ] Fiskalizacija: SOAP uključen tek kad je `Raverus.FiskalizacijaDEV.COM.dll` na stroju i testiran na `cistest`.
 - [ ] Postojeće Carpo granule prolaze isti smoke kao prije.
 - [ ] Prebacivanje granulu po granulu u `ssMeni`, s povratom na NetGen.
