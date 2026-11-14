@@ -34,17 +34,23 @@ namespace Carpo.NetGen.Komande
             return id;
         }
 
+        /// <summary>
+        /// Form2.vb 3624-3633: u strParametriSvi (pa i u ONSUBMIT) ide samo @ime=id ili @ime=null.
+        /// @searchboxIME je SearchBoxCaptioni i ide samo u CB (3936), vidi <see cref="SearchNatpis"/> (PAR-02).
+        /// </summary>
         public static string Search(string ime, string oznaka, string tekst)
         {
             string n = (ime ?? "").Trim();
             string id = (oznaka ?? "").Trim();
-            string glavni;
             if (id.Length == 0 || id == "0")
-                glavni = "@" + n + "=null,";
-            else
-                glavni = "@" + n + "=" + id + ",";
-            string natpis = (tekst ?? "").Replace(",", " ");
-            return glavni + "@searchbox" + n + "='" + natpis + "',";
+                return "@" + n + "=null,";
+            return "@" + n + "=" + id + ",";
+        }
+
+        /// <summary>Form2.vb 3630/3635: SearchBoxCaptioni, tekst tražilice; zarez postane razmak.</summary>
+        public static string SearchNatpis(string ime, string tekst)
+        {
+            return "@searchbox" + (ime ?? "").Trim() + "='" + (tekst ?? "").Replace(",", " ") + "',";
         }
 
         public static string Grid(string ime, string id, string plavi, string cekirani, int redova)

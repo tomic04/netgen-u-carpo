@@ -1519,7 +1519,7 @@ namespace Carpo.NetGen.Ui
             string izvor = master ?? "";
             if (_forma != null && !string.IsNullOrEmpty(_forma.OnSubmit))
                 izvor = _forma.OnSubmit;
-            return SrediPoslije.ZaSlanje(izvor, SviParametri(), _kontekst ?? new SqlKontekst(), null);
+            return SrediPoslije.ZaSlanje(izvor, SviParametri(), _kontekst ?? new SqlKontekst(), _kontekst == null ? null : _kontekst.Clipboard);
         }
 
         private void IzvrsiSql(string tekst)
@@ -2447,14 +2447,21 @@ namespace Carpo.NetGen.Ui
             var cb = _kontekst == null ? null : _kontekst.Clipboard;
             if (cb != null)
             {
+                // 3936: Split(SearchBoxCaptioni & ComboBoxCaptioni & strParametriSvi): natpisi tražilica i
+                // comboa idu samo u CB, ne i u parametre koji se lijepe na ONSUBMIT (PAR-02).
+                var trazilice = new StringBuilder();
                 var natpisi = new StringBuilder();
                 foreach (Control c in SveKontrole())
                 {
+                    if (string.IsNullOrEmpty(c.Name))
+                        continue;
+                    if (c.GetType() == typeof(ButtonEdit))
+                        trazilice.Append(ParametriSvi.SearchNatpis(c.Name, ((ButtonEdit)c).Text));
                     var look = c as LookUpEdit;
-                    if (look != null && !string.IsNullOrEmpty(c.Name))
+                    if (look != null)
                         natpisi.Append("@combobox").Append(c.Name.Trim()).Append("='").Append((look.Text ?? "").Replace(",", " ")).Append("',");
                 }
-                ClipboardNg.UpisiParametre(cb, natpisi.ToString() + svi);
+                ClipboardNg.UpisiParametre(cb, trazilice.ToString() + natpisi.ToString() + svi);
             }
             // 3429-3662: PokupiParametre sprema vrijednosti u NetGenDBClipboard (DBC-01).
             if (_dbCb && !_slazem && !_zatvaram)
