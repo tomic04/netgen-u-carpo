@@ -1958,7 +1958,11 @@ namespace Carpo.NetGen.Ui
                         if (view.FocusedColumn != null && view.FocusedRowHandle >= 0)
                             celija = view.GetFocusedRowCellValue(view.FocusedColumn);
                         if (_kontekst != null)
+                        {
+                            // Form2.Glbl_DoubleClick 6188-6201: DblClickedColumn (natpis) i TrenutnaVrijednost.
+                            _kontekst.DblClickedColumn = view.FocusedColumn == null ? "" : view.FocusedColumn.GetCaption();
                             _kontekst.LastValue = Form2Dogadjaj.VrijednostDvoklika(celija == null ? "" : Convert.ToString(celija));
+                        }
                         IzvrsiDogadjaj(dbl);
                     };
                 }
@@ -1987,6 +1991,24 @@ namespace Carpo.NetGen.Ui
                         IzvrsiDogadjaj(klik);
                     };
                 }
+                string prijeSql = Attr(k, "BEFORECELLEDITED");
+                if (view != null && prijeSql.Length > 0)
+                {
+                    view.ShowingEditor += delegate (object s, System.ComponentModel.CancelEventArgs e)
+                    {
+                        if (_slazem)
+                            return;
+                        // Form2.Glbl_EditingCell 8532-8614: TrenutnaKolona/TrenutnaVrijednost, stupci reda kao
+                        // parametri, red oznacen, Rafalno; greska prekine uredjivanje (e.Cancel).
+                        PostaviCeliju(view, view.FocusedColumn, view.FocusedColumn == null ? null : view.GetFocusedRowCellValue(view.FocusedColumn));
+                        if (view.FocusedRowHandle >= 0)
+                            view.SelectRow(view.FocusedRowHandle);
+                        string redParam = Form2Dogadjaj.ParametriCelije(view.GetFocusedDataRow());
+                        string sredjen = SrediPoslije.Zamijeni(prijeSql, redParam, _kontekst ?? new SqlKontekst(), _kontekst == null ? null : _kontekst.Clipboard, false);
+                        if (Form2Dogadjaj.VratiStaru(IzvrsiDogadjaj(sredjen)))
+                            e.Cancel = true;
+                    };
+                }
                 string celijaSql = Attr(k, "ONCELLEDITED");
                 if (view != null && celijaSql.Length > 0)
                 {
@@ -1997,10 +2019,13 @@ namespace Carpo.NetGen.Ui
                         object v = view.FocusedColumn == null ? null : view.GetFocusedRowCellValue(view.FocusedColumn);
                         stara = Form2Dogadjaj.VrijednostDvoklika(v == null ? "" : Convert.ToString(v));
                     };
-                    view.CellValueChanged += delegate
+                    view.CellValueChanged += delegate (object s, DevExpress.XtraGrid.Views.Base.CellValueChangedEventArgs e)
                     {
                         if (vracam || _slazem)
                             return;
+                        // 8616-8640: @@EDITEDCOLUMN je natpis uredjenog stupca, @@LASTVALUE nova vrijednost
+                        // (Narudzbe g_ugo_stavke: @kolona='@@editedcolumn', @vrijednost='@@lastvalue').
+                        PostaviCeliju(view, e.Column, e.Value);
                         // Form2.Glbl_CellEdited (8616-8688): stupci reda postanu parametri
                         // (ParametriSaGrida), SQL se sredi s njima, pa ide kroz Rafalno.
                         // Greska vrati staru vrijednost celije (CEL-01).
@@ -2032,6 +2057,15 @@ namespace Carpo.NetGen.Ui
                     };
                 }
             }
+        }
+
+        /// <summary>SrediSQL2 2882-2883: TrenutnaKolona.Caption i TrenutnaVrijednost (Val &lt;&gt; 0 → točka).</summary>
+        private void PostaviCeliju(GridView view, DevExpress.XtraGrid.Columns.GridColumn stupac, object vrijednost)
+        {
+            if (_kontekst == null || view == null)
+                return;
+            _kontekst.EditedColumn = stupac == null ? "" : stupac.GetCaption();
+            _kontekst.LastValue = Form1Rafal.ZadnjaVrijednost(vrijednost);
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

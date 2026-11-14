@@ -2828,7 +2828,8 @@ namespace Carpo.NetGen.GridTest
                 var g = new NgControl("grid", NgGrana.Grid, "g", new NgAttributeBag(new Dictionary<string, string>
                 {
                     { "SQL", "select a, b, c from t" }, { "CLEARCOLUMS", "TRUE" }, { "GROUPBYBOXVISIBLE", "FALSE" },
-                    { "FROZENCOLUMNS", "3" }, { "FILTERMODE", "true" }, { "CHECKBOXVISIBLE", "" }
+                    { "FROZENCOLUMNS", "3" }, { "FILTERMODE", "true" }, { "CHECKBOXVISIBLE", "" }, { "EDITCOLUMNS", "c" },
+                    { "ONCELLEDITED", "select '@@editedcolumn' as kolona, '@@lastvalue' as vrijednost" }
                 }), true);
                 g.Kolone.Add(Stupac("c", "Ce", "TRUE", "3", ""));
                 g.Kolone.Add(Stupac("a", "", "FALSE", "0", ""));
@@ -2836,8 +2837,10 @@ namespace Carpo.NetGen.GridTest
                 var kontrole = new List<NgControl> { g };
                 var forma = new NgForm("G1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
                 int punjenja = 0;
+                var poslano = new List<string>();
                 Func<string, DataTable> baza = delegate (string x)
                 {
+                    poslano.Add(x ?? "");
                     var t = new DataTable();
                     t.Columns.Add("a", typeof(string));
                     t.Columns.Add("b", typeof(decimal));
@@ -2867,6 +2870,10 @@ namespace Carpo.NetGen.GridTest
                         && v.OptionsSelection.MultiSelectMode == DevExpress.XtraGrid.Views.Grid.GridMultiSelectMode.RowSelect
                         && c.Fixed == DevExpress.XtraGrid.Columns.FixedStyle.Left && b.Fixed == DevExpress.XtraGrid.Columns.FixedStyle.Left,
                         "grupe=" + v.OptionsView.ShowGroupPanel + " filter=" + v.OptionsView.ShowAutoFilterRow + " sel=" + v.OptionsSelection.MultiSelectMode + " fixed=" + c.Fixed + "/" + b.Fixed);
+                    // Form2.Glbl_CellEdited + SrediSQL2 2882: @@editedcolumn je natpis stupca (Narudzbe g_ugo_stavke).
+                    v.FocusedRowHandle = 0;
+                    v.SetRowCellValue(0, c, 7);
+                    T("dgr03-editedcolumn", poslano.Contains("select 'Ce' as kolona, '7' as vrijednost"), string.Join(" | ", poslano.ToArray()));
                     // Korisnik promijeni stupac; RefreshGrida (5305-5315) ga ne slaze iznova.
                     c.Caption = "Korisnik";
                     int prije = punjenja;
