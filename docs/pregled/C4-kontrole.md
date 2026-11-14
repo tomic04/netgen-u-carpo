@@ -95,10 +95,10 @@ Form3 pamti izgled grida tražilice: `spremipostavke` (38-48) i `DeleteGridLayou
 
 ## Otvoreno
 
-- `TIMERSQL` (4 forme, 1 granula): Timer2 je u NetGenu ugašen dok ga `TIMERON(n)` ne upali, a `TIMERON` nema nigdje u korpusu, pa se ni u NetGenu ne izvršava.
+- `TIMERSQL` (4 forme, 1 granula): Timer2 je u NetGenu ugašen dok ga `TIMERON(n)` ne upali, a `TIMERON` nema nigdje u korpusu, pa se ni u NetGenu ne izvršava. Za nove granule je portano (TMR-01): `TIMERON(ms)` upali tajmer dijaloga, tik izvrši `TIMERSQL`, `TIMEROFF()` ga ugasi.
 - `IMAGEINDEX` (30 gumba, 9 granula) i automatske ikone po natpisu (dodaj, obriši, izmjeni…): Carpo gumbi imaju svoj izgled (50-50 → Carpo).
 - Grid dijaloga: layout datoteke (`MULTIGRIDLAYOUT` 1), `INPUTMASK` stupca (0 u korpusu). `COLUMNCAPTION`/`COLUMNWIDTH`/`DEFAULTACTIVECOLUMN` na gridu nema u korpusu. `PAGEFOOTER*` (57, 30 granula): Spin.Printing PrintLink nema podnožje (Carpo ComponentGrid ga isto ne šalje), pa ostaje bez njega (50-50 → Carpo).
 
 ## Testovi
 
-`log01-*` (`LozinkaULogu`), `doz02-*` (`DozvoleDijaloga`), `lay01-raspored`, `hot01-f2`, `dat01-datumi` (`RasporedDijaloga`), `dgr01-*`, `dgr02-grid-atributi`, `dgr03-editedcolumn` (`GridDijalogaStupci`), `isp07-printgrid-ime`, `grb01-*`, `tre03-*`, `mdr01-multidrop`, `for01-foreachrow` (`DogadjajiDijaloga`), `Form2Izgled` pod Mono (dock, anchor, stil, boja, hotkey, mjesta gumba).
+`tmr01-*` (`TajmerDijaloga`), `log01-*` (`LozinkaULogu`), `doz02-*` (`DozvoleDijaloga`), `lay01-raspored`, `hot01-f2`, `dat01-datumi` (`RasporedDijaloga`), `dgr01-*`, `dgr02-grid-atributi`, `dgr03-editedcolumn` (`GridDijalogaStupci`), `isp07-printgrid-ime`, `grb01-*`, `tre03-*`, `mdr01-multidrop`, `for01-foreachrow` (`DogadjajiDijaloga`), `Form2Izgled` pod Mono (dock, anchor, stil, boja, hotkey, mjesta gumba).

@@ -1998,6 +1998,7 @@ namespace Carpo.NetGen.GridTest
             RokUpita();
             VelicinaUZapisu();
             NaslovDijaloga();
+            TajmerDijaloga();
             IncludeFormi();
             IzvorXmla();
             DozvoleDijaloga();
@@ -2964,6 +2965,49 @@ namespace Carpo.NetGen.GridTest
                 Carpo.NetGen.Xml.XmlIzvor.Dms = null;
                 Carpo.NetGen.Xml.XmlIzvor.Baza = null;
                 try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }
+
+        /// <summary>TMR-01: Form2 Timer2. TIMERON(ms) upali, Tick izvrsi TIMERSQL, TIMEROFF() ugasi, zatvaranje pocisti.</summary>
+        private static void TajmerDijaloga()
+        {
+            var kontrole = new List<NgControl>
+            {
+                new NgControl("label", NgGrana.Label, "stop", new NgAttributeBag(new Dictionary<string, string> { { "ONCLICK", "TIMEROFF()" }, { "CAPTION", "Stop" } }), true)
+            };
+            var forma = new NgForm("Tmr", new NgAttributeBag(new Dictionary<string, string> { { "ONLOADED", "TIMERON(40)" }, { "TIMERSQL", "select tajmer" } }),
+                "", "", kontrole, new List<NgButton>(), new List<string>());
+            var sql = new List<string>();
+            var d = new Dijalog();
+            try
+            {
+                d.Slozi(forma, new SqlKontekst(), delegate (string s) { sql.Add(s ?? ""); return null; });
+                d.ShowInTaskbar = false;
+                d.StartPosition = FormStartPosition.Manual;
+                d.Location = new Point(-32000, -32000);
+                d.Show();
+                var svojstvo = typeof(Dijalog).GetProperty("Tajmer", BindingFlags.Instance | BindingFlags.NonPublic);
+                var tajmer = (System.Windows.Forms.Timer)svojstvo.GetValue(d, null);
+                T("tmr01-upaljen", tajmer != null && tajmer.Enabled && tajmer.Interval == 40, tajmer == null ? "null" : tajmer.Enabled + "/" + tajmer.Interval);
+                tajmer.Enabled = false;
+                int prije = Broji(sql, "select tajmer");
+                typeof(Dijalog).GetMethod("Tajmer_Tick", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(d, new object[] { null, EventArgs.Empty });
+                T("tmr01-tik", Broji(sql, "select tajmer") == prije + 1, (Broji(sql, "select tajmer") - prije).ToString());
+                tajmer.Enabled = true;
+                Control stop = d.Controls.Find("stop", true)[0];
+                typeof(Control).GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(stop, new object[] { EventArgs.Empty });
+                T("tmr01-stop", !tajmer.Enabled, tajmer.Enabled.ToString());
+                d.Close();
+                T("tmr01-zatvori", svojstvo.GetValue(d, null) == null, "");
+            }
+            catch (Exception ex)
+            {
+                T("tmr01", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                if (!d.IsDisposed)
+                    d.Dispose();
             }
         }
 
