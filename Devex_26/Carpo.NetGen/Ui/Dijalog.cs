@@ -410,6 +410,12 @@ namespace Carpo.NetGen.Ui
         /// <summary>Form2_FormClosed 4079-4083: Rafalno(strONClosed).</summary>
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
+            if (_tajmer != null)
+            {
+                _tajmer.Enabled = false;
+                _tajmer.Dispose();
+                _tajmer = null;
+            }
             string zatvoreno = AtributForme("ONCLOSED");
             if (zatvoreno.Length > 0)
             {
@@ -625,6 +631,46 @@ namespace Carpo.NetGen.Ui
         private int _tihoGrid;
         private bool _slazem;
         private int _dubinaDogadjaja;
+
+        /// <summary>Timer2 (Form2.vb 6856-6863, 9687-9689): TIMERON(ms) ga upali, TIMEROFF() ugasi, Tick izvrsi TIMERSQL forme.</summary>
+        private System.Windows.Forms.Timer _tajmer;
+        private bool _tajmerRadi;
+
+        internal System.Windows.Forms.Timer Tajmer { get { return _tajmer; } }
+
+        private void UpaliTajmer(int interval)
+        {
+            if (_tajmer == null)
+            {
+                _tajmer = new System.Windows.Forms.Timer();
+                _tajmer.Tick += Tajmer_Tick;
+            }
+            _tajmer.Interval = interval;
+            _tajmer.Enabled = true;
+        }
+
+        /// <summary>
+        /// Timer2_Tick 9687: Rafalno(strTimerSQL). VB tikne i dok prethodni TIMERSQL jos radi (poruka ili
+        /// upit); ovdje se tik preskoci dok prethodni ne zavrsi (TMR-01).
+        /// </summary>
+        internal void Tajmer_Tick(object sender, EventArgs e)
+        {
+            if (_tajmerRadi || IsDisposed)
+                return;
+            _tajmerRadi = true;
+            try
+            {
+                IzvrsiDogadjaj(AtributForme("TIMERSQL"));
+            }
+            catch (Exception ex)
+            {
+                NgDnevnik.Greska("TIMERSQL: " + ex.Message);
+            }
+            finally
+            {
+                _tajmerRadi = false;
+            }
+        }
 
         /// <summary>Form2.RefreshKontrola (5470-5602): combo i grid iz Cdt (REFRESHAFTERCHILD="TRUE").</summary>
         public void OsvjeziNakonDjeteta()
@@ -979,12 +1025,14 @@ namespace Carpo.NetGen.Ui
                 }
                 if (korak.Vrsta == "timer")
                 {
-                    RafalNaredba.TimerOn(korak.Tekst);
+                    UpaliTajmer(RafalNaredba.TimerOn(korak.Tekst));
                     continue;
                 }
                 if (korak.Vrsta == "timeroff")
                 {
                     RafalNaredba.TimerOff();
+                    if (_tajmer != null)
+                        _tajmer.Enabled = false;
                     continue;
                 }
                 if (korak.Vrsta == "progres")
