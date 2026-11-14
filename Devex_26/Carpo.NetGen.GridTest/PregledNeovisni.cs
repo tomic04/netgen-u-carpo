@@ -253,7 +253,7 @@ namespace Carpo.NetGen.GridTest
             string xml = Xml("PnJednom.xml",
                 "<PROJECT ONLOAD=\"select 1 as id, 'a' as naziv\" CMD1CAPTION=\"Filter:FILT\">\r\n"
                 + "<NAME>PnJednom</NAME>\r\n<CAPTION>Pregled jednom</CAPTION>\r\n"
-                + "<FILT CAPTION=\"Filter\" FILLEXPLORER=\"TRUE\" CMD1CAPTION=\"OK\" CMD2CAPTION=\"Odustani\" ONSUBMIT=\"dbo.spPregledNeovisni @k='jednom', @t='fiksno'\">\r\n"
+                + "<FILT CAPTION=\"Filter\" FILLEXPLORER=\"TRUE\" CMD1CAPTION=\"OK\" CMD2CAPTION=\"Odustani\" ONSUBMIT=\"dbo.spPregledNeovisni @k='jednom', @t='fiksno' !!\">\r\n"
                 + "<INPUT TYPE=\"text\" NAME=\"t\" DEFAULT=\"abc\" TOP=\"100\" LEFT=\"100\" WIDTH=\"2000\" HEIGHT=\"300\" />\r\n"
                 + "</FILT>\r\n</PROJECT>\r\n");
             bool otvoren;
@@ -273,8 +273,10 @@ namespace Carpo.NetGen.GridTest
                 DataTable z = Zapisi("jednom");
                 var gv = Polje(forma, "gvGla") as GridView;
                 int redova = gv == null ? -1 : gv.DataRowCount;
-                T("pn-onsubmit-jednom", z.Rows.Count == 1 && redova == 1,
-                    "ONSUBMIT izvršen " + z.Rows.Count.ToString() + " puta (NetGen 1), master redova=" + redova.ToString());
+                // !! na kraju: strParametri se ne lijepi (Form1 5447), @t ostaje 'fiksno'.
+                string t = z.Rows.Count == 1 ? Convert.ToString(z.Rows[0][0]) : "";
+                T("pn-onsubmit-jednom", z.Rows.Count == 1 && redova == 1 && t == "fiksno",
+                    "ONSUBMIT izvršen " + z.Rows.Count.ToString() + " puta (NetGen 1), t='" + t + "', master redova=" + redova.ToString());
             }
             catch (Exception ex)
             {
