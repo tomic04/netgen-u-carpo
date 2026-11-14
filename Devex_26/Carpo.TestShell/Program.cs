@@ -69,8 +69,20 @@ namespace Carpo.TestShell
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
                 Application.ThreadException += delegate (object s, System.Threading.ThreadExceptionEventArgs e)
                 {
-                    global::Carpo.TestShell.Main.ZadnjaNit = e.Exception == null ? "ThreadException" : e.Exception.GetType().Name + ": " + e.Exception.Message;
-                    try { File.AppendAllText(izvjestaj + ".iznimka.txt", (e.Exception == null ? "" : e.Exception.ToString()) + "\r\n"); } catch { }
+                    global::Carpo.TestShell.Main.ZadnjaNit = e.Exception == null ? "ThreadException" : global::Carpo.TestShell.Main.OpisIznimke(e.Exception);
+                    global::Carpo.TestShell.Main.ZapisiIznimku(e.Exception);
+                };
+                // SWP-05: iznimka izvan UI niti ili pri izlazu (finalizator, pozadinska nit) ruši proces kodom
+                // E0434352 bez traga; ovdje se zapiše prije pada.
+                AppDomain.CurrentDomain.UnhandledException += delegate (object s, UnhandledExceptionEventArgs e)
+                {
+                    try
+                    {
+                        File.AppendAllText(izvjestaj + ".iznimka.txt", "== neuhvaćena (nit "
+                            + System.Threading.Thread.CurrentThread.ManagedThreadId.ToString() + ", kraj=" + e.IsTerminating.ToString() + ")\r\n"
+                            + Convert.ToString(e.ExceptionObject) + "\r\n");
+                    }
+                    catch { }
                 };
                 var main = new Main(sweepServer, sweepBaza, args[1], 7, "", "", true);
                 main.Shown += delegate

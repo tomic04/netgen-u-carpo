@@ -41,6 +41,14 @@ namespace Carpo.NetGen.Ui
         private string _server = "";
         private string _baza = "";
         private string _sqlGreska = "";
+        // SWP-04: _sqlGreska je poruka iz baze (RAISERROR/spRaiserror, broj >= 50000), npr. "Niste odabrali
+        // dokument za ispravak!". NetGen je prikaže korisniku; klik pregled je bilježi kao PORUKA, ne GRESKA.
+        private bool _sqlPoruka;
+
+        private string StatusSqlGreske
+        {
+            get { return _sqlPoruka ? "PORUKA" : "GRESKA"; }
+        }
         private string _zadnjiSql = "";
         private string _testId = "";
         private string _imeUnosa = "";
@@ -228,7 +236,18 @@ namespace Carpo.NetGen.Ui
             for (int i = 0; i < _stablo.Stanje.Korijen.Count; i++)
                 DodajCvor(_stablo.Stanje.Korijen[i], null);
             trMain.EndUnboundLoad();
+            Dijalog.Trag("drvo dodano, ExpandAll");
             trMain.ExpandAll();
+        }
+
+        private static int BrojCvorova(System.Collections.Generic.List<Cvor> cvorovi)
+        {
+            int n = 0;
+            if (cvorovi == null)
+                return 0;
+            for (int i = 0; i < cvorovi.Count; i++)
+                n += 1 + BrojCvorova(cvorovi[i].Djeca);
+            return n;
         }
 
         private void DodajCvor(Cvor cvor, TreeListNode roditelj)
@@ -287,6 +306,7 @@ namespace Carpo.NetGen.Ui
             if (sql.Length == 0 || SqlTekst.JeZabranaPisanja(sql))
                 return;
             DataTable t = Citaj(SqlTekst.Sredi(sql, _master.Kontekst));
+            Dijalog.Trag("combo redova " + (t == null ? "null" : t.Rows.Count.ToString()));
             if (t == null || t.Columns.Count == 0 || t.Rows.Count == 0)
                 return;
             _comboRedovi = t;
@@ -314,8 +334,11 @@ namespace Carpo.NetGen.Ui
             }
             if (vrijednost.Length == 0)
                 return;
+            Dijalog.Trag("combo stablo " + vrijednost);
             _stablo.IzTeksta(vrijednost, _projekt, Citaj);
+            Dijalog.Trag("combo cvorova " + BrojCvorova(_stablo.Stanje.Korijen).ToString());
             NapuniDrvo();
+            Dijalog.Trag("combo drvo gotovo");
             if (_stablo.Stanje.Vidljivo && _stablo.Stanje.Splitter > 0)
             {
                 splitMain.PanelVisibility = SplitPanelVisibility.Both;
@@ -1089,6 +1112,7 @@ namespace Carpo.NetGen.Ui
             if (DateTime.UtcNow > RokUtc || _brojUpita >= MaxUpita)
             {
                 _sqlGreska = "sweep rok";
+                _sqlPoruka = false;
                 return null;
             }
             _brojUpita++;
@@ -1097,6 +1121,7 @@ namespace Carpo.NetGen.Ui
             if (sql.IndexOf("cis.porezna-uprava.hr", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 _sqlGreska = "nije poslano na produkcijski URL Porezne";
+                _sqlPoruka = false;
                 return null;
             }
             if (SqlTekst.JeZabranaPisanja(sql) && !DijalogTok.DozvoliUpis)
@@ -1124,7 +1149,11 @@ namespace Carpo.NetGen.Ui
                 // Class1.ExecSql 157-166: greška o ssoperateri, sspermission, NetGenDBFilter... je tiha.
                 bool tiho = filter || SqlPoruka.Tiha(ex.Message);
                 if (!tiho)
+                {
                     _sqlGreska = ex.Message + " | " + sql;
+                    var sqlEx = ex as System.Data.SqlClient.SqlException;
+                    _sqlPoruka = sqlEx != null && sqlEx.Number >= 50000;
+                }
                 NgDnevnik.Greska(ex.Message + " | " + sql);
                 if (!tiho)
                     PostaviStatus(ex.Message);
@@ -1194,7 +1223,7 @@ namespace Carpo.NetGen.Ui
             int master = _master.Stanje.Tablica == null ? 0 : _master.Stanje.Tablica.Rows.Count;
             bool sqlMaster = MasterPuni();
             if (!string.IsNullOrEmpty(_sqlGreska))
-                redovi.Add(Linija(granula, "master", "grid", "GRESKA", _sqlGreska, "netgen/Form1.vb:3882"));
+                redovi.Add(Linija(granula, "master", "grid", StatusSqlGreske, _sqlGreska, "netgen/Form1.vb:3882"));
             else if (sqlMaster && master == 0)
                 redovi.Add(Linija(granula, "master", "grid", "PRAZAN", "NetGen puni master, grid je prazan", "netgen/Form1.vb:3882"));
             else
@@ -1204,7 +1233,7 @@ namespace Carpo.NetGen.Ui
             {
                 int det = _detail.Stanje.Tablica == null ? 0 : _detail.Stanje.Tablica.Rows.Count;
                 if (!string.IsNullOrEmpty(_sqlGreska) && det == 0)
-                    redovi.Add(Linija(granula, "detail", "grid", "GRESKA", _sqlGreska, "netgen/Form1.vb:2258"));
+                    redovi.Add(Linija(granula, "detail", "grid", StatusSqlGreske, _sqlGreska, "netgen/Form1.vb:2258"));
                 else if (master > 0 && det == 0)
                     redovi.Add(Linija(granula, "detail", "grid", "PRAZAN", "master ima red, detail je prazan", "netgen/Form1.vb:2258"));
                 else
@@ -1232,6 +1261,7 @@ namespace Carpo.NetGen.Ui
             if (trMain.Nodes.Count > 0)
             {
                 _sqlGreska = "";
+                _sqlPoruka = false;
                 try
                 {
                     PokreniZatvaranje();
@@ -1239,7 +1269,7 @@ namespace Carpo.NetGen.Ui
                     trMain.FocusedNode = trMain.Nodes[0];
                     Application.DoEvents();
                     if (!string.IsNullOrEmpty(_sqlGreska))
-                        redovi.Add(Linija(granula, "stablo", "cvor", "GRESKA", _sqlGreska, "netgen/Form1.vb:7426"));
+                        redovi.Add(Linija(granula, "stablo", "cvor", StatusSqlGreske, _sqlGreska, "netgen/Form1.vb:7426"));
                     else
                         redovi.Add(Linija(granula, "stablo", "cvor", "OK", "prvi cvor", "netgen/Form1.vb:7426"));
                 }
@@ -1292,6 +1322,7 @@ namespace Carpo.NetGen.Ui
                     continue;
                 }
                 _sqlGreska = "";
+                _sqlPoruka = false;
                 _zadnjiSql = "";
                 _poslano.Clear();
                 try
@@ -1337,7 +1368,7 @@ namespace Carpo.NetGen.Ui
                     Application.DoEvents();
                     string provjera = upis ? ProvjeriUpis(naredba) : "";
                     if (!string.IsNullOrEmpty(_sqlGreska))
-                        redovi.Add(Linija(granula, "gumb", natpis, "GRESKA", _sqlGreska, "netgen/Form2.vb:3377"));
+                        redovi.Add(Linija(granula, "gumb", natpis, StatusSqlGreske, _sqlGreska, "netgen/Form2.vb:3377"));
                     else if (provjera.StartsWith("GRESKA", StringComparison.Ordinal))
                         redovi.Add(Linija(granula, "gumb", natpis, "GRESKA", provjera.Substring(6).Trim(), "netgen/Form2.vb:3406"));
                     else if (provjera.Length > 0)

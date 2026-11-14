@@ -268,7 +268,14 @@ namespace Carpo.TestShell
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("cmdGen_Click exception: " + ex.ToString());
-                MessageBox.Show(ex.ToString(), "Start Error");
+                if (_klikPregled)
+                {
+                    // SWP-03: u sweepu i klik pregledu nema korisnika; MessageBox bi držao UI do čuvara.
+                    ZadnjaNit = OpisIznimke(ex);
+                    ZapisiIznimku(ex);
+                }
+                else
+                    MessageBox.Show(ex.ToString(), "Start Error");
             }
             finally
             {
@@ -513,6 +520,41 @@ namespace Carpo.TestShell
         }
 
         public static string ZadnjaNit = "";
+
+        /// <summary>
+        /// SWP-03: za red sweepa: vrsta, poruka i prva tri okvira stoga (Tip.Metoda), da se iz CI loga
+        /// vidi gdje je puklo bez preuzimanja artefakta.
+        /// </summary>
+        public static string OpisIznimke(Exception ex)
+        {
+            if (ex == null)
+                return "iznimka";
+            var sb = new StringBuilder(ex.GetType().Name + ": " + ex.Message);
+            try
+            {
+                var st = new System.Diagnostics.StackTrace(ex, false);
+                int n = 0;
+                for (int i = 0; i < st.FrameCount && n < 3; i++)
+                {
+                    var m = st.GetFrame(i).GetMethod();
+                    if (m == null)
+                        continue;
+                    sb.Append(n == 0 ? " @ " : " < ");
+                    sb.Append((m.DeclaringType == null ? "" : m.DeclaringType.Name + ".") + m.Name);
+                    n++;
+                }
+            }
+            catch { }
+            return sb.ToString();
+        }
+
+        /// <summary>SWP-03: cijela iznimka u &lt;izvještaj&gt;.iznimka.txt (UiSweep ga ispiše u CI log).</summary>
+        public static void ZapisiIznimku(Exception ex)
+        {
+            if (string.IsNullOrEmpty(_sweepIzvjestaj) || ex == null)
+                return;
+            try { File.AppendAllText(_sweepIzvjestaj + ".iznimka.txt", "== " + _sweepGranula + "\r\n" + ex.ToString() + "\r\n"); } catch { }
+        }
         private bool _sweepRadi;
 
         private void ZatvarajSweep()
@@ -599,6 +641,7 @@ namespace Carpo.TestShell
             // Granule iz scripts\ui\sweep-preskoci.txt (poznati HANG) se preskaču.
             _sweepIzvjestaj = izvjestaj;
             _sweepPocetak = DateTime.UtcNow;
+            _sweepUi = Thread.CurrentThread;
             var cuvar = new Thread(CuvarSweepa);
             cuvar.IsBackground = true;
             cuvar.Start();
@@ -635,7 +678,7 @@ namespace Carpo.TestShell
                 xmlovi = dio.ToArray();
             }
             var sb = new StringBuilder();
-            int cisto = 0, greska = 0, hang = 0, iznimka = 0, nije = 0, rokova = 0;
+            int cisto = 0, greska = 0, hang = 0, iznimka = 0, nije = 0, rokova = 0, porukaBaza = 0;
             // Mjerenje (SWP-01): sweep-1 je u 38 min prošao 32 granule, a svaka je trajala 0-4 s.
             // Red u .red ima i ukupno vrijeme s čišćenjem, broj otvorenih formi, GDI/USER objekte i sat.
             try { File.AppendAllText(izvjestaj + ".red", "#start\t" + DateTime.Now.ToString("HH:mm:ss") + "\txml=" + xmlovi.Length.ToString() + "\r\n"); } catch { }
@@ -688,13 +731,19 @@ namespace Carpo.TestShell
                     {
                         var redovi = _zadnjaPodloga.ProvediKlikove(true);
                         bool doRoka = false;
+                        string porukaBaze = "";
                         for (int i = 0; i < redovi.Count; i++)
                         {
                             string[] c = redovi[i].Split('\t');
+                            // SWP-04: RAISERROR iz baze (validacija procedure) je PORUKA; vidi se odvojeno od GRESKA.
+                            if (c.Length >= 4 && c[3] == "PORUKA" && porukaBaze.Length == 0)
+                                porukaBaze = c.Length > 4 ? c[4] : redovi[i];
                             if (c.Length >= 4 && (c[3] == "GRESKA" || c[3] == "HANG"))
                             {
                                 // Podloga.Citaj: "sweep rok" je granica sweepa (MaxUpita, RokUtc), ne greška granule (SWP-01).
-                                if (c[3] == "GRESKA" && c.Length > 4 && c[4] == "sweep rok")
+                                // Isto vrijedi za SQL timeout: sweep spušta vrijeme upita na 1 s (Podloga.TimeoutUpita).
+                                if (c[3] == "GRESKA" && c.Length > 4
+                                    && (c[4] == "sweep rok" || c[4].StartsWith("Execution Timeout Expired", StringComparison.Ordinal)))
                                 {
                                     doRoka = true;
                                     continue;
@@ -704,7 +753,12 @@ namespace Carpo.TestShell
                                 break;
                             }
                         }
-                        if (ishod == "CISTO" && doRoka)
+                        if (ishod == "CISTO" && porukaBaze.Length > 0)
+                        {
+                            ishod = "PORUKA";
+                            uzrok = porukaBaze;
+                        }
+                        else if (ishod == "CISTO" && doRoka)
                         {
                             ishod = "ROK";
                             uzrok = "sweep rok (granica upita)";
@@ -714,7 +768,8 @@ namespace Carpo.TestShell
                 catch (Exception ex)
                 {
                     ishod = "IZNIMKA";
-                    uzrok = ex.GetType().Name + ": " + ex.Message;
+                    uzrok = OpisIznimke(ex);
+                    ZapisiIznimku(ex);
                 }
                 sw.Stop();
                 int sec = (int)sw.Elapsed.TotalSeconds;
@@ -732,11 +787,12 @@ namespace Carpo.TestShell
                 zatvaranje.Stop();
                 if (ishod == "CISTO") cisto++;
                 else if (ishod == "ROK") rokova++;
+                else if (ishod == "PORUKA") porukaBaza++;
                 else if (ishod == "HANG") hang++;
                 else if (ishod == "IZNIMKA") iznimka++;
                 else greska++;
                 string grupa = GrupaUzroka(uzrok);
-                if (ishod != "CISTO" && ishod != "ROK")
+                if (ishod != "CISTO" && ishod != "ROK" && ishod != "PORUKA")
                 {
                     int n;
                     grupe.TryGetValue(grupa, out n);
@@ -757,8 +813,9 @@ namespace Carpo.TestShell
             glava.AppendLine("hang=" + hang.ToString());
             glava.AppendLine("iznimka=" + iznimka.ToString());
             glava.AppendLine("rok=" + rokova.ToString());
+            glava.AppendLine("poruka=" + porukaBaza.ToString());
             glava.AppendLine("nije-project=" + nije.ToString());
-            glava.AppendLine("granula=" + (cisto + rokova + greska + hang + iznimka).ToString());
+            glava.AppendLine("granula=" + (cisto + rokova + porukaBaza + greska + hang + iznimka).ToString());
             glava.AppendLine("prag-s=" + sekundi.ToString());
             glava.AppendLine("shard=" + shard.ToString() + "/" + dijelova.ToString());
             foreach (var par in grupe)
@@ -766,6 +823,8 @@ namespace Carpo.TestShell
             glava.AppendLine("granula\tishod\tsekunde\tuzrok");
             glava.Append(sb.ToString());
             File.WriteAllText(izvjestaj, glava.ToString());
+            // SWP-05: oznaka da je sweep gotov; pad nakon nje je pad pri izlazu procesa, ne granule.
+            try { File.AppendAllText(izvjestaj + ".red", "#kraj\t" + DateTime.Now.ToString("HH:mm:ss") + "\r\n"); } catch { }
             return 0;
         }
 
@@ -787,6 +846,42 @@ namespace Carpo.TestShell
             catch { }
             return "ukupno=" + ukupno.ElapsedMilliseconds.ToString() + "ms forme=" + forme.ToString()
                 + " gdi=" + gdi.ToString() + " user=" + user.ToString() + " " + DateTime.Now.ToString("HH:mm:ss");
+        }
+
+        private static Thread _sweepUi;
+
+        private static string StogUi()
+        {
+            Thread ui = _sweepUi;
+            if (ui == null)
+                return "(nema UI niti)";
+#pragma warning disable 618
+            try
+            {
+                ui.Suspend();
+                try
+                {
+                    var st = new System.Diagnostics.StackTrace(ui, false);
+                    var sb = new StringBuilder();
+                    int n = Math.Min(st.FrameCount, 45);
+                    for (int i = 0; i < n; i++)
+                    {
+                        var m = st.GetFrame(i).GetMethod();
+                        if (m != null)
+                            sb.Append("  ").Append(m.DeclaringType == null ? "?" : m.DeclaringType.FullName).Append('.').Append(m.Name).Append("\r\n");
+                    }
+                    return sb.ToString();
+                }
+                finally
+                {
+                    ui.Resume();
+                }
+            }
+            catch (Exception ex)
+            {
+                return "(stog nije dohvaćen: " + ex.GetType().Name + ": " + ex.Message + ")";
+            }
+#pragma warning restore 618
         }
 
         private static string _sweepIzvjestaj;
@@ -811,6 +906,8 @@ namespace Carpo.TestShell
                 }
                 catch { }
                 try { File.AppendAllText(_sweepIzvjestaj + ".red", _sweepGranula + "\tHANG\t90\tčuvar: granula drži UI dulje od 90 s; zadnji trag: " + zadnja + "\r\n"); } catch { }
+                // Stog UI niti u trenutku zastoja: točno mjesto gdje granula stoji.
+                try { File.AppendAllText(_sweepIzvjestaj + ".faza.txt", "STOG UI NITI:\r\n" + StogUi() + "\r\n"); } catch { }
                 Environment.Exit(3);
             }
         }

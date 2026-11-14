@@ -20,11 +20,12 @@ if (Test-Path -LiteralPath $kodDat) { Remove-Item -LiteralPath $kodDat -Force }
 $rad = Split-Path -Parent $Exe
 $redovi = $Izvjestaj + ".red"
 if (Test-Path -LiteralPath $redovi) { Remove-Item -LiteralPath $redovi -Force }
+if (Test-Path -LiteralPath ($Izvjestaj + ".iznimka.txt")) { Remove-Item -LiteralPath ($Izvjestaj + ".iznimka.txt") -Force }
 # Shard ima ~100 granula; s pragom od 4 s treba i 20 min. Korak u build.yml ima 40 min.
 $rokShardMs = 2280000
 function Pokazi-Djelomicno {
     if (Test-Path -LiteralPath $redovi) {
-        $sve = @(Get-Content -LiteralPath $redovi)
+        $sve = @(Get-Content -LiteralPath $redovi -Encoding UTF8)
         $nije = @($sve | Where-Object { ($_ -split "`t")[1] -ne "CISTO" })
         Write-Host ("---- sweep redovi (.red): " + $sve.Count + " redaka, " + $nije.Count + " nije CISTO; svaki red ima ukupno/forme/gdi/sat (SWP-01) ----")
         $sve | ForEach-Object { Write-Host $_ }
@@ -35,7 +36,13 @@ function Pokazi-Djelomicno {
     $faza = $Izvjestaj + ".faza.txt"
     if (Test-Path -LiteralPath $faza) {
         Write-Host "---- kraj traga (.faza.txt) ----"
-        Get-Content -LiteralPath $faza -Tail 15 | ForEach-Object { Write-Host $_ }
+        Get-Content -LiteralPath $faza -Tail 70 -Encoding UTF8 | ForEach-Object { Write-Host $_ }
+    }
+    # SWP-03: cijeli stog iznimaka (TestShell piše .iznimka.txt), najviše 150 redaka.
+    $izn = $Izvjestaj + ".iznimka.txt"
+    if (Test-Path -LiteralPath $izn) {
+        Write-Host "---- iznimke (.iznimka.txt) ----"
+        Get-Content -LiteralPath $izn -TotalCount 150 -Encoding UTF8 | ForEach-Object { Write-Host $_ }
     }
 }
 if ($sid -ne 0) {
@@ -49,7 +56,13 @@ if ($sid -ne 0) {
         Pokazi-Djelomicno
         throw "sweep timeout"
     }
-    if ($p.ExitCode -ne 0) { Pokazi-Djelomicno; throw "sweep kod $($p.ExitCode) (3 = cuvar: granula je drzala UI dulje od 90 s)" }
+    if ($p.ExitCode -ne 0) {
+        # SWP-05: s "#kraj" u .red sweep je prošao sve granule, a proces je pao pri izlazu. To je nalaz
+        # (stog je u .iznimka.txt), ali izvještaj vrijedi i ispisuje se.
+        $kraj = (Test-Path -LiteralPath $redovi) -and (@(Get-Content -LiteralPath $redovi -Encoding UTF8) | Where-Object { $_ -like "#kraj*" }).Count -gt 0
+        if (-not $kraj) { Pokazi-Djelomicno; throw "sweep kod $($p.ExitCode) (3 = cuvar: granula je drzala UI dulje od 90 s)" }
+        Write-Host "::warning::Sweep je gotov, ali proces je pao pri izlazu (kod $($p.ExitCode)); stog je u .iznimka.txt."
+    }
 } else {
     $cmd = $Izvjestaj + ".cmd"
     $dodatak = ""
@@ -72,7 +85,7 @@ if ($sid -ne 0) {
 if (-not (Test-Path -LiteralPath $Izvjestaj)) { throw "Nema izvjestaja $Izvjestaj" }
 Pokazi-Djelomicno
 # Glava (brojevi i grupe) pa svi redovi koji nisu CISTO; cisti se samo broje.
-$izv = @(Get-Content -LiteralPath $Izvjestaj)
+$izv = @(Get-Content -LiteralPath $Izvjestaj -Encoding UTF8)
 $izv | Where-Object { -not ($_ -match "`tCISTO`t") } | ForEach-Object { Write-Host $_ }
 $global:LASTEXITCODE = 0
 exit 0

@@ -1997,6 +1997,7 @@ namespace Carpo.NetGen.GridTest
             RasporedDijaloga();
             IspisUcinak();
             PokaziUpitUcinak();
+            ComboPodloge();
             RafalnoPravila();
             PodlogaRafalno();
             GreskeDijaloga();
@@ -3816,6 +3817,44 @@ namespace Carpo.NetGen.GridTest
                 string sql = master == null || master.Stanje == null ? "" : (master.Stanje.SqlZaSlanje ?? "");
                 T("pokazi-upit", otvoren && redova > 0 && greska.Length == 0 && sql.IndexOf("spJeziciQuery", StringComparison.Ordinal) >= 0,
                     "redovi=" + redova.ToString() + " " + greska + " " + sql);
+            }
+            finally
+            {
+                forma.Close();
+                forma.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// CMB-02: granula s COMBO atributom (Narudžbe) se otvara. Postavljanje bbiLookUpFilter.EditValue
+        /// zvalo je i Carpo rukovatelj u Manageru, koji je bez JSettings bacio NullReference iz Prikazi.
+        /// </summary>
+        private static void ComboPodloge()
+        {
+            string root = Environment.GetEnvironmentVariable("GITHUB_WORKSPACE");
+            if (string.IsNullOrEmpty(root))
+                root = Directory.GetCurrentDirectory();
+            string xml = Path.Combine(root, "definitions", "netgen", "BIOVEGA", "Narudzbe.xml");
+            if (!File.Exists(xml))
+            {
+                T("cmb02-combo-podloga", false, "nema " + xml);
+                return;
+            }
+            var forma = new Podloga();
+            try
+            {
+                forma.ShowInTaskbar = false;
+                forma.StartPosition = FormStartPosition.Manual;
+                forma.Location = new Point(-32000, -32000);
+                forma.Show();
+                string greska = "";
+                bool otvoren = false;
+                try { otvoren = forma.Prikazi(xml, "localhost", "spin", 7); }
+                catch (Exception ex) { greska = ex.GetType().Name + ": " + ex.Message; }
+                var combo = forma.bbiLookUpFilter;
+                string vrijednost = combo == null ? "" : Convert.ToString(combo.EditValue);
+                T("cmb02-combo-podloga", greska.Length == 0 && otvoren && vrijednost == "Vremenska podjela",
+                    "otvoren=" + otvoren.ToString() + " combo=" + vrijednost + " " + greska);
             }
             finally
             {
