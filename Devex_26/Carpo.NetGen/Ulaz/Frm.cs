@@ -56,6 +56,9 @@ namespace Carpo.NetGen
 
         private object Izvrsi(string server, string database, string remoteDllPath, int operater, bool otvori, int clientHandle)
         {
+            // M5 (XML-01): Jupiter traži XML u DMS-u i bazi JupiterXML prije diska; test ide s diska.
+            if (string.IsNullOrWhiteSpace(TestXmlPath))
+                Carpo.NetGen.Xml.XmlIzvor.Ukljuci(server);
             var o = NgUlaz.Pokreni(TestXmlPath, moduleId, remoteDllPath);
             if (o.Ucitano && o.Greska == null)
                 WCaption = o.WCaption;

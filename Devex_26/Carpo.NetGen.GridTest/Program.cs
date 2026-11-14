@@ -1996,6 +1996,7 @@ namespace Carpo.NetGen.GridTest
             GridDijalogaStupci();
             LozinkaULogu();
             IncludeFormi();
+            IzvorXmla();
             DozvoleDijaloga();
             IspisGridaDijaloga();
             BojeIzUpita();
@@ -2871,6 +2872,63 @@ namespace Carpo.NetGen.GridTest
             }
             finally
             {
+        /// <summary>Kao KriptirajDekriptiraj.Encrypt (DES, Key = IV, StreamWriter.WriteLine): tijelo reda netgenxml.</summary>
+        private static byte[] KriptirajKaoNetGen(string tekst)
+        {
+            byte[] k = Encoding.UTF8.GetBytes(Carpo.NetGen.Xml.XmlIzvor.Kljuc);
+            using (var des = new System.Security.Cryptography.DESCryptoServiceProvider())
+            {
+                des.Key = k;
+                des.IV = k;
+                var ms = new MemoryStream();
+                using (var cs = new System.Security.Cryptography.CryptoStream(ms, des.CreateEncryptor(), System.Security.Cryptography.CryptoStreamMode.Write))
+                using (var sw = new StreamWriter(cs))
+                    sw.WriteLine(tekst);
+                return ms.ToArray();
+            }
+        }
+
+        /// <summary>XML-01 (M5): DMS, pa netgenxml (DES "tan123ge"), pa disk (Form1 3160-3274).</summary>
+        private static void IzvorXmla()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "ngm5" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            Directory.CreateDirectory(dir);
+            int baza = 0;
+            try
+            {
+                T("xml01-dekript", Carpo.NetGen.Xml.XmlIzvor.Dekriptiraj(KriptirajKaoNetGen("abc čž"), "tan123ge") == "abc čž\r\n", "");
+                string disk = Path.Combine(dir, "Disk.xml");
+                File.WriteAllText(disk, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT>\r\n<NAME>D</NAME>\r\n<CAPTION>S diska</CAPTION>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+                T("xml01-iskljucen", Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(disk).Projekt.Naslov == "S diska", "");
+                Carpo.NetGen.Xml.XmlIzvor.Ukljuci("");
+                Carpo.NetGen.Xml.XmlIzvor.Dms = delegate (string put) { return null; };
+                Carpo.NetGen.Xml.XmlIzvor.Baza = delegate (string ime)
+                {
+                    baza++;
+                    return ime == "Baza.xml" ? KriptirajKaoNetGen("<PROJECT><NAME>B</NAME><CAPTION>Iz baze</CAPTION></PROJECT>") : null;
+                };
+                var r = Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(Path.Combine(dir, "Baza.xml"));
+                Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(Path.Combine(dir, "Baza.xml"));
+                T("xml01-baza", r.Uspjeh && r.Projekt.Naslov == "Iz baze" && baza == 1, (r.Greska ?? "") + " baza=" + baza);
+                T("xml01-disk", Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(disk).Projekt.Naslov == "S diska" && baza == 2, "baza=" + baza);
+                Carpo.NetGen.Xml.XmlIzvor.Dms = delegate (string put)
+                {
+                    var d = new System.Xml.XmlDocument();
+                    d.LoadXml("<PROJECT><NAME>M</NAME><CAPTION>Iz DMS-a</CAPTION></PROJECT>");
+                    return d;
+                };
+                var m = Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(Path.Combine(dir, "Dms.xml"));
+                T("xml01-dms", m.Uspjeh && m.Projekt.Naslov == "Iz DMS-a" && baza == 2, "baza=" + baza);
+            }
+            catch (Exception ex)
+            {
+                T("xml01", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                Carpo.NetGen.Xml.XmlIzvor.Ukljucen = false;
+                Carpo.NetGen.Xml.XmlIzvor.Dms = null;
+                Carpo.NetGen.Xml.XmlIzvor.Baza = null;
                 try { Directory.Delete(dir, true); } catch (IOException) { }
             }
         }

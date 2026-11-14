@@ -48,9 +48,14 @@ namespace Carpo.NetGen.Xml
         {
             try
             {
-                var doc = new XmlDocument();
-                doc.XmlResolver = null;
-                doc.Load(putanja);
+                // M5 (XML-01): u Jupiteru prvo DMS, pa baza netgenxml; inače disk (Form1 3160-3274).
+                XmlDocument doc = XmlIzvor.Dohvati(putanja);
+                if (doc == null)
+                {
+                    doc = new XmlDocument();
+                    doc.XmlResolver = null;
+                    doc.Load(putanja);
+                }
                 return Parsiraj(doc, putanja);
             }
             catch (Exception ex)

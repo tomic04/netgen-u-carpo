@@ -233,10 +233,10 @@ U Class1 bloku (stanje 14. 11. 2026.): sve žive metode imaju Carpo put ili ih n
 | `SpinAppDataFolderDotNet` 48, `JupiterAppDataFolderDotNet` 59, `JupiterGridSettingsFolderDotNet` 70 | `GridRaspored.Mapa` (GRL-01) | isto | `grl01-*` |
 | `PutanjaSlike` 136 | Nitko je ne zove izvan modula | isto |  |
 | `JupiterLog.Sredi` 122, `SakrijVrijednost` 141 | `NgDnevnik.Sakrij`: `pwd=`, `password=` i polja s PASSWORDCHAR (R120) | isto | `log01-spojni`, `log01-*` |
-| `Encrypt` / `Decrypt` / `KeyToBytes` | `Decrypt` je za XML iz baze `netgenxml` (M5) | nedostaje |  |
+| `Encrypt` / `Decrypt` / `KeyToBytes` | `XmlIzvor.Dekriptiraj` (Decrypt, KeyToBytes) za XML iz baze `netgenxml` (M5, XML-01); `Encrypt` nitko ne zove | isto | `xml01-dekript`, `xml01-baza` |  |
 | `GetLast` 16 | Nitko je ne zove | isto |  |
 | `Translate_OLD` 293, `ToCiril2` 474 | Prijevod: PRV-01, čeka odluku | nedostaje |  |
 | `Translate` 266 | Tekst ostaje. `JupiterPrevoditelj` se ne učitava kad jezik nije `hrv` | razlika | `prevod` |
 | `GetServerPath` 214 | Dio ispisa `rs:` kroz Form6 (ISP-05, otvoreno) | nedostaje |  |
 
-U ovom bloku (stanje 14. 11. 2026.): 4 isto (mape kroz `GridRaspored`, redact kroz `NgDnevnik.Sakrij`), 3 nedostaje (DES za `netgenxml` je M5, stari prijevod je PRV-01, `GetServerPath` je ispis `rs:` ISP-05), 1 razlika (`Translate`).
+U ovom bloku (stanje 14. 11. 2026.): 5 isto (mape kroz `GridRaspored`, redact kroz `NgDnevnik.Sakrij`, DES kroz `XmlIzvor`), 2 nedostaje (stari prijevod je PRV-01, `GetServerPath` je ispis `rs:` ISP-05); DES za `netgenxml` je M5 (XML-01), 1 razlika (`Translate`).
