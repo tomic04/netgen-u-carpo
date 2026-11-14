@@ -52,6 +52,40 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 - **NetGen:** zove proceduru iz XML-a. Ako je nema, padne.
 - **Zašto ostaje:** na spinu je stub `SELECT … WHERE 1=0` dok ne stignu prava tijela. Jupiter se ne čita. Popis je u `docs/granule/spin-objekti.md`.
 
+### R114 Ispis iz izbornika grida ide kroz Spin.Printing, bez podnožja
+
+- **NetGen:** „Ispis” (`IspisNovi`, Janus GridExPrinting) i „Ispis REPX” (`IspisGRIDREPX`, NetGenExtensions) s PAGEHEADER*, PAGEFOOTER* i PAGEORIENTATION (Form1, Form2 9015-9056).
+- **Zašto ostaje:** Carpo grid ispisuje Spin.Printing `PrintLink`, koji ima zaglavlje (naslov, lijevo, desno) i orijentaciju, ali ne podnožje (Carpo `ComponentGrid` ga isto ne šalje). Jedna stavka „Ispis” umjesto dvije, jer bi obje radile isto (ISP-07).
+- **Test:** `isp07-printgrid-ime`
+
+### R115 Izgled grida u .xml, Janus .gxl se ne čita
+
+- **NetGen:** „Spremi postavke grida” piše Janus `.gxl` (za DXGRID `.xml`) u `Grid Settings` (Form1 6192-6420, Form2 9205-9243).
+- **Zašto ostaje:** DevExpress ne čita Janus format. Ime datoteke je isto, nastavak `.xml` kao NetGen DX grid (GRL-01).
+- **Test:** `grl01-spremi-ucitaj`, `grl01-reset`
+
+### R116 Pomoć bez HELPKOD-a se ne pokreće
+
+- **NetGen:** gumb bez ONCLICK (ili „help”) i F1 zovu `DajPokaziHelp` i kad nema HELPKOD-a (`-h` prazan).
+- **Zašto ostaje:** JupiterHelp bez koda nema što pokazati; Carpo ga ne pokreće (HLP-02).
+- **Test:** `hlp02-argumenti`
+
+### R117 Obje boje ćelije iz upita vrijede
+
+- **NetGen:** svaki `*CellForeColorID`/`*CellBackColorID` stupac zamijeni cijeli FormatStyle ćelije, pa od dviju boja ostane zadnja po redu stupaca (`GridEX1_FormattingRow` 7875).
+- **Zašto ostaje:** očita namjera procedure je obje boje; DevExpress `RowCellStyle` postavi obje (GRB-01).
+- **Test:** `grb01-boje`
+
+### R118 Pitanje lanca bez korisnika je Cancel
+
+- **NetGen:** ISEMPTYORZEROALERT/CANCELBOX uvijek pokaže MsgBox.
+- **Zašto ostaje:** na CI-u i u klik-pregledu nema korisnika, a modalni prozor zaustavi test; pitanje vrati Cancel (lanac stane), upozorenje ide u dnevnik. S korisnikom je `XtraMessageBox` (DEV-01).
+
+### R119 Tekst ploče za grupiranje je Carpov
+
+- **NetGen:** `BuiltInTexts(GroupByBoxInfo) = ""` (prazna ploča).
+- **Zašto ostaje:** izgled je Carpov (pravilo 50-50); vidljivost ploče prati GROUPBYBOXVISIBLE (DGR-02).
+
 ## Uklonjeno
 
 Svaka uklonjena stavka ima test koji provjerava NetGen linije. R59 i R110 su portani: redni stupac grida, gumbi 79/8 na dnu, slika čvora 0, `PageHeaderFooter` Left/Center/Right.
