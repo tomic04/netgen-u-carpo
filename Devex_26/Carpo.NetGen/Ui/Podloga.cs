@@ -509,7 +509,9 @@ namespace Carpo.NetGen.Ui
                 OsvjeziMaster();
                 return;
             }
-            if (zagrada > 0)
+            // Form2.NovaGenerickaForma2 4398 postavi strPrevParametri djeteta prije nego tpP uđe u strParametriSvi (4406),
+            // pa dijete otvoreno iz dijaloga te parametre ne vidi; iz podloge (Form1 5313-5314) vidi.
+            if (zagrada > 0 && !izDijaloga)
                 ParametriIzImenaForme(trazeno, zagrada);
             // Form2 1035: COMMANDTIMEOUT forme zamijeni strCommandTimeout i ostane (TMO-01).
             int rok = VrijemeUpita.Iz(forma.Atributi, _vrijemeUpita);
