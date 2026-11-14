@@ -49,7 +49,7 @@ if ($sid -ne 0) {
         Pokazi-Djelomicno
         throw "sweep timeout"
     }
-    if ($p.ExitCode -ne 0) { throw "sweep kod $($p.ExitCode)" }
+    if ($p.ExitCode -ne 0) { Pokazi-Djelomicno; throw "sweep kod $($p.ExitCode) (3 = cuvar: granula je drzala UI dulje od 90 s)" }
 } else {
     $cmd = $Izvjestaj + ".cmd"
     $dodatak = ""
@@ -67,7 +67,7 @@ if ($sid -ne 0) {
     schtasks /Delete /TN $tn /F 2>$null | Out-Null
     if (-not (Test-Path -LiteralPath $kodDat)) { Pokazi-Djelomicno; throw "timeout sweep" }
     $kod = [int]((Get-Content -LiteralPath $kodDat -Raw).Trim())
-    if ($kod -ne 0) { throw "sweep kod $kod" }
+    if ($kod -ne 0) { Pokazi-Djelomicno; throw "sweep kod $kod (3 = cuvar: granula je drzala UI dulje od 90 s)" }
 }
 if (-not (Test-Path -LiteralPath $Izvjestaj)) { throw "Nema izvjestaja $Izvjestaj" }
 Pokazi-Djelomicno

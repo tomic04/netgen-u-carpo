@@ -594,6 +594,29 @@ namespace Carpo.TestShell
             // Trag gumba (Podloga piše "gumb <natpis>" prije klika): na roku UiSweep ispiše kraj traga.
             Carpo.NetGen.Ui.Dijalog.TragPutanja = izvjestaj + ".faza.txt";
             try { File.Delete(izvjestaj + ".faza.txt"); } catch { }
+            // SWP-03: čuvar. Granula koja drži UI dulje od 90 s (modalni prozor koji sweep ne zatvori, beskonačna
+            // petlja) zapiše HANG s granulom i zadnjim tragom, pa proces izađe s kodom 3; ne čeka se rok šestine.
+            // Granule iz scripts\ui\sweep-preskoci.txt (poznati HANG) se preskaču.
+            _sweepIzvjestaj = izvjestaj;
+            _sweepPocetak = DateTime.UtcNow;
+            var cuvar = new Thread(CuvarSweepa);
+            cuvar.IsBackground = true;
+            cuvar.Start();
+            var preskoci = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                string popis = Environment.GetEnvironmentVariable("NETGEN_SWEEP_PRESKOCI");
+                if (!string.IsNullOrEmpty(popis) && File.Exists(popis))
+                {
+                    foreach (string red in File.ReadAllLines(popis))
+                    {
+                        string t = red.Trim();
+                        if (t.Length > 0 && !t.StartsWith("#", StringComparison.Ordinal))
+                            preskoci.Add(t);
+                    }
+                }
+            }
+            catch { }
             _klikPregled = true;
             _sweepRadi = true;
             var bdij = new Thread(ZatvarajSweep);
@@ -623,6 +646,14 @@ namespace Carpo.TestShell
                     ? put.Substring(korijen.Length).TrimStart('\\', '/')
                     : put;
                 var ukupno = System.Diagnostics.Stopwatch.StartNew();
+                _sweepGranula = rel;
+                _sweepPocetak = DateTime.UtcNow;
+                if (preskoci.Contains(rel))
+                {
+                    sb.AppendLine(rel + "\tPRESKOCEN\t0\tsweep-preskoci.txt");
+                    try { File.AppendAllText(izvjestaj + ".red", rel + "\tPRESKOCEN\t0\tsweep-preskoci.txt\r\n"); } catch { }
+                    continue;
+                }
                 if (!Carpo.NetGen.Xml.NetGenXmlReader.JeNetGenProjekt(put))
                 {
                     nije++;
@@ -756,6 +787,32 @@ namespace Carpo.TestShell
             catch { }
             return "ukupno=" + ukupno.ElapsedMilliseconds.ToString() + "ms forme=" + forme.ToString()
                 + " gdi=" + gdi.ToString() + " user=" + user.ToString() + " " + DateTime.Now.ToString("HH:mm:ss");
+        }
+
+        private static string _sweepIzvjestaj;
+        private static volatile string _sweepGranula = "";
+        private static DateTime _sweepPocetak = DateTime.UtcNow;
+
+        private void CuvarSweepa()
+        {
+            while (_sweepRadi || _sweepGranula.Length == 0)
+            {
+                Thread.Sleep(5000);
+                if (!_sweepRadi && _sweepGranula.Length > 0)
+                    return;
+                if ((DateTime.UtcNow - _sweepPocetak).TotalSeconds < 90)
+                    continue;
+                string zadnja = "";
+                try
+                {
+                    string[] trag = File.ReadAllLines(_sweepIzvjestaj + ".faza.txt");
+                    if (trag.Length > 0)
+                        zadnja = trag[trag.Length - 1];
+                }
+                catch { }
+                try { File.AppendAllText(_sweepIzvjestaj + ".red", _sweepGranula + "\tHANG\t90\tčuvar: granula drži UI dulje od 90 s; zadnji trag: " + zadnja + "\r\n"); } catch { }
+                Environment.Exit(3);
+            }
         }
 
         private static string GrupaUzroka(string uzrok)
