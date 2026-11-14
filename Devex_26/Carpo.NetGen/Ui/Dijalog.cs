@@ -260,6 +260,11 @@ namespace Carpo.NetGen.Ui
                     okviri[0].Controls.Add(natpis[0]);
             }
 
+            // Form2.vb 1373-1379 i 1403-1409: okvir (frame/group) i panel idu SendToBack, a ostale kontrole
+            // BringToFront (1348, 1498, ...). Bez toga okvir koji je u XML-u prije kontrola leži preko njih i
+            // forma izgleda prazno (1217 formi u 299 granula, npr. RobaWebKlase INSERT_KLASA) (LAY-02).
+            PosaljiOkvireStraga(forma);
+
             if (forma.Gumbi != null && forma.Gumbi.Count > 0)
             {
                 // Form2.designer: Panel1 dno (33) s Button1..6 na stalnim mjestima; prazan natpis skrije gumb
@@ -324,6 +329,21 @@ namespace Carpo.NetGen.Ui
             UcitajDbClipboard(forma);
             SrediNaslov();
             OsvjeziStatus();
+        }
+
+        private void PosaljiOkvireStraga(NgForm forma)
+        {
+            if (forma == null || forma.Kontrole == null)
+                return;
+            for (int i = 0; i < forma.Kontrole.Count; i++)
+            {
+                NgControl k = forma.Kontrole[i];
+                if ((k.Grana != NgGrana.Group && k.Grana != NgGrana.Panel) || string.IsNullOrEmpty(k.Name))
+                    continue;
+                Control[] nadjeno = Controls.Find(k.Name, true);
+                if (nadjeno.Length > 0)
+                    nadjeno[0].SendToBack();
+            }
         }
 
         public bool ProvediTipku(Keys keyData)
