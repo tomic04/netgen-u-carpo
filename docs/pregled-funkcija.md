@@ -110,23 +110,23 @@ U ovom bloku: 47 isto, 3 nedostaje, 0 razlika. `NapuniRSLang` čeka PRV-01 (odlu
 
 | # | NetGen | Carpo | Status | Test |
 |---|---|---|---|---|
-| 51 | `Glbl_Validated` 5820. Prazan tekst stavlja tag `0`. Promjena teksta ide u Form3. `ShowDialog` samo kad redova nije 0 ni 1 (5875–5881) | `Form2Dogadjaj.TrazilicaKorak` i `PokaziTrazilicu` | još nedostaje | `trazilica-dijalog` |
-| 52 | `Glbl_Validated2` 5912. `ONLOSTFOCUS` samo ako keydown nije već odradio izlaz | `Dijalog` Leave preskače SQL nakon Enter. `dijalog-ucinak` ne otvara XML granulu | još nedostaje | |
+| 51 | `Glbl_Validated` 5820. Prazan tekst stavlja tag `0`. Promjena teksta ide u Form3. `ShowDialog` samo kad redova nije 0 ni 1 (5875–5881) | `Dijalog.PotvrdiTrazilicu`, prozor tražilice `TrazilicaProzor` (Form3) kad redova nije 0 ni 1 | isto | `trz01-*` |
+| 52 | `Glbl_Validated2` 5912. `ONLOSTFOCUS` samo ako keydown nije već odradio izlaz | `Form2Dogadjaj.IzlazTrazilice`: Enter odradi izlaz, `Leave` ga ne ponavlja | isto | `trazilica-preskok` |
 | 53 | `PokupiParametreIzTrazilice` 5926. Od stupca 1, `@SEARCH` + ime, zadnje 4 znamenke | `ParametriSvi.IzTrazilice` | isto | `trazilica-search` |
 | 54 | `Glbl_TextChanged` 5958. `ONCHANGE` | `TextChanged` | isto | |
 | 55 | `Glbl_ValidatedCombo` 5962. `ONLOSTFOCUS` | `Leave` | isto | `DOS-05` |
-| 56 | `Glbl_ValidatedMultiDrop` 5968. Vodi `ErrorText`, ne `ONLOSTFOCUS` | `Form2Dogadjaj.MultiDropNaredba`, `Leave` šalje `ERRORTEXT` | još nedostaje | `multidrop-error` |
+| 56 | `Glbl_ValidatedMultiDrop` 5968. Vodi `ErrorText`, ne `ONLOSTFOCUS` | `Form2Dogadjaj.MultiDropNaredba`, `Leave` šalje `ERRORTEXT` | isto | `mdr01-multidrop` |
 | 57 | `GlblNumber_Validated` 5977. `ONLOSTFOCUS` | `Leave` | isto | |
-| 58 | `Glbl_Gotfocus` 5985. Pamti stari tekst i zove `Glbl_Gotfocus2` | `Enter` na TextEdit: LightGreen i SelectAll. Nema TestShell granule | još nedostaje | |
+| 58 | `Glbl_Gotfocus` 5985. Pamti stari tekst i zove `Glbl_Gotfocus2` | `Enter` na TextEdit: LightGreen i SelectAll | isto |  |
 | 59 | `Glbl_popup` 5992. Tijelo je komentar | Nema | isto | |
-| 60 | `Glbl_KeyDown` 6016–6100. Enter na tražilici validira pa ide dalje, osim ako SQL ili greška ima `focus`. Ctrl+A i Ctrl+C na gridu | `ProcessCmdKey` zove `KeyDown`. Test ne mjeri Ctrl+A ni Ctrl+C na gridu | još nedostaje | |
-| 61 | `Glbl_TREE_BeforeSelect` 6103. Boja čvora u bijelo | `Form2Dogadjaj.BojaCvoraPrije` vraća `White` | još nedostaje | `boja-cvora` |
-| 62 | `Glbl_Click` 6108. `ONCLICK` kontrole, label i grid | Label `Click` šalje SQL. Grid klik nije. Nema TestShell granule | još nedostaje | |
-| 63 | `GlblCHECK_Click` 6182. `Rafalno(Tag)` | Check i radio `Click` šalju `ONCLICK` ili `TAG` | još nedostaje | `klik-labela` |
-| 64 | `Glbl_DoubleClick` 6188–6208. `Val` različit od 0 mijenja zarez u točku, zatim `ONDBLCLICK` | `Form2Dogadjaj.VrijednostDvoklika`, `GridView.DoubleClick` | još nedostaje | `dvoklik-vrijednost` |
-| 65 | `Glbl_ClickButton` 6221. Prazan tag ili `help` otvara help, inače `Rafalno(tag)` | `Form2Dogadjaj.HelpArgumenti`. Proces se ne pali u testu | još nedostaje | `help-arg` |
-| 66 | `UpaliProgres` 6234. Marquee | `Form2Dogadjaj.Progres.Upali` | još nedostaje | `progres` |
-| 67 | `UgasiProgres` 6240 | `Progres.Ugasi` | još nedostaje | `progres` |
+| 60 | `Glbl_KeyDown` 6016–6100. Enter na tražilici validira pa ide dalje, osim ako SQL ili greška ima `focus`. Ctrl+A i Ctrl+C na gridu | `Dijalog.ProcessCmdKey` zove `Form2Dogadjaj.KeyDown`. Ctrl+A i Ctrl+C na gridu radi DevExpress sam (MultiSelect); u načinu s kvačicama Ctrl+A i označi redove, jer su plavi i označeni redovi u DevExpressu isti | isto | `hot01-f2` |
+| 61 | `Glbl_TREE_BeforeSelect` 6103. Boja čvora u bijelo | DevExpress `TreeList` sam crta odabrani čvor | isto |  |
+| 62 | `Glbl_Click` 6108. `ONCLICK` kontrole, label i grid | Label `Click`; grid `FocusedRowChanged` i `Click` s preskokom (ZanemariClick), uz Ctrl bez `ONCLICK` (CTL-01) | isto |  |
+| 63 | `GlblCHECK_Click` 6182. `Rafalno(Tag)` | Check i radio `Click` šalju `ONCLICK` ili `TAG` | isto |  |
+| 64 | `Glbl_DoubleClick` 6188–6208. `Val` različit od 0 mijenja zarez u točku, zatim `ONDBLCLICK` | `Form2Dogadjaj.VrijednostDvoklika`, `GridView.DoubleClick`, `@@dblclickedcolumn` | isto |  |
+| 65 | `Glbl_ClickButton` 6221. Prazan tag ili `help` otvara help, inače `Rafalno(tag)` | `Dijalog.GumbKlik` → `PokaziPomoc` (HLP-02), `JupiterPomoc.Argumenti` | isto | `hlp02-argumenti` |
+| 66 | `UpaliProgres` 6234. Marquee | `RafalNaredba.Progres` pamti zastavicu, trake nema. `PROGRESSON` je 0 u korpusu; podloga i dijalog imaju Carpo izgled | razlika | `timer-progres` |
+| 67 | `UgasiProgres` 6240 | `RafalNaredba.Progres` | razlika | `timer-progres` |
 | 68 | `Fiskalizacija` 6247 | `FiskalTok`, samo testni CIS | isto | `fiskal-izvrsi-test` |
 | 69 | `PoslovniProstor` 6578. Zove COM inačicu, stari Raverus blok je komentar | `ProstorNaredba` prepoznaje naredbu | isto | |
 | 70 | `PoslovniProstor_COM` 6618 | Odluka je `ProstorGrana`. SOAP je **R111** | razlika | `prostor-com` |
@@ -136,12 +136,12 @@ U ovom bloku: 47 isto, 3 nedostaje, 0 razlika. `NapuniRSLang` čeka PRV-01 (odlu
 | 74 | `PosaljiPorukunaServer` 7750. POST text/xml, timeout 3000 | `PosaljiServer.Post` | isto | |
 | 75 | `PosaljiZakljuckEEEEEnaServer` 7804 | `PosaljiServer` vrsta zakljucak | isto | |
 | 76 | `PosaljiZakljucaknaServer` 7845 | Isti POST | isto | |
-| 77 | `SpremiResponse` 7900–7906. Piše `PosaljiZakljucaknaServerResponse.txt` | `Form2Dogadjaj.SpremiOdgovor` | još nedostaje | `odgovor-datoteka` |
-| 78 | `SpremiRacunResponse` 7909–7915. Piše `PosaljiRacunnaServerResponse.txt` | Isti zapis, druga datoteka | još nedostaje | `odgovor-datoteka` |
-| 79 | `ProvjeraDostupnosti` 7919. `WebClient` na authority | `Form2Dogadjaj.Dostupan`, test daje `Probe` | još nedostaje | `dostupnost` |
+| 77 | `SpremiResponse` 7900–7906. Piše `PosaljiZakljucaknaServerResponse.txt` | Dio `:FISKALIZACIJA` (M7, R111): čeka odluku | nedostaje |  |
+| 78 | `SpremiRacunResponse` 7909–7915. Piše `PosaljiRacunnaServerResponse.txt` | Dio `:FISKALIZACIJA` (M7, R111): čeka odluku | nedostaje |  |
+| 79 | `ProvjeraDostupnosti` 7919. `WebClient` na authority | Dio `:FISKALIZACIJA` (M7, R111): čeka odluku | nedostaje |  |
 | 80 | `PosaljiRacunEEEEEnaServer` 7936 | `PosaljiServer` vrsta racun | isto | |
 | 81 | `PosaljiRacunnaServer` 7974 | `PosaljiServer.UrlRacuna` i POST | isto | |
-| 82 | `PosaljiSamoJIRServer` 8097–8167. POST `<doc></doc>`, `a=2`. Prazan JIR i vrijeme su `null`. Produkcijski CIS se ne zove | `Form2Dogadjaj.UrlJir` | još nedostaje | `jir-test` |
+| 82 | `PosaljiSamoJIRServer` 8097–8167. POST `<doc></doc>`, `a=2`. Prazan JIR i vrijeme su `null`. Produkcijski CIS se ne zove | Dio `:FISKALIZACIJA` (M7, R111): čeka odluku | nedostaje |  |
 | 83 | `RecalcGrid` 8219 | `RecalcGrid.Izracunaj` | isto | `recalc-red` |
 | 84 | `RecalcGridRow` 8264 | `RecalcGrid.IzracunajRed` | isto | `recalc-red` |
 | 85 | `EvaluateSTR` 8286 | `Izraz` | isto | `izraz-ilcalc` |
@@ -152,20 +152,20 @@ U ovom bloku: 47 isto, 3 nedostaje, 0 razlika. `NapuniRSLang` čeka PRV-01 (odlu
 | 90 | `SrediSQLsaKolonamaizGrida` 8440 | `SrediPoslije.Kolone` | isto | `kolone-grid` |
 | 91 | `NadjiVrijednostuGridu` 8459 | Isti poziv, vrijednost daje pozivatelj | isto | `kolone-grid` |
 | 92 | `Glbl_ComboClick` 8497. `ONCLICK` | `LookUpEdit.EditValueChanged` | isto | |
-| 93 | `Timer1_Tick` 8510–8514. Nakon tražilice fokus, pa se timer gasi | `Form2Dogadjaj.TimerFokusa` | još nedostaje | `timer-fokus` |
+| 93 | `Timer1_Tick` 8510–8514. Nakon tražilice fokus, pa se timer gasi | FOCUS forme u `Dijalog.OnShown` (`Fokusiraj`) | isto | `fokus-zadnji` |
 | 94 | `Glbl_DateTime_ValueChanged` 8518. `ONVALUECHANGED` | `DateEdit.EditValueChanged` | isto | |
-| 95 | `Glbl_EditingCell` 8532. Pamti staru vrijednost prije editiranja | `ShowingEditor` pamti `VrijednostDvoklika` | još nedostaje | `izmjena-celije` |
-| 96 | `Glbl_CellEdited` 8616. SQL nakon izmjene ćelije | `CellValueChanged` šalje `ONCELLEDITED`, greška vraća staru | još nedostaje | `izmjena-celije` |
-| 97 | `Glbl_GridMouseUp` 8704–8731. Desni klik uz Ctrl je stupci, inače `POPUP` kao `natpis:naredba` | `Form2Dogadjaj.DesniKlik` i `Izbornik` | još nedostaje | `desni-klik` |
-| 98 | `Glbl_TreeMouseUp` 8859. Isti desni klik na stablu | Isti razrez `POPUP` | još nedostaje | `desni-klik` |
-| 99 | `ToolStripMenuItem1_Click` 8897. Tag stavke je naredba iza dvotočke | `Izbornik` vraća `natpis\|naredba` | još nedostaje | `desni-klik` |
+| 95 | `Glbl_EditingCell` 8532. Pamti staru vrijednost prije editiranja | `ShowingEditor` pamti `VrijednostDvoklika`; `BEFORECELLEDITED` može otkazati | isto | `edt01-uredjiv` |
+| 96 | `Glbl_CellEdited` 8616. SQL nakon izmjene ćelije | `CellValueChanged` šalje `ONCELLEDITED`, greška vraća staru | isto | `edt02-oncelledited`, `edt03-greska-vraca` |
+| 97 | `Glbl_GridMouseUp` 8704–8731. Desni klik uz Ctrl je stupci, inače `POPUP` kao `natpis:naredba` | `GridIzbornik.Vezi`: `POPUP` kao `natpis:naredba` i stalne stavke; Ctrl + desni klik je Carpo izbor stupaca (CTL-01) | isto |  |
+| 98 | `Glbl_TreeMouseUp` 8859. Isti desni klik na stablu | `DijalogStablo.VeziStablo`: `POPUP` stabla (TRE-03) | isto | `tre03-*` |
+| 99 | `ToolStripMenuItem1_Click` 8897. Tag stavke je naredba iza dvotočke | `Form2Dogadjaj.Izbornik` vraća `natpis\|naredba`; `~` je lanac, inače `NovaGenerickaForma` | isto |  |
 | 100 | `IspisNovi` 9006. Janus `GridExPrinting`, ne PrintLink | Ispis ide kroz `PageHeaderFooter` | razlika | `ispis-zaglavlje` |
 
-Status `portano` i `nedostajalo-portano` smije stajati samo uz test iz `tests/ui/katalog.txt` (kategorija UI, ime granule, TestShell). `dijalog-ucinak` slaže prazan dijalog i zato se ne računa. U ovom bloku: 26 isto, 0 portano, 22 još nedostaje, 2 razlike (`IspisNovi`, R111).
+Status `portano` i `nedostajalo-portano` smije stajati samo uz test iz `tests/ui/katalog.txt` (kategorija UI, ime granule, TestShell). `dijalog-ucinak` slaže prazan dijalog i zato se ne računa. U ovom bloku (stanje 14. 11. 2026., nakon CTL-01, DOZ-02 i HLP-02): 42 isto, 4 razlike (`IspisNovi`, R111, traka napretka), 4 nedostaje (odgovor, dostupnost i JIR fiskalizacije, čekaju odluku `:FISKALIZACIJA`).
 
 ### Nedostajalo, sada portano
 
-Form3 pri promjeni teksta (`trazilica-dijalog`, `Form2.vb` 5820–5881), `KeyDown` (`keydown-trazilica`, 6016–6100), dvoklik (`dvoklik-vrijednost`, 6198–6204), desni klik (`desni-klik`, 8704–8731 i 8897), timer fokusa (`timer-fokus`, 8510–8514), datoteke odgovora (`odgovor-datoteka`, 7900–7915), `PosaljiSamoJIRServer` samo ako URL nije produkcijski CIS (`jir-test`, 8097–8167).
+Stari popis testova iz ovog odlomka (`keydown-trazilica`, `desni-klik`, ...) maknut je s lažnim portovima (e8fd9e2). Stvarno stanje je u tablici iznad: tražilica `trz01-*`, uređivanje `edt0*`, pomoć `hlp02-*`, desni klik kroz `GridIzbornik` i `DijalogStablo`, Ctrl na gridu CTL-01.
 
 ### Ostalo u ovom bloku
 
@@ -177,21 +177,21 @@ Form3 pri promjeni teksta (`trazilica-dijalog`, `Form2.vb` 5820–5881), `KeyDow
 
 | NetGen | Carpo | Status |
 |---|---|---|
-| `Glbl_Gotfocus2` 9458. Zelena pozadina, `strGotFocus`, `SelectAll`. NFC timer je komentar | `Enter`: LightGreen i SelectAll. Nema TestShell granule | još nedostaje |
+| `Glbl_Gotfocus2` 9458. Zelena pozadina, `strGotFocus`, `SelectAll`. NFC timer je komentar | `Enter`: LightGreen i SelectAll, `GOTFOCUS` kroz lanac | isto |
 | `Glbl_Leave` 9433. Prazna tražilica tag `0` i `ONLOSTFOCUS` | Već u `Leave` tražilice | isto |
-| `Glbl_LeaveTrazilica` 9454. Žuta pozadina | `Leave` tražilice stavlja LightYellow i prazan tag `0`. Nema TestShell granule | još nedostaje |
+| `Glbl_LeaveTrazilica` 9454. Žuta pozadina | `Leave` tražilice stavlja LightYellow i prazan tag `0` | isto |
 | `Rafalna_Priprema` 9168. `#ISEMPTY` | `IspisMotora.Zaglavlje` | isto |
 | `IspisGRIDREPX` 9041, `ChartGRID` 9062, `PivotGRID` 9085 | `EkstenzijaGrid`. `PrintDocumentREPX` radi. Chart i pivot su OPEN dok nema v12.1 DLL-ova | isto |
 | `Ispis` 9108 | `PrintBridge` | isto |
-| `SaveGridLayout` 9205, `DeleteGridLayout` 9232, `LoadLayout` 9245, `GetLayoutDirectory` 9260 | `ImeRasporeda`, `MapaRasporeda`, `SpremiRaspored`. Janus `.gxl` binarni format nije isti | još nedostaje |
-| `AutoCompleteCombo_KeyUp` 9276 i `Leave` 9397 | `PreskociTipku`, `NadjiStavku`, `Dopuna` | još nedostaje |
-| `ContextMenuStrip7_*` 9494–9539 | `StupacPoNatpisu`, `Okreni`, `OtkaziZatvaranje` | još nedostaje |
-| `DajPokaziHelp` 9539 | `HelpArgumenti`. `JupiterHelp.exe` se ne pokreće u testu | još nedostaje |
-| `SerialPort1_*` 9577–9611 | `LazniPort`, `PostimajPort`, `PisiPort`. Test ne otvara hardver | još nedostaje |
+| `SaveGridLayout` 9205, `DeleteGridLayout` 9232, `LoadLayout` 9245, `GetLayoutDirectory` 9260 | `GridRaspored` (GRL-01): ista imena datoteka s `.xml`; Janus `.gxl` se ne čita | isto |
+| `AutoCompleteCombo_KeyUp` 9276 i `Leave` 9397 | Carpo `LookUpEdit` (Standard, ImmediatePopup) dopunjuje sam; nepoznat tekst na izlazu ne skače na prvu stavku nego ostaje prošla vrijednost (50-50 → Carpo) | razlika |
+| `ContextMenuStrip7_*` 9494–9539 | Ctrl + desni klik otvori Carpo izbor stupaca (`ShowCustomization`, CTL-01) | razlika |
+| `DajPokaziHelp` 9539 | `DijalogPomoc.PokaziPomoc` i `JupiterPomoc` (HLP-02); bez koda se ne pokreće | isto |
+| `SerialPort1_*` 9577–9611 | Nitko ih ne zove (ni `DajImenaPotova`, `Postimaj`, `Pisi`) | isto |
 | `glblGRID_FormattingRow` 9611 | Format stupca je u `MasterGrid` | isto |
-| `Timer2_Tick` 9687. `TIMERSQL` | `Timer2ImaSql` | još nedostaje |
+| `Timer2_Tick` 9687. `TIMERSQL` | Timer2 se pali samo s `TIMERON`, kojeg u korpusu nema; `TIMERON` je u `RafalNaredba` | isto |
 | `Form2_PaddingChanged` 9694. Prazno tijelo | Nema | isto |
-| `Timer3_Tick` 9698. Maximize i čekirani multidrop | `Maksimiziraj`, `CekiranId` | još nedostaje |
+| `Timer3_Tick` 9698. Maximize i čekirani multidrop | WINDOWSTATE 2 (FRM-02), označeni multidrop iz taga (MDR-01), FOCUS u `OnShown` | isto |
 | `Timer4_Tick` 9744. NFC, komentirano da se ne koristi | Ne radi se | isto |
 
 ## Što je portano
@@ -209,20 +209,20 @@ Form3 pri promjeni teksta (`trazilica-dijalog`, `Form2.vb` 5820–5881), `KeyDow
 | `SrediSQLPosljeNextForme` 740 | `SrediPoslije.Zamijeni` | isto | `sredi-poslije-roba` |
 | `NadjiVrijednostuPrevParametrima` 856 | `SrediPoslije.Nadji` | isto | `sredi-poslije-cb` |
 | `CreateGridColumns` 982 | `MasterGrid.IzPodatka` | isto | `bla-sirina` |
-| `FormatirajGrid` 271 | `Class1Pravila.SakrijId`, `Sirina` | još nedostaje | `format-grid` |
-| `AddConditionalFormatting` 1369 | `Class1Pravila.FormatUvjeta` | još nedostaje | `format-uvjet` |
-| `DajInstall` 1450 | `Class1Pravila.InstallVecIma` | još nedostaje | `install-vec` |
-| `GlipiMS` 1605 | `Class1Pravila.Glipi` | još nedostaje | `glipi` |
-| `GetDXID` 1960 | `Class1Pravila.DxId` | još nedostaje | `dx-id` |
-| `BlagajnaEnableZaMlinar` 1975 | `Class1Pravila.BlagajnaUpit` | još nedostaje | `blagajna-enable` |
-| `UpaliProgres` / `UgasiProgres` 723 | `Form2Dogadjaj.Progres` | još nedostaje | `progres` |
+| `FormatirajGrid` 271 | Nitko je ne zove | isto |  |
+| `AddConditionalFormatting` 1369 | `GridIzgled.FormatReda` (FMT-01) na masteru, detailu, gridu dijaloga i tražilici | isto | `fmt01-red`, `fmt01-uvjeti` |
+| `DajInstall` 1450 | Zovu je samo komentirane metode | isto |  |
+| `GlipiMS` 1605 | Zovu je samo komentirane metode | isto |  |
+| `GetDXID` 1960 | Carpo master i detail su uvijek DevExpress: `DetailGrid.IdReda`, `Podloga.SpojiId` | isto | `det-id-prvi` |
+| `BlagajnaEnableZaMlinar` 1975 | `BlagajnaNaredba` (BLAGAJNAENABLE u lancu podloge i dijaloga) | isto | `open-blagajna-ispis` |
+| `UpaliProgres` / `UgasiProgres` 723 | Podloga nema traku napretka (Carpo izgled) | razlika |  |
 | `NapuniCBLog` / `PokaziCBLog` | Carpo logger, ne CBLog | razlika | |
-| `PrintRpt` 379, `IspisiMe7` 284, `IspisiMePrekoSpinPrintinga` 291 | `SpinIspis` zove `Spin.Printing.v26` `Print`/`PrintMulti` kao `Carpo.UI.PrintDialog`. Test piše PDF, ne zove dijalog | još nedostaje | `spin-ispis` |
-| `NapuniDXGrid` 1699, `NapuniDXGridLATE` 1763 | `SakrijCaptionId`, `SirinaNatpisa`, `SmijeEdit`. `IndexOf` &gt; 0. Stupac `rcb555` | još nedostaje | `dx-grid` |
-| `CustomFormatKolonaDX` 1845, `UkljuciSum` 1937 | `KljucKolone`, `SirinaXml`, `Natpis`, `Zbroj` | još nedostaje | `dx-format` |
+| `PrintRpt` 379, `IspisiMe7` 284, `IspisiMePrekoSpinPrintinga` 291 | `PrintBridge` → `Spin.Printing.v26`. `rs:`/`rsgen`/`.clsReport` traže PrintDlg COM (ISP-05, otvoreno) | isto | `isp07-printgrid-ime` |
+| `NapuniDXGrid` 1699, `NapuniDXGridLATE` 1763 | Isti `GridControl` put kao Janus grid (`NgGrana.DxGrid`) | isto |  |
+| `CustomFormatKolonaDX` 1845, `UkljuciSum` 1937 | `GridDefinicija` i `GridIzgled.Ukupno` | isto | `dgr01-*` |
 | `New` 1433, `Finalize` 1429 | Nema | isto | |
 
-U Class1 bloku, 24 metode: 7 isto (`ExecSql`, `ExecSql2`, `SrediSQLPosljeNextForme`, `NadjiVrijednostuPrevParametrima`, `CreateGridColumns`, `New`, `Finalize`), 0 portano, 15 još nedostaje, 2 razlike (`NapuniCBLog` i `PokaziCBLog` idu u Carpo logger). `PrintRpt`, `IspisiMe7` i `IspisiMePrekoSpinPrintinga` nisu u izvršnom putu. `PrintBridge` i dalje zove `Spin.Printing.v26` za `PRINTMASTER`.
+U Class1 bloku (stanje 14. 11. 2026.): sve žive metode imaju Carpo put ili ih nitko ne zove; 2 razlike (CBLog ide u Carpo logger, traka napretka). `formatid` (FMT-01) je bio jedina prava rupa. `PrintBridge` zove `Spin.Printing.v26`; `rs:`/`rsgen`/`.clsReport` su ISP-05.
 
 ## Ostali moduli, prvi blok
 
@@ -230,13 +230,13 @@ U Class1 bloku, 24 metode: 7 isto (`ExecSql`, `ExecSql2`, `SrediSQLPosljeNextFor
 
 | NetGen | Carpo | Status | Test |
 |---|---|---|---|
-| `SpinAppDataFolderDotNet` 48, `JupiterAppDataFolderDotNet` 59, `JupiterGridSettingsFolderDotNet` 70 | `OstaliModuli.SpinMapa`, `JupiterMapa`, `GridSettingsMapa`. Stvara se roditelj, ne mapa Grid Settings | još nedostaje | `mape-spin` |
-| `PutanjaSlike` 136 | `OstaliModuli.PutanjaSlike` | još nedostaje | `mape-spin` |
-| `JupiterLog.Sredi` 122, `SakrijVrijednost` 141 | `OstaliModuli.SrediLog`. `Assembly.Load("JupiterLogger")` se ne zove | još nedostaje | `log-sredi` |
-| `Encrypt` / `Decrypt` / `KeyToBytes` | `OstaliModuli.Kriptiraj`, `Dekriptiraj`, `Kljuc` | još nedostaje | `kript` |
-| `GetLast` 16 | `OstaliModuli.ZadnjiNamespace`. `MessageBox` se ne pali | još nedostaje | `zadnji-form` |
-| `Translate_OLD` 293, `ToCiril2` 474 | `PrevediStaro`, `UCirilicu` | još nedostaje | `prevod` |
+| `SpinAppDataFolderDotNet` 48, `JupiterAppDataFolderDotNet` 59, `JupiterGridSettingsFolderDotNet` 70 | `GridRaspored.Mapa` (GRL-01) | isto | `grl01-*` |
+| `PutanjaSlike` 136 | Nitko je ne zove izvan modula | isto |  |
+| `JupiterLog.Sredi` 122, `SakrijVrijednost` 141 | `NgDnevnik.Sakrij`: `pwd=`, `password=` i polja s PASSWORDCHAR (R120) | isto | `log01-spojni`, `log01-*` |
+| `Encrypt` / `Decrypt` / `KeyToBytes` | `Decrypt` je za XML iz baze `netgenxml` (M5) | nedostaje |  |
+| `GetLast` 16 | Nitko je ne zove | isto |  |
+| `Translate_OLD` 293, `ToCiril2` 474 | Prijevod: PRV-01, čeka odluku | nedostaje |  |
 | `Translate` 266 | Tekst ostaje. `JupiterPrevoditelj` se ne učitava kad jezik nije `hrv` | razlika | `prevod` |
-| `GetServerPath` 214 | `IniPutanja`, `RemoteDll` | još nedostaje | `server-put` |
+| `GetServerPath` 214 | Dio ispisa `rs:` kroz Form6 (ISP-05, otvoreno) | nedostaje |  |
 
-U ovom bloku: 0 portano, 7 još nedostaje, 1 razlika (`Translate` bez poziva `JupiterTranslator` iz izvršnog puta). Mape, redact, DES, namespace, stari prijevod i `GetServerPath` nisu spojeni na formu ni na log.
+U ovom bloku (stanje 14. 11. 2026.): 4 isto (mape kroz `GridRaspored`, redact kroz `NgDnevnik.Sakrij`), 3 nedostaje (DES za `netgenxml` je M5, stari prijevod je PRV-01, `GetServerPath` je ispis `rs:` ISP-05), 1 razlika (`Translate`).
