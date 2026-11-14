@@ -38,6 +38,18 @@ function Pokazi-Djelomicno {
         Write-Host "---- kraj traga (.faza.txt) ----"
         Get-Content -LiteralPath $faza -Tail 70 -Encoding UTF8 | ForEach-Object { Write-Host $_ }
     }
+    # SWP-09: 40 najsporijih upita (NgVeza) i broj puklih, s granulom.
+    if (Test-Path -LiteralPath $faza) {
+        $spori = @(Get-Content -LiteralPath $faza -Encoding UTF8 | Where-Object { $_ -match ' spor upit (\d+) ms' } |
+            Sort-Object { [int]([regex]::Match($_, ' spor upit (\d+) ms').Groups[1].Value) } -Descending | Select-Object -First 40)
+        if ($spori.Count -gt 0) {
+            Write-Host "---- najsporiji upiti ----"
+            $spori | ForEach-Object { Write-Host $_ }
+        }
+        $pukli = @(Get-Content -LiteralPath $faza -Encoding UTF8 | Where-Object { $_ -match ' upit pukao ' })
+        Write-Host ("---- pukli upiti: " + $pukli.Count + " (prvih 30) ----")
+        $pukli | Select-Object -First 30 | ForEach-Object { Write-Host $_ }
+    }
     # SWP-03: cijeli stog iznimaka (TestShell piše .iznimka.txt), najviše 150 redaka.
     $izn = $Izvjestaj + ".iznimka.txt"
     if (Test-Path -LiteralPath $izn) {

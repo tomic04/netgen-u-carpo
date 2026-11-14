@@ -129,7 +129,7 @@ namespace Carpo.NetGen.Ui
         {
             if (string.IsNullOrEmpty(TragPutanja))
                 return;
-            try { System.IO.File.AppendAllText(TragPutanja, DateTime.Now.ToString("HH:mm:ss") + " " + red + "\r\n"); }
+            try { System.IO.File.AppendAllText(TragPutanja, DateTime.Now.ToString("HH:mm:ss.fff") + " " + red + "\r\n"); }
             catch { }
         }
 
