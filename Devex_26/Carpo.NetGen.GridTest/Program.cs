@@ -2862,7 +2862,8 @@ namespace Carpo.NetGen.GridTest
                     var c = v.Columns.ColumnByFieldName("c");
                     T("dgr01-clear-redoslijed", a != null && b != null && c != null && !a.Visible && c.VisibleIndex == 0 && b.VisibleIndex == 1
                         && c.Caption == "Ce" && b.Caption == "Be" && b.DisplayFormat.FormatString == "#,##0.0000",
-                        a == null ? "nema" : "a=" + a.Visible + " c=" + c.VisibleIndex + " b=" + b.VisibleIndex + " " + c.Caption + "/" + b.Caption);
+                        a == null ? "nema" : "a=" + a.Visible + " c=" + c.VisibleIndex + " b=" + b.VisibleIndex + " " + c.Caption + "/" + b.Caption
+                        + " format=" + b.DisplayFormat.FormatString + "/" + b.DisplayFormat.FormatType);
                     bool prosjek = c != null && c.Summary.Count == 1 && c.Summary[0].SummaryType == DevExpress.Data.SummaryItemType.Average;
                     bool zbroj = b != null && b.Summary.Count == 1 && b.Summary[0].SummaryType == DevExpress.Data.SummaryItemType.Sum;
                     T("dgr01-agregat", v.OptionsView.ShowFooter && prosjek && zbroj, "prosjek=" + prosjek + " zbroj=" + zbroj);

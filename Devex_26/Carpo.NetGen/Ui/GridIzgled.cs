@@ -86,11 +86,12 @@ namespace Carpo.NetGen.Ui
                 c.OptionsColumn.AllowEdit = k.Uredivanje;
                 if (!string.IsNullOrEmpty(k.Format))
                 {
-                    c.DisplayFormat.FormatString = k.Format;
+                    // FormatType prvi: promjena tipa u FormatInfo vrati FormatString na zadani.
                     c.DisplayFormat.FormatType = k.Format.IndexOf("yy", StringComparison.OrdinalIgnoreCase) >= 0
                         || k.Format.IndexOf("dd", StringComparison.OrdinalIgnoreCase) >= 0
                         ? DevExpress.Utils.FormatType.DateTime
                         : DevExpress.Utils.FormatType.Numeric;
+                    c.DisplayFormat.FormatString = k.Format;
                 }
                 DevExpress.Utils.HorzAlignment h;
                 if (Vodoravno(k.Poravnanje, out h))
