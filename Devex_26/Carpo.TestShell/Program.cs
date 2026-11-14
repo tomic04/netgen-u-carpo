@@ -63,13 +63,16 @@ namespace Carpo.TestShell
                     int.TryParse(args[4], out shard);
                     int.TryParse(args[5], out dijelova);
                 }
+                // SWP-02: sweep nad drugom bazom (npr. backup klijenta na jupiter2019); bez toga localhost/spin.
+                string sweepServer = args.Length >= 8 && args[6].Trim().Length > 0 ? args[6].Trim() : "localhost";
+                string sweepBaza = args.Length >= 8 && args[7].Trim().Length > 0 ? args[7].Trim() : "spin";
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
                 Application.ThreadException += delegate (object s, System.Threading.ThreadExceptionEventArgs e)
                 {
                     global::Carpo.TestShell.Main.ZadnjaNit = e.Exception == null ? "ThreadException" : e.Exception.GetType().Name + ": " + e.Exception.Message;
                     try { File.AppendAllText(izvjestaj + ".iznimka.txt", (e.Exception == null ? "" : e.Exception.ToString()) + "\r\n"); } catch { }
                 };
-                var main = new Main("localhost", "spin", args[1], 7, "", "", true);
+                var main = new Main(sweepServer, sweepBaza, args[1], 7, "", "", true);
                 main.Shown += delegate
                 {
                     main.BeginInvoke(new Action(delegate

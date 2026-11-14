@@ -172,11 +172,16 @@ namespace Carpo.NetGen.Ui
                 return false;
             }
 
+            // SWP-03: faze otvaranja u trag sweepa (TragPutanja je prazan izvan TestShella).
+            Dijalog.Trag("podloga stablo");
             _stablo.Ucitaj(_projekt, Citaj);
+            Dijalog.Trag("podloga combo");
             NapuniCombo();
             NapuniDrvo();
             _detail.Pripremi(_projekt);
+            Dijalog.Trag("podloga dms");
             PripremiDms();
+            Dijalog.Trag("podloga setdefaults");
             string zadano = _projekt.Atributi != null && _projekt.Atributi.Ima("SETDEFAULTS")
                 ? _projekt.Atributi.Vrijednost("SETDEFAULTS") : "";
             _master.Clipboard = Carpo.NetGen.Kontrole.ClipboardNg.IzSetDefaults(zadano, kontekst, Citaj);
@@ -190,13 +195,17 @@ namespace Carpo.NetGen.Ui
                 // strProjectCaption (Form1 3530, ime izgleda grida dijaloga) ostaje CAPTION projekta.
                 Text = naslovIzZadanog;
             }
+            Dijalog.Trag("podloga dozvole");
             UcitajDozvole();
             UcitajEditStupce();
             _master.Ucitaj(_projekt, null);
+            Dijalog.Trag("podloga master");
             NapuniGrid();
+            Dijalog.Trag("podloga gumbi");
             NapuniGumbe();
             // Form1.vb 3873 ssPermissionProvjeri prije ONLOAD2 (3906).
             PrimijeniDozvoleGumba();
+            Dijalog.Trag("podloga onload2");
             PrimijeniOnLoad2();
             DodajGumbPomoci();
             return true;
@@ -1202,6 +1211,7 @@ namespace Carpo.NetGen.Ui
                     redovi.Add(Linija(granula, "detail", "grid", "OK", det.ToString() + " redova", "netgen/Form1.vb:2258"));
             }
 
+            Dijalog.Trag("klik kartice");
             var tab = NadjiTab();
             if (tab != null)
             {
@@ -1225,6 +1235,7 @@ namespace Carpo.NetGen.Ui
                 try
                 {
                     PokreniZatvaranje();
+                    Dijalog.Trag("klik stablo");
                     trMain.FocusedNode = trMain.Nodes[0];
                     Application.DoEvents();
                     if (!string.IsNullOrEmpty(_sqlGreska))
@@ -1266,6 +1277,13 @@ namespace Carpo.NetGen.Ui
                     || natpis.Equals("Web", StringComparison.OrdinalIgnoreCase)))
                 {
                     redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", "preglednik nije dio upisa", "netgen/Form2.vb:3367"));
+                    continue;
+                }
+                if (!upis && !DijalogTok.UpisNaSpinu(_server, _baza) && !OtvaraFormu(naredba))
+                {
+                    // SWP-02: izvan spina (npr. backup klijenta) klikne se samo gumb koji otvara formu granule;
+                    // forma se zatvori s Odustani. Izravan SQL ili procedura se ne šalje.
+                    redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", "nije spin: izravan SQL se ne šalje", "netgen/Form2.vb:3367"));
                     continue;
                 }
                 if (!upis && Destruktivan(naredba, natpis))
@@ -1886,6 +1904,24 @@ namespace Carpo.NetGen.Ui
             if (on.Length > 0 && !on.StartsWith(":", StringComparison.Ordinal))
                 return true;
             return !string.IsNullOrWhiteSpace(_master.Stanje.IzvorSql);
+        }
+
+        /// <summary>SWP-02: prvi dio naredbe gumba (do #) je forma ove granule ili uključenog XML-a.</summary>
+        private bool OtvaraFormu(string naredba)
+        {
+            if (_projekt == null || string.IsNullOrWhiteSpace(naredba))
+                return false;
+            string ime = naredba.Trim();
+            int hash = ime.IndexOf('#');
+            if (hash >= 0)
+                ime = ime.Substring(0, hash);
+            ime = ime.Trim();
+            if (ime.StartsWith(":", StringComparison.Ordinal))
+                ime = ime.Substring(1).Trim();
+            int zagrada = ime.IndexOf('(');
+            if (zagrada > 0)
+                ime = ime.Substring(0, zagrada).Trim();
+            return ime.Length > 0 && IncludeForme.Nadji(_projekt, ime) != null;
         }
 
         private bool Destruktivan(string naredba, string natpis)

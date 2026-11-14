@@ -5,7 +5,9 @@ param(
     [Parameter(Mandatory = $true)][string]$Izvjestaj,
     [int]$Sekundi = 6,
     [int]$Shard = 0,
-    [int]$Dijelova = 6
+    [int]$Dijelova = 6,
+    [string]$Server = "",
+    [string]$Baza = ""
 )
 $ErrorActionPreference = "Stop"
 if (-not (Test-Path -LiteralPath $Exe)) { throw "Nema $Exe" }
@@ -38,6 +40,7 @@ function Pokazi-Djelomicno {
 }
 if ($sid -ne 0) {
     $linija = "--sweep `"$XmlRoot`" `"$Izvjestaj`" $Sekundi $Shard $Dijelova"
+    if ($Server -ne "" -and $Baza -ne "") { $linija = $linija + " `"$Server`" `"$Baza`"" }
     $p = Start-Process -FilePath $Exe -ArgumentList $linija -WorkingDirectory $rad -PassThru
     $cekaj = $rokShardMs
     if ($Shard -eq 0) { $cekaj = 20000000 }
@@ -46,10 +49,12 @@ if ($sid -ne 0) {
         Pokazi-Djelomicno
         throw "sweep timeout"
     }
-    if ($p.ExitCode -ne 0) { throw "sweep kod $($p.ExitCode)" }
+    if ($p.ExitCode -ne 0) { Pokazi-Djelomicno; throw "sweep kod $($p.ExitCode) (3 = cuvar: granula je drzala UI dulje od 90 s)" }
 } else {
     $cmd = $Izvjestaj + ".cmd"
-    $bat = "@echo off`r`ncd /d `"$rad`"`r`n`"$Exe`" --sweep `"$XmlRoot`" `"$Izvjestaj`" $Sekundi $Shard $Dijelova`r`necho %ERRORLEVEL%> `"$kodDat`"`r`n"
+    $dodatak = ""
+    if ($Server -ne "" -and $Baza -ne "") { $dodatak = " `"$Server`" `"$Baza`"" }
+    $bat = "@echo off`r`ncd /d `"$rad`"`r`n`"$Exe`" --sweep `"$XmlRoot`" `"$Izvjestaj`" $Sekundi $Shard $Dijelova$dodatak`r`necho %ERRORLEVEL%> `"$kodDat`"`r`n"
     [IO.File]::WriteAllText($cmd, $bat)
     $tn = "NetGenSweep"
     schtasks /Delete /TN $tn /F 2>$null | Out-Null
@@ -62,7 +67,7 @@ if ($sid -ne 0) {
     schtasks /Delete /TN $tn /F 2>$null | Out-Null
     if (-not (Test-Path -LiteralPath $kodDat)) { Pokazi-Djelomicno; throw "timeout sweep" }
     $kod = [int]((Get-Content -LiteralPath $kodDat -Raw).Trim())
-    if ($kod -ne 0) { throw "sweep kod $kod" }
+    if ($kod -ne 0) { Pokazi-Djelomicno; throw "sweep kod $kod (3 = cuvar: granula je drzala UI dulje od 90 s)" }
 }
 if (-not (Test-Path -LiteralPath $Izvjestaj)) { throw "Nema izvjestaja $Izvjestaj" }
 Pokazi-Djelomicno

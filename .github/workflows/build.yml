@@ -86,11 +86,18 @@ jobs:
           $msg = git log -1 --format=%s
           $sweep = "0"
           $shard = "0"
+          $ct = ""
           if ($msg -match '\[sweep-([1-6])\]') {
             $sweep = "1"
             $shard = $Matches[1]
           }
-          [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, "sweep=$sweep`nshard=$shard`n")
+          # SWP-02: [ct-sweep-N:Baza] je sweep granula Centra tehnike nad backupom na jupiter2019.
+          if ($msg -match '\[ct-sweep-([1-6]):([A-Za-z0-9_]+)\]') {
+            $sweep = "1"
+            $shard = $Matches[1]
+            $ct = $Matches[2]
+          }
+          [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, "sweep=$sweep`nshard=$shard`nct=$ct`n")
           Write-Host "poruka=$msg sweep=$sweep shard=$shard event=$env:GITHUB_EVENT_NAME"
 
       - name: Spin stubovi i otvaranje
@@ -373,7 +380,17 @@ jobs:
           $exe = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin\Carpo.TestShell.exe"
           $shard = "${{ steps.vrsta.outputs.shard }}"
           $izv = Join-Path $env:GITHUB_WORKSPACE "artifacts\ui-smoke\sweep-$shard.txt"
-          & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSweep.ps1") -Exe $exe -XmlRoot (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Izvjestaj $izv -Sekundi 4 -Shard ([int]$shard) -Dijelova 6
+          $env:NETGEN_SWEEP_PRESKOCI = Join-Path $env:GITHUB_WORKSPACE "scripts\ui\sweep-preskoci.txt"
+          $ct = "${{ steps.vrsta.outputs.ct }}"
+          if ($ct -ne "") {
+            # Samo čitanje: popis baza na jupiter2019 koje liče na traženu, pa sweep XML-ova Centra tehnike.
+            $q = "set nocount on; select name, convert(varchar(19), create_date, 120) from sys.databases where name like '%entar%' or name like '%" + $ct + "%' order by name"
+            sqlcmd -S jupiter2019 -d master -E -C -l 15 -W -h -1 -Q $q
+            $root = Join-Path $env:GITHUB_WORKSPACE "definitions\netgen\Centar tehnike"
+            & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSweep.ps1") -Exe $exe -XmlRoot $root -Izvjestaj $izv -Sekundi 4 -Shard ([int]$shard) -Dijelova 6 -Server "jupiter2019" -Baza $ct
+          } else {
+            & (Join-Path $env:GITHUB_WORKSPACE "scripts\ui\UiSweep.ps1") -Exe $exe -XmlRoot (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") -Izvjestaj $izv -Sekundi 4 -Shard ([int]$shard) -Dijelova 6
+          }
           if ($LASTEXITCODE -ne 0) { throw "Sweep nije zavrsio. Kod $LASTEXITCODE" }
 
       - name: Stabilni TestShell na sql-ai
