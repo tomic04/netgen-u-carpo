@@ -2443,7 +2443,8 @@ namespace Carpo.NetGen.Ui
                 if (dt != null && dt.Rows.Count == 1)
                     red = dt.Rows[0];
                 else if (dt != null && dt.Rows.Count > 1)
-                    red = TrazilicaProzor.Odaberi(this, dt, c.Text ?? "", Attr(def, "COLUMNCAPTION"), Attr(def, "COLUMNWIDTH"), Attr(def, "COLUMNAUTORESIZE"));
+                    red = TrazilicaProzor.Odaberi(this, dt, c.Text ?? "", Attr(def, "COLUMNCAPTION"), Attr(def, "COLUMNWIDTH"), Attr(def, "COLUMNAUTORESIZE"),
+                        "GridTrazilica-" + GridRaspored.ImeXml(_kontekst == null ? "" : _kontekst.XmlName) + "-" + (_forma == null ? "" : _forma.Ime));
             }
             if (red != null)
             {

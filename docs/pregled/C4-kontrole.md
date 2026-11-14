@@ -89,6 +89,10 @@ Isto vrijedi za tekst labele, okvira i panela (1324, 1369, 1399; LBL-01): 64 lab
 
 `Form2_FormClosing` 4108-4109 sprema visinu i širinu kroz VB `SaveSetting("Jupiter", "FormHeight"/"FormWidth", ključ)`, a `ProcitajXML` 2785-2790 ih vraća kad forma nije WINDOWSTATE 2 i ima MaximizeBox. Ključ je `strXML-strImeForme-Version1-Version2`: put XML-a (`remotedllpath\SharedDLLs\xml\ime.xml`), ime forme, VERSION projekta i VERSION forme. Carpo nije pamtio veličinu. Sada `VelicinaDijaloga` čita i piše isti ključ u `HKCU\Software\VB and VBA Program Settings\Jupiter`, pa vrati veličinu koju je korisnik namjestio još u NetGenu. Bez korisnika (CI, klik pregled) se ne čita ni ne piše. Maksimiziran dijalog sprema normalnu veličinu (R121). Test `vel01-*`.
 
+## Izgled prozora tražilice (TRZ-02)
+
+Form3 pamti izgled grida tražilice: `spremipostavke` (38-48) i `DeleteGridLayout` (50-58, pa zatvori prozor) pišu i brišu `GridTrazilica-<xml>-<forma>.gxl`, a `Trazilica` (84-94) ga učita prije COLUMNCAPTION i COLUMNWIDTH. Carpo prozor tražilice nije pamtio ništa. Sada desni klik na grid tražilice ima „Spremi postavke grida” i „Reset grida” (reset zatvori prozor bez odabira). Izgled je `GridTrazilica-<xml>-<forma>.xml` u mapi Grid Settings i učita se prije COLUMNCAPTION i COLUMNWIDTH. Janus `.gxl` se ne čita (R115).
+
 ## Otvoreno
 
 - `TIMERSQL` (4 forme, 1 granula): Timer2 je u NetGenu ugašen dok ga `TIMERON(n)` ne upali, a `TIMERON` nema nigdje u korpusu, pa se ni u NetGenu ne izvršava.
