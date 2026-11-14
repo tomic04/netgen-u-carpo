@@ -3794,7 +3794,9 @@ namespace Carpo.NetGen.GridTest
                 {
                     Dijalog.NakonPrikaza = null;
                 }
-                T("ulz05-frm-dijete", string.Join(",", otvoreni.ToArray()) == "Treca/42,Cetvrta/42", string.Join(",", otvoreni.ToArray()));
+                // Prikaz DRUGA (Show bez petlje) dođe na red tek u petlji djeteta, pa se on ne broji.
+                var djeca = otvoreni.FindAll(delegate (string x) { return !x.StartsWith("Druga", StringComparison.Ordinal); });
+                T("ulz05-frm-dijete", string.Join(",", djeca.ToArray()) == "Treca/42,Cetvrta/42", string.Join(",", otvoreni.ToArray()));
                 if (dij != null)
                 {
                     dij.Close();
