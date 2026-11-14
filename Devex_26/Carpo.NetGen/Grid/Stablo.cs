@@ -240,8 +240,30 @@ namespace Carpo.NetGen.Grid
             }
             var vidjeni = new Dictionary<DataRow, bool>();
             var root = IzReda(tablica.Rows[0], imeForme);
-            DodajDjecu(tablica, tablica.Rows[0], root, imeForme, vidjeni);
+            DodajDjecu(PoRoditelju(tablica), tablica.Rows[0], root, imeForme, vidjeni);
             Stanje.Korijen.Add(root);
+        }
+
+        /// <summary>
+        /// STB-02: redovi po roditelju (stupac 1), redom kao u tablici. Prije je svaki čvor prolazio cijelu
+        /// tablicu (n²): spTreeVremenskaPodjela na pravoj bazi (Centar tehnike, Narudzbe) je držala UI minutama.
+        /// </summary>
+        private static Dictionary<string, List<DataRow>> PoRoditelju(DataTable tablica)
+        {
+            var mapa = new Dictionary<string, List<DataRow>>(StringComparer.Ordinal);
+            for (int i = 0; i < tablica.Rows.Count; i++)
+            {
+                DataRow dr = tablica.Rows[i];
+                string roditelj = Celija(dr, 1);
+                List<DataRow> lista;
+                if (!mapa.TryGetValue(roditelj, out lista))
+                {
+                    lista = new List<DataRow>();
+                    mapa[roditelj] = lista;
+                }
+                lista.Add(dr);
+            }
+            return mapa;
         }
 
         private static bool IdStupacJedinstven(DataTable tablica)
@@ -259,15 +281,16 @@ namespace Carpo.NetGen.Grid
             return true;
         }
 
-        private void DodajDjecu(DataTable tablica, DataRow roditelj, Cvor cvor, string imeForme, Dictionary<DataRow, bool> vidjeni)
+        private void DodajDjecu(Dictionary<string, List<DataRow>> poRoditelju, DataRow roditelj, Cvor cvor, string imeForme, Dictionary<DataRow, bool> vidjeni)
         {
             string id = Celija(roditelj, 0);
-            for (int i = 0; i < tablica.Rows.Count; i++)
+            List<DataRow> djeca;
+            if (!poRoditelju.TryGetValue(id, out djeca))
+                return;
+            for (int i = 0; i < djeca.Count; i++)
             {
-                DataRow dr = tablica.Rows[i];
+                DataRow dr = djeca[i];
                 if (dr == roditelj || vidjeni.ContainsKey(dr))
-                    continue;
-                if (Celija(dr, 1) != id)
                     continue;
                 if (Celija(dr, 0) == "0")
                     continue;
@@ -275,7 +298,7 @@ namespace Carpo.NetGen.Grid
                 var dijete = IzReda(dr, imeForme);
                 dijete.Oznaka = Celija(dr, 0);
                 cvor.Djeca.Add(dijete);
-                DodajDjecu(tablica, dr, dijete, imeForme, vidjeni);
+                DodajDjecu(poRoditelju, dr, dijete, imeForme, vidjeni);
             }
         }
 
