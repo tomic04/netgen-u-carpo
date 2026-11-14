@@ -92,6 +92,7 @@ namespace Carpo.NetGen.Ui
             splitGrid.Panel2.Controls.Remove(gcDet);
             stavke.Controls.Add(gcDet);
             var tab = new XtraTabControl();
+            _detaljTabovi = tab;
             tab.Dock = DockStyle.Fill;
             tab.TabPages.Add(stavke);
             splitGrid.Panel2.Controls.Add(tab);
@@ -133,6 +134,7 @@ namespace Carpo.NetGen.Ui
             var kontekst = new SqlKontekst();
             kontekst.OperaterId = operater.ToString();
             kontekst.XmlName = Path.GetFileName(xml ?? "");
+            kontekst.Version = NgVerzija.Tekst();
             kontekst.Node = "null";
             _stablo.Kontekst = kontekst;
             _stablo.ImeXml = kontekst.XmlName;
@@ -152,6 +154,7 @@ namespace Carpo.NetGen.Ui
             NapuniCombo();
             NapuniDrvo();
             _detail.Pripremi(_projekt);
+            PripremiDms();
             string zadano = _projekt.Atributi != null && _projekt.Atributi.Ima("SETDEFAULTS")
                 ? _projekt.Atributi.Vrijednost("SETDEFAULTS") : "";
             _master.Clipboard = Carpo.NetGen.Kontrole.ClipboardNg.IzSetDefaults(zadano, kontekst, Citaj);
@@ -165,6 +168,7 @@ namespace Carpo.NetGen.Ui
             // Form1.vb 3873 ssPermissionProvjeri prije ONLOAD2 (3906).
             PrimijeniDozvoleGumba();
             PrimijeniOnLoad2();
+            DodajGumbPomoci();
             return true;
         }
 
@@ -409,7 +413,7 @@ namespace Carpo.NetGen.Ui
                 // Form1.NovaGenerickaForma 5295: Form2b.DetID = GetDetID() (@@DETID u dijalogu, DET-01).
                 if (_master.Kontekst != null)
                     _master.Kontekst.DetId = DetaljId();
-                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), Citaj, true, this);
+                dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), CitajZaDijalog, true, this);
                 string iz = dij.Vrijednost("izvjestaj");
                 if (!string.IsNullOrEmpty(iz))
                     _polja["izvjestaj"] = iz;
@@ -764,6 +768,8 @@ namespace Carpo.NetGen.Ui
             VeziGrid(gvDet, gcDet, t, _detail.Stanje.Kolone, _detail.Stanje.Poruka, _detail.Stanje.CheckboxVidljiv, null, true);
             if (_detail.Stanje.FokusZadnji && gvDet.RowCount > 0)
                 gvDet.FocusedRowHandle = gvDet.RowCount - 1;
+            // PokaziUpitDetalj 2433: DMS kartica se puni nakon stavki (DMS-01).
+            OsvjeziDms();
         }
 
         private void VeziGrid(GridView pogled, GridControl grid, DataTable tablica, System.Collections.Generic.List<GridKolona> kolone, string poruka, bool checkbox, bool? grupa, bool filter)

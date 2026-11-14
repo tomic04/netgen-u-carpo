@@ -35,12 +35,34 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 | GRD-02 | `TOTALROW` (zbroj decimalnih stupaca) i `CHECKBOXVISIBLE` (kvačica reda) | footer sa zbrojem; `CheckBoxRowSelect` osim kad je `CHECKBOXVISIBLE="FALSE"`; uređen red postane označen (8624) |
 | FOR-01 | `FOREACH*` pomakne grid i izvrši lanac po retku | isto; `@(grid..stupac)` iz trenutnog reda (`SrediSQLsaKolonamaizGrida`) |
 
+## NetGenDBClipboard (DBC-01)
+
+| Što | NetGen | Carpo |
+|---|---|---|
+| Kada | `DBCLIPBOARD="true"` (32 forme), ili svaka forma s `filter` u imenu osim `DBCLIPBOARD="false"` (Form2 1099-1104) | isto (`Komande/DbClipboard`) |
+| Čitanje | `select * from NetGenDBClipboard where operaterid=…`; greška (nema tablice) gasi pamćenje; vrijednost nadjača ONLOAD i ONLOAD2; ključ `ime.xml/kontrola` bez obzira na velika slova | isto, nakon `PrimijeniOnLoad` (`Ui/DijalogDbClipboard`) |
+| Po tipu | kvačica `Checked`, tekst (`null` → prazno), broj, datum, combo (id), tražilica (id + `…caption`), multidrop samo bez ONLOAD vrijednosti | isto; `¸¸` se vrati u `'` (VB ga ostavlja u polju) |
+| Pisanje | `PokupiParametre` na svaki događaj: `select count(*)` pa `insert` ili `update` za svaku kontrolu | piše se samo vrijednost koja se razlikuje od one u tablici (isti krajnji sadržaj, bez upita na svaki događaj); upis prolazi `DijalogTok.SmijePoslati` |
+
+## STATUSSTRIP (STS-01)
+
+`TEXT1..3` (23 kontrole, 9 granula: `@@version`, `Broj stavki:`, `@@gridstavke`, `Gornji prikaz sadrži @@rowcountgridrob redova`) se u NetGenu spreme velikim slovima i na svakom `RefreshControls` (4753) prođu kroz `SrediSQL2`, `SrediSQLPosljeNextForme` i stupce grida. Carpo je pokazivao samo `TEXT1` doslovno (`@@VERSION`). Sada `Ui/DijalogStatus` radi isto, poslije ONLOAD-a i poslije svakog rezultata SQL-a, a `@@VERSION` je `NetGen v` + verzija sklopa.
+
+## Broj s FORMATMASK (NUM-02)
+
+`FORMATMASK="#0"` (godina proizvodnje/baždarenja, 4 kontrole) nema grupiranje tisućica; Carpo je s maskom `n0` pokazivao `2.024`. Maska bez zareza sada je `f{DECIMALS}`, sa zarezom ostaje `n{DECIMALS}`.
+
+## Slika (PIC-01)
+
+`TYPE="picturebox"`: `LOCATION` (3 granule, UNC put do .jpg), vrijednost iz ONLOAD/ONLOAD2 (put ili http) i u rezultatu SQL-a `byte[]` u stupcu s imenom ili put u stupcu `<ime>location` (Form2 2710-2724, 4766-4795). Carpo je čitao samo `byte[]`; sada i put/URL (`PictureEdit.LoadAsync`).
+
 ## Otvoreno
 
 - `MULTILINE` (243 / 60 granula), `ENTERASTAB`, `PASSWORDCHAR` (4), `MAXLENGTH` (80 / 14): tekstualno polje je uvijek `TextEdit`.
 - `VALUE="DATE"` na datumu (133): u VB kodu za `DTPicker` nije pronađeno čitanje; provjeriti gdje se koristi.
-- Tab stranice (`TYPE="tab"`), `STATUSSTRIP` tekstovi s `@@` (2741–2743), `TIMERSQL` (1 granula).
-- `RSDBClipboard` (spremanje vrijednosti dijaloga među pokretanjima, `SpremiuDBClipboard`).
+- Tab stranice (`TYPE="tab"`).
+- `TIMERSQL` (4 forme, 1 granula): Timer2 je u NetGenu ugašen dok ga `TIMERON(n)` ne upali, a `TIMERON` nema nigdje u korpusu, pa se ni u NetGenu ne izvršava.
+- `IMAGEINDEX` (30 gumba, 9 granula) i automatske ikone po natpisu (dodaj, obriši, izmjeni…): Carpo gumbi imaju svoj izgled (50-50 → Carpo).
 - Grid dijaloga: `COLUMNCAPTION`/`COLUMNWIDTH` za grid (nije tražilica), `FROZENCOLUMNS`, `AUTOMATICSORT`, layout datoteke.
 
 ## Testovi

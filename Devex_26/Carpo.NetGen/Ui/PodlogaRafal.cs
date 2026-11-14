@@ -64,7 +64,10 @@ namespace Carpo.NetGen.Ui
                         NgDnevnik.Akcija(BlagajnaNaredba.Upit(BlagajnaNaredba.Id(s)));
                     else if (vrsta == "assembly")
                     {
-                        var poziv = AssemblyPoziv.Pozovi(s.Trim().TrimStart(':'), "shell", _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "");
+                        // 6602-6661 (":ASSEMBLYLOAD(", parametri reda, Driver) i 6681-6727 (bez dvotočke, prazni parametri).
+                        string put = s.ToUpperInvariant().Contains(":ASSEMBLYLOAD(") ? "kolon" : "rafalno";
+                        SpojiId();
+                        var poziv = AssemblyPoziv.Pozovi(s.Trim(), put, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "");
                         if (poziv.Prekinuto)
                             return "";
                     }
@@ -128,6 +131,23 @@ namespace Carpo.NetGen.Ui
                     _master.Kontekst.SelectedColor = boja;
             }
             return "";
+        }
+
+        /// <summary>
+        /// Dijalog mora vidjeti grešku SQL-a (Dijalog.Omotaj pokaže poruku i prekine lanac, MSG-01).
+        /// Citaj je guta; tiha greška (ssPermission, NetGenDBFilter...) ostaje null kao u ExecSql.
+        /// </summary>
+        private DataTable CitajZaDijalog(string sql)
+        {
+            _zadnjaPoruka = null;
+            DataTable t = Citaj(sql);
+            if (t == null && !string.IsNullOrEmpty(_zadnjaPoruka) && !SqlPoruka.Tiha(_zadnjaPoruka))
+            {
+                string poruka = _zadnjaPoruka;
+                _zadnjaPoruka = null;
+                throw new InvalidOperationException(poruka);
+            }
+            return t;
         }
 
         /// <summary>6813-6835: ColorDialog, @@SELECTEDCOLOR je HTML boja, pa SQL iz originalnog segmenta.</summary>
@@ -294,6 +314,17 @@ namespace Carpo.NetGen.Ui
             gvDet.CellValueChanging += Kvacica_Mijenja;
             gvGla.CellValueChanged += delegate (object s, CellValueChangedEventArgs e) { CelijaPromijenjena(gvGla, e, "ONCELLEDITED", false); };
             gvDet.CellValueChanged += delegate (object s, CellValueChangedEventArgs e) { CelijaPromijenjena(gvDet, e, "ONCELLEDITEDDET", true); };
+            // GridEX1_KeyDown 7017-7025: Enter na masteru je NovaGenerickaForma(ONENTERKEY) (ENT-02).
+            gvGla.KeyDown += delegate (object s, KeyEventArgs e)
+            {
+                if (e.KeyCode != Keys.Enter || gvGla.IsEditing)
+                    return;
+                string naredba = AtributProjekta("ONENTERKEY");
+                if (naredba.Trim().Length == 0)
+                    return;
+                e.Handled = true;
+                IzvrsiLanac(naredba);
+            };
         }
 
         /// <summary>

@@ -84,6 +84,7 @@ namespace Carpo.NetGen.Ui
             var kontekst = new SqlKontekst();
             kontekst.OperaterId = operater.ToString();
             kontekst.XmlName = System.IO.Path.GetFileName(xml ?? "");
+            kontekst.Version = NgVerzija.Tekst();
             kontekst.Node = "null";
             d.Prikazi(trazena, kontekst, delegate (string sql) { return Citaj(server, baza, sql); }, false);
             return d;

@@ -1995,6 +1995,9 @@ namespace Carpo.NetGen.GridTest
             PokaziUpitUcinak();
             RafalnoPravila();
             PodlogaRafalno();
+            GreskeDijaloga();
+            DbClipboardDijalog();
+            StatusDijaloga();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -2624,6 +2627,179 @@ namespace Carpo.NetGen.GridTest
             T("msg-msgbox-zadano", poruka == "SPREMLJENO", poruka);
         }
 
+        /// <summary>
+        /// Class1.ExecSql u dijalogu (MSG-01): greška se pokaže i prekine lanac, "#OK" pokaže i ide dalje.
+        /// ONLOAD s greškom ne otvara formu (Form2.vb 1199, Form1.vb 5352, ONL-02).
+        /// </summary>
+        private static void GreskeDijaloga()
+        {
+            var poruke = new List<string>();
+            NgPoruka.Zapis = delegate (string x) { poruke.Add(x ?? ""); };
+            var sql = new List<string>();
+            Func<string, DataTable> baza = delegate (string s)
+            {
+                sql.Add(s ?? "");
+                if ((s ?? "").IndexOf("provjera", StringComparison.OrdinalIgnoreCase) >= 0)
+                    throw new InvalidOperationException("Dokument je zaključen #OK");
+                if ((s ?? "").IndexOf("pada", StringComparison.OrdinalIgnoreCase) >= 0)
+                    throw new InvalidOperationException("Zadani konto ne postoji");
+                var dt = new DataTable();
+                dt.Columns.Add("status");
+                dt.Rows.Add("dalje");
+                return dt;
+            };
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("label", NgGrana.Label, "status", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "s" } }), true));
+                kontrole.Add(new NgControl("button", NgGrana.Button, "ok", new NgAttributeBag(new Dictionary<string, string>
+                {
+                    { "ONCLICK", "exec spProvjera 1#select 'dalje' as status" }
+                }), true));
+                kontrole.Add(new NgControl("button", NgGrana.Button, "pad", new NgAttributeBag(new Dictionary<string, string>
+                {
+                    { "ONCLICK", "exec spPada 1#select 'nakon' as status" }
+                }), true));
+                var forma = new NgForm("G1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), baza);
+                    // PerformClick radi samo na prikazanoj formi (kao DogadjajiDijaloga).
+                    d.ShowInTaskbar = false;
+                    d.StartPosition = FormStartPosition.Manual;
+                    d.Location = new Point(-32000, -32000);
+                    d.Show();
+                    var ok = d.Controls.Find("ok", true);
+                    var pad = d.Controls.Find("pad", true);
+                    sql.Clear();
+                    poruke.Clear();
+                    if (ok.Length > 0)
+                        ((DevExpress.XtraEditors.SimpleButton)ok[0]).PerformClick();
+                    bool dalje = sql.Exists(delegate (string x) { return x.IndexOf("'dalje'", StringComparison.Ordinal) >= 0; });
+                    T("msg01-ok-nastavlja", dalje && poruke.Count == 1 && poruke[0].Contains("Dokument je zaključen") && !poruke[0].Contains("#"),
+                        string.Join(" / ", poruke.ToArray()) + " | " + string.Join(" ; ", sql.ToArray()));
+                    sql.Clear();
+                    poruke.Clear();
+                    if (pad.Length > 0)
+                        ((DevExpress.XtraEditors.SimpleButton)pad[0]).PerformClick();
+                    bool nakon = sql.Exists(delegate (string x) { return x.IndexOf("'nakon'", StringComparison.Ordinal) >= 0; });
+                    T("msg01-greska-prekida", !nakon && poruke.Count == 1 && poruke[0].Contains("Zadani konto ne postoji"),
+                        string.Join(" / ", poruke.ToArray()) + " | " + string.Join(" ; ", sql.ToArray()));
+                }
+                var onload = new NgForm("G2", new NgAttributeBag(new Dictionary<string, string>()), "", "exec spPada @id=1", new List<NgControl>(), new List<NgButton>(), new List<string>());
+                using (var d2 = new Dijalog())
+                {
+                    poruke.Clear();
+                    d2.Slozi(onload, new SqlKontekst(), baza);
+                    bool greska = !string.IsNullOrEmpty(d2.GreskaOnLoad);
+                    // Prikazi samo kad je greška zapamćena: tada se vraća bez ShowDialog (inače bi test stao).
+                    if (greska)
+                        d2.Prikazi(onload, new SqlKontekst(), baza, true, null);
+                    T("onl02-onload-greska", greska && !d2.Visible && d2.DialogResult != DialogResult.OK && poruke.Count >= 1, d2.GreskaOnLoad);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("greske-dijaloga", false, ex.ToString());
+            }
+            finally
+            {
+                NgPoruka.Zapis = null;
+            }
+        }
+
+        /// <summary>NetGenDBClipboard (DBC-01): filter forma čita spremljene vrijednosti i sprema promjenu.</summary>
+        private static void DbClipboardDijalog()
+        {
+            T("dbc-ukljucen", DbClipboard.Ukljucen("FILTER_FORM", "") && DbClipboard.Ukljucen("UNOS", "TRUE") && !DbClipboard.Ukljucen("FilterX", "false") && !DbClipboard.Ukljucen("UNOS", ""), "");
+            T("dbc-sql", DbClipboard.CitajSql("7") == "select * from NetGenDBClipboard where operaterid='7'"
+                && DbClipboard.UbaciSql("7", "Test.xml", "naziv", " x ") == "inseRt into NetGenDBClipboard (operaterid,[key],[value]) values(7,'Test.xml/naziv','x')", "");
+            var sql = new List<string>();
+            Func<string, DataTable> baza = delegate (string s)
+            {
+                sql.Add(s ?? "");
+                var dt = new DataTable();
+                if ((s ?? "").StartsWith("select * from NetGenDBClipboard", StringComparison.Ordinal))
+                {
+                    dt.Columns.Add("key");
+                    dt.Columns.Add("value");
+                    dt.Rows.Add("test.xml/naziv", "abc");
+                    dt.Rows.Add("TEST.xml/aktivan ", "Checked");
+                    return dt;
+                }
+                if ((s ?? "").StartsWith("select count(*)", StringComparison.Ordinal))
+                {
+                    dt.Columns.Add("n", typeof(int));
+                    dt.Rows.Add(1);
+                    return dt;
+                }
+                return dt;
+            };
+            bool bilo = DijalogTok.DozvoliUpis;
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("text", NgGrana.Text, "naziv", new NgAttributeBag(new Dictionary<string, string>()), true));
+                kontrole.Add(new NgControl("check", NgGrana.Check, "aktivan", new NgAttributeBag(new Dictionary<string, string>()), true));
+                var forma = new NgForm("FILTER1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                var k = new SqlKontekst();
+                k.XmlName = "Test.xml";
+                k.OperaterId = "7";
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, k, baza);
+                    var naziv = d.Controls.Find("naziv", true);
+                    var aktivan = d.Controls.Find("aktivan", true);
+                    bool procitano = naziv.Length > 0 && naziv[0].Text == "abc" && aktivan.Length > 0 && ((DevExpress.XtraEditors.CheckEdit)aktivan[0]).Checked;
+                    T("dbc01-cita", procitano, naziv.Length > 0 ? naziv[0].Text : "nema");
+                    DijalogTok.DozvoliUpis = true;
+                    sql.Clear();
+                    if (naziv.Length > 0)
+                        naziv[0].Text = "xyz";
+                    Zovi(d, "PokupiParametre");
+                    bool izmjena = sql.Exists(delegate (string x) { return x == "update NetGenDBClipboard set [value]='xyz' where operaterid=7 and [key]='Test.xml/naziv'"; });
+                    bool bezKvacice = !sql.Exists(delegate (string x) { return x.IndexOf("aktivan", StringComparison.Ordinal) >= 0 && x.StartsWith("update", StringComparison.Ordinal); });
+                    T("dbc01-sprema", izmjena && bezKvacice, string.Join(" ; ", sql.ToArray()));
+                }
+            }
+            catch (Exception ex)
+            {
+                T("dbc01", false, ex.ToString());
+            }
+            finally
+            {
+                DijalogTok.DozvoliUpis = bilo;
+            }
+        }
+
+        /// <summary>STATUSSTRIP TEXT1..3 (STS-01): velika slova, pa @@VERSION i ostali tokeni.</summary>
+        private static void StatusDijaloga()
+        {
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("statusstrip", NgGrana.StatusStrip, "s1", new NgAttributeBag(new Dictionary<string, string>
+                {
+                    { "TEXT1", "@@version" }, { "TEXT2", "Broj stavki:" }, { "TEXT3", "" }
+                }), true));
+                var forma = new NgForm("S1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                var k = new SqlKontekst();
+                k.Version = "NetGen v1.2.3";
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, k, delegate (string x) { return new DataTable(); });
+                    var s1 = d.Controls.Find("s1", true);
+                    string tekst = s1.Length > 0 ? s1[0].Text : "nema";
+                    T("sts01-status", tekst == "NetGen v1.2.3   BROJ STAVKI:", tekst);
+                }
+                T("sts01-verzija", NgVerzija.Tekst().StartsWith("NetGen v", StringComparison.Ordinal), NgVerzija.Tekst());
+            }
+            catch (Exception ex)
+            {
+                T("sts01", false, ex.ToString());
+            }
+        }
+
         private static object Polje(object o, string ime)
         {
             for (Type t = o.GetType(); t != null; t = t.BaseType)
@@ -2728,6 +2904,11 @@ namespace Carpo.NetGen.GridTest
                 master.Stanje.Odluka = "salji";
                 Zovi(forma, "IzvrsiRafalno", "REFRESHMASTERGRID");
                 T("ref01-zadnji-sql", gv.DataRowCount == 1 && Convert.ToString(gv.GetRowCellValue(0, "id")) == "9", "redova=" + gv.DataRowCount);
+                // KEY-01: JupiterShared_KeyDown bez DefinitionForm bacao bi NRE na svaku tipku; Escape zatvara (Form1_KeyDown).
+                Zovi(forma, "OnKeyDown", new KeyEventArgs(Keys.Down));
+                T("key01-tipka", true, "");
+                Zovi(forma, "OnKeyDown", new KeyEventArgs(Keys.Escape));
+                T("key01-escape", forma.IsDisposed || !forma.Visible, "visible=" + (!forma.IsDisposed && forma.Visible));
             }
             catch (Exception ex)
             {

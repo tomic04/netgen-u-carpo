@@ -25,7 +25,7 @@ namespace Carpo.NetGen.Ui
     /// Raspored je SrediKontrolu (TOP/LEFT/WIDTH/HEIGHT / 14). WebBrowser ostaje
     /// WinForms jer DevExpress nema preglednik.
     /// </summary>
-    public sealed class Dijalog : XtraForm
+    public sealed partial class Dijalog : XtraForm
     {
         private Func<string, DataTable> _citaj;
         private SqlKontekst _kontekst;
@@ -67,11 +67,22 @@ namespace Carpo.NetGen.Ui
             KeyPreview = true;
         }
 
+        /// <summary>
+        /// Form2.ProcitajXML 1197-1199 i Form1 5352: greška na ONLOAD forme (ExecSql je pokazao poruku)
+        /// znači da se forma ne otvara. "#OK" nije greška (ONL-02).
+        /// </summary>
+        public string GreskaOnLoad { get; private set; }
+
         public void Prikazi(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj, bool modal = true, Form vlasnik = null)
         {
             Slozi(forma, kontekst, citaj);
             if (forma == null)
                 return;
+            if (!string.IsNullOrEmpty(GreskaOnLoad))
+            {
+                Trag("onload greska, forma se ne otvara " + forma.Ime);
+                return;
+            }
             Trag("prije-show " + forma.Ime + " modal=" + modal);
             if (modal)
             {
@@ -85,6 +96,33 @@ namespace Carpo.NetGen.Ui
                     ShowDialog();
             }
             Trag("poslije-show " + forma.Ime);
+        }
+
+        /// <summary>
+        /// Class1.ExecSql Catch (157-200): greška SQL-a se pokaže korisniku (MsgBox); "#OK"/"+OK" i tihe
+        /// greške (ssoperateri, sspermission, NetGenDBFilter...) nisu greška pa lanac ide dalje (MSG-01).
+        /// Ostale se bace dalje, pa lanac stane kao na GreskaKodIzvrsavanjaSQLa.
+        /// </summary>
+        private Func<string, DataTable> Omotaj(Func<string, DataTable> citaj)
+        {
+            if (citaj == null)
+                return null;
+            return delegate (string sql)
+            {
+                try
+                {
+                    return citaj(sql);
+                }
+                catch (Exception ex)
+                {
+                    SqlPoruka.Ishod ish = SqlPoruka.IzIznimke(ex.Message);
+                    if (ish.Prikazi)
+                        NgPoruka.Info(this, "\r\n" + ish.Tekst + "\r\n\r\n", "Poruka");
+                    if (string.IsNullOrEmpty(ish.Greska))
+                        return null;
+                    throw;
+                }
+            };
         }
 
         private static void Trag(string red)
@@ -114,6 +152,8 @@ namespace Carpo.NetGen.Ui
         private void SloziTijelo(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj)
         {
             _nakonDjeteta.Clear();
+            GreskaOnLoad = "";
+            citaj = Omotaj(citaj);
             _citaj = citaj;
             _kontekst = kontekst;
             _forma = forma;
@@ -274,6 +314,9 @@ namespace Carpo.NetGen.Ui
             }
 
             PrimijeniOnLoad();
+            // Form2.vb 1170-1182 i čitanje po kontroli: NetGenDBClipboard nadjača ONLOAD i ONLOAD2 (DBC-01).
+            UcitajDbClipboard(forma);
+            OsvjeziStatus();
         }
 
         public bool ProvediTipku(Keys keyData)
@@ -541,6 +584,10 @@ namespace Carpo.NetGen.Ui
                     view.OptionsSelection.MultiSelectMode = Attr(k, "CHECKBOXVISIBLE").ToUpperInvariant() == "FALSE"
                         ? GridMultiSelectMode.RowSelect
                         : GridMultiSelectMode.CheckBoxRowSelect;
+                    // Form2.vb 1708: Janus ColumnHeaders = "2" (InheritableBoolean.False, 1713) skriva zaglavlja (3 grida, GRD-03).
+                    string zaglavlja = Attr(k, "COLUMNHEADERS").ToLowerInvariant();
+                    if (zaglavlja == "2" || zaglavlja == "false")
+                        view.OptionsView.ShowColumnHeaders = false;
                 }
             }
         }
@@ -1463,6 +1510,8 @@ namespace Carpo.NetGen.Ui
             string temp = Form2Rezultat.Celija(r, "temp");
             if (temp.Length > 0)
                 PostaviId(temp);
+            // 4753-4757: StatusStrip prije petlje po kontrolama (STS-01).
+            OsvjeziStatus();
 
             var kontrole = SveKontrole().ToArray();
             for (int i = 0; i < kontrole.Length; i++)
@@ -1472,7 +1521,13 @@ namespace Carpo.NetGen.Ui
                     continue;
                 string ime = c.Name.Trim();
                 if (!Form2Rezultat.Ima(r, ime))
+                {
+                    // 4785-4793: PictureBox gleda i "<ime>location" kad stupca s imenom nema (PIC-01).
+                    var slika = c as PictureEdit;
+                    if (slika != null)
+                        UcitajSliku(slika, Form2Rezultat.Celija(r, ime + "location"));
                     continue;
+                }
                 object sirovo = r[ime];
                 string v = Form2Rezultat.Celija(r, ime);
                 PrimijeniNaKontrolu(c, r, v, sirovo);
@@ -1497,6 +1552,10 @@ namespace Carpo.NetGen.Ui
                     }
                     catch (Exception ex) { NgDnevnik.Greska("slika " + c.Name + ": " + ex.Message); }
                 }
+                // 4785-4793: stupac "<ime>location" je put ili URL slike (PIC-01).
+                string lok = Form2Rezultat.Celija(r, c.Name.Trim() + "location");
+                if (lok.Trim().Length > 0)
+                    UcitajSliku(slika, lok);
                 return;
             }
             DodatnoPostavi(c, v);
@@ -2229,6 +2288,9 @@ namespace Carpo.NetGen.Ui
                 }
                 ClipboardNg.UpisiParametre(cb, natpisi.ToString() + svi);
             }
+            // 3429-3662: PokupiParametre sprema vrijednosti u NetGenDBClipboard (DBC-01).
+            if (_dbCb && !_slazem)
+                SpremiDbClipboard();
             return svi;
         }
 
@@ -2596,7 +2658,10 @@ namespace Carpo.NetGen.Ui
                 if (int.TryParse((decimale ?? "").Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out dec) && dec >= 0 && dec <= 10)
                 {
                     spin.Properties.IsFloatValue = dec > 0;
-                    spin.Properties.Mask.EditMask = "n" + dec.ToString(CultureInfo.InvariantCulture);
+                    // FORMATMASK bez ',' (npr. "#0" za godinu, 4 granule) nema grupiranje tisućica: 2024, ne 2.024 (NUM-02).
+                    string maska = k.Atributi == null ? null : k.Atributi.Vrijednost("FORMATMASK");
+                    bool bezGrupa = !string.IsNullOrEmpty(maska) && maska.Trim().Length > 0 && maska.IndexOf(',') < 0;
+                    spin.Properties.Mask.EditMask = (bezGrupa ? "f" : "n") + dec.ToString(CultureInfo.InvariantCulture);
                     spin.Properties.Mask.UseMaskAsDisplayFormat = true;
                 }
                 return spin;
@@ -2670,6 +2735,13 @@ namespace Carpo.NetGen.Ui
         private static void PostaviTekst(Control c, NgControl k, Mjesto m)
         {
             string tekst = m.Tekst ?? "";
+            var slikaLok = c as PictureEdit;
+            if (slikaLok != null)
+            {
+                // Form2.vb 2710: ImageLocation = LOCATION.ToUpper (3 granule, UNC put do slike) (PIC-01).
+                UcitajSliku(slikaLok, Attr(k, "LOCATION").ToUpperInvariant());
+                return;
+            }
             var check = c as CheckEdit;
             if (check != null)
             {
@@ -2789,6 +2861,10 @@ namespace Carpo.NetGen.Ui
         private void UcitajOnLoad(string on, SqlKontekst kontekst, Func<string, DataTable> citaj)
         {
             string sql = SqlTekst.Sredi(on, kontekst);
+            // Form2.vb 1146: SrediSQLPosljeNextForme uvijek prođe ostatak @@ (CB ili null). Sredi to radi
+            // samo uz parametre grida, pa je @@gridX bez njih ostajao u SQL-u (sintaksna greška, ONL-02).
+            if (sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                sql = SrediPoslije.Petlja(sql, kontekst == null ? "" : kontekst.ParametriSaGrida, kontekst == null ? null : kontekst.Clipboard, false);
             NgDnevnik.Sql(sql);
             DataTable dt = null;
             try
@@ -2798,6 +2874,7 @@ namespace Carpo.NetGen.Ui
             catch (Exception ex)
             {
                 NgDnevnik.Greska(ex.Message + " | " + sql);
+                GreskaOnLoad = string.IsNullOrEmpty(ex.Message) ? "greska" : ex.Message;
             }
             if (dt == null || dt.Rows.Count == 0)
                 return;
@@ -2821,8 +2898,31 @@ namespace Carpo.NetGen.Ui
             }
         }
 
+        /// <summary>PictureBox.ImageLocation / Load: put na disku, UNC ili http, učitava se asinkrono.</summary>
+        private static void UcitajSliku(PictureEdit slika, string put)
+        {
+            string p = (put ?? "").Trim();
+            if (slika == null || p.Length == 0)
+                return;
+            try
+            {
+                slika.LoadAsync(p);
+            }
+            catch (Exception ex)
+            {
+                NgDnevnik.Greska("slika " + slika.Name + " " + p + ": " + ex.Message);
+            }
+        }
+
         private static void PostaviVrijednost(Control c, string v)
         {
+            var slika = c as PictureEdit;
+            if (slika != null)
+            {
+                // Form2.vb 2713-2724: ONLOAD/ONLOAD2 stupac s imenom slike je put (http ide kroz Load).
+                UcitajSliku(slika, v);
+                return;
+            }
             var vise = c as CheckedComboBoxEdit;
             if (vise != null)
             {

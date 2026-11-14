@@ -37,6 +37,12 @@ Carpo je imao samo prvi (`IzvrsiLanac`), pa su desni klik s `~` i događaji ćel
 | **MSG-01** | svaki MSGBOX, svaka SQL greška | `MsgBox` (ExecSql 186/200/203, Form2 7165) | `PorukaNaredba.Prikazi` je bio null izvan testa: MSGBOX se nije vidio | `Ui/NgPoruka` (XtraMessageBox); poruka greške kao `ExecSql` (`#`/`+` skraćuje, `#OK` nije greška, ssPermission/NetGenDBFilter… tiho). Na CI-u i u klik-pregledu samo dnevnik |
 | **DBL-02** | DETAILDBLCLICK 19 | `NovaGenerickaForma(strDBlClickDetForm)` (lanac) | `OtvoriFormu` (samo forma) | `IzvrsiLanac` |
 | **ONC-01** | ONCLOSED 4 | `Form1_FormClosed`: `Rafalno(strONClosed)` | ignorirano | isto |
+| **DMS-01** | DMSDET 9 | kartica "DMS (n)" uz stavke (GridEX3), puni se nakon detalja; desni klik Pogledaj / Spremi na disk / Obriši / Preuzmi za potpis / Vrati potpisano / Odustani; dvoklik Pogledaj (DmsManagerV1 kasnim vezanjem) | nije postojalo | `Ui/PodlogaDms` + `Poziv/DmsPoziv`, iste metode i SQL; argumenti se pretvore u tipove parametara kao VB late binding |
+| **ENT-02** | ONENTERKEY 2 | `GridEX1_KeyDown` Enter → `NovaGenerickaForma(ONENTERKEY)` | ignorirano (čitao ga je samo dijalog) | isto, osim dok se ćelija uređuje |
+| **KEY-01** | sve granule | `Form1_KeyDown`: Escape zatvara podlogu | Carpo `JupiterShared_KeyDown` čita `DefinitionForm` koji podloga nema: uz KeyPreview svaka tipka baca NullReferenceException | podloga sama obrađuje tipke (`OnKeyDown`), Escape zatvara osim dok se uređuje ćelija ili filter red |
+| **HLP-01** | HELPKOD 16 | F1 i gumb "?" pokreću `JupiterHelp.exe -s -d -h -o -p` | ignorirano | isto (bez exe-a samo dnevnik, kao On Error Resume Next) |
+| **MSG-02** | svaki SQL u dijalogu | `ExecSql` pokaže grešku, `GreskaKodIzvrsavanjaSQLa` prekida lanac (Form2 7511), "#OK" ne | `Podloga.Citaj` je gutao grešku: lanac dijaloga je išao dalje (i OK zatvarao formu), poruka se nije vidjela (EVT-03 je radio samo s čitačem koji baca) | `Dijalog.Omotaj`: poruka kao ExecSql, "#OK"/tiha greška vraća null, ostale se bace pa lanac stane. Podloga i ObicnaForma daju dijalogu čitač koji baca |
+| **ONL-02** | ONLOAD forme | `ProcitajXML` 1199: greška na ONLOAD → `Exit Sub`, Form1 5352 ne otvara formu | forma se otvarala s praznim poljima | forma se ne otvara (`Dijalog.GreskaOnLoad`) |
 
 ## Otvoreno
 
@@ -45,5 +51,6 @@ Carpo je imao samo prvi (`IzvrsiLanac`), pa su desni klik s `~` i događaji ćel
 | FOR-02 | FOREACH* na podlozi: NetGen ne vrti petlju (Rafalno preskoči tijelo, NovaGenerickaForma ga otvori kao formu); Carpo `IzvrsiLanac` vrti čitanja | treba odluka: VB ponašanje je praktički "ne radi ništa" |
 | TREE-SQL | čvor stabla s `select`/`sp`/`exec`: Carpo puni grid, NetGen `NovaGenerickaForma` (forma ili gumbi) | u korpusu čvorovi nose imena formi; provjeriti s novih 500-600 granula |
 | MULTIGRIDLAYOUT | 42 granule: Janus layout iz datoteke | Carpo uvijek gradi stupce ispočetka (50-50 → Carpo) |
-| FILTERSAVE, TRANSLATECOLUMNS, MASTERGRIDLAYOUTFILE | 2 / 2 / 3 | sljedeći krug C3. AUTOFITCOLUMNS (84) NetGen uopće ne čita |
+| FILTERSAVE, MASTERGRIDLAYOUTFILE | 2 / 3 | dio Janus layout datoteka (.gxl), kao MULTIGRIDLAYOUT. AUTOFITCOLUMNS (84) NetGen uopće ne čita |
+| TRANSLATECOLUMNS | 2 | `Translate` vrijednosti ćelija; bez jezika (hrv) ne mijenja ništa, Carpo nema prevoditelja za podlogu |
 | SQL-01, B-JUP | upis na jupiter2019/2022 | čeka korisnika |
