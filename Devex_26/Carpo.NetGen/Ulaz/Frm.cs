@@ -44,12 +44,9 @@ namespace Carpo.NetGen
         public object Run(string server, string database, string userId, string password,
             int operater, int clientHandle, short top, short left, string remoteDllPath)
         {
-            // Form2.vb: stari Run ne napravi New Form2, pa ne otvara ništa; ni Produkcija se ne pali (PN-11).
+            // Form2.vb: stari Run ne napravi New Form2, pa ne otvara ništa.
             Carpo.NetGen.Grid.SpinVeza.Prijava(userId, password);
-            bool bezProzora = BezProzora;
-            BezProzora = true;
-            try { return Izvrsi(server, database, remoteDllPath, operater, false, 0); }
-            finally { BezProzora = bezProzora; }
+            return Izvrsi(server, database, remoteDllPath, operater, false, 0);
         }
 
         public object Run8(string server, string database, string userId, string password,
