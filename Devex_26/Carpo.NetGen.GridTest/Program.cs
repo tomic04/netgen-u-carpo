@@ -2988,7 +2988,7 @@ namespace Carpo.NetGen.GridTest
                             argumenti[i] = Activator.CreateInstance(pt);
                     }
                     var arg = (DevExpress.XtraGrid.Views.Grid.RowCellStyleEventArgs)ctor.Invoke(argumenti);
-                    typeof(GridIzgled).GetMethod("StilCelije", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, new object[] { v, arg });
+                    typeof(Carpo.NetGen.Ui.GridIzgled).GetMethod("StilCelije", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, new object[] { v, arg });
                     T("grb01-boje", arg.Appearance.BackColor.ToArgb() == Color.Red.ToArgb() && arg.Appearance.ForeColor.ToArgb() == Color.Blue.ToArgb(),
                         "back=" + arg.Appearance.BackColor + " fore=" + arg.Appearance.ForeColor);
                 }
