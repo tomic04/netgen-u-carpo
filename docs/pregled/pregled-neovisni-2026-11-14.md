@@ -57,6 +57,7 @@ ispravka): segment `==` (VB `PokaziUpit(sql)` puni master, Carpo samo izvrši), 
 - **ROK granule:** nisu analizirane pojedinačno.
 - **HANG granule:** sve četiri/osam iz sweepova prije #143 bile su PN-15 (petlja u `ZastitaSql`); nakon ispravka 0 HANG. Trag faza slaganja dijaloga (#144) ostaje za buduće slučajeve.
 - **Ulaz `frm` (9 redaka ssMeni):** `Frm.OtvoriDijete` također odbacuje `(…)` iz imena forme (PN-14) i šalje ONSUBMIT iz dijaloga; `Form2.Run` put nije uspoređen redak po redak.
+- **Apostrof u tekstu dijaloga (`¸¸`) — NetGen i Carpo jednaki, ali vrijedi znati:** `Form2.vb` 3655 stavlja `'`→`¸¸` u `strParametri`; natrag u `''` ide samo `Class1.vb` 850 unutar `@@` petlje. Za DML ONSUBMIT (`insert … '@@naziv'`) dobije se `O''Hara`; za exec ONSUBMIT sa zalijepljenim `@naziv='O¸¸Hara'` bez `@@` u tekstu `¸¸` ostaje i ide u bazu. Carpo (`Lanac.cs` 179, `SrediPoslije.cs` 50) radi isto. Nije pregledano u bazi; samo čitanje koda — sumnja, ne nalaz.
 - **`SviParametri` naspram `strParametri` — moja procjena bila je KRIVA:** VB iz `strParametri` izbacuje kontrole čiji CAPTION počinje s `_` (`Form2.vb` 3424); Carpo ih lijepi. Napisao sam "0 od 986" jer je skripta tražila `<CONTROL>` umjesto `<INPUT>`; ispravno brojanje: 1208 kontrola s `_` natpisom u 234 XML-a. Primjer: `BIOVEGA/MPPredispIz.xml` ZAKLJUCI (`exec spmpzakljucidokNG @id=@@id end` + `broj` s natpisom `_Broj dokumenta`) — Carpo zalijepi `@broj=` i upit pukne, NetGen šalje bez njega. Našao korisnik/Opus; ispravak je PAR-03 u PR #147 (nije moj, ne diram).
 
 ## Pregledano i nađeno ispravnim
