@@ -61,10 +61,10 @@ Redom iz `Form2.vb`. `nedostaje` znači da živo tijelo nema Carpo par. Komentir
 | 6 | `Run2` 237 | `frm.Run` / `NgUlaz`, Windows veza | isto | |
 | 7 | `Run` 390 | Isti ulaz | isto | |
 | 8 | `Run3` 533 | Isti ulaz | isto | |
-| 9 | `SendMessage` 610 | Nema Jupiter `hwnd` roditelja | nedostaje | |
-| 10 | `SetParent` 614 | Isto | nedostaje | |
-| 11 | `GetWindowRect` 618 | Isto | nedostaje | |
-| 12 | `SetWindowPos` 622 | Isto | nedostaje | |
+| 9 | `SendMessage` 610. Zatvaranje prve forme šalje `&H7D0` (4113) | `frm.Ugradi`: `FormClosed` šalje 0x7D0 na `mainHandle` (ULZ-04) | isto | `ulz04-frm-jupiter` |
+| 10 | `SetParent` 614. Prva forma ide u `clientHandle` (994) | `frm.Ugradi` (ULZ-04); podloga kroz `Base.Start` (ULZ-01) | isto | `ulz04-frm-jupiter` |
+| 11 | `GetWindowRect` 618. Samo deklaracija, poziva nema | Nema | isto | |
+| 12 | `SetWindowPos` 622. Samo deklaracija, poziva nema | Nema | isto | |
 | 13 | `NapuniKontroleZaEdit` 659. Combo `Tag` iza `##` postaje `SelectedValue` | `ComboDijalog.OdvojiHash`, `Dijalog.NapuniKontrolu` | isto | `combo-hash` |
 | 14 | `ProcitajXML` 705 | `NetGenXmlReader` | isto | |
 | 15 | `DazovaIzStore` 2825. Stupci 0–3, id 0 se preskače | `Stablo` | isto | `sta-stablo` |
@@ -78,33 +78,33 @@ Redom iz `Form2.vb`. `nedostaje` znači da živo tijelo nema Carpo par. Komentir
 | 23 | `PokupiParametre` 3406 | `Dijalog.SviParametri` | isto | `param-broj` |
 | 24 | `GetDXID` 3986. Prazan grid je `0`, inače stupac `id` ili prvi | `DetailGrid.IdReda` | isto | `det-id-prvi` |
 | 25 | `SpremiuDBClipboard` 4000. Piše samo ako je `DBCLIPBOARD` `true` | `Rijetke.ClipboardPadStvaraTablicu` je false, pa se ne piše | isto | `MAIL-05` |
-| 26 | `Form2_Activated` 4025. `Rafalno(ONACTIVATED)`, jedan prijevod, `bCloseParent` | `Dijalog.OnActivated` radi samo `bCloseParent`. `ONACTIVATED` se ne vrti | nedostaje | |
+| 26 | `Form2_Activated` 4025. `Rafalno(ONACTIVATED)`, jedan prijevod, `bCloseParent` | `Dijalog.OnActivated`: `bCloseParent`, pa `ONACTIVATED` kroz lanac | isto | |
 | 27 | `Form2_Deactivate` 4073. Tijelo je komentar | Nema | isto | |
-| 28 | `Form2_FormClosed` 4079. `Rafalno(ONCLOSED)` | Zatvaranje ne vrti `ONCLOSED` | nedostaje | |
+| 28 | `Form2_FormClosed` 4079. `Rafalno(ONCLOSED)` | `Dijalog.OnFormClosed` vrti `ONCLOSED` | isto | |
 | 29 | `Form2_FormClosing` 4093. `ONCLOSING` je komentar. Živo je DB clipboard | Clipboard se ne piše dok atribut nije `true` | isto | |
-| 30 | `Form2_KeyDown` 4135 | Nije provučeno kroz Carpo tipke dijaloga | nedostaje | |
+| 30 | `Form2_KeyDown` 4135. F1, Escape/`ONESCKEY`, Ctrl+F11/F6, F1-F10 i `*` | `Dijalog.ProcessCmdKey`. Ctrl+F11/F6 pišu u Carpo log (R120) | isto | `hot01-f2` |
 | 31 | `NovaGenerickaForma2` 4259 | `DijalogTok` / `OtvoriFormu` | isto | `next-kom` |
-| 32 | `DodatnoPostimajKontrolu` 4482 | Djelomično kroz `OnLoad2` i focus | nedostaje | |
+| 32 | `DodatnoPostimajKontrolu` 4482 | `Dijalog.DodatnoPostavi`, visible/enable ponovo pitaju ssPermission | isto | `doz02-naknadno` |
 | 33 | `RefreshControls` 4556 | `RafalNaredba.RefreshKontrola` i `IzvrsiSql` | isto | `prazan-alert` |
 | 34 | `RefreshControlsSaEVALOM` 5217 | `Izraz` | isto | `izraz-ilcalc` |
-| 35 | `RefreshGrida` 5284 | `RECALC` / osvježavanje grida na dijalogu nije isti poziv | nedostaje | |
-| 36 | `RucniRadNaGriduzaCheckiranjeRedova` 5435 | Nema ručnog checka po loadu | nedostaje | |
+| 35 | `RefreshGrida` 5284 | `Dijalog.OsvjeziGrid`: povratak na isti red, `move*`, `AFTERREFRESH` | isto | |
+| 36 | `RucniRadNaGriduzaCheckiranjeRedova` 5435 | `DijalogGrid.OznaciIzStupca` (`selectedid`) | isto | `chk01` |
 | 37 | `RefreshControlSQL` 5460 | `RefreshKontrola` čita SQL kontrole | isto | |
 | 38 | `RefreshKontrola` 5470 | `DijalogTok` vrsta `refresh` | isto | `prazan-alert` |
 | 39 | `DataGridView1_SelectionChanged` 5623 | Selekcija detaila ide drugim putem (`DetailGrid`) | isto | `sta-detail` |
-| 40 | `DataGridView1_RowEnter` 5643 | Nema posebnog `RowEnter` na dijalog gridu | nedostaje | |
-| 41 | `ssPermissionProcitaj` 5657 | Upit se ne šalje | nedostaje | |
-| 42 | `ssPermissionProvjeri` 5674 | Vidljivost kontrole se ne gasi iz `ssPermission` | nedostaje | |
-| 43 | `ssPermissionProvjeriKontrolu` 5723 | Isto | nedostaje | |
-| 44 | `ssPermissionProvjeriRafalnuKomandu` 5760 | Komanda se ne gasi po dozvoli | nedostaje | |
-| 45 | `Form2_KeyUp` 5788. Ctrl (17) gasi `ControlClicked` | Nema te zastavice | nedostaje | |
-| 46 | `Form2_Load` 5794. `NapuniKontroleZaEdit`, `ONLOADED`, dozvole | `ONLOADED` lanac i `##` jesu. Dozvole nisu | nedostaje | `combo-hash` |
+| 40 | `DataGridView1_RowEnter` 5643. `AddHandler` je komentar (1570, 1782) | Nema | isto | |
+| 41 | `ssPermissionProcitaj` 5657. `PERMISIO` na formi, objekt xml.forma | `Dozvole.SqlForme`, `DijalogDozvole.UcitajDozvole` | isto | `doz02-sql`, `doz02-citanje` |
+| 42 | `ssPermissionProvjeri` 5674 | `Dozvole.Kontrola`, poslije `ONLOADED`; sve kontrole, ne samo izravna djeca | isto | `doz02-kontrola`, `doz02-dijalog` |
+| 43 | `ssPermissionProvjeriKontrolu` 5723 | `Dozvole.KontrolaNaknadno` | isto | `doz02-naknadno` |
+| 44 | `ssPermissionProvjeriRafalnuKomandu` 5760 | `Dozvole.SmijeKomandu`: forma prije otvaranja i stalne stavke desnog klika | isto | `doz02-forma`, `doz02-izbornik` |
+| 45 | `Form2_KeyUp` 5788. Ctrl (17) gasi `ControlClicked` | Zastavica je `Control.ModifierKeys`: s Ctrl red ne šalje `ONCLICK`, Ctrl + desni klik otvori Carpo izbor stupaca | isto | |
+| 46 | `Form2_Load` 5794. `NapuniKontroleZaEdit`, `ONLOADED`, dozvole | `Dijalog.OnLoad`: `ONLOADED`, pa dozvole | isto | `combo-hash`, `doz02-dijalog` |
 | 47 | `Button3_Click` 5800. `NovaGenerickaForma2(Tag)` | CMD ide kroz `GumbKlik` | isto | |
 | 48 | `Button4_Click` 5805 | Isto | isto | |
 | 49 | `Button5_Click` 5810 | Isto | isto | |
 | 50 | `Button6_Click` 5815 | Isto | isto | |
 
-U ovom bloku: 32 isto, 18 nedostaje, 0 razlika. Portano u bloku: `NapuniKontroleZaEdit` (`combo-hash`), uz hijerarhiju, `SETDEFAULTS` i `ExecSql2` iz prethodnog podatkovnog sloja.
+U ovom bloku: 47 isto, 3 nedostaje, 0 razlika. `NapuniRSLang` čeka PRV-01 (odluka korisnika); `BF` i `BF2` su HTML obrazac, kojeg Carpo nema (Ctrl+F6 piše parametre u Carpo log). Portano u bloku: `NapuniKontroleZaEdit` (`combo-hash`), uz hijerarhiju, `SETDEFAULTS` i `ExecSql2` iz prethodnog podatkovnog sloja.
 
 ## Form2, 51–100
 

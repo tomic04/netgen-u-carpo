@@ -71,6 +71,14 @@ Zatvaranje (DBC-02): `Form2_FormClosing` 4095-4099 uz RSDBCLIPBOARD još jednom 
 
 `Form2_KeyDown` 4167-4176: Ctrl+F11 i Ctrl+F6 pokažu `PREVPARAMETRI`, `PARAMETRISVI` i `PARAMETRIIZTRAZILICE` u CBLog prozoru (Form5); Ctrl+F6 umjesto toga daje HTML obrasca (`BF`), kojeg Carpo nema. Dijalog nije reagirao ni na jedno. Sada obje tipke upišu parametre u Carpo log i otvore njegov prozor, kao Ctrl+F11 na podlozi, koja sad upiše i `PARAMATERISAMASTERIDETAILGRIDA` (Form1 1376-1378). Polja s `PASSWORDCHAR` (MPKase) u logu imaju `'***'` (R120).
 
+## Dozvole na dijalogu (DOZ-02)
+
+`PERMISIO="true"` na FORM (Form2.vb 1097) čita `ssPermission` za objekt `xml.forma`, s `order by sort desc` (Form1 je od 2021. bez `desc`). Poslije `ONLOADED` redovi s imenom kontrole skriju ili pokažu kontrolu i natpis `lbl`+ime (`Vidljivost`) i zabrane ili dopuste je (`smije`); dopušten red pobjeđuje. `visible`/`enable` iz rezultata ponovo pitaju dozvolu (4489, 4513). Forma s `smije=0` se ne otvara (4423, 4459), a zabranjene stalne stavke desnog klika grida su sive (8787-8826). Stavke POPUP-a VB uspoređuje s objektom bez forme, pa na dijalogu ne djeluju; Carpo isto. VB gleda samo izravnu djecu forme (`Controls`), Carpo sve kontrole (i one u okviru). U korpusu `PERMISIO` je samo na PROJECT (29), na formi 0, pa je ovo za nove granule.
+
+## Ctrl na gridu (CTL-01)
+
+`ControlClicked` (Form2 6079, 5635, 5790, 8704; Form1 6984, 7036): dok je Ctrl pritisnut, promjena reda na gridu dijaloga ne šalje `ONCLICK` (ni klik koji ju je napravio). Ctrl + desni klik na gridu (dijalog i podloga) u NetGenu je popis stupaca s kvačicom vidljivosti; Carpo otvori svoj izbor stupaca (`ShowCustomization`, kao `ComponentGrid.SetAttributeColumnChooser`), 50-50 → Carpo.
+
 ## Otvoreno
 
 - `TIMERSQL` (4 forme, 1 granula): Timer2 je u NetGenu ugašen dok ga `TIMERON(n)` ne upali, a `TIMERON` nema nigdje u korpusu, pa se ni u NetGenu ne izvršava.
@@ -79,4 +87,4 @@ Zatvaranje (DBC-02): `Form2_FormClosing` 4095-4099 uz RSDBCLIPBOARD još jednom 
 
 ## Testovi
 
-`log01-*` (`LozinkaULogu`), `lay01-raspored`, `hot01-f2`, `dat01-datumi` (`RasporedDijaloga`), `dgr01-*`, `dgr02-grid-atributi`, `dgr03-editedcolumn` (`GridDijalogaStupci`), `isp07-printgrid-ime`, `grb01-*`, `tre03-*`, `mdr01-multidrop`, `for01-foreachrow` (`DogadjajiDijaloga`), `Form2Izgled` pod Mono (dock, anchor, stil, boja, hotkey, mjesta gumba).
+`log01-*` (`LozinkaULogu`), `doz02-*` (`DozvoleDijaloga`), `lay01-raspored`, `hot01-f2`, `dat01-datumi` (`RasporedDijaloga`), `dgr01-*`, `dgr02-grid-atributi`, `dgr03-editedcolumn` (`GridDijalogaStupci`), `isp07-printgrid-ime`, `grb01-*`, `tre03-*`, `mdr01-multidrop`, `for01-foreachrow` (`DogadjajiDijaloga`), `Form2Izgled` pod Mono (dock, anchor, stil, boja, hotkey, mjesta gumba).
