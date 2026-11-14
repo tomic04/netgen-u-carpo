@@ -586,6 +586,14 @@ namespace Carpo.TestShell
                 dijelova = 1;
             Carpo.NetGen.Ui.Podloga.TimeoutUpita = 1;
             Carpo.NetGen.Ui.Podloga.MaxUpita = 5;
+            // Sweep nema korisnika: ispis ide u PDF bez dijaloga pisača (Spin.Printing bi otvorio svoj prozor),
+            // a SHOWOPENFILEDIALOG/SHOWFOLDERBROWSERDIALOG vrate prazno umjesto modalnog Windows dijaloga (SWP-01).
+            Carpo.NetGen.Print.PrintBridge.MapaIzvoza = Path.Combine(Path.GetTempPath(), "netgen-sweep-ispis");
+            Carpo.NetGen.Komande.RafalNaredba.MapaDijalog = delegate { return ""; };
+            Carpo.NetGen.Komande.RafalNaredba.DatotekaDijalog = delegate { return ""; };
+            // Trag gumba (Podloga piše "gumb <natpis>" prije klika): na roku UiSweep ispiše kraj traga.
+            Carpo.NetGen.Ui.Dijalog.TragPutanja = izvjestaj + ".faza.txt";
+            try { File.Delete(izvjestaj + ".faza.txt"); } catch { }
             _klikPregled = true;
             _sweepRadi = true;
             var bdij = new Thread(ZatvarajSweep);
@@ -604,20 +612,26 @@ namespace Carpo.TestShell
                 xmlovi = dio.ToArray();
             }
             var sb = new StringBuilder();
-            int cisto = 0, greska = 0, hang = 0, iznimka = 0, nije = 0;
+            int cisto = 0, greska = 0, hang = 0, iznimka = 0, nije = 0, rokova = 0;
+            // Mjerenje (SWP-01): sweep-1 je u 38 min prošao 32 granule, a svaka je trajala 0-4 s.
+            // Red u .red ima i ukupno vrijeme s čišćenjem, broj otvorenih formi, GDI/USER objekte i sat.
+            try { File.AppendAllText(izvjestaj + ".red", "#start\t" + DateTime.Now.ToString("HH:mm:ss") + "\txml=" + xmlovi.Length.ToString() + "\r\n"); } catch { }
             var grupe = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             foreach (string put in xmlovi)
             {
                 string rel = put.StartsWith(korijen, StringComparison.OrdinalIgnoreCase)
                     ? put.Substring(korijen.Length).TrimStart('\\', '/')
                     : put;
+                var ukupno = System.Diagnostics.Stopwatch.StartNew();
                 if (!Carpo.NetGen.Xml.NetGenXmlReader.JeNetGenProjekt(put))
                 {
                     nije++;
                     sb.AppendLine(rel + "\tNIJE\t0\tnije PROJECT");
+                    try { File.AppendAllText(izvjestaj + ".red", rel + "\tNIJE\t0\tnije PROJECT\t" + Mjera(ukupno) + "\r\n"); } catch { }
                     continue;
                 }
                 xml = put;
+                try { File.AppendAllText(izvjestaj + ".faza.txt", DateTime.Now.ToString("HH:mm:ss") + " granula " + rel + "\r\n"); } catch { }
                 _zadnjaPodloga = null;
                 ZadnjaNit = "";
                 Carpo.NetGen.Ui.Podloga.RokUtc = DateTime.UtcNow.AddSeconds(sekundi);
@@ -642,15 +656,27 @@ namespace Carpo.TestShell
                     else
                     {
                         var redovi = _zadnjaPodloga.ProvediKlikove(true);
+                        bool doRoka = false;
                         for (int i = 0; i < redovi.Count; i++)
                         {
                             string[] c = redovi[i].Split('\t');
                             if (c.Length >= 4 && (c[3] == "GRESKA" || c[3] == "HANG"))
                             {
+                                // Podloga.Citaj: "sweep rok" je granica sweepa (MaxUpita, RokUtc), ne greška granule (SWP-01).
+                                if (c[3] == "GRESKA" && c.Length > 4 && c[4] == "sweep rok")
+                                {
+                                    doRoka = true;
+                                    continue;
+                                }
                                 ishod = c[3] == "HANG" ? "HANG" : "GRESKA";
                                 uzrok = c.Length > 4 ? c[4] : redovi[i];
                                 break;
                             }
+                        }
+                        if (ishod == "CISTO" && doRoka)
+                        {
+                            ishod = "ROK";
+                            uzrok = "sweep rok (granica upita)";
                         }
                     }
                 }
@@ -670,13 +696,16 @@ namespace Carpo.TestShell
                     else
                         uzrok = uzrok + " | " + sec.ToString() + "s";
                 }
+                var zatvaranje = System.Diagnostics.Stopwatch.StartNew();
                 ZatvoriTudje();
+                zatvaranje.Stop();
                 if (ishod == "CISTO") cisto++;
+                else if (ishod == "ROK") rokova++;
                 else if (ishod == "HANG") hang++;
                 else if (ishod == "IZNIMKA") iznimka++;
                 else greska++;
                 string grupa = GrupaUzroka(uzrok);
-                if (ishod != "CISTO")
+                if (ishod != "CISTO" && ishod != "ROK")
                 {
                     int n;
                     grupe.TryGetValue(grupa, out n);
@@ -687,7 +716,7 @@ namespace Carpo.TestShell
                     poruka = poruka.Substring(0, 240);
                 string linija = rel + "\t" + ishod + "\t" + sec.ToString() + "\t" + poruka;
                 sb.AppendLine(linija);
-                try { File.AppendAllText(izvjestaj + ".red", linija + "\r\n"); } catch { }
+                try { File.AppendAllText(izvjestaj + ".red", linija + "\t" + Mjera(ukupno) + " zatvaranje=" + zatvaranje.ElapsedMilliseconds.ToString() + "ms\r\n"); } catch { }
             }
             _sweepRadi = false;
             var glava = new StringBuilder();
@@ -696,8 +725,9 @@ namespace Carpo.TestShell
             glava.AppendLine("greska=" + greska.ToString());
             glava.AppendLine("hang=" + hang.ToString());
             glava.AppendLine("iznimka=" + iznimka.ToString());
+            glava.AppendLine("rok=" + rokova.ToString());
             glava.AppendLine("nije-project=" + nije.ToString());
-            glava.AppendLine("granula=" + (cisto + greska + hang + iznimka).ToString());
+            glava.AppendLine("granula=" + (cisto + rokova + greska + hang + iznimka).ToString());
             glava.AppendLine("prag-s=" + sekundi.ToString());
             glava.AppendLine("shard=" + shard.ToString() + "/" + dijelova.ToString());
             foreach (var par in grupe)
@@ -706,6 +736,26 @@ namespace Carpo.TestShell
             glava.Append(sb.ToString());
             File.WriteAllText(izvjestaj, glava.ToString());
             return 0;
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern uint GetGuiResources(IntPtr hProcess, uint uiFlags);
+
+        /// <summary>SWP-01: ukupno vrijeme granule, otvorene forme, GDI i USER objekti procesa, sat.</summary>
+        private static string Mjera(System.Diagnostics.Stopwatch ukupno)
+        {
+            int forme = -1;
+            uint gdi = 0, user = 0;
+            try { forme = Application.OpenForms.Count; } catch { }
+            try
+            {
+                IntPtr h = System.Diagnostics.Process.GetCurrentProcess().Handle;
+                gdi = GetGuiResources(h, 0);
+                user = GetGuiResources(h, 1);
+            }
+            catch { }
+            return "ukupno=" + ukupno.ElapsedMilliseconds.ToString() + "ms forme=" + forme.ToString()
+                + " gdi=" + gdi.ToString() + " user=" + user.ToString() + " " + DateTime.Now.ToString("HH:mm:ss");
         }
 
         private static string GrupaUzroka(string uzrok)
