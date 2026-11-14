@@ -586,6 +586,14 @@ namespace Carpo.TestShell
                 dijelova = 1;
             Carpo.NetGen.Ui.Podloga.TimeoutUpita = 1;
             Carpo.NetGen.Ui.Podloga.MaxUpita = 5;
+            // Sweep nema korisnika: ispis ide u PDF bez dijaloga pisača (Spin.Printing bi otvorio svoj prozor),
+            // a SHOWOPENFILEDIALOG/SHOWFOLDERBROWSERDIALOG vrate prazno umjesto modalnog Windows dijaloga (SWP-01).
+            Carpo.NetGen.Print.PrintBridge.MapaIzvoza = Path.Combine(Path.GetTempPath(), "netgen-sweep-ispis");
+            Carpo.NetGen.Komande.RafalNaredba.MapaDijalog = delegate { return ""; };
+            Carpo.NetGen.Komande.RafalNaredba.DatotekaDijalog = delegate { return ""; };
+            // Trag gumba (Podloga piše "gumb <natpis>" prije klika): na roku UiSweep ispiše kraj traga.
+            Carpo.NetGen.Ui.Dijalog.TragPutanja = izvjestaj + ".faza.txt";
+            try { File.Delete(izvjestaj + ".faza.txt"); } catch { }
             _klikPregled = true;
             _sweepRadi = true;
             var bdij = new Thread(ZatvarajSweep);
@@ -623,6 +631,7 @@ namespace Carpo.TestShell
                     continue;
                 }
                 xml = put;
+                try { File.AppendAllText(izvjestaj + ".faza.txt", DateTime.Now.ToString("HH:mm:ss") + " granula " + rel + "\r\n"); } catch { }
                 _zadnjaPodloga = null;
                 ZadnjaNit = "";
                 Carpo.NetGen.Ui.Podloga.RokUtc = DateTime.UtcNow.AddSeconds(sekundi);
