@@ -70,15 +70,8 @@ namespace Carpo.NetGen
         {
             // Form2.vb Run 64-65: strImeForme = "MAINFORM", ulaznaForma ima prednost.
             string ime = string.IsNullOrWhiteSpace(ulaznaForma) ? "MAINFORM" : ulaznaForma.Trim();
-            NgForm forma = null;
-            for (int i = 0; i < Projekt.Forme.Count; i++)
-            {
-                if (string.Equals(Projekt.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
-                {
-                    forma = Projekt.Forme[i];
-                    break;
-                }
-            }
+            // Glavni XML, pa INCLUDE (Form2.ProcitajXML 840-934, XML-02).
+            NgForm forma = Carpo.NetGen.Xml.IncludeForme.Nadji(Projekt, ime);
             if (forma == null)
             {
                 ZadnjaGreska = "nema forme " + ime;

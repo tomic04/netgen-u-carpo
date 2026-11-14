@@ -209,6 +209,10 @@ namespace Carpo.NetGen.Model
         public string Permisio { get; private set; }
 
         public string Include { get; private set; }
+
+        /// <summary>Put XML-a s kojeg je projekt pročitan (za INCLUDE iz iste mape, XML-02).</summary>
+        public string Putanja { get; internal set; }
+
         public List<NgForm> Forme { get; private set; }
         public List<NgColumnGroup> GrupeKolona { get; private set; }
         public List<NgControl> KontroleIzvanForme { get; private set; }

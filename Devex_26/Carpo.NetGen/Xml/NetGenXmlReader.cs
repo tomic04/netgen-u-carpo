@@ -123,6 +123,7 @@ namespace Carpo.NetGen.Xml
                 preskoceni,
                 svi,
                 elementi);
+            projekt.Putanja = putanja;
 
             return NgLoadResult.URedu(putanja, projekt);
         }

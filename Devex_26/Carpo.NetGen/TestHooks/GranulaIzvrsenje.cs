@@ -128,12 +128,7 @@ namespace Carpo.NetGen.TestHooks
                 ime = ime.Substring(1);
             if (ime.Length == 0)
                 return null;
-            for (int i = 0; i < p.Forme.Count; i++)
-            {
-                if (string.Equals(p.Forme[i].Ime, ime, StringComparison.OrdinalIgnoreCase))
-                    return p.Forme[i];
-            }
-            return null;
+            return Carpo.NetGen.Xml.IncludeForme.Nadji(p, ime);
         }
 
         private static Pogled Natpis(Zahtjev zahtjev, bool potvrda)
