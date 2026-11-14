@@ -65,8 +65,8 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 
 - `TIMERSQL` (4 forme, 1 granula): Timer2 je u NetGenu ugašen dok ga `TIMERON(n)` ne upali, a `TIMERON` nema nigdje u korpusu, pa se ni u NetGenu ne izvršava.
 - `IMAGEINDEX` (30 gumba, 9 granula) i automatske ikone po natpisu (dodaj, obriši, izmjeni…): Carpo gumbi imaju svoj izgled (50-50 → Carpo).
-- Grid dijaloga: `COLUMNCAPTION`/`COLUMNWIDTH` za grid (nije tražilica), layout datoteke (`MULTIGRIDLAYOUT` 1), `INPUTMASK` stupca (0 u korpusu), `PAGEHEADER*`/`PAGEORIENTATION` (ispis grida dijaloga, 127 granula — uz `:printgrid`).
+- Grid dijaloga: layout datoteke (`MULTIGRIDLAYOUT` 1), `INPUTMASK` stupca (0 u korpusu). `COLUMNCAPTION`/`COLUMNWIDTH`/`DEFAULTACTIVECOLUMN` na gridu nema u korpusu. `PAGEFOOTER*` (57, 30 granula): Spin.Printing PrintLink nema podnožje (Carpo ComponentGrid ga isto ne šalje), pa ostaje bez njega (50-50 → Carpo).
 
 ## Testovi
 
-`lay01-raspored`, `hot01-f2`, `dat01-datumi` (`RasporedDijaloga`), `dgr01-*`, `dgr02-grid-atributi`, `dgr03-editedcolumn` (`GridDijalogaStupci`), `mdr01-multidrop`, `for01-foreachrow` (`DogadjajiDijaloga`), `Form2Izgled` pod Mono (dock, anchor, stil, boja, hotkey, mjesta gumba).
+`lay01-raspored`, `hot01-f2`, `dat01-datumi` (`RasporedDijaloga`), `dgr01-*`, `dgr02-grid-atributi`, `dgr03-editedcolumn` (`GridDijalogaStupci`), `isp07-printgrid-ime`, `grb01-*`, `mdr01-multidrop`, `for01-foreachrow` (`DogadjajiDijaloga`), `Form2Izgled` pod Mono (dock, anchor, stil, boja, hotkey, mjesta gumba).

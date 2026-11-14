@@ -1994,6 +1994,7 @@ namespace Carpo.NetGen.GridTest
             StatusDijaloga();
             GridDijalogaStupci();
             IspisGridaDijaloga();
+            BojeIzUpita();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -2934,6 +2935,65 @@ namespace Carpo.NetGen.GridTest
             finally
             {
                 Carpo.NetGen.Print.PrintBridge.Stroj = null;
+            }
+        }
+
+        /// <summary>
+        /// GRB-01: stupci upita RowForeColorID/RowColorID, &lt;ime&gt;CellBackColorID i &lt;ime&gt;MaxLinesID
+        /// (Form1.GridEX1_FormattingRow 7875-7945, Form2.glblGRID_FormattingRow).
+        /// </summary>
+        private static void BojeIzUpita()
+        {
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("grid", NgGrana.Grid, "g", new NgAttributeBag(new Dictionary<string, string> { { "SQL", "select 1" } }), true));
+                var forma = new NgForm("B1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), delegate (string x)
+                    {
+                        var t = new DataTable();
+                        t.Columns.Add("id", typeof(int));
+                        t.Columns.Add("Naziv", typeof(string));
+                        t.Columns.Add("NazivCellBackColorID", typeof(string));
+                        t.Columns.Add("NazivMaxLinesID", typeof(int));
+                        t.Columns.Add("RowForeColorID", typeof(string));
+                        t.Columns.Add("RowColorID", typeof(string));
+                        t.Rows.Add(1, "dugi naziv", "#FF0000", 2, "Blue", "");
+                        return t;
+                    });
+                    var grid = (DevExpress.XtraGrid.GridControl)d.Controls.Find("g", true)[0];
+                    var v = (DevExpress.XtraGrid.Views.Grid.GridView)grid.MainView;
+                    var naziv = v.Columns.ColumnByFieldName("Naziv");
+                    T("grb01-maxlines", naziv != null && naziv.AppearanceCell.TextOptions.WordWrap == DevExpress.Utils.WordWrap.Wrap && v.OptionsView.RowAutoHeight
+                        && !v.Columns.ColumnByFieldName("NazivCellBackColorID").Visible, naziv == null ? "nema" : naziv.AppearanceCell.TextOptions.WordWrap.ToString());
+                    var izgled = new DevExpress.Utils.AppearanceObject();
+                    // Konstruktor (rowHandle, stupac, stanje, izgled) preko refleksije, bez imena tipa stanja.
+                    ConstructorInfo ctor = typeof(DevExpress.XtraGrid.Views.Grid.RowCellStyleEventArgs).GetConstructors()[0];
+                    ParameterInfo[] ps = ctor.GetParameters();
+                    var argumenti = new object[ps.Length];
+                    for (int i = 0; i < ps.Length; i++)
+                    {
+                        Type pt = ps[i].ParameterType;
+                        if (pt == typeof(int))
+                            argumenti[i] = 0;
+                        else if (pt.IsInstanceOfType(naziv))
+                            argumenti[i] = naziv;
+                        else if (pt.IsInstanceOfType(izgled))
+                            argumenti[i] = izgled;
+                        else if (pt.IsValueType)
+                            argumenti[i] = Activator.CreateInstance(pt);
+                    }
+                    var arg = (DevExpress.XtraGrid.Views.Grid.RowCellStyleEventArgs)ctor.Invoke(argumenti);
+                    typeof(GridIzgled).GetMethod("StilCelije", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, new object[] { v, arg });
+                    T("grb01-boje", arg.Appearance.BackColor.ToArgb() == Color.Red.ToArgb() && arg.Appearance.ForeColor.ToArgb() == Color.Blue.ToArgb(),
+                        "back=" + arg.Appearance.BackColor + " fore=" + arg.Appearance.ForeColor);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("grb01", false, ex.ToString());
             }
         }
 

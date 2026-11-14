@@ -68,7 +68,7 @@ namespace Carpo.NetGen.Ui
             bool premjesteno = false;
             bool prelama = false;
             int grupa = 0;
-            pogled.RowCellStyle -= CrveniBroj;
+            pogled.RowCellStyle -= StilCelije;
             for (int i = 0; i < kolone.Count; i++)
             {
                 GridKolona k = kolone[i];
@@ -112,9 +112,26 @@ namespace Carpo.NetGen.Ui
                 if (k.Grupiraj)
                     c.GroupIndex = grupa++;
             }
+            // Form1.GridEX1_FormattingRow 7875-7945 (i GridEX2, Form2.glblGRID_FormattingRow): stupac
+            // <ime>MaxLinesID iz upita prelama stupac <ime> (GRB-01).
+            var tablica = pogled.GridControl == null ? null : pogled.GridControl.DataSource as DataTable;
+            if (tablica != null)
+            {
+                foreach (DataColumn dc in tablica.Columns)
+                {
+                    int p = dc.ColumnName.IndexOf(MaxLinija, StringComparison.Ordinal);
+                    if (p < 0)
+                        continue;
+                    GridColumn osnovni = pogled.Columns.ColumnByFieldName(dc.ColumnName.Replace(MaxLinija, ""));
+                    if (osnovni == null)
+                        continue;
+                    osnovni.AppearanceCell.TextOptions.WordWrap = DevExpress.Utils.WordWrap.Wrap;
+                    prelama = true;
+                }
+            }
             if (prelama)
                 pogled.OptionsView.RowAutoHeight = true;
-            pogled.RowCellStyle += CrveniBroj;
+            pogled.RowCellStyle += StilCelije;
             if (premjesteno)
                 Poredaj(pogled, kolone);
             for (int i = 0; i < kolone.Count; i++)
@@ -185,8 +202,61 @@ namespace Carpo.NetGen.Ui
             NijeNula
         }
 
+        private const string MaxLinija = "MaxLinesID";
+        private const string BojaRedaTekst = "RowForeColorID";
+        private const string BojaRedaPozadina = "RowColorID";
+        private const string BojaCelijeTekst = "CellForeColorID";
+        private const string BojaCelijePozadina = "CellBackColorID";
+
+        /// <summary>
+        /// Form1.GridEX1_FormattingRow 7875-7945, GridEX2_FormattingRow 8026 i Form2.glblGRID_FormattingRow 1784
+        /// (GRB-01): stupci upita RowForeColorID + RowColorID (oba moraju postojati) boje red, a
+        /// &lt;ime&gt;CellForeColorID / &lt;ime&gt;CellBackColorID ćeliju stupca &lt;ime&gt; (HTML boja, ColorTranslator.FromHtml).
+        /// VB svakim *ID stupcem zamijeni cijeli FormatStyle ćelije, pa od obje boje ostane zadnja po redu
+        /// stupaca; ovdje vrijede obje. Pa NEGATIVERED/NOTZERORED.
+        /// </summary>
+        private static void StilCelije(object sender, RowCellStyleEventArgs e)
+        {
+            var pogled = sender as GridView;
+            var tablica = pogled == null || pogled.GridControl == null ? null : pogled.GridControl.DataSource as DataTable;
+            if (tablica != null && e.Column != null && e.RowHandle >= 0)
+            {
+                Color boja;
+                if (tablica.Columns.Contains(BojaRedaTekst) && tablica.Columns.Contains(BojaRedaPozadina))
+                {
+                    if (HtmlBoja(pogled.GetRowCellValue(e.RowHandle, BojaRedaTekst), out boja))
+                        e.Appearance.ForeColor = boja;
+                    if (HtmlBoja(pogled.GetRowCellValue(e.RowHandle, BojaRedaPozadina), out boja))
+                        e.Appearance.BackColor = boja;
+                }
+                string ime = e.Column.FieldName ?? "";
+                if (tablica.Columns.Contains(ime + BojaCelijeTekst) && HtmlBoja(pogled.GetRowCellValue(e.RowHandle, ime + BojaCelijeTekst), out boja))
+                    e.Appearance.ForeColor = boja;
+                if (tablica.Columns.Contains(ime + BojaCelijePozadina) && HtmlBoja(pogled.GetRowCellValue(e.RowHandle, ime + BojaCelijePozadina), out boja))
+                    e.Appearance.BackColor = boja;
+            }
+            CrveniBroj(e);
+        }
+
+        private static bool HtmlBoja(object vrijednost, out Color boja)
+        {
+            boja = Color.Empty;
+            string t = vrijednost == null || vrijednost == DBNull.Value ? "" : (Convert.ToString(vrijednost) ?? "").Trim();
+            if (t.Length == 0)
+                return false;
+            try
+            {
+                boja = ColorTranslator.FromHtml(t);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            return !boja.IsEmpty;
+        }
+
         /// <summary>Form1.vb 7543-7563: NEGATIVERED (vrijednost &lt; 0) i NOTZERORED (&lt;&gt; 0) crvenim slovima.</summary>
-        private static void CrveniBroj(object sender, RowCellStyleEventArgs e)
+        private static void CrveniBroj(RowCellStyleEventArgs e)
         {
             if (e.Column == null || !(e.Column.Tag is Crveno) || e.CellValue == null || e.CellValue == DBNull.Value)
                 return;
