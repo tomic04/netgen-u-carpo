@@ -221,6 +221,12 @@ namespace Carpo.NetGen.Ui
             var tablica = pogled == null || pogled.GridControl == null ? null : pogled.GridControl.DataSource as DataTable;
             if (tablica != null && e.Column != null && e.RowHandle >= 0)
             {
+                if (tablica.Columns.Contains(StupacFormata))
+                {
+                    DataRow red = pogled.GetDataRow(e.RowHandle);
+                    if (red != null)
+                        FormatReda(e.Appearance, red[StupacFormata]);
+                }
                 Color boja;
                 if (tablica.Columns.Contains(BojaRedaTekst) && tablica.Columns.Contains(BojaRedaPozadina))
                 {
@@ -236,6 +242,70 @@ namespace Carpo.NetGen.Ui
                     e.Appearance.BackColor = boja;
             }
             CrveniBroj(e);
+        }
+
+        /// <summary>Stupac upita čija vrijednost bira izgled reda (FMT-01).</summary>
+        public const string StupacFormata = "formatid";
+
+        private static readonly Dictionary<string, Font> Fontovi = new Dictionary<string, Font>();
+
+        /// <summary>
+        /// Class1.AddConditionalFormatting 1369-1412 (FMT-01): Janus uvjeti "Contains" na stupcu formatid
+        /// (master, detail, grid dijaloga, tražilica). bold, strike, italic i underline se zbrajaju; od boja
+        /// (gray, red, green, blue, brown, yellow, orange) vrijedi zadnja po tom redu, kao zadnji Janus uvjet.
+        /// Boje reda i ćelije iz upita (GRB-01) dolaze poslije i nadjačaju ovo.
+        /// </summary>
+        public static void FormatReda(DevExpress.Utils.AppearanceObject izgled, object vrijednost)
+        {
+            if (izgled == null || vrijednost == null || vrijednost == DBNull.Value)
+                return;
+            string f = (Convert.ToString(vrijednost) ?? "").ToLowerInvariant();
+            if (f.Length == 0)
+                return;
+            Color? boja = null;
+            if (f.Contains("gray"))
+                boja = SystemColors.GrayText;
+            if (f.Contains("red"))
+                boja = Color.Red;
+            if (f.Contains("green"))
+                boja = Color.Green;
+            if (f.Contains("blue"))
+                boja = Color.Blue;
+            if (f.Contains("brown"))
+                boja = Color.Brown;
+            if (f.Contains("yellow"))
+                boja = Color.Yellow;
+            if (f.Contains("orange"))
+                boja = Color.Orange;
+            if (boja.HasValue)
+                izgled.ForeColor = boja.Value;
+            FontStyle stil = FontStyle.Regular;
+            if (f.Contains("bold"))
+                stil |= FontStyle.Bold;
+            if (f.Contains("strike"))
+                stil |= FontStyle.Strikeout;
+            if (f.Contains("italic"))
+                stil |= FontStyle.Italic;
+            if (f.Contains("underline"))
+                stil |= FontStyle.Underline;
+            if (stil == FontStyle.Regular)
+                return;
+            Font osnova = izgled.Font;
+            FontStyle novi = osnova.Style | stil;
+            if (novi == osnova.Style)
+                return;
+            // RowCellStyle ide za svaku ćeliju pri crtanju: font se pravi jednom po obliku.
+            string kljuc = osnova.Name + "|" + osnova.Size.ToString(System.Globalization.CultureInfo.InvariantCulture) + "|" + (int)osnova.Unit + "|" + (int)novi;
+            Font gotov;
+            lock (Fontovi)
+            {
+                if (!Fontovi.TryGetValue(kljuc, out gotov))
+                {
+                    gotov = new Font(osnova, novi);
+                    Fontovi.Add(kljuc, gotov);
+                }
+            }
+            izgled.Font = gotov;
         }
 
         private static bool HtmlBoja(object vrijednost, out Color boja)
