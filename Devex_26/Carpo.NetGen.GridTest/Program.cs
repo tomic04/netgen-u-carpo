@@ -1998,6 +1998,7 @@ namespace Carpo.NetGen.GridTest
             IspisUcinak();
             PokaziUpitUcinak();
             ComboPodloge();
+            SesijaVeze();
             RafalnoPravila();
             PodlogaRafalno();
             GreskeDijaloga();
@@ -3860,6 +3861,68 @@ namespace Carpo.NetGen.GridTest
             {
                 forma.Close();
                 forma.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// SES-01: upiti granule idu kroz jednu SQL sesiju kao NetGen Conn. Tablica ## koju napuni jedan upit
+        /// vidi se u sljedećem (MPStanjeTrg ##temp50, MPPonudaNEW ##tponudanaplata), a # isto.
+        /// Kontrola pokazuje staro ponašanje: dvije veze iz poola (sp_reset_connection).
+        /// </summary>
+        private static void SesijaVeze()
+        {
+            string spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj("localhost", "spin"), "ses01.xml");
+            string ime = "##ses01_" + System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
+            // Kontrola (staro): punjenje i čitanje kroz zasebne veze iz poola.
+            string kontrola;
+            try
+            {
+                string k = SpinVeza.SaAplikacijom(SpinVeza.Spoj("localhost", "spin"), "ses01k.xml");
+                using (var c1 = new SqlConnection(k))
+                {
+                    c1.Open();
+                    using (var cmd = new SqlCommand("select 1 as a into " + ime + "k", c1))
+                        cmd.ExecuteNonQuery();
+                }
+                using (var c2 = new SqlConnection(k))
+                {
+                    c2.Open();
+                    using (var cmd = new SqlCommand("select count(*) from " + ime + "k", c2))
+                        kontrola = "vidi " + Convert.ToString(cmd.ExecuteScalar());
+                }
+            }
+            catch (Exception ex)
+            {
+                kontrola = ex.Message;
+            }
+            Console.WriteLine("INFO ses01-kontrola (dvije veze iz poola) | " + kontrola);
+            try
+            {
+                NgVeza.Prijavi(spoj);
+                DataTable spid1 = NgVeza.Citaj(spoj, "select @@spid as s", 30);
+                NgVeza.Citaj(spoj, "if object_id('tempdb.." + ime + "') is not null drop table " + ime + "; select 1 as a into " + ime, 30);
+                NgVeza.Citaj(spoj, "if object_id('tempdb..#ses01l') is not null drop table #ses01l; select 2 as a into #ses01l", 30);
+                DataTable globalna = NgVeza.Citaj(spoj, "select a from " + ime, 30);
+                DataTable lokalna = NgVeza.Citaj(spoj, "select a from #ses01l", 30);
+                DataTable spid2 = NgVeza.Citaj(spoj, "select @@spid as s", 30);
+                T("ses01-ista-sesija", Convert.ToString(spid1.Rows[0][0]) == Convert.ToString(spid2.Rows[0][0])
+                    && globalna.Rows.Count == 1 && lokalna.Rows.Count == 1,
+                    "spid " + Convert.ToString(spid1.Rows[0][0]) + "/" + Convert.ToString(spid2.Rows[0][0])
+                    + " ##=" + globalna.Rows.Count.ToString() + " #=" + lokalna.Rows.Count.ToString());
+                // Zadnja podloga zatvori vezu: ## tablica sesije nestane, kao na kraju NetGen procesa.
+                NgVeza.Otpusti(spoj);
+                object postoji;
+                using (var c = new SqlConnection(SpinVeza.Spoj("localhost", "spin")))
+                {
+                    c.Open();
+                    using (var cmd = new SqlCommand("select object_id('tempdb.." + ime + "')", c))
+                        postoji = cmd.ExecuteScalar();
+                }
+                T("ses01-otpusti-zatvori", postoji == null || postoji == DBNull.Value, "object_id=" + Convert.ToString(postoji));
+            }
+            catch (Exception ex)
+            {
+                T("ses01-ista-sesija", false, ex.GetType().Name + ": " + ex.Message);
             }
         }
 
