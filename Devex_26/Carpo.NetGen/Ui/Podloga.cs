@@ -606,7 +606,7 @@ namespace Carpo.NetGen.Ui
                     string[] sqlovi = ForeachNaredba.Ponovi(tijelo, IdjeviMaster(ForeachNaredba.Vrsta(s)));
                     for (int k = 0; k < sqlovi.Length; k++)
                     {
-                        if (ZastitaSql.Tekst(sqlovi[k]).Pise)
+                        if (ZastitaSql.Tekst(sqlovi[k]).Pise && !DijalogTok.Produkcija)
                             continue;
                         try { Citaj(sqlovi[k]); }
                         catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sqlovi[k]); }

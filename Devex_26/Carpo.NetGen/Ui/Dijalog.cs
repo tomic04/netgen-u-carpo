@@ -1405,7 +1405,7 @@ namespace Carpo.NetGen.Ui
             if (vrsta == 0 || put.Length == 0)
                 return;
             var redovi = new System.Collections.Generic.List<string[]>();
-            if (_citaj != null && sql.Length > 0 && !ZastitaSql.Tekst(sql).Pise)
+            if (_citaj != null && sql.Length > 0 && (!ZastitaSql.Tekst(sql).Pise || DijalogTok.Produkcija))
             {
                 try
                 {
