@@ -1,3 +1,4 @@
+using System;
 using System.Data;
 using System.Globalization;
 using System.Windows.Forms;
@@ -26,6 +27,8 @@ namespace Carpo.NetGen.Ui
             view.OptionsSelection.MultiSelectMode = kvacica
                 ? GridMultiSelectMode.CheckBoxRowSelect
                 : GridMultiSelectMode.RowSelect;
+            if (kvacica)
+                OznaciIzStupca(view, dt);
             if (!slozeno)
                 return;
             // Form2.vb 1708: Janus ColumnHeaders = "2" (InheritableBoolean.False, 1713) skriva zaglavlja (3 grida, GRD-03).
@@ -49,6 +52,24 @@ namespace Carpo.NetGen.Ui
             view.OptionsNavigation.EnterMoveNextColumn = Attr(k, "ENTERKEYBEHAVIOR") == "1";
             // Form2.vb 1730 LoadLayout: spremljeni izgled; FILTERSAVE je atribut forme (GRL-01).
             GridRaspored.Ucitaj(view, DatotekaIzgleda(c), AtributForme("FILTERSAVE").ToLowerInvariant() == "true");
+        }
+
+        /// <summary>
+        /// RucniRadNaGriduzaCheckiranjeRedova 5435-5456 (nakon punjenja i RefreshGrida 5351): uz vidljivu kvačicu
+        /// red čiji stupac "selectedid" sadrži "1" postane označen (CHK-01).
+        /// </summary>
+        private static void OznaciIzStupca(GridView view, DataTable dt)
+        {
+            if (dt == null || !dt.Columns.Contains("selectedid"))
+                return;
+            int stupac = dt.Columns.IndexOf("selectedid");
+            for (int i = 0; i < dt.Rows.Count; i++)
+            {
+                object v = dt.Rows[i][stupac];
+                string t = v == null || v == DBNull.Value ? "" : (Convert.ToString(v) ?? "");
+                if (t.Trim().ToLowerInvariant().Contains("1"))
+                    view.SelectRow(view.GetRowHandle(i));
+            }
         }
 
         /// <summary>
