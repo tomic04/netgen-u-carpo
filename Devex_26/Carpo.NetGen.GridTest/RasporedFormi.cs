@@ -55,9 +55,10 @@ namespace Carpo.NetGen.GridTest
             var sat = Stopwatch.StartNew();
             var tsv = new StringBuilder();
             tsv.AppendLine("granula\tforma\tvrsta\tkontrola\tdetalj");
-            int granula = 0, formi = 0, iznimka = 0, prekriveno = 0, formiPrekriveno = 0, nema = 0, bezVelicine = 0, izvan = 0, ucitanje = 0;
+            int granula = 0, formi = 0, iznimka = 0, prekriveno = 0, formiPrekriveno = 0, preklapanje = 0, nema = 0, bezVelicine = 0, izvan = 0, ucitanje = 0;
             var nemaPoGrani = new SortedDictionary<string, int>();
             var primjeri = new List<string>();
+            var primjeriOstalo = new Dictionary<string, List<string>>();
             var putevi = Directory.GetFiles(korijen, "*.xml", SearchOption.AllDirectories);
             Array.Sort(putevi, StringComparer.OrdinalIgnoreCase);
             foreach (string put in putevi)
@@ -103,6 +104,7 @@ namespace Carpo.NetGen.GridTest
                                 nemaPoGrani.TryGetValue(g, out n);
                                 nemaPoGrani[g] = n + 1;
                                 tsv.AppendLine(rel + "\t" + forma.Ime + "\tNEMA\t" + nk.Name + "\t" + nk.TypeRaw);
+                                Primjer(primjeriOstalo, "NEMA", rel + "\t" + forma.Ime + "\t" + nk.Name + "\t" + nk.TypeRaw);
                                 continue;
                             }
                             Control c = nadjeno[0];
@@ -112,23 +114,36 @@ namespace Carpo.NetGen.GridTest
                             {
                                 bezVelicine++;
                                 tsv.AppendLine(rel + "\t" + forma.Ime + "\tBEZ-VELICINE\t" + c.Name + "\t" + c.Width + "x" + c.Height);
+                                Primjer(primjeriOstalo, "BEZ-VELICINE", rel + "\t" + forma.Ime + "\t" + c.Name + " (" + nk.TypeRaw + ")\t" + c.Width + "x" + c.Height);
                                 continue;
                             }
-                            string prekriva = Prekriva(c, d);
-                            if (prekriva != null)
+                            // Okvir i panel su pozadina; njihovo središte smiju pokriti kontrole (VB ih šalje straga).
+                            bool okvir = c is PanelControl;
+                            Control pokriva = okvir ? null : Prekriva(c, d);
+                            if (pokriva != null && pokriva is PanelControl)
                             {
+                                // Isto što i greška u RobaWebKlase (LAY-02): okvir ili panel ispred polja. VB to nikad ne radi.
                                 prekriveno++;
                                 imaPrekriveno = true;
-                                string red = rel + "\t" + forma.Ime + "\tPREKRIVENO\t" + c.Name + "\t" + prekriva;
+                                string red = rel + "\t" + forma.Ime + "\tPREKRIVENO-OKVIROM\t" + c.Name + "\t" + pokriva.Name + " (" + pokriva.GetType().Name + ")";
                                 tsv.AppendLine(red);
                                 if (primjeri.Count < 40)
                                     primjeri.Add(red);
+                            }
+                            else if (pokriva != null)
+                            {
+                                // Dvije kontrole na istom mjestu: kasnija je ispred (kao NetGen), npr. polja koja se izmjenjuju.
+                                preklapanje++;
+                                string red = rel + "\t" + forma.Ime + "\tPREKLAPANJE\t" + c.Name + "\t" + pokriva.Name + " (" + pokriva.GetType().Name + ")";
+                                tsv.AppendLine(red);
+                                Primjer(primjeriOstalo, "PREKLAPANJE", red);
                             }
                             Control p = c.Parent;
                             if (p != null && c.Dock == DockStyle.None && (c.Left >= p.ClientSize.Width || c.Top >= p.ClientSize.Height || c.Right <= 0 || c.Bottom <= 0))
                             {
                                 izvan++;
                                 tsv.AppendLine(rel + "\t" + forma.Ime + "\tIZVAN\t" + c.Name + "\t" + c.Bounds + " u " + p.Name + " " + p.ClientSize);
+                                Primjer(primjeriOstalo, "IZVAN", rel + "\t" + forma.Ime + "\t" + c.Name + " (" + nk.TypeRaw + ")\t" + c.Bounds + " u " + (p == d ? "formi" : p.Name) + " " + p.ClientSize);
                             }
                         }
                         if (imaPrekriveno)
@@ -156,13 +171,20 @@ namespace Carpo.NetGen.GridTest
             glava.AppendLine("# Raspored formi (RAS-01)");
             glava.AppendLine("granula=" + granula + " formi=" + formi + " sekundi=" + (int)sat.Elapsed.TotalSeconds);
             glava.AppendLine("iznimka=" + iznimka + " ucitanje=" + ucitanje);
-            glava.AppendLine("prekriveno=" + prekriveno + " u formi=" + formiPrekriveno);
+            glava.AppendLine("prekriveno-okvirom=" + prekriveno + " u formi=" + formiPrekriveno + " (mora biti 0)");
+            glava.AppendLine("preklapanje=" + preklapanje + " (kao NetGen: kasnija kontrola ispred)");
             glava.AppendLine("nema=" + nema + " bez-velicine=" + bezVelicine + " izvan=" + izvan);
             foreach (var par in nemaPoGrani)
                 glava.AppendLine("nema\t" + par.Key + "\t" + par.Value);
-            glava.AppendLine("---- primjeri (prekriveno i iznimka) ----");
+            glava.AppendLine("---- primjeri (prekriveno okvirom i iznimka) ----");
             foreach (string p in primjeri)
                 glava.AppendLine(p);
+            foreach (var par in primjeriOstalo)
+            {
+                glava.AppendLine("---- primjeri " + par.Key + " ----");
+                foreach (string p in par.Value)
+                    glava.AppendLine(p);
+            }
             Console.Write(glava.ToString());
             if (!string.IsNullOrEmpty(izvjestaj))
             {
@@ -171,11 +193,24 @@ namespace Carpo.NetGen.GridTest
                     Directory.CreateDirectory(mapa);
                 File.WriteAllText(izvjestaj, glava.ToString() + tsv.ToString(), new UTF8Encoding(false));
             }
-            return 0;
+            // Okvir preko polja i forma koja se ne složi ruše build; ostalo je izvještaj.
+            return prekriveno > 0 || iznimka > 0 ? 1 : 0;
+        }
+
+        private static void Primjer(Dictionary<string, List<string>> primjeri, string vrsta, string red)
+        {
+            List<string> l;
+            if (!primjeri.TryGetValue(vrsta, out l))
+            {
+                l = new List<string>();
+                primjeri[vrsta] = l;
+            }
+            if (l.Count < 25)
+                l.Add(red);
         }
 
         /// <summary>Susjed ispred (manji indeks u roditelju), vidljiv i neproziran, preko središta kontrole.</summary>
-        private static string Prekriva(Control c, Control forma)
+        private static Control Prekriva(Control c, Control forma)
         {
             Control p = c.Parent;
             if (p == null)
@@ -190,7 +225,7 @@ namespace Carpo.NetGen.GridTest
                 if (s.Width <= 0 || s.Height <= 0)
                     continue;
                 if (s.Bounds.Contains(sredina))
-                    return s.Name + " (" + s.GetType().Name + ")";
+                    return s;
             }
             return null;
         }
