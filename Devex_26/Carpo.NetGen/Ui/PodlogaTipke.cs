@@ -1,8 +1,5 @@
 using System;
-using System.Diagnostics;
-using System.Globalization;
 using System.Windows.Forms;
-using Carpo.NetGen.Log;
 using DevExpress.XtraEditors;
 using DevExpress.XtraGrid;
 
@@ -65,7 +62,7 @@ namespace Carpo.NetGen.Ui
             pnlButtons.Controls.Add(gumb);
         }
 
-        /// <summary>DajPokaziHelp 7781-7799: JupiterHelp.exe -s server -d baza -h HELPKOD -o Str(operater) -p imeXml.</summary>
+        /// <summary>DajPokaziHelp 7781-7799.</summary>
         private void PokaziPomoc()
         {
             string kod = AtributProjekta("HELPKOD").Trim().ToUpperInvariant();
@@ -73,28 +70,7 @@ namespace Carpo.NetGen.Ui
                 return;
             string xml = _master.Kontekst == null ? "" : _master.Kontekst.XmlName;
             string op = _master.Kontekst == null ? "0" : _master.Kontekst.OperaterId;
-            int broj;
-            // VB Str() pozitivnom broju doda razmak sprijeda.
-            string str = int.TryParse(op, NumberStyles.Integer, CultureInfo.InvariantCulture, out broj) && broj >= 0 ? " " + broj.ToString(CultureInfo.InvariantCulture) : op;
-            string argumenti = "-s " + _server + " -d " + _baza + " -h " + kod + " -o " + str + " -p " + xml;
-            NgDnevnik.Akcija("JupiterHelp.exe " + argumenti);
-            // Klik-pregled ne pokreće vanjske programe.
-            if (NgPoruka.Tiho)
-                return;
-            try
-            {
-                var p = new Process();
-                p.StartInfo.FileName = "JupiterHelp.exe";
-                p.StartInfo.Arguments = argumenti;
-                p.StartInfo.CreateNoWindow = true;
-                p.StartInfo.WorkingDirectory = Environment.CurrentDirectory;
-                p.Start();
-            }
-            catch (Exception ex)
-            {
-                // On Error Resume Next: bez JupiterHelp.exe ne javlja ništa korisniku.
-                NgDnevnik.Greska("JupiterHelp.exe: " + ex.Message);
-            }
+            JupiterPomoc.Pokreni(_server, _baza, kod, op, xml);
         }
     }
 }

@@ -28,6 +28,8 @@ namespace Carpo.NetGen.Grid
         public string SelectedPath = "";
         /// <summary>cls1.strProjectCaption = naslov podloge (Form1.vb 3530); ime spremljenog izgleda grida dijaloga.</summary>
         public string ProjektNaslov = "";
+        /// <summary>strHelpKod (HELPKOD projekta, velikim slovima): dijalog bez svog HELPKOD-a koristi njega (Form2.vb 1050).</summary>
+        public string HelpKod = "";
         /// <summary>
         /// Medjuspremnik podloge (SETDEFAULTS, Form1.vb 3945-4009). U NetGenu je cls1.CB globalan,
         /// pa ga NadjiVrijednostuPrevParametrima vidi i u dijalogu i na gumbu (CB-01).
@@ -214,6 +216,7 @@ namespace Carpo.NetGen.Grid
                 k.SelectedFile = izvor.SelectedFile;
                 k.SelectedPath = izvor.SelectedPath;
                 k.ProjektNaslov = izvor.ProjektNaslov;
+                k.HelpKod = izvor.HelpKod;
                 k.Clipboard = izvor.Clipboard;
             }
             if (string.IsNullOrEmpty(k.Id))
