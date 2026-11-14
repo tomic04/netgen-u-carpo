@@ -261,6 +261,7 @@ Pravila za svaki ispravak:
 2. Najvažnije granule po stvarnoj upotrebi (`ssMeni` i Jupiter log otvaranja, ako postoji) dobivaju puni UI test učinka i D1 trag.
 3. 28 prepisanih parova (`definitions/Prepisane_granule`) služe kao referenca kako su Carpo autori sami riješili slučajeve 50-50.
 4. Popis 160 otvorenih stavki (`Otvoreno-za-implementaciju.md`) se zatvara kroz fazu E.
+5. Ishodi sweepa (TestShell `--sweep`, SWP-01..04): **CISTO**; **ROK** je granica sweepa (5 upita, 1 s po upitu, i SQL timeout), ne greška; **PORUKA** je RAISERROR iz baze (validacija procedure, broj >= 50000) koju NetGen pokaže korisniku; **GRESKA**; **HANG** je granula dulja od praga, a čuvar nakon 90 s zapiše stog UI niti i prekine; **IZNIMKA** ima u redu mjesto (prva tri okvira stoga), a cijeli stog je u `.iznimka.txt` i u CI logu. Sweep klijenta: commit s `[ct-sweep-N:Baza]` ide nad bazom na jupiter2019; na bazi koja nije spin gumbi šalju samo SQL koji otvara formu.
 
 ---
 

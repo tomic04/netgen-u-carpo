@@ -678,7 +678,7 @@ namespace Carpo.TestShell
                 xmlovi = dio.ToArray();
             }
             var sb = new StringBuilder();
-            int cisto = 0, greska = 0, hang = 0, iznimka = 0, nije = 0, rokova = 0;
+            int cisto = 0, greska = 0, hang = 0, iznimka = 0, nije = 0, rokova = 0, poruka = 0;
             // Mjerenje (SWP-01): sweep-1 je u 38 min prošao 32 granule, a svaka je trajala 0-4 s.
             // Red u .red ima i ukupno vrijeme s čišćenjem, broj otvorenih formi, GDI/USER objekte i sat.
             try { File.AppendAllText(izvjestaj + ".red", "#start\t" + DateTime.Now.ToString("HH:mm:ss") + "\txml=" + xmlovi.Length.ToString() + "\r\n"); } catch { }
@@ -731,9 +731,13 @@ namespace Carpo.TestShell
                     {
                         var redovi = _zadnjaPodloga.ProvediKlikove(true);
                         bool doRoka = false;
+                        string porukaBaze = "";
                         for (int i = 0; i < redovi.Count; i++)
                         {
                             string[] c = redovi[i].Split('\t');
+                            // SWP-04: RAISERROR iz baze (validacija procedure) je PORUKA; vidi se odvojeno od GRESKA.
+                            if (c.Length >= 4 && c[3] == "PORUKA" && porukaBaze.Length == 0)
+                                porukaBaze = c.Length > 4 ? c[4] : redovi[i];
                             if (c.Length >= 4 && (c[3] == "GRESKA" || c[3] == "HANG"))
                             {
                                 // Podloga.Citaj: "sweep rok" je granica sweepa (MaxUpita, RokUtc), ne greška granule (SWP-01).
@@ -749,7 +753,12 @@ namespace Carpo.TestShell
                                 break;
                             }
                         }
-                        if (ishod == "CISTO" && doRoka)
+                        if (ishod == "CISTO" && porukaBaze.Length > 0)
+                        {
+                            ishod = "PORUKA";
+                            uzrok = porukaBaze;
+                        }
+                        else if (ishod == "CISTO" && doRoka)
                         {
                             ishod = "ROK";
                             uzrok = "sweep rok (granica upita)";
@@ -778,11 +787,12 @@ namespace Carpo.TestShell
                 zatvaranje.Stop();
                 if (ishod == "CISTO") cisto++;
                 else if (ishod == "ROK") rokova++;
+                else if (ishod == "PORUKA") poruka++;
                 else if (ishod == "HANG") hang++;
                 else if (ishod == "IZNIMKA") iznimka++;
                 else greska++;
                 string grupa = GrupaUzroka(uzrok);
-                if (ishod != "CISTO" && ishod != "ROK")
+                if (ishod != "CISTO" && ishod != "ROK" && ishod != "PORUKA")
                 {
                     int n;
                     grupe.TryGetValue(grupa, out n);
@@ -803,8 +813,9 @@ namespace Carpo.TestShell
             glava.AppendLine("hang=" + hang.ToString());
             glava.AppendLine("iznimka=" + iznimka.ToString());
             glava.AppendLine("rok=" + rokova.ToString());
+            glava.AppendLine("poruka=" + poruka.ToString());
             glava.AppendLine("nije-project=" + nije.ToString());
-            glava.AppendLine("granula=" + (cisto + rokova + greska + hang + iznimka).ToString());
+            glava.AppendLine("granula=" + (cisto + rokova + poruka + greska + hang + iznimka).ToString());
             glava.AppendLine("prag-s=" + sekundi.ToString());
             glava.AppendLine("shard=" + shard.ToString() + "/" + dijelova.ToString());
             foreach (var par in grupe)

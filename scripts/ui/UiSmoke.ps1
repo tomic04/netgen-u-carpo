@@ -168,7 +168,8 @@ foreach ($rel in $granule) {
         $klikLinije | ForEach-Object { Write-Host $_ }
         foreach ($lin in $klikLinije) {
             $kol = $lin.Split("`t")
-            if ($kol.Count -ge 4 -and $kol[3] -eq "GRESKA") { throw "Klik $ime ima GRESKA. $lin" }
+            # PORUKA (RAISERROR iz baze, SWP-04) u klik pregledu i dalje ruši: na spinu je očekujemo samo ako je test traži.
+            if ($kol.Count -ge 4 -and ($kol[3] -eq "GRESKA" -or $kol[3] -eq "PORUKA")) { throw "Klik $ime ima $($kol[3]). $lin" }
         }
     }
 }
