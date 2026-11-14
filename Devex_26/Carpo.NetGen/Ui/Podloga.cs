@@ -228,7 +228,18 @@ namespace Carpo.NetGen.Ui
             for (int i = 0; i < _stablo.Stanje.Korijen.Count; i++)
                 DodajCvor(_stablo.Stanje.Korijen[i], null);
             trMain.EndUnboundLoad();
+            Dijalog.Trag("drvo dodano, ExpandAll");
             trMain.ExpandAll();
+        }
+
+        private static int BrojCvorova(System.Collections.Generic.List<Cvor> cvorovi)
+        {
+            int n = 0;
+            if (cvorovi == null)
+                return 0;
+            for (int i = 0; i < cvorovi.Count; i++)
+                n += 1 + BrojCvorova(cvorovi[i].Djeca);
+            return n;
         }
 
         private void DodajCvor(Cvor cvor, TreeListNode roditelj)
@@ -287,6 +298,7 @@ namespace Carpo.NetGen.Ui
             if (sql.Length == 0 || SqlTekst.JeZabranaPisanja(sql))
                 return;
             DataTable t = Citaj(SqlTekst.Sredi(sql, _master.Kontekst));
+            Dijalog.Trag("combo redova " + (t == null ? "null" : t.Rows.Count.ToString()));
             if (t == null || t.Columns.Count == 0 || t.Rows.Count == 0)
                 return;
             _comboRedovi = t;
@@ -314,8 +326,11 @@ namespace Carpo.NetGen.Ui
             }
             if (vrijednost.Length == 0)
                 return;
+            Dijalog.Trag("combo stablo " + vrijednost);
             _stablo.IzTeksta(vrijednost, _projekt, Citaj);
+            Dijalog.Trag("combo cvorova " + BrojCvorova(_stablo.Stanje.Korijen).ToString());
             NapuniDrvo();
+            Dijalog.Trag("combo drvo gotovo");
             if (_stablo.Stanje.Vidljivo && _stablo.Stanje.Splitter > 0)
             {
                 splitMain.PanelVisibility = SplitPanelVisibility.Both;
