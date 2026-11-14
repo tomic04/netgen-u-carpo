@@ -97,7 +97,11 @@ namespace Carpo.NetGen
             PrevoditeljPoruka = prevod.Poruka;
             PrevoditeljVerzija = prevod.Verzija;
             PrevoditeljTip = prevod.Tip;
-            if (!string.IsNullOrEmpty(server) && server.IndexOf("jupiter2022", StringComparison.OrdinalIgnoreCase) >= 0)
+            // B-JUP: pravi Jupiter ulaz radi kao NetGen (upis, i jupiter2022); test i TestShell ostaju zaštićeni.
+            bool produkcija = string.IsNullOrWhiteSpace(TestXmlPath) && !BezProzora;
+            if (produkcija)
+                Carpo.NetGen.Komande.DijalogTok.Produkcija = true;
+            if (!produkcija && !string.IsNullOrEmpty(server) && server.IndexOf("jupiter2022", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 ZadnjaGreska = "jupiter2022 se ne koristi.";
                 return null;

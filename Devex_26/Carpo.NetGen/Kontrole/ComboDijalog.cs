@@ -119,7 +119,8 @@ namespace Carpo.NetGen.Kontrole
         {
             if (citaj == null || string.IsNullOrWhiteSpace(sql))
                 return null;
-            if (ZastitaSql.Tekst(sql).Pise)
+            // B-JUP: u pravom Jupiter ulazu combo šalje SQL kakav jest, kao NetGen.
+            if (ZastitaSql.Tekst(sql).Pise && !Carpo.NetGen.Komande.DijalogTok.Produkcija)
                 return null;
             DataTable dt = citaj(SqlZaSlanje(sql, new SqlKontekst()));
             if (dt == null || dt.Columns.Count == 0)

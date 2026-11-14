@@ -76,6 +76,14 @@ namespace Carpo.NetGen.Komande
         }
 
         public static bool DozvoliUpis;
+
+        /// <summary>
+        /// B-JUP (plan, faza G; odluka 9.3). Pravi Jupiter ulaz (Loader ili frm bez TestXmlPath i bez BezProzora):
+        /// granula radi kao NetGen, pa SQL koji piše ide u bazu, i na jupiter2019 i jupiter2022. TestShell, klik
+        /// pregled i testovi ga ne pale, pa za njih zaštite ostaju. Produkcijski URL Porezne ostaje zatvoren
+        /// (fiskalizacija je posebna odluka, R111).
+        /// </summary>
+        public static bool Produkcija;
         public static string TekstUpisa = "";
 
         public static string NextForm(NgForm forma)
@@ -289,7 +297,7 @@ namespace Carpo.NetGen.Komande
                 return false;
             if (!ZastitaSql.Tekst(sql).Pise)
                 return true;
-            return DozvoliUpis;
+            return DozvoliUpis || Produkcija;
         }
 
         /// <summary>

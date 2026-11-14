@@ -515,7 +515,7 @@ namespace Carpo.NetGen.Ui
             try
             {
                 var dij = new Dijalog();
-                dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server));
+                dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server) && !DijalogTok.Produkcija);
                 dij.Konekcija = _spoj;
                 dij.Operater = _master.Kontekst.OperaterId;
                 dij.Id = _master.Stanje.Id;
@@ -604,7 +604,7 @@ namespace Carpo.NetGen.Ui
         /// </summary>
         private void OsvjeziMaster()
         {
-            if (DijalogTok.JeJupiter(_server) || _projekt == null)
+            if ((DijalogTok.JeJupiter(_server) && !DijalogTok.Produkcija) || _projekt == null)
                 return;
             if (_master.Stanje != null && _master.Stanje.Odluka == "salji" && !_master.Stanje.BlokiranoPisanje
                 && !string.IsNullOrEmpty(_master.Stanje.SqlZaSlanje))
@@ -644,6 +644,8 @@ namespace Carpo.NetGen.Ui
                     string[] sqlovi = ForeachNaredba.Ponovi(tijelo, IdjeviMaster(ForeachNaredba.Vrsta(s)));
                     for (int k = 0; k < sqlovi.Length; k++)
                     {
+                        // FOR-02: NetGen na podlozi ne vrti FOREACH (tijelo se preskoči), pa Carpo ni u
+                        // Produkcija ne šalje upis iz petlje dok se o FOR-02 ne odluči.
                         if (ZastitaSql.Tekst(sqlovi[k]).Pise)
                             continue;
                         try { Citaj(sqlovi[k]); }

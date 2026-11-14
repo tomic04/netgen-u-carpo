@@ -235,7 +235,8 @@ namespace Carpo.NetGen.Grid
 
         public static bool JeZabranaPisanja(string sql)
         {
-            if (sql == null)
+            // B-JUP: u pravom Jupiter ulazu nema zabrane pisanja (DijalogTok.Produkcija).
+            if (sql == null || Carpo.NetGen.Komande.DijalogTok.Produkcija)
                 return false;
             string t = sql.TrimStart();
             int i = 0;
@@ -315,7 +316,8 @@ namespace Carpo.NetGen.Grid
 
         public static string Spoj(string server, string baza)
         {
-            if (!string.IsNullOrEmpty(server) && server.IndexOf("jupiter2022", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (!Carpo.NetGen.Komande.DijalogTok.Produkcija && !string.IsNullOrEmpty(server)
+                && server.IndexOf("jupiter2022", StringComparison.OrdinalIgnoreCase) >= 0)
                 throw new InvalidOperationException("jupiter2022 se ne koristi.");
             if (_korisnik.Length == 0)
                 return "Server=" + server + ";Database=" + baza + ";Integrated Security=true;TrustServerCertificate=True;";

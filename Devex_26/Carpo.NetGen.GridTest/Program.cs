@@ -2046,6 +2046,7 @@ namespace Carpo.NetGen.GridTest
             StatusDijaloga();
             GridDijalogaStupci();
             LozinkaULogu();
+            ProdukcijaUpis();
             RokUpita();
             VelicinaUZapisu();
             NaslovDijaloga();
@@ -3139,6 +3140,29 @@ namespace Carpo.NetGen.GridTest
             finally
             {
                 Carpo.NetGen.Komande.VrijemeUpita.Najvise = stari;
+            }
+        }
+
+        /// <summary>B-JUP: pravi Jupiter ulaz (DijalogTok.Produkcija) pusti upis i jupiter2022; test ostaje zaštićen.</summary>
+        private static void ProdukcijaUpis()
+        {
+            bool stari = DijalogTok.Produkcija;
+            try
+            {
+                DijalogTok.Produkcija = false;
+                bool zastita = SqlTekst.JeZabranaPisanja("insert into t values (1)") && !DijalogTok.SmijePoslati("update t set a = 1");
+                bool baca = false;
+                try { SpinVeza.Spoj("jupiter2022", "x"); }
+                catch (InvalidOperationException) { baca = true; }
+                DijalogTok.Produkcija = true;
+                bool pusta = !SqlTekst.JeZabranaPisanja("insert into t values (1)") && DijalogTok.SmijePoslati("update t set a = 1")
+                    && SpinVeza.Spoj("jupiter2022", "x").IndexOf("jupiter2022", StringComparison.Ordinal) >= 0;
+                bool porezna = !DijalogTok.SmijePoslati("exec spFiskal 'https://cis.porezna-uprava.hr/x'");
+                T("bjup-produkcija", zastita && baca && pusta && porezna, "zastita=" + zastita + " baca=" + baca + " pusta=" + pusta + " porezna=" + porezna);
+            }
+            finally
+            {
+                DijalogTok.Produkcija = stari;
             }
         }
 
