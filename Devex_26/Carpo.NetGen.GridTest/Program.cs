@@ -1995,6 +1995,7 @@ namespace Carpo.NetGen.GridTest
             GridDijalogaStupci();
             IspisGridaDijaloga();
             BojeIzUpita();
+            StabloDijaloga();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -2994,6 +2995,62 @@ namespace Carpo.NetGen.GridTest
             catch (Exception ex)
             {
                 T("grb01", false, ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// TRE-03: stablo na dijalogu (Form2.vb 2558-2601, DazovaIzStore 2825): čvorovi iz procedure, parametar
+        /// je oznaka odabranog čvora (null dok nije odabran), odabir ide u ONCLICK, "refresh" ga puni iznova.
+        /// </summary>
+        private static void StabloDijaloga()
+        {
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("tree", NgGrana.Tree, "klasa", new NgAttributeBag(new Dictionary<string, string>
+                {
+                    { "SQL", "spTreeKlase:FORMA" }, { "ONCLICK", "select '@@klasa' as status" }
+                }), true));
+                kontrole.Add(new NgControl("label", NgGrana.Label, "status", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "s" } }), true));
+                var forma = new NgForm("T3", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                int stabala = 0;
+                Func<string, DataTable> baza = delegate (string x)
+                {
+                    string q = (x ?? "").Trim();
+                    var t = new DataTable();
+                    if (q.StartsWith("spTreeKlase", StringComparison.Ordinal))
+                    {
+                        stabala++;
+                        t.Columns.Add("id"); t.Columns.Add("roditelj"); t.Columns.Add("natpis"); t.Columns.Add("oznaka");
+                        t.Rows.Add("1", "0", "Sve", "10");
+                        t.Rows.Add("2", "1", "Voće", "20");
+                        t.Rows.Add("3", "1", "Povrće", "30");
+                        return t;
+                    }
+                    var m = System.Text.RegularExpressions.Regex.Match(q, "^select '([^']*)' as (\\w+)$");
+                    if (!m.Success)
+                        return null;
+                    t.Columns.Add(m.Groups[2].Value);
+                    t.Rows.Add(m.Groups[1].Value);
+                    return t;
+                };
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), baza);
+                    var stablo = (DevExpress.XtraTreeList.TreeList)d.Controls.Find("klasa", true)[0];
+                    Control status = d.Controls.Find("status", true)[0];
+                    bool cvorovi = stablo.Nodes.Count == 1 && stablo.Nodes[0].Nodes.Count == 2 && Convert.ToString(stablo.Nodes[0].GetValue(0)) == "Sve";
+                    string prazno = Convert.ToString(Zovi(d, "SviParametri"));
+                    T("tre03-cvorovi", cvorovi && stabala == 1 && prazno.IndexOf("@klasa=null,", StringComparison.Ordinal) >= 0, "cvorova=" + stablo.Nodes.Count + " param=" + prazno);
+                    stablo.FocusedNode = stablo.Nodes[0].Nodes[0];
+                    T("tre03-klik", status.Text == "20" && Convert.ToString(Zovi(d, "SviParametri")).IndexOf("@klasa='20',", StringComparison.Ordinal) >= 0, status.Text);
+                    Zovi(d, "IzvrsiDogadjaj", "select 'refresh' as klasa");
+                    T("tre03-refresh", stabala == 2 && stablo.Nodes.Count == 1, "stabala=" + stabala);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("tre03", false, ex.ToString());
             }
         }
 

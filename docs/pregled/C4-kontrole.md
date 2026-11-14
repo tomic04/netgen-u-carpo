@@ -28,6 +28,7 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 | **BTN-03** | | gumb s jednim SQL-om → `RefreshControls` | rezultat se odbacivao | rezultat se primijeni, greška prekida |
 | **TXT-02** | `MULTILINE` (226 polja, 48 granula), `SCROLLBARS` 0/3, `PASSWORDCHAR` `*` (12, 4 granule), `MAXLENGTH` (~330 polja, 20 granula), `ENTERASTAB` (0) | `TeksT` (2045-2050); Enter u višelinijskom polju je novi red, osim uz ENTERASTAB "true" (Glbl_KeyDown) | (bilo otvoreno u ovom popisu) | `MemoEdit` s visinom iz XML-a, ScrollBars, WordWrap; PasswordChar i MaxLength na `TextEdit`; Enter kao VB |
 | **DAT-02** | `VALUE="DATE"`/`DATE1`/`DATE2` na datumu (197 polja, 41 granula) | Form2 čita `VALUE` samo za broj (2088), `DTPicker` ga ne gleda | ignorirano | isto (nema čega prenijeti). `TYPE="tab"` nema u korpusu |
+| **TRE-03** | `TYPE="tree"` na dijalogu (11 granula: ManagerCjenika, AOPNovi, JOPPD, MPOptimalneZalihe…) | `treeViewMoj` (2558-2601): SQL `sp…tree…:forma#tekst:naredba`, `DazovaIzStore` (id, roditelj, natpis, oznaka), `ExpandAll`; AfterSelect → ONCLICK; parametar `@ime='oznaka'` ili null (3667); POPUP na desni klik; "refresh" puni iznova (5071) | prazan `TreeList`, bez parametra i događaja | `Dijalog.NapuniStablo` preko istog `Stablo` (NaDijalogu) kao podloga; `ParametriSvi.Stablo`; ONCLICK na promjenu čvora; POPUP; refresh |
 
 ## Grid dijaloga
 
@@ -71,4 +72,4 @@ Zatvaranje (DBC-02): `Form2_FormClosing` 4095-4099 uz RSDBCLIPBOARD još jednom 
 
 ## Testovi
 
-`lay01-raspored`, `hot01-f2`, `dat01-datumi` (`RasporedDijaloga`), `dgr01-*`, `dgr02-grid-atributi`, `dgr03-editedcolumn` (`GridDijalogaStupci`), `isp07-printgrid-ime`, `grb01-*`, `mdr01-multidrop`, `for01-foreachrow` (`DogadjajiDijaloga`), `Form2Izgled` pod Mono (dock, anchor, stil, boja, hotkey, mjesta gumba).
+`lay01-raspored`, `hot01-f2`, `dat01-datumi` (`RasporedDijaloga`), `dgr01-*`, `dgr02-grid-atributi`, `dgr03-editedcolumn` (`GridDijalogaStupci`), `isp07-printgrid-ime`, `grb01-*`, `tre03-*`, `mdr01-multidrop`, `for01-foreachrow` (`DogadjajiDijaloga`), `Form2Izgled` pod Mono (dock, anchor, stil, boja, hotkey, mjesta gumba).

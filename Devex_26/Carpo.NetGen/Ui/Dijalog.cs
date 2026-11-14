@@ -502,6 +502,11 @@ namespace Carpo.NetGen.Ui
         {
             if (_citaj == null || k == null)
                 return;
+            if (k.Grana == NgGrana.Tree)
+            {
+                NapuniStablo(c, k, gotovSql != null);
+                return;
+            }
             if (k.Grana != NgGrana.Combo && k.Grana != NgGrana.Grid && k.Grana != NgGrana.DxGrid && k.Grana != NgGrana.MultiDrop)
                 return;
             if (gotovSql == null && k.Grana != NgGrana.Combo && DijalogTok.PreskociGrid(k))
@@ -1548,6 +1553,14 @@ namespace Carpo.NetGen.Ui
             }
             DodatnoPostavi(c, v);
             string mala = (v ?? "").Trim().ToLowerInvariant();
+            if (c is DevExpress.XtraTreeList.TreeList)
+            {
+                // RefreshControls 5071-5088: "refresh" ponovno puni stablo iz izvornog SQL-a (TRE-03).
+                NgControl defStabla = NadjiKontrolu(c.Name);
+                if (mala.Contains("refresh") && defStabla != null)
+                    NapuniStablo(c, defStabla, true);
+                return;
+            }
             var grid = c as GridControl;
             if (grid != null)
             {
@@ -1937,6 +1950,11 @@ namespace Carpo.NetGen.Ui
                     tekstFokus.BackColor = System.Drawing.Color.LightGreen;
                     tekstFokus.SelectAll();
                 };
+            }
+            if (k.Grana == NgGrana.Tree && c is DevExpress.XtraTreeList.TreeList)
+            {
+                VeziStablo((DevExpress.XtraTreeList.TreeList)c, k);
+                return;
             }
             string dbl = Attr(k, "ONDBLCLICK");
             string popup = Attr(k, "POPUP");
@@ -2455,6 +2473,12 @@ namespace Carpo.NetGen.Ui
                 if (grid != null)
                 {
                     sb.Append(GridParametar(grid));
+                    continue;
+                }
+                var stablo = c as DevExpress.XtraTreeList.TreeList;
+                if (stablo != null)
+                {
+                    sb.Append(ParametarStabla(stablo));
                     continue;
                 }
                 var look = c as LookUpEdit;
