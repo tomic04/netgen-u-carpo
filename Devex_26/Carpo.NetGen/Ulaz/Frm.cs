@@ -131,11 +131,14 @@ namespace Carpo.NetGen
         /// </summary>
         private void Ugradi(Form d, int clientHandle)
         {
+            bool jup10 = clientHandle != 0 && string.Equals((Koler ?? "").Trim(), "Jup10", StringComparison.Ordinal);
+            // Rub prije SetParent: promjena stila nakon njega može ponovo stvoriti prozor bez roditelja.
+            if (jup10)
+                d.FormBorderStyle = FormBorderStyle.None;
             if (clientHandle != 0)
                 SetParent(d.Handle, new IntPtr(clientHandle));
-            if (clientHandle != 0 && string.Equals((Koler ?? "").Trim(), "Jup10", StringComparison.Ordinal))
+            if (jup10)
             {
-                d.FormBorderStyle = FormBorderStyle.None;
                 Control roditelj = Control.FromHandle(new IntPtr(clientHandle));
                 if (roditelj != null)
                 {

@@ -3621,7 +3621,7 @@ namespace Carpo.NetGen.GridTest
         /// Show, hWnd). Zadnji test: forma registrira Logger u DependencyContainer.
         /// </summary>
         [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern IntPtr GetParent(IntPtr hWnd);
+        private static extern IntPtr GetAncestor(IntPtr hWnd, uint flags);
 
         private static void LoaderOtvara()
         {
@@ -3674,17 +3674,21 @@ namespace Carpo.NetGen.GridTest
                     f2.Koler = "Jup10";
                     f2.Run8("localhost", "spin", "", "", 7, (int)hPloca, 0, 0, "");
                     var d2 = f2.Forma as Dijalog;
-                    bool ugradjen = d2 != null && GetParent(d2.Handle) == hPloca && d2.FormBorderStyle == FormBorderStyle.None;
+                    // GetParent za prozor bez WS_CHILD vraća vlasnika; stvarni roditelj je GetAncestor(GA_PARENT).
+                    IntPtr roditelj = d2 == null ? IntPtr.Zero : GetAncestor(d2.Handle, 1);
+                    bool ugradjen = d2 != null && roditelj == hPloca && d2.FormBorderStyle == FormBorderStyle.None;
                     ploca.Size = new Size(321, 123);
-                    bool prati = d2 != null && d2.Size == new Size(321, 123) && d2.Location == Point.Empty;
+                    // Location prozora bez WS_CHILD WinForms čita u koordinatama ekrana, pa se gleda veličina.
+                    bool prati = d2 != null && d2.Size == new Size(321, 123);
                     IntPtr hDijaloga = d2 == null ? IntPtr.Zero : d2.Handle;
+                    string opis = d2 == null ? "nema" : "roditelj=" + roditelj + "/" + hPloca + " rub=" + d2.FormBorderStyle + " vel=" + d2.Size;
                     if (d2 != null)
                     {
                         d2.Close();
                         d2.Dispose();
                     }
                     T("ulz04-frm-jupiter", ugradjen && prati && domacin.Zatvoren == hDijaloga && hDijaloga != IntPtr.Zero,
-                        "ugradjen=" + ugradjen + " prati=" + prati + " poruka=" + domacin.Zatvoren + " greska=" + f2.ZadnjaGreska);
+                        opis + " poruka=" + domacin.Zatvoren + " greska=" + f2.ZadnjaGreska);
                 }
             }
             catch (Exception ex)
