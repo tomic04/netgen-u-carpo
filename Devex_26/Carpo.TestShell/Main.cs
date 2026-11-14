@@ -271,8 +271,8 @@ namespace Carpo.TestShell
                 if (_klikPregled)
                 {
                     // SWP-03: u sweepu i klik pregledu nema korisnika; MessageBox bi držao UI do čuvara.
-                    ZadnjaNit = ex.GetType().Name + ": " + ex.Message;
-                    Carpo.NetGen.Ui.Dijalog.Trag("IZNIMKA pri otvaranju: " + ex.ToString().Replace("\r\n", " | "));
+                    ZadnjaNit = OpisIznimke(ex);
+                    ZapisiIznimku(ex);
                 }
                 else
                     MessageBox.Show(ex.ToString(), "Start Error");
@@ -520,6 +520,41 @@ namespace Carpo.TestShell
         }
 
         public static string ZadnjaNit = "";
+
+        /// <summary>
+        /// SWP-03: za red sweepa: vrsta, poruka i prva tri okvira stoga (Tip.Metoda), da se iz CI loga
+        /// vidi gdje je puklo bez preuzimanja artefakta.
+        /// </summary>
+        public static string OpisIznimke(Exception ex)
+        {
+            if (ex == null)
+                return "iznimka";
+            var sb = new StringBuilder(ex.GetType().Name + ": " + ex.Message);
+            try
+            {
+                var st = new System.Diagnostics.StackTrace(ex, false);
+                int n = 0;
+                for (int i = 0; i < st.FrameCount && n < 3; i++)
+                {
+                    var m = st.GetFrame(i).GetMethod();
+                    if (m == null)
+                        continue;
+                    sb.Append(n == 0 ? " @ " : " < ");
+                    sb.Append((m.DeclaringType == null ? "" : m.DeclaringType.Name + ".") + m.Name);
+                    n++;
+                }
+            }
+            catch { }
+            return sb.ToString();
+        }
+
+        /// <summary>SWP-03: cijela iznimka u &lt;izvještaj&gt;.iznimka.txt (UiSweep ga ispiše u CI log).</summary>
+        public static void ZapisiIznimku(Exception ex)
+        {
+            if (string.IsNullOrEmpty(_sweepIzvjestaj) || ex == null)
+                return;
+            try { File.AppendAllText(_sweepIzvjestaj + ".iznimka.txt", "== " + _sweepGranula + "\r\n" + ex.ToString() + "\r\n"); } catch { }
+        }
         private bool _sweepRadi;
 
         private void ZatvarajSweep()
@@ -702,7 +737,9 @@ namespace Carpo.TestShell
                             if (c.Length >= 4 && (c[3] == "GRESKA" || c[3] == "HANG"))
                             {
                                 // Podloga.Citaj: "sweep rok" je granica sweepa (MaxUpita, RokUtc), ne greška granule (SWP-01).
-                                if (c[3] == "GRESKA" && c.Length > 4 && c[4] == "sweep rok")
+                                // Isto vrijedi za SQL timeout: sweep spušta vrijeme upita na 1 s (Podloga.TimeoutUpita).
+                                if (c[3] == "GRESKA" && c.Length > 4
+                                    && (c[4] == "sweep rok" || c[4].StartsWith("Execution Timeout Expired", StringComparison.Ordinal)))
                                 {
                                     doRoka = true;
                                     continue;
@@ -722,7 +759,8 @@ namespace Carpo.TestShell
                 catch (Exception ex)
                 {
                     ishod = "IZNIMKA";
-                    uzrok = ex.GetType().Name + ": " + ex.Message;
+                    uzrok = OpisIznimke(ex);
+                    ZapisiIznimku(ex);
                 }
                 sw.Stop();
                 int sec = (int)sw.Elapsed.TotalSeconds;

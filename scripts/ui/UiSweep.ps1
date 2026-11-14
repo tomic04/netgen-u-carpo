@@ -20,11 +20,12 @@ if (Test-Path -LiteralPath $kodDat) { Remove-Item -LiteralPath $kodDat -Force }
 $rad = Split-Path -Parent $Exe
 $redovi = $Izvjestaj + ".red"
 if (Test-Path -LiteralPath $redovi) { Remove-Item -LiteralPath $redovi -Force }
+if (Test-Path -LiteralPath ($Izvjestaj + ".iznimka.txt")) { Remove-Item -LiteralPath ($Izvjestaj + ".iznimka.txt") -Force }
 # Shard ima ~100 granula; s pragom od 4 s treba i 20 min. Korak u build.yml ima 40 min.
 $rokShardMs = 2280000
 function Pokazi-Djelomicno {
     if (Test-Path -LiteralPath $redovi) {
-        $sve = @(Get-Content -LiteralPath $redovi)
+        $sve = @(Get-Content -LiteralPath $redovi -Encoding UTF8)
         $nije = @($sve | Where-Object { ($_ -split "`t")[1] -ne "CISTO" })
         Write-Host ("---- sweep redovi (.red): " + $sve.Count + " redaka, " + $nije.Count + " nije CISTO; svaki red ima ukupno/forme/gdi/sat (SWP-01) ----")
         $sve | ForEach-Object { Write-Host $_ }
@@ -35,7 +36,13 @@ function Pokazi-Djelomicno {
     $faza = $Izvjestaj + ".faza.txt"
     if (Test-Path -LiteralPath $faza) {
         Write-Host "---- kraj traga (.faza.txt) ----"
-        Get-Content -LiteralPath $faza -Tail 70 | ForEach-Object { Write-Host $_ }
+        Get-Content -LiteralPath $faza -Tail 70 -Encoding UTF8 | ForEach-Object { Write-Host $_ }
+    }
+    # SWP-03: cijeli stog iznimaka (TestShell piše .iznimka.txt), najviše 150 redaka.
+    $izn = $Izvjestaj + ".iznimka.txt"
+    if (Test-Path -LiteralPath $izn) {
+        Write-Host "---- iznimke (.iznimka.txt) ----"
+        Get-Content -LiteralPath $izn -TotalCount 150 -Encoding UTF8 | ForEach-Object { Write-Host $_ }
     }
 }
 if ($sid -ne 0) {
