@@ -509,6 +509,10 @@ namespace Carpo.NetGen.Ui
                 OsvjeziMaster();
                 return;
             }
+            // Form2.NovaGenerickaForma2 4398 postavi strPrevParametri djeteta prije nego tpP uđe u strParametriSvi (4406),
+            // pa dijete otvoreno iz dijaloga te parametre ne vidi; iz podloge (Form1 5313-5314) vidi.
+            if (zagrada > 0 && !izDijaloga)
+                ParametriIzImenaForme(trazeno, zagrada);
             // Form2 1035: COMMANDTIMEOUT forme zamijeni strCommandTimeout i ostane (TMO-01).
             int rok = VrijemeUpita.Iz(forma.Atributi, _vrijemeUpita);
             if (rok != _vrijemeUpita)
@@ -573,6 +577,37 @@ namespace Carpo.NetGen.Ui
             {
                 _dubinaForme--;
             }
+        }
+
+        /// <summary>
+        /// Form1.NovaGenerickaForma2 5298-5313 (1.10.2009.): IMEFORME(@pero=@@id,@djuro=@@gridX). Parametri u zagradi
+        /// se srede kao SQL s parametrima reda, dio s @id= postavi ID dijaloga, a cijeli niz ide ispred
+        /// ParametriSaGrida, pa ih dijalog vidi kao @@pero u ONLOAD-u, naslovu i ONSUBMIT-u (PN-14). 24 gumba u
+        /// korpusu (KOD_Diskete IZMJENA(@oopdiskprijenosglaid=@@id), LVObracun :UPDATELVDET(@lvdetid=@@lvdetid)...).
+        /// </summary>
+        private void ParametriIzImenaForme(string trazeno, int zagrada)
+        {
+            string unutra = trazeno.Substring(zagrada + 1);
+            if (unutra.EndsWith(")", StringComparison.Ordinal))
+                unutra = unutra.Substring(0, unutra.Length - 1);
+            SqlKontekst k = _master.Kontekst;
+            if (k == null)
+                return;
+            string tpP = SrediPoslije.Petlja(SqlTekst.Sredi(unutra, k), k.ParametriSaGrida ?? "", k.Clipboard, false);
+            if (tpP.Trim().Length == 0)
+                return;
+            string[] dijelovi = tpP.Trim().Split(',');
+            for (int j = 0; j < dijelovi.Length; j++)
+            {
+                string dio = dijelovi[j].Trim();
+                if (dio.StartsWith("@id=", StringComparison.OrdinalIgnoreCase))
+                {
+                    string id = dio.Substring(4).Trim();
+                    _master.Stanje.Id = id;
+                    k.Id = id;
+                }
+            }
+            k.ParametriSaGrida = tpP + "," + (k.ParametriSaGrida ?? "");
         }
 
         /// <summary>

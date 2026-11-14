@@ -44,6 +44,10 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 | **DGR-03** | `@@editedcolumn`/`@@lastvalue` u ONCELLEDITED grida (Narudzbe `g_ugo_stavke`: `@kolona='@@editedcolumn'`), `@@dblclickedcolumn`; `BEFORECELLEDITED` (0 u korpusu) | `Glbl_CellEdited`/`Glbl_EditingCell`/`Glbl_DoubleClick` postave TrenutnaKolona (natpis), TrenutnaVrijednost, DblClickedColumn; SrediSQL2 2882 ih zamijeni. EditingCell s greškom otkaže uređivanje | dijalog ih nije postavljao, pa je `@kolona=''` išao u proceduru; BEFORECELLEDITED ignoriran | kontekst dobije natpis stupca i vrijednost (točka umjesto zareza za broj) prije SQL-a; BEFORECELLEDITED na `ShowingEditor`, greška ga otkaže |
 | **CHK-01** | stupac upita `selectedid` u gridu dijaloga | `RucniRadNaGriduzaCheckiranjeRedova` (5435, nakon punjenja i RefreshGrida 5351): uz vidljivu kvačicu red s "1" u `selectedid` je označen | nije postojalo | isto, nakon svakog punjenja |
 
+## ONLOAD forme od jedne riječi (PN-13)
+
+`Form2.vb` 1195 izvrši svaki neprazan ONLOAD forme. `DijalogTok.OnLoadJeUpit` je tražio razmak (da ne bi ime forme išlo kao SQL), pa je `OOPKnjigaR.FILTERFORM ONLOAD="spHRInterneObustave"` bio preskočen i filter se otvarao bez vrijednosti iz procedure. U korpusu nijedan ONLOAD forme ne počinje s `:`, pa je razmak nepotreban. Test `pn-onload-jedna-rijec`.
+
 ## NetGenDBClipboard (DBC-01)
 
 | Što | NetGen | Carpo |

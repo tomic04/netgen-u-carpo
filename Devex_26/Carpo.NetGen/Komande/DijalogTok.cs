@@ -279,9 +279,10 @@ namespace Carpo.NetGen.Komande
             string t = (on ?? "").TrimStart();
             if (t.Length == 0 || t.StartsWith(":", StringComparison.Ordinal))
                 return false;
-            // Ime forme nema razmak (INSERT_KLASA). SQL ga ima, i kad počinje sa if.
-            // Form2.vb 1195 izvršava ONLOAD, Form1 ne otvara formu iz tog teksta.
-            return t.IndexOf(' ') >= 0 || t.IndexOf('\n') >= 0 || t.IndexOf('\r') >= 0;
+            // Form2.vb 1195 izvršava svaki neprazan ONLOAD forme, i jednu riječ bez razmaka (OOPKnjigaR FILTERFORM
+            // ONLOAD="spHRInterneObustave"). Ranija provjera na razmak ga je preskakala (PN-13); u korpusu nijedan
+            // ONLOAD forme ne počinje s ':'.
+            return true;
         }
 
         public static bool SmijePoslati(string sql)
