@@ -172,11 +172,16 @@ namespace Carpo.NetGen.Ui
                 return false;
             }
 
+            // SWP-03: faze otvaranja u trag sweepa (TragPutanja je prazan izvan TestShella).
+            Dijalog.Trag("podloga stablo");
             _stablo.Ucitaj(_projekt, Citaj);
+            Dijalog.Trag("podloga combo");
             NapuniCombo();
             NapuniDrvo();
             _detail.Pripremi(_projekt);
+            Dijalog.Trag("podloga dms");
             PripremiDms();
+            Dijalog.Trag("podloga setdefaults");
             string zadano = _projekt.Atributi != null && _projekt.Atributi.Ima("SETDEFAULTS")
                 ? _projekt.Atributi.Vrijednost("SETDEFAULTS") : "";
             _master.Clipboard = Carpo.NetGen.Kontrole.ClipboardNg.IzSetDefaults(zadano, kontekst, Citaj);
@@ -190,13 +195,17 @@ namespace Carpo.NetGen.Ui
                 // strProjectCaption (Form1 3530, ime izgleda grida dijaloga) ostaje CAPTION projekta.
                 Text = naslovIzZadanog;
             }
+            Dijalog.Trag("podloga dozvole");
             UcitajDozvole();
             UcitajEditStupce();
             _master.Ucitaj(_projekt, null);
+            Dijalog.Trag("podloga master");
             NapuniGrid();
+            Dijalog.Trag("podloga gumbi");
             NapuniGumbe();
             // Form1.vb 3873 ssPermissionProvjeri prije ONLOAD2 (3906).
             PrimijeniDozvoleGumba();
+            Dijalog.Trag("podloga onload2");
             PrimijeniOnLoad2();
             DodajGumbPomoci();
             return true;
@@ -1202,6 +1211,7 @@ namespace Carpo.NetGen.Ui
                     redovi.Add(Linija(granula, "detail", "grid", "OK", det.ToString() + " redova", "netgen/Form1.vb:2258"));
             }
 
+            Dijalog.Trag("klik kartice");
             var tab = NadjiTab();
             if (tab != null)
             {
@@ -1225,6 +1235,7 @@ namespace Carpo.NetGen.Ui
                 try
                 {
                     PokreniZatvaranje();
+                    Dijalog.Trag("klik stablo");
                     trMain.FocusedNode = trMain.Nodes[0];
                     Application.DoEvents();
                     if (!string.IsNullOrEmpty(_sqlGreska))
