@@ -1992,6 +1992,11 @@ namespace Carpo.NetGen.GridTest
             GreskeDijaloga();
             DbClipboardDijalog();
             StatusDijaloga();
+            GridDijalogaStupci();
+            IspisGridaDijaloga();
+            BojeIzUpita();
+            StabloDijaloga();
+            IzgledGridaDijaloga();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -2816,6 +2821,303 @@ namespace Carpo.NetGen.GridTest
             }
         }
 
+        /// <summary>
+        /// Faza C4 (DGR-01, DGR-02): grid dijaloga s COLUMN djecom i CLEARCOLUMS (Form2.vb 1798-1957),
+        /// GROUPBYBOXVISIBLE, FROZENCOLUMNS, FILTERMODE, TOTALROW s AGREGATEFUNCTION; osvjezavanje ne dira stupce.
+        /// </summary>
+        private static void GridDijalogaStupci()
+        {
+            try
+            {
+                var g = new NgControl("grid", NgGrana.Grid, "g", new NgAttributeBag(new Dictionary<string, string>
+                {
+                    { "SQL", "select a, b, c from t" }, { "CLEARCOLUMS", "TRUE" }, { "GROUPBYBOXVISIBLE", "FALSE" },
+                    { "FROZENCOLUMNS", "3" }, { "FILTERMODE", "true" }, { "CHECKBOXVISIBLE", "" }, { "EDITCOLUMNS", "c" },
+                    { "ONCELLEDITED", "select '@@editedcolumn' as kolona, '@@lastvalue' as vrijednost" }
+                }), true);
+                g.Kolone.Add(Stupac("c", "Ce", "TRUE", "3", ""));
+                g.Kolone.Add(Stupac("a", "", "FALSE", "0", ""));
+                g.Kolone.Add(Stupac("b", "Be", "TRUE", "2", "#,##0.0000"));
+                var kontrole = new List<NgControl> { g };
+                var forma = new NgForm("G1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                int punjenja = 0;
+                var poslano = new List<string>();
+                Func<string, DataTable> baza = delegate (string x)
+                {
+                    poslano.Add(x ?? "");
+                    var t = new DataTable();
+                    t.Columns.Add("a", typeof(string));
+                    t.Columns.Add("b", typeof(decimal));
+                    t.Columns.Add("c", typeof(int));
+                    t.Rows.Add("x", 1.5m, 2);
+                    t.Rows.Add("y", 2.5m, 4);
+                    if ((x ?? "").IndexOf("from t", StringComparison.Ordinal) >= 0)
+                        punjenja++;
+                    return t;
+                };
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), baza);
+                    var grid = (DevExpress.XtraGrid.GridControl)d.Controls.Find("g", true)[0];
+                    var v = (DevExpress.XtraGrid.Views.Grid.GridView)grid.MainView;
+                    var a = v.Columns.ColumnByFieldName("a");
+                    var b = v.Columns.ColumnByFieldName("b");
+                    var c = v.Columns.ColumnByFieldName("c");
+                    T("dgr01-clear-redoslijed", a != null && b != null && c != null && !a.Visible && c.VisibleIndex == 0 && b.VisibleIndex == 1
+                        && c.Caption == "Ce" && b.Caption == "Be" && b.DisplayFormat.FormatString == "#,##0.0000",
+                        a == null ? "nema" : "a=" + a.Visible + " c=" + c.VisibleIndex + " b=" + b.VisibleIndex + " " + c.Caption + "/" + b.Caption
+                        + " format=" + b.DisplayFormat.FormatString + "/" + b.DisplayFormat.FormatType);
+                    bool prosjek = c != null && c.Summary.Count == 1 && c.Summary[0].SummaryType == DevExpress.Data.SummaryItemType.Average;
+                    bool zbroj = b != null && b.Summary.Count == 1 && b.Summary[0].SummaryType == DevExpress.Data.SummaryItemType.Sum;
+                    T("dgr01-agregat", v.OptionsView.ShowFooter && prosjek && zbroj, "prosjek=" + prosjek + " zbroj=" + zbroj);
+                    // FROZENCOLUMNS 3 = ikona + 2 podatka (kvacicu je CLEARCOLUMS sakrio, Form2.vb 1798).
+                    T("dgr02-grid-atributi", !v.OptionsView.ShowGroupPanel && v.OptionsView.ShowAutoFilterRow
+                        && v.OptionsSelection.MultiSelectMode == DevExpress.XtraGrid.Views.Grid.GridMultiSelectMode.RowSelect
+                        && c.Fixed == DevExpress.XtraGrid.Columns.FixedStyle.Left && b.Fixed == DevExpress.XtraGrid.Columns.FixedStyle.Left,
+                        "grupe=" + v.OptionsView.ShowGroupPanel + " filter=" + v.OptionsView.ShowAutoFilterRow + " sel=" + v.OptionsSelection.MultiSelectMode + " fixed=" + c.Fixed + "/" + b.Fixed);
+                    // Form2.Glbl_CellEdited + SrediSQL2 2882: @@editedcolumn je natpis stupca (Narudzbe g_ugo_stavke).
+                    v.FocusedRowHandle = 0;
+                    v.SetRowCellValue(0, c, 7);
+                    T("dgr03-editedcolumn", poslano.Contains("select 'Ce' as kolona, '7' as vrijednost"), string.Join(" | ", poslano.ToArray()));
+                    // Korisnik promijeni stupac; RefreshGrida (5305-5315) ga ne slaze iznova.
+                    c.Caption = "Korisnik";
+                    int prije = punjenja;
+                    Zovi(d, "OsvjeziGrid", grid, g, "");
+                    T("dgr01-osvjezi-ostavi-stupce", punjenja == prije + 1 && c.Caption == "Korisnik" && !a.Visible && c.VisibleIndex == 0,
+                        "punjenja=" + (punjenja - prije) + " natpis=" + c.Caption);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("dgr01", false, ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// ISP-07: PRINTGRID(ime) ispisuje imenovani grid dijaloga s njegovim PAGEHEADER* i PAGEORIENTATION
+        /// (Form2.vb 6950-6955, IspisGRIDREPX 9041); prije je išao prvi grid bez zaglavlja.
+        /// </summary>
+        private static void IspisGridaDijaloga()
+        {
+            var stroj = new LazniSpin();
+            Carpo.NetGen.Print.PrintBridge.Stroj = stroj;
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("text", NgGrana.Text, "broj", new NgAttributeBag(new Dictionary<string, string> { { "DEFAULT", "15" } }), true));
+                kontrole.Add(new NgControl("grid", NgGrana.Grid, "prvi", new NgAttributeBag(new Dictionary<string, string> { { "SQL", "select 1 as id" } }), true));
+                kontrole.Add(new NgControl("grid", NgGrana.Grid, "kartica", new NgAttributeBag(new Dictionary<string, string>
+                {
+                    { "SQL", "select 2 as id" }, { "PAGEHEADERCENTER", "Kartica br.@@broj" }, { "PAGEHEADERLEFT", "Lijevo" },
+                    { "PAGEORIENTATION", "LANDSCAPE" }
+                }), true));
+                var forma = new NgForm("P1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), delegate (string x)
+                    {
+                        var t = new DataTable();
+                        t.Columns.Add("id", typeof(int));
+                        t.Rows.Add(1);
+                        return t;
+                    });
+                    var kartica = d.Controls.Find("kartica", true)[0];
+                    LazniSpin.Metoda = "";
+                    Zovi(d, "IzvrsiDogadjaj", "PRINTGRID(kartica)");
+                    T("isp07-printgrid-ime", LazniSpin.Metoda == "PrintLink" && LazniSpin.Kontrola == kartica && LazniSpin.Landscape
+                        && LazniSpin.Caption == "Kartica br.15" && LazniSpin.Header == "Lijevo",
+                        LazniSpin.Metoda + " grid=" + (LazniSpin.Kontrola is Control ? ((Control)LazniSpin.Kontrola).Name : "?")
+                        + " land=" + LazniSpin.Landscape + " caption=" + LazniSpin.Caption + " header=" + LazniSpin.Header);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("isp07", false, ex.ToString());
+            }
+            finally
+            {
+                Carpo.NetGen.Print.PrintBridge.Stroj = null;
+            }
+        }
+
+        /// <summary>
+        /// GRB-01: stupci upita RowForeColorID/RowColorID, &lt;ime&gt;CellBackColorID i &lt;ime&gt;MaxLinesID
+        /// (Form1.GridEX1_FormattingRow 7875-7945, Form2.glblGRID_FormattingRow).
+        /// </summary>
+        private static void BojeIzUpita()
+        {
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("grid", NgGrana.Grid, "g", new NgAttributeBag(new Dictionary<string, string> { { "SQL", "select 1" } }), true));
+                var forma = new NgForm("B1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), delegate (string x)
+                    {
+                        var t = new DataTable();
+                        t.Columns.Add("id", typeof(int));
+                        t.Columns.Add("Naziv", typeof(string));
+                        t.Columns.Add("NazivCellBackColorID", typeof(string));
+                        t.Columns.Add("NazivMaxLinesID", typeof(int));
+                        t.Columns.Add("RowForeColorID", typeof(string));
+                        t.Columns.Add("RowColorID", typeof(string));
+                        t.Rows.Add(1, "dugi naziv", "#FF0000", 2, "Blue", "");
+                        return t;
+                    });
+                    var grid = (DevExpress.XtraGrid.GridControl)d.Controls.Find("g", true)[0];
+                    var v = (DevExpress.XtraGrid.Views.Grid.GridView)grid.MainView;
+                    var naziv = v.Columns.ColumnByFieldName("Naziv");
+                    T("grb01-maxlines", naziv != null && naziv.AppearanceCell.TextOptions.WordWrap == DevExpress.Utils.WordWrap.Wrap && v.OptionsView.RowAutoHeight
+                        && !v.Columns.ColumnByFieldName("NazivCellBackColorID").Visible, naziv == null ? "nema" : naziv.AppearanceCell.TextOptions.WordWrap.ToString());
+                    var izgled = new DevExpress.Utils.AppearanceObject();
+                    // Konstruktor (rowHandle, stupac, stanje, izgled) preko refleksije, bez imena tipa stanja.
+                    ConstructorInfo ctor = typeof(DevExpress.XtraGrid.Views.Grid.RowCellStyleEventArgs).GetConstructors()[0];
+                    ParameterInfo[] ps = ctor.GetParameters();
+                    var argumenti = new object[ps.Length];
+                    for (int i = 0; i < ps.Length; i++)
+                    {
+                        Type pt = ps[i].ParameterType;
+                        if (pt == typeof(int))
+                            argumenti[i] = 0;
+                        else if (pt.IsInstanceOfType(naziv))
+                            argumenti[i] = naziv;
+                        else if (pt.IsInstanceOfType(izgled))
+                            argumenti[i] = izgled;
+                        else if (pt.IsValueType)
+                            argumenti[i] = Activator.CreateInstance(pt);
+                    }
+                    var arg = (DevExpress.XtraGrid.Views.Grid.RowCellStyleEventArgs)ctor.Invoke(argumenti);
+                    typeof(Carpo.NetGen.Ui.GridIzgled).GetMethod("StilCelije", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, new object[] { v, arg });
+                    T("grb01-boje", arg.Appearance.BackColor.ToArgb() == Color.Red.ToArgb() && arg.Appearance.ForeColor.ToArgb() == Color.Blue.ToArgb(),
+                        "back=" + arg.Appearance.BackColor + " fore=" + arg.Appearance.ForeColor);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("grb01", false, ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// TRE-03: stablo na dijalogu (Form2.vb 2558-2601, DazovaIzStore 2825): čvorovi iz procedure, parametar
+        /// je oznaka odabranog čvora (null dok nije odabran), odabir ide u ONCLICK, "refresh" ga puni iznova.
+        /// </summary>
+        private static void StabloDijaloga()
+        {
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("tree", NgGrana.Tree, "klasa", new NgAttributeBag(new Dictionary<string, string>
+                {
+                    { "SQL", "spTreeKlase:FORMA" }, { "ONCLICK", "select '@@klasa' as status" }
+                }), true));
+                kontrole.Add(new NgControl("label", NgGrana.Label, "status", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "s" } }), true));
+                var forma = new NgForm("T3", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                int stabala = 0;
+                Func<string, DataTable> baza = delegate (string x)
+                {
+                    string q = (x ?? "").Trim();
+                    var t = new DataTable();
+                    if (q.StartsWith("spTreeKlase", StringComparison.Ordinal))
+                    {
+                        stabala++;
+                        t.Columns.Add("id"); t.Columns.Add("roditelj"); t.Columns.Add("natpis"); t.Columns.Add("oznaka");
+                        t.Rows.Add("1", "0", "Sve", "10");
+                        t.Rows.Add("2", "1", "Voće", "20");
+                        t.Rows.Add("3", "1", "Povrće", "30");
+                        return t;
+                    }
+                    var m = System.Text.RegularExpressions.Regex.Match(q, "^select '([^']*)' as (\\w+)$");
+                    if (!m.Success)
+                        return null;
+                    t.Columns.Add(m.Groups[2].Value);
+                    t.Rows.Add(m.Groups[1].Value);
+                    return t;
+                };
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), baza);
+                    var stablo = (DevExpress.XtraTreeList.TreeList)d.Controls.Find("klasa", true)[0];
+                    Control status = d.Controls.Find("status", true)[0];
+                    bool cvorovi = stablo.Nodes.Count == 1 && stablo.Nodes[0].Nodes.Count == 2 && Convert.ToString(stablo.Nodes[0].GetValue(0)) == "Sve";
+                    string prazno = Convert.ToString(Zovi(d, "SviParametri"));
+                    T("tre03-cvorovi", cvorovi && stabala == 1 && prazno.IndexOf("@klasa=null,", StringComparison.Ordinal) >= 0, "cvorova=" + stablo.Nodes.Count + " param=" + prazno);
+                    stablo.FocusedNode = stablo.Nodes[0].Nodes[0];
+                    T("tre03-klik", status.Text == "20" && Convert.ToString(Zovi(d, "SviParametri")).IndexOf("@klasa='20',", StringComparison.Ordinal) >= 0, status.Text);
+                    Zovi(d, "IzvrsiDogadjaj", "select 'refresh' as klasa");
+                    T("tre03-refresh", stabala == 2 && stablo.Nodes.Count == 1, "stabala=" + stabala);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("tre03", false, ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// GRL-01: "Spremi postavke grida" sprema izgled grida dijaloga (SaveGridLayout 9205), novo otvaranje ga
+        /// učita (LoadLayout), a "Reset grida" ga obriše i složi stupce iznova (DeleteGridLayout).
+        /// </summary>
+        private static void IzgledGridaDijaloga()
+        {
+            string mapa = Path.Combine(Path.GetTempPath(), "nggrl" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            GridRaspored.MapaZaTest = mapa;
+            try
+            {
+                var g = new NgControl("grid", NgGrana.Grid, "g", new NgAttributeBag(new Dictionary<string, string> { { "SQL", "select a, b from t" } }), true);
+                var forma = new NgForm("L1", new NgAttributeBag(new Dictionary<string, string>()), "", "", new List<NgControl> { g }, new List<NgButton>(), new List<string>());
+                Func<string, DataTable> baza = delegate (string x)
+                {
+                    var t = new DataTable();
+                    t.Columns.Add("a", typeof(string));
+                    t.Columns.Add("b", typeof(string));
+                    t.Rows.Add("1", "2");
+                    return t;
+                };
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), baza);
+                    var grid = (DevExpress.XtraGrid.GridControl)d.Controls.Find("g", true)[0];
+                    var v = (DevExpress.XtraGrid.Views.Grid.GridView)grid.MainView;
+                    v.Columns.ColumnByFieldName("a").Visible = false;
+                    GridRaspored.Spremi(v, Convert.ToString(Zovi(d, "DatotekaIzgleda", grid)));
+                }
+                bool spremljeno = Directory.Exists(mapa) && Directory.GetFiles(mapa, "GridLodani-*-L1-g-.xml").Length == 1;
+                using (var d2 = new Dijalog())
+                {
+                    d2.Slozi(forma, new SqlKontekst(), baza);
+                    var grid = (DevExpress.XtraGrid.GridControl)d2.Controls.Find("g", true)[0];
+                    var v = (DevExpress.XtraGrid.Views.Grid.GridView)grid.MainView;
+                    bool ucitano = !v.Columns.ColumnByFieldName("a").Visible && v.Columns.ColumnByFieldName("b").Visible;
+                    T("grl01-spremi-ucitaj", spremljeno && ucitano, "spremljeno=" + spremljeno + " ucitano=" + ucitano);
+                    Zovi(d2, "ResetGrida", grid, g);
+                    bool vraceno = v.Columns.ColumnByFieldName("a") != null && v.Columns.ColumnByFieldName("a").Visible
+                        && Directory.GetFiles(mapa, "*.xml").Length == 0;
+                    T("grl01-reset", vraceno, "a=" + (v.Columns.ColumnByFieldName("a") == null ? "nema" : v.Columns.ColumnByFieldName("a").Visible.ToString()));
+                }
+            }
+            catch (Exception ex)
+            {
+                T("grl01", false, ex.ToString());
+            }
+            finally
+            {
+                GridRaspored.MapaZaTest = null;
+                try { if (Directory.Exists(mapa)) Directory.Delete(mapa, true); } catch (IOException) { }
+            }
+        }
+
+        private static NgColumn Stupac(string ime, string natpis, string vidljiv, string agregat, string format)
+        {
+            var a = new Dictionary<string, string>
+            {
+                { "INDEX", "" }, { "NAME", ime }, { "WIDTH", "1400" }, { "CAPTION", natpis }, { "FORMAT", format },
+                { "VISIBLE", vidljiv }, { "AGREGATEFUNCTION", agregat }
+            };
+            return new NgColumn(ime, agregat, false, new NgAttributeBag(a));
+        }
+
         private static object Polje(object o, string ime)
         {
             for (Type t = o.GetType(); t != null; t = t.BaseType)
@@ -2872,6 +3174,9 @@ namespace Carpo.NetGen.GridTest
                 var id = gv.Columns.ColumnByFieldName("id");
                 T("edt01-uredjiv", gv.OptionsBehavior.Editable && naziv != null && naziv.OptionsColumn.AllowEdit && id != null && !id.OptionsColumn.AllowEdit,
                     "editable=" + gv.OptionsBehavior.Editable + " rows=" + gv.DataRowCount);
+                // DGR-01: Class1.vb 1112 HeaderAlignment Far za int stupac, i na podlozi.
+                T("dgr01-zaglavlje-broja", id != null && id.AppearanceHeader.TextOptions.HAlignment == DevExpress.Utils.HorzAlignment.Far,
+                    id == null ? "nema id" : id.AppearanceHeader.TextOptions.HAlignment.ToString());
                 gv.FocusedRowHandle = 0;
                 // '|' nije granica tokena u SrediSQLPosljeNextForme (Class1 766-820), zato zarez.
                 gv.SetRowCellValue(0, naziv, "xyz");

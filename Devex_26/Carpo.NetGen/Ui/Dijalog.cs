@@ -502,6 +502,11 @@ namespace Carpo.NetGen.Ui
         {
             if (_citaj == null || k == null)
                 return;
+            if (k.Grana == NgGrana.Tree)
+            {
+                NapuniStablo(c, k, gotovSql != null);
+                return;
+            }
             if (k.Grana != NgGrana.Combo && k.Grana != NgGrana.Grid && k.Grana != NgGrana.DxGrid && k.Grana != NgGrana.MultiDrop)
                 return;
             if (gotovSql == null && k.Grana != NgGrana.Combo && DijalogTok.PreskociGrid(k))
@@ -573,22 +578,9 @@ namespace Carpo.NetGen.Ui
             if (grid != null)
             {
                 grid.DataSource = dt;
-                // Form2.vb 1643-1673: CreateGridColumns s EDITCOLUMNS grida (GRD-01). Bez toga su
-                // svi stupci vidljivi pod sirovim imenom, a ONCELLEDITED ne moze nikad okinuti.
                 var view = grid.MainView as GridView;
                 if (view != null)
-                {
-                    // Form2.vb 1739-1755: TOTALROW i CHECKBOXVISIBLE (ToUpper, samo "FALSE" gasi).
-                    bool ukupno = Attr(k, "TOTALROW").ToUpperInvariant() != "FALSE";
-                    GridIzgled.Primijeni(view, dt, EditStupci(c, k), ukupno);
-                    view.OptionsSelection.MultiSelectMode = Attr(k, "CHECKBOXVISIBLE").ToUpperInvariant() == "FALSE"
-                        ? GridMultiSelectMode.RowSelect
-                        : GridMultiSelectMode.CheckBoxRowSelect;
-                    // Form2.vb 1708: Janus ColumnHeaders = "2" (InheritableBoolean.False, 1713) skriva zaglavlja (3 grida, GRD-03).
-                    string zaglavlja = Attr(k, "COLUMNHEADERS").ToLowerInvariant();
-                    if (zaglavlja == "2" || zaglavlja == "false")
-                        view.OptionsView.ShowColumnHeaders = false;
-                }
+                    SloziGridDijaloga(c, k, view, dt);
             }
         }
 
@@ -1035,6 +1027,12 @@ namespace Carpo.NetGen.Ui
                     NgDnevnik.Akcija(BlagajnaNaredba.Upit(BlagajnaNaredba.Id(korak.Tekst)));
                     continue;
                 }
+                if (korak.Vrsta == "ispis" && korak.Tekst.IndexOf("PRINTGRID(", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    // Form2.vb 6950-6955: TempGrid = Controls(ime), pa IspisGRIDREPX s njegovim zaglavljima (ISP-07).
+                    IspisiGrid(korak.Tekst, GridIzNaredbe(korak.Tekst));
+                    continue;
+                }
                 if (korak.Vrsta == "ispis" || korak.Vrsta == "predlozak")
                 {
                     Carpo.NetGen.Print.PrintBridge.Ispisi(korak.Tekst, true, Id, Operater, Konekcija, "", ZadnjiSql, "", SviParametri(), "", "", "", Text, null, "", null);
@@ -1201,19 +1199,7 @@ namespace Carpo.NetGen.Ui
             }
             MasterSql = _jupiter ? "" : klik.MasterSql;
             if (!DijalogTok.DozvoliUpis && Carpo.NetGen.Print.PrintBridge.Vrsta(naredba, true).Length > 0)
-            {
-                DevExpress.XtraGrid.GridControl grid = null;
-                foreach (Control c in SveKontrole())
-                {
-                    grid = c as DevExpress.XtraGrid.GridControl;
-                    if (grid != null)
-                        break;
-                }
-                string orij = _forma != null && _forma.Atributi != null && _forma.Atributi.Ima("PAGEORIENTATION")
-                    ? _forma.Atributi.Vrijednost("PAGEORIENTATION") : "";
-                DataTable tab = grid == null ? null : grid.DataSource as DataTable;
-                Carpo.NetGen.Print.PrintBridge.Ispisi(naredba, true, Id, Operater, Konekcija, "", ZadnjiSql, "", SviParametri(), "", "", "", Text, grid, orij, tab);
-            }
+                IspisiGrid(naredba, GridIzNaredbe(naredba));
             for (int i = 0; i < klik.Naredbe.Count; i++)
             {
                 string n = klik.Naredbe[i] ?? "";
@@ -1567,6 +1553,14 @@ namespace Carpo.NetGen.Ui
             }
             DodatnoPostavi(c, v);
             string mala = (v ?? "").Trim().ToLowerInvariant();
+            if (c is DevExpress.XtraTreeList.TreeList)
+            {
+                // RefreshControls 5071-5088: "refresh" ponovno puni stablo iz izvornog SQL-a (TRE-03).
+                NgControl defStabla = NadjiKontrolu(c.Name);
+                if (mala.Contains("refresh") && defStabla != null)
+                    NapuniStablo(c, defStabla, true);
+                return;
+            }
             var grid = c as GridControl;
             if (grid != null)
             {
@@ -1957,6 +1951,11 @@ namespace Carpo.NetGen.Ui
                     tekstFokus.SelectAll();
                 };
             }
+            if (k.Grana == NgGrana.Tree && c is DevExpress.XtraTreeList.TreeList)
+            {
+                VeziStablo((DevExpress.XtraTreeList.TreeList)c, k);
+                return;
+            }
             string dbl = Attr(k, "ONDBLCLICK");
             string popup = Attr(k, "POPUP");
             if (k.Grana == NgGrana.Grid || k.Grana == NgGrana.DxGrid)
@@ -1971,7 +1970,11 @@ namespace Carpo.NetGen.Ui
                         if (view.FocusedColumn != null && view.FocusedRowHandle >= 0)
                             celija = view.GetFocusedRowCellValue(view.FocusedColumn);
                         if (_kontekst != null)
+                        {
+                            // Form2.Glbl_DoubleClick 6188-6201: DblClickedColumn (natpis) i TrenutnaVrijednost.
+                            _kontekst.DblClickedColumn = view.FocusedColumn == null ? "" : view.FocusedColumn.GetCaption();
                             _kontekst.LastValue = Form2Dogadjaj.VrijednostDvoklika(celija == null ? "" : Convert.ToString(celija));
+                        }
                         IzvrsiDogadjaj(dbl);
                     };
                 }
@@ -2000,6 +2003,24 @@ namespace Carpo.NetGen.Ui
                         IzvrsiDogadjaj(klik);
                     };
                 }
+                string prijeSql = Attr(k, "BEFORECELLEDITED");
+                if (view != null && prijeSql.Length > 0)
+                {
+                    view.ShowingEditor += delegate (object s, System.ComponentModel.CancelEventArgs e)
+                    {
+                        if (_slazem)
+                            return;
+                        // Form2.Glbl_EditingCell 8532-8614: TrenutnaKolona/TrenutnaVrijednost, stupci reda kao
+                        // parametri, red oznacen, Rafalno; greska prekine uredjivanje (e.Cancel).
+                        PostaviCeliju(view, view.FocusedColumn, view.FocusedColumn == null ? null : view.GetFocusedRowCellValue(view.FocusedColumn));
+                        if (view.FocusedRowHandle >= 0)
+                            view.SelectRow(view.FocusedRowHandle);
+                        string redParam = Form2Dogadjaj.ParametriCelije(view.GetFocusedDataRow());
+                        string sredjen = SrediPoslije.Zamijeni(prijeSql, redParam, _kontekst ?? new SqlKontekst(), _kontekst == null ? null : _kontekst.Clipboard, false);
+                        if (Form2Dogadjaj.VratiStaru(IzvrsiDogadjaj(sredjen)))
+                            e.Cancel = true;
+                    };
+                }
                 string celijaSql = Attr(k, "ONCELLEDITED");
                 if (view != null && celijaSql.Length > 0)
                 {
@@ -2010,10 +2031,13 @@ namespace Carpo.NetGen.Ui
                         object v = view.FocusedColumn == null ? null : view.GetFocusedRowCellValue(view.FocusedColumn);
                         stara = Form2Dogadjaj.VrijednostDvoklika(v == null ? "" : Convert.ToString(v));
                     };
-                    view.CellValueChanged += delegate
+                    view.CellValueChanged += delegate (object s, DevExpress.XtraGrid.Views.Base.CellValueChangedEventArgs e)
                     {
                         if (vracam || _slazem)
                             return;
+                        // 8616-8640: @@EDITEDCOLUMN je natpis uredjenog stupca, @@LASTVALUE nova vrijednost
+                        // (Narudzbe g_ugo_stavke: @kolona='@@editedcolumn', @vrijednost='@@lastvalue').
+                        PostaviCeliju(view, e.Column, e.Value);
                         // Form2.Glbl_CellEdited (8616-8688): stupci reda postanu parametri
                         // (ParametriSaGrida), SQL se sredi s njima, pa ide kroz Rafalno.
                         // Greska vrati staru vrijednost celije (CEL-01).
@@ -2033,7 +2057,12 @@ namespace Carpo.NetGen.Ui
                 }
                 // Form2.Glbl_GridMouseUp: desni klik na svaki grid dijaloga (POPUP i stalne stavke) (POP-01).
                 if (view != null)
-                    GridIzbornik.Vezi(view, delegate { return popup; }, IzvrsiIzbornik);
+                    GridIzbornik.Vezi(view, delegate { return popup; }, IzvrsiIzbornik, null, new GridRadnje
+                    {
+                        Ispis = delegate { IspisiGrid("PRINTGRID(" + c.Name + ")", gc); },
+                        Spremi = delegate { GridRaspored.Spremi(view, DatotekaIzgleda(c)); },
+                        Reset = delegate { ResetGrida(gc, k); }
+                    });
                 if (view != null && popup.Length > 0)
                 {
                     view.MouseUp += delegate (object s, MouseEventArgs e)
@@ -2045,6 +2074,15 @@ namespace Carpo.NetGen.Ui
                     };
                 }
             }
+        }
+
+        /// <summary>SrediSQL2 2882-2883: TrenutnaKolona.Caption i TrenutnaVrijednost (Val &lt;&gt; 0 → točka).</summary>
+        private void PostaviCeliju(GridView view, DevExpress.XtraGrid.Columns.GridColumn stupac, object vrijednost)
+        {
+            if (_kontekst == null || view == null)
+                return;
+            _kontekst.EditedColumn = stupac == null ? "" : stupac.GetCaption();
+            _kontekst.LastValue = Form1Rafal.ZadnjaVrijednost(vrijednost);
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -2296,7 +2334,7 @@ namespace Carpo.NetGen.Ui
                 ClipboardNg.UpisiParametre(cb, natpisi.ToString() + svi);
             }
             // 3429-3662: PokupiParametre sprema vrijednosti u NetGenDBClipboard (DBC-01).
-            if (_dbCb && !_slazem)
+            if (_dbCb && !_slazem && !_zatvaram)
                 SpremiDbClipboard();
             return svi;
         }
@@ -2440,6 +2478,12 @@ namespace Carpo.NetGen.Ui
                 if (grid != null)
                 {
                     sb.Append(GridParametar(grid));
+                    continue;
+                }
+                var stablo = c as DevExpress.XtraTreeList.TreeList;
+                if (stablo != null)
+                {
+                    sb.Append(ParametarStabla(stablo));
                     continue;
                 }
                 var look = c as LookUpEdit;

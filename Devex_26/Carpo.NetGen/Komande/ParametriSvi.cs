@@ -8,6 +8,18 @@ namespace Carpo.NetGen.Komande
     /// </summary>
     public static class ParametriSvi
     {
+        /// <summary>
+        /// Form2.vb 3667-3678 (treeViewMoj): oznaka odabranog čvora pod navodnicima, ' → '' i , → ~~; bez
+        /// odabranog čvora null (TRE-03).
+        /// </summary>
+        public static string Stablo(string ime, string oznakaCvora)
+        {
+            string n = (ime ?? "").Trim();
+            if (oznakaCvora == null)
+                return "@" + n + "=null,";
+            return "@" + n + "='" + oznakaCvora.Replace("'", "''").Replace(",", "~~") + "',";
+        }
+
         public static string Radio(string ime, bool ukljucen)
         {
             return "@" + (ime ?? "").Trim() + "=" + (ukljucen ? "1" : "0") + ",";

@@ -77,6 +77,7 @@ Korpus (584 granule): ONLOSTFOCUS 2 700+ (NUMBER 1 253, SEARCH 555, COMBO 515…
 | **GRD-01** | P1 | Stupci grida dijaloga | `CreateGridColumns` s `EDITCOLUMNS` (1643–1673), `MultipleSelection` | sirova imena, vidljivi `*ID`, nije se moglo uređivati | **ispravljeno**: `GridIzgled.Primijeni` (isti `MasterGrid.IzPodatka` kao podloga) |
 | **BTN-02** | P1 | CMD3–CMD6 dijaloga | `Button3..6_Click` → `NovaGenerickaForma2(Tag)` (5800–5818), bez Rafalna | tag je išao serveru kao SQL (35 gumba) | **ispravljeno**: forma, ispis ili objekt; nakon forme RAC-01 |
 | ISP-04 | P1 | `ispis(parametri)` | `NovaGenerickaForma2` rastavi ime i `tpP` (4277–4288) | `rptX(@id=5)` kao ime predloška | **ispravljeno**: `PrintBridge.BezZagrade` |
+| **ISP-07** | P1 | `PRINTGRID(ime)` u lancu/gumbu dijaloga (karticagrid, 3 granule) i „Ispis” u izborniku grida (podloga i dijalog) | `TempGrid = Controls(ime)`; `IspisGRIDREPX`/`IspisNovi` (Form2 9015-9056, Form1 isto): PAGEHEADERLEFT/CENTER/RIGHT grida kroz SrediSQL2 i SrediSQLPosljeNextForme s datumom za ispis, prazan centar je naslov, PAGEORIENTATION grida (LANDSCAPE u 344 grida) | lanac je zvao ispis bez grida, gumb prvi grid bez zaglavlja i s orijentacijom forme; „Ispis” u izborniku je bio goli pregled grida | **ispravljeno**: `Dijalog.IspisiGrid` i `Podloga.IspisiGrid` preko Spin.Printing PrintLink s tim zaglavljima i orijentacijom; jedna stavka „Ispis” (VB ima i „Ispis REPX”, isti ispis drugim motorom) |
 
 Otvoreno iz ovog pregleda:
 

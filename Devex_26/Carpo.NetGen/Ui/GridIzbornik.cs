@@ -12,22 +12,20 @@ namespace Carpo.NetGen.Ui
 {
     /// <summary>
     /// Desni klik na grid (Form2.Glbl_GridMouseUp 9500+, Form1 POPUPMASTER 3560 / POPUPDETAIL 3700):
-    /// stavke "Natpis:naredba#..." pa stalne stavke (Export grid, Grupiraj / razgrupiraj, Ispis).
+    /// stavke "Natpis:naredba#..." pa stalne stavke (Spremi postavke grida, Reset grida, Export grid, Grupiraj / razgrupiraj, Ispis).
     /// DevExpress izbornik retka (PopupMenuShowing) umjesto Janus ContextMenuStrip (POP-01).
     /// </summary>
     public static class GridIzbornik
     {
-        public static void Vezi(GridView pogled, Func<string> popup, Action<string> naredba)
-        {
-            Vezi(pogled, popup, naredba, null);
-        }
-
         /// <summary>
         /// dozvola(natpis, stalna): Form1 3577-3610 za stavke iz POPUP-a i ssPermissionProvjeriRafalnuKomandu
         /// (3627-3672) za stalne stavke. Null ne mijenja ništa (DOZ-01).
+        /// radnje: GridRadnje (Ispis s PAGEHEADER*, Spremi/Reset izgleda). Carpo ima jednu stavku ispisa.
         /// </summary>
-        public static void Vezi(GridView pogled, Func<string> popup, Action<string> naredba, Func<string, bool, Dozvole.Stanje> dozvola)
+        public static void Vezi(GridView pogled, Func<string> popup, Action<string> naredba, Func<string, bool, Dozvole.Stanje> dozvola, GridRadnje radnje)
         {
+            if (radnje == null)
+                radnje = new GridRadnje();
             if (pogled == null)
                 return;
             bool grupe = false;
@@ -51,8 +49,23 @@ namespace Carpo.NetGen.Ui
                     Primijeni(stavka, dozvola, dio[0], false);
                     e.Menu.Items.Add(stavka);
                 }
+                bool prva = true;
+                if (radnje.Spremi != null)
+                {
+                    var spremi = new DXMenuItem("Spremi postavke grida", delegate { radnje.Spremi(); });
+                    spremi.BeginGroup = stavke.Count > 0;
+                    Primijeni(spremi, dozvola, "Spremi postavke grida", true);
+                    e.Menu.Items.Add(spremi);
+                    prva = false;
+                }
+                if (radnje.Reset != null)
+                {
+                    var reset = new DXMenuItem("Reset grida", delegate { radnje.Reset(); });
+                    Primijeni(reset, dozvola, "Reset grida", true);
+                    e.Menu.Items.Add(reset);
+                }
                 var export = new DXMenuItem("Export grid", delegate { Izvezi(pogled.GridControl); });
-                export.BeginGroup = stavke.Count > 0;
+                export.BeginGroup = prva && stavke.Count > 0;
                 Primijeni(export, dozvola, "Export grid", true);
                 e.Menu.Items.Add(export);
                 var grupiraj = new DXMenuItem("Grupiraj / razgrupiraj", delegate
@@ -66,14 +79,19 @@ namespace Carpo.NetGen.Ui
                 });
                 Primijeni(grupiraj, dozvola, "Grupiraj / razgrupiraj", true);
                 e.Menu.Items.Add(grupiraj);
-                var ispis = new DXMenuItem("Ispis", delegate
+                var stavkaIspis = new DXMenuItem("Ispis", delegate
                 {
+                    if (radnje.Ispis != null)
+                    {
+                        radnje.Ispis();
+                        return;
+                    }
                     var g = pogled.GridControl;
                     if (g != null && g.IsPrintingAvailable)
                         g.ShowPrintPreview();
                 });
-                Primijeni(ispis, dozvola, "Ispis", true);
-                e.Menu.Items.Add(ispis);
+                Primijeni(stavkaIspis, dozvola, "Ispis", true);
+                e.Menu.Items.Add(stavkaIspis);
                 e.Allow = true;
             };
         }

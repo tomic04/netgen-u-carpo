@@ -160,7 +160,20 @@ namespace Carpo.NetGen.Xml
         {
             string typeRaw = cvor.Atributi.Ima("TYPE") ? cvor.Atributi.Vrijednost("TYPE") : null;
             string name = cvor.Atributi.Ima("NAME") ? (cvor.Atributi.Vrijednost("NAME") ?? "").Trim() : null;
-            return new NgControl(typeRaw, NgType.Odredi(typeRaw), name, cvor.Atributi, izravno);
+            var k = new NgControl(typeRaw, NgType.Odredi(typeRaw), name, cvor.Atributi, izravno);
+            for (int i = 0; i < cvor.Djeca.Count; i++)
+            {
+                if (cvor.Djeca[i].Ime == "COLUMN")
+                    k.Kolone.Add(Kolona(cvor.Djeca[i].Atributi));
+            }
+            return k;
+        }
+
+        private static NgColumn Kolona(NgAttributeBag a)
+        {
+            string jednoG = a.Ima("AGREGATEFUNCTION") ? (a.Vrijednost("AGREGATEFUNCTION") ?? "").Trim() : null;
+            string name = a.Ima("NAME") ? (a.Vrijednost("NAME") ?? "").Trim() : null;
+            return new NgColumn(name, jednoG, a.Ima("AGGREGATEFUNCTION"), a);
         }
 
         private static NgForm ProcitajFormu(NgCvor cvor)
@@ -190,11 +203,7 @@ namespace Carpo.NetGen.Xml
             {
                 if (cvor.Djeca[i].Ime != "COLUMN")
                     continue;
-                var a = cvor.Djeca[i].Atributi;
-                string jednoG = a.Ima("AGREGATEFUNCTION") ? (a.Vrijednost("AGREGATEFUNCTION") ?? "").Trim() : null;
-                bool dvaG = a.Ima("AGGREGATEFUNCTION");
-                string name = a.Ima("NAME") ? (a.Vrijednost("NAME") ?? "").Trim() : null;
-                kolone.Add(new NgColumn(name, jednoG, dvaG, a));
+                kolone.Add(Kolona(cvor.Djeca[i].Atributi));
             }
             return new NgColumnGroup(
                 cvor.Ime,

@@ -72,8 +72,18 @@ namespace Carpo.NetGen.Ui
             gvGla.DoubleClick += Pogled_DoubleClick;
             // Form1 3560 (POPUP/POPUPMASTER, 204 granule) i 3700 (POPUPDETAIL): desni klik (POP-01).
             // Form1 3577-3610 i 3627-3672: s PERMISIO stavke i stalne stavke slijede ssPermission (DOZ-01).
-            GridIzbornik.Vezi(gvGla, delegate { return _projekt == null ? "" : (_projekt.Popup ?? ""); }, IzvrsiIzbornik, DozvolaStavke);
-            GridIzbornik.Vezi(gvDet, delegate { return AtributProjekta("POPUPDETAIL"); }, IzvrsiIzbornik, DozvolaStavke);
+            GridIzbornik.Vezi(gvGla, delegate { return _projekt == null ? "" : (_projekt.Popup ?? ""); }, IzvrsiIzbornik, DozvolaStavke, new GridRadnje
+            {
+                Ispis = delegate { IspisiGrid("PRINTMASTER", false); },
+                Spremi = delegate { GridRaspored.Spremi(gvGla, DatotekaIzgleda(false)); },
+                Reset = delegate { GridRaspored.Obrisi(DatotekaIzgleda(false)); OsvjeziMaster(); }
+            });
+            GridIzbornik.Vezi(gvDet, delegate { return AtributProjekta("POPUPDETAIL"); }, IzvrsiIzbornik, DozvolaStavke, new GridRadnje
+            {
+                Ispis = delegate { IspisiGrid("PRINTDET", true); },
+                Spremi = delegate { GridRaspored.Spremi(gvDet, DatotekaIzgleda(true)); },
+                Reset = delegate { GridRaspored.Obrisi(DatotekaIzgleda(true)); OsvjeziDetail(); }
+            });
             // Form1.GridEX2_DoubleClick (7200): NovaGenerickaForma(strDBlClickDetForm), lanac kao gumb (DBL-02).
             gvDet.DoubleClick += delegate
             {
@@ -87,6 +97,13 @@ namespace Carpo.NetGen.Ui
             trMain.OptionsView.ShowIndicator = false;
             trMain.OptionsBehavior.Editable = false;
             trMain.FocusedNodeChanged += Drvo_FocusedNodeChanged;
+            // Form1.TreeView2_DoubleClick 5656-5662: dvoklik ponovi radnju odabranog čvora (forma ili upit),
+            // pa ponovni klik na isti čvor osvježi (TRE-02).
+            trMain.DoubleClick += delegate
+            {
+                if (trMain.FocusedNode != null)
+                    IzvrsiCvor(trMain.FocusedNode.Tag as Cvor);
+            };
             var stavke = new XtraTabPage();
             stavke.Text = "Stavke";
             splitGrid.Panel2.Controls.Remove(gcDet);
@@ -134,6 +151,7 @@ namespace Carpo.NetGen.Ui
             var kontekst = new SqlKontekst();
             kontekst.OperaterId = operater.ToString();
             kontekst.XmlName = Path.GetFileName(xml ?? "");
+            kontekst.ProjektNaslov = Text;
             kontekst.Version = NgVerzija.Tekst();
             kontekst.Node = "null";
             _stablo.Kontekst = kontekst;
@@ -278,7 +296,11 @@ namespace Carpo.NetGen.Ui
 
         private void Drvo_FocusedNodeChanged(object sender, FocusedNodeChangedEventArgs e)
         {
-            var cvor = e.Node == null ? null : e.Node.Tag as Cvor;
+            IzvrsiCvor(e.Node == null ? null : e.Node.Tag as Cvor);
+        }
+
+        private void IzvrsiCvor(Cvor cvor)
+        {
             if (cvor == null)
                 return;
             _stablo.Odaberi(cvor);
@@ -304,6 +326,35 @@ namespace Carpo.NetGen.Ui
         }
 
         private int _dubinaForme;
+
+        /// <summary>
+        /// PRINTMASTER/PRINTDET i "Ispis" u izborniku grida (Form1 IspisNovi, IspisGRIDREPX): Form1.vb 5934-5938,
+        /// 6001: PAGEHEADERLEFT/CENTER/RIGHT kroz SrediSQL i SrediSQLPosljeNextForme s ParametriSaGrida i datumom
+        /// za ispis; prazan centar je naslov (PRN-01, ISP-07).
+        /// </summary>
+        private void IspisiGrid(string naredba, bool detail)
+        {
+            GridControl gc = detail ? gcDet : gcGla;
+            DataTable tab = gc == null ? null : gc.DataSource as DataTable;
+            string orij = AtributProjekta("PAGEORIENTATION");
+            PrintBridge.Ispisi(naredba, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "",
+                ZaglavljeIspisa("PAGEHEADERLEFT"), ZaglavljeIspisa("PAGEHEADERCENTER"), ZaglavljeIspisa("PAGEHEADERRIGHT"), Text, gc, orij, tab);
+        }
+
+        /// <summary>
+        /// GridMaster/GridDet + ime XML-a (+ forma koja je napunila master, uz MULTIGRIDLAYOUT) + "-" + jezik
+        /// (Form1 6206, 6237). Jezik je JupiterTranslatorMPJezik, prazan bez prevoditelja.
+        /// </summary>
+        private string DatotekaIzgleda(bool detail)
+        {
+            string xml = GridRaspored.ImeXml(_master.Kontekst == null ? "" : _master.Kontekst.XmlName);
+            bool vise = AtributProjekta("MULTIGRIDLAYOUT").ToLowerInvariant() == "true";
+            string forma = !detail && vise ? _aktivnaFormaMastera : "";
+            return GridRaspored.Datoteka((detail ? "GridDet" : "GridMaster") + xml + forma + "-");
+        }
+
+        /// <summary>Form1 5448, 5489: AktivnaFormaMaster je forma s FILLEXPLORER koja je napunila master.</summary>
+        private string _aktivnaFormaMastera = "";
 
         private string ZaglavljeIspisa(string atribut)
         {
@@ -390,6 +441,7 @@ namespace Carpo.NetGen.Ui
                     _master.Stanje.ZadnjiSql = sqlPrazna;
                     _master.Stanje.Odluka = SqlTekst.Odluka(sqlPrazna);
                     _master.Stanje.BlokiranoPisanje = SqlTekst.JeZabranaPisanja(sqlPrazna);
+                    _aktivnaFormaMastera = ime;
                     NapuniGrid();
                     return;
                 }
@@ -430,6 +482,7 @@ namespace Carpo.NetGen.Ui
                     _master.Stanje.ZadnjiSql = sql;
                     _master.Stanje.SqlZaSlanje = sql;
                     _master.Stanje.Odluka = SqlTekst.Odluka(sql);
+                    _aktivnaFormaMastera = ime;
                     if (_master.Stanje.Odluka == "salji" && !SqlTekst.JeZabranaPisanja(sql))
                         NapuniGrid();
                     return;
@@ -598,17 +651,7 @@ namespace Carpo.NetGen.Ui
                         }
                         continue;
                     }
-                    object grid = vrsta == "detail" ? (object)gcDet : gcGla;
-                    DataTable tab = null;
-                    var gc = grid as GridControl;
-                    if (gc != null)
-                        tab = gc.DataSource as DataTable;
-                    string orij = _projekt != null && _projekt.Atributi != null && _projekt.Atributi.Ima("PAGEORIENTATION")
-                        ? _projekt.Atributi.Vrijednost("PAGEORIENTATION") : "";
-                    // Form1.vb 5934-5938, 6001: PAGEHEADERLEFT/CENTER/RIGHT kroz SrediSQL i SrediSQLPosljeNextForme
-                    // s ParametriSaGrida i datumom za ispis; prazan centar je naslov (PRN-01).
-                    PrintBridge.Ispisi(s, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "",
-                        ZaglavljeIspisa("PAGEHEADERLEFT"), ZaglavljeIspisa("PAGEHEADERCENTER"), ZaglavljeIspisa("PAGEHEADERRIGHT"), Text, grid, orij, tab);
+                    IspisiGrid(s, vrsta == "detail");
                 }
                 else if (s.ToUpperInvariant().IndexOf("BEEP()", StringComparison.Ordinal) >= 0)
                     RafalNaredba.Beep();
@@ -778,7 +821,8 @@ namespace Carpo.NetGen.Ui
             NgDnevnik.Sql(sql);
             DataTable t = Citaj(sql);
             NgColumnGroup def = _projekt == null ? null : _projekt.NadjiGrupu("DETAILCOLUMNS");
-            _detail.PrimijeniTablicu(t, def);
+            NgColumnGroup mst = _projekt == null ? null : _projekt.NadjiGrupu("MASTERCOLUMNS");
+            _detail.PrimijeniTablicu(t, def, mst == null ? null : mst.HeaderAlignment);
             VeziGrid(gvDet, gcDet, t, _detail.Stanje.Kolone, _detail.Stanje.Poruka, _detail.Stanje.CheckboxVidljiv, null, true);
             if (_detail.Stanje.FokusZadnji && gvDet.RowCount > 0)
                 gvDet.FocusedRowHandle = gvDet.RowCount - 1;
@@ -807,43 +851,12 @@ namespace Carpo.NetGen.Ui
                 PostaviStatus(redova.ToString());
             if (kolone == null)
                 return;
-            for (int i = 0; i < kolone.Count; i++)
-            {
-                GridKolona k = kolone[i];
-                if (k.Selektor || k.Podatak == "Icon")
-                    continue;
-                var c = pogled.Columns.ColumnByFieldName(k.Podatak);
-                if (c == null)
-                    continue;
-                c.Visible = k.Vidljiva;
-                c.Caption = k.Natpis ?? k.Podatak;
-                if (k.Sirina > 0)
-                    c.Width = k.Sirina;
-                c.OptionsColumn.AllowEdit = k.Uredivanje;
-                if (!string.IsNullOrEmpty(k.Format))
-                {
-                    c.DisplayFormat.FormatString = k.Format;
-                    c.DisplayFormat.FormatType = k.Format.IndexOf("yy", System.StringComparison.OrdinalIgnoreCase) >= 0
-                        || k.Format.IndexOf("dd", System.StringComparison.OrdinalIgnoreCase) >= 0
-                        ? DevExpress.Utils.FormatType.DateTime
-                        : DevExpress.Utils.FormatType.Numeric;
-                }
-                if (string.Equals(k.Poravnanje, "Far", System.StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(k.Poravnanje, "Right", System.StringComparison.OrdinalIgnoreCase))
-                    c.AppearanceCell.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
-                else if (string.Equals(k.Poravnanje, "Center", System.StringComparison.OrdinalIgnoreCase))
-                    c.AppearanceCell.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
-                if (string.Equals(k.PoravnanjeZaglavlja, "Far", System.StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(k.PoravnanjeZaglavlja, "Right", System.StringComparison.OrdinalIgnoreCase))
-                    c.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
-                else if (string.Equals(k.PoravnanjeZaglavlja, "Center", System.StringComparison.OrdinalIgnoreCase))
-                    c.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
-                else if (string.Equals(k.PoravnanjeZaglavlja, "Near", System.StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(k.PoravnanjeZaglavlja, "Left", System.StringComparison.OrdinalIgnoreCase))
-                    c.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Near;
-            }
+            // Class1.CreateGridColumns i Form1.CustomFormatKolona: zajedno s gridom dijaloga (DGR-01).
+            GridIzgled.PrimijeniKolone(pogled, kolone);
             PodesiUredjivanje(pogled, kolone);
             PrimijeniUkupno(pogled, tablica, kolone);
+            // Form1.vb 2009 / LoadLayout2: spremljeni izgled grida nakon CustomFormatKolona (GRL-01).
+            GridRaspored.Ucitaj(pogled, DatotekaIzgleda(pogled == gvDet), AtributProjekta("FILTERSAVE").ToLowerInvariant() == "true");
             if (pogled.RowCount > 0)
                 pogled.FocusedRowHandle = 0;
         }
