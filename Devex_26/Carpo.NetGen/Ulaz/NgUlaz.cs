@@ -6,6 +6,7 @@ namespace Carpo.NetGen
     internal sealed class NgUlazRezultat
     {
         public NgProject Projekt;
+        public string Putanja;
         public string WCaption;
         public string Greska;
         public bool Ucitano;
@@ -32,6 +33,7 @@ namespace Carpo.NetGen
 
             var r = NetGenXmlReader.Ucitaj(putanja);
             o.Ucitano = true;
+            o.Putanja = putanja;
             if (!r.Uspjeh)
             {
                 o.Greska = r.Greska;

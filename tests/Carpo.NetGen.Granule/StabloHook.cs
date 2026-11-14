@@ -50,6 +50,8 @@ namespace Carpo.NetGen.Granule
                 Directory.CreateDirectory(Path.GetDirectoryName(cilj));
                 File.Copy(datoteka, cilj, true);
                 var loader = new Loader();
+                // Provjera puta iz Parametra: samo model, bez prozora (M1 Run8 inace otvori Podlogu).
+                loader.BezProzora = true;
                 loader.moduleId = moduleId;
                 loader.Run8("localhost", "spin", "", "", 7, 0, 0, 0, remote);
                 if (loader.Projekt == null)

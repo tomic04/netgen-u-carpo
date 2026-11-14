@@ -207,6 +207,8 @@ namespace Carpo.TestShell
                         {
                         }
                         loader.TestXmlPath = xml;
+                        // TestShell sam otvara Podlogu (i klik-pregled), Run8 samo učita model.
+                        loader.BezProzora = true;
                         loader.moduleId = Path.GetFileName(xml);
                         loader.mainHandle = (int)pnlShell.Handle;
                         loader.Run8(server, database, username, password, operateriId, (int)pnlShell.Handle, 0, 0, "");
