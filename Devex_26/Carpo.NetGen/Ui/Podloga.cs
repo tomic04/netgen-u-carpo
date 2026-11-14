@@ -1562,6 +1562,7 @@ namespace Carpo.NetGen.Ui
             if (!MultiOdabir.Je(ime))
                 return;
             string op = _master.Kontekst == null ? "0" : _master.Kontekst.OperaterId;
+            Citaj(MultiOdabir.ObrisiKorisnika());
             Citaj(MultiOdabir.Obrisi(op));
             var ids = new System.Collections.Generic.List<string>();
             int[] sel = gvGla.GetSelectedRows();

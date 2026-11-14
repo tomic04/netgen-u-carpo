@@ -53,7 +53,7 @@ Pokretanje je opisano u zaglavlju `tools/diff/sql_diff.py`.
 | **SQL-01** | odluka | Razmak na kraju vrijednosti s grida | `Class1.vb` 867 uzima vrijednost iz neobrezanog dijela `"@x='abc' , "`: `'@@x'` → `'abc '`, `@@x` → `abc ` | bez razmaka | **čeka odluku**, prijedlog R: Carpo (vidi dolje) |
 | SQL-06 | P2 | `@@selectedfile`, `@@selectedpath`, `@@FOCUSEDCONTROL` na putu detail grida | `SrediSQL2` ih zamijeni globalnim vrijednostima zadnjeg dijaloga | `null` | otvoreno; u korpusu se pojavljuju samo u lancima dijaloga, gdje Carpo koristi `Sredi2` |
 | NUM-01 | P0 | Brojčano polje dijaloga šalje prikazani tekst, `DECIMALS` se ne čita | `Form2.vb` 2086, 3601 | `1.234,5` → `1.234.5` u SQL-u, decimale se ne mogu unijeti | **ispravljeno** (grana `pregled/num-01`) |
-| MULTI-01 | P1 | MULTISELECT i MULTIBLUE isto | `Form1.vb` 5015–5032, 4934 | oba uzimaju označene retke; temp se ne briše po `suser_sname()` | otvoreno |
+| MULTI-01 | P1 | MULTISELECT i MULTIBLUE isto | `Form1.vb` 5015–5032, 4931–4932 | oba uzimaju označene retke; temp se ne briše po `suser_sname()` | **ispravljeno** brisanje (prvo `susersname = suser_sname()`, pa operater). Isti odabir je DevExpress: uz kvačice (CheckBoxRowSelect) plavi red i kvačica su isto, bez kvačica plavi su odabrani redovi (RowSelect), pa MULTIBLUE i MULTISELECT daju iste retke kao NetGen u oba slučaja |
 
 ### SQL-01: prijedlog odluke
 

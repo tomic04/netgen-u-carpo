@@ -20,6 +20,12 @@ namespace Carpo.NetGen.Komande
             return (ime ?? "").Trim().ToLowerInvariant().StartsWith("multiblue", StringComparison.Ordinal);
         }
 
+        /// <summary>Form1.vb 4931: prvo brisanje po SQL korisniku (suser_sname), pa po operateru (4932) (MULTI-01).</summary>
+        public static string ObrisiKorisnika()
+        {
+            return "if object_id('TotalGenMultiSelectTemp') is not null delete TotalGenMultiSelectTemp where susersname= suser_sname()";
+        }
+
         public static string Obrisi(string operaterId)
         {
             string op = Broj(operaterId);
