@@ -543,7 +543,9 @@ namespace Carpo.NetGen.Ui
             _dubinaForme++;
             try
             {
+                Dijalog.Trag("otvori formu " + ime);
                 var dij = new Dijalog();
+                Dijalog.Trag("dijalog stvoren " + ime);
                 dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server) && !DijalogTok.Produkcija);
                 // Form1 5381-5520: ONSUBMIT izvršava podloga, jednom, nakon zatvaranja dijaloga (PN-01).
                 dij.OnSubmitSaljePodloga = true;
