@@ -822,9 +822,14 @@ namespace Carpo.TestShell
                 UpisiIshod(snimka, "FAIL nema prozora granule");
                 return 2;
             }
-            if (!ImaSnimku(snimka) && granula != null && !granula.IsDisposed)
+            // Ako je snimka uzeta prije nego se podloga iscrtala, ekran je prazan. Refresh iscrta prozor odmah
+            // (UpdateWindow), bez pumpanja poruka: DoEvents bi tu okinuo Shown, a ulaz ":Forma" (RUT-01) u
+            // OnShown otvori modalni dijalog koji Klikni zatvara tek kasnije.
+            for (int pokusajSnimke = 0; pokusajSnimke < 4 && !ImaSnimku(snimka) && granula != null && !granula.IsDisposed; pokusajSnimke++)
             {
-                try { granula.Update(); } catch { }
+                if (pokusajSnimke > 0)
+                    Thread.Sleep(300);
+                try { granula.Refresh(); } catch { }
                 SnimiProzor(granula.Handle, snimka);
             }
             if (!ImaSnimku(snimka) && !_klikPregled)
