@@ -319,6 +319,7 @@ namespace Carpo.NetGen.Ui
             PrimijeniOnLoad();
             // Form2.vb 1170-1182 i čitanje po kontroli: NetGenDBClipboard nadjača ONLOAD i ONLOAD2 (DBC-01).
             UcitajDbClipboard(forma);
+            SrediNaslov();
             OsvjeziStatus();
         }
 

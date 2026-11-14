@@ -1995,6 +1995,7 @@ namespace Carpo.NetGen.GridTest
             StatusDijaloga();
             GridDijalogaStupci();
             LozinkaULogu();
+            NaslovDijaloga();
             IncludeFormi();
             IzvorXmla();
             DozvoleDijaloga();
@@ -2937,6 +2938,29 @@ namespace Carpo.NetGen.GridTest
             }
         }
 
+        /// <summary>CAP-01: Form2.ProcitajXML 1240, @@ u naslovu forme.</summary>
+        private static void NaslovDijaloga()
+        {
+            try
+            {
+                var kontrole = new List<NgControl> { new NgControl("text", NgGrana.Text, "t", new NgAttributeBag(new Dictionary<string, string>()), true) };
+                var forma = new NgForm("N1", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Izmjena dokumenta : @@broj [ @@id ] @@datumdok" } }),
+                    "", "", kontrole, new List<NgButton>(), new List<string>());
+                var k = new SqlKontekst();
+                k.Id = "7";
+                k.ParametriSaGrida = "@broj='B-12',@datumdok='14.11.2026',";
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, k, delegate (string x) { return new DataTable(); });
+                    T("cap01-naslov", d.Text == "Izmjena dokumenta : B-12 [ 7 ] 14.11.2026", d.Text);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("cap01", false, ex.GetType().Name + ": " + ex.Message);
+            }
+        }
+
         private static string ZadnjiZapis()
         {
             return NgDnevnik.Zapisi.Count == 0 ? "" : NgDnevnik.Zapisi[NgDnevnik.Zapisi.Count - 1].Tekst;
@@ -3762,6 +3786,32 @@ namespace Carpo.NetGen.GridTest
                 forma = loader.Forma;
                 T("m1-run8-podloga", forma is Podloga && loader.hWnd != 0 && loader.WCaption == "Loader test" && string.IsNullOrEmpty(loader.ZadnjaGreska),
                     "forma=" + (forma == null ? "null" : forma.GetType().Name) + " hWnd=" + loader.hWnd + " caption=" + loader.WCaption + " greska=" + loader.ZadnjaGreska);
+                // ULZ-06: Form1.Run 1190-1205, Koler Jup10: podloga bez ruba, veličine panela, prati ga.
+                using (var domacin = new Form())
+                {
+                    var ploca = new Panel();
+                    ploca.Size = new Size(500, 300);
+                    domacin.Controls.Add(ploca);
+                    IntPtr hDomacin = domacin.Handle;
+                    IntPtr hPloca = ploca.Handle;
+                    var l2 = new Carpo.NetGen.Loader();
+                    l2.TestXmlPath = xml;
+                    l2.moduleId = "LoaderTest.xml";
+                    l2.Koler = "Jup10";
+                    l2.Run8("localhost", "spin", "", "", 7, (int)hPloca, 0, 0, "");
+                    Form p2 = l2.Forma;
+                    bool odmah = p2 != null && p2.Size == new Size(500, 300) && p2.FormBorderStyle == FormBorderStyle.None
+                        && GetAncestor(p2.Handle, 1) == hPloca;
+                    ploca.Size = new Size(640, 360);
+                    bool prati = p2 != null && p2.Size == new Size(640, 360);
+                    string opis = p2 == null ? "nema " + l2.ZadnjaGreska : "rub=" + p2.FormBorderStyle + " vel=" + p2.Size + " roditelj=" + (GetAncestor(p2.Handle, 1) == hPloca);
+                    if (p2 != null)
+                    {
+                        p2.Close();
+                        p2.Dispose();
+                    }
+                    T("ulz06-podloga-jup10", odmah && prati, opis);
+                }
                 // ULZ-02: ulaz frm otvara dijalog ulaznaForma (inace MAINFORM) s ID-om ulazniID (Form2.Run 55-65).
                 string dijXml = Path.Combine(dir, "FrmTest.xml");
                 File.WriteAllText(dijXml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT>\r\n<NAME>F</NAME>\r\n<CAPTION>Frm test</CAPTION>\r\n"

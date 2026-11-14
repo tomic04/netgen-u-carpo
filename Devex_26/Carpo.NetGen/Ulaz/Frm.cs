@@ -173,37 +173,13 @@ namespace Carpo.NetGen
         /// </summary>
         private void Ugradi(Form d, int clientHandle)
         {
-            bool jup10 = clientHandle != 0 && string.Equals((Koler ?? "").Trim(), "Jup10", StringComparison.Ordinal);
-            // Rub prije SetParent: promjena stila nakon njega može ponovo stvoriti prozor bez roditelja.
+            bool jup10 = Carpo.NetGen.Ulaz.JupiterProzor.JeJup10(Koler, clientHandle);
             if (jup10)
-                d.FormBorderStyle = FormBorderStyle.None;
+                Carpo.NetGen.Ulaz.JupiterProzor.BezRuba(d);
             if (clientHandle != 0)
                 SetParent(d.Handle, new IntPtr(clientHandle));
             if (jup10)
-            {
-                Control roditelj = Control.FromHandle(new IntPtr(clientHandle));
-                if (roditelj != null)
-                {
-                    Form forma = roditelj.FindForm();
-                    EventHandler prati = delegate
-                    {
-                        if (d.IsDisposed)
-                            return;
-                        d.WindowState = FormWindowState.Normal;
-                        d.Location = System.Drawing.Point.Empty;
-                        d.Size = roditelj.Size;
-                    };
-                    roditelj.Resize += prati;
-                    if (forma != null)
-                        forma.LocationChanged += prati;
-                    d.FormClosed += delegate
-                    {
-                        roditelj.Resize -= prati;
-                        if (forma != null)
-                            forma.LocationChanged -= prati;
-                    };
-                }
-            }
+                Carpo.NetGen.Ulaz.JupiterProzor.PratiRoditelja(d, clientHandle, false);
             int glavni = mainHandle;
             if (glavni != 0)
             {

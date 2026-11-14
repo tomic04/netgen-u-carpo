@@ -45,6 +45,20 @@ namespace Carpo.NetGen.Ui
             }
         }
 
+        /// <summary>
+        /// Form2.ProcitajXML 1240: Me.Text = SrediSQLPosljeNextForme(SrediSQL2(Me.Text), , True) (CAP-01). 752 naslova
+        /// formi u korpusu imaju @@ ("Izmjena dokumenta : @@broj [ @@id ]"); datumi su za ispis (dd.MM.yyyy).
+        /// Prazan prevParametri u VB-u čita strSviParametriuModulu, a to je ParametriSaGrida.
+        /// </summary>
+        private void SrediNaslov()
+        {
+            string t = Text ?? "";
+            if (t.IndexOf("@@", StringComparison.Ordinal) < 0)
+                return;
+            SqlKontekst k = _kontekst ?? new SqlKontekst();
+            Text = SrediPoslije.Zamijeni(t, k.ParametriSaGrida, k, k.Clipboard, true);
+        }
+
         private string StatusDio(string predlozak)
         {
             string t = Ponasanje.StatusTekst(predlozak);
