@@ -84,7 +84,7 @@ Otvoreno iz ovog pregleda (stanje nakon C4):
 - ~~**FOR-01**~~: ispravljeno u C4 (`FOREACH*` vrti cijeli lanac po retku, test `for01-foreachrow`).
 - ~~**SQL-07**~~: provjereno 14. 11. 2026. `tools/diff/sql_diff.py` (vb_oracle naspram C#): put dijaloga ima 13 746 slučajeva i 0 razlika. `lanac_diff.py`: 5 885 segmenata, 2 poznate razlike (`:printgrid`, `:FISKALIZACIJA`).
 - ~~**MDR-01**~~: ispravljeno u C4 (stavke, `@ime='id~id'`, test `mdr01-multidrop`).
-- **ISP-05** (P2): `rs:/…`, `rsgen` i `.clsReport` traže stari PrintDlg COM; čeka odluku ostaje li on na računalima.
+- ~~**ISP-05**~~: odluka korisnika 14. 11. 2026.: stari VB6 ispis (`rs:/…`, `rsgen`, `gg/`, `.clsReport`, PrintDlg COM) se ukida i ne porta se. `PrintBridge.JeStariVb6` ga prepozna i zapiše grešku u Carpo log umjesto da tiho ne napravi ništa (R123, test `isp05-*`).
 - ~~`TIMERSQL`, `MULTILINE`/`ENTERASTAB`, `STYLE`, `HOTKEY`~~: obrađeno u C4 (TXT-02, HOT-01, LAY-01; TIMERSQL se ni u NetGenu ne izvršava).
 
 ## Testovi (događaji)
