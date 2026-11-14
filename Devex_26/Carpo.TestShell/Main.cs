@@ -958,6 +958,17 @@ namespace Carpo.TestShell
                 catch
                 {
                 }
+                // SWP-07: skrivena forma drži prozore (USER objekte). Cijeli Centar tehnike (411) u jednom procesu
+                // stigao je do granice od 10 000 ("Error creating window handle") oko 200. granule, pa je sve
+                // iza toga bila IZNIMKA. Dispose bez Close: ne čeka ONCLOSED ni DoEvents (5e66957), a otpusti
+                // prozore i vezu granule (Podloga.Dispose, SES-01).
+                try
+                {
+                    f.Dispose();
+                }
+                catch
+                {
+                }
             }
         }
 
