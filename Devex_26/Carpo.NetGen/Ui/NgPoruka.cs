@@ -20,6 +20,26 @@ namespace Carpo.NetGen.Ui
         {
             // Form2.vb 7165-7169: MSGBOX se prikazuje. Bez ovoga PorukaNaredba.Prikazi je null u Carpu i poruka se gubi.
             PorukaNaredba.Zadano = delegate (string t) { Info(null, t, "Poruka"); };
+            // ISEMPTYORZEROALERT/CANCELBOX kao XtraMessageBox (Carpo). Bez korisnika (CI, klik-pregled) pitanje je
+            // Cancel: modalni prozor bi zaustavio test. Datoteke i mape ostaju WinForms dijalozi, kao u Carpu.
+            RafalNaredba.ZadanoPitaj = delegate (string t)
+            {
+                NgDnevnik.Akcija("pitanje: " + (t ?? ""));
+                if (BezKorisnika())
+                    return false;
+                return XtraMessageBox.Show(t ?? "", "Pitanje", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK;
+            };
+            RafalNaredba.ZadanoUpozori = delegate (string t)
+            {
+                NgDnevnik.Akcija("upozorenje: " + (t ?? ""));
+                if (!BezKorisnika())
+                    XtraMessageBox.Show(t ?? "", "Upozorenje", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            };
+        }
+
+        private static bool BezKorisnika()
+        {
+            return Tiho || string.Equals(Environment.GetEnvironmentVariable("GITHUB_ACTIONS") ?? "", "true", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>Statički konstruktor postavi PorukaNaredba.Zadano.</summary>
@@ -35,7 +55,7 @@ namespace Carpo.NetGen.Ui
                 Zapis(tekst ?? "");
                 return;
             }
-            if (Tiho || string.Equals(Environment.GetEnvironmentVariable("GITHUB_ACTIONS") ?? "", "true", StringComparison.OrdinalIgnoreCase))
+            if (BezKorisnika())
                 return;
             try
             {

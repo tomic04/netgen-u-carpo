@@ -4,6 +4,7 @@ using Carpo.NetGen.Grid;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Log;
 using Carpo.NetGen.Model;
+using DevExpress.Utils.Menu;
 using DevExpress.XtraTreeList;
 using DevExpress.XtraTreeList.Nodes;
 
@@ -113,15 +114,16 @@ namespace Carpo.NetGen.Ui
             {
                 if (e.Button != MouseButtons.Right)
                     return;
-                var meni = new ContextMenuStrip();
+                // DevExpress izbornik umjesto ContextMenuStrip (kao GridIzbornik).
+                var meni = new DXPopupMenu();
                 var stavke = Form2Dogadjaj.Izbornik(popup);
                 for (int i = 0; i < stavke.Count; i++)
                 {
                     string[] dio = stavke[i].Split(new[] { '|' }, 2);
                     string cilj = dio.Length > 1 ? dio[1] : "";
-                    meni.Items.Add(dio[0], null, delegate { IzvrsiIzbornik(cilj); });
+                    meni.Items.Add(new DXMenuItem(dio[0], delegate { IzvrsiIzbornik(cilj); }));
                 }
-                meni.Show(stablo, e.Location);
+                MenuManagerHelper.ShowMenu(meni, stablo.LookAndFeel, null, stablo, e.Location);
             };
         }
     }

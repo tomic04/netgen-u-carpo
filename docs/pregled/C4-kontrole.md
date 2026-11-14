@@ -30,6 +30,7 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 | **DAT-02** | `VALUE="DATE"`/`DATE1`/`DATE2` na datumu (197 polja, 41 granula) | Form2 čita `VALUE` samo za broj (2088), `DTPicker` ga ne gleda | ignorirano | isto (nema čega prenijeti). `TYPE="tab"` nema u korpusu |
 | **TRE-03** | `TYPE="tree"` na dijalogu (11 granula: ManagerCjenika, AOPNovi, JOPPD, MPOptimalneZalihe…) | `treeViewMoj` (2558-2601): SQL `sp…tree…:forma#tekst:naredba`, `DazovaIzStore` (id, roditelj, natpis, oznaka), `ExpandAll`; AfterSelect → ONCLICK; parametar `@ime='oznaka'` ili null (3667); POPUP na desni klik; "refresh" puni iznova (5071) | prazan `TreeList`, bez parametra i događaja | `Dijalog.NapuniStablo` preko istog `Stablo` (NaDijalogu) kao podloga; `ParametriSvi.Stablo`; ONCLICK na promjenu čvora; POPUP; refresh |
 | **HLP-02** | HELPKOD projekta (16 granula) ili forme (2); gumb bez ONCLICK; TYPE help | `Form2_KeyDown` F1 i `Glbl_ClickButton` → `DajPokaziHelp` (JupiterHelp.exe -s -d -h -o -p) | dijalog nije imao pomoć | F1 i takvi gumbi pokreću JupiterHelp preko zajedničkog `JupiterPomoc` (kao podloga); bez koda ništa (VB bi pokrenuo s praznim `-h`) |
+| **DEV-01** | WinForms ostaci u UI-u | — | `ContextMenuStrip` na stablu dijaloga, `MessageBox` za ISEMPTYORZEROALERT/CANCELBOX | DevExpress `DXPopupMenu` i `XtraMessageBox` (bez korisnika na CI-u pitanje je Cancel). Datoteke/mape/boja ostaju WinForms dijalozi, kao u Carpu; `WebBrowser` (3 granule) nema DevExpress zamjenu |
 
 ## Grid dijaloga
 
