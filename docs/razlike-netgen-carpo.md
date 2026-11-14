@@ -208,7 +208,7 @@ Svaka uklonjena stavka ima test koji provjerava NetGen linije. R59 i R110 su por
 | R91 combo i grid SELECT | `dijalog-combo-sql` |
 | R92 `NEXTFORM` i `FILLEXPLORER` | `rupa-next` |
 | R93 prazan red comboa | `combo-prazan-red` |
-| R94 `exec` se ne lijepi | `onclick-exec-ne-lijepi` |
+| ~~R94 `exec` se ne lijepi~~ povučeno 14. 11. 2026. (PN-03): VB nema iznimku za `exec`, `!!` gasi lijepljenje | `onclick-uzvicnik-ne-lijepi`, `lijepi-exec-kao-vb` |
 | R95 `SKIPDEFAULTLOAD` | `grid-skip` |
 | R96 `NEXTFORM` tekst | `next-kom` |
 | R97 master nakon OK | `okl-prihvati` |

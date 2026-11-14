@@ -130,17 +130,16 @@ namespace Carpo.NetGen.Komande
         }
 
         /// <summary>
-        /// sp... dobije drugi niz @ime= iako već ima parametre. !! na kraju to gasi.
+        /// Form2.Button1_Click 3377 i Form1 5450: strParametri se lijepi na strStora, osim kad prvih 6 znakova
+        /// stoji u INSERTDELETEUPDATESELECT. !! na kraju to gasi (Form1 5447). Iznimke za "exec" u VB-u nema
+        /// (PN-03): 26 ONSUBMIT-a u korpusu, npr. `exec spMPUvjetiKase @action = 13 , @operateriid = @@operateriid ,`,
+        /// u NetGenu dobije parametre dijaloga.
         /// </summary>
         public static string Lijepi(string stora, string parametri)
         {
             string sql = stora ?? "";
             string bez = sql.Replace("!!", "");
             if (sql.Contains("!!"))
-                return bez;
-            string pocetak = bez.TrimStart();
-            if (pocetak.StartsWith("exec", StringComparison.OrdinalIgnoreCase)
-                || pocetak.StartsWith("execute", StringComparison.OrdinalIgnoreCase))
                 return bez;
             if (Prvih6JeDml(bez))
                 return bez;
