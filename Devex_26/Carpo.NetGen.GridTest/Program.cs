@@ -3826,7 +3826,7 @@ namespace Carpo.NetGen.GridTest
         }
 
         /// <summary>
-        /// CMB-01: granula s COMBO atributom (Narudžbe) se otvara. Postavljanje bbiLookUpFilter.EditValue
+        /// CMB-02: granula s COMBO atributom (Narudžbe) se otvara. Postavljanje bbiLookUpFilter.EditValue
         /// zvalo je i Carpo rukovatelj u Manageru, koji je bez JSettings bacio NullReference iz Prikazi.
         /// </summary>
         private static void ComboPodloge()
@@ -3837,7 +3837,7 @@ namespace Carpo.NetGen.GridTest
             string xml = Path.Combine(root, "definitions", "netgen", "BIOVEGA", "Narudzbe.xml");
             if (!File.Exists(xml))
             {
-                T("cmb01-combo-podloga", false, "nema " + xml);
+                T("cmb02-combo-podloga", false, "nema " + xml);
                 return;
             }
             var forma = new Podloga();
@@ -3853,7 +3853,7 @@ namespace Carpo.NetGen.GridTest
                 catch (Exception ex) { greska = ex.GetType().Name + ": " + ex.Message; }
                 var combo = forma.bbiLookUpFilter;
                 string vrijednost = combo == null ? "" : Convert.ToString(combo.EditValue);
-                T("cmb01-combo-podloga", greska.Length == 0 && otvoren && vrijednost == "Vremenska podjela",
+                T("cmb02-combo-podloga", greska.Length == 0 && otvoren && vrijednost == "Vremenska podjela",
                     "otvoren=" + otvoren.ToString() + " combo=" + vrijednost + " " + greska);
             }
             finally

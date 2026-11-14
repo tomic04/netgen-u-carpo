@@ -1065,7 +1065,7 @@ namespace Carpo.UI.Forms.Master
         private void bbiLookUpFilter_EditValueChanged(object sender, EventArgs e)//promjena
         {
             // NetGen Podloga puni isti combo iz COMBO atributa i ima svoj rukovatelj (Combo_EditValueChanged).
-            // Bez JSettings ovaj je padao na JSettings.ComboEdit (NullReference pri otvaranju Narudžbi, CMB-01).
+            // Bez JSettings ovaj je padao na JSettings.ComboEdit (NullReference pri otvaranju Narudžbi, CMB-02).
             if (JSettings == null)
                 return;
             if (string.Equals(previous, "Filter", StringComparison.CurrentCultureIgnoreCase))
