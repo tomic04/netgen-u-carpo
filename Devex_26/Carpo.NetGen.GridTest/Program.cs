@@ -93,8 +93,8 @@ namespace Carpo.NetGen.GridTest
                         popuni = statusi.Forme[i];
                 }
             }
-            string sql = Carpo.NetGen.Komande.DijalogTok.SqlNakonOk(popuni);
-            T("fillexplorer-statusi", sql.IndexOf("spStatusiQuery", StringComparison.OrdinalIgnoreCase) >= 0, sql);
+            string sql = popuni == null ? "" : (popuni.OnSubmit ?? "");
+            T("fillexplorer-statusi", popuni != null && Carpo.NetGen.Komande.DijalogTok.PuniExplorer(popuni) && sql.IndexOf("spStatusiQuery", StringComparison.OrdinalIgnoreCase) >= 0, sql);
             Carpo.NetGen.Model.NgForm onlydet = null;
             if (statusi != null)
             {
@@ -104,7 +104,7 @@ namespace Carpo.NetGen.GridTest
                         onlydet = statusi.Forme[i];
                 }
             }
-            T("onlydet-nije-master", Carpo.NetGen.Komande.DijalogTok.SqlNakonOk(onlydet).Length == 0, Carpo.NetGen.Komande.DijalogTok.SqlNakonOk(onlydet));
+            T("onlydet-nije-master", onlydet != null && !Carpo.NetGen.Komande.DijalogTok.PuniExplorer(onlydet), Carpo.NetGen.Komande.DijalogTok.FillExplorerVrijednost(onlydet));
             T("onlydet-detalj", Carpo.NetGen.Komande.DijalogTok.OsvjeziDetalj(onlydet) && !Carpo.NetGen.Komande.DijalogTok.OsvjeziDetalj(popuni), "");
             var rute = Ucitaj("BSRute.xml");
             Carpo.NetGen.Model.NgForm stablo = null;
@@ -116,7 +116,7 @@ namespace Carpo.NetGen.GridTest
                         stablo = rute.Forme[i];
                 }
             }
-            T("onlytree-nije-master", stablo != null && Carpo.NetGen.Komande.DijalogTok.SqlNakonOk(stablo).Length == 0 && Carpo.NetGen.Komande.DijalogTok.OsvjeziStablo(stablo) && !Carpo.NetGen.Komande.DijalogTok.OsvjeziDetalj(stablo), "");
+            T("onlytree-nije-master", stablo != null && !Carpo.NetGen.Komande.DijalogTok.PuniExplorer(stablo) && Carpo.NetGen.Komande.DijalogTok.OsvjeziStablo(stablo) && !Carpo.NetGen.Komande.DijalogTok.OsvjeziDetalj(stablo), "");
             var jezici = Ucitaj("JeziciNG.xml");
             T("obicna-unesi", Carpo.NetGen.Komande.GumbTok.Akcija(jezici, "Unesi") == "forma", Carpo.NetGen.Komande.GumbTok.Akcija(jezici, "Unesi"));
             T("obicna-refreshmaster", Carpo.NetGen.Komande.GumbTok.Akcija(jezici, "refreshmaster") == "osvjezi", Carpo.NetGen.Komande.GumbTok.Akcija(jezici, "refreshmaster"));
@@ -1924,9 +1924,9 @@ namespace Carpo.NetGen.GridTest
                 NgForm prazan = FormaIme(p, "PRAZAN");
                 NgForm bez = FormaIme(p, "BEZ");
                 NgForm dijete = FormaIme(p, "DIJETE");
-                T("STA-08", unesi != null && unesi.Kontrole.Count == 0 && DijalogTok.SqlNakonOk(unesi) == "select 1", DijalogTok.SqlNakonOk(unesi));
-                T("LVO-04", stablo != null && DijalogTok.OsvjeziStablo(stablo) && !DijalogTok.PuniExplorer(stablo) && DijalogTok.SqlNakonOk(stablo) == "", "");
-                T("MPK-30", prazan != null && !DijalogTok.PuniExplorer(prazan) && DijalogTok.SqlNakonOk(prazan) == "", "");
+                T("STA-08", unesi != null && unesi.Kontrole.Count == 0 && DijalogTok.PuniExplorer(unesi) && unesi.OnSubmit == "select 1", unesi == null ? "" : unesi.OnSubmit);
+                T("LVO-04", stablo != null && DijalogTok.OsvjeziStablo(stablo) && !DijalogTok.PuniExplorer(stablo), "");
+                T("MPK-30", prazan != null && !DijalogTok.PuniExplorer(prazan) && DijalogTok.FillExplorerVrijednost(prazan) == "", "");
                 T("OPZ-04", bez != null && !DijalogTok.PuniExplorer(bez) && (p.Atributi.Vrijednost("FILLEXPLORER") ?? "") == "TRUE", "");
                 var vrc = DijalogTok.Koraci("REFRESHAFTERCHILD");
                 T("VRC-05", dijete != null && dijete.Atributi.Vrijednost("REFRESHAFTERCHILD") == "TRUE" && !Lanac.OsvjezavaSegment("REFRESHAFTERCHILD") && vrc.Count == 1 && vrc[0].Vrsta == "sql", vrc.Count == 0 ? "" : vrc[0].Vrsta);
@@ -1973,12 +1973,9 @@ namespace Carpo.NetGen.GridTest
             T("sredi-poslije-cb", SrediPoslije.Zamijeni("@@tkosmomi", "", k, cb, false) == "Glavno"
                 && SrediPoslije.Zamijeni("@@kolicina", "", k, cb, false) == "1.5", SrediPoslije.Zamijeni("@@kolicina", "", k, cb, false));
             T("gridrowcount-komentar", SrediPoslije.Zamijeni("@@GRIDROWCOUNT(g)", "", k, null, false) == "null(g)", SrediPoslije.Zamijeni("@@GRIDROWCOUNT(g)", "", k, null, false));
-            string dml = SrediPoslije.ZaSlanje("update t set a=@@naziv", "@naziv='K',", k, null);
-            T("za-slanje-dml", dml == "update t set a=K" && dml.IndexOf("@naziv=", StringComparison.Ordinal) < 0, dml);
-            string sp = SrediPoslije.ZaSlanje("spX", "@a=1,", k, null);
-            T("za-slanje-sp", sp.IndexOf("@a=1", StringComparison.Ordinal) >= 0, sp);
-            string gas = SrediPoslije.ZaSlanje("spX !!", "@a=1,", k, null);
-            T("za-slanje-uzvicnik", gas.IndexOf("@a", StringComparison.Ordinal) < 0 && gas.IndexOf("!!", StringComparison.Ordinal) < 0, gas);
+            // ZaSlanje je maknut (PN-01): ONSUBMIT priprema Dijalog.PripremiOnSubmit (Lijepi + Pripremi), a izvršava podloga.
+            T("za-slanje-dml", Lanac.Lijepi("update t set a=@@naziv", "@naziv='K',") == "update t set a=@@naziv", "");
+            T("za-slanje-uzvicnik", Lanac.Lijepi("spX !!", "@a=1,") == "spX ", Lanac.Lijepi("spX !!", "@a=1,"));
             string kol = SrediPoslije.Kolone("select @(stavke..naziv)", delegate (string g, string c) { return g == "stavke" && c == "naziv" ? "Kava" : "null"; });
             T("kolone-grid", kol == "select Kava", kol);
             var red = new DataTable();
@@ -2063,6 +2060,7 @@ namespace Carpo.NetGen.GridTest
             BojeIzUpita();
             StabloDijaloga();
             IzgledGridaDijaloga();
+            PregledNeovisni.Izvrsi(T);
             OznaceniIzUpita();
             // HLP-02: DajPokaziHelp argumenti; Str(7) ima razmak sprijeda.
             T("hlp02-argumenti", JupiterPomoc.Argumenti("srv", "db", "KOD", "7", "X.xml") == "-s srv -d db -h KOD -o  7 -p X.xml",

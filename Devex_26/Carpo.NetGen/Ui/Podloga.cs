@@ -478,6 +478,17 @@ namespace Carpo.NetGen.Ui
 
         private void OtvoriFormu(string naredba)
         {
+            OtvoriFormu(naredba, null, false);
+        }
+
+        /// <summary>
+        /// Form1.NovaGenerickaForma (5290-5520). <paramref name="idSljedece"/> je Tid iz NEXTFORM petlje (5414):
+        /// sljedeća forma se otvara s ID-om iz rezultata ONSUBMIT-a prethodne, ne s fokusiranim redom.
+        /// <paramref name="izDijaloga"/>: dijete otvoreno iz dijaloga ide kao Form2.NovaGenerickaForma2 (4384-4479):
+        /// ONSUBMIT jednom, NEXTFORM, bez FILLEXPLORER grana i bez osvježavanja mastera (roditelj radi RefreshKontrola).
+        /// </summary>
+        private void OtvoriFormu(string naredba, string idSljedece, bool izDijaloga)
+        {
             if (string.IsNullOrWhiteSpace(naredba) || _projekt == null || _dubinaForme > 8)
                 return;
             string trazeno = naredba.Trim();
@@ -507,28 +518,31 @@ namespace Carpo.NetGen.Ui
             }
             if (MultiOdabir.Je(ime))
                 NapuniOdabir(ime);
+            if (!string.IsNullOrEmpty(idSljedece))
+            {
+                // 5414-5415: Form2c.ID = Tid, cls1.MasterID = Tid.
+                _master.Stanje.Id = idSljedece;
+                _master.Kontekst.Id = idSljedece;
+            }
             if (forma.Kontrole == null || forma.Kontrole.Count == 0)
             {
-                // Form1.vb 5369: nema kontrola, OKClick je true i dijalog se ne otvara.
-                string prazna = DijalogTok.SqlNakonOk(forma);
-                if (prazna.Length > 0)
-                {
-                    string sqlPrazna = SqlTekst.Sredi(prazna, _master.Kontekst);
-                    _master.Stanje.IzvorSql = prazna;
-                    _master.Stanje.SqlZaSlanje = sqlPrazna;
-                    _master.Stanje.ZadnjiSql = sqlPrazna;
-                    _master.Stanje.Odluka = SqlTekst.Odluka(sqlPrazna);
-                    _master.Stanje.BlokiranoPisanje = SqlTekst.JeZabranaPisanja(sqlPrazna);
-                    _aktivnaFormaMastera = ime;
-                    NapuniGrid();
-                    return;
-                }
+                // Form1.vb 5369-5375: bez kontrola dijalog se ne otvara, OKClick je True i ide se odmah na NEXTFORM
+                // i FILLEXPLORER grane sa strStora bez parametara (PokupiParametre nema što skupiti).
+                string bezKontrola = Lanac.Lijepi((forma.OnSubmit ?? "").Trim(), "");
+                if (bezKontrola.Length > 0)
+                    bezKontrola = Lanac.BezKrajnjegZareza(SqlTekst.ZaGumb(bezKontrola, _master.Kontekst));
+                _dubinaForme++;
+                try { NakonDijaloga(forma, ime, bezKontrola, izDijaloga); }
+                finally { _dubinaForme--; }
+                return;
             }
             _dubinaForme++;
             try
             {
                 var dij = new Dijalog();
                 dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server) && !DijalogTok.Produkcija);
+                // Form1 5381-5520: ONSUBMIT izvršava podloga, jednom, nakon zatvaranja dijaloga (PN-01).
+                dij.OnSubmitSaljePodloga = true;
                 dij.Konekcija = _spoj;
                 dij.Operater = _master.Kontekst.OperaterId;
                 dij.Id = _master.Stanje.Id;
@@ -538,7 +552,7 @@ namespace Carpo.NetGen.Ui
                     // Form2.vb 3906: strSviParametriuModulu vrijedi i u djetetu.
                     if (_master.Kontekst != null)
                         _master.Kontekst.ParametriSaGrida = ParametriModula.Dodaj(_master.Kontekst.ParametriSaGrida, dij.ParametriVise());
-                    OtvoriFormu(imeDjeteta);
+                    OtvoriFormu(imeDjeteta, null, true);
                 };
                 // Form1.NovaGenerickaForma 5295: Form2b.DetID = GetDetID() (@@DETID u dijalogu, DET-01).
                 if (_master.Kontekst != null)
@@ -551,41 +565,150 @@ namespace Carpo.NetGen.Ui
                     return;
                 if (_master.Kontekst != null)
                     _master.Kontekst.ParametriSaGrida = ParametriModula.Dodaj(_master.Kontekst.ParametriSaGrida, dij.ParametriVise());
-                ZapamtiNoviTrosak();
-                string explorer = DijalogTok.SqlNakonOk(forma);
-                if (explorer.Length > 0)
-                {
-                    string sql = SqlTekst.Sredi(explorer, _master.Kontekst).Replace("~~", ",");
-                    _master.Stanje.IzvorSql = explorer;
-                    _master.Stanje.ZadnjiSql = sql;
-                    _master.Stanje.SqlZaSlanje = sql;
-                    _master.Stanje.Odluka = SqlTekst.Odluka(sql);
-                    _aktivnaFormaMastera = ime;
-                    if (_master.Stanje.Odluka == "salji" && !SqlTekst.JeZabranaPisanja(sql))
-                        NapuniGrid();
-                    return;
-                }
-                if (DijalogTok.OsvjeziDetalj(forma))
-                {
-                    OsvjeziDetail();
-                    return;
-                }
-                if (DijalogTok.OsvjeziStablo(forma))
-                {
-                    _stablo.Ucitaj(_projekt, Citaj);
-                    NapuniDrvo();
-                    return;
-                }
-                string sljedeca = DijalogTok.NextForm(forma);
-                if (sljedeca.Length > 0)
-                    OtvoriFormu(sljedeca);
-                else if (_zadnjiRed)
-                    OsvjeziMaster();
+                // strStora & " " & strParametri, sređen (Form2.Button1_Click 3367-3388, Form1 5450); dijalog ga nije slao.
+                string stora = (dij.OnSubmitPripremljen ?? "").Trim();
+                NakonDijaloga(forma, ime, stora, izDijaloga);
             }
             finally
             {
                 _dubinaForme--;
             }
+        }
+
+        /// <summary>
+        /// Form1.NovaGenerickaForma 5381-5520 nakon OK: NEXTFORM petlja (5381-5415), pa FILLEXPLORER grane
+        /// (5445-5507). ONSUBMIT ide serveru jednom (PN-01), s parametrima dijaloga (PN-02); sljedeća forma dobije
+        /// ID iz rezultata (PN-05); treeandrefreshmaster, treeandmaster i false kao u VB-u (PN-07).
+        /// </summary>
+        private void NakonDijaloga(NgForm forma, string ime, string stora, bool izDijaloga)
+        {
+            string sljedeca = DijalogTok.NextForm(forma);
+            if (sljedeca.Length > 0)
+            {
+                // 5385-5390 (Form2 4432-4440): Tid = cf.ID, a ako strStora vrati red, prva ćelija.
+                string tid = _master.Stanje.Id;
+                if (stora.Length > 0)
+                {
+                    DataTable t = IzvrsiOnSubmit(stora);
+                    if (t != null && t.Rows.Count > 0 && t.Columns.Count > 0 && t.Rows[0][0] != DBNull.Value)
+                        tid = Convert.ToString(t.Rows[0][0]).Trim();
+                    else if (!izDijaloga)
+                    {
+                        // Klik pregled na spinu: stub spPrnTroskoviGlaAzur ne vraća id, pa ga uzme iz tablice.
+                        ZapamtiNoviTrosak();
+                        tid = _master.Stanje.Id;
+                    }
+                }
+                // 5409: PokaziUpit(strZadnjiSQLsakojimjepunjenGrid), pa 5414 Form2c.ID = Tid. Iz dijaloga (4442) samo RefreshKontrola.
+                if (!izDijaloga)
+                    OsvjeziMaster();
+                OtvoriFormu(sljedeca, tid, izDijaloga);
+                return;
+            }
+            if (izDijaloga)
+            {
+                // Form2 4468-4477: ExecSql(strStora & strParametri), pa RefreshKontrola roditelja (RAC-01 u Dijalog).
+                if (stora.Length > 0)
+                    IzvrsiOnSubmit(stora);
+                return;
+            }
+            string fill = DijalogTok.FillExplorerVrijednost(forma);
+            if (fill == "true")
+            {
+                // 5445-5453: master je rezultat ONSUBMIT-a.
+                if (stora.Length > 0)
+                    NapuniMasterIz(stora, ime);
+                return;
+            }
+            if (fill == "false")
+            {
+                // 5455-5466: ExecSql, ili forma kad tekst počinje s ':'; master se ne osvježava.
+                if (stora.StartsWith(":", StringComparison.Ordinal))
+                    IzvrsiLanac(stora);
+                else if (stora.Length > 0)
+                    IzvrsiOnSubmit(stora);
+                return;
+            }
+            if (DijalogTok.OsvjeziDetalj(forma))
+            {
+                // 5467-5471: PokaziUpitDetalj(strStartupStoraDetalj).
+                OsvjeziDetail();
+                return;
+            }
+            if (DijalogTok.OsvjeziStablo(forma))
+            {
+                // 5472-5474: NapuniDrvoVrijeme.
+                OsvjeziStabloPodloge();
+                return;
+            }
+            if (fill == "treeandrefreshmaster")
+            {
+                // 5475-5486: stablo, ExecSql(ONSUBMIT), zadnji master, fokus stabla.
+                OsvjeziStabloPodloge();
+                if (stora.Length > 0)
+                    IzvrsiOnSubmit(stora);
+                _aktivnaFormaMastera = ime;
+                if (_zadnjiRed)
+                    OsvjeziMaster();
+                trMain.Focus();
+                return;
+            }
+            if (fill == "treeandmaster")
+            {
+                // 5487-5500: stablo, pa master iz ONSUBMIT-a.
+                OsvjeziStabloPodloge();
+                if (stora.Length > 0)
+                    NapuniMasterIz(stora, ime);
+                trMain.Focus();
+                return;
+            }
+            // 5501-5507: ExecSql(ONSUBMIT), pa zadnji master ako je ovo zadnji red.
+            if (stora.Length > 0)
+            {
+                IzvrsiOnSubmit(stora);
+                ZapamtiNoviTrosak();
+            }
+            _aktivnaFormaMastera = ime;
+            if (_zadnjiRed)
+                OsvjeziMaster();
+        }
+
+        /// <summary>cls1.ExecSql(strStora): jednom, kroz vezu granule; greška je u statusu, lanac ide dalje kao u VB-u.</summary>
+        private DataTable IzvrsiOnSubmit(string stora)
+        {
+            // Kao JupiterNeSaljeGumb: na jupiter2019/2022 izvan produkcije gumb i ONSUBMIT se ne šalju (R89).
+            if (DijalogTok.JeJupiter(_server) && !DijalogTok.Produkcija)
+            {
+                NgDnevnik.Akcija("jupiter: ONSUBMIT se ne šalje: " + stora);
+                return null;
+            }
+            if (!DijalogTok.SmijePoslati(stora))
+            {
+                NgDnevnik.Akcija("nije poslano, zabrana pisanja: " + stora);
+                return null;
+            }
+            NgDnevnik.Sql(stora);
+            return Citaj(stora);
+        }
+
+        /// <summary>PokaziUpit(ONSUBMIT): master grid se puni rezultatom ONSUBMIT-a (5450, 5497).</summary>
+        private void NapuniMasterIz(string stora, string ime)
+        {
+            string sql = stora.Replace("~~", ",");
+            _master.Stanje.IzvorSql = stora;
+            _master.Stanje.ZadnjiSql = sql;
+            _master.Stanje.SqlZaSlanje = sql;
+            _master.Stanje.Odluka = SqlTekst.Odluka(sql);
+            _master.Stanje.BlokiranoPisanje = !DijalogTok.SmijePoslati(sql);
+            _aktivnaFormaMastera = ime;
+            if (_master.Stanje.Odluka == "salji" && !_master.Stanje.BlokiranoPisanje)
+                NapuniGrid();
+        }
+
+        private void OsvjeziStabloPodloge()
+        {
+            _stablo.Ucitaj(_projekt, Citaj);
+            NapuniDrvo();
         }
 
         private void PrimijeniStupce(string naredba)

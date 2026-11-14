@@ -40,6 +40,14 @@ namespace Carpo.NetGen.Ui
 
         public string OtvorenaForma = "";
         public string MasterSql = "";
+        /// <summary>
+        /// Form1.NovaGenerickaForma 5381-5520: ONSUBMIT (strStora) izvršava podloga nakon što se dijalog zatvori,
+        /// jednom, a dijalog ga samo pripremi (Form2.Button1_Click 3367-3388). Podloga ovo postavi prije Prikazi;
+        /// samostalni dijalog (ulaz frm) ga šalje sam kao prije (PN-01).
+        /// </summary>
+        public bool OnSubmitSaljePodloga;
+        /// <summary>ONSUBMIT spreman za slanje (strStora + strParametri, zamijenjeni @@), kad ga šalje podloga.</summary>
+        public string OnSubmitPripremljen = "";
         public string Konekcija = "";
         public string Operater = "";
         public string Id = "0";
@@ -159,6 +167,7 @@ namespace Carpo.NetGen.Ui
             _forma = forma;
             OtvorenaForma = "";
             MasterSql = "";
+            OnSubmitPripremljen = "";
             string naslov = forma.Atributi == null ? null : forma.Atributi.Vrijednost("CAPTION");
             if (string.IsNullOrEmpty(naslov))
                 naslov = forma.Ime;
@@ -883,11 +892,16 @@ namespace Carpo.NetGen.Ui
                 {
                     if (korak.Vrsta == "ok")
                         DialogResult = DialogResult.OK;
-                    if (klik.SaljeSql && _citaj != null && klik.MasterSql.Length > 0)
+                    if (klik.MasterSql.Length > 0)
                     {
-                        string sqlOk = Lanac.BezKrajnjegZareza(SqlZaGumb(klik.MasterSql));
-                        try { _citaj(sqlOk); }
-                        catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sqlOk); }
+                        string sqlOk = PripremiOnSubmit();
+                        if (OnSubmitSaljePodloga)
+                            OnSubmitPripremljen = sqlOk;
+                        else if (klik.SaljeSql && _citaj != null)
+                        {
+                            try { _citaj(sqlOk); }
+                            catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + sqlOk); }
+                        }
                     }
                     continue;
                 }
@@ -1235,11 +1249,7 @@ namespace Carpo.NetGen.Ui
             }
             DijalogTok.Klik klik = DijalogTok.Gumb(_forma, 0, Pripremi(t), _jupiter);
             if (!string.IsNullOrEmpty(klik.MasterSql))
-            {
-                klik.MasterSql = Pripremi(klik.MasterSql);
-                if (klik.MasterSql.TrimEnd().EndsWith(",", StringComparison.Ordinal))
-                    klik.MasterSql = Lanac.BezKrajnjegZareza(Lanac.Lijepi(klik.MasterSql, SviParametri()));
-            }
+                klik.MasterSql = PripremiOnSubmit();
             return IzvrsiKorake(koraci, klik);
         }
 
@@ -1280,12 +1290,7 @@ namespace Carpo.NetGen.Ui
             naredba = Pripremi(naredba);
             DijalogTok.Klik klik = DijalogTok.Gumb(_forma, redni, naredba, _jupiter);
             if (!string.IsNullOrEmpty(klik.MasterSql))
-            {
-                klik.MasterSql = Pripremi(klik.MasterSql);
-                // Form1.vb 5452: ONSUBMIT koji završava zarezom dobije strParametri.
-                if (klik.MasterSql.TrimEnd().EndsWith(",", StringComparison.Ordinal))
-                    klik.MasterSql = Lanac.BezKrajnjegZareza(Lanac.Lijepi(klik.MasterSql, SviParametri()));
-            }
+                klik.MasterSql = PripremiOnSubmit();
             var koraci = DijalogTok.Koraci(sirovo);
             if (JeLanac(koraci))
             {
@@ -1337,7 +1342,9 @@ namespace Carpo.NetGen.Ui
                     if (IsDisposed)
                         return;
                 }
-                if (klik.SaljeSql && !string.IsNullOrEmpty(klik.MasterSql) && DijalogTok.SmijePoslati(klik.MasterSql))
+                if (!string.IsNullOrEmpty(klik.MasterSql) && OnSubmitSaljePodloga)
+                    OnSubmitPripremljen = klik.MasterSql;
+                else if (klik.SaljeSql && !string.IsNullOrEmpty(klik.MasterSql) && DijalogTok.SmijePoslati(klik.MasterSql))
                 {
                     NgDnevnik.Sql(klik.MasterSql);
                     try
@@ -1357,10 +1364,26 @@ namespace Carpo.NetGen.Ui
                 if (nadjeni.Length > 0)
                     nadjeni[0].Focus();
             }
+            // Form2.Button2_Click 3395-3398: Odustani zatvara s OKClick = False (PN-12); prije je i CMD2 davao OK,
+            // pa je podloga nakon Odustani izvršavala ONSUBMIT, NEXTFORM i osvježavanje.
             if (klik.Zatvara)
-                DialogResult = DialogResult.OK;
+                DialogResult = klik.Odustani ? DialogResult.Cancel : DialogResult.OK;
             else if (b != null)
                 b.DialogResult = DialogResult.None;
+        }
+
+        /// <summary>
+        /// Form2.Button1_Click 3367-3388 i Form1 5445-5450: strStora &amp; " " &amp; strParametri (bez lijepljenja za
+        /// INSERT/DELETE/UPDATE/SELECT i uz !!), pa SrediSQL i SrediSQLPosljeNextForme s parametrima dijaloga i CB-om.
+        /// Isti tekst za gumb OK, "#OK" u lancu i za podlogu (OnSubmitPripremljen).
+        /// </summary>
+        private string PripremiOnSubmit()
+        {
+            string stora = _forma == null ? "" : (_forma.OnSubmit ?? "").Trim();
+            if (stora.Length == 0)
+                return "";
+            string spojeno = Lanac.Lijepi(stora, SviParametri());
+            return Lanac.BezKrajnjegZareza(Pripremi(spojeno));
         }
 
         private string Pripremi(string naredba)
@@ -1513,14 +1536,6 @@ namespace Carpo.NetGen.Ui
             }
             try { RafalNaredba.ZapisiDatoteku(put, vrsta, redovi.ToArray()); }
             catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + put); }
-        }
-
-        private string SqlZaGumb(string master)
-        {
-            string izvor = master ?? "";
-            if (_forma != null && !string.IsNullOrEmpty(_forma.OnSubmit))
-                izvor = _forma.OnSubmit;
-            return SrediPoslije.ZaSlanje(izvor, SviParametri(), _kontekst ?? new SqlKontekst(), _kontekst == null ? null : _kontekst.Clipboard);
         }
 
         private void IzvrsiSql(string tekst)
