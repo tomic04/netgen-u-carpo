@@ -52,11 +52,39 @@ namespace Carpo.NetGen.Ui
         /// </summary>
         private void SrediNaslov()
         {
-            string t = Text ?? "";
-            if (t.IndexOf("@@", StringComparison.Ordinal) < 0)
-                return;
             SqlKontekst k = _kontekst ?? new SqlKontekst();
-            Text = SrediPoslije.Zamijeni(t, k.ParametriSaGrida, k, k.Clipboard, true);
+            string t = Text ?? "";
+            if (t.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                Text = SrediPoslije.Zamijeni(t, k.ParametriSaGrida, k, k.Clipboard, true);
+            SrediNatpise(k);
+        }
+
+        /// <summary>
+        /// Form2.ProcitajXML 1324 (label), 1369 (group/frame), 1399 (panel): tekst iz CAPTION ili ONLOAD-a ide kroz
+        /// SrediSQL2 i SrediSQLPosljeNextForme; labela "null" postane prazna (LBL-01). U korpusu 64 labele i 2 okvira
+        /// imaju @@ ("Želite li obrisati tablu @@Šifra ?").
+        /// </summary>
+        private void SrediNatpise(SqlKontekst k)
+        {
+            if (_forma == null || _forma.Kontrole == null)
+                return;
+            for (int i = 0; i < _forma.Kontrole.Count; i++)
+            {
+                NgControl d = _forma.Kontrole[i];
+                if ((d.Grana != NgGrana.Label && d.Grana != NgGrana.Group && d.Grana != NgGrana.Panel) || string.IsNullOrEmpty(d.Name))
+                    continue;
+                Control[] nadjeno = Controls.Find(d.Name, true);
+                if (nadjeno.Length == 0)
+                    continue;
+                Control c = nadjeno[0];
+                string t = c.Text ?? "";
+                if (t.IndexOf("@@", StringComparison.Ordinal) < 0)
+                    continue;
+                string s = SrediPoslije.Zamijeni(t, k.ParametriSaGrida, k, k.Clipboard, false);
+                if (d.Grana == NgGrana.Label && s.Trim().ToLowerInvariant() == "null")
+                    s = "";
+                c.Text = s;
+            }
         }
 
         private string StatusDio(string predlozak)

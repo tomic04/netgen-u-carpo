@@ -83,6 +83,8 @@ Zatvaranje (DBC-02): `Form2_FormClosing` 4095-4099 uz RSDBCLIPBOARD još jednom 
 
 `Form2.ProcitajXML` 1240: `Me.Text = SrediSQLPosljeNextForme(SrediSQL2(Me.Text), , True)`. 752 naslova formi u korpusu imaju `@@` (`Izmjena dokumenta : @@broj [ @@id ]`, `Arkodovi za tablu @@Šifra`). Carpo je naslov pokazivao doslovno. Sada se poslije ONLOAD-a i NetGenDBClipboard-a naslov sredi kao status (STS-01): parametri modula, pa CB, datumi za ispis. Test `cap01-naslov`.
 
+Isto vrijedi za tekst labele, okvira i panela (1324, 1369, 1399; LBL-01): 64 labele i 2 okvira u korpusu imaju `@@` (`Želite li obrisati tablu @@Šifra ?`). Labela koja postane `null` je prazna. Test `lbl01-natpis`.
+
 ## Otvoreno
 
 - `TIMERSQL` (4 forme, 1 granula): Timer2 je u NetGenu ugašen dok ga `TIMERON(n)` ne upali, a `TIMERON` nema nigdje u korpusu, pa se ni u NetGenu ne izvršava.

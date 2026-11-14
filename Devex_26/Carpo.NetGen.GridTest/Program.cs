@@ -2943,7 +2943,12 @@ namespace Carpo.NetGen.GridTest
         {
             try
             {
-                var kontrole = new List<NgControl> { new NgControl("text", NgGrana.Text, "t", new NgAttributeBag(new Dictionary<string, string>()), true) };
+                var kontrole = new List<NgControl>
+                {
+                    new NgControl("text", NgGrana.Text, "t", new NgAttributeBag(new Dictionary<string, string>()), true),
+                    new NgControl("label", NgGrana.Label, "l1", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Obrisati @@broj ?" } }), true),
+                    new NgControl("label", NgGrana.Label, "l2", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "@@nepostoji" } }), true)
+                };
                 var forma = new NgForm("N1", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Izmjena dokumenta : @@broj [ @@id ] @@datumdok" } }),
                     "", "", kontrole, new List<NgButton>(), new List<string>());
                 var k = new SqlKontekst();
@@ -2953,6 +2958,9 @@ namespace Carpo.NetGen.GridTest
                 {
                     d.Slozi(forma, k, delegate (string x) { return new DataTable(); });
                     T("cap01-naslov", d.Text == "Izmjena dokumenta : B-12 [ 7 ] 14.11.2026", d.Text);
+                    string l1 = d.Controls.Find("l1", true)[0].Text;
+                    string l2 = d.Controls.Find("l2", true)[0].Text;
+                    T("lbl01-natpis", l1 == "Obrisati B-12 ?" && l2 == "", l1 + "|" + l2);
                 }
             }
             catch (Exception ex)
