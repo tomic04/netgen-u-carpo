@@ -807,6 +807,54 @@ namespace Carpo.TestShell
             }
         }
 
+        private static readonly Dictionary<string, bool> _imaJupiterLogs = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// LOG-02: JupiterLogs postoji na sql-ai, a na jupiter2019/2022 ne. TestShell je log spajao na server
+        /// granule, pa je svaki zapis išao preko mreže na bazu koje nema. Sada: server granule ako ima
+        /// JupiterLogs, inače lokalni SQL (sql-ai), inače samo datoteka (null).
+        /// </summary>
+        internal static string ServerZaLog(string server)
+        {
+            if (ImaJupiterLogs(server))
+                return server;
+            if (ImaJupiterLogs("localhost"))
+                return "localhost";
+            return null;
+        }
+
+        private static bool ImaJupiterLogs(string server)
+        {
+            if (string.IsNullOrWhiteSpace(server))
+                return false;
+            bool ima;
+            lock (_imaJupiterLogs)
+            {
+                if (_imaJupiterLogs.TryGetValue(server, out ima))
+                    return ima;
+            }
+            ima = false;
+            try
+            {
+                string cs = "Server=" + server + ";Database=master;Integrated Security=true;TrustServerCertificate=True;Connect Timeout=3;Application Name=Carpo.TestShell-log";
+                using (var c = new System.Data.SqlClient.SqlConnection(cs))
+                using (var cmd = new System.Data.SqlClient.SqlCommand("select db_id(N'JupiterLogs')", c))
+                {
+                    cmd.CommandTimeout = 3;
+                    c.Open();
+                    object o = cmd.ExecuteScalar();
+                    ima = o != null && o != DBNull.Value;
+                }
+            }
+            catch
+            {
+                ima = false;
+            }
+            lock (_imaJupiterLogs)
+                _imaJupiterLogs[server] = ima;
+            return ima;
+        }
+
         public int PokreniUiSmoke(string snimka)
         {
             return PokreniUiSmoke(snimka, false);
@@ -833,7 +881,7 @@ namespace Carpo.TestShell
                 cmdGen.Enabled = true;
                 try
                 {
-                    Carpo.Core.Logger.BindJupiterLogs(server, operateriId, operater, database, null, Path.GetFileNameWithoutExtension(xml));
+                    Carpo.Core.Logger.BindJupiterLogs(ServerZaLog(server), operateriId, operater, database, null, Path.GetFileNameWithoutExtension(xml));
                 }
                 catch (Exception ex)
                 {
@@ -1685,7 +1733,7 @@ namespace Carpo.TestShell
                     cmdGen.Enabled = true;
                     isXmlGen = postavke.isXmlGen;
 
-                    Carpo.Core.Logger.BindJupiterLogs(server, operateriId, operater, database, null, System.IO.Path.GetFileNameWithoutExtension(xml));
+                    Carpo.Core.Logger.BindJupiterLogs(ServerZaLog(server), operateriId, operater, database, null, System.IO.Path.GetFileNameWithoutExtension(xml));
 
                     if (isXmlGen)
                         paramList = postavke.xmlGenParamList;

@@ -28,6 +28,9 @@ namespace Carpo.NetGen.GridTest
         [STAThread]
         private static int Main(string[] args)
         {
+            // RAS-01: provjera izgleda svih formi korpusa (zaseban korak u build.yml).
+            if (args != null && args.Length >= 2 && args[0] == "--raspored")
+                return RasporedFormi.Provjeri(args[1], args.Length > 2 ? args[2] : null);
             SqlPreskoci();
             IntrastatPreskok();
             RucniStart();
@@ -1984,6 +1987,7 @@ namespace Carpo.NetGen.GridTest
             ImeAplikacije();
             StariIspisUkinut();
             OkvirStraga();
+            RedoslijedKaoVb();
             BrojNaDijalogu();
             LanacNakonZamjene();
             DogadjajiPravila();
@@ -3139,6 +3143,31 @@ namespace Carpo.NetGen.GridTest
             catch (Exception ex)
             {
                 T("lay02", false, ex.GetType().Name + ": " + ex.Message);
+            }
+        }
+
+        /// <summary>LAY-03: kasnija kontrola u XML-u je ispred ranije (VB BringToFront), i za Dock.</summary>
+        private static void RedoslijedKaoVb()
+        {
+            try
+            {
+                var kontrole = new List<NgControl>
+                {
+                    new NgControl("text", NgGrana.Text, "prvo", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "100" }, { "LEFT", "100" }, { "HEIGHT", "288" }, { "WIDTH", "2000" } }), true),
+                    new NgControl("text", NgGrana.Text, "drugo", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "100" }, { "LEFT", "100" }, { "HEIGHT", "288" }, { "WIDTH", "2000" } }), true)
+                };
+                var forma = new NgForm("RED", new NgAttributeBag(null), "", "", kontrole, new List<NgButton>(), new List<string>());
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), delegate (string x) { return new DataTable(); });
+                    int i1 = d.Controls.GetChildIndex(d.Controls.Find("prvo", false)[0]);
+                    int i2 = d.Controls.GetChildIndex(d.Controls.Find("drugo", false)[0]);
+                    T("lay03-kasnija-ispred", i2 < i1, "prvo=" + i1 + " drugo=" + i2);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("lay03", false, ex.GetType().Name + ": " + ex.Message);
             }
         }
 

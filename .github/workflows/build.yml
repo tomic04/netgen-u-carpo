@@ -312,6 +312,19 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Uzorak otvaranja nije prosao." }
           Get-Content (Join-Path $env:GITHUB_WORKSPACE "artifacts\granule\uzorak.md")
 
+      - name: Raspored formi
+        # RAS-01: svaka forma svake granule se složi bez baze i bez prikaza; traži prekrivene kontrole
+        # (okvir preko polja), kontrole koje nisu nastale, bez veličine ili izvan prozora, i iznimke.
+        # Zasad samo izvještaj; kad se očisti, prekriveno i iznimka će rušiti build.
+        if: steps.vrsta.outputs.sweep != '1'
+        continue-on-error: true
+        shell: powershell
+        run: |
+          $out = Join-Path $env:GITHUB_WORKSPACE "artifacts\bin"
+          $izv = Join-Path $env:GITHUB_WORKSPACE "artifacts\ui-smoke\raspored.tsv"
+          & (Join-Path $out "Carpo.NetGen.GridTest.exe") --raspored (Join-Path $env:GITHUB_WORKSPACE "definitions\netgen") $izv
+          if ($LASTEXITCODE -ne 0) { throw "Raspored formi nije prosao. Kod $LASTEXITCODE" }
+
       - name: Jupiter smoke
         # Korisnik je zabranio svaki upit prema jupiter2019 i jupiter2022.
         if: false

@@ -263,7 +263,8 @@ namespace Carpo.NetGen.Ui
             // Form2.vb 1373-1379 i 1403-1409: okvir (frame/group) i panel idu SendToBack, a ostale kontrole
             // BringToFront (1348, 1498, ...). Bez toga okvir koji je u XML-u prije kontrola leži preko njih i
             // forma izgleda prazno (1217 formi u 299 granula, npr. RobaWebKlase INSERT_KLASA) (LAY-02).
-            PosaljiOkvireStraga(forma);
+            // Kasnija kontrola je ispred ranije (i za Dock), kao u VB-u (LAY-03).
+            SloziRedoslijed(forma);
 
             if (forma.Gumbi != null && forma.Gumbi.Count > 0)
             {
@@ -331,18 +332,32 @@ namespace Carpo.NetGen.Ui
             OsvjeziStatus();
         }
 
-        private void PosaljiOkvireStraga(NgForm forma)
+        /// <summary>
+        /// VB slaže kontrole redom iz XML-a: okvir i panel SendToBack, sve ostalo BringToFront nakon
+        /// Controls.Add. Controls.Add sam stavlja novu kontrolu iza starih, pa bez ovoga i preklopljene
+        /// kontrole i Dock idu obrnuto od NetGena (LAY-02, LAY-03). Natpis "lbl"+ime ide uz svoju kontrolu.
+        /// </summary>
+        private void SloziRedoslijed(NgForm forma)
         {
             if (forma == null || forma.Kontrole == null)
                 return;
             for (int i = 0; i < forma.Kontrole.Count; i++)
             {
                 NgControl k = forma.Kontrole[i];
-                if ((k.Grana != NgGrana.Group && k.Grana != NgGrana.Panel) || string.IsNullOrEmpty(k.Name))
+                if (string.IsNullOrEmpty(k.Name))
                     continue;
                 Control[] nadjeno = Controls.Find(k.Name, true);
-                if (nadjeno.Length > 0)
+                if (nadjeno.Length == 0)
+                    continue;
+                if (k.Grana == NgGrana.Group || k.Grana == NgGrana.Panel)
+                {
                     nadjeno[0].SendToBack();
+                    continue;
+                }
+                nadjeno[0].BringToFront();
+                Control[] natpis = Controls.Find("lbl" + k.Name, true);
+                if (natpis.Length > 0)
+                    natpis[0].BringToFront();
             }
         }
 
