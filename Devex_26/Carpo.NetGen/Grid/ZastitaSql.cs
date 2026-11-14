@@ -140,7 +140,10 @@ namespace Carpo.NetGen.Grid
                     i++;
                     continue;
                 }
+                int prije = i;
                 t.Add(ProcitajIme(sql, ref i));
+                if (i == prije)
+                    i++;
             }
             return t;
         }
@@ -169,7 +172,18 @@ namespace Carpo.NetGen.Grid
                         k++;
                     }
                     if (k == i)
+                    {
+                        // Druga točka u "tempdb..tablica", "konikom..roba", "@(grid..stupac)" ili "@@x...": nije dio
+                        // imena, ali se mora pojesti, inače Tokeni ne napreduje i lista raste do OutOfMemory (PN-15;
+                        // MPPonudaWEB, MPEIzvod na Centru tehnike, 776 tekstova u korpusu).
+                        if (sql[i] == '.')
+                        {
+                            sb.Append('.');
+                            i++;
+                            continue;
+                        }
                         break;
+                    }
                     sb.Append(sql.Substring(i, k - i));
                     i = k;
                 }
