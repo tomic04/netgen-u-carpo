@@ -185,7 +185,8 @@ namespace Carpo.NetGen.Grid
                 using (var cmd = new System.Data.SqlClient.SqlCommand(Stanje.SqlZaSlanje ?? "", conn))
                 using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
                 {
-                    cmd.CommandTimeout = Stanje.TimeoutSekundi;
+                    // COMMANDTIMEOUT projekta/forme (TMO-01); sweep ga ograniči kroz VrijemeUpita.Najvise (SWP-01).
+                    cmd.CommandTimeout = Carpo.NetGen.Komande.VrijemeUpita.Stvarno(Stanje.TimeoutSekundi);
                     conn.Open();
                     da.Fill(dt);
                 }
