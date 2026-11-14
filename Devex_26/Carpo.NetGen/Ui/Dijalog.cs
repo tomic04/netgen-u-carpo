@@ -3077,6 +3077,13 @@ namespace Carpo.NetGen.Ui
             // samo uz parametre grida, pa je @@gridX bez njih ostajao u SQL-u (sintaksna greška, ONL-02).
             if (sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
                 sql = SrediPoslije.Petlja(sql, kontekst == null ? "" : kontekst.ParametriSaGrida, kontekst == null ? null : kontekst.Clipboard, false);
+            // PN-09: sweep nad jupiter2019/2022 (izvan produkcije) otvara forme, a ONLOAD forme može biti procedura
+            // koja piše (MatTem PROKNJIZIFORM: spKntMatKnjizenje @Action=2). Takav ONLOAD se tamo ne šalje.
+            if (_jupiter && OnLoadPise(sql, citaj))
+            {
+                NgDnevnik.Akcija("jupiter: ONLOAD piše, nije poslan: " + sql);
+                return;
+            }
             NgDnevnik.Sql(sql);
             DataTable dt = null;
             try
@@ -3097,6 +3104,34 @@ namespace Carpo.NetGen.Ui
                 if (kontekst != null)
                     kontekst.ParametriSaGrida += "@" + col.ColumnName + "='" + v.Replace("'", "''") + "' , ";
             }
+        }
+
+        /// <summary>
+        /// Tekst ONLOAD-a piše (ZastitaSql.Tekst), ili tijelo neke od njegovih procedura piše u trajnu tablicu
+        /// (sys.sql_modules kroz object_definition, ZastitaSql.Tijelo). Bez tijela (nema procedure) nije pisanje.
+        /// </summary>
+        private static bool OnLoadPise(string sql, Func<string, DataTable> citaj)
+        {
+            SqlZastita z = ZastitaSql.Tekst(sql);
+            if (z.Pise)
+                return true;
+            for (int i = 0; i < z.Procedure.Count; i++)
+            {
+                string ime = z.Procedure[i].Replace("'", "''");
+                try
+                {
+                    DataTable t = citaj("select object_definition(object_id('" + ime + "')) as d");
+                    if (t == null || t.Rows.Count == 0 || t.Rows[0][0] == DBNull.Value)
+                        continue;
+                    if (ZastitaSql.Tijelo(Convert.ToString(t.Rows[0][0])).Pise)
+                        return true;
+                }
+                catch (Exception ex)
+                {
+                    NgDnevnik.Greska("object_definition " + ime + ": " + ex.Message);
+                }
+            }
+            return false;
         }
 
         private void PrimijeniOnLoad()
