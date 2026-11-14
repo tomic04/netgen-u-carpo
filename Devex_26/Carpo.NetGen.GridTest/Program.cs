@@ -1983,6 +1983,7 @@ namespace Carpo.NetGen.GridTest
             SqlSlojNetGen();
             ImeAplikacije();
             StariIspisUkinut();
+            OkvirStraga();
             BrojNaDijalogu();
             LanacNakonZamjene();
             DogadjajiPravila();
@@ -3108,6 +3109,37 @@ namespace Carpo.NetGen.GridTest
             bool poslano = PrintBridge.Ispisi("rs:/Racun", true, "1", "7", "", "", "", "", "", "", "", "", "N", null, "", null);
             string zapis = ZadnjiZapis();
             T("isp05-ukinut", !poslano && zapis.IndexOf("ISP-05", StringComparison.Ordinal) >= 0 && zapis.IndexOf("rs:/Racun", StringComparison.Ordinal) >= 0, zapis);
+        }
+
+        /// <summary>LAY-02: okvir prije kontrola (RobaWebKlase INSERT_KLASA) ide iza njih, kao VB SendToBack.</summary>
+        private static void OkvirStraga()
+        {
+            try
+            {
+                var kontrole = new List<NgControl>
+                {
+                    new NgControl("frame", NgGrana.Group, "FrameNG0", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "72" }, { "LEFT", "72" }, { "HEIGHT", "2160" }, { "WIDTH", "6048" } }), true),
+                    new NgControl("text", NgGrana.Text, "naziv", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "432" }, { "LEFT", "1440" }, { "HEIGHT", "288" }, { "WIDTH", "2160" } }), true),
+                    new NgControl("label", NgGrana.Label, "Label13", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "432" }, { "LEFT", "432" }, { "CAPTION", "Naziv:" } }), true),
+                    new NgControl("panel", NgGrana.Panel, "Panel1", new NgAttributeBag(new Dictionary<string, string> { { "TOP", "2300" }, { "LEFT", "72" } }), true)
+                };
+                var forma = new NgForm("INSERT_KLASA", new NgAttributeBag(new Dictionary<string, string> { { "CAPTION", "Dodavanje klase" } }),
+                    "", "", kontrole, new List<NgButton>(), new List<string>());
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), delegate (string x) { return new DataTable(); });
+                    Control okvir = d.Controls.Find("FrameNG0", false)[0];
+                    Control tekst = d.Controls.Find("naziv", false)[0];
+                    Control natpis = d.Controls.Find("Label13", false)[0];
+                    Control ploca = d.Controls.Find("Panel1", false)[0];
+                    int io = d.Controls.GetChildIndex(okvir), it = d.Controls.GetChildIndex(tekst), il = d.Controls.GetChildIndex(natpis), ip = d.Controls.GetChildIndex(ploca);
+                    T("lay02-okvir-straga", io > it && io > il && ip > it && ip > il, "okvir=" + io + " tekst=" + it + " natpis=" + il + " panel=" + ip);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("lay02", false, ex.GetType().Name + ": " + ex.Message);
+            }
         }
 
         /// <summary>APP-01: Application Name veze je "Carpo.NetGen." + ime XML-a (NetGen "NetGenDLL-" + XML, Form1 1176).</summary>
