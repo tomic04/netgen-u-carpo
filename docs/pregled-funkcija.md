@@ -217,12 +217,12 @@ Stari popis testova iz ovog odlomka (`keydown-trazilica`, `desni-klik`, ...) mak
 | `BlagajnaEnableZaMlinar` 1975 | `BlagajnaNaredba` (BLAGAJNAENABLE u lancu podloge i dijaloga) | isto | `open-blagajna-ispis` |
 | `UpaliProgres` / `UgasiProgres` 723 | Podloga nema traku napretka (Carpo izgled) | razlika |  |
 | `NapuniCBLog` / `PokaziCBLog` | Carpo logger, ne CBLog | razlika | |
-| `PrintRpt` 379, `IspisiMe7` 284, `IspisiMePrekoSpinPrintinga` 291 | `PrintBridge` → `Spin.Printing.v26`. `rs:`/`rsgen`/`.clsReport` traže PrintDlg COM (ISP-05, otvoreno) | isto | `isp07-printgrid-ime` |
+| `PrintRpt` 379, `IspisiMe7` 284, `IspisiMePrekoSpinPrintinga` 291 | `PrintBridge` → `Spin.Printing.v26`. `rs:`/`rsgen`/`.clsReport` su stari VB6 PrintDlg COM: ukinuto (ISP-05, R123) | isto | `isp07-printgrid-ime` |
 | `NapuniDXGrid` 1699, `NapuniDXGridLATE` 1763 | Isti `GridControl` put kao Janus grid (`NgGrana.DxGrid`) | isto |  |
 | `CustomFormatKolonaDX` 1845, `UkljuciSum` 1937 | `GridDefinicija` i `GridIzgled.Ukupno` | isto | `dgr01-*` |
 | `New` 1433, `Finalize` 1429 | Nema | isto | |
 
-U Class1 bloku (stanje 14. 11. 2026.): sve žive metode imaju Carpo put ili ih nitko ne zove; 2 razlike (CBLog ide u Carpo logger, traka napretka). `formatid` (FMT-01) je bio jedina prava rupa. `PrintBridge` zove `Spin.Printing.v26`; `rs:`/`rsgen`/`.clsReport` su ISP-05.
+U Class1 bloku (stanje 14. 11. 2026.): sve žive metode imaju Carpo put ili ih nitko ne zove; 2 razlike (CBLog ide u Carpo logger, traka napretka). `formatid` (FMT-01) je bio jedina prava rupa. `PrintBridge` zove `Spin.Printing.v26`; `rs:`/`rsgen`/`.clsReport` su stari VB6 ispis, ukinut (ISP-05, R123).
 
 ## Ostali moduli, prvi blok
 
@@ -237,6 +237,6 @@ U Class1 bloku (stanje 14. 11. 2026.): sve žive metode imaju Carpo put ili ih n
 | `GetLast` 16 | Nitko je ne zove | isto |  |
 | `Translate_OLD` 293, `ToCiril2` 474 | Prijevod: PRV-01, čeka odluku | nedostaje |  |
 | `Translate` 266 | Tekst ostaje. `JupiterPrevoditelj` se ne učitava kad jezik nije `hrv` | razlika | `prevod` |
-| `GetServerPath` 214 | Dio ispisa `rs:` kroz Form6 (ISP-05, otvoreno) | nedostaje |  |
+| `GetServerPath` 214 | Dio ispisa `rs:` kroz Form6: stari VB6 ispis je ukinut (ISP-05, R123) | razlika | `isp05-ukinut` |
 
-U ovom bloku (stanje 14. 11. 2026.): 5 isto (mape kroz `GridRaspored`, redact kroz `NgDnevnik.Sakrij`, DES kroz `XmlIzvor`), 2 nedostaje (stari prijevod je PRV-01, `GetServerPath` je ispis `rs:` ISP-05); DES za `netgenxml` je M5 (XML-01), 1 razlika (`Translate`).
+U ovom bloku (stanje 14. 11. 2026.): 5 isto (mape kroz `GridRaspored`, redact kroz `NgDnevnik.Sakrij`, DES kroz `XmlIzvor`), 1 nedostaje (stari prijevod je PRV-01), `GetServerPath` je ukinuti VB6 ispis `rs:` (ISP-05, R123); DES za `netgenxml` je M5 (XML-01), 1 razlika (`Translate`).

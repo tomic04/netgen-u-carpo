@@ -1982,6 +1982,7 @@ namespace Carpo.NetGen.GridTest
             DijalogUcinak();
             SqlSlojNetGen();
             ImeAplikacije();
+            StariIspisUkinut();
             BrojNaDijalogu();
             LanacNakonZamjene();
             DogadjajiPravila();
@@ -3097,7 +3098,18 @@ namespace Carpo.NetGen.GridTest
             return NgDnevnik.Zapisi.Count == 0 ? "" : NgDnevnik.Zapisi[NgDnevnik.Zapisi.Count - 1].Tekst;
         }
 
-        /// <summary>Plan, faza G: lozinka iz polja s PASSWORDCHAR ne ide u log; log ne raste bez kraja.</summary>
+        /// <summary>ISP-05: stari VB6 ispis (rs:, rsgen, gg/, .clsReport) je ukinut; Spin.Printing put ostaje.</summary>
+        private static void StariIspisUkinut()
+        {
+            bool prepoznaje = PrintBridge.JeStariVb6("rs:/Racun") && PrintBridge.JeStariVb6(":RS/Racun") && PrintBridge.JeStariVb6("rsgenPonuda")
+                && PrintBridge.JeStariVb6("Ponuda.clsReport") && PrintBridge.JeStariVb6("gg/x");
+            bool ostaje = !PrintBridge.JeStariVb6("vrstadokid-NabPriGla") && !PrintBridge.JeStariVb6("repx:/Ponuda") && !PrintBridge.JeStariVb6("PRINTMASTER");
+            T("isp05-prepoznaje", prepoznaje && ostaje, "");
+            bool poslano = PrintBridge.Ispisi("rs:/Racun", true, "1", "7", "", "", "", "", "", "", "", "", "N", null, "", null);
+            string zapis = ZadnjiZapis();
+            T("isp05-ukinut", !poslano && zapis.IndexOf("ISP-05", StringComparison.Ordinal) >= 0 && zapis.IndexOf("rs:/Racun", StringComparison.Ordinal) >= 0, zapis);
+        }
+
         /// <summary>APP-01: Application Name veze je "Carpo.NetGen." + ime XML-a (NetGen "NetGenDLL-" + XML, Form1 1176).</summary>
         private static void ImeAplikacije()
         {
@@ -3110,6 +3122,7 @@ namespace Carpo.NetGen.GridTest
             T("app01-prazno", new SqlConnectionStringBuilder(SpinVeza.SaAplikacijom("Server=a;", null)).ApplicationName == "Carpo.NetGen", "");
         }
 
+        /// <summary>Plan, faza G: lozinka iz polja s PASSWORDCHAR ne ide u log; log ne raste bez kraja.</summary>
         private static void LozinkaULogu()
         {
             try
