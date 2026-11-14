@@ -311,3 +311,9 @@ A (grane)  ──►  B (mapa)  ──►  C1–C2 (SQL, komande)  ──►  C3
 - **Ti ili runner:** odluke iz točke 9, pokretanje D1 i UI testova na Windowsu (`sql-ai`), push i spajanje PR-ova.
 
 Svaka faza završava dokumentom u `docs/pregled/` i kratkim sažetkom: što je provjereno, koliko je nalaza po statusu i što blokira sljedeću fazu.
+
+## Nove granule (500-600 s drugih servera)
+
+1. `python3 tools/nove_granule.py <mapa>`: XML-ovi koji se ne čitaju, novi `TYPE` (i grana koju bi NetGen uzeo), atributi koje Carpo.NetGen ne poznaje (uz oznaku čita li ih NetGen) i naredbe lanca bez literala u kodu.
+2. Kopirati u `definitions/netgen/<server>/` (podfolderi ostaju), pa `tools/netgen_xml_katalog.py` i `tools/pregled_b3_xml.py` za matricu.
+3. PR: CI (Smoke parsera, `nocni-otvaranje` nad cijelim `definitions/netgen`, Klik pregled) pokaže granule koje padnu.
