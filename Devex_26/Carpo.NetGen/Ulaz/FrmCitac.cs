@@ -16,6 +16,9 @@ namespace Carpo.NetGen.Ulaz
     {
         private readonly string _spoj;
 
+        /// <summary>strCommandTimeout: Form2 ga mijenja svaka forma s COMMANDTIMEOUT (1035, TMO-01).</summary>
+        public int Rok = VrijemeUpita.Zadano;
+
         public FrmCitac(string spoj)
         {
             _spoj = spoj ?? "";
@@ -42,7 +45,7 @@ namespace Carpo.NetGen.Ulaz
                 using (var cmd = new SqlCommand(sql, conn))
                 using (var da = new SqlDataAdapter(cmd))
                 {
-                    cmd.CommandTimeout = Carpo.NetGen.Ui.Podloga.TimeoutUpita;
+                    cmd.CommandTimeout = VrijemeUpita.Stvarno(Rok);
                     conn.Open();
                     da.Fill(dt);
                 }

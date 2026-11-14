@@ -1995,6 +1995,7 @@ namespace Carpo.NetGen.GridTest
             StatusDijaloga();
             GridDijalogaStupci();
             LozinkaULogu();
+            RokUpita();
             VelicinaUZapisu();
             NaslovDijaloga();
             IncludeFormi();
@@ -2994,6 +2995,28 @@ namespace Carpo.NetGen.GridTest
             {
                 Carpo.NetGen.Ui.VelicinaDijaloga.Korijen = stari;
                 try { Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(test, false); } catch (Exception) { }
+            }
+        }
+
+        /// <summary>TMO-01: COMMANDTIMEOUT projekta i forme (Form1 3463, Form2 1035, Class1 99).</summary>
+        private static void RokUpita()
+        {
+            int stari = Carpo.NetGen.Komande.VrijemeUpita.Najvise;
+            try
+            {
+                var sa = new NgAttributeBag(new Dictionary<string, string> { { "COMMANDTIMEOUT", "600" } });
+                var krivo = new NgAttributeBag(new Dictionary<string, string> { { "COMMANDTIMEOUT", "abc" } });
+                var bez = new NgAttributeBag(new Dictionary<string, string>());
+                T("tmo01-atribut", Carpo.NetGen.Komande.VrijemeUpita.Iz(sa, 30) == 600 && Carpo.NetGen.Komande.VrijemeUpita.Iz(krivo, 300) == 300
+                    && Carpo.NetGen.Komande.VrijemeUpita.Iz(bez, 120) == 120, "");
+                Carpo.NetGen.Komande.VrijemeUpita.Najvise = 0;
+                bool slobodno = Carpo.NetGen.Komande.VrijemeUpita.Stvarno(600) == 600;
+                Carpo.NetGen.Ui.Podloga.TimeoutUpita = 1;
+                T("tmo01-granica", slobodno && Carpo.NetGen.Komande.VrijemeUpita.Stvarno(600) == 1 && Carpo.NetGen.Komande.VrijemeUpita.Stvarno(0) == 1, "");
+            }
+            finally
+            {
+                Carpo.NetGen.Komande.VrijemeUpita.Najvise = stari;
             }
         }
 
