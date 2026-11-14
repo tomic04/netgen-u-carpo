@@ -73,7 +73,7 @@ namespace Carpo.NetGen
         public object Run8(string server, string database, string userId, string password,
             int operater, int clientHandle, short top, short left, string remoteDllPath)
         {
-            // strNGParams ide u isti router kao klik gumba; ovdje se jos ne izvrsava.
+            // strNGParams ide u isti router kao klik gumba, kad se Podloga pokaze (Form1_Load 1682, ULZ-03).
             return Izvrsi(server, database, remoteDllPath, operater, clientHandle);
         }
 
@@ -144,6 +144,9 @@ namespace Carpo.NetGen
             if (forma == null)
                 return;
             Forma = forma;
+            var podloga = forma as Carpo.NetGen.Ui.Podloga;
+            if (podloga != null)
+                podloga.NgParametri = strNGParams;
             var baza = forma as Carpo.UI.Forms.Jupiter.Base;
             try
             {

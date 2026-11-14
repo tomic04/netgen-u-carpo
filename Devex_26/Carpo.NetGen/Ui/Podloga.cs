@@ -244,7 +244,17 @@ namespace Carpo.NetGen.Ui
             }
             if (_master.Stanje.OtvaraFormu)
                 IzvrsiLanac(_master.Stanje.ImeForme ?? "");
+            // Form1_Load 1682-1686: strNGParams iz Jupiterovog retka ide u NovaGenerickaForma (ULZ-03).
+            string ng = (NgParametri ?? "").Trim();
+            if (ng.Length > 0 && !IsDisposed)
+            {
+                NgDnevnik.Akcija(" strNGParams = " + ng);
+                IzvrsiLanac(ng);
+            }
         }
+
+        /// <summary>Loader.strNGParams (Jupiter): naredba kao klik gumba nakon otvaranja (ULZ-03).</summary>
+        public string NgParametri { get; set; }
 
         private void NapuniCombo()
         {
