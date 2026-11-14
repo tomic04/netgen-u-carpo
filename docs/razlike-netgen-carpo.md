@@ -109,11 +109,11 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 - **Zašto ostaje:** odluka korisnika 14. 11. 2026.: stari VB6 ispis se ukida. Carpo ga ne zove; `PrintBridge.JeStariVb6` zapiše grešku u Carpo log s imenom ispisa, umjesto da klik tiho ne napravi ništa. `vrstadokid-` i `repx` idu u Spin.Printing kao i dosad (ISP-05).
 - **Test:** `isp05-prepoznaje`, `isp05-ukinut`
 
-### R124 Nakon SQL timeouta granula dobije novu sesiju
+### R124 Nakon SQL greške granula dobije novu sesiju (kao NetGen Close/Open)
 
-- **NetGen:** svi upiti granule idu kroz jednu otvorenu vezu (`Conn`, Form1 1607). Timeout prekine batch usred procedure; ako je procedura otvorila transakciju, ona ostaje otvorena na toj vezi, a sljedeći upiti rade unutar nje i drže zaključavanja.
-- **Zašto ostaje:** Carpo (SES-01) također drži jednu vezu po granuli, ali je nakon timeouta zatvori, pa server napravi rollback. Prije toga je Carpo svaki upit slao kroz novu vezu iz poola, koja otvorenu transakciju poništi pri sljedećoj upotrebi (50-50 → Carpo). Privremene tablice sesije nakon timeouta nestanu.
-- **Test:** `ses01-ista-sesija`, `ses01-otpusti-zatvori`
+- **NetGen:** svi upiti granule idu kroz jednu otvorenu vezu (`Conn`, Form1 1607). Nakon svake greške koja nije RAISERROR s `#`/`+` `Class1.ExecSql` 241-242 radi `Conn.Close()` i `Conn.Open()`; pool pri tome pozove `sp_reset_connection`, pa se otvorena transakcija poništi i `#temp` tablice nestanu. Timeout ne stigne do toga ako je na razini veze.
+- **Carpo:** `NgVeza` nakon takve greške i nakon timeouta zatvori vezu, pa server napravi rollback; sljedeći upit otvori novu sesiju. Isti ishod kao NetGen (PN-04, neovisni pregled 14. 11. 2026.; prije je zatvarala samo nakon timeouta).
+- **Test:** `ses01-ista-sesija`, `ses01-otpusti-zatvori`, `ses02-veza-nakon-greske`
 
 ## Uklonjeno
 

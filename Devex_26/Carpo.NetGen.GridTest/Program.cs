@@ -3983,6 +3983,31 @@ namespace Carpo.NetGen.GridTest
                         postoji = cmd.ExecuteScalar();
                 }
                 T("ses01-otpusti-zatvori", postoji == null || postoji == DBNull.Value, "object_id=" + Convert.ToString(postoji));
+                // PN-04: Class1.ExecSql 241-242 nakon greške radi Conn.Close/Open, pa otvorena transakcija ne ostane na vezi.
+                // RAISERROR s "#" (npr. "Nema stavki #OK") NetGen ne resetira (157-200), pa #temp ostaje.
+                string spojG = SpinVeza.SaAplikacijom(SpinVeza.Spoj("localhost", "spin"), "ses02.xml");
+                NgVeza.Prijavi(spojG);
+                try
+                {
+                    try { NgVeza.Citaj(spojG, "begin tran; raiserror('ses02 greska', 16, 1); select 1 as a", 30); }
+                    catch (SqlException) { }
+                    DataTable tc = NgVeza.Citaj(spojG, "select @@trancount as n", 30);
+                    int trancount = tc == null || tc.Rows.Count == 0 ? -1 : Convert.ToInt32(tc.Rows[0][0]);
+                    if (trancount > 0)
+                        NgVeza.Citaj(spojG, "while @@trancount > 0 rollback", 30);
+                    NgVeza.Citaj(spojG, "if object_id('tempdb..#ses02') is not null drop table #ses02; select 3 as a into #ses02", 30);
+                    try { NgVeza.Citaj(spojG, "raiserror('Nema stavki #OK', 16, 1)", 30); }
+                    catch (SqlException) { }
+                    DataTable ostala = null;
+                    try { ostala = NgVeza.Citaj(spojG, "select a from #ses02", 30); }
+                    catch (SqlException) { }
+                    T("ses02-veza-nakon-greske", trancount == 0 && ostala != null && ostala.Rows.Count == 1,
+                        "@@trancount=" + trancount.ToString() + " (NetGen 0) #temp nakon #OK poruke: " + (ostala == null ? "nema" : "ima"));
+                }
+                finally
+                {
+                    NgVeza.Otpusti(spojG);
+                }
             }
             catch (Exception ex)
             {
