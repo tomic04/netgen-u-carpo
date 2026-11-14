@@ -153,6 +153,10 @@ namespace Carpo.NetGen
             var baza = forma as Carpo.UI.Forms.Jupiter.Base;
             try
             {
+                // Form1.Run 1190-1205: Koler "Jup10" je bez ruba i veličine Jupiterovog panela (ULZ-06).
+                bool jup10 = Carpo.NetGen.Ulaz.JupiterProzor.JeJup10(Koler, clientHandle);
+                if (jup10)
+                    Carpo.NetGen.Ulaz.JupiterProzor.BezRuba(forma);
                 if (baza != null)
                 {
                     baza.InitLogger(dnevnik);
@@ -163,6 +167,8 @@ namespace Carpo.NetGen
                 }
                 else
                     forma.Show();
+                if (jup10)
+                    Carpo.NetGen.Ulaz.JupiterProzor.PratiRoditelja(forma, clientHandle, true);
                 hWnd = (int)forma.Handle;
             }
             catch (Exception ex)
