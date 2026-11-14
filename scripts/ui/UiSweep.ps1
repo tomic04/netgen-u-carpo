@@ -79,7 +79,7 @@ if ($sid -ne 0) {
 if (-not (Test-Path -LiteralPath $Izvjestaj)) { throw "Nema izvjestaja $Izvjestaj" }
 Pokazi-Djelomicno
 # Glava (brojevi i grupe) pa svi redovi koji nisu CISTO; cisti se samo broje.
-$izv = @(Get-Content -LiteralPath $Izvjestaj)
+$izv = @(Get-Content -LiteralPath $Izvjestaj -Encoding UTF8)
 $izv | Where-Object { -not ($_ -match "`tCISTO`t") } | ForEach-Object { Write-Host $_ }
 $global:LASTEXITCODE = 0
 exit 0

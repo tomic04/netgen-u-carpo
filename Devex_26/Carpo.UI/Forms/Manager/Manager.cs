@@ -1026,6 +1026,9 @@ namespace Carpo.UI.Forms.Master
 
         private void TreeWithGrids_KeyDown(object sender, KeyEventArgs e)
         {
+            // NetGen Podloga (prazni Manager, KeyPreview): F8 bi izvozio Carpo definiciju koje nema.
+            if (JSettings == null)
+                return;
             if (e.KeyCode == Keys.F8)
             {
                 Xml jRootXml = new Xml(AssemblyFolder, AssamblyName);
@@ -1061,6 +1064,10 @@ namespace Carpo.UI.Forms.Master
 
         private void bbiLookUpFilter_EditValueChanged(object sender, EventArgs e)//promjena
         {
+            // NetGen Podloga puni isti combo iz COMBO atributa i ima svoj rukovatelj (Combo_EditValueChanged).
+            // Bez JSettings ovaj je padao na JSettings.ComboEdit (NullReference pri otvaranju Narudžbi, CMB-01).
+            if (JSettings == null)
+                return;
             if (string.Equals(previous, "Filter", StringComparison.CurrentCultureIgnoreCase))
             {
                 gvGla.ClearGrouping();
