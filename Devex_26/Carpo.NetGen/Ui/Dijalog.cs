@@ -223,7 +223,8 @@ namespace Carpo.NetGen.Ui
                 var dugme = c as SimpleButton;
                 if (dugme != null)
                 {
-                    dugme.Tag = k.Atributi == null ? "" : (k.Atributi.Vrijednost("ONCLICK") ?? "");
+                    // Form2.vb 2684-2689: TYPE help ima Tag "help" (pomoć), ostali ONCLICK.
+                    dugme.Tag = k.Grana == NgGrana.Help ? "help" : (k.Atributi == null ? "" : (k.Atributi.Vrijednost("ONCLICK") ?? ""));
                     dugme.Click += GumbKlik;
                 }
                 VeziDogadjaj(c, k);
@@ -1164,6 +1165,12 @@ namespace Carpo.NetGen.Ui
                 int.TryParse(b.Name.Substring(3), out redni);
                 if (crta >= 0)
                     naredba = tag.Substring(crta + 1);
+            }
+            else if (naredba.Trim().Length == 0 || string.Equals(naredba.Trim(), "help", StringComparison.OrdinalIgnoreCase))
+            {
+                // Form2.Glbl_ClickButton 6221-6229: gumb bez naredbe ili "help" je pomoć (HLP-02).
+                PokaziPomoc();
+                return;
             }
             // Form2.Button3..6_Click (5800-5818): CMD3-CMD6 zovu NovaGenerickaForma2(Tag) izravno,
             // bez Rafalna. Tag je forma, ispis ili objekt, nikad SQL (BTN-02).
@@ -2118,6 +2125,9 @@ namespace Carpo.NetGen.Ui
                     return true;
                 }
             }
+            // Form2_KeyDown 4161-4166: F1 uz HELPKOD je pomoć, prije HOTKEY-a (HLP-02).
+            if (kod == (int)Keys.F1 && !control && PokaziPomoc())
+                return true;
             // Form2_KeyDown 4192-4252: F1-F10 i * su HOTKEY (HOT-01).
             if (Form2Izgled.JeHotkey(keyData & Keys.KeyCode) && PokreniHotkey(keyData & Keys.KeyCode))
                 return true;

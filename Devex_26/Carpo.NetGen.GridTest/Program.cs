@@ -1997,6 +1997,10 @@ namespace Carpo.NetGen.GridTest
             BojeIzUpita();
             StabloDijaloga();
             IzgledGridaDijaloga();
+            OznaceniIzUpita();
+            // HLP-02: DajPokaziHelp argumenti; Str(7) ima razmak sprijeda.
+            T("hlp02-argumenti", JupiterPomoc.Argumenti("srv", "db", "KOD", "7", "X.xml") == "-s srv -d db -h KOD -o  7 -p X.xml",
+                JupiterPomoc.Argumenti("srv", "db", "KOD", "7", "X.xml"));
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -3105,6 +3109,36 @@ namespace Carpo.NetGen.GridTest
             {
                 GridRaspored.MapaZaTest = null;
                 try { if (Directory.Exists(mapa)) Directory.Delete(mapa, true); } catch (IOException) { }
+            }
+        }
+
+        /// <summary>CHK-01: stupac "selectedid" s 1 označi red grida dijaloga (RucniRadNaGriduzaCheckiranjeRedova).</summary>
+        private static void OznaceniIzUpita()
+        {
+            try
+            {
+                var g = new NgControl("grid", NgGrana.Grid, "g", new NgAttributeBag(new Dictionary<string, string> { { "SQL", "select 1" } }), true);
+                var forma = new NgForm("C1", new NgAttributeBag(new Dictionary<string, string>()), "", "", new List<NgControl> { g }, new List<NgButton>(), new List<string>());
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), delegate (string x)
+                    {
+                        var t = new DataTable();
+                        t.Columns.Add("id", typeof(int));
+                        t.Columns.Add("naziv", typeof(string));
+                        t.Columns.Add("selectedid", typeof(int));
+                        t.Rows.Add(1, "a", 1);
+                        t.Rows.Add(2, "b", 0);
+                        return t;
+                    });
+                    var grid = (DevExpress.XtraGrid.GridControl)d.Controls.Find("g", true)[0];
+                    var v = (DevExpress.XtraGrid.Views.Grid.GridView)grid.MainView;
+                    T("chk01-selectedid", v.IsRowSelected(v.GetRowHandle(0)) && !v.IsRowSelected(v.GetRowHandle(1)), "sel=" + v.SelectedRowsCount);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("chk01", false, ex.ToString());
             }
         }
 
