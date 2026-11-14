@@ -1268,6 +1268,13 @@ namespace Carpo.NetGen.Ui
                     redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", "preglednik nije dio upisa", "netgen/Form2.vb:3367"));
                     continue;
                 }
+                if (!upis && !DijalogTok.UpisNaSpinu(_server, _baza) && !OtvaraFormu(naredba))
+                {
+                    // SWP-02: izvan spina (npr. backup klijenta) klikne se samo gumb koji otvara formu granule;
+                    // forma se zatvori s Odustani. Izravan SQL ili procedura se ne šalje.
+                    redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", "nije spin: izravan SQL se ne šalje", "netgen/Form2.vb:3367"));
+                    continue;
+                }
                 if (!upis && Destruktivan(naredba, natpis))
                 {
                     redovi.Add(Linija(granula, "gumb", natpis, "PRESKOCEN", naredba, "netgen/Form2.vb:3367"));
@@ -1886,6 +1893,24 @@ namespace Carpo.NetGen.Ui
             if (on.Length > 0 && !on.StartsWith(":", StringComparison.Ordinal))
                 return true;
             return !string.IsNullOrWhiteSpace(_master.Stanje.IzvorSql);
+        }
+
+        /// <summary>SWP-02: prvi dio naredbe gumba (do #) je forma ove granule ili uključenog XML-a.</summary>
+        private bool OtvaraFormu(string naredba)
+        {
+            if (_projekt == null || string.IsNullOrWhiteSpace(naredba))
+                return false;
+            string ime = naredba.Trim();
+            int hash = ime.IndexOf('#');
+            if (hash >= 0)
+                ime = ime.Substring(0, hash);
+            ime = ime.Trim();
+            if (ime.StartsWith(":", StringComparison.Ordinal))
+                ime = ime.Substring(1).Trim();
+            int zagrada = ime.IndexOf('(');
+            if (zagrada > 0)
+                ime = ime.Substring(0, zagrada).Trim();
+            return ime.Length > 0 && IncludeForme.Nadji(_projekt, ime) != null;
         }
 
         private bool Destruktivan(string naredba, string natpis)
