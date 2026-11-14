@@ -218,10 +218,34 @@ def main():
     print("Mrtve (samo test ili nitko ne zove): %d" % len(mrtve))
     for kljuc, rel, linija, vrsta in mrtve:
         print("MRTVO %s %s:%d %s" % (kljuc, rel, linija, vrsta))
+    kuka = qa_kuka_u_produkciji()
+    for rel, linija in kuka:
+        print("QA-KUKA %s:%d produkcijski kod spominje TestHooks" % (rel, linija))
     if mrtve:
         print("Build staje. Ulaz iz Dijalog/Podloga/TestShell, ili iznimka s razlogom u scripts/ci/mrtve-iznimke.txt.")
         return 1
+    if kuka:
+        print("Build staje. Loader, frm i Podloga ne smiju dosegnuti GranulaSesija/GranulaIzvrsenje (PRD-03).")
+        return 1
     return 0
+
+
+QA_KUKA = re.compile(r"\b(?:TestHooks|GranulaSesija|GranulaIzvrsenje)\b")
+
+
+def qa_kuka_u_produkciji():
+    """PRD-03: QA kuka je samo za testove. Komentari se ne broje."""
+    nadjeno = []
+    mapa_kuke = os.path.join(NETGEN, "TestHooks") + os.sep
+    for put in datoteke_cs(NETGEN):
+        if put.startswith(mapa_kuke) or je_test(put):
+            continue
+        with open(put, encoding="utf-8-sig", errors="replace") as f:
+            for i, red in enumerate(f, 1):
+                kod = red.split("//", 1)[0]
+                if QA_KUKA.search(kod):
+                    nadjeno.append((os.path.relpath(put, ROOT), i))
+    return nadjeno
 
 
 if __name__ == "__main__":
