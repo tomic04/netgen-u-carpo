@@ -65,6 +65,8 @@ namespace Carpo.NetGen.GridTest
                 Korak("nextform-id", NextFormId);
                 Korak("odustani-nije-ok", OdustaniNijeOk);
                 Korak("stablo-nakon-dijaloga", StabloNakonDijaloga);
+                Korak("forma-parametri", FormaParametri);
+                Korak("onload-jedna-rijec", OnLoadJednaRijec);
             }
             finally
             {
@@ -139,8 +141,8 @@ namespace Carpo.NetGen.GridTest
                     + "insert into dbo.PregledNeovisniLog (oznaka, t) values (@k, @t);\r\n"
                     + "select 1 as id, @k as oznaka, isnull(@t, '') as t");
                 Izvrsi(c, "if object_id('dbo.spPregledNeovisniTree') is not null drop procedure dbo.spPregledNeovisniTree");
-                Izvrsi(c, "create procedure dbo.spPregledNeovisniTree @k varchar(50) as\r\n"
-                    + "insert into dbo.PregledNeovisniLog (oznaka, t) values (@k, 'stablo');\r\n"
+                Izvrsi(c, "create procedure dbo.spPregledNeovisniTree @k varchar(50) = null as\r\n"
+                    + "if @k is not null insert into dbo.PregledNeovisniLog (oznaka, t) values (@k, 'stablo');\r\n"
                     + "select 1 as id, 0 as roditelj, 'Korijen' as natpis");
                 Izvrsi(c, "delete from dbo.PregledNeovisniLog");
             }
@@ -480,6 +482,101 @@ namespace Carpo.NetGen.GridTest
             catch (Exception ex)
             {
                 T("pn-stablo-nakon-dijaloga", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                Zatvori(forma);
+            }
+        }
+        // ------------------------------------------------------------------ PN-14
+
+        /// <summary>
+        /// Form1.NovaGenerickaForma2 5298-5313: IMEFORME(@pero=@@id): parametar iz zagrade ide ispred strPrevParametri
+        /// dijaloga, pa ONLOAD vidi @@pero (KOD_Diskete IZMJENA(@oopdiskprijenosglaid=@@id) → ONLOAD
+        /// "select @@oopdiskprijenosglaid as ..."). Carpo je zagradu odbacivao.
+        /// </summary>
+        private static void FormaParametri()
+        {
+            string xml = Xml("PnParam.xml",
+                "<PROJECT ONLOAD=\"select 7 as id, 'a' as naziv\" CMD1CAPTION=\"Izmjena:IZM(@kljuc=@@id,@drugi=@@naziv)\">\r\n"
+                + "<NAME>PnParam</NAME>\r\n<CAPTION>Pregled parametri</CAPTION>\r\n"
+                + "<IZM CAPTION=\"Izmjena\" CMD1CAPTION=\"OK\" CMD2CAPTION=\"Odustani\" ONLOAD=\"select @@kljuc as k, '@@drugi' as d\">\r\n"
+                + "<INPUT TYPE=\"text\" NAME=\"k\" TOP=\"100\" LEFT=\"100\" WIDTH=\"2000\" HEIGHT=\"300\" />\r\n"
+                + "<INPUT TYPE=\"text\" NAME=\"d\" TOP=\"500\" LEFT=\"100\" WIDTH=\"2000\" HEIGHT=\"300\" />\r\n"
+                + "</IZM>\r\n</PROJECT>\r\n");
+            bool otvoren;
+            Podloga forma = OtvoriPodlogu(xml, out otvoren);
+            try
+            {
+                SimpleButton gumb = GumbPodloge(forma, "Izmjena");
+                if (!otvoren || gumb == null)
+                {
+                    T("pn-forma-parametri", false, "podloga se nije otvorila ili nema gumba");
+                    return;
+                }
+                string k = "", d = "";
+                Dijalog.NakonPrikaza = delegate (Dijalog dij)
+                {
+                    Control[] ck = dij.Controls.Find("k", true);
+                    Control[] cd = dij.Controls.Find("d", true);
+                    k = ck.Length > 0 ? ck[0].Text : "nema";
+                    d = cd.Length > 0 ? cd[0].Text : "nema";
+                    KlikniCmd(dij, 2);
+                };
+                try { gumb.PerformClick(); }
+                finally { Dijalog.NakonPrikaza = null; }
+                Application.DoEvents();
+                T("pn-forma-parametri", k == "7" && d == "a", "k='" + k + "' d='" + d + "' (NetGen: k='7' d='a')");
+            }
+            catch (Exception ex)
+            {
+                T("pn-forma-parametri", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                Zatvori(forma);
+            }
+        }
+
+        // ------------------------------------------------------------------ PN-13
+
+        /// <summary>
+        /// Form2.vb 1195: svaki neprazan ONLOAD forme se izvrši, i procedura bez parametara (OOPKnjigaR FILTERFORM
+        /// ONLOAD="spHRInterneObustave"). DijalogTok.OnLoadJeUpit je tražio razmak, pa ga je preskakao.
+        /// </summary>
+        private static void OnLoadJednaRijec()
+        {
+            string xml = Xml("PnJedna.xml",
+                "<PROJECT ONLOAD=\"select 1 as id, 'a' as naziv\" CMD1CAPTION=\"Filter:FILT\">\r\n"
+                + "<NAME>PnJedna</NAME>\r\n<CAPTION>Pregled jedna rijec</CAPTION>\r\n"
+                + "<FILT CAPTION=\"Filter\" CMD1CAPTION=\"OK\" CMD2CAPTION=\"Odustani\" ONLOAD=\"dbo.spPregledNeovisniTree\">\r\n"
+                + "<INPUT TYPE=\"text\" NAME=\"natpis\" TOP=\"100\" LEFT=\"100\" WIDTH=\"2000\" HEIGHT=\"300\" />\r\n"
+                + "</FILT>\r\n</PROJECT>\r\n");
+            bool otvoren;
+            Podloga forma = OtvoriPodlogu(xml, out otvoren);
+            try
+            {
+                SimpleButton gumb = GumbPodloge(forma, "Filter");
+                if (!otvoren || gumb == null)
+                {
+                    T("pn-onload-jedna-rijec", false, "podloga se nije otvorila ili nema gumba");
+                    return;
+                }
+                string natpis = "";
+                Dijalog.NakonPrikaza = delegate (Dijalog dij)
+                {
+                    Control[] c = dij.Controls.Find("natpis", true);
+                    natpis = c.Length > 0 ? c[0].Text : "nema";
+                    KlikniCmd(dij, 2);
+                };
+                try { gumb.PerformClick(); }
+                finally { Dijalog.NakonPrikaza = null; }
+                Application.DoEvents();
+                T("pn-onload-jedna-rijec", natpis == "Korijen", "natpis='" + natpis + "' (NetGen: 'Korijen')");
+            }
+            catch (Exception ex)
+            {
+                T("pn-onload-jedna-rijec", false, ex.GetType().Name + ": " + ex.Message);
             }
             finally
             {
