@@ -48,6 +48,13 @@ namespace Carpo.NetGen.Komande
         public static Func<string, bool> Pitaj;
         public static Action<string> Upozori;
 
+        /// <summary>
+        /// XtraMessageBox koji postavi Ui.NgPoruka. Pitaj/Upozori (testovi) imaju prednost; bez ičega ostaje
+        /// WinForms MessageBox.
+        /// </summary>
+        public static Func<string, bool> ZadanoPitaj;
+        public static Action<string> ZadanoUpozori;
+
         /// <summary>ISEMPTYORZEROALERT: prazno ili 0 pita OK/Cancel. Cancel prekida. Form2.vb 7083–7088.</summary>
         public static bool AlertNastavi(string vrijednost, string poruka)
         {
@@ -55,6 +62,8 @@ namespace Carpo.NetGen.Komande
                 return true;
             if (Pitaj != null)
                 return Pitaj(poruka ?? "");
+            if (ZadanoPitaj != null)
+                return ZadanoPitaj(poruka ?? "");
             return MessageBox.Show(poruka ?? "", "Pitanje", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK;
         }
 
@@ -65,6 +74,8 @@ namespace Carpo.NetGen.Komande
                 return false;
             if (Upozori != null)
                 Upozori(poruka ?? "");
+            else if (ZadanoUpozori != null)
+                ZadanoUpozori(poruka ?? "");
             else
                 MessageBox.Show(poruka ?? "", "Upozorenje", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return true;
