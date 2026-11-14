@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT 
+DETAILGRID = "spmpCopyDok @action=2, @operateriid=@@operateriid, @id=@@id"
+MASTERDBLCLICK=""
+CMD1CAPTION="Parametri:FILTERFORM" 
+CMD2CAPTION=""
+CMD3CAPTION="Kopiraj:KOPIRAJ" 
+CMD4CAPTION="" 
+CMD5CAPTION="" 		
+CMD6CAPTION="Print dok.:vrstadokid-MaloprodajaGla"
+CMD7CAPTION="Lista" 
+CMD8CAPTION="" 
+POPUPMASTER="Filter:FILTERFORM" 
+TREE=""
+GROUPBYBOXVISIBLE="TRUE" 
+ONLOAD=":FILTERFORM"   
+CHECKBOXVISIBLE="FALSE"
+DETCHECKBOXVISIBLE="FALSE"
+TOTALROWVISIBLE="TRUE"
+DETTOTALROWVISIBLE="FALSE"
+COMMANDTIMEOUT="600"
+SETDEFAULTS="" 
+ONLOAD2="" 
+REPORT=""
+MULTIGRIDLAYOUT="TRUE">
+
+	<NAME>Kopiranje dokumenata MP</NAME>
+	<CAPTION>Kopiranje dokumenata MP </CAPTION>
+
+<FILTERFORM 
+	NAME="FILTERFORM" 
+	HEIGHT="3500" WIDTH="7710" 
+	CAPTION="Upišite uvjete prikaza " 
+	ONSUBMIT="spmpCopyDok @action = 1, @operateriid=@@operateriid, "
+	ONLOAD="select @@datumod as datumod, @@datumdo as datumdo, @@trgovinaid as trgovinaid" 
+	ONLOADED="select vrstapromid from vrstaprom where sifra = '104'"
+	FILLEXPLORER="TRUE" 
+	NEXTFORM=""
+	VERSION="1.2"
+	CMD1CAPTION="Pokaži" 
+	CMD2CAPTION="Odustani">
+	
+	<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od*" TOP="500" LEFT="1400" WIDTH="1500" HEIGHT="320"/>
+	<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do*" TOP="900" LEFT="1400" WIDTH="1500" HEIGHT="320"/>
+	<INPUT TYPE="combo" NAME="vrstadokid" CAPTION="Vrsta dokumenta:*" TOP="1300" LEFT="1400" WIDTH="5500" HEIGHT="320"
+		ALLOWEMPTY="TRUE" SQL="spMPDajVrstaDok @sifra = '104'" />
+	<INPUT TYPE="combo" NAME="trgovinaid" CAPTION="Trgovina:*" TOP="1700" LEFT="1400" WIDTH="5500" HEIGHT="320"
+		ALLOWEMPTY="TRUE" SQL="spMPDajTrgovinaNG @operateriid = @@operateriid" />
+	<INPUT TYPE="number" NAME="vrstapromid" CAPTION="Vrsta prometa" TOP="-1700" LEFT="1400" WIDTH="5500" HEIGHT="320"
+		ALLOWEMPTY="FALSE"/>
+</FILTERFORM>
+
+
+
+<KOPIRAJ 
+	NAME="FILTERFORM" 
+	HEIGHT="9000" WIDTH="8400" 
+	CAPTION="Upišite uvjete prikaza " 
+	ONLOAD="select datumdok,broj,getdate() as newdatumdok from maloprodajagla where maloprodajaglaid=@@id" 
+	FILLEXPLORER="TRUE" 
+	VERSION="1.11">
+	
+	<INPUT TYPE="date" NAME="datumdok" CAPTION="Datum dokumenta" ENABLED="TRUE"/>
+	<INPUT TYPE="text" NAME="broj" CAPTION="Broj dokumenta:" ENABLED="FALSE"/>
+	<INPUT TYPE="multidrop" NAME="trgovine" 
+		ALLOWEMPTY="TRUE" CAPTION="Trgovina:" ONLOSTFOCUS="" ONCLICK="if (select trgovinaid from maloprodajagla where maloprodajaglaid= @@ID ) = @@trgovinaid  begin 
+	                        exec spRaiserror 69001, 'Ne možete kopirati na istu trgovinu !' 
+			end" SQL="spMPDajTrgovinaNG @operateriid=@@operateriid  " />
+	<INPUT TYPE="date" NAME="newdatumdok" CAPTION="Datum novog dokumenta" ENABLED="TRUE"/>
+	<INPUT TYPE="grid" 
+				NAME="detalji" 
+				TOP="2500" 
+				LEFT="200" 
+				WIDTH="7770"
+				HEIGHT="5000" 
+				CHECKBOXVISIBLE="FALSE" 
+				TOTALROWVISIBLE="FALSE"
+	  		        EDITCOLUMNS="[Količina1200]"
+				GROUPBYBOXVISIBLE="FALSE"		
+				CAPTION="_Stavke dokumenta"
+				REFRESHAFTERCHILD="TRUE"
+				VISIBLE="TRUE"
+				SQL="spmpCopyDok @action=2,@operateriid=@@operateriid,@id=@@id" />
+				
+				<INPUT TYPE="button" NAME="ok"     CAPTION="Kopiraj"  TOP="8000" LEFT="456" WIDTH="1106" HEIGHT="322" 
+				ONCLICK="exec spmpCopyDok @action=3,@id=@@id,@trgovine='@@trgovine',@datumdok='@@newdatumdok'
+				#OK "  HOTKEY="F2" />
+				<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="8000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</KOPIRAJ>
+	
+</PROJECT>

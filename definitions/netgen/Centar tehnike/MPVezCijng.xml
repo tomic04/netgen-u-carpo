@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="windows-1250" ?>
+
+<PROJECT  
+		ONLOAD="spMPVezaniCjeniciNG @action=1,@operateriid=@@operateriid"  		
+		REPORT="" 	
+		CMD1CAPTION="Cjenik:FORM1" 
+		CMD2CAPTION="Vezanje cjenika:FORM2" 
+		CMD3CAPTION="Uvjeti vezanja:PRIKAZI" 
+		CMD4CAPTION="Aktiviranje:FORM3"
+ 		CMD5CAPTION="" 
+		CMD6CAPTION=""  
+		CMD7CAPTION="Lista"  
+		CMD8CAPTION=""  
+		MASTERDBLCLICK="FORMEDIT"
+		COMMANDTIMEOUT="600"
+		GROUPBYBOXVISIBLE="FALSE" 
+		POPUPMASTER=""
+		CHECKBOXVISIBLE="FALSE"
+		TOTALROWVISIBLE="FALSE"> 
+ 
+  <NAME>MP Vezani cjenici</NAME>
+  <CAPTION>MP Vezani cjenici</CAPTION>
+
+
+  <FORM1
+	  NAME="FORM1"
+	  HEIGHT="5000" 
+	  WIDTH="7502"
+	  ONLOAD=""
+	  CAPTION="Rad s mp cjenikom ">
+
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Otvori novi mp cjenik"  TOP="500" LEFT="456" WIDTH="3500" HEIGHT="322" ONCLICK=":NOVICJENIK#OK"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Izmijeni naziv neaktiviranog cjenika"  TOP="1000" LEFT="456" WIDTH="3500" HEIGHT="322" ONCLICK=":EDITCJENIK#OKSTAY"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Obriši neaktivirani cjenik" TOP="1500" LEFT="456" WIDTH="3500" HEIGHT="322" ONCLICK=":BRISICJENIK#OKSTAY"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Pokaži stavke cjenika" TOP="2000" LEFT="456" WIDTH="3500" HEIGHT="322" ONCLICK=":STAVKECJENIKA#OKSTAY"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Donesi stavke sa drugog cjenika" TOP="2500" LEFT="456" WIDTH="3500" HEIGHT="322" ONCLICK=":DONESISTAVKECJENIKA#OK"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="3500" LEFT="5500" WIDTH="1106" HEIGHT="322" ONCLICK="close" />
+
+  </FORM1 >
+	
+  <NOVICJENIK 
+	  WIDTH="9000"
+	  ONSUBMIT=""
+	  ONLOAD="select 1 as glavni"
+	  HEIGHT="6000"
+	  CAPTION="Novi cjenik"
+	  FILLEXPLORER="" >
+
+	  <INPUT TYPE="text" NAME="Opis" CAPTION="Naziv cjenika:*" TOP="500" LEFT="2500" HEIGHT="320" WIDTH="5500" VISIBLE="TRUE" ENABLED="TRUE"/>
+	  <INPUT TYPE="combo" NAME="vrcjenikid"	CAPTION="Cjenik iz kojeg se kopira:*" TOP="1000" LEFT="2500" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="TRUE" SQL="select vrcjenikid, opis as naziv from vrcjenik where datumaktiviranja is not null and indmp=1"/>
+	  <INPUT TYPE="number" NAME="PostotakNoviC" CAPTION="% promjene novog cjenika:*" ENABLED="TRUE" ALLOWEMPTY="FALSE" TOP="1500" LEFT="3500" WIDTH="1000" HEIGHT="320" DECIMALS="2"/>
+
+	  <INPUT TYPE="checkbox" NAME="glavni" CAPTION="Novi cjenik je samostalni cjenik*" TOP="2000" LEFT="2500" WIDTH="5500" ONCLICK="select vrcjenik2id=case when @@glavni=1 then 'disable' else 'enable' end # select PostotakVezaniC=case when @@glavni=1 then 'disable' else 'enable' end  " />
+
+	 
+	  <INPUT TYPE="checkbox" NAME="vezani" CAPTION="Veži novi cjenik uz glavni cjenik*" TOP="3000" LEFT="2500" WIDTH="5500" ONCLICK="select vrcjenik2id=case when @@vezani=1 then 'enable' else 'disable' end # select PostotakVezaniC=case when @@vezani=1 then 'enable' else 'disable' end  " />
+	  <INPUT TYPE="combo" NAME="vrcjenik2id" CAPTION="Glavni cjenik:*"  ALLOWEMPTY="FALSE" TOP="3500" LEFT="2500" SQL="select vrcjenikid, opis as naziv from vrcjenik where datumaktiviranja is not null and indmp=1 and vrcjenikid not in (select vrcjenik2id from mpvezanicjenik)" WIDTH="5500" ENABLED="TRUE" HEIGHT="320"/>
+	  <INPUT TYPE="number" NAME="PostotakVezaniC" CAPTION="% promjene vezanog cjenika:*" TOP="4000" LEFT="3500" ENABLED="TRUE" ALLOWEMPTY="FALSE" WIDTH="1000" HEIGHT="320" DECIMALS="2"/>
+
+
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Otvori novi mp cjenik" TOP="5000" LEFT="456" WIDTH="3000" HEIGHT="322" 
+			 ONCLICK="if @@glavni=@@vezani and @@glavni=1 begin exec spRaiserror 69001, 'Cjenik ne može istovremeno biti i samostalni i vezani !' return end 
+			 #if @@glavni=@@vezani and @@glavni=0 begin exec spRaiserror 69001, 'Morate odabrati da li će cjenik biti samostalni ili vezani !' return end 
+			 #spMPVezaniCjeniciNG @action=2, @operateriid=@@operateriid,@Opis='@@Opis',@vrcjenikid=@@vrcjenikid,@PostotakNoviC=@@PostotakNoviC, @glavni=@@glavni, @vezani=@@vezani, @vrcjenik2id=@@vrcjenik2id, @PostotakVezaniC=@@PostotakVezaniC#OK" />
+	  <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="5000" LEFT="3756" WIDTH="1106" HEIGHT="322" ONCLICK="close" />
+
+  </NOVICJENIK>
+
+  <EDITCJENIK
+	  NAME="IZMIJENI"
+	  HEIGHT="3500"
+	  WIDTH="8000"
+	  CAPTION="Izmijeniti cjenik ?"
+	  ONSUBMIT="spMPVezaniCjeniciNG @action=22,"
+	  ONLOAD="select @@id as vrcjenikid"
+	  FILLEXPLORER=""
+	  CMD1CAPTION="Spremi"
+	  CMD2CAPTION="Odustani">
+
+	  <INPUT TYPE="combo" NAME="vrcjenikid" CAPTION="Cjenik:*" TOP="500" LEFT="1800" WIDTH="5500" HEIGHT="320" ALLOWEMPTY="FALSE" ENABLED="FALSE" BOLD="TRUE" SQL="select vrcjenikid, opis as naziv from vrcjenik where vrcjenikid=@@vrcjenikid" />
+	  <INPUT TYPE="text" NAME="Opis" CAPTION="Novi naziv cjenika:*" TOP="1000" LEFT="1800" HEIGHT="320" WIDTH="5500" VISIBLE="TRUE" ENABLED="TRUE"/>
+
+  </EDITCJENIK>
+
+  <BRISICJENIK
+	  NAME="BRISI" 
+	  HEIGHT="2197" 
+	  WIDTH="5501" 
+	  CAPTION="Obrisati cjenik ?"
+	  ONSUBMIT="spMPVezaniCjeniciNG @action=4,"
+	  ONLOAD="select @@id as vrcjenikid"
+	  FILLEXPLORER="" 
+	  CMD1CAPTION="Obriši" 
+	  CMD2CAPTION="Odustani">
+
+	  <INPUT TYPE="combo" NAME="vrcjenikid" CAPTION="Cjenik:*" TOP="500" LEFT="1000" WIDTH="4000" HEIGHT="320" ALLOWEMPTY="FALSE" ENABLED="FALSE" BOLD="TRUE" SQL="select vrcjenikid, opis as naziv from vrcjenik where vrcjenikid=@@vrcjenikid" />
+
+  </BRISICJENIK>
+
+
+  <STAVKECJENIKA
+	  WIDTH="11000"
+	  ONSUBMIT=""
+	  ONLOAD="select @@id as vrcjenikid"
+	  HEIGHT="7500"
+	  CAPTION="Stavke cjenika"
+	  CMD1CAPTION="Povratak"
+	  FILLEXPLORER="" >
+
+	  <INPUT TYPE="grid" NAME="grid1" LEFT="300" CAPTION="" CHECKBOXVISIBLE="FALSE" TOTALROW="FALSE" WIDTH="10000" HEIGHT="6000" SQL="spMPVezaniCjeniciNG @action=5, @operateriid=@@operateriid,@vrcjenikid=@@vrcjenikid"  />
+
+  </STAVKECJENIKA>
+
+  <DONESISTAVKECJENIKA
+	  WIDTH="7000"
+	  ONSUBMIT="spMPVezaniCjeniciNG @action=3, "
+	  ONLOAD="select @@id as vrcjenikid"
+	  ONLOAD2=""
+	  HEIGHT="3500"
+	  CAPTION="Donos robe sa drugog cjenika "
+	  CMD1CAPTION="Donesi"
+	  CMD2CAPTION="Odustani"
+	  FILLEXPLORER="" >
+
+
+	  <INPUT TYPE="combo" NAME="vrcjenikid" CAPTION="Na cjenik:*" TOP="500" LEFT="2000" WIDTH="4000" HEIGHT="320" ALLOWEMPTY="false" ENABLED="FALSE" BOLD="TRUE" SQL="select vrcjenikid, opis as naziv from vrcjenik where vrcjenikid=@@vrcjenikid" />
+	  <INPUT TYPE="combo" NAME="vrcjeniksaid" CAPTION="Cjenik sa:*" TOP="1000" LEFT="2000" WIDTH="4000" HEIGHT="320" ALLOWEMPTY="false" ENABLED="TRUE" SQL="select vrcjenikid, opis as naziv from vrcjenik where datumaktiviranja is not null and indmp=1" />
+	  <INPUT TYPE="number" NAME="PostotakNoviC" CAPTION="% promjene novog cjenika:*" TOP="1500" ENABLED="TRUE" ALLOWEMPTY="FALSE" WIDTH="1000" HEIGHT="320" DECIMALS="2" LEFT="3500"/>
+
+  </DONESISTAVKECJENIKA>
+
+  <FORM2
+	  NAME="FORM2"
+	  HEIGHT="4000"
+	  WIDTH="7502"
+	  CAPTION="Vezanje mp cjenika ">
+
+		<INPUT TYPE="button" NAME="ok"     CAPTION="Veži mp cjenike"  TOP="500" LEFT="456" WIDTH="3000" HEIGHT="322" ONCLICK=":FORMADD#OKSTAY"  HOTKEY="" />
+		<INPUT TYPE="button" NAME="ok"     CAPTION="Izmjeni vezu" TOP="1000" LEFT="456" WIDTH="3000" HEIGHT="322" ONCLICK=":FORMEDIT#OKSTAY"  HOTKEY="" />
+		<INPUT TYPE="button" NAME="ok"     CAPTION="Obriši vezu" TOP="1500" LEFT="456" WIDTH="3000" HEIGHT="322" ONCLICK=":BRISI#OKSTAY"  HOTKEY="" />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2000" LEFT="3756" WIDTH="1106" HEIGHT="322" ONCLICK="close" />
+
+  </FORM2>
+	
+  <FORMADD  	
+		FILLEXPLORER="" 
+		WIDTH="9000" 
+		ONSUBMIT="spMPVezaniCjeniciNG @action=7,@operateriid=@@operateriid," 
+		ONLOAD="" 
+		HEIGHT="3300" 
+		CAPTION="Novi vezani cjenik" 
+		BORDERSTYLE="3" 
+		CMD1CAPTION="Spremi" 
+		CMD2CAPTION="Odustani" > 
+		
+	  <INPUT TYPE="combo" CAPTION="Glavni cjenik:*" NAME="vrcjenikid" TOP="500" LEFT="2000" SQL="select vrcjenikid, opis as naziv from vrcjenik where datumaktiviranja is not null and indmp=1 and vrcjenikid not in (select vrcjenik2id from mpvezanicjenik)" WIDTH="5500" ALLOWEMPTY="FALSE" ENABLED="TRUE"	HEIGHT="320"/>
+	  <INPUT TYPE="combo" CAPTION="Vezani cjenik:*" NAME="vrcjenik2id" TOP="1000" LEFT="2000" ALLOWEMPTY="FALSE" SQL="select vrcjenikid, opis as Naziv from vrcjenik where vrcjenikid not in (select vrcjenik2id from MPVezanicjenik) and datumaktiviranja is not null" WIDTH="5500" ENABLED="TRUE"	HEIGHT="320"/>
+	  <INPUT TYPE="number" NAME="PostotakVezaniC" CAPTION="% promjene vezanog cjenika:*" TOP="1500" LEFT="3500" ENABLED="TRUE" ALLOWEMPTY="FALSE" WIDTH="1000" HEIGHT="320" DECIMALS="2" />
+
+  </FORMADD>
+
+  <FORMEDIT  	
+		  FILLEXPLORER="" 
+		  WIDTH="9000" 
+		  ONSUBMIT="spMPVezaniCjeniciNG @action=8,@operateriid=@@operateriid, @MPVezaniCjenikid=@@MPVezaniCjenikid," 
+		  ONLOAD="select @@id as vrcjenik2id, (select vrcjenikid from MPVezaniCjenik where vrcjenik2id=@@id) as vrcjenikid, (select MPVezaniCjenikid from MPVezaniCjenik where vrcjenik2id=@@id) as MPVezaniCjenikid,
+					(select postotak from MPVezaniCjenik where vrcjenik2id=@@id) as PostotakVezaniC" 
+		  HEIGHT="3300" 
+		  CAPTION="Izmjeni vezani cjenik" 
+		  BORDERSTYLE="3" 
+		  CMD1CAPTION="Spremi" 
+		  CMD2CAPTION="Odustani" >
+
+	  <INPUT TYPE="combo" CAPTION="Glavni cjenik:*" NAME="vrcjenikid" TOP="500" LEFT="2000" SQL="select vrcjenikid, opis as Naziv from vrcjenik where vrcjenikid=@@vrcjenikid" WIDTH="5500" ALLOWEMPTY="FALSE" ENABLED="FALSE" HEIGHT="320"/>
+	  <INPUT TYPE="combo" CAPTION="Vezani cjenik:*" NAME="vrcjenik2id" TOP="1000" LEFT="2000" ALLOWEMPTY="FALSE" SQL="select vrcjenikid as vrcjenik2id, opis as Naziv from vrcjenik where vrcjenikid=@@vrcjenik2id" WIDTH="5500" ENABLED="FALSE" HEIGHT="320"/>
+	  <INPUT TYPE="number" NAME="PostotakVezaniC" CAPTION="% promjene vezanog cjenika:*" TOP="1500" LEFT="3500" ENABLED="TRUE" ALLOWEMPTY="FALSE" WIDTH="1000" HEIGHT="320" DECIMALS="2" />
+
+  </FORMEDIT>
+
+
+  <BRISI  	
+		  FILLEXPLORER="" 
+		  WIDTH="9000" 
+		  ONSUBMIT="spMPVezaniCjeniciNG @action=12,@operateriid=@@operateriid, @MPVezaniCjenikid=@@MPVezaniCjenikid," 
+		  ONLOAD="select @@id as vrcjenik2id, (select vrcjenikid from MPVezaniCjenik where vrcjenik2id=@@id) as vrcjenikid, (select MPVezaniCjenikid from MPVezaniCjenik where vrcjenik2id=@@id) as MPVezaniCjenikid,
+					(select postotak from MPVezaniCjenik where vrcjenik2id=@@id) as PostotakVezaniC" 
+		  HEIGHT="3300" 
+		  CAPTION="Brisanje vezanog cjenika" 
+		  BORDERSTYLE="3" 
+		  CMD1CAPTION="Obriši" 
+		  CMD2CAPTION="Odustani" >
+
+	  <INPUT TYPE="combo" CAPTION="Glavni cjenik:*" NAME="vrcjenikid" TOP="500" LEFT="2000" SQL="select vrcjenikid, opis as Naziv from vrcjenik where vrcjenikid=@@vrcjenikid" WIDTH="5500" ALLOWEMPTY="FALSE" ENABLED="FALSE" HEIGHT="320"/>
+	  <INPUT TYPE="combo" CAPTION="Vezani cjenik:*" NAME="vrcjenik2id" TOP="1000" LEFT="2000" ALLOWEMPTY="FALSE" SQL="select vrcjenikid as vrcjenik2id, opis as Naziv from vrcjenik where vrcjenikid=@@vrcjenik2id" WIDTH="5500" ENABLED="FALSE" HEIGHT="320"/>
+	  <INPUT TYPE="number" NAME="PostotakVezaniC" CAPTION="% promjene vezanog cjenika:*" TOP="1500" LEFT="3500" SQL="" ENABLED="false" ALLOWEMPTY="FALSE" WIDTH="1000" HEIGHT="320" DECIMALS="2" />
+
+  </BRISI>
+
+
+  <PRIKAZI
+	  FILLEXPLORER="" 
+      REPORT=""  
+      WIDTH="14500" 
+      ONSUBMIT="select 1" 
+      ONLOAD="select @@id as vrcjenik2id, (select vrcjenikid from MPVezaniCjenik where vrcjenik2id=@@id) as vrcjenikid, (select MPVezaniCjenikid from MPVezaniCjenik where vrcjenik2id=@@id) as MPVezaniCjenikid, (select rtrim(ltrim(opis)) from vrcjenik where vrcjenikid=@@id) as opis" 
+      HEIGHT="6800" 
+      CAPTION="'@@opis': Izuzeci po klasama i robi "  
+      BORDERSTYLE="3">
+	  
+	  <INPUT TYPE="grid" NAME="Uvjeti" REFRESHAFTERCHILD="TRUE" CHECKBOXVISIBLE="FALSE" TOTALROWVISIBLE="FALSE" TOP="400" LEFT="200" WIDTH="13500" HEIGHT="5000" SQL="spMPVezaniCjeniciNG @action=9, @operateriid=@@operateriid , @MPVezanicjenikid=@@MPVezaniCjenikid"/>
+	  <INPUT TYPE="text" NAME="opis" CAPTION="" HEIGHT="320" WIDTH="5500" VISIBLE="FALSE" ENABLED="TRUE" TOP="8000"/>
+
+
+	  <INPUT TYPE="button" NAME="cancel" CAPTION="Spremi"  TOP="5700" LEFT="456" WIDTH="1000" HEIGHT="322" ONCLICK="close"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Dodaj uvjet"  TOP="5700" LEFT="2456" WIDTH="2000" HEIGHT="322" ONCLICK=":DODAJSPEC#OKSTAY"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Izmjeni uvjet"  TOP="5700" LEFT="4600" WIDTH="2000" HEIGHT="322" ONCLICK=":IZMJENISPEC#OKSTAY"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Obriši uvjet"  TOP="5700" LEFT="6800" WIDTH="2000" HEIGHT="322" ONCLICK=":OBRISISPEC#OKSTAY"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Aktiviraj uvjet"  TOP="5700" LEFT="9000" WIDTH="2000" HEIGHT="322" ONCLICK="FOREACHBLUEROW(uvjeti)#:AKTIVIRAJSPEC#OKSTAY"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Deaktiviraj uvjet"  TOP="5700" LEFT="11200" WIDTH="2000" HEIGHT="322" ONCLICK="FOREACHBLUEROW(uvjeti)#:DEAKTIVIRAJSPEC#OKSTAY"  HOTKEY="" />
+
+  </PRIKAZI>
+
+	
+  <DODAJSPEC  	
+		  FILLEXPLORER="" 
+		  WIDTH="9000" 
+		  ONSUBMIT="select 1" 
+		  ONLOAD="if (select count(*) from MPVezanicjenik where vrcjenik2id=@@id)=0 begin 
+					exec spRaiserror 69001, &apos;Odabrani cjenik nije vezani cjenik ! Ne možete dodavati uvjete !&apos; end" 
+		  HEIGHT="3500" 
+		  CAPTION="Specifični uvjeti za klasu ili robu " 
+		  BORDERSTYLE="3" 
+		  NEXTFORM="">
+	  
+	  <INPUT TYPE="combo" CAPTION="Klasa robe:*" TOP="500" LEFT="2000" NAME="klmasterrobaid" SQL="select KlMasterRobaId, rtrim(oznaka)+' '+naziv as naziv from KlMasterRoba order by sortkey" WIDTH="5500" ALLOWEMPTY="TRUE" ENABLED="TRUE" HEIGHT="320"
+			 ONLOSTFOCUS="spMPVezaniCjeniciNG @action=19, @klmasterrobaid=@@klmasterrobaid, @MPVezanicjenikid=@@MPVezanicjenikid"/>
+	  <INPUT TYPE="search" CAPTION="Roba:*" NAME="robaid" TOP="1000" LEFT="2000" SQL="spMPRobaZaMPNG @trazi = '@@searchboxrobaid'" WIDTH="5500" HEIGHT="320" 
+			 ONLOSTFOCUS="if @@robaid in (select robaid from roba where klmasterrobaid in (select klmasterrobaid from MPVezanicjenikUvjeti where MPVezanicjenikid=@@MPVezanicjenikid)) begin exec spRaiserror 69001, 'Roba koju ste izabrali nalazi se u klasi koja je već unijeta u uvjete vezanja cjenika ! Kod aktiviranja veze, uvjet vezan uz robu bit će prioritetniji od uvjeta vezanog uz klasu za tu robu .' end#exec spmpKontrolaOdabraneRobeNG  @robaid = @@robaid"/>
+	  <INPUT TYPE="number" NAME="PostotakVezaniC" CAPTION="% promjene:*" TOP="1500" LEFT="2000" ENABLED="TRUE" ALLOWEMPTY="FALSE" WIDTH="1000" HEIGHT="320" DECIMALS="2" />
+
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Spremi"  TOP="2500" LEFT="456" WIDTH="1106" HEIGHT="322" ONCLICK="spMPVezaniCjeniciNG @action=10,@operateriid=@@operateriid, @MPVezanicjenikid=@@MPVezaniCjenikid,++#:AKTIVIRAJSPECODMAH#OK"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2500" LEFT="2000" WIDTH="1106" HEIGHT="322" ONCLICK="close" />
+
+  </DODAJSPEC>
+
+	
+  <AKTIVIRAJSPECODMAH
+		NAME="AKTIVIRAJSPECODMAH"
+		HEIGHT="4000"
+		WIDTH="8000"
+		ONLOAD="select top 1 mpvezanicjenikuvjetiid as uvjeti,klmasterrobaid,robaid,postotak from mpvezanicjenikuvjeti where MPVezanicjenikid=@@MPVezaniCjenikid order by mpvezanicjenikuvjetiid desc"
+		CAPTION="Aktiviranje uvjeta vezanog cjenika">
+
+	  <INPUT TYPE="label" NAME="lblporuka" TOP="500" LEFT="456" WIDTH="5000" CAPTION="Želite li odmah i aktivirati uneseni uvjet vezanja cjenika ?"/>
+
+	  <INPUT TYPE="combo" CAPTION="Klasa robe:*" NAME="klmasterrobaid" TOP="1000" LEFT="2000" SQL="select klmasterrobaid, naziv as naziv from KlMasterRoba" WIDTH="5500" ALLOWEMPTY="TRUE" ENABLED="FALSE" HEIGHT="320"/>
+	  <INPUT TYPE="combo" CAPTION="Roba:*" NAME="robaid" TOP="1500" LEFT="2000" SQL="select robaid, naziv as naziv from roba where robaid in (select robaid from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti)" ENABLED="FALSE" WIDTH="5500" HEIGHT="320" />
+	  <INPUT TYPE="number" NAME="PostotakVezaniC" CAPTION="% promjene:*" LEFT="2000" TOP="2000" SQL="select postotak as PostotakVezaniC from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti" ENABLED="FALSE" ALLOWEMPTY="FALSE" WIDTH="1000" HEIGHT="320" DECIMALS="2" />
+
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="DA"  TOP="3000" LEFT="456" WIDTH="1106" HEIGHT="322" ONCLICK="spMPVezaniCjeniciNG @action=16,@operateriid=@@operateriid, @MPVezanicjenikUvjetiid=@@Uvjeti#OK"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="cancel" CAPTION="NE" TOP="3000" LEFT="2000" WIDTH="1106" HEIGHT="322" ONCLICK="close" />
+
+  </AKTIVIRAJSPECODMAH>
+
+	
+  <IZMJENISPEC  	
+		  FILLEXPLORER="" 
+		  WIDTH="9000" 
+		  ONSUBMIT="spMPVezaniCjeniciNG @action=14,@operateriid=@@operateriid, @MPVezanicjenikUvjetiid=@@Uvjeti, " 
+		  ONLOAD="if (select count(*) from MPVezanicjenik where vrcjenik2id=@@id)=0 begin 
+					exec spRaiserror 69001, &apos;Odabrani cjenik nije vezani cjenik ! Ne postoje uvjeti koje možete izmijeniti !&apos; end 
+					else begin if (select datumaktiviranja from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti ) is not null begin 
+					exec spRaiserror 69001, 'Uvjet vezanog cjenika koji ste odabrali je aktiviran! Ne možete ga mijenjati !' end 
+					else begin
+					select klmasterrobaid,robaid,postotak from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiId=@@uvjeti end end" 
+		  HEIGHT="3500" 
+		  CAPTION="Izmjena specifičnih uvjeta za klasu ili robu " 
+		  BORDERSTYLE="3" 
+		  CMD1CAPTION="Izmjeni" 
+		  CMD2CAPTION="Odustani">
+
+	  <INPUT TYPE="combo" CAPTION="Klasa robe:*" NAME="klmasterrobaid" TOP="500" LEFT="2000" SQL="select klmasterrobaid, naziv as naziv from KlMasterRoba" WIDTH="5500" ALLOWEMPTY="TRUE" ENABLED="FALSE" HEIGHT="320"/>
+	  <INPUT TYPE="combo" CAPTION="Roba:*" NAME="robaid" TOP="1000" LEFT="2000" SQL="select robaid, naziv as naziv from roba where robaid in (select robaid from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti)" ENABLED="FALSE" WIDTH="5500" HEIGHT="320" />
+	  <INPUT TYPE="number" NAME="PostotakVezaniC" CAPTION="% promjene:*" TOP="1500" LEFT="2000" SQL="select postotak as PostotakVezaniC from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti" ENABLED="TRUE" ALLOWEMPTY="FALSE" WIDTH="1000" HEIGHT="320" DECIMALS="2" />
+
+  </IZMJENISPEC>
+
+
+  <OBRISISPEC  	
+	  FILLEXPLORER="" 
+	  WIDTH="9000" 
+	  ONSUBMIT="spMPVezaniCjeniciNG @action=15,@operateriid=@@operateriid, @MPVezanicjenikUvjetiid=@@Uvjeti, " 
+	  ONLOAD="if (select count(*) from MPVezanicjenik where vrcjenik2id=@@id)=0 begin 
+					exec spRaiserror 69001, &apos;Odabrani cjenik nije vezani cjenik ! Ne postoje uvjeti koje možete obrisati !&apos; end 
+					else begin if (select datumaktiviranja from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti ) is not null begin 
+					exec spRaiserror 69001, 'Uvjet vezanog cjenika koji ste odabrali je aktiviran! Ne možete ga brisati !' end 
+					else begin
+					select klmasterrobaid,robaid,postotak from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiId=@@uvjeti end end" 
+	  HEIGHT="3500" 
+	  CAPTION="Brisanje specifičnih uvjeta za klasu ili robu " 
+	  BORDERSTYLE="3" 
+	  CMD1CAPTION="Briši" 
+	  CMD2CAPTION="Odustani" >
+	  
+	  <INPUT TYPE="combo" CAPTION="Klasa robe:*" NAME="klmasterrobaid" TOP="500" LEFT="2000" SQL="select klmasterrobaid, naziv as naziv from KlMasterRoba" WIDTH="5500" ALLOWEMPTY="TRUE" ENABLED="FALSE" HEIGHT="320"/>
+	  <INPUT TYPE="combo" CAPTION="Roba:*" NAME="robaid" TOP="1000" LEFT="2000" SQL="select robaid, naziv as naziv from roba where robaid in (select robaid from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti)" ENABLED="FALSE" WIDTH="5500" HEIGHT="320" />
+	  <INPUT TYPE="number" NAME="PostotakVezaniC" CAPTION="% promjene:*" TOP="1500" LEFT="2000" SQL="select postotak as PostotakVezaniC from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti" ALLOWEMPTY="FALSE" ENABLED="FALSE" WIDTH="1000" HEIGHT="320" DECIMALS="2" />
+
+  </OBRISISPEC>
+
+	
+  <AKTIVIRAJSPEC
+	  FILLEXPLORER="" 
+	  WIDTH="9000" 
+	  ONSUBMIT="spMPVezaniCjeniciNG @action=16,@operateriid=@@operateriid, @MPVezanicjenikUvjetiid=@@Uvjeti, " 
+	  ONLOAD="if (select count(*) from MPVezanicjenik where vrcjenik2id=@@id)=0 begin 
+					exec spRaiserror 69001, &apos;Odabrani cjenik nije vezani cjenik ! Ne postoje uvjeti koje možete aktivirati !&apos; end 
+					else begin if (select datumaktiviranja from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti ) is not null begin 
+					exec spRaiserror 69001, 'Uvjet vezanog cjenika koji ste odabrali je aktiviran! Ne možete ga ponovno aktivirati !' end 
+					else begin
+					select klmasterrobaid,robaid,postotak from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiId=@@uvjeti end end" 
+	  HEIGHT="3500" 
+	  CAPTION="Aktiviranje uvjeta vezanog cjenika" 
+	  BORDERSTYLE="3" 
+	  CMD1CAPTION="Aktiviraj" 
+	  CMD2CAPTION="Odustani">
+
+	  <INPUT TYPE="combo" CAPTION="Klasa robe:*" NAME="klmasterrobaid" TOP="500" LEFT="2000" SQL="select klmasterrobaid, naziv as naziv from KlMasterRoba" WIDTH="5500" ALLOWEMPTY="TRUE" ENABLED="FALSE" HEIGHT="320"/>
+	  <INPUT TYPE="combo" CAPTION="Roba:*" NAME="robaid" TOP="1000" LEFT="2000" SQL="select robaid, naziv as naziv from roba where robaid in (select robaid from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti)" ENABLED="FALSE" WIDTH="5500" HEIGHT="320" />
+	  <INPUT TYPE="number" NAME="PostotakVezaniC" CAPTION="% promjene:*" TOP="1500" LEFT="2000" SQL="select postotak as PostotakVezaniC from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti" ALLOWEMPTY="FALSE" ENABLED="FALSE" WIDTH="1000" HEIGHT="320" DECIMALS="2" />
+
+  </AKTIVIRAJSPEC>
+
+	
+  <DEAKTIVIRAJSPEC
+	FILLEXPLORER=""
+	WIDTH="9000"
+	ONSUBMIT="spMPVezaniCjeniciNG @action=18,@operateriid=@@operateriid, @MPVezanicjenikUvjetiid=@@Uvjeti, "
+	ONLOAD="if (select count(*) from MPVezanicjenik where vrcjenik2id=@@id)=0 begin 
+					exec spRaiserror 69001, &apos;Odabrani cjenik nije vezani cjenik ! Ne postoje uvjeti koje možete deaktivirati !&apos; end
+					else begin
+					select klmasterrobaid,robaid,postotak from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiId=@@uvjeti end"
+	HEIGHT="3500"
+	CAPTION="Deaktiviranje uvjeta vezanog cjenika"
+	BORDERSTYLE="3"
+	CMD1CAPTION="Deaktiviraj"
+	CMD2CAPTION="Odustani">
+
+	<INPUT TYPE="combo" CAPTION="Klasa robe:*" NAME="klmasterrobaid" TOP="500" LEFT="2000" SQL="select klmasterrobaid, naziv as naziv from KlMasterRoba" WIDTH="5500" ALLOWEMPTY="TRUE" ENABLED="FALSE" HEIGHT="320"/>
+	<INPUT TYPE="combo" CAPTION="Roba:*" NAME="robaid" TOP="1000" LEFT="2000" SQL="select robaid, naziv as naziv from roba where robaid in (select robaid from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti)" ENABLED="FALSE" WIDTH="4500" HEIGHT="320" />
+	<INPUT TYPE="number" NAME="PostotakVezaniC" CAPTION="% promjene:*" TOP="1500" LEFT="2000" SQL="select postotak as PostotakVezaniC from MPVezanicjenikUvjeti where MPVezanicjenikUvjetiid=@@Uvjeti" ALLOWEMPTY="FALSE" ENABLED="FALSE" WIDTH="1000" HEIGHT="320" DECIMALS="2" />
+
+  </DEAKTIVIRAJSPEC>
+	
+
+  <FORM3
+		NAME="FORM3"
+		HEIGHT="4000"
+		WIDTH="8000"
+		ONLOAD="select @@id as vrcjenik2id, (select vrcjenikid from MPVezaniCjenik where vrcjenik2id=@@id) as vrcjenikid, (select MPVezaniCjenikid from MPVezaniCjenik where vrcjenik2id=@@id) as MPVezaniCjenikid, convert(varchar(10),getdate(),112) as datum1, convert(varchar(10),(getdate()+1),112) as datum2" 
+		CAPTION="Aktiviranje mp cjenika">
+
+	  <INPUT TYPE="date" NAME="datum1" TOP="500" LEFT="6000" HEIGHT="302" WIDTH="1498" CAPTION="_Datum aktiviranja cjenika:*" ENABLED="FALSE" />
+	  <INPUT TYPE="date" NAME="datum2" TOP="1000" LEFT="6000" HEIGHT="302" WIDTH="1498" CAPTION="_Datum aktiviranja veze:*" ENABLED="FALSE" />
+
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Aktiviraj mp cjenik"  TOP="500" LEFT="456" WIDTH="3000" HEIGHT="322" ONCLICK=":AKTIVIRANJECJENIKA#OK"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="ok"     CAPTION="Aktiviraj vezu među mp cjenicima" TOP="1000" LEFT="456" WIDTH="3000" HEIGHT="322" ONCLICK="if (select count(*) from mpvezanicjenikuvjeti where MPVezaniCjenikid=@@MPVezaniCjenikid and datumaktiviranja is null)>0 begin 
+			 exec spRaiserror 69001, 'Postoje uvjeti vezanja odabranog cjenika koji nisu aktivirani ! Aktivirajte ili obrišite neaktivirane uvjete vezanja !' end#:AKTIVIRANJE#OK"  HOTKEY="" />
+	  <INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2000" LEFT="3756" WIDTH="1106" HEIGHT="322" ONCLICK="close" />
+
+  </FORM3>
+
+
+  <AKTIVIRANJECJENIKA 
+	  NAME="AKTIVIRANJECJENIKA" 
+	  HEIGHT="3398" 
+	  WIDTH="7603" 
+	  CAPTION="Aktiviranje mp cjenika" 
+	  BORDERSTYLE="3"
+	  ONSUBMIT="spMPVezaniCjeniciNG @action=6,@operateriid=@@operateriid,"
+	  ONLOAD="select @@id as vrcjenikid, convert(varchar(10),getdate(),112) as datum" 
+	  FILLEXPLORER="" 
+	  CMD1CAPTION="Aktiviraj" 
+	  CMD2CAPTION="Odustani" >
+
+	  <INPUT TYPE="combo" NAME="vrcjenikid"	CAPTION="Cjenik:*"	TOP="500" LEFT="1000" WIDTH="4000" HEIGHT="320" ALLOWEMPTY="FALSE" ENABLED="FALSE" BOLD="TRUE" SQL="select vrcjenikid, opis as naziv from vrcjenik where vrcjenikid=@@vrcjenikid" />
+	  <INPUT TYPE="date" NAME="datum" TOP="1000" LEFT="2000" HEIGHT="302" WIDTH="1498" CAPTION="Datum aktiviranja:*" ENABLED="FALSE" />
+
+  </AKTIVIRANJECJENIKA>
+
+
+  <DEAKTIVIRANJECJENIKA
+	NAME="DEAKTIVIRANJECJENIKA"
+	HEIGHT="3398"
+	WIDTH="7603"
+	CAPTION="Deaktiviranje mp cjenika"
+	BORDERSTYLE="3"
+	ONSUBMIT="spMPVezaniCjeniciNG @action=17,"
+	ONLOAD="select @@id as vrcjenikid"
+	FILLEXPLORER=""
+	CMD1CAPTION="Deaktiviraj"
+	CMD2CAPTION="Odustani" >
+
+		<INPUT TYPE="combo" NAME="vrcjenikid"	CAPTION="Cjenik:*"	TOP="500" LEFT="1000" WIDTH="4000" HEIGHT="320" ALLOWEMPTY="false" ENABLED="FALSE" BOLD="TRUE" SQL="select vrcjenikid, opis as naziv from vrcjenik where vrcjenikid=@@vrcjenikid" />
+		<INPUT TYPE="date" NAME="datum" TOP="1000" LEFT="2000" HEIGHT="302" WIDTH="1498" CAPTION="Datum aktiviranja:*" SQL="select convert(varchar(10),datumaktiviranja,112) from vrcjenik where vrcjenikid=@@vrcjenikid" ENABLED="FALSE" />
+
+  </DEAKTIVIRANJECJENIKA>
+
+
+  <AKTIVIRANJE 
+	  NAME="AKTIVIRANJE" 
+	  HEIGHT="4000" 
+	  WIDTH="7800" 
+	  CAPTION="Aktiviranje veze među mp cjenicima" 
+	  BORDERSTYLE="3" 
+	  ONSUBMIT="spMPVezaniCjeniciNG @action=13,@operateriid=@@operateriid, @MPVezaniCjenikid=@@MPVezaniCjenikid, "
+	  ONLOAD="select @@id as vrcjenik2id, (select vrcjenikid from MPVezaniCjenik where vrcjenik2id=@@id) as vrcjenikid, (select MPVezaniCjenikid from MPVezaniCjenik where vrcjenik2id=@@id) as MPVezaniCjenikid,
+					(select postotak from MPVezaniCjenik where vrcjenik2id=@@id) as PostotakVezaniC, convert(varchar(10),(getdate()+1),112) as datum" 
+	  FILLEXPLORER="" 
+	  CMD1CAPTION="Aktiviraj" 
+	  CMD2CAPTION="Odustani">
+	  
+	  <INPUT TYPE="combo" CAPTION="Glavni cjenik:*" NAME="vrcjenikid" TOP="500" LEFT="1500" SQL="select vrcjenikid, opis as Naziv from vrcjenik where vrcjenikid=@@vrcjenikid" WIDTH="5500" ALLOWEMPTY="FALSE" ENABLED="FALSE" HEIGHT="320"/>
+	  <INPUT TYPE="combo" CAPTION="Vezani cjenik:*" NAME="vrcjenik2id" TOP="1000" LEFT="1500" ALLOWEMPTY="FALSE" SQL="select vrcjenikid as vrcjenik2id, opis as Naziv from vrcjenik where vrcjenikid=@@vrcjenik2id" WIDTH="5500" ENABLED="FALSE" HEIGHT="320"/>
+	  <INPUT TYPE="number" NAME="PostotakVezaniC" CAPTION="% promjene vezanog cjenika:*" TOP="1500" LEFT="3500" ENABLED="FALSE" ALLOWEMPTY="FALSE" WIDTH="1000" HEIGHT="320" DECIMALS="2" />
+	  <INPUT TYPE="date" NAME="datum" TOP="2000" LEFT="3500" HEIGHT="302" WIDTH="1498" CAPTION="Datum aktiviranja veze:*" ENABLED="FALSE" />
+
+  </AKTIVIRANJE>
+
+</PROJECT> 

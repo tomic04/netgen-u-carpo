@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="windows-1250" ?> 
+<PROJECT  
+ONLOAD=":FILTERFORM"  
+BUTTONS="Parametri:FILTERFORM#Kartica:MPKARTICA(@mastergridid = @@id, @datumod  = @@datod, @datumdo = @@datdo, @skladisteid = @@trgovinaid)#Početno stanje:POCETNOSTANJE"
+MASTERDBLCLICK=":MPKARTICA(@mastergridid = @@id, @datumod  = @@datod, @datumdo = @@datdo, @skladisteid = @@trgovinaid)"
+GROUPBYBOXVISIBLE="TRUE" 
+CHECKBOXVISIBLE="FALSE"
+TOTALROWVISIBLE="TRUE"
+DETTOTALROWVISIBLE="TRUE"
+COMMANDTIMEOUT="300"
+INCLUDE="MPKarticaRobe.xml" 
+DETCHECKBOXVISIBLE="FALSE"
+TREE="spMPTreeKomisNG @action=1 , @trgovinaid = @@trgovinaid, @datum = @@datod:FILTERPAR_FORM"
+EDITCOLUMNS=""
+ONCELLEDITED="">
+ 
+  <NAME>Pregled stanje komisijske robe </NAME>
+  <CAPTION>Pregled stanje komisijske robe </CAPTION>
+
+<FILTERPAR_FORM    
+	FILLEXPLORER="TRUE" 
+	ONSUBMIT="exec spMpStanjeQueryNG @action = 500, @operateriid = @@operateriid, @datumod = @@datod, @datumdo = @@datdo, @komisija = 3, @skladisteid = @@trgovinaid, @partneriid = @@node" />
+
+
+<FILTERFORM
+	NAME="FILTERFORM"
+	FILLEXPLORER="ONLYTREE"
+	ONSUBMIT=""
+	ONLOAD="select @@partneriid as partneriid, @@trgovinaid as trgovinaid, @@datumod as datumod, @@datumdo as datumdo "
+	REPORT=""  
+	WIDTH="8000" 
+	HEIGHT="3500" 
+	CAPTION="Parametri"
+	CMD1CAPTION="Pokaži" 
+	CMD2CAPTION="Odustani" >
+
+
+	<INPUT TYPE="date" NAME="datod" CAPTION="Datum od:*" TOP="500" LEFT="1500" WIDTH="1500" HEIGHT="320" DEFAULT="firstdayofmonth" CHECKBOX="FALSE"/>
+	<INPUT TYPE="date" NAME="datdo" CAPTION=" do:*" TOP="500" LEFT="3500" WIDTH="1500" HEIGHT="320" CHECKBOX="FALSE" ONLOSTFOCUS="select 'refresh' as trgovinaid"/>
+	<INPUT TYPE="combo" NAME="trgovinaid" CAPTION="Trgovina:*" TOP="900" LEFT="1500" WIDTH="3500" HEIGHT="320" ALLOWEMPTY="FALSE" 
+		   SQL="spMPDajTrgovinaNG @operateriid = @@operateriid, @komis = 1 " /> 
+
+</FILTERFORM>
+
+
+<POCETNOSTANJE
+	NAME="FILTERFORM"
+	FILLEXPLORER="ONLYTREE"
+	ONSUBMIT=""
+	ONLOAD="select @@trgovinaid as trgovinaid, (select top 1 YEAR(datumobrade)+1 from MPobrada where Trgovinaid = @@trgovinaid order by 1 desc) as godina, 0 as pokazi, opis as trgovina from trgovina where trgovinaid = @@trgovinaid"
+	ONLOADED=""
+	REPORT=""
+	WIDTH="14000"
+	HEIGHT="9000"
+	CAPTION="Otvaranje POČETOG STANJA KOMISIJE "
+	CMD1CAPTION=""
+	CMD2CAPTION="" >
+
+
+		<INPUT TYPE="text" NAME="trgovina" CAPTION="Trgovina*" TOP="400" LEFT="1500" WIDTH="3500" HEIGHT="320" SQL=" " ENABLED="FALSE" STYLE="1" CHECKBOX="FALSE"/>
+		<INPUT TYPE="text" NAME="godina" CAPTION=" PS za godinu*" TOP="800" LEFT="1500" WIDTH="700" HEIGHT="320" CHECKBOX="FALSE" DECIMALS="0" ONLOSTFOCUS="select 'refresh' as partneriid"/>
+		<INPUT TYPE="combo" NAME="partneriid" CAPTION="Partner:*" TOP="1200" LEFT="1500" WIDTH="4000" HEIGHT="320" ALLOWEMPTY="TRUE" SQL=" select partneriid, naziv from partneri where partneriid in (select distinct partneriid from mpstanje where trgovinaid = @@trgovinaid and partneriid is not null and godina = @@godina-1)"   />
+		<INPUT TYPE="check" NAME="svi" CAPTION="Svi partneri*" TOP="1200" LEFT="6000" WIDTH="3500" HEIGHT="320" ALLOWEMPTY="TRUE" SQL=""   />
+		<INPUT TYPE="number" NAME="pokazi" CAPTION="Trgovina*" VISIBLE ="FALSE" TOP="-1400" LEFT="1500" WIDTH="3500" HEIGHT="320" SQL=" " ENABLED="FALSE" STYLE="1" CHECKBOX="FALSE"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Pokaži" TOP="1200" LEFT="8500" WIDTH="1500" HEIGHT="322" ONCLICK="select 1 as pokazi#select 'visible' as PS#select 'refresh' as PS"/>
+
+
+		<INPUT TYPE="grid" 
+			NAME="PS" 
+			TOP="1800" LEFT="200" WIDTH="13500" HIGHT="6000"
+			TOTALROW="TRUE"
+			VISIBLE="FALSE"
+			CHECKBOXVISIBLE="FALSE"
+			PAGEORIENTATION="LANDSCAPE"
+			SQL="spmpPSKomisija @action = 1, @trgovinaid = @@trgovinaid, @godina = '@@godina', @partneriid = @@partneriid, @svi = @@svi" CAPTION="Roba ta PS "/>
+		
+		<COLUMN INDEX="" NAME="[Stanje0800]" AGREGATEFUNCTION="0"/>
+
+		<INPUT TYPE="button" NAME="" CAPTION="Otvori" TOP="7500" LEFT="200" WIDTH="1500" HEIGHT="322" ONCLICK="spmpPSKomisija @action = 2, @trgovinaid = @@trgovinaid, @godina = @@godina, @partneriid = @@partneriid, @operateriid = @@operateriid "/>
+		<INPUT TYPE="button" NAME="" CAPTION="Odustani" TOP="7500" LEFT="2200" WIDTH="1500" HEIGHT="322" ONCLICK="close"  />
+
+
+	</POCETNOSTANJE>
+
+
+
+</PROJECT>
+ 
