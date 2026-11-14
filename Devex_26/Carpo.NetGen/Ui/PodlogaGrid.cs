@@ -1,9 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Data;
 using Carpo.NetGen.Grid;
-using DevExpress.Data;
-using DevExpress.XtraGrid.Columns;
 using DevExpress.XtraGrid.Views.Grid;
 
 namespace Carpo.NetGen.Ui
@@ -20,34 +17,12 @@ namespace Carpo.NetGen.Ui
             bool master = pogled == gvGla;
             bool ukupno = master ? _master.Stanje.TotalRed : _detail.Stanje.TotalRed;
             if (kolone != null)
-            {
-                for (int i = 0; i < kolone.Count; i++)
-                {
-                    GridKolona k = kolone[i];
-                    if (k.Selektor || string.IsNullOrEmpty(k.Podatak))
-                        continue;
-                    GridColumn c = pogled.Columns.ColumnByFieldName(k.Podatak);
-                    if (c == null)
-                        continue;
-                    c.Summary.Clear();
-                    string vrsta = GridAgregat.Vrsta(k.Agregat);
-                    if (vrsta.Length == 0)
-                        continue;
-                    Type tip = tablica != null && tablica.Columns.Contains(k.Podatak) ? tablica.Columns[k.Podatak].DataType : null;
-                    c.Summary.Add((SummaryItemType)Enum.Parse(typeof(SummaryItemType), vrsta), k.Podatak, GridAgregat.Format(vrsta, tip, k.Format));
-                }
-            }
+                GridIzgled.Ukupno(pogled, tablica, kolone);
             pogled.OptionsView.ShowFooter = ukupno;
             if (!master)
                 return;
             pogled.OptionsCustomization.AllowSort = _master.Stanje.SortKlikom;
-            int zamrznuti = GridAgregat.ZamrznutiPodaci(_master.Stanje.ZamrznuteKolone, _master.Stanje.CheckboxVidljiv);
-            int n = 0;
-            for (int i = 0; i < pogled.VisibleColumns.Count && n < zamrznuti; i++)
-            {
-                pogled.VisibleColumns[i].Fixed = FixedStyle.Left;
-                n++;
-            }
+            GridIzgled.Zamrzni(pogled, _master.Stanje.ZamrznuteKolone, _master.Stanje.CheckboxVidljiv);
         }
     }
 }

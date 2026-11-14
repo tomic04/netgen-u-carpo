@@ -778,7 +778,8 @@ namespace Carpo.NetGen.Ui
             NgDnevnik.Sql(sql);
             DataTable t = Citaj(sql);
             NgColumnGroup def = _projekt == null ? null : _projekt.NadjiGrupu("DETAILCOLUMNS");
-            _detail.PrimijeniTablicu(t, def);
+            NgColumnGroup mst = _projekt == null ? null : _projekt.NadjiGrupu("MASTERCOLUMNS");
+            _detail.PrimijeniTablicu(t, def, mst == null ? null : mst.HeaderAlignment);
             VeziGrid(gvDet, gcDet, t, _detail.Stanje.Kolone, _detail.Stanje.Poruka, _detail.Stanje.CheckboxVidljiv, null, true);
             if (_detail.Stanje.FokusZadnji && gvDet.RowCount > 0)
                 gvDet.FocusedRowHandle = gvDet.RowCount - 1;
@@ -807,41 +808,8 @@ namespace Carpo.NetGen.Ui
                 PostaviStatus(redova.ToString());
             if (kolone == null)
                 return;
-            for (int i = 0; i < kolone.Count; i++)
-            {
-                GridKolona k = kolone[i];
-                if (k.Selektor || k.Podatak == "Icon")
-                    continue;
-                var c = pogled.Columns.ColumnByFieldName(k.Podatak);
-                if (c == null)
-                    continue;
-                c.Visible = k.Vidljiva;
-                c.Caption = k.Natpis ?? k.Podatak;
-                if (k.Sirina > 0)
-                    c.Width = k.Sirina;
-                c.OptionsColumn.AllowEdit = k.Uredivanje;
-                if (!string.IsNullOrEmpty(k.Format))
-                {
-                    c.DisplayFormat.FormatString = k.Format;
-                    c.DisplayFormat.FormatType = k.Format.IndexOf("yy", System.StringComparison.OrdinalIgnoreCase) >= 0
-                        || k.Format.IndexOf("dd", System.StringComparison.OrdinalIgnoreCase) >= 0
-                        ? DevExpress.Utils.FormatType.DateTime
-                        : DevExpress.Utils.FormatType.Numeric;
-                }
-                if (string.Equals(k.Poravnanje, "Far", System.StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(k.Poravnanje, "Right", System.StringComparison.OrdinalIgnoreCase))
-                    c.AppearanceCell.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
-                else if (string.Equals(k.Poravnanje, "Center", System.StringComparison.OrdinalIgnoreCase))
-                    c.AppearanceCell.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
-                if (string.Equals(k.PoravnanjeZaglavlja, "Far", System.StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(k.PoravnanjeZaglavlja, "Right", System.StringComparison.OrdinalIgnoreCase))
-                    c.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
-                else if (string.Equals(k.PoravnanjeZaglavlja, "Center", System.StringComparison.OrdinalIgnoreCase))
-                    c.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
-                else if (string.Equals(k.PoravnanjeZaglavlja, "Near", System.StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(k.PoravnanjeZaglavlja, "Left", System.StringComparison.OrdinalIgnoreCase))
-                    c.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Near;
-            }
+            // Class1.CreateGridColumns i Form1.CustomFormatKolona: zajedno s gridom dijaloga (DGR-01).
+            GridIzgled.PrimijeniKolone(pogled, kolone);
             PodesiUredjivanje(pogled, kolone);
             PrimijeniUkupno(pogled, tablica, kolone);
             if (pogled.RowCount > 0)

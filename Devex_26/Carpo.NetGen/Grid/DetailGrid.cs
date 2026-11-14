@@ -89,7 +89,7 @@ namespace Carpo.NetGen.Grid
             return sql;
         }
 
-        public void PrimijeniTablicu(DataTable tablica, NgColumnGroup definicija)
+        public void PrimijeniTablicu(DataTable tablica, NgColumnGroup definicija, string zaglavljeMastera)
         {
             Stanje.Tablica = tablica;
             Stanje.Kolone.Clear();
@@ -104,38 +104,9 @@ namespace Carpo.NetGen.Grid
             if (definicija == null)
                 return;
             bool clear = definicija.ClearColums != null && definicija.ClearColums.Trim().ToLowerInvariant() == "true";
-            if (clear)
-            {
-                for (int i = 0; i < Stanje.Kolone.Count; i++)
-                    Stanje.Kolone[i].Vidljiva = false;
-            }
-            for (int n = 0; n < definicija.Kolone.Count; n++)
-            {
-                var def = definicija.Kolone[n];
-                GridKolona kol = null;
-                for (int i = 0; i < Stanje.Kolone.Count; i++)
-                {
-                    if (string.Equals(Stanje.Kolone[i].Podatak, def.Name, StringComparison.OrdinalIgnoreCase))
-                    {
-                        kol = Stanje.Kolone[i];
-                        break;
-                    }
-                }
-                if (kol == null)
-                    continue;
-                if (clear)
-                    kol.Vidljiva = true;
-                string width = def.Atributi.Vrijednost("WIDTH");
-                int w;
-                if (!string.IsNullOrEmpty(width) && int.TryParse(width.Trim(), out w) && w > 0)
-                    kol.Sirina = MasterGrid.VbJedinica(w);
-                string cap = def.Atributi.Vrijednost("CAPTION");
-                if (!string.IsNullOrEmpty(cap) && cap.Trim().Length > 0)
-                    kol.Natpis = cap.Trim();
-                string vis = def.Atributi.Vrijednost("VISIBLE");
-                if (!string.IsNullOrEmpty(vis) && vis.Trim().Length > 0)
-                    kol.Vidljiva = vis.Trim().ToLowerInvariant() != "false";
-            }
+            // Form1.vb 2347: CustomFormatKolona kao za master. Unutra čita strHeaderAlignment (MASTERCOLUMNS),
+            // ne parametar s HEADERALIGNMENT detaila, pa zaglavlja detaila dobiju poravnanje mastera.
+            GridDefinicija.Primijeni(Stanje.Kolone, definicija.Kolone, clear, zaglavljeMastera, false);
         }
 
         public static string IdReda(DataRow red)

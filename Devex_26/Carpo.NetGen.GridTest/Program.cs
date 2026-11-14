@@ -1992,6 +1992,7 @@ namespace Carpo.NetGen.GridTest
             GreskeDijaloga();
             DbClipboardDijalog();
             StatusDijaloga();
+            GridDijalogaStupci();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -2816,6 +2817,80 @@ namespace Carpo.NetGen.GridTest
             }
         }
 
+        /// <summary>
+        /// Faza C4 (DGR-01, DGR-02): grid dijaloga s COLUMN djecom i CLEARCOLUMS (Form2.vb 1798-1957),
+        /// GROUPBYBOXVISIBLE, FROZENCOLUMNS, FILTERMODE, TOTALROW s AGREGATEFUNCTION; osvjezavanje ne dira stupce.
+        /// </summary>
+        private static void GridDijalogaStupci()
+        {
+            try
+            {
+                var g = new NgControl("grid", NgGrana.Grid, "g", new NgAttributeBag(new Dictionary<string, string>
+                {
+                    { "SQL", "select a, b, c from t" }, { "CLEARCOLUMS", "TRUE" }, { "GROUPBYBOXVISIBLE", "FALSE" },
+                    { "FROZENCOLUMNS", "3" }, { "FILTERMODE", "true" }, { "CHECKBOXVISIBLE", "" }
+                }), true);
+                g.Kolone.Add(Stupac("c", "Ce", "TRUE", "3", ""));
+                g.Kolone.Add(Stupac("a", "", "FALSE", "0", ""));
+                g.Kolone.Add(Stupac("b", "Be", "TRUE", "2", "#,##0.0000"));
+                var kontrole = new List<NgControl> { g };
+                var forma = new NgForm("G1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                int punjenja = 0;
+                Func<string, DataTable> baza = delegate (string x)
+                {
+                    var t = new DataTable();
+                    t.Columns.Add("a", typeof(string));
+                    t.Columns.Add("b", typeof(decimal));
+                    t.Columns.Add("c", typeof(int));
+                    t.Rows.Add("x", 1.5m, 2);
+                    t.Rows.Add("y", 2.5m, 4);
+                    if ((x ?? "").IndexOf("from t", StringComparison.Ordinal) >= 0)
+                        punjenja++;
+                    return t;
+                };
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), baza);
+                    var grid = (DevExpress.XtraGrid.GridControl)d.Controls.Find("g", true)[0];
+                    var v = (DevExpress.XtraGrid.Views.Grid.GridView)grid.MainView;
+                    var a = v.Columns.ColumnByFieldName("a");
+                    var b = v.Columns.ColumnByFieldName("b");
+                    var c = v.Columns.ColumnByFieldName("c");
+                    T("dgr01-clear-redoslijed", a != null && b != null && c != null && !a.Visible && c.VisibleIndex == 0 && b.VisibleIndex == 1
+                        && c.Caption == "Ce" && b.Caption == "Be" && b.DisplayFormat.FormatString == "#,##0.0000",
+                        a == null ? "nema" : "a=" + a.Visible + " c=" + c.VisibleIndex + " b=" + b.VisibleIndex + " " + c.Caption + "/" + b.Caption);
+                    bool prosjek = c != null && c.Summary.Count == 1 && c.Summary[0].SummaryType == DevExpress.Data.SummaryItemType.Average;
+                    bool zbroj = b != null && b.Summary.Count == 1 && b.Summary[0].SummaryType == DevExpress.Data.SummaryItemType.Sum;
+                    T("dgr01-agregat", v.OptionsView.ShowFooter && prosjek && zbroj, "prosjek=" + prosjek + " zbroj=" + zbroj);
+                    // FROZENCOLUMNS 3 = ikona + 2 podatka (kvacicu je CLEARCOLUMS sakrio, Form2.vb 1798).
+                    T("dgr02-grid-atributi", !v.OptionsView.ShowGroupPanel && v.OptionsView.ShowAutoFilterRow
+                        && v.OptionsSelection.MultiSelectMode == DevExpress.XtraGrid.Views.Grid.GridMultiSelectMode.RowSelect
+                        && c.Fixed == DevExpress.XtraGrid.Columns.FixedStyle.Left && b.Fixed == DevExpress.XtraGrid.Columns.FixedStyle.Left,
+                        "grupe=" + v.OptionsView.ShowGroupPanel + " filter=" + v.OptionsView.ShowAutoFilterRow + " sel=" + v.OptionsSelection.MultiSelectMode + " fixed=" + c.Fixed + "/" + b.Fixed);
+                    // Korisnik promijeni stupac; RefreshGrida (5305-5315) ga ne slaze iznova.
+                    c.Caption = "Korisnik";
+                    int prije = punjenja;
+                    Zovi(d, "OsvjeziGrid", grid, g, "");
+                    T("dgr01-osvjezi-ostavi-stupce", punjenja == prije + 1 && c.Caption == "Korisnik" && !a.Visible && c.VisibleIndex == 0,
+                        "punjenja=" + (punjenja - prije) + " natpis=" + c.Caption);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("dgr01", false, ex.ToString());
+            }
+        }
+
+        private static NgColumn Stupac(string ime, string natpis, string vidljiv, string agregat, string format)
+        {
+            var a = new Dictionary<string, string>
+            {
+                { "INDEX", "" }, { "NAME", ime }, { "WIDTH", "1400" }, { "CAPTION", natpis }, { "FORMAT", format },
+                { "VISIBLE", vidljiv }, { "AGREGATEFUNCTION", agregat }
+            };
+            return new NgColumn(ime, agregat, false, new NgAttributeBag(a));
+        }
+
         private static object Polje(object o, string ime)
         {
             for (Type t = o.GetType(); t != null; t = t.BaseType)
@@ -2872,6 +2947,9 @@ namespace Carpo.NetGen.GridTest
                 var id = gv.Columns.ColumnByFieldName("id");
                 T("edt01-uredjiv", gv.OptionsBehavior.Editable && naziv != null && naziv.OptionsColumn.AllowEdit && id != null && !id.OptionsColumn.AllowEdit,
                     "editable=" + gv.OptionsBehavior.Editable + " rows=" + gv.DataRowCount);
+                // DGR-01: Class1.vb 1112 HeaderAlignment Far za int stupac, i na podlozi.
+                T("dgr01-zaglavlje-broja", id != null && id.AppearanceHeader.TextOptions.HAlignment == DevExpress.Utils.HorzAlignment.Far,
+                    id == null ? "nema id" : id.AppearanceHeader.TextOptions.HAlignment.ToString());
                 gv.FocusedRowHandle = 0;
                 // '|' nije granica tokena u SrediSQLPosljeNextForme (Class1 766-820), zato zarez.
                 gv.SetRowCellValue(0, naziv, "xyz");

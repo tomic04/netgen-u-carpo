@@ -34,6 +34,8 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 | GRD-01 | `CreateGridColumns` s EDITCOLUMNS (može biti sp/select) | `GridIzgled.Primijeni` (natpisi bez širine, skriveni `*ID`, formati, uređivanje) |
 | GRD-02 | `TOTALROW` (zbroj decimalnih stupaca) i `CHECKBOXVISIBLE` (kvačica reda) | footer sa zbrojem; `CheckBoxRowSelect` osim kad je `CHECKBOXVISIBLE="FALSE"`; uređen red postane označen (8624) |
 | FOR-01 | `FOREACH*` pomakne grid i izvrši lanac po retku | isto; `@(grid..stupac)` iz trenutnog reda (`SrediSQLsaKolonamaizGrida`) |
+| **DGR-01** | `COLUMN` djeca grida (1 349 stupaca, 47 granula: Narudzbe, ManagerCjenika, ZahtjevZaNabavku, KomStanjeSkl…) i `CLEARCOLUMS` (8): Form2.vb 1798-1957 — POSITION, MAXLINES, WIDTH, CAPTION, FORMAT, VISIBLE, ALIGN, AGREGATEFUNCTION, pa CLEARCOLUMS pozicija (nadjača POSITION), boje | XML reader ih je bacao, svi stupci su se vidjeli pod imenom iz SQL-a | `NgControl.Kolone` → `GridDefinicija` (isti kod kao podloga, red Form2) → `GridIzgled.PrimijeniKolone`. CLEARCOLUMS skrije sve, i kvačicu (Form2 ju postavi prije, 1748), pa opisani stupci idu redom definicije. Osvježavanje ne slaže stupce iznova (RefreshGrida 5305-5315), pa korisnikova širina i redoslijed ostaju |
+| **DGR-02** | `GROUPBYBOXVISIBLE` (1 281 grid, 236 granula; FALSE 1 102), `FROZENCOLUMNS` (10), `FILTERMODE` (6), `AUTOMATICSORT`, `ENTERKEYBEHAVIOR` 1 (22) | ploča za grupiranje uvijek vidljiva, ostalo ignorirano | `ShowGroupPanel` po CBool (prazno ostavi Janus True; tekst ploče Carpov), `Fixed` (ikona i kvačica se broje), red za filtriranje, `AllowSort`, Enter na sljedeći stupac dok se uređuje. ENTERKEYBEHAVIOR 2 (2 grida) nije vezan: Janus enum nije potvrđen |
 
 ## NetGenDBClipboard (DBC-01)
 
@@ -63,8 +65,8 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 - Tab stranice (`TYPE="tab"`).
 - `TIMERSQL` (4 forme, 1 granula): Timer2 je u NetGenu ugašen dok ga `TIMERON(n)` ne upali, a `TIMERON` nema nigdje u korpusu, pa se ni u NetGenu ne izvršava.
 - `IMAGEINDEX` (30 gumba, 9 granula) i automatske ikone po natpisu (dodaj, obriši, izmjeni…): Carpo gumbi imaju svoj izgled (50-50 → Carpo).
-- Grid dijaloga: `COLUMNCAPTION`/`COLUMNWIDTH` za grid (nije tražilica), `FROZENCOLUMNS`, `AUTOMATICSORT`, layout datoteke.
+- Grid dijaloga: `COLUMNCAPTION`/`COLUMNWIDTH` za grid (nije tražilica), layout datoteke (`MULTIGRIDLAYOUT` 1), `INPUTMASK` stupca (0 u korpusu), `PAGEHEADER*`/`PAGEORIENTATION` (ispis grida dijaloga, 127 granula — uz `:printgrid`).
 
 ## Testovi
 
-`lay01-raspored`, `hot01-f2`, `dat01-datumi` (`RasporedDijaloga`), `mdr01-multidrop`, `for01-foreachrow` (`DogadjajiDijaloga`), `Form2Izgled` pod Mono (dock, anchor, stil, boja, hotkey, mjesta gumba).
+`lay01-raspored`, `hot01-f2`, `dat01-datumi` (`RasporedDijaloga`), `dgr01-*`, `dgr02-grid-atributi` (`GridDijalogaStupci`), `mdr01-multidrop`, `for01-foreachrow` (`DogadjajiDijaloga`), `Form2Izgled` pod Mono (dock, anchor, stil, boja, hotkey, mjesta gumba).

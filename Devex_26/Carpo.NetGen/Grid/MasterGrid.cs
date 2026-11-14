@@ -27,6 +27,8 @@ namespace Carpo.NetGen.Grid
         public bool AutoSirina;
         public string PoravnanjeZaglavlja;
         public int? Pozicija;
+        /// <summary>Redoslijed prikaza nakon Janus Position premještanja (GridDefinicija). DGR-01.</summary>
+        public int Redni;
         public bool Selektor;
         public bool Grupiraj;
         public string EditTip = "NoEdit";
@@ -111,7 +113,7 @@ namespace Carpo.NetGen.Grid
                 Stanje.ImeForme = efektivni.Substring(1);
                 Stanje.Odluka = "forma";
                 Stanje.Redoslijed.Add("nije-sql");
-                PrimijeniAtribute(projekt, null);
+                PrimijeniAtribute(projekt);
                 NgDnevnik.Akcija("otvara formu " + (Stanje.ImeForme ?? ""));
                 return;
             }
@@ -138,12 +140,12 @@ namespace Carpo.NetGen.Grid
                 if (tablica != null)
                     SloziKolone(projekt, tablica);
                 else
-                    PrimijeniAtribute(projekt, projekt.NadjiGrupu("MASTERCOLUMNS"));
+                    PrimijeniAtribute(projekt);
                 Fokus(projekt);
             }
             else
             {
-                PrimijeniAtribute(projekt, null);
+                PrimijeniAtribute(projekt);
             }
             Stanje.Redoslijed.Add("kraj");
             OznaciDx(projekt);
@@ -272,7 +274,7 @@ namespace Carpo.NetGen.Grid
             }
             if (projekt != null)
             {
-                PrimijeniAtribute(projekt, projekt.NadjiGrupu("MASTERCOLUMNS"));
+                PrimijeniAtribute(projekt);
                 Stanje.Redoslijed.Add("custom-format");
                 PrimijeniDefiniciju(projekt.NadjiGrupu("MASTERCOLUMNS"));
             }
@@ -301,18 +303,22 @@ namespace Carpo.NetGen.Grid
             {
                 k.Sirina = 34;
                 k.Poravnanje = "Far";
+                // Class1.vb 1066, 1112, 1170: HeaderAlignment Far za boolean, int i decimal/double.
+                k.PoravnanjeZaglavlja = "Far";
             }
             else if (tip.IndexOf("int", StringComparison.Ordinal) >= 0)
             {
                 k.Sirina = 34;
                 k.Format = "##0";
                 k.Poravnanje = "Far";
+                k.PoravnanjeZaglavlja = "Far";
             }
             else if (tip.IndexOf("decimal", StringComparison.Ordinal) >= 0 || tip.IndexOf("double", StringComparison.Ordinal) >= 0)
             {
                 k.Sirina = 44;
                 k.Format = "#,##0.00";
                 k.Poravnanje = "Far";
+                k.PoravnanjeZaglavlja = "Far";
                 // Class1.vb 1171: AggregateFunction.Sum (Janus 2) u ukupnom retku (TOT-01).
                 k.Agregat = "2";
             }
@@ -353,7 +359,7 @@ namespace Carpo.NetGen.Grid
             return k;
         }
 
-        private void PrimijeniAtribute(NgProject projekt, NgColumnGroup master)
+        private void PrimijeniAtribute(NgProject projekt)
         {
             string cb = Attr(projekt, "CHECKBOXVISIBLE");
             if (cb != null)
@@ -403,139 +409,15 @@ namespace Carpo.NetGen.Grid
                 Stanje.EnterTipka = "None";
             if (projekt.Atributi.Ima("ENTERKEYBEHAVIOR"))
                 Stanje.EnterTipka = (projekt.Atributi.Vrijednost("ENTERKEYBEHAVIOR") ?? "").Trim();
-            if (master != null && !string.IsNullOrEmpty(master.HeaderAlignment))
-            {
-                for (int i = 0; i < Stanje.Kolone.Count; i++)
-                    Stanje.Kolone[i].PoravnanjeZaglavlja = master.HeaderAlignment;
-            }
         }
 
+        /// <summary>Form1.CustomFormatKolona (7451) za MASTERCOLUMNS. HEADERALIGNMENT ide samo na opisane stupce.</summary>
         private void PrimijeniDefiniciju(NgColumnGroup grupa)
         {
             if (grupa == null)
                 return;
             bool clear = grupa.ClearColums != null && grupa.ClearColums.ToLowerInvariant() == "true";
-            if (clear)
-            {
-                for (int i = 0; i < Stanje.Kolone.Count; i++)
-                    Stanje.Kolone[i].Vidljiva = false;
-            }
-            int pos = 0;
-            for (int n = 0; n < grupa.Kolone.Count; n++)
-            {
-                var def = grupa.Kolone[n];
-                pos++;
-                string indexRaw = def.Atributi.Vrijednost("INDEX");
-                int index = 0;
-                if (!string.IsNullOrEmpty(indexRaw))
-                    int.TryParse(indexRaw.Trim(), out index);
-                string ime = def.Name ?? "";
-                if (index <= 0 && ime.Length == 0)
-                    continue;
-                GridKolona kol = null;
-                if (index > 0)
-                {
-                    int vidljivi = 0;
-                    for (int i = 0; i < Stanje.Kolone.Count; i++)
-                    {
-                        if (vidljivi == index)
-                        {
-                            kol = Stanje.Kolone[i];
-                            break;
-                        }
-                        vidljivi++;
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < Stanje.Kolone.Count; i++)
-                    {
-                        if (string.Equals(Stanje.Kolone[i].Podatak, ime, StringComparison.OrdinalIgnoreCase))
-                        {
-                            kol = Stanje.Kolone[i];
-                            break;
-                        }
-                    }
-                }
-                if (kol == null)
-                    continue;
-                if (!string.IsNullOrEmpty(def.AgregateFunction))
-                    kol.Agregat = def.AgregateFunction;
-                string width = def.Atributi.Vrijednost("WIDTH");
-                int w;
-                if (!string.IsNullOrEmpty(width) && int.TryParse(width.Trim(), out w) && w > 0)
-                    kol.Sirina = VbJedinica(w);
-                string cap = def.Atributi.Vrijednost("CAPTION");
-                if (!string.IsNullOrEmpty(cap) && cap.Trim().Length > 0)
-                    kol.Natpis = cap.Trim();
-                string fmt = def.Atributi.Vrijednost("FORMAT");
-                if (!string.IsNullOrEmpty(fmt) && fmt.Trim().Length > 0)
-                    kol.Format = fmt.Trim();
-                string vis = def.Atributi.Vrijednost("VISIBLE");
-                if (!string.IsNullOrEmpty(vis) && vis.Trim().Length > 0)
-                    kol.Vidljiva = vis.Trim().ToLowerInvariant() != "false";
-                if (clear)
-                {
-                    pos++;
-                    kol.Pozicija = pos;
-                    kol.Vidljiva = true;
-                }
-                string poz = def.Atributi.Vrijednost("POSITION");
-                int pz;
-                if (!string.IsNullOrEmpty(poz) && int.TryParse(poz.Trim(), out pz))
-                    kol.Pozicija = pz;
-                kol.Natpis = (kol.Natpis ?? "").Replace(";", "\r\n");
-                string auto = def.Atributi.Vrijednost("AUTOSIZE");
-                if (auto != null && auto.Trim().ToLowerInvariant() == "true")
-                    kol.AutoSirina = true;
-                string neg = def.Atributi.Vrijednost("NEGATIVERED");
-                if (neg != null && neg.Trim().ToLowerInvariant() == "true")
-                    kol.NegativnoCrveno = true;
-                string nz = def.Atributi.Vrijednost("NOTZERORED");
-                if (nz != null && nz.Trim().ToLowerInvariant() == "true")
-                    kol.NotZeroCrveno = true;
-                string fg = def.Atributi.Vrijednost("FORECOLOR");
-                if (!string.IsNullOrEmpty(fg) && fg.Trim().Length > 0 && Boja(fg) != null)
-                    kol.BojaTeksta = Boja(fg);
-                string bg = def.Atributi.Vrijednost("BACKCOLOR");
-                if (!string.IsNullOrEmpty(bg) && bg.Trim().Length > 0 && Boja(bg) != null)
-                    kol.BojaPozadine = Boja(bg);
-                string ml = def.Atributi.Vrijednost("MAXLINES");
-                int m;
-                if (!string.IsNullOrEmpty(ml) && int.TryParse(ml.Trim(), out m) && m > 0)
-                {
-                    kol.MaxLinija = m;
-                    kol.Prelomi = true;
-                }
-                if (!string.IsNullOrEmpty(grupa.HeaderAlignment))
-                    kol.PoravnanjeZaglavlja = grupa.HeaderAlignment;
-            }
-        }
-
-        private static string Boja(string ime)
-        {
-            switch ((ime ?? "").Trim().ToLowerInvariant())
-            {
-                case "green":
-                case "white":
-                case "black":
-                case "darksalmon":
-                case "darkseagreen":
-                case "limegreen":
-                case "greenyellow":
-                case "yellow":
-                case "lightyellow":
-                case "red":
-                case "brown":
-                case "blue":
-                case "ghostwhite":
-                case "gray":
-                case "orange":
-                case "orangered":
-                    return ime.Trim().ToLowerInvariant();
-                default:
-                    return null;
-            }
+            GridDefinicija.Primijeni(Stanje.Kolone, grupa.Kolone, clear, grupa.HeaderAlignment, false);
         }
 
         private void Fokus(NgProject projekt)

@@ -65,6 +65,7 @@ namespace Carpo.NetGen.Model
             Name = name;
             Atributi = atributi;
             IzravnoDijeteForme = izravnoDijeteForme;
+            Kolone = new List<NgColumn>();
         }
 
         /// <summary>TYPE kako je napisan, ukljucujuci tipfelere. Null ako atributa nema.</summary>
@@ -73,6 +74,9 @@ namespace Carpo.NetGen.Model
         public string Name { get; private set; }
         public NgAttributeBag Atributi { get; private set; }
         public bool IzravnoDijeteForme { get; private set; }
+
+        /// <summary>COLUMN djeca grida dijaloga (Form2.vb 1804-1957), redom kako su napisana. DGR-01.</summary>
+        public List<NgColumn> Kolone { get; private set; }
     }
 
     public sealed class NgColumn

@@ -55,6 +55,9 @@ Sada `Prozor.Otvori` svaku granulu otvara u Podlozi; `ObicnaForma` i `OdabirForm
 | **SRT-01** | AUTOMATICSORT=false 7 | `GridEX1.AutomaticSort = False` | izračunato, nije primijenjeno | `AllowSort=false` |
 | **FRZ-01** | FROZENCOLUMNS 5/8/13 u 12 granula | `GridEX1.FrozenColumns` (broji ikonu i kvačicu) | izračunato, nije primijenjeno | toliko podatkovnih stupaca lijevo `Fixed` |
 | **MSG-03** | poruka s `#close`/`+close` | `ZelimIzaciIzForme` zatvara formu (Form2 7512) | nije postojalo | greška SQL-a u lancu dijaloga s `#close` zatvori dijalog |
+| **COL-01** | MASTERCOLUMNS/DETAILCOLUMNS (1 634 stupca, 107 granula), CLEARCOLUMS TRUE u 22 grupe | `CustomFormatKolona` (Form1 7451): CLEARCOLUMS skrije sve, pa pozicija po redu definicije; VISIBLE odlučuje | master je nakon VISIBLE prisilno palio stupac (8 stupaca s VISIBLE=FALSE se vidjelo); detail nije primjenjivao FORMAT, AGREGATEFUNCTION, INDEX ni redoslijed; nitko nije primjenjivao Position | jedan `GridDefinicija` za master, detail i grid dijaloga; Position kao Janus (stupac se premjesti, ostali se pomaknu) → `VisibleIndex` |
+| **COL-02** | HEADERALIGNMENT 1/2 (110 grupa, 70 granula); brojčani stupci | Janus TextAlignment 1 Near, 2 Center, 3 Far, samo na opisanim stupcima; detail dobije poravnanje **mastera** (`CustomFormatKolona` čita polje `strHeaderAlignment`, parametar je neiskorišten); Class1 1066/1112/1170: zaglavlje boolean/int/decimal je Far | "1"/"2" se nisu prepoznavali; master je poravnanje stavljao na sve stupce | kao VB |
+| **COL-03** | MAXLINES, AUTOSIZE, FORECOLOR/BACKCOLOR (lightyellow, 2 granule), NEGATIVERED, NOTZERORED, `!` u natpisu (grupiranje) | WordWrap/MaxLines, AutoSize, CellStyle, FormatCondition crveno, `RootTable.Groups` | MasterGrid je računao, podloga nije primjenjivala | `RowAutoHeight` + prelamanje, `BestFit`, boja ćelije, `RowCellStyle` crveno, `GroupIndex` |
 
 ## Otvoreno
 

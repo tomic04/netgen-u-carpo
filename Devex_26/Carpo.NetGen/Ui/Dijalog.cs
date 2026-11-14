@@ -573,22 +573,9 @@ namespace Carpo.NetGen.Ui
             if (grid != null)
             {
                 grid.DataSource = dt;
-                // Form2.vb 1643-1673: CreateGridColumns s EDITCOLUMNS grida (GRD-01). Bez toga su
-                // svi stupci vidljivi pod sirovim imenom, a ONCELLEDITED ne moze nikad okinuti.
                 var view = grid.MainView as GridView;
                 if (view != null)
-                {
-                    // Form2.vb 1739-1755: TOTALROW i CHECKBOXVISIBLE (ToUpper, samo "FALSE" gasi).
-                    bool ukupno = Attr(k, "TOTALROW").ToUpperInvariant() != "FALSE";
-                    GridIzgled.Primijeni(view, dt, EditStupci(c, k), ukupno);
-                    view.OptionsSelection.MultiSelectMode = Attr(k, "CHECKBOXVISIBLE").ToUpperInvariant() == "FALSE"
-                        ? GridMultiSelectMode.RowSelect
-                        : GridMultiSelectMode.CheckBoxRowSelect;
-                    // Form2.vb 1708: Janus ColumnHeaders = "2" (InheritableBoolean.False, 1713) skriva zaglavlja (3 grida, GRD-03).
-                    string zaglavlja = Attr(k, "COLUMNHEADERS").ToLowerInvariant();
-                    if (zaglavlja == "2" || zaglavlja == "false")
-                        view.OptionsView.ShowColumnHeaders = false;
-                }
+                    SloziGridDijaloga(c, k, view, dt);
             }
         }
 
