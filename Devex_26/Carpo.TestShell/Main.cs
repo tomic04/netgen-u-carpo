@@ -636,6 +636,8 @@ namespace Carpo.TestShell
             Carpo.NetGen.Komande.RafalNaredba.DatotekaDijalog = delegate { return ""; };
             // Trag gumba (Podloga piše "gumb <natpis>" prije klika): na roku UiSweep ispiše kraj traga.
             Carpo.NetGen.Ui.Dijalog.TragPutanja = izvjestaj + ".faza.txt";
+            // SWP-09: spori i pukli upiti (s trajanjem) u isti trag, da se vidi što granulu drži do roka.
+            Carpo.NetGen.Grid.NgVeza.SporiUpit = delegate (string t) { Carpo.NetGen.Ui.Dijalog.Trag(t + " | " + _sweepGranula); };
             try { File.Delete(izvjestaj + ".faza.txt"); } catch { }
             // SWP-03: čuvar. Granula koja drži UI dulje od 90 s (modalni prozor koji sweep ne zatvori, beskonačna
             // petlja) zapiše HANG s granulom i zadnjim tragom, pa proces izađe s kodom 3; ne čeka se rok šestine.

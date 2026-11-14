@@ -38,6 +38,33 @@ function Pokazi-Djelomicno {
         Write-Host "---- kraj traga (.faza.txt) ----"
         Get-Content -LiteralPath $faza -Tail 70 -Encoding UTF8 | ForEach-Object { Write-Host $_ }
     }
+    # SWP-09: 40 najsporijih upita (NgVeza) i broj puklih, s granulom.
+    if (Test-Path -LiteralPath $faza) {
+        $spori = @(Get-Content -LiteralPath $faza -Encoding UTF8 | Where-Object { $_ -match ' spor upit (\d+) ms' } |
+            Sort-Object { [int]([regex]::Match($_, ' spor upit (\d+) ms').Groups[1].Value) } -Descending | Select-Object -First 40)
+        if ($spori.Count -gt 0) {
+            Write-Host "---- najsporiji upiti ----"
+            $spori | ForEach-Object { Write-Host $_ }
+        }
+        $pukli = @(Get-Content -LiteralPath $faza -Encoding UTF8 | Where-Object { $_ -match ' upit pukao ' })
+        Write-Host ("---- pukli upiti: " + $pukli.Count + " (prvih 30) ----")
+        $pukli | Select-Object -First 30 | ForEach-Object { Write-Host $_ }
+    }
+    # SWP-09: trag prvih pet HANG granula (od "granula X" do sljedeće), da se vidi koji korak drži rok.
+    if ((Test-Path -LiteralPath $faza) -and (Test-Path -LiteralPath $redovi)) {
+        $hangovi = @(Get-Content -LiteralPath $redovi -Encoding UTF8 | Where-Object { ($_ -split "`t")[1] -eq "HANG" } | ForEach-Object { ($_ -split "`t")[0] } | Select-Object -Unique -First 5)
+        if ($hangovi.Count -gt 0) {
+            $tr = @(Get-Content -LiteralPath $faza -Encoding UTF8)
+            foreach ($h in $hangovi) {
+                Write-Host "---- trag HANG: $h ----"
+                $u = $false; $n = 0
+                foreach ($l in $tr) {
+                    if ($l -match ' granula (.+)$') { $u = ($Matches[1] -eq $h); if (-not $u -and $n -gt 0) { break } }
+                    if ($u -and $n -lt 60) { Write-Host $l; $n++ }
+                }
+            }
+        }
+    }
     # SWP-03: cijeli stog iznimaka (TestShell piše .iznimka.txt), najviše 150 redaka.
     $izn = $Izvjestaj + ".iznimka.txt"
     if (Test-Path -LiteralPath $izn) {
