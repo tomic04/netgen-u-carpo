@@ -105,22 +105,17 @@ namespace Carpo.NetGen.Komande
             return string.Equals(FillExplorer(forma), "onlydet", StringComparison.Ordinal);
         }
 
+        /// <summary>FILLEXPLORER forme, malim slovima (Form1.vb 5445-5507 grana po vrijednosti).</summary>
+        public static string FillExplorerVrijednost(NgForm forma)
+        {
+            return FillExplorer(forma);
+        }
+
         private static string FillExplorer(NgForm forma)
         {
             if (forma == null || forma.Atributi == null || !forma.Atributi.Ima("FILLEXPLORER"))
                 return "";
             return (forma.Atributi.Vrijednost("FILLEXPLORER") ?? "").Trim().ToLowerInvariant();
-        }
-
-        /// <summary>FILLEXPLORER=TRUE zamijeni master sa ONSUBMIT. Form1.vb 5445–5453.</summary>
-        public static string SqlNakonOk(NgForm forma)
-        {
-            if (!PuniExplorer(forma))
-                return "";
-            string stora = forma == null ? "" : (forma.OnSubmit ?? "").Trim();
-            if (stora.Length == 0)
-                return "";
-            return Lanac.Lijepi(stora, "");
         }
 
         public static bool PuniExplorer(NgForm forma)

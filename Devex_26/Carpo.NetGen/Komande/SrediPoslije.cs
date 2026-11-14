@@ -11,23 +11,6 @@ namespace Carpo.NetGen.Komande
     /// </summary>
     public static class SrediPoslije
     {
-        /// <summary>
-        /// Button1 (3371–3388), pa Form1 5450–5514. DML ugradi @@ i ne lijepi parametre.
-        /// !! gasi lijepljenje. Ostalo se lijepi, pa ide SrediSQL i ova zamjena.
-        /// </summary>
-        public static string ZaSlanje(string stora, string parametri, SqlKontekst k, IDictionary<string, string> clipboard)
-        {
-            string s = stora ?? "";
-            bool uzvicnik = s.IndexOf("!!", StringComparison.Ordinal) >= 0;
-            string bez = s.Replace("!!", "");
-            if (Lanac.Prvih6JeDml(bez.TrimStart()))
-                return Zamijeni(bez, parametri, k, clipboard, false);
-            if (uzvicnik)
-                return SqlTekst.Sredi2(bez, k).Trim();
-            string spojeno = Lanac.Lijepi(bez, parametri ?? "");
-            return Zamijeni(SqlTekst.Sredi(spojeno, k), parametri, k, clipboard, false);
-        }
-
         /// <summary>SrediSQL2, pa petlja @@. Prazan ulaz bez @@ ostaje. Class1.vb 755–852.</summary>
         public static string Zamijeni(string sql, string parametri, SqlKontekst k, IDictionary<string, string> clipboard, bool datumZaIspis)
         {
