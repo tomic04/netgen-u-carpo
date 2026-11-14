@@ -93,6 +93,7 @@ Isto vrijedi za tekst labele, okvira i panela (1324, 1369, 1399; LBL-01): 64 lab
 
 Form3 pamti izgled grida tražilice: `spremipostavke` (38-48) i `DeleteGridLayout` (50-58, pa zatvori prozor) pišu i brišu `GridTrazilica-<xml>-<forma>.gxl`, a `Trazilica` (84-94) ga učita prije COLUMNCAPTION i COLUMNWIDTH. Carpo prozor tražilice nije pamtio ništa. Sada desni klik na grid tražilice ima „Spremi postavke grida” i „Reset grida” (reset zatvori prozor bez odabira). Izgled je `GridTrazilica-<xml>-<forma>.xml` u mapi Grid Settings i učita se prije COLUMNCAPTION i COLUMNWIDTH. Janus `.gxl` se ne čita (R115).
 | **LAY-02** | okvir (`frame`/`group`, 1217 formi u 299 granula) ili panel u XML-u prije kontrola koje nisu u njemu (`PARENT`) | `Form2.vb` 1373-1379, 1403-1409: okvir i panel `SendToBack`, ostale kontrole `BringToFront` | okvir je ostao ispred kontrola, pa je forma izgledala prazno (RobaWebKlase „Dodavanje klase”: samo siva traka okvira i gumbi) | nakon slaganja okviri i paneli idu iza, redom iz XML-a; test `lay02-okvir-straga` |
+| **LAY-03** | kontrole koje se preklapaju i više kontrola s `DOCK` | VB nakon `Controls.Add` zove `BringToFront` (kasnija kontrola je ispred ranije, i redom za Dock), okvir i panel `SendToBack` | `Controls.Add` je kasniju kontrolu stavljao iza ranije, pa su preklapanje i redoslijed Docka bili obrnuti od NetGena | `SloziRedoslijed` ponovi VB redom iz XML-a; test `lay03-kasnija-ispred`. Provjera svih formi korpusa je RAS-01 (korak „Raspored formi” u CI-ju) |
 
 ## Otvoreno
 
