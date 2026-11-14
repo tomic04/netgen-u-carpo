@@ -24,8 +24,8 @@ function Pokazi-Djelomicno {
     if (Test-Path -LiteralPath $redovi) {
         $sve = @(Get-Content -LiteralPath $redovi)
         $nije = @($sve | Where-Object { ($_ -split "`t")[1] -ne "CISTO" })
-        Write-Host ("---- djelomicni sweep: " + $sve.Count + " granula, " + $nije.Count + " nije CISTO ----")
-        $nije | ForEach-Object { Write-Host $_ }
+        Write-Host ("---- sweep redovi (.red): " + $sve.Count + " redaka, " + $nije.Count + " nije CISTO; svaki red ima ukupno/forme/gdi/sat (SWP-01) ----")
+        $sve | ForEach-Object { Write-Host $_ }
         if ($sve.Count -gt 0) { Write-Host ("zadnja: " + $sve[$sve.Count - 1]) }
     } else {
         Write-Host "---- nema ni djelomicnog izvjestaja ($redovi) ----"
@@ -60,6 +60,7 @@ if ($sid -ne 0) {
     if ($kod -ne 0) { throw "sweep kod $kod" }
 }
 if (-not (Test-Path -LiteralPath $Izvjestaj)) { throw "Nema izvjestaja $Izvjestaj" }
+Pokazi-Djelomicno
 # Glava (brojevi i grupe) pa svi redovi koji nisu CISTO; cisti se samo broje.
 $izv = @(Get-Content -LiteralPath $Izvjestaj)
 $izv | Where-Object { -not ($_ -match "`tCISTO`t") } | ForEach-Object { Write-Host $_ }
