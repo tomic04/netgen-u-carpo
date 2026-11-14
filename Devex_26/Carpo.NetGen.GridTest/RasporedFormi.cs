@@ -110,7 +110,8 @@ namespace Carpo.NetGen.GridTest
                             Control c = nadjeno[0];
                             if (!VidljivaDoForme(c, d))
                                 continue;
-                            if (c.Dock == DockStyle.None && (c.Width <= 0 || c.Height <= 0))
+                            // Natpis bez teksta ima širinu 0 dok ga ONLOAD/SETTEXT ne napuni; to nije greška.
+                            if (c.Dock == DockStyle.None && !(c is LabelControl) && (c.Width <= 0 || c.Height <= 0))
                             {
                                 bezVelicine++;
                                 tsv.AppendLine(rel + "\t" + forma.Ime + "\tBEZ-VELICINE\t" + c.Name + "\t" + c.Width + "x" + c.Height);
