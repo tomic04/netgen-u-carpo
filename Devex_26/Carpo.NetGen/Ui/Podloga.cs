@@ -1558,7 +1558,9 @@ namespace Carpo.NetGen.Ui
                 }
                 catch (Exception ex)
                 {
-                    redovi.Add(Linija(granula, "gumb", natpis, "GRESKA", ex.Message, "netgen/Form2.vb:3367"));
+                    // Iznimka u kodu (ne SQL): u red ide i mjesto u Carpo.NetGen, jer se artefakti sweepa ne mogu preuzeti.
+                    redovi.Add(Linija(granula, "gumb", natpis, "GRESKA", KratakOpisIznimke(ex), "netgen/Form2.vb:3367"));
+                    NgDnevnik.Greska("klik gumb " + natpis + ": " + ex.ToString());
                 }
             }
             return redovi;
@@ -1855,6 +1857,32 @@ namespace Carpo.NetGen.Ui
                 || n.IndexOf("@action=2", StringComparison.OrdinalIgnoreCase) >= 0)
                 return 4;
             return 5;
+        }
+
+        /// <summary>Tip, poruka i prva tri okvira stoga iz Carpo.NetGen (bez putanja), za red klik pregleda.</summary>
+        private static string KratakOpisIznimke(Exception ex)
+        {
+            Exception e = ex;
+            while (e.InnerException != null && e is System.Reflection.TargetInvocationException)
+                e = e.InnerException;
+            var sb = new System.Text.StringBuilder();
+            sb.Append(e.GetType().Name).Append(": ").Append((e.Message ?? "").Replace("\r", " ").Replace("\n", " ").Replace("\t", " "));
+            string[] redovi = (e.StackTrace ?? "").Split('\n');
+            int n = 0;
+            for (int i = 0; i < redovi.Length && n < 3; i++)
+            {
+                string r = redovi[i].Trim();
+                if (r.IndexOf("Carpo.NetGen", StringComparison.Ordinal) < 0 && r.IndexOf("Carpo.UI", StringComparison.Ordinal) < 0)
+                    continue;
+                int u = r.IndexOf(" in ", StringComparison.Ordinal);
+                string okvir = u > 0 ? r.Substring(0, u) : r;
+                int linija = r.LastIndexOf(":line ", StringComparison.Ordinal);
+                if (linija > 0)
+                    okvir += r.Substring(linija);
+                sb.Append(n == 0 ? " @ " : " <- ").Append(okvir.Replace("at ", "").Trim());
+                n++;
+            }
+            return sb.ToString();
         }
 
         private string PoslanoKoje(string dio)
