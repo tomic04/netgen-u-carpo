@@ -342,7 +342,7 @@ Zbroj stavki je 160.
 |---|---|---|---|
 | JeziciNG `JEZ-56` | Ispiši zove ispis mastera, ne formu tog imena | `netgen/Form1.vb:4945-4948,5984` | dijalog još nije u kuki |
 | JeziciNG `JEZ-57` | Desno zaglavlje ispisa dolazi iz @@tkosmomi (SETDEFAULTS u CB) | `netgen/Form1.vb:6001; netgen/Class1.vb:932-966` | dijalog još nije u kuki |
-| MPBlagajna `MPB-20` | Spin.Printing.v23 pa v9.1. Port zove v26, ne v23 | `netgen/Class1.vb:297-304; Devex_26/Carpo.NetGen/Placeholders.cs:46-52` | kuka nema ključ |
+| MPBlagajna `MPB-20` | Spin.Printing.v23 pa v9.1. Port zove v26, ne v23 | `netgen/Class1.vb:297-304; Devex_26/Carpo.NetGen/Print/PrintBridge.cs:20-21` | kuka nema ključ |
 | KarticaPartnera `KAR-40` | Ako Spin.Printing padne, Form6 zove rptDevRepx.DoPrint2 | `netgen/Form6.vb:134-161; netgen/Class1.vb:606-632` | kuka nema ključ |
 
 ## 16. Procedura ili tijelo nisu dostupni za čitanje

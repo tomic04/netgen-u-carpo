@@ -1,4 +1,4 @@
-// Stub PrintBridge za diferencijalni test: samo ciste funkcije iz Placeholders.cs.
+// Stub PrintBridge za diferencijalni test: samo ciste funkcije iz Print/PrintBridge.cs.
 using System;
 namespace Carpo.NetGen.Print
 {

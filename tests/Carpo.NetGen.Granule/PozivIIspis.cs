@@ -252,7 +252,7 @@ namespace Carpo.NetGen.Granule
                 ? Qa.Z(Ime, "MPB-06", "Prazan centar i nema v[ ostave centar prazan. Lijevo je @@trgovina", "netgen/Form1.vb:5996-5997")
                 : Qa.P(Ime, "MPB-06", "zaglavlje", "netgen/Form1.vb:5996", levo));
             l.Add(Stablo.Meni(Ime, "MPB-07", "MPBlagajna.xml"));
-            Ispis.K(l, Ime, xml, "MPB-20", "Spin.Printing.v23 pa v9.1. Port zove v26, ne v23", "netgen/Class1.vb:297-304; Devex_26/Carpo.NetGen/Placeholders.cs:46-52", "spin.printing", "v26");
+            Ispis.K(l, Ime, xml, "MPB-20", "Spin.Printing.v23 pa v9.1. Port zove v26, ne v23", "netgen/Class1.vb:297-304; Devex_26/Carpo.NetGen/Print/PrintBridge.cs:20-21", "spin.printing", "v26");
             return l;
         }
     }
