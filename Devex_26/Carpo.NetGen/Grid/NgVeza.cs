@@ -45,7 +45,7 @@ namespace Carpo.NetGen.Grid
                     {
                         try { s.Veza.Dispose(); } catch { }
                     }
-                    s.Veza = new SqlConnection(spoj);
+                    s.Veza = new SqlConnection(BezPoola(spoj));
                     s.Veza.Open();
                 }
                 var dt = new DataTable();
@@ -74,6 +74,17 @@ namespace Carpo.NetGen.Grid
                 lock (_brava)
                     s.Zauzeta = false;
             }
+        }
+
+        /// <summary>
+        /// Zajednička veza ne ide u pool: zatvaranje tada stvarno završi sesiju (privremene tablice nestanu,
+        /// otvorena transakcija se poništi), kao kad NetGen proces zatvori Conn. Iz poola bi sesija živjela dalje.
+        /// </summary>
+        private static string BezPoola(string spoj)
+        {
+            var b = new SqlConnectionStringBuilder(spoj);
+            b.Pooling = false;
+            return b.ConnectionString;
         }
 
         private static Stavka Uzmi(string spoj)
