@@ -29,8 +29,8 @@ using DevExpress.XtraTreeList.Nodes;
 namespace Carpo.NetGen.Ui
 {
     /// <summary>
-    /// Samo granule čiji NetGen raspored jest stablo lijevo, master-detail i gumbi dolje.
-    /// Ostale idu u ObicnaForma ili u Dijalog. Odabir je OdabirForme.JeManager.
+    /// Form1: podloga svake granule (Prozor, RUT-01). Stablo lijevo i detalj se sakriju kad ih nema
+    /// (OnShown), a ONLOAD ":Forma" otvori dijalog nad podlogom.
     /// </summary>
     public sealed partial class Podloga : Carpo.UI.Forms.Master.Manager
     {
@@ -584,6 +584,20 @@ namespace Carpo.NetGen.Ui
                         continue;
                     }
                     string vrsta = PrintBridge.Vrsta(s, false);
+                    // NovaGenerickaForma2 5003-5054: ispis dokumenta (ne PRINTMASTER/PRINTDET, 4945-4962) ide
+                    // za svaki označeni red, kao forma (ISP-06).
+                    int[] oznaceni = vrsta.Length == 0 ? OznaceniRedovi() : new int[0];
+                    if (oznaceni.Length > 1)
+                    {
+                        for (int r = 0; r < oznaceni.Length && !IsDisposed; r++)
+                        {
+                            gvGla.FocusedRowHandle = oznaceni[r];
+                            SpojiId();
+                            PrintBridge.Ispisi(s, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "",
+                                "", "", "", Text, gcGla, "", null);
+                        }
+                        continue;
+                    }
                     object grid = vrsta == "detail" ? (object)gcDet : gcGla;
                     DataTable tab = null;
                     var gc = grid as GridControl;
@@ -829,6 +843,7 @@ namespace Carpo.NetGen.Ui
                     c.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Near;
             }
             PodesiUredjivanje(pogled, kolone);
+            PrimijeniUkupno(pogled, tablica, kolone);
             if (pogled.RowCount > 0)
                 pogled.FocusedRowHandle = 0;
         }

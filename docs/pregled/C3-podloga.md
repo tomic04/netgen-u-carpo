@@ -20,6 +20,14 @@ NetGen podloga ima dva različita izvršitelja lanca `a#b#c`:
 
 Carpo je imao samo prvi (`IzvrsiLanac`), pa su desni klik s `~` i događaji ćelija išli kao otvaranje forme.
 
+## Ulaz granule (RUT-01)
+
+NetGen ima jednu podlogu (Form1) za svaku granulu. Bez stabla i detalja ti se paneli sakriju; ONLOAD `:Forma` (Form1.vb 3879) otvori dijalog modalno nad podlogom, a FILLEXPLORER dijaloga puni master grid (5445-5453).
+
+Carpo je imao tri ulaza: Podloga samo za granule sa stablom, detaljem i gumbima (132), skraćenu `ObicnaForma` (235 granula: bez izbornika, lanaca, uređivanja, dozvola, zbrojeva, DMS-a…) i samostalan dijalog za `:Forma` (230 granula; 228 ulaznih formi ima FILLEXPLORER, pa rezultat filtra nije imao gdje). Klik-pregled je već sve otvarao u Podlozi.
+
+Sada `Prozor.Otvori` svaku granulu otvara u Podlozi; `ObicnaForma` i `OdabirForme` su uklonjeni. Ako se želi Carpo izgled bez Manager okvira za jednostavne granule, to je odluka izgleda, ne funkcionalnosti.
+
 ## Nalazi
 
 | ID | Korpus | NetGen | Carpo prije | Sada |
@@ -43,6 +51,10 @@ Carpo je imao samo prvi (`IzvrsiLanac`), pa su desni klik s `~` i događaji ćel
 | **HLP-01** | HELPKOD 16 | F1 i gumb "?" pokreću `JupiterHelp.exe -s -d -h -o -p` | ignorirano | isto (bez exe-a samo dnevnik, kao On Error Resume Next) |
 | **MSG-02** | svaki SQL u dijalogu | `ExecSql` pokaže grešku, `GreskaKodIzvrsavanjaSQLa` prekida lanac (Form2 7511), "#OK" ne | `Podloga.Citaj` je gutao grešku: lanac dijaloga je išao dalje (i OK zatvarao formu), poruka se nije vidjela (EVT-03 je radio samo s čitačem koji baca) | `Dijalog.Omotaj`: poruka kao ExecSql, "#OK"/tiha greška vraća null, ostale se bace pa lanac stane. Podloga i ObicnaForma daju dijalogu čitač koji baca |
 | **ONL-02** | ONLOAD forme | `ProcitajXML` 1199: greška na ONLOAD → `Exit Sub`, Form1 5352 ne otvara formu | forma se otvarala s praznim poljima | forma se ne otvara (`Dijalog.GreskaOnLoad`) |
+| **TOT-01** | TOTALROWVISIBLE/DETTOTALROWVISIBLE (ukupni red u ~236 granula), AGREGATEFUNCTION 642 stupca | ukupni red; decimalni stupac zbraja (`#,##0.00`), COLUMN AGREGATEFUNCTION 0 None, 1 Count, 2 Sum, 3 Average, 4 Min, 5 Max | MasterGrid je računao `TotalRed`, ali podloga nije imala footer ni zbrojeve | footer i sažeci (`Grid/GridAgregat`, `Ui/PodlogaGrid`); značenje brojeva potvrđeno na korpusu (2 su količine i vrijednosti, 3 cijene i "pros.") |
+| **SRT-01** | AUTOMATICSORT=false 7 | `GridEX1.AutomaticSort = False` | izračunato, nije primijenjeno | `AllowSort=false` |
+| **FRZ-01** | FROZENCOLUMNS 5/8/13 u 12 granula | `GridEX1.FrozenColumns` (broji ikonu i kvačicu) | izračunato, nije primijenjeno | toliko podatkovnih stupaca lijevo `Fixed` |
+| **MSG-03** | poruka s `#close`/`+close` | `ZelimIzaciIzForme` zatvara formu (Form2 7512) | nije postojalo | greška SQL-a u lancu dijaloga s `#close` zatvori dijalog |
 
 ## Otvoreno
 

@@ -883,7 +883,37 @@ namespace Carpo.TestShell
             string ime = Path.GetFileName(xml ?? "");
             if (ime.Equals("RealizacijaStavkeNG.xml", StringComparison.OrdinalIgnoreCase))
             {
+                // RUT-01: ulaz ":Parametri" je modalni dijalog nad podlogom (otvori se u OnShown), pa ga
+                // Odustani zatvara iz timera; petlja s DoEvents bi ostala u ShowDialog.
                 var o = NadjiGumb(granula, "Odustani");
+                if (o == null)
+                {
+                    int tik = 0;
+                    var t = new System.Windows.Forms.Timer();
+                    t.Interval = 200;
+                    t.Tick += delegate
+                    {
+                        tik++;
+                        foreach (Form f in Application.OpenForms)
+                        {
+                            var dij = f as Dijalog;
+                            if (dij == null || dij.IsDisposed)
+                                continue;
+                            var g = NadjiGumb(dij, "Odustani");
+                            if (g == null)
+                                continue;
+                            t.Stop();
+                            g.DialogResult = DialogResult.Cancel;
+                            g.PerformClick();
+                            return;
+                        }
+                        if (tik > 50)
+                            t.Stop();
+                    };
+                    t.Start();
+                    trag = "klik=Odustani(dijalog)";
+                    return 0;
+                }
                 if (o == null)
                 {
                     UpisiIshod(snimka, "FAIL nema gumba Odustani");

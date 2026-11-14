@@ -553,12 +553,6 @@ namespace Carpo.NetGen.GridTest
 
         private static void Odabir()
         {
-            T("odabir-verizne-manager", Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("KntKompVerizne.xml")), "");
-            T("odabir-statusi-manager", Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("Statusi.xml")), "");
-            T("odabir-blazak-manager", Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("KntBlaZak.xml")), "");
-            T("odabir-oznaka-nije", !Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("OznakaKL.xml")), "");
-            T("odabir-jezici-nije", !Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("JeziciNG.xml")), "");
-            T("odabir-stavke-nije", !Carpo.NetGen.Shell.OdabirForme.JeManager(Ucitaj("RealizacijaStavkeNG.xml")), "");
         }
 
         private static void RucniStart()
@@ -1882,7 +1876,7 @@ namespace Carpo.NetGen.GridTest
                 NgForm prazan = FormaIme(p, "PRAZAN");
                 NgForm bez = FormaIme(p, "BEZ");
                 NgForm dijete = FormaIme(p, "DIJETE");
-                T("STA-08", unesi != null && unesi.Kontrole.Count == 0 && !DijalogTok.OtvaraProzor(unesi) && DijalogTok.SqlNakonOk(unesi) == "select 1", DijalogTok.SqlNakonOk(unesi));
+                T("STA-08", unesi != null && unesi.Kontrole.Count == 0 && DijalogTok.SqlNakonOk(unesi) == "select 1", DijalogTok.SqlNakonOk(unesi));
                 T("LVO-04", stablo != null && DijalogTok.OsvjeziStablo(stablo) && !DijalogTok.PuniExplorer(stablo) && DijalogTok.SqlNakonOk(stablo) == "", "");
                 T("MPK-30", prazan != null && !DijalogTok.PuniExplorer(prazan) && DijalogTok.SqlNakonOk(prazan) == "", "");
                 T("OPZ-04", bez != null && !DijalogTok.PuniExplorer(bez) && (p.Atributi.Vrijednost("FILLEXPLORER") ?? "") == "TRUE", "");
@@ -2625,6 +2619,28 @@ namespace Carpo.NetGen.GridTest
                 NgPoruka.Zapis = null;
             }
             T("msg-msgbox-zadano", poruka == "SPREMLJENO", poruka);
+            T("tot01-agregat", GridAgregat.Vrsta("2") == "Sum" && GridAgregat.Vrsta("3") == "Average" && GridAgregat.Vrsta("0") == "" && GridAgregat.Vrsta("SUM") == "Sum"
+                && GridAgregat.Vrsta("4") == "Min" && GridAgregat.Vrsta("5") == "Max" && GridAgregat.Vrsta("") == "", "");
+            T("tot01-format", GridAgregat.Format("Sum", typeof(decimal), "#,##0.000") == "{0:#,##0.00}" && GridAgregat.Format("Sum", typeof(int), "##0") == "{0:##0}"
+                && GridAgregat.Format("Count", typeof(decimal), "") == "{0}", "");
+            T("tot01-zamrznuti", GridAgregat.ZamrznutiPodaci(5, true) == 3 && GridAgregat.ZamrznutiPodaci(5, false) == 4 && GridAgregat.ZamrznutiPodaci(0, true) == 0 && GridAgregat.ZamrznutiPodaci(null, false) == 0, "");
+            var dec = new DataTable();
+            dec.Columns.Add("Iznos", typeof(decimal));
+            T("tot01-decimal-sum", MasterGrid.IzPodatka(dec.Columns[0], "").Agregat == "2", "");
+            // ISP-02: vrstadokid- ide u Spin.Printing (ovdje PDF mapa testa) s istim imenom i @id=.
+            string mapaPrije = PrintBridge.MapaIzvoza;
+            try
+            {
+                PrintBridge.MapaIzvoza = Path.Combine(Path.GetTempPath(), "ngvrsta");
+                bool vrsta = PrintBridge.Ispisi(":vrstadokid-NabZahGla", false, "17", "7", "", "", "", "", "", "", "", "", "", null, "", null);
+                T("isp02-vrstadokid", vrsta && PrintBridge.ZadnjiIme == "vrstadokid-NabZahGla" && PrintBridge.ZadnjiParam == "@id=17,", PrintBridge.ZadnjiIme + " " + PrintBridge.ZadnjiParam);
+                PrintBridge.Ispisi(":vrstadokid-NabZahGla(25)", false, "17", "7", "", "", "", "", "", "", "", "", "", null, "", null);
+                T("isp02-zagrada-id", PrintBridge.ZadnjiParam == "@id=25,25", PrintBridge.ZadnjiParam);
+            }
+            finally
+            {
+                PrintBridge.MapaIzvoza = mapaPrije;
+            }
         }
 
         /// <summary>
