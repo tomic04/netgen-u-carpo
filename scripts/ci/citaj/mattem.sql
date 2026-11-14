@@ -1,8 +1,12 @@
 set nocount on;
 set xact_abort on;
 begin tran;
-print '== spKntMatKnjizenje';
-select definition from sys.sql_modules where object_id = object_id('dbo.spKntMatKnjizenje');
-print '== procedure koje zove';
-select distinct referenced_entity_name from sys.sql_expression_dependencies where referencing_id = object_id('dbo.spKntMatKnjizenje');
+declare @shema varchar(50) = (select rtrim(VarSet) from pubvars where VarIme = 'FaktureKnjizenje');
+print '== shema: ' + isnull(@shema, '(null)');
+print '== concat_null_yields_null zadano za bazu:';
+select is_concat_null_yields_null_on from sys.databases where name = db_name();
+print '== spKntMatKnjizenje' + isnull(@shema, '');
+select definition from sys.sql_modules where object_id = object_id('dbo.spKntMatKnjizenje' + isnull(@shema, ''));
+print '== kandidati';
+select name from sys.procedures where name like 'spKntMatKnjizenje%' order by name;
 rollback;
