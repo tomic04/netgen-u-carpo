@@ -678,7 +678,7 @@ namespace Carpo.TestShell
                 xmlovi = dio.ToArray();
             }
             var sb = new StringBuilder();
-            int cisto = 0, greska = 0, hang = 0, iznimka = 0, nije = 0, rokova = 0, poruka = 0;
+            int cisto = 0, greska = 0, hang = 0, iznimka = 0, nije = 0, rokova = 0, porukaBaza = 0;
             // Mjerenje (SWP-01): sweep-1 je u 38 min prošao 32 granule, a svaka je trajala 0-4 s.
             // Red u .red ima i ukupno vrijeme s čišćenjem, broj otvorenih formi, GDI/USER objekte i sat.
             try { File.AppendAllText(izvjestaj + ".red", "#start\t" + DateTime.Now.ToString("HH:mm:ss") + "\txml=" + xmlovi.Length.ToString() + "\r\n"); } catch { }
@@ -787,7 +787,7 @@ namespace Carpo.TestShell
                 zatvaranje.Stop();
                 if (ishod == "CISTO") cisto++;
                 else if (ishod == "ROK") rokova++;
-                else if (ishod == "PORUKA") poruka++;
+                else if (ishod == "PORUKA") porukaBaza++;
                 else if (ishod == "HANG") hang++;
                 else if (ishod == "IZNIMKA") iznimka++;
                 else greska++;
@@ -813,9 +813,9 @@ namespace Carpo.TestShell
             glava.AppendLine("hang=" + hang.ToString());
             glava.AppendLine("iznimka=" + iznimka.ToString());
             glava.AppendLine("rok=" + rokova.ToString());
-            glava.AppendLine("poruka=" + poruka.ToString());
+            glava.AppendLine("poruka=" + porukaBaza.ToString());
             glava.AppendLine("nije-project=" + nije.ToString());
-            glava.AppendLine("granula=" + (cisto + rokova + poruka + greska + hang + iznimka).ToString());
+            glava.AppendLine("granula=" + (cisto + rokova + porukaBaza + greska + hang + iznimka).ToString());
             glava.AppendLine("prag-s=" + sekundi.ToString());
             glava.AppendLine("shard=" + shard.ToString() + "/" + dijelova.ToString());
             foreach (var par in grupe)
