@@ -37,7 +37,7 @@ namespace Carpo.NetGen.Ui
             };
         }
 
-        private static bool BezKorisnika()
+        internal static bool BezKorisnika()
         {
             return Tiho || string.Equals(Environment.GetEnvironmentVariable("GITHUB_ACTIONS") ?? "", "true", StringComparison.OrdinalIgnoreCase);
         }

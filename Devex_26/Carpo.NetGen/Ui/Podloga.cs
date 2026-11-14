@@ -152,6 +152,8 @@ namespace Carpo.NetGen.Ui
             kontekst.XmlName = Path.GetFileName(xml ?? "");
             kontekst.ProjektNaslov = Text;
             kontekst.HelpKod = AtributProjekta("HELPKOD").ToUpperInvariant();
+            kontekst.XmlPut = xml ?? "";
+            kontekst.ProjektVerzija = AtributProjekta("VERSION");
             kontekst.Version = NgVerzija.Tekst();
             kontekst.Node = "null";
             _stablo.Kontekst = kontekst;

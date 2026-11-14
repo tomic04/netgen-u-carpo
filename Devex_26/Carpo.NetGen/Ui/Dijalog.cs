@@ -303,6 +303,9 @@ namespace Carpo.NetGen.Ui
                 MaximizeBox = maks.Value;
             if (AtributForme("WINDOWSTATE") == "2")
                 WindowState = FormWindowState.Maximized;
+            // Form2.vb 2785-2790: bez WINDOWSTATE 2 i s MaximizeBox vrati spremljenu veličinu (VEL-01).
+            if (AtributForme("WINDOWSTATE") != "2" && MaximizeBox)
+                VratiVelicinu();
             // Dock: kontrola straga se slaze prva. Ploca s gumbima ide na dno prva, a Fill (grid, DOCK=5)
             // zadnji, pa popuni ostatak (VB: grid i okvir BringToFront nakon Controls.Add).
             Control[] gumbi = Controls.Find("pnlGumbi", false);

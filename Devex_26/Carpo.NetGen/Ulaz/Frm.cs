@@ -93,6 +93,8 @@ namespace Carpo.NetGen
                 k.ProjektNaslov = Projekt.Naslov ?? "";
                 k.HelpKod = (Projekt.Atributi == null ? "" : (Projekt.Atributi.Vrijednost("HELPKOD") ?? "")).Trim().ToUpperInvariant();
                 k.Clipboard = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                k.XmlPut = putanja ?? "";
+                k.ProjektVerzija = (Projekt.Atributi == null ? "" : (Projekt.Atributi.Vrijednost("VERSION") ?? "")).Trim();
                 var d = new Carpo.NetGen.Ui.Dijalog();
                 d.Konekcija = spoj;
                 d.Operater = k.OperaterId;
