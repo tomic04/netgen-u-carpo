@@ -2851,6 +2851,9 @@ namespace Carpo.NetGen.GridTest
                 NgDnevnik.Tajna("1");
                 NgDnevnik.Sql("select 1");
                 T("log01-kratka", ZadnjiZapis() == "select 1", ZadnjiZapis());
+                // JupiterLog.Sredi 122-141: pwd= i password= u spojnom nizu.
+                NgDnevnik.Greska("Server=a;Database=b;UID=sa;PWD=x9y;Application Name=n; @password='p''q', @c=1");
+                T("log01-spojni", ZadnjiZapis() == "Server=a;Database=b;UID=sa;PWD=***;Application Name=n; @password=***, @c=1", ZadnjiZapis());
                 for (int i = 0; i < NgDnevnik.NajviseZapisa + 50; i++)
                     NgDnevnik.Akcija("x" + i);
                 T("log01-granica", NgDnevnik.Zapisi.Count == NgDnevnik.NajviseZapisa && ZadnjiZapis() == "x" + (NgDnevnik.NajviseZapisa + 49),
@@ -3090,7 +3093,8 @@ namespace Carpo.NetGen.GridTest
                         t.Columns.Add("NazivMaxLinesID", typeof(int));
                         t.Columns.Add("RowForeColorID", typeof(string));
                         t.Columns.Add("RowColorID", typeof(string));
-                        t.Rows.Add(1, "dugi naziv", "#FF0000", 2, "Blue", "");
+                        t.Columns.Add("FormatID", typeof(string));
+                        t.Rows.Add(1, "dugi naziv", "#FF0000", 2, "Blue", "", "boldgreen");
                         return t;
                     });
                     var grid = (DevExpress.XtraGrid.GridControl)d.Controls.Find("g", true)[0];
@@ -3119,6 +3123,19 @@ namespace Carpo.NetGen.GridTest
                     typeof(Carpo.NetGen.Ui.GridIzgled).GetMethod("StilCelije", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, new object[] { v, arg });
                     T("grb01-boje", arg.Appearance.BackColor.ToArgb() == Color.Red.ToArgb() && arg.Appearance.ForeColor.ToArgb() == Color.Blue.ToArgb(),
                         "back=" + arg.Appearance.BackColor + " fore=" + arg.Appearance.ForeColor);
+                    // FMT-01: formatid "boldgreen" podeblja red; RowForeColorID (GRB-01) nadjača zelenu.
+                    T("fmt01-red", arg.Appearance.Font.Bold && arg.Appearance.ForeColor.ToArgb() == Color.Blue.ToArgb(),
+                        "bold=" + arg.Appearance.Font.Bold + " fore=" + arg.Appearance.ForeColor);
+                    var a1 = new DevExpress.Utils.AppearanceObject();
+                    Carpo.NetGen.Ui.GridIzgled.FormatReda(a1, "boldorange");
+                    var a2 = new DevExpress.Utils.AppearanceObject();
+                    Carpo.NetGen.Ui.GridIzgled.FormatReda(a2, "RedGreen Italic Strike");
+                    var a3 = new DevExpress.Utils.AppearanceObject();
+                    Color prije = a3.ForeColor;
+                    Carpo.NetGen.Ui.GridIzgled.FormatReda(a3, DBNull.Value);
+                    T("fmt01-uvjeti", a1.ForeColor.ToArgb() == Color.Orange.ToArgb() && a1.Font.Bold && !a1.Font.Italic
+                        && a2.ForeColor.ToArgb() == Color.Green.ToArgb() && a2.Font.Italic && a2.Font.Strikeout && !a2.Font.Bold
+                        && a3.ForeColor == prije && !a3.Font.Bold, a1.ForeColor + " " + a2.ForeColor + " " + a2.Font.Style);
                 }
             }
             catch (Exception ex)

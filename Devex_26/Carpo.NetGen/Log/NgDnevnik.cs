@@ -34,6 +34,10 @@ namespace Carpo.NetGen.Log
         private static readonly List<string> TajnaImena = new List<string>();
         private static Regex _imena;
 
+        // JupiterLog.Sredi 122-141: pwd= i password= (spojni niz) do ; ili " (VB), ovdje i navodnik.
+        private static readonly Regex Spojni = new Regex(@"((?:pwd|password)\s*=\s*N?)(?:'(?:[^']|'')*'|[^;""']+)",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
         public static void Spoji(object carpoLogger)
         {
             CarpoLogger = carpoLogger;
@@ -100,11 +104,12 @@ namespace Carpo.NetGen.Log
             }
         }
 
-        /// <summary>Tekst kakav ide u log: lozinke su <c>***</c>.</summary>
+        /// <summary>Tekst kakav ide u log: lozinke (polja s PASSWORDCHAR, pwd=, password=) su <c>***</c>.</summary>
         public static string Sakrij(string tekst)
         {
             if (string.IsNullOrEmpty(tekst))
                 return tekst ?? "";
+            tekst = Spojni.Replace(tekst, "$1***");
             lock (Brava)
             {
                 if (_imena != null)
