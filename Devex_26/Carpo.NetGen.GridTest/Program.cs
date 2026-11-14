@@ -1996,6 +1996,7 @@ namespace Carpo.NetGen.GridTest
             GridDijalogaStupci();
             LozinkaULogu();
             IncludeFormi();
+            IzvorXmla();
             DozvoleDijaloga();
             IspisGridaDijaloga();
             BojeIzUpita();
@@ -2875,6 +2876,67 @@ namespace Carpo.NetGen.GridTest
             }
         }
 
+        /// <summary>Kao KriptirajDekriptiraj.Encrypt (DES, Key = IV, StreamWriter.WriteLine): tijelo reda netgenxml.</summary>
+        private static byte[] KriptirajKaoNetGen(string tekst)
+        {
+            byte[] k = Encoding.UTF8.GetBytes(Carpo.NetGen.Xml.XmlIzvor.Kljuc);
+            using (var des = new System.Security.Cryptography.DESCryptoServiceProvider())
+            {
+                des.Key = k;
+                des.IV = k;
+                var ms = new MemoryStream();
+                using (var cs = new System.Security.Cryptography.CryptoStream(ms, des.CreateEncryptor(), System.Security.Cryptography.CryptoStreamMode.Write))
+                using (var sw = new StreamWriter(cs))
+                    sw.WriteLine(tekst);
+                return ms.ToArray();
+            }
+        }
+
+        /// <summary>XML-01 (M5): DMS, pa netgenxml (DES "tan123ge"), pa disk (Form1 3160-3274).</summary>
+        private static void IzvorXmla()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "ngm5" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            Directory.CreateDirectory(dir);
+            int baza = 0;
+            try
+            {
+                T("xml01-dekript", Carpo.NetGen.Xml.XmlIzvor.Dekriptiraj(KriptirajKaoNetGen("abc čž"), "tan123ge") == "abc čž\r\n", "");
+                string disk = Path.Combine(dir, "Disk.xml");
+                File.WriteAllText(disk, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT>\r\n<NAME>D</NAME>\r\n<CAPTION>S diska</CAPTION>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+                T("xml01-iskljucen", Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(disk).Projekt.Naslov == "S diska", "");
+                Carpo.NetGen.Xml.XmlIzvor.Ukljuci("");
+                Carpo.NetGen.Xml.XmlIzvor.Dms = delegate (string put) { return null; };
+                Carpo.NetGen.Xml.XmlIzvor.Baza = delegate (string ime)
+                {
+                    baza++;
+                    return ime == "Baza.xml" ? KriptirajKaoNetGen("<PROJECT><NAME>B</NAME><CAPTION>Iz baze</CAPTION></PROJECT>") : null;
+                };
+                var r = Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(Path.Combine(dir, "Baza.xml"));
+                Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(Path.Combine(dir, "Baza.xml"));
+                T("xml01-baza", r.Uspjeh && r.Projekt.Naslov == "Iz baze" && baza == 1, (r.Greska ?? "") + " baza=" + baza);
+                T("xml01-disk", Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(disk).Projekt.Naslov == "S diska" && baza == 2, "baza=" + baza);
+                Carpo.NetGen.Xml.XmlIzvor.Dms = delegate (string put)
+                {
+                    var d = new System.Xml.XmlDocument();
+                    d.LoadXml("<PROJECT><NAME>M</NAME><CAPTION>Iz DMS-a</CAPTION></PROJECT>");
+                    return d;
+                };
+                var m = Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(Path.Combine(dir, "Dms.xml"));
+                T("xml01-dms", m.Uspjeh && m.Projekt.Naslov == "Iz DMS-a" && baza == 2, "baza=" + baza);
+            }
+            catch (Exception ex)
+            {
+                T("xml01", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                Carpo.NetGen.Xml.XmlIzvor.Ukljucen = false;
+                Carpo.NetGen.Xml.XmlIzvor.Dms = null;
+                Carpo.NetGen.Xml.XmlIzvor.Baza = null;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }
+
         private static string ZadnjiZapis()
         {
             return NgDnevnik.Zapisi.Count == 0 ? "" : NgDnevnik.Zapisi[NgDnevnik.Zapisi.Count - 1].Tekst;
@@ -3704,7 +3766,9 @@ namespace Carpo.NetGen.GridTest
                 string dijXml = Path.Combine(dir, "FrmTest.xml");
                 File.WriteAllText(dijXml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT>\r\n<NAME>F</NAME>\r\n<CAPTION>Frm test</CAPTION>\r\n"
                     + "<MAINFORM CAPTION=\"Glavna\"><INPUT TYPE=\"label\" NAME=\"lbl\" CAPTION=\"x\" /></MAINFORM>\r\n"
-                    + "<DRUGA CAPTION=\"Druga @@id\"><INPUT TYPE=\"text\" NAME=\"t\" /></DRUGA>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+                    + "<DRUGA CAPTION=\"Druga @@id\"><INPUT TYPE=\"text\" NAME=\"t\" /></DRUGA>\r\n"
+                    + "<TRECA CAPTION=\"Treca\" NEXTFORM=\"CETVRTA\"><INPUT TYPE=\"text\" NAME=\"x\" /></TRECA>\r\n"
+                    + "<CETVRTA CAPTION=\"Cetvrta\"><INPUT TYPE=\"text\" NAME=\"y\" /></CETVRTA>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
                 var f = new Carpo.NetGen.frm();
                 f.TestXmlPath = dijXml;
                 f.moduleId = "FrmTest.xml";
@@ -3714,6 +3778,25 @@ namespace Carpo.NetGen.GridTest
                 var dij = f.Forma as Dijalog;
                 T("m1-frm-dijalog", dij != null && dij.Visible && f.hWnd != 0 && dij.Id == "42" && dij.Controls.Find("t", true).Length == 1,
                     "forma=" + (f.Forma == null ? "null" : f.Forma.GetType().Name) + " id=" + (dij == null ? "" : dij.Id) + " greska=" + f.ZadnjaGreska);
+                // ULZ-05: dijalog ulaza frm sam otvara dijete (Form2.NovaGenerickaForma2), a nakon OK i NEXTFORM.
+                var otvoreni = new List<string>();
+                Dijalog.NakonPrikaza = delegate (Dijalog d)
+                {
+                    otvoreni.Add(d.Text + "/" + d.Id);
+                    d.DialogResult = DialogResult.OK;
+                };
+                try
+                {
+                    if (dij != null && dij.OtvoriDrugu != null)
+                        dij.OtvoriDrugu(":TRECA(@a=1)");
+                }
+                finally
+                {
+                    Dijalog.NakonPrikaza = null;
+                }
+                // Prikaz DRUGA (Show bez petlje) dođe na red tek u petlji djeteta, pa se on ne broji.
+                var djeca = otvoreni.FindAll(delegate (string x) { return !x.StartsWith("Druga", StringComparison.Ordinal); });
+                T("ulz05-frm-dijete", string.Join(",", djeca.ToArray()) == "Treca/42,Cetvrta/42", string.Join(",", otvoreni.ToArray()));
                 if (dij != null)
                 {
                     dij.Close();
