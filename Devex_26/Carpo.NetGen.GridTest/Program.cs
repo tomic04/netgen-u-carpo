@@ -2047,6 +2047,7 @@ namespace Carpo.NetGen.GridTest
             ComboPodloge();
             AlatiPodloge();
             KlikMasterGreska();
+            PodlogaErrorLog();
             SesijaVeze();
             SqlPrijava();
             RafalnoPravila();
@@ -3985,6 +3986,39 @@ namespace Carpo.NetGen.GridTest
             }
             finally
             {
+                forma.Close();
+                forma.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// PN-10: Class1.ExecSql 230 zove dbo.spNetGenErrorLog za svaku ne-tihu grešku (dijalog, stablo, SETDEFAULTS...),
+        /// Carpo je zvao samo za master grid.
+        /// </summary>
+        private static void PodlogaErrorLog()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "ngelog" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            Directory.CreateDirectory(dir);
+            string xml = Path.Combine(dir, "ErrorLogTest.xml");
+            File.WriteAllText(xml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT ONLOAD=\"select 1 as id\" SETDEFAULTS=\"select * from dbo.NetGenNemaTablicePn10\">\r\n"
+                + "<NAME>ELog</NAME>\r\n<CAPTION>ErrorLog test</CAPTION>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+            var zapisi = new List<string>();
+            GreskaSql.Izvrsi = delegate (string sql) { zapisi.Add(sql); return null; };
+            var forma = new Podloga();
+            try
+            {
+                forma.ShowInTaskbar = false;
+                forma.StartPosition = FormStartPosition.Manual;
+                forma.Location = new Point(-32000, -32000);
+                forma.Show();
+                forma.Prikazi(xml, "localhost", "spin", 7);
+                string prvi = zapisi.Count > 0 ? zapisi[0] : "";
+                T("pn10-errorlog-citaj", zapisi.Count >= 1 && prvi.StartsWith("dbo.spNetGenErrorLog @errorNumber=208", StringComparison.Ordinal)
+                    && prvi.IndexOf("NetGenNemaTablicePn10", StringComparison.Ordinal) >= 0, "zapisa=" + zapisi.Count + " " + prvi);
+            }
+            finally
+            {
+                GreskaSql.Izvrsi = null;
                 forma.Close();
                 forma.Dispose();
             }
