@@ -1994,6 +1994,7 @@ namespace Carpo.NetGen.GridTest
             DbClipboardDijalog();
             StatusDijaloga();
             GridDijalogaStupci();
+            LozinkaULogu();
             IspisGridaDijaloga();
             BojeIzUpita();
             StabloDijaloga();
@@ -2830,6 +2831,49 @@ namespace Carpo.NetGen.GridTest
         /// Faza C4 (DGR-01, DGR-02): grid dijaloga s COLUMN djecom i CLEARCOLUMS (Form2.vb 1798-1957),
         /// GROUPBYBOXVISIBLE, FROZENCOLUMNS, FILTERMODE, TOTALROW s AGREGATEFUNCTION; osvjezavanje ne dira stupce.
         /// </summary>
+        private static string ZadnjiZapis()
+        {
+            return NgDnevnik.Zapisi.Count == 0 ? "" : NgDnevnik.Zapisi[NgDnevnik.Zapisi.Count - 1].Tekst;
+        }
+
+        /// <summary>Plan, faza G: lozinka iz polja s PASSWORDCHAR ne ide u log; log ne raste bez kraja.</summary>
+        private static void LozinkaULogu()
+        {
+            try
+            {
+                NgDnevnik.TajnoIme("ServerPassTest");
+                NgDnevnik.Sql("exec x @ServerPassTest='ab''c',@b=1");
+                T("log01-ime", ZadnjiZapis() == "exec x @ServerPassTest='***',@b=1", ZadnjiZapis());
+                NgDnevnik.Tajna("Tajna,9'x");
+                NgDnevnik.Sql("exec sp 'srv','Tajna,9''x' -- Tajna~~9¸¸x");
+                T("log01-vrijednost", ZadnjiZapis() == "exec sp 'srv','***' -- ***", ZadnjiZapis());
+                NgDnevnik.Tajna("1");
+                NgDnevnik.Sql("select 1");
+                T("log01-kratka", ZadnjiZapis() == "select 1", ZadnjiZapis());
+                for (int i = 0; i < NgDnevnik.NajviseZapisa + 50; i++)
+                    NgDnevnik.Akcija("x" + i);
+                T("log01-granica", NgDnevnik.Zapisi.Count == NgDnevnik.NajviseZapisa && ZadnjiZapis() == "x" + (NgDnevnik.NajviseZapisa + 49),
+                    NgDnevnik.Zapisi.Count.ToString());
+                var p = new NgControl("text", NgGrana.Text, "PassAdmin", new NgAttributeBag(new Dictionary<string, string> { { "PASSWORDCHAR", "*" } }), true);
+                var forma = new NgForm("L1", new NgAttributeBag(new Dictionary<string, string>()), "", "", new List<NgControl> { p }, new List<NgButton>(), new List<string>());
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), delegate (string x) { return new DataTable(); });
+                    var t = (DevExpress.XtraEditors.TextEdit)d.Controls.Find("PassAdmin", true)[0];
+                    t.Text = "Admin#2026";
+                    string dump = (string)typeof(Dijalog).GetMethod("ParametriZaLog", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(d, null);
+                    NgDnevnik.Akcija(dump);
+                    string z = ZadnjiZapis();
+                    T("log01-dijalog", t.Properties.PasswordChar == '*' && dump.IndexOf("@PassAdmin='Admin#2026'", StringComparison.Ordinal) >= 0
+                        && z.IndexOf("Admin#2026", StringComparison.Ordinal) < 0 && z.IndexOf("@PassAdmin='***'", StringComparison.Ordinal) >= 0, z);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("log01", false, ex.GetType().Name + ": " + ex.Message);
+            }
+        }
+
         private static void GridDijalogaStupci()
         {
             try

@@ -2125,6 +2125,15 @@ namespace Carpo.NetGen.Ui
                     return true;
                 }
             }
+            // Form2_KeyDown 4167-4176: Ctrl+F11 (i Ctrl+F6, HTML obrasca nema) pokaže parametre u CBLog-u.
+            // Carpo: parametri idu u Carpo log i otvori se njegov prozor, kao na podlozi.
+            if (control && (kod == (int)Keys.F11 || kod == (int)Keys.F6))
+            {
+                string greskaLoga = CarpoLogProzor.Pokazi(this, ParametriZaLog());
+                if (greskaLoga != null)
+                    NgDnevnik.Greska(greskaLoga);
+                return true;
+            }
             // Form2_KeyDown 4161-4166: F1 uz HELPKOD je pomoć, prije HOTKEY-a (HLP-02).
             if (kod == (int)Keys.F1 && !control && PokaziPomoc())
                 return true;
@@ -2466,6 +2475,14 @@ namespace Carpo.NetGen.Ui
             }
         }
 
+        /// <summary>Form2_KeyDown 4169: PREVPARAMETRI, PARAMETRISVI i PARAMETRIIZTRAZILICE (lozinke skriva NgDnevnik).</summary>
+        internal string ParametriZaLog()
+        {
+            string prev = _kontekst == null ? "" : (_kontekst.ParametriSaGrida ?? "");
+            return "PREVPARAMETRI=" + prev + "\r\n\r\nPARAMETRISVI=" + SviParametri()
+                + "\r\n\r\nPARAMETRIIZTRAZILICE=" + _parametriIzTrazilice;
+        }
+
         private string SviParametri()
         {
             var sb = new StringBuilder();
@@ -2545,6 +2562,8 @@ namespace Carpo.NetGen.Ui
                         sb.Append(ParametriSvi.Datum(c.Name, Attr(defDatuma, "CUSTOMFORMAT"), ima, ima ? (DateTime?)d : null));
                         continue;
                     }
+                    if (txt.Properties.PasswordChar != '\0' || txt.Properties.UseSystemPasswordChar)
+                        NgDnevnik.Tajna(txt.Text);
                     sb.Append(ParametriSvi.Tekst(c.Name, txt.Text));
                 }
             }
@@ -2691,7 +2710,11 @@ namespace Carpo.NetGen.Ui
                 TextEdit t = vise == true ? new MemoEdit() : new TextEdit();
                 string lozinka = Attr(k, "PASSWORDCHAR");
                 if (lozinka.Length > 0)
+                {
                     t.Properties.PasswordChar = lozinka[0];
+                    // Plan, faza G: lozinka ne ide u log (NetGen CBLog ju je pisao).
+                    NgDnevnik.TajnoIme(k.Name);
+                }
                 int duljina;
                 if (int.TryParse(Attr(k, "MAXLENGTH"), NumberStyles.Integer, CultureInfo.InvariantCulture, out duljina) && duljina > 0)
                     t.Properties.MaxLength = duljina;

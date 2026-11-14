@@ -67,6 +67,10 @@ Zatvaranje (DBC-02): `Form2_FormClosing` 4095-4099 uz RSDBCLIPBOARD još jednom 
 
 `TYPE="picturebox"`: `LOCATION` (3 granule, UNC put do .jpg), vrijednost iz ONLOAD/ONLOAD2 (put ili http) i u rezultatu SQL-a `byte[]` u stupcu s imenom ili put u stupcu `<ime>location` (Form2 2710-2724, 4766-4795). Carpo je čitao samo `byte[]`; sada i put/URL (`PictureEdit.LoadAsync`).
 
+## Log i Ctrl+F11 (LOG-01)
+
+`Form2_KeyDown` 4167-4176: Ctrl+F11 i Ctrl+F6 pokažu `PREVPARAMETRI`, `PARAMETRISVI` i `PARAMETRIIZTRAZILICE` u CBLog prozoru (Form5); Ctrl+F6 umjesto toga daje HTML obrasca (`BF`), kojeg Carpo nema. Dijalog nije reagirao ni na jedno. Sada obje tipke upišu parametre u Carpo log i otvore njegov prozor, kao Ctrl+F11 na podlozi, koja sad upiše i `PARAMATERISAMASTERIDETAILGRIDA` (Form1 1376-1378). Polja s `PASSWORDCHAR` (MPKase) u logu imaju `'***'` (R120).
+
 ## Otvoreno
 
 - `TIMERSQL` (4 forme, 1 granula): Timer2 je u NetGenu ugašen dok ga `TIMERON(n)` ne upali, a `TIMERON` nema nigdje u korpusu, pa se ni u NetGenu ne izvršava.
@@ -75,4 +79,4 @@ Zatvaranje (DBC-02): `Form2_FormClosing` 4095-4099 uz RSDBCLIPBOARD još jednom 
 
 ## Testovi
 
-`lay01-raspored`, `hot01-f2`, `dat01-datumi` (`RasporedDijaloga`), `dgr01-*`, `dgr02-grid-atributi`, `dgr03-editedcolumn` (`GridDijalogaStupci`), `isp07-printgrid-ime`, `grb01-*`, `tre03-*`, `mdr01-multidrop`, `for01-foreachrow` (`DogadjajiDijaloga`), `Form2Izgled` pod Mono (dock, anchor, stil, boja, hotkey, mjesta gumba).
+`log01-*` (`LozinkaULogu`), `lay01-raspored`, `hot01-f2`, `dat01-datumi` (`RasporedDijaloga`), `dgr01-*`, `dgr02-grid-atributi`, `dgr03-editedcolumn` (`GridDijalogaStupci`), `isp07-printgrid-ime`, `grb01-*`, `tre03-*`, `mdr01-multidrop`, `for01-foreachrow` (`DogadjajiDijaloga`), `Form2Izgled` pod Mono (dock, anchor, stil, boja, hotkey, mjesta gumba).
