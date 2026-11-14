@@ -46,7 +46,8 @@ namespace Carpo.NetGen.Granule
                 && DijalogTok.OnLoadJeUpit("select @@node as vrstadokid")
                 && DijalogTok.OnLoadJeUpit("if @@id=0 raiserror ('n', 16, 1) else exec spRatArkod_Query @action='id', @id=@@id")
                 && !DijalogTok.OnLoadJeUpit(":FILTERFORM")
-                && !DijalogTok.OnLoadJeUpit("INSERT_KLASA");
+                // Form2.vb 1195 izvrši i ONLOAD od jedne riječi (OOPKnjigaR FILTERFORM, PN-13); u korpusu nijedan ONLOAD forme nije ime forme.
+                && DijalogTok.OnLoadJeUpit("spHRInterneObustave");
             l.Add(onload
                 ? Qa.Z("GridRed", "STA-01", "ONLOAD procedure se izvršava, ne samo select", "netgen/Form2.vb:1195-1205")
                 : Qa.P("GridRed", "STA-01", "ONLOAD procedure", "netgen/Form2.vb:1195-1205", "sp nije upit"));
