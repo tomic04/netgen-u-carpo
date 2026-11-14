@@ -133,6 +133,16 @@ namespace Carpo.NetGen.Ui
             };
         }
 
+        /// <summary>Sweep: faza slaganja forme dulja od 300 ms ide u trag (TragPutanja), da se vidi gdje HANG granula gubi vrijeme.</summary>
+        private static void Faza(System.Diagnostics.Stopwatch sat, string forma, string faza)
+        {
+            if (string.IsNullOrEmpty(TragPutanja))
+                return;
+            if (sat.ElapsedMilliseconds >= 300)
+                Trag("sporo: " + forma + " faza " + faza + " " + sat.ElapsedMilliseconds + " ms");
+            sat.Restart();
+        }
+
         public static void Trag(string red)
         {
             if (string.IsNullOrEmpty(TragPutanja))
@@ -195,8 +205,10 @@ namespace Carpo.NetGen.Ui
 
             NgDnevnik.Akcija("otvara formu " + forma.Ime + " node=" + (kontekst == null ? "" : kontekst.Node));
             string on = forma.OnLoad ?? "";
+            var satFaze = System.Diagnostics.Stopwatch.StartNew();
             if (DijalogTok.OnLoadJeUpit(on) && citaj != null)
                 UcitajOnLoad(on, kontekst, citaj);
+            Faza(satFaze, forma.Ime, "onload");
             int zadnji = 0;
             var roditelji = new List<KeyValuePair<Control, string>>();
             bool imaGumb = forma.Gumbi != null && forma.Gumbi.Count > 0;
@@ -205,7 +217,10 @@ namespace Carpo.NetGen.Ui
                 NgControl k = forma.Kontrole[i];
                 if (k.Grana == NgGrana.Button)
                     imaGumb = true;
+                var satKontrole = System.Diagnostics.Stopwatch.StartNew();
                 Control c = Napravi(k);
+                if (satKontrole.ElapsedMilliseconds >= 300)
+                    Trag("sporo: kontrola " + (k.Name ?? "") + " (" + k.Grana + ") " + satKontrole.ElapsedMilliseconds + " ms");
                 if (c == null)
                     continue;
                 Mjesto m = Raspored.Izracunaj(k.Grana, k.Atributi, ref zadnji);
@@ -274,6 +289,7 @@ namespace Carpo.NetGen.Ui
             // forma izgleda prazno (1217 formi u 299 granula, npr. RobaWebKlase INSERT_KLASA) (LAY-02).
             // Kasnija kontrola je ispred ranije (i za Dock), kao u VB-u (LAY-03).
             SloziRedoslijed(forma);
+            Faza(satFaze, forma.Ime, "kontrole");
 
             if (forma.Gumbi != null && forma.Gumbi.Count > 0)
             {
@@ -312,6 +328,7 @@ namespace Carpo.NetGen.Ui
                 AcceptButton = ok;
             }
             PrimijeniOnLoad2(forma, kontekst, citaj);
+            Faza(satFaze, forma.Ime, "onload2");
             // Form2.vb 1031: MAXIMIZEBOX (CBool), 991 + Timer3 9702: WINDOWSTATE "2" je maksimizirano (FRM-02).
             bool? maks = Form2Rezultat.VbBool(AtributForme("MAXIMIZEBOX"));
             if (maks.HasValue)
@@ -335,11 +352,15 @@ namespace Carpo.NetGen.Ui
 
             // Form2.vb 2801-2804: s kontrolama i PERMISIO="true" na formi čita se ssPermission (DOZ-02).
             UcitajDozvole(forma, citaj);
+            Faza(satFaze, forma.Ime, "dozvole");
             PrimijeniOnLoad();
+            Faza(satFaze, forma.Ime, "primijeni-onload");
             // Form2.vb 1170-1182 i čitanje po kontroli: NetGenDBClipboard nadjača ONLOAD i ONLOAD2 (DBC-01).
             UcitajDbClipboard(forma);
+            Faza(satFaze, forma.Ime, "dbclipboard");
             SrediNaslov();
             OsvjeziStatus();
+            Faza(satFaze, forma.Ime, "naslov-status");
         }
 
         /// <summary>
