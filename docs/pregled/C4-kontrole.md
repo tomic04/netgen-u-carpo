@@ -49,6 +49,8 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 | Po tipu | kvačica `Checked`, tekst (`null` → prazno), broj, datum, combo (id), tražilica (id + `…caption`), multidrop samo bez ONLOAD vrijednosti | isto; `¸¸` se vrati u `'` (VB ga ostavlja u polju) |
 | Pisanje | `PokupiParametre` na svaki događaj: `select count(*)` pa `insert` ili `update` za svaku kontrolu | piše se samo vrijednost koja se razlikuje od one u tablici (isti krajnji sadržaj, bez upita na svaki događaj); upis prolazi `DijalogTok.SmijePoslati` |
 
+Zatvaranje (DBC-02): `Form2_FormClosing` 4095-4099 uz RSDBCLIPBOARD još jednom zove `PokupiParametre` (polja u CB), a `formClosingB` preskoči upis u tablicu. Isto je u `Dijalog.OnFormClosing`.
+
 ## STATUSSTRIP (STS-01)
 
 `TEXT1..3` (23 kontrole, 9 granula: `@@version`, `Broj stavki:`, `@@gridstavke`, `Gornji prikaz sadrži @@rowcountgridrob redova`) se u NetGenu spreme velikim slovima i na svakom `RefreshControls` (4753) prođu kroz `SrediSQL2`, `SrediSQLPosljeNextForme` i stupce grida. Carpo je pokazivao samo `TEXT1` doslovno (`@@VERSION`). Sada `Ui/DijalogStatus` radi isto, poslije ONLOAD-a i poslije svakog rezultata SQL-a, a `@@VERSION` je `NetGen v` + verzija sklopa.

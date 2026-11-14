@@ -2311,7 +2311,7 @@ namespace Carpo.NetGen.Ui
                 ClipboardNg.UpisiParametre(cb, natpisi.ToString() + svi);
             }
             // 3429-3662: PokupiParametre sprema vrijednosti u NetGenDBClipboard (DBC-01).
-            if (_dbCb && !_slazem)
+            if (_dbCb && !_slazem && !_zatvaram)
                 SpremiDbClipboard();
             return svi;
         }

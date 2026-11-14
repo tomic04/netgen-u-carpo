@@ -19,6 +19,23 @@ namespace Carpo.NetGen.Ui
     public sealed partial class Dijalog
     {
         private bool _dbCb;
+        private bool _zatvaram;
+
+        /// <summary>
+        /// Form2_FormClosing 4095-4099: uz RSDBCLIPBOARD "true" PokupiParametre još jednom upiše polja u CB, a
+        /// formClosingB (4002) preskoči upis u NetGenDBClipboard (DBC-02).
+        /// </summary>
+        protected override void OnFormClosing(System.Windows.Forms.FormClosingEventArgs e)
+        {
+            if (_dbCb)
+            {
+                _zatvaram = true;
+                try { PokupiParametre(); }
+                catch (Exception ex) { NgDnevnik.Greska("FormClosing: " + ex.Message); }
+                finally { _zatvaram = false; }
+            }
+            base.OnFormClosing(e);
+        }
         private readonly Dictionary<string, string> _dbCbZapisano = new Dictionary<string, string>(StringComparer.Ordinal);
 
         private string XmlDb()
