@@ -626,8 +626,9 @@ namespace Carpo.TestShell
                 sekundi = 6;
             if (dijelova < 1)
                 dijelova = 1;
-            Carpo.NetGen.Ui.Podloga.TimeoutUpita = 1;
-            Carpo.NetGen.Ui.Podloga.MaxUpita = 5;
+            // SWP-08: sweep klijenta smije dublje (NETGEN_SWEEP_UPITA, NETGEN_SWEEP_TIMEOUT); zadano 5 upita po 1 s.
+            Carpo.NetGen.Ui.Podloga.TimeoutUpita = BrojIzOkoline("NETGEN_SWEEP_TIMEOUT", 1, 1, 60);
+            Carpo.NetGen.Ui.Podloga.MaxUpita = BrojIzOkoline("NETGEN_SWEEP_UPITA", 5, 1, 200);
             // Sweep nema korisnika: ispis ide u PDF bez dijaloga pisača (Spin.Printing bi otvorio svoj prozor),
             // a SHOWOPENFILEDIALOG/SHOWFOLDERBROWSERDIALOG vrate prazno umjesto modalnog Windows dijaloga (SWP-01).
             Carpo.NetGen.Print.PrintBridge.MapaIzvoza = Path.Combine(Path.GetTempPath(), "netgen-sweep-ispis");
@@ -826,6 +827,15 @@ namespace Carpo.TestShell
             // SWP-05: oznaka da je sweep gotov; pad nakon nje je pad pri izlazu procesa, ne granule.
             try { File.AppendAllText(izvjestaj + ".red", "#kraj\t" + DateTime.Now.ToString("HH:mm:ss") + "\r\n"); } catch { }
             return 0;
+        }
+
+        private static int BrojIzOkoline(string ime, int zadano, int najmanje, int najvise)
+        {
+            int n;
+            string v = Environment.GetEnvironmentVariable(ime);
+            if (string.IsNullOrWhiteSpace(v) || !int.TryParse(v.Trim(), out n) || n < najmanje || n > najvise)
+                return zadano;
+            return n;
         }
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
