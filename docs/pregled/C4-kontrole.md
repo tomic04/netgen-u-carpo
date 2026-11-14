@@ -26,6 +26,8 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 | **MDR-01** | 42 MULTIDROP, 20 granula | CheckedComboBoxEdit iz SQL-a, parametar `@ime='id~id'`, ONLOAD/rezultat označe id-eve | prazan, parametar je bio tekst | kao VB |
 | **HOT-01** | 1 036 HOTKEY, 139 granula (F2, F5, F8) | F1–F10 i `*`: gumb klik, combo/broj/tražilica/grid fokus | ignorirano | kao VB |
 | **BTN-03** | | gumb s jednim SQL-om → `RefreshControls` | rezultat se odbacivao | rezultat se primijeni, greška prekida |
+| **TXT-02** | `MULTILINE` (226 polja, 48 granula), `SCROLLBARS` 0/3, `PASSWORDCHAR` `*` (12, 4 granule), `MAXLENGTH` (~330 polja, 20 granula), `ENTERASTAB` (0) | `TeksT` (2045-2050); Enter u višelinijskom polju je novi red, osim uz ENTERASTAB "true" (Glbl_KeyDown) | (bilo otvoreno u ovom popisu) | `MemoEdit` s visinom iz XML-a, ScrollBars, WordWrap; PasswordChar i MaxLength na `TextEdit`; Enter kao VB |
+| **DAT-02** | `VALUE="DATE"`/`DATE1`/`DATE2` na datumu (197 polja, 41 granula) | Form2 čita `VALUE` samo za broj (2088), `DTPicker` ga ne gleda | ignorirano | isto (nema čega prenijeti). `TYPE="tab"` nema u korpusu |
 
 ## Grid dijaloga
 
@@ -61,9 +63,6 @@ Kontrole u okvirima: VB `PokupiParametre`, `RefreshControls` i HOTKEY idu samo p
 
 ## Otvoreno
 
-- `MULTILINE` (243 / 60 granula), `ENTERASTAB`, `PASSWORDCHAR` (4), `MAXLENGTH` (80 / 14): tekstualno polje je uvijek `TextEdit`.
-- `VALUE="DATE"` na datumu (133): u VB kodu za `DTPicker` nije pronađeno čitanje; provjeriti gdje se koristi.
-- Tab stranice (`TYPE="tab"`).
 - `TIMERSQL` (4 forme, 1 granula): Timer2 je u NetGenu ugašen dok ga `TIMERON(n)` ne upali, a `TIMERON` nema nigdje u korpusu, pa se ni u NetGenu ne izvršava.
 - `IMAGEINDEX` (30 gumba, 9 granula) i automatske ikone po natpisu (dodaj, obriši, izmjeni…): Carpo gumbi imaju svoj izgled (50-50 → Carpo).
 - Grid dijaloga: `COLUMNCAPTION`/`COLUMNWIDTH` za grid (nije tražilica), layout datoteke (`MULTIGRIDLAYOUT` 1), `INPUTMASK` stupca (0 u korpusu), `PAGEHEADER*`/`PAGEORIENTATION` (ispis grida dijaloga, 127 granula — uz `:printgrid`).

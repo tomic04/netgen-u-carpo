@@ -17,16 +17,13 @@ namespace Carpo.NetGen.Ui
     /// </summary>
     public static class GridIzbornik
     {
-        public static void Vezi(GridView pogled, Func<string> popup, Action<string> naredba)
-        {
-            Vezi(pogled, popup, naredba, null);
-        }
-
         /// <summary>
         /// dozvola(natpis, stalna): Form1 3577-3610 za stavke iz POPUP-a i ssPermissionProvjeriRafalnuKomandu
         /// (3627-3672) za stalne stavke. Null ne mijenja ništa (DOZ-01).
+        /// ispis: "Ispis" (ispisnovi) i "Ispis REPX" (ispisdx) ispisuju grid s PAGEHEADER* i PAGEORIENTATION
+        /// (Form1 IspisNovi/IspisGRIDREPX, Form2 9015/9041). Carpo ima jednu stavku; null je pregled grida.
         /// </summary>
-        public static void Vezi(GridView pogled, Func<string> popup, Action<string> naredba, Func<string, bool, Dozvole.Stanje> dozvola)
+        public static void Vezi(GridView pogled, Func<string> popup, Action<string> naredba, Func<string, bool, Dozvole.Stanje> dozvola, Action ispis)
         {
             if (pogled == null)
                 return;
@@ -66,14 +63,19 @@ namespace Carpo.NetGen.Ui
                 });
                 Primijeni(grupiraj, dozvola, "Grupiraj / razgrupiraj", true);
                 e.Menu.Items.Add(grupiraj);
-                var ispis = new DXMenuItem("Ispis", delegate
+                var stavkaIspis = new DXMenuItem("Ispis", delegate
                 {
+                    if (ispis != null)
+                    {
+                        ispis();
+                        return;
+                    }
                     var g = pogled.GridControl;
                     if (g != null && g.IsPrintingAvailable)
                         g.ShowPrintPreview();
                 });
-                Primijeni(ispis, dozvola, "Ispis", true);
-                e.Menu.Items.Add(ispis);
+                Primijeni(stavkaIspis, dozvola, "Ispis", true);
+                e.Menu.Items.Add(stavkaIspis);
                 e.Allow = true;
             };
         }

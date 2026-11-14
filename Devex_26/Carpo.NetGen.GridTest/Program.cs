@@ -1993,6 +1993,7 @@ namespace Carpo.NetGen.GridTest
             DbClipboardDijalog();
             StatusDijaloga();
             GridDijalogaStupci();
+            IspisGridaDijaloga();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -2885,6 +2886,53 @@ namespace Carpo.NetGen.GridTest
             catch (Exception ex)
             {
                 T("dgr01", false, ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// ISP-07: PRINTGRID(ime) ispisuje imenovani grid dijaloga s njegovim PAGEHEADER* i PAGEORIENTATION
+        /// (Form2.vb 6950-6955, IspisGRIDREPX 9041); prije je išao prvi grid bez zaglavlja.
+        /// </summary>
+        private static void IspisGridaDijaloga()
+        {
+            var stroj = new LazniSpin();
+            Carpo.NetGen.Print.PrintBridge.Stroj = stroj;
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("text", NgGrana.Text, "broj", new NgAttributeBag(new Dictionary<string, string> { { "DEFAULT", "15" } }), true));
+                kontrole.Add(new NgControl("grid", NgGrana.Grid, "prvi", new NgAttributeBag(new Dictionary<string, string> { { "SQL", "select 1 as id" } }), true));
+                kontrole.Add(new NgControl("grid", NgGrana.Grid, "kartica", new NgAttributeBag(new Dictionary<string, string>
+                {
+                    { "SQL", "select 2 as id" }, { "PAGEHEADERCENTER", "Kartica br.@@broj" }, { "PAGEHEADERLEFT", "Lijevo" },
+                    { "PAGEORIENTATION", "LANDSCAPE" }
+                }), true));
+                var forma = new NgForm("P1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), delegate (string x)
+                    {
+                        var t = new DataTable();
+                        t.Columns.Add("id", typeof(int));
+                        t.Rows.Add(1);
+                        return t;
+                    });
+                    var kartica = d.Controls.Find("kartica", true)[0];
+                    LazniSpin.Metoda = "";
+                    Zovi(d, "IzvrsiDogadjaj", "PRINTGRID(kartica)");
+                    T("isp07-printgrid-ime", LazniSpin.Metoda == "PrintLink" && LazniSpin.Kontrola == kartica && LazniSpin.Landscape
+                        && LazniSpin.Caption == "Kartica br.15" && LazniSpin.Header == "Lijevo",
+                        LazniSpin.Metoda + " grid=" + (LazniSpin.Kontrola is Control ? ((Control)LazniSpin.Kontrola).Name : "?")
+                        + " land=" + LazniSpin.Landscape + " caption=" + LazniSpin.Caption + " header=" + LazniSpin.Header);
+                }
+            }
+            catch (Exception ex)
+            {
+                T("isp07", false, ex.ToString());
+            }
+            finally
+            {
+                Carpo.NetGen.Print.PrintBridge.Stroj = null;
             }
         }
 

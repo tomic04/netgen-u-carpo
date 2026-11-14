@@ -1022,6 +1022,12 @@ namespace Carpo.NetGen.Ui
                     NgDnevnik.Akcija(BlagajnaNaredba.Upit(BlagajnaNaredba.Id(korak.Tekst)));
                     continue;
                 }
+                if (korak.Vrsta == "ispis" && korak.Tekst.IndexOf("PRINTGRID(", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    // Form2.vb 6950-6955: TempGrid = Controls(ime), pa IspisGRIDREPX s njegovim zaglavljima (ISP-07).
+                    IspisiGrid(korak.Tekst, GridIzNaredbe(korak.Tekst));
+                    continue;
+                }
                 if (korak.Vrsta == "ispis" || korak.Vrsta == "predlozak")
                 {
                     Carpo.NetGen.Print.PrintBridge.Ispisi(korak.Tekst, true, Id, Operater, Konekcija, "", ZadnjiSql, "", SviParametri(), "", "", "", Text, null, "", null);
@@ -1188,19 +1194,7 @@ namespace Carpo.NetGen.Ui
             }
             MasterSql = _jupiter ? "" : klik.MasterSql;
             if (!DijalogTok.DozvoliUpis && Carpo.NetGen.Print.PrintBridge.Vrsta(naredba, true).Length > 0)
-            {
-                DevExpress.XtraGrid.GridControl grid = null;
-                foreach (Control c in SveKontrole())
-                {
-                    grid = c as DevExpress.XtraGrid.GridControl;
-                    if (grid != null)
-                        break;
-                }
-                string orij = _forma != null && _forma.Atributi != null && _forma.Atributi.Ima("PAGEORIENTATION")
-                    ? _forma.Atributi.Vrijednost("PAGEORIENTATION") : "";
-                DataTable tab = grid == null ? null : grid.DataSource as DataTable;
-                Carpo.NetGen.Print.PrintBridge.Ispisi(naredba, true, Id, Operater, Konekcija, "", ZadnjiSql, "", SviParametri(), "", "", "", Text, grid, orij, tab);
-            }
+                IspisiGrid(naredba, GridIzNaredbe(naredba));
             for (int i = 0; i < klik.Naredbe.Count; i++)
             {
                 string n = klik.Naredbe[i] ?? "";
@@ -2045,7 +2039,7 @@ namespace Carpo.NetGen.Ui
                 }
                 // Form2.Glbl_GridMouseUp: desni klik na svaki grid dijaloga (POPUP i stalne stavke) (POP-01).
                 if (view != null)
-                    GridIzbornik.Vezi(view, delegate { return popup; }, IzvrsiIzbornik);
+                    GridIzbornik.Vezi(view, delegate { return popup; }, IzvrsiIzbornik, null, delegate { IspisiGrid("PRINTGRID(" + c.Name + ")", gc); });
                 if (view != null && popup.Length > 0)
                 {
                     view.MouseUp += delegate (object s, MouseEventArgs e)

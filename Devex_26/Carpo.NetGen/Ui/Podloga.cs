@@ -72,8 +72,10 @@ namespace Carpo.NetGen.Ui
             gvGla.DoubleClick += Pogled_DoubleClick;
             // Form1 3560 (POPUP/POPUPMASTER, 204 granule) i 3700 (POPUPDETAIL): desni klik (POP-01).
             // Form1 3577-3610 i 3627-3672: s PERMISIO stavke i stalne stavke slijede ssPermission (DOZ-01).
-            GridIzbornik.Vezi(gvGla, delegate { return _projekt == null ? "" : (_projekt.Popup ?? ""); }, IzvrsiIzbornik, DozvolaStavke);
-            GridIzbornik.Vezi(gvDet, delegate { return AtributProjekta("POPUPDETAIL"); }, IzvrsiIzbornik, DozvolaStavke);
+            GridIzbornik.Vezi(gvGla, delegate { return _projekt == null ? "" : (_projekt.Popup ?? ""); }, IzvrsiIzbornik, DozvolaStavke,
+                delegate { IspisiGrid("PRINTMASTER", false); });
+            GridIzbornik.Vezi(gvDet, delegate { return AtributProjekta("POPUPDETAIL"); }, IzvrsiIzbornik, DozvolaStavke,
+                delegate { IspisiGrid("PRINTDET", true); });
             // Form1.GridEX2_DoubleClick (7200): NovaGenerickaForma(strDBlClickDetForm), lanac kao gumb (DBL-02).
             gvDet.DoubleClick += delegate
             {
@@ -304,6 +306,20 @@ namespace Carpo.NetGen.Ui
         }
 
         private int _dubinaForme;
+
+        /// <summary>
+        /// PRINTMASTER/PRINTDET i "Ispis" u izborniku grida (Form1 IspisNovi, IspisGRIDREPX): Form1.vb 5934-5938,
+        /// 6001: PAGEHEADERLEFT/CENTER/RIGHT kroz SrediSQL i SrediSQLPosljeNextForme s ParametriSaGrida i datumom
+        /// za ispis; prazan centar je naslov (PRN-01, ISP-07).
+        /// </summary>
+        private void IspisiGrid(string naredba, bool detail)
+        {
+            GridControl gc = detail ? gcDet : gcGla;
+            DataTable tab = gc == null ? null : gc.DataSource as DataTable;
+            string orij = AtributProjekta("PAGEORIENTATION");
+            PrintBridge.Ispisi(naredba, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "",
+                ZaglavljeIspisa("PAGEHEADERLEFT"), ZaglavljeIspisa("PAGEHEADERCENTER"), ZaglavljeIspisa("PAGEHEADERRIGHT"), Text, gc, orij, tab);
+        }
 
         private string ZaglavljeIspisa(string atribut)
         {
@@ -598,17 +614,7 @@ namespace Carpo.NetGen.Ui
                         }
                         continue;
                     }
-                    object grid = vrsta == "detail" ? (object)gcDet : gcGla;
-                    DataTable tab = null;
-                    var gc = grid as GridControl;
-                    if (gc != null)
-                        tab = gc.DataSource as DataTable;
-                    string orij = _projekt != null && _projekt.Atributi != null && _projekt.Atributi.Ima("PAGEORIENTATION")
-                        ? _projekt.Atributi.Vrijednost("PAGEORIENTATION") : "";
-                    // Form1.vb 5934-5938, 6001: PAGEHEADERLEFT/CENTER/RIGHT kroz SrediSQL i SrediSQLPosljeNextForme
-                    // s ParametriSaGrida i datumom za ispis; prazan centar je naslov (PRN-01).
-                    PrintBridge.Ispisi(s, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "",
-                        ZaglavljeIspisa("PAGEHEADERLEFT"), ZaglavljeIspisa("PAGEHEADERCENTER"), ZaglavljeIspisa("PAGEHEADERRIGHT"), Text, grid, orij, tab);
+                    IspisiGrid(s, vrsta == "detail");
                 }
                 else if (s.ToUpperInvariant().IndexOf("BEEP()", StringComparison.Ordinal) >= 0)
                     RafalNaredba.Beep();
