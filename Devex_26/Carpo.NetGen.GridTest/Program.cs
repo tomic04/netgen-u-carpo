@@ -1996,6 +1996,7 @@ namespace Carpo.NetGen.GridTest
             IspisGridaDijaloga();
             BojeIzUpita();
             StabloDijaloga();
+            IzgledGridaDijaloga();
             var traz = new DataTable();
             traz.Columns.Add("id", typeof(int));
             traz.Columns.Add("Naziv0100", typeof(string));
@@ -3051,6 +3052,59 @@ namespace Carpo.NetGen.GridTest
             catch (Exception ex)
             {
                 T("tre03", false, ex.ToString());
+            }
+        }
+
+        /// <summary>
+        /// GRL-01: "Spremi postavke grida" sprema izgled grida dijaloga (SaveGridLayout 9205), novo otvaranje ga
+        /// učita (LoadLayout), a "Reset grida" ga obriše i složi stupce iznova (DeleteGridLayout).
+        /// </summary>
+        private static void IzgledGridaDijaloga()
+        {
+            string mapa = Path.Combine(Path.GetTempPath(), "nggrl" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            GridRaspored.MapaZaTest = mapa;
+            try
+            {
+                var g = new NgControl("grid", NgGrana.Grid, "g", new NgAttributeBag(new Dictionary<string, string> { { "SQL", "select a, b from t" } }), true);
+                var forma = new NgForm("L1", new NgAttributeBag(new Dictionary<string, string>()), "", "", new List<NgControl> { g }, new List<NgButton>(), new List<string>());
+                Func<string, DataTable> baza = delegate (string x)
+                {
+                    var t = new DataTable();
+                    t.Columns.Add("a", typeof(string));
+                    t.Columns.Add("b", typeof(string));
+                    t.Rows.Add("1", "2");
+                    return t;
+                };
+                using (var d = new Dijalog())
+                {
+                    d.Slozi(forma, new SqlKontekst(), baza);
+                    var grid = (DevExpress.XtraGrid.GridControl)d.Controls.Find("g", true)[0];
+                    var v = (DevExpress.XtraGrid.Views.Grid.GridView)grid.MainView;
+                    v.Columns.ColumnByFieldName("a").Visible = false;
+                    GridRaspored.Spremi(v, Convert.ToString(Zovi(d, "DatotekaIzgleda", grid)));
+                }
+                bool spremljeno = Directory.Exists(mapa) && Directory.GetFiles(mapa, "GridLodani-*-L1-g-.xml").Length == 1;
+                using (var d2 = new Dijalog())
+                {
+                    d2.Slozi(forma, new SqlKontekst(), baza);
+                    var grid = (DevExpress.XtraGrid.GridControl)d2.Controls.Find("g", true)[0];
+                    var v = (DevExpress.XtraGrid.Views.Grid.GridView)grid.MainView;
+                    bool ucitano = !v.Columns.ColumnByFieldName("a").Visible && v.Columns.ColumnByFieldName("b").Visible;
+                    T("grl01-spremi-ucitaj", spremljeno && ucitano, "spremljeno=" + spremljeno + " ucitano=" + ucitano);
+                    Zovi(d2, "ResetGrida", grid, g);
+                    bool vraceno = v.Columns.ColumnByFieldName("a") != null && v.Columns.ColumnByFieldName("a").Visible
+                        && Directory.GetFiles(mapa, "*.xml").Length == 0;
+                    T("grl01-reset", vraceno, "a=" + (v.Columns.ColumnByFieldName("a") == null ? "nema" : v.Columns.ColumnByFieldName("a").Visible.ToString()));
+                }
+            }
+            catch (Exception ex)
+            {
+                T("grl01", false, ex.ToString());
+            }
+            finally
+            {
+                GridRaspored.MapaZaTest = null;
+                try { if (Directory.Exists(mapa)) Directory.Delete(mapa, true); } catch (IOException) { }
             }
         }
 

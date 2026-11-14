@@ -300,6 +300,13 @@ namespace Carpo.NetGen.Ui
             return true;
         }
 
+        /// <summary>Reset grida (DeleteGridLayout): sljedece punjenje slozi stupce iznova.</summary>
+        public static void Zaboravi(GridView pogled)
+        {
+            if (pogled != null)
+                Slozeno.Remove(pogled);
+        }
+
         /// <summary>Popis stupaca za koji je pogled zadnji put slozen (DataSource sam doda stupce, pa to nije znak).</summary>
         private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<GridView, string> Slozeno =
             new System.Runtime.CompilerServices.ConditionalWeakTable<GridView, string>();

@@ -72,10 +72,18 @@ namespace Carpo.NetGen.Ui
             gvGla.DoubleClick += Pogled_DoubleClick;
             // Form1 3560 (POPUP/POPUPMASTER, 204 granule) i 3700 (POPUPDETAIL): desni klik (POP-01).
             // Form1 3577-3610 i 3627-3672: s PERMISIO stavke i stalne stavke slijede ssPermission (DOZ-01).
-            GridIzbornik.Vezi(gvGla, delegate { return _projekt == null ? "" : (_projekt.Popup ?? ""); }, IzvrsiIzbornik, DozvolaStavke,
-                delegate { IspisiGrid("PRINTMASTER", false); });
-            GridIzbornik.Vezi(gvDet, delegate { return AtributProjekta("POPUPDETAIL"); }, IzvrsiIzbornik, DozvolaStavke,
-                delegate { IspisiGrid("PRINTDET", true); });
+            GridIzbornik.Vezi(gvGla, delegate { return _projekt == null ? "" : (_projekt.Popup ?? ""); }, IzvrsiIzbornik, DozvolaStavke, new GridRadnje
+            {
+                Ispis = delegate { IspisiGrid("PRINTMASTER", false); },
+                Spremi = delegate { GridRaspored.Spremi(gvGla, DatotekaIzgleda(false)); },
+                Reset = delegate { GridRaspored.Obrisi(DatotekaIzgleda(false)); OsvjeziMaster(); }
+            });
+            GridIzbornik.Vezi(gvDet, delegate { return AtributProjekta("POPUPDETAIL"); }, IzvrsiIzbornik, DozvolaStavke, new GridRadnje
+            {
+                Ispis = delegate { IspisiGrid("PRINTDET", true); },
+                Spremi = delegate { GridRaspored.Spremi(gvDet, DatotekaIzgleda(true)); },
+                Reset = delegate { GridRaspored.Obrisi(DatotekaIzgleda(true)); OsvjeziDetail(); }
+            });
             // Form1.GridEX2_DoubleClick (7200): NovaGenerickaForma(strDBlClickDetForm), lanac kao gumb (DBL-02).
             gvDet.DoubleClick += delegate
             {
@@ -143,6 +151,7 @@ namespace Carpo.NetGen.Ui
             var kontekst = new SqlKontekst();
             kontekst.OperaterId = operater.ToString();
             kontekst.XmlName = Path.GetFileName(xml ?? "");
+            kontekst.ProjektNaslov = Text;
             kontekst.Version = NgVerzija.Tekst();
             kontekst.Node = "null";
             _stablo.Kontekst = kontekst;
@@ -332,6 +341,21 @@ namespace Carpo.NetGen.Ui
                 ZaglavljeIspisa("PAGEHEADERLEFT"), ZaglavljeIspisa("PAGEHEADERCENTER"), ZaglavljeIspisa("PAGEHEADERRIGHT"), Text, gc, orij, tab);
         }
 
+        /// <summary>
+        /// GridMaster/GridDet + ime XML-a (+ forma koja je napunila master, uz MULTIGRIDLAYOUT) + "-" + jezik
+        /// (Form1 6206, 6237). Jezik je JupiterTranslatorMPJezik, prazan bez prevoditelja.
+        /// </summary>
+        private string DatotekaIzgleda(bool detail)
+        {
+            string xml = GridRaspored.ImeXml(_master.Kontekst == null ? "" : _master.Kontekst.XmlName);
+            bool vise = AtributProjekta("MULTIGRIDLAYOUT").ToLowerInvariant() == "true";
+            string forma = !detail && vise ? _aktivnaFormaMastera : "";
+            return GridRaspored.Datoteka((detail ? "GridDet" : "GridMaster") + xml + forma + "-");
+        }
+
+        /// <summary>Form1 5448, 5489: AktivnaFormaMaster je forma s FILLEXPLORER koja je napunila master.</summary>
+        private string _aktivnaFormaMastera = "";
+
         private string ZaglavljeIspisa(string atribut)
         {
             string sirovo = AtributProjekta(atribut);
@@ -417,6 +441,7 @@ namespace Carpo.NetGen.Ui
                     _master.Stanje.ZadnjiSql = sqlPrazna;
                     _master.Stanje.Odluka = SqlTekst.Odluka(sqlPrazna);
                     _master.Stanje.BlokiranoPisanje = SqlTekst.JeZabranaPisanja(sqlPrazna);
+                    _aktivnaFormaMastera = ime;
                     NapuniGrid();
                     return;
                 }
@@ -457,6 +482,7 @@ namespace Carpo.NetGen.Ui
                     _master.Stanje.ZadnjiSql = sql;
                     _master.Stanje.SqlZaSlanje = sql;
                     _master.Stanje.Odluka = SqlTekst.Odluka(sql);
+                    _aktivnaFormaMastera = ime;
                     if (_master.Stanje.Odluka == "salji" && !SqlTekst.JeZabranaPisanja(sql))
                         NapuniGrid();
                     return;
@@ -829,6 +855,8 @@ namespace Carpo.NetGen.Ui
             GridIzgled.PrimijeniKolone(pogled, kolone);
             PodesiUredjivanje(pogled, kolone);
             PrimijeniUkupno(pogled, tablica, kolone);
+            // Form1.vb 2009 / LoadLayout2: spremljeni izgled grida nakon CustomFormatKolona (GRL-01).
+            GridRaspored.Ucitaj(pogled, DatotekaIzgleda(pogled == gvDet), AtributProjekta("FILTERSAVE").ToLowerInvariant() == "true");
             if (pogled.RowCount > 0)
                 pogled.FocusedRowHandle = 0;
         }

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows.Forms;
 using Carpo.NetGen.Komande;
 using Carpo.NetGen.Model;
+using DevExpress.XtraGrid;
 using DevExpress.XtraGrid.Views.Grid;
 
 namespace Carpo.NetGen.Ui
@@ -46,6 +47,30 @@ namespace Carpo.NetGen.Ui
             view.OptionsView.ShowAutoFilterRow = Attr(k, "FILTERMODE").ToLowerInvariant() == "true";
             // Form2.vb 1659-1662: ENTERKEYBEHAVIOR 1 (NextCell) vodi Enter na sljedeci stupac dok se uredjuje.
             view.OptionsNavigation.EnterMoveNextColumn = Attr(k, "ENTERKEYBEHAVIOR") == "1";
+            // Form2.vb 1730 LoadLayout: spremljeni izgled; FILTERSAVE je atribut forme (GRL-01).
+            GridRaspored.Ucitaj(view, DatotekaIzgleda(c), AtributForme("FILTERSAVE").ToLowerInvariant() == "true");
+        }
+
+        /// <summary>
+        /// Form2.vb 9205-9243: "GridLodani-" + naslov projekta + "-" + ime XML-a + "-" + forma + "-" + grid + "-" + jezik.
+        /// </summary>
+        private string DatotekaIzgleda(Control grid)
+        {
+            string xml = GridRaspored.ImeXml(_kontekst == null ? "" : _kontekst.XmlName);
+            string naslov = _kontekst == null ? "" : (_kontekst.ProjektNaslov ?? "");
+            string forma = _forma == null ? "" : (_forma.Ime ?? "");
+            return GridRaspored.Datoteka("GridLodani-" + naslov + "-" + xml + "-" + forma + "-" + (grid == null ? "" : grid.Name.Trim()) + "-");
+        }
+
+        /// <summary>DeleteGridLayout 9226-9238: obriše datoteku, složi stupce iznova i osvježi grid.</summary>
+        private void ResetGrida(GridControl grid, NgControl k)
+        {
+            GridRaspored.Obrisi(DatotekaIzgleda(grid));
+            var view = grid == null ? null : grid.MainView as GridView;
+            if (view == null || k == null)
+                return;
+            GridIzgled.Zaboravi(view);
+            OsvjeziGrid(grid, k, "");
         }
     }
 }

@@ -2057,7 +2057,12 @@ namespace Carpo.NetGen.Ui
                 }
                 // Form2.Glbl_GridMouseUp: desni klik na svaki grid dijaloga (POPUP i stalne stavke) (POP-01).
                 if (view != null)
-                    GridIzbornik.Vezi(view, delegate { return popup; }, IzvrsiIzbornik, null, delegate { IspisiGrid("PRINTGRID(" + c.Name + ")", gc); });
+                    GridIzbornik.Vezi(view, delegate { return popup; }, IzvrsiIzbornik, null, new GridRadnje
+                    {
+                        Ispis = delegate { IspisiGrid("PRINTGRID(" + c.Name + ")", gc); },
+                        Spremi = delegate { GridRaspored.Spremi(view, DatotekaIzgleda(c)); },
+                        Reset = delegate { ResetGrida(gc, k); }
+                    });
                 if (view != null && popup.Length > 0)
                 {
                     view.MouseUp += delegate (object s, MouseEventArgs e)
