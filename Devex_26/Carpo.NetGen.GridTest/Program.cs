@@ -2868,6 +2868,33 @@ namespace Carpo.NetGen.GridTest
                 T("inc01-ne-slijedi", e == null && Carpo.NetGen.Xml.IncludeForme.Nadji(p, "NEPOSTOJI") == null, "");
                 T("inc01-gumb", Carpo.NetGen.Komande.GumbTok.Akcija(p, ":B_INC") == "forma" && Carpo.NetGen.Komande.GumbTok.Akcija(p, ":NEPOSTOJI") == "osvjezi",
                     Carpo.NetGen.Komande.GumbTok.Akcija(p, ":B_INC"));
+                // Pravi korpus: BSDok.xml zove STANJE_INC, koja je samo u BSUgovori_INC.xml (PROJECT INCLUDE).
+                string bsdok = null;
+                var d0 = new DirectoryInfo(Environment.CurrentDirectory);
+                while (d0 != null && bsdok == null)
+                {
+                    // Mapa "xml-ovi s nevko\u0161a-Zubak": traži se po početku imena, bez dijakritike u izvoru.
+                    string korijen = Path.Combine(d0.FullName, "definitions", "netgen");
+                    if (Directory.Exists(korijen))
+                    {
+                        foreach (string m in Directory.GetDirectories(korijen, "xml-ovi s nevko*"))
+                        {
+                            string k = Path.Combine(m, "BSDok.xml");
+                            if (File.Exists(k))
+                                bsdok = k;
+                        }
+                    }
+                    d0 = d0.Parent;
+                }
+                if (bsdok != null)
+                {
+                    NgProject bs = Carpo.NetGen.Xml.NetGenXmlReader.Ucitaj(bsdok).Projekt;
+                    NgForm stanje = Carpo.NetGen.Xml.IncludeForme.Nadji(bs, "STANJE_INC");
+                    T("inc01-bsdok", bs != null && stanje != null && stanje.Kontrole.Count > 0 && Carpo.NetGen.Komande.GumbTok.Akcija(bs, ":STANJE_INC") == "forma",
+                        stanje == null ? "nema STANJE_INC" : stanje.Kontrole.Count.ToString());
+                }
+                else
+                    Console.WriteLine("inc01-bsdok: nema BSDok.xml u definitions/netgen");
             }
             catch (Exception ex)
             {
