@@ -92,10 +92,14 @@ namespace Carpo.NetGen.Grid
             }
             catch (SqlException ex)
             {
-                // Timeout (-2) prekine batch usred procedure i može ostaviti otvorenu transakciju (XACT_ABORT off).
-                // Zasebna veza iz poola bi je poništila pri sljedećoj upotrebi; ovdje se veza zatvori, pa server
-                // napravi rollback. Privremene tablice sesije tada nestanu, ali granula je ionako u grešci.
-                if (ex.Number == -2 && s.Veza != null)
+                // Class1.ExecSql 241-242: nakon greške NetGen radi Conn.Close() i Conn.Open() (pool, sp_reset_connection):
+                // transakcija koju je procedura ostavila otvorenom se poništi, zaključavanja se puste, #temp tablice
+                // nestanu. Iznimka je RAISERROR s "#" ili "+" u poruci (#OK, #close, +FOCUS...), gdje VB izađe prije
+                // toga (157-200). Timeout (-2) također prekine batch usred procedure. Ovdje se veza zatvori, pa server
+                // napravi rollback; sljedeći upit otvori novu sesiju (R124, PN-04).
+                string poruka = ex.Message ?? "";
+                bool porukaProcedure = ex.Number != -2 && (poruka.Contains("#") || poruka.Contains("+"));
+                if (!porukaProcedure && s.Veza != null)
                 {
                     try { s.Veza.Dispose(); } catch { }
                     s.Veza = null;
