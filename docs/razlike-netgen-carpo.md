@@ -115,6 +115,12 @@ Pregled stavku po stavku. Port koji prati NetGen nije rupa. Ostale stavke su ukl
 - **Carpo:** `NgVeza` nakon takve greške i nakon timeouta zatvori vezu, pa server napravi rollback; sljedeći upit otvori novu sesiju. Isti ishod kao NetGen (PN-04, neovisni pregled 14. 11. 2026.; prije je zatvarala samo nakon timeouta).
 - **Test:** `ses01-ista-sesija`, `ses01-otpusti-zatvori`, `ses02-veza-nakon-greske`
 
+### R125 Grid kao prvi parametar iza ONSUBMIT-a sa zarezom
+
+- **NetGen:** `strParametri` grida počinje zarezom (`,@stavke=5`, Form2.vb 3811), pa `spX @a=1,` + ` ` + `,@stavke=5` daje `spX @a=1, ,@stavke=5`, što je greška sintakse.
+- **Zašto Carpo drukčije:** vodeći zarez se izostavi samo kad stora završava zarezom (`Dijalog.PripremiOnSubmit`, PAR-03). U svim ostalim slučajevima tekst je isti kao u NetGenu. Kad su se kontrole pisale ispred grida, NetGen bi napravio `,,`; Carpo tada zarez ne udvostručuje.
+- **Test:** `par03-grid-zarez`, `par03-grid-bez-zareza`
+
 ## Uklonjeno
 
 Svaka uklonjena stavka ima test koji provjerava NetGen linije. R59 i R110 su portani: redni stupac grida, gumbi 79/8 na dnu, slika čvora 0, `PageHeaderFooter` Left/Center/Right.

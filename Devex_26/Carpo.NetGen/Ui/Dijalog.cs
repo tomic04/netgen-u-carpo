@@ -1403,7 +1403,12 @@ namespace Carpo.NetGen.Ui
             string stora = _forma == null ? "" : (_forma.OnSubmit ?? "").Trim();
             if (stora.Length == 0)
                 return "";
-            string spojeno = Lanac.Lijepi(stora, SviParametri());
+            string par = ParametriZaOnSubmit();
+            // Grid prvi daje ",@ime=id" (3811). Iza store koja završava zarezom NetGen bi poslao ", ,@ime=id"
+            // (greška sintakse); tu se vodeći zarez izostavi, inače je tekst isti kao u NetGenu (PAR-03).
+            if (par.StartsWith(",", StringComparison.Ordinal) && stora.Replace("!!", "").TrimEnd().EndsWith(",", StringComparison.Ordinal))
+                par = par.Substring(1);
+            string spojeno = Lanac.Lijepi(stora, par);
             return Lanac.BezKrajnjegZareza(Pripremi(spojeno));
         }
 
@@ -2634,37 +2639,92 @@ namespace Carpo.NetGen.Ui
 
         private string SviParametri()
         {
+            return SviParametri(false);
+        }
+
+        /// <summary>
+        /// PAR-03: ono što se lijepi na ONSUBMIT (Form2.Button1_Click 3377 strStora &amp; " " &amp; strParametri, Form1
+        /// 5450-5507). PokupiParametre (3406-3901) gradi dva niza: strParametriSvi (SviParametri) i strParametri.
+        /// strParametri preskače kontrolu čiji Tag počinje s "_" (Tag je CAPTION, inače NAME, 3051-3053) za
+        /// checkbox, radio, combo, datum, broj, tekst, stablo i grid; tražilica i višestruki combo nemaju tu
+        /// provjeru. Grid daje samo ",@ime=id," (3811), bez @arrayofblueids/@nizplavih/@nizoznacenih/@rowcount.
+        /// Forma bez NEXTFORM odreže sve od ",@grid" (Form1 5427-5431, Form2 4468-4473).
+        /// Carpo je lijepio strParametriSvi, pa je ZAKLJUČI (spmpzakljucidokNG @id=@@id, jedina kontrola
+        /// _broj) dobio "@id=5 @broj='…'" (greška sintakse), a forme sa zarezom proceduri višak parametara.
+        /// </summary>
+        private string ParametriZaOnSubmit()
+        {
+            string p = SviParametri(true);
+            if (p.EndsWith(",", StringComparison.Ordinal))
+                p = p.Substring(0, p.Length - 1);
+            if (DijalogTok.NextForm(_forma).Length == 0 && p.Trim().Length > 0 && p.IndexOf("@grid", StringComparison.Ordinal) >= 0)
+            {
+                int rez = p.IndexOf(",@grid", StringComparison.Ordinal);
+                if (rez >= 0)
+                    p = p.Substring(0, rez);
+            }
+            return p;
+        }
+
+        /// <summary>Form2 3051-3053: Tag kontrole je CAPTION, a prazan CAPTION znači NAME; "_" na početku.</summary>
+        private bool TagSCrtom(string ime)
+        {
+            NgControl def = NadjiKontrolu(ime);
+            if (def == null)
+                return false;
+            string tag = Attr(def, "CAPTION") ?? "";
+            if (tag.Trim().Length == 0)
+                tag = Attr(def, "NAME") ?? ime;
+            return tag.StartsWith("_", StringComparison.Ordinal);
+        }
+
+        private string SviParametri(bool zaOnSubmit)
+        {
             var sb = new StringBuilder();
             foreach (Control c in SveKontrole())
             {
                 if (string.IsNullOrEmpty(c.Name))
                     continue;
+                bool crta = zaOnSubmit && TagSCrtom(c.Name);
                 var chk = c as CheckEdit;
                 if (chk != null && chk.Properties.CheckStyle == CheckStyles.Radio)
                 {
-                    sb.Append(ParametriSvi.Radio(c.Name, chk.Checked));
+                    if (!crta)
+                        sb.Append(ParametriSvi.Radio(c.Name, chk.Checked));
                     continue;
                 }
                 if (chk != null)
                 {
-                    sb.Append("@").Append(c.Name.Trim()).Append("=").Append((int)chk.CheckState).Append(",");
+                    if (!crta)
+                        sb.Append("@").Append(c.Name.Trim()).Append("=").Append((int)chk.CheckState).Append(",");
                     continue;
                 }
                 var grid = c as GridControl;
                 if (grid != null)
                 {
-                    sb.Append(GridParametar(grid));
+                    if (!zaOnSubmit)
+                        sb.Append(GridParametar(grid));
+                    else if (!crta)
+                    {
+                        // 3811: ",@ime=id,". Vodeći zarez ostaje samo kad je grid prvi, inače bi bio ",," (VB greška sintakse).
+                        if (sb.Length == 0)
+                            sb.Append(",");
+                        sb.Append("@").Append(grid.Name.Trim()).Append("=").Append(GridId(grid)).Append(",");
+                    }
                     continue;
                 }
                 var stablo = c as DevExpress.XtraTreeList.TreeList;
                 if (stablo != null)
                 {
-                    sb.Append(ParametarStabla(stablo));
+                    if (!crta)
+                        sb.Append(ParametarStabla(stablo));
                     continue;
                 }
                 var look = c as LookUpEdit;
                 if (look != null)
                 {
+                    if (crta)
+                        continue;
                     object v = look.EditValue;
                     string t = v == null || v == DBNull.Value || Convert.ToString(v).Length == 0 ? "null" : Convert.ToString(v);
                     sb.Append("@").Append(c.Name.Trim()).Append("=").Append(t).Append(",");
@@ -2685,6 +2745,8 @@ namespace Carpo.NetGen.Ui
                 var txt = c as TextEdit;
                 if (txt != null)
                 {
+                    if (crta)
+                        continue;
                     var spin = txt as SpinEdit;
                     if (spin != null)
                     {
@@ -2717,6 +2779,15 @@ namespace Carpo.NetGen.Ui
                 }
             }
             return sb.ToString();
+        }
+
+        /// <summary>Form2 3693-3709 tGetID: id fokusiranog reda, "0" kad nema redova.</summary>
+        private static string GridId(GridControl grid)
+        {
+            var pogled = grid.MainView as GridView;
+            if (pogled == null || pogled.RowCount == 0)
+                return "0";
+            return Celija(pogled, pogled.FocusedRowHandle);
         }
 
         private static string GridParametar(GridControl grid)
