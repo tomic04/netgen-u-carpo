@@ -44,6 +44,18 @@ namespace Carpo.NetGen.Ui
         // SWP-04: _sqlGreska je poruka iz baze (RAISERROR/spRaiserror, broj >= 50000), npr. "Niste odabrali
         // dokument za ispravak!". NetGen je prikaže korisniku; klik pregled je bilježi kao PORUKA, ne GRESKA.
         private bool _sqlPoruka;
+        private bool _vezaPrijavljena;
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            base.OnFormClosed(e);
+            // SES-01: zadnja podloga granule zatvori vezu, kao kraj NetGen procesa.
+            if (_vezaPrijavljena)
+            {
+                _vezaPrijavljena = false;
+                NgVeza.Otpusti(_spoj);
+            }
+        }
 
         private string StatusSqlGreske
         {
@@ -173,6 +185,11 @@ namespace Carpo.NetGen.Ui
             try
             {
                 _spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj(server, baza), xml);
+                if (!_vezaPrijavljena)
+                {
+                    NgVeza.Prijavi(_spoj);
+                    _vezaPrijavljena = true;
+                }
             }
             catch (Exception ex)
             {
@@ -1132,16 +1149,8 @@ namespace Carpo.NetGen.Ui
                 _poslano.Add(sql);
             try
             {
-                var dt = new DataTable();
-                using (var conn = new System.Data.SqlClient.SqlConnection(_spoj))
-                using (var cmd = new System.Data.SqlClient.SqlCommand(sql, conn))
-                using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
-                {
-                    cmd.CommandTimeout = VrijemeUpita.Stvarno(_vrijemeUpita);
-                    conn.Open();
-                    da.Fill(dt);
-                }
-                return dt;
+                // Class1.ExecSql: svaki upit kroz istu otvorenu vezu (SES-01).
+                return NgVeza.Citaj(_spoj, sql, VrijemeUpita.Stvarno(_vrijemeUpita));
             }
             catch (Exception ex)
             {

@@ -1,0 +1,155 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+
+namespace Carpo.NetGen.Grid
+{
+    /// <summary>
+    /// SES-01: jedna otvorena veza po granuli, kao NetGen.
+    /// NetGen otvori <c>Conn</c> jednom (Form1 1607, Module1 128 ThreadStatic) i svaki <c>Class1.ExecSql</c>
+    /// (da.Fill na otvorenoj vezi) ide kroz istu SQL sesiju. Carpo je svaki upit slao kroz novu vezu iz poola;
+    /// pool pri ponovnoj upotrebi pozove sp_reset_connection, koji briše privremene tablice sesije, i ##.
+    /// Granule koje čitaju tablicu koju je prethodni upit napunio (<c>##temp50</c>, <c>##tponudanaplata</c>,
+    /// <c>##ttnaplata</c>, <c>##tempniv</c>...) tada dobiju "Invalid object name".
+    /// Ovdje: jedna otvorena veza po connection stringu (u njemu je i ime granule, APP-01).
+    /// Upit s druge niti ili dok je veza zauzeta ide kroz zasebnu vezu, jer SqlConnection bez MARS-a
+    /// ne smije imati dva upita odjednom.
+    /// </summary>
+    public static class NgVeza
+    {
+        private sealed class Stavka
+        {
+            public SqlConnection Veza;
+            public bool Zauzeta;
+            public int Korisnika;
+        }
+
+        private static readonly object _brava = new object();
+        private static readonly Dictionary<string, Stavka> _veze = new Dictionary<string, Stavka>(StringComparer.Ordinal);
+
+        /// <summary>Izvrši upit kao Class1.ExecSql: kroz otvorenu vezu granule.</summary>
+        public static DataTable Citaj(string spoj, string sql, int timeoutSekundi)
+        {
+            Stavka s = Uzmi(spoj);
+            if (s == null)
+            {
+                return CitajZasebno(spoj, sql, timeoutSekundi);
+            }
+            try
+            {
+                if (s.Veza == null || s.Veza.State != ConnectionState.Open)
+                {
+                    // Prvi upit ili veza je pukla (greška razine 20+ je zatvori); NetGen tada radi Close/Open (Class1 241).
+                    if (s.Veza != null)
+                    {
+                        try { s.Veza.Dispose(); } catch { }
+                    }
+                    s.Veza = new SqlConnection(spoj);
+                    s.Veza.Open();
+                }
+                var dt = new DataTable();
+                using (var cmd = new SqlCommand(sql, s.Veza))
+                using (var da = new SqlDataAdapter(cmd))
+                {
+                    cmd.CommandTimeout = timeoutSekundi;
+                    da.Fill(dt);
+                }
+                return dt;
+            }
+            catch (SqlException ex)
+            {
+                // Timeout (-2) prekine batch usred procedure i može ostaviti otvorenu transakciju (XACT_ABORT off).
+                // Zasebna veza iz poola bi je poništila pri sljedećoj upotrebi; ovdje se veza zatvori, pa server
+                // napravi rollback. Privremene tablice sesije tada nestanu, ali granula je ionako u grešci.
+                if (ex.Number == -2 && s.Veza != null)
+                {
+                    try { s.Veza.Dispose(); } catch { }
+                    s.Veza = null;
+                }
+                throw;
+            }
+            finally
+            {
+                lock (_brava)
+                    s.Zauzeta = false;
+            }
+        }
+
+        private static Stavka Uzmi(string spoj)
+        {
+            lock (_brava)
+            {
+                Stavka s;
+                if (!_veze.TryGetValue(spoj, out s))
+                {
+                    s = new Stavka();
+                    _veze[spoj] = s;
+                }
+                if (s.Zauzeta)
+                    return null;
+                s.Zauzeta = true;
+                return s;
+            }
+        }
+
+        private static DataTable CitajZasebno(string spoj, string sql, int timeoutSekundi)
+        {
+            var dt = new DataTable();
+            using (var conn = new SqlConnection(spoj))
+            using (var cmd = new SqlCommand(sql, conn))
+            using (var da = new SqlDataAdapter(cmd))
+            {
+                cmd.CommandTimeout = timeoutSekundi;
+                conn.Open();
+                da.Fill(dt);
+            }
+            return dt;
+        }
+
+        /// <summary>Podloga se otvorila s ovim spojem.</summary>
+        public static void Prijavi(string spoj)
+        {
+            if (string.IsNullOrEmpty(spoj))
+                return;
+            lock (_brava)
+            {
+                Stavka s;
+                if (!_veze.TryGetValue(spoj, out s))
+                {
+                    s = new Stavka();
+                    _veze[spoj] = s;
+                }
+                s.Korisnika++;
+            }
+        }
+
+        /// <summary>
+        /// Podloga se zatvorila. Kad nijedna podloga više ne koristi spoj, veza se zatvori, kao kad NetGen
+        /// proces završi (privremene tablice sesije tada nestanu).
+        /// </summary>
+        public static void Otpusti(string spoj)
+        {
+            if (string.IsNullOrEmpty(spoj))
+                return;
+            SqlConnection zatvori = null;
+            lock (_brava)
+            {
+                Stavka s;
+                if (!_veze.TryGetValue(spoj, out s))
+                    return;
+                if (s.Korisnika > 0)
+                    s.Korisnika--;
+                if (s.Korisnika == 0 && !s.Zauzeta)
+                {
+                    zatvori = s.Veza;
+                    _veze.Remove(spoj);
+                }
+            }
+            if (zatvori != null)
+            {
+                try { zatvori.Dispose(); } catch { }
+            }
+        }
+    }
+}

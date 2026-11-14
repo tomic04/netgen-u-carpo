@@ -180,16 +180,10 @@ namespace Carpo.NetGen.Grid
             NgDnevnik.Sql(Stanje.SqlZaSlanje);
             try
             {
-                var dt = new DataTable();
-                using (var conn = new System.Data.SqlClient.SqlConnection(connectionString))
-                using (var cmd = new System.Data.SqlClient.SqlCommand(Stanje.SqlZaSlanje ?? "", conn))
-                using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
-                {
-                    // COMMANDTIMEOUT projekta/forme (TMO-01); sweep ga ograniči kroz VrijemeUpita.Najvise (SWP-01).
-                    cmd.CommandTimeout = Carpo.NetGen.Komande.VrijemeUpita.Stvarno(Stanje.TimeoutSekundi);
-                    conn.Open();
-                    da.Fill(dt);
-                }
+                // COMMANDTIMEOUT projekta/forme (TMO-01); sweep ga ograniči kroz VrijemeUpita.Najvise (SWP-01).
+                // Ista SQL sesija kao ostali upiti granule (SES-01).
+                var dt = NgVeza.Citaj(connectionString, Stanje.SqlZaSlanje ?? "",
+                    Carpo.NetGen.Komande.VrijemeUpita.Stvarno(Stanje.TimeoutSekundi));
                 Stanje.Tablica = dt;
                 Stanje.Kolone.Clear();
                 Stanje.SqlGreska = null;
