@@ -809,7 +809,8 @@ namespace Carpo.NetGen.GridTest
             NgForm partner = Forma(Ucitaj("KntPreknjizavanjePartnera.xml"), "FILTERFORM");
             string submit = partner == null ? "" : partner.OnSubmit;
             string zalijepljeno = Lanac.Lijepi(submit, "@PartnerSTARIid=9,@PartnerNOVIid=8,");
-            T("onclick-exec-ne-lijepi", submit.TrimStart().StartsWith("exec", StringComparison.OrdinalIgnoreCase)
+            // !! na kraju ONSUBMIT-a gasi lijepljenje (Form1 5447); exec sam po sebi ne (PN-03).
+            T("onclick-uzvicnik-ne-lijepi", submit.TrimStart().StartsWith("exec", StringComparison.OrdinalIgnoreCase) && submit.Contains("!!")
                 && zalijepljeno.IndexOf("PartnerSTARIid=9", StringComparison.Ordinal) < 0
                 && zalijepljeno.IndexOf("!!", StringComparison.Ordinal) < 0
                 && zalijepljeno.IndexOf("@Action=1", StringComparison.Ordinal) >= 0, zalijepljeno);
@@ -1397,6 +1398,8 @@ namespace Carpo.NetGen.GridTest
             T("sp-lijepi-parametre", Lanac.Lijepi("spKultureNGAzur @Action=0,", "@Cijena=''")
                 .EndsWith("@Cijena=''"), "");
             T("dml-ne-lijepi", Lanac.Lijepi("select 1", "@a=1") == "select 1", "");
+            // PN-03: Form2 3377 gasi lijepljenje samo za INSERTDELETEUPDATESELECT; exec se lijepi kao i sp (R94 povučen).
+            T("lijepi-exec-kao-vb", Lanac.Lijepi("exec spMPUvjetiKase @action = 13 , @operateriid = 7 ,", "@mpakcijeid=5,") == "exec spMPUvjetiKase @action = 13 , @operateriid = 7 , @mpakcijeid=5,", Lanac.Lijepi("exec spMPUvjetiKase @action = 13 , @operateriid = 7 ,", "@mpakcijeid=5,"));
             T("uzvicnik-gasi-lijepljenje", Lanac.Lijepi("spX @Action=0 !!", "@a=1").IndexOf("@a") < 0, "");
             T("caption-novi-red", Lanac.Caption("a!!b") == "a\r\nb", "");
             T("prazan-broj", Lanac.PrazanBroj() == "0", "");
