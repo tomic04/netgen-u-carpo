@@ -2041,6 +2041,7 @@ namespace Carpo.NetGen.GridTest
             PokaziUpitUcinak();
             ComboPodloge();
             AlatiPodloge();
+            KlikMasterGreska();
             SesijaVeze();
             SqlPrijava();
             RafalnoPravila();
@@ -3937,6 +3938,47 @@ namespace Carpo.NetGen.GridTest
             finally
             {
                 Application.ThreadException -= h;
+                forma.Close();
+                forma.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// PN-08: greška master grida (MasterGrid.IzvrsiCitanje kroz NgVeza) nije ulazila u Podloga._sqlGreska, pa je
+        /// klik pregled javljao PRAZAN, a sweep je takvu granulu brojao kao CISTO. NetGen (Form1 3882 → ExecSql)
+        /// grešku pokaže korisniku.
+        /// </summary>
+        private static void KlikMasterGreska()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "nggre" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            Directory.CreateDirectory(dir);
+            string xml = Path.Combine(dir, "GreskaTest.xml");
+            File.WriteAllText(xml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<PROJECT ONLOAD=\"select * from dbo.NetGenNemaTakveTablice\">\r\n"
+                + "<NAME>Greska</NAME>\r\n<CAPTION>Greska test</CAPTION>\r\n</PROJECT>\r\n", new UTF8Encoding(false));
+            var forma = new Podloga();
+            try
+            {
+                forma.ShowInTaskbar = false;
+                forma.StartPosition = FormStartPosition.Manual;
+                forma.Location = new Point(-32000, -32000);
+                forma.Show();
+                forma.Prikazi(xml, "localhost", "spin", 7);
+                List<string> redovi = forma.ProvediKlikove(true);
+                string master = "";
+                string opis = "";
+                for (int i = 0; i < redovi.Count; i++)
+                {
+                    string[] c = redovi[i].Split('\t');
+                    if (c.Length >= 5 && c[1] == "master")
+                    {
+                        master = c[3];
+                        opis = c[4];
+                    }
+                }
+                T("pn08-klik-master-greska", master == "GRESKA" && opis.IndexOf("NetGenNemaTakveTablice", StringComparison.Ordinal) >= 0, "master=" + master + " " + opis);
+            }
+            finally
+            {
                 forma.Close();
                 forma.Dispose();
             }

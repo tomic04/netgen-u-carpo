@@ -71,6 +71,8 @@ namespace Carpo.NetGen.Grid
         public string GridDock = "Fill";
         public bool DxGrid;
         public string SqlGreska;
+        /// <summary>Broj SQL greške (SqlException.Number) uz SqlGreska; RAISERROR procedure je &gt;= 50000 (PORUKA u sweepu).</summary>
+        public int SqlGreskaBroj;
         public string Poruka;
         public string GroupCount = "[ ]";
         public string PocetniSort = "sql";
@@ -187,6 +189,7 @@ namespace Carpo.NetGen.Grid
                 Stanje.Tablica = dt;
                 Stanje.Kolone.Clear();
                 Stanje.SqlGreska = null;
+                Stanje.SqlGreskaBroj = 0;
                 Stanje.Poruka = null;
                 SloziKolone(_projekt, dt);
                 Fokus(_projekt);
@@ -203,6 +206,7 @@ namespace Carpo.NetGen.Grid
                     ZabiljeziGresku(ex.Message, false);
                 else
                     ZabiljeziGresku(ex.Message, true);
+                Stanje.SqlGreskaBroj = broj;
             }
             GridIzgled.Popuni(Stanje);
         }
