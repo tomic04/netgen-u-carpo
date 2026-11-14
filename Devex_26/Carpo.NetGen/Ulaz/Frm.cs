@@ -45,12 +45,15 @@ namespace Carpo.NetGen
             int operater, int clientHandle, short top, short left, string remoteDllPath)
         {
             // Form2.vb: stari Run ne napravi New Form2, pa ne otvara ništa.
+            Carpo.NetGen.Grid.SpinVeza.Prijava(userId, password);
             return Izvrsi(server, database, remoteDllPath, operater, false, 0);
         }
 
         public object Run8(string server, string database, string userId, string password,
             int operater, int clientHandle, short top, short left, string remoteDllPath)
         {
+            // Form2 441-444 i 282-285: s korisnikom SQL prijava (ULZ-07).
+            Carpo.NetGen.Grid.SpinVeza.Prijava(userId, password);
             return Izvrsi(server, database, remoteDllPath, operater, !BezProzora, clientHandle);
         }
 
@@ -80,6 +83,7 @@ namespace Carpo.NetGen
                 ZadnjaGreska = "nema forme " + ime;
                 return;
             }
+            Action otpusti = null;
             try
             {
                 string spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj(server, database), putanja);
@@ -100,6 +104,17 @@ namespace Carpo.NetGen
                 d.Operater = k.OperaterId;
                 d.Id = k.Id;
                 var citac = new Carpo.NetGen.Ulaz.FrmCitac(spoj);
+                // SES-01: veza živi dok je dijalog otvoren, kao Conn u Form2.Run.
+                NgVeza.Prijavi(spoj);
+                bool otpustena = false;
+                otpusti = delegate
+                {
+                    if (otpustena)
+                        return;
+                    otpustena = true;
+                    NgVeza.Otpusti(spoj);
+                };
+                d.FormClosed += delegate { otpusti(); };
                 citac.Rok = Carpo.NetGen.Komande.VrijemeUpita.Iz(forma.Atributi, citac.Rok);
                 // ULZ-05: bez podloge dijalog sam otvara djecu (Form2.NovaGenerickaForma2).
                 d.OtvoriDrugu = delegate (string imeDjeteta) { OtvoriDijete(d, imeDjeteta, k, spoj, citac, 1); };
@@ -108,6 +123,7 @@ namespace Carpo.NetGen
                 if (!string.IsNullOrEmpty(d.GreskaOnLoad))
                 {
                     ZadnjaGreska = d.GreskaOnLoad;
+                    otpusti();
                     d.Dispose();
                     return;
                 }
@@ -122,6 +138,8 @@ namespace Carpo.NetGen
             {
                 ZadnjaGreska = ex.Message;
                 Carpo.NetGen.Log.NgDnevnik.Greska("frm.Run8: " + ex.Message);
+                if (otpusti != null && (Forma == null || Forma.IsDisposed))
+                    otpusti();
             }
         }
 

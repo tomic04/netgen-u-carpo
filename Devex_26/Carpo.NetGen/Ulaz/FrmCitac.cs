@@ -40,16 +40,8 @@ namespace Carpo.NetGen.Ulaz
             NgDnevnik.Sql(sql);
             try
             {
-                var dt = new DataTable();
-                using (var conn = new SqlConnection(_spoj))
-                using (var cmd = new SqlCommand(sql, conn))
-                using (var da = new SqlDataAdapter(cmd))
-                {
-                    cmd.CommandTimeout = VrijemeUpita.Stvarno(Rok);
-                    conn.Open();
-                    da.Fill(dt);
-                }
-                return dt;
+                // Form2 Run 249-294: jedna otvorena veza za sve upite dijaloga i djece (SES-01).
+                return NgVeza.Citaj(_spoj, sql, VrijemeUpita.Stvarno(Rok));
             }
             catch (SqlException ex)
             {

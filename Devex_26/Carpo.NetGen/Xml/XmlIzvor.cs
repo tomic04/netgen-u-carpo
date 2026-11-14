@@ -56,7 +56,8 @@ namespace Carpo.NetGen.Xml
             var b = new SqlConnectionStringBuilder();
             b.DataSource = server.Trim();
             b.InitialCatalog = "JupiterXML";
-            b.IntegratedSecurity = true;
+            // Form1 1564-1568 (tstr6): ista prijava kao baza granule (ULZ-07).
+            Carpo.NetGen.Grid.SpinVeza.PostaviPrijavu(b);
             b.ApplicationName = "Carpo.NetGen";
             b.ConnectTimeout = 5;
             SpojBaze = b.ConnectionString;

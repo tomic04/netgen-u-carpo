@@ -1999,6 +1999,7 @@ namespace Carpo.NetGen.GridTest
             PokaziUpitUcinak();
             ComboPodloge();
             SesijaVeze();
+            SqlPrijava();
             RafalnoPravila();
             PodlogaRafalno();
             GreskeDijaloga();
@@ -3923,6 +3924,37 @@ namespace Carpo.NetGen.GridTest
             catch (Exception ex)
             {
                 T("ses01-ista-sesija", false, ex.GetType().Name + ": " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// ULZ-07: Run8 s korisnikom spaja SQL prijavom (Form1 1563-1568), i bazu granule i JupiterXML;
+        /// bez korisnika Windows prijavom. Lozinka s ; i navodnikom ostaje cijela.
+        /// </summary>
+        private static void SqlPrijava()
+        {
+            string izvorPrije = XmlIzvor.SpojBaze;
+            bool ukljucenPrije = XmlIzvor.Ukljucen;
+            try
+            {
+                SpinVeza.Prijava("ngtest", "a;b\"c");
+                var b = new SqlConnectionStringBuilder(SpinVeza.SaAplikacijom(SpinVeza.Spoj("srv", "baza"), "X.xml"));
+                XmlIzvor.Ukljuci("srv");
+                var x = new SqlConnectionStringBuilder(XmlIzvor.SpojBaze);
+                T("ulz07-sql-prijava", !b.IntegratedSecurity && b.UserID == "ngtest" && b.Password == "a;b\"c"
+                    && b.InitialCatalog == "baza" && b.ApplicationName == "Carpo.NetGen.X"
+                    && !x.IntegratedSecurity && x.UserID == "ngtest" && x.InitialCatalog == "JupiterXML",
+                    "baza: user=" + b.UserID + " integrated=" + b.IntegratedSecurity.ToString()
+                    + "; JupiterXML: user=" + x.UserID + " integrated=" + x.IntegratedSecurity.ToString());
+                SpinVeza.Prijava("", "");
+                var w = new SqlConnectionStringBuilder(SpinVeza.Spoj("srv", "baza"));
+                T("ulz07-windows-prijava", w.IntegratedSecurity && w.UserID.Length == 0, w.ConnectionString);
+            }
+            finally
+            {
+                SpinVeza.Prijava("", "");
+                XmlIzvor.SpojBaze = izvorPrije;
+                XmlIzvor.Ukljucen = ukljucenPrije;
             }
         }
 
