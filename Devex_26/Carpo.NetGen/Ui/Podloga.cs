@@ -67,6 +67,11 @@ namespace Carpo.NetGen.Ui
         private string _testId = "";
         private string _imeUnosa = "";
         private readonly List<string> _poslano = new List<string>();
+        /// <summary>
+        /// Traje klik pregled (ProvediKlikove, TestShell). Samo tada se pamte poslani SQL-ovi (_poslano) i radi
+        /// ZapamtiNoviTrosak; u običnom radu podloga ne smije čitati PrnTroskoviGla ni mijenjati @@id (PF-01).
+        /// </summary>
+        private bool _klikPregled;
         private bool _punim;
         private int _redovaDetail;
         private DataTable _comboRedovi;
@@ -1340,7 +1345,7 @@ namespace Carpo.NetGen.Ui
                 return null;
             bool filter = sql.IndexOf("NetGenDBFilter", StringComparison.OrdinalIgnoreCase) >= 0;
             _zadnjiSql = sql;
-            if (!filter)
+            if (!filter && _klikPregled)
                 _poslano.Add(sql);
             try
             {
@@ -1394,6 +1399,7 @@ namespace Carpo.NetGen.Ui
             bool upis = !samoCitanje && DijalogTok.UpisNaSpinu(_server, _baza);
             DijalogTok.DozvoliUpis = upis;
             NgPoruka.Tiho = true;
+            _klikPregled = true;
             _imeUnosa = "kp" + DateTime.Now.ToString("HHmmss");
             DijalogTok.TekstUpisa = _imeUnosa;
             _korisceno.Clear();
@@ -1415,6 +1421,8 @@ namespace Carpo.NetGen.Ui
             {
                 if (upis)
                     OcistiTest();
+                _klikPregled = false;
+                _poslano.Clear();
                 Dijalog.NakonPrikaza = null;
                 DijalogTok.DozvoliUpis = false;
                 NgPoruka.Tiho = false;
@@ -1724,6 +1732,10 @@ namespace Carpo.NetGen.Ui
 
         private void ZapamtiNoviTrosak()
         {
+            // Samo klik pregled na spinu (stub spPrnTroskoviGlaAzur ne vraća id). NetGen (Form1 5385-5390, 5501-5507)
+            // nakon ONSUBMIT-a ne čita tablicu: @@id je red u gridu ili prva ćelija rezultata (PF-01).
+            if (!_klikPregled)
+                return;
             string sql = PoslanoKoje("spPrnTroskoviGlaAzur");
             if (sql.Length == 0 || !Akcija(sql, "0") || _master.Kontekst == null)
                 return;
