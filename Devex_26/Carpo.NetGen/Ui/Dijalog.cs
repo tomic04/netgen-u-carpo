@@ -41,6 +41,11 @@ namespace Carpo.NetGen.Ui
         private string _priprema = "";
 
         public string OtvorenaForma = "";
+        /// <summary>
+        /// Form2.RefreshControls 4692-4697: stupac "findnode" u rezultatu SQL-a dijaloga je ključ čvora stabla
+        /// podloge; Form1 5523-5531 ga nakon zatvaranja dijaloga nađe, odabere i raširi (PF-05).
+        /// </summary>
+        public string FindNode = "";
         public string MasterSql = "";
         /// <summary>
         /// Form1.NovaGenerickaForma 5381-5520: ONSUBMIT (strStora) izvršava podloga nakon što se dijalog zatvori,
@@ -179,6 +184,7 @@ namespace Carpo.NetGen.Ui
             _kontekst = kontekst;
             _forma = forma;
             OtvorenaForma = "";
+            FindNode = "";
             MasterSql = "";
             OnSubmitPripremljen = "";
             string naslov = forma.Atributi == null ? null : forma.Atributi.Vrijednost("CAPTION");
@@ -1641,6 +1647,9 @@ namespace Carpo.NetGen.Ui
                 KlikniKontrolu(klikni.Trim());
             if (IsDisposed)
                 return;
+            string cvor = Form2Rezultat.Celija(r, "findnode");
+            if (cvor.Length > 0)
+                FindNode = cvor;
             string boja = Form2Rezultat.Celija(r, "setcolorforcolorpicker");
             if (boja.Length > 0 && _kontekst != null)
                 _kontekst.SelectedColor = boja;
