@@ -26,7 +26,6 @@ namespace Carpo.NetGen.GridTest
     internal static class PregledFable52
     {
         private static Action<string, bool, string> _t;
-        private static volatile bool _cuvar;
         private static volatile string _korak = "";
 
         private static void T(string id, bool ok, string detalj)
@@ -34,9 +33,14 @@ namespace Carpo.NetGen.GridTest
             _t(id, ok, detalj);
         }
 
+        private static volatile bool _cuvar;
+
         public static void Izvrsi(Action<string, bool, string> t)
         {
             _t = t;
+            Korak("onload-datum-hr", OnLoadDatumHr);
+            Korak("combo-tip", ComboTipKljuca);
+            // Podloga u GridTestu nema Carpo Logger, pa JupiterShared_Shown baci iznimku na UI niti (kao u PregledNeovisni).
             ThreadExceptionEventHandler iznimka = delegate (object s, ThreadExceptionEventArgs e)
             {
                 Console.WriteLine("pf: iznimka na UI niti u koraku " + _korak + ": " + e.Exception.GetType().Name + " " + e.Exception.Message);
@@ -48,7 +52,6 @@ namespace Carpo.NetGen.GridTest
             cuvar.Start();
             try
             {
-                Korak("onload-datum-hr", OnLoadDatumHr);
                 try
                 {
                     PripremiSpin();
@@ -58,9 +61,11 @@ namespace Carpo.NetGen.GridTest
                     T("pf-spin-priprema", false, ex.Message);
                     return;
                 }
-                Korak("trosak-hack", TrosakHack);
                 Korak("onsubmit-poruka", OnSubmitPoruka);
+                Korak("kasna-greska", KasnaGreska);
                 Korak("poruka-s-tablicom", PorukaSTablicom);
+                Korak("trosak-hack", TrosakHack);
+                Korak("findnode", FindNodeNakonDijaloga);
             }
             finally
             {
@@ -130,6 +135,10 @@ namespace Carpo.NetGen.GridTest
                 Izvrsi(c, "create procedure dbo.spPregledFable @k varchar(50), @t varchar(200) = null as\r\n"
                     + "insert into dbo.PregledFableLog (oznaka, t) values (@k, @t);\r\n"
                     + "select 1 as id, @k as oznaka, isnull(@t, '') as t");
+                Izvrsi(c, "delete from dbo.PregledFableLog");
+                Izvrsi(c, "if object_id('dbo.spPregledFableTree') is not null drop procedure dbo.spPregledFableTree");
+                Izvrsi(c, "create procedure dbo.spPregledFableTree as\r\n"
+                    + "select 1 as id, 0 as roditelj, 'Korijen' as natpis union all select 2, 1, 'Prvi' union all select 3, 1, 'Drugi'");
                 Izvrsi(c, "if object_id('dbo.spPregledFableGreska') is not null drop procedure dbo.spPregledFableGreska");
                 Izvrsi(c, "create procedure dbo.spPregledFableGreska @k varchar(50) as\r\n"
                     + "if @k = 'poruka' raiserror('Dokument je zakljucen #', 16, 1)\r\n"
@@ -138,7 +147,6 @@ namespace Carpo.NetGen.GridTest
                 Izvrsi(c, "create procedure dbo.spPregledFablePorukaTablica as\r\n"
                     + "select 7 as id, 'sedam' as naziv;\r\n"
                     + "raiserror('Gotovo #OK', 16, 1)");
-                Izvrsi(c, "delete from dbo.PregledFableLog");
             }
         }
 
@@ -289,6 +297,75 @@ namespace Carpo.NetGen.GridTest
             }
         }
 
+        // ------------------------------------------------------------------ PF-05
+
+        /// <summary>
+        /// Form2.RefreshControls 4692-4697 zapamti stupac "findnode" iz rezultata SQL-a dijaloga, a Form1
+        /// 5523-5531 nakon zatvaranja dijaloga nađe čvor stabla s tim ključem (Nodes.Find), odabere ga i raširi.
+        /// 20 ONCLICK-a u 9 XML-ova (DobUgovori, UgovorSKupcima, AOPNovi, KOD_Stavke:
+        /// "...#OK#select @@partneriid as findnode"). Carpo je stupac zanemario, pa stablo ostane na starom čvoru.
+        /// </summary>
+        private static void FindNodeNakonDijaloga()
+        {
+            string xml = Xml("PfFindNode.xml",
+                "<PROJECT ONLOAD=\"select 1 as id, 'a' as naziv\" TREE=\"dbo.spPregledFableTree:FILT\" CMD1CAPTION=\"Unesi:UNOS\">\r\n"
+                + "<NAME>PfFindNode</NAME>\r\n<CAPTION>Pregled findnode</CAPTION>\r\n"
+                + "<FILT CAPTION=\"Filter\"></FILT>\r\n"
+                + "<UNOS CAPTION=\"Unos\">\r\n"
+                + "<INPUT TYPE=\"text\" NAME=\"t\" DEFAULT=\"abc\" TOP=\"100\" LEFT=\"100\" WIDTH=\"2000\" HEIGHT=\"300\" />\r\n"
+                + "<INPUT TYPE=\"button\" NAME=\"spremi\" CAPTION=\"Spremi\" TOP=\"600\" LEFT=\"100\" WIDTH=\"1500\" HEIGHT=\"350\" ONCLICK=\"OK#select 3 as findnode\" />\r\n"
+                + "</UNOS>\r\n</PROJECT>\r\n");
+            bool otvoren;
+            Podloga forma = OtvoriPodlogu(xml, out otvoren);
+            try
+            {
+                SimpleButton gumb = GumbPodloge(forma, "Unesi");
+                var stablo = Polje(forma, "trMain") as DevExpress.XtraTreeList.TreeList;
+                if (!otvoren || gumb == null || stablo == null)
+                {
+                    T("pf05-findnode", false, "podloga se nije otvorila, nema gumba ili stabla");
+                    return;
+                }
+                string prije = Oznaka(stablo);
+                bool kliknut = false;
+                Dijalog.NakonPrikaza = delegate (Dijalog d)
+                {
+                    Control[] c = d.Controls.Find("spremi", true);
+                    if (c.Length > 0 && c[0] is SimpleButton)
+                    {
+                        kliknut = true;
+                        ((SimpleButton)c[0]).PerformClick();
+                    }
+                    if (!d.IsDisposed && d.DialogResult != DialogResult.OK)
+                    {
+                        d.DialogResult = DialogResult.Cancel;
+                        d.Close();
+                    }
+                };
+                try { gumb.PerformClick(); }
+                finally { Dijalog.NakonPrikaza = null; }
+                Application.DoEvents();
+                string poslije = Oznaka(stablo);
+                T("pf05-findnode", kliknut && poslije == "3", "čvor prije='" + prije + "' poslije='" + poslije + "' gumb kliknut=" + kliknut.ToString() + " (NetGen: čvor 3)");
+            }
+            catch (Exception ex)
+            {
+                T("pf05-findnode", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                Zatvori(forma);
+            }
+        }
+
+        private static string Oznaka(DevExpress.XtraTreeList.TreeList stablo)
+        {
+            if (stablo.FocusedNode == null)
+                return "";
+            var cvor = stablo.FocusedNode.Tag as Cvor;
+            return cvor == null ? "" : (cvor.Oznaka ?? "");
+        }
+
         // ------------------------------------------------------------------ PF-02
 
         /// <summary>
@@ -377,7 +454,13 @@ namespace Carpo.NetGen.GridTest
                 string id = "";
                 if (gv != null && redova > 0 && gv.Columns.ColumnByFieldName("id") != null)
                     id = Convert.ToString(gv.GetRowCellValue(0, "id"));
-                T("pf04-poruka-s-tablicom", redova == 1 && id == "7",
+                bool gotovo = false;
+                for (int i = 0; i < poruke.Count; i++)
+                {
+                    if (poruke[i].IndexOf("Gotovo", StringComparison.Ordinal) >= 0)
+                        gotovo = true;
+                }
+                T("pf04-poruka-s-tablicom", redova == 1 && id == "7" && gotovo,
                     "master redova=" + redova.ToString() + " id='" + id + "' poruka=[" + string.Join(" | ", poruke.ToArray()).Replace("\r", " ").Replace("\n", " ") + "] (NetGen: 1 red, id 7, poruka 'Gotovo')");
             }
             catch (Exception ex)
@@ -392,13 +475,117 @@ namespace Carpo.NetGen.GridTest
             }
         }
 
+        /// <summary>
+        /// Class1.ExecSql 139-155: da.Fill(ds) čita sve rezultate, pa greška NAKON prve tablice baci iznimku: MsgBox,
+        /// Conn.Close/Open (241-242, transakcija se poništi). NgVeza je punio DataTable (samo prvi rezultat), pa je
+        /// takva greška nestala bez traga, a transakcija koju je procedura otvorila ostala je otvorena na vezi granule.
+        /// </summary>
+        private static void KasnaGreska()
+        {
+            string spoj = SpinVeza.SaAplikacijom(Spoj(), "pf04.xml");
+            NgVeza.Prijavi(spoj);
+            try
+            {
+                string bacila = "";
+                try { NgVeza.Citaj(spoj, "begin tran; select 1 as a; raiserror('Kasna greska', 16, 1)", 30); }
+                catch (SqlException ex) { bacila = ex.Message; }
+                DataTable tc = NgVeza.Citaj(spoj, "select @@trancount as n", 30);
+                int trancount = tc == null || tc.Rows.Count == 0 ? -1 : Convert.ToInt32(tc.Rows[0][0]);
+                if (trancount > 0)
+                    NgVeza.Citaj(spoj, "while @@trancount > 0 rollback", 30);
+                T("pf04-greska-nakon-tablice", bacila.IndexOf("Kasna greska", StringComparison.Ordinal) >= 0 && trancount == 0,
+                    "iznimka='" + bacila + "' @@trancount=" + trancount.ToString() + " (NetGen: greška se vidi, @@trancount 0)");
+
+                DataTable uz = null;
+                string poruka = "";
+                try { NgVeza.Citaj(spoj, "select 7 as id; raiserror('Gotovo #OK', 16, 1)", 30); }
+                catch (SqlException ex)
+                {
+                    poruka = ex.Message;
+                    uz = ex.Data[NgVeza.TablicaUzPoruku] as DataTable;
+                }
+                T("pf04-tablica-uz-poruku", poruka.IndexOf("Gotovo", StringComparison.Ordinal) >= 0 && uz != null && uz.Rows.Count == 1,
+                    "poruka='" + poruka + "' tablica=" + (uz == null ? "nema" : uz.Rows.Count.ToString() + " red") + " (NetGen: poruka i ds.Tables(0))");
+            }
+            catch (Exception ex)
+            {
+                T("pf04-greska-nakon-tablice", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                NgVeza.Otpusti(spoj);
+            }
+        }
+
+        // ------------------------------------------------------------------ PF-06 (dokaz)
+
+        /// <summary>
+        /// ONLOAD vrijednost comba: VB SelectedValue = vrijednost (DataView.Find pretvori u tip stupca). Carpo
+        /// PostaviVrijednost stavi int u LookUpEdit.EditValue; ključ tipa numeric/smallint/bigint se tada ne nađe.
+        /// </summary>
+        private static void ComboTipKljuca()
+        {
+            Console.WriteLine("pf: kultura " + CultureInfo.CurrentCulture.Name + " / " + CultureInfo.CurrentUICulture.Name);
+            JedanCombo("pf06-combo-int", typeof(int));
+            JedanCombo("pf06-combo-decimal", typeof(decimal));
+            JedanCombo("pf06-combo-short", typeof(short));
+            JedanCombo("pf06-combo-long", typeof(long));
+        }
+
+        private static void JedanCombo(string id, Type tip)
+        {
+            Dijalog d = null;
+            try
+            {
+                var kontrole = new List<NgControl>();
+                kontrole.Add(new NgControl("combo", NgGrana.Combo, "vrsta", new NgAttributeBag(new Dictionary<string, string> { { "SQL", "select id, naziv from pfcombo" } }), true));
+                var forma = new NgForm("T", new NgAttributeBag(null), "", "select 1 as x", kontrole, new List<NgButton>(), new List<string>());
+                Func<string, DataTable> citaj = delegate (string sql)
+                {
+                    var t = new DataTable();
+                    if ((sql ?? "").IndexOf("pfcombo", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        t.Columns.Add("id", tip);
+                        t.Columns.Add("naziv", typeof(string));
+                        t.Rows.Add(Convert.ChangeType(3, tip), "tri");
+                        t.Rows.Add(Convert.ChangeType(5, tip), "pet");
+                        return t;
+                    }
+                    if ((sql ?? "").IndexOf("select 1 as x", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        t.Columns.Add("vrsta", tip);
+                        t.Rows.Add(Convert.ChangeType(5, tip));
+                        return t;
+                    }
+                    return null;
+                };
+                d = new Dijalog();
+                d.Slozi(forma, new SqlKontekst(), citaj);
+                var look = (LookUpEdit)d.Controls.Find("vrsta", true)[0];
+                object red = look.GetSelectedDataRow();
+                string svi = Convert.ToString(typeof(Dijalog).GetMethod("SviParametri", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(d, null));
+                T(id, red != null && look.Text == "pet", "tekst='" + look.Text + "' red=" + (red == null ? "nema" : "ima") + " EditValue=" + Convert.ToString(look.EditValue) + " (" + (look.EditValue == null ? "null" : look.EditValue.GetType().Name) + ") param=" + svi);
+            }
+            catch (Exception ex)
+            {
+                Exception u = ex.InnerException ?? ex;
+                T(id, false, u.GetType().Name + ": " + u.Message);
+            }
+            finally
+            {
+                if (d != null)
+                    d.Dispose();
+            }
+        }
+
         // ------------------------------------------------------------------ PF-03
 
         /// <summary>
         /// Form2.ProcitajXML: ONLOAD stupac datuma ide u DTPicker kao Date (Value), a u CB kao CStr(Date) u kulturi
         /// računala, pa Class1.NadjiVrijednostuPrevParametrima za @DAT... da 'yyyyMMdd'. Carpo (Dijalog.UcitajOnLoad)
         /// pretvori datum u tekst InvariantCulture ("11/05/2026 00:00:00") i taj tekst upiše u DateEdit.Text: na
-        /// računalu s hrvatskim postavkama 5. 11. postane 11. 5., a 25. 11. se ne učita. Bez baze.
+        /// računalu s hrvatskim postavkama DateEdit ga ne razumije (EditValue ostane tekst), pa SviParametri na OK
+        /// pošalje @datum=null. Run 43756059751 (grana pregled52/dokaz) pokazuje stanje prije ispravka. Bez baze.
         /// </summary>
         private static void OnLoadDatumHr()
         {
@@ -410,6 +597,7 @@ namespace Carpo.NetGen.GridTest
                 var kontrole = new List<NgControl>();
                 kontrole.Add(new NgControl("date", NgGrana.Date, "datumdok", new NgAttributeBag(new Dictionary<string, string>()), true));
                 kontrole.Add(new NgControl("date", NgGrana.Date, "datumdo", new NgAttributeBag(new Dictionary<string, string>()), true));
+                kontrole.Add(new NgControl("date", NgGrana.Date, "datumtekst", new NgAttributeBag(new Dictionary<string, string>()), true));
                 var forma = new NgForm("T", new NgAttributeBag(null), "", "select 1 as x", kontrole, new List<NgButton>(), new List<string>());
                 Func<string, DataTable> citaj = delegate (string sql)
                 {
@@ -419,7 +607,9 @@ namespace Carpo.NetGen.GridTest
                     t.Columns.Add("datumdok", typeof(DateTime));
                     t.Columns.Add("datumdo", typeof(DateTime));
                     t.Columns.Add("datbez", typeof(DateTime));
-                    t.Rows.Add(new DateTime(2026, 11, 5), new DateTime(2026, 11, 25), new DateTime(2026, 11, 5));
+                    // Datum kao tekst (select '20261203' as datumtekst): VB 2273-2275 ga složi u yyyy-MM-dd.
+                    t.Columns.Add("datumtekst", typeof(string));
+                    t.Rows.Add(new DateTime(2026, 11, 5), new DateTime(2026, 11, 25), new DateTime(2026, 11, 5), "20261203");
                     return t;
                 };
                 d = new Dijalog();
@@ -430,6 +620,11 @@ namespace Carpo.NetGen.GridTest
                 string b = drugi.EditValue is DateTime ? ((DateTime)drugi.EditValue).ToString("yyyyMMdd") : "nema (" + drugi.Text + ")";
                 T("pf03-onload-datum-hr", a == "20261105" && b == "20261125",
                     "hr-HR: ONLOAD 5.11.2026 -> " + a + ", 25.11.2026 -> " + b + " (NetGen: 20261105, 20261125)");
+                // Form2.PokupiParametre 3530-3567: učitani datum na OK ide kao 'yyyyMMdd'; prije je išao null.
+                string svi = Convert.ToString(typeof(Dijalog).GetMethod("SviParametri", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(d, null));
+                T("pf03-onload-datum-parametar", svi.IndexOf("@datumdok='20261105'", StringComparison.Ordinal) >= 0
+                    && svi.IndexOf("@datumdo='20261125'", StringComparison.Ordinal) >= 0
+                    && svi.IndexOf("@datumtekst='20261203'", StringComparison.Ordinal) >= 0, svi);
                 string token = Convert.ToString(typeof(Dijalog).GetMethod("Pripremi", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(d, new object[] { "spX @d=@@datbez" }));
                 T("pf03-onload-datum-token", token == "spX @d='20261105'", token + " (NetGen: spX @d='20261105')");
             }
