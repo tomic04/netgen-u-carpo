@@ -1397,6 +1397,11 @@ namespace Carpo.NetGen.Ui
                     _sqlGreska = ex.Message + " | " + sql;
                     var sqlEx = ex as System.Data.SqlClient.SqlException;
                     _sqlPoruka = sqlEx != null && sqlEx.Number >= 50000;
+                    // Class1.ExecSql 230: svaka ne-tiha greška ide u dbo.spNetGenErrorLog (prije samo master grid, PN-10).
+                    // Na jupiter2019/2022 izvan produkcije i u sweepu (DozvoliUpis/Tiho) se ne piše.
+                    bool porukaProcedure = _zadnjaPoruka.Contains("#") || _zadnjaPoruka.Contains("+");
+                    if (!porukaProcedure && !NgPoruka.Tiho && !(DijalogTok.JeJupiter(_server) && !DijalogTok.Produkcija))
+                        GreskaSql.Zapisi(sqlEx == null ? 0 : sqlEx.Number, ex.Message, sql, _spoj);
                 }
                 NgDnevnik.Greska(ex.Message + " | " + sql);
                 if (!tiho)
