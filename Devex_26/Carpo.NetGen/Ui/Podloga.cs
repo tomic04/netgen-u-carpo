@@ -579,6 +579,9 @@ namespace Carpo.NetGen.Ui
                 // strStora & " " & strParametri, sređen (Form2.Button1_Click 3367-3388, Form1 5450); dijalog ga nije slao.
                 string stora = (dij.OnSubmitPripremljen ?? "").Trim();
                 NakonDijaloga(forma, ime, stora, izDijaloga);
+                // Form1 5523-5531: nakon grana FILLEXPLORER-a, forma bez NEXTFORM-a s "findnode" odabere čvor stabla (PF-05).
+                if (!izDijaloga && DijalogTok.NextForm(forma).Length == 0)
+                    OdaberiCvor(dij.FindNode);
             }
             finally
             {
@@ -1259,6 +1262,38 @@ namespace Carpo.NetGen.Ui
             }
             string[] iz = ForeachNaredba.Idjevi(vrsta, svi, plavi, cek);
             return new System.Collections.Generic.List<string>(iz);
+        }
+
+        /// <summary>
+        /// Form1 5524-5531: TreeView2.Nodes.Find(strFindNode, True) traži po ključu čvora (prvi stupac TREE upita,
+        /// Form1 4502), svaki nađeni odabere i raširi; zadnji ostaje odabran. Korijen u VB-u nema ključ.
+        /// </summary>
+        private void OdaberiCvor(string kljuc)
+        {
+            string trazeno = (kljuc ?? "").Trim();
+            if (trazeno.Length == 0 || trMain == null || IsDisposed)
+                return;
+            var nadjeni = new System.Collections.Generic.List<DevExpress.XtraTreeList.Nodes.TreeListNode>();
+            SkupiPoKljucu(trMain.Nodes, trazeno, nadjeni);
+            for (int i = 0; i < nadjeni.Count; i++)
+            {
+                trMain.FocusedNode = nadjeni[i];
+                nadjeni[i].Expanded = true;
+            }
+        }
+
+        private static void SkupiPoKljucu(DevExpress.XtraTreeList.Nodes.TreeListNodes cvorovi, string kljuc, System.Collections.Generic.List<DevExpress.XtraTreeList.Nodes.TreeListNode> nadjeni)
+        {
+            if (cvorovi == null)
+                return;
+            for (int i = 0; i < cvorovi.Count; i++)
+            {
+                DevExpress.XtraTreeList.Nodes.TreeListNode n = cvorovi[i];
+                var cvor = n.Tag as Cvor;
+                if (n.ParentNode != null && cvor != null && string.Equals((cvor.Oznaka ?? "").Trim(), kljuc, StringComparison.OrdinalIgnoreCase))
+                    nadjeni.Add(n);
+                SkupiPoKljucu(n.Nodes, kljuc, nadjeni);
+            }
         }
 
         private void OznaciPrazneCvorove()

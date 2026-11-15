@@ -64,6 +64,7 @@ namespace Carpo.NetGen.GridTest
                 Korak("kasna-greska", KasnaGreska);
                 Korak("poruka-s-tablicom", PorukaSTablicom);
                 Korak("trosak-hack", TrosakHack);
+                Korak("findnode", FindNodeNakonDijaloga);
             }
             finally
             {
@@ -134,6 +135,9 @@ namespace Carpo.NetGen.GridTest
                     + "insert into dbo.PregledFableLog (oznaka, t) values (@k, @t);\r\n"
                     + "select 1 as id, @k as oznaka, isnull(@t, '') as t");
                 Izvrsi(c, "delete from dbo.PregledFableLog");
+                Izvrsi(c, "if object_id('dbo.spPregledFableTree') is not null drop procedure dbo.spPregledFableTree");
+                Izvrsi(c, "create procedure dbo.spPregledFableTree as\r\n"
+                    + "select 1 as id, 0 as roditelj, 'Korijen' as natpis union all select 2, 1, 'Prvi' union all select 3, 1, 'Drugi'");
                 Izvrsi(c, "if object_id('dbo.spPregledFableGreska') is not null drop procedure dbo.spPregledFableGreska");
                 Izvrsi(c, "create procedure dbo.spPregledFableGreska @k varchar(50) as\r\n"
                     + "if @k = 'poruka' raiserror('Dokument je zakljucen #', 16, 1)\r\n"
@@ -290,6 +294,75 @@ namespace Carpo.NetGen.GridTest
             {
                 Zatvori(forma);
             }
+        }
+
+        // ------------------------------------------------------------------ PF-05
+
+        /// <summary>
+        /// Form2.RefreshControls 4692-4697 zapamti stupac "findnode" iz rezultata SQL-a dijaloga, a Form1
+        /// 5523-5531 nakon zatvaranja dijaloga nađe čvor stabla s tim ključem (Nodes.Find), odabere ga i raširi.
+        /// 20 ONCLICK-a u 9 XML-ova (DobUgovori, UgovorSKupcima, AOPNovi, KOD_Stavke:
+        /// "...#OK#select @@partneriid as findnode"). Carpo je stupac zanemario, pa stablo ostane na starom čvoru.
+        /// </summary>
+        private static void FindNodeNakonDijaloga()
+        {
+            string xml = Xml("PfFindNode.xml",
+                "<PROJECT ONLOAD=\"select 1 as id, 'a' as naziv\" TREE=\"dbo.spPregledFableTree:FILT\" CMD1CAPTION=\"Unesi:UNOS\">\r\n"
+                + "<NAME>PfFindNode</NAME>\r\n<CAPTION>Pregled findnode</CAPTION>\r\n"
+                + "<FILT CAPTION=\"Filter\"></FILT>\r\n"
+                + "<UNOS CAPTION=\"Unos\">\r\n"
+                + "<INPUT TYPE=\"text\" NAME=\"t\" DEFAULT=\"abc\" TOP=\"100\" LEFT=\"100\" WIDTH=\"2000\" HEIGHT=\"300\" />\r\n"
+                + "<INPUT TYPE=\"button\" NAME=\"spremi\" CAPTION=\"Spremi\" TOP=\"600\" LEFT=\"100\" WIDTH=\"1500\" HEIGHT=\"350\" ONCLICK=\"OK#select 3 as findnode\" />\r\n"
+                + "</UNOS>\r\n</PROJECT>\r\n");
+            bool otvoren;
+            Podloga forma = OtvoriPodlogu(xml, out otvoren);
+            try
+            {
+                SimpleButton gumb = GumbPodloge(forma, "Unesi");
+                var stablo = Polje(forma, "trMain") as DevExpress.XtraTreeList.TreeList;
+                if (!otvoren || gumb == null || stablo == null)
+                {
+                    T("pf05-findnode", false, "podloga se nije otvorila, nema gumba ili stabla");
+                    return;
+                }
+                string prije = Oznaka(stablo);
+                bool kliknut = false;
+                Dijalog.NakonPrikaza = delegate (Dijalog d)
+                {
+                    Control[] c = d.Controls.Find("spremi", true);
+                    if (c.Length > 0 && c[0] is SimpleButton)
+                    {
+                        kliknut = true;
+                        ((SimpleButton)c[0]).PerformClick();
+                    }
+                    if (!d.IsDisposed && d.DialogResult != DialogResult.OK)
+                    {
+                        d.DialogResult = DialogResult.Cancel;
+                        d.Close();
+                    }
+                };
+                try { gumb.PerformClick(); }
+                finally { Dijalog.NakonPrikaza = null; }
+                Application.DoEvents();
+                string poslije = Oznaka(stablo);
+                T("pf05-findnode", kliknut && poslije == "3", "čvor prije='" + prije + "' poslije='" + poslije + "' gumb kliknut=" + kliknut.ToString() + " (NetGen: čvor 3)");
+            }
+            catch (Exception ex)
+            {
+                T("pf05-findnode", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                Zatvori(forma);
+            }
+        }
+
+        private static string Oznaka(DevExpress.XtraTreeList.TreeList stablo)
+        {
+            if (stablo.FocusedNode == null)
+                return "";
+            var cvor = stablo.FocusedNode.Tag as Cvor;
+            return cvor == null ? "" : (cvor.Oznaka ?? "");
         }
 
         // ------------------------------------------------------------------ PF-02
