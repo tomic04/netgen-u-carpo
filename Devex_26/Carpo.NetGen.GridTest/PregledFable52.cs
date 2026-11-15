@@ -502,7 +502,7 @@ namespace Carpo.NetGen.GridTest
                 catch (SqlException ex)
                 {
                     poruka = ex.Message;
-                    uz = ex.Data[NgVeza.TablicaUzPoruku] as DataTable;
+                    uz = ex.Data["NgTablicaUzPoruku"] as DataTable;
                 }
                 T("pf04-tablica-uz-poruku", poruka.IndexOf("Gotovo", StringComparison.Ordinal) >= 0 && uz != null && uz.Rows.Count == 1,
                     "poruka='" + poruka + "' tablica=" + (uz == null ? "nema" : uz.Rows.Count.ToString() + " red") + " (NetGen: poruka i ds.Tables(0))");
