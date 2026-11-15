@@ -63,6 +63,7 @@ namespace Carpo.NetGen.GridTest
                 Korak("onsubmit-poruka", OnSubmitPoruka);
                 Korak("kasna-greska", KasnaGreska);
                 Korak("poruka-s-tablicom", PorukaSTablicom);
+                Korak("trosak-hack", TrosakHack);
             }
             finally
             {
@@ -127,6 +128,12 @@ namespace Carpo.NetGen.GridTest
             using (var c = new SqlConnection(Spoj()))
             {
                 c.Open();
+                Izvrsi(c, "if object_id('dbo.PregledFableLog') is null create table dbo.PregledFableLog (kad datetime not null default getdate(), oznaka varchar(50) not null, t varchar(200) null)");
+                Izvrsi(c, "if object_id('dbo.spPregledFable') is not null drop procedure dbo.spPregledFable");
+                Izvrsi(c, "create procedure dbo.spPregledFable @k varchar(50), @t varchar(200) = null as\r\n"
+                    + "insert into dbo.PregledFableLog (oznaka, t) values (@k, @t);\r\n"
+                    + "select 1 as id, @k as oznaka, isnull(@t, '') as t");
+                Izvrsi(c, "delete from dbo.PregledFableLog");
                 Izvrsi(c, "if object_id('dbo.spPregledFableGreska') is not null drop procedure dbo.spPregledFableGreska");
                 Izvrsi(c, "create procedure dbo.spPregledFableGreska @k varchar(50) as\r\n"
                     + "if @k = 'poruka' raiserror('Dokument je zakljucen #', 16, 1)\r\n"
@@ -234,6 +241,55 @@ namespace Carpo.NetGen.GridTest
             finally { Dijalog.NakonPrikaza = null; }
             Application.DoEvents();
             return forma;
+        }
+
+        // ------------------------------------------------------------------ PF-01
+
+        /// <summary>
+        /// Podloga.ZapamtiNoviTrosak (kod klik pregleda za spin) radi i u običnom radu: nakon ONSUBMIT-a koji
+        /// sadrži "spPrnTroskoviGlaAzur ... @action=0" čita "select top 1 ... from PrnTroskoviGla order by ... desc"
+        /// i taj id upiše u _master.Stanje.Id i Kontekst.Id. NetGen (Form1 5501-5507) to ne radi: @@id ostaje red
+        /// u gridu. Lista _poslano (svi poslani SQL-ovi) se izvan klik pregleda nikad ne prazni.
+        /// </summary>
+        private static void TrosakHack()
+        {
+            string xml = Xml("PfTrosak.xml",
+                "<PROJECT ONLOAD=\"select 1 as id, 'a' as naziv\" CMD1CAPTION=\"Unos:UNOS\">\r\n"
+                + "<NAME>PfTrosak</NAME>\r\n<CAPTION>Pregled trosak</CAPTION>\r\n"
+                + "<UNOS CAPTION=\"Unos\" CMD1CAPTION=\"OK\" CMD2CAPTION=\"Odustani\" ONSUBMIT=\"dbo.spPregledFable @k='trosak', @t='spPrnTroskoviGlaAzur @action=0' !!\">\r\n"
+                + "<INPUT TYPE=\"text\" NAME=\"t\" DEFAULT=\"abc\" TOP=\"100\" LEFT=\"100\" WIDTH=\"2000\" HEIGHT=\"300\" />\r\n"
+                + "</UNOS>\r\n</PROJECT>\r\n");
+            string greska;
+            Podloga forma = KlikOk(xml, "Unos", out greska);
+            try
+            {
+                if (greska.Length > 0)
+                {
+                    T("pf01-trosak-hack", false, greska);
+                    return;
+                }
+                var poslano = Polje(forma, "_poslano") as List<string>;
+                int trosak = 0;
+                int ukupno = poslano == null ? -1 : poslano.Count;
+                if (poslano != null)
+                {
+                    for (int i = 0; i < poslano.Count; i++)
+                    {
+                        if (poslano[i].IndexOf("from PrnTroskoviGla", StringComparison.OrdinalIgnoreCase) >= 0)
+                            trosak++;
+                    }
+                }
+                T("pf01-trosak-hack", trosak == 0, "upita 'from PrnTroskoviGla' izvan klik pregleda: " + trosak.ToString() + " (NetGen 0)");
+                T("pf01-poslano-ne-raste", ukupno == 0, "_poslano izvan klik pregleda ima " + ukupno.ToString() + " SQL-ova (treba 0, lista se nikad ne prazni)");
+            }
+            catch (Exception ex)
+            {
+                T("pf01-trosak-hack", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                Zatvori(forma);
+            }
         }
 
         // ------------------------------------------------------------------ PF-02
