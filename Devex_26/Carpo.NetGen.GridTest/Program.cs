@@ -2069,6 +2069,7 @@ namespace Carpo.NetGen.GridTest
             StabloDijaloga();
             IzgledGridaDijaloga();
             PregledNeovisni.Izvrsi(T);
+            PregledFable52.Izvrsi(T);
             OznaceniIzUpita();
             // HLP-02: DajPokaziHelp argumenti; Str(7) ima razmak sprijeda.
             T("hlp02-argumenti", JupiterPomoc.Argumenti("srv", "db", "KOD", "7", "X.xml") == "-s srv -d db -h KOD -o  7 -p X.xml",
