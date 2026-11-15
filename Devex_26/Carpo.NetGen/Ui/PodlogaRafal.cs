@@ -117,12 +117,14 @@ namespace Carpo.NetGen.Ui
             }
             _zadnjaPoruka = null;
             DataTable rez = Citaj(t);
-            if (rez == null && _zadnjaPoruka != null)
+            if (_zadnjaPoruka != null)
             {
                 SqlPoruka.Ishod ish = SqlPoruka.IzIznimke(_zadnjaPoruka);
                 if (ish.Prikazi)
                     NgPoruka.Info(this, "\r\n" + ish.Tekst + "\r\n\r\n", "Poruka");
-                return ish.Greska ?? "";
+                // Uz "#OK" poruku tablica (ako je stigla prije nje) ide dalje, kao ds.Tables(0) u ExecSql 190-195 (PF-04).
+                if (rez == null || !string.IsNullOrEmpty(ish.Greska))
+                    return ish.Greska ?? "";
             }
             if (rez != null && rez.Rows.Count > 0 && rez.Columns.Contains("setcolorforcolorpicker"))
             {
@@ -141,11 +143,15 @@ namespace Carpo.NetGen.Ui
         {
             _zadnjaPoruka = null;
             DataTable t = Citaj(sql);
-            if (t == null && !string.IsNullOrEmpty(_zadnjaPoruka) && !SqlPoruka.Tiha(_zadnjaPoruka))
+            if (!string.IsNullOrEmpty(_zadnjaPoruka) && !SqlPoruka.Tiha(_zadnjaPoruka))
             {
                 string poruka = _zadnjaPoruka;
                 _zadnjaPoruka = null;
-                throw new InvalidOperationException(poruka);
+                var iznimka = new InvalidOperationException(poruka);
+                // Tablica uz poruku procedure ide dijalogu zajedno s porukom (Dijalog.Omotaj, PF-04).
+                if (t != null)
+                    iznimka.Data[NgVeza.TablicaUzPoruku] = t;
+                throw iznimka;
             }
             return t;
         }

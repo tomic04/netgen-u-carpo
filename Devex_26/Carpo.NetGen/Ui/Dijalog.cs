@@ -128,8 +128,9 @@ namespace Carpo.NetGen.Ui
                     SqlPoruka.Ishod ish = SqlPoruka.IzIznimke(ex.Message);
                     if (ish.Prikazi)
                         NgPoruka.Info(this, "\r\n" + ish.Tekst + "\r\n\r\n", "Poruka");
+                    // Class1.ExecSql 190-195: uz "#OK" poruku vrati se tablica koja je stigla prije nje (PF-04).
                     if (string.IsNullOrEmpty(ish.Greska))
-                        return null;
+                        return ex.Data[NgVeza.TablicaUzPoruku] as DataTable;
                     throw;
                 }
             };

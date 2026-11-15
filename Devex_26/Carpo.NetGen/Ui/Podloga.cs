@@ -737,7 +737,7 @@ namespace Carpo.NetGen.Ui
         {
             _zadnjaPoruka = null;
             DataTable t = Citaj(sql);
-            if (t == null && _zadnjaPoruka != null)
+            if (_zadnjaPoruka != null)
             {
                 SqlPoruka.Ishod ish = SqlPoruka.IzIznimke(_zadnjaPoruka);
                 if (ish.Prikazi)
@@ -995,11 +995,24 @@ namespace Carpo.NetGen.Ui
             string staro = gvGla.FocusedRowHandle >= 0 && gvGla.DataRowCount > 0 ? IdCelije(gvGla.FocusedRowHandle) : "";
             _punim = true;
             _master.IzvrsiCitanje(_spoj);
+            PokaziPorukuUzTablicu();
             VeziGrid(gvGla, gcGla, _master.Stanje.Tablica, _master.Stanje.Kolone, _master.Stanje.Poruka, _master.Stanje.CheckboxVidljiv, _master.Stanje.GroupByBox, _master.Stanje.FilterRed || _master.Stanje.FilterNamjernoOdstupanje || !_master.Stanje.FilterIzXml);
             PozicionirajMaster(staro);
             SpojiId();
             _punim = false;
             OsvjeziDetail();
+        }
+
+        /// <summary>Class1.ExecSql 164-186: poruka procedure koja je stigla uz tablicu mastera (MsgBox), jednom (PF-04).</summary>
+        private void PokaziPorukuUzTablicu()
+        {
+            string poruka = _master.Stanje.PorukaUzTablicu;
+            if (string.IsNullOrEmpty(poruka))
+                return;
+            _master.Stanje.PorukaUzTablicu = null;
+            SqlPoruka.Ishod ish = SqlPoruka.IzIznimke(poruka);
+            if (ish.Prikazi)
+                NgPoruka.Info(this, "\r\n" + ish.Tekst + "\r\n\r\n", "Poruka");
         }
 
         /// <summary>
@@ -1348,7 +1361,8 @@ namespace Carpo.NetGen.Ui
                 NgDnevnik.Greska(ex.Message + " | " + sql);
                 if (!tiho)
                     PostaviStatus(ex.Message);
-                return null;
+                // Class1.ExecSql 164-195: uz poruku procedure ('#'/'+') vrati se tablica koja je stigla prije nje (PF-04).
+                return tiho ? null : ex.Data[NgVeza.TablicaUzPoruku] as DataTable;
             }
         }
 
