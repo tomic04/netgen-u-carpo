@@ -61,6 +61,8 @@ namespace Carpo.NetGen.GridTest
                     return;
                 }
                 Korak("onsubmit-poruka", OnSubmitPoruka);
+                Korak("kasna-greska", KasnaGreska);
+                Korak("poruka-s-tablicom", PorukaSTablicom);
             }
             finally
             {
@@ -129,6 +131,10 @@ namespace Carpo.NetGen.GridTest
                 Izvrsi(c, "create procedure dbo.spPregledFableGreska @k varchar(50) as\r\n"
                     + "if @k = 'poruka' raiserror('Dokument je zakljucen #', 16, 1)\r\n"
                     + "else raiserror('Obicna greska procedure', 16, 1)");
+                Izvrsi(c, "if object_id('dbo.spPregledFablePorukaTablica') is not null drop procedure dbo.spPregledFablePorukaTablica");
+                Izvrsi(c, "create procedure dbo.spPregledFablePorukaTablica as\r\n"
+                    + "select 7 as id, 'sedam' as naziv;\r\n"
+                    + "raiserror('Gotovo #OK', 16, 1)");
             }
         }
 
@@ -282,6 +288,102 @@ namespace Carpo.NetGen.GridTest
                 NgPoruka.Zapis = staro;
                 if (forma != null)
                     Zatvori(forma);
+            }
+        }
+
+        // ------------------------------------------------------------------ PF-04
+
+        /// <summary>
+        /// Class1.ExecSql 164-191: kad procedura vrati tablicu pa digne RAISERROR s '#' ili '+' ("... #OK"),
+        /// NetGen pokaže poruku i VRATI tablicu (ds.Tables(0)). FILLEXPLORER=TRUE tada napuni master (Form1 5450).
+        /// Carpo: NgVeza baci iznimku i tablica se izgubi.
+        /// </summary>
+        private static void PorukaSTablicom()
+        {
+            string xml = Xml("PfTablica.xml",
+                "<PROJECT ONLOAD=\"select 1 as id, 'a' as naziv\" CMD1CAPTION=\"Filter:FILT\">\r\n"
+                + "<NAME>PfTablica</NAME>\r\n<CAPTION>Pregled tablica</CAPTION>\r\n"
+                + "<FILT CAPTION=\"Filter\" FILLEXPLORER=\"TRUE\" CMD1CAPTION=\"OK\" CMD2CAPTION=\"Odustani\" ONSUBMIT=\"dbo.spPregledFablePorukaTablica !!\">\r\n"
+                + "<INPUT TYPE=\"text\" NAME=\"t\" DEFAULT=\"abc\" TOP=\"100\" LEFT=\"100\" WIDTH=\"2000\" HEIGHT=\"300\" />\r\n"
+                + "</FILT>\r\n</PROJECT>\r\n");
+            var poruke = new List<string>();
+            Action<string> staro = NgPoruka.Zapis;
+            NgPoruka.Zapis = delegate (string tekst) { poruke.Add(tekst ?? ""); };
+            Podloga forma = null;
+            try
+            {
+                string greska;
+                forma = KlikOk(xml, "Filter", out greska);
+                if (greska.Length > 0)
+                {
+                    T("pf04-poruka-s-tablicom", false, greska);
+                    return;
+                }
+                var gv = Polje(forma, "gvGla") as GridView;
+                int redova = gv == null ? -1 : gv.DataRowCount;
+                string id = "";
+                if (gv != null && redova > 0 && gv.Columns.ColumnByFieldName("id") != null)
+                    id = Convert.ToString(gv.GetRowCellValue(0, "id"));
+                bool gotovo = false;
+                for (int i = 0; i < poruke.Count; i++)
+                {
+                    if (poruke[i].IndexOf("Gotovo", StringComparison.Ordinal) >= 0)
+                        gotovo = true;
+                }
+                T("pf04-poruka-s-tablicom", redova == 1 && id == "7" && gotovo,
+                    "master redova=" + redova.ToString() + " id='" + id + "' poruka=[" + string.Join(" | ", poruke.ToArray()).Replace("\r", " ").Replace("\n", " ") + "] (NetGen: 1 red, id 7, poruka 'Gotovo')");
+            }
+            catch (Exception ex)
+            {
+                T("pf04-poruka-s-tablicom", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                NgPoruka.Zapis = staro;
+                if (forma != null)
+                    Zatvori(forma);
+            }
+        }
+
+        /// <summary>
+        /// Class1.ExecSql 139-155: da.Fill(ds) čita sve rezultate, pa greška NAKON prve tablice baci iznimku: MsgBox,
+        /// Conn.Close/Open (241-242, transakcija se poništi). NgVeza je punio DataTable (samo prvi rezultat), pa je
+        /// takva greška nestala bez traga, a transakcija koju je procedura otvorila ostala je otvorena na vezi granule.
+        /// </summary>
+        private static void KasnaGreska()
+        {
+            string spoj = SpinVeza.SaAplikacijom(Spoj(), "pf04.xml");
+            NgVeza.Prijavi(spoj);
+            try
+            {
+                string bacila = "";
+                try { NgVeza.Citaj(spoj, "begin tran; select 1 as a; raiserror('Kasna greska', 16, 1)", 30); }
+                catch (SqlException ex) { bacila = ex.Message; }
+                DataTable tc = NgVeza.Citaj(spoj, "select @@trancount as n", 30);
+                int trancount = tc == null || tc.Rows.Count == 0 ? -1 : Convert.ToInt32(tc.Rows[0][0]);
+                if (trancount > 0)
+                    NgVeza.Citaj(spoj, "while @@trancount > 0 rollback", 30);
+                T("pf04-greska-nakon-tablice", bacila.IndexOf("Kasna greska", StringComparison.Ordinal) >= 0 && trancount == 0,
+                    "iznimka='" + bacila + "' @@trancount=" + trancount.ToString() + " (NetGen: greška se vidi, @@trancount 0)");
+
+                DataTable uz = null;
+                string poruka = "";
+                try { NgVeza.Citaj(spoj, "select 7 as id; raiserror('Gotovo #OK', 16, 1)", 30); }
+                catch (SqlException ex)
+                {
+                    poruka = ex.Message;
+                    uz = ex.Data[NgVeza.TablicaUzPoruku] as DataTable;
+                }
+                T("pf04-tablica-uz-poruku", poruka.IndexOf("Gotovo", StringComparison.Ordinal) >= 0 && uz != null && uz.Rows.Count == 1,
+                    "poruka='" + poruka + "' tablica=" + (uz == null ? "nema" : uz.Rows.Count.ToString() + " red") + " (NetGen: poruka i ds.Tables(0))");
+            }
+            catch (Exception ex)
+            {
+                T("pf04-greska-nakon-tablice", false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                NgVeza.Otpusti(spoj);
             }
         }
 

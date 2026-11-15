@@ -62,6 +62,50 @@ namespace Carpo.NetGen.Grid
             return t.Length > 160 ? t.Substring(0, 160) : t;
         }
 
+        /// <summary>
+        /// Ključ u SqlException.Data: tablica koja je stigla prije RAISERROR-a s '#' ili '+'. Class1.ExecSql
+        /// 164-195 tada pokaže poruku i vrati ds.Tables(0), pa pozivatelj ima i poruku i tablicu (PF-04).
+        /// </summary>
+        public const string TablicaUzPoruku = "NgTablicaUzPoruku";
+
+        /// <summary>
+        /// Class1.ExecSql 139-155: da.Fill(ds) pročita SVE rezultate, pa greška koja dođe nakon prve tablice
+        /// (procedura vrati redove, a onda padne ili digne RAISERROR) baci iznimku. Fill(DataTable) čita samo prvu
+        /// tablicu i ostatak tiho odbaci: korisnik ne vidi grešku, a veza se ne resetira (PF-04).
+        /// </summary>
+        private static DataTable Napuni(SqlConnection veza, string sql, int timeoutSekundi)
+        {
+            var ds = new DataSet();
+            try
+            {
+                using (var cmd = new SqlCommand(sql, veza))
+                using (var da = new SqlDataAdapter(cmd))
+                {
+                    cmd.CommandTimeout = timeoutSekundi;
+                    da.Fill(ds);
+                }
+            }
+            catch (SqlException ex)
+            {
+                string poruka = ex.Message ?? "";
+                if (ds.Tables.Count > 0 && ex.Number != -2 && (poruka.Contains("#") || poruka.Contains("+")))
+                    ex.Data[TablicaUzPoruku] = Prva(ds);
+                throw;
+            }
+            return Prva(ds);
+        }
+
+        /// <summary>Prva tablica bez DataSet-a (kao prije uz Fill(DataTable)); bez rezultata prazna tablica.</summary>
+        private static DataTable Prva(DataSet ds)
+        {
+            if (ds.Tables.Count == 0)
+                return new DataTable();
+            DataTable t = ds.Tables[0];
+            ds.Tables.Remove(t);
+            t.TableName = "";
+            return t;
+        }
+
         private static DataTable CitajBezMjere(string spoj, string sql, int timeoutSekundi)
         {
             Stavka s = Uzmi(spoj);
@@ -81,14 +125,7 @@ namespace Carpo.NetGen.Grid
                     s.Veza = new SqlConnection(BezPoola(spoj));
                     s.Veza.Open();
                 }
-                var dt = new DataTable();
-                using (var cmd = new SqlCommand(sql, s.Veza))
-                using (var da = new SqlDataAdapter(cmd))
-                {
-                    cmd.CommandTimeout = timeoutSekundi;
-                    da.Fill(dt);
-                }
-                return dt;
+                return Napuni(s.Veza, sql, timeoutSekundi);
             }
             catch (SqlException ex)
             {
@@ -143,16 +180,11 @@ namespace Carpo.NetGen.Grid
 
         private static DataTable CitajZasebno(string spoj, string sql, int timeoutSekundi)
         {
-            var dt = new DataTable();
             using (var conn = new SqlConnection(spoj))
-            using (var cmd = new SqlCommand(sql, conn))
-            using (var da = new SqlDataAdapter(cmd))
             {
-                cmd.CommandTimeout = timeoutSekundi;
                 conn.Open();
-                da.Fill(dt);
+                return Napuni(conn, sql, timeoutSekundi);
             }
-            return dt;
         }
 
         /// <summary>Podloga se otvorila s ovim spojem.</summary>

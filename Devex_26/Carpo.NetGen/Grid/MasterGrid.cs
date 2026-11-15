@@ -74,6 +74,8 @@ namespace Carpo.NetGen.Grid
         /// <summary>Broj SQL greške (SqlException.Number) uz SqlGreska; RAISERROR procedure je &gt;= 50000 (PORUKA u sweepu).</summary>
         public int SqlGreskaBroj;
         public string Poruka;
+        /// <summary>Poruka procedure (RAISERROR s '#'/'+') koja je stigla NAKON tablice: grid se napuni, a podloga je pokaže (PF-04).</summary>
+        public string PorukaUzTablicu;
         public string GroupCount = "[ ]";
         public string PocetniSort = "sql";
     }
@@ -191,6 +193,7 @@ namespace Carpo.NetGen.Grid
                 Stanje.SqlGreska = null;
                 Stanje.SqlGreskaBroj = 0;
                 Stanje.Poruka = null;
+                Stanje.PorukaUzTablicu = null;
                 SloziKolone(_projekt, dt);
                 Fokus(_projekt);
                 Stanje.Redoslijed.Add("exec-ok");
@@ -201,6 +204,22 @@ namespace Carpo.NetGen.Grid
                 var sqlEx = ex as System.Data.SqlClient.SqlException;
                 if (sqlEx != null)
                     broj = sqlEx.Number;
+                // Class1.ExecSql 164-195: RAISERROR s '#'/'+' nakon tablice ("Gotovo #OK"): poruka, a tablica puni grid (PF-04).
+                var uzPoruku = ex.Data[NgVeza.TablicaUzPoruku] as DataTable;
+                if (uzPoruku != null && !TihaGreska(ex.Message))
+                {
+                    Stanje.Tablica = uzPoruku;
+                    Stanje.Kolone.Clear();
+                    Stanje.SqlGreska = null;
+                    Stanje.SqlGreskaBroj = 0;
+                    Stanje.Poruka = null;
+                    Stanje.PorukaUzTablicu = ex.Message ?? "";
+                    SloziKolone(_projekt, uzPoruku);
+                    Fokus(_projekt);
+                    Stanje.Redoslijed.Add("exec-ok");
+                    GridIzgled.Popuni(Stanje);
+                    return;
+                }
                 GreskaSql.Zapisi(broj, ex.Message, Stanje.SqlZaSlanje, connectionString);
                 if (TihaGreska(ex.Message))
                     ZabiljeziGresku(ex.Message, false);
