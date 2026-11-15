@@ -35,6 +35,8 @@ namespace Carpo.NetGen.Ui
         public static string TragPutanja;
         private bool _jupiter;
         private readonly Dictionary<string, string> _izUpita = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        /// <summary>ONLOAD stupci tipa datuma, sirovi (PF-03): DateEdit dobije DateTime, a @@ime 'yyyyMMdd', neovisno o kulturi računala.</summary>
+        private readonly Dictionary<string, DateTime> _izUpitaDatum = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         private int _grupe;
         private string _priprema = "";
 
@@ -1460,6 +1462,12 @@ namespace Carpo.NetGen.Ui
             var kontrole = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var par in _izUpita)
                 kontrole[par.Key] = par.Value;
+            // PF-03: ONLOAD datum kao @@ime ide 'yyyyMMdd' (Class1 876/941 za @DAT...), s vremenom samo izvan @DAT imena.
+            foreach (var par in _izUpitaDatum)
+            {
+                bool samoDatum = par.Value.TimeOfDay == TimeSpan.Zero || par.Key.StartsWith("dat", StringComparison.OrdinalIgnoreCase);
+                kontrole[par.Key] = par.Value.ToString(samoDatum ? "yyyyMMdd" : "yyyyMMdd HH:mm:ss", CultureInfo.InvariantCulture);
+            }
             SkupiTekst(this, kontrole);
             string id = _kontekst == null ? "" : _kontekst.Id;
             return DijalogTok.ZamijeniTokene(naredba, id, kontrole);
@@ -1901,7 +1909,9 @@ namespace Carpo.NetGen.Ui
             string[] oblici = { "dd.MM.yyyy", "d.M.yyyy", "dd.MM.yyyy.", "d.M.yyyy.", "yyyyMMdd", "yyyy-MM-dd", "dd.MM.yyyy HH:mm:ss", "d.M.yyyy. H:mm:ss" };
             if (DateTime.TryParseExact(t, oblici, CultureInfo.InvariantCulture, DateTimeStyles.None, out d))
                 return true;
-            return DateTime.TryParse(t, CultureInfo.CurrentCulture, DateTimeStyles.None, out d);
+            if (DateTime.TryParse(t, CultureInfo.CurrentCulture, DateTimeStyles.None, out d))
+                return true;
+            return DateTime.TryParse(t, CultureInfo.InvariantCulture, DateTimeStyles.None, out d);
         }
 
         /// <summary>
@@ -3120,7 +3130,21 @@ namespace Carpo.NetGen.Ui
                 return;
             foreach (DataColumn col in dt.Columns)
             {
-                string v = dt.Rows[0][col] == DBNull.Value ? "" : Convert.ToString(dt.Rows[0][col], CultureInfo.InvariantCulture);
+                object sirovo = dt.Rows[0][col];
+                string v;
+                if (sirovo is DateTime)
+                {
+                    // PF-03. Form2.ProcitajXML 2301 i 1205-1232: datum ide u DTPicker kao Date, a u CB kao CStr(Date),
+                    // što NadjiVrijednostuPrevParametrima (Class1 876, 941) čita kao dd.MM.yyyy. InvariantCulture
+                    // ("11/05/2026 00:00:00") DateEdit u hr-HR ne razumije, pa je datum na spremanju išao kao null.
+                    var dan = (DateTime)sirovo;
+                    _izUpitaDatum[col.ColumnName] = dan;
+                    v = dan.TimeOfDay == TimeSpan.Zero
+                        ? dan.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)
+                        : dan.ToString("dd.MM.yyyy H:mm:ss", CultureInfo.InvariantCulture);
+                }
+                else
+                    v = sirovo == DBNull.Value ? "" : Convert.ToString(sirovo, CultureInfo.InvariantCulture);
                 _izUpita[col.ColumnName] = v;
                 if (kontekst != null)
                     kontekst.ParametriSaGrida += "@" + col.ColumnName + "='" + v.Replace("'", "''") + "' , ";
@@ -3162,6 +3186,13 @@ namespace Carpo.NetGen.Ui
                 Control[] n = Controls.Find(par.Key, true);
                 if (n.Length == 0)
                     continue;
+                DateTime dan;
+                var datum = n[0] as DateEdit;
+                if (datum != null && _izUpitaDatum.TryGetValue(par.Key, out dan))
+                {
+                    datum.EditValue = dan;
+                    continue;
+                }
                 PostaviVrijednost(n[0], par.Value ?? "");
             }
         }
@@ -3220,6 +3251,14 @@ namespace Carpo.NetGen.Ui
                     look.EditValue = brojId;
                 else if (!string.IsNullOrEmpty(v))
                     look.EditValue = v;
+                return;
+            }
+            var datum = c as DateEdit;
+            DateTime dan;
+            if (datum != null && !string.IsNullOrWhiteSpace(v) && ProcitajDatum(v, out dan))
+            {
+                // 2301-2305: Glbl.Value = tekst (CDate), pa yyyyMMdd. Text bi parsirao DevExpress u kulturi računala (PF-03).
+                datum.EditValue = dan;
                 return;
             }
             var edit = c as TextEdit;
