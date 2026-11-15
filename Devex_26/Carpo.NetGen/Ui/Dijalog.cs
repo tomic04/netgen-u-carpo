@@ -3135,7 +3135,7 @@ namespace Carpo.NetGen.Ui
                 string v;
                 if (sirovo is DateTime)
                 {
-                    // PF-03. Form2.ProcitajXML 2271 i 1205-1232: datum ide u DTPicker kao Date, a u CB kao CStr(Date),
+                    // PF-03. Form2.ProcitajXML 2301 i 1205-1232: datum ide u DTPicker kao Date, a u CB kao CStr(Date),
                     // što NadjiVrijednostuPrevParametrima (Class1 876, 941) čita kao dd.MM.yyyy. InvariantCulture
                     // ("11/05/2026 00:00:00") DateEdit u hr-HR ne razumije, pa je datum na spremanju išao kao null.
                     var dan = (DateTime)sirovo;
@@ -3258,7 +3258,7 @@ namespace Carpo.NetGen.Ui
             DateTime dan;
             if (datum != null && !string.IsNullOrWhiteSpace(v) && ProcitajDatum(v, out dan))
             {
-                // 2271-2275: Glbl.Value = tekst (CDate), pa yyyyMMdd. Text bi parsirao DevExpress u kulturi računala (PF-03).
+                // 2301-2305: Glbl.Value = tekst (CDate), pa yyyyMMdd. Text bi parsirao DevExpress u kulturi računala (PF-03).
                 datum.EditValue = dan;
                 return;
             }
