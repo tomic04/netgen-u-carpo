@@ -33,10 +33,40 @@ namespace Carpo.NetGen.GridTest
             _t(id, ok, detalj);
         }
 
+        private static volatile bool _cuvar;
+
         public static void Izvrsi(Action<string, bool, string> t)
         {
             _t = t;
             Korak("onload-datum-hr", OnLoadDatumHr);
+            // Podloga u GridTestu nema Carpo Logger, pa JupiterShared_Shown baci iznimku na UI niti (kao u PregledNeovisni).
+            ThreadExceptionEventHandler iznimka = delegate (object s, ThreadExceptionEventArgs e)
+            {
+                Console.WriteLine("pf: iznimka na UI niti u koraku " + _korak + ": " + e.Exception.GetType().Name + " " + e.Exception.Message);
+            };
+            Application.ThreadException += iznimka;
+            _cuvar = true;
+            var cuvar = new Thread(Cuvar);
+            cuvar.IsBackground = true;
+            cuvar.Start();
+            try
+            {
+                try
+                {
+                    PripremiSpin();
+                }
+                catch (Exception ex)
+                {
+                    T("pf-spin-priprema", false, ex.Message);
+                    return;
+                }
+                Korak("onsubmit-poruka", OnSubmitPoruka);
+            }
+            finally
+            {
+                _cuvar = false;
+                Application.ThreadException -= iznimka;
+            }
         }
 
         private static void Korak(string ime, Action radnja)
@@ -44,6 +74,215 @@ namespace Carpo.NetGen.GridTest
             _korak = ime;
             Console.WriteLine("pf: " + ime);
             radnja();
+        }
+
+        private static void Cuvar()
+        {
+            string zadnji = _korak;
+            int sekundi = 0;
+            while (_cuvar)
+            {
+                Thread.Sleep(1000);
+                if (_korak != zadnji)
+                {
+                    zadnji = _korak;
+                    sekundi = 0;
+                    continue;
+                }
+                sekundi++;
+                if (sekundi < 90)
+                    continue;
+                sekundi = 0;
+                Console.WriteLine("pf: korak " + _korak + " stoji 90 s");
+                try
+                {
+                    var forme = new List<Form>();
+                    foreach (Form f in Application.OpenForms)
+                        forme.Add(f);
+                    foreach (Form f in forme)
+                    {
+                        if (f is Dijalog && !f.IsDisposed)
+                        {
+                            Form z = f;
+                            z.BeginInvoke(new Action(delegate () { z.DialogResult = DialogResult.Cancel; z.Close(); }));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("pf:   " + ex.Message);
+                }
+            }
+        }
+
+        private static string Spoj()
+        {
+            return SpinVeza.Spoj("localhost", "spin");
+        }
+
+        private static void PripremiSpin()
+        {
+            using (var c = new SqlConnection(Spoj()))
+            {
+                c.Open();
+                Izvrsi(c, "if object_id('dbo.spPregledFableGreska') is not null drop procedure dbo.spPregledFableGreska");
+                Izvrsi(c, "create procedure dbo.spPregledFableGreska @k varchar(50) as\r\n"
+                    + "if @k = 'poruka' raiserror('Dokument je zakljucen #', 16, 1)\r\n"
+                    + "else raiserror('Obicna greska procedure', 16, 1)");
+            }
+        }
+
+        private static void Izvrsi(SqlConnection c, string sql)
+        {
+            using (var cmd = new SqlCommand(sql, c))
+            {
+                cmd.CommandTimeout = 30;
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private static string Xml(string ime, string sadrzaj)
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "pf" + Guid.NewGuid().ToString("N").Substring(0, 6));
+            Directory.CreateDirectory(dir);
+            string put = Path.Combine(dir, ime);
+            File.WriteAllText(put, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n" + sadrzaj, new UTF8Encoding(false));
+            return put;
+        }
+
+        private static Podloga OtvoriPodlogu(string xml, out bool otvoren)
+        {
+            var forma = new Podloga();
+            forma.ShowInTaskbar = false;
+            forma.StartPosition = FormStartPosition.Manual;
+            forma.Location = new Point(-32000, -32000);
+            forma.Show();
+            otvoren = forma.Prikazi(xml, "localhost", "spin", 7);
+            Application.DoEvents();
+            return forma;
+        }
+
+        private static object Polje(object o, string ime)
+        {
+            for (Type t = o.GetType(); t != null; t = t.BaseType)
+            {
+                FieldInfo f = t.GetField(ime, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                if (f != null)
+                    return f.GetValue(o);
+            }
+            return null;
+        }
+
+        private static SimpleButton GumbPodloge(Podloga forma, string natpis)
+        {
+            var ploca = Polje(forma, "pnlButtons") as Control;
+            if (ploca == null)
+                return null;
+            foreach (Control c in ploca.Controls)
+            {
+                var b = c as SimpleButton;
+                if (b != null && string.Equals((b.Text ?? "").Trim(), natpis, StringComparison.OrdinalIgnoreCase))
+                    return b;
+            }
+            return null;
+        }
+
+        private static void KlikniCmd(Dijalog d, int redni)
+        {
+            Control[] c = d.Controls.Find("cmd" + redni.ToString(), true);
+            if (c.Length > 0)
+                ((SimpleButton)c[0]).PerformClick();
+            else
+            {
+                d.DialogResult = DialogResult.Cancel;
+                d.Close();
+            }
+        }
+
+        private static void Zatvori(Podloga forma)
+        {
+            try
+            {
+                forma.Close();
+                forma.Dispose();
+            }
+            catch
+            {
+            }
+        }
+
+        /// <summary>Otvori podlogu, klikni gumb, u dijalogu klikni CMD1 (OK).</summary>
+        private static Podloga KlikOk(string xml, string gumbNatpis, out string greska)
+        {
+            greska = "";
+            bool otvoren;
+            Podloga forma = OtvoriPodlogu(xml, out otvoren);
+            SimpleButton gumb = GumbPodloge(forma, gumbNatpis);
+            if (!otvoren || gumb == null)
+            {
+                greska = "podloga se nije otvorila ili nema gumba";
+                return forma;
+            }
+            Dijalog.NakonPrikaza = delegate (Dijalog d) { KlikniCmd(d, 1); };
+            try { gumb.PerformClick(); }
+            finally { Dijalog.NakonPrikaza = null; }
+            Application.DoEvents();
+            return forma;
+        }
+
+        // ------------------------------------------------------------------ PF-02
+
+        /// <summary>
+        /// Class1.ExecSql 157-205: svaka ne-tiha greška SQL-a pokaže MsgBox (poruka procedure prije '#', inače
+        /// cijela poruka i SQL). ONSUBMIT nakon dijaloga izvršava Form1 (5501-5507) kroz cls1.ExecSql, dakle s
+        /// porukom. Carpo: Podloga.IzvrsiOnSubmit -> Citaj proguta grešku u statusnu traku (koju odmah prebriše
+        /// broj redova nakon OsvjeziMaster), pa korisnik ne zna da procedura nije spremila.
+        /// </summary>
+        private static void OnSubmitPoruka()
+        {
+            JednaPoruka("pf02-onsubmit-poruka", "poruka", "Dokument je zakljucen");
+            JednaPoruka("pf02-onsubmit-greska", "greska", "Obicna greska procedure");
+        }
+
+        private static void JednaPoruka(string id, string k, string ocekivano)
+        {
+            string xml = Xml("PfPoruka.xml",
+                "<PROJECT ONLOAD=\"select 1 as id, 'a' as naziv\" CMD1CAPTION=\"Spremi:UNOS\">\r\n"
+                + "<NAME>PfPoruka</NAME>\r\n<CAPTION>Pregled poruka</CAPTION>\r\n"
+                + "<UNOS CAPTION=\"Unos\" CMD1CAPTION=\"OK\" CMD2CAPTION=\"Odustani\" ONSUBMIT=\"dbo.spPregledFableGreska @k='" + k + "' !!\">\r\n"
+                + "<INPUT TYPE=\"text\" NAME=\"t\" DEFAULT=\"abc\" TOP=\"100\" LEFT=\"100\" WIDTH=\"2000\" HEIGHT=\"300\" />\r\n"
+                + "</UNOS>\r\n</PROJECT>\r\n");
+            var poruke = new List<string>();
+            Action<string> staro = NgPoruka.Zapis;
+            NgPoruka.Zapis = delegate (string tekst) { poruke.Add(tekst ?? ""); };
+            Podloga forma = null;
+            try
+            {
+                string greska;
+                forma = KlikOk(xml, "Spremi", out greska);
+                if (greska.Length > 0)
+                {
+                    T(id, false, greska);
+                    return;
+                }
+                bool ima = false;
+                for (int i = 0; i < poruke.Count; i++)
+                {
+                    if (poruke[i].IndexOf(ocekivano, StringComparison.OrdinalIgnoreCase) >= 0)
+                        ima = true;
+                }
+                T(id, ima, "poruka korisniku: " + poruke.Count.ToString() + " [" + string.Join(" | ", poruke.ToArray()).Replace("\r", " ").Replace("\n", " ") + "] (NetGen: MsgBox '" + ocekivano + "')");
+            }
+            catch (Exception ex)
+            {
+                T(id, false, ex.GetType().Name + ": " + ex.Message);
+            }
+            finally
+            {
+                NgPoruka.Zapis = staro;
+                if (forma != null)
+                    Zatvori(forma);
+            }
         }
 
         // ------------------------------------------------------------------ PF-03

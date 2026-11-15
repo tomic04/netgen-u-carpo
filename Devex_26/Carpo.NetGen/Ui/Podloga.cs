@@ -725,7 +725,25 @@ namespace Carpo.NetGen.Ui
                 return null;
             }
             NgDnevnik.Sql(stora);
-            return Citaj(stora);
+            return CitajSPorukom(stora);
+        }
+
+        /// <summary>
+        /// Class1.ExecSql 157-205: ne-tihu grešku SQL-a NetGen pokaže korisniku (MsgBox; kod RAISERROR-a s '#' ili
+        /// '+' tekst prije znaka). Citaj je piše samo u statusnu traku, koju OsvjeziMaster odmah prebriše brojem
+        /// redova, pa korisnik nakon OK nije znao da procedura nije spremila (PF-02).
+        /// </summary>
+        private DataTable CitajSPorukom(string sql)
+        {
+            _zadnjaPoruka = null;
+            DataTable t = Citaj(sql);
+            if (t == null && _zadnjaPoruka != null)
+            {
+                SqlPoruka.Ishod ish = SqlPoruka.IzIznimke(_zadnjaPoruka);
+                if (ish.Prikazi)
+                    NgPoruka.Info(this, "\r\n" + ish.Tekst + "\r\n\r\n", "Poruka");
+            }
+            return t;
         }
 
         /// <summary>PokaziUpit(ONSUBMIT): master grid se puni rezultatom ONSUBMIT-a (5450, 5497).</summary>
