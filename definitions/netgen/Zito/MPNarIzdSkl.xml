@@ -3,14 +3,14 @@
 		 DETAILGRID = "spMPQueryGlaIDetNG @action=2,@operateriid=@@operateriid,@id=@@id, @nenc = 1"
 		 MASTERDBLCLICK="UPDATE_FORM"
 		 INCLUDE="MPAmbalaza.xml" 
-		 BUTTONS="Filter:FILTERFORM#Dodaj:INSERTFORM1#Izmjeni:UPDATE_FORM#Zakljuèi:ZAKLJUCI#Print dok.:vrstadokid-Maloprodajagla" 
+		 BUTTONS="Filter:FILTERFORM#Dodaj:INSERTFORM1#Izmjeni:UPDATE_FORM#Zakljuèi:ZAKLJUCI#Print dok.:MULTISELECTISPIS_FORM" 
 		 POPUPMASTER="Filter:FILTERFORM#Izmjeni:UPDATEFORM#Zakljuèi:ZAKLJUCI#Otkljuèaj:OTKLJUCAJ#Stornoraj:STORNO" 
 		 TREE="Danas:DANAS_FORM#Juèer:JUCER_FORM#spMPTreeNG @action=1:TEKUCIMJESEC_FORM#Prošli mjesec:PROSLIMJESEC_FORM#spMPTreeNG @action=2:FILTERODDO_FORM#spMPTreeNG @action=3:FILTERODDO_FORM#spMPTreeNG @action=4:FILTEROPERATERIFORM"
-		 GROUPBYBOXVISIBLE="FALSE" 
+		 GROUPBYBOXVISIBLE="TRUE" 
 		 ONLOAD555="select vrstadokid from vrstadok where vrstapromid in (select vrstapromid from vrstaprom where sifra = '104') and mpizdatnicaZakljuci = 1"   
 		 FROZENCOLUMNS="0" 
 		 AUTOFITCOLUMNS="False"
-		 CHECKBOXVISIBLE="FALSE"
+		 CHECKBOXVISIBLE="TRUE"
 		 TOTALROWVISIBLE="FALSE"
 	     DETCHECKBOXVISIBLE="FALSE"	
 		 DETTOTALROWVISIBLE="FALSE"
@@ -42,7 +42,7 @@
 		>
 		<INPUT TYPE="combo" NAME="vrstadokid" ALLOWEMPTY="TRUE" TOP="200" LEFT="2000" CAPTION="Vrsta dokumena*" SQL="spmpDajVrstaDok '104'" />
 		<INPUT TYPE="button" NAME="ok" 		  CAPTION="Dokument&gt;&gt;&gt;" TABINDEX="2" TOP="800" LEFT="1280" WIDTH="1428" HEIGHT="322"
-			   ONCLICK="if @@vrstadokid is null begin raiserror 19001 &apos;Niste odabrali dokumant !&apos;
+			   ONCLICK="if @@vrstadokid is null begin exec spRaiserror 69001, &apos;Niste odabrali dokumant !&apos;
 							end#close#:INSERTFORM1" HOTKEY="F8" />
 		<INPUT TYPE="button" NAME="cancel" 		CAPTION="Odustani" TABINDEX="3" TOP="800" LEFT="3280" WIDTH="1428" HEIGHT="322" ONCLICK="close" HOTKEY="F8" />
 	</INSERTFORM2>
@@ -53,7 +53,7 @@
 		 ONSUBMIT=""
 		 ONLOAD1="select convert(varchar,getdate(),112) as datumdok, @@vrstadokid as vrstadokid" 
 		 ONLOAD="if (select count(*) from maloprodajagla where trgovinaid = (select top 1 trgovinaid from trgovineprava where operaterid = @@operateriid) and status = 0 and vrstadokid = @@vrstadokid) > 0 begin 
-						raiserror 19001 'Niste zatvorili zadnju narudžbu. Ne možete otvoriti novu !'
+						exec spRaiserror 69001, 'Niste zatvorili zadnju narudžbu. Ne možete otvoriti novu !'
 				 end
 				 else begin select convert(varchar,getdate(),112) as datumdok, @@vrstadokid as vrstadokid
 				 end " 
@@ -70,7 +70,7 @@
 			<INPUT TYPE="text" NAME="vrstadokid" CAPTION="" TOP="-1100"/>
 				<INPUT TYPE="button" NAME="ok" 		  CAPTION="Stavke >>> "  TOP="2800" LEFT="700" WIDTH="1428" HEIGHT="322"
 				   ONCLICK="if (select count(*) from maloprodajagla where trgovinaid = @@trgovinaid and status = 0 and vrstadokid = @@vrstadokid) > 0 begin 
-						raiserror 19001 'Niste zatvorili zadnju narudžbu. Ne možete otvoriti novu !'
+						exec spRaiserror 69001, 'Niste zatvorili zadnju narudžbu. Ne možete otvoriti novu !'
 				 end 
 				 else begin exec spMPInsertGlaIdetNG @action=1,@operateriid=@@operateriid,@sifradok = '104', @status = 0, @datumdok = @@datumdok , @trgovinaid = @@trgovinaid , @skladisteid = @@skladisteid, @napomena = '@@napomena', @osobeid = @@osobeid, @vrstadokid = @@vrstadokid end#close#:UPDATE_FORM " HOTKEY="F8" />
 		<INPUT TYPE="button" NAME="cancel" 		CAPTION="Odustani" TOP="2800" LEFT="2700" WIDTH="1428" HEIGHT="322" ONCLICK="close" HOTKEY="F8" />
@@ -86,11 +86,11 @@
 		FILLEXPLORER="" 
 		FOCUS="robaid" 
 		ONLOAD="if (select status from maloprodajagla  where maloprodajaglaid = @@ID ) > 0 begin 
-				raiserror 19001 &apos;Dokument je zakljuèen. Ne može se više ispravljati !&apos;
+				exec spRaiserror 69001, &apos;Dokument je zakljuèen. Ne može se više ispravljati !&apos;
 				end
 			else begin
 				if @@id = 0  begin 
-						raiserror 19001 &apos;Niste odabrali dokumant !&apos;
+						exec spRaiserror 69001, &apos;Niste odabrali dokumant !&apos;
 				end 
 				else begin 
 					exec spMPQueryGlaIDetNG @action=3 ,@ID=@@ID, @operateriid = @@operateriid
@@ -102,7 +102,7 @@
 		<INPUT TYPE="date"   NAME="datumdok"      CAPTION="Datum*" TOP="210" LEFT="1490" WIDTH="1596" HEIGHT="280" SQL=""  />
 		<INPUT TYPE="text"   NAME="broj"          CAPTION="Broj*" TOP="210" LEFT="3780" WIDTH="2002" HEIGHT="280" SQL="" ENABLED="FALSE"  />
 		<INPUT TYPE="combo"  NAME="trgovinaid"    CAPTION="Trgovina*" TOP="554" LEFT="1490" WIDTH="3500" HEIGHT="294" ALLOWEMPTY="FALSE" ENABLED="FALSE" SQL="spMPDajTrgovina @operateriid=@@operateriid"  ONCLICK="select 'refresh' as skladisteid, 'refresh' as osobeid"/>
-		<INPUT TYPE="combo"  NAME="sskladisteid"   CAPTION="Skladište*" TOP="854" LEFT="1490" WIDTH="3500" HEIGHT="294" ALLOWEMPTY="FALSE" SQL="spmpdajskladisteNG @trgovinaid = @@trgovinaid, @operateriid=@@operateriid, @oznaka = '070'"  />
+		<INPUT TYPE="combo"  NAME="sskladisteid"   CAPTION="Skladište*" TOP="854" LEFT="1490" WIDTH="3500" HEIGHT="294" ALLOWEMPTY="FALSE" SQL="spmpdajskladisteNG @trgovinaid = @@trgovinaid, @operateriid=@@operateriid"  />
 		<INPUT TYPE="text"   NAME="napomena"      CAPTION="Napomena*" TOP="1190" LEFT="1490" WIDTH="3568" HEIGHT="280" ALLOWEMPTY="TRUE" SQL=""  />
 		<INPUT TYPE="combo"  NAME="osobeid "      CAPTION="Odgovorna osoba*" TOP="1490" LEFT="1490" WIDTH="2568" HEIGHT="280" ALLOWEMPTY="FALSE" SQL="spMPDajOsobe @trgovinaid = @@trgovinaid"  />
 
@@ -132,7 +132,7 @@
 			   POPUP="Obriši:BRISISTAVKU"
 			   ONDBLCLICK=":IZMJENISTAVKU" 
 			   EDITCOLUMNS="kol.ulaz"
-			   ONCELLEDITED="spMPInsertGlaIdetNG @action=4, @maloprodajadetid = @@stavke, @id = @@id, @kolicinaulaz = @(stavke..kol.ulaz), @kolicinanaruceno = @(stavke..kol.ulaz)#select 'stavke' as focus #select cmpiznos from maloprodajagla where maloprodajaglaid = @@id"
+			   ONCELLEDITED="spMPInsertGlaIdetNG @action=4, @maloprodajadetid = @@stavke, @id = @@id, @kolicinaulaz =  @(stavke..kol.ulaz0800), @kolicinanaruceno = @(stavke..kol.ulaz0800)#select 'stavke' as focus #select cmpiznos from maloprodajagla where maloprodajaglaid = @@id"
 			   DETCHECKBOXVISIBLE="FALSE"	
 			   PAGEHEADERCENTER="Narudžba br.@@broj"
 			   PAGEHEADERRIGHT=""
@@ -219,7 +219,7 @@
 		CAPTION="Zakljuèiti dokument  ?" 
 		ONSUBMIT="spmpzakljucidokNG @id=@@id"
 		ONLOAD5="if (select status from maloprodajagla where maloprodajaglaid= @@ID ) > 0 begin 
-                        raiserror 19001 'Dokument je zakljuèen. Ne može se više zakljuèivati!' 
+                        exec spRaiserror 69001, 'Dokument je zakljuèen. Ne može se više zakljuèivati!' 
 						end
 						else begin
                         exec spMPQueryGlaIDetNG @action=3,@ID=@@ID
@@ -241,7 +241,7 @@
 		 CAPTION="Otkljuèavanje dokumenta  ?" 
 		 ONSUBMIT="spMPOtkljucakDokNG @id=@@id"
 		 ONLOAD="if (select status from maloprodajagla where maloprodajaglaid= @@ID ) > 0 begin 
-                        raiserror 19001 'Dokument je zakljuèen. Ne može se više otkljuèavati!' 
+                        exec spRaiserror 69001, 'Dokument je zakljuèen. Ne može se više otkljuèavati!' 
 						end
 						else begin
                         exec spMPQueryGlaIDetNG @action=3,@ID=@@ID
@@ -264,19 +264,21 @@
 			<INPUT TYPE="text"   NAME="userid"       CAPTION="Šifra"      HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
 			<INPUT TYPE="text"   NAME="roba"         CAPTION="Naziv robe" HEIGHT="317" WIDTH="4997"  TABINDEX="77" ENABLED="FALSE"/>
 			<INPUT TYPE="number" NAME="kolicina" CAPTION="Kolièina"   HEIGHT="302" WIDTH="1206"  DECIMALS="4" TABINDEX="1" ENABLED="FALSE" />
-			<INPUT TYPE="button" NAME="ok"           CAPTION="Obriši"   TOP="2000" LEFT="456" WIDTH="1106" HEIGHT="322" ONCLICK="spMPInsertGlaIdetNG @action = 5, @maloprodajadetid = @@stavke , @id = @@id, @maloprodajaglaid = @@id#select 'refresh' as stavke#Ok"  HOTKEY="F2" />
+			<INPUT TYPE="button" NAME="ok"           CAPTION="Obriši"   TOP="2000" LEFT="456" WIDTH="1106" HEIGHT="322" ONCLICK="spMPInsertGlaIdetNG @action = 5, @maloprodajadetid = @@stavke , @id = @@id, @maloprodajaglaid = @@id#Ok"  HOTKEY="F2" />
 			<INPUT TYPE="button" NAME="cancel"       CAPTION="Odustani" TOP="2000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
 </BRISISTAVKU>
 
 	
 <DONESI NAME="DONESI" 
-		HEIGHT="2902" WIDTH="7502" 
+		HEIGHT="3902" WIDTH="7502" 
 		CAPTION="Donos robe sa : " 	
 		ONLOAD="select 7 as dana"
 		  >
-			<INPUT TYPE="button" NAME="ok"     CAPTION="Donos sa terminala"  TOP="500" LEFT="456" WIDTH="2106" HEIGHT="322" ONCLICK=":DONOSTERMINAL#OK"  HOTKEY="F2" />
-			<INPUT TYPE="button" NAME="ok"     CAPTION="Donos iz robe "      TOP="1000" LEFT="456" WIDTH="2106" HEIGHT="322" ONCLICK=":DONOSIZROBE#OK"  HOTKEY="F2" />
-			<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani"            TOP="1500" LEFT="3756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+			<INPUT TYPE="button" NAME="ok"     CAPTION="Donos sa terminala"  TOP="500" LEFT="456" WIDTH="3106" HEIGHT="322" ONCLICK=":DONOSTERMINAL#OK"  HOTKEY="F2" />
+			<INPUT TYPE="button" NAME="ok"     CAPTION="Donos iz robe "      TOP="1000" LEFT="456" WIDTH="3106" HEIGHT="322" ONCLICK=":DONOSIZROBE#OK"  HOTKEY="F2" />
+			<INPUT TYPE="button" NAME="ok"     CAPTION="Donos sa zadnjeg zad."      TOP="1500" LEFT="456" WIDTH="3106" HEIGHT="322" ONCLICK=":DONOSIZPRIMKE#OK"  HOTKEY="F2" />
+			<INPUT TYPE="button" NAME="ok"     CAPTION="Donos iz asortimana"      TOP="2000" LEFT="456" WIDTH="3106" HEIGHT="322" ONCLICK=":DONOSIZASORT#OK"  HOTKEY="F2" />
+			<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani"            TOP="2000" LEFT="4756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
 </DONESI >
 
 
@@ -385,9 +387,87 @@
 			<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="9000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
 </DONOSIZROBE>
 
+	<DONOSIZPRIMKE
+			FILLEXPLORER="TRUE"
+			WIDTH="9000"
+			ONSUBMIT=""
+			ONLOAD=""
+			HEIGHT="8000"
+			CAPTION="Donos iz zadnjih zaduženja "
+		>
 
 
-<BRISISTAVKUTERM
+		<INPUT TYPE="grid"
+		NAME="donosp"
+		TOP="300"
+		LEFT="200"
+		WIDTH="9000"
+		HEIGHT="3000"
+		CHECKBOXVISIBLE="TRUE"
+		TOTALROWVISIBLE="FALSE"
+		EDITCOLUMNS=""
+		GROUPBYBOXVISIBLE="FALSE"
+		CAPTION="_Zadnja zaduženja iz VP "
+		REFRESHAFTERCHILD="TRUE"
+		VISIBLE="TRUE"
+		ONCLICK="select 'refresh' as donospstavke "
+		SQL="spMPDonesiSaZadnjegDokNG @action = 1, @id  = @@id " />
+
+		<INPUT TYPE="grid"
+		NAME="donospstavke"
+		TOP="3500"
+		LEFT="200"
+		WIDTH="9000"
+		HEIGHT="3000"
+		CHECKBOXVISIBLE="TRUE"
+		TOTALROWVISIBLE="FALSE"
+		EDITCOLUMNS=""
+		GROUPBYBOXVISIBLE="FALSE"
+		CAPTION="_Zadnje primke dobavljaèa"
+		REFRESHAFTERCHILD="TRUE"
+		VISIBLE="TRUE"
+		SQL="spMPDonesiSaZadnjegDokNG @action = 2, @id  = @@donosp " />
+
+		<INPUT TYPE="button" NAME="ok"     CAPTION="Prebaci"  TOP="7000" LEFT="456" WIDTH="1106" HEIGHT="322"
+           ONCLICK="FOREACHSELECTED(donosp)#spMPDonesiSaZadnjegDokNG @action =3 , @maloprodajaglaid = @@id, @primkaid  = @@donosp
+                    #select cmpiznos, nabiznos from maloprodajagla where maloprodajaglaid = @@id#select 'refresh' as stavke#Ok"  HOTKEY="F2" />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="7000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	</DONOSIZPRIMKE>
+	<DONOSIZASORT
+		 
+	  FILLEXPLORER=""
+	  WIDTH="10500"
+	  ONSUBMIT=""
+	  ONLOAD="select naziv as partner from partneri where partneriid = @@partneriid"
+	  HEIGHT="8000"
+	  CAPTION="Donos iz asortimana dobavljaèa @@partner"
+		>
+
+
+		<INPUT TYPE="grid"
+			NAME="donosiasort"
+			TOP="700"
+			LEFT="200"
+			WIDTH="9500"
+			HEIGHT="6000"
+			CHECKBOXVISIBLE="FALSE"
+			TOTALROWVISIBLE="FALSE"
+				EDITCOLUMNS="[Nar.kolièina1000]"
+			GROUPBYBOXVISIBLE="FALSE"
+			CAPTION="Asortiman dobavljaèa"
+			REFRESHAFTERCHILD="TRUE"
+			VISIBLE="TRUE"
+			SQL="spmPDOnosIzAsortimana @action = 2, @trgovinaid = @@trgovinaid , @partneriid= @@partneriid , @datumdok = @@datumdok " />
+
+		<INPUT TYPE="button" NAME="ok"     CAPTION="Prebaci"  TOP="7000" LEFT="456" WIDTH="1106" HEIGHT="322"
+					ONCLICK="FOREACHROW(donosiasort)#if @(donosiasort..Nar.kolièina1000) > 0 and @(donosiasort..dobavljivostretired) = 0 and @(donosiasort..umirovljen) = 0 begin 
+					exec spMPInsertGlaIdetNG @action = 3,@robaid = @(donosiasort..robaid), @id = @@id , @kolicinaulaz = @(donosiasort..Nar.kolièina1000), @mpcijena = @(donosiasort..cijena0800), @nabcijena =@(donosiasort..Nabavna cijena 0800) , @indpakovanje = 1 end
+					#select sum(nvrijednost) as nvrijednost from mpnardet where mpnarglaid = @@id#Ok"  HOTKEY="F2" />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="7000" LEFT="3000" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	</DONOSIZASORT>
+
+
+	<BRISISTAVKUTERM
 	  	WIDTH="5500" 
 	  	ONSUBMIT="spMPPrijenosTerminalNG @action = 55, @id=@@donos2t " 
 	  	ONLOAD="SELECT @@donost as donos2t,(select rtrim(cast(userid as varchar)) + ' ' +naziv as Naziv from roba where robaid = (select robaid from ptprijenos where ptprijenosid=@@donost)) as pitanje"	
@@ -431,11 +511,11 @@
 			CAPTION="Stornirati dokument  ?" 
 			ONSUBMIT=""
 			ONLOAD="if (select storno from maloprodajagla where maloprodajaglaid= @@ID ) = 'S'  begin 
-	                        raiserror 19001 'Dokument je veæ storniran. Ne možete ga stornirati !' 
+	                        exec spRaiserror 69001, 'Dokument je veæ storniran. Ne možete ga stornirati !' 
 						end
 						else begin
 							if (select status from maloprodajagla where maloprodajaglaid= @@ID ) &lt;&gt; 2 begin 
-								raiserror 19001 'Dokuiment nije zakljuèen. Ne možete ga stornirati !' 
+								exec spRaiserror 69001, 'Dokuiment nije zakljuèen. Ne možete ga stornirati !' 
 							end
 						else begin
                         exec spMPQueryGlaIDetNG @action=3,@ID=@@ID
@@ -452,6 +532,16 @@
 		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2000" LEFT="1756" TABINDEX="1" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
 	</STORNO>
 
-
+  <MULTISELECTISPIS_FORM
+      NAME="MULTISELECTISPIS_FORM"
+      FILLEXPLORER=""
+      CAPTION="Ispis dokumenata"
+      WIDTH="8000"
+      HEIGHT="2600"
+      ONLOADED=":vrstadokid-Maloprodajagla"
+      ONSUBMIT=""
+      CMD1CAPTION="Poništi"
+      CMD2CAPTION="Odustani" >
+  </MULTISELECTISPIS_FORM>
 
 </PROJECT>

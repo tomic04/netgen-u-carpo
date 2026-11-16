@@ -41,6 +41,7 @@
 		CAPTION="Unos povrata dobavljaèu"
 		ONSUBMIT=""
 		ONLOAD="select convert(varchar,getdate(),112) as datumdok"
+		ONLOADED="select 'refresh' as orgshemaid, 'refresh' as osobeid "
 		NEXTFORM="UPDATE_FORM"
 		FOCUS="datumdok">
 
@@ -52,7 +53,7 @@
 			   ONLOSTFOCUS="select 'refresh' as orgshemaid, 'refresh' as osobeid"/>
 		<INPUT TYPE="combo"  NAME="vrstadokid"  CAPTION="Vrsta dokumenta*" TOP="750" LEFT="1500" SQL="spMPDajVrstadok @sifra = '305'" ENABLED="FALSE"  />
 		<INPUT TYPE="combo"  NAME="osobeid"		CAPTION="Odgovorna osoba*"  TOP="750"  LEFT="8200" SQL="spMPDajosobe @trgovinaid = @@trgovinaid"  WIDTH="3500"/>
-		<INPUT TYPE="search" NAME="partneriid"  CAPTION="Partner*"   TOP="1100"  LEFT="1500" WIDTH="5600" SQL="vipartneri#partneriid#%naziv%#%mjestanaziv%#sifra#!adresa" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+		<INPUT TYPE="search" NAME="partneriid"  CAPTION="Partner*"   TOP="1100"  LEFT="1500" WIDTH="5600" SQL="vipartneri#partneriid#naziv%#sifra#poreznibroj#!adresa#!mjestanaziv" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
 		<INPUT TYPE="combo"  NAME="orgshemaid"  CAPTION=""  TOP="-3854"  LEFT="1500" SQL="select orgshemaid from trgovina where trgovinaid = @@trgovinaid"  WIDTH="3500" ENABLED="FALSE"/>
 		<INPUT TYPE="text"   NAME="orgdok"    CAPTION="Zapisnik partnera*" TOP="1100" LEFT="9200" WIDTH="2500"  />
 		<INPUT TYPE="text"   NAME="napomena"    CAPTION="URA/Dostav.*"       TOP="1450" LEFT="1500" WIDTH="2500"  />
@@ -71,10 +72,10 @@
 		FILLEXPLORER=""
 		FOCUS="robaid"
 		ONLOAD="if (select status from maloprodajagla  where maloprodajaglaid = @@ID ) = 2 begin 
-			raiserror 19001 &apos;Dokument je zakljuèen. Ne može se više ispravljati !&apos;
+			exec spRaiserror 69001, &apos;Dokument je zakljuèen. Ne može se više ispravljati !&apos;
 			end	else begin
 			if @@id = 0  begin 
-			raiserror 19001 &apos;Niste odabrali dokument !&apos;
+			exec spRaiserror 69001, &apos;Niste odabrali dokument !&apos;
 			end else begin 
 			exec spMPQueryGlaIDetNG @action=3 ,@ID=@@ID, @operateriid = @@operateriid end end" >
 
@@ -88,7 +89,7 @@
 		<INPUT TYPE="text"   NAME="broj"        CAPTION="_Broj*"     TOP="750"  LEFT="1500" ENABLED="FALSE" WIDTH="3500" SQL=""  />
 		<INPUT TYPE="combo"  NAME="osobeid"		CAPTION="Odgovorna osoba*"  TOP="750"  LEFT="8200" SQL="spMPDajosobe @trgovinaid = @@trgovinaid"  WIDTH="3500"/>
 		<INPUT TYPE="combo"  NAME="vrstadokid"  CAPTION="Vrsta dokumenta*" TOP="1100" LEFT="1500" SQL="spMPDajVrstadok @sifra = '305'" ENABLED="FALSE"  />
-		<INPUT TYPE="search" NAME="partneriid"  CAPTION="Partner*"   TOP="1450"  LEFT="1500" SQL="vipartneri#partneriid#%naziv%#%mjestanaziv%#sifra#!adresa" WIDTH="5600" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+		<INPUT TYPE="search" NAME="partneriid"  CAPTION="Partner*"   TOP="1450"  LEFT="1500" SQL="vipartneri#partneriid#naziv%#sifra#poreznibroj#!adresa#!mjestanaziv" WIDTH="5600" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
 		<INPUT TYPE="text"   NAME="orgdok"    CAPTION="Zapisnik partnera*" TOP="1450" LEFT="9200" WIDTH="2500"  />
 		<INPUT TYPE="text"   NAME="napomena"    CAPTION="URA/Dostav.*"       TOP="1800" LEFT="1500" WIDTH="2500"  />
 		<INPUT TYPE="text"   NAME="nap2"    CAPTION="Napomena*"       TOP="2150" LEFT="1500" WIDTH="10200"  />
@@ -121,7 +122,7 @@
 
 		<INPUT TYPE="grid" DOCK="5"
 			   NAME="stavke"
-			   REFRESHAFTERCHILD="TRUE"
+			   REFRESHAFTERCHILD=""
 			   CAPTION="Stavke"
 			   TOP="6000" LEFT="100" WIDTH="10000" HEIGHT="1500"
 			   TABINDEX="-1"
@@ -150,7 +151,7 @@
 		<INPUT TYPE="button" NAME="cancel" ANCHOR="6" CAPTION="Odustani" TOP="9600" LEFT="1456" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
 
 		<INPUT TYPE="button" NAME="ispravi" ANCHOR="9" CAPTION="Ispravi" TOP="6000" LEFT="10200" WIDTH="1400" HEIGHT="322" ONCLICK=":IZMJENISTAVKU"  />
-		<INPUT TYPE="button" NAME="obrisi" ANCHOR="9" CAPTION="Obriši" TOP="6600" LEFT="10200" WIDTH="1400" HEIGHT="322" ONCLICK="FOREACHBLUEROW(stavke)#:BRISISTAVKU"  />
+		<INPUT TYPE="button" NAME="obrisi" ANCHOR="9" CAPTION="Obriši" TOP="6600" LEFT="10200" WIDTH="1400" HEIGHT="322" ONCLICK="FOREACHBLUEROW(stavke)#:BRISISTAVKU#select 'refresh' as stavke"  />
 		<INPUT TYPE="button" NAME="donesi" ANCHOR="9" CAPTION="Donesi" TOP="7200" LEFT="10200" WIDTH="1400" HEIGHT="322" ONCLICK=":DONESI"  />
 	</UPDATE_FORM>
 
@@ -356,7 +357,7 @@
 
 		<INPUT TYPE="date" NAME="xdatumod" TOP="500" LEFT="1500" CAPTION="Datum od*" WIDTH="1500" DEFAULT="firstdayofyear"/>
 		<INPUT TYPE="date" NAME="xdatumdo" TOP="1000" LEFT="1500" CAPTION="Datum do*" WIDTH="1500" DEFAULT="today"/>
-		<INPUT TYPE="search" NAME="xpartneriid" TOP="1500" LEFT="1500" WIDTH="5500" CAPTION="Partner*" ALLOWEMPTY="TRUE" SQL="vipartneri#partneriid#%naziv%#%mjestanaziv%#!adresa" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+		<INPUT TYPE="search" NAME="xpartneriid" TOP="1500" LEFT="1500" WIDTH="5500" CAPTION="Partner*" ALLOWEMPTY="TRUE" SQL="vipartneri#partneriid#naziv%#sifra#poreznibroj#!adresa#!mjestanaziv" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
 		<INPUT TYPE="combo" NAME="xtrgovinaid" TOP="2000" LEFT="1500" WIDTH="3500" CAPTION="Trgovina*" ALLOWEMPTY="TRUE" ONLOSTFOCUS="" SQL="spMPDajTrgovinaNG @operateriid = @@operateriid, @vrstatrg='M' " />
 		<INPUT TYPE="combo" NAME="xstatus" TOP="2500" LEFT="1500" ALLOWEMPTY="TRUE" CAPTION="Status*" SQL="select 0 as status,&apos;Otvoren&apos; as naziv  union all select 1 as status,&apos;Naloženo &apos; as naziv union all select 2 as status,&apos;Zaprimljeno &apos; as naziv" />
 		<INPUT TYPE="text" NAME="trazibroj" TOP="3000" LEFT="1500" WIDTH="2500" ALLOWEMPTY="TRUE" CAPTION="Broj dokumenta*" ONLOSTFOCUS=""/>
@@ -368,11 +369,11 @@
 		NAME="ZAKLJUCI" HEIGHT="3197" WIDTH="5501"
 		CAPTION="Zakljuèiti dokument  ?"
 		ONSUBMIT="if (select count(*) from maloprodajadet where maloprodajaglaid = @@id ) = 0 begin 
-			raiserror 19001 'Dokument nema stavaka. Ne može se zakljuèiti !' end 
+			exec spRaiserror 69001, 'Dokument nema stavaka. Ne može se zakljuèiti !' end 
 			else begin 
 			exec spmpzakljucidokNG @id=@@id end"
 		ONLOAD="if (select status from maloprodajagla where maloprodajaglaid= @@ID ) = 2 begin 
-            raiserror 19001 'Dokument je zakljuèen. Ne može se više zakljuèivati!' 
+            exec spRaiserror 69001, 'Dokument je zakljuèen. Ne može se više zakljuèivati!' 
 			end	else begin
             exec spMPQueryGlaIDetNG @action=3,@ID=@@ID end"
 		FILLEXPLORER=""
@@ -405,10 +406,10 @@
 		CAPTION="Stornirati dokument  ?"
 		ONSUBMIT=""
 		ONLOAD="if (select storno from maloprodajagla where maloprodajaglaid= @@ID ) = 'S'  begin 
-			raiserror 19001 'Dokument je veæ storniran. Ne možete ga stornirati !' 
+			exec spRaiserror 69001, 'Dokument je veæ storniran. Ne možete ga stornirati !' 
 			end	else begin
 			if (select status from maloprodajagla where maloprodajaglaid= @@ID ) &lt;&gt; 2 begin 
-			raiserror 19001 'Dokuiment nije zakljuèen. Ne možete ga stornirati !' 
+			exec spRaiserror 69001, 'Dokuiment nije zakljuèen. Ne možete ga stornirati !' 
 			end	else begin
 			exec spMPQueryGlaIDetNG @action=3,@ID=@@ID end end"
 		FILLEXPLORER=""
@@ -430,10 +431,10 @@
 	FILLEXPLORER=""
 	FOCUS="robaid"
 	ONLOAD="if (select status from maloprodajagla  where maloprodajaglaid = @@ID ) &lt; 2 begin 
-		raiserror 19001 &apos;Dokument nije zakljuèen. Korekcija se može raditi samo na zakljuèenom dokumentu !&apos;
+		exec spRaiserror 69001, &apos;Dokument nije zakljuèen. Korekcija se može raditi samo na zakljuèenom dokumentu !&apos;
 		end else begin
 		if @@id = 0  begin 
-		raiserror 19001 &apos;Niste odabrali dokument !&apos;
+		exec spRaiserror 69001, &apos;Niste odabrali dokument !&apos;
 		end else begin 
 		exec spMPQueryGlaIDetNG @action=3 ,@ID=@@ID, @operateriid = @@operateriid
 		end	end ">
@@ -447,7 +448,7 @@
 		<INPUT TYPE="text"   NAME="broj"        CAPTION="_Broj*"     TOP="750"  LEFT="1500" ENABLED="FALSE" WIDTH="3500" SQL=""  />
 		<INPUT TYPE="combo"  NAME="vrstadokid"  CAPTION="Vrsta dokumenta*" TOP="1100" LEFT="1500" ENABLED="FALSE" SQL="spMPDajVrstadok @sifra = '305'" />
 		<INPUT TYPE="combo"  NAME="osobeid"		CAPTION="Odgovorna osoba*"  TOP="1100"  LEFT="8200" ENABLED="FALSE" SQL="spMPDajosobe @trgovinaid = @@trgovinaid"  WIDTH="3500"/>
-		<INPUT TYPE="search" NAME="partneriid"  CAPTION="Partner*"   TOP="1450"  LEFT="1500" ENABLED="FALSE" SQL="vipartneri#partneriid#%naziv%#%mjestanaziv%#sifra#!adresa" WIDTH="5600" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
+		<INPUT TYPE="search" NAME="partneriid"  CAPTION="Partner*"   TOP="1450"  LEFT="1500" ENABLED="FALSE" SQL="vipartneri#partneriid#naziv%#sifra#poreznibroj#!adresa#!mjestanaziv" WIDTH="5600" ONLOSTFOCUS="" BACKCOLOR="LIGHTYELLOW" />
 		<INPUT TYPE="text"   NAME="napomena"    CAPTION="URA/Dostav.*" TOP="1800" LEFT="1500" WIDTH="1500" ENABLED="FALSE" />
 		<INPUT TYPE="text"   NAME="FaktureDobId"    CAPTION=""       TOP="-1610" LEFT="7000" WIDTH="1500"  />
 		<INPUT TYPE="text"   NAME="AFaktureDobId"    CAPTION=""       TOP="-1610" LEFT="8000" WIDTH="1500"  />

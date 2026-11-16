@@ -109,6 +109,10 @@
 	<INPUT TYPE="combo"  NAME="lokacijeid"	TOP="1250" LEFT="6300" WIDTH="3800" SQL="select parstruid, naziv from parstru where partneriid=@@partneriid order by hqind desc,parstruid" ALLOWEMPTY="FALSE" CAPTION="Mjesto isporuke*" ONLOSTFOCUS="select 'robaid' as focus"/>
 	<INPUT TYPE="number" NAME="ukupno" CAPTION="*" TOP="1300" LEFT="10200" WIDTH="4100" HEIGHT="1000" SQL="" BACKCOLOR="greenyellow" SIZE="30" STYLE="1"/>
 
+	<INPUT TYPE="number" NAME="kolicinakod"    CAPTION=""       TOP="-1610" LEFT="8000" WIDTH="1500"   DECIMALS="4"/>
+	<INPUT TYPE="text" NAME="orgtrazi"    CAPTION=""       TOP="-1610" LEFT="8000" WIDTH="1500"   />
+
+
 	<INPUT TYPE="search" NAME="robaid"	 TOP="1750" LEFT="1000" WIDTH="4000" 
 		   SQL="spMPRobaZaMPNG @trgovinaid = @@trgovinaid , @skladisteid = @@skladisteid, @trazi = '@@searchboxrobaid', @partneriid= @@partneriid, @parstruid = @@parstruid, @datumdok = @@datumdok" ALLOWEMPTY="FALSE" CAPTION="Roba*"
      ONLOSTFOCUSold="exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid
@@ -122,12 +126,15 @@
 						#exec spmpBlagajna @action = 5, @kasa = '@@kasa', @operateriid = @@operateriid 
 						#if (select count(*) from mpprometblag where kasa = '@@kasa' and operateriid = @@operateriid and mpcijena = 0 ) &lt;&gt; 0 
 							and (select coalesce(ZabranaUpisMPC,0) from mpkase where kasa = '@@kasa') = 0 begin select 'enable' as mpcpov,  'mpcpov' as focus end "
-     ONLOSTFOCUS="exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid
-						#if @@robaid is not null begin exec spMPDajArtikalNG @robaId = @@robaid, @TrgovinaId = @@trgovinaid, @Skladisteid = @@skladisteid, @datum = @@datumdok,@partneriid = @@partneriid, @vrstadokid = @@vrstadokid, @sifradok = '96', @pronacinisporukeid=1 end 
+     ONLOSTFOCUS="select trazi as orgtrazi From mprobatrazi where mpkaseid = (select mpkaseid from mpkase where kasa = '@@kasa')
+						#exec spmpKontrolaOdabraneRobeNG @robaid = @@robaid
+						#if @@robaid is not null begin exec spMPDajArtikalNG @robaId = @@robaid, @TrgovinaId = @@trgovinaid, @Skladisteid = @@skladisteid, @datum = @@datumdok,@partneriid = @@partneriid, @vrstadokid = @@vrstadokid, @sifradok = '96', @pronacinisporukeid=1 , @orgtrazi = '@@orgtrazi' end 
 						#select 1 as kolizlaz
 						#if coalesce((select kkvalobavezan from roba where robaid = @@robaid ),0) =1 and coalesce((select kkvalobavezan from skladiste where skladisteid = @@skladisteid),0) = 1 begin select   'KOLKONTIGENT' as form end 
-						# if coalesce((select kkvalobavezan from roba where robaid = @@robaid ),0) = 0  or coalesce((select kkvalobavezan from skladiste where skladisteid = @@skladisteid),0) = 0 begin  exec spmpBlagajna @action = 4, @brojdok = '@@brojrac', @kasa = '@@kasa', @operateriid = @@operateriid , @datumdok = @@datumdok, @robaid = @@robaid, @mpcijena = @@mpcijena, @kolicina = @@kolizlaz, @povnaknadaroba = @@povnaknadaroba, @rabat = @@rabatizlaz, @partneriid = @@partneriid, @parstruid= @@lokacijeid, @napomena = '@@napomena' end 
-						#select null as robaid, 0 as mpcpov, 0 as rabatizlaz,0 as povnaknadaroba, 0 as kolicina, 'refreshmovelast' as stavke 
+						# if coalesce((select kkvalobavezan from roba where robaid = @@robaid ),0) = 0  or coalesce((select kkvalobavezan from skladiste where skladisteid = @@skladisteid),0) = 0 begin  
+						exec spmpBlagajna @action = 4, @brojdok = '@@brojrac', @kasa = '@@kasa', @operateriid = @@operateriid , @datumdok = @@datumdok, @robaid = @@robaid, @mpcijena = @@mpcijena, 
+						@kolicina = @@kolizlaz, @kolicinakod= @@kolicinakod, @povnaknadaroba = @@povnaknadaroba, @rabat = @@rabatizlaz, @partneriid = @@partneriid, @parstruid= @@lokacijeid, @napomena = '@@napomena' end 
+						#select null as robaid, 0 as mpcpov, 0 as rabatizlaz,0 as povnaknadaroba, 0 as kolicina, '' as orgtrazi, 'refreshmovelast' as stavke 
 						#exec spmpBlagajna @action = 3, @kasa = '@@kasa', @operateriid = @@operateriid 
 						#exec spmpBlagajna @action = 5, @kasa = '@@kasa', @operateriid = @@operateriid 
 						#if (select count(*) from mpprometblag where kasa = '@@kasa' and operateriid = @@operateriid and mpcijena = 0 ) &lt;&gt; 0 
@@ -905,7 +912,7 @@
 		<INPUT TYPE="label" NAME="stat" TOP="800" LEFT="331" HEIGHT="490" WIDTH="4234" STYLE="1" SIZE="15" CAPTION="Želite li ispisati zakljuèak blagajne ? " />
 		<INPUT TYPE="text"   NAME="broj"    CAPTION="Broj zakljuèka blagajne:*"  STYLE="1" TOP="1300" LEFT="2000" WIDTH="2000" SQL=""  ENABLED="FALSE"/>
 		
-		<INPUT TYPE="button" NAME="ok"     CAPTION="Ispiši"  TOP="1800" LEFT="200"  WIDTH="1106" HEIGHT="322" ONCLICK=":vrstadokid-maloprodajagla(@@maloprodajaglaid)#close"  HOTKEY="" />
+		<INPUT TYPE="button" NAME="ok"     CAPTION="Ispiši"  TOP="1800" LEFT="200"  WIDTH="1106" HEIGHT="322" ONCLICK=":repx/:rptZitoMPUtrzakPOS(@id = @@maloprodajaglaid)#close"  HOTKEY="" />
 		<INPUT TYPE="button" NAME="cancel"     CAPTION="Odustani"  TOP="1800" LEFT="1600"  WIDTH="1106" HEIGHT="322" ONCLICK="close"  HOTKEY="" />
 	</PRINTZAK>
 

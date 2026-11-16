@@ -7,9 +7,9 @@
     CMD4CAPTION="Trgovine:PREGPOTRG" 
     CMD5CAPTION="Aktiviraj:STATUSA" 
     CMD6CAPTION="Ispis:repx/rptMPProizvodi(@id = @@id)"   
-    CMD7CAPTION="Kopiraj:KOPIRAJ"   
-    CMD8CAPTION="Lista"
-	CMD9CAPTION="Kopiraj SVE:KOPIRAJSVE"
+    CMD7CAPTION="Kopiraj na trgovinu:KOPIRAJ"   
+    CMD8CAPTION="Kopiraj normativ:KOPIRAJNORM"
+	CMD9CAPTION="Obriši:BRISI"
 	  CHECKBOXVISIBLE="FALSE"
 	  DETCHECKBOXVISIBLE="FALSE"
     GROUPBOXVISIBLE="FALSE"
@@ -28,8 +28,6 @@
   <MASTERCOLUMNS>
     <COLUMN INDEX="9" NAME="KOLIÈINA0900" CAPTION="" FORMAT="#,###0.###0" AGREGATEFUNCTION="0" />
     <COLUMN INDEX="10" NAME="NC1000" CAPTION="" FORMAT="#,###0.###0" AGREGATEFUNCTION="0" />
-	<COLUMN INDEX="11" NAME="NC1000" CAPTION="" FORMAT="#,###0.###0" AGREGATEFUNCTION="0" />
-	<COLUMN INDEX="12" NAME="NC1000" CAPTION="" FORMAT="#,###0.###0" AGREGATEFUNCTION="0" />
   </MASTERCOLUMNS>
 
 
@@ -46,7 +44,8 @@
 			ONSUBMIT="spMPProizvodiGlaIdet @action = 8,  @operateriid= @@operateriid, " 
 			ONLOAD="select @@datumod as datumod, @@datumdo as datumdo, @@trgovinaid as trgovinaid" 
       ONLOADED="select @@status as status"
-			HEIGHT="3000" 
+			HEIGHT="3500"
+			VERSION="1"
 			CAPTION="Upišite uvjete pregleda "  
 			BORDERSTYLE="3" 
 			CMD1CAPTION="Pokaži" 
@@ -63,10 +62,12 @@
     <INPUT TYPE="combo" NAME="status" ALLOWEMPTY="FALSE" CAPTION="Status normativa:*" TOP="1200" LEFT="1500" WIDTH="4000"
            SQL="select 0 as id, 'Svi' as naziv union all select 1 as id, 'Aktivni' as naziv union all select 2 as id, 'Neaktivni' as naziv" />
 
-    <INPUT TYPE="check" NAME="nc0" ALLOWEMPTY="FALSE" CAPTION="NC = 0 :" TOP="1600" LEFT="1500" WIDTH="4000"
+    <INPUT TYPE="check" NAME="nc0" ALLOWEMPTY="FALSE" CAPTION="NC = 0 :" TOP="2100" LEFT="1500" WIDTH="4000"
            SQL="" />
+		<INPUT TYPE="check" NAME="Bezn" ALLOWEMPTY="FALSE" CAPTION="Bez normativa" TOP="1600" LEFT="1500" WIDTH="4000"
+			   SQL="" />
 
-  </FILTERFORM>
+	</FILTERFORM>
 
   <INSERTFORM
     REFRESHAFTERCHILD=""
@@ -92,7 +93,8 @@
     FILLEXPLORER=""
     REPORT=""
     WIDTH="11000"
-    ONLOAD="if coalesce((select ind from mpproizvodigla where mpproizvodiglaid = @@id ),0) = 1  or (select datumdo from mpproizvodigla where mpproizvodiglaid = @@id ) is not null begin 
+    ONLOADXX="exec spMPProizvodiGlaIdet @action=3,@mpproizvodiglaid=@@id"
+	ONLOAD="if coalesce((select ind from mpproizvodigla where mpproizvodiglaid = @@id ),0) = 1  or (select datumdo from mpproizvodigla where mpproizvodiglaid = @@id ) is not null begin 
 			exec spRaiserror 69001, 'Proizvod je aktivan ili je bio aktivan. Ne može se više ispravljati !' 
 		end
 		else begin
@@ -184,8 +186,32 @@
 
   </BRISISTAVKU>
 
+	<BRISI
+	  WIDTH="7500"
+	  VERSION="1"
+	  ONSUBMIT="exec spMPProizvodiGlaIdet @action=15,@MPproizvodiglaid=@@ID, "
+	  ONLOAD=" if (select ind from mpproizvodigla where mpproizvodiglaid = @@id  )  = 1 begin raiserror 19001 'Proizvod je aktivan. Ne možete ga brisati' end 
+				else begin 
+				if ( select count(*) from mpproizvodidet where 	mpproizvodiglaid = @@id  ) > 0 begin 
+					raiserror 19001 'Proizvod ima normativ.  Ne možete ga brisati' 
+	  end 
+		else begin 
+		  exec spMPProizvodiGlaIdet @action=3,@MPproizvodiglaid=@@ID  
+		  end 
+	  end"
+	  HEIGHT="3200"
+	  CAPTION="Brisanje normativa"
+	  BORDERSTYLE="3"
+	  CMD1CAPTION="Obriši"
+	  CMD2CAPTION="Odustani" >
 
-  <STATUSA
+		<INPUT TYPE="label" NAME="stat"  LEFT="100" TOP="300" BOLD="TRUE" WIDTH="3500" CAPTION="Jeste li sigurni da želite obrisati proizvod ? " STYLE="1"/>
+		<INPUT TYPE="text" NAME="naziv"  LEFT="1000" TOP="800" BOLD="TRUE" WIDTH="4500" CAPTION="Proizvod*" ENABLED="FALSE" STYLE="1"/>
+		<INPUT TYPE="number"  KOMENTAR="ova kontrola služi samo da saèuva ID stavke , pozicionirana je tako da se nevidi na formi" NAME="mpproizvodidetid" TOP="5600" LEFT="2200" CAPTION="mpproizvodidetid" WIDTH="2500" HEIGHT="320" ENABLED="FALSE" DECIMALS="0" />
+
+	</BRISI>
+
+	<STATUSA
      WIDTH="11000"
      ONSUBMIT=""
      ONLOADDDDD="if coalesce((select ind from mpproizvodigla where mpproizvodiglaid = @@id ),0) = 1   begin 
@@ -265,7 +291,7 @@
 
   </PREGPOTRG>
 
-  <KOPIRAJ
+  <KOPIRAJSVE
   FILLEXPLORER=""
   REPORT=""
   WIDTH="9500"
@@ -306,9 +332,9 @@
     <INPUT TYPE="button" NAME="cancel" TABINDEX="" CAPTION="Odustani" TOP="5300" LEFT="1500" WIDTH="1000" HEIGHT="322" ONCLICK="close"  />
     <INPUT TYPE="button" NAME="kopp" TABINDEX="" CAPTION="Kopiraj" TOP="5300" LEFT="3500" WIDTH="1000" HEIGHT="322" ONCLICK="spMPProizvodiGlaIdet @action = 19, @trgovinaid=@@trgovinaid,  @trgovina2id = @@trgovina2id#OK"  />
 
-  </KOPIRAJ>
+  </KOPIRAJSVE>
 
-	<KOPIRAJSVE
+	<KOPIRAJ
 	  FILLEXPLORER=""
 	  REPORT=""
 	  WIDTH="7000"
@@ -364,8 +390,57 @@
 						#:INFO_FORM2		
 						#OK"  />
 
-	</KOPIRAJSVE>
+	</KOPIRAJ>
 
+	<KOPIRAJNORM
+	  FILLEXPLORER=""
+	  REPORT=""
+	  WIDTH="7000"
+	  VERSION="2.5"
+	  ONLOAD="select MPProizvodiGlaID as MPProizvodiGla2ID, r.naziv + ' (' + cast(r.userid as varchar(15)) + ')' as naziv from mpproizvodigla pg inner join roba r on pg.robaid = r.robaid where mpproizvodiglaid = @@id"
+	  ONSUBMIT=""
+	  CMD1CAPTION=""
+	  CMD2CAPTION=""
+	  HEIGHT="6900"
+	  CAPTION="Kopiranje normativa proizvoda ? "
+	  MASTERDBLCLICK=""
+	  BORDERSTYLE="3"
+	  ONLOADED="select 0 as imaNorm, 1 as odgovor"
+	 >
+
+		<INPUT TYPE="text" NAME="MPProizvodiGla2ID" CAPTION=""  TOP="100" LEFT="7000" WIDTH="1000" HEIGHT="320"  ENABLED="FALSE"  />
+		<INPUT TYPE="text"   NAME="imaNorm"    CAPTION=""       TOP="-1610" LEFT="8000" WIDTH="1500"  VISIBLE="FALSE"/>
+
+		<INPUT TYPE="text" NAME="naziv" CAPTION="Proizvod*"  TOP="300" LEFT="1500" WIDTH="5000" HEIGHT="320"  ENABLED="FALSE"  />
+
+		<INPUT TYPE="date" NAME="datumod" CAPTION="Datum važenja od*"  TOP="700" LEFT="1500" WIDTH="1500" HEIGHT="320"  ENABLED="TRUE"  />
+
+
+
+		<INPUT TYPE="grid"
+		  NAME="kopinorm"
+		  REFRESHAFTERCHILD="FALSE"
+		  CHECKBOXVISIBLE="TRUE"
+		  VERSION="2"
+		  GROUPBOXVISIBLE="FALSE"
+		  TOTALROWVISIBLE="FALSE"
+		  TOP="1600"
+		  LEFT="1500"
+		  CAPTION=""
+		  WIDTH="5000"
+		  HEIGHT="3700"
+		  TABINDEX="5"
+		  SQL="spMPProizvodiGlaIdet @action = 4, @mpproizvodiglaid = @@MPProizvodiGla2ID" >
+
+
+
+		</INPUT>
+		<INPUT TYPE="button" NAME="cancel" TABINDEX="" CAPTION="Odustani" TOP="5600" LEFT="1500" WIDTH="1000" HEIGHT="322" ONCLICK="close"  />
+		<INPUT TYPE="button" NAME="kopp" TABINDEX="" CAPTION="Kopiraj" TOP="5600" LEFT="3500" WIDTH="1000" HEIGHT="322"
+			   ONCLICK="close#exec spMPProizvodiGlaIdet @action = 23, @mpproizvodiglaid = @@MPProizvodiGla2ID, @trgovinaIDlista = '@@nizoznacenihajdijevakopiTrgovina'
+						#OK"  />
+
+	</KOPIRAJNORM>
 
 	<PROVEDI_FORMA1
 	   NAME="PROVEDI_FORMA" HEIGHT="2200" WIDTH="6000"

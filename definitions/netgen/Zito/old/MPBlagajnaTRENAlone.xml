@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT
+	SETDEFAULTS="spmpPermissionNG @action = 0, @operateriid = @@operateriid, @object= '@@xmlname' "
+	DETAILGRID = "spMPBlagajnaQueryGlaIdetNG @action=2,@operateriid=@@operateriid,@id=@@id, @nenc = 1"
+	MASTERDBLCLICK=""
+	CMD1CAPTION="&amp;Parametri:FILTERFORM" 
+	CMD2CAPTION="&amp;Blagajna:BLAGAJNA(@trgovinaid=@@trgovinaid)"
+	CMD3CAPTION="&amp;" 
+	CMD4CAPTION="&amp;Zaključak blagajne:ZAKLJUCAK" 
+	CMD5CAPTION="&amp;Plaćanje:PLACANJE" 		
+	CMD6CAPTION="&amp;Print mp račun:vrstadokid-MPBlagajnagla"
+	CMD7CAPTION="&amp;Print zaključka:PRINTZAK" 
+	CMD8CAPTION="" 
+	EDITCOLUMNS=""
+	POPUPMASTER="Parametri:FILTERFORM#Storniraj:STORNO" 
+	TREE="Danas:DANAS_FORM#Jučer:JUCER_FORM#spMPTreeNG @action=1:TEKUCIMJESEC_FORM#Prošli mjesec:PROSLIMJESEC_FORM#spMPTreeNG @action=2:FILTERODDO_FORM#spMPTreeNG @action=3:FILTERODDO_FORM#spMPTreeNG @action=4:FILTEROPERATERIFORM"
+	GROUPBYBOXVISIBLE="TRUE" ONLOAD="" FROZENCOLUMNS="0" AUTOFITCOLUMNS="False"
+	CHECKBOXVISIBLE="FALSE"
+	TOTALROWVISIBLE="TRUE"
+	DETTOTALROWVISIBLE="FALSE"
+	ONLOAD2="select 'Dodaj' = case when @@dodaj=1 then 'enable' else 'disable' end , 'Izmjeni' = case when @@izmjeni=1 then 'enable' else 'disable' end , 
+			'Zakljuci' = case when @@Zakljuci=1 then 'enable' else 'disable' end, 'Obrisi' = case when @@Obrisi=1 then 'enable' else 'disable' end , 
+			'Storno' = case when @@storno=1 then 'enable' else 'disable' end , 'otkljucaj' = case when @@otkljucaj=1 then 'enable' else 'disable' end "
+	REPORT=""
+	INCLUDE="MPRacun.xml">
+
+
+
+	<NAME>MP računi</NAME>
+	<CAPTION>MP računi</CAPTION>
+
+
+<DANAS_FORM         FILLEXPLORER="TRUE" ONSUBMIT="spMPBlagajnaQueryGlaIdetNG @action=1,@operateriid=@@operateriid,@node='danas'" />
+<JUCER_FORM         FILLEXPLORER="TRUE" ONSUBMIT="spMPBlagajnaQueryGlaIdetNG @action=1,@operateriid=@@operateriid,@node='jucer'" />
+<TEKUCIMJESEC_FORM  FILLEXPLORER="TRUE" ONSUBMIT="spMPBlagajnaQueryGlaIdetNG @action=1,@operateriid=@@operateriid,@node='ovajmj'" />
+<PROSLIMJESEC_FORM  FILLEXPLORER="TRUE" ONSUBMIT="spMPBlagajnaQueryGlaIdetNG @action=1,@operateriid=@@operateriid,@node='proslimj'" />
+<FILTERODDO_FORM    FILLEXPLORER="TRUE" ONSUBMIT="spMPBlagajnaQueryGlaIdetNG @action=1,@operateriid=@@operateriid,@node='@@node'" />
+
+
+
+
+
+<FILTERFORM 
+	NAME="FILTERFORM" HEIGHT="3254" WIDTH="6710" 
+	 CAPTION="Upišite uvjete prikaza " 
+	 ONSUBMIT="spMPBlagajnaQueryGlaIdetNG @action = 1,  @operateriid= @@operateriid, "
+	 ONLOAD="" 
+	 FILLEXPLORER="TRUE" 
+	 NEXTFORM=""
+	 CMD1CAPTION="Pokaži" 
+	 CMD2CAPTION="Odustani" >
+	
+	<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od" />
+	<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do" />
+	<INPUT TYPE="combo" NAME="trgovinaid" ALLOWEMPTY="TRUE" CAPTION="Trgovina" ONLOSTFOCUS="" SQL="spMPDajTrgovinaNG @operateriid = @@operateriid " />
+	<INPUT TYPE="combo" NAME="mpkaseid" ALLOWEMPTY="TRUE" CAPTION="Kasa" ONLOSTFOCUS="" SQL="select mpkaseid, kasa from mpkase where trgovinaid = @@trgovinaid" />
+	<INPUT TYPE="combo" NAME="status" ALLOWEMPTY="true" CAPTION="Status" SQL="select 1 as status,&apos;Bez zaključka&apos; as naziv  union all select 2 as status,&apos;U zaključku&apos; as naziv " />
+</FILTERFORM>
+
+
+
+<STORNO NAME="STORNO" HEIGHT="3197" WIDTH="5501"
+	CAPTION="Stornirati račun ?"
+	ONSUBMIT=""
+	ONLOAD="if (select storno from mpblagajnagla where mpblagajnaglaid= @@ID ) = 'S'  begin 
+                        raiserror 19001 'Dokument je već storniran. Ne možete ga stornirati !' 
+					end
+					else begin
+						if (select status from mpblagajnagla where mpblagajnaglaid= @@ID ) &lt;&gt; 2 begin 
+							raiserror 19001 'Dokument nije zaključen. Ne možete ga stornirati !' 
+						end
+					else begin
+                    exec spMPBlagajnaQueryGlaIdetNG @action=3,@ID=@@ID
+					end						
+				end"
+	 FILLEXPLORER="">
+	
+	<INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="2304" HEIGHT="317" WIDTH="2794" CAPTION="_broj" ENABLED="FALSE"/>
+	<INPUT TYPE="label" NAME="Label55" TOP="360" LEFT="288"	 HEIGHT="288" WIDTH="1728" CAPTION="Broj računa:" />
+	<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite stornirati dokument  ? " />
+	
+	<INPUT TYPE="button" NAME="ok"     CAPTION="Storniraj"  TOP="2000" LEFT="456" WIDTH="1106" HEIGHT="322" ONCLICK="#close#spMPStornoBlagNG @action = 1 , @id=@@id, @poruka = 1"  HOTKEY="" />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</STORNO>
+
+
+
+<PLACANJE 
+		NAME="POKAZIFORM" HEIGHT="6998" WIDTH="6002"  
+			 CAPTION="Plaćanje"
+			 ONLOAD33="if @@id is not null begin exec spMPBlagajnaQueryGlaIdetNG @action=3,@id=@@id end else begin raiserror 19001 ' Odaberite račun ! ' end " 
+			 ONLOAD="if coalesce((select zakljucakid from mpblagajnagla where mpblagajnaglaid = @@id),0) &lt;> 0 begin 
+						raiserror 19001 'Račun je u zaključku blagajne. Ne može se više mijenjati naplata !' 
+						end
+						else begin
+							if coalesce(@@id,0) = 0 begin 
+								raiserror 19001 ' Odaberite račun ! ' 
+							end
+							else begin 
+								exec spMPBlagajnaQueryGlaIdetNG @action=3,@id=@@id 
+							end
+						end "
+			 CMD1CAPTION="" 
+			 CMD2CAPTION="" 
+		>
+		<INPUT TYPE="text"   NAME="broj"             CAPTION="Broj računa:*"        TOP="144" LEFT="2160" HEIGHT="317" WIDTH="1498" ENABLED="FALSE" />
+		<INPUT TYPE="date"   NAME="datumdok"         CAPTION="Datum računa:*"       TOP="504" LEFT="2160" HEIGHT="302" WIDTH="1498" ENABLED="FALSE" />
+		<INPUT TYPE="number"  NAME="placeno"			 CAPTION="Iznos računa*"		TOP="864" LEFT="2160" HEIGHT="302" WIDTH="1000" SQL="" ALLOWEMPTY="FALSE" ENABLED="FALSE" />
+		<INPUT TYPE="grid"   
+				NAME="placanje"		 
+				TOP="2002" 
+				LEFT="58" 
+				HEIGHT="3589" 
+				WIDTH="10498" 
+				CHECKBOXVISIBLE="FALSE" 
+				SQL="exec spMPBlagajnaQueryGlaIdetNG @action = 33,@id=@@id" />
+	<INPUT TYPE="button" NAME="ok"     CAPTION="Izmjeni"  TOP="6000" LEFT="500" WIDTH="1106" HEIGHT="322" 
+		   ONCLICK=":NAPLATARAC1#close"  HOTKEY="" />
+	<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="6000" LEFT="2000" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</PLACANJE>
+	
+
+
+
+<ZAKLJUCAK 
+	NAME="ZAKLJUCAK" HEIGHT="6998" WIDTH="6002"  
+			 CAPTION="Zaključak blagajne"
+			 ONLOAD="select 0 as ukuzak" 
+			 CMD1CAPTION="" 
+			 CMD2CAPTION="" 
+		>
+		<INPUT TYPE="combo"   NAME="trgovinaid"             CAPTION="Trgovina:*"        TOP="144" LEFT="1560" HEIGHT="317" WIDTH="3498" ENABLED="TRUE" 
+				SQL="SpMPDajTRgovinaNG @operateriid = @@operateriid, @vrstatrg = 'V'" 
+				ONCLICK="select 'refresh' as datumdok #select 'refresh' as mpkaseid #exec spMPBlagajnaQueryGlaIdetNG @action = 47,@datumdok=@@datumdok, @trgovinaid = @@trgovinaid, @mpkaseid = @@mpkaseid"
+				ONLOSTFOCUS ="select 'refresh' as datumdok #select 'refresh' as mpkaseid #exec spMPBlagajnaQueryGlaIdetNG @action = 47,@datumdok=@@datumdok, @trgovinaid = @@trgovinaid, @mpkaseid = @@mpkaseid"/>
+		<INPUT TYPE="combo"   NAME="mpkaseid"             CAPTION="Blagajna:*"        TOP="504" LEFT="1560" HEIGHT="317" WIDTH="1000" ENABLED="TRUE" SQL="select mpkaseid, kasa as naziv from mpkase where trgovinaid = @@trgovinaid" ONCLICK=""/>
+		<INPUT TYPE="date"   NAME="datumdok"         CAPTION="Datum zaključka:*"       TOP="854" LEFT="1560" HEIGHT="302" WIDTH="1498" ENABLED="TRUE" />
+		<INPUT TYPE="button" NAME="ok"				CAPTION="Pokaži"  TOP="854" LEFT="3500" WIDTH="1106" HEIGHT="322" ONCLICK="select 0 as ukuzak#exec spMPBlagajnaQueryGlaIdetNG @action = 45,@datumdok=@@datumdok, @trgovinaid = @@trgovinaid, @mpkaseid = @@mpkaseid# select 'refresh' as zakljucak# select 'visible' as zakljucak # select  'visible' as gumbzak"  ONLOSRFOCUS ="" HOTKEY="" />
+		<INPUT TYPE="number"   NAME="ukuzak"         CAPTION="Ukupno:*"       TOP="5500" LEFT="3560" HEIGHT="302" WIDTH="1498" ENABLED="TRUE" BACKCOLOR="greenyellow" STYLE="1"/>
+		<INPUT TYPE="grid"   NAME="zakljucak"		 
+				TOP="1202" 
+				LEFT="58" 
+				HEIGHT="3989" 
+				WIDTH="10498"  
+				VISIBLE="FALSE" 
+			   CHECKBOXVISIBLE="FALSE"	
+			   PAGEHEADERCENTER=""
+			   PAGEHEADERRIGHT=""
+			   PAGEHEADERLEFT="Datum: @@datum##Trgovina: @@trgovina"
+			   PAGEFOOTERCENTER=""
+			   PAGEFOOTERLEFT=""
+			   PAGEFOOTERRIGHT="@@tkosmomi"
+			   PAGEORIENTATION="LANDSCAPE"
+			   GROUPBYBOXVISIBLE="FALSE"
+			   TOTALROW="FALSE"
+				SQL="exec spMPBlagajnaQueryGlaIdetNG @action = 44,@datumdok=@@datumdok, @trgovinaid = @@trgovinaid, @mpkaseid = @@mpkaseid" />
+		<INPUT TYPE="button" NAME="gumbzak"				CAPTION="Zaključi"  TOP="6000" LEFT="500" WIDTH="1106" HEIGHT="322" VISIBLE="FALSE" 
+			   ONCLICK="exec spMPBlagajnaInsertGlaIdetNG @action = 46,@datumdok=@@datumdok, @trgovinaid = @@trgovinaid, @ukuzak = @@ukuzak, @operateriid = @@operateriid, @mpkaseid = @@mpkaseid#ok"
+			   ONCLICKstaro="exec spMPBlagajnaInsertGlaIdetNG @action = 46,@datumdok=@@datumdok, @trgovinaid = @@trgovinaid, @ukuzak = @@ukuzak, @operateriid = @@operateriid, @mpkaseid = @@mpkaseid
+						#select top 1 maloprodajaglaid from maloprodajagla where trgovinaid = @@trgovinaid and datumdok=@@datumdok and vrstadokid in (select top 1 vrstadokid from vrstadok where vrstapromid in (select vrstapromid from vrstaprom where sifra='97')) order by 1 desc
+						#:vrstadokid-maloprodajagla(@@maloprodajaglaid)#close"  HOTKEY="" />
+		<INPUT TYPE="button" NAME="cancel"			CAPTION="Odustani" TOP="6000" LEFT="2000" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	</ZAKLJUCAK>
+
+
+	
+
+	<NAPLATARAC1
+		FILLEXPLORER="TRUE"
+		WIDTH="5500"
+		ONSUBMIT=""
+		ONLOAD="spMPBlagajna @action = 18 ,@id = @@id, @kasa = '@@kasa', @trgovinaid = @@trgovinaid, @operateriid = @@operateriid " 
+		ONLOAD2="select case when @@indpopusta = 0 or @@indpopusta = 1 then 'disable' else 'enable' end as popustrac" 
+		ONLOADED="spMPBlagajna @action = 14 ,@id = @@id, @operateriid = @@operateriid 
+					"
+		HEIGHT="9000"
+		CAPTION="Način plaćanja MP računa"
+				>
+
+
+		<INPUT TYPE="grid"
+		NAME="naplata1"
+		TOP="300"
+		LEFT="200"
+		WIDTH="9000"
+		HEIGHT="5000"
+		SIZE="12"
+		CHECKBOXVISIBLE="FALSE"
+		TOTALROW="FALSE"
+ 	    EDITCOLUMNS="Iznos1000"
+	    ONCELLEDITED="spMPBlagajna @action = 11 , @kasa = '@@kasa', @operateriid = @@operateriid, @kntnacinplacid = @@naplata1,  @iznosplac = @@placeno #select 'refresh' as naplata1#select 'naplata1' as focus"
+		GROUPBYBOXVISIBLE="FALSE"
+		CAPTION="Plaćanje računa"
+		ONENTERKEY=":UPISIZNOSBLAG1#select (select sum (iznos) from mpnaplatablag where kasa = '@@kasa' and operateriid = @@operateriid ) - @@cmpiznos as za_vratiti#select 'naplata1' as focus"
+		REFRESHAFTERCHILD="TRUE"
+		VISIBLE="TRUE"
+		SQL="exec spmpblagajna  @action = 10,@kasa='@@kasa', @operateriid = @@operateriid, @trgovinaid = @@trgovinaid, @defaultplac =  '@@defaultplac' , @id = @@id " />
+		<INPUT TYPE="text" NAME="kasa" CAPTION="" TOP="-6100" SIZE="25"  LEFT="1500" WIDTH="3400" HEIGHT="280" SQL="" TABINDEX ="-1"  ENABLED ="TRUE" BACKCOLOR="greenyellow" STYLE="1"/>
+		<INPUT TYPE="number" NAME="cmpiznos" CAPTION="" TOP="6100" SIZE="25"  LEFT="1500" WIDTH="3400" HEIGHT="280" SQL="" TABINDEX ="-1"  ENABLED ="TRUE" BACKCOLOR="greenyellow" STYLE="1"/>
+		<INPUT TYPE="label" NAME="lcmpiznos" CAPTION="Za platiti" TOP="6300" SIZE="12"  LEFT="300" WIDTH="3400" HEIGHT="280" SQL="" TABINDEX ="-1"  ENABLED ="TRUE" BACKCOLOR="" STYLE="1"/>
+		<INPUT TYPE="number" NAME="za_vratiti" CAPTION="" TOP="7100" LEFT="1500" SIZE="25"  WIDTH="3400" HEIGHT="280" SQL="" TABINDEX ="-1"  ENABLED ="TRUE" BACKCOLOR="greenyellow" STYLE="1"/>
+		<INPUT TYPE="label" NAME="lza_vratiti" CAPTION="Za vratiti" TOP="7300" SIZE="12"  LEFT="300" WIDTH="3400" HEIGHT="280" SQL="" TABINDEX ="-1"  ENABLED ="TRUE" BACKCOLOR="" STYLE="1"/>
+		<INPUT TYPE="button" NAME="ok"     CAPTION="SPREMI"  TOP="8000" LEFT="1456" WIDTH="1900" HEIGHT="360" SIZE="12" STYLE="1" 
+			   ONCLICK="spmpBlagajna @action = 13, @za_platiti = @@cmpiznos, @kasa = '@@kasa', @operateriid = @@operateriid  
+				#spMPBlagajnaInsertGlaIdetNG @action = 51, @kasa = '@@kasa', @id = @@id, @operateriid = @@operateriid 
+				#delete mpprometblag where kasa = '@@kasa' and operateriid = @operateriid#delete mpnaplatablag where kasa = '@@kasa' and operateriid = @@operateriid 
+				#:vrstadokid-MPBlagajnagla
+				#close"  HOTKEY="F3" />
+
+	</NAPLATARAC1>
+
+	
+	
+	<UPISIZNOSBLAG1 NAME="UPISIZNOS" HEIGHT="3302" WIDTH="7085"
+			CAPTION="Iznos plaćanja"
+			ONSUBMIT=""
+				ONLOAD="select @@cmpiznos as iznosplac , naziv from kntnacinplac where kntnacinplacid = @@naplata"
+				FILLEXPLORER=""
+				CMD1CAPTION=""
+				CMD2CAPTION=""
+		>
+		<INPUT TYPE="text"   NAME="naziv" TOP="700"  LEFT="2059" HEIGHT="288" WIDTH="4478"  CAPTION="_Način plaćanja:*"  ENABLED="FALSE" />
+		<INPUT TYPE="number"   NAME="iznosplac"   TOP="1200"  LEFT="2074" HEIGHT="288" WIDTH="1500"  CAPTION="Iznos plaćanja:*"  DECIMAL="2" ENABLED="TRUE"  />
+		<INPUT TYPE="button" NAME="ok"     CAPTION="Prihvati"  TOP="2000" LEFT="456" WIDTH="1106" HEIGHT="322"
+			   ONCLICK="spmpBlagajna @action = 11 , @kasa = '@@kasa', @operateriid = @@operateriid, @kntnacinplacid = @@naplata1,  @iznosplac = @@iznosplac , @za_platiti = @@iznosplac
+				#select @@za_vratiti as zavratiti#select 0 as prviput #select 'refresh' as naplat1 #select 'naplata1' as focus#OK"   />
+		<INPUT TYPE="button" NAME="cancel" CAPTION="Odustani" TOP="2000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+	</UPISIZNOSBLAG1>
+
+	<STANJE
+			FILLEXPLORER=""
+				ONSUBMIT=""
+			ONLOAD=""
+			WIDTH="5200"
+			HEIGHT="5500"
+			CAPTION="Stanje blagajne na dan @@datumdok"
+		>
+		<INPUT TYPE="grid"
+				NAME="stanje"
+				TOP="200"
+				LEFT="200"
+				WIDTH="5500"
+				HEIGHT="4000"
+				CHECKBOXVISIBLE="FALSE"
+				TOTALROWVISIBLE="FALSE"
+				GROUPBYBOXVISIBLE="FALSE"
+				CAPTION=""
+		REFRESHAFTERCHILD="TRUE"
+		SQL="exec spmpblagajna @action = 15, @kasa = '@@kasa', @operateriid = @@operateriid, @datumdok = @@datumdok " />
+
+		<INPUT TYPE="button" NAME="ok" CAPTION="OK"  TOP="4500" LEFT="2000" WIDTH="1106" HEIGHT="400" SIZE="10" ONCLICK="close"  />
+
+
+	</STANJE>
+
+
+	<PRINTZAK 
+		NAME="PRINTZAK" 
+		HEIGHT="3197" WIDTH="5501"
+		CAPTION="Ispis zaključka blagajne"
+		ONSUBMIT=""
+		ONLOAD="if (select zakljucakid from mpblagajnagla where mpblagajnaglaid=@@ID) is null begin
+					raiserror 19001 'Zaključak blagajne za odabrani mp račun još nije napravljen !' 
+				end else begin
+				select maloprodajaglaid,broj from maloprodajagla where maloprodajaglaid in (select zakljucakid from mpblagajnagla where mpblagajnaglaid=@@ID) end"
+		FILLEXPLORER="">
+		
+		<INPUT TYPE="label" NAME="stat" TOP="800" LEFT="331" HEIGHT="490" WIDTH="4234" STYLE="1" SIZE="15" CAPTION="Želite li ispisati zaključak blagajne ? " />
+		<INPUT TYPE="text"   NAME="broj"    CAPTION="Broj zaključka blagajne:*"  STYLE="1" TOP="1300" LEFT="2000" WIDTH="2000" SQL=""  ENABLED="FALSE"/>
+		
+		<INPUT TYPE="button" NAME="ok"     CAPTION="Ispiši"  TOP="1800" LEFT="200"  WIDTH="1106" HEIGHT="322" ONCLICK=":vrstadokid-maloprodajagla(@@maloprodajaglaid)#close"  HOTKEY="" />
+		<INPUT TYPE="button" NAME="cancel"     CAPTION="Odustani"  TOP="1800" LEFT="1600"  WIDTH="1106" HEIGHT="322" ONCLICK="close"  HOTKEY="" />
+	</PRINTZAK>
+
+
+</PROJECT>
