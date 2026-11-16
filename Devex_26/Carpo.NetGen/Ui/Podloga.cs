@@ -67,6 +67,11 @@ namespace Carpo.NetGen.Ui
         private string _testId = "";
         private string _imeUnosa = "";
         private readonly List<string> _poslano = new List<string>();
+        /// <summary>
+        /// Traje klik pregled (ProvediKlikove, TestShell). Samo tada se pamte poslani SQL-ovi (_poslano) i radi
+        /// ZapamtiNoviTrosak; u običnom radu podloga ne smije čitati PrnTroskoviGla ni mijenjati @@id (PF-01).
+        /// </summary>
+        private bool _klikPregled;
         private bool _punim;
         private int _redovaDetail;
         private DataTable _comboRedovi;
@@ -574,6 +579,9 @@ namespace Carpo.NetGen.Ui
                 // strStora & " " & strParametri, sređen (Form2.Button1_Click 3367-3388, Form1 5450); dijalog ga nije slao.
                 string stora = (dij.OnSubmitPripremljen ?? "").Trim();
                 NakonDijaloga(forma, ime, stora, izDijaloga);
+                // Form1 5523-5531: nakon grana FILLEXPLORER-a, forma bez NEXTFORM-a s "findnode" odabere čvor stabla (PF-05).
+                if (!izDijaloga && DijalogTok.NextForm(forma).Length == 0)
+                    OdaberiCvor(dij.FindNode);
             }
             finally
             {
@@ -725,7 +733,25 @@ namespace Carpo.NetGen.Ui
                 return null;
             }
             NgDnevnik.Sql(stora);
-            return Citaj(stora);
+            return CitajSPorukom(stora);
+        }
+
+        /// <summary>
+        /// Class1.ExecSql 157-205: ne-tihu grešku SQL-a NetGen pokaže korisniku (MsgBox; kod RAISERROR-a s '#' ili
+        /// '+' tekst prije znaka). Citaj je piše samo u statusnu traku, koju OsvjeziMaster odmah prebriše brojem
+        /// redova, pa korisnik nakon OK nije znao da procedura nije spremila (PF-02).
+        /// </summary>
+        private DataTable CitajSPorukom(string sql)
+        {
+            _zadnjaPoruka = null;
+            DataTable t = Citaj(sql);
+            if (_zadnjaPoruka != null)
+            {
+                SqlPoruka.Ishod ish = SqlPoruka.IzIznimke(_zadnjaPoruka);
+                if (ish.Prikazi)
+                    NgPoruka.Info(this, "\r\n" + ish.Tekst + "\r\n\r\n", "Poruka");
+            }
+            return t;
         }
 
         /// <summary>PokaziUpit(ONSUBMIT): master grid se puni rezultatom ONSUBMIT-a (5450, 5497).</summary>
@@ -977,11 +1003,24 @@ namespace Carpo.NetGen.Ui
             string staro = gvGla.FocusedRowHandle >= 0 && gvGla.DataRowCount > 0 ? IdCelije(gvGla.FocusedRowHandle) : "";
             _punim = true;
             _master.IzvrsiCitanje(_spoj);
+            PokaziPorukuUzTablicu();
             VeziGrid(gvGla, gcGla, _master.Stanje.Tablica, _master.Stanje.Kolone, _master.Stanje.Poruka, _master.Stanje.CheckboxVidljiv, _master.Stanje.GroupByBox, _master.Stanje.FilterRed || _master.Stanje.FilterNamjernoOdstupanje || !_master.Stanje.FilterIzXml);
             PozicionirajMaster(staro);
             SpojiId();
             _punim = false;
             OsvjeziDetail();
+        }
+
+        /// <summary>Class1.ExecSql 164-186: poruka procedure koja je stigla uz tablicu mastera (MsgBox), jednom (PF-04).</summary>
+        private void PokaziPorukuUzTablicu()
+        {
+            string poruka = _master.Stanje.PorukaUzTablicu;
+            if (string.IsNullOrEmpty(poruka))
+                return;
+            _master.Stanje.PorukaUzTablicu = null;
+            SqlPoruka.Ishod ish = SqlPoruka.IzIznimke(poruka);
+            if (ish.Prikazi)
+                NgPoruka.Info(this, "\r\n" + ish.Tekst + "\r\n\r\n", "Poruka");
         }
 
         /// <summary>
@@ -1225,6 +1264,38 @@ namespace Carpo.NetGen.Ui
             return new System.Collections.Generic.List<string>(iz);
         }
 
+        /// <summary>
+        /// Form1 5524-5531: TreeView2.Nodes.Find(strFindNode, True) traži po ključu čvora (prvi stupac TREE upita,
+        /// Form1 4502), svaki nađeni odabere i raširi; zadnji ostaje odabran. Korijen u VB-u nema ključ.
+        /// </summary>
+        private void OdaberiCvor(string kljuc)
+        {
+            string trazeno = (kljuc ?? "").Trim();
+            if (trazeno.Length == 0 || trMain == null || IsDisposed)
+                return;
+            var nadjeni = new System.Collections.Generic.List<DevExpress.XtraTreeList.Nodes.TreeListNode>();
+            SkupiPoKljucu(trMain.Nodes, trazeno, nadjeni);
+            for (int i = 0; i < nadjeni.Count; i++)
+            {
+                trMain.FocusedNode = nadjeni[i];
+                nadjeni[i].Expanded = true;
+            }
+        }
+
+        private static void SkupiPoKljucu(DevExpress.XtraTreeList.Nodes.TreeListNodes cvorovi, string kljuc, System.Collections.Generic.List<DevExpress.XtraTreeList.Nodes.TreeListNode> nadjeni)
+        {
+            if (cvorovi == null)
+                return;
+            for (int i = 0; i < cvorovi.Count; i++)
+            {
+                DevExpress.XtraTreeList.Nodes.TreeListNode n = cvorovi[i];
+                var cvor = n.Tag as Cvor;
+                if (n.ParentNode != null && cvor != null && string.Equals((cvor.Oznaka ?? "").Trim(), kljuc, StringComparison.OrdinalIgnoreCase))
+                    nadjeni.Add(n);
+                SkupiPoKljucu(n.Nodes, kljuc, nadjeni);
+            }
+        }
+
         private void OznaciPrazneCvorove()
         {
             if (trMain == null)
@@ -1309,7 +1380,7 @@ namespace Carpo.NetGen.Ui
                 return null;
             bool filter = sql.IndexOf("NetGenDBFilter", StringComparison.OrdinalIgnoreCase) >= 0;
             _zadnjiSql = sql;
-            if (!filter)
+            if (!filter && _klikPregled)
                 _poslano.Add(sql);
             try
             {
@@ -1326,11 +1397,17 @@ namespace Carpo.NetGen.Ui
                     _sqlGreska = ex.Message + " | " + sql;
                     var sqlEx = ex as System.Data.SqlClient.SqlException;
                     _sqlPoruka = sqlEx != null && sqlEx.Number >= 50000;
+                    // Class1.ExecSql 230: svaka ne-tiha greška ide u dbo.spNetGenErrorLog (prije samo master grid, PN-10).
+                    // Na jupiter2019/2022 izvan produkcije i u sweepu (DozvoliUpis/Tiho) se ne piše.
+                    bool porukaProcedure = _zadnjaPoruka.Contains("#") || _zadnjaPoruka.Contains("+");
+                    if (!porukaProcedure && !NgPoruka.Tiho && !(DijalogTok.JeJupiter(_server) && !DijalogTok.Produkcija))
+                        GreskaSql.Zapisi(sqlEx == null ? 0 : sqlEx.Number, ex.Message, sql, _spoj);
                 }
                 NgDnevnik.Greska(ex.Message + " | " + sql);
                 if (!tiho)
                     PostaviStatus(ex.Message);
-                return null;
+                // Class1.ExecSql 164-195: uz poruku procedure ('#'/'+') vrati se tablica koja je stigla prije nje (PF-04).
+                return tiho ? null : ex.Data[NgVeza.TablicaUzPoruku] as DataTable;
             }
         }
 
@@ -1362,6 +1439,7 @@ namespace Carpo.NetGen.Ui
             bool upis = !samoCitanje && DijalogTok.UpisNaSpinu(_server, _baza);
             DijalogTok.DozvoliUpis = upis;
             NgPoruka.Tiho = true;
+            _klikPregled = true;
             _imeUnosa = "kp" + DateTime.Now.ToString("HHmmss");
             DijalogTok.TekstUpisa = _imeUnosa;
             _korisceno.Clear();
@@ -1383,6 +1461,8 @@ namespace Carpo.NetGen.Ui
             {
                 if (upis)
                     OcistiTest();
+                _klikPregled = false;
+                _poslano.Clear();
                 Dijalog.NakonPrikaza = null;
                 DijalogTok.DozvoliUpis = false;
                 NgPoruka.Tiho = false;
@@ -1692,6 +1772,10 @@ namespace Carpo.NetGen.Ui
 
         private void ZapamtiNoviTrosak()
         {
+            // Samo klik pregled na spinu (stub spPrnTroskoviGlaAzur ne vraća id). NetGen (Form1 5385-5390, 5501-5507)
+            // nakon ONSUBMIT-a ne čita tablicu: @@id je red u gridu ili prva ćelija rezultata (PF-01).
+            if (!_klikPregled)
+                return;
             string sql = PoslanoKoje("spPrnTroskoviGlaAzur");
             if (sql.Length == 0 || !Akcija(sql, "0") || _master.Kontekst == null)
                 return;

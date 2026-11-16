@@ -27,6 +27,20 @@ mcs -target:library -out:/tmp/ng.dll -r:System.Data.dll -r:System.Xml.dll \
 
 `tools/diff/sql_diff.py` i `tools/diff/lanac_diff.py` uspoređuju doslovni Python model VB koda (`vb_oracle.py`, `lanac_vb.py`) s C# kodom (`CsVoz.cs`, `LanacVoz.cs` pod Mono) na svim SQL tekstovima i lancima iz korpusa. Upute su na vrhu svake skripte.
 
+## 4. Parseri nad cijelim korpusom (iznimke i petlje)
+
+```
+mcs -out:/tmp/KorpusParseri.exe -r:/tmp/ng.dll -r:System.Data.dll -r:System.Xml.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll tools/provjera/KorpusParseri.cs
+cp /tmp/ng.dll /tmp/ng.dll.bak; mono /tmp/KorpusParseri.exe definitions/netgen
+```
+
+(`/tmp/ng.dll` iz točke 2 mora biti u istoj mapi kao exe.) Za svaki tekst s naredbom ili SQL-om iz svih XML-ova (ONCLICK,
+ONSUBMIT, ONLOAD, SQL, CMD, POPUP, TREE…) i svaki njegov `#` segment poziva ~50 čistih parsera `Carpo.NetGen`
+(`ZastitaSql`, `SqlTekst`, `SrediPoslije`, `DijalogTok.Koraci`, `Lanac`, `RafalNaredba`, `Form1Rafal`…) s rokom 3 s po pozivu
+i ispiše iznimke, petlje (PETLJA) i pozive dulje od 500 ms, grupirano s primjerom ulaza. Stanje 14. 11. 2026.: 25 482 teksta,
+1,55 milijuna poziva, 0 iznimki, 0 petlji (prije PN-15: `ZastitaSql` je visio na 776 tekstova). Pokreni nad novim mapama XML-ova
+prije sweepa.
+
 ## Mrtve metode i QA kuka
 
 ```
