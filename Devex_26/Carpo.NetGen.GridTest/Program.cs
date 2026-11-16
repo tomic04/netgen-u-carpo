@@ -2070,6 +2070,7 @@ namespace Carpo.NetGen.GridTest
             StabloDijaloga();
             IzgledGridaDijaloga();
             PregledNeovisni.Izvrsi(T);
+            ParametriOnSubmit.Izvrsi(T);
             PregledFable52.Izvrsi(T);
             OznaceniIzUpita();
             // HLP-02: DajPokaziHelp argumenti; Str(7) ima razmak sprijeda.
