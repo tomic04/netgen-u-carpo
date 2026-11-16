@@ -27,17 +27,30 @@ jobs:
           if (-not (Test-Path -LiteralPath $izvor)) { throw "Nema $izvor" }
           Write-Host "Sadrzaj ${izvor}:"
           Get-ChildItem -LiteralPath $izvor -Recurse | ForEach-Object { Write-Host ("  " + $_.FullName.Substring($izvor.Length) + "`t" + $(if ($_.PSIsContainer) { "<mapa>" } else { $_.Length })) }
+          # Korijen: silazi dok mapa ima samo jednu podmapu i nijednu datoteku (C:\NetGenXml\<ime>\<ime>).
+          $korijen = $izvor
+          while ($true) {
+            $mape = @(Get-ChildItem -LiteralPath $korijen -Directory)
+            $dat = @(Get-ChildItem -LiteralPath $korijen -File)
+            if ($mape.Count -eq 1 -and $dat.Count -eq 0) { $korijen = $mape[0].FullName } else { break }
+          }
+          Write-Host "korijen: $korijen"
           $cilj = Join-Path $env:GITHUB_WORKSPACE "definitions\netgen\Zito"
+          if (Test-Path -LiteralPath $cilj) { Remove-Item -LiteralPath $cilj -Recurse -Force }
           New-Item -ItemType Directory -Force -Path $cilj | Out-Null
           $n = 0
-          Get-ChildItem -LiteralPath $izvor -Recurse -File | Where-Object { $_.Extension -ieq ".xml" } | ForEach-Object {
-            Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $cilj $_.Name) -Force
+          Get-ChildItem -LiteralPath $korijen -Recurse -File | Where-Object { $_.Extension -ieq ".xml" } | ForEach-Object {
+            $rel = $_.FullName.Substring($korijen.Length).TrimStart('\')
+            $dest = Join-Path $cilj $rel
+            $dir = Split-Path -Parent $dest
+            if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+            Copy-Item -LiteralPath $_.FullName -Destination $dest -Force
             $n++
           }
           Write-Host "kopirano XML-ova: $n"
           if ($n -eq 0) { throw "Nema XML-ova u $izvor" }
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
-          git add -- "definitions/netgen/Zito"
+          git add -A -- "definitions/netgen/Zito"
           git commit -m "Uvoz XML-ova s sql-ai (C:\NetGenXml) u definitions/netgen/Zito"
           git push origin HEAD:${{ github.ref_name }}
