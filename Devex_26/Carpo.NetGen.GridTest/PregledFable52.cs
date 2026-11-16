@@ -39,6 +39,7 @@ namespace Carpo.NetGen.GridTest
         {
             _t = t;
             Korak("onload-datum-hr", OnLoadDatumHr);
+            Korak("assembly-totalgen", AssemblyTotalGen);
             // Podloga u GridTestu nema Carpo Logger, pa JupiterShared_Shown baci iznimku na UI niti (kao u PregledNeovisni).
             ThreadExceptionEventHandler iznimka = delegate (object s, ThreadExceptionEventArgs e)
             {
@@ -516,6 +517,23 @@ namespace Carpo.NetGen.GridTest
             }
         }
 
+        // ------------------------------------------------------------------ PF-07
+
+        /// <summary>
+        /// Form1.vb 4623 o.totalgen(ID, OperateriID.ToString, tconstr, sql, parametri): VB kasno vezanje nađe
+        /// TotalGen(Int32, Int32, String, String, String) (takav potpis imaju KUPPreglednikDMS.ScanPreview i
+        /// ScanDialog, 5 granula Žita s 55 % pokretanja) i pretvori tekst u broj. InvokeMember("totalgen", tekstovi)
+        /// ga ne nađe, pa gumb s ASSEMBLYLOAD ne radi ništa (greška samo u dnevniku).
+        /// </summary>
+        private static void AssemblyTotalGen()
+        {
+            PfTotalGen.Zadnje = "";
+            Carpo.NetGen.Poziv.AssemblyPoziv.Ishod i = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(
+                "ASSEMBLYLOAD(Carpo.NetGen.GridTest.PfTotalGen)", "shell", "5", "7", "Server=x", "select 1", "@a='1' , ", "");
+            T("pf07-assemblyload-totalgen", i.Pozvan && PfTotalGen.Zadnje == "5|7|Driver={SQL Server};Server=x|select 1|@a='1' , ",
+                "Pozvan=" + i.Pozvan.ToString() + " primljeno='" + PfTotalGen.Zadnje + "' (NetGen: 5|7|Driver={SQL Server};Server=x|select 1|@a='1' , )");
+        }
+
         // ------------------------------------------------------------------ PF-03
 
         /// <summary>
@@ -577,6 +595,17 @@ namespace Carpo.NetGen.GridTest
                 if (d != null)
                     d.Dispose();
             }
+        }
+    }
+
+    /// <summary>Potpis kao KUPPreglednikDMS.ScanPreview.TotalGen (PF-07).</summary>
+    public class PfTotalGen
+    {
+        public static string Zadnje = "";
+
+        public void TotalGen(int id, int operateriId, string cs, string param, string param2)
+        {
+            Zadnje = id.ToString() + "|" + operateriId.ToString() + "|" + cs + "|" + param + "|" + param2;
         }
     }
 }
