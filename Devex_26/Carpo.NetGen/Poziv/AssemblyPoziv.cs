@@ -148,19 +148,47 @@ namespace Carpo.NetGen.Poziv
                 NgDnevnik.Akcija("zovem totalgen u asembliju ...");
             try
             {
-                o.GetType().InvokeMember(
-                    "totalgen",
-                    BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance,
-                    null,
-                    o,
-                    new object[] { i.Argumenti[0], i.Argumenti[1], i.Argumenti[2], i.Argumenti[3], i.Argumenti[4] });
+                PozoviTotalGen(o, i.Argumenti);
                 i.Pozvan = true;
             }
             catch (Exception ex)
             {
-                NgDnevnik.Greska("nakon totalgen u asembliju " + ex.Message);
+                Exception uzrok = ex is TargetInvocationException && ex.InnerException != null ? ex.InnerException : ex;
+                NgDnevnik.Greska("nakon totalgen u asembliju " + uzrok.Message);
             }
             return i;
+        }
+
+        /// <summary>
+        /// Form1.vb 4623 o.totalgen(ID, OperateriID.ToString, tconstr, sql, parametri) je VB kasno vezanje: ime
+        /// metode bez razlike velikih i malih slova, a tekst se pretvara u tip parametra. Pravi DLL-ovi imaju
+        /// TotalGen(Int32 id, Int32 operateriId, String cs, String param, String param2) (KUPPreglednikDMS.ScanPreview),
+        /// što InvokeMember("totalgen", tekstovi) ne nađe (PF-07).
+        /// </summary>
+        private static void PozoviTotalGen(object o, string[] argumenti)
+        {
+            MethodInfo metoda = null;
+            foreach (MethodInfo m in o.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (string.Equals(m.Name, "totalgen", StringComparison.OrdinalIgnoreCase) && m.GetParameters().Length == argumenti.Length)
+                {
+                    metoda = m;
+                    break;
+                }
+            }
+            if (metoda == null)
+                throw new MissingMethodException(o.GetType().FullName, "totalgen");
+            ParameterInfo[] p = metoda.GetParameters();
+            var vrijednosti = new object[argumenti.Length];
+            for (int k = 0; k < argumenti.Length; k++)
+            {
+                Type tip = p[k].ParameterType;
+                if (tip == typeof(string) || tip == typeof(object))
+                    vrijednosti[k] = argumenti[k];
+                else
+                    vrijednosti[k] = Convert.ChangeType(argumenti[k], tip, CultureInfo.CurrentCulture);
+            }
+            metoda.Invoke(o, vrijednosti);
         }
     }
 }
