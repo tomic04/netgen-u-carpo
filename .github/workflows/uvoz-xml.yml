@@ -1,0 +1,43 @@
+# Jednokratni uvoz XML-ova s diska sql-ai (C:\NetGenXml) u definitions/netgen/Zito.
+# Radi samo na granama uvoz/**; commit ide na istu granu.
+name: uvoz-xml
+
+on:
+  push:
+    branches:
+      - 'uvoz/**'
+
+permissions:
+  contents: write
+
+jobs:
+  uvoz:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: [self-hosted, sql-ai]
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Kopiraj i commitaj
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $izvor = "C:\NetGenXml"
+          if (-not (Test-Path -LiteralPath $izvor)) { throw "Nema $izvor" }
+          Write-Host "Sadrzaj ${izvor}:"
+          Get-ChildItem -LiteralPath $izvor -Recurse | ForEach-Object { Write-Host ("  " + $_.FullName.Substring($izvor.Length) + "`t" + $(if ($_.PSIsContainer) { "<mapa>" } else { $_.Length })) }
+          $cilj = Join-Path $env:GITHUB_WORKSPACE "definitions\netgen\Zito"
+          New-Item -ItemType Directory -Force -Path $cilj | Out-Null
+          $n = 0
+          Get-ChildItem -LiteralPath $izvor -Recurse -File | Where-Object { $_.Extension -ieq ".xml" } | ForEach-Object {
+            Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $cilj $_.Name) -Force
+            $n++
+          }
+          Write-Host "kopirano XML-ova: $n"
+          if ($n -eq 0) { throw "Nema XML-ova u $izvor" }
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          git add -- "definitions/netgen/Zito"
+          git commit -m "Uvoz XML-ova s sql-ai (C:\NetGenXml) u definitions/netgen/Zito"
+          git push origin HEAD:${{ github.ref_name }}
