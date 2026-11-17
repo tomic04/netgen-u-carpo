@@ -68,13 +68,7 @@ namespace Carpo.UI.Forms.Jupiter
             Permissions.PermissionsAreSet = false;
 
             InitLogger(Logger);
-            if (this is Forms.Base.JupiterShared)
-            {
-                Forms.Base.JupiterShared form = this as Forms.Base.JupiterShared;
-                Logger.Imginfo = form.bbiLog;
-                form.bbiLog.EditValue = Properties.Resources.circle_gray_16;
-                form.repPicEditLog.ContextMenuStrip = new ContextMenuStrip(); //onemogućuje desni klik
-            }
+            InitLogIcon();
 
             Core.PubVars.OperateriId = operateriid;
             string appName = AssamblyName + "." + ModuleId;
@@ -123,6 +117,20 @@ namespace Carpo.UI.Forms.Jupiter
         }
 
         #endregion JupiterStart
+
+        /// <summary>
+        /// Kružić loga u statusnoj traci (sivi, a Logger ga mijenja u žuti ili crveni kod upozorenja i greške).
+        /// Zove ga Start, a i forma koja se ne otvara kroz Start (Carpo.NetGen podloga).
+        /// </summary>
+        public void InitLogIcon()
+        {
+            Forms.Base.JupiterShared form = this as Forms.Base.JupiterShared;
+            if (form == null || Logger == null)
+                return;
+            Logger.Imginfo = form.bbiLog;
+            form.bbiLog.EditValue = Properties.Resources.circle_gray_16;
+            form.repPicEditLog.ContextMenuStrip = new ContextMenuStrip(); //onemogućuje desni klik
+        }
 
         public void InitLogger(Logger loger)
         {

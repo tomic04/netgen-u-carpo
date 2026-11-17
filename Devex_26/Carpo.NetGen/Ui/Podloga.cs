@@ -181,7 +181,7 @@ namespace Carpo.NetGen.Ui
             _server = server ?? "";
             _baza = baza ?? "";
             Text = string.IsNullOrEmpty(_projekt.Naslov) ? "NetGen" : _projekt.Naslov;
-            bbiVerzija.Caption = (server ?? "") + " · " + (baza ?? "") + " · " + operater.ToString();
+            _vezaOpis = (server ?? "") + " · " + (baza ?? "") + " · " + operater.ToString();
             var kontekst = new SqlKontekst();
             kontekst.OperaterId = operater.ToString();
             kontekst.XmlName = Path.GetFileName(xml ?? "");
@@ -290,6 +290,28 @@ namespace Carpo.NetGen.Ui
             n.Tag = cvor;
             for (int i = 0; i < cvor.Djeca.Count; i++)
                 DodajCvor(cvor.Djeca[i], n);
+        }
+
+        private string _vezaOpis = "";
+
+        /// <summary>
+        /// Statusna traka kao na Carpo formi (Starter.RegisterForm, Base.Start): desno verzija sklopa i kružić loga,
+        /// siv dok nema ničega, žut kod upozorenja, crven kod greške. Podloga ne ide kroz Starter, pa to postavlja sama.
+        /// Server, baza i operater su u opisu (hint) verzije.
+        /// </summary>
+        protected override void OnLoad(EventArgs e)
+        {
+            if (string.IsNullOrEmpty(AssamblyVersion))
+            {
+                Version v = typeof(Podloga).Assembly.GetName().Version;
+                AssamblyVersion = v.Major.ToString() + "." + v.Minor.ToString() + "." + v.Build.ToString() + "." + v.Revision.ToString();
+                AssamblyVersionToolTip = "Carpo.NetGen " + v.ToString() + (_vezaOpis.Length == 0 ? "" : " · " + _vezaOpis);
+            }
+            InitLogIcon();
+            // Greška zabilježena prije prikaza (učitavanje XML-a, ONLOAD) mora se vidjeti odmah.
+            if (Logger != null && (Logger.ErrorExists || Logger.WarningExists))
+                Logger.SetIcon();
+            base.OnLoad(e);
         }
 
         protected override void OnShown(EventArgs e)
