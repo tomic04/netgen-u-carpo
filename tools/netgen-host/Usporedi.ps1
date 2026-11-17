@@ -40,14 +40,20 @@ function Ispisi($dat) {
 
 try {
     & $trag -Radnja Start -Server $Server -Baza $Baza | Out-Null
+    $env:NETGEN_TIP = "NetGenDLL.Loader"
     $arg = @($Server, $Baza, "$Operater", "`"$Xml`"", "`"$izl\$ime-netgen`"", "$Sekundi")
     if ($Klik) { $arg += "`"$Klik`"" }
     $p = Start-Process -FilePath $hostExe -ArgumentList $arg -PassThru
     if (-not $p.WaitForExit(180000)) { $p.Kill(); "NetGen: ROK" }
     & $trag -Radnja Citaj -Server $Server -Baza $Baza -Izlaz "$izl\$ime-netgen.tsv" | Out-Null
 
+    # Carpo kroz isti pokretač i isti ulaz (Carpo.NetGen.Loader.Run8) kojim ga otvara Jupiter. TestShell --ui-smoke
+    # ne otvara ulaznu formu granule, pa usporedba kroz njega nije bila poštena.
     & $trag -Radnja Start -Server $Server -Baza $Baza | Out-Null
-    $p = Start-Process -FilePath $TestShell -ArgumentList "--ui-smoke", "`"$Xml`"", "`"$izl\$ime-carpo.png`"" -WorkingDirectory (Split-Path -Parent $TestShell) -PassThru
+    $env:NETGEN_DLL = Join-Path (Split-Path -Parent $TestShell) "Carpo.NetGen.dll"
+    $env:NETGEN_TIP = "Carpo.NetGen.Loader"
+    $arg[4] = "`"$izl\$ime-carpo`""
+    $p = Start-Process -FilePath $hostExe -ArgumentList $arg -PassThru
     if (-not $p.WaitForExit(180000)) { $p.Kill(); "Carpo: ROK" }
     & $trag -Radnja Citaj -Server $Server -Baza $Baza -Izlaz "$izl\$ime-carpo.tsv" | Out-Null
 }

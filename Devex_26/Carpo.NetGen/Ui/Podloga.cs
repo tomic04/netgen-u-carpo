@@ -1099,6 +1099,14 @@ namespace Carpo.NetGen.Ui
                 // Iznimka u vezanju ne smije ostaviti _punim: detalj se inače više ne osvježava.
                 _punim = false;
             }
+            // Form1.PokaziUpit 1830: bez master upita izlazi odmah, pa ni detalj ne ide (PokaziUpitDetalj je na kraju
+            // PokaziUpit). Izmjereno: MPNarIzdSkl (ONLOAD="") u NetGenu ne šalje DETAILGRID, a Carpo je slao "@id=0".
+            if (_master.Stanje.Odluka != "salji" || _master.Stanje.BlokiranoPisanje || string.IsNullOrEmpty(_master.Stanje.SqlZaSlanje))
+                return;
+            // Master upit koji je pukao ne veže grid (ExecSql vrati Nothing), pa NetGen ne šalje ni detalj. Izmjereno:
+            // MPInventura, MPInvRazlike, MPNarPredis; Carpo je nakon greške mastera slao DETAILGRID s "@id=0".
+            if (MasterGreska().Length > 0)
+                return;
             OsvjeziDetail();
         }
 
@@ -1284,7 +1292,11 @@ namespace Carpo.NetGen.Ui
             string raw = (_projekt.Atributi.Vrijednost("ONLOAD2") ?? "").Trim();
             if (raw.Length == 0)
                 return;
-            string sql = SqlTekst.Sredi(raw, _master.Kontekst).Replace("~~", ",");
+            // Form1.vb 3907: cls1.SrediSQLPosljeNextForme(SrediSQL(strONLoad2)). Token kojeg nema u CB-u postane null, pa
+            // se upit ipak pošalje (izmjereno: MPNarIzdSkl šalje "case when null=1 then 'enable' else 'disable'").
+            // Prije je neriješeni @@token ostao u tekstu i ONLOAD2 se nije slao, pa stanje gumba nije postavljeno.
+            SqlKontekst k = _master.Kontekst;
+            string sql = SrediPoslije.Zamijeni(SqlTekst.Sredi(raw, k), "", k, k == null ? null : k.Clipboard, false).Replace("~~", ",");
             if (SqlTekst.Odluka(sql) != "salji" || SqlTekst.JeZabranaPisanja(sql))
                 return;
             DataTable t = Citaj(sql);
