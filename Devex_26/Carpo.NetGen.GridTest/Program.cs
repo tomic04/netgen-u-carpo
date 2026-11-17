@@ -3399,6 +3399,7 @@ namespace Carpo.NetGen.GridTest
                 {
                     // Module1.vb 189: strPermisio je početno True, pa forma bez atributa učitava dozvole.
                     Carpo.NetGen.Komande.Dozvole.Globalno = true;
+                    d.Operater = "7";
                     var bez = new NgForm("F1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
                     poslano.Clear();
                     d.Slozi(bez, new SqlKontekst { XmlName = "Obrazac" }, delegate (string x) { poslano.Add(x ?? ""); return t; });

@@ -35,6 +35,9 @@ namespace Carpo.NetGen.Ui
             string op = (Operater ?? "").Trim();
             if (op.Length == 0 && _kontekst != null)
                 op = _kontekst.OperaterId ?? "";
+            // Bez operatera upit nije valjan SQL ("OperateriID = )"). U NetGenu je cls1.OperateriID uvijek postavljen.
+            if (op.Trim().Length == 0)
+                return;
             string xml = _kontekst == null ? "" : (_kontekst.XmlName ?? "");
             try
             {

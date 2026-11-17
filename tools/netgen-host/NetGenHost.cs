@@ -8,7 +8,9 @@
 //   sekundi        koliko čekati nakon otvaranja prije snimke (zadano 6)
 //   klik           natpis gumba podloge koji se klikne nakon otvaranja (bez toga se ništa ne klika)
 //
-// Okolina: NETGEN_DLL (zadano SharedAssemblies\Spin\NetGenDLL.dll), NETGEN_SHARED (mapa SharedAssemblies).
+// Okolina: NETGEN_DLL (zadano SharedAssemblies\Spin\NetGenDLL.dll), NETGEN_SHARED (mapa SharedAssemblies),
+// NETGEN_TIP (zadano NetGenDLL.Loader). Carpo.NetGen.Loader ima ista polja i Run8, pa isti pokretač otvara i
+// Carpo granulu putem kojim je otvara Jupiter: NETGEN_DLL=...\Carpo.NetGen.dll, NETGEN_TIP=Carpo.NetGen.Loader.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -29,6 +31,7 @@ namespace NetGenHost
 
         private static string _prefiks = "";
         private static string _shared = ZadaniShared;
+        private static string _mapaDll = "";
         private static Dictionary<string, string> _indeks;
         private static readonly object _brava = new object();
         private static IntPtr _glavni = IntPtr.Zero;
@@ -69,6 +72,10 @@ namespace NetGenHost
                 return Ishod(2, "nema XML-a " + xml);
             if (!File.Exists(dll))
                 return Ishod(2, "nema NetGenDLL.dll " + dll);
+            _mapaDll = Path.GetDirectoryName(Path.GetFullPath(dll));
+            string tip = Environment.GetEnvironmentVariable("NETGEN_TIP");
+            if (string.IsNullOrEmpty(tip))
+                tip = "NetGenDLL.Loader";
 
             AppDomain.CurrentDomain.AssemblyResolve += Razrijesi;
             Application.EnableVisualStyles();
@@ -111,7 +118,9 @@ namespace NetGenHost
                     {
                         Assembly a = Assembly.LoadFrom(dll);
                         Zapisi("DLL", dll + " " + a.GetName().Version);
-                        object loader = a.CreateInstance("NetGenDLL.Loader");
+                        object loader = a.CreateInstance(tip);
+                        if (loader == null)
+                            throw new InvalidOperationException("nema tipa " + tip);
                         Type t = loader.GetType();
                         t.GetField("moduleId").SetValue(loader, modul);
                         t.GetField("mainHandle").SetValue(loader, (int)forma.Handle);
@@ -180,11 +189,12 @@ namespace NetGenHost
                 {
                     _indeks = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                     // Spin prvi: ondje je NetGenDLL i njegove ovisnosti u verziji koju Jupiter stvarno koristi.
-                    foreach (string mapa in new[] { Path.Combine(_shared, "Spin"), Path.Combine(_shared, "Janus"), Path.Combine(_shared, "DevExpress"), Path.Combine(_shared, "Microsoft"), _shared })
+                    // Mapa samog DLL-a prva: ondje su ovisnosti u verziji s kojom je izgrađen.
+                    foreach (string mapa in new[] { _mapaDll, Path.Combine(_shared, "Spin"), Path.Combine(_shared, "Janus"), Path.Combine(_shared, "DevExpress"), Path.Combine(_shared, "Microsoft"), _shared })
                     {
-                        if (!Directory.Exists(mapa))
+                        if (string.IsNullOrEmpty(mapa) || !Directory.Exists(mapa))
                             continue;
-                        foreach (string f in Directory.GetFiles(mapa, "*.dll", SearchOption.AllDirectories))
+                        foreach (string f in Directory.GetFiles(mapa, "*.dll", mapa == _mapaDll ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories))
                         {
                             string k = Path.GetFileNameWithoutExtension(f);
                             if (!_indeks.ContainsKey(k))

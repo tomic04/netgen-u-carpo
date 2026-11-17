@@ -218,12 +218,6 @@ namespace Carpo.NetGen.Ui
             Dijalog.Trag("podloga combo");
             NapuniCombo();
             NapuniDrvo();
-            // NetGen pri otvaranju ima odabran prvi čvor stabla prije početnog upita: TreeView2_AfterSelect (Form1.vb
-            // 7182-7189) postavi Node čim stablo postane vidljivo u NapuniDrvoVrijeme. Izmjereno starim NetGenom
-            // (tools/netgen-host) na sql-ai/spin: AOPNovi šalje "@id='0'", a Carpo je slao "@id='null'" i dobio
-            // grešku pretvorbe. Forma čvora se ovdje ne izvršava; master puni početni upit, kao zadnji i u NetGenu.
-            if (_stablo.Stanje.Vidljivo && _stablo.Stanje.Korijen.Count > 0)
-                _stablo.Odaberi(_stablo.Stanje.Korijen[0]);
             _detail.Pripremi(_projekt);
             Dijalog.Trag("podloga dms");
             PripremiDms();
@@ -244,13 +238,17 @@ namespace Carpo.NetGen.Ui
             Dijalog.Trag("podloga dozvole");
             UcitajDozvole();
             UcitajEditStupce();
-            _master.Ucitaj(_projekt, null);
-            Dijalog.Trag("podloga master");
-            NapuniGrid();
+            // Gumbi prije prvog čvora i početnog upita: forma čvora zna postaviti njihovo stanje (enable/disable),
+            // a u NetGenu gumbi postoje od čitanja XML-a.
             Dijalog.Trag("podloga gumbi");
             NapuniGumbe();
             // Form1.vb 3873 ssPermissionProvjeri prije ONLOAD2 (3906).
             PrimijeniDozvoleGumba();
+            Dijalog.Trag("podloga prvi cvor");
+            IzvrsiPrviCvor();
+            _master.Ucitaj(_projekt, null);
+            Dijalog.Trag("podloga master");
+            NapuniGrid();
             Dijalog.Trag("podloga onload2");
             PrimijeniOnLoad2();
             DodajGumbPomoci();
@@ -405,6 +403,40 @@ namespace Carpo.NetGen.Ui
                 int d = _stablo.Stanje.Splitter;
                 if (d > 40 && d < Width - 120)
                     splitMain.SplitterPosition = d;
+            }
+        }
+
+        /// <summary>
+        /// NetGen pri otvaranju odabere prvi čvor stabla čim ono postane vidljivo (NapuniDrvoVrijeme, Form1.vb 4375-4379),
+        /// pa TreeView2_AfterSelect (7182-7189) postavi Node i izvrši formu čvora, prije početnog upita (3879-3883).
+        /// Izmjereno starim NetGenom na sql-ai/spin (tools/netgen-host): AOPNovi šalje "@id='0'" umjesto "@id='null'",
+        /// a MPBlagajna, MPNivelacija, Narudzbe i druge odmah napune master upitom forme čvora ("@node='danas'").
+        /// Forma čvora koja ima kontrole ovdje se ne otvara (modalni dijalog prije prikaza podloge); tada se samo postavi Node.
+        /// </summary>
+        private void IzvrsiPrviCvor()
+        {
+            if (!_stablo.Stanje.Vidljivo || _stablo.Stanje.Korijen.Count == 0)
+                return;
+            Cvor prvi = _stablo.Stanje.Korijen[0];
+            string naredba = (prvi.Naredba ?? "").Trim();
+            if (naredba.StartsWith(":", StringComparison.Ordinal))
+                naredba = naredba.Substring(1).Trim();
+            int zagrada = naredba.IndexOf('(');
+            string ime = zagrada > 0 ? naredba.Substring(0, zagrada).Trim() : naredba;
+            NgForm forma = ime.Length == 0 || _projekt == null ? null : IncludeForme.Nadji(_projekt, ime);
+            if (forma != null && forma.Kontrole != null && forma.Kontrole.Count > 0)
+            {
+                _stablo.Odaberi(prvi);
+                NgDnevnik.Akcija("prvi čvor: forma " + ime + " ima kontrole, pri otvaranju se ne otvara");
+                return;
+            }
+            try
+            {
+                IzvrsiCvor(prvi);
+            }
+            catch (Exception ex)
+            {
+                NgDnevnik.Greska("prvi čvor: " + ex.Message);
             }
         }
 
