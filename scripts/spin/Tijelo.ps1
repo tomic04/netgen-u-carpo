@@ -1,4 +1,4 @@
-# Cita tijelo dbo.spJeziciQuery samo s localhost/spin.
+# Cita tijelo dbo.spJeziciQuery samo s sql-ai/spin.
 # Ne otvara jupiter2019 ni jupiter2022. Ne izvrsava proceduru. Ne pise redove.
 # Isti filtar kao Citanje.RazlogTijela: komentar, zaglavlje CREATE/ALTER PROC i WITH EXECUTE AS nisu upis.
 $ErrorActionPreference = "Continue"
@@ -32,10 +32,10 @@ function Pogoci([string]$t) {
 $sb = New-Object System.Text.StringBuilder
 [void]$sb.AppendLine("# Tijelo spJeziciQuery na spinu")
 [void]$sb.AppendLine("")
-[void]$sb.AppendLine("Samo localhost, baza spin. Jupiter se ne cita. Procedura se ne pokrece.")
+[void]$sb.AppendLine("Samo sql-ai, baza spin. Jupiter se ne cita. Procedura se ne pokrece.")
 [void]$sb.AppendLine("")
 
-$cs = "Server=localhost;Database=spin;Integrated Security=True;TrustServerCertificate=True;Pooling=false;Connect Timeout=15;Application Name=CarpoNetGen-tijelo;ApplicationIntent=ReadOnly"
+$cs = "Server=sql-ai;Database=spin;Integrated Security=True;TrustServerCertificate=True;Pooling=false;Connect Timeout=15;Application Name=CarpoNetGen-tijelo;ApplicationIntent=ReadOnly"
 try {
     $conn = New-Object System.Data.SqlClient.SqlConnection $cs
     $conn.Open()

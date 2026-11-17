@@ -1,6 +1,6 @@
 # Klijentske definicije za spin
 
-Izvorna matrica (koja verzija na kojem klijentu) je `IZVOR.md`. Tijela se ne mijenjaju. `PrimijeniKlijente.ps1` ih stavlja na `localhost/spin` nakon prijenosa s Jupitera, tako da ova verzija ostane.
+Izvorna matrica (koja verzija na kojem klijentu) je `IZVOR.md`. Tijela se ne mijenjaju. `PrimijeniKlijente.ps1` ih stavlja na `sql-ai/spin` nakon prijenosa s Jupitera, tako da ova verzija ostane.
 
 | Objekt | Verzija na spinu | Zašto |
 |---|---|---|

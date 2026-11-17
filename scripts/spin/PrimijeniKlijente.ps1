@@ -106,7 +106,7 @@ $linije.Add("# Klijentski objekti na spinu")
 $linije.Add("")
 
 $spin = $null
-try { $spin = Veza "localhost" "spin" "CarpoNetGen-otvaranje" }
+try { $spin = Veza "sql-ai" "spin" "CarpoNetGen-otvaranje" }
 catch {
     $linije.Add("- spin: $($_.Exception.Message)")
     Set-Content -LiteralPath $izvjestaj -Value ($linije -join "`r`n") -Encoding UTF8
@@ -189,7 +189,7 @@ foreach ($fajl in $procedure) {
     $tekst = [IO.File]::ReadAllText($put)
     $tekst = [regex]::Replace($tekst, '(?i)\bcreate\s+procedure\b', 'CREATE OR ALTER PROCEDURE', 1)
     [IO.File]::WriteAllText($tmp, $tekst, (New-Object System.Text.UTF8Encoding $false))
-    & sqlcmd -S localhost -d spin -E -C -b -f 65001 -i $tmp
+    & sqlcmd -S sql-ai -d spin -E -C -b -f 65001 -i $tmp
     if ($LASTEXITCODE -eq 0) { $linije.Add("- primijenjeno $fajl") }
     else { $linije.Add("- NIJE primijenjeno $fajl, kod $LASTEXITCODE") }
 }

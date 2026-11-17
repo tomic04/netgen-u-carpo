@@ -8,14 +8,14 @@ if ([string]::IsNullOrWhiteSpace($root) -or -not (Test-Path (Join-Path $root "sc
 $sql = Join-Path $root "scripts\spin\klijenti\spFakPartneriUvjetiQuery.A.sql"
 if (-not (Test-Path -LiteralPath $sql)) { throw "Nema $sql" }
 
-sqlcmd -S localhost -d spin -E -C -b -Q "IF OBJECT_ID(N'dbo.spFakPartneriUvjetiQuery', N'P') IS NOT NULL DROP PROCEDURE dbo.spFakPartneriUvjetiQuery;"
+sqlcmd -S sql-ai -d spin -E -C -b -Q "IF OBJECT_ID(N'dbo.spFakPartneriUvjetiQuery', N'P') IS NOT NULL DROP PROCEDURE dbo.spFakPartneriUvjetiQuery;"
 if ($LASTEXITCODE -ne 0) { throw "drop spFakPartneriUvjetiQuery nije prosao" }
 
-sqlcmd -S localhost -d spin -E -C -b -f 65001 -i $sql
+sqlcmd -S sql-ai -d spin -E -C -b -f 65001 -i $sql
 if ($LASTEXITCODE -ne 0) { throw "spFakPartneriUvjetiQuery.A.sql nije prosao" }
 
 $tablica = Join-Path $root "scripts\spin\FakPartneriUvjeti.sql"
-sqlcmd -S localhost -d spin -E -C -b -f 65001 -i $tablica
+sqlcmd -S sql-ai -d spin -E -C -b -f 65001 -i $tablica
 if ($LASTEXITCODE -ne 0) { throw "FakPartneriUvjeti.sql nije prosao" }
 
 Write-Host "spin spFakPartneriUvjetiQuery = klijentska verzija A, tablica FakPartneriUvjeti"

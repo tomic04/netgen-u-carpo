@@ -77,10 +77,10 @@ namespace Carpo.NetGen.Granule
             string sklop = AssemblyPoziv.SklopIz(tip);
             if (tip != "ExportToExcelNG.clsExportToExcelNG" || sklop != "ExportToExcelNG")
                 return Qa.P(granula, id, opis, izvor, "tip [" + tip + "] sklop [" + sklop + "]");
-            string veza = AssemblyPoziv.Konekcija("dijalog", "Server=localhost;Database=spin");
-            if (veza != "Driver={SQL Server};Server=localhost;Database=spin")
+            string veza = AssemblyPoziv.Konekcija("dijalog", "Server=sql-ai;Database=spin");
+            if (veza != "Driver={SQL Server};Server=sql-ai;Database=spin")
                 return Qa.P(granula, id, opis, izvor, "veza [" + veza + "]");
-            AssemblyPoziv.Ishod ishod = AssemblyPoziv.Pozovi(naredba, "dijalog", "7", "3", "Server=localhost", "zadnji", "grid", "@a=1");
+            AssemblyPoziv.Ishod ishod = AssemblyPoziv.Pozovi(naredba, "dijalog", "7", "3", "Server=sql-ai", "zadnji", "grid", "@a=1");
             if (!ishod.Prekinuto || ishod.Pozvan || ishod.Argumenti[3] != "@a=1" || ishod.Argumenti[4] != "@a=1")
                 return Qa.P(granula, id, opis, izvor, "prekinuto=" + ishod.Prekinuto + " pozvan=" + ishod.Pozvan);
             Console.WriteLine("[Z] MPOdjavaNarNG NRD-ASSEMBLY tip=ExportToExcelNG.clsExportToExcelNG sklop=ExportToExcelNG prekinuto=da");
@@ -219,7 +219,7 @@ namespace Carpo.NetGen.Granule
             bool proslo;
             try
             {
-                proslo = PrintBridge.DevRepx(naredba, "Server=localhost", "@id=4", "9");
+                proslo = PrintBridge.DevRepx(naredba, "Server=sql-ai", "@id=4", "9");
             }
             finally
             {

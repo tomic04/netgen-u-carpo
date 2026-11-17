@@ -25,7 +25,24 @@ namespace Carpo.NetGen.Ulaz
             public string Susjed = "";
         }
 
+        private static readonly object _brava = new object();
+        private static Ishod _ishod;
+
+        /// <summary>
+        /// Jednom po procesu: sklop i mape se ne mijenjaju dok Jupiter radi, a traženje po disku (Susjed, Nadji)
+        /// je prije išlo pri svakom otvaranju granule.
+        /// </summary>
         public static Ishod Ucitaj()
+        {
+            lock (_brava)
+            {
+                if (_ishod == null)
+                    _ishod = UcitajSad();
+                return _ishod;
+            }
+        }
+
+        private static Ishod UcitajSad()
         {
             var i = new Ishod();
             i.Susjed = Susjed();

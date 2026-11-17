@@ -107,7 +107,7 @@ $linije.Add("")
 
 $spin = $null
 try {
-    $spin = Veza "localhost" "spin" "CarpoNetGen-otvaranje"
+    $spin = Veza "sql-ai" "spin" "CarpoNetGen-otvaranje"
 } catch {
     $linije.Add("- spin: $($_.Exception.Message)")
     Set-Content -LiteralPath $izvjestaj -Value ($linije -join "`r`n") -Encoding UTF8

@@ -222,13 +222,14 @@ namespace Carpo.TestShell
                                 var podloga = new Carpo.NetGen.Ui.Podloga();
                                 _zadnjaPodloga = podloga;
                                 forma = podloga;
-                                if (!podloga.Prikazi(xml, server, database, operateriId) && !_klikPregled)
+                                // Run8 je već učitao model; isti XML se ne parsira drugi put.
+                                if (!podloga.Prikazi(xml, loader.Projekt, server, database, operateriId) && !_klikPregled)
                                     MessageBox.Show(podloga.Text, "Carpo.NetGen");
                             }
                             else
                             {
                                 string greska;
-                                forma = Carpo.NetGen.Ui.Prozor.Otvori(xml, server, database, operateriId, out greska);
+                                forma = Carpo.NetGen.Ui.Prozor.Otvori(xml, loader.Projekt, server, database, operateriId, out greska);
                                 var podloga = forma as Carpo.NetGen.Ui.Podloga;
                                 if (podloga != null)
                                     _zadnjaPodloga = podloga;
@@ -487,7 +488,7 @@ namespace Carpo.TestShell
         private static DataTable CitajBoju(string sql)
         {
             var dt = new DataTable();
-            using (var conn = new System.Data.SqlClient.SqlConnection(Carpo.NetGen.Grid.SpinVeza.Spoj("localhost", "spin")))
+            using (var conn = new System.Data.SqlClient.SqlConnection(Carpo.NetGen.Grid.SpinVeza.Spoj("sql-ai", "spin")))
             using (var cmd = new System.Data.SqlClient.SqlCommand(sql, conn))
             using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
             {
@@ -995,8 +996,8 @@ namespace Carpo.TestShell
         {
             if (ImaJupiterLogs(server))
                 return server;
-            if (ImaJupiterLogs("localhost"))
-                return "localhost";
+            if (ImaJupiterLogs("sql-ai"))
+                return "sql-ai";
             return null;
         }
 

@@ -21,6 +21,29 @@ namespace Carpo.NetGen.Grid
 
         public static Func<string, DataTable> Izvrsi;
 
+        /// <summary>
+        /// Smije li se greška zapisati u dbo.spNetGenErrorLog (PN-10). Ne piše se u sweepu i klik-pregledu (tiho),
+        /// za poruku procedure s '#' ili '+', ni na jupiter2019/jupiter2022 izvan produkcije.
+        /// Isto pravilo za master grid i za ostale upite podloge.
+        /// </summary>
+        public static bool Smije(string spoj, string poruka, bool tiho)
+        {
+            if (tiho)
+                return false;
+            string p = poruka ?? "";
+            if (p.IndexOf('#') >= 0 || p.IndexOf('+') >= 0)
+                return false;
+            return !(Carpo.NetGen.Komande.DijalogTok.JeJupiter(Server(spoj)) && !Carpo.NetGen.Komande.DijalogTok.Produkcija);
+        }
+
+        private static string Server(string spoj)
+        {
+            if (string.IsNullOrEmpty(spoj))
+                return "";
+            try { return new SqlConnectionStringBuilder(spoj).DataSource ?? ""; }
+            catch (Exception) { return spoj; }
+        }
+
         public static void Zapisi(int broj, string opis, string sql, string spoj)
         {
             string tekst = Poziv(broj, opis, sql);

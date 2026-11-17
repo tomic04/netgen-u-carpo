@@ -121,7 +121,7 @@ namespace Carpo.NetGen.GridTest
 
         private static string Spoj()
         {
-            return SpinVeza.Spoj("localhost", "spin");
+            return SpinVeza.Spoj("sql-ai", "spin");
         }
 
         private static void PripremiSpin()
@@ -174,7 +174,7 @@ namespace Carpo.NetGen.GridTest
             forma.StartPosition = FormStartPosition.Manual;
             forma.Location = new Point(-32000, -32000);
             forma.Show();
-            otvoren = forma.Prikazi(xml, "localhost", "spin", 7);
+            otvoren = forma.Prikazi(xml, "sql-ai", "spin", 7);
             Application.DoEvents();
             return forma;
         }

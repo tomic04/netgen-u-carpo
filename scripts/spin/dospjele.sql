@@ -1,4 +1,4 @@
--- DOS-11 na localhost/spin. Nije klijentsko tijelo.
+-- DOS-11 na sql-ai/spin. Nije klijentsko tijelo.
 -- Combo i multidrop: stupac 0 je vrijednost, stupac 1 je natpis
 -- (netgen/Form2.vb 2430-2431 i 2503-2504).
 -- Pozivi su iz definitions/netgen/Agronom granule/KntDospjeleStavke.xml.

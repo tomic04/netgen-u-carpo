@@ -18,7 +18,7 @@ namespace Carpo.TestShell
             {
                 string snimka = args[2];
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
-                var main = new Main("localhost", "spin", args[1], 7, "", "", true);
+                var main = new Main("sql-ai", "spin", args[1], 7, "", "", true);
                 main.Shown += delegate
                 {
                     main.BeginInvoke(new Action(delegate
@@ -38,7 +38,7 @@ namespace Carpo.TestShell
                 {
                     try { File.AppendAllText(snimka + ".iznimka.txt", e.Exception.ToString() + "\r\n"); } catch { }
                 };
-                var main = new Main("localhost", "spin", args[1], 7, "", "", true);
+                var main = new Main("sql-ai", "spin", args[1], 7, "", "", true);
                 main.Shown += delegate
                 {
                     main.BeginInvoke(new Action(delegate
@@ -63,8 +63,8 @@ namespace Carpo.TestShell
                     int.TryParse(args[4], out shard);
                     int.TryParse(args[5], out dijelova);
                 }
-                // SWP-02: sweep nad drugom bazom (npr. backup klijenta na jupiter2019); bez toga localhost/spin.
-                string sweepServer = args.Length >= 8 && args[6].Trim().Length > 0 ? args[6].Trim() : "localhost";
+                // SWP-02: sweep nad drugom bazom (npr. backup klijenta na jupiter2019); bez toga sql-ai/spin.
+                string sweepServer = args.Length >= 8 && args[6].Trim().Length > 0 ? args[6].Trim() : "sql-ai";
                 string sweepBaza = args.Length >= 8 && args[7].Trim().Length > 0 ? args[7].Trim() : "spin";
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
                 Application.ThreadException += delegate (object s, System.Threading.ThreadExceptionEventArgs e)
@@ -105,7 +105,7 @@ namespace Carpo.TestShell
                 {
                     try { File.AppendAllText(snimka + ".iznimka.txt", e.Exception.ToString() + "\r\n"); } catch { }
                 };
-                var main = new Main("localhost", "spin", args[1], 7, "", "", true);
+                var main = new Main("sql-ai", "spin", args[1], 7, "", "", true);
                 main.Shown += delegate
                 {
                     main.BeginInvoke(new Action(delegate

@@ -169,7 +169,15 @@ namespace Carpo.NetGen.Ui
                 PostaviStatus(r.Greska ?? "XML nije učitan.");
                 return false;
             }
-            _projekt = r.Projekt;
+            return Prikazi(xml, r.Projekt, server, baza, operater);
+        }
+
+        /// <summary>S već učitanim modelom (Prozor.Otvori), bez ponovnog čitanja XML-a.</summary>
+        public bool Prikazi(string xml, NgProject projekt, string server, string baza, int operater)
+        {
+            if (projekt == null)
+                return Prikazi(xml, server, baza, operater);
+            _projekt = projekt;
             _server = server ?? "";
             _baza = baza ?? "";
             Text = string.IsNullOrEmpty(_projekt.Naslov) ? "NetGen" : _projekt.Naslov;
@@ -546,10 +554,11 @@ namespace Carpo.NetGen.Ui
                 return;
             }
             _dubinaForme++;
+            Dijalog dij = null;
             try
             {
                 Dijalog.Trag("otvori formu " + ime);
-                var dij = new Dijalog();
+                dij = new Dijalog();
                 Dijalog.Trag("dijalog stvoren " + ime);
                 dij.JupiterNeSaljeGumb(DijalogTok.JeJupiter(_server) && !DijalogTok.Produkcija);
                 // Form1 5381-5520: ONSUBMIT izvršava podloga, jednom, nakon zatvaranja dijaloga (PN-01).
@@ -586,6 +595,14 @@ namespace Carpo.NetGen.Ui
             finally
             {
                 _dubinaForme--;
+                if (dij != null)
+                {
+                    // Dijalog s podloge nema roditelja-dijalog: CLOSEPARENT ne smije ostati za sljedeći otvoreni dijalog.
+                    if (!izDijaloga)
+                        Dijalog.ZaboraviZatvaranjeRoditelja(dij);
+                    // Modalna forma se nakon ShowDialog ne oslobađa sama (gridovi, tablice, handleovi).
+                    dij.Dispose();
+                }
             }
         }
 
@@ -910,11 +927,17 @@ namespace Carpo.NetGen.Ui
                     {
                         for (int r = 0; r < oznaceni.Length && !IsDisposed; r++)
                         {
-                            gvGla.FocusedRowHandle = oznaceni[r];
+                            // Fokus samo radi id-a reda; detalj i DMS se ne učitavaju za svaki red, nego jednom nakon petlje.
+                            bool punimPrije = _punim;
+                            _punim = true;
+                            try { gvGla.FocusedRowHandle = oznaceni[r]; }
+                            finally { _punim = punimPrije; }
                             SpojiId();
                             PrintBridge.Ispisi(s, false, _master.Stanje.Id, _master.Kontekst.OperaterId, _spoj, _spoj, _master.Stanje.ZadnjiSql, AssemblyPoziv.ParametriReda(gvGla.GetFocusedDataRow()), "",
                                 "", "", "", Text, gcGla, "", null);
                         }
+                        if (!IsDisposed)
+                            OsvjeziDetail();
                         continue;
                     }
                     IspisiGrid(s, vrsta == "detail");
@@ -923,7 +946,8 @@ namespace Carpo.NetGen.Ui
                     RafalNaredba.Beep();
                 else if (s.StartsWith("==", StringComparison.Ordinal))
                 {
-                    try { Citaj(s.Substring(2)); }
+                    // Form1.vb 4872-4874: PokaziUpit(Ar5(i).Replace("==", "")) puni master grid; prije se rezultat bacao.
+                    try { NapuniMasterIz(SqlTekst.Sredi(s.Replace("==", ""), _master.Kontekst), _aktivnaFormaMastera); }
                     catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + s); }
                 }
                 else if (s.IndexOf("findnode", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -1002,12 +1026,19 @@ namespace Carpo.NetGen.Ui
             // Form1.PokaziUpit 1837-1839: tID = GetID() prije punjenja.
             string staro = gvGla.FocusedRowHandle >= 0 && gvGla.DataRowCount > 0 ? IdCelije(gvGla.FocusedRowHandle) : "";
             _punim = true;
-            _master.IzvrsiCitanje(_spoj);
-            PokaziPorukuUzTablicu();
-            VeziGrid(gvGla, gcGla, _master.Stanje.Tablica, _master.Stanje.Kolone, _master.Stanje.Poruka, _master.Stanje.CheckboxVidljiv, _master.Stanje.GroupByBox, _master.Stanje.FilterRed || _master.Stanje.FilterNamjernoOdstupanje || !_master.Stanje.FilterIzXml);
-            PozicionirajMaster(staro);
-            SpojiId();
-            _punim = false;
+            try
+            {
+                _master.IzvrsiCitanje(_spoj, NgPoruka.Tiho);
+                PokaziPorukuUzTablicu();
+                VeziGrid(gvGla, gcGla, _master.Stanje.Tablica, _master.Stanje.Kolone, _master.Stanje.Poruka, _master.Stanje.CheckboxVidljiv, _master.Stanje.GroupByBox, _master.Stanje.FilterRed || _master.Stanje.FilterNamjernoOdstupanje || !_master.Stanje.FilterIzXml);
+                PozicionirajMaster(staro);
+                SpojiId();
+            }
+            finally
+            {
+                // Iznimka u vezanju ne smije ostaviti _punim: detalj se inače više ne osvježava.
+                _punim = false;
+            }
             OsvjeziDetail();
         }
 
@@ -1074,8 +1105,13 @@ namespace Carpo.NetGen.Ui
             }
             NgDnevnik.Sql(spremno);
             DataTable t = Citaj(spremno);
-            gcGla.DataSource = t;
+            // Promjena izvora pomakne fokus; detalj se učita jednom, niže, a ne i iz FocusedRowChanged.
+            bool punimPrije = _punim;
+            _punim = true;
+            try { gcGla.DataSource = t; }
+            finally { _punim = punimPrije; }
             PostaviStatus(t == null ? "Greška SQL-a." : (t.Rows.Count.ToString() + " redova"));
+            SpojiId();
             OsvjeziDetail();
         }
 
@@ -1111,13 +1147,22 @@ namespace Carpo.NetGen.Ui
 
         private void VeziGrid(GridView pogled, GridControl grid, DataTable tablica, System.Collections.Generic.List<GridKolona> kolone, string poruka, bool checkbox, bool? grupa, bool filter)
         {
-            grid.DataSource = tablica;
-            pogled.PopulateColumns();
-            if (grupa.HasValue)
-                pogled.OptionsView.ShowGroupPanel = grupa.Value;
-            pogled.OptionsView.ShowAutoFilterRow = filter;
-            if (checkbox)
-                pogled.OptionsSelection.MultiSelectMode = GridMultiSelectMode.CheckBoxRowSelect;
+            // Vezanje, stupci i opcije u jednom prolazu iscrtavanja (zove se pri svakoj promjeni reda mastera).
+            grid.BeginUpdate();
+            try
+            {
+                grid.DataSource = tablica;
+                pogled.PopulateColumns();
+                if (grupa.HasValue)
+                    pogled.OptionsView.ShowGroupPanel = grupa.Value;
+                pogled.OptionsView.ShowAutoFilterRow = filter;
+                if (checkbox)
+                    pogled.OptionsSelection.MultiSelectMode = GridMultiSelectMode.CheckBoxRowSelect;
+            }
+            finally
+            {
+                grid.EndUpdate();
+            }
             if (!string.IsNullOrEmpty(poruka))
             {
                 PostaviStatus(poruka.Replace("\r\n", " "));
@@ -1325,10 +1370,13 @@ namespace Carpo.NetGen.Ui
         private void PomakniNaId(string naredba)
         {
             string ostatak = (naredba ?? "").ToLowerInvariant().Replace("refreshmovetoid", "").Trim();
-            if (_master != null && _master.Stanje != null && (_master.Stanje.ZadnjiSql ?? "").Length > 0)
+            // Form1.vb 4837: PokaziUpit(strZadnjiSQLsakojimjepunjenGrid) napuni grid, pa se red traži u novim podacima.
+            // Prije se upit izvršio, a rezultat bacio, pa se novi red nije mogao naći.
+            if (_master != null && _master.Stanje != null && _master.Stanje.Odluka == "salji" && !_master.Stanje.BlokiranoPisanje
+                && (_master.Stanje.SqlZaSlanje ?? "").Length > 0)
             {
-                try { Citaj(_master.Stanje.ZadnjiSql); }
-                catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + _master.Stanje.ZadnjiSql); }
+                try { NapuniGrid(); }
+                catch (Exception ex) { NgDnevnik.Greska(ex.Message + " | " + _master.Stanje.SqlZaSlanje); }
             }
             var tablica = gcGla == null ? null : gcGla.DataSource as DataTable;
             int red = RafalNaredba.RedStupca2(tablica, ostatak);
@@ -1399,8 +1447,7 @@ namespace Carpo.NetGen.Ui
                     _sqlPoruka = sqlEx != null && sqlEx.Number >= 50000;
                     // Class1.ExecSql 230: svaka ne-tiha greška ide u dbo.spNetGenErrorLog (prije samo master grid, PN-10).
                     // Na jupiter2019/2022 izvan produkcije i u sweepu (DozvoliUpis/Tiho) se ne piše.
-                    bool porukaProcedure = _zadnjaPoruka.Contains("#") || _zadnjaPoruka.Contains("+");
-                    if (!porukaProcedure && !NgPoruka.Tiho && !(DijalogTok.JeJupiter(_server) && !DijalogTok.Produkcija))
+                    if (GreskaSql.Smije(_spoj, _zadnjaPoruka, NgPoruka.Tiho))
                         GreskaSql.Zapisi(sqlEx == null ? 0 : sqlEx.Number, ex.Message, sql, _spoj);
                 }
                 NgDnevnik.Greska(ex.Message + " | " + sql);

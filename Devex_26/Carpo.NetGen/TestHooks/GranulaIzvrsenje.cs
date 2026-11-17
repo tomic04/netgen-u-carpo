@@ -581,7 +581,7 @@ namespace Carpo.NetGen.TestHooks
             string e = Environment.GetEnvironmentVariable("SPIN_SQL");
             if (!string.IsNullOrWhiteSpace(e))
                 return e;
-            return SpinVeza.Spoj("localhost", "spin");
+            return SpinVeza.Spoj("sql-ai", "spin");
         }
 
         private static string Attr(NgProject p, string ime)

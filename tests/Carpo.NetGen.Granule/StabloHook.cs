@@ -53,7 +53,7 @@ namespace Carpo.NetGen.Granule
                 // Provjera puta iz Parametra: samo model, bez prozora (M1 Run8 inace otvori Podlogu).
                 loader.BezProzora = true;
                 loader.moduleId = moduleId;
-                loader.Run8("localhost", "spin", "", "", 7, 0, 0, 0, remote);
+                loader.Run8("sql-ai", "spin", "", "", 7, 0, 0, 0, remote);
                 if (loader.Projekt == null)
                     return Qa.P(granula, id, "Loader otvori XML iz Parametra", izvor, loader.ZadnjaGreska ?? "nema projekta");
                 string g2;

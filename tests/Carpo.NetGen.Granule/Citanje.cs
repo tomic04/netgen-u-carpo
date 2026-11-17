@@ -21,7 +21,7 @@ namespace Carpo.NetGen.Granule
                     return e.IndexOf("TrustServerCertificate", StringComparison.OrdinalIgnoreCase) >= 0
                         ? e
                         : e.Trim().TrimEnd(';') + ";TrustServerCertificate=True";
-                return "Server=localhost;Database=spin;Integrated Security=True;TrustServerCertificate=True;Connect Timeout=15;ApplicationIntent=ReadOnly";
+                return "Server=sql-ai;Database=spin;Integrated Security=True;TrustServerCertificate=True;Connect Timeout=15;ApplicationIntent=ReadOnly";
             }
         }
 

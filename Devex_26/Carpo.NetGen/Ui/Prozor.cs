@@ -14,15 +14,25 @@ namespace Carpo.NetGen.Ui
     {
         public static Form Otvori(string xml, string server, string baza, int operater, out string greska)
         {
+            return Otvori(xml, null, server, baza, operater, out greska);
+        }
+
+        /// <summary>projekt: već učitan model (Loader ga ima iz NgUlaz), da se isti XML ne čita i ne parsira ponovno.</summary>
+        public static Form Otvori(string xml, Carpo.NetGen.Model.NgProject projekt, string server, string baza, int operater, out string greska)
+        {
             greska = null;
-            var r = NetGenXmlReader.Ucitaj(xml);
-            if (!r.Uspjeh || r.Projekt == null)
+            if (projekt == null)
             {
-                greska = r.Greska ?? "XML nije učitan.";
-                return null;
+                var r = NetGenXmlReader.Ucitaj(xml);
+                if (!r.Uspjeh || r.Projekt == null)
+                {
+                    greska = r.Greska ?? "XML nije učitan.";
+                    return null;
+                }
+                projekt = r.Projekt;
             }
             var podloga = new Podloga();
-            if (!podloga.Prikazi(xml, server, baza, operater))
+            if (!podloga.Prikazi(xml, projekt, server, baza, operater))
                 greska = podloga.Text;
             return podloga;
         }

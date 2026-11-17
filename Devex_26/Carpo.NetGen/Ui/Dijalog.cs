@@ -459,6 +459,13 @@ namespace Carpo.NetGen.Ui
             }));
         }
 
+        /// <summary>CLOSEPARENT iz dijaloga koji nema roditelja-dijalog: zahtjev se odbaci kad se taj dijalog zatvori.</summary>
+        internal static void ZaboraviZatvaranjeRoditelja(Dijalog dijete)
+        {
+            if (_zatvoriRoditelja == dijete)
+                _zatvoriRoditelja = null;
+        }
+
         protected override void OnActivated(EventArgs e)
         {
             base.OnActivated(e);
@@ -2455,9 +2462,10 @@ namespace Carpo.NetGen.Ui
                     break;
                 }
             }
-            for (int r = 0; r < pogled.DataRowCount; r++)
+            // Handleovi 0..DataRowCount-1 su vidljivi redovi podataka. GetRowHandle(r) prima indeks u izvoru,
+            // pa je uz filter vraćao krive ili nevažeće handleove i FOREACH je preskakao redove.
+            for (int h = 0; h < pogled.DataRowCount; h++)
             {
-                int h = pogled.GetRowHandle(r);
                 bool uzmi;
                 if (vrsta == "svi")
                     uzmi = true;

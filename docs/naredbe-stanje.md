@@ -42,4 +42,4 @@ Broj je pojavljivanje u `definitions/netgen` (XML). Status je što klik u Carpu 
 | CREATEOBJECT | `Form2.vb` 7419–7423 | izvršava poruku | 0 |
 | findnode | `Form1.vb` 4809–4815 | izvršava, prazan natpis čvora | rijetko |
 | refreshmovetoid | `Form1.vb` 4831–4861 | izvršava, traži stupac 2 | rijetko |
-| == | `Form1.vb` 4872–4874 | izvršava SQL iza prefiksa | rijetko |
+| == | `Form1.vb` 4872–4874 | izvršava SQL iza prefiksa i puni master grid (PokaziUpit) | rijetko |

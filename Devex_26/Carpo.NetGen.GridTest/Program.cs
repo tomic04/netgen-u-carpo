@@ -233,7 +233,7 @@ namespace Carpo.NetGen.GridTest
             Carpo.NetGen.Print.WordDot.Aplikacija = word;
             try
             {
-                bool w = Carpo.NetGen.Print.WordDot.Otvori("WORDDOT1C:\\dot\\racun.dot", "Server=localhost", new[] { "4" });
+                bool w = Carpo.NetGen.Print.WordDot.Otvori("WORDDOT1C:\\dot\\racun.dot", "Server=sql-ai", new[] { "4" });
                 T("word-dot", w && word.Visible && word.Dodan == "C:\\dot\\racun.dot" && word.Makro == "Pokreni" && word.Id == "4", word.Dodan);
             }
             finally
@@ -515,7 +515,7 @@ namespace Carpo.NetGen.GridTest
             T("boja-html", Carpo.NetGen.Komande.BojaNaredba.Html(System.Drawing.Color.Red) == "Red"
                 && Carpo.NetGen.Komande.BojaNaredba.Html(System.Drawing.Color.FromArgb(1, 2, 3)) == "#010203"
                 && Carpo.NetGen.Komande.BojaNaredba.Sql("COLORPICKER(update x set boja='@@boja')").StartsWith("update"), "");
-            T("posalji-url", Carpo.NetGen.Komande.PosaljiServer.UrlRacuna("http://localhost/ws/", "ab", "1", "2026", "5", "", "", "20260301").IndexOf("xmlrec.asp?a=1&v=1", StringComparison.Ordinal) >= 0
+            T("posalji-url", Carpo.NetGen.Komande.PosaljiServer.UrlRacuna("http://sql-ai/ws/", "ab", "1", "2026", "5", "", "", "20260301").IndexOf("xmlrec.asp?a=1&v=1", StringComparison.Ordinal) >= 0
                 && Carpo.NetGen.Komande.PosaljiServer.Vrsta("POSALJIPORUKENASERVER(select 1)") == "poruka", "");
             T("pokretanje", Carpo.NetGen.Komande.Pokretanje.Datoteka("C:\\a.bat~/q") == "C:\\a.bat"
                 && Carpo.NetGen.Komande.Pokretanje.Argument("C:\\a.bat~/q") == "/q"
@@ -562,17 +562,17 @@ namespace Carpo.NetGen.GridTest
         {
             string tip = "ASSEMBLYLOAD(Carpo.NetGen.GridTest.TgSonda)";
             TgSonda.Zadnji = null;
-            var shell = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(tip, "shell", "7", "3", "Server=localhost;Database=spin", "select 1 as id", "@id='7' , ", "");
+            var shell = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(tip, "shell", "7", "3", "Server=sql-ai;Database=spin", "select 1 as id", "@id='7' , ", "");
             T("assembly-shell", shell.Pozvan && !shell.Prekinuto
                 && shell.Sklop == "Carpo.NetGen.GridTest"
                 && TgSonda.Zadnji != null
                 && TgSonda.Zadnji[0] == "7" && TgSonda.Zadnji[1] == "3"
-                && TgSonda.Zadnji[2] == "Driver={SQL Server};Server=localhost;Database=spin"
+                && TgSonda.Zadnji[2] == "Driver={SQL Server};Server=sql-ai;Database=spin"
                 && TgSonda.Zadnji[3] == "select 1 as id" && TgSonda.Zadnji[4] == "@id='7' , "
                 && TgSonda.Vratio == "NE", shell.Pozvan ? (TgSonda.Zadnji == null ? "" : string.Join("|", TgSonda.Zadnji)) : shell.Sklop);
-            var raf = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(tip, "rafalno", "7", "3", "Server=localhost", "select 1 as id", "@id='7' , ", "@a=1");
-            T("assembly-rafalno", raf.Pozvan && TgSonda.Zadnji[2] == "Server=localhost" && TgSonda.Zadnji[4] == "", TgSonda.Zadnji == null ? "" : TgSonda.Zadnji[4]);
-            var dij = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(tip, "dijalog", "7", "3", "Server=localhost", "select 1 as id", "grid", "@CarpoForm='x',");
+            var raf = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(tip, "rafalno", "7", "3", "Server=sql-ai", "select 1 as id", "@id='7' , ", "@a=1");
+            T("assembly-rafalno", raf.Pozvan && TgSonda.Zadnji[2] == "Server=sql-ai" && TgSonda.Zadnji[4] == "", TgSonda.Zadnji == null ? "" : TgSonda.Zadnji[4]);
+            var dij = Carpo.NetGen.Poziv.AssemblyPoziv.Pozovi(tip, "dijalog", "7", "3", "Server=sql-ai", "select 1 as id", "grid", "@CarpoForm='x',");
             T("assembly-dijalog", dij.Pozvan && TgSonda.Zadnji[3] == "@CarpoForm='x'," && TgSonda.Zadnji[4] == "@CarpoForm='x',"
                 && TgSonda.Zadnji[2].StartsWith("Driver={SQL Server};", StringComparison.Ordinal), TgSonda.Zadnji == null ? "" : TgSonda.Zadnji[3]);
             TgSonda.Zadnji = null;
@@ -1546,7 +1546,7 @@ namespace Carpo.NetGen.GridTest
             try { SpinVeza.Spoj("jupiter2022", "spin"); }
             catch (InvalidOperationException) { bacio = true; }
             T("ne-jupiter2022", bacio, "");
-            T("localhost-ok", SpinVeza.Spoj("localhost", "spin").IndexOf("spin", StringComparison.OrdinalIgnoreCase) >= 0, "");
+            T("sql-ai-ok", SpinVeza.Spoj("sql-ai", "spin").IndexOf("spin", StringComparison.OrdinalIgnoreCase) >= 0, "");
             var g = new MasterGrid();
             g.Ucitaj(Projekt("ONLOAD", "update klmasterroba set oznaka=1"), null);
             T("update-se-ne-salje", g.Stanje.BlokiranoPisanje && g.Stanje.Odluka == "zabrana-pisanja", g.Stanje.Odluka);
@@ -1554,7 +1554,7 @@ namespace Carpo.NetGen.GridTest
 
         private static void SpinStabloFill()
         {
-            string spoj = SpinVeza.Spoj("localhost", "spin");
+            string spoj = SpinVeza.Spoj("sql-ai", "spin");
             int usporedeno = 0;
             usporedeno += UsporediStablo(spoj, "spTreeVrstaDok", "POPUNI_FORM", "Statusi");
             usporedeno += UsporediStablo(spoj, "spBlagajneZakTreeNG @action=0,@operateriid=0", "MJESEC_FORM", "KntBlaZak-0");
@@ -2027,6 +2027,18 @@ namespace Carpo.NetGen.GridTest
             GreskaSql.Izvrsi = null;
             T("execsql2-poziv", greska == "dbo.spNetGenErrorLog @errorNumber=5, @errorDescription='nema ''x''',@ngLog='select ''a'''"
                 && uhvaceno == greska && GreskaSql.TimeoutSekundi == 100, uhvaceno);
+            // PN-10: isto pravilo za master grid i ostale upite; na jupiter2019/2022 izvan produkcije i u sweepu se ne piše.
+            bool produkcijaPrije = Carpo.NetGen.Komande.DijalogTok.Produkcija;
+            Carpo.NetGen.Komande.DijalogTok.Produkcija = false;
+            bool smijeSpin = GreskaSql.Smije("Server=sql-ai;Database=spin;Integrated Security=true", "Invalid object name", false);
+            bool smijeJupiter = GreskaSql.Smije("Data Source=jupiter2019;Initial Catalog=Biovega;Integrated Security=true", "Invalid object name", false);
+            bool smijeTiho = GreskaSql.Smije("Server=sql-ai;Database=spin;Integrated Security=true", "Invalid object name", true);
+            bool smijePoruka = GreskaSql.Smije("Server=sql-ai;Database=spin;Integrated Security=true", "Gotovo #OK", false);
+            Carpo.NetGen.Komande.DijalogTok.Produkcija = true;
+            bool smijeJupiterProd = GreskaSql.Smije("Data Source=jupiter2022;Initial Catalog=spin;Integrated Security=true", "Invalid object name", false);
+            Carpo.NetGen.Komande.DijalogTok.Produkcija = produkcijaPrije;
+            T("pn10-smije-zapisati", smijeSpin && !smijeJupiter && !smijeTiho && !smijePoruka && smijeJupiterProd,
+                smijeSpin + " " + smijeJupiter + " " + smijeTiho + " " + smijePoruka + " " + smijeJupiterProd);
             string odabrano;
             string ostatak;
             T("combo-hash", ComboDijalog.OdvojiHash("sql##7", out odabrano, out ostatak) && odabrano == "7" && ostatak == "sql", odabrano);
@@ -3270,7 +3282,7 @@ namespace Carpo.NetGen.GridTest
         /// <summary>APP-01: Application Name veze je "Carpo.NetGen." + ime XML-a (NetGen "NetGenDLL-" + XML, Form1 1176).</summary>
         private static void ImeAplikacije()
         {
-            string spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj("localhost", "spin"), @"C:\xml\Agronom granule\MPKase.xml");
+            string spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj("sql-ai", "spin"), @"C:\xml\Agronom granule\MPKase.xml");
             var b = new SqlConnectionStringBuilder(spoj);
             T("app01-ime", b.ApplicationName == "Carpo.NetGen.MPKase" && b.InitialCatalog == "spin" && b.IntegratedSecurity, b.ApplicationName);
             string cudno = SpinVeza.SaAplikacijom("Server=a;Database=b", "x;y=z'.xml");
@@ -3779,7 +3791,7 @@ namespace Carpo.NetGen.GridTest
                 forma.StartPosition = FormStartPosition.Manual;
                 forma.Location = new Point(-32000, -32000);
                 forma.Show();
-                bool otvoren = forma.Prikazi(xml, "localhost", "spin", 7);
+                bool otvoren = forma.Prikazi(xml, "sql-ai", "spin", 7);
                 var gv = Polje(forma, "gvGla") as DevExpress.XtraGrid.Views.Grid.GridView;
                 master = Polje(forma, "_master") as MasterGrid;
                 if (!otvoren || gv == null || master == null)
@@ -3880,7 +3892,7 @@ namespace Carpo.NetGen.GridTest
                 forma.StartPosition = FormStartPosition.Manual;
                 forma.Location = new Point(-32000, -32000);
                 forma.Show();
-                bool otvoren = forma.Prikazi(xml, "localhost", "spin", 7);
+                bool otvoren = forma.Prikazi(xml, "sql-ai", "spin", 7);
                 FieldInfo gvPolje = typeof(Podloga).GetField("gvGla", BindingFlags.Instance | BindingFlags.NonPublic);
                 object gv = gvPolje == null ? null : gvPolje.GetValue(forma);
                 int redova = -1;
@@ -3925,7 +3937,7 @@ namespace Carpo.NetGen.GridTest
                 forma.StartPosition = FormStartPosition.Manual;
                 forma.Location = new Point(-32000, -32000);
                 forma.Show();
-                bool otvoren = forma.Prikazi(xml, "localhost", "spin", 7);
+                bool otvoren = forma.Prikazi(xml, "sql-ai", "spin", 7);
                 Application.ThreadException += h;
                 // Shown Managera bez Carpo Loggera baci svoju iznimku; ona nije predmet testa.
                 Application.DoEvents();
@@ -3971,7 +3983,7 @@ namespace Carpo.NetGen.GridTest
                 forma.StartPosition = FormStartPosition.Manual;
                 forma.Location = new Point(-32000, -32000);
                 forma.Show();
-                forma.Prikazi(xml, "localhost", "spin", 7);
+                forma.Prikazi(xml, "sql-ai", "spin", 7);
                 List<string> redovi = forma.ProvediKlikove(true);
                 string master = "";
                 string opis = "";
@@ -4013,7 +4025,7 @@ namespace Carpo.NetGen.GridTest
                 forma.StartPosition = FormStartPosition.Manual;
                 forma.Location = new Point(-32000, -32000);
                 forma.Show();
-                forma.Prikazi(xml, "localhost", "spin", 7);
+                forma.Prikazi(xml, "sql-ai", "spin", 7);
                 string prvi = zapisi.Count > 0 ? zapisi[0] : "";
                 T("pn10-errorlog-citaj", zapisi.Count >= 1 && prvi.StartsWith("dbo.spNetGenErrorLog @errorNumber=208", StringComparison.Ordinal)
                     && prvi.IndexOf("NetGenNemaTablicePn10", StringComparison.Ordinal) >= 0, "zapisa=" + zapisi.Count + " " + prvi);
@@ -4050,7 +4062,7 @@ namespace Carpo.NetGen.GridTest
                 forma.Show();
                 string greska = "";
                 bool otvoren = false;
-                try { otvoren = forma.Prikazi(xml, "localhost", "spin", 7); }
+                try { otvoren = forma.Prikazi(xml, "sql-ai", "spin", 7); }
                 catch (Exception ex) { greska = ex.GetType().Name + ": " + ex.Message; }
                 var combo = forma.bbiLookUpFilter;
                 string vrijednost = combo == null ? "" : Convert.ToString(combo.EditValue);
@@ -4071,13 +4083,13 @@ namespace Carpo.NetGen.GridTest
         /// </summary>
         private static void SesijaVeze()
         {
-            string spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj("localhost", "spin"), "ses01.xml");
+            string spoj = SpinVeza.SaAplikacijom(SpinVeza.Spoj("sql-ai", "spin"), "ses01.xml");
             string ime = "##ses01_" + System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
             // Kontrola (staro): punjenje i čitanje kroz zasebne veze iz poola.
             string kontrola;
             try
             {
-                string k = SpinVeza.SaAplikacijom(SpinVeza.Spoj("localhost", "spin"), "ses01k.xml");
+                string k = SpinVeza.SaAplikacijom(SpinVeza.Spoj("sql-ai", "spin"), "ses01k.xml");
                 using (var c1 = new SqlConnection(k))
                 {
                     c1.Open();
@@ -4111,17 +4123,24 @@ namespace Carpo.NetGen.GridTest
                     + " ##=" + globalna.Rows.Count.ToString() + " #=" + lokalna.Rows.Count.ToString());
                 // Zadnja podloga zatvori vezu: ## tablica sesije nestane, kao na kraju NetGen procesa.
                 NgVeza.Otpusti(spoj);
-                object postoji;
-                using (var c = new SqlConnection(SpinVeza.Spoj("localhost", "spin")))
+                // Server sesiju čisti nakon zatvaranja veze, preko mreže s malim zakašnjenjem: čeka se do 5 s.
+                object postoji = null;
+                using (var c = new SqlConnection(SpinVeza.Spoj("sql-ai", "spin")))
                 {
                     c.Open();
-                    using (var cmd = new SqlCommand("select object_id('tempdb.." + ime + "')", c))
-                        postoji = cmd.ExecuteScalar();
+                    for (int pokusaj = 0; pokusaj < 25; pokusaj++)
+                    {
+                        using (var cmd = new SqlCommand("select object_id('tempdb.." + ime + "')", c))
+                            postoji = cmd.ExecuteScalar();
+                        if (postoji == null || postoji == DBNull.Value)
+                            break;
+                        Thread.Sleep(200);
+                    }
                 }
                 T("ses01-otpusti-zatvori", postoji == null || postoji == DBNull.Value, "object_id=" + Convert.ToString(postoji));
                 // PN-04: Class1.ExecSql 241-242 nakon greške radi Conn.Close/Open, pa otvorena transakcija ne ostane na vezi.
                 // RAISERROR s "#" (npr. "Nema stavki #OK") NetGen ne resetira (157-200), pa #temp ostaje.
-                string spojG = SpinVeza.SaAplikacijom(SpinVeza.Spoj("localhost", "spin"), "ses02.xml");
+                string spojG = SpinVeza.SaAplikacijom(SpinVeza.Spoj("sql-ai", "spin"), "ses02.xml");
                 NgVeza.Prijavi(spojG);
                 try
                 {
@@ -4184,7 +4203,7 @@ namespace Carpo.NetGen.GridTest
 
         private static void FiskalUuidSpin()
         {
-            string spoj = SpinVeza.Spoj("localhost", "spin");
+            string spoj = SpinVeza.Spoj("sql-ai", "spin");
             try
             {
                 using (var conn = new SqlConnection(spoj))
@@ -4264,7 +4283,7 @@ namespace Carpo.NetGen.GridTest
                 Path.Combine(korijen, "definitions", "netgen", "Agronom granule", "Statusi.xml"),
                 Path.Combine(korijen, "definitions", "netgen", "Agronom granule", "KntKompVerizne.xml")
             };
-            string spoj = SpinVeza.Spoj("localhost", "spin");
+            string spoj = SpinVeza.Spoj("sql-ai", "spin");
             for (int i = 0; i < kandidati.Length; i++)
             {
                 string put = kandidati[i];
@@ -4373,7 +4392,7 @@ namespace Carpo.NetGen.GridTest
                 var loader = new Carpo.NetGen.Loader();
                 loader.TestXmlPath = xml;
                 loader.moduleId = "LoaderTest.xml";
-                loader.Run8("localhost", "spin", "", "", 7, 0, 0, 0, "");
+                loader.Run8("sql-ai", "spin", "", "", 7, 0, 0, 0, "");
                 forma = loader.Forma;
                 T("m1-run8-podloga", forma is Podloga && loader.hWnd != 0 && loader.WCaption == "Loader test" && string.IsNullOrEmpty(loader.ZadnjaGreska),
                     "forma=" + (forma == null ? "null" : forma.GetType().Name) + " hWnd=" + loader.hWnd + " caption=" + loader.WCaption + " greska=" + loader.ZadnjaGreska);
@@ -4389,7 +4408,7 @@ namespace Carpo.NetGen.GridTest
                     l2.TestXmlPath = xml;
                     l2.moduleId = "LoaderTest.xml";
                     l2.Koler = "Jup10";
-                    l2.Run8("localhost", "spin", "", "", 7, (int)hPloca, 0, 0, "");
+                    l2.Run8("sql-ai", "spin", "", "", 7, (int)hPloca, 0, 0, "");
                     Form p2 = l2.Forma;
                     bool odmah = p2 != null && p2.Size == new Size(500, 300) && p2.FormBorderStyle == FormBorderStyle.None
                         && GetAncestor(p2.Handle, 1) == hPloca;
@@ -4415,7 +4434,7 @@ namespace Carpo.NetGen.GridTest
                 f.moduleId = "FrmTest.xml";
                 f.ulaznaForma = "DRUGA";
                 f.ulazniID = "42";
-                f.Run8("localhost", "spin", "", "", 7, 0, 0, 0, "");
+                f.Run8("sql-ai", "spin", "", "", 7, 0, 0, 0, "");
                 var dij = f.Forma as Dijalog;
                 T("m1-frm-dijalog", dij != null && dij.Visible && f.hWnd != 0 && dij.Id == "42" && dij.Controls.Find("t", true).Length == 1,
                     "forma=" + (f.Forma == null ? "null" : f.Forma.GetType().Name) + " id=" + (dij == null ? "" : dij.Id) + " greska=" + f.ZadnjaGreska);
@@ -4456,7 +4475,7 @@ namespace Carpo.NetGen.GridTest
                     f2.moduleId = "FrmTest.xml";
                     f2.mainHandle = (int)hDomacin;
                     f2.Koler = "Jup10";
-                    f2.Run8("localhost", "spin", "", "", 7, (int)hPloca, 0, 0, "");
+                    f2.Run8("sql-ai", "spin", "", "", 7, (int)hPloca, 0, 0, "");
                     var d2 = f2.Forma as Dijalog;
                     // GetParent za prozor bez WS_CHILD vraća vlasnika; stvarni roditelj je GetAncestor(GA_PARENT).
                     IntPtr roditelj = d2 == null ? IntPtr.Zero : GetAncestor(d2.Handle, 1);
@@ -4528,7 +4547,7 @@ namespace Carpo.NetGen.GridTest
 
         private static void SpinGreska()
         {
-            string spoj = SpinVeza.Spoj("localhost", "spin");
+            string spoj = SpinVeza.Spoj("sql-ai", "spin");
             string tekst = GreskaSql.Poziv(4242, "test", "select 1");
             try
             {
@@ -4563,12 +4582,12 @@ namespace Carpo.NetGen.GridTest
             T(ime + "-sql-citanje", g.Stanje.Odluka == "salji" && !SqlTekst.JeZabranaPisanja(g.Stanje.SqlZaSlanje), g.Stanje.Odluka + " " + g.Stanje.SqlZaSlanje);
             if (g.Stanje.Odluka != "salji")
                 return;
-            g.IzvrsiCitanje(SpinVeza.Spoj("localhost", "spin"));
+            g.IzvrsiCitanje(SpinVeza.Spoj("sql-ai", "spin"));
             if (!string.IsNullOrEmpty(g.Stanje.SqlGreska))
             {
                 Console.WriteLine("SPIN " + ime + " NETGEN-CATCH " + g.Stanje.SqlGreska);
                 T(ime + "-netgen-catch", g.Stanje.Kolone.Count == 0 && g.Stanje.Tablica == null && !string.IsNullOrEmpty(g.Stanje.Poruka), g.Stanje.Poruka);
-                using (var c = new SqlConnection(SpinVeza.Spoj("localhost", "spin")))
+                using (var c = new SqlConnection(SpinVeza.Spoj("sql-ai", "spin")))
                 {
                     c.Open();
                     IspisiKontekst(c, ime);

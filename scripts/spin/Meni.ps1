@@ -1,10 +1,10 @@
-# Testni redovi u ssMeni na localhost/spin.
+# Testni redovi u ssMeni na sql-ai/spin.
 # Parametar je asm:NetGenDLL.loader:<xml>. Jupiter iz toga uzme tekst iza
 # druge dvotocke i preda ga kao ModuleID. NetGen ga spremi u Mid
 # (Form1.vb 1251-1258) i otvori remotedllpath\SharedDLLs\xml\ + Mid (1139).
 # Ovo nije klijentski red. Jupiter se ne cita.
 $ErrorActionPreference = "Stop"
-$cs = "Server=localhost;Database=spin;Integrated Security=True;TrustServerCertificate=True;Pooling=false;Connect Timeout=15;Application Name=CarpoNetGen-ssMeni;ApplicationIntent=ReadOnly"
+$cs = "Server=sql-ai;Database=spin;Integrated Security=True;TrustServerCertificate=True;Pooling=false;Connect Timeout=15;Application Name=CarpoNetGen-ssMeni;ApplicationIntent=ReadOnly"
 $conn = New-Object System.Data.SqlClient.SqlConnection $cs
 $conn.Open()
 

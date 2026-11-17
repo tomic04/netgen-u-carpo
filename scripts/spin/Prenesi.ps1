@@ -70,7 +70,7 @@ function TipStupca($row) {
 }
 
 $nadjeni = @{}
-$spin = Veza "localhost" "spin" "CarpoNetGen-otvaranje"
+$spin = Veza "sql-ai" "spin" "CarpoNetGen-otvaranje"
 
 function NadjiStupac {
     foreach ($par in $red) {

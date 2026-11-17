@@ -174,6 +174,12 @@ namespace Carpo.NetGen.Grid
         /// </summary>
         public void IzvrsiCitanje(string connectionString)
         {
+            IzvrsiCitanje(connectionString, false);
+        }
+
+        /// <summary>tiho: sweep i klik-pregled, greška se ne zapisuje u spNetGenErrorLog (kao Podloga.Citaj).</summary>
+        public void IzvrsiCitanje(string connectionString, bool tiho)
+        {
             if (Stanje.Odluka != "salji" || Stanje.BlokiranoPisanje)
                 return;
             if (string.IsNullOrEmpty(connectionString))
@@ -220,7 +226,8 @@ namespace Carpo.NetGen.Grid
                     GridIzgled.Popuni(Stanje);
                     return;
                 }
-                GreskaSql.Zapisi(broj, ex.Message, Stanje.SqlZaSlanje, connectionString);
+                if (GreskaSql.Smije(connectionString, ex.Message, tiho))
+                    GreskaSql.Zapisi(broj, ex.Message, Stanje.SqlZaSlanje, connectionString);
                 if (TihaGreska(ex.Message))
                     ZabiljeziGresku(ex.Message, false);
                 else

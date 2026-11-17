@@ -148,7 +148,7 @@ namespace Carpo.NetGen
                 Carpo.NetGen.Log.NgDnevnik.Greska("Logger: " + ex.Message);
             }
             string greska;
-            System.Windows.Forms.Form forma = Carpo.NetGen.Ui.Prozor.Otvori(putanja, server, database, operater, out greska);
+            System.Windows.Forms.Form forma = Carpo.NetGen.Ui.Prozor.Otvori(putanja, Projekt, server, database, operater, out greska);
             if (!string.IsNullOrEmpty(greska))
                 ZadnjaGreska = greska;
             if (forma == null)
