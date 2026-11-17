@@ -605,6 +605,10 @@ namespace Carpo.NetGen.Ui
             {
                 // Form1.vb 5369-5375: bez kontrola dijalog se ne otvara, OKClick je True i ide se odmah na NEXTFORM
                 // i FILLEXPLORER grane sa strStora bez parametara (PokupiParametre nema što skupiti).
+                // Form2.ProcitajXML 1195-1232: ONLOAD se izvrši i za formu bez kontrola, prije ONSUBMIT-a, a njegova greška
+                // prekida formu (Form1.vb 5352).
+                if (!OnLoadBezKontrola(forma))
+                    return;
                 string bezKontrola = Lanac.Lijepi((forma.OnSubmit ?? "").Trim(), "");
                 if (bezKontrola.Length > 0)
                     bezKontrola = Lanac.BezKrajnjegZareza(SqlTekst.ZaGumb(bezKontrola, _master.Kontekst));
@@ -664,6 +668,57 @@ namespace Carpo.NetGen.Ui
                     dij.Dispose();
                 }
             }
+        }
+
+        /// <summary>
+        /// Form2.ProcitajXML 1195-1232 za formu bez kontrola: ONLOAD se izvrši, a stupci prvog reda uđu u CB (ime + "="),
+        /// odakle ih ONSUBMIT čita kao @@stupac. Izmjereno starim NetGenom: Narudzbe i PrijemniList (forma čvora Promet:
+        /// ONLOAD iz @@node izračuna dateod/datedo, ONSUBMIT ih šalje), LVKatalozi, PNKatalozi, ManagerObaveza,
+        /// ServisPrava. Carpo je ONLOAD preskakao, pa je ONSUBMIT dobivao null. Vraća false ako je ONLOAD pukao.
+        /// </summary>
+        private bool OnLoadBezKontrola(NgForm forma)
+        {
+            string on = forma == null ? "" : (forma.OnLoad ?? "");
+            if (!DijalogTok.OnLoadJeUpit(on))
+                return true;
+            SqlKontekst k = _master.Kontekst;
+            string sql = SqlTekst.Sredi(on, k);
+            if (sql.IndexOf("@@", StringComparison.Ordinal) >= 0)
+                sql = SrediPoslije.Petlja(sql, k == null ? "" : k.ParametriSaGrida, k == null ? null : k.Clipboard, false);
+            if (SqlTekst.Odluka(sql) != "salji" || !DijalogTok.SmijePoslati(sql))
+                return true;
+            NgDnevnik.Sql(sql);
+            _sqlGreska = "";
+            DataTable dt = Citaj(sql);
+            if (!string.IsNullOrEmpty(_sqlGreska))
+                return false;
+            if (dt == null || dt.Rows.Count == 0 || k == null)
+                return true;
+            if (k.Clipboard == null)
+                k.Clipboard = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (DataColumn col in dt.Columns)
+            {
+                object sirovo = dt.Rows[0][col];
+                string v;
+                if (sirovo is DateTime)
+                {
+                    // Kao Dijalog.UcitajOnLoad: CStr(Date) u CB-u, čita se kao dd.MM.yyyy (PF-03).
+                    var dan = (DateTime)sirovo;
+                    v = dan.TimeOfDay == TimeSpan.Zero
+                        ? dan.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture)
+                        : dan.ToString("dd.MM.yyyy H:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+                }
+                else
+                    // 1205-1207: Vrijednost5 je "null" prije dodjele; DBNull se ne može dodijeliti Stringu, pa ostane "null".
+                    v = sirovo == DBNull.Value ? "null" : Convert.ToString(sirovo, System.Globalization.CultureInfo.InvariantCulture);
+                // 1208-1210: navodnik s početka i kraja se skine, vrijednost se trima.
+                if (v.StartsWith("'", StringComparison.Ordinal))
+                    v = v.Substring(1);
+                if (v.EndsWith("'", StringComparison.Ordinal))
+                    v = v.Substring(0, v.Length - 1);
+                k.Clipboard[col.ColumnName + "="] = v.Trim();
+            }
+            return true;
         }
 
         /// <summary>
