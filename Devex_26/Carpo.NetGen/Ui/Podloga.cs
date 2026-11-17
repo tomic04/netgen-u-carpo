@@ -642,11 +642,13 @@ namespace Carpo.NetGen.Ui
                 if (_master.Kontekst != null)
                     _master.Kontekst.DetId = DetaljId();
                 dij.Prikazi(forma, SqlTekst.ZaFormu(_master.Kontekst), CitajZaDijalog, true, this);
+                if (dij.DialogResult != DialogResult.OK)
+                    return;
+                // Tek nakon potvrde: forma zatvorena bez OK ne ostavlja vrijednost (PokupiParametre se ne zove). Izmjereno
+                // starim NetGenom na Bilanca-GFI: nakon odustajanja lanac ONLOAD-a šalje '@@izvjestaj' kao 'null'.
                 string iz = dij.Vrijednost("izvjestaj");
                 if (!string.IsNullOrEmpty(iz))
                     _polja["izvjestaj"] = iz;
-                if (dij.DialogResult != DialogResult.OK)
-                    return;
                 if (_master.Kontekst != null)
                     _master.Kontekst.ParametriSaGrida = ParametriModula.Dodaj(_master.Kontekst.ParametriSaGrida, dij.ParametriVise());
                 // strStora & " " & strParametri, sređen (Form2.Button1_Click 3367-3388, Form1 5450); dijalog ga nije slao.

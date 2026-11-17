@@ -178,6 +178,7 @@ namespace Carpo.NetGen.Ui
         private void SloziTijelo(NgForm forma, SqlKontekst kontekst, Func<string, DataTable> citaj)
         {
             _nakonDjeteta.Clear();
+            _gridKlikNaPrikazu.Clear();
             GreskaOnLoad = "";
             citaj = Omotaj(citaj);
             _citaj = citaj;
@@ -450,6 +451,16 @@ namespace Carpo.NetGen.Ui
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
+            // Janus grid pri prikazu forme okine SelectionChanged za prvi red, pa ide ONCLICK grida (Form2.vb 5623-5640).
+            // Izmjereno starim NetGenom: ServisPrava, grid master s ONCLICK "select 'refresh' as detail" odmah napuni
+            // detalj za prvi red (@servisid=1); u Carpu je detalj ostajao prazan do prve promjene reda.
+            for (int i = 0; i < _gridKlikNaPrikazu.Count && !IsDisposed; i++)
+            {
+                if (_gridKlikNaPrikazu[i].Key.DataRowCount > 0)
+                    IzvrsiDogadjaj(_gridKlikNaPrikazu[i].Value);
+            }
+            if (IsDisposed)
+                return;
             // FOCUS forme (1053, Timer1 8510): nakon ucitavanja kontrola dobije fokus.
             string fokus = AtributForme("FOCUS");
             if (fokus.Length > 0)
@@ -695,6 +706,9 @@ namespace Carpo.NetGen.Ui
         }
 
         private readonly Dictionary<Control, string> _editStupci = new Dictionary<Control, string>();
+
+        /// <summary>Gridovi s ONCLICK-om: događaj se okine jednom pri prikazu forme, za prvi red (OnShown).</summary>
+        private readonly List<KeyValuePair<GridView, string>> _gridKlikNaPrikazu = new List<KeyValuePair<GridView, string>>();
 
         /// <summary>Form2.vb 1643-1649: EDITCOLUMNS je popis ili sp/select koji ga vrati (prva celija), jednom.</summary>
         private string EditStupci(Control c, NgControl k)
@@ -2179,6 +2193,7 @@ namespace Carpo.NetGen.Ui
                     // ONCLICK grida ide kad se promijeni red; klik koji je tu promjenu napravio se preskoce
                     // (ZanemariClick). Klik na isti red ide opet.
                     bool zanemariKlik = false;
+                    _gridKlikNaPrikazu.Add(new KeyValuePair<GridView, string>(view, klik));
                     view.FocusedRowChanged += delegate
                     {
                         if (_slazem || _tihoGrid > 0)

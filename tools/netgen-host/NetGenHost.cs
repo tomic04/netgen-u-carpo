@@ -281,6 +281,22 @@ namespace NetGenHost
                         continue;
                     if (naslov.Length == 0 && klasa.IndexOf("WindowsForms", StringComparison.OrdinalIgnoreCase) < 0)
                         continue;
+                    // Pomoćni DevExpress prozori (sjene, podloge) nemaju naslov i imaju stil klase 0: nisu dijalozi granule.
+                    if (naslov.Length == 0 && klasa.IndexOf(".Window.0.", StringComparison.OrdinalIgnoreCase) >= 0)
+                        continue;
+                    // Carpo poruku prikazuje DevExpress prozorom (XtraMessageBoxForm), ne Windows MsgBoxom: bilježi se
+                    // kao MSGBOX i zatvara odmah, bez čekanja koje vrijedi za dijaloge granule.
+                    string poruka;
+                    if (JeCarpoPoruka(h, out poruka) || naslov == "Poruka")
+                    {
+                        lock (_vidjeni)
+                        {
+                            if (_vidjeni.Add(h))
+                                Zapisi("MSGBOX", "[" + naslov + "] " + poruka);
+                        }
+                        PostMessage(h, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+                        continue;
+                    }
                     bool novi;
                     lock (_vidjeni)
                         novi = _vidjeni.Add(h);
@@ -292,6 +308,34 @@ namespace NetGenHost
                     }
                     PostMessage(h, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
                 }
+            }
+        }
+
+        private static bool JeCarpoPoruka(IntPtr h, out string poruka)
+        {
+            poruka = "";
+            try
+            {
+                Control c = Control.FromHandle(h);
+                if (c == null)
+                    return false;
+                Type t = c.GetType();
+                if (t.FullName.IndexOf("MessageBox", StringComparison.OrdinalIgnoreCase) < 0)
+                    return false;
+                // XtraMessageBoxForm drži tekst u svojstvu Message (XtraMessageBoxArgs.Text); čita se refleksijom.
+                PropertyInfo p = t.GetProperty("Message", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                object m = p == null ? null : p.GetValue(c, null);
+                if (m != null)
+                {
+                    PropertyInfo tekst = m.GetType().GetProperty("Text");
+                    poruka = Convert.ToString(tekst == null ? m : tekst.GetValue(m, null));
+                }
+                return true;
+            }
+            catch
+            {
+                // Prozor koji se ne može pročitati tretira se kao obični dijalog.
+                return false;
             }
         }
 
