@@ -84,6 +84,22 @@ python3 scripts/ci/portano-ui.py                       # portano-needs-UI-test g
 
 `tools/diff/sql_diff.py` and `tools/diff/lanac_diff.py` are differential tests. They compare a literal Python model of the VB code (`vb_oracle.py`, `lanac_vb.py`) with the C# code running under Mono, over every SQL text and command chain in the corpus. `tools/provjera/KorpusParseri.cs` runs the ~50 pure parsers over every command string in the corpus to look for exceptions and infinite loops. Run it over new XML folders before a sweep.
 
+## Comparing with the real NetGen (`tools/netgen-host`)
+
+When the question is "what does NetGen do here", measure it instead of reading VB:
+
+```powershell
+.\tools\netgen-host\Izgradi.ps1      # builds netgen\ (no deploy) and NetGenHost.exe into artifacts\bin\netgen-host
+.\tools\netgen-host\Usporedi.ps1 -Xml "definitions\netgen\BIOVEGA\AOPNovi.xml"
+```
+
+`Usporedi.ps1` opens the granule in the old NetGen and in Carpo (TestShell `--ui-smoke`) against `sql-ai/spin` and prints the SQL each one sent, in order.
+
+- `NetGenHost.exe` opens a granule through `NetGenDLL.Loader.Run8` the way Jupiter does, records every MsgBox and dialog NetGen shows, closes them, takes a screenshot and exits. With `-Klik "<caption>"` it clicks that button on the main form after opening.
+- `Trag.ps1` captures the SQL on the server: an Extended Events session named `NetGenUsporedba` on `sql-ai`, filtered to this machine and the `spin` database. The session exists only between `Start` and `Stop`.
+- Building NetGen needs the `DevExpress131` folder of the full NetGen2026 clone (`-DevExpress131`, default `C:\TFS\Core Techonologies\NetGen2026\DevExpress131`) and the .NET Framework MSBuild. The newer VB compiler rejects `Form2.vb` with BC36595.
+- The Janus licence dialog appears on every NetGen start. The host closes it, which takes about 12 seconds.
+
 ## CI (`.github/workflows/build.yml`, self-hosted runner `sql-ai`)
 
 Each push and PR runs: the guard scripts → spin DB setup (`scripts/spin/*.sql`, `*.ps1`) → sequential build → corpus smoke → GridTest (`CARPO_SPIN=1`) + defaults + Granule checklist and sample → form layout → click review (`klik-kratko.txt`; `klik-puno.txt` nightly or with `workflow_dispatch klik=puno`). Details are in [docs/ci.md](docs/ci.md). `nocni-otvaranje.yml` opens every corpus file and every `ssMeni` row each night.
