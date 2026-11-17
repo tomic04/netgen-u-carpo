@@ -10,7 +10,7 @@ A port of **NetGen** (a 20-year-old VB.NET engine that renders XML "granule" def
 |---|---|
 | `netgen/` | Original NetGenDLL (VB.NET 4.8). **The reference implementation, in maintenance mode.** Has its own [netgen/CLAUDE.md](netgen/CLAUDE.md). Read it before you touch anything there. |
 | `Devex_26/` | Carpo solution (`Carpo.sln`, .NET Framework, DevExpress 26.1). The port lives in `Devex_26/Carpo.NetGen`. |
-| `definitions/netgen/` | Corpus of real NetGen XML granule files, grouped by client folder (`BIOVEGA`, `Agronom granule`, `Centar tehnike`, …). Tests and sweeps run over it. |
+| `definitions/netgen/` | Corpus of real NetGen XML granule files, grouped by client folder (`BIOVEGA`, `Agronom granule`, `Centar tehnike`, `Zito`, …). Tests and sweeps run over it. `Zito` (888 files, added 17. 11. 2026.) has no matching database on the servers used for testing, so it is covered by the parser, layout and sweep checks only. |
 | `definitions/carpo/`, `definitions/Prepisane_granule/` | Native Carpo XML, and granules rewritten by hand (`Carpo/` and `Netgen/`). |
 | `xml/klijenti/` | Client-specific versions of granules that were missing from the corpus (see `IZVOR.md`). They do not replace `definitions/netgen`. |
 | `tests/Carpo.NetGen.Granule/` | Per-granule QA checklist runner (console exe). |

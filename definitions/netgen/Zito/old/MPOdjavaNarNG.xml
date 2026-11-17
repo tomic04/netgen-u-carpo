@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT
+		 ONLOAD="spMPOdjavaNG @action=1,@operateriid=@@operateriid,@node='danas' "
+		 DETAILGRID = "spMPOdjavaNG @action=2,@operateriid=@@operateriid,@id=@@id"
+		 MASTERDBLCLICK="UPDATE_FORM"
+		 BUTTONS="Obriši dok. odjave:DELETE_FORM#Zaključi dok. odjave:ZAKLJUCI_FORM#Pronađi:FILTER_FORM#Ispis dok:vrstadokid-mpnargla" 
+		 POPUPMASTER="Zaključi dok. odjave:ZAKLJUCI_FORM#Poništi zaključak dok. odjave:OTKLJUCAJ_FORM#Poništi odjavu roba sa dok.odjave:PONISTIODJAVU"
+		 POPUPDETAIL=""
+		 TREE="Danas:DANAS_FORM#Jučer:JUCER_FORM#Tekući mjesec:TEKUCIMJESEC_FORM#Prošli mjesec:PROSLIMJESEC_FORM#spMPTreeNG @action=2:FILTERODDO_FORM#spMPTreeNG @action=3:FILTERODDO_FORM"
+		 GROUPBYBOXVISIBLE="TRUE" 
+		 CHECKBOXVISIBLE="FALSE"
+		 DETCHECKBOXVISIBLE="FALSE"
+		 TOTALROWVISIBLE="FALSE"
+		 DETTOTALROWVISIBLE="TRUE"
+		 SETDEFAULTS="spMPPermissionNG @action = 0 , @operateriid = @@operateriid, @object = '@@xmlname' " 
+		 ONLOAD2="select 'Dodaj' = case when @@dodaj=1 then 'enable' else 'disable' end , 'Izmjeni' = case when @@izmjeni=1 then 'enable' else 'disable' end ,
+				'Zaključi' = case when @@zakljuci=1 then 'enable' else 'disable' end, 'Obrisi' = case when @@Obrisi=1 then 'enable' else 'disable' end , 'Storno' = case when @@storno=1 then 'enable' else 'disable' end , 'otkljucaj' = case when @@otkljucaj=1 then 'enable' else 'disable' end " 
+		 REPORT=""
+		 PAGEHEADERCENTER="Odjava komisijske robe iz maloprodaje"
+		 PAGEHEADERRIGHT=""
+		 PAGEHEADERLEFT=""
+		 PAGEFOOTERCENTER=""
+		 PAGEFOOTERLEFT=""
+		 PAGEFOOTERRIGHT="@@tkosmomi"
+		 PAGEORIENTATION="LANDSCAPE">
+
+
+	<NAME>Odjava komisijske robe iz maloprodaje</NAME>
+	<CAPTION>Odjava komisijske robe iz maloprodaje</CAPTION>
+
+
+
+	<DANAS_FORM         FILLEXPLORER="TRUE" ONSUBMIT="spMPOdjavaNG @action=1,@operateriid=@@operateriid,@node='danas'" />
+	<JUCER_FORM         FILLEXPLORER="TRUE" ONSUBMIT="spMPOdjavaNG @action=1,@operateriid=@@operateriid,@node='jucer'" />
+	<TEKUCIMJESEC_FORM  FILLEXPLORER="TRUE" ONSUBMIT="spMPOdjavaNG @action=1,@operateriid=@@operateriid,@node='ovajmj'" />
+	<PROSLIMJESEC_FORM  FILLEXPLORER="TRUE" ONSUBMIT="spMPOdjavaNG @action=1,@operateriid=@@operateriid,@node='proslimj'" />
+	<FILTERODDO_FORM    FILLEXPLORER="TRUE" ONSUBMIT="spMPOdjavaNG @action=1,@operateriid=@@operateriid,@node='@@node'" />
+
+
+
+<FILTER_FORM 
+	HEIGHT="3500" WIDTH="7000"
+	CAPTION="Upišite uvjete prikaza"
+	ONSUBMIT="spMPOdjavaNG @action=1,@operateriid=@@operateriid,"
+	FILLEXPLORER="TRUE"
+	CMD1CAPTION="Pokaži" 
+	CMD2CAPTION="Odustani">
+
+	<INPUT TYPE="date"   NAME="datumod"    CAPTION="Datum od" DEFAULT="firstdayofmonth"/>
+	<INPUT TYPE="date"   NAME="datumdo"    CAPTION="Datum do" />
+	<INPUT TYPE="search" NAME="partneriid" CAPTION="Partner"  SQL="vipartneri#partneriid#Naziv%#poreznibroj#%mjestanaziv%#!adresa" ALLOWEMPTY="TRUE" />
+	<INPUT TYPE="combo"  NAME="trgovinaid" CAPTION="Trgovina" SQL="spMPDajTrgovina @operateriid=@@operateriid" ALLOWEMPTY="TRUE" />
+	<INPUT TYPE="combo"  NAME="status"	   CAPTION="Status" SQL="select 0 as status,&apos;Nezaključen&apos; as naziv union all select 1 as status,&apos;Zaključen&apos; as naziv union all select 2 as status,&apos;Odjavljen&apos; as naziv" ALLOWEMPTY="TRUE" />
+	
+</FILTER_FORM>
+
+	
+
+<UPDATE_FORM
+	HEIGHT="8500" WIDTH= "12000"
+	CAPTION="Izmjena dokumenta MP odjave: @@broj [ @@id ]"
+	FILLEXPLORER=""
+	FOCUS=""
+	ONLOAD="if coalesce((select status from mpnargla where mpnarglaid = @@ID ),0)=1  begin 
+			raiserror 19001 &apos;Dokument je zaključen. Ne može se više ispravljati !&apos; end
+			else begin
+			if coalesce((select status from mpnargla where mpnarglaid = @@ID ),0)=2  begin 
+			raiserror 19001 &apos;Dokument je odjavljen. Ne može se više ispravljati !&apos; end
+			else begin if @@id = 0  begin 
+			raiserror 19001 &apos;Niste odabrali dokument !&apos; end 
+			else begin exec spMPOdjavaNG @action=11, @id=@@id end end end">
+
+	<INPUT TYPE="frame" NAME="fr1" CAPTION="Zaglavlje:" TOP="28" LEFT="56" WIDTH="11800" HEIGHT="2000"   />
+	<INPUT TYPE="text" NAME="broj" CAPTION="Broj*" TOP="300" LEFT="950" WIDTH="3000" HEIGHT="280" SQL="" ENABLED="FALSE"/>
+	<INPUT TYPE="date" NAME="datumdok" CAPTION="Datum*" TOP="300" LEFT="4800" WIDTH="1500" HEIGHT="280" SQL="" ENABLED="FALSE"/>
+	<INPUT TYPE="text" NAME="memo" CAPTION="" TOP="300" LEFT="6500" WIDTH="5000" HEIGHT="280" SQL="" ENABLED="FALSE"/>
+	<INPUT TYPE="combo" NAME="osobeid" CAPTION="Odg.osoba*" TOP="700" LEFT="7992" WIDTH="3500" HEIGHT="294" SQL="spMPDajOsobe @trgovinaid = @@trgovinaid" ALLOWEMPTY="FALSE" />
+	<INPUT TYPE="combo" NAME="trgovinaid" CAPTION="Trgovina*" TOP="700" LEFT="950" WIDTH="4000" HEIGHT="294" SQL="spMPDajTrgovina @operateriid=@@operateriid" ALLOWEMPTY="FALSE" ENABLED="FALSE" />
+	<INPUT TYPE="search" NAME="partneriid" CAPTION="Partner*" TOP="1100" LEFT="950" WIDTH="5500" HEIGHT="280" SQL="vipartneri#partneriid#Naziv%#poreznibroj#%mjestanaziv%#!adresa" ONLOSTFOCUS="" ALLOWEMPTY="FALSE" ENABLED="FALSE"/>
+	<INPUT TYPE="text" NAME="opis" CAPTION="Napomena*" TOP="1500" LEFT="1100" WIDTH="10400" HEIGHT="280" SQL="" />
+	<INPUT TYPE="combo" NAME="osobeparid" CAPTION="Kontakt osoba*" TOP="1100" LEFT="7992" WIDTH="3500" HEIGHT="294" 
+		   SQL="select o.osobeid,rtrim(ltrim(o.ime))+' '+rtrim(ltrim(o.prezime)) as naziv from lnosopar ln inner join parstru ps on ln.parstruid=ps.parstruid inner join partneri p on ps.partneriid=p.partneriid inner join osobe o on ln.osobeid=o.osobeid where p.partneriid=@@partneriid" ALLOWEMPTY="TRUE" />
+
+	<INPUT TYPE="grid" 
+		   NAME="stavke"
+		   CAPTION="Stavke"
+		   TOP="2200" LEFT="100" WIDTH="11650" HEIGHT="5000"
+		   AFTERREFRESH=""
+		   EDITCOLUMNS="količina1000, Napomena2000"
+		   ONCELLEDITED="update mpnardet set kolicina=@(stavke..količina1000), nvrijednost=round(CijenaKn*@(stavke..količina1000),2), opis='@(stavke..Napomena2000)' where mpnardetid = @@stavke
+						#update MPOdjavaKomisZbirno set kolicina=@(stavke..količina1000), vrijemezadnjeizmjene=getdate() where mpnardetid = @@stavke
+						#select 'refresh' as stavke#select 'stavke' as focus#"
+		   CHECKBOXVISIBLE="FALSE"
+		   PAGEHEADERCENTER="Dokument MP odjave br.@@broj"
+		   PAGEHEADERRIGHT=""
+		   PAGEHEADERLEFT="Datum: @@datum##Trgovina: @@trgovina"
+		   PAGEFOOTERCENTER=""
+		   PAGEFOOTERLEFT=""
+		   PAGEFOOTERRIGHT="@@tkosmomi"
+		   PAGEORIENTATION="LANDSCAPE"
+		   GROUPBYBOXVISIBLE="FALSE"
+		   TOTALROW="FALSE"
+		   SQL="spMPOdjavaNG @action=2,@operateriid=@@operateriid,@id=@@id" />
+
+	<INPUT TYPE="button" NAME="ok" CAPTION="Spremi (F2)" TOP="7500" LEFT="196" WIDTH="1106" HEIGHT="322" 
+		   ONCLICK="exec spMPOdjavaNG @action=6,@operateriid=@@operateriid,@id=@@id,@opis=@@opis,@osobeid=@@osobeid,@osobeparid=@@osobeparid#ok" HOTKEY="F2" />
+
+</UPDATE_FORM>
+
+	
+	
+<DELETE_FORM 
+	NAME="DELETE_FORM" 
+	HEIGHT="3000" WIDTH="8000"  
+	CAPTION="Brisanje odjave" 
+	ONLOAD="if coalesce((select status from mpnargla where mpnarglaid = @@ID ),0)=1 begin 
+			raiserror 19001 &apos;Dokument je zaključen. Ne može se brisati ukoliko se prethodno ne poništi zaključak!&apos; end
+			else begin
+			if coalesce((select status from mpnargla where mpnarglaid = @@ID ),0)=2 begin 
+			raiserror 19001 &apos;Dokument je odjavljen. Ne može se više brisati !&apos; end
+			else begin if @@id = 0  begin 
+			raiserror 19001 &apos;Niste odabrali dokument !&apos; end end end">
+
+	<INPUT TYPE="label" NAME="stat" TOP="1200" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite obrisati dokument odjave ? " />
+
+
+	<INPUT TYPE="button" NAME="ok"           CAPTION="Obriši"   TOP="2000" LEFT="456" WIDTH="1106" HEIGHT="322" 
+		   ONCLICK="exec spMPOdjavaNG @action=3,@operateriid=@@operateriid,@id=@@id#Ok"  HOTKEY="" />
+	<INPUT TYPE="button" NAME="cancel"       CAPTION="Odustani" TOP="2000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</DELETE_FORM>
+
+
+
+<ZAKLJUCI_FORM 
+	NAME="ZAKLJUCI" HEIGHT="3197" WIDTH="5501" 
+	CAPTION="Zaključiti dokument?" 
+	ONSUBMIT=""
+	ONLOAD="if (select status from mpnargla where mpnarglaid= @@ID ) > 1 begin 
+                    raiserror 19001 'Dokument je već zaključen. Ne može se ponovno zaključivati!' end 
+					else begin select broj from mpnargla where mpnarglaid= @@ID end" >
+
+	<INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="1325" HEIGHT="317" WIDTH="2794" CAPTION="Broj mp odjave:*" TABINDEX="1" ENABLED="FALSE"/>
+	<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite zaključiti dokument? " />
+
+	<INPUT TYPE="button" NAME="ok"           CAPTION="Zaključi"   TOP="2000" LEFT="456" WIDTH="1106" HEIGHT="322" 
+		   ONCLICK="exec spMPOdjavaNG @action=4,@operateriid=@@operateriid,@id=@@id#Ok#close"
+		   ONCLICKKK="update mpnargla set status=1 where mpnarglaid=@@id
+					#update MPOdjavaKomisZbirno set status=1, vrijemezakmpnargla=getdate() where mpnarglaid=@@id#Ok#close"  HOTKEY="" />
+	<INPUT TYPE="button" NAME="cancel"       CAPTION="Odustani" TOP="2000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</ZAKLJUCI_FORM>
+
+
+
+<OTKLJUCAJ_FORM 
+	NAME="OTKLJUCAJ" HEIGHT="3197" WIDTH="5501" 
+	CAPTION="Otključavanje dokumenta?" 
+	ONSUBMIT=""
+	ONLOAD="if (select status from mpnargla where mpnarglaid= @@ID ) = 2 begin 
+            raiserror 19001 'Dokument je odjavljen. Ne može se poništiti zaključak!' end 
+			else begin select broj from mpnargla where mpnarglaid= @@ID end">
+
+	<INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="1325" HEIGHT="317" WIDTH="2794"  CAPTION="Broj mp odjave:*" ENABLED="FALSE"/>
+	<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234"  BOLD="TRUE" CAPTION="Jeste li sigurni da želite otključati dokument  ? " />
+
+	<INPUT TYPE="button" NAME="ok"           CAPTION="Otključaj"   TOP="2000" LEFT="456" WIDTH="1106" HEIGHT="322"
+			ONCLICK="exec spMPOdjavaNG @action=5,@operateriid=@@operateriid,@id=@@id#Ok" 
+		   ONCLICKKK="update mpnargla set status=0 where mpnarglaid=@@id
+					#update MPOdjavaKomisZbirno set status=0 where mpnarglaid=@@id#Ok"  HOTKEY="" />
+	<INPUT TYPE="button" NAME="cancel"       CAPTION="Odustani" TOP="2000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</OTKLJUCAJ_FORM>
+
+
+<ODJAVA
+	NAME="ODJAVA" HEIGHT="3197" WIDTH="5501"
+	CAPTION="Odjaviti robe sa dokumenta?"
+	ONSUBMIT=""
+	ONLOAD="if coalesce((select status from mpnargla where mpnarglaid= @@ID ),0) &lt; 1 begin 
+            raiserror 19001 'Dokument nije zaključen. Ne mogu se odjaviti robe s dokumenta!' end 
+			else begin
+			if coalesce((select status from mpnargla where mpnarglaid = @@ID ),0) = 2  begin 
+			raiserror 19001 &apos;Dokument je već odjavljen. Ne mogu se ponovno odjavljivati robe s dokumenta!&apos; end
+			else begin select broj from mpnargla where mpnarglaid= @@ID end end ">
+
+	<INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="1325" HEIGHT="317" WIDTH="2794"  CAPTION="Broj mp odjave:*" ENABLED="FALSE"/>
+	<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234"  BOLD="TRUE" CAPTION="Jeste li sigurni da želite odjaviti robe sa dokumenta  ? " />
+
+	<INPUT TYPE="button" NAME="ok"           CAPTION="Odjavi"   TOP="2000" LEFT="456" WIDTH="1106" HEIGHT="322"
+		   ONCLICK="exec spMPOdjavaNG @action=4,@operateriid=@@operateriid,@id=@@id#Ok"  HOTKEY="" />
+	<INPUT TYPE="button" NAME="cancel"       CAPTION="Odustani" TOP="2000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</ODJAVA>
+
+
+
+<PONISTIODJAVU
+	NAME="PONISTIODJAVU" HEIGHT="3197" WIDTH="5501"
+	CAPTION="Poništiti odjavu robe sa dokumenta?"
+	ONSUBMIT=""
+	ONLOAD="if coalesce((select status from mpnargla where mpnarglaid= @@ID ),0) &lt; 2 begin 
+            raiserror 19001 'Dokument nije odjavljen. Ne može se poništiti odjava robe s dokumenta!' end 
+			else begin select broj from mpnargla where mpnarglaid= @@ID end ">
+
+	<INPUT TYPE="text"  NAME="broj" TOP="360" LEFT="1325" HEIGHT="317" WIDTH="2794"  CAPTION="Broj mp odjave:*" ENABLED="FALSE"/>
+	<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234"  BOLD="TRUE" CAPTION="Jeste li sigurni da želite poništiti odjavu robe sa dokumenta  ? " />
+
+	<INPUT TYPE="button" NAME="ok"           CAPTION="Odjavi"   TOP="2000" LEFT="456" WIDTH="1106" HEIGHT="322"
+		   ONCLICK="exec spMPOdjavaNG @action=5,@operateriid=@@operateriid,@id=@@id#Ok"  HOTKEY="" />
+	<INPUT TYPE="button" NAME="cancel"       CAPTION="Odustani" TOP="2000" LEFT="1756" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+</PONISTIODJAVU>
+
+
+
+</PROJECT>

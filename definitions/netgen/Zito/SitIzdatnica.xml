@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT 
+		 SETDEFAULTS="select '125' as vrstaprom
+			            , nasbod= (select coalesce((select Iznos from Bodovi where BodoviId = convert(integer,(select VarSet from PubVars where VarIme = 'NasBod'))),1))
+				    , tkosmomi = (select naziv  from partneri where partneriid = convert(integer,(select VarSet from PubVars where VarIme = 'NasId'))) 
+				    , aa = '@@xmlname' , bb=@@operateriid"
+		 ONLOAD2=""
+		 DETAILGRID = "spSKTQueryGlaIDetNG @action=2,@SktPrometGlaID=@@id,@operateriid=@@operateriid,@vrstaprom = '@@vrstaprom'"
+		 MASTERDBLCLICK="UPDATE_FORM"
+		 CMD1CAPTION="Dodaj:INSERTFORM"
+		 CMD2CAPTION="Izmjeni:UPDATE_FORM" 
+		 CMD3CAPTION="Storniraj:STORNIRAJ" 
+		 CMD4CAPTION="Zaključi:ZAKLJUCI" 		
+		 CMD5CAPTION="Print dok.:vrstadokid-sktprometgla"
+		 CMD6CAPTION="Lista" 
+		 CMD7CAPTION="" 
+		 CMD8CAPTION="" 
+		 POPUPMASTER="Filter:FILTERFORM#Izmjeni:UPDATEFORM#Zaključi:ZAKLJUCI#Otključaj:OTKLJUCAJ" 
+		 TREE="Granula >>> Izdatnica sa skladišta na uporabu:#Filter:FILTERFORM#Danas:DANAS_FORM#Jučer:JUCER_FORM#spSKTTree @action=1:TEKUCIMJESEC_FORM#Prošli mjesec:PROSLIMJESEC_FORM#spSKTTree @action=2:FILTERODDO_FORM#spSKTTree @action=3,@vrstaprom ='@@vrstaprom' :FILTERODDO_FORM#spSKTTree @action=4,@vrstaprom ='@@vrstaprom' :FILTEROPERATERIFORM"
+		 GROUPBYBOXVISIBLE="FALSE" ONLOAD="" FROZENCOLUMNS="0" AUTOFITCOLUMNS="False"
+		 CHECKBOXVISIBLE="FALSE"
+		 TOTALROWVISIBLE="FALSE"
+		 DETTOTALROWVISIBLE="FALSE"
+		 REPORT="">
+
+
+
+	<NAME>Izdatnica sa skladišta na uporabu</NAME>
+	<CAPTION>Izdatnica sa skladišta na uporabu</CAPTION>
+
+
+<DANAS_FORM           FILLEXPLORER="TRUE" ONSUBMIT="spSKTQueryGlaIDetNG @action=1,@operateriid=@@operateriid,@node='danas',   @vrstaprom = '@@vrstaprom' , @skladisteid = Null " />
+<JUCER_FORM           FILLEXPLORER="TRUE" ONSUBMIT="spSKTQueryGlaIDetNG @action=1,@operateriid=@@operateriid,@node='jucer',   @vrstaprom = '@@vrstaprom' , @skladisteid = Null " />
+<TEKUCIMJESEC_FORM    FILLEXPLORER="TRUE" ONSUBMIT="spSKTQueryGlaIDetNG @action=1,@operateriid=@@operateriid,@node='ovajmj',  @vrstaprom = '@@vrstaprom' , @skladisteid = Null " />
+<PROSLIMJESEC_FORM    FILLEXPLORER="TRUE" ONSUBMIT="spSKTQueryGlaIDetNG @action=1,@operateriid=@@operateriid,@node='proslimj',@vrstaprom = '@@vrstaprom' , @skladisteid = Null " />
+<FILTERODDO_FORM      FILLEXPLORER="TRUE" ONSUBMIT="spSKTQueryGlaIDetNG @action=1,@operateriid=@@operateriid,@node='@@node',  @vrstaprom = '@@vrstaprom' , @skladisteid = Null " />
+<FILTEROPERATERIFORM  FILLEXPLORER="TRUE" ONSUBMIT="spSKTQueryGlaIDetNG @action=11,@operateriid=@@node,@node='@@node',  @vrstaprom = '@@vrstaprom' , @skladisteid = Null " />
+
+
+
+<INSERTFORM NAME="INSERTFORM" HEIGHT="3400" WIDTH="9000" 
+		 CAPTION="Novi dokument"
+		 ONLOAD="select convert(varchar,getdate(),112) as datumdok" 
+		 NEXTFORM="UPDATE_FORM"
+		>
+			
+		<INPUT TYPE="frame"  NAME="fr1"            CAPTION="Zaglavlje:" TOP="28" LEFT="56" WIDTH="8750" HEIGHT="2500"   />
+		<INPUT TYPE="combo"  NAME="vrstadokid"     CAPTION="Vrsta dokumenta*" TOP="200" LEFT="1572" WIDTH="4500" HEIGHT="280" ALLOWEMPTY="FALSE" SQL="select vrstadokid,opis from vrstadok where vrstapromid=(select vrstapromid from vrstaprom where sifra= @@vrstaprom)"  />
+		<INPUT TYPE="date"   NAME="datumdok"       CAPTION="Datum*" TOP="550" LEFT="1572" WIDTH="1596" HEIGHT="280" SQL=""  />
+		<INPUT TYPE="text"   NAME="broj"           CAPTION="Broj*" TOP="550" LEFT="3780" WIDTH="2002" HEIGHT="280" ENABLED="FALSE" />
+		<INPUT TYPE="combo"  NAME="orgshemaid"     CAPTION="Org shema*" TOP="900" LEFT="1572" WIDTH="4500" HEIGHT="294" ALLOWEMPTY="FALSE" SQL="select orgshemaid, naziv, sortkey from orgshema order by sortkey"  ONCLICK=""/>
+		<INPUT TYPE="combo"  NAME="skladisteid"    CAPTION="Skladište*" TOP="1200" LEFT="1572" WIDTH="4500" HEIGHT="294" ALLOWEMPTY="FALSE" SQL="dbo.spSkladisteQuery @Action=6"  />
+		<INPUT TYPE="text"   NAME="orgdok"         CAPTION="Napomena*" TOP="1550" LEFT="1572" WIDTH="4500" HEIGHT="280"   />
+		<INPUT TYPE="combo"  NAME="osobeid "       CAPTION="Odgovorna osoba*" TOP="1900" LEFT="1572" WIDTH="4500" HEIGHT="280" ALLOWEMPTY="FALSE" SQL="spOsobeQuery @action=16"  />
+
+		<INPUT TYPE="button" NAME="ok" 		  CAPTION="Otvori >> (F8)" TOP="2000" LEFT="7000" WIDTH="1428" HEIGHT="322" ONCLICK="spSKTPrometGlaAZur @action=0,@id=0,@operateriid=@@operateriid, @status = 1, @storno=0, @prefix='', @sufix='',@select_id=1 ,  ++ #OK" HOTKEY="F8" />
+
+</INSERTFORM>
+
+
+
+<UPDATE_FORM 
+		CAPTION="Izmjeni dokmument [ @@id ]" 
+		HEIGHT="8900" 
+		WIDTH= "9200" 
+		FILLEXPLORER="" 
+		FOCUS="robaid" 
+		ONLOAD="exec spSKTQueryGlaIDetNG @action=3 ,@ID=@@ID, @operateriid = @@operateriid" 
+		ONLOAD2="if (select status from sktprometgla where sktprometglaid=@@id)>1 begin
+			select 'disable' as ok1, 'disable' as ok2 , 'disable' as obrisi
+			end" 
+		>
+
+		<INPUT TYPE="frame"  NAME="fr1"            CAPTION="Zaglavlje:" TOP="28" LEFT="56" WIDTH="8750" HEIGHT="1900"   />
+		<INPUT TYPE="date"   NAME="datumdok"       CAPTION="Datum*" TOP="210" LEFT="1572" WIDTH="1596" HEIGHT="280" SQL=""  />
+		<INPUT TYPE="text"   NAME="broj"           CAPTION="Broj*" TOP="210" LEFT="3780" WIDTH="2002" HEIGHT="280" ENABLED="FALSE" />
+		<INPUT TYPE="combo"  NAME="orgshemaid"     CAPTION="Org shema*" TOP="554" LEFT="1572" WIDTH="4500" HEIGHT="294" ALLOWEMPTY="FALSE" SQL="select orgshemaid, naziv, sortkey from orgshema order by sortkey"  ONCLICK=""/>
+		<INPUT TYPE="combo"  NAME="skladisteid"    CAPTION="Skladište*" TOP="854" LEFT="1572" WIDTH="4500" HEIGHT="294" ALLOWEMPTY="FALSE" SQL="dbo.spSkladisteQuery @Action=6"  />
+		<INPUT TYPE="text"   NAME="orgdok"         CAPTION="Napomena*" TOP="1190" LEFT="1572" WIDTH="4500" HEIGHT="280"   />
+		<INPUT TYPE="combo"  NAME="osobeid "       CAPTION="Odgovorna osoba*" TOP="1490" LEFT="1572" WIDTH="4500" HEIGHT="280" ALLOWEMPTY="FALSE" SQL="spOsobeQuery @action=16"  />
+
+		<INPUT TYPE="frame"  NAME="fr2"            CAPTION="Nova stavka dokumenta :" TOP="2000" LEFT="56" WIDTH="8750" HEIGHT="2200"   />
+		<INPUT TYPE="search" NAME="robaid" 	   CAPTION="Roba (F5)*" TOP="2226" LEFT="1572" WIDTH="4500" COLUMNWIDTH="900,2000, 3000, 1100, 1100,1100, 0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" COLUMNCAPTION="Šifra,Klasifikacija,Naziv,Količina, Cijena, Brutocijena" ALLOWEMPTY="FALSE" HEIGHT="280" BACKCOLOR="LIGHTYELLOW" HOTKEY="F5"
+			SQL="spHelpRoba2 @skladisteid=@@skladisteid, @mora_biti_na_stanju = 0, @Naziv = '@@searchboxrobaid'" 
+			ONLOSTFOCUS="select naziv as jmnaziv from jm where jmid = (select jmid from roba where robaid=@@robaid) 
+					# select NabavnaCij as cijena from cjenik where robaid=@@robaid and vrcjenikid=(select VrCjenikId from skladiste where skladisteid=@@skladisteid)#select 'refresh' as osimovinaid"
+			/>
+
+		<INPUT TYPE="label"  NAME="lblosimovinaid"	   CAPTION="Inv. broj:" TOP="2226" LEFT="6200" WIDTH="1800" HEIGHT="280"  />
+		<INPUT TYPE="combo"  NAME="osimovinaid"	   CAPTION="Inventurni broj" TOP="2226" LEFT="6900" WIDTH="1800" HEIGHT="280" SQL="spSKTUzmi_Imovinu @robaid=@@robaid, @skladisteid=@@skladisteid"  />
+
+			
+			
+		<INPUT TYPE="number" NAME="kolicina" 	   CAPTION="Količina*" TOP="2562" LEFT="1572" WIDTH="1296" HEIGHT="280" DECIMALS="4" SQL=""  />
+		<INPUT TYPE="text"   NAME="jmnaziv"	   CAPTION="JM*" TOP="2562" LEFT="3372" WIDTH="700" HEIGHT="280" ENABLED="FALSE" SQL=""  />
+		<INPUT TYPE="number" NAME="cijena"	   CAPTION="Cijena*" TOP="2862" LEFT="1572" WIDTH="1596" HEIGHT="280" ENABLED="FALSE" SQL=""  />
+		<INPUT TYPE="combo"  NAME="osoba2id"	   CAPTION="Osoba*" TOP="3162" LEFT="1572" WIDTH="4500" HEIGHT="280" SQL="select k.HRKadroviId, coalesce(k.Prezime, '') + ' ' + coalesce(k.Ime, '') as ImePrezime from viOSOsobe k where k.DatumOdlaska is null or k.datumodlaska > getdate() order by prezime"  />
+		<INPUT TYPE="combo"  NAME="smjestajid"	   CAPTION="Smještaj*" TOP="3462" LEFT="1572" WIDTH="4500" HEIGHT="280" SQL="select SmjestajID,  Naziv= rtrim(sortkey) + '  ' + rtrim(naziv) + '::' + rtrim(Oznaka), Oznaka  from Smjestaj order by SortKey"  />
+		<INPUT TYPE="text"   NAME="napomenastavka" CAPTION="Napomena*" TOP="3762" LEFT="1572" WIDTH="4500" HEIGHT="280"   />
+		<INPUT TYPE="button" NAME="ok1" 	   CAPTION="Dodaj (F8)" TOP="3750" LEFT="7280" WIDTH="1428" HEIGHT="322" HOTKEY="F8"
+			ONCLICK="if (select status from sktprometgla where sktprometglaid=@@id)=1 begin exec spSktPrometDetAzur @action=0,@robaid=@@robaid,@SktPrometGlaID=@@id,@KolicinaIzlaz=@@kolicina,@KolicinaUlaz=0,@ProdCijena=0,@NabCijena=@@cijena, @Memo='@@napomenastavka' end else begin raiserror 19001 &apos;Dokument je zaključen. Ne može se više ispravljati ! +OK &apos; end
+				#select '' as roba , 'robaid' as focus, robaid = null, kolicina = 0, cijena = 0, '' as napomenastavka , '' as jmnaziv, 'refreshmovelast' as stavke "  />
+
+		<INPUT TYPE="grid" 
+			   NAME="stavke" 
+			   REFRESHAFTERCHILD="TRUE" 
+			   CAPTION="Stavke" 
+			   TOP="4300" LEFT="56" WIDTH="8750" HEIGHT="3078"
+			   TABINDEX="-1"
+			   AFTERREFRESH=""
+			   POPUP="Obriši:DELETE_FORM"
+			   ONDBLCLICK=":IZMJENISTAVKU" 
+			   EDITCOLUMNS="kol.ulaz"
+			   ONCELLEDITED=""
+			   CHECKBOXVISIBLE="FALSE"	
+			   PAGEHEADERCENTER="Izdatnica sa skladišta na uporabu br. @@broj"
+			   PAGEHEADERRIGHT=""
+			   PAGEHEADERLEFT="Datum: @@datumdok"
+			   PAGEFOOTERCENTER=""
+			   PAGEFOOTERLEFT=""
+			   PAGEFOOTERRIGHT="@@tkosmomi"
+			   PAGEORIENTATION="LANDSCAPE"
+			   GROUPBYBOXVISIBLE="FALSE"
+			   TOTALROW="FALSE"
+			   SQL="spSKTQueryGlaIDetNG @action=2,@SktPrometGlaID=@@id,@operateriid=@@operateriid,@vrstaprom = @@vrstaprom " />
+
+		<INPUT TYPE="number" NAME="ukupno"  CAPTION="Ukupno*"     TOP="7500" LEFT="6650" WIDTH="2100" HEIGHT="280" SQL="" TABINDEX ="-1"  BACKCOLOR="greenyellow" STYLE="1"/>
+		<INPUT TYPE="button" NAME="ok2"     CAPTION="Spremi (F2)" TOP="8000" LEFT="196"  WIDTH="1106" HEIGHT="322" 
+			ONCLICK="if (select status from sktprometgla where sktprometglaid=@@id)=1 begin exec spSKTPrometGlaAZur  @action=1,@id = @@id, @operateriid=@@operateriid,@vrstadokid = @@vrstadokid,@datumdok= @@datumdok, @orgshemaid=@@orgshemaid, @orgdok = '@@orgdok',@osobeid = @@osobeid, @skladisteid = @@skladisteid,@broj='' end else begin raiserror 19001 &apos;Dokument je zaključen. Ne može se više ispravljati ! +OK &apos; end
+				#Ok"  />
+		<INPUT TYPE="button" NAME="cancel"  CAPTION="Odustani"    TOP="8000" LEFT="1456" WIDTH="1106" HEIGHT="322" ONCLICK="close"  />
+		<INPUT TYPE="button" NAME="obrisi"  CAPTION="Obriši"      TOP="8000" LEFT="4186" WIDTH="1400" HEIGHT="322" ONCLICK="FOREACHBLUEROW(stavke)#:DELETE_FORM"  />
+</UPDATE_FORM>
+
+
+<DELETE_FORM 
+		CAPTION="Brisanje" 
+		HEIGHT="1800" 
+		WIDTH= "7400" 
+		>
+			<INPUT TYPE="label" NAME="lblporuka" TOP="300" LEFT="400" WIDTH="400" CAPTION="Jeste li sigurni da želite obrisati stavku @@gridstavkerobanaziv  ?"/>
+			<INPUT TYPE="button" NAME="ok" HOTKEY="" TOP="800" LEFT="400" WIDTH="1000" CAPTION="Obriši" 
+			ONCLICK="spSKTPrometDetAzur @action=2,@id=@@gridstavkesktprometdetid
+				#spSktPrometDetDodAzur 2, 0, @@gridstavkesktprometdetid , null, null 
+				#Ok"  />
+			<INPUT TYPE="button" NAME="cancel" TOP="800" LEFT="1500" WIDTH="1000" CAPTION="Odustani" ONCLICK="close"  />
+</DELETE_FORM>
+
+
+<STORNIRAJ 
+		CAPTION="Storniraj" 
+		HEIGHT="1800" 
+		WIDTH= "7400" 
+		ONLOAD="if ((select status from sktprometgla where sktprometglaid = @@ID ) &lt; &gt; 2 or (select status from sktprometgla where sktprometglaid = @@ID ) = 1 ) begin
+				raiserror 19001 'Storniranje nije moguće'
+				end "
+		>
+			<INPUT TYPE="label" NAME="lblporuka" TOP="300" LEFT="400" WIDTH="400" CAPTION="Jeste li sigurni da želite stornirati dokument @@broj  ?"/>
+			<INPUT TYPE="button" NAME="ok" HOTKEY="" TOP="800" LEFT="400" WIDTH="1000" CAPTION="Storniraj" 
+			ONCLICK="spSktPrometGlaAzur @action=4,@id=@@id,@OperaterKnjizenjaId=@@operateriid, @broj=''
+				#Ok"  />
+			<INPUT TYPE="button" NAME="cancel" TOP="800" LEFT="1500" WIDTH="1000" CAPTION="Odustani" ONCLICK="close"  />
+</STORNIRAJ>
+
+
+<ZAKLJUCI 
+		CAPTION="Zaključi" 
+		HEIGHT="1800" 
+		WIDTH= "7400" 
+		>
+			<INPUT TYPE="label" NAME="lblporuka" TOP="300" LEFT="400" WIDTH="400" CAPTION="Jeste li sigurni da želite zaključiti dokument @@broj  ?"/>
+			<INPUT TYPE="button" NAME="ok" HOTKEY="" TOP="800" LEFT="400" WIDTH="1000" CAPTION="Zaključi" 
+			ONCLICK="if (select status from sktprometgla where sktprometglaid = @@ID ) = 1 begin
+				update  SktPrometGla set   Status = '2', DatumKnjizenja = convert(varchar(8),getdate(),112) , OperaterKnjizenjaId = @@operateriid  where   SktPrometGlaId = @@id
+				end
+				#spSitIzdatnicaZaduzenje 0,@@id 
+				#Ok"  />
+			<INPUT TYPE="button" NAME="cancel" TOP="800" LEFT="1500" WIDTH="1000" CAPTION="Odustani" ONCLICK="close"  />
+</ZAKLJUCI>
+
+
+<FILTERFORM NAME="FILTERFORM" HEIGHT="3254" WIDTH="6710" 
+		 CAPTION="Upišite uvjete prikaza " 
+		 ONSUBMIT="spSKTQueryGlaIDetNG @action = 1,  @vrstaprom =  @@vrstaprom , @operateriid= @@operateriid, "
+		 ONLOAD="" 
+		 FILLEXPLORER="TRUE" 
+		 NEXTFORM=""
+		 CMD1CAPTION="Pokaži" 
+		 CMD2CAPTION="Odustani" 
+		 >
+			<INPUT TYPE="date" NAME="datumod" CAPTION="Datum od" />
+			<INPUT TYPE="date" NAME="datumdo" CAPTION="Datum do" />
+			<INPUT TYPE="combo" NAME="skladisteid" ALLOWEMPTY="TRUE" CAPTION="Skladište" SQL="dbo.spSkladisteQuery @Action=6" />
+			<INPUT TYPE="combo" NAME="status" ALLOWEMPTY="true" CAPTION="Status" SQL="select 0 as status,&apos;Otvoren&apos; as naziv  union all select 1 as status,&apos;Naloženo &apos; as naziv union all select 2 as status,&apos;Zaprimljeno &apos; as naziv" />
+</FILTERFORM>
+
+
+
+ 
+
+
+
+</PROJECT>

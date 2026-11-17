@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="windows-1250" standalone="yes" ?>
+<PROJECT  
+	POPUPMASTER="" 
+	MASTERDBLCLICK=""
+    BUTTONS="Filter:FILTERFORM#Zaključi:ZAKLJUCI#Update NC:UPDATE_NC#Proknjizi:PROKNJIZI" 
+	GROUPBYBOXVISIBLE="TRUE" 
+	ONLOAD="spstZakljucakPerioda @action = 8,  @operateriid = @@operateriid "
+	COMMANDTIMEOUT="600"
+	FROZENCOLUMNS="0" 
+	CHECKBOXVISIBLE="FALSE">
+	
+<NAME>Zaključak perioda stočarstva </NAME>
+<CAPTION>Zaključak perioda stočarstva</CAPTION>
+
+	<FILTERFORM NAME="FILTERFORM" HEIGHT="2000" WIDTH="4500"
+			 CAPTION="Upišite mjesec zaključka perioda !"
+			 ONSUBMIT="spMPZakljucakPeriodaMPNG @action = 8,  @operateriid = @@operateriid,  "
+			 ONLOAD="select month(getdate())-1 as mjesec"
+			 FILLEXPLORER="TRUE"
+			 NEXTFORM=""
+			 CMD1CAPTION="Pokaži"
+			 CMD2CAPTION="Odustani"
+		 >
+		<INPUT TYPE="number" NAME="mjesec" CAPTION="Mjesec obrade" DEFAULT=""/>
+	</FILTERFORM>
+
+	<ZAKLJUCI 
+		NAME=" MAINFORM " 
+		HEIGHT="8000" 
+		WIDTH="9000"
+		COMMANDTIMEOUT="600"
+		ONESCKEY="select 1"
+		INCLUDEE=""
+		CAPTION="Zaključak perioda stočarstva"
+		ONLOAD="SELECT '''                                                     ''' as prazno, 0 as brojNezak, 0 as brojneizl, 0 as brojduplih, 0 as neispravno, convert(char(100) , '' ) as tekstporuke, @@id as trgovinaid"
+		MAXIMIZEBOX="TRUE" 
+		
+		FOCUS="Stfarmeid" 
+		WINDOWSTATE="0">
+
+		<INPUT TYPE="frame" NAME="topgroupbox" DOCK="" CAPTION="Uvjeti:" LEFT="300" TOP="200" HEIGHT="1700" WIDTH="8000"   />
+		<INPUT TYPE="frame" NAME="midlegroupbox" DOCK="" CAPTION="Status dokumenata  :" LEFT="300" TOP="2000"  WIDTH="8000" HEIGHT="2500"  />
+		<INPUT TYPE="frame" NAME="midlegroupbox2" DOCK="" CAPTION="Status obrade zaključka perioda:" TOP="5500" LEFT="300" WIDTH="8000" HEIGHT="1000"  />
+
+		<INPUT TYPE="combo" NAME="Stfarmeid" TOP="500" LEFT="1500" WIDTH="4500" SQL="spstdajfarme @operateriid=@@operateriid " ALLOWEMPTY="FALSE" ENABLED="TRUE" CAPTION="Farma:*"
+			   ONLOSTFOCUS="select top 1 datumobrade+1 as datumod from stobrada where stfarmeid = @@stfarmeid order by 1 desc#select 'refresh' as datumod"
+			   ONCLICK="select 0 as kontrola, 0 as zakljuci, 0 as anivelacija#select top 1 datumobrade+1 as datumod from stobrada where stfarmeid = @@stfarmeid order by 1 desc#select 'refresh' as datumod"/>
+		<INPUT TYPE="date" NAME="datumod" CAPTION="Razdoblje od:*" TOP="1000" LEFT="1500" WIDTH="1500" ENABLED="FALSE" />
+		<INPUT TYPE="date" NAME="datumdo" CAPTION="do:*" TOP="1000" LEFT="3700" WIDTH="1500"/>
+		
+		<INPUT TYPE="number" NAME="brojNezak" CAPTION="Broj nezaključenih dokumenata:*" DECIMALS="0" TOP="2700" LEFT="3000" WIDTH="1000" STYLE="1" ENABLED ="FALSE" BACKCOLOR="greenyellow"/>
+		<INPUT TYPE="text" NAME="prazno" CAPTION="Broj nezaključenih dokumenata:*" DECIMALS="0" TOP="-2700" LEFT="3000" WIDTH="1000" ENABLED ="FALSE" />
+		<INPUT TYPE="button" NAME="b33" CAPTION="Pokaži"  TOP="2700" LEFT="4500" WIDTH="1500" HEIGHT="322" ONCLICK=":NEZAKDOK" HOTKEY="" />
+
+		<INPUT TYPE="number" NAME="brojneizl" CAPTION="Broj neproknjiženih izlučenja :*" DECIMALS="0" TOP="3200" LEFT="3000" WIDTH="1000" STYLE="1" ENABLED ="FALSE" BACKCOLOR="greenyellow" />
+		<INPUT TYPE="text" NAME="prazno" CAPTION="Broj neproknjiženih izlučenja :*" DECIMALS="0" TOP="-3200" LEFT="3000" WIDTH="1000" ENABLED ="FALSE" />
+		<INPUT TYPE="button" NAME="b33" CAPTION="Pokaži"  TOP="3200" LEFT="4500" WIDTH="1500" HEIGHT="322" ONCLICK=":NESKLDOK" HOTKEY="" />
+
+		<INPUT TYPE="number" NAME="brojlosih" CAPTION="Broj neispravnih skl. dok :*" DECIMALS="0" TOP="3700" LEFT="3000" WIDTH="1000" STYLE="1" FORECOLOR="red" BACKCOLOR="red" ENABLED ="FALSE" />
+		<INPUT TYPE="text" NAME="prazno" CAPTION="Broj neispravnih skl. dok  :*" DECIMALS="0" TOP="-3200" LEFT="3000" WIDTH="1000" ENABLED ="FALSE" />
+		<INPUT TYPE="button" NAME="b33" CAPTION="Pokaži"  TOP="3700" LEFT="4500" WIDTH="1500" HEIGHT="322" ONCLICK=":NEISPRAVNO" HOTKEY="" />
+
+		<INPUT TYPE="number" NAME="kontrola" CAPTION="" DECIMALS="" TOP="-3500" LEFT="3000" WIDTH="1200" ENABLED ="FALSE" STYLE="1"/>
+		<INPUT TYPE="number" NAME="zakljuci" CAPTION="" DECIMALS="" TOP="-3500" LEFT="3000" WIDTH="1200" ENABLED ="FALSE" STYLE="1"/>
+
+		<INPUT TYPE="labelporuka" NAME="poruka" CAPTION="" SIZE="12" DECIMALS="" TOP="5900" LEFT="1000" WIDTH="6200" STYLE="1"/>
+
+		<INPUT TYPE="button" NAME="b1" CAPTION="1.Kontrola"  TOP="6700" LEFT="500" WIDTH="1500" HEIGHT="322" 
+			   ONCLICK="select 1 as kontrola 
+						#select 'Provjeravam nezaključene dokumente !                                   .' as poruka
+						#spstZakljucakPerioda @action = 1, @stfarmeid =@@stfarmeid , @datumod=@@datumod, @datumdo=@@datumdo, @operateriid = @@operateriid 
+						#spstZakljucakPerioda @action = 16, @stfarmeid =@@stfarmeid , @datumod=@@datumod, @datumdo=@@datumdo, @operateriid = @@operateriid 
+						#select 'Provjeravam neproknjižene dokumente izlučenja!                                   .' as poruka
+						#spstZakljucakPerioda @action = 15, @stfarmeid=@@stfarmeid, @datumod=@@datumod, @datumdo=@@datumdo , @operateriid = @@operateriid 
+						#select 'Provjeravam neispravne skladišne dokumente izlučenja!                                   .' as poruka
+						#exec spstZakljucakPerioda @action = 18, @stfarmeid=@@stfarmeid, @datumod=@@datumod, @datumdo=@@datumdo , @operateriid = @@operateriid , @prikaz = 0
+						#if @@brojneizl = 0 and @@zakljuci = 0 and @@neispravno = 0 and @@brojlosih = 0 begin select 'Kontrola dokumenata završena. Možete zaključiti period !                                   .' as poruka , 1 as kontrola end
+						#if @@brojneizl &lt;> 0 or @@brojlosih &lt;>0 or @@neispravno &lt;>0 begin select 'Provjerite statuse dokumenata i popravite!                                   .' as poruka , 0 as kontrola end
+						#if @@brojneizl = 0 and @@zakljuci = 0 and @@neispravno = 0 and @@brojlosih = 0 begin select 'enable' as b3 end " HOTKEY="" />
+		
+		<INPUT TYPE="button" NAME="b3" CAPTION="3.Zaključi" TOP="6700" LEFT="3600" WIDTH="1500" ENABLED="FALSE" HEIGHT="322"
+					   ONCLICK="if @@zakljuci = 1 begin raiserror 19001 'Period je već zaključen !' end 
+						#spstZakljucakPerioda @action = 19, @stfarmeid=@@stfarmeid, @datumod=@@datumod, @datumdo=@@datumdo , @operateriid = @@operateriid  
+						#select 'Zaključak perioda je napravljen !' as poruka, 1 as zakljuci # select 'disable' as b3" HOTKEY="" />
+
+		<INPUT TYPE="button" NAME="b4" CAPTION="Odustani" TOP="6700" LEFT="6700" WIDTH="1500" HEIGHT="322" ONCLICK="close" HOTKEY="" />
+	</ZAKLJUCI>
+
+
+	<UPDATE_NC NAME="UPDATE_NC" HEIGHT="3197" WIDTH="5501"
+		CAPTION="Obrada NC ?"
+		ONSUBMIT="spMPZakljucakPeriodaMPNG @action = 10, @trgovinaid=@@id, "
+		ONLOAD="select opis as trgovina  from trgovina where trgovinaid = @@id"
+		 FILLEXPLORER=""
+		 CMD1CAPTION="Zaključi"
+		 CMD2CAPTION="Odustani"
+		>
+		<INPUT TYPE="text"  NAME="trgovina" TOP="360" LEFT="1504" HEIGHT="317" WIDTH="2794" CAPTION="Trgovina*" TABINDEX="1" ENABLED="FALSE"/>
+		<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite obnoviti NC na odabranoj trgovini? " />
+	</UPDATE_NC>
+
+	<PROKNJIZI NAME="PROKNJIZI" HEIGHT="3197" WIDTH="5501"
+		CAPTION="Knjiženje zaključka perioda "
+		ONSUBMIT="spMPZakljucakPeriodaMPNG @action = 9, @trgovinaid=@@id, "
+		ONLOAD="select opis as trgovina  , (select max(datumobrade) from mpobrada where trgovinaid = @@id ) as datumdo from trgovina where trgovinaid = @@id"
+		 FILLEXPLORER=""
+		 CMD1CAPTION="Proknjiži"
+		 CMD2CAPTION="Odustani"
+		>
+		<INPUT TYPE="text"  NAME="trgovina" TOP="360" LEFT="1504" HEIGHT="317" WIDTH="2794" CAPTION="Trgovina*" TABINDEX="1" ENABLED="FALSE"/>
+		<INPUT TYPE="date" NAME="datumdo" TOP="760" LEFT="1504" CAPTION="Datum do*" ENABLED="FALSE" DEFAULT="today"/>
+		<INPUT TYPE="label" NAME="stat" TOP="1325" LEFT="331" HEIGHT="490" WIDTH="4234" CAPTION="Jeste li sigurni da želite obnoviti NC na odabranoj trgovini? " />
+	</PROKNJIZI>
+
+	<ANALIZAKARTICA
+		HEIGHT="7500"
+		WIDTH="15000"
+		CAPTION="Analiza kartica trgovine @@comboboxtrgovinaid za period @@datumod do @@datumdo"
+		ONSUBMIT=""
+		CHECKBOXVISIBLE="TRUE"
+		ONLOAD="select convert(char(4),year(@@datumod))+'0101' as datod">
+		<INPUT TYPE="date" NAME="datod" CAPTION="" TOP="-1000" LEFT="1500" WIDTH="1500" ENABLED="FALSE" />
+
+
+		<INPUT TYPE="grid" NAME="analizakartica" TOP="200" LEFT="200" WIDTH="14500" HIGHT="6000"
+				TOTALROW="TRUE"
+				CHECKBOXVISIBLE="FALSE"
+				PAGEORIENTATION="LANDSCAPE"
+				SQL="spMPStanjeQueryNG @action=500, @kartica = 1, @komisija = 2, @neispravno = 1, @skladisteid = @@trgovinaid , @datumod = @@datod , @datumdo = @@datumdo " CAPTION="Kartica robe"/>
+		<COLUMN INDEX="" NAME="[Stanje0800]" AGREGATEFUNCTION="0"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="200" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Kartica" TOP="6500" LEFT="2200" WIDTH="1500" HEIGHT="322" ONCLICK=":KARTICA" 
+			   ONCLICKK=":MPKARTICA(@mastergrid = @@analizakartica, @skladisteid = @@trgovinaid, @datumod = @@datod, @totalgen = 1 )"/>
+
+
+	</ANALIZAKARTICA>
+
+
+	
+	<NEZAKDOK
+	HEIGHT="7500"
+	WIDTH="7500"
+	CAPTION="Nezaključeni dokumenti u periodu od @@datumod do @@datumdo"
+	ONSUBMIT=""
+	CHECKBOXVISIBLE="TRUE"
+	ONLOAD="">
+
+
+		<INPUT TYPE="grid" NAME="nezakdok" TOP="200" LEFT="200" WIDTH="15500" HIGHT="6000"
+				TOTALROW="TRUE"
+				CHECKBOXVISIBLE="FALSE"
+				PAGEORIENTATION="LANDSCAPE"
+				SQL="spstZakljucakPerioda @action=2, @stfarmeid =@@stfarmeid,@datumod=@@datumod,@datumdo=@@datumdo" CAPTION=""/>
+		<COLUMN INDEX="" NAME="" AGREGATEFUNCTION="0"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Stavke" TOP="6500" LEFT="200" WIDTH="1500" HEIGHT="322" ONCLICK=":STAVKENEZAK"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Zaključi" TOP="6500" LEFT="2000" WIDTH="1500" HEIGHT="322" ONCLICK="exec spstzakljucidok @id = @@nezakdok, @operateriid = @@operateriid #select 'refresh' as nezakdok"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="4000" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+
+
+	</NEZAKDOK>
+
+	<STAVKENEZAK
+			HEIGHT="7500"
+			WIDTH="7500"
+			CAPTION="Stavke dokumenta "
+			ONSUBMIT=""
+			CHECKBOXVISIBLE="TRUE"
+			ONLOAD="">
+
+
+		<INPUT TYPE="grid" NAME="stavkenezakdok" TOP="200" LEFT="200" WIDTH="15500" HIGHT="6000"
+				TOTALROW="TRUE"
+				CHECKBOXVISIBLE="FALSE"
+				PAGEORIENTATION="LANDSCAPE"
+				SQL="spstZakljucakPerioda @action=3, @id = @@nezakdok" CAPTION=""/>
+		<COLUMN INDEX="" NAME="" AGREGATEFUNCTION="0"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="4000" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+
+
+	</STAVKENEZAK>
+
+
+	<NESKLDOK
+	HEIGHT="7500"
+	WIDTH="7500"
+	CAPTION="Nezaključeni dokumenti u periodu od @@datumod do @@datumdo"
+	ONSUBMIT=""
+	CHECKBOXVISIBLE="TRUE"
+	ONLOAD="">
+
+
+		<INPUT TYPE="grid" NAME="NESKLDOK" TOP="200" LEFT="200" WIDTH="15500" HIGHT="6000"
+				TOTALROW="TRUE"
+				CHECKBOXVISIBLE="FALSE"
+				PAGEORIENTATION="LANDSCAPE"
+				SQL="spstZakljucakPerioda @action=17, @stfarmeid =@@stfarmeid,@datumod=@@datumod,@datumdo=@@datumdo" CAPTION=""/>
+		<COLUMN INDEX="" NAME="" AGREGATEFUNCTION="0"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Stavke" TOP="6500" LEFT="200" WIDTH="1500" HEIGHT="322" ONCLICK=":STAVKENESKL"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Popravi" TOP="6500" LEFT="2000" WIDTH="1500" HEIGHT="322" ONCLICK="exec spstZakljucakPerioda @action = 4, @id = @@NESKLDOK, @operateriid = @@operateriid #select 'refresh' as NESKLDOK"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="4000" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+
+
+	</NESKLDOK>
+	<STAVKENESKL
+			HEIGHT="7500"
+			WIDTH="7500"
+			CAPTION="Stavke dokumenta "
+			ONSUBMIT=""
+			CHECKBOXVISIBLE="TRUE"
+			ONLOAD="">
+
+
+		<INPUT TYPE="grid" NAME="stavkenezakdok" TOP="200" LEFT="200" WIDTH="15500" HIGHT="6000"
+				TOTALROW="TRUE"
+				CHECKBOXVISIBLE="FALSE"
+				PAGEORIENTATION="LANDSCAPE"
+				SQL="spstZakljucakPerioda @action=3, @id = @@NESKLDOK" CAPTION=""/>
+		<COLUMN INDEX="" NAME="" AGREGATEFUNCTION="0"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="4000" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+
+
+	</STAVKENESKL>
+
+	<NEISPRAVNO
+	HEIGHT="7500"
+	WIDTH="14500"
+	CAPTION="Nezaključeni dokumenti u periodu od @@datumod do @@datumdo"
+	ONSUBMIT=""
+	CHECKBOXVISIBLE="TRUE"
+	ONLOAD="">
+
+
+		<INPUT TYPE="grid" NAME="NEISPRAVNO" TOP="200" LEFT="200" WIDTH="14200" HIGHT="6000"
+				TOTALROW="TRUE"
+				CHECKBOXVISIBLE="FALSE"
+				PAGEORIENTATION="LANDSCAPE"
+				SQL="spstZakljucakPerioda @action=18, @stfarmeid =@@stfarmeid,@datumod=@@datumod,@datumdo=@@datumdo, @prikaz = 1 " CAPTION=""/>
+		<COLUMN INDEX="" NAME="" AGREGATEFUNCTION="0"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Stavke" TOP="6500" LEFT="200" WIDTH="1500" HEIGHT="322" ONCLICK=":STAVKENEISPRAVNO"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Popravi" TOP="6500" LEFT="2000" WIDTH="1500" HEIGHT="322" ONCLICK="exec spstZakljucakPerioda @action = 5, @id = @@NEISPRAVNO, @operateriid = @@operateriid #select 'refresh' as NEISPRAVNO"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="4000" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+
+
+	</NEISPRAVNO>
+
+	<STAVKENEISPRAVNO
+			HEIGHT="7500"
+			WIDTH="7500"
+			CAPTION="Stavke dokumenta "
+			ONSUBMIT=""
+			CHECKBOXVISIBLE="TRUE"
+			ONLOAD="">
+
+
+		<INPUT TYPE="grid" NAME="stavkenezakdok" TOP="200" LEFT="200" WIDTH="15500" HIGHT="6000"
+				TOTALROW="TRUE"
+				CHECKBOXVISIBLE="FALSE"
+				PAGEORIENTATION="LANDSCAPE"
+				SQL="spstZakljucakPerioda @action=3, @id = @@NEISPRAVNO" CAPTION=""/>
+		<COLUMN INDEX="" NAME="" AGREGATEFUNCTION="0"/>
+		<INPUT TYPE="button" NAME="" CAPTION="Izlaz" TOP="6500" LEFT="4000" WIDTH="1500" HEIGHT="322" ONCLICK="close"/>
+
+
+	</STAVKENEISPRAVNO>
+
+
+	<KARTICA 	FILLEXPLORER="TRUE"
+		   WIDTH="17000"
+		   ONSUBMIT=""
+		   ONLOAD=""
+		   HEIGHT="9500"
+		   CAPTION="Kartica robe"
+		   BORDERSTYLE="3"
+		   CMD1CAPTION=""
+		   CMD2CAPTION=""
+		   CMD3CAPTION=""
+		   CMD4CAPTION=""
+		   CMD5CAPTION=""
+		   CMD6CAPTION=""
+		
+		   CHILDFORM="">
+
+		<INPUT TYPE="grid" NAME="kartica" REFRESHAFTERCHILD="TRUE" TOP="200" LEFT = "200" WIDTH="16500" HEIGHT="8000" TABINDEX="2" CHECKBOXVISIBLE="FALSE"
+	 TOTALROW="FALSE" DETTOTALROWVISIBLE="FALSE" GROUPBYBOXVISIBLE="FALSE"
+					 SQL="spMPStanjeKarticaNG @action = 1, @robaid = @@analizakartica, @prikaz= 0, @trgovinaid = @@trgovinaid, @datumod = @@datumod, @datumdo = @@datumdo, @totalgen= 1,@operateriid = @@operateriid" />
+
+		<INPUT TYPE="button" NAME="cancel" TABINDEX="16" CAPTION="Kraj" TOP="8500" LEFT="1000" WIDTH="1400" HEIGHT="322" ONCLICK="close"  />
+		<INPUT TYPE="button" NAME="cijena" TABINDEX="16" CAPTION="Cijena" TOP="8500" LEFT="3000" WIDTH="1400" HEIGHT="322" ONCLICK=":IZMJENIFORM"  />
+		<INPUT TYPE="button" NAME="Staracij" TABINDEX="16" CAPTION="Stara cij" TOP="8500" LEFT="5000" WIDTH="1400" HEIGHT="322" ONCLICK=":IZMJENISTARUMPC"  />
+		<INPUT TYPE="button" NAME="Kolicina" TABINDEX="16" CAPTION="Količina" TOP="8500" LEFT="7000" WIDTH="1400" HEIGHT="322" ONCLICK=":IZMJENIKOL"  />
+		<INPUT TYPE="button" NAME="KolicinaA" TABINDEX="16" CAPTION="Količina A-niv" TOP="8500" LEFT="9000" WIDTH="1400" HEIGHT="322" ONCLICK=":IZMJENIKOLA"  />
+		<INPUT TYPE="button" NAME="StaracijA" TABINDEX="16" CAPTION="Stara Cij A-niv" TOP="8500" LEFT="11000" WIDTH="1400" HEIGHT="322" ONCLICK=":IZMJENISTARUMPCA"  />
+
+	</KARTICA>
+
+	<IZMJENIFORM
+	  WIDTH="5500"
+	  ONSUBMIT="spMPKontrolaNivelacijaNG @action=8, @maloprodajadetid = @@gridkarticamaloprodajadetid, @vrstadok = '@@gridkarticaVrsta_dokumenta' ,"
+	  ONLOAD="if @@gridkarticamaloprodajadetid is not null begin 
+				select mpcijena as cijena from maloprodajadet where maloprodajadetid = @@gridkarticamaloprodajadetid
+				end
+				else begin 
+					raiserror 19001 'Niste odabrali dokumant nivelacije!'	   
+				end "
+	  HEIGHT="2500"
+	  CAPTION="Izmjeni cijenu"
+	  CMD1CAPTION="Spremi"
+	  CMD2CAPTION="Odustani"
+	  FILLEXPLORER="">
+
+		<INPUT TYPE="number" NAME="cijena" CAPTION="Cijena" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" />
+
+
+	</IZMJENIFORM>
+	<IZMJENIKOL
+	  WIDTH="5500"
+	  ONSUBMIT="spMPKontrolaNivelacijaNG @action=15, @stavke = @@gridkarticamaloprodajadetid, @vrstadok = '@@gridkarticaVrsta_dokumenta' , "
+	  ONLOAD="if @@gridkarticamaloprodajadetid is not null begin 
+					select kolicinaulaz as kolicina from maloprodajadet where maloprodajadetid= @@gridkarticamaloprodajadetid
+				end
+				else begin 
+					raiserror 19001 'Niste odabrali dokumant nivelacije !'	   
+				end"
+	  HEIGHT="2500"
+	  CAPTION="Izmjeni količinu"
+	  CMD1CAPTION="Spremi"
+	  CMD2CAPTION="Odustani"
+	  FILLEXPLORER="">
+
+		<INPUT TYPE="number" NAME="kolicina" CAPTION="Kolicina" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" />
+
+
+	</IZMJENIKOL>
+
+	<IZMJENIKOLA
+	  WIDTH="5500"
+	  ONSUBMIT="spMPKontrolaNivelacijaNG @action=13, @stavke = @@kartica, @vrstadok = '@@gridkarticaVrsta_dokumenta' ,"
+	  ONLOAD="if @@gridkarticampniveldetid is not null begin 
+					select kolicinaulaz as kolicina from mpniveldet where mpniveldetid= @@gridkarticampniveldetid
+				end
+				else begin 
+					raiserror 19001 'Niste odabrali A-nivelaciju!'	   
+				end"
+	  HEIGHT="2500"
+	  CAPTION="Izmjeni količinu"
+	  CMD1CAPTION="Spremi"
+	  CMD2CAPTION="Odustani"
+	  FILLEXPLORER="">
+
+		<INPUT TYPE="number" NAME="kolicina" CAPTION="Kolicina" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" />
+
+
+	</IZMJENIKOLA>
+
+	<IZMJENISTARUMPC
+	  WIDTH="5500"
+	  ONSUBMIT="spMPKontrolaNivelacijaNG @action=9, @stavke = @@gridkarticamaloprodajadetid, @vrstadok = '@@gridkarticaVrsta_dokumenta' ,"
+	  ONLOAD="if @@gridkarticamaloprodajadetid is not null begin
+					select nabcijena as cijena from maloprodajadet where maloprodajadetid = @@gridkarticamaloprodajadetid
+				end
+				else begin 
+					raiserror 19001 'Niste odabrali dokumant nivelacije !'	   
+				end"
+	  HEIGHT="2500"
+	  CAPTION="Izmjeni cijenu"
+	  CMD1CAPTION="Spremi"
+	  CMD2CAPTION="Odustani"
+	  FILLEXPLORER="">
+
+		<INPUT TYPE="number" NAME="cijena" CAPTION="Cijena" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" />
+
+
+	</IZMJENISTARUMPC>
+
+	<IZMJENISTARUMPCA
+	  WIDTH="5500"
+	  ONSUBMIT="spMPKontrolaNivelacijaNG @action=14, @stavke = @@kartica, @ANIV = 1, @vrstadok = '@@gridkarticaVrsta_dokumenta' ,"
+	  ONLOAD="if @@gridkarticampniveldetid is not null begin 
+					select nabcijena+povnaknadaroba as cijena from mpniveldet where mpniveldetid = @@gridkarticampniveldetid
+				end
+				else begin 
+					raiserror 19001 'Niste odabrali A-NIvelaciju!'	   
+				end"
+	  HEIGHT="2500"
+	  CAPTION="Izmjeni cijenu"
+	  CMD1CAPTION="Spremi"
+	  CMD2CAPTION="Odustani"
+	  FILLEXPLORER="">
+
+		<INPUT TYPE="number" NAME="cijena" CAPTION="Cijena" TEXT="" WIDTH="2500" HEIGHT="320" TABINDEX="0" DECIMALS="2" />
+
+
+	</IZMJENISTARUMPCA>
+
+
+</PROJECT>
