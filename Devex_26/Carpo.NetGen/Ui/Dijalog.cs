@@ -656,6 +656,9 @@ namespace Carpo.NetGen.Ui
                 look.Properties.DataSource = dt;
                 look.Properties.ValueMember = dt.Columns[0].ColumnName;
                 look.Properties.DisplayMember = dt.Columns.Count > 1 ? dt.Columns[1].ColumnName : dt.Columns[0].ColumnName;
+                // NetGen Combo je obični ComboBox: u popisu je samo natpis. Bez ovoga LookUpEdit pokaže sve stupce upita
+                // (npr. "select * from ssoperateri"), stisnute u širinu kontrole.
+                CarpoIzgled.ComboStupac(look, look.Properties.DisplayMember);
                 // Osvjezavanje ostavi odabir korisnika (LookUpEdit zadrzi EditValue ako ga nova lista ima).
                 if (gotovSql != null)
                     return;
@@ -987,7 +990,12 @@ namespace Carpo.NetGen.Ui
                 }
                 if (korak.Vrsta == "sql" && _citaj != null && !_jupiter)
                 {
-                    string dio = Pripremi(korak.Tekst);
+                    // Form2.vb 7510 -> RefreshControls 4559-4565: PokupiParametre, pa "++" postane strParametri.
+                    // Bez toga je SQL gumba odlazio s doslovnim "++" (npr. "spKUPPrometAzurN @Action=0,@operateriid=182,++").
+                    string tekstKoraka = korak.Tekst ?? "";
+                    if (tekstKoraka.IndexOf("++", StringComparison.Ordinal) >= 0)
+                        tekstKoraka = tekstKoraka.Replace("++", PokupiParametre());
+                    string dio = Pripremi(tekstKoraka);
                     if (!DijalogTok.SmijePoslati(dio))
                         continue;
                     NgDnevnik.Sql(dio);

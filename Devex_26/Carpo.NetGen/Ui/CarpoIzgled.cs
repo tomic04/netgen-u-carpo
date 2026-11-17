@@ -117,6 +117,14 @@ namespace Carpo.NetGen.Ui
             combo.Properties.ShowFooter = false;
         }
 
+        /// <summary>Popis comba ima jedan stupac, natpis (Form2.vb: Combo je ComboBox s tekstom stavke).</summary>
+        public static void ComboStupac(LookUpEdit combo, string natpis)
+        {
+            combo.Properties.Columns.Clear();
+            if (!string.IsNullOrEmpty(natpis))
+                combo.Properties.Columns.Add(new DevExpress.XtraEditors.Controls.LookUpColumnInfo(natpis, ""));
+        }
+
         public static void Gumb(SimpleButton gumb)
         {
             gumb.Appearance.Font = new Font(gumb.Font.FontFamily, 7f, FontStyle.Bold);
