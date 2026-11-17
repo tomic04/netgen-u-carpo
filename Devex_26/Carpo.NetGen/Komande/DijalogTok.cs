@@ -51,7 +51,7 @@ namespace Carpo.NetGen.Komande
         }
 
         /// <summary>
-        /// Upis smije samo klik-pregled na bazi spin, server localhost na sql-ai.
+        /// Upis smije samo klik-pregled na bazi spin: server sql-ai s bilo kojeg stroja, ili lokalno ime na samom sql-ai i u CI-ju.
         /// jupiter2019, jupiter2022 i svaka druga baza ostaju zatvorene.
         /// </summary>
         public static bool UpisNaSpinu(string server, string baza)
@@ -61,12 +61,15 @@ namespace Carpo.NetGen.Komande
             if (JeJupiter(server))
                 return false;
             string s = (server ?? "").Trim();
+            // sql-ai/spin je testna baza projekta: upis je dopušten s bilo kojeg stroja (testovi se vrte i s laptopa).
+            if (s.IndexOf("sql-ai", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            // Lokalno ime servera vrijedi samo na samom sql-ai ili u CI-ju, da tuđi lokalni "spin" ostane zatvoren.
             bool lokal = s.Length == 0
                 || string.Equals(s, "localhost", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(s, ".", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(s, "(local)", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(s, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
-                || s.IndexOf("sql-ai", StringComparison.OrdinalIgnoreCase) >= 0;
+                || string.Equals(s, "127.0.0.1", StringComparison.OrdinalIgnoreCase);
             if (!lokal)
                 return false;
             string akcija = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") ?? "";

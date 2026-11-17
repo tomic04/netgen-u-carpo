@@ -218,6 +218,12 @@ namespace Carpo.NetGen.Ui
             Dijalog.Trag("podloga combo");
             NapuniCombo();
             NapuniDrvo();
+            // NetGen pri otvaranju ima odabran prvi čvor stabla prije početnog upita: TreeView2_AfterSelect (Form1.vb
+            // 7182-7189) postavi Node čim stablo postane vidljivo u NapuniDrvoVrijeme. Izmjereno starim NetGenom
+            // (tools/netgen-host) na sql-ai/spin: AOPNovi šalje "@id='0'", a Carpo je slao "@id='null'" i dobio
+            // grešku pretvorbe. Forma čvora se ovdje ne izvršava; master puni početni upit, kao zadnji i u NetGenu.
+            if (_stablo.Stanje.Vidljivo && _stablo.Stanje.Korijen.Count > 0)
+                _stablo.Odaberi(_stablo.Stanje.Korijen[0]);
             _detail.Pripremi(_projekt);
             Dijalog.Trag("podloga dms");
             PripremiDms();

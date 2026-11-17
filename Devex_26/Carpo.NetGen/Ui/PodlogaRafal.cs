@@ -256,7 +256,8 @@ namespace Carpo.NetGen.Ui
         private void UcitajDozvole()
         {
             _dozvole = null;
-            if (!Dozvole.Ukljucene(AtributProjekta("PERMISIO")))
+            bool imaPermisio = _projekt != null && _projekt.Atributi != null && _projekt.Atributi.Ima("PERMISIO");
+            if (!Dozvole.Projekt(imaPermisio, AtributProjekta("PERMISIO")))
                 return;
             string xml = _master.Kontekst == null ? "" : _master.Kontekst.XmlName;
             string op = _master.Kontekst == null ? "0" : _master.Kontekst.OperaterId;

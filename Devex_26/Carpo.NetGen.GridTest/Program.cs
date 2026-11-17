@@ -3397,10 +3397,26 @@ namespace Carpo.NetGen.GridTest
                 }
                 using (var d = new Dijalog())
                 {
+                    // Module1.vb 189: strPermisio je početno True, pa forma bez atributa učitava dozvole.
+                    Carpo.NetGen.Komande.Dozvole.Globalno = true;
                     var bez = new NgForm("F1", new NgAttributeBag(new Dictionary<string, string>()), "", "", kontrole, new List<NgButton>(), new List<string>());
                     poslano.Clear();
                     d.Slozi(bez, new SqlKontekst { XmlName = "Obrazac" }, delegate (string x) { poslano.Add(x ?? ""); return t; });
-                    T("doz02-bez-permisio", !poslano.Exists(delegate (string x) { return x.IndexOf("ssPermission", StringComparison.Ordinal) >= 0; }), "");
+                    T("doz02-bez-permisio", poslano.Exists(delegate (string x) { return x.IndexOf("ssPermission", StringComparison.Ordinal) >= 0; }), "");
+                }
+                using (var d = new Dijalog())
+                {
+                    // PERMISIO="false" isključi dozvole, i to ostane za sljedeću formu bez atributa (ista varijabla, Form2.vb 1097).
+                    var iskljucena = new NgForm("F1", new NgAttributeBag(new Dictionary<string, string> { { "PERMISIO", "false" } }), "", "", kontrole, new List<NgButton>(), new List<string>());
+                    poslano.Clear();
+                    d.Slozi(iskljucena, new SqlKontekst { XmlName = "Obrazac" }, delegate (string x) { poslano.Add(x ?? ""); return t; });
+                    bool nijePoslano = !poslano.Exists(delegate (string x) { return x.IndexOf("ssPermission", StringComparison.Ordinal) >= 0; });
+                    bool ostaloIskljuceno = !Carpo.NetGen.Komande.Dozvole.Forma(false, "");
+                    // Novi projekt (Form1.vb 3153) vrati True; atribut koji nije Boolean ne mijenja ništa.
+                    bool projektVraca = Carpo.NetGen.Komande.Dozvole.Projekt(false, "") && Carpo.NetGen.Komande.Dozvole.Projekt(true, "možda")
+                        && !Carpo.NetGen.Komande.Dozvole.Projekt(true, "FALSE");
+                    Carpo.NetGen.Komande.Dozvole.Globalno = true;
+                    T("doz02-permisio-false", nijePoslano && ostaloIskljuceno && projektVraca, nijePoslano + " " + ostaloIskljuceno + " " + projektVraca);
                 }
             }
             catch (Exception ex)

@@ -27,7 +27,10 @@ namespace Carpo.NetGen.Ui
         private void UcitajDozvole(NgForm forma, Func<string, DataTable> citaj)
         {
             _dozvole = null;
-            if (forma == null || forma.Kontrole.Count == 0 || citaj == null || !Dozvole.Ukljucene(AtributForme("PERMISIO")))
+            if (forma == null || forma.Kontrole.Count == 0 || citaj == null)
+                return;
+            bool imaPermisio = forma.Atributi != null && forma.Atributi.Ima("PERMISIO");
+            if (!Dozvole.Forma(imaPermisio, AtributForme("PERMISIO")))
                 return;
             string op = (Operater ?? "").Trim();
             if (op.Length == 0 && _kontekst != null)

@@ -19,9 +19,47 @@ namespace Carpo.NetGen.Komande
             public bool? Natpis;
         }
 
-        public static bool Ukljucene(string permisio)
+        /// <summary>
+        /// Module1.vb 189: strPermisio je jedna Boolean varijabla za cijeli proces, početno True.
+        /// Bez atributa PERMISIO dozvole se zato učitavaju (51 od 973 granule ga ima); isključuje ih tek PERMISIO="false".
+        /// </summary>
+        public static bool Globalno = true;
+
+        /// <summary>
+        /// Form1.vb 3153 i 3395: projekt postavi True, pa pročita atribut. Ako atributa nema ili se ne može pretvoriti
+        /// u Boolean, čitanje pukne pod On Error Resume Next i ostane True.
+        /// </summary>
+        public static bool Projekt(bool imaAtribut, string vrijednost)
         {
-            return (permisio ?? "").Trim().ToLowerInvariant() == "true";
+            Globalno = true;
+            if (imaAtribut)
+                Globalno = Pretvori(vrijednost, Globalno);
+            return Globalno;
+        }
+
+        /// <summary>
+        /// Form2.vb 1097 i 2802: forma s atributom promijeni istu varijablu (i ostane tako za sljedeće forme);
+        /// forma bez atributa naslijedi zatečeno stanje.
+        /// </summary>
+        public static bool Forma(bool imaAtribut, string vrijednost)
+        {
+            if (imaAtribut)
+                Globalno = Pretvori(vrijednost, Globalno);
+            return Globalno;
+        }
+
+        /// <summary>VB pretvorba String u Boolean: "true"/"false" bez obzira na slova, broj je True ako nije 0, ostalo je greška (ostaje staro).</summary>
+        private static bool Pretvori(string vrijednost, bool staro)
+        {
+            string v = (vrijednost ?? "").Trim();
+            if (string.Equals(v, "true", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (string.Equals(v, "false", StringComparison.OrdinalIgnoreCase))
+                return false;
+            double broj;
+            if (double.TryParse(v, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out broj))
+                return broj != 0;
+            return staro;
         }
 
         /// <summary>2697-2707, verzija od 18.10.2021.</summary>
