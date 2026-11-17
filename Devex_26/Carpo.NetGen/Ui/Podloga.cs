@@ -1164,6 +1164,11 @@ namespace Carpo.NetGen.Ui
             // MPInventura, MPInvRazlike, MPNarPredis; Carpo je nakon greške mastera slao DETAILGRID s "@id=0".
             if (MasterGreska().Length > 0)
                 return;
+            // Upit koji ne vrati nijedan skup rezultata: Class1.ExecSql vrati Nothing (ds.Tables.Count = 0), grid se ne veže
+            // i detalj ne ide. Skup s nula redaka se veže i detalj ide (AOPNovi). Izmjereno na jupiter2022/PCC: KntBlaZak,
+            // spBLZakljucakQueryNG @action=0 ne vraća ništa, NetGen ne šalje DETAILGRID, Carpo je slao "@Id=null".
+            if (_master.Stanje.Tablica == null || _master.Stanje.Tablica.Columns.Count == 0)
+                return;
             OsvjeziDetail();
         }
 
