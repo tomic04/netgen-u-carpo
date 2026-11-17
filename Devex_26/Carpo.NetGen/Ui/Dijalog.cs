@@ -667,7 +667,12 @@ namespace Carpo.NetGen.Ui
                 // Osvjezavanje ostavi odabir korisnika (LookUpEdit zadrzi EditValue ako ga nova lista ima).
                 if (gotovSql != null)
                     return;
-                if (!prazan && ComboDijalog.OdabirAkoNista(dt, false) == "1")
+                // WinForms ComboBox vezan na DataSource odabere prvi red, pa combo bez ALLOWEMPTY u NetGenu nikad nije
+                // prazan (izmjereno: MPFiskalPubVars šalje @partneriid = 118, prvi red; Carpo je slao null).
+                // Form2.vb 3460 (SelectedValue = 1) je samo rezerva kad ništa nije odabrano.
+                if (!prazan && dt.Rows.Count > 0)
+                    look.EditValue = dt.Rows[0][0];
+                else if (!prazan && ComboDijalog.OdabirAkoNista(dt, false) == "1")
                     look.EditValue = 1;
                 string odabrano;
                 string ostatak;
@@ -3250,6 +3255,17 @@ namespace Carpo.NetGen.Ui
                 _izUpita[col.ColumnName] = v;
                 if (kontekst != null)
                     kontekst.ParametriSaGrida += "@" + col.ColumnName + "='" + v.Replace("'", "''") + "' , ";
+                // Form2.ProcitajXML 1205-1224: stupci ONLOAD-a idu i u CB (ime + "="), bez navodnika s krajeva; DBNull je "null".
+                // CB je zajednički s podlogom, pa vrijednost ostaje i nakon zatvaranja forme.
+                if (kontekst != null && kontekst.Clipboard != null)
+                {
+                    string zaCb = sirovo == DBNull.Value ? "null" : v;
+                    if (zaCb.StartsWith("'", StringComparison.Ordinal))
+                        zaCb = zaCb.Substring(1);
+                    if (zaCb.EndsWith("'", StringComparison.Ordinal))
+                        zaCb = zaCb.Substring(0, zaCb.Length - 1);
+                    kontekst.Clipboard[col.ColumnName + "="] = zaCb.Trim();
+                }
             }
         }
 
