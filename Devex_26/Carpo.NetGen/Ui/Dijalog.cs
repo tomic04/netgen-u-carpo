@@ -218,6 +218,11 @@ namespace Carpo.NetGen.Ui
             if (DijalogTok.OnLoadJeUpit(on) && citaj != null)
                 UcitajOnLoad(on, kontekst, citaj);
             Faza(satFaze, forma.Ime, "onload");
+            // Form2.vb 1197-1199: nakon greške ONLOAD-a ProcitajXML izlazi (Exit Sub) prije kontrola, pa se njihov SQL
+            // ne izvršava. Forma se ionako ne prikazuje (Prikazi gleda GreskaOnLoad). Prije su se combo i grid forme
+            // ipak punili, npr. nakon poruke "Niste odabrali niti jednu stavku! +close" (RekapitulacijaUI, KARTICA).
+            if (!string.IsNullOrEmpty(GreskaOnLoad))
+                return;
             int zadnji = 0;
             var roditelji = new List<KeyValuePair<Control, string>>();
             bool imaGumb = forma.Gumbi != null && forma.Gumbi.Count > 0;

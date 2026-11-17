@@ -803,6 +803,9 @@ namespace Carpo.TestShell
                     grupe[grupa] = n + 1;
                 }
                 string poruka = (uzrok ?? "").Replace("\t", " ").Replace("\r", " ").Replace("\n", " ");
+                // U retku granule se odmah vidi da greška vjerojatno dolazi od prolaza, ne od Carpa.
+                if (grupa == "prazan-parametar" && ishod != "CISTO" && ishod != "ROK" && ishod != "PORUKA")
+                    poruka = "[prazan-parametar] " + poruka;
                 if (poruka.Length > 240)
                     poruka = poruka.Substring(0, 240);
                 string linija = rel + "\t" + ishod + "\t" + sec.ToString() + "\t" + poruka;
@@ -936,6 +939,11 @@ namespace Carpo.TestShell
                 return "nema-objekta";
             if (t.IndexOf("invalid column name", StringComparison.Ordinal) >= 0)
                 return "nema-stupca";
+            // Vrijednost koje nema ode u SQL kao null, pod navodnicima iz XML-a kao 'null' (isto radi NetGen). U sweepu je
+            // to redovito posljedica prolaza: ulazna forma je zatvorena s Odustani ili nema odabranog reda ili čvora.
+            int crta = t.IndexOf(" | ", StringComparison.Ordinal);
+            if (crta >= 0 && t.IndexOf("'null'", crta, StringComparison.Ordinal) >= 0)
+                return "prazan-parametar";
             if (t.IndexOf("timeout", StringComparison.Ordinal) >= 0 || t.IndexOf("dulje od", StringComparison.Ordinal) >= 0
                 || t.IndexOf("sweep rok", StringComparison.Ordinal) >= 0 || t.IndexOf("isteklo", StringComparison.Ordinal) >= 0)
                 return "hang";
